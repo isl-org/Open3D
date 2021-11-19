@@ -43,8 +43,6 @@ from open3d.ml.vis import LabelLUT
 from . import plugin_data_pb2
 from . import metadata
 
-import ipdb
-
 try:
     from tensorflow.io.gfile import GFile as _fileopen
 except ImportError:
@@ -56,8 +54,8 @@ _log.propagate = False
 _stream_handler = logging.StreamHandler()
 _stream_handler.setFormatter(
     logging.Formatter('[%(name)s %(levelname)s T:%(threadName)s] %(message)s'))
-_stream_handler.setLevel(logging.DEBUG)
-_log.setLevel(logging.DEBUG)
+_stream_handler.setLevel(logging.WARNING)
+_log.setLevel(logging.WARNING)
 _log.addHandler(_stream_handler)
 
 
@@ -545,6 +543,63 @@ class RenderUpdate:
             self._shader = "unlitGradient.LUT"
             self._colormap = None
 
+    class BackupRestore():
+        """Manages backup and restore for tensormap[property] tensors. Call
+        backup(tensormap, property) before modifying the property. This will
+        save the data to a backup tensor (with key __property) and ensure a
+        tensor is available for modification / assignment. A list of tensormap
+        and property tuples is maintained so that a single call to restore()
+        will switch the data back to the earlier state. The implementation takes
+        care to only allocate a single backup copy of the tensor data which will
+        be reused on subsequent calls to backup().
+        """
+
+        def __init__(self):
+            self.swap_list = []  # swap these during restore
+            self.backup_list = []  # backup these during restore
+
+        def backup(self, tm, prop, clone=False, shape=None, dtype=None):
+            """Args:
+
+                    tm (TensorMap): tensormap, such as PointCloud.point
+                    prop (str): property key, such as 'indices'
+                    clone (bool): Backup should be a clone, else empty tensor.
+                    shape, dtype: sape, dtype if property and backup are absent
+                        and a new empty tensor should be created.
+            """
+            if prop in tm:
+                if "__" + prop in tm:  # swap
+                    tm[prop], tm["__" + prop] = tm["__" + prop], tm[prop]
+                elif clone:
+                    tm["__" + prop] = tm[prop].clone()  # backup
+                else:
+                    tm["__" + prop] = tm[prop]  # backup
+                    tm[prop] = o3d.core.Tensor.empty(tm["__" + prop].shape,
+                                                     tm["__" + prop].dtype)
+                self.swap_list.append((tm, prop))
+                return
+            if "__" + prop in tm:  # __prop -> prop
+                tm[prop] = tm["__" + prop]
+                del tm["__" + prop]
+            elif shape is not None and dtype is not None:
+                tm[prop] = o3d.core.Tensor.empty(shape, dtype)
+            self.backup_list.append((tm, prop))
+
+        def restore(self):
+            show = "tensormap props: (swap_list)"
+            for tm, prop in self.swap_list:  # swap
+                tm[prop], tm["__" + prop] = tm["__" + prop], tm[prop]
+                show += prop + repr(tm[prop][:0]) + '\t' + "__" + prop + repr(
+                    tm["__" + prop][:0])
+
+            self.swap_list = []
+            show += "\n (backup_list) "
+            for tm, prop in self.backup_list:  # backup
+                tm["__" + prop] = tm[prop]
+                del tm[prop]
+                show += "__" + prop + repr(tm["__" + prop][:0])
+            self.backup_list = []
+
     def apply(self, o3dvis, geometry_name, geometry, inference_data_proto=None):
         """Apply the RenderUpdate to a geometry.
 
@@ -558,19 +613,6 @@ class RenderUpdate:
         if (len(self._updated) == 0 or geometry.is_empty()):
             _log.debug("No updates, or empty geometry.")
             return
-
-        def swap__(tensormap, prop):
-            """If backup of property prop exists, restore it. Else save prop to
-            a backup (__prop).  prop can now be safely modified for
-            visualization. Returns True if prop exists, else False.
-            """
-            if "__" + prop in tensormap:
-                tensormap[prop][:] = tensormap["__" + prop][:]  # restore
-                return True
-            if prop in tensormap:
-                tensormap["__" + prop] = tensormap[prop].clone()  # backup
-                return True
-            return False
 
         def get_labelLUT():
             """Create {label: color} mapping from list of colors."""
@@ -603,6 +645,7 @@ class RenderUpdate:
 
         geometry_update_flag = 0
         material_update_flag = 0
+        swap = RenderUpdate.BackupRestore()
         material = o3dvis.get_geometry_material(geometry_name)
 
         # Visualize scalar / 3-vector property with color map
@@ -620,7 +663,7 @@ class RenderUpdate:
             elif (self._property in custom_props and
                   self._shader == "defaultUnlit" and
                   geometry_vertex[self._property].shape[1] >= 3):
-                swap__(geometry_vertex, "colors")
+                swap.backup(geometry_vertex, "colors")
                 geometry_vertex["colors"], min_val, max_val = _normalize(
                     geometry_vertex[self._property][:, :3])
                 self._update_range(min_val, max_val)
@@ -628,19 +671,22 @@ class RenderUpdate:
 
         # Bounding boxes / LineSet
         if isinstance(geometry, o3d.t.geometry.LineSet):
-            if not swap__(geometry.line, "colors"):
-                geometry.line["colors"] = o3d.core.Tensor.full(
-                    (len(geometry.line["indices"]), 3),
-                    128,
-                    dtype=o3d.core.uint8)
             if self._property == "" and self._shader == "unlitSolidColor":
+                swap.backup(geometry.line,
+                            "colors",
+                            shape=(len(geometry.line["indices"]), 3),
+                            dtype=o3d.core.uint8)
                 geometry.line["colors"][:] = next(iter(
                     self._colormap.values()))[:3]
             elif self._property != "" and self._shader == "unlitGradient.LUT":
                 if self._colormap is None:
                     self._colormap = get_labelLUT()
                 if "colormap" in updated:
-                    swap__(geometry.line, "indices")
+                    swap.backup(geometry.line, "indices", clone=True)
+                    swap.backup(geometry.line,
+                                "colors",
+                                shape=(len(geometry.line["indices"]), 3),
+                                dtype=o3d.core.uint8)
                     t_lines = geometry.line["indices"]
                     t_colors = geometry.line["colors"]
                     idx = 0
@@ -653,7 +699,8 @@ class RenderUpdate:
                         idx += self._LINES_PER_BBOX
 
         # PointCloud, Mesh, LineSet with colors
-        elif "shader" in updated or "colormap" in updated:
+        elif (("shader" in updated or "colormap" in updated) and
+              not geometry.has_valid_material()):
             material_update_flag = 1
             material.base_color = ((1.0, 1.0, 1.0, 1.0) if have_colors else
                                    (0.5, 0.5, 0.5, 1.0))
@@ -714,14 +761,8 @@ class RenderUpdate:
             self._gui.run_sync(o3dvis.add_geometry, geometry_name, geometry,
                                material if material_update_flag else None)
         self._gui.run_sync(o3dvis.post_redraw)
-        if not have_colors:  # reset colors
-            if hasattr(geometry, "line") and "colors" in geometry.line:
-                del geometry.line["colors"]
-            elif "colors" in geometry_vertex:
-                del geometry_vertex["colors"]
-            elif (hasattr(geometry, "triangle") and
-                  "colors" in geometry.triangle):
-                del geometry.triangle["colors"]
+
+        swap.restore()
         _log.debug(f"apply complete: {geometry_name} with "
                    f"{self._property}[{self._index}]/{self._shader}")
 

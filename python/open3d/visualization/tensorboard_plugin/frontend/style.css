@@ -344,3 +344,15 @@ select {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* Error message when network connection is lost */
+.no-webrtc {
+  padding: 8px;
+  position: fixed;
+  width: 25em;
+  top: 20em;
+  left: 40em;
+  background-color: black;
+  color: white;
+  border-radius: 1em;
+}

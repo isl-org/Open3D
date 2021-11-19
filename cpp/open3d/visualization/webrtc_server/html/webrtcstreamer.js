@@ -32,7 +32,7 @@
 // ----------------------------------------------------------------------------
 
 (function() {
-const enableLogging = true;
+const enableLogging = false;
 if (enableLogging === false) {
     if (typeof window.console === 'undefined') {
         window.console = {};

@@ -372,15 +372,17 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
     };
 
     /**
-     * Show popup asking the user to reload the page if network connection is
+     * Show message asking the user to reload the page if network connection is
      * lost.
      */
-    onClose = () => {
-        let userChoice = window.confirm(
-                `Network connection to Open3D server lost. If TensorBoard is still running, press OK to reload the page.`);
-        if (userChoice == true) {
-            location.reload();
-        }
+    onCloseWebRTC = () => {
+        let widgetView = document.getElementById('widget-view');
+        widgetView.insertAdjacentHTML('afterbegin', `
+                <div class="no-webrtc">
+                <h3>Network connection to Open3D server lost.</h3>
+                <p>If TensorBoard is still running, please <a href="#"
+                onclick="location.reload();">reload</a> the page.</p>
+              </div>`);
     };
 
     /**
@@ -455,7 +457,7 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
 
         let videoElt = document.getElementById(videoId);
         let client = new WebRtcStreamer(
-                videoElt, this.URL_ROUTE_PREFIX, this.onClose, null);
+                videoElt, this.URL_ROUTE_PREFIX, this.onCloseWebRTC, null);
         console.info('[addConnection] videoId: ' + videoId);
 
         client.connect(windowUId, /*audio*/ null, this.webRtcOptions);
@@ -478,10 +480,6 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
             if (run) {
                 this.runWindow.set(run, windowUId);
                 this.windowState.get(windowUId).run = run;
-                console.debug(
-                        'After addConnection: this.runWindow = ',
-                        this.runWindow,
-                        'this.windowState = ', this.windowState);
             }
             videoElt.addEventListener(
                     'RemoteDataChannelOpen',
@@ -1040,7 +1038,6 @@ Click to change">
         // Need colormap Object for JSON
         updateRenderingMessage.render_state.colormap =
                 Object.fromEntries(renderStateTag.colormap.entries());
-        console.log('Before update_rendering:', this.renderState);
         console.info('Sending updateRenderingMessage:', updateRenderingMessage);
         this.webRtcClientList.values().next().value.sendJsonData(
                 updateRenderingMessage);
@@ -1124,7 +1121,6 @@ Click to change">
                 rst.colormap = Object.fromEntries(
                         this.renderState.get(tag).colormap.entries());
         }
-        console.log('Before update_geometry:', this.renderState);
         console.info('Sending updateGeometryMessage:', updateGeometryMessage);
         this.webRtcClientList.get(windowUId).sendJsonData(
                 updateGeometryMessage);
@@ -1185,10 +1181,6 @@ Click to change">
      * @listens document#change
      */
     onStepBIdxSelect = (windowUId, evt) => {
-        console.debug(
-                '[onStepBIdxSelect] this.windowState: ', this.windowState,
-                'this.commonStep', this.commonStep, 'this.commonBatchIdx',
-                this.commonBatchIdx);
         if (evt.target.name.startsWith('batch-idx-selector')) {
             if (this.commonBatchIdx != null) {
                 this.commonBatchIdx = evt.target.value;
@@ -1236,6 +1228,11 @@ Click to change">
                 console.error(err.name, err.message, evt.data);
             }
         }
+        // remove busy indicator if reply is for last message
+        if (this.messageId == message.messageId) {
+            document.getElementById('loader_video_' + windowUId)
+                    .classList.remove('loader');
+        }
         if (message.status !== 'OK') {
             console.error(message.status);
         }
@@ -1259,9 +1256,6 @@ Click to change">
             if (this.windowState.size === 0) {  // First load
                 this.runWindow.set(message.current.run, windowUId);
                 this.windowState.set(windowUId, message.current);
-                console.debug(
-                        '[After get_run_tags] this.runWindow: ', this.runWindow,
-                        'this.windowState:', this.windowState);
                 this.COLORMAPS = message.colormaps;  // Object (not Map)
                 this.labelLUTColors =
                         message.LabelLUTColors;  // Object (not Map)
@@ -1292,9 +1286,6 @@ Click to change">
                     `windowUId mismatch: received ${message.window_uid} !== ${
                             windowUId}`);
             this.windowState.set(windowUId, message.current);
-            console.debug(
-                    '[After update_geometry] this.runWindow: ', this.runWindow,
-                    'this.windowState:', this.windowState);
             // Update run level selectors
             this.createSlider(
                     windowUId, 'batch-idx-selector', 'Batch index',
@@ -1327,12 +1318,6 @@ Click to change">
                 }
                 this.createPropertyPanel(tag);
             }
-            console.debug(
-                    '[After update_geometry] this.renderState',
-                    this.renderState);
-            // remove busy indicator
-            document.getElementById('loader_video_' + windowUId)
-                    .classList.remove('loader');
         } else if (message.class_name.endsWith('update_rendering')) {
             this.renderState.set(message.tag, message.render_state);
             const cmap = this.renderState.get(message.tag).colormap;  // Object
@@ -1341,12 +1326,6 @@ Click to change">
                         new Map(Object.entries(cmap));  // Map
             }
             this.createPropertyPanel(message.tag);
-            console.log(
-                    '[After update_rendering] this.renderState',
-                    this.renderState);
-            // remove busy indicator
-            document.getElementById('loader_video_' + windowUId)
-                    .classList.remove('loader');
         }
     };
 }
