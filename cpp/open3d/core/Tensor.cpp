@@ -661,6 +661,12 @@ Tensor Tensor::Flatten(int64_t start_dim /*= 0*/,
     core::SizeVector shape = GetShape();
     core::SizeVector dst_shape;
     int64_t num_dims = NumDims();
+    if (num_dims == 0) {
+        // Wrap here only to check for validity of input dimensions
+        start_dim = shape_util::WrapDim(start_dim, 1, false);
+        end_dim = shape_util::WrapDim(end_dim, 1, false);
+        return Broadcast({1});
+    }
     start_dim = shape_util::WrapDim(start_dim, num_dims, false);
     end_dim = shape_util::WrapDim(end_dim, num_dims, false);
     if (end_dim < start_dim) {

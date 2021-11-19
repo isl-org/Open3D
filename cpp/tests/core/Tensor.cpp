@@ -414,23 +414,122 @@ TEST_P(TensorPermuteDevices, Expand) {
 TEST_P(TensorPermuteDevices, Flatten) {
     core::Device device = GetParam();
 
-    core::Tensor src_t = core::Tensor::Init<float>(
-            {{{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}},
-             {{12, 13, 14, 15}, {16, 17, 18, 19}, {20, 21, 22, 23}}},
-            device);
+    // Flatten 0-D Tensor
+    core::Tensor src_t = core::Tensor::Init<float>(3, device);
+    core::Tensor dst_t = core::Tensor::Init<float>({3}, device);
+    
+    EXPECT_TRUE((dst_t == src_t.Flatten()).All());
+    EXPECT_TRUE((dst_t == src_t.Flatten(0)).All());
+    EXPECT_TRUE((dst_t == src_t.Flatten(-1)).All());
 
-    core::Tensor dst_t_no_param = core::Tensor::Init<float>(
-            {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
-             12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23},
-            device);
+    EXPECT_TRUE((dst_t == src_t.Flatten(0, 0)).All());
+    EXPECT_TRUE((dst_t == src_t.Flatten(0, -1)).All());
+    EXPECT_TRUE((dst_t == src_t.Flatten(-1, 0)).All());
+    EXPECT_TRUE((dst_t == src_t.Flatten(-1, -1)).All());
 
-    core::Tensor dst_t_with_param = core::Tensor::Init<float>(
-            {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
-             {12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}},
-            device);
+    EXPECT_ANY_THROW(src_t.Flatten(-2));
+    EXPECT_ANY_THROW(src_t.Flatten(1));
+    EXPECT_ANY_THROW(src_t.Flatten(0, -2));
+    EXPECT_ANY_THROW(src_t.Flatten(0, 1));
 
-    EXPECT_TRUE((dst_t_no_param == src_t.Flatten()).All());
-    EXPECT_TRUE((dst_t_with_param == src_t.Flatten(1)).All());
+    // Flatten 1-D Tensor
+    src_t = core::Tensor::Init<float>({1, 2, 3}, device);
+    dst_t = core::Tensor::Init<float>({1, 2, 3}, device);
+    
+    EXPECT_TRUE((dst_t == src_t.Flatten()).All());
+    EXPECT_TRUE((dst_t == src_t.Flatten(0)).All());
+    EXPECT_TRUE((dst_t == src_t.Flatten(-1)).All());
+
+    EXPECT_TRUE((dst_t == src_t.Flatten(0, 0)).All());
+    EXPECT_TRUE((dst_t == src_t.Flatten(0, -1)).All());
+    EXPECT_TRUE((dst_t == src_t.Flatten(-1, 0)).All());
+    EXPECT_TRUE((dst_t == src_t.Flatten(-1, -1)).All());
+
+    EXPECT_ANY_THROW(src_t.Flatten(-2));
+    EXPECT_ANY_THROW(src_t.Flatten(1));
+    EXPECT_ANY_THROW(src_t.Flatten(0, -2));
+    EXPECT_ANY_THROW(src_t.Flatten(0, 1));
+
+    // Flatten 2-D Tensor
+    src_t = core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
+    core::Tensor dst_t_flat =
+            core::Tensor::Init<float>({1, 2, 3, 4, 5, 6}, device);
+    core::Tensor dst_t_unchanged =
+            core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
+
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten()).All());
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0)).All());
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-2)).All());
+
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0, 1)).All());
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-2, 1)).All());
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0, -1)).All());
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-2, -1)).All());
+
+    EXPECT_TRUE((dst_t_unchanged == src_t.Flatten(1)).All());
+    EXPECT_TRUE((dst_t_unchanged == src_t.Flatten(-1)).All());
+
+    for (int64_t dim : {-2, -1, 0, 1}) {
+        EXPECT_TRUE((dst_t_unchanged == src_t.Flatten(dim, dim)).All());
+    }
+    
+    // Out of bounds dimensions
+    EXPECT_ANY_THROW(src_t.Flatten(0, 2));
+    EXPECT_ANY_THROW(src_t.Flatten(0, -3));
+    EXPECT_ANY_THROW(src_t.Flatten(-3, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(2, 0));
+
+    // end_dim is greater than start_dim
+    EXPECT_ANY_THROW(src_t.Flatten(1, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(-1, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(1, -2));
+    EXPECT_ANY_THROW(src_t.Flatten(-1, -2));
+
+    // Flatten 3-D Tensor
+    src_t = core::Tensor::Init<float>(
+            {{{1, 2, 3}, {4, 5, 6}}, {{7, 8, 9}, {10, 11, 12}}}, device);
+    dst_t_flat = core::Tensor::Init<float>(
+            {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, device);
+    dst_t_unchanged = core::Tensor::Init<float>(
+            {{{1, 2, 3}, {4, 5, 6}}, {{7, 8, 9}, {10, 11, 12}}}, device);
+    core::Tensor dst_t_unflat_last = core::Tensor::Init<float>(
+            {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, device);
+    core::Tensor dst_t_unflat_first = core::Tensor::Init<float>(
+            {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}}, device);
+
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten()).All());
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0)).All());
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-3)).All());
+
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0, 2)).All());
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-3, 2)).All());
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0, -1)).All());
+    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-3, -1)).All());
+
+    EXPECT_TRUE((dst_t_unflat_last == src_t.Flatten(0, 1)).All());
+    EXPECT_TRUE((dst_t_unflat_last == src_t.Flatten(0, -2)).All());
+    EXPECT_TRUE((dst_t_unflat_last == src_t.Flatten(-3, 1)).All());
+    EXPECT_TRUE((dst_t_unflat_last == src_t.Flatten(-3, -2)).All());
+
+    EXPECT_TRUE((dst_t_unflat_first == src_t.Flatten(1, 2)).All());
+    EXPECT_TRUE((dst_t_unflat_first == src_t.Flatten(1, -1)).All());
+    EXPECT_TRUE((dst_t_unflat_first == src_t.Flatten(-2, 2)).All());
+    EXPECT_TRUE((dst_t_unflat_first == src_t.Flatten(-2, -1)).All());
+
+    for (int64_t dim : {-3, -2, -1, 0, 1, 2}) {
+        EXPECT_TRUE((dst_t_unchanged == src_t.Flatten(dim, dim)).All());
+    }
+
+    // Out of bounds dimensions
+    EXPECT_ANY_THROW(src_t.Flatten(0, 3));
+    EXPECT_ANY_THROW(src_t.Flatten(0, -4));
+    EXPECT_ANY_THROW(src_t.Flatten(-4, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(3, 0));
+
+    // end_dim is greater than start_dim
+    EXPECT_ANY_THROW(src_t.Flatten(1, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(2, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(2, 1));
 }
 
 TEST_P(TensorPermuteDevices, DefaultStrides) {
