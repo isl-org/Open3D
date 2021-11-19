@@ -165,6 +165,7 @@ class Open3DPluginWindow:
               "messageId": 2,
               "window_uid": "window_2",
               "class_name": "tensorboard/window_2/toggle_settings",
+              "open": "true" | "false",
               "status": "OK"
             }
         """
@@ -173,6 +174,7 @@ class Open3DPluginWindow:
         self.window.show_settings = not self.window.show_settings
         self._gui.run_sync(self.window.post_redraw)
         message["status"] = "OK"
+        message["open"] = self.window.show_settings
         return json.dumps(message)
 
     def _validate_run(self, selected_run):

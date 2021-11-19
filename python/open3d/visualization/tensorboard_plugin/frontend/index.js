@@ -378,11 +378,10 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
     onCloseWebRTC = () => {
         let widgetView = document.getElementById('widget-view');
         widgetView.insertAdjacentHTML('afterbegin', `
-                <div class="no-webrtc">
+            <div class="no-webrtc">
                 <h3>Network connection to Open3D server lost.</h3>
-                <p>If TensorBoard is still running, please <a href="#"
-                onclick="location.reload();">reload</a> the page.</p>
-              </div>`);
+                <p>If TensorBoard is still running, please reload the page.</p>
+            </div>`);
     };
 
     /**
@@ -485,6 +484,7 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
                     'RemoteDataChannelOpen',
                     this.requestGeometryUpdate.bind(this, windowUId));
         }
+        videoElt.settingsOpen = false;
         document.getElementById('zoom-' + windowUId)
                 .addEventListener(
                         'click', this.toggleZoom.bind(this, windowUId));
@@ -499,15 +499,19 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
      * @param {String} windowUId e.g. "window_2"
      */
     toggleZoom = (windowUId) => {
-        let elem = document.getElementById('video_' + windowUId);
-        if (elem.width <= this.width) {  // zoom
-            elem.width = this.fullWidth;
-            elem.height = this.fullHeight;
+        let videoElt = document.getElementById('video_' + windowUId);
+        if (videoElt.width <= this.width) {  // zoom
+            videoElt.width = this.fullWidth;
+            videoElt.height = this.fullHeight;
         } else {  // original
-            elem.width = this.width;
-            elem.height = this.height;
+            videoElt.width = this.width;
+            videoElt.height = this.height;
+            if (videoElt.settingsOpen) {  // close settings panel
+                this.toggleSettings(windowUId);
+            }
         }
-        console.debug(`New ${windowUId} size: (${elem.width}, ${elem.height})`);
+        console.debug(`New ${windowUId} size: (${videoElt.width}, ${
+                videoElt.height})`);
     };
 
     /**
@@ -516,14 +520,6 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
      * @param {String} windowUId e.g. "window_2"
      */
     toggleSettings = (windowUId) => {
-        // O3DVisualizer controls work only with full size.
-        let elem = document.getElementById('video_' + windowUId);
-        if (elem.width <= this.width) {  // zoom
-            elem.width = this.fullWidth;
-            elem.height = this.fullHeight;
-        }
-        // Disable view sync on opening options panel
-        document.getElementById('ui-options-view').checked = false;
         this.messageId += 1;
         const toggleSettingsMessage = {
             messageId: this.messageId,
@@ -1236,7 +1232,20 @@ Click to change">
         if (message.status !== 'OK') {
             console.error(message.status);
         }
-        if (message.class_name.endsWith('get_run_tags')) {
+        if (message.class_name.endsWith('toggle_settings')) {
+            let videoElt = document.getElementById('video_' + windowUId);
+            videoElt.settingsOpen = message.open;
+            if (message.open == true) {
+                // O3DVisualizer controls work only with full size.
+                videoElt.width = this.fullWidth;
+                videoElt.height = this.fullHeight;
+                // Disable view sync on opening options panel
+                let optViewElt = document.getElementById('ui-options-view');
+                optViewElt.checked = false;
+                evt = new Event('change');
+                optViewElt.dispatchEvent(evt);
+            }
+        } else if (message.class_name.endsWith('get_run_tags')) {
             const runToTags = message.run_to_tags;
             this.createSelector(
                     'run-selector-checkboxes', 'run-selector',
@@ -1326,6 +1335,12 @@ Click to change">
                         new Map(Object.entries(cmap));  // Map
             }
             this.createPropertyPanel(message.tag);
+        }
+        // Send some MouseEvents to force a redraw
+        const mouseEvt = new MouseEvent('mousemove');
+        let videoElt = document.getElementById('video_' + windowUId);
+        for (let i = 0; i < 3; ++i) {
+            videoElt.dispatchEvent(mouseEvt);
         }
     };
 }
