@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -94,6 +94,11 @@ public:
         return points_.size() > 0 && colors_.size() == points_.size();
     }
 
+    /// Returns 'true' if the point cloud contains per-point covariance matrix.
+    bool HasCovariances() const {
+        return !points_.empty() && covariances_.size() == points_.size();
+    }
+
     /// Normalize point normals to length 1.
     PointCloud &NormalizeNormals() {
         for (size_t i = 0; i < normals_.size(); i++) {
@@ -165,6 +170,15 @@ public:
     /// 2k, …].
     std::shared_ptr<PointCloud> UniformDownSample(size_t every_k_points) const;
 
+    /// \brief Function to downsample input pointcloud into output pointcloud
+    /// randomly.
+    ///
+    /// The sample is performed by randomly selecting the index of the points
+    /// in the pointcloud.
+    ///
+    /// \param sampling_ratio Sampling ratio, the ratio of sample to total
+    /// number of points in the pointcloud.
+    std::shared_ptr<PointCloud> RandomDownSample(double sampling_ratio) const;
     /// \brief Function to crop pointcloud into output pointcloud
     ///
     /// All points with coordinates outside the bounding box \p bbox are
@@ -203,7 +217,8 @@ public:
     /// exist.
     ///
     /// \param search_param The KDTree search parameters for neighborhood
-    /// search. \param fast_normal_computation If true, the normal estiamtion
+    /// search.
+    /// \param fast_normal_computation If true, the normal estimation
     /// uses a non-iterative method to extract the eigenvector from the
     /// covariance matrix. This is faster, but is not as numerical stable.
     void EstimateNormals(
@@ -241,6 +256,26 @@ public:
     ///
     /// \param target The target point cloud.
     std::vector<double> ComputePointCloudDistance(const PointCloud &target);
+
+    /// \brief Static function to compute the covariance matrix for each point
+    /// of a point cloud. Doesn't change the input PointCloud, just outputs the
+    /// covariance matrices.
+    ///
+    ///
+    /// \param input PointCloud to use for covariance computation \param
+    /// search_param The KDTree search parameters for neighborhood search.
+    static std::vector<Eigen::Matrix3d> EstimatePerPointCovariances(
+            const PointCloud &input,
+            const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
+
+    /// \brief Function to compute the covariance matrix for each point of a
+    /// point cloud.
+    ///
+    ///
+    /// \param search_param The KDTree search parameters for neighborhood
+    /// search.
+    void EstimateCovariances(
+            const KDTreeSearchParam &search_param = KDTreeSearchParamKNN());
 
     /// Function to compute the mean and covariance matrix
     /// of a point cloud.
@@ -369,6 +404,8 @@ public:
     std::vector<Eigen::Vector3d> normals_;
     /// RGB colors of points.
     std::vector<Eigen::Vector3d> colors_;
+    /// Covariance Matrix for each point
+    std::vector<Eigen::Matrix3d> covariances_;
 };
 
 }  // namespace geometry

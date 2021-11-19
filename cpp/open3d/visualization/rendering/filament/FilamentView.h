@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -84,6 +84,10 @@ public:
 
     void ConfigureForColorPicking() override;
 
+    void EnableViewCaching(bool enable) override;
+    bool IsCached() const override;
+    TextureHandle GetColorBuffer() override;
+
     Camera* GetCamera() const override;
 
     // Copies available settings for view and camera
@@ -97,9 +101,16 @@ public:
     void PostRender();
 
 private:
+    void SetRenderTarget(const RenderTargetHandle render_target);
+
     std::unique_ptr<FilamentCamera> camera_;
     Mode mode_ = Mode::Color;
     TargetBuffers discard_buffers_;
+    bool caching_enabled_ = false;
+    bool configured_for_picking_ = false;
+    TextureHandle color_buffer_;
+    TextureHandle depth_buffer_;
+    RenderTargetHandle render_target_;
 
     filament::Engine& engine_;
     FilamentScene* scene_ = nullptr;

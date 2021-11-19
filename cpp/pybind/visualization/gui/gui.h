@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,6 +42,8 @@ namespace gui {
 
 void InitializeForPython(std::string resource_path = "");
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
+        rendering::Open3DScene *scene, int width, int height);
+std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
         rendering::Open3DScene *scene, int width, int height);
 
 void pybind_gui(py::module &m);

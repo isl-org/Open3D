@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,8 +37,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-void pybind_core_nns(py::module &m) {
-    py::module m_nns = m.def_submodule("nns");
+void pybind_core_nns(py::module &m_nns) {
     static const std::unordered_map<std::string, std::string>
             map_nearest_neighbor_search_method_docs = {
                     {"query_points", "The query tensor of shape {n_query, d}."},
@@ -74,16 +73,33 @@ void pybind_core_nns(py::module &m) {
             py::arg("radius") = py::none());
     nns.def("multi_radius_index", &NearestNeighborSearch::MultiRadiusIndex,
             "Set index for multi-radius search.");
-    nns.def("hybrid_index", &NearestNeighborSearch::HybridIndex,
-            "Set index for hybrid search.");
+    nns.def(
+            "hybrid_index",
+            [](NearestNeighborSearch &self, utility::optional<double> radius) {
+                if (!radius.has_value()) {
+                    return self.HybridIndex();
+                } else {
+                    return self.HybridIndex(radius.value());
+                }
+            },
+            py::arg("radius") = py::none());
 
     // Search functions.
     nns.def("knn_search", &NearestNeighborSearch::KnnSearch, "query_points"_a,
             "knn"_a, "Perform knn search.");
-    nns.def("fixed_radius_search", &NearestNeighborSearch::FixedRadiusSearch,
-            "query_points"_a, "radius"_a,
-            "Perform fixed radius search. All query points share the same "
-            "radius.");
+    nns.def(
+            "fixed_radius_search",
+            [](NearestNeighborSearch &self, Tensor query_points, double radius,
+               utility::optional<bool> sort) {
+                if (!sort.has_value()) {
+                    return self.FixedRadiusSearch(query_points, radius, true);
+                } else {
+                    return self.FixedRadiusSearch(query_points, radius,
+                                                  sort.value());
+                }
+            },
+            py::arg("query_points"), py::arg("radius"),
+            py::arg("sort") = py::none());
     nns.def("multi_radius_search", &NearestNeighborSearch::MultiRadiusSearch,
             "query_points"_a, "radii"_a,
             "Perform multi-radius search. Each query point has an independent "

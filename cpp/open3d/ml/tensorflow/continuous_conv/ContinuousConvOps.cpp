@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,8 +32,14 @@
 using namespace tensorflow;
 
 REGISTER_OP("Open3DContinuousConv")
-        .Attr("TReal: {float, double}")
-        .Attr("TIndex: {int32, int64}")
+        .Attr("TFeat: {float, double, bfloat16}")  // Type for features and
+                                                   // weights
+        .Attr("output_type: {float, double, bfloat16} = DT_FLOAT")  // Type for
+                                                                    // the
+                                                                    // output
+                                                                    // features
+        .Attr("TReal: {float, double}")  // Type for point positions and extents
+        .Attr("TIndex: {int32, int64}")  // Type for neighbor indexing
         .Attr("align_corners: bool = true")
         .Attr("coordinate_mapping: {'ball_to_cube_radial', "
               "'ball_to_cube_volume_preserving', 'identity'} = "
@@ -42,17 +48,17 @@ REGISTER_OP("Open3DContinuousConv")
         .Attr("interpolation: {'linear', 'linear_border', 'nearest_neighbor'} "
               "= 'linear'")
         .Attr("max_temp_mem_MB: int = 64")
-        .Input("filters: TReal")        // [depth, height, width, in_ch, out_ch]
+        .Input("filters: TFeat")        // [depth, height, width, in_ch, out_ch]
         .Input("out_positions: TReal")  // [num_points_out, 3]
         .Input("extents: TReal")        // [num_points_out, 3]
         .Input("offset: TReal")         // [3]
         .Input("inp_positions: TReal")  // [num_points_in, 3]
-        .Input("inp_features: TReal")   // [num_points_in, in_ch]
-        .Input("inp_importance: TReal")        // [num_points_in]
+        .Input("inp_features: TFeat")   // [num_points_in, in_ch]
+        .Input("inp_importance: TFeat")        // [num_points_in]
         .Input("neighbors_index: TIndex")      // [?]
-        .Input("neighbors_importance: TReal")  // [?]
+        .Input("neighbors_importance: TFeat")  // [?]
         .Input("neighbors_row_splits: int64")  // [num_points_out+1]
-        .Output("out_features : TReal")        // [num_points_out, out_ch]
+        .Output("out_features : output_type")  // [num_points_out, out_ch]
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             ShapeHandle filters_shape, out_positions_shape, extents_shape,
@@ -173,12 +179,12 @@ This example shows how to use this op::
   radius = 1.2
   neighbors = nsearch(inp_positions, out_positions, radius)
 
-  ml3d.ops.continuous_conv(filters, 
-                           out_positions, 
-                           extents=[[2*radius]], 
-                           offset=[0,0,0], 
-                           inp_positions=inp_positions, 
-                           inp_features=inp_features, 
+  ml3d.ops.continuous_conv(filters,
+                           out_positions,
+                           extents=[[2*radius]],
+                           offset=[0,0,0],
+                           inp_positions=inp_positions,
+                           inp_features=inp_features,
                            inp_importance=[],
                            neighbors_index=neighbors.neighbors_index,
                            neighbors_row_splits=neighbors.neighbors_row_splits,
@@ -199,12 +205,12 @@ This example shows how to use this op::
   radius = 1.2
   neighbors = nsearch(inp_positions, out_positions, radius)
 
-  ml3d.ops.continuous_conv(filters, 
-                           out_positions, 
-                           extents=torch.FloatTensor([[2*radius]]), 
-                           offset=torch.FloatTensor([0,0,0]), 
-                           inp_positions=inp_positions, 
-                           inp_features=inp_features, 
+  ml3d.ops.continuous_conv(filters,
+                           out_positions,
+                           extents=torch.FloatTensor([[2*radius]]),
+                           offset=torch.FloatTensor([0,0,0]),
+                           inp_positions=inp_positions,
+                           inp_features=inp_features,
                            inp_importance=torch.FloatTensor([]),
                            neighbors_index=neighbors.neighbors_index,
                            neighbors_row_splits=neighbors.neighbors_row_splits,
@@ -227,24 +233,24 @@ coordinate_mapping: Defines how the relative positions of the neighbors are
   and "identiy" for a rectangular filter window.
 
 
-normalize: If True the output feature values will be normalized using the sum 
+normalize: If True the output feature values will be normalized using the sum
   for **neighbors_importance** for each output point.
 
 
 interpolation: If interpolation is "linear" then each filter value lookup is a
   trilinear interpolation. If interpolation is "nearest_neighbor" only the
-  spatially closest value is considered. This makes the filter and therefore 
+  spatially closest value is considered. This makes the filter and therefore
   the convolution discontinuous.
 
 
 max_temp_mem_MB: Defines the maximum temporary memory in megabytes to be used
   for the GPU implementation. More memory means fewer kernel invocations. Note
-  that the a minimum amount of temp memory will always be allocated even if 
+  that the a minimum amount of temp memory will always be allocated even if
   this variable is set to 0.
 
 
-filters: The filter parameters. The shape of the filter is 
-  [depth, height, width, in_ch, out_ch]. The dimensions 'depth', 'height', 
+filters: The filter parameters. The shape of the filter is
+  [depth, height, width, in_ch, out_ch]. The dimensions 'depth', 'height',
   'width' define the spatial resolution of the filter. The spatial size of the
   filter is defined by the parameter 'extents'.
 
@@ -283,7 +289,7 @@ neighbors_index: The neighbors_index stores a list of indices of neighbors for
 
 
 neighbors_importance: Tensor of the same shape as 'neighbors_index' with a
-  scalar value that is used to scale the features of each neighbor. Use a 
+  scalar value that is used to scale the features of each neighbor. Use a
   zero length Tensor to weigh each neighbor with 1.
 
 
@@ -291,6 +297,7 @@ neighbors_row_splits: The exclusive prefix sum of the neighbor count for the
   output points including the total neighbor count as the last element. The
   size of this array is the number of output points + 1.
 
+output_type: The type for the output.
 
 out_features: A Tensor with the output feature vectors for each output point.
 

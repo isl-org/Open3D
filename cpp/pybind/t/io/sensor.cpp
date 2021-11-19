@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,7 +51,7 @@ void pybind_sensor(py::module &m) {
                      "'depth' here. The intrinsic camera calibration for the "
                      "color stream will be saved in 'intrinsic.json'"},
                     {"start_time_us",
-                     "(default 0) Start saving frames from this time (us)"},
+                     "Start saving frames from this time (us)"},
                     {"end_time_us",
                      "(default video length) Save frames till this time (us)"},
                     {"buffer_size",
@@ -171,30 +171,32 @@ void pybind_sensor(py::module &m) {
     py::class_<RSBagReader, std::unique_ptr<RSBagReader>, RGBDVideoReader>
             rs_bag_reader(
                     m, "RSBagReader",
-                    "RealSense Bag file reader."
-                    "Only the first color and depth streams from the bag file "
-                    "will be read.\n"
+                    "RealSense Bag file reader.\n"
+                    "\tOnly the first color and depth streams from the bag "
+                    "file will be read.\n"
                     " - The streams must have the same frame rate.\n"
                     " - The color stream must have RGB 8 bit (RGB8/BGR8) pixel "
                     "format\n"
                     " - The depth stream must have 16 bit unsigned int (Z16) "
                     "pixel format\n"
                     "The output is synchronized color and depth frame pairs "
-                    "with the depth frame aligned to the color frame."
-                    "Unsynchronized frames will be dropped. With alignment,"
-                    "the depth and color frames have the same  viewpoint and"
-                    "resolution. See "
-                    "https://intelrealsense.github.io/librealsense/doxygen/"
-                    "rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7"
-                    "for format documentation\n"
-                    "Note: A few frames may be dropped if user code takes a "
-                    "long time (>10 frame intervals) to process a frame.");
+                    "with the depth frame aligned to the color frame. "
+                    "Unsynchronized frames will be dropped. With alignment, "
+                    "the depth and color frames have the same  viewpoint and "
+                    "resolution. See format documentation `here "
+                    "<https://intelrealsense.github.io/librealsense/doxygen/"
+                    "rs__sensor_8h.html#ae04b7887ce35d16dbd9d2d295d23aac7>`__"
+                    "\n\n"
+                    ".. warning:: A few frames may be dropped if user code "
+                    "takes a long time (>10 frame intervals) to process a "
+                    "frame.");
     rs_bag_reader.def(py::init<>())
             .def(py::init<size_t>(),
                  "buffer_size"_a = RSBagReader::DEFAULT_BUFFER_SIZE)
             .def("is_opened", &RSBagReader::IsOpened,
                  "Check if the RS bag file  is opened.")
-            .def("open", &RSBagReader::Open, "filename"_a,
+            .def("open", &RSBagReader::Open,
+                 py::call_guard<py::gil_scoped_release>(), "filename"_a,
                  "Open an RS bag playback.")
             .def("close", &RSBagReader::Close,
                  "Close the opened RS bag playback.")
@@ -205,11 +207,13 @@ void pybind_sensor(py::module &m) {
                     py::overload_cast<>(&RSBagReader::GetMetadata, py::const_),
                     py::overload_cast<>(&RSBagReader::GetMetadata),
                     "Get metadata of the RS bag playback.")
-            .def("seek_timestamp", &RSBagReader::SeekTimestamp, "timestamp"_a,
+            .def("seek_timestamp", &RSBagReader::SeekTimestamp,
+                 py::call_guard<py::gil_scoped_release>(), "timestamp"_a,
                  "Seek to the timestamp (in us).")
             .def("get_timestamp", &RSBagReader::GetTimestamp,
                  "Get current timestamp (in us).")
             .def("next_frame", &RSBagReader::NextFrame,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Get next frame from the RS bag playback and returns the RGBD "
                  "object.")
             // Release Python GIL for SaveFrames, since this will take a while
@@ -217,7 +221,7 @@ void pybind_sensor(py::module &m) {
                  py::call_guard<py::gil_scoped_release>(), "frame_path"_a,
                  "start_time_us"_a = 0, "end_time_us"_a = UINT64_MAX,
                  "Save synchronized and aligned individual frames to "
-                 "subfolders")
+                 "subfolders.")
             .def("__repr__", &RSBagReader::ToString);
     docstring::ClassMethodDocInject(m, "RSBagReader", "__init__",
                                     map_shared_argument_docstrings);
@@ -258,16 +262,19 @@ void pybind_sensor(py::module &m) {
             "recording");
     realsense_sensor.def(py::init<>(), "Initialize with default settings.")
             .def_static("list_devices", &RealSenseSensor::ListDevices,
+                        py::call_guard<py::gil_scoped_release>(),
                         "List all RealSense cameras connected to the system "
                         "along with their capabilities. Use this listing to "
                         "select an appropriate configuration for a camera")
             .def_static("enumerate_devices", &RealSenseSensor::EnumerateDevices,
+                        py::call_guard<py::gil_scoped_release>(),
                         "Query all connected RealSense cameras for their "
                         "capabilities.")
             .def("init_sensor",
                  py::overload_cast<const RGBDSensorConfig &, size_t,
                                    const std::string &>(
                          &RealSenseSensor::InitSensor),
+                 py::call_guard<py::gil_scoped_release>(),
                  "sensor_config"_a = RealSenseSensorConfig{},
                  "sensor_index"_a = 0, "filename"_a = "",
                  "Configure sensor with custom settings. If this is skipped, "
@@ -277,12 +284,14 @@ void pybind_sensor(py::module &m) {
                  py::overload_cast<const RealSenseSensorConfig &, size_t,
                                    const std::string &>(
                          &RealSenseSensor::InitSensor),
+                 py::call_guard<py::gil_scoped_release>(),
                  "sensor_config"_a = RealSenseSensorConfig{},
                  "sensor_index"_a = 0, "filename"_a = "",
                  "Configure sensor with custom settings. If this is skipped, "
                  "default settings will be used. You can enable recording to a "
                  "bag file by specifying a filename.")
             .def("start_capture", &RealSenseSensor::StartCapture,
+                 py::call_guard<py::gil_scoped_release>(),
                  "start_record"_a = false,
                  "Start capturing synchronized depth and color frames.")
             .def("pause_record", &RealSenseSensor::PauseRecord,
@@ -293,11 +302,13 @@ void pybind_sensor(py::module &m) {
                  "Resume recording to the bag file. The file will contain "
                  "discontinuous segments.")
             .def("capture_frame", &RealSenseSensor::CaptureFrame,
-                 "wait"_a = true, "align_depth_to_color"_a = true,
+                 py::call_guard<py::gil_scoped_release>(), "wait"_a = true,
+                 "align_depth_to_color"_a = true,
                  "Acquire the next synchronized RGBD frameset from the camera.")
             .def("get_timestamp", &RealSenseSensor::GetTimestamp,
                  "Get current timestamp (in us)")
             .def("stop_capture", &RealSenseSensor::StopCapture,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Stop capturing frames.")
             .def("get_metadata", &RealSenseSensor::GetMetadata,
                  "Get metadata of the RealSense video capture.")

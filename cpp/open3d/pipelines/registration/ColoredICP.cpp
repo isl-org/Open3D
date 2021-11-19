@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,8 @@
 #include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace pipelines {
@@ -118,9 +118,22 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty() || !target.HasNormals() || !target.HasColors() ||
-        !source.HasColors()) {
-        return Eigen::Matrix4d::Identity();
+    if (corres.empty()) {
+        utility::LogError(
+                "No correspondences found between source and target "
+                "pointcloud.");
+    }
+    if (!target.HasNormals()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have normals.");
+    }
+    if (!target.HasColors()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have colors.");
+    }
+    if (!source.HasColors()) {
+        utility::LogError(
+                "ColoredICP requires source pointcloud to have colors.");
     }
 
     double sqrt_lambda_geometric = sqrt(lambda_geometric_);
@@ -228,13 +241,32 @@ RegistrationResult RegistrationColoredICP(
         double max_distance,
         const Eigen::Matrix4d &init /* = Eigen::Matrix4d::Identity()*/,
         const TransformationEstimationForColoredICP &estimation
-        /*TransformationEstimationForColoredICP()*/,
+        /* = TransformationEstimationForColoredICP()*/,
         const ICPConvergenceCriteria
                 &criteria /* = ICPConvergenceCriteria()*/) {
-    auto target_c = InitializePointCloudForColoredICP(
-            target, geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30));
-    return RegistrationICP(source, *target_c, max_distance, init, estimation,
-                           criteria);
+    if (!target.HasNormals()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have normals.");
+    }
+    if (!target.HasColors()) {
+        utility::LogError(
+                "ColoredICP requires target pointcloud to have colors.");
+    }
+    if (!source.HasColors()) {
+        utility::LogError(
+                "ColoredICP requires source pointcloud to have colors.");
+    }
+
+    if (auto target_c = InitializePointCloudForColoredICP(
+                target,
+                geometry::KDTreeSearchParamHybrid(max_distance * 2.0, 30))) {
+        return RegistrationICP(source, *target_c, max_distance, init,
+                               estimation, criteria);
+    } else {
+        utility::LogError(
+                "Internal error: InitializePointCloudForColoredICP returns "
+                "nullptr.");
+    };
 }
 
 }  // namespace registration

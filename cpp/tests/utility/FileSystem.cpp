@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,8 @@
 
 #include <algorithm>
 
-#include "open3d/utility/Console.h"
-#include "tests/UnitTest.h"
+#include "open3d/utility/Logging.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -375,7 +375,8 @@ TEST(FileSystem, File_Exists_Remove) {
     status = utility::filesystem::FileExists(fileName);
     EXPECT_FALSE(status);
 
-    creat(fileName.c_str(), 0);
+    FILE *file = utility::filesystem::FOpen(fileName, "w");
+    fclose(file);
 
     status = utility::filesystem::FileExists(fileName);
     EXPECT_TRUE(status);
@@ -416,8 +417,10 @@ TEST(FileSystem, ListFilesInDirectory) {
     status = utility::filesystem::ChangeWorkingDirectory(path);
     EXPECT_TRUE(status);
 
-    for (size_t i = 0; i < fileNames.size(); i++)
-        creat(fileNames[i].c_str(), 0);
+    for (size_t i = 0; i < fileNames.size(); i++) {
+        FILE *file = utility::filesystem::FOpen(fileNames[i], "w");
+        fclose(file);
+    }
 
     std::vector<std::string> list;
     status = utility::filesystem::ListFilesInDirectory(".", list);
@@ -468,8 +471,10 @@ TEST(FileSystem, ListFilesInDirectoryWithExtension) {
     status = utility::filesystem::ChangeWorkingDirectory(path);
     EXPECT_TRUE(status);
 
-    for (size_t i = 0; i < fileNames.size(); i++)
-        creat(fileNames[i].c_str(), 0);
+    for (size_t i = 0; i < fileNames.size(); i++) {
+        FILE *file = utility::filesystem::FOpen(fileNames[i], "w");
+        fclose(file);
+    }
 
     std::vector<std::string> list;
     status = utility::filesystem::ListFilesInDirectory(".", list);

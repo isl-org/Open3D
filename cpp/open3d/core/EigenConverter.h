@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,16 +32,16 @@
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorList.h"
 
 namespace open3d {
 namespace core {
 namespace eigen_converter {
 
-/// Converts a Eigen matrix of shape (M, N) with alignment A and type T to a
-/// Tensor.
+/// \brief Converts a Eigen matrix of shape (M, N) with alignment A and type T
+/// to a Tensor.
+///
 /// \param matrix A templated Eigen matrix.
-/// \return A tensor converted from the eigen matrix.
+/// \return A tensor converted from the Eigen matrix.
 template <class T, int M, int N, int A>
 core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
     core::Dtype dtype = core::Dtype::FromType<T>();
@@ -50,25 +50,67 @@ core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
                         dtype);
 }
 
-/// Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3d>. An
+/// \brief Converts a 2D Tensor to Eigen::MatrixXd of same shape. Regardless of
+/// the tensor dtype, the output will be converted to double.
+///
+/// \param tensor A 2D tensor.
+/// \return Eigen::MatrixXd.
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXd(const core::Tensor &tensor);
+
+/// \brief Converts a 2D Tensor to Eigen::MatrixXf of same shape. Regardless of
+/// the tensor dtype, the output will be converted to float.
+///
+/// \param tensor A 2D tensor.
+/// \return Eigen::MatrixXf.
+Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXf(const core::Tensor &tensor);
+
+/// \brief Converts a 2D Tensor to Eigen::MatrixXi of same shape. Regardless of
+/// the tensor dtype, the output will be converted to int.
+///
+/// \param tensor A 2D tensor.
+/// \return Eigen::MatrixXi.
+Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+TensorToEigenMatrixXi(const core::Tensor &tensor);
+
+/// \brief Converts a tensor of shape (N, 2) to std::vector<Eigen::Vector2d>. An
+/// exception will be thrown if the tensor shape is not (N, 2). Regardless of
+/// the tensor dtype, the output will be converted to double.
+///
+/// \param tensor A tensor of shape (N, 2).
+/// \return A vector of N Eigen::Vector2d values.
+std::vector<Eigen::Vector2d> TensorToEigenVector2dVector(
+        const core::Tensor &tensor);
+
+/// \brief Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3d>. An
 /// exception will be thrown if the tensor shape is not (N, 3). Regardless of
-/// the tensor dtype, the output will be converted to to double.
+/// the tensor dtype, the output will be converted to double.
 ///
 /// \param tensor A tensor of shape (N, 3).
 /// \return A vector of N Eigen::Vector3d values.
 std::vector<Eigen::Vector3d> TensorToEigenVector3dVector(
         const core::Tensor &tensor);
 
-/// Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3i>. An
+/// \brief Converts a tensor of shape (N, 2) to std::vector<Eigen::Vector2i>. An
+/// exception will be thrown if the tensor shape is not (N, 2). Regardless of
+/// the tensor dtype, the output will be converted to int.
+///
+/// \param tensor A tensor of shape (N, 2).
+/// \return A vector of N Eigen::Vector2i values.
+std::vector<Eigen::Vector2i> TensorToEigenVector2iVector(
+        const core::Tensor &tensor);
+
+/// \brief Converts a tensor of shape (N, 3) to std::vector<Eigen::Vector3i>. An
 /// exception will be thrown if the tensor shape is not (N, 3). Regardless of
-/// the tensor dtype, the output will be converted to to double.
+/// the tensor dtype, the output will be converted to int.
 ///
 /// \param tensor A tensor of shape (N, 3).
 /// \return A vector of N Eigen::Vector3i values.
 std::vector<Eigen::Vector3i> TensorToEigenVector3iVector(
         const core::Tensor &tensor);
 
-/// Converts a vector of Eigen::Vector3d to a (N, 3) tensor. This
+/// \brief Converts a vector of Eigen::Vector3d to a (N, 3) tensor. This
 /// function also takes care of dtype conversion and device transfer if
 /// necessary.
 ///
@@ -81,7 +123,35 @@ core::Tensor EigenVector3dVectorToTensor(
         core::Dtype dtype,
         const core::Device &device);
 
-/// Converts a vector of Eigen::Vector3i to a (N, 3) tensor. This
+/// \brief Converts a vector of Eigen::Vector2d to a (N, 2) tensor. This
+/// function also takes care of dtype conversion and device transfer if
+/// necessary.
+///
+/// \param values A vector of Eigen::Vector2d values, e.g. a list of UV
+/// coordinates.
+/// \param dtype Dtype of the output tensor.
+/// \param device Device of the output tensor.
+/// \return A tensor of shape (N, 2) with the specified dtype and device.
+core::Tensor EigenVector2dVectorToTensor(
+        const std::vector<Eigen::Vector2d> &values,
+        core::Dtype dtype,
+        const core::Device &device);
+
+/// \brief Converts a vector of Eigen::Vector2i to a (N, 2) tensor. This
+/// function also takes care of dtype conversion and device transfer if
+/// necessary.
+///
+/// \param values A vector of Eigen::Vector2i values, e.g. a list of 2D points /
+/// indices.
+/// \param dtype Dtype of the output tensor.
+/// \param device Device of the output tensor.
+/// \return A tensor of shape (N, 2) with the specified dtype and device.
+core::Tensor EigenVector2iVectorToTensor(
+        const std::vector<Eigen::Vector2i> &values,
+        core::Dtype dtype,
+        const core::Device &device);
+
+/// \brief Converts a vector of Eigen::Vector3i to a (N, 3) tensor. This
 /// function also takes care of dtype conversion and device transfer if
 /// necessary.
 ///

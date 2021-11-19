@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
+#include "open3d/core/nns/FixedRadiusSearchImpl.cuh"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
@@ -45,7 +45,7 @@ void BuildSpatialHashTableCUDA(const torch::Tensor& points,
     size_t temp_size = 0;
 
     // determine temp_size
-    open3d::ml::impl::BuildSpatialHashTableCUDA(
+    open3d::core::nns::impl::BuildSpatialHashTableCUDA(
             stream, temp_ptr, temp_size, texture_alignment, points.size(0),
             points.data_ptr<T>(), T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), hash_table_splits.data(),
@@ -57,7 +57,7 @@ void BuildSpatialHashTableCUDA(const torch::Tensor& points,
     auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
 
     // actually build the table
-    open3d::ml::impl::BuildSpatialHashTableCUDA(
+    open3d::core::nns::impl::BuildSpatialHashTableCUDA(
             stream, temp_ptr, temp_size, texture_alignment, points.size(0),
             points.data_ptr<T>(), T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), hash_table_splits.data(),

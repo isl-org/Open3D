@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,11 @@
 #include <Eigen/Geometry>
 
 namespace open3d {
+
+namespace geometry {
+class AxisAlignedBoundingBox;
+}  // namespace geometry
+
 namespace visualization {
 namespace rendering {
 
@@ -37,6 +42,7 @@ public:
     enum class FovType { Vertical, Horizontal };
     enum class Projection { Perspective, Ortho };
     using Transform = Eigen::Transform<float, 3, Eigen::Affine>;
+    using ProjectionMatrix = Eigen::Transform<float, 3, Eigen::Projective>;
 
     virtual ~Camera() = default;
 
@@ -85,6 +91,7 @@ public:
     virtual void LookAt(const Eigen::Vector3f& center,
                         const Eigen::Vector3f& eye,
                         const Eigen::Vector3f& up) = 0;
+    virtual void FromExtrinsics(const Eigen::Matrix4d& extrinsics);
 
     virtual void SetModelMatrix(const Transform& view) = 0;
     virtual void SetModelMatrix(const Eigen::Vector3f& forward,
@@ -104,7 +111,14 @@ public:
     virtual Eigen::Vector3f GetUpVector() const = 0;
     virtual Transform GetModelMatrix() const = 0;
     virtual Transform GetViewMatrix() const = 0;
-    virtual Transform GetProjectionMatrix() const = 0;
+    virtual ProjectionMatrix GetProjectionMatrix() const = 0;
+    virtual Transform GetCullingProjectionMatrix() const = 0;
+
+    virtual Eigen::Vector3f Unproject(float x,
+                                      float y,
+                                      float z,
+                                      float view_width,
+                                      float view_height) const = 0;
 
     // Returns the normalized device coordinates (NDC) of the specified point
     // given the view and projection matrices of the camera. The returned point
@@ -147,6 +161,27 @@ public:
     virtual const ProjectionInfo& GetProjection() const = 0;
 
     virtual void CopyFrom(const Camera* camera) = 0;
+
+    /// Convenience function for configuring a camera as a pinhole camera.
+    /// Configures the projection using the intrinsics and bounds,
+    /// and the model matrix using the extrinsic matrix. Equivalent to calling
+    /// SetProjection() and FromExtrinsics().
+    static void SetupCameraAsPinholeCamera(
+            rendering::Camera& camera,
+            const Eigen::Matrix3d& intrinsic,
+            const Eigen::Matrix4d& extrinsic,
+            int intrinsic_width_px,
+            int intrinsic_height_px,
+            const geometry::AxisAlignedBoundingBox& scene_bounds);
+
+    /// Returns a good value for the near plane.
+    static float CalcNearPlane();
+
+    /// Returns a value for the far plane that ensures that the entire bounds
+    /// provided will not be clipped.
+    static float CalcFarPlane(
+            const rendering::Camera& camera,
+            const geometry::AxisAlignedBoundingBox& scene_bounds);
 };
 
 }  // namespace rendering

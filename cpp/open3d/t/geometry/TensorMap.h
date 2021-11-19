@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,8 +39,8 @@ namespace geometry {
 /// typically used as a container for geometry attributes.
 ///
 /// e.g.
-/// tensor_map.primary_key: "points"
-/// tensor_map["points"]  : Tensor of shape {100, 3}.
+/// tensor_map.primary_key: "positions"
+/// tensor_map["positions"]  : Tensor of shape {100, 3}.
 /// tensor_map["colors"]  : Tensor of shape {100, 3}.
 /// tensor_map["normals"] : Tensor of shape {100, 3}.
 ///
@@ -92,6 +92,21 @@ public:
         AssertPrimaryKeyInMapOrEmpty();
     }
 
+    /// \brief Erase elements for the TensorMap by key value, if the key
+    /// exists. If the key does not exists, a warning is thrown.
+    /// Also `primary_key` cannot be deleted. It is based on
+    /// `size_type unordered_map::erase(const key_type& k);`.
+    /// \return The number of elements deleted. [0 if key was not present].
+    std::size_t Erase(const std::string key) {
+        if (key == primary_key_) {
+            utility::LogError("Primary key: {} cannot be deleted.",
+                              primary_key_);
+        } else if (!Contains(key)) {
+            utility::LogWarning("Key: {} is not present.", key);
+        }
+        return this->erase(key);
+    }
+
     TensorMap& operator=(const TensorMap&) = default;
 
     TensorMap& operator=(TensorMap&&) = default;
@@ -104,6 +119,15 @@ public:
 
     /// Assert IsSizeSynchronized().
     void AssertSizeSynchronized() const;
+
+    /// Returns True if the underlying memory buffers of all the Tensors in the
+    /// TensorMap is contiguous.
+    bool IsContiguous() const;
+
+    /// Returns a new contiguous TensorMap containing the same data in the same
+    /// device. For the contiguous tensors in the TensorMap, the same underlying
+    /// memory will be used.
+    TensorMap Contiguous() const;
 
     /// Returns true if the key exists in the map.
     /// Same as C++20's std::unordered_map::contains().

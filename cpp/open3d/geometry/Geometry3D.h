@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <vector>
 
 #include "open3d/geometry/Geometry.h"
 #include "open3d/utility/Eigen.h"
@@ -155,6 +156,14 @@ protected:
     /// \param normals A list of normals to be transformed.
     void TransformNormals(const Eigen::Matrix4d& transformation,
                           std::vector<Eigen::Vector3d>& normals) const;
+
+    /// \brief Transforms all covariance matrices with the transformation.
+    ///
+    /// \param transformation 4x4 matrix for transformation.
+    /// \param covariances A list of covariance matrices to be transformed.
+    void TransformCovariances(const Eigen::Matrix4d& transformation,
+                              std::vector<Eigen::Matrix3d>& covariances) const;
+
     /// \brief Apply translation to the geometry coordinates.
     ///
     /// \param translation A 3D vector to transform the geometry.
@@ -192,6 +201,13 @@ protected:
     /// \param normals A list of normals to be transformed.
     void RotateNormals(const Eigen::Matrix3d& R,
                        std::vector<Eigen::Vector3d>& normals) const;
+
+    /// \brief Rotate all covariance matrices with the rotation matrix \p R.
+    ///
+    /// \param R A 3x3 rotation matrix
+    /// \param covariances A list of covariance matrices to be transformed.
+    void RotateCovariances(const Eigen::Matrix3d& R,
+                           std::vector<Eigen::Matrix3d>& covariances) const;
 };
 
 }  // namespace geometry

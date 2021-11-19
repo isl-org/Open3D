@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -73,6 +73,9 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> InvertNeighborsListCPU(
                                           const torch::Tensor&,          \
                                           const torch::Tensor&);
 
+INSTANTIATE(int32_t, uint8_t)
+INSTANTIATE(int32_t, int8_t)
+INSTANTIATE(int32_t, int16_t)
 INSTANTIATE(int32_t, int32_t)
 INSTANTIATE(int32_t, int64_t)
 INSTANTIATE(int32_t, float)

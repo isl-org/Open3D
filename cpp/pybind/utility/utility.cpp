@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@ namespace utility {
 
 void pybind_utility(py::module &m) {
     py::module m_submodule = m.def_submodule("utility");
-    pybind_console(m_submodule);
+    pybind_logging(m_submodule);
     pybind_eigen(m_submodule);
 }
 

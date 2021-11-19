@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,7 +51,7 @@ public:
           center_(0, 0, 0),
           R_(Eigen::Matrix3d::Identity()),
           extent_(0, 0, 0),
-          color_(0, 0, 0) {}
+          color_(1, 1, 1) {}
     /// \brief Parameterized constructor.
     ///
     /// \param center Specifies the center position of the bounding box.
@@ -88,7 +88,7 @@ public:
     double Volume() const;
 
     /// Returns the eight points that define the bounding box.
-    ///
+    /// \verbatim
     ///      ------- x
     ///     /|
     ///    / |
@@ -106,6 +106,7 @@ public:
     ///   | /               | /
     ///   |/                |/
     /// 5 ------------------- 4
+    /// \endverbatim
     std::vector<Eigen::Vector3d> GetBoxPoints() const;
 
     /// Return indices to points that are within the bounding box.
@@ -155,7 +156,7 @@ public:
         : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(0, 0, 0),
           max_bound_(0, 0, 0),
-          color_(0, 0, 0) {}
+          color_(1, 1, 1) {}
     /// \brief Parameterized constructor.
     ///
     /// \param min_bound Lower bounds of the bounding box for all axes.
@@ -165,7 +166,7 @@ public:
         : Geometry3D(Geometry::GeometryType::AxisAlignedBoundingBox),
           min_bound_(min_bound),
           max_bound_(max_bound),
-          color_(0, 0, 0) {}
+          color_(1, 1, 1) {}
     ~AxisAlignedBoundingBox() override {}
 
 public:

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #define EIGEN_USE_GPU
 #include "VoxelizeOpKernel.h"
-#include "open3d/ml/Helper.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/ml/impl/misc/Voxelize.cuh"
 
 using namespace open3d::ml;
@@ -39,11 +39,13 @@ class VoxelizeOpKernelCUDA : public VoxelizeOpKernel {
 public:
     explicit VoxelizeOpKernelCUDA(OpKernelConstruction* construction)
         : VoxelizeOpKernel(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,
                 const tensorflow::Tensor& points,
+                const tensorflow::Tensor& row_splits,
                 const tensorflow::Tensor& voxel_size,
                 const tensorflow::Tensor& points_range_min,
                 const tensorflow::Tensor& points_range_max) {
@@ -52,32 +54,34 @@ public:
         OutputAllocator output_allocator(context);
 
         switch (points.dim_size(1)) {
-#define CASE(NDIM)                                                          \
-    case NDIM: {                                                            \
-        void* temp_ptr = nullptr;                                           \
-        size_t temp_size = 0;                                               \
-        VoxelizeCUDA<T, NDIM>(                                              \
-                device.stream(), temp_ptr, temp_size, texture_alignment,    \
-                points.dim_size(0), points.flat<T>().data(),                \
-                voxel_size.flat<T>().data(),                                \
-                points_range_min.flat<T>().data(),                          \
-                points_range_max.flat<T>().data(), max_points_per_voxel,    \
-                max_voxels, output_allocator);                              \
-                                                                            \
-        Tensor temp_tensor;                                                 \
-        TensorShape temp_shape({ssize_t(temp_size)});                       \
-        OP_REQUIRES_OK(context,                                             \
-                       context->allocate_temp(DataTypeToEnum<uint8_t>::v(), \
-                                              temp_shape, &temp_tensor));   \
-        temp_ptr = temp_tensor.flat<uint8_t>().data();                      \
-                                                                            \
-        VoxelizeCUDA<T, NDIM>(                                              \
-                device.stream(), temp_ptr, temp_size, texture_alignment,    \
-                points.dim_size(0), points.flat<T>().data(),                \
-                voxel_size.flat<T>().data(),                                \
-                points_range_min.flat<T>().data(),                          \
-                points_range_max.flat<T>().data(), max_points_per_voxel,    \
-                max_voxels, output_allocator);                              \
+#define CASE(NDIM)                                                             \
+    case NDIM: {                                                               \
+        void* temp_ptr = nullptr;                                              \
+        size_t temp_size = 0;                                                  \
+        VoxelizeCUDA<T, NDIM>(                                                 \
+                device.stream(), temp_ptr, temp_size, texture_alignment,       \
+                points.dim_size(0), points.flat<T>().data(),                   \
+                row_splits.dim_size(0) - 1, row_splits.flat<int64_t>().data(), \
+                voxel_size.flat<T>().data(),                                   \
+                points_range_min.flat<T>().data(),                             \
+                points_range_max.flat<T>().data(), max_points_per_voxel,       \
+                max_voxels, output_allocator);                                 \
+                                                                               \
+        Tensor temp_tensor;                                                    \
+        TensorShape temp_shape({ssize_t(temp_size)});                          \
+        OP_REQUIRES_OK(context,                                                \
+                       context->allocate_temp(DataTypeToEnum<uint8_t>::v(),    \
+                                              temp_shape, &temp_tensor));      \
+        temp_ptr = temp_tensor.flat<uint8_t>().data();                         \
+                                                                               \
+        VoxelizeCUDA<T, NDIM>(                                                 \
+                device.stream(), temp_ptr, temp_size, texture_alignment,       \
+                points.dim_size(0), points.flat<T>().data(),                   \
+                row_splits.dim_size(0) - 1, row_splits.flat<int64_t>().data(), \
+                voxel_size.flat<T>().data(),                                   \
+                points_range_min.flat<T>().data(),                             \
+                points_range_max.flat<T>().data(), max_points_per_voxel,       \
+                max_voxels, output_allocator);                                 \
     } break;
             CASE(1)
             CASE(2)

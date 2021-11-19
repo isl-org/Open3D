@@ -14,9 +14,9 @@ Recommended procedure
 1. Download, build from source, and familiarize yourself with Open3D
 2. Read the :ref:`style_guide` and install required tools
 3. Check existing classes, examples, and related code
-4. Fork Open3D on `GitHub <https://github.com/intel-isl/Open3D>`_
+4. Fork Open3D on `GitHub <https://github.com/isl-org/Open3D>`_
 5. Create new features in your fork. Do not forget unit tests and documentation. Double-check the :ref:`style_guide`
-6. Make a pull request to the `master branch <https://github.com/intel-isl/Open3D/tree/master>`_
+6. Make a pull request to the `master branch <https://github.com/isl-org/Open3D/tree/master>`_
 7. Make sure your PR passes the CI tests. If it doesn’t, fix the code until it builds and passes the CI tests
 8. Your PR will be assigned to reviewers
 9. Engage with your reviewers during the review process. Address issues or concerns raised during the review. Don’t let the review die.
@@ -29,7 +29,7 @@ Dos
 +-------------------------------------------------------------------------------------------------------------+
 | [DO] Follow the :ref:`style_guide` and install the required tools                                           |
 +-------------------------------------------------------------------------------------------------------------+
-| [DO] Use C++11 features when contributing C++ code. Use C++14 and C++17 features only when required         |
+| [DO] Use C++14 features when contributing C++ code                                                          |
 +-------------------------------------------------------------------------------------------------------------+
 | [DO] Remember to provide Python bindings when adding new C++ core functionalities                           |
 +-------------------------------------------------------------------------------------------------------------+
@@ -80,7 +80,7 @@ You want to contribute to Open3D by reviewing code. Your mission is to help deve
 Recommended procedure
 -----------------------
 
- 1. Check the list of `open pull requests <https://github.com/intel-isl/Open3D/pulls>`_ and pick one that doesn’t yet have a reviewer. Leave a comment on the PR mentioning your interest: e.g., “I could help review this PR.”
+ 1. Check the list of `open pull requests <https://github.com/isl-org/Open3D/pulls>`_ and pick one that doesn’t yet have a reviewer. Leave a comment on the PR mentioning your interest: e.g., “I could help review this PR.”
  2. A project maintainer will assign you to the PR as a reviewer
  3. Use `Reviewable <https://reviewable.io/reviews>`_ to perform the code review
  4. When you begin the review, post a comment to indicate that you have started: e.g., “Starting to review this PR.”
@@ -222,9 +222,9 @@ Case 1: When documenting C++ code
 Case 2: When documenting Python bindings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* First, complete the Python binding code following the guides from `Pybind11 Docs <https://pybind11.readthedocs.io/en/stable/basics.html>`_. Make sure to write the high-level docstrings for the classes and functions. Also use "param_name"_a to denote function parameters.
-* Use the `docstring::ClassMethodDocInject()` or `docstring::FunctionDocInject()` to insert parameter docs.
-* Example binding and docstrings for the `Calculator` class:
+* First, complete the Python binding code following the guides from `Pybind11 Docs <https://pybind11.readthedocs.io/en/stable/basics.html>`_. Make sure to write the high-level docstrings for the classes and functions. Also use ``"param_name"_a`` to denote function parameters.
+* Use the ``docstring::ClassMethodDocInject()`` or ``docstring::FunctionDocInject()`` to insert parameter docs.
+* Example binding and docstrings for the ``Calculator`` class:
 
 ..  code:: cpp
 
@@ -233,11 +233,11 @@ Case 2: When documenting Python bindings
                 "Calculator class performs numerical computations.");
     calculator.def("add", &Calculator::Add,
                    "Performs ``a`` plus ``b``. Unlike "
-                   ":meth:`open3d.Calculator.sub`, "
-                   ":meth:`open3d.Calculator.add` is "
+                   ":math:`open3d.Calculator.sub`, "
+                   ":math:`open3d.Calculator.add` is "
                    "commutative.",
                                 "a"_a, "b"_a);
-    calculator.def("sub", &Calculator::Add, "Substracts ``b`` from ``a``", "a"_a,
+    calculator.def("sub", &Calculator::Add, "Subtracts ``b`` from ``a``", "a"_a,
                                 "b"_a);
     docstring::ClassMethodDocInject(m, "Calculator", "add",
                                     {{"a", "LHS operand for summation."},
@@ -250,7 +250,7 @@ Case 2: When documenting Python bindings
 Case 3: When documenting pure Python code (no bindings)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Use standard docstring syntax as explained `here <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html>`_ and `there <https://www.python.org/dev/peps/pep-0257/>`_.
+* Use standard docstring syntax (`Google style <https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings>`__) as explained `here <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html>`_ and `there <https://www.python.org/dev/peps/pep-0257/>`_.
 
 
 Case 4: When adding a Python tutorial

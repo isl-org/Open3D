@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@
 #include "libqhullcpp/QhullVertexSet.h"
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {
@@ -118,6 +118,7 @@ Qhull::ComputeDelaunayTetrahedralization(
     if (points.size() == 4) {
         delaunay_triangulation->vertices_ = points;
         delaunay_triangulation->tetras_.push_back(Vector4i(0, 1, 2, 3));
+        pt_map.insert(pt_map.end(), {0, 1, 2, 3});
         return std::make_tuple(delaunay_triangulation, pt_map);
     }
 

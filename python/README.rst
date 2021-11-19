@@ -42,14 +42,14 @@ The package has been tested on:
 * macOS High Sierra and above
 
 With Python versions:
-* 3.5
 * 3.6
 * 3.7
+* 3.8
 
 Resources
 ======================
 
 * Website: `www.open3d.org <http://www.open3d.org>`_
-* Code: `github.com/intel-isl/Open3D <https://github.com/intel-isl/Open3D>`_
+* Code: `github.com/isl-org/Open3D <https://github.com/isl-org/Open3D>`_
 * Document: `www.open3d.org/docs <http://www.open3d.org/docs>`_
 * License: `The MIT license <https://opensource.org/licenses/MIT>`_

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,11 +47,51 @@
 #include <unistd.h>
 #endif
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace utility {
 namespace filesystem {
+
+static std::string GetEnvVar(const std::string &env_var) {
+    if (const char *env_p = std::getenv(env_var.c_str())) {
+        return std::string(env_p);
+    } else {
+        return "";
+    }
+}
+
+std::string GetHomeDirectory() {
+    std::string home_dir = "";
+#ifdef WINDOWS
+    // %USERPROFILE%
+    // %HOMEDRIVE%
+    // %HOMEPATH%
+    // %HOME%
+    // C:/
+    home_dir = GetEnvVar("USERPROFILE");
+    if (home_dir.empty() || !DirectoryExists(home_dir)) {
+        home_dir = GetEnvVar("HOMEDRIVE");
+        if (home_dir.empty() || !DirectoryExists(home_dir)) {
+            home_dir = GetEnvVar("HOMEPATH");
+            if (home_dir.empty() || !DirectoryExists(home_dir)) {
+                home_dir = GetEnvVar("HOME");
+                if (home_dir.empty() || !DirectoryExists(home_dir)) {
+                    home_dir = "C:/";
+                }
+            }
+        }
+    }
+#else
+    // $HOME
+    // /
+    home_dir = GetEnvVar("HOME");
+    if (home_dir.empty() || !DirectoryExists(home_dir)) {
+        home_dir = "/";
+    }
+#endif
+    return home_dir;
+}
 
 std::string GetFileExtensionInLowerCase(const std::string &filename) {
     size_t dot_pos = filename.find_last_of(".");
@@ -92,7 +132,9 @@ std::string GetFileParentDirectory(const std::string &filename) {
 }
 
 std::string GetRegularizedDirectoryName(const std::string &directory) {
-    if (directory.back() != '/' && directory.back() != '\\') {
+    if (directory.empty()) {
+        return "/";
+    } else if (directory.back() != '/' && directory.back() != '\\') {
         return directory + "/";
     } else {
         return directory;
@@ -101,7 +143,8 @@ std::string GetRegularizedDirectoryName(const std::string &directory) {
 
 std::string GetWorkingDirectory() {
     char buff[PATH_MAX + 1];
-    getcwd(buff, PATH_MAX + 1);
+    auto ignored = getcwd(buff, PATH_MAX + 1);
+    (void)ignored;
     return std::string(buff);
 }
 
@@ -153,16 +196,19 @@ std::vector<std::string> GetPathComponents(const std::string &path) {
     }
 
     std::vector<std::string> components;
-    if (!isWindowsPath) {
-        components.push_back("/");
-    }
     if (isRelative) {
         auto cwd = utility::filesystem::GetWorkingDirectory();
         auto cwdComponents = SplitByPathSeparators(cwd);
         components.insert(components.end(), cwdComponents.begin(),
                           cwdComponents.end());
+        if (cwd[0] != '/') {
+            isWindowsPath = true;
+        }
     } else {
         // absolute path, don't need any prefix
+    }
+    if (!isWindowsPath) {
+        components.insert(components.begin(), "/");
     }
 
     for (auto &dir : pathComponents) {

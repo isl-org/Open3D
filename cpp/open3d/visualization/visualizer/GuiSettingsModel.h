@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -102,6 +102,9 @@ public:
     bool GetShowAxes() const;
     void SetShowAxes(bool show);
 
+    bool GetShowGround() const;
+    void SetShowGround(bool show);
+
     bool GetSunFollowsCamera() const;
     void SetSunFollowsCamera(bool follow);
 
@@ -134,6 +137,9 @@ public:
     int GetPointSize() const;
     void SetPointSize(int size);
 
+    bool GetUserWantsEstimateNormals();
+    void EstimateNormalsClicked();
+
     bool GetDisplayingPointClouds() const;
     /// If true, enables point size
     void SetDisplayingPointClouds(bool displaying);
@@ -149,6 +155,7 @@ private:
     Eigen::Vector3f bg_color_ = {1.0f, 1.0f, 1.0f};
     bool show_skybox_ = false;
     bool show_axes_ = false;
+    bool show_ground_ = false;
     bool sun_follows_cam_ = false;
     LightingProfile lighting_;
     MaterialType current_type_ = LIT;
@@ -158,6 +165,7 @@ private:
     bool user_has_changed_lighting_profile_ = false;
     bool user_has_customized_lighting_ = false;
     bool displaying_point_clouds_ = false;
+    bool user_wants_estimate_normals_ = false;
 
     std::function<void(bool)> on_changed_;
 

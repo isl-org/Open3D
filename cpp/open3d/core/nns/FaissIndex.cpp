@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +39,8 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/core/SizeVector.h"
-#include "open3d/utility/Console.h"
+#include "open3d/core/TensorCheck.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -48,28 +49,27 @@ namespace nns {
 FaissIndex::FaissIndex() {}
 
 FaissIndex::FaissIndex(const Tensor &dataset_points) {
+    AssertTensorDtype(dataset_points, Float32);
     SetTensorData(dataset_points);
 }
 
 FaissIndex::~FaissIndex() {}
 
 bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
+    AssertTensorDtype(dataset_points, Float32);
+
     dataset_points_ = dataset_points.Contiguous();
     size_t dataset_size = GetDatasetSize();
     int dimension = GetDimension();
 
-    // Check dtype.
-    dataset_points_.AssertDtype(Dtype::Float32);
-
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
-                "[FaissIndex::SetTensorData] dataset_points must be "
-                "2D matrix, with shape {n_dataset_points, d}.");
+                "dataset_points must be 2D matrix, with shape "
+                "{n_dataset_points, d}.");
     }
 
     if (dimension == 0 || dataset_size == 0) {
-        utility::LogWarning(
-                "[FaissIndex::SetTensorData] Failed due to no data.");
+        utility::LogWarning("Failed due to no data.");
     }
 
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
@@ -77,70 +77,68 @@ bool FaissIndex::SetTensorData(const Tensor &dataset_points) {
         res.reset(new faiss::gpu::StandardGpuResources());
         faiss::gpu::GpuIndexFlatConfig config;
         config.device = dataset_points_.GetDevice().GetID();
+
+        CachedMemoryManager::ReleaseCache(dataset_points_.GetDevice());
         index.reset(new faiss::gpu::GpuIndexFlat(
                 res.get(), dimension, faiss::MetricType::METRIC_L2, config));
 #else
         utility::LogError(
-                "[FaissIndex::SetTensorData] GPU Tensor is not supported when "
-                "BUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
-                "BUILD_CUDA_MODULE=ON.");
+                "GPU Tensor is not supported when -DBUILD_CUDA_MODULE=OFF. "
+                "Please recompile Open3D with -DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
         index.reset(new faiss::IndexFlatL2(dimension));
     }
-    float *_data_ptr = static_cast<float *>(dataset_points_.GetDataPtr());
+    float *_data_ptr = dataset_points_.GetDataPtr<float>();
     index->add(dataset_size, _data_ptr);
     return true;
 }
 
 std::pair<Tensor, Tensor> FaissIndex::SearchKnn(const Tensor &query_points,
                                                 int knn) const {
-    // Check dtype.
-    query_points.AssertDtype(Dtype::Float32);
+    // Check device and dtype.
+    // AssertTensorDevice(query_points, GetDevice());
+    AssertTensorDtype(query_points, GetDtype());
 
     // Check shape.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
-        utility::LogError(
-                "[FaissIndex::SearchKnn] knn should be larger than 0.");
+        utility::LogError("knn should be larger than 0.");
     }
 
     int64_t num_query_points = query_points.GetShape()[0];
     knn = std::min(knn, (int)GetDatasetSize());
 
-    auto *data_ptr = static_cast<const float *>(query_points.GetDataPtr());
+    auto *data_ptr = query_points.GetDataPtr<float>();
 
-    Tensor indices = Tensor::Empty({num_query_points * knn}, Dtype::Int64,
+    Tensor indices = Tensor::Empty({num_query_points * knn}, Int64,
                                    dataset_points_.GetDevice());
-    Tensor distances = Tensor::Empty({num_query_points * knn}, Dtype::Float32,
+    Tensor distances = Tensor::Empty({num_query_points * knn}, Float32,
                                      dataset_points_.GetDevice());
 
     index->search(num_query_points, data_ptr, knn,
-                  static_cast<float *>(distances.GetDataPtr()),
-                  static_cast<int64_t *>(indices.GetDataPtr()));
+                  distances.GetDataPtr<float>(), indices.GetDataPtr<int64_t>());
 
     indices = indices.Reshape({num_query_points, knn});
     distances = distances.Reshape({num_query_points, knn});
     return std::make_pair(indices, distances);
 }
 
-std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
-                                                   float radius,
-                                                   int max_knn) const {
-    // Check dtype.
-    query_points.AssertDtype(Dtype::Float32);
+std::tuple<Tensor, Tensor, Tensor> FaissIndex::SearchHybrid(
+        const Tensor &query_points, double radius, int max_knn) const {
+    // Check device and dtype.
+    // AssertTensorDevice(query_points, GetDevice());
+    AssertTensorDtype(query_points, Float32);
 
     // Check shape.
-    query_points.AssertShapeCompatible({utility::nullopt, GetDimension()});
+    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
-        utility::LogError(
-                "[FaissIndex::SearchHybrid] max_knn should be larger than 0.");
+        utility::LogError("max_knn should be larger than 0.");
     }
     if (radius <= 0) {
-        utility::LogError(
-                "[FaissIndex::SearchHybrid] radius should be larger than 0.");
+        utility::LogError("radius should be larger than 0.");
     }
 
     Tensor indices;
@@ -149,15 +147,18 @@ std::pair<Tensor, Tensor> FaissIndex::SearchHybrid(const Tensor &query_points,
     std::tie(indices, distances) = SearchKnn(query_points, max_knn);
 
     Tensor invalid = distances.Gt(radius);
-    Tensor invalid_indices = Tensor(std::vector<int64_t>({-1}), {1},
-                                    Dtype::Int64, indices.GetDevice());
-    Tensor invalid_distances = Tensor(std::vector<float>({-1}), {1},
-                                      Dtype::Float32, distances.GetDevice());
+
+    Tensor counts = max_knn - invalid.To(Int64).Sum({0});
+
+    Tensor invalid_indices =
+            Tensor(std::vector<int64_t>({-1}), {1}, Int64, indices.GetDevice());
+    Tensor invalid_distances = Tensor(std::vector<float>({-1}), {1}, Float32,
+                                      distances.GetDevice());
 
     indices.SetItem(TensorKey::IndexTensor(invalid), invalid_indices);
     distances.SetItem(TensorKey::IndexTensor(invalid), invalid_distances);
 
-    return std::make_pair(indices, distances);
+    return std::make_tuple(indices, distances, counts);
 }
 
 }  // namespace nns

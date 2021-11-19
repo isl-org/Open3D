@@ -1,6 +1,28 @@
-# Open3D: www.open3d.org
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 
 # examples/python/reconstruction_system/initialize_config.py
 
@@ -33,7 +55,26 @@ def initialize_config(config):
     set_default_value(config, "global_registration", "ransac")
     set_default_value(config, "python_multi_threading", True)
 
+    # `slac` and `slac_integrate` related parameters.
+    # `voxel_size` and `min_depth` paramters from previous section,
+    # are also used in `slac` and `slac_integrate`.
+    set_default_value(config, "max_iterations", 5)
+    set_default_value(config, "sdf_trunc", 0.04)
+    set_default_value(config, "block_count", 40000)
+    set_default_value(config, "distance_threshold", 0.07)
+    set_default_value(config, "fitness_threshold", 0.3)
+    set_default_value(config, "regularizer_weight", 1)
+    set_default_value(config, "method", "slac")
+    set_default_value(config, "device", "CPU:0")
+    set_default_value(config, "save_output_as", "pointcloud")
+    set_default_value(config, "folder_slac", "slac/")
+    set_default_value(config, "template_optimized_posegraph_slac",
+                      "optimized_posegraph_slac.json")
+
+    # path related parameters.
     set_default_value(config, "folder_fragment", "fragments/")
+    set_default_value(config, "subfolder_slac",
+                      "slac/%0.3f/" % config["voxel_size"])
     set_default_value(config, "template_fragment_posegraph",
                       "fragments/fragment_%03d.json")
     set_default_value(config, "template_fragment_posegraph_optimized",
@@ -52,8 +93,9 @@ def initialize_config(config):
     set_default_value(config, "template_global_mesh", "scene/integrated.ply")
     set_default_value(config, "template_global_traj", "scene/trajectory.log")
 
-    if os.path.isfile(
-            config["path_dataset"]) and config["path_dataset"].endswith(".bag"):
+    if config["path_dataset"].endswith(".bag"):
+        assert os.path.isfile(config["path_dataset"]), (
+            f"File {config['path_dataset']} not found.")
         print("Extracting frames from RGBD video file")
         config["path_dataset"], config["path_intrinsic"], config[
             "depth_scale"] = extract_rgbd_frames(config["path_dataset"])

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/FaissIndex.h"
 #include "open3d/core/nns/FixedRadiusIndex.h"
+#include "open3d/core/nns/KnnIndex.h"
 #include "open3d/core/nns/NanoFlannIndex.h"
 #include "open3d/utility/Optional.h"
 
@@ -74,15 +75,16 @@ public:
     /// Set index for hybrid search.
     ///
     /// \return Returns true if building index success, otherwise false.
-    bool HybridIndex();
+    bool HybridIndex(utility::optional<double> radius = {});
 
     /// Perform knn search.
     ///
     /// \param query_points Query points. Must be 2D, with shape {n, d}.
     /// \param knn Number of neighbors to search per query point.
     /// \return Pair of Tensors, (indices, distances):
-    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
-    /// - distainces: Tensor of shape {n, knn}, same dtype with query_points.
+    /// - indices: Tensor of shape {n, knn}, with dtype Int32.
+    /// - distances: Tensor of shape {n, knn}, same dtype with query_points.
+    ///              The distances are squared L2 distances.
     std::pair<Tensor, Tensor> KnnSearch(const Tensor &query_points, int knn);
 
     /// Perform fixed radius search. All query points share the same radius.
@@ -92,12 +94,12 @@ public:
     /// \param radius Radius.
     /// \return Tuple of Tensors, (indices, distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
-    /// Int64.
+    /// Int32.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
-    /// with query_points.
-    /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
+    /// with query_points. The distances are squared L2 distances.
+    /// - num_neighbors: Tensor of shape {n,}, with dtype Int32.
     std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
-            const Tensor &query_points, double radius);
+            const Tensor &query_points, double radius, bool sort = true);
 
     /// Perform multi-radius search. Each query point has an independent radius.
     ///
@@ -106,10 +108,10 @@ public:
     /// Must be 1D, with shape {n,}.
     /// \return Tuple of Tensors, (indices,distances, num_neighbors):
     /// - indicecs: Tensor of shape {total_number_of_neighbors,}, with dtype
-    /// Int64.
+    /// Int32.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
-    /// with query_points.
-    /// - num_neighbors: Tensor of shape {n,}, with dtype Int64.
+    /// with query_points. The distances are squared L2 distances.
+    /// - num_neighbors: Tensor of shape {n,}, with dtype Int32.
     std::tuple<Tensor, Tensor, Tensor> MultiRadiusSearch(
             const Tensor &query_points, const Tensor &radii);
 
@@ -119,13 +121,15 @@ public:
     /// d}.
     /// \param radius Radius.
     /// \param max_knn Maximum number of neighbor to search per query.
-    /// \return Pair of Tensors, (indices, distances):
-    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
+    /// \return Tuple of Tensors, (indices, distances, counts):
+    /// - indices: Tensor of shape {n, knn}, with dtype Int32.
     /// - distainces: Tensor of shape {n, knn}, with same dtype with
-    /// query_points.
-    std::pair<Tensor, Tensor> HybridSearch(const Tensor &query_points,
-                                           double radius,
-                                           int max_knn);
+    /// query_points. The distances are squared L2 distances.
+    /// - counts: Counts of neighbour for each query points. [Tensor
+    /// of shape {n}, with dtype Int32].
+    std::tuple<Tensor, Tensor, Tensor> HybridSearch(const Tensor &query_points,
+                                                    double radius,
+                                                    int max_knn);
 
 private:
     bool SetIndex();
@@ -137,6 +141,7 @@ protected:
     std::unique_ptr<NanoFlannIndex> nanoflann_index_;
     std::unique_ptr<FaissIndex> faiss_index_;
     std::unique_ptr<nns::FixedRadiusIndex> fixed_radius_index_;
+    std::unique_ptr<nns::KnnIndex> knn_index_;
     const Tensor dataset_points_;
 };
 }  // namespace nns

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,9 @@
 
 #include "open3d/camera/PinholeCameraTrajectory.h"
 #include "open3d/io/IJsonConvertibleIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 #include "open3d/visualization/visualizer/ViewControlWithCustomAnimation.h"
 
 namespace open3d {
@@ -96,8 +97,8 @@ void VisualizerWithCustomAnimation::Play(
     is_redraw_required_ = true;
     UpdateWindowTitle();
     recording_file_index_ = 0;
-    utility::ConsoleProgressBar progress_bar(view_control.NumOfFrames(),
-                                             "Play animation: ");
+    utility::ProgressBar progress_bar(view_control.NumOfFrames(),
+                                      "Play animation: ");
     auto trajectory_ptr = std::make_shared<camera::PinholeCameraTrajectory>();
     bool recording_trajectory = view_control.IsValidPinholeCameraTrajectory();
     if (recording) {

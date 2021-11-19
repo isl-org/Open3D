@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,8 +31,9 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TetraMesh.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 
@@ -135,13 +136,14 @@ Eigen::Vector3d ComputeEigenvector1(const Eigen::Matrix3d &A,
     }
 }
 
-Eigen::Vector3d FastEigen3x3(Eigen::Matrix3d &A) {
+Eigen::Vector3d FastEigen3x3(const Eigen::Matrix3d &covariance) {
     // Previous version based on:
     // https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
     // Current version based on
     // https://www.geometrictools.com/Documentation/RobustEigenSymmetric3x3.pdf
     // which handles edge cases like points on a plane
 
+    Eigen::Matrix3d A = covariance;
     double max_coeff = A.maxCoeff();
     if (max_coeff == 0) {
         return Eigen::Vector3d::Zero();
@@ -221,22 +223,14 @@ Eigen::Vector3d FastEigen3x3(Eigen::Matrix3d &A) {
     }
 }
 
-Eigen::Vector3d ComputeNormal(const PointCloud &cloud,
-                              const std::vector<int> &indices,
+Eigen::Vector3d ComputeNormal(const Eigen::Matrix3d &covariance,
                               bool fast_normal_computation) {
-    if (indices.size() == 0) {
-        return Eigen::Vector3d::Zero();
-    }
-    Eigen::Matrix3d covariance =
-            utility::ComputeCovariance(cloud.points_, indices);
-
     if (fast_normal_computation) {
         return FastEigen3x3(covariance);
-    } else {
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
-        solver.compute(covariance, Eigen::ComputeEigenvectors);
-        return solver.eigenvectors().col(0);
     }
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver;
+    solver.compute(covariance, Eigen::ComputeEigenvectors);
+    return solver.eigenvectors().col(0);
 }
 
 // Disjoint set data structure to find cycles in graphs
@@ -317,29 +311,27 @@ void PointCloud::EstimateNormals(
     if (!has_normal) {
         normals_.resize(points_.size());
     }
-    KDTreeFlann kdtree;
-    kdtree.SetGeometry(*this);
-#pragma omp parallel for schedule(static)
-    for (int i = 0; i < (int)points_.size(); i++) {
-        std::vector<int> indices;
-        std::vector<double> distance2;
-        Eigen::Vector3d normal;
-        if (kdtree.Search(points_[i], search_param, indices, distance2) >= 3) {
-            normal = ComputeNormal(*this, indices, fast_normal_computation);
-            if (normal.norm() == 0.0) {
-                if (has_normal) {
-                    normal = normals_[i];
-                } else {
-                    normal = Eigen::Vector3d(0.0, 0.0, 1.0);
-                }
+    std::vector<Eigen::Matrix3d> covariances;
+    if (!HasCovariances()) {
+        covariances = EstimatePerPointCovariances(*this, search_param);
+    } else {
+        covariances = covariances_;
+    }
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
+    for (int i = 0; i < (int)covariances.size(); i++) {
+        auto normal = ComputeNormal(covariances[i], fast_normal_computation);
+        if (normal.norm() == 0.0) {
+            if (has_normal) {
+                normal = normals_[i];
+            } else {
+                normal = Eigen::Vector3d(0.0, 0.0, 1.0);
             }
-            if (has_normal && normal.dot(normals_[i]) < 0.0) {
-                normal *= -1.0;
-            }
-            normals_[i] = normal;
-        } else {
-            normals_[i] = Eigen::Vector3d(0.0, 0.0, 1.0);
         }
+        if (has_normal && normal.dot(normals_[i]) < 0.0) {
+            normal *= -1.0;
+        }
+        normals_[i] = normal;
     }
 }
 
@@ -351,7 +343,8 @@ void PointCloud::OrientNormalsToAlignWithDirection(
                 "[OrientNormalsToAlignWithDirection] No normals in the "
                 "PointCloud. Call EstimateNormals() first.");
     }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         auto &normal = normals_[i];
         if (normal.norm() == 0.0) {
@@ -369,7 +362,8 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
                 "[OrientNormalsTowardsCameraLocation] No normals in the "
                 "PointCloud. Call EstimateNormals() first.");
     }
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         Eigen::Vector3d orientation_reference = camera_location - points_[i];
         auto &normal = normals_[i];
@@ -466,7 +460,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
     // find start node for tree traversal
     // init with node that maximizes z
     double max_z = std::numeric_limits<double>::lowest();
-    size_t v0;
+    size_t v0 = 0;
     for (size_t vidx = 0; vidx < points_.size(); ++vidx) {
         const Eigen::Vector3d &v = points_[vidx];
         if (v(2) > max_z) {

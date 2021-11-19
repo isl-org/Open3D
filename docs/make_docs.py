@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,18 @@ def _create_or_clear_dir(dir_path):
         print("Removed directory %s" % dir_path)
     os.makedirs(dir_path)
     print("Created directory %s" % dir_path)
+
+
+def _update_file(src, dst):
+    """Copies a file if the destination does not exist or is older."""
+    if Path(dst).exists():
+        src_stat = os.stat(src)
+        dst_stat = os.stat(dst)
+        if src_stat.st_mtime - dst_stat.st_mtime <= 0:
+            print("Copy skipped: {}".format(dst))
+            return
+    print("Copy: {}\n   -> {}".format(src, dst))
+    shutil.copy2(src, dst)
 
 
 class PyAPIDocsBuilder:
@@ -146,7 +158,9 @@ class PyAPIDocsBuilder:
         out_string += "\n\n" + ".. autoclass:: %s" % class_name
         out_string += "\n    :members:"
         out_string += "\n    :undoc-members:"
-        out_string += "\n    :inherited-members:"
+        if not (full_module_name.startswith("open3d.ml.tf") or
+                full_module_name.startswith("open3d.ml.torch")):
+            out_string += "\n    :inherited-members:"
         out_string += "\n"
 
         with open(output_path, "w") as f:
@@ -210,7 +224,7 @@ class PyAPIDocsBuilder:
         class_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isclass(obj[1])
+            if inspect.isclass(obj[1]) and not obj[0].startswith('_')
         ]
         for class_name in class_names:
             file_name = "%s.%s.rst" % (full_module_name, class_name)
@@ -225,7 +239,7 @@ class PyAPIDocsBuilder:
         function_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isroutine(obj[1])
+            if inspect.isroutine(obj[1]) and not obj[0].startswith('_')
         ]
         for function_name in function_names:
             file_name = "%s.%s.rst" % (full_module_name, function_name)
@@ -242,7 +256,7 @@ class PyAPIDocsBuilder:
         sub_module_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.ismodule(obj[1])
+            if inspect.ismodule(obj[1]) and not obj[0].startswith('_')
         ]
         documented_sub_module_names = [
             sub_module_name for sub_module_name in sub_module_names if "%s.%s" %
@@ -373,12 +387,12 @@ class JupyterDocsBuilder:
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
-        nb_direct_copy = ['tensor.ipynb']
+        nb_direct_copy = [
+            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration',
+            't_robust_kernel'
+        ]
         example_dirs = [
-            "geometry",
-            "core",
-            "pipelines",
-            "visualization",
+            "geometry", "core", "pipelines", "visualization", "t_pipelines"
         ]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir).parent / "examples" /
@@ -397,16 +411,20 @@ class JupyterDocsBuilder:
 
             for nb_in_path in in_dir.glob("*.ipynb"):
                 nb_out_path = out_dir / nb_in_path.name
-                if not nb_out_path.is_file():
-                    print("Copy: {}\n   -> {}".format(nb_in_path, nb_out_path))
-                    shutil.copy(nb_in_path, nb_out_path)
-                else:
-                    print("Copy skipped: {}.format(nb_out_path)")
+                _update_file(nb_in_path, nb_out_path)
                 nb_paths.append(nb_out_path)
+
+            # Copy the 'images' dir present in some example dirs.
+            if (in_dir / "images").is_dir():
+                if (out_dir / "images").exists():
+                    shutil.rmtree(out_dir / "images")
+                print("Copy: {}\n   -> {}".format(in_dir / "images",
+                                                  out_dir / "images"))
+                shutil.copytree(in_dir / "images", out_dir / "images")
 
         # Execute Jupyter notebooks
         for nb_path in nb_paths:
-            if nb_out_path.name in nb_direct_copy:
+            if nb_path.name in nb_direct_copy:
                 print("[Processing notebook {}, directly copied]".format(
                     nb_path.name))
                 continue
@@ -453,7 +471,8 @@ if __name__ == "__main__":
     # Build docs for release (version number will be used instead of git hash).
     $ python make_docs.py --is_release --sphinx --doxygen
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--clean_notebooks",
         action="store_true",

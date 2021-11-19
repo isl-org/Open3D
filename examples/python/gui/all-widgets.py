@@ -1,4 +1,29 @@
-#!/usr/bin/env python
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+
 import open3d.visualization.gui as gui
 import os.path
 
@@ -112,8 +137,17 @@ class ExampleWindow:
         combo.set_on_selection_changed(self._on_combo)
         collapse.add_child(combo)
 
+        # This is a toggle switch, which is similar to a checkbox. To my way of
+        # thinking the difference is subtle: a checkbox toggles properties
+        # (for example, purely visual changes like enabling lighting) while a
+        # toggle switch is better for changing the behavior of the app (for
+        # example, turning on processing from the camera).
+        switch = gui.ToggleSwitch("Continuously update from camera")
+        switch.set_on_clicked(self._on_switch)
+        collapse.add_child(switch)
+
         # Add a simple image
-        logo = gui.ImageLabel(basedir + "/icon-32.png")
+        logo = gui.ImageWidget(basedir + "/icon-32.png")
         collapse.add_child(logo)
 
         # Add a list of items
@@ -260,6 +294,12 @@ class ExampleWindow:
             text = "Good choice"
 
         self.show_message_dialog("There might be a problem...", text)
+
+    def _on_switch(self, is_on):
+        if is_on:
+            print("Camera would now be running")
+        else:
+            print("Camera would now be off")
 
     # This function is essentially the same as window.show_message_box(),
     # so for something this simple just use that, but it illustrates making a

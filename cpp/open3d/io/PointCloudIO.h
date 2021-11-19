@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,8 +47,8 @@ struct ReadPointCloudOption {
             // Attention: when you update the defaults, update the docstrings in
             // pybind/io/class_io.cpp
             std::string format = "auto",
-            bool remove_nan_points = true,
-            bool remove_infinite_points = true,
+            bool remove_nan_points = false,
+            bool remove_infinite_points = false,
             bool print_progress = false,
             std::function<bool(double)> update_progress = {})
         : format(format),

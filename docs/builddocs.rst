@@ -40,18 +40,19 @@ First, install a TeX distribution such as `MacTeX <http://www.tug.org/mactex/>`_
 
 .. code-block:: bash
 
-    # Install deps
-    pip install -U "sphinx==3.1.2" "sphinx-rtd-theme==0.5.0" "nbsphinx==0.7.1" "Pillow==7.2.0"
-
-    # Patched m2r: https://github.com/sphinx-doc/sphinx/issues/7420
-    pip install -U -q git+https://github.com/intel-isl/m2r@dev#egg=m2r
+    pip install -r docs/requirements.txt
 
 
 Build
 -----
 
 First, clone and build Open3D from source and install the Open3D Python package.
-Visit :ref:`compilation` for details.
+Visit :ref:`compilation` for details. After configuration, install the Open3D
+Python package with:
+
+.. code-block:: bash
+
+    make install-pip-package -j$(nproc)
 
 .. code-block:: bash
 

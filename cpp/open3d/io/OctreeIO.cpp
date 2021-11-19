@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,8 @@
 #include <unordered_map>
 
 #include "open3d/io/IJsonConvertibleIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace io {
@@ -52,7 +52,7 @@ static const std::unordered_map<
 std::shared_ptr<geometry::Octree> CreateOctreeFromFile(
         const std::string &filename, const std::string &format) {
     auto octree = std::make_shared<geometry::Octree>();
-    WriteOctree(filename, *octree);
+    ReadOctree(filename, *octree);
     return octree;
 }
 

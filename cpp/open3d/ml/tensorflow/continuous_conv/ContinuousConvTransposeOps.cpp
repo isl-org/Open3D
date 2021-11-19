@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,10 @@
 using namespace tensorflow;
 
 REGISTER_OP("Open3DContinuousConvTranspose")
+        .Attr("TFeat: {float, double, bfloat16}")  // Type for features and
+                                                   // weights
+        .Attr("output_type: {float, double} = DT_FLOAT")  // Type for the output
+                                                          // features
         .Attr("TReal: {float, double}")
         .Attr("TIndex: {int32, int64}")
         .Attr("align_corners: bool = true")
@@ -43,20 +47,20 @@ REGISTER_OP("Open3DContinuousConvTranspose")
               "= 'linear'")
         .Attr("max_temp_mem_MB: int = 64")
         .Attr("debug: bool = false")
-        .Input("filters: TReal")        // [depth, height, width, in_ch, out_ch]
+        .Input("filters: TFeat")        // [depth, height, width, in_ch, out_ch]
         .Input("out_positions: TReal")  // [num_points_out, 3]
-        .Input("out_importance: TReal")                // [num_points_out]
+        .Input("out_importance: TFeat")                // [num_points_out]
         .Input("extents: TReal")                       // [num_points_in, 3]
         .Input("offset: TReal")                        // [3]
         .Input("inp_positions: TReal")                 // [num_points_in, 3]
-        .Input("inp_features: TReal")                  // [num_points_in, in_ch]
+        .Input("inp_features: TFeat")                  // [num_points_in, in_ch]
         .Input("inp_neighbors_index: TIndex")          // [?]
-        .Input("inp_neighbors_importance_sum: TReal")  // [num_points_in]
+        .Input("inp_neighbors_importance_sum: TFeat")  // [num_points_in]
         .Input("inp_neighbors_row_splits: int64")      // [num_points_in+1]
         .Input("neighbors_index: TIndex")              // [?]
-        .Input("neighbors_importance: TReal")          // [?]
+        .Input("neighbors_importance: TFeat")          // [?]
         .Input("neighbors_row_splits: int64")          // [num_points_out+1]
-        .Output("out_features : TReal")  // [num_points_out, out_ch]
+        .Output("out_features : output_type")  // [num_points_out, out_ch]
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
             using namespace ::tensorflow::shape_inference;
             ShapeHandle filters_shape, out_positions_shape,
@@ -274,7 +278,7 @@ inp_neighbors_index:
 
 
 inp_neighbors_importance_sum:
-  1D tensor of the same length as 'inp_positions' or zero length if 
+  1D tensor of the same length as 'inp_positions' or zero length if
   neighbors_importance is empty. This is the sum of the values in
   'neighbors_importance' for each input point.
 
@@ -300,6 +304,7 @@ neighbors_row_splits:
   the total neighbor count as the last element. The size of this array is the
   number of output points + 1.
 
+output_type: The type for the output.
 
 out_features:
   A Tensor with the output feature vectors for each output point.

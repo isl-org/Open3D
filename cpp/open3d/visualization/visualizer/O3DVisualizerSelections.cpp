@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/gui/SceneWidget.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 
@@ -40,8 +40,8 @@ namespace visualization {
 namespace visualizer {
 
 namespace {
-rendering::Material MakeMaterial() {
-    rendering::Material m;
+rendering::MaterialRecord MakeMaterial() {
+    rendering::MaterialRecord m;
     m.shader = "defaultUnlit";
     m.base_color = {1.0f, 0.0f, 1.0f, 1.0f};
     return m;
@@ -56,7 +56,7 @@ O3DVisualizerSelections::~O3DVisualizerSelections() {}
 
 void O3DVisualizerSelections::NewSet() {
     auto name = std::string("__selection_") + std::to_string(next_id_++);
-    sets_.push_back({name});
+    sets_.push_back({name, {}});
     if (current_set_index_ < 0) {
         current_set_index_ = int(sets_.size()) - 1;
     }
@@ -178,7 +178,9 @@ void O3DVisualizerSelections::SetPointSize(double radius_world) {
 }
 
 void O3DVisualizerSelections::MakeActive() {
-    assert(!is_active_);
+    if (is_active_) {
+        utility::LogError("Already active.");
+    }
 
     is_active_ = true;
     widget3d_.SetViewControls(gui::SceneWidget::Controls::PICK_POINTS);

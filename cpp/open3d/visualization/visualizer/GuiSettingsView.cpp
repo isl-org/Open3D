@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,8 @@
 
 #include <cmath>
 
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Checkbox.h"
 #include "open3d/visualization/gui/ColorEdit.h"
 #include "open3d/visualization/gui/Combobox.h"
@@ -100,6 +100,13 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     view_ctrls->AddFixed(separation_height);
     view_ctrls->AddChild(show_axes_);
 
+    // Show ground plane
+    show_ground_ = std::make_shared<gui::Checkbox>("Show ground");
+    show_ground_->SetOnChecked(
+            [this](bool is_checked) { model_.SetShowGround(is_checked); });
+    view_ctrls->AddFixed(separation_height);
+    view_ctrls->AddChild(show_ground_);
+
     // Lighting profiles
     lighting_profile_ = std::make_shared<gui::Combobox>();
     for (auto &lp : GuiSettingsModel::lighting_profiles_) {
@@ -113,6 +120,9 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
             model_.SetSunFollowsCamera(false);
             model_.SetLightingProfile(
                     GuiSettingsModel::lighting_profiles_[index]);
+            if (GuiSettingsModel::lighting_profiles_[index].use_default_ibl) {
+                ibls_->SetSelectedValue(GuiSettingsModel::DEFAULT_IBL);
+            }
         }
     });
 
@@ -302,6 +312,14 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         model_.SetPointSize(int(std::round(value)));
     });
     mat_grid->AddChild(point_size_);
+
+    mat_grid->AddChild(std::make_shared<gui::Label>(""));
+    generate_normals_ = std::make_shared<SmallButton>("Estimate PCD Normals");
+    generate_normals_->SetOnClicked(
+            [this]() { model_.EstimateNormalsClicked(); });
+    generate_normals_->SetEnabled(false);
+    mat_grid->AddChild(generate_normals_);
+
     materials->AddChild(mat_grid);
 
     AddFixed(separation_height);
@@ -326,6 +344,10 @@ void GuiSettingsView::ShowFileMaterialEntry(bool show) {
                  " [default]")
                         .c_str());
     }
+}
+
+void GuiSettingsView::EnableEstimateNormals(bool enable) {
+    generate_normals_->SetEnabled(enable);
 }
 
 void GuiSettingsView::Update() {

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,8 @@
 
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
 
+#include "open3d/core/Dtype.h"
+
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
 // 4146: PixelBufferDescriptor assert unsigned is positive before subtracting
 //       but MSVC can't figure that out.
@@ -44,6 +46,7 @@
 #include <filament/IndirectLight.h>
 #include <filament/LightManager.h>
 #include <filament/Material.h>
+#include <filament/RenderTarget.h>
 #include <filament/RenderableManager.h>
 #include <filament/Scene.h>
 #include <filament/Skybox.h>
@@ -57,8 +60,9 @@
 #endif  // _MSC_VER
 
 #include "open3d/io/ImageIO.h"
-#include "open3d/utility/Console.h"
+#include "open3d/t/geometry/Image.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
@@ -149,6 +153,10 @@ std::intptr_t RetainImageForLoading(
     return id;
 }
 
+static void DeallocateBuffer(void* buffer, size_t size, void* user_ptr) {
+    free(buffer);
+}
+
 void FreeRetainedImage(void* buffer, size_t size, void* user_ptr) {
     const auto id = reinterpret_cast<std::intptr_t>(user_ptr);
     auto found = pending_images.find(id);
@@ -194,43 +202,102 @@ struct TextureSettings {
     std::uint32_t texel_height = 0;
 };
 
+void FormatSettingsFromImage(TextureSettings& settings,
+                             int num_channels,
+                             int bytes_per_channel,
+                             bool srgb) {
+    // Map of (bytes_per_channel << 4 | num_channles) -> internal format
+    static std::unordered_map<unsigned int, filament::Texture::InternalFormat>
+            format_map = {
+                    {(1 << 4 | 1), filament::Texture::InternalFormat::R8},
+                    {(1 << 4 | 2), filament::Texture::InternalFormat::RG8},
+                    {(1 << 4 | 3), filament::Texture::InternalFormat::RGB8},
+                    {(1 << 4 | 4), filament::Texture::InternalFormat::RGBA8}};
+
+    // Set image format
+    switch (num_channels) {
+        case 1:
+            settings.image_format = filament::Texture::Format::R;
+            break;
+        case 2:
+            settings.image_format = filament::Texture::Format::RG;
+            break;
+        case 3:
+            settings.image_format = filament::Texture::Format::RGB;
+            break;
+        case 4:
+            settings.image_format = filament::Texture::Format::RGBA;
+            break;
+        default:
+            utility::LogError("Unsupported image number of channels: {}",
+                              num_channels);
+            break;
+    }
+
+    // Figure out internal format
+    unsigned int key = (bytes_per_channel << 4 | num_channels);
+    if (format_map.count(key) > 0) {
+        settings.format = format_map[key];
+    } else {
+        utility::LogError(
+                "Unsupported combination of number of channels ({}) and bytes "
+                "per channel ({}).",
+                num_channels, bytes_per_channel);
+    }
+
+    // Override the two special cases of RGB/RGBA with srgb=true
+    if (srgb && bytes_per_channel == 1 &&
+        (num_channels == 3 || num_channels == 4)) {
+        if (num_channels == 3) {
+            settings.format = filament::Texture::InternalFormat::SRGB8;
+        } else {
+            settings.format = filament::Texture::InternalFormat::SRGB8_A8;
+        }
+    }
+}
+
+void DataTypeFromImage(TextureSettings& settings, int bytes_per_channel) {
+    switch (bytes_per_channel) {
+        case 1:
+            settings.image_type = filament::Texture::Type::UBYTE;
+            break;
+        case 2:
+            settings.image_type = filament::Texture::Type::USHORT;
+            break;
+
+        case 4:
+            settings.image_type = filament::Texture::Type::FLOAT;
+            break;
+
+        default:
+            utility::LogError("Unsupported image bytes per channel: {}",
+                              bytes_per_channel);
+            break;
+    }
+}
+
 TextureSettings GetSettingsFromImage(const geometry::Image& image, bool srgb) {
     TextureSettings settings;
 
     settings.texel_width = image.width_;
     settings.texel_height = image.height_;
 
-    switch (image.num_of_channels_) {
-        case 1:
-            settings.image_format = filament::Texture::Format::R;
-            settings.format = filament::Texture::InternalFormat::R8;
-            break;
-        case 3:
-            settings.image_format = filament::Texture::Format::RGB;
-            settings.format = srgb ? filament::Texture::InternalFormat::SRGB8
-                                   : filament::Texture::InternalFormat::RGB8;
-            break;
-        case 4:
-            settings.image_format = filament::Texture::Format::RGBA;
-            settings.format = srgb ? filament::Texture::InternalFormat::SRGB8_A8
-                                   : filament::Texture::InternalFormat::RGBA8;
-            break;
-        default:
-            utility::LogError("Unsupported image number of channels: {}",
-                              image.num_of_channels_);
-            break;
-    }
+    FormatSettingsFromImage(settings, image.num_of_channels_,
+                            image.bytes_per_channel_, srgb);
+    DataTypeFromImage(settings, image.bytes_per_channel_);
+    return settings;
+}
 
-    switch (image.bytes_per_channel_) {
-        case 1:
-            settings.image_type = filament::Texture::Type::UBYTE;
-            break;
-        default:
-            utility::LogError("Unsupported image bytes per channel: {}",
-                              image.bytes_per_channel_);
-            break;
-    }
+TextureSettings GetSettingsFromImage(const t::geometry::Image& image,
+                                     bool srgb) {
+    TextureSettings settings;
 
+    settings.texel_width = image.GetCols();
+    settings.texel_height = image.GetRows();
+
+    FormatSettingsFromImage(settings, image.GetChannels(),
+                            image.GetDtype().ByteSize(), srgb);
+    DataTypeFromImage(settings, image.GetDtype().ByteSize());
     return settings;
 }
 
@@ -250,11 +317,15 @@ const MaterialHandle FilamentResourceManager::kDefaultNormalShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultDepthShader =
         MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kDefaultDepthValueShader =
+        MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitGradientShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitSolidColorShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultUnlitBackgroundShader =
+        MaterialHandle::Next();
+const MaterialHandle FilamentResourceManager::kInfinitePlaneShader =
         MaterialHandle::Next();
 const MaterialHandle FilamentResourceManager::kDefaultLineShader =
         MaterialHandle::Next();
@@ -282,6 +353,7 @@ static const std::unordered_set<REHandle_abstract> kDefaultResources = {
         FilamentResourceManager::kDefaultUnlitGradientShader,
         FilamentResourceManager::kDefaultUnlitSolidColorShader,
         FilamentResourceManager::kDefaultUnlitBackgroundShader,
+        FilamentResourceManager::kInfinitePlaneShader,
         FilamentResourceManager::kDefaultLineShader,
         FilamentResourceManager::kDefaultUnlitPolygonOffsetShader,
         FilamentResourceManager::kDepthMaterial,
@@ -392,12 +464,114 @@ TextureHandle FilamentResourceManager::CreateTexture(
     return handle;
 }
 
+TextureHandle FilamentResourceManager::CreateTexture(
+        const t::geometry::Image& image, bool srgb) {
+    TextureHandle handle;
+    auto texture = LoadTextureFromImage(image, srgb);
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    return handle;
+}
+
 TextureHandle FilamentResourceManager::CreateTextureFilled(
         const Eigen::Vector3f& color, size_t dimension) {
     TextureHandle handle;
     auto texture = LoadFilledTexture(color, dimension);
     handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
 
+    return handle;
+}
+
+bool FilamentResourceManager::UpdateTexture(
+        TextureHandle texture,
+        const std::shared_ptr<geometry::Image> image,
+        bool srgb) {
+    auto ftexture_weak = GetTexture(texture);
+    if (auto ftexture = ftexture_weak.lock()) {
+        if (ftexture->getWidth() == size_t(image->width_) &&
+            ftexture->getHeight() == size_t(image->height_)) {
+            auto retained_img_id = RetainImageForLoading(image);
+            auto texture_settings = GetSettingsFromImage(*image, srgb);
+            filament::Texture::PixelBufferDescriptor desc(
+                    image->data_.data(), image->data_.size(),
+                    texture_settings.image_format, texture_settings.image_type,
+                    FreeRetainedImage, (void*)retained_img_id);
+            ftexture->setImage(engine_, 0, std::move(desc));
+            return true;
+        }
+    }
+    return false;
+}
+
+bool FilamentResourceManager::UpdateTexture(TextureHandle texture,
+                                            const t::geometry::Image& image,
+                                            bool srgb) {
+    auto ftexture_weak = GetTexture(texture);
+    if (auto ftexture = ftexture_weak.lock()) {
+        if (ftexture->getWidth() == size_t(image.GetCols()) &&
+            ftexture->getHeight() == size_t(image.GetRows())) {
+            auto texture_settings = GetSettingsFromImage(image, srgb);
+            filament::Texture::PixelBufferDescriptor desc(
+                    image.GetDataPtr(),
+                    image.GetRows() * image.GetCols() * image.GetChannels() *
+                            image.GetDtype().ByteSize(),
+                    texture_settings.image_format, texture_settings.image_type);
+            ftexture->setImage(engine_, 0, std::move(desc));
+            return true;
+        }
+    }
+    return false;
+}
+
+TextureHandle FilamentResourceManager::CreateColorAttachmentTexture(
+        int width, int height) {
+    using namespace filament;
+    auto texture = Texture::Builder()
+                           .width(width)
+                           .height(height)
+                           .levels(1)
+                           .format(Texture::InternalFormat::RGBA16F)
+                           .usage(Texture::Usage::COLOR_ATTACHMENT |
+                                  Texture::Usage::SAMPLEABLE)
+                           .build(engine_);
+    TextureHandle handle;
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    return handle;
+}
+
+TextureHandle FilamentResourceManager::CreateDepthAttachmentTexture(
+        int width, int height) {
+    using namespace filament;
+    auto texture = Texture::Builder()
+                           .width(width)
+                           .height(height)
+                           .levels(1)
+                           .format(Texture::InternalFormat::DEPTH32F)
+                           .usage(Texture::Usage::DEPTH_ATTACHMENT)
+                           .build(engine_);
+    TextureHandle handle;
+    handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+    return handle;
+}
+
+RenderTargetHandle FilamentResourceManager::CreateRenderTarget(
+        TextureHandle color, TextureHandle depth) {
+    using namespace filament;
+
+    RenderTargetHandle handle;
+    auto color_tex_weak = GetTexture(color);
+    auto depth_tex_weak = GetTexture(depth);
+    auto color_tex = color_tex_weak.lock();
+    auto depth_tex = depth_tex_weak.lock();
+    if (!color_tex || !depth_tex) {
+        utility::LogWarning("Supplied texture attachments are invalid.");
+        return handle;
+    }
+
+    auto rt = RenderTarget::Builder()
+                      .texture(RenderTarget::COLOR, color_tex.get())
+                      .texture(RenderTarget::DEPTH, depth_tex.get())
+                      .build(engine_);
+    handle = RegisterResource<RenderTargetHandle>(engine_, rt, render_targets_);
     return handle;
 }
 
@@ -566,6 +740,11 @@ std::weak_ptr<filament::Texture> FilamentResourceManager::GetTexture(
     return FindResource(id, textures_);
 }
 
+std::weak_ptr<filament::RenderTarget> FilamentResourceManager::GetRenderTarget(
+        const RenderTargetHandle& id) {
+    return FindResource(id, render_targets_);
+}
+
 std::weak_ptr<filament::IndirectLight>
 FilamentResourceManager::GetIndirectLight(const IndirectLightHandle& id) {
     return FindResource(id, ibls_);
@@ -590,6 +769,7 @@ void FilamentResourceManager::DestroyAll() {
     material_instances_.clear();
     materials_.clear();
     textures_.clear();
+    render_targets_.clear();
     vertex_buffers_.clear();
     index_buffers_.clear();
     ibls_.clear();
@@ -626,6 +806,10 @@ void FilamentResourceManager::Destroy(const REHandle_abstract& id) {
         case EntityType::IndirectLight:
             DestroyResource(id, ibls_);
             break;
+        case EntityType::RenderTarget:
+            DestroyResource(id, render_targets_);
+            break;
+
         default:
             utility::LogWarning(
                     "Resource {} is not suited for destruction by "
@@ -674,6 +858,51 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     texture->setImage(engine_, 0, std::move(pb));
     texture->generateMipmaps(engine_);
     return texture;
+}
+
+filament::Texture* FilamentResourceManager::LoadTextureFromImage(
+        const t::geometry::Image& image, bool srgb) {
+    using namespace filament;
+
+    auto texture_settings = GetSettingsFromImage(image, srgb);
+    auto levels = maxLevelCount(texture_settings.texel_width,
+                                texture_settings.texel_height);
+
+    const size_t image_bytes = image.GetRows() * image.GetCols() *
+                               image.GetChannels() *
+                               image.GetDtype().ByteSize();
+    if (image.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+        t::geometry::Image cpu_image = image.To(core::Device("CPU:0"));
+        auto* image_data = malloc(image_bytes);
+        memcpy(image_data, cpu_image.GetDataPtr(), image_bytes);
+        Texture::PixelBufferDescriptor pb(
+                image_data, image_bytes, texture_settings.image_format,
+                texture_settings.image_type, DeallocateBuffer);
+        auto texture = Texture::Builder()
+                               .width(texture_settings.texel_width)
+                               .height(texture_settings.texel_height)
+                               .levels(levels)
+                               .format(texture_settings.format)
+                               .sampler(Texture::Sampler::SAMPLER_2D)
+                               .build(engine_);
+        texture->setImage(engine_, 0, std::move(pb));
+        texture->generateMipmaps(engine_);
+        return texture;
+    } else {
+        Texture::PixelBufferDescriptor pb(image.GetDataPtr(), image_bytes,
+                                          texture_settings.image_format,
+                                          texture_settings.image_type);
+        auto texture = Texture::Builder()
+                               .width(texture_settings.texel_width)
+                               .height(texture_settings.texel_height)
+                               .levels(levels)
+                               .format(texture_settings.format)
+                               .sampler(Texture::Sampler::SAMPLER_2D)
+                               .build(engine_);
+        texture->setImage(engine_, 0, std::move(pb));
+        texture->generateMipmaps(engine_);
+        return texture;
+    }
 }
 
 filament::Texture* FilamentResourceManager::LoadFilledTexture(
@@ -806,6 +1035,7 @@ void FilamentResourceManager::LoadDefaults() {
                                    default_color);
     unlit_mat->setDefaultParameter("pointSize", 3.f);
     unlit_mat->setDefaultParameter("albedo", texture, default_sampler);
+    unlit_mat->setDefaultParameter("srgbColor", 0.f);
     materials_[kDefaultUnlit] = BoxResource(unlit_mat, engine_);
 
     const auto unlit_trans_path =
@@ -870,7 +1100,15 @@ void FilamentResourceManager::LoadDefaults() {
                                 {1.0f, 1.0f, 1.0f});
     bg_mat->setDefaultParameter("albedo", texture, default_sampler);
     bg_mat->setDefaultParameter("aspectRatio", 0.0f);
+    bg_mat->setDefaultParameter("yOrigin", 0.0f);
     materials_[kDefaultUnlitBackgroundShader] = BoxResource(bg_mat, engine_);
+
+    const auto inf_path = resource_root + "/infiniteGroundPlane.filamat";
+    auto inf_mat = LoadMaterialFromFile(inf_path, engine_);
+    inf_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
+                                 {0.4f, 0.4f, 0.4f});
+    inf_mat->setDefaultParameter("axis", 0.0f);
+    materials_[kInfinitePlaneShader] = BoxResource(inf_mat, engine_);
 
     const auto line_path = resource_root + "/unlitLine.filamat";
     auto line_mat = LoadMaterialFromFile(line_path, engine_);

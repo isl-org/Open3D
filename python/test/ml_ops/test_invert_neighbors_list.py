@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,8 @@ pytestmark = mltest.default_marks
 
 # the supported dtypes for the attributes
 value_dtypes = pytest.mark.parametrize(
-    'dtype', [np.int32, np.int64, np.float32, np.float64])
+    'dtype',
+    [np.uint8, np.int8, np.int16, np.int32, np.int64, np.float32, np.float64])
 
 attributes = pytest.mark.parametrize('attributes',
                                      ['scalar', 'none', 'multidim'])

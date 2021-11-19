@@ -10,5 +10,14 @@
     "tsdf_cubic_size": 4.0,
     "icp_method": "point_to_point",
     "global_registration": "ransac",
-    "python_multi_threading": true
+    "python_multi_threading": true,
+    "max_iterations": 5,
+    "sdf_trunc": 0.04,
+    "block_count": 40000,
+    "distance_threshold": 0.07,
+    "fitness_threshold": 0.3,
+    "regularizer_weight": 1,
+    "method": "slac",
+    "device": "CPU:0",
+    "save_output_as": "pointcloud" 
 }

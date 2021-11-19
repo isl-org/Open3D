@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,12 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+#include <tensorflow/core/framework/op_kernel.h>
+#include <tensorflow/core/framework/shape_inference.h>
+#include <tensorflow/core/framework/tensor.h>
+#include <tensorflow/core/lib/core/errors.h>
+
 #include "open3d/ml/ShapeChecking.h"
-#include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow/core/framework/shape_inference.h"
-#include "tensorflow/core/framework/tensor.h"
-#include "tensorflow/core/lib/core/errors.h"
 
 inline std::vector<open3d::ml::op_util::DimValue> GetShapeVector(
         ::tensorflow::shape_inference::InferenceContext* c,

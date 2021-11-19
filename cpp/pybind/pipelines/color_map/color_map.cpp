@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/pipelines/color_map/NonRigidOptimizer.h"
 #include "open3d/pipelines/color_map/RigidOptimizer.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
 
 namespace open3d {
@@ -140,8 +140,7 @@ void pybind_color_map_options(py::module &m) {
             "debug_output_dir"_a = "");
 
     docstring::ClassMethodDocInject(m, "RigidOptimizerOption", "__init__",
-                                    colormap_docstrings,
-                                    /*skip_init=*/false);
+                                    colormap_docstrings);
 
     py::class_<pipelines::color_map::NonRigidOptimizerOption>
             non_rigid_optimizer_option(m, "NonRigidOptimizerOption",
@@ -185,8 +184,7 @@ void pybind_color_map_options(py::module &m) {
             "debug_output_dir"_a = "");
 
     docstring::ClassMethodDocInject(m, "NonRigidOptimizerOption", "__init__",
-                                    colormap_docstrings,
-                                    /*skip_init=*/false);
+                                    colormap_docstrings);
 }
 
 void pybind_color_map_classes(py::module &m) {

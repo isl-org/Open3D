@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -66,7 +66,7 @@ public:
     /// dtype with dataset_points.
     /// \param knn Number of nearest neighbor to search.
     /// \return Pair of Tensors: (indices, distances):
-    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
+    /// - indices: Tensor of shape {n, knn}, with dtype Int32.
     /// - distainces: Tensor of shape {n, knn}, same dtype with dataset_points.
     virtual std::pair<Tensor, Tensor> SearchKnn(const Tensor &query_points,
                                                 int knn) const = 0;
@@ -77,12 +77,14 @@ public:
     /// dtype with dataset_points.
     /// \param radii list of radius. Must be 1D, with shape {n, }.
     /// \return Tuple of Tensors: (indices, distances, num_neighbors):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
+    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int32.
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
-    /// - num_neighbors: Tensor of shape {n,}, dtype Int64.
+    /// - num_neighbors: Tensor of shape {n,}, dtype Int32.
     virtual std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor &query_points, const Tensor &radii) const = 0;
+            const Tensor &query_points,
+            const Tensor &radii,
+            bool sort) const = 0;
 
     /// Perform radius search.
     ///
@@ -90,12 +92,12 @@ public:
     /// dtype with dataset_points.
     /// \param radius Radius.
     /// \return Tuple of Tensors, (indices, distances, num_neighbors):
-    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int64.
+    /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int32.
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
-    /// - num_neighbors: Tensor of shape {n}, dtype Int64.
+    /// - num_neighbors: Tensor of shape {n}, dtype Int32.
     virtual std::tuple<Tensor, Tensor, Tensor> SearchRadius(
-            const Tensor &query_points, double radius) const = 0;
+            const Tensor &query_points, double radius, bool sort) const = 0;
 
     /// Perform hybrid search.
     ///
@@ -103,12 +105,12 @@ public:
     /// \param radius Radius.
     /// \param max_knn Maximum number of
     /// neighbor to search per query point.
-    /// \return Pair of Tensors, (indices, distances):
-    /// - indices: Tensor of shape {n, knn}, with dtype Int64.
+    /// \return Tuple of Tensors, (indices, distances, counts):
+    /// - indices: Tensor of shape {n, knn}, with dtype Int32.
     /// - distances: Tensor of shape {n, knn}, with dtype Float32.
-    virtual std::pair<Tensor, Tensor> SearchHybrid(const Tensor &query_points,
-                                                   float radius,
-                                                   int max_knn) const = 0;
+    /// - counts: Tensor of shape {n, 1}, with dtype Int32.
+    virtual std::tuple<Tensor, Tensor, Tensor> SearchHybrid(
+            const Tensor &query_points, double radius, int max_knn) const = 0;
 
     /// Get dimension of the dataset points.
     /// \return dimension of dataset points.

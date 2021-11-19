@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@ using namespace tensorflow;
 
 REGISTER_OP("Open3DInvertNeighborsList")
         .Attr("TIndex: {int32}")
-        .Attr("TAttr: {int32, int64, float, double}")
+        .Attr("TAttr: {uint8, int8, int16, int32, int64, float, double}")
         .Input("num_points: int64")
         .Input("inp_neighbors_index: TIndex")
         .Input("inp_neighbors_row_splits: int64")

@@ -1,3 +1,5 @@
+set(MIN_NODE_VERSION "14.00.0")
+
 # Clean up directory
 file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR})
 file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/open3d)
@@ -11,7 +13,7 @@ file(MAKE_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/open3d)
 # 1) Pure-python code and misc files, copied from ${PYTHON_PACKAGE_SRC_DIR}
 file(COPY ${PYTHON_PACKAGE_SRC_DIR}/
      DESTINATION ${PYTHON_PACKAGE_DST_DIR}
-     )
+)
 
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 #    Optionally other modules e.g. open3d_tf_ops.so may be included.
@@ -50,18 +52,20 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/gui/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/gui/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/rendering/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/rendering/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/j_visualizer.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/j_visualizer.py")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/web_visualizer.py"
+               "${PYTHON_PACKAGE_DST_DIR}/open3d/web_visualizer.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/conda_build_config.yaml"
                "${PYTHON_PACKAGE_DST_DIR}/conda_meta/conda_build_config.yaml")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/meta.yaml"
                "${PYTHON_PACKAGE_DST_DIR}/conda_meta/meta.yaml")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/j_visualizer.js"
-               "${PYTHON_PACKAGE_DST_DIR}/js/j_visualizer.js")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/lib/web_visualizer.js"
+               "${PYTHON_PACKAGE_DST_DIR}/js/lib/web_visualizer.js")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
                "${PYTHON_PACKAGE_DST_DIR}/js/package.json")
-file(COPY "${PYTHON_PACKAGE_DST_DIR}/../_build_config.py"
-     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/" )
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/../cpp/open3d/visualization/webrtc_server/html/webrtcstreamer.js"
+               "${PYTHON_PACKAGE_DST_DIR}/js/lib/webrtcstreamer.js")
+file(COPY "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
+     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
 
 if (BUILD_TENSORFLOW_OPS OR BUILD_PYTORCH_OPS)
     # copy generated files
@@ -75,46 +79,49 @@ if (BUNDLE_OPEN3D_ML)
     file(RENAME "${PYTHON_PACKAGE_DST_DIR}/open3d/ml3d" "${PYTHON_PACKAGE_DST_DIR}/open3d/_ml3d")
 endif()
 
-# Build Jupyter plugin with webpack. This step distills and merges all js
-# dependencies and include all static assets. The generated output is in
-# ${PYTHON_PACKAGE_DST_DIR}/open3d/static.
+# Build Jupyter plugin.
 if (BUILD_JUPYTER_EXTENSION)
-    file(REMOVE_RECURSE ${PYTHON_PACKAGE_DST_DIR}/open3d/static)
-    message(STATUS "Jupyter support is enabled. Building Jupyter plugin ...")
-    if (WIN32)
-        find_program(NPM "npm")
-        execute_process(
-            COMMAND cmd /c "${NPM}" install
-            RESULT_VARIABLE res_var
-            WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/js
-        )
+    if (WIN32 OR UNIX AND NOT LINUX_AARCH64)
+        message(STATUS "Jupyter support is enabled, building Jupyter plugin now.")
     else()
-        execute_process(
-            COMMAND npm install
-            RESULT_VARIABLE res_var
-            WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}/js
-        )
-    endif()
-    if (NOT "${res_var}" STREQUAL "0")
-        message(FATAL_ERROR "`npm install` failed with: '${res_var}'")
+        message(FATAL_ERROR "Jupyter plugin is not supported on ARM.")
     endif()
 
-    # We cache ${PYTHON_PACKAGE_DST_DIR}/js/node_modules in
-    #          ${PYTHON_PACKAGE_SRC_DIR}/js/node_modules
-    # to speed up webpack build speed during development.
-    # During build, the following steps will happen:
-    # 1) The entire ${PYTHON_PACKAGE_DST_DIR} in the build directory is cleared.
-    # 2) ${PYTHON_PACKAGE_SRC_DIR}/js/node_modules is copied to
-    #    ${PYTHON_PACKAGE_DST_DIR}/js/node_modules, regadless whether
-    #    ${PYTHON_PACKAGE_SRC_DIR}/js/node_modules is empty or not.
-    # 3) `npm install` is run in ${PYTHON_PACKAGE_DST_DIR}/js, so
-    #    ${PYTHON_PACKAGE_DST_DIR}/js/node_modules must be filled after
-    #    `npm install`.
-    # 4) ${PYTHON_PACKAGE_DST_DIR}/js/node_modules is then copied back to
-    #    ${PYTHON_PACKAGE_SRC_DIR}/js/node_modules for caching.
-    file(REMOVE_RECURSE ${PYTHON_PACKAGE_SRC_DIR}/js/node_modules)
-    file(COPY ${PYTHON_PACKAGE_DST_DIR}/js/node_modules
-        DESTINATION ${PYTHON_PACKAGE_SRC_DIR}/js)
+    find_program(NODE node)
+    if (NODE)
+        message(STATUS "node found at: ${NODE}")
+    else()
+        message(STATUS "node not found.")
+        message(FATAL_ERROR "Please install Node.js."
+                            "Visit https://nodejs.org/en/download/package-manager/ for details."
+                            "For ubuntu, we recommend getting the latest version of Node.js from"
+                            "https://github.com/nodesource/distributions/blob/master/README.md#installation-instructions.")
+    endif()
+    execute_process(COMMAND "${NODE}" --version
+                    OUTPUT_VARIABLE NODE_VERSION
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    STRING(REGEX REPLACE "v" "" NODE_VERSION ${NODE_VERSION})
+    message(STATUS "node version: ${NODE_VERSION}")
+    if (NODE_VERSION VERSION_LESS ${MIN_NODE_VERSION})
+        message(FATAL_ERROR "node version ${NODE_VERSION} is too old. "
+                            "Please upgrade to ${MIN_NODE_VERSION} or higher.")
+    endif()
+
+    find_program(YARN yarn)
+    if (YARN)
+        message(STATUS "yarn found at: ${YARN}")
+    else()
+        message(FATAL_ERROR "yarn not found. You may install yarm globally by "
+                            "npm install -g yarn.")
+    endif()
+
+    # Append requirements_jupyter.txt to requirements.txt
+    execute_process(COMMAND ${CMAKE_COMMAND} -E cat
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter.txt
+        OUTPUT_VARIABLE ALL_REQUIREMENTS
+    )
+    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt ${ALL_REQUIREMENTS})
 endif()
 
 if (BUILD_GUI)

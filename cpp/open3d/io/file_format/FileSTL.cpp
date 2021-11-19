@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,9 @@
 
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace io {
@@ -77,8 +78,8 @@ bool WriteTriangleMeshToSTL(const std::string &filename,
     myFile.write(header, 80);
     myFile.write((char *)(&num_of_triangles), 4);
 
-    utility::ConsoleProgressBar progress_bar(num_of_triangles,
-                                             "Writing STL: ", print_progress);
+    utility::ProgressBar progress_bar(num_of_triangles,
+                                      "Writing STL: ", print_progress);
     for (size_t i = 0; i < num_of_triangles; i++) {
         Eigen::Vector3f float_vector3f =
                 mesh.triangle_normals_[i].cast<float>();

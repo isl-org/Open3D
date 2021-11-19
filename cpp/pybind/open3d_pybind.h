@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,10 @@
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Optional.h"
 
+// We include the type caster for tensor here because it must be included in
+// every compilation unit.
+#include "pybind/core/tensor_type_caster.h"
+
 namespace py = pybind11;
 using namespace py::literals;
 
@@ -56,6 +60,7 @@ PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3i>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2i>);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Matrix3d>);
 PYBIND11_MAKE_OPAQUE(temp_eigen_matrix4d);
 PYBIND11_MAKE_OPAQUE(temp_eigen_vector4i);
 PYBIND11_MAKE_OPAQUE(

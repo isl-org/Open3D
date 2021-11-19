@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,8 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/t/io/PointCloudIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
@@ -57,11 +57,10 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
         int64_t num_points = file.GetNumLines();
 
         pointcloud.Clear();
-        core::Tensor points({num_points, 3}, core::Dtype::Float64);
-        core::Tensor intensities({num_points, 1}, core::Dtype::Float64);
-        double *points_ptr = static_cast<double *>(points.GetDataPtr());
-        double *intensities_ptr =
-                static_cast<double *>(intensities.GetDataPtr());
+        core::Tensor points({num_points, 3}, core::Float64);
+        core::Tensor intensities({num_points, 1}, core::Float64);
+        double *points_ptr = points.GetDataPtr<double>();
+        double *intensities_ptr = intensities.GetDataPtr<double>();
 
         int i = 0;
         double x, y, z, I;
@@ -77,7 +76,7 @@ bool ReadPointCloudFromXYZI(const std::string &filename,
                 reporter.Update(file.CurPos());
             }
         }
-        pointcloud.SetPoints(points);
+        pointcloud.SetPointPositions(points);
         pointcloud.SetPointAttr("intensities", intensities);
         reporter.Finish();
 
@@ -103,7 +102,7 @@ bool WritePointCloudToXYZI(const std::string &filename,
             return false;
         }
         utility::CountingProgressReporter reporter(params.update_progress);
-        const core::Tensor &points = pointcloud.GetPoints();
+        const core::Tensor &points = pointcloud.GetPointPositions();
         if (!points.GetShape().IsCompatible({utility::nullopt, 3})) {
             utility::LogWarning(
                     "Write XYZI failed: Shape of points is {}, but it should "

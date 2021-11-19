@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -44,6 +44,7 @@ struct Widget::Impl {
     Rect frame_;
     Color bg_color_ = DEFAULT_BGCOLOR;
     std::vector<std::shared_ptr<Widget>> children_;
+    std::string tooltip_;
     bool is_visible_ = true;
     bool is_enabled_ = true;
     bool pop_disabled_flags_at_end_of_draw_ = false;
@@ -88,13 +89,22 @@ bool Widget::IsEnabled() const { return impl_->is_enabled_; }
 
 void Widget::SetEnabled(bool enabled) { impl_->is_enabled_ = enabled; }
 
-Size Widget::CalcPreferredSize(const Theme&) const {
+void Widget::SetTooltip(const char* text) { impl_->tooltip_ = text; }
+
+const char* Widget::GetTooltip() const { return impl_->tooltip_.c_str(); }
+
+Size Widget::CalcPreferredSize(const LayoutContext&,
+                               const Constraints& constraints) const {
     return Size(DIM_GROW, DIM_GROW);
 }
 
-void Widget::Layout(const Theme& theme) {
+Size Widget::CalcMinimumSize(const LayoutContext& context) const {
+    return Size(0, 0);
+}
+
+void Widget::Layout(const LayoutContext& context) {
     for (auto& child : impl_->children_) {
-        child->Layout(theme);
+        child->Layout(context);
     }
 }
 
@@ -136,6 +146,34 @@ void Widget::DrawImGuiPopEnabledState() {
     if (impl_->pop_disabled_flags_at_end_of_draw_) {
         ImGui::PopStyleVar();
         ImGui::PopItemFlag();
+    }
+}
+
+void Widget::DrawImGuiTooltip() {
+    if (!impl_->tooltip_.empty() && IsEnabled() &&
+        (ImGui::IsItemActive() || ImGui::IsItemHovered())) {
+        // The default margins of the tooltips are 0 and rather ugly. It turns
+        // out that tooltips are implemented as ImGui Windows, so we need to
+        // push WindowPadding, not FramePadding as you might expect.
+        // Note: using Push/PopStyleVar() causes problems because we might
+        //       already done a Push of the WindowPadding above, and the pushes
+        //       seem to get coalesced, so when we pop here, it effectively pops
+        //       in calling code, which then crashes because there are too many
+        //       pops.
+        float border_radius = std::round(0.2f * ImGui::GetFont()->FontSize);
+        float margin = 0.25f * ImGui::GetFont()->FontSize;
+        float old_radius = ImGui::GetStyle().WindowRounding;
+        ImVec2 old_padding = ImGui::GetStyle().WindowPadding;
+        ImGui::GetStyle().WindowPadding = ImVec2(2.0f * margin, margin);
+        ImGui::GetStyle().WindowRounding = border_radius;
+
+        ImGui::BeginTooltip();
+        ImGui::Text("%s", impl_->tooltip_.c_str());
+        ImGui::EndTooltip();
+
+        // Pop
+        ImGui::GetStyle().WindowPadding = old_padding;
+        ImGui::GetStyle().WindowRounding = old_radius;
     }
 }
 

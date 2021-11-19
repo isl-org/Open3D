@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -450,6 +450,10 @@ TEST(TriangleMesh, ComputeVertexNormals) {
     for (size_t i = 0; i < size; i++)
         tm.triangles_.push_back(
                 Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
+
+    tm.ComputeVertexNormals();
+
+    ExpectEQ(ref, tm.vertex_normals_);
 
     tm.ComputeVertexNormals();
 
@@ -1871,9 +1875,9 @@ TEST(TriangleMesh, CreateFromPointCloudPoisson) {
     // TODO: To be investigated.
     //
     // macOS could sometimes be stuck on this test. Examples:
-    // - https://github.com/intel-isl/Open3D/runs/844549493#step:6:3150
-    // - https://github.com/intel-isl/Open3D/runs/741891346#step:5:3146
-    // - https://github.com/intel-isl/Open3D/runs/734021844#step:5:3169
+    // - https://github.com/isl-org/Open3D/runs/844549493#step:6:3150
+    // - https://github.com/isl-org/Open3D/runs/741891346#step:5:3146
+    // - https://github.com/isl-org/Open3D/runs/734021844#step:5:3169
     //
     // We suspect that this is related to threading. Here we set n_threads=1,
     // and if the macOS CI still stuck on this test occasionally, we might need

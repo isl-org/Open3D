@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,6 +40,10 @@ struct Theme {
     Color background_color;
 
     std::string font_path;
+    std::string font_bold_path;
+    std::string font_italic_path;
+    std::string font_bold_italic_path;
+    std::string font_mono_path;
     int font_size;
     int default_margin;
     int default_layout_spacing;
@@ -64,6 +68,12 @@ struct Theme {
     Color checkbox_background_hover_off_color;
     Color checkbox_background_hover_on_color;
     Color checkbox_check_color;
+
+    Color toggle_background_off_color;
+    Color toggle_background_on_color;
+    Color toggle_background_hover_off_color;
+    Color toggle_background_hover_on_color;
+    Color toggle_thumb_color;
 
     Color combobox_background_color;
     Color combobox_hover_color;

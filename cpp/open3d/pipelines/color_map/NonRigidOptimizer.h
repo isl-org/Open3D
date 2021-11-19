@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -100,11 +100,11 @@ struct NonRigidOptimizerOption {
     std::string debug_output_dir_ = "";
 };
 
-geometry::TriangleMesh RunNonRigidOptimizer(
-        const geometry::TriangleMesh& mesh,
-        const std::vector<geometry::RGBDImage>& images_rgbd,
-        const camera::PinholeCameraTrajectory& camera_trajectory,
-        const NonRigidOptimizerOption& option);
+std::pair<geometry::TriangleMesh, camera::PinholeCameraTrajectory>
+RunNonRigidOptimizer(const geometry::TriangleMesh& mesh,
+                     const std::vector<geometry::RGBDImage>& images_rgbd,
+                     const camera::PinholeCameraTrajectory& camera_trajectory,
+                     const NonRigidOptimizerOption& option);
 
 }  // namespace color_map
 }  // namespace pipelines

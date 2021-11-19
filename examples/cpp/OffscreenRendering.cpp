@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -54,13 +54,14 @@ int main(int argc, const char *argv[]) {
                                  EngineInstance::GetResourceManager());
     auto *scene = new Open3DScene(*renderer);
 
-    Material mat;
+    MaterialRecord mat;
     mat.shader = "defaultLit";
     auto torus = open3d::geometry::TriangleMesh::CreateTorus();
     torus->ComputeVertexNormals();
     torus->PaintUniformColor({1.0f, 1.0f, 0.0f});
     scene->AddGeometry("torus", torus.get(), mat);
     scene->ShowAxes(true);
+
     scene->GetCamera()->SetProjection(60.0f, float(width) / float(height), 0.1f,
                                       10.0f, Camera::FovType::Vertical);
     scene->GetCamera()->LookAt({0.0f, 0.0f, 0.0f}, {3.0f, 3.0f, 3.0f},
@@ -69,8 +70,7 @@ int main(int argc, const char *argv[]) {
     // This example demonstrates rendering to an image without a window.
     // If you want to render to an image from within a window you should use
     // scene->GetScene()->RenderToImage() instead.
-    Application::EnvUnlocker unlocker;
-    auto img = app.RenderToImage(unlocker, scene->GetView(), scene->GetScene(),
+    auto img = app.RenderToImage(*renderer, scene->GetView(), scene->GetScene(),
                                  width, height);
     std::cout << "Writing file to " << kOutputFilename << std::endl;
     io::WriteImage(kOutputFilename, *img);
@@ -80,7 +80,7 @@ int main(int argc, const char *argv[]) {
     delete scene;
     delete renderer;
 
-    // Cleanup Filament. Normally this is done by app.Run(), but since we not
-    // using that we need to do it ourselves.
+    // Cleanup Filament. Normally this is done by app.Run(), but since we are
+    // not using that we need to do it ourselves.
     app.OnTerminate();
 }
