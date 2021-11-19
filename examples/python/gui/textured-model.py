@@ -41,7 +41,7 @@ def main():
     model_dir = sys.argv[1]
     model_name = os.path.join(model_dir, os.path.basename(model_dir) + ".obj")
     model = o3d.io.read_triangle_mesh(model_name)
-    material = o3d.visualization.rendering.Material()
+    material = o3d.visualization.rendering.MaterialRecord()
     material.shader = "defaultLit"
 
     albedo_name = os.path.join(model_dir, "albedo.png")

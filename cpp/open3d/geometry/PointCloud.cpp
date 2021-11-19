@@ -38,6 +38,7 @@
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace geometry {
@@ -497,7 +498,9 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
+PointCloud::RemoveRadiusOutliers(size_t nb_points,
+                                 double search_radius,
+                                 bool print_progress /* = false */) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogError(
                 "[RemoveRadiusOutliers] Illegal input parameters,"
@@ -506,6 +509,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     std::vector<bool> mask = std::vector<bool>(points_.size());
+    utility::OMPProgressBar progress_bar(points_.size(),
+                                         "Remove radius outliers: ", true);
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
@@ -514,6 +519,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
         size_t nb_neighbors = kdtree.SearchRadius(points_[i], search_radius,
                                                   tmp_indices, dist);
         mask[i] = (nb_neighbors > nb_points);
+        ++progress_bar;
     }
     std::vector<size_t> indices;
     for (size_t i = 0; i < mask.size(); i++) {
@@ -526,7 +532,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
 PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
-                                      double std_ratio) const {
+                                      double std_ratio,
+                                      bool print_progress /* = false */) const {
     if (nb_neighbors < 1 || std_ratio <= 0) {
         utility::LogError(
                 "[RemoveStatisticalOutliers] Illegal input parameters, number "
@@ -541,6 +548,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     std::vector<double> avg_distances = std::vector<double>(points_.size());
     std::vector<size_t> indices;
     size_t valid_distances = 0;
+    utility::OMPProgressBar progress_bar(points_.size(),
+                                         "Remove statistical outliers: ", true);
 
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
@@ -556,6 +565,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
             mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
         }
         avg_distances[i] = mean;
+        ++progress_bar;
     }
     if (valid_distances == 0) {
         return std::make_tuple(std::make_shared<PointCloud>(),
