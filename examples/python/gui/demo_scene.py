@@ -41,10 +41,17 @@ def check_for_required_assets():
     Check for demo scene assets and print usage if necessary
     '''
     if not os.path.exists("examples/test_data/demo_scene_assets"):
-        print(
-            "This demo requires assets that appear to be missing. Please execute the follow:\n  cd examples/test_data\n  wget https://github.com/isl-org/open3d_downloads/releases/download/o3d_demo_scene/demo_scene_assets.tgz\n  tar xzvf demo_scene_assets.tgz\n  cd ../..\n  python examples/python/gui/demo-scene.py\n"
-        )
-        exit()
+        print("""This demo requires assets that appear to be missing.
+Please execute the follow commands:
+```
+cd examples/test_data
+wget https://github.com/isl-org/open3d_downloads/releases/download/o3d_demo_scene/demo_scene_assets.tgz
+tar xzvf demo_scene_assets.tgz
+cd ../..
+python examples/python/gui/demo-scene.py
+```
+""")
+        exit(1)
 
 
 def create_material(directory, name):
@@ -69,6 +76,22 @@ def create_material(directory, name):
     if os.path.exists(metallic_img_name):
         mat.texture_maps['metallic'] = o3d.t.io.read_image(metallic_img_name)
         mat.scalar_properties['metallic'] = 1.0
+    return mat
+
+
+def convert_material_record(mat_record):
+    mat = vis.Material('defaultLit')
+    # Convert scalar paremeters
+    mat.vector_properties['base_color'] = mat_record.base_color
+    mat.scalar_properties['metallic'] = mat_record.base_metallic
+    mat.scalar_properties['roughness'] = mat_record.base_roughness
+    mat.scalar_properties['reflectance'] = mat_record.base_reflectance
+    mat.texture_maps['albedo'] = o3d.t.geometry.Image.from_legacy(
+        mat_record.albedo_img)
+    mat.texture_maps['normal'] = o3d.t.geometry.Image.from_legacy(
+        mat_record.normal_img)
+    mat.texture_maps['ao_rough_metal'] = o3d.t.geometry.Image.from_legacy(
+        mat_record.ao_rough_metal_img)
     return mat
 
 
@@ -109,11 +132,13 @@ def create_scene():
     a_ico = o3d.t.geometry.TriangleMesh.from_legacy(a_ico)
 
     # Load an OBJ model for our scene
-    monkey = o3d.io.read_triangle_mesh("examples/test_data/monkey/monkey.obj")
-    monkey.paint_uniform_color((1.0, 0.75, 0.3))
-    monkey.scale(1.5, (0.0, 0.0, 0.0))
-    monkey.translate((0, 1.4, 0))
-    monkey = o3d.t.geometry.TriangleMesh.from_legacy(monkey)
+    helmet = o3d.io.read_triangle_model(
+        "examples/test_data/demo_scene_assets/FlightHelmet.gltf")
+    helmet_parts = []
+    for m in helmet.meshes:
+        # m.mesh.paint_uniform_color((1.0, 0.75, 0.3))
+        m.mesh.scale(10.0, (0.0, 0.0, 0.0))
+        helmet_parts.append(m)
 
     # Create a ground plane
     ground_plane = o3d.geometry.TriangleMesh.create_box(
@@ -135,34 +160,29 @@ def create_scene():
     mat_ground.vector_properties['absorption_color'] = np.array(
         [0.82, 0.98, 0.972, 1.0])
     mat_ground.texture_maps['albedo'] = o3d.t.io.read_image(
-        "examples/test_data/demo_scene_assets/PaintedPlaster017_4K_Color.jpg")
+        "examples/test_data/demo_scene_assets/PaintedPlaster017_Color.jpg")
     mat_ground.texture_maps['roughness'] = o3d.t.io.read_image(
         "examples/test_data/demo_scene_assets/noiseTexture.png")
     mat_ground.texture_maps['normal'] = o3d.t.io.read_image(
-        "examples/test_data/demo_scene_assets/PaintedPlaster017_4K_NormalDX.jpg"
-    )
+        "examples/test_data/demo_scene_assets/PaintedPlaster017_NormalDX.jpg")
     ground_plane.material = mat_ground
 
     # Load textures and create materials for each of our demo items
-    monkey.material = create_material("examples/test_data/demo_scene_assets",
-                                      "WoodFloor050_4K")
     a_cube.material = create_material("examples/test_data/demo_scene_assets",
-                                      "Wood049_4K")
+                                      "WoodFloor050")
     a_sphere.material = create_material("examples/test_data/demo_scene_assets",
-                                        "Tiles074_4K")
+                                        "Tiles074")
     a_ico.material = create_material("examples/test_data/demo_scene_assets",
-                                     "Terrazzo018_4K")
+                                     "Terrazzo018")
     a_cylinder.material = create_material(
-        "examples/test_data/demo_scene_assets", "Metal008_2K")
+        "examples/test_data/demo_scene_assets", "Metal008")
+
     geoms = [{
         "name": "plane",
         "geometry": ground_plane
     }, {
         "name": "cube",
         "geometry": a_cube
-    }, {
-        "name": "monkey",
-        "geometry": monkey
     }, {
         "name": "cylinder",
         "geometry": a_cylinder
@@ -173,6 +193,13 @@ def create_scene():
         "name": "sphere",
         "geometry": a_sphere
     }]
+    # Load the helmet
+    for part in helmet_parts:
+        name = part.mesh_name
+        tgeom = o3d.t.geometry.TriangleMesh.from_legacy(part.mesh)
+        tgeom.material = convert_material_record(
+            helmet.materials[part.material_idx])
+        geoms.append({"name": name, "geometry": tgeom})
     return geoms
 
 
@@ -183,6 +210,4 @@ if __name__ == "__main__":
              bg_color=(0.8, 0.9, 0.9, 1.0),
              show_ui=True,
              width=1920,
-             height=1080,
-             ibl="default",
-             ibl_intensity=37500)
+             height=1080)
