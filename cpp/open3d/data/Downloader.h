@@ -47,6 +47,8 @@ public:
                          const std::string& output_file_path = "",
                          const std::string& output_file_name = "");
 
+    std::string GetSHA256(const std::string& filename);
+
 protected:
     /// Open3D data root.
     std::string data_root_;

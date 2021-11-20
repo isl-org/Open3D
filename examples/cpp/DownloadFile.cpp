@@ -59,9 +59,13 @@ int main() {
 
     // Download in specified directory (creates the directory hierarchy if not
     // present), with the given name.
-    if (!downloader.DownloadFromURL(url, random_dir_hierarchy,
-                                    "random_name.zip")) {
-        utility::LogInfo("Method 4 Failed");
+    if (downloader.DownloadFromURL(url, random_dir_hierarchy,
+                                   "random_name.zip")) {
+        auto file_sha256 =
+                downloader.GetSHA256(random_dir_hierarchy + "random_name.zip");
+        utility::LogInfo("SHA256: {}", file_sha256);
+    } else {
+        utility::LogInfo("Method 3 Failed");
     }
 
     return 0;
