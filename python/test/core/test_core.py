@@ -247,8 +247,8 @@ def test_arange(device):
 def test_flatten(device):
 
     # Flatten 0-D tensor
-    src_t = o3c.Tensor(3).to(device)
-    dst_t = o3c.Tensor([3]).to(device)
+    src_t = o3c.Tensor(3, dtype=o3c.Dtype.Int64).to(device)
+    dst_t = o3c.Tensor([3], dtype=o3c.Dtype.Int64).to(device)
     assert ((dst_t == src_t.flatten()).all())
     assert ((dst_t == src_t.flatten(0)).all())
     assert ((dst_t == src_t.flatten(-1)).all())
@@ -268,8 +268,8 @@ def test_flatten(device):
         src_t.flatten(0, 1)
 
     # Flatten 1-D tensor
-    src_t = o3c.Tensor([1, 2, 3]).to(device)
-    dst_t = o3c.Tensor([1, 2, 3]).to(device)
+    src_t = o3c.Tensor([1, 2, 3], dtype=o3c.Dtype.Int64).to(device)
+    dst_t = o3c.Tensor([1, 2, 3], dtype=o3c.Dtype.Int64).to(device)
 
     assert ((dst_t == src_t.flatten()).all())
     assert ((dst_t == src_t.flatten(0)).all())
@@ -290,9 +290,11 @@ def test_flatten(device):
         src_t.flatten(0, 1)
 
     # Flatten 2-D tensor
-    src_t = o3c.Tensor([[1, 2, 3], [4, 5, 6]]).to(device)
-    dst_t_flat = o3c.Tensor([1, 2, 3, 4, 5, 6]).to(device)
-    dst_t_unchanged = o3c.Tensor([[1, 2, 3], [4, 5, 6]]).to(device)
+    src_t = o3c.Tensor([[1, 2, 3], [4, 5, 6]], dtype=o3c.Dtype.Int64).to(device)
+    dst_t_flat = o3c.Tensor([1, 2, 3, 4, 5, 6],
+                            dtype=o3c.Dtype.Int64).to(device)
+    dst_t_unchanged = o3c.Tensor([[1, 2, 3], [4, 5, 6]],
+                                 dtype=o3c.Dtype.Int64).to(device)
 
     assert ((dst_t_flat == src_t.flatten()).all())
     assert ((dst_t_flat == src_t.flatten(0)).all())
@@ -330,15 +332,19 @@ def test_flatten(device):
         src_t.flatten(-1, -2)
 
     # Flatten 3-D tensor
-    src_t = o3c.Tensor([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11,
-                                                             12]]]).to(device)
-    dst_t_flat = o3c.Tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).to(device)
-    dst_t_unchanged = o3c.Tensor([[[1, 2, 3], [4, 5, 6]],
-                                  [[7, 8, 9], [10, 11, 12]]]).to(device)
-    dst_t_first_two_flat = o3c.Tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9],
-                                       [10, 11, 12]]).to(device)
-    dst_t_last_two_flat = o3c.Tensor([[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11,
-                                                           12]]).to(device)
+    src_t = o3c.Tensor([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                       dtype=o3c.Dtype.Int64).to(device)
+    dst_t_flat = o3c.Tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                            dtype=o3c.Dtype.Int64).to(device)
+    dst_t_unchanged = o3c.Tensor(
+        [[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+        dtype=o3c.Dtype.Int64).to(device)
+    dst_t_first_two_flat = o3c.Tensor(
+        [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]],
+        dtype=o3c.Dtype.Int64).to(device)
+    dst_t_last_two_flat = o3c.Tensor(
+        [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]],
+        dtype=o3c.Dtype.Int64).to(device)
 
     assert ((dst_t_flat == src_t.flatten()).all())
     assert ((dst_t_flat == src_t.flatten(0)).all())
