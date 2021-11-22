@@ -35,7 +35,7 @@ int main() {
             "https://github.com/reyanshsolis/rey_download/releases/download/"
             "test_data/test_file.zip";
 
-    const std::string SHA256 =
+    const std::string Expected_SHA256 =
             "844c677b4bbf9e63035331769947ada46640187ac4caeff50f22c14f76e5f814";
 
     const std::string random_dir_hierarchy =
@@ -44,6 +44,12 @@ int main() {
 
     data::Downloader downloader;
 
+    // Downloader API.
+    // URL is the only compulsory input, others are optional, and passing
+    // empty string "", trigers the default behaviour.
+    // downloader.DownloadFromURL(url, output_file_name, output_file_path,
+    //                            expected_sha256);
+
     // Download in Open3D Data Root directory, with the original file name
     // extracted from the url.
     if (!downloader.DownloadFromURL(url)) {
@@ -51,24 +57,26 @@ int main() {
     }
 
     // Download in Open3D Data Root directory, with the given file name.
-    if (!downloader.DownloadFromURL(url, "", "random_name.zip", SHA256)) {
+    if (!downloader.DownloadFromURL(url, "", "random_name.zip",
+                                    Expected_SHA256)) {
         utility::LogInfo("Method 2 Failed");
     }
 
     // Download in specified directory (creates the directory hierarchy if not
     // present), with the original file name extracted from the url.
-    if (!downloader.DownloadFromURL(url, random_dir_hierarchy, "", SHA256)) {
+    if (!downloader.DownloadFromURL(url, random_dir_hierarchy, "",
+                                    Expected_SHA256)) {
         utility::LogInfo("Method 3 Failed");
     }
 
     // Download in specified directory (creates the directory hierarchy if not
     // present), with the given name.
     if (downloader.DownloadFromURL(url, random_dir_hierarchy, "random_name.zip",
-                                   SHA256)) {
-        auto file_sha256 =
+                                   Expected_SHA256)) {
+        auto file_Expected_SHA256 =
                 data::GetSHA256(random_dir_hierarchy + "/random_name.zip");
 
-        utility::LogInfo("SHA256: {}", file_sha256);
+        utility::LogInfo("Expected_SHA256: {}", file_Expected_SHA256);
     } else {
         utility::LogInfo("Method 4 Failed");
     }

@@ -1413,7 +1413,7 @@ open3d_import_3rdparty_library(3rdparty_openssl
     LIBRARIES    ${OPENSSL_LIBRARIES}
     DEPENDS      ext_zlib ext_openssl
 )
-list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_openssl)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
 
 # curl
 include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
@@ -1424,7 +1424,7 @@ open3d_import_3rdparty_library(3rdparty_curl
     LIBRARIES    ${CURL_LIBRARIES}
     DEPENDS      ext_zlib ext_openssl ext_curl
 )
-list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_curl)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
