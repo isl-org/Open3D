@@ -371,6 +371,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("clearcoat_roughness_img",
                            &MaterialRecord::clearcoat_roughness_img)
             .def_readwrite("anisotropy_img", &MaterialRecord::anisotropy_img)
+            .def_readwrite("ao_rough_metal_img",
+                           &MaterialRecord::ao_rough_metal_img)
             .def_readwrite("generic_params", &MaterialRecord::generic_params)
             .def_readwrite("generic_imgs", &MaterialRecord::generic_imgs)
             .def_readwrite("gradient", &MaterialRecord::gradient)

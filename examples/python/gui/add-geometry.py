@@ -106,7 +106,7 @@ class SpheresApp:
 
     def add_sphere(self):
         self._id += 1
-        mat = rendering.Material()
+        mat = rendering.MaterialRecord()
         mat.base_color = [
             random.random(),
             random.random(),

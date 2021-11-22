@@ -117,12 +117,12 @@ void pybind_pointcloud(py::module &m) {
             .def("remove_radius_outlier", &PointCloud::RemoveRadiusOutliers,
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
-                 "nb_points"_a, "radius"_a)
+                 "nb_points"_a, "radius"_a, "print_progress"_a = false)
             .def("remove_statistical_outlier",
                  &PointCloud::RemoveStatisticalOutliers,
                  "Function to remove points that are further away from their "
                  "neighbors in average",
-                 "nb_neighbors"_a, "std_ratio"_a)
+                 "nb_neighbors"_a, "std_ratio"_a, "print_progress"_a = false)
             .def("estimate_normals", &PointCloud::EstimateNormals,
                  "Function to compute the normals of a point cloud. Normals "
                  "are oriented with respect to the input point cloud if "
@@ -274,11 +274,13 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_radius_outlier",
             {{"nb_points", "Number of points within the radius."},
-             {"radius", "Radius of the sphere."}});
+             {"radius", "Radius of the sphere."},
+             {"print_progress", "Set to True to print progress bar."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_statistical_outlier",
             {{"nb_neighbors", "Number of neighbors around the target point."},
-             {"std_ratio", "Standard deviation ratio."}});
+             {"std_ratio", "Standard deviation ratio."},
+             {"print_progress", "Set to True to print progress bar."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "estimate_normals",
             {{"search_param",

@@ -170,10 +170,10 @@ class Settings:
 
         self.apply_material = True  # clear to False after processing
         self._materials = {
-            Settings.LIT: rendering.Material(),
-            Settings.UNLIT: rendering.Material(),
-            Settings.NORMALS: rendering.Material(),
-            Settings.DEPTH: rendering.Material()
+            Settings.LIT: rendering.MaterialRecord(),
+            Settings.UNLIT: rendering.MaterialRecord(),
+            Settings.NORMALS: rendering.MaterialRecord(),
+            Settings.DEPTH: rendering.MaterialRecord()
         }
         self._materials[Settings.LIT].base_color = [0.9, 0.9, 0.9, 1.0]
         self._materials[Settings.LIT].shader = Settings.LIT
