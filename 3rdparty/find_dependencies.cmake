@@ -748,6 +748,30 @@ if (BUILD_LIBREALSENSE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_librealsense)
 endif()
 
+# curl
+include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
+open3d_import_3rdparty_library(3rdparty_curl
+    INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
+    INCLUDE_ALL
+    LIB_DIR      ${CURL_LIB_DIR}
+    LIBRARIES    ${CURL_LIBRARIES}
+    DEPENDS      ext_zlib ext_openssl ext_curl
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
+
+# openssl
+include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
+open3d_import_3rdparty_library(3rdparty_openssl
+    INCLUDE_DIRS ${OPENSSL_INCLUDE_DIRS}
+    INCLUDE_ALL
+    LIB_DIR      ${OPENSSL_LIB_DIR}
+    LIBRARIES    ${OPENSSL_LIBRARIES}
+    DEPENDS      ext_zlib ext_openssl
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
+
+# Don't move curl and openssl below PNG. Throws unidentified-symbols error.
+
 # PNG
 if(USE_SYSTEM_PNG)
     # ZLIB::ZLIB is automatically included by the PNG package.
@@ -1404,27 +1428,6 @@ else()
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
 
-# openssl
-include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
-open3d_import_3rdparty_library(3rdparty_openssl
-    INCLUDE_DIRS ${OPENSSL_INCLUDE_DIRS}
-    INCLUDE_ALL
-    LIB_DIR      ${OPENSSL_LIB_DIR}
-    LIBRARIES    ${OPENSSL_LIBRARIES}
-    DEPENDS      ext_zlib ext_openssl
-)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
-
-# curl
-include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
-open3d_import_3rdparty_library(3rdparty_curl
-    INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
-    INCLUDE_ALL
-    LIB_DIR      ${CURL_LIB_DIR}
-    LIBRARIES    ${CURL_LIBRARIES}
-    DEPENDS      ext_zlib ext_openssl ext_curl
-)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
