@@ -28,23 +28,58 @@
 
 #include <curl/curl.h>
 #include <curl/easy.h>
-// #include <openssl/sha.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <openssl/sha.h>
 
-// #include <fstream>
-// #include <iomanip>
-#include <iostream>
-#include <sstream>
+#include <fstream>
+#include <iomanip>
 #include <string>
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
-// #define CURL_STATICLIB
+#define CURL_STATICLIB
 
 namespace open3d {
 namespace data {
+
+/// Reference: https://gist.github.com/arrieta/7d2e196c40514d8b5e9031f2535064fc
+///\author    J. Arrieta <Juan.Arrieta@nablazerolabs.com>
+///\copyright (c) 2017 Nabla Zero Labs
+///\license   MIT License
+
+std::string GetSHA256(const std::string& file_path) {
+    std::ifstream fp(file_path.c_str(), std::ios::in | std::ios::binary);
+
+    if (not fp.good()) {
+        std::ostringstream os;
+        utility::LogError("Cannot open {}", file_path);
+    }
+
+    constexpr const std::size_t buffer_size{1 << 12};
+    char buffer[buffer_size];
+
+    unsigned char hash[SHA256_DIGEST_LENGTH] = {0};
+
+    SHA256_CTX ctx;
+    SHA256_Init(&ctx);
+
+    while (fp.good()) {
+        fp.read(buffer, buffer_size);
+        SHA256_Update(&ctx, buffer, fp.gcount());
+    }
+
+    SHA256_Final(hash, &ctx);
+    fp.close();
+
+    std::ostringstream os;
+    os << std::hex << std::setfill('0');
+
+    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+        os << std::setw(2) << static_cast<unsigned int>(hash[i]);
+    }
+
+    return os.str();
+}
 
 // REPLICATED FUNCTION FROM DATASET.h. TO BE REFACTORED.
 /// A dataset class locates the data root directory in the following order:
@@ -122,7 +157,8 @@ static std::string GetAbsoluteFilePath(const std::string& url,
 
 bool Downloader::DownloadFromURL(const std::string& url,
                                  const std::string& output_file_path,
-                                 const std::string& output_file_name) {
+                                 const std::string& output_file_name,
+                                 const std::string& SHA256) {
     std::string file_path =
             GetAbsoluteFilePath(url, output_file_path, output_file_name);
 
@@ -146,6 +182,8 @@ bool Downloader::DownloadFromURL(const std::string& url,
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteDataCb);
 
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+
+        // TODO: Add Open3D progress-bar option.
         // curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION,
         //                  download_progress_callback);
         // curl_easy_setopt(curl, CURLOPT_XFERINFODATA,
@@ -160,50 +198,29 @@ bool Downloader::DownloadFromURL(const std::string& url,
         fclose(fp);
 
         if (res == CURLE_OK) {
+            if (!SHA256.empty()) {
+                const std::string actual_hash = GetSHA256(file_path.c_str());
+                if (SHA256 == actual_hash) {
+                    return true;
+                } else {
+                    utility::LogWarning(
+                            "SHA256 hash mismatch for file {}.\n Expected: "
+                            "{}.\n Actual: {}.",
+                            file_path, SHA256, actual_hash);
+                    return false;
+                }
+            }
+
             return true;
         } else {
+            utility::LogWarning("Download Failed");
             return false;
         }
 
     } else {
+        utility::LogWarning("Failed to initialize CURL");
         return false;
     }
-}
-
-std::string Downloader::GetSHA256(const std::string& filename) {
-    // const int K_READ_BUF_SIZE{1024 * 16};
-
-    std::string empty_string = "";
-
-    // // Initialize openssl
-    // SHA256_CTX context;
-    // if (!SHA256_Init(&context)) {
-        return empty_string;
-    // }
-
-    // // Read file and update calculated SHA
-    // char buf[K_READ_BUF_SIZE];
-    // std::ifstream file(filename, std::ifstream::binary);
-    // while (file.good()) {
-    //     file.read(buf, sizeof(buf));
-    //     if (!SHA256_Update(&context, buf, file.gcount())) {
-    //         return empty_string;
-    //     }
-    // }
-
-    // // Get Final SHA
-    // unsigned char result[SHA256_DIGEST_LENGTH];
-    // if (!SHA256_Final(result, &context)) {
-    //     return empty_string;
-    // }
-
-    // // Transform byte-array to string
-    // std::stringstream shastr;
-    // shastr << std::hex << std::setfill('0');
-    // for (const auto& byte : result) {
-    //     shastr << std::setw(2) << (int)byte;
-    // }
-    // return shastr.str();
 }
 
 }  // namespace data
