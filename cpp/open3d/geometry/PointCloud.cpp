@@ -559,12 +559,14 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
         kdtree.SearchKNN(points_[i], int(nb_neighbors), tmp_indices, dist);
         double mean = -1.0;
         if (dist.size() > 0u) {
+#pragma omp atomic
             valid_distances++;
             std::for_each(dist.begin(), dist.end(),
                           [](double &d) { d = std::sqrt(d); });
             mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
         }
         avg_distances[i] = mean;
+#pragma omp critical
         ++progress_bar;
     }
     if (valid_distances == 0) {
