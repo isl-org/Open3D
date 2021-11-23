@@ -167,7 +167,7 @@ class LRUCache:
                 f"Hits: {self.hits}, Misses: {self.misses}")
 
 
-def classify_properties(tensormap):
+def _classify_properties(tensormap):
     """Classify custom geometry properties (other than positions, indices,
     colors, normals) into labels and other custom properties.
 
@@ -304,12 +304,15 @@ class Open3DPluginDataReader:
         if len(prop_shape) == 0 and not geometry.is_empty():
             for prop_type in ('point', 'vertex'):  # exclude 'line'
                 if hasattr(geometry, prop_type):
-                    label_props, custom_props = classify_properties(
+                    label_props, custom_props = _classify_properties(
                         getattr(geometry, prop_type))
                     prop_shape.update(custom_props)
                     prop_shape.update(label_props)
             if len(inference_data_proto.inference_result) > 0:
-                prop_shape.update({'labels': 1, 'confidence': 1})
+                # Only bbox labels can be visualized. Scalars such as
+                # 'confidence' from BoundingBox3D requires
+                # unlitGradient.GRADIENT shader support for LineSet.
+                prop_shape.update({'labels': 1})
 
     def read_geometry(self, run, tag, step, batch_idx, step_to_idx):
         """Geometry reader from msgpack files."""
@@ -392,7 +395,7 @@ def _normalize(tensor):
     """Normalize tensor by scaling and shifting to range [0, 1].
 
     Args:
-        tensor: Open3D float tensor. Int tensors are returned unchanged.
+        tensor: Open3D / Numpy float tensor. Int tensors are returned unchanged.
 
     Return:
         tuple: (Normalized tensor, min value of tensor, max value of tensor) min
@@ -421,8 +424,8 @@ class RenderUpdate:
     empty message.
 
     We use uint8 colors everywhere, since they are more compact to store during
-    serialization. Colormaps are converted to float here, since rendering uses float
-    colormaps.
+    serialization. Colormaps are converted to float here, since rendering uses
+    float colormaps.
     """
 
     _LINES_PER_BBOX = 17  # BoundingBox3D
@@ -438,10 +441,9 @@ class RenderUpdate:
             for point in cmap.points
         } for name, cmap in _CMAPS.items()
     }
-    LABELLUT_COLORS = {
-        label: _float_to_u8(color + [1.0])
-        for label, color in enumerate(LabelLUT.Colors)
-    }
+    LABELLUT_COLORS = tuple(
+        _float_to_u8(color + [1.0])
+        for color in LabelLUT.get_colors(mode='lightbg'))
 
     def __init__(self, window_scaling, message, label_to_names):
         from open3d.visualization.async_event_loop import async_event_loop
@@ -503,6 +505,101 @@ class RenderUpdate:
         _log.debug("material colormap range range set to "
                    f"{material.scalar_min, material.scalar_max}")
 
+    def _set_render_defaults(self, geometry, inference_result, label_props,
+                             custom_props):
+        """Set default options for rendering (shader and property), based on
+        data type and properties.
+        """
+        geometry_vertex = (geometry.point
+                           if hasattr(geometry, 'point') else geometry.vertex)
+        if self._shader == "":
+            if (len(inference_result) > 0  # Have BB labels
+                    or len(label_props) > 0):  # Have vertex labels
+                self._shader = "unlitGradient.LUT"
+                if self._property == "":
+                    self._property = (next(iter(label_props))
+                                      if len(label_props) > 0 else "labels")
+                    self._index = 0
+            elif len(custom_props) > 0:
+                self._shader = "unlitGradient.GRADIENT.RAINBOW"
+                if self._property == "":
+                    self._property = next(iter(custom_props))
+                    self._index = 0
+            elif (isinstance(geometry, o3d.t.geometry.LineSet) or
+                  "normals" in geometry_vertex):
+                self._shader = "defaultLit"  # also proxy for unlitLine
+            elif "colors" in geometry_vertex:
+                self._shader = "defaultUnlit"
+            else:  # Only XYZ
+                self._shader = "unlitSolidColor"
+
+        # Fix incompatible option. TODO(Sameer): Move this logic to JS
+        if (self._property in custom_props and
+                self._shader == "unlitGradient.LUT"):
+            self._shader = "unlitGradient.GRADIENT.RAINBOW"
+            self._colormap = None
+        if (self._property in label_props and
+                self._shader.startswith("unlitGradient.GRADIENT.")):
+            self._shader = "unlitGradient.LUT"
+            self._colormap = None
+
+    class BackupRestore():
+        """Manages backup and restore for tensormap[property] tensors. Call
+        backup(tensormap, property) before modifying the property. This will
+        save the data to a backup tensor (with key __property) and ensure a
+        tensor is available for modification / assignment. A list of tensormap
+        and property tuples is maintained so that a single call to restore()
+        will switch the data back to the earlier state. The implementation takes
+        care to only allocate a single backup copy of the tensor data which will
+        be reused on subsequent calls to backup().
+        """
+
+        def __init__(self):
+            self.swap_list = []  # swap these during restore
+            self.backup_list = []  # backup these during restore
+
+        def backup(self, tm, prop, clone=False, shape=None, dtype=None):
+            """Args:
+
+                    tm (TensorMap): tensormap, such as PointCloud.point
+                    prop (str): property key, such as 'indices'
+                    clone (bool): Backup should be a clone, else empty tensor.
+                    shape, dtype: sape, dtype if property and backup are absent
+                        and a new empty tensor should be created.
+            """
+            if prop in tm:
+                if "__" + prop in tm:  # swap
+                    tm[prop], tm["__" + prop] = tm["__" + prop], tm[prop]
+                elif clone:
+                    tm["__" + prop] = tm[prop].clone()  # backup
+                else:
+                    tm["__" + prop] = tm[prop]  # backup
+                    tm[prop] = o3d.core.Tensor.empty(tm["__" + prop].shape,
+                                                     tm["__" + prop].dtype)
+                self.swap_list.append((tm, prop))
+                return
+            if "__" + prop in tm:  # __prop -> prop
+                tm[prop] = tm["__" + prop]
+                del tm["__" + prop]
+            elif shape is not None and dtype is not None:
+                tm[prop] = o3d.core.Tensor.empty(shape, dtype)
+            self.backup_list.append((tm, prop))
+
+        def restore(self):
+            show = "tensormap props: (swap_list)"
+            for tm, prop in self.swap_list:  # swap
+                tm[prop], tm["__" + prop] = tm["__" + prop], tm[prop]
+                show += prop + repr(tm[prop][:0]) + '\t' + "__" + prop + repr(
+                    tm["__" + prop][:0])
+
+            self.swap_list = []
+            show += "\n (backup_list) "
+            for tm, prop in self.backup_list:  # backup
+                tm["__" + prop] = tm[prop]
+                del tm[prop]
+                show += "__" + prop + repr(tm["__" + prop][:0])
+            self.backup_list = []
+
     def apply(self, o3dvis, geometry_name, geometry, inference_data_proto=None):
         """Apply the RenderUpdate to a geometry.
 
@@ -513,59 +610,32 @@ class RenderUpdate:
                 updated.
             inference_data_proto : BoundingBox labels and confidences.
         """
-
-        def swap__(tensormap, prop):
-            """If backup of property prop exists, restore it. Else save prop to
-            a backup (__prop).  prop can now be safely modified for
-            visualization. Returns True if prop exists, else False.
-            """
-            if "__" + prop in tensormap:
-                tensormap[prop][:] = tensormap["__" + prop][:]  # restore
-                return True
-            if prop in tensormap:
-                tensormap["__" + prop] = tensormap[prop].clone()  # backup
-                return True
-            return False
-
         if (len(self._updated) == 0 or geometry.is_empty()):
             _log.debug("No updates, or empty geometry.")
             return
 
+        def get_labelLUT():
+            """Create {label: color} mapping from list of colors."""
+            return {
+                label: self.LABELLUT_COLORS[k]
+                for k, label in enumerate(self._label_to_names)
+            }
+
         geometry_vertex = (geometry.point
                            if hasattr(geometry, 'point') else geometry.vertex)
-        have_colors = ("colors" in geometry.line if hasattr(geometry, 'line')
-                       else "colors" in geometry_vertex)
+        have_colors = ("colors" in geometry.line if hasattr(
+            geometry, 'line') else ("colors" in geometry.triangle if hasattr(
+                geometry, 'triangle') else "colors" in geometry_vertex))
 
         if inference_data_proto is not None:
             inference_result = inference_data_proto.inference_result
         else:
             inference_result = []
-        # Set default shader and property
-        label_props, custom_props = classify_properties(geometry_vertex)
-        if self._shader == "":
-            if (len(inference_result) > 0  # Have BB labels
-                    or len(label_props) > 0):  # Have vertex labels
-                self._shader = "unlitGradient.LUT"
-                if self._property == "":
-                    self._property = (next(iter(label_props))
-                                      if len(label_props) > 0 else "labels")
-                    self._index = 0
-            elif isinstance(geometry, o3d.t.geometry.LineSet):
-                self._shader = "unlitLine"
-            elif len(custom_props) > 0:
-                self._shader = "unlitGradient.GRADIENT.RAINBOW"
-                if self._property == "":
-                    self._property = next(iter(custom_props))
-                    self._index = 0
-            elif "normals" in geometry_vertex:
-                self._shader = "defaultLit"
-            elif "colors" in geometry_vertex:
-                self._shader = "defaultUnlit"
-            else:  # Only XYZ
-                self._shader = "unlitSolidColor"
+        label_props, custom_props = _classify_properties(geometry_vertex)
+        self._set_render_defaults(geometry, inference_result, label_props,
+                                  custom_props)
 
-        o3dscene = o3dvis.scene
-        if o3dscene.has_geometry(geometry_name):
+        if o3dvis.scene.has_geometry(geometry_name):
             updated = self._updated
             # update_geometry() only accepts tPointCloud
             if not isinstance(geometry, o3d.t.geometry.PointCloud):
@@ -575,73 +645,69 @@ class RenderUpdate:
 
         geometry_update_flag = 0
         material_update_flag = 0
+        swap = RenderUpdate.BackupRestore()
         material = o3dvis.get_geometry_material(geometry_name)
 
         # Visualize scalar / 3-vector property with color map
-        if "property" in updated:
+        if "property" in updated or "shader" in updated:
             # Float Scalar with colormap
             if ((self._property in custom_props or
                  self._property in label_props) and
                     self._shader.startswith("unlitGradient") and
                     geometry_vertex[self._property].shape[1] > self._index):
                 geometry_vertex["__visualization_scalar"] = geometry_vertex[
-                    self._property][:, self._index].to(o3d.core.float32)
+                    self._property][:, self._index].to(
+                        o3d.core.float32).contiguous()
                 geometry_update_flag |= rendering.Scene.UPDATE_UV0_FLAG
             # 3-vector as RGB
             elif (self._property in custom_props and
                   self._shader == "defaultUnlit" and
                   geometry_vertex[self._property].shape[1] >= 3):
-                swap__(geometry_vertex, "colors")
+                swap.backup(geometry_vertex, "colors")
                 geometry_vertex["colors"], min_val, max_val = _normalize(
                     geometry_vertex[self._property][:, :3])
                 self._update_range(min_val, max_val)
                 geometry_update_flag |= rendering.Scene.UPDATE_COLORS_FLAG
 
-        # Bounding boxes
+        # Bounding boxes / LineSet
         if isinstance(geometry, o3d.t.geometry.LineSet):
-            if 'shader' in updated:  # shader is always "unlitLine"
-                updated.remove("shader")
-            material.shader = "unlitLine"
-            material.line_width = 2 * self._window_scaling
-            if not swap__(geometry.line, "colors"):
-                geometry.line["colors"] = o3d.core.Tensor.full(
-                    (len(geometry.line["indices"]), 3),
-                    128,
-                    dtype=o3d.core.uint8)
             if self._property == "" and self._shader == "unlitSolidColor":
-                geometry.line["colors"][:] = _u8_to_float(
-                    next(iter(self._colormap.values())))[:3]
-            elif self._property != "" and len(inference_result) > 0:  # labels
+                swap.backup(geometry.line,
+                            "colors",
+                            shape=(len(geometry.line["indices"]), 3),
+                            dtype=o3d.core.uint8)
+                geometry.line["colors"][:] = next(iter(
+                    self._colormap.values()))[:3]
+            elif self._property != "" and self._shader == "unlitGradient.LUT":
                 if self._colormap is None:
-                    self._colormap = deepcopy(self.LABELLUT_COLORS)
-                    for label in list(self._colormap):
-                        if label not in self._label_to_names:
-                            self._colormap.pop(label)
+                    self._colormap = get_labelLUT()
                 if "colormap" in updated:
-                    swap__(geometry.line, "indices")
+                    swap.backup(geometry.line, "indices", clone=True)
+                    swap.backup(geometry.line,
+                                "colors",
+                                shape=(len(geometry.line["indices"]), 3),
+                                dtype=o3d.core.uint8)
                     t_lines = geometry.line["indices"]
                     t_colors = geometry.line["colors"]
                     idx = 0
-                    for k in range(len(inference_result)):
-                        label = inference_result[k].label
-                        if label in self._colormap:
-                            col = self._colormap[label]
-                            col, alpha = col[:3], col[3]
-                        else:
-                            col, alpha = (128, 128, 128), 255
-                        t_colors[idx:idx + self._LINES_PER_BBOX] = col
-                        if alpha == 0:
+                    for bbir in inference_result:
+                        col = self._colormap.setdefault(bbir.label,
+                                                        (128, 128, 128, 255))
+                        t_colors[idx:idx + self._LINES_PER_BBOX] = col[:3]
+                        if col[3] == 0:  # alpha
                             t_lines[idx:idx + self._LINES_PER_BBOX] = 0
                         idx += self._LINES_PER_BBOX
 
         # PointCloud, Mesh, LineSet with colors
-        elif "shader" in updated or "colormap" in updated:
+        elif (("shader" in updated or "colormap" in updated) and
+              not geometry.has_valid_material()):
             material_update_flag = 1
+            material.base_color = ((1.0, 1.0, 1.0, 1.0) if have_colors else
+                                   (0.5, 0.5, 0.5, 1.0))
             if self._shader == "defaultLit":
                 material.shader = "defaultLit"
             elif self._shader == "defaultUnlit":
                 material.shader = "defaultUnlit"
-                material.base_color = [0.5, 0.5, 0.5, 1.0]
             elif self._shader == "unlitSolidColor":
                 material.shader = "unlitSolidColor"
                 if self._colormap is None:
@@ -650,29 +716,28 @@ class RenderUpdate:
                     next(iter(self._colormap.values())))
             elif self._shader == "unlitGradient.LUT":  # Label Colormap
                 if self._colormap is None:
-                    self._colormap = deepcopy(self.LABELLUT_COLORS)
-                    for label in list(self._colormap):
-                        if label not in self._label_to_names:
-                            self._colormap.pop(label)
+                    self._colormap = get_labelLUT()
                 material.shader = "unlitGradient"
                 material.gradient = rendering.Gradient()
+                material.gradient.mode = rendering.Gradient.LUT
+                lmin = min(self._label_to_names.keys())
+                lmax = max(self._label_to_names.keys())
+                material.scalar_min, material.scalar_max = lmin, lmax
                 if len(self._colormap) > 1:
+                    norm_cmap = list((float(label - lmin) / (lmax - lmin),
+                                      _u8_to_float(color))
+                                     for label, color in self._colormap.items())
                     material.gradient.points = list(
-                        rendering.Gradient.Point(
-                            float(i) /
-                            (len(self._colormap) - 1), _u8_to_float(color))
-                        for i, color in enumerate(self._colormap.values()))
+                        rendering.Gradient.Point(*lc) for lc in norm_cmap)
                 else:
                     material.gradient.points = [
                         rendering.Gradient.Point(0.0, [1.0, 0.0, 1.0, 1.0])
                     ]
-                material.gradient.mode = rendering.Gradient.LUT
-                material.scalar_min, material.scalar_max = 0, max(
-                    self._label_to_names.keys())
             # Colormap (RAINBOW / GREYSCALE): continuous data
             elif self._shader.startswith("unlitGradient.GRADIENT."):
                 if self._colormap is None:
-                    self._colormap = deepcopy(self.DICT_COLORMAPS["RAINBOW"])
+                    self._colormap = deepcopy(
+                        self.DICT_COLORMAPS[self._shader[23:]])
                 material.shader = "unlitGradient"
                 material.gradient = rendering.Gradient()
                 material.gradient.points = list(
@@ -682,11 +747,11 @@ class RenderUpdate:
                 material.gradient.mode = rendering.Gradient.GRADIENT
                 self._set_vis_minmax(geometry_vertex, material)
 
-        if o3dscene.has_geometry(geometry_name):
+        if o3dvis.scene.has_geometry(geometry_name):
             if material_update_flag > 0:
-                self._gui.run_sync(o3dvis.modify_geometry_material,
-                                   geometry_name, material)
-                # does not do force_redraw(), so also need update_geometry()
+                self._gui.run_sync(
+                    o3dvis.modify_geometry_material, geometry_name, material
+                )  # does not do force_redraw(), so also need update_geometry()
             self._gui.run_sync(o3dvis.update_geometry, geometry_name, geometry,
                                geometry_update_flag)
             _log.debug(
@@ -694,13 +759,10 @@ class RenderUpdate:
                 f"Geo:{geometry_update_flag:b}, Mat:{material_update_flag:b}")
         else:
             self._gui.run_sync(o3dvis.add_geometry, geometry_name, geometry,
-                               material if self._shader == "" else None)
+                               material if material_update_flag else None)
         self._gui.run_sync(o3dvis.post_redraw)
-        if not have_colors:  # reset colors
-            if hasattr(geometry, "line") and "colors" in geometry.line:
-                del geometry.line["colors"]
-            elif "colors" in geometry_vertex:
-                del geometry_vertex["colors"]
+
+        swap.restore()
         _log.debug(f"apply complete: {geometry_name} with "
                    f"{self._property}[{self._index}]/{self._shader}")
 

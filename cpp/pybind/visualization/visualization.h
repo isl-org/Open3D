@@ -69,6 +69,9 @@ std::shared_ptr<T> TakeOwnership(UnownedPointer<T> x) {
     return std::shared_ptr<T>(x.get());
 }
 
+// Please update docs/python_api_in/open3d.visualization.rst when adding /
+// reorganizing submodules to open3d.visualization.
+
 void pybind_visualization(py::module &m);
 
 void pybind_renderoption(py::module &m);

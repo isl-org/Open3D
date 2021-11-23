@@ -23,17 +23,17 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
 import copy
 import os
 import sys
 import numpy as np
 import open3d as o3d
+# pylint: disable-next=unused-import
 from open3d.visualization.tensorboard_plugin import summary
 from open3d.visualization.tensorboard_plugin.util import to_dict_batch
-import tensorflow as tf
+from torch.utils.tensorboard import SummaryWriter
 
-BASE_LOGDIR = "demo_logs/tf/"
+BASE_LOGDIR = "demo_logs/pytorch/"
 MODEL_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
                          '..', "test_data", "monkey")
 
@@ -42,7 +42,7 @@ def small_scale(run_name="small_scale"):
     """Basic demo with cube and cylinder with normals and colors.
     """
     logdir = os.path.join(BASE_LOGDIR, run_name)
-    writer = tf.summary.create_file_writer(logdir)
+    writer = SummaryWriter(logdir)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True)
     cube.compute_vertex_normals()
@@ -53,18 +53,11 @@ def small_scale(run_name="small_scale"):
                                                          create_uv_map=True)
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
-    with writer.as_default():
-        for step in range(3):
-            cube.paint_uniform_color(colors[step])
-            summary.add_3d('cube',
-                           to_dict_batch([cube]),
-                           step=step,
-                           logdir=logdir)
-            cylinder.paint_uniform_color(colors[step])
-            summary.add_3d('cylinder',
-                           to_dict_batch([cylinder]),
-                           step=step,
-                           logdir=logdir)
+    for step in range(3):
+        cube.paint_uniform_color(colors[step])
+        writer.add_3d('cube', to_dict_batch([cube]), step=step)
+        cylinder.paint_uniform_color(colors[step])
+        writer.add_3d('cylinder', to_dict_batch([cylinder]), step=step)
 
 
 def property_reference(run_name="property_reference"):
@@ -72,7 +65,7 @@ def property_reference(run_name="property_reference"):
     repeated properties of ``vertex_positions`` and ``vertex_normals``.
     """
     logdir = os.path.join(BASE_LOGDIR, run_name)
-    writer = tf.summary.create_file_writer(logdir)
+    writer = SummaryWriter(logdir)
 
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4, create_uv_map=True)
     cube.compute_vertex_normals()
@@ -83,23 +76,19 @@ def property_reference(run_name="property_reference"):
                                                          create_uv_map=True)
     cylinder.compute_vertex_normals()
     colors = [(1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)]
-    with writer.as_default():
-        for step in range(3):
-            cube.paint_uniform_color(colors[step])
-            cube_summary = to_dict_batch([cube])
-            if step > 0:
-                cube_summary['vertex_positions'] = 0
-                cube_summary['vertex_normals'] = 0
-            summary.add_3d('cube', cube_summary, step=step, logdir=logdir)
-            cylinder.paint_uniform_color(colors[step])
-            cylinder_summary = to_dict_batch([cylinder])
-            if step > 0:
-                cylinder_summary['vertex_positions'] = 0
-                cylinder_summary['vertex_normals'] = 0
-            summary.add_3d('cylinder',
-                           cylinder_summary,
-                           step=step,
-                           logdir=logdir)
+    for step in range(3):
+        cube.paint_uniform_color(colors[step])
+        cube_summary = to_dict_batch([cube])
+        if step > 0:
+            cube_summary['vertex_positions'] = 0
+            cube_summary['vertex_normals'] = 0
+        writer.add_3d('cube', cube_summary, step=step)
+        cylinder.paint_uniform_color(colors[step])
+        cylinder_summary = to_dict_batch([cylinder])
+        if step > 0:
+            cylinder_summary['vertex_positions'] = 0
+            cylinder_summary['vertex_normals'] = 0
+        writer.add_3d('cylinder', cylinder_summary, step=step)
 
 
 def large_scale(n_steps=16,
@@ -110,43 +99,40 @@ def large_scale(n_steps=16,
     with step. Each element in a batch is painted a different color.
     """
     logdir = os.path.join(BASE_LOGDIR, run_name)
-    writer = tf.summary.create_file_writer(logdir)
+    writer = SummaryWriter(logdir)
     colors = []
     for k in range(batch_size):
         t = k * np.pi / batch_size
         colors.append(((1 + np.sin(t)) / 2, (1 + np.cos(t)) / 2, t / np.pi))
-    with writer.as_default():
-        for step in range(n_steps):
-            resolution = base_resolution * (step + 1)
-            cylinder_list = []
-            moebius_list = []
-            cylinder = o3d.geometry.TriangleMesh.create_cylinder(
-                radius=1.0, height=2.0, resolution=resolution, split=4)
-            cylinder.compute_vertex_normals()
-            moebius = o3d.geometry.TriangleMesh.create_moebius(
-                length_split=int(3.5 * resolution),
-                width_split=int(0.75 * resolution),
-                twists=1,
-                raidus=1,
-                flatness=1,
-                width=1,
-                scale=1)
-            moebius.compute_vertex_normals()
-            for b in range(batch_size):
-                cylinder_list.append(copy.deepcopy(cylinder))
-                cylinder_list[b].paint_uniform_color(colors[b])
-                moebius_list.append(copy.deepcopy(moebius))
-                moebius_list[b].paint_uniform_color(colors[b])
-            summary.add_3d('cylinder',
-                           to_dict_batch(cylinder_list),
-                           step=step,
-                           logdir=logdir,
-                           max_outputs=batch_size)
-            summary.add_3d('moebius',
-                           to_dict_batch(moebius_list),
-                           step=step,
-                           logdir=logdir,
-                           max_outputs=batch_size)
+    for step in range(n_steps):
+        resolution = base_resolution * (step + 1)
+        cylinder_list = []
+        moebius_list = []
+        cylinder = o3d.geometry.TriangleMesh.create_cylinder(
+            radius=1.0, height=2.0, resolution=resolution, split=4)
+        cylinder.compute_vertex_normals()
+        moebius = o3d.geometry.TriangleMesh.create_moebius(
+            length_split=int(3.5 * resolution),
+            width_split=int(0.75 * resolution),
+            twists=1,
+            raidus=1,
+            flatness=1,
+            width=1,
+            scale=1)
+        moebius.compute_vertex_normals()
+        for b in range(batch_size):
+            cylinder_list.append(copy.deepcopy(cylinder))
+            cylinder_list[b].paint_uniform_color(colors[b])
+            moebius_list.append(copy.deepcopy(moebius))
+            moebius_list[b].paint_uniform_color(colors[b])
+        writer.add_3d('cylinder',
+                      to_dict_batch(cylinder_list),
+                      step=step,
+                      max_outputs=batch_size)
+        writer.add_3d('moebius',
+                      to_dict_batch(moebius_list),
+                      step=step,
+                      max_outputs=batch_size)
 
 
 def with_material(model_dir=MODEL_DIR):
@@ -177,15 +163,39 @@ def with_material(model_dir=MODEL_DIR):
             if texture == "metallic":
                 summary_3d.update(material_scalar_metallic=1.0)
 
-    writer = tf.summary.create_file_writer(logdir)
-    with writer.as_default():
-        summary.add_3d(model_name, summary_3d, step=0, logdir=logdir)
+    writer = SummaryWriter(logdir)
+    writer.add_3d(model_name, summary_3d, step=0)
+
+
+def demo_scene():
+    """Write the demo_scene.py example showing rich PBR materials as a summary
+    """
+    import demo_scene
+    demo_scene.check_for_required_assets()
+    geoms = demo_scene.create_scene()
+    writer = SummaryWriter(os.path.join(BASE_LOGDIR, 'demo_scene'))
+    for geom_data in geoms:
+        geom = geom_data["geometry"]
+        summary_3d = {}
+        for key, tensor in geom.vertex.items():
+            summary_3d["vertex_" + key] = tensor
+        for key, tensor in geom.triangle.items():
+            summary_3d["triangle_" + key] = tensor
+        if geom.has_valid_material():
+            summary_3d["material_name"] = geom.material.material_name
+            for key, value in geom.material.scalar_properties.items():
+                summary_3d["material_scalar_" + key] = value
+            for key, value in geom.material.vector_properties.items():
+                summary_3d["material_vector_" + key] = value
+            for key, value in geom.material.texture_maps.items():
+                summary_3d["material_texture_map_" + key] = value
+        writer.add_3d(geom_data["name"], summary_3d, step=0)
 
 
 if __name__ == "__main__":
 
     examples = ('small_scale', 'large_scale', 'property_reference',
-                'with_material')
+                'with_material', 'demo_scene')
     selected = tuple(eg for eg in sys.argv[1:] if eg in examples)
     if len(selected) == 0:
         print(f'Usage: python {__file__} EXAMPLE...')
