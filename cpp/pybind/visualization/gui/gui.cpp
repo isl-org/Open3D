@@ -174,10 +174,13 @@ std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
 }
 
 std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height) {
+        rendering::Open3DScene *scene,
+        int width,
+        int height,
+        bool z_in_view_space /* = false */) {
     return Application::GetInstance().RenderToDepthImage(
             scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
-            height);
+            height, z_in_view_space);
 }
 
 enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };

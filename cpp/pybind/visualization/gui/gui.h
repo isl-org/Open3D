@@ -44,7 +44,10 @@ void InitializeForPython(std::string resource_path = "");
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
         rendering::Open3DScene *scene, int width, int height);
 std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height);
+        rendering::Open3DScene *scene,
+        int width,
+        int height,
+        bool z_in_view_space = false);
 
 void pybind_gui(py::module &m);
 
