@@ -418,14 +418,14 @@ TEST_P(TensorPermuteDevices, Flatten) {
     core::Tensor src_t = core::Tensor::Init<float>(3, device);
     core::Tensor dst_t = core::Tensor::Init<float>({3}, device);
 
-    EXPECT_TRUE((dst_t == src_t.Flatten()).All());
-    EXPECT_TRUE((dst_t == src_t.Flatten(0)).All());
-    EXPECT_TRUE((dst_t == src_t.Flatten(-1)).All());
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten()));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1)));
 
-    EXPECT_TRUE((dst_t == src_t.Flatten(0, 0)).All());
-    EXPECT_TRUE((dst_t == src_t.Flatten(0, -1)).All());
-    EXPECT_TRUE((dst_t == src_t.Flatten(-1, 0)).All());
-    EXPECT_TRUE((dst_t == src_t.Flatten(-1, -1)).All());
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0, 0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0, -1)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1, 0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1, -1)));
 
     EXPECT_ANY_THROW(src_t.Flatten(-2));
     EXPECT_ANY_THROW(src_t.Flatten(1));
@@ -436,14 +436,14 @@ TEST_P(TensorPermuteDevices, Flatten) {
     src_t = core::Tensor::Init<float>({1, 2, 3}, device);
     dst_t = core::Tensor::Init<float>({1, 2, 3}, device);
 
-    EXPECT_TRUE((dst_t == src_t.Flatten()).All());
-    EXPECT_TRUE((dst_t == src_t.Flatten(0)).All());
-    EXPECT_TRUE((dst_t == src_t.Flatten(-1)).All());
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten()));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1)));
 
-    EXPECT_TRUE((dst_t == src_t.Flatten(0, 0)).All());
-    EXPECT_TRUE((dst_t == src_t.Flatten(0, -1)).All());
-    EXPECT_TRUE((dst_t == src_t.Flatten(-1, 0)).All());
-    EXPECT_TRUE((dst_t == src_t.Flatten(-1, -1)).All());
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0, 0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0, -1)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1, 0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1, -1)));
 
     EXPECT_ANY_THROW(src_t.Flatten(-2));
     EXPECT_ANY_THROW(src_t.Flatten(1));
@@ -457,20 +457,20 @@ TEST_P(TensorPermuteDevices, Flatten) {
     core::Tensor dst_t_unchanged =
             core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
 
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten()).All());
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0)).All());
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-2)).All());
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten()));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-2)));
 
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0, 1)).All());
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-2, 1)).All());
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0, -1)).All());
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-2, -1)).All());
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0, 1)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-2, 1)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0, -1)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-2, -1)));
 
-    EXPECT_TRUE((dst_t_unchanged == src_t.Flatten(1)).All());
-    EXPECT_TRUE((dst_t_unchanged == src_t.Flatten(-1)).All());
+    EXPECT_TRUE(dst_t_unchanged.AllEqual(src_t.Flatten(1)));
+    EXPECT_TRUE(dst_t_unchanged.AllEqual(src_t.Flatten(-1)));
 
     for (int64_t dim : {-2, -1, 0, 1}) {
-        EXPECT_TRUE((dst_t_unchanged == src_t.Flatten(dim, dim)).All());
+        EXPECT_TRUE(dst_t_unchanged.AllEqual(src_t.Flatten(dim, dim)));
     }
 
     // Out of bounds dimensions
@@ -497,27 +497,27 @@ TEST_P(TensorPermuteDevices, Flatten) {
     core::Tensor dst_t_last_two_flat = core::Tensor::Init<float>(
             {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}}, device);
 
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten()).All());
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0)).All());
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-3)).All());
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten()));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-3)));
 
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0, 2)).All());
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-3, 2)).All());
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(0, -1)).All());
-    EXPECT_TRUE((dst_t_flat == src_t.Flatten(-3, -1)).All());
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0, 2)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-3, 2)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0, -1)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-3, -1)));
 
-    EXPECT_TRUE((dst_t_first_two_flat == src_t.Flatten(0, 1)).All());
-    EXPECT_TRUE((dst_t_first_two_flat == src_t.Flatten(0, -2)).All());
-    EXPECT_TRUE((dst_t_first_two_flat == src_t.Flatten(-3, 1)).All());
-    EXPECT_TRUE((dst_t_first_two_flat == src_t.Flatten(-3, -2)).All());
+    EXPECT_TRUE(dst_t_first_two_flat.AllEqual(src_t.Flatten(0, 1)));
+    EXPECT_TRUE(dst_t_first_two_flat.AllEqual(src_t.Flatten(0, -2)));
+    EXPECT_TRUE(dst_t_first_two_flat.AllEqual(src_t.Flatten(-3, 1)));
+    EXPECT_TRUE(dst_t_first_two_flat.AllEqual(src_t.Flatten(-3, -2)));
 
-    EXPECT_TRUE((dst_t_last_two_flat == src_t.Flatten(1, 2)).All());
-    EXPECT_TRUE((dst_t_last_two_flat == src_t.Flatten(1, -1)).All());
-    EXPECT_TRUE((dst_t_last_two_flat == src_t.Flatten(-2, 2)).All());
-    EXPECT_TRUE((dst_t_last_two_flat == src_t.Flatten(-2, -1)).All());
+    EXPECT_TRUE(dst_t_last_two_flat.AllEqual(src_t.Flatten(1, 2)));
+    EXPECT_TRUE(dst_t_last_two_flat.AllEqual(src_t.Flatten(1, -1)));
+    EXPECT_TRUE(dst_t_last_two_flat.AllEqual(src_t.Flatten(-2, 2)));
+    EXPECT_TRUE(dst_t_last_two_flat.AllEqual(src_t.Flatten(-2, -1)));
 
     for (int64_t dim : {-3, -2, -1, 0, 1, 2}) {
-        EXPECT_TRUE((dst_t_unchanged == src_t.Flatten(dim, dim)).All());
+        EXPECT_TRUE(dst_t_unchanged.AllEqual(src_t.Flatten(dim, dim)));
     }
 
     // Out of bounds dimensions
