@@ -31,7 +31,8 @@ def autolabel(rects):
                 1.0 * height,
                 '%d' % int(height),
                 ha='center',
-                va='bottom')
+                va='bottom',
+                fontsize=24)
 
 
 def parse_benchmark_log_file(log_file):
@@ -155,19 +156,20 @@ if __name__ == "__main__":
         old_rects = ax.bar(ind, old_gmean_times, width, color='y')
         new_rects = ax.bar(ind + width, new_gmean_times, width, color='r')
 
-        ax.set_ylabel('Time (ms)', fontsize=20)
+        ax.set_ylabel('Time (ms)', fontsize=30)
         ax.set_title(
             f'Open3D v0.13 v.s. v0.14 {operand} op benchmark (lower is better)',
             fontweight="bold",
-            fontsize=24)
+            fontsize=30)
         ax.set_xticks(ind + width / 2)
         ops = [op.replace("logical_", "") for op in ops]
-        ax.set_xticklabels(ops, fontsize=20)
+        ax.set_xticklabels(ops)
+        ax.tick_params(axis='both', which='major', labelsize=26)
 
         ax.legend((old_rects[0], new_rects[0]),
                   ("Open3D v0.13", "Open3D v0.14"),
                   loc='upper center',
-                  fontsize=20)
+                  fontsize=26)
 
         autolabel(old_rects)
         autolabel(new_rects)
