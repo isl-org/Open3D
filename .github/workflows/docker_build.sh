@@ -34,13 +34,16 @@ OPTION:
     3-ml-shared-bionic : CUDA CI, 3-ml-shared-bionic
     4-ml-bionic        : CUDA CI, 4-ml-bionic
     5-ml-focal         : CUDA CI, 5-ml-focal
+    docs-docker        : Create docs docker
+    docs-build         : Build docs after docs-docker
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
 
 # Shared variables
-CCACHE_VERSION=4.3
-CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+export CCACHE_VERSION=4.3
+export CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+export GIT_HASH=$(git rev-parse HEAD)
 
 print_usage_and_exit() {
     echo "$__usage"
@@ -216,6 +219,69 @@ cuda_build() {
     export BUILD_PYTORCH_OPS=ON
 }
 
+docs_export_env() {
+    export DOCKER_TAG=open3d-ci:docs
+
+    export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-docs
+    export PYTHON_VERSION=3.6
+}
+
+docs_docker() {
+    echo "[docs_docker()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[docs_docker()] BASE_IMAGE=${BASE_IMAGE}"
+    echo "[docs_docker()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
+    echo "[docs_docker()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
+    echo "[docs_docker()] CMAKE_VERSION=${CMAKE_VERSION}"
+    echo "[docs_docker()] CCACHE_VERSION=${CCACHE_VERSION}"
+    echo "[docs_docker()] PYTHON_VERSION=${PYTHON_VERSION}"
+
+    pushd "${HOST_OPEN3D_ROOT}"
+    docker build \
+        --build-arg BASE_IMAGE="${BASE_IMAGE}" \
+        --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
+        --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
+        --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
+        --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
+        --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+        -t "${DOCKER_TAG}" \
+        -f .github/workflows/Dockerfile.docs .
+    popd
+}
+
+docs_build() {
+    echo "[docs_build()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[docs_build()] BASE_IMAGE=${BASE_IMAGE}"
+    echo "[docs_build()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
+    echo "[docs_build()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
+    echo "[docs_build()] CMAKE_VERSION=${CMAKE_VERSION}"
+    echo "[docs_build()] CCACHE_VERSION=${CCACHE_VERSION}"
+    echo "[docs_build()] PYTHON_VERSION=${PYTHON_VERSION}"
+
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+         # Hyper-threading can be slow on Linux.
+        num_cpus=$(lscpu | awk '/^Core\(s\) per socket/{ print $4 }')
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        num_cpus=$(sysctl -n hw.ncpu)
+    else
+        echo "Unsupported OS: ${OSTYPE}"
+        exit 1
+    fi
+    echo "num_cpus=${num_cpus}"
+    max_cpu_index=$((num_cpus - 1))
+
+    docker run --cpuset-cpus "0-${max_cpu_index}" --gpus all -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
+        bash -c "source /root/Open3D/util/ci_utils.sh \
+              && build_docs ${DEVELOPER_BUILD} \
+              && CCACHE_TAR_NAME=${CCACHE_TAR_NAME} package_ccache \
+              && tar -C /root/Open3D/docs/_out -czvf ${GIT_HASH}_ready.tar.gz html \
+              && cp ${GIT_HASH}_ready.tar.gz /opt/mount \
+              && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
+              && chown $(id -u):$(id -g) /opt/mount/${GIT_HASH}_ready.tar.gz \
+              && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
+}
+
 function main () {
     if [[ "$#" -ne 1 ]]; then
         echo "Error: invalid number of arguments: $#." >&2
@@ -270,6 +336,14 @@ function main () {
         5-ml-focal)
             5-ml-focal_export_env
             cuda_build
+            ;;
+        docs-docker)
+            docs_export_env
+            docs_docker
+            ;;
+        docs-build)
+            docs_export_env
+            docs_build
             ;;
         *)
             echo "Error: invalid argument: ${1}." >&2
