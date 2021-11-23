@@ -42,44 +42,52 @@ int main() {
             utility::filesystem::GetHomeDirectory() +
             "/test_folder1/test_folder2";
 
-    data::Downloader downloader;
-
     // Downloader API.
     // URL is the only compulsory input, others are optional, and passing
     // empty string "", trigers the default behaviour.
-    // downloader.DownloadFromURL(url, output_file_name, output_file_path,
-    //                            expected_sha256);
+    // open3d::data::DownloadFromURL(url, output_file_name, output_file_path,
+    //                               always_download, expected_sha256);
 
-    // Download in Open3D Data Root directory, with the original file name
-    // extracted from the url.
-    if (!downloader.DownloadFromURL(url)) {
+    // Default.
+    // Download in Open3D Data Root directory,
+    // with the original file name extracted from the url,
+    // `always_download` is True : If exists, it will be over-written.
+    // SHA256 is not verified.
+    if (!data::DownloadFromURL(url)) {
         utility::LogInfo("Method 1 Failed");
     }
 
+    // Download with custom name.
+    // Download in Open3D Data Root directory,
+    // with the the given name `random_name.zip`,
+    // `always_download` is False : Skip download if file exists, with correct
+    // SHA256SUM.
+    // SHA256 is required. Not providing this, will throw Runtime ERROR.
     // Download in Open3D Data Root directory, with the given file name.
-    if (!downloader.DownloadFromURL(url, "", "random_name.zip",
-                                    Expected_SHA256)) {
+    if (!data::DownloadFromURL(url, "", "random_name.zip", false,
+                               Expected_SHA256)) {
         utility::LogInfo("Method 2 Failed");
     }
 
     // Download in specified directory (creates the directory hierarchy if not
     // present), with the original file name extracted from the url.
-    if (!downloader.DownloadFromURL(url, random_dir_hierarchy, "",
-                                    Expected_SHA256)) {
+    if (!data::DownloadFromURL(url, random_dir_hierarchy, "", false,
+                               Expected_SHA256)) {
         utility::LogInfo("Method 3 Failed");
     }
 
     // Download in specified directory (creates the directory hierarchy if not
     // present), with the given name.
-    if (downloader.DownloadFromURL(url, random_dir_hierarchy, "random_name.zip",
-                                   Expected_SHA256)) {
-        auto file_Expected_SHA256 =
-                data::GetSHA256(random_dir_hierarchy + "/random_name.zip");
-
-        utility::LogInfo("Expected_SHA256: {}", file_Expected_SHA256);
-    } else {
+    if (!data::DownloadFromURL(url, random_dir_hierarchy, "random_name.zip",
+                               false, Expected_SHA256)) {
         utility::LogInfo("Method 4 Failed");
     }
+
+    // Print calculated SHA256SUM.
+    auto file_actual_SHA256 =
+            data::GetSHA256(random_dir_hierarchy + "/random_name.zip");
+
+    utility::LogInfo("SHA256SUM: {}", file_actual_SHA256);
 
     return 0;
 }

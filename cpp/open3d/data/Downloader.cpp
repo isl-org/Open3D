@@ -101,17 +101,6 @@ static std::string LocateDataRoot() {
     return data_root;
 }
 
-Downloader::Downloader(const std::string& data_root) {
-    if (data_root.empty()) {
-        data_root_ = LocateDataRoot();
-    } else {
-        data_root_ = data_root;
-    }
-    utility::LogDebug("Downloader: Open3D Data Root is at {}", data_root_);
-}
-
-std::string Downloader::GetDataRoot() const { return data_root_; }
-
 static size_t WriteDataCb(void* ptr, size_t size, size_t nmemb, FILE* stream) {
     size_t written;
     written = fwrite(ptr, size, nmemb, stream);
@@ -155,12 +144,29 @@ static std::string GetAbsoluteFilePath(const std::string& url,
     return file_path;
 }
 
-bool Downloader::DownloadFromURL(const std::string& url,
-                                 const std::string& output_file_path,
-                                 const std::string& output_file_name,
-                                 const std::string& SHA256) {
+bool DownloadFromURL(const std::string& url,
+                     const std::string& output_file_path,
+                     const std::string& output_file_name,
+                     const bool always_download,
+                     const std::string& SHA256) {
     std::string file_path =
             GetAbsoluteFilePath(url, output_file_path, output_file_name);
+
+    if (!always_download && utility::filesystem::FileExists(file_path)) {
+        if (!SHA256.empty()) {
+            const std::string actual_hash = GetSHA256(file_path.c_str());
+            if (SHA256 == actual_hash) {
+                utility::LogDebug(
+                        "Downloading Skipped. File already present with "
+                        "expected SHA256 hash.");
+                return true;
+            }
+        } else {
+            utility::LogError(
+                    "Setting always_download to false, requires SHA256 "
+                    "value, to verify the existing file.");
+        }
+    }
 
     CURL* curl;
     FILE* fp;
@@ -211,6 +217,7 @@ bool Downloader::DownloadFromURL(const std::string& url,
                 }
             }
 
+            utility::LogDebug("Downloaded file {}.", file_path);
             return true;
         } else {
             utility::LogWarning("Download Failed");

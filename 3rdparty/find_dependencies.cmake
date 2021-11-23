@@ -748,7 +748,10 @@ if (BUILD_LIBREALSENSE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_librealsense)
 endif()
 
-# curl
+# Don't move Curl below PNG. Moving Curl below PNG will throws 
+# unidentified-symbols related errors.
+
+# Curl
 include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
 open3d_import_3rdparty_library(3rdparty_curl
     INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
@@ -759,7 +762,7 @@ open3d_import_3rdparty_library(3rdparty_curl
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
-# openssl
+# OpenSSL
 include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
 open3d_import_3rdparty_library(3rdparty_openssl
     INCLUDE_DIRS ${OPENSSL_INCLUDE_DIRS}
@@ -769,8 +772,6 @@ open3d_import_3rdparty_library(3rdparty_openssl
     DEPENDS      ext_zlib ext_openssl
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
-
-# Don't move curl and openssl below PNG. Throws unidentified-symbols error.
 
 # PNG
 if(USE_SYSTEM_PNG)
