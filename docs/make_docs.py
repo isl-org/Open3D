@@ -373,11 +373,12 @@ class JupyterDocsBuilder:
         print("Notebook execution mode: {}".format(self.execute_notebooks))
 
     def overwrite_tutorial_file(self, url, output_file, output_file_path):
-        with urllib.request.urlopen(url,
-                                    context=ssl.create_default_context(
-                                        cafile=certifi.where())) as response, \
-                                            open(output_file, 'wb') as out_file:
-            shutil.copyfileobj(response, out_file)
+        with urllib.request.urlopen(
+                url,
+                context=ssl.create_default_context(cafile=certifi.where()),
+        ) as response:
+            with open(output_file, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
         shutil.move(output_file, output_file_path)
 
     def run(self):
