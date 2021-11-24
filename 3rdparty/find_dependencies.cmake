@@ -748,7 +748,7 @@ if (BUILD_LIBREALSENSE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_librealsense)
 endif()
 
-# Don't move Curl below PNG. Moving Curl below PNG will throws 
+# Don't move Curl below PNG. Moving Curl below PNG will throws
 # unidentified-symbols related errors.
 
 # Curl
@@ -762,16 +762,26 @@ open3d_import_3rdparty_library(3rdparty_curl
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
-# OpenSSL
-include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
-open3d_import_3rdparty_library(3rdparty_openssl
-    INCLUDE_DIRS ${OPENSSL_INCLUDE_DIRS}
-    INCLUDE_ALL
-    LIB_DIR      ${OPENSSL_LIB_DIR}
-    LIBRARIES    ${OPENSSL_LIBRARIES}
-    DEPENDS      ext_zlib ext_openssl
+add_library(3rdparty_openssl INTERFACE)
+target_link_libraries(3rdparty_openssl INTERFACE
+    /home/yixing/repo/Open3D/build/openssl/lib/libssl.a
+    /home/yixing/repo/Open3D/build/openssl/lib/libcrypto.a
 )
+target_include_directories(3rdparty_openssl INTERFACE ${OPENSSL_INCLUDE_DIRS})
+add_library(Open3D::3rdparty_openssl ALIAS 3rdparty_openssl)
+install(TARGETS 3rdparty_openssl EXPORT Open3DTargets)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
+
+# # OpenSSL
+# include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
+# open3d_import_3rdparty_library(3rdparty_openssl
+#     INCLUDE_DIRS ${OPENSSL_INCLUDE_DIRS}
+#     INCLUDE_ALL
+#     LIB_DIR      ${OPENSSL_LIB_DIR}
+#     LIBRARIES    ${OPENSSL_LIBRARIES}
+#     DEPENDS      ext_zlib ext_openssl
+# )
+# list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
 
 # PNG
 if(USE_SYSTEM_PNG)
