@@ -679,7 +679,9 @@ Tensor Tensor::Flatten(int64_t start_dim /*= 0*/,
     for (int64_t dim = 0; dim < num_dims; dim++) {
         if (dim >= start_dim && dim <= end_dim) {
             flat_dimension_size *= shape[dim];
-            if (dim == end_dim) dst_shape.push_back(flat_dimension_size);
+            if (dim == end_dim) {
+                dst_shape.push_back(flat_dimension_size);
+            }
         } else {
             dst_shape.push_back(shape[dim]);
         }
