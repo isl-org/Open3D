@@ -304,6 +304,15 @@ Eigen::Vector2f FilamentCamera::GetNDC(const Eigen::Vector3f& pt) const {
     return {ndc_space_p.x, ndc_space_p.y};
 }
 
+double FilamentCamera::GetViewZ(float z_buffer) const {
+    double z_near = GetNear();
+    if (z_buffer >= 1.0f) {
+        return std::numeric_limits<double>::infinity();
+    } else {
+        return -z_near / (1.0 - z_buffer);
+    }
+}
+
 const Camera::ProjectionInfo& FilamentCamera::GetProjection() const {
     return projection_;
 }

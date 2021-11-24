@@ -189,6 +189,9 @@ private:
     std::unordered_map<REHandle_abstract, std::unordered_set<REHandle_abstract>>
             dependencies_;
 
+    // Cache for GPU
+    std::unordered_map<uint64_t, TextureHandle> texture_cache_;
+
     filament::Texture* LoadTextureFromImage(
             const std::shared_ptr<geometry::Image>& image, bool srgb);
     filament::Texture* LoadTextureFromImage(const t::geometry::Image& image,

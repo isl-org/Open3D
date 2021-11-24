@@ -341,10 +341,11 @@ def _convert_bboxes(bboxes):
     data = dict()
     if hasattr(bboxes[0], "__len__"):  # Nested Seq. (B, Nbb)
         for bb_batch in bboxes:
-            append_key_values(data,
-                              BoundingBox3D.create_lines(bb_batch, out='dict'))
+            append_key_values(
+                data, BoundingBox3D.create_lines(bb_batch, out_format='dict'))
     else:
-        append_key_values(data, BoundingBox3D.create_lines(bboxes, out='dict'))
+        append_key_values(data,
+                          BoundingBox3D.create_lines(bboxes, out_format='dict'))
     data.pop('line_colors')  # No LUT. Assign colors during rendering.
     labels = data.pop('bbox_labels')
     confidences = tuple(np.float32(c) for c in data.pop('bbox_confidences'))
@@ -578,90 +579,94 @@ def add_3d(name,
            max_outputs=1,
            label_to_names=None,
            description=None):
-    """Write 3D geometry data as summary.
+    """Write 3D geometry data as TensorBoard summary for visualization with the
+    Open3D for TensorBoard plugin.
 
     Args:
-      name (str): A name or tag for this summary. The summary tag used for
-        TensorBoard will be this name prefixed by any active name scopes.
-      data (dict): A dictionary of tensors representing 3D data. Tensorflow,
-        PyTorch, Numpy and Open3D tensors are supported. The following keys
-        are supported:
-          - ``vertex_positions``: shape `(B, N, 3)` where B is the number of
-                point clouds and must be same for each key. N is the number of
-                3D points. Will be cast to ``float32``.
-          - ``vertex_colors``: shape `(B, N, 3)` Will be converted to ``uint8``.
-          - ``vertex_normals``: shape `(B, N, 3)` Will be cast to ``float32``.
-          - ``vertex_texture_uvs``: shape `(B, N, 2)` Per vertex UV coordinates
-            for applying material texture maps. Will be cast to ``float32``.
-            Only one of ``[vertex|triangle]_texture_uvs`` should be provided.
-          - ``vertex_*FEATURE*``: shape `(B, N, _)`. Store arbitrary vertex
-              features. Floats will be cast to ``float32`` and integers to
-              ``int32``.
-          - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
-          - ``triangle_texture_uvs``: shape `(B, Nf, 3, 2)` Per triangle UV
-            coordinates for applying material texture maps. Will be cast to
-            ``float32``. Only one of ``[vertex|triangle]_texture_uvs`` should be
-            provided.
-          - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
-          - ``bboxes``: shape `(B, Nbb)`. The tensor dtype should be
-            `open3d.ml.vis.BoundingBox3D``. Property references not supported.
-            Use separate from other 3D properties.
-          - ``material_name``: shape `(B,)` and dtype ``str``. Base PBR material
-            name is required to specify any material properties.  Open3D
-            built-in materials: ``defaultLit``, ``defaultUnlit``, ``unlitLine``,
-            ``unlitGradient``, ``unlitSolidColor``.
-          - ``material_scalar_*PROPERTY*``: Any material scalar property with
-            float values of shape `(B,)`. e.g. To specify the property
-            `metallic`, use the key `material_scalar_metallic`.
-          -  ``material_vector_*PROPERTY*``: Any material 4-vector property with
-             float values of shape `(B, 4)` e.g. To specify the property
-            `baseColor`, use the key `material_vector_base_color`.
-          -  ``material_texture_map_*TEXTURE_MAP*``: PBR Material texture maps.
-             e.g. ``material_texture_map_metallic`` represents a texture map
-             describing the metallic property for rendering.
-             Values are Tensors with shape `(B, Nr, Nc, C)`, corresponding to a
-             batch of texture maps with `C` channels and shape `(Nr, Nc)`. The
-             geometry must have ``[vertex|triangle]_texture_uvs`` coordinates to
-             use any texture map.
+        name (str): A name or tag for this summary. The summary tag used for
+            TensorBoard will be this name prefixed by any active name scopes.
+        data (dict): A dictionary of tensors representing 3D data. Tensorflow,
+            PyTorch, Numpy and Open3D tensors are supported. The following keys
+            are supported:
+            - ``vertex_positions``: shape `(B, N, 3)` where B is the number of point
+              clouds and must be same for each key. N is the number of 3D points.
+              Will be cast to ``float32``.
+            - ``vertex_colors``: shape `(B, N, 3)` Will be converted to ``uint8``.
+            - ``vertex_normals``: shape `(B, N, 3)` Will be cast to ``float32``.
+            - ``vertex_texture_uvs``: shape `(B, N, 2)` Per vertex UV coordinates
+              for applying material texture maps. Will be cast to ``float32``.  Only
+              one of ``[vertex|triangle]_texture_uvs`` should be provided.
+            - ``vertex_[FEATURE]``: shape `(B, N, _)`. Store custom vertex features.
+              Floats will be cast to ``float32`` and integers to ``int32``.
+            - ``triangle_indices``: shape `(B, Nf, 3)`. Will be cast to ``uint32``.
+            - ``triangle_colors``: shape `(B, Nf, 3)` Will be converted to
+              ``uint8``.
+            - ``triangle_normals``: shape `(B, Nf, 3)` Will be cast to ``float32``.
+            - ``triangle_texture_uvs``: shape `(B, Nf, 3, 2)` Per triangle UV
+              coordinates for applying material texture maps. Will be cast to
+              ``float32``. Only one of ``[vertex|triangle]_texture_uvs`` should be
+              provided.
+            - ``line_indices``: shape `(B, Nl, 2)`. Will be cast to ``uint32``.
+            - ``bboxes``: shape `(B, Nbb)`. The tensor dtype should be
+              `open3d.ml.vis.BoundingBox3D`. The boxes will be colored according to
+              their labels in tensorboard. Visualizing confidences is not yet
+              supported. Property references are not supported.  Use separate from
+              other 3D data.
+            - ``material_name``: shape `(B,)` and dtype ``str``. Base PBR material
+              name is required to specify any material properties.  Open3D built-in
+              materials: ``defaultLit``, ``defaultUnlit``, ``unlitLine``,
+              ``unlitGradient``, ``unlitSolidColor``.
+            - ``material_scalar_[PROPERTY]``: Any material scalar property with
+              float values of shape `(B,)`. e.g. To specify the property `metallic`,
+              use the key `material_scalar_metallic`.
+            - ``material_vector_[PROPERTY]``: Any material 4-vector property with
+              float values of shape `(B, 4)` e.g. To specify the property
+              `baseColor`, use the key `material_vector_base_color`.
+            - ``material_texture_map_[PROPERTY]``: PBR material texture maps.  e.g.
+              ``material_texture_map_metallic`` represents a texture map describing
+              the metallic property for rendering.  Values are Tensors with shape
+              `(B, Nr, Nc, C)`, corresponding to a batch of texture maps with `C`
+              channels and shape `(Nr, Nc)`. The geometry must have
+              ``[vertex|triangle]_texture_uvs`` coordinates to use any texture map.
 
-        For batch_size B=1, the tensors may drop a rank (e.g. (N,3)
-        ``vertex_positions``, (4,) material vector properties or float scalar ()
-        material scalar properties.). Variable sized elements in a batch are
-        also supported. In this case, use a sequence of tensors. For example, to
-        save a batch of 2 point clouds with 8 and 16 points each, data should
-        contain `{'vertex_positions': (pcd1, pcd2)}` where `pcd1.shape = (8, 3)` and
-        `pcd2.shape = (16, 3)`.
+            For batch_size B=1, the tensors may drop a rank (e.g. (N,3)
+            ``vertex_positions``, (4,) material vector properties or float scalar ()
+            material scalar properties.). Variable sized elements in a batch are
+            also supported. In this case, use a sequence of tensors. For example, to
+            save a batch of 2 point clouds with 8 and 16 points each, data should
+            contain `{'vertex_positions': (pcd1, pcd2)}` where `pcd1.shape = (8, 3)`
+            and `pcd2.shape = (16, 3)`.
 
-        Floating point color and texture map data will be clipped to the range
-        [0,1] and converted to ``uint8`` range [0,255]. ``uint16`` data will be
-        compressed to the range [0,255].
+            Floating point color and texture map data will be clipped to the range
+            [0,1] and converted to ``uint8`` range [0,255]. ``uint16`` data will be
+            compressed to the range [0,255].
 
-        Any data tensor (with ndim>=2 including batch_size), may be replaced by
-        an ``int`` scalar referring to a previous step. This allows reusing a
-        previously written property in case that it does not change at different
-        steps. This is not supported for ``material_name``,
-        ``material_scalar_*PROPERTY*`` and custom vertex features.
+            Any data tensor (with ndim>=2 including batch_size), may be replaced by
+            an ``int`` scalar referring to a previous step. This allows reusing a
+            previously written property in case that it does not change at different
+            steps. This is not supported for ``material_name``,
+            ``material_scalar_*PROPERTY*`` and custom vertex features.
 
-        Please see the `Filament Materials Guide
-        <https://google.github.io/filament/Materials.html#materialmodels>`__ for
-        a complete explanation of material properties.
+            Please see the `Filament Materials Guide
+            <https://google.github.io/filament/Materials.html#materialmodels>`__ for
+            a complete description of material properties.
 
-      step (int): Explicit ``int64``-castable monotonic step value for this
-        summary.  [`TensorFlow`: If ``None``, this defaults to
-        `tf.summary.experimental.get_step()`, which must not be ``None``.]
-      logdir (str): The logging directory used to create the SummaryWriter.
-        [`PyTorch`: This will be automatically inferred if not provided or
-        ``None``.]
-      max_outputs (int): Optional integer. At most this many 3D elements will be
-        emitted at each step. When more than `max_outputs` 3D elements are
-        provided, the first ``max_outputs`` 3D elements will be used and the
-        rest silently discarded. Use ``0`` to save everything.
-      label_to_names (dict): Optional mapping from labels (e.g. int used in
-        labels for bboxes or vertices) to category names. Only data from the
-        first step is saved for any tag during a run.
-      description (str): Optional long-form description for this summary, as a
-        constant ``str``. Markdown is supported. Defaults to empty. Currently
-        unused.
+        step (int): Explicit ``int64``-castable monotonic step value for this
+          summary.  [`TensorFlow`: If ``None``, this defaults to
+          `tf.summary.experimental.get_step()`, which must not be ``None``.]
+        logdir (str): The logging directory used to create the SummaryWriter.
+          [`PyTorch`: This will be automatically inferred if not provided or
+          ``None``.]
+        max_outputs (int): Optional integer. At most this many 3D elements will be
+          emitted at each step. When more than `max_outputs` 3D elements are
+          provided, the first ``max_outputs`` 3D elements will be used and the
+          rest silently discarded. Use ``0`` to save everything.
+        label_to_names (dict): Optional mapping from labels (e.g. int used in
+          labels for bboxes or vertices) to category names. Only data from the
+          first step is saved for any tag during a run.
+        description (str): Optional long-form description for this summary, as a
+          constant ``str``. Markdown is supported. Defaults to empty. Currently
+          unused.
 
     Returns:
       [TensorFlow] True on success, or false if no summary was emitted because
@@ -714,6 +719,11 @@ def add_3d(name,
                 writer.add_3d('cube', to_dict_batch([cube]), step=step)
 
         Now use ``tensorboard --logdir demo_logs`` to visualize the 3D data.
+
+    Note:
+        Sumary writing works on all platforms, and the visualization can be
+        accessed from a browser on any platform. Running the tensorboard process
+        is not supported on macOS as yet.
     """
     if tf is None:
         raise RuntimeError(
