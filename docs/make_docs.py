@@ -292,7 +292,9 @@ class SphinxDocsBuilder:
     (3) Calls `sphinx-build` with the user argument
     """
 
-    def __init__(self, html_output_dir, is_release, skip_notebooks):
+    def __init__(self, current_file_dir, html_output_dir, is_release,
+                 skip_notebooks):
+        self.current_file_dir = current_file_dir
         self.html_output_dir = html_output_dir
         self.is_release = is_release
         self.skip_notebooks = skip_notebooks
@@ -301,6 +303,12 @@ class SphinxDocsBuilder:
         """
         Call Sphinx command with hard-coded "html" target
         """
+        # Copy docs files from Open3D-ML repo
+        OPEN3D_ML_ROOT = os.environ.get("OPEN3D_ML_ROOT", "../../Open3D-ML")
+        if os.path.isdir(OPEN3D_ML_ROOT):
+            shutil.copy(os.path.join(OPEN3D_ML_ROOT, "docs", "tensorboard.md"),
+                        self.current_file_dir)
+
         build_dir = os.path.join(self.html_output_dir, "html")
 
         if self.is_release:
@@ -560,7 +568,7 @@ if __name__ == "__main__":
         print("Building Sphinx docs")
         skip_notebooks = (args.execute_notebooks == "never" and
                           args.clean_notebooks)
-        sdb = SphinxDocsBuilder(html_output_dir, args.is_release,
+        sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release,
                                 skip_notebooks)
         sdb.run()
     else:
