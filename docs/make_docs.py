@@ -44,6 +44,9 @@ import re
 from pathlib import Path
 import nbformat
 import nbconvert
+import ssl
+import certifi
+import urllib.request
 
 
 def _create_or_clear_dir(dir_path):
@@ -369,6 +372,15 @@ class JupyterDocsBuilder:
         self.current_file_dir = current_file_dir
         print("Notebook execution mode: {}".format(self.execute_notebooks))
 
+    def overwrite_tutorial_file(self, url, output_file, output_file_path):
+        with urllib.request.urlopen(
+                url,
+                context=ssl.create_default_context(cafile=certifi.where()),
+        ) as response:
+            with open(output_file, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        shutil.move(output_file, output_file_path)
+
     def run(self):
         if self.execute_notebooks == "never":
             return
@@ -388,8 +400,7 @@ class JupyterDocsBuilder:
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
         nb_direct_copy = [
-            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration',
-            't_robust_kernel'
+            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration.ipynb'
         ]
         example_dirs = [
             "geometry", "core", "pipelines", "visualization", "t_pipelines"
@@ -457,6 +468,13 @@ class JupyterDocsBuilder:
 
                 with open(nb_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
+
+        url = "https://github.com/isl-org/Open3D/files/7592880/t_icp_registration.zip"
+        output_file = "t_icp_registration.ipynb"
+        output_file_path = os.path.join(
+            self.current_file_dir,
+            "tutorial/t_pipelines/t_icp_registration.ipynb")
+        self.overwrite_tutorial_file(url, output_file, output_file_path)
 
 
 if __name__ == "__main__":
