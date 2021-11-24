@@ -44,7 +44,6 @@ import re
 from pathlib import Path
 import nbformat
 import nbconvert
-import zipfile
 import ssl
 import certifi
 import urllib.request
@@ -405,7 +404,6 @@ class JupyterDocsBuilder:
         example_dirs = [
             "geometry", "core", "pipelines", "visualization", "t_pipelines"
         ]
-
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir).parent / "examples" /
                       "python" / example_dir)
