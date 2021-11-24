@@ -13,15 +13,25 @@ set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
     "Minimum OS X deployment version" FORCE)
 endif()
 
-if(UNIX AND NOT APPLE)
-    # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
-    # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
-    execute_process(COMMAND uname -p
-        OUTPUT_VARIABLE PROCESSOR_ARCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if(PROCESSOR_ARCH STREQUAL "aarch64")
-        set(LINUX_AARCH64 TRUE)
+# CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
+# which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
+if(UNIX)
+    if(APPLE)
+        execute_process(COMMAND uname -m
+            OUTPUT_VARIABLE PROCESSOR_ARCH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(PROCESSOR_ARCH STREQUAL "arm64")
+            set(APPLE_AARCH64 TRUE)
+        endif()
+    else()
+        execute_process(COMMAND uname -p
+            OUTPUT_VARIABLE PROCESSOR_ARCH
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(PROCESSOR_ARCH STREQUAL "aarch64")
+            set(LINUX_AARCH64 TRUE)
+        endif()
     endif()
 endif()
 
@@ -36,13 +46,18 @@ option(BUILD_PYTHON_MODULE        "Build the python module"                  ON 
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
 option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
-if(NOT LINUX_AARCH64)
+if(NOT LINUX_AARCH64 AND NOT APPLE_AARCH64)
     option(BUILD_ISPC_MODULE      "Build the ISPC module"                    ON )
 else()
     option(BUILD_ISPC_MODULE      "Build the ISPC module"                    OFF)
 endif()
 option(BUILD_COMMON_ISPC_ISAS     "Build for common ISPC ISAs (for release)" OFF)
-option(BUILD_GUI                  "Builds new GUI"                           ON )
+if(APPLE_AARCH64)
+    option(BUILD_GUI              "Builds new GUI"                           OFF)
+else()
+    option(BUILD_GUI              "Builds new GUI"                           ON )
+endif()
+
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(WITH_IPPICV                "Use Intel Performance Primitives"         ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
@@ -52,7 +67,7 @@ else()
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
 endif()
 option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
-if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64))
+if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
 else()
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
