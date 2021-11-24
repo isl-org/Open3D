@@ -764,10 +764,14 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
 add_library(3rdparty_openssl INTERFACE)
 target_link_libraries(3rdparty_openssl INTERFACE
-    /home/yixing/repo/Open3D/build/openssl/lib/libssl.a
-    /home/yixing/repo/Open3D/build/openssl/lib/libcrypto.a
+    # /home/yixing/repo/Open3D/build/openssl/lib/libssl.a
+    /home/yixing/repo/boringssl/build/ssl/libssl.a
+    # /home/yixing/repo/Open3D/build/openssl/lib/libcrypto.a
+    /home/yixing/repo/boringssl/build/crypto/libcrypto.a
 )
-target_include_directories(3rdparty_openssl INTERFACE ${OPENSSL_INCLUDE_DIRS})
+target_include_directories(3rdparty_openssl INTERFACE
+    /home/yixing/repo/boringssl/include
+)
 add_library(Open3D::3rdparty_openssl ALIAS 3rdparty_openssl)
 install(TARGETS 3rdparty_openssl EXPORT Open3DTargets)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
