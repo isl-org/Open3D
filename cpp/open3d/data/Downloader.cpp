@@ -149,9 +149,12 @@ bool DownloadFromURL(const std::string& url,
                      const std::string& output_file_name,
                      const bool always_download,
                      const std::string& SHA256) {
+
+    // Get absolute file-path, from inputs.
     std::string file_path =
             GetAbsoluteFilePath(url, output_file_path, output_file_name);
 
+    // Check and skip download if required.
     if (!always_download && utility::filesystem::FileExists(file_path)) {
         if (!SHA256.empty()) {
             const std::string actual_hash = GetSHA256(file_path.c_str());
@@ -168,27 +171,32 @@ bool DownloadFromURL(const std::string& url,
         }
     }
 
+    // Download Mechanisam.
     CURL* curl;
     FILE* fp;
     CURLcode res;
 
+    // Initialize Curl.
     curl = curl_easy_init();
+
     if (curl) {
         fp = fopen(file_path.c_str(), "wb");
 
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
-        // Follow redirection in link.
+        // Follow redirection in link. `-L option in curl`.
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
+        // TODO: Check if it is safe to skip this verification.
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
 
         // Write function callback.
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteDataCb);
-
+        // Pass file-handler to which the data will be written. 
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
 
+        // Progress bar options.
         // TODO: Add Open3D progress-bar option.
         // curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION,
         //                  download_progress_callback);
@@ -203,7 +211,9 @@ bool DownloadFromURL(const std::string& url,
         // Close file.
         fclose(fp);
 
+        // File downloaded without error.
         if (res == CURLE_OK) {
+            // Verify SHA256 value.
             if (!SHA256.empty()) {
                 const std::string actual_hash = GetSHA256(file_path.c_str());
                 if (SHA256 == actual_hash) {
