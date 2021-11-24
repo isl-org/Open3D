@@ -78,6 +78,7 @@ examples/python/geometry/copy_of_lena_color.jpg
 examples/python/geometry/copy_of_crate.mtl
 examples/python/geometry/copy_of_crate.png
 examples/python/geometry/copy_of_crate.obj
+examples/python/t_pipelines/t_icp_registration.ipynb
 
 # doc
 docs/test_data
@@ -93,3 +94,4 @@ docs/python_api/
 docs/conf.py
 docs/Doxyfile
 docs/getting_started.rst
+docs/t_icp_registration.zip
