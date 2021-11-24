@@ -28,20 +28,5 @@
         "url": "https://github.com/isl-org/open3d_downloads/raw/master/tests/point_cloud_sample2.pts",
         "path": "tests/point_cloud_sample2.pts",
         "sha256": "59e8b0daee0b009f56fc19cf0a17a6c7bed0dc852845e31cc85911db24c3d1a4"
-    },
-    "tutorial/t_pipelines/index.html": {
-        "url": "https://github.com/isl-org/open3d_downloads/blob/master/tutorials/t_pipelines/index.html",
-        "path": "tutorial/t_pipelines/index.html",
-        "sha256": "41c71601bb40311536c4432a58d9fc48f9e555d726d881535bff65eb1d78eb52"
-    },
-    "tutorial/t_pipelines/t_icp_registration.html": {
-        "url": "https://github.com/isl-org/open3d_downloads/blob/master/tutorials/t_pipelines/t_icp_registration.html",
-        "path": "tutorial/t_pipelines/t_icp_registration.html",
-        "sha256": "e5e4757233e34dad1561fe21e7a7c4c8164d13e5f5a804ebc46eca99014a7558"
-    },
-    "tutorial/t_pipelines/t_robust_kernel.html": {
-        "url": "https://github.com/isl-org/open3d_downloads/blob/master/tutorials/t_pipelines/t_robust_kernel.html",
-        "path": "tutorial/t_pipelines/t_robust_kernel.html",
-        "sha256": "b4bb44dcff405c0bb503b8bb0f931b0f8cc954736ffa99383a5811a1abaf050e"
     }
 }

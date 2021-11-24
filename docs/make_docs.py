@@ -45,14 +45,9 @@ from pathlib import Path
 import nbformat
 import nbconvert
 import zipfile
-if (sys.version_info > (3, 0)):
-    pyver = 3
-    from urllib.request import Request, urlopen
-else:
-    pyver = 2
-    from urllib2 import Request, urlopen
 import ssl
 import certifi
+import urllib.request
 
 
 def _create_or_clear_dir(dir_path):
@@ -378,43 +373,13 @@ class JupyterDocsBuilder:
         self.current_file_dir = current_file_dir
         print("Notebook execution mode: {}".format(self.execute_notebooks))
 
-    def file_downloader(self, url):
-        file_name = url.split('/')[-1]
-        u = urlopen(url,
-                    context=ssl.create_default_context(cafile=certifi.where()))
-        f = open(file_name, "wb")
-        if pyver == 2:
-            meta = u.info()
-            file_size = int(meta.getheaders("Content-Length")[0])
-        elif pyver == 3:
-            file_size = int(u.getheader("Content-Length"))
-        print("Downloading: %s " % file_name)
-
-        file_size_dl = 0
-        block_sz = 8192
-        progress = 0
-        while True:
-            buffer = u.read(block_sz)
-            if not buffer:
-                break
-            file_size_dl += len(buffer)
-            f.write(buffer)
-            if progress + 10 <= (file_size_dl * 100. / file_size):
-                progress = progress + 10
-                print(" %.1f / %.1f MB (%.0f %%)" % \
-                        (file_size_dl/(1024*1024), file_size/(1024*1024), progress))
-        f.close()
-
-    def overwite_examples(self, url, extract_path):
-        self.file_downloader(url)
-        print("DOWNLOAD COMPLETE")
-        file_name = url.split('/')[-1]
-        file_path = os.path.join(self.current_file_dir, file_name)
-        print("Unzipping %s" % file_path)
-        zip_ref = zipfile.ZipFile(file_path, 'r')
-        zip_ref.extractall(extract_path)
-        zip_ref.close()
-        print("Extracted to %s" % extract_path)
+    def overwrite_tutorial_file(self, url, output_file, output_file_path):
+        with urllib.request.urlopen(url,
+                                    context=ssl.create_default_context(
+                                        cafile=certifi.where())) as response, \
+                                            open(output_file, 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
+        shutil.move(output_file, output_file_path)
 
     def run(self):
         if self.execute_notebooks == "never":
@@ -505,11 +470,12 @@ class JupyterDocsBuilder:
                 with open(nb_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
 
-        # Copy downloaded tutorial
-        url = "https://github.com/isl-org/Open3D/files/7592752/t_icp_registration.zip"
-        extract_to = os.path.join(self.current_file_dir,
-                                  "tutorial/t_pipelines/")
-        self.overwite_examples(url, extract_to)
+        url = "https://github.com/isl-org/Open3D/files/7592880/t_icp_registration.zip"
+        output_file = "t_icp_registration.ipynb"
+        output_file_path = os.path.join(
+            self.current_file_dir,
+            "tutorial/t_pipelines/t_icp_registration.ipynb")
+        self.overwrite_tutorial_file(url, output_file, output_file_path)
 
 
 if __name__ == "__main__":
@@ -609,15 +575,3 @@ if __name__ == "__main__":
         ddb.run()
     else:
         print("Doxygen build disabled, use --doxygen to enable")
-
-    # Overwriting tutorials by the downloaded version.
-    ticp_tutorial_dst_dir = os.path.join(html_output_dir,
-                                         "html/tutorial/t_pipelines")
-    print(ticp_tutorial_dst_dir)
-    ticp_tutorial_src_dir = os.path.join(
-        os.path.abspath(os.path.join(pwd, os.pardir)),
-        "examples/test_data/open3d_downloads/tutorial/t_pipelines")
-    print(ticp_tutorial_src_dir)
-
-    shutil.move(ticp_tutorial_src_dir, ticp_tutorial_dst_dir)
-    print("DONE!")
