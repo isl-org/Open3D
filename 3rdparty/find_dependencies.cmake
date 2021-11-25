@@ -1229,9 +1229,11 @@ if(USE_BLAS)
             LIBRARIES    ${OPENBLAS_LIBRARIES}
             DEPENDS      ext_openblas
         )
-        target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
+        if(APPLE_AARCH64)
+            target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
+        endif()
         target_link_libraries(3rdparty_blas INTERFACE Threads::Threads
-            /opt/homebrew/Cellar/gcc/11.2.0_2/lib/gcc/11/libgfortran.5.dylib)
+            /opt/homebrew/Cellar/gcc/11.2.0_2/lib/gcc/11/libgfortran.a)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
 else()
