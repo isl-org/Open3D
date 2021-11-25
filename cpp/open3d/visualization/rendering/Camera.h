@@ -126,6 +126,10 @@ public:
     // the point is out of view.
     virtual Eigen::Vector2f GetNDC(const Eigen::Vector3f& pt) const = 0;
 
+    /// Returns the view space depth (i.e., distance from camera) for the given
+    /// Z-buffer value
+    virtual double GetViewZ(float z_buffer) const = 0;
+
     struct ProjectionInfo {
         bool is_ortho;
         bool is_intrinsic;

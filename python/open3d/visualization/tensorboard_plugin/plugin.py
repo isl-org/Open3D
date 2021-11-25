@@ -165,6 +165,7 @@ class Open3DPluginWindow:
               "messageId": 2,
               "window_uid": "window_2",
               "class_name": "tensorboard/window_2/toggle_settings",
+              "open": "true" | "false",
               "status": "OK"
             }
         """
@@ -173,6 +174,7 @@ class Open3DPluginWindow:
         self.window.show_settings = not self.window.show_settings
         self._gui.run_sync(self.window.post_redraw)
         message["status"] = "OK"
+        message["open"] = self.window.show_settings
         return json.dumps(message)
 
     def _validate_run(self, selected_run):
@@ -415,6 +417,8 @@ class Open3DPluginWindow:
         self.window.show_menu(False)
         self.window.scene.downsample_threshold = 400000
         self.window.set_background((1, 1, 1, 1), None)  # White background
+        self.window.show_skybox(False)
+        self.window.line_width = int(3 * self.window.scaling)
         # Register frontend callbacks
         class_name_base = "tensorboard/" + self.window.uid
         webrtc_server.register_data_channel_message_callback(

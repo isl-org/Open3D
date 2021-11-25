@@ -174,10 +174,13 @@ std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
 }
 
 std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height) {
+        rendering::Open3DScene *scene,
+        int width,
+        int height,
+        bool z_in_view_space /* = false */) {
     return Application::GetInstance().RenderToDepthImage(
             scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
-            height);
+            height, z_in_view_space);
 }
 
 enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
@@ -1663,6 +1666,7 @@ void pybind_gui_classes(py::module &m) {
             py::none(), py::none(), "");
     filedlg_mode.value("OPEN", FileDialog::Mode::OPEN)
             .value("SAVE", FileDialog::Mode::SAVE)
+            .value("OPEN_DIR", FileDialog::Mode::OPEN_DIR)
             .export_values();
     filedlg.def(py::init<FileDialog::Mode, const char *, const Theme &>(),
                 "Creates either an open or save file dialog. The first "

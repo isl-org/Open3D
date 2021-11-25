@@ -502,6 +502,7 @@ bool FilamentScene::CreateAndAddFilamentEntity(
                 object_name,
                 RenderableGeometry{object_name,
                                    true,
+                                   false,
                                    true,
                                    true,
                                    true,
@@ -647,9 +648,11 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                 //     TPointCloudBuffersBuilder::ConstructBuffers
                 float* uv_array = static_cast<float*>(malloc(uv_array_size));
                 memset(uv_array, 0, uv_array_size);
-                const float* src = static_cast<const float*>(
+                auto vis_scalars =
                         point_cloud.GetPointAttr("__visualization_scalar")
-                                .GetDataPtr());
+                                .Contiguous();
+                const float* src =
+                        static_cast<const float*>(vis_scalars.GetDataPtr());
                 const size_t n = 2 * n_vertices;
                 for (size_t i = 0; i < n; i += 2) {
                     uv_array[i] = *src++;
@@ -1898,6 +1901,24 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
         container.view->PreRender();
         renderer.render(container.view->GetNativeView());
         container.view->PostRender();
+    }
+}
+
+void FilamentScene::HideRefractedMaterials(bool hide) {
+    for (auto geom : geometries_) {
+        if (geom.second.mat.properties.shader == "defaultLitSSR") {
+            if (hide) {
+                if (!geom.second.visible) {
+                    geom.second.was_hidden_before_picking = true;
+                } else {
+                    ShowGeometry(geom.first, false);
+                }
+            } else {
+                if (!geom.second.was_hidden_before_picking) {
+                    ShowGeometry(geom.first, true);
+                }
+            }
+        }
     }
 }
 

@@ -58,7 +58,7 @@ class ExampleApp:
 
         self.widget3d.scene = rendering.Open3DScene(self.window.renderer)
 
-        mat = rendering.Material()
+        mat = rendering.MaterialRecord()
         mat.shader = "defaultUnlit"
         # Point size is in native pixels, but "pixel" means different things to
         # different platforms (macOS, in particular), so multiply by Window scale

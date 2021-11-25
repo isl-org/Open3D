@@ -84,45 +84,68 @@ def load_fountain_dataset():
 
 
 def test_color_map():
+    """
+    Hard-coded values are from the 0.12 release. We expect the values to match
+    exactly when OMP_NUM_THREADS=1. If more threads are used, there could be
+    some small numerical differences.
+    """
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
+
     # Load dataset
     mesh, rgbd_images, camera_trajectory = load_fountain_dataset()
 
     # Computes averaged color without optimization, for debugging
-    with o3d.utility.VerbosityContextManager(
-            o3d.utility.VerbosityLevel.Debug) as cm:
-        o3d.pipelines.color_map.run_rigid_optimizer(
-            mesh, rgbd_images, camera_trajectory,
-            o3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=0))
+    mesh, camera_trajectory = o3d.pipelines.color_map.run_rigid_optimizer(
+        mesh, rgbd_images, camera_trajectory,
+        o3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=0))
+    vertex_mean = np.mean(np.asarray(mesh.vertex_colors), axis=0)
+    extrinsic_mean = np.array(
+        [c.extrinsic for c in camera_trajectory.parameters]).mean(axis=0)
+    np.testing.assert_allclose(vertex_mean,
+                               np.array([0.40322907, 0.37276872, 0.54375919]),
+                               rtol=1e-5)
+    np.testing.assert_allclose(
+        extrinsic_mean,
+        np.array([[0.77003829, -0.10813595, 0.06467495, -0.56212008],
+                  [0.19100387, 0.86225833, -0.14664845, -0.81434887],
+                  [-0.05557141, 0.16504166, 0.82036438, 0.27867426],
+                  [0., 0., 0., 1.]]),
+        rtol=1e-5)
 
     # Rigid Optimization
-    start = time.time()
-    with o3d.utility.VerbosityContextManager(
-            o3d.utility.VerbosityLevel.Debug) as cm:
-        mesh_optimized = o3d.pipelines.color_map.run_rigid_optimizer(
-            mesh, rgbd_images, camera_trajectory,
-            o3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=5))
-    print(f"Rigid optimization takes {time.time() - start}")
+    mesh, camera_trajectory = o3d.pipelines.color_map.run_rigid_optimizer(
+        mesh, rgbd_images, camera_trajectory,
+        o3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=10))
+
+    vertex_mean = np.mean(np.asarray(mesh.vertex_colors), axis=0)
+    extrinsic_mean = np.array(
+        [c.extrinsic for c in camera_trajectory.parameters]).mean(axis=0)
+    np.testing.assert_allclose(vertex_mean,
+                               np.array([0.40294861, 0.37250299, 0.54338467]),
+                               rtol=1e-5)
+    np.testing.assert_allclose(
+        extrinsic_mean,
+        np.array([[0.7699379, -0.10768808, 0.06543989, -0.56320637],
+                  [0.19119488, 0.8619734, -0.14717332, -0.8137762],
+                  [-0.05608781, 0.16546427, 0.81995183, 0.27725451],
+                  [0., 0., 0., 1.]]),
+        rtol=1e-5)
 
     # Non-rigid Optimization
-    start = time.time()
-    with o3d.utility.VerbosityContextManager(
-            o3d.utility.VerbosityLevel.Debug) as cm:
-        mesh_optimized = o3d.pipelines.color_map.run_non_rigid_optimizer(
-            mesh, rgbd_images, camera_trajectory,
-            o3d.pipelines.color_map.NonRigidOptimizerOption(
-                maximum_iteration=5))
-    print(f"Non-rigid optimization takes {time.time() - start}")
+    mesh, camera_trajectory = o3d.pipelines.color_map.run_non_rigid_optimizer(
+        mesh, rgbd_images, camera_trajectory,
+        o3d.pipelines.color_map.NonRigidOptimizerOption(maximum_iteration=10))
 
-    # Black box test with hard-coded result values. The results of
-    # color_map_optimization are deterministic. This test ensures the refactored
-    # code produces the same output. This is only valid for using exactly the
-    # same inputs and optimization options.
-    vertex_colors = np.asarray(mesh_optimized.vertex_colors)
-    assert vertex_colors.shape == (536872, 3)
-
-    # We need to account for the acceptable variation in the least significant
-    # bit which can occur with different JPEG libraries. The test value is
-    # pretty much exact with libjpeg-turbo, but not with the original libjpeg.
-    np.testing.assert_allclose(np.mean(vertex_colors, axis=0),
-                               [0.40307181, 0.37264626, 0.5436129],
-                               rtol=1. / 256.)
+    vertex_mean = np.mean(np.asarray(mesh.vertex_colors), axis=0)
+    extrinsic_mean = np.array(
+        [c.extrinsic for c in camera_trajectory.parameters]).mean(axis=0)
+    np.testing.assert_allclose(vertex_mean,
+                               np.array([0.4028204, 0.37237733, 0.54322786]),
+                               rtol=1e-5)
+    np.testing.assert_allclose(
+        extrinsic_mean,
+        np.array([[0.76967962, -0.10824218, 0.0674025, -0.56381652],
+                  [0.19129921, 0.86245618, -0.14634957, -0.81500831],
+                  [-0.05765316, 0.16483281, 0.82054672, 0.27526268],
+                  [0., 0., 0., 1.]]),
+        rtol=1e-5)
