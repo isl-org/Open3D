@@ -1092,7 +1092,11 @@ if(BUILD_GUI)
         endif()
     endif()
     if (APPLE)
-        set(FILAMENT_RUNTIME_VER x86_64)
+        if (APPLE_AARCH64)
+            set(FILAMENT_RUNTIME_VER arm64)
+        else()
+            set(FILAMENT_RUNTIME_VER x86_64)
+        endif()
     endif()
     open3d_import_3rdparty_library(3rdparty_filament
         HEADER
