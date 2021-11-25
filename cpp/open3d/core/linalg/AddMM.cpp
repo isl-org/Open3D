@@ -42,15 +42,10 @@ void AddMM(const Tensor& A,
     AssertTensorDtype(output, A.GetDtype());
 
     const Device device = A.GetDevice();
-    const Dtype dtype_original = A.GetDtype();
-    Dtype dtype;
+    const Dtype dtype = A.GetDtype();
 
-    if (dtype_original != core::Float32 && dtype_original != core::Float64) {
-        utility::LogDebug("Converting to Float32 dtype to from {}.",
-                          dtype.ToString());
-        dtype = core::Float32;
-    } else {
-        dtype = dtype_original;
+    if (dtype != core::Float32 && dtype != core::Float64) {
+        utility::LogError("AddMM is not implemented for {}.", dtype.ToString());
     }
 
     // Check shapes
@@ -123,8 +118,6 @@ void AddMM(const Tensor& A,
         AddMMCPU(B_data, A_data, C_data, n, k, m, alpha, beta, transB, transA,
                  ldb, lda, ldc, dtype);
     }
-
-    output = output.To(dtype_original);
 };
 
 }  // namespace core
