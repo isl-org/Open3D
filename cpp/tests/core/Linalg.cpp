@@ -105,43 +105,35 @@ TEST_P(LinalgPermuteDevices, AddMM) {
     core::Tensor C = core::Tensor::Ones({2, 4}, dtype, device);
     core::AddMM(A, B, C, 1.0, 1.0);
     EXPECT_EQ(C.GetShape(), core::SizeVector({2, 4}));
-    std::vector<float> C_data = C.ToFlatVector<float>();
-    std::vector<float> C_gt = {75, 81, 87, 93, 174, 189, 204, 219};
-    for (int i = 0; i < 8; ++i) {
-        EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
-    }
+    core::Tensor C_gt = core::Tensor::Init<float>(
+            {{75, 81, 87, 93}, {174, 189, 204, 219}}, device);
+    EXPECT_TRUE(C_gt.AllClose(C, EPSILON));
 
     // alpha = -2.0 & beta = 5.0.
     C = core::Tensor::Ones({2, 4}, dtype, device);
     core::AddMM(A, B, C, -2.0, 5.0);
     EXPECT_EQ(C.GetShape(), core::SizeVector({2, 4}));
-    C_data = C.ToFlatVector<float>();
-    C_gt = {-143, -155, -167, -179, -341, -371, -401, -431};
-    for (int i = 0; i < 8; ++i) {
-        EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
-    }
+    C_gt = core::Tensor::Init<float>(
+            {{-143, -155, -167, -179}, {-341, -371, -401, -431}}, device);
+    EXPECT_TRUE(C_gt.AllClose(C, EPSILON));
 
     // Transposed addmm test.
     C = core::Tensor::Ones({2, 4}, dtype, device);
     core::Tensor B_T_T = B_T.T();
     core::AddMM(A, B_T_T, C, 1.0, 1.0);
     EXPECT_EQ(C.GetShape(), core::SizeVector({2, 4}));
-    C_data = C.ToFlatVector<float>();
-    C_gt = {75, 81, 87, 93, 174, 189, 204, 219};
-    for (int i = 0; i < 8; ++i) {
-        EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
-    }
+    C_gt = core::Tensor::Init<float>({{75, 81, 87, 93}, {174, 189, 204, 219}},
+                                     device);
+    EXPECT_TRUE(C_gt.AllClose(C, EPSILON));
 
     // Transposed addmm + alpha = -2.0 & beta = 5.0.
     C = core::Tensor::Ones({2, 4}, dtype, device);
     B_T_T = B_T.T();
     core::AddMM(A, B_T_T, C, -2.0, 5.0);
     EXPECT_EQ(C.GetShape(), core::SizeVector({2, 4}));
-    C_data = C.ToFlatVector<float>();
-    C_gt = {-143, -155, -167, -179, -341, -371, -401, -431};
-    for (int i = 0; i < 8; ++i) {
-        EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
-    }
+    C_gt = core::Tensor::Init<float>(
+            {{-143, -155, -167, -179}, {-341, -371, -401, -431}}, device);
+    EXPECT_TRUE(C_gt.AllClose(C, EPSILON));
 
     // Non-contiguous addmm test.
     core::Tensor A_slice = A.GetItem(
@@ -156,11 +148,9 @@ TEST_P(LinalgPermuteDevices, AddMM) {
     C = core::Tensor::Ones({2, 4}, dtype, device);
     core::AddMM(A_slice, B_slice, C, 1.0, 1.0);
     EXPECT_EQ(C.GetShape(), core::SizeVector({2, 4}));
-    C_data = C.ToFlatVector<float>();
-    C_gt = {60, 65, 70, 75, 126, 137, 148, 159};
-    for (int i = 0; i < 6; ++i) {
-        EXPECT_TRUE(std::abs(C_data[i] - C_gt[i]) < EPSILON);
-    }
+    C_gt = core::Tensor::Init<float>({{60, 65, 70, 75}, {126, 137, 148, 159}},
+                                     device);
+    EXPECT_TRUE(C_gt.AllClose(C, EPSILON));
 }
 
 TEST_P(LinalgPermuteDevices, LU) {

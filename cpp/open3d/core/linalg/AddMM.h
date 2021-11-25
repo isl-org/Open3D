@@ -31,7 +31,7 @@
 namespace open3d {
 namespace core {
 
-/// Computes matrix multiplication C = AB.
+/// Computes matrix multiplication C = alpha * A @ B + beta * C.
 void AddMM(
         const Tensor& A, const Tensor& B, Tensor& C, double alpha, double beta);
 
@@ -66,5 +66,6 @@ void AddMMCPU(void* A_data,
               int ldb,
               int ldc,
               Dtype dtype);
+
 }  // namespace core
 }  // namespace open3d
