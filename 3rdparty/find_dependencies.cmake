@@ -1221,8 +1221,8 @@ if(USE_BLAS)
         message(STATUS "Building OpenBLAS with LAPACK from source")
         set(BLAS_BUILD_FROM_SOURCE ON)
 
-        find_program(GFORTRAN "gfortran")
-        if (GFORTRAN)
+        find_program(gfortran_bin "gfortran")
+        if (gfortran_bin)
             message(STATUS "gfortran found at ${gfortran}")
         else()
             message(FATAL_ERROR "gfortran is required to compile LAPACK from source. "
@@ -1240,26 +1240,45 @@ if(USE_BLAS)
         )
         if(APPLE_AARCH64)
             execute_process(COMMAND brew --prefix gfortran
-                OUTPUT_VARIABLE GFORTRAN_PREFIX
+                OUTPUT_VARIABLE gfortran_prefix
                 RESULT_VARIABLE RET
                 OUTPUT_STRIP_TRAILING_WHITESPACE
             )
             if(RET AND NOT RET EQUAL 0)
                 message(FATAL_ERROR "Failed to run `brew --prefix gfortran`")
             endif()
-            message(STATUS "GFORTRAN_PREFIX: ${GFORTRAN_PREFIX}")
+            message(STATUS "gfortran_prefix: ${gfortran_prefix}")
 
-            file(GLOB_RECURSE LIB_GFORTRAN /opt/homebrew/Cellar/gcc/*/libgfortran.a)
-            message(STATUS "LIB_GFORTRAN: ${LIB_GFORTRAN}")
+            execute_process(COMMAND ${gfortran_bin} -print-search-dirs
+                OUTPUT_VARIABLE gfortran_search_dirs
+                RESULT_VARIABLE RET
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            if(RET AND NOT RET EQUAL 0)
+                message(FATAL_ERROR "Failed to run `${gfortran_bin} -print-search-dirs`")
+            endif()
+            message(STATUS "gfortran_search_dirs: ${gfortran_search_dirs}")
 
-            file(GLOB_RECURSE LIB_GCC /opt/homebrew/Cellar/gcc/*/libgcc.a)
-            message(STATUS "LIB_GCC: ${LIB_GCC}")
+            string(REGEX MATCH "libraries: =(.*)" match_result ${gfortran_search_dirs})
+            if (match_result)
+                string(REPLACE ":" ";" gfortran_lib_dirs ${CMAKE_MATCH_1})
+                message(STATUS "gfortran_lib_dirs: ${gfortran_lib_dirs}")
+            else()
+                message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
+            endif()
+
+
+            # file(GLOB_RECURSE LIB_GFORTRAN /opt/homebrew/Cellar/gcc/*/libgfortran.a)
+            # message(STATUS "LIB_GFORTRAN: ${LIB_GFORTRAN}")
+
+            # file(GLOB_RECURSE LIB_GCC /opt/homebrew/Cellar/gcc/*/libgcc.a)
+            # message(STATUS "LIB_GCC: ${LIB_GCC}")
 
             find_library(
                 LIB_GFORTRAN
                 NAMES libgfortran.a
-                PATHS /opt/homebrew/Cellar/gcc/
-                PATH_SUFFIXES gcc/11
+                PATHS ${gfortran_lib_dirs}
+                # PATH_SUFFIXES gcc/11
                 # NO_DEFAULT_PATH
                 # NO_PACKAGE_ROOT_PATH
                 # NO_CMAKE_PATH
@@ -1273,8 +1292,7 @@ if(USE_BLAS)
             find_library(
                 LIB_GCC
                 NAMES libgcc.a
-                PATHS /opt/homebrew/Cellar/gcc/
-                PATH_SUFFIXES 11.2.0_2/lib/gcc/11/gcc/aarch64-apple-darwin20/11
+                PATHS ${gfortran_lib_dirs}
                 # NO_DEFAULT_PATH
                 # NO_PACKAGE_ROOT_PATH
                 # NO_CMAKE_PATH
