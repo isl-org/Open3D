@@ -1231,11 +1231,14 @@ if(USE_BLAS)
         )
         if(APPLE_AARCH64)
             target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
-        endif()
-        target_link_libraries(3rdparty_blas INTERFACE Threads::Threads
-            /opt/homebrew/Cellar/gcc/11.2.0_2/lib/gcc/11/libgfortran.a
-            /opt/homebrew/Cellar/gcc/11.2.0_2/lib/gcc/11/gcc/aarch64-apple-darwin20/11/libgcc.a
+            target_link_libraries(3rdparty_blas INTERFACE Threads::Threads
+                /opt/homebrew/Cellar/gcc/11.2.0_2/lib/gcc/11/libgfortran.a
+                /opt/homebrew/Cellar/gcc/11.2.0_2/lib/gcc/11/gcc/aarch64-apple-darwin20/11/libgcc.a
             )
+        endif()
+        if(LINUX_AARCH64)
+            target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
+        endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
 else()
