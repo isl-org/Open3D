@@ -1239,16 +1239,7 @@ if(USE_BLAS)
             DEPENDS      ext_openblas
         )
         if(APPLE_AARCH64)
-            execute_process(COMMAND brew --prefix gfortran
-                OUTPUT_VARIABLE gfortran_prefix
-                RESULT_VARIABLE RET
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-            if(RET AND NOT RET EQUAL 0)
-                message(FATAL_ERROR "Failed to run `brew --prefix gfortran`")
-            endif()
-            message(STATUS "gfortran_prefix: ${gfortran_prefix}")
-
+            # Get gfortran library search directories.
             execute_process(COMMAND ${gfortran_bin} -print-search-dirs
                 OUTPUT_VARIABLE gfortran_search_dirs
                 RESULT_VARIABLE RET
@@ -1267,49 +1258,13 @@ if(USE_BLAS)
                 message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
             endif()
 
-
-            # file(GLOB_RECURSE LIB_GFORTRAN /opt/homebrew/Cellar/gcc/*/libgfortran.a)
-            # message(STATUS "LIB_GFORTRAN: ${LIB_GFORTRAN}")
-
-            # file(GLOB_RECURSE LIB_GCC /opt/homebrew/Cellar/gcc/*/libgcc.a)
-            # message(STATUS "LIB_GCC: ${LIB_GCC}")
-
-            find_library(
-                LIB_GFORTRAN
-                NAMES libgfortran.a
-                PATHS ${gfortran_lib_dirs}
-                # PATH_SUFFIXES gcc/11
-                # NO_DEFAULT_PATH
-                # NO_PACKAGE_ROOT_PATH
-                # NO_CMAKE_PATH
-                # NO_CMAKE_ENVIRONMENT_PATH
-                # NO_SYSTEM_ENVIRONMENT_PATH
-                # NO_CMAKE_SYSTEM_PATH
-                REQUIRED
-            )
-            message(STATUS "LIB_GFORTRAN: ${LIB_GFORTRAN}")
-
-            find_library(
-                LIB_GCC
-                NAMES libgcc.a
-                PATHS ${gfortran_lib_dirs}
-                # NO_DEFAULT_PATH
-                # NO_PACKAGE_ROOT_PATH
-                # NO_CMAKE_PATH
-                # NO_CMAKE_ENVIRONMENT_PATH
-                # NO_SYSTEM_ENVIRONMENT_PATH
-                # NO_CMAKE_SYSTEM_PATH
-                REQUIRED
-            )
-            message(STATUS "LIB_GCC: ${LIB_GCC}")
-
-            message(FATAL_ERROR "all found!")
-
+            # Find libgfortran.a and libgcc.a in gfortran search directories.
+            find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
+            find_library(gcc_lib NAMES libgcc.a PATHS ${gfortran_lib_dirs} REQUIRED)
 
             target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
             target_link_libraries(3rdparty_blas INTERFACE Threads::Threads
-                /opt/homebrew/Cellar/gcc/11.2.0_2/lib/gcc/11/libgfortran.a
-                /opt/homebrew/Cellar/gcc/11.2.0_2/lib/gcc/11/gcc/aarch64-apple-darwin20/11/libgcc.a
+                ${gfortran_lib} ${gcc_lib}
             )
         endif()
         if(LINUX_AARCH64)
