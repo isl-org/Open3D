@@ -1225,7 +1225,8 @@ if(USE_BLAS)
             LIBRARIES    ${OPENBLAS_LIBRARIES}
             DEPENDS      ext_openblas
         )
-        target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
+        target_link_libraries(3rdparty_blas INTERFACE Threads::Threads
+            /opt/homebrew/Cellar/gcc/11.2.0_2/lib/gcc/11/libgfortran.5.dylib)
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
 else()
