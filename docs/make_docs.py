@@ -29,7 +29,6 @@
 # (2) make.py generate Python api docs, one ".rst" file per class / function
 # (3) make.py calls the actual `sphinx-build`
 
-from __future__ import print_function
 import argparse
 import subprocess
 import sys
@@ -37,9 +36,6 @@ import importlib
 import os
 import inspect
 import shutil
-import warnings
-import weakref
-from tempfile import mkdtemp
 import re
 from pathlib import Path
 import nbformat
@@ -141,7 +137,6 @@ class PyAPIDocsBuilder:
 
     def _generate_function_doc(self, full_module_name, function_name,
                                output_path):
-        # print("Generating docs: %s" % (output_path,))
         out_string = ""
         out_string += "%s.%s" % (full_module_name, function_name)
         out_string += "\n" + "-" * len(out_string)
@@ -153,7 +148,6 @@ class PyAPIDocsBuilder:
             f.write(out_string)
 
     def _generate_class_doc(self, full_module_name, class_name, output_path):
-        # print("Generating docs: %s" % (output_path,))
         out_string = ""
         out_string += "%s.%s" % (full_module_name, class_name)
         out_string += "\n" + "-" * len(out_string)
@@ -172,7 +166,6 @@ class PyAPIDocsBuilder:
     def _generate_module_doc(self, full_module_name, class_names,
                              function_names, sub_module_names,
                              sub_module_doc_path):
-        # print("Generating docs: %s" % (sub_module_doc_path,))
         class_names = sorted(class_names)
         function_names = sorted(function_names)
         out_string = ""
@@ -292,7 +285,9 @@ class SphinxDocsBuilder:
     (3) Calls `sphinx-build` with the user argument
     """
 
-    def __init__(self, html_output_dir, is_release, skip_notebooks):
+    def __init__(self, current_file_dir, html_output_dir, is_release,
+                 skip_notebooks):
+        self.current_file_dir = current_file_dir
         self.html_output_dir = html_output_dir
         self.is_release = is_release
         self.skip_notebooks = skip_notebooks
@@ -301,6 +296,14 @@ class SphinxDocsBuilder:
         """
         Call Sphinx command with hard-coded "html" target
         """
+        # Copy docs files from Open3D-ML repo
+        OPEN3D_ML_ROOT = os.environ.get(
+            "OPEN3D_ML_ROOT",
+            os.path.join(self.current_file_dir, "../../Open3D-ML"))
+        if os.path.isdir(OPEN3D_ML_ROOT):
+            shutil.copy(os.path.join(OPEN3D_ML_ROOT, "docs", "tensorboard.md"),
+                        self.current_file_dir)
+
         build_dir = os.path.join(self.html_output_dir, "html")
 
         if self.is_release:
@@ -400,7 +403,8 @@ class JupyterDocsBuilder:
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
         nb_direct_copy = [
-            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration.ipynb'
+            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration.ipynb',
+            'jupyter_visualization.ipynb'
         ]
         example_dirs = [
             "geometry", "core", "pipelines", "visualization", "t_pipelines"
@@ -460,10 +464,9 @@ class JupyterDocsBuilder:
                 try:
                     ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
                 except nbconvert.preprocessors.execute.CellExecutionError:
-                    print(
-                        "Execution of {} failed, this will cause Travis to fail."
-                        .format(nb_path.name))
-                    if "TRAVIS" in os.environ:
+                    print("Execution of {} failed, this will cause CI to fail.".
+                          format(nb_path.name))
+                    if "GITHUB_ACTIONS" in os.environ:
                         raise
 
                 with open(nb_path, "w", encoding="utf-8") as f:
@@ -560,7 +563,7 @@ if __name__ == "__main__":
         print("Building Sphinx docs")
         skip_notebooks = (args.execute_notebooks == "never" and
                           args.clean_notebooks)
-        sdb = SphinxDocsBuilder(html_output_dir, args.is_release,
+        sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release,
                                 skip_notebooks)
         sdb.run()
     else:
