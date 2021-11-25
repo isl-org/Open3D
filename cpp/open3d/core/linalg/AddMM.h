@@ -32,6 +32,10 @@ namespace open3d {
 namespace core {
 
 /// Computes matrix multiplication C = alpha * A @ B + beta * C.
+/// If matrix A is a (n x m) tensor, and B is a (m x p) tensor, C should have a
+/// shape (n x p).
+/// alpha and beta are scaling factors on matrix-matrix multiplication and the
+/// added matrix input respectively.
 void AddMM(
         const Tensor& A, const Tensor& B, Tensor& C, double alpha, double beta);
 

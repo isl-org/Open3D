@@ -61,7 +61,8 @@ void pybind_core_linalg(py::module &m) {
                 return output;
             },
             "Function to perform addmm of two 2D tensors with compatible "
-            "shapes.",
+            "shapes. Specifically this function returns output = alpha * A @ B "
+            "+ beta * input.",
             "input"_a, "A"_a, "B"_a, "alpha"_a, "beta"_a);
     m.def(
             "det",
