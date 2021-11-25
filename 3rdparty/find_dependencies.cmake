@@ -1219,7 +1219,6 @@ if(USE_BLAS)
     else()
         # Install gfortran first for compiling OpenBLAS/Lapack from source.
         message(STATUS "Building OpenBLAS with LAPACK from source")
-        set(BLAS_BUILD_FROM_SOURCE ON)
 
         find_program(gfortran_bin "gfortran")
         if (gfortran_bin)
