@@ -32,10 +32,11 @@ set(filament_LIBRARIES
 # Locate byproducts
 set(lib_dir lib)
 if(APPLE)
-    set(lib_dir lib/x86_64)
-endif()
-if(APPLE_AARCH64)
-    set(lib_dir lib/arm64)
+    if(APPLE_AARCH64)
+        set(lib_dir lib/arm64)
+    else()
+        set(lib_dir lib/x86_64)
+    endif()
 endif()
 
 set(lib_byproducts ${filament_LIBRARIES})
