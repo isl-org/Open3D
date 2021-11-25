@@ -403,7 +403,8 @@ class JupyterDocsBuilder:
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
         nb_direct_copy = [
-            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration.ipynb'
+            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration.ipynb',
+            'jupyter_visualization.ipynb'
         ]
         example_dirs = [
             "geometry", "core", "pipelines", "visualization", "t_pipelines"
@@ -465,8 +466,8 @@ class JupyterDocsBuilder:
                 except nbconvert.preprocessors.execute.CellExecutionError:
                     print("Execution of {} failed, this will cause CI to fail.".
                           format(nb_path.name))
-                    # if "GITHUB_ACTIONS" in os.environ:
-                    #     raise
+                    if "GITHUB_ACTIONS" in os.environ:
+                        raise
 
                 with open(nb_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
