@@ -1251,11 +1251,10 @@ if(USE_BLAS)
 
 
             find_library(
-
                 GFORTRAN_LIB
                 NAMES libgfortran.a
                 PATHS /opt/homebrew/Cellar/gcc/
-                PATH_SUFFIXES 11.2.0_2/lib/gcc/11/
+                PATH_SUFFIXES gcc/11
                 # NO_DEFAULT_PATH
                 # NO_PACKAGE_ROOT_PATH
                 # NO_CMAKE_PATH
