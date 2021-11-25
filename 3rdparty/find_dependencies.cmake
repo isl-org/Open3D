@@ -1250,6 +1250,7 @@ if(USE_BLAS)
             endif()
             message(STATUS "gfortran_search_dirs: ${gfortran_search_dirs}")
 
+            # Parse gfortran library search directories into CMake list.
             string(REGEX MATCH "libraries: =(.*)" match_result ${gfortran_search_dirs})
             if (match_result)
                 string(REPLACE ":" ";" gfortran_lib_dirs ${CMAKE_MATCH_1})
@@ -1258,13 +1259,17 @@ if(USE_BLAS)
                 message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
             endif()
 
-            # Find libgfortran.a and libgcc.a in gfortran search directories.
+            # Find libgfortran.a and libgcc.a inside the gfortran library search
+            # directories. This ensures that the library matches the compiler.
             find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
             find_library(gcc_lib NAMES libgcc.a PATHS ${gfortran_lib_dirs} REQUIRED)
 
+            # -no_compact_unwind is needed to supress compiler warnings.
             target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
-            target_link_libraries(3rdparty_blas INTERFACE Threads::Threads
-                ${gfortran_lib} ${gcc_lib}
+
+            target_link_libraries(3rdparty_blas INTERFACE
+                ${gfortran_lib}
+                ${gcc_lib}
             )
         endif()
         if(LINUX_AARCH64)
