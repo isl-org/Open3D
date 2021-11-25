@@ -4,13 +4,6 @@ set(OPENBLAS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/openblas)
 
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     set(OPENBLAS_TARGET "ARMV8")
-    find_program(GFORTRAN "gfortran")
-    if (GFORTRAN)
-        message(STATUS "gfortran found at ${gfortran}")
-    else()
-        message(FATAL_ERROR "gfortran is required to compile LAPACK from source. "
-                            "Please install by `brew install gfortran`.")
-    endif()
 else()
     set(OPENBLAS_TARGET "NEHALEM")
 endif()

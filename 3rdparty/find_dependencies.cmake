@@ -1221,6 +1221,15 @@ if(USE_BLAS)
         message(STATUS "Building OpenBLAS with LAPACK from source")
         set(BLAS_BUILD_FROM_SOURCE ON)
 
+        find_program(GFORTRAN "gfortran")
+        if (GFORTRAN)
+            message(STATUS "gfortran found at ${gfortran}")
+        else()
+            message(FATAL_ERROR "gfortran is required to compile LAPACK from source. "
+                                "On Ubuntu, please install by `apt install gfortran`. "
+                                "On macOS, please install by `brew install gfortran`. ")
+        endif()
+
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         open3d_import_3rdparty_library(3rdparty_blas
             HIDDEN
@@ -1230,6 +1239,33 @@ if(USE_BLAS)
             DEPENDS      ext_openblas
         )
         if(APPLE_AARCH64)
+            execute_process(COMMAND brew --prefix gfortran
+                OUTPUT_VARIABLE GFORTRAN_PREFIX
+                RESULT_VARIABLE RET
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            if(RET AND NOT RET EQUAL 0)
+                message(FATAL_ERROR "Failed to run `brew --prefix gfortran`")
+            endif()
+            message(STATUS "GFORTRAN_PREFIX: ${GFORTRAN_PREFIX}")
+
+
+            find_library(
+
+                GFORTRAN_LIB
+                NAMES libgfortran.a
+                PATHS /opt/homebrew/Cellar/gcc/
+                PATH_SUFFIXES 11.2.0_2/lib/gcc/11/
+                # NO_DEFAULT_PATH
+                # NO_PACKAGE_ROOT_PATH
+                # NO_CMAKE_PATH
+                # NO_CMAKE_ENVIRONMENT_PATH
+                # NO_SYSTEM_ENVIRONMENT_PATH
+                # NO_CMAKE_SYSTEM_PATH
+            )
+            message(FATAL_ERROR "GFORTRAN_LIB: ${GFORTRAN_LIB}")
+
+
             target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
             target_link_libraries(3rdparty_blas INTERFACE Threads::Threads
                 /opt/homebrew/Cellar/gcc/11.2.0_2/lib/gcc/11/libgfortran.a
