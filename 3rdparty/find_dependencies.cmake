@@ -1251,7 +1251,7 @@ if(USE_BLAS)
 
 
             find_library(
-                GFORTRAN_LIB
+                LIB_GFORTRAN
                 NAMES libgfortran.a
                 PATHS /opt/homebrew/Cellar/gcc/
                 PATH_SUFFIXES gcc/11
@@ -1262,7 +1262,7 @@ if(USE_BLAS)
                 # NO_SYSTEM_ENVIRONMENT_PATH
                 # NO_CMAKE_SYSTEM_PATH
             )
-            message(FATAL_ERROR "GFORTRAN_LIB: ${GFORTRAN_LIB}")
+            message(FATAL_ERROR "LIB_GFORTRAN: ${LIB_GFORTRAN}")
 
 
             target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
