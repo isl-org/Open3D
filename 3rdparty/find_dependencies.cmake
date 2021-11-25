@@ -1261,8 +1261,26 @@ if(USE_BLAS)
                 # NO_CMAKE_ENVIRONMENT_PATH
                 # NO_SYSTEM_ENVIRONMENT_PATH
                 # NO_CMAKE_SYSTEM_PATH
+                REQUIRED
             )
-            message(FATAL_ERROR "LIB_GFORTRAN: ${LIB_GFORTRAN}")
+            message(STATUS "LIB_GFORTRAN: ${LIB_GFORTRAN}")
+
+            find_library(
+                LIB_GCC
+                NAMES libgcc.a
+                PATHS /opt/homebrew/Cellar/gcc/
+                PATH_SUFFIXES 11.2.0_2/lib/gcc/11/gcc/aarch64-apple-darwin20/11
+                # NO_DEFAULT_PATH
+                # NO_PACKAGE_ROOT_PATH
+                # NO_CMAKE_PATH
+                # NO_CMAKE_ENVIRONMENT_PATH
+                # NO_SYSTEM_ENVIRONMENT_PATH
+                # NO_CMAKE_SYSTEM_PATH
+                REQUIRED
+            )
+            message(STATUS "LIB_GCC: ${LIB_GCC}")
+
+            message(FATAL_ERROR "all found!")
 
 
             target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
