@@ -76,7 +76,7 @@ std::string TriangleMesh::ToString() const {
             GetTriangleIndices().GetLength(),
             GetTriangleIndices().GetDtype().ToString());
 
-    std::string vertices_attr_str = "\nVertices Attributes:";
+    std::string vertices_attr_str = "\nVertex Attributes:";
     if (vertex_attr_.size() == 1) {
         vertices_attr_str += " None.";
     } else {
@@ -91,7 +91,7 @@ std::string TriangleMesh::ToString() const {
         vertices_attr_str[vertices_attr_str.size() - 1] = '.';
     }
 
-    std::string triangles_attr_str = "\nTriangles Attributes:";
+    std::string triangles_attr_str = "\nTriangle Attributes:";
     if (triangle_attr_.size() == 1) {
         triangles_attr_str += " None.";
     } else {
@@ -205,6 +205,13 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                 core::eigen_converter::EigenVector3dVectorToTensor(
                         mesh_legacy.triangle_normals_, float_dtype, device));
     }
+    if (mesh_legacy.HasTriangleUvs()) {
+        mesh.SetTriangleAttr(
+                "texture_uvs",
+                core::eigen_converter::EigenVector2dVectorToTensor(
+                        mesh_legacy.triangle_uvs_, float_dtype, device)
+                        .Reshape({-1, 3, 2}));
+    }
     return mesh;
 }
 
@@ -234,6 +241,16 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
         mesh_legacy.triangle_normals_ =
                 core::eigen_converter::TensorToEigenVector3dVector(
                         GetTriangleNormals());
+    }
+    if (HasTriangleAttr("texture_uvs")) {
+        mesh_legacy.triangle_uvs_ =
+                core::eigen_converter::TensorToEigenVector2dVector(
+                        GetTriangleAttr("texture_uvs").Reshape({-1, 2}));
+    }
+    if (HasVertexAttr("texture_uvs")) {
+        utility::LogWarning("{}",
+                            "texture_uvs as a vertex attribute is not "
+                            "supported by legacy TriangleMesh. Ignored.");
     }
 
     return mesh_legacy;

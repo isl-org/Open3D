@@ -102,6 +102,8 @@ def jupyter_draw_geometries(
 
 o3d.visualization.draw_geometries = jupyter_draw_geometries
 
+# o3d.visualization.draw = jupyter_draw_geometries
+
 
 def edges_to_lineset(mesh, edges, color):
     ls = o3d.geometry.LineSet()

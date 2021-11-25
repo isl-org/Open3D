@@ -47,10 +47,10 @@ void pybind_visualization(py::module &m) {
     pybind_viewcontrol_method(m_visualization);
     pybind_visualizer_method(m_visualization);
     pybind_visualization_utility_methods(m_visualization);
+    rendering::pybind_material(m_visualization);  // For RPC serialization
 
 #ifdef BUILD_GUI
     rendering::pybind_rendering(m_visualization);
-    rendering::pybind_material(m_visualization);
     gui::pybind_gui(m_visualization);
     pybind_o3dvisualizer(m_visualization);
 #endif

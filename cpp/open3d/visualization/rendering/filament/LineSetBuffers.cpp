@@ -420,22 +420,23 @@ TLineSetBuffersBuilder::TLineSetBuffersBuilder(
 
 RenderableManager::PrimitiveType TLineSetBuffersBuilder::GetPrimitiveType()
         const {
-    return RenderableManager::PrimitiveType::LINES;
+    if (wide_lines_) {
+        return RenderableManager::PrimitiveType::TRIANGLES;
+    } else {
+        return RenderableManager::PrimitiveType::LINES;
+    }
 }
 
-GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
-    auto& engine = EngineInstance::GetInstance();
-    auto& resource_mgr = EngineInstance::GetResourceManager();
-
+void TLineSetBuffersBuilder::ConstructThinLines(uint32_t& n_vertices,
+                                                float** vertex_data,
+                                                uint32_t& n_indices,
+                                                uint32_t& indices_bytes,
+                                                uint32_t** line_indices) {
     const auto& points = geometry_.GetPointPositions();
-
-    const uint32_t vertex_stride = 7 * sizeof(float);
-    const uint32_t color_start_offset = 3 * sizeof(float);
-    uint32_t n_vertices = 0;
-    float* vertex_data = nullptr;
-    uint32_t n_indices = 0;
-    IndexType* line_indices = nullptr;
-    uint32_t indices_bytes = 0;
+    const uint32_t n_elements = 7;
+    const uint32_t vertex_stride = n_elements * sizeof(float);
+    float* vdata;
+    uint32_t* idata;
 
     // Two separate paths for lines with colors and those without
     if (geometry_.HasLineColors()) {
@@ -448,62 +449,178 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
         const auto& lines = geometry_.GetLineIndices();
         const auto& colors = geometry_.GetLineColors();
         n_vertices = lines.GetLength() * 2;
-        core::Tensor dup_vertices =
+        core::Tensor filament_data =
+                core::Tensor::Empty({n_vertices, n_elements}, core::Float32);
+        filament_data.Slice(1, 0, 3) =
                 points.IndexGet({lines.Reshape({n_vertices}).To(core::Int64)});
-        vertex_data = static_cast<float*>(malloc(n_vertices * vertex_stride));
-        float* vertex_data_ptr = vertex_data;
-        const float* current_vertex =
-                static_cast<float*>(dup_vertices.GetDataPtr());
-        const float* color_data =
-                static_cast<const float*>(colors.GetDataPtr());
-        for (int i = 0; i < lines.GetLength(); ++i) {
-            // Vertex one of the line
-            *vertex_data_ptr++ = *current_vertex++;
-            *vertex_data_ptr++ = *current_vertex++;
-            *vertex_data_ptr++ = *current_vertex++;
-            *vertex_data_ptr++ = *color_data;
-            *vertex_data_ptr++ = *(color_data + 1);
-            *vertex_data_ptr++ = *(color_data + 2);
-            *vertex_data_ptr++ = 1.f;
-            *vertex_data_ptr++ = *current_vertex++;
-            *vertex_data_ptr++ = *current_vertex++;
-            *vertex_data_ptr++ = *current_vertex++;
-            *vertex_data_ptr++ = *color_data;
-            *vertex_data_ptr++ = *(color_data + 1);
-            *vertex_data_ptr++ = *(color_data + 2);
-            *vertex_data_ptr++ = 1.f;
-            color_data += 3;
-        }
+        filament_data.Slice(0, 0, n_vertices, 2).Slice(1, 3, 6) = colors;
+        filament_data.Slice(0, 1, n_vertices, 2).Slice(1, 3, 6) = colors;
+        filament_data.Slice(1, 6, 7) = 1.f;
+        vdata = static_cast<float*>(malloc(n_vertices * vertex_stride));
+        memcpy(vdata, filament_data.GetDataPtr(), n_vertices * vertex_stride);
         indices_bytes = n_vertices * sizeof(IndexType);
         n_indices = n_vertices;
-        line_indices = static_cast<IndexType*>(malloc(indices_bytes));
-        std::iota(line_indices, line_indices + n_vertices, 0);
+        idata = static_cast<IndexType*>(malloc(indices_bytes));
+        std::iota(idata, idata + n_vertices, 0);
     } else {
         n_vertices = points.GetLength();
         core::Tensor filament_data =
-                core::Tensor::Ones({n_vertices, 7}, core::Float32);
+                core::Tensor::Empty({n_vertices, n_elements}, core::Float32);
         filament_data.Slice(1, 0, 3) = points;
+        filament_data.Slice(1, 3, 7) = 1.f;
         const auto vertex_array_size = n_vertices * vertex_stride;
-        vertex_data = static_cast<float*>(malloc(vertex_array_size));
-        memcpy(vertex_data, filament_data.GetDataPtr(), vertex_array_size);
+        vdata = static_cast<float*>(malloc(vertex_array_size));
+        memcpy(vdata, filament_data.GetDataPtr(), vertex_array_size);
         indices_bytes =
                 geometry_.GetLineIndices().GetLength() * 2 * sizeof(IndexType);
         n_indices = geometry_.GetLineIndices().GetLength() * 2;
-        line_indices = static_cast<IndexType*>(malloc(indices_bytes));
-        memcpy(line_indices, geometry_.GetLineIndices().GetDataPtr(),
-               indices_bytes);
+        idata = static_cast<IndexType*>(malloc(indices_bytes));
+        memcpy(idata, geometry_.GetLineIndices().GetDataPtr(), indices_bytes);
     }
 
-    VertexBuffer* vbuf = VertexBuffer::Builder()
-                                 .bufferCount(1)
-                                 .vertexCount(n_vertices)
-                                 .attribute(VertexAttribute::POSITION, 0,
-                                            VertexBuffer::AttributeType::FLOAT3,
-                                            0, vertex_stride)
-                                 .attribute(VertexAttribute::COLOR, 0,
-                                            VertexBuffer::AttributeType::FLOAT4,
-                                            color_start_offset, vertex_stride)
-                                 .build(engine);
+    // Assign buffers back to inputs
+    *vertex_data = vdata;
+    *line_indices = idata;
+}
+
+void TLineSetBuffersBuilder::ConstructWideLines(uint32_t& n_vertices,
+                                                float** vertex_data,
+                                                uint32_t& n_indices,
+                                                uint32_t& indices_bytes,
+                                                uint32_t** line_indices) {
+    const auto& points = geometry_.GetPointPositions();
+    const auto& lines = geometry_.GetLineIndices();
+
+    const uint32_t n_elements = 11;
+    const uint32_t vertex_stride = n_elements * sizeof(float);
+    float* vdata;
+    uint32_t* idata;
+
+    n_vertices = lines.GetLength() * 4;
+    core::Tensor filament_data =
+            core::Tensor::Empty({n_vertices, n_elements}, core::Float32);
+    // Get the start and end vertex of each line
+    core::Tensor pos1_data =
+            points.IndexGet({lines.Slice(1, 0, 1)
+                                     .Reshape({lines.GetLength()})
+                                     .To(core::Int64)});
+    core::Tensor pos2_data =
+            points.IndexGet({lines.Slice(1, 1, 2)
+                                     .Reshape({lines.GetLength()})
+                                     .To(core::Int64)});
+    // Fill the vertices. The original vertices get expanded to 4 vertices
+    // for the 4 corners of the line (composed of 2 triangles) as follows:
+    // pos1 pos2 1.0 [color]
+    // pos1 pos2 -1.0 [color]
+    // pos2 pos1 -1.0 [color]
+    // pos2 pos1 1.0 [color]
+    // Vertex
+    filament_data.Slice(0, 0, n_vertices, 4).Slice(1, 0, 3) = pos1_data;
+    filament_data.Slice(0, 1, n_vertices, 4).Slice(1, 0, 3) = pos1_data;
+    filament_data.Slice(0, 2, n_vertices, 4).Slice(1, 0, 3) = pos2_data;
+    filament_data.Slice(0, 3, n_vertices, 4).Slice(1, 0, 3) = pos2_data;
+    // Next parameter
+    filament_data.Slice(0, 0, n_vertices, 4).Slice(1, 3, 6) = pos2_data;
+    filament_data.Slice(0, 1, n_vertices, 4).Slice(1, 3, 6) = pos2_data;
+    filament_data.Slice(0, 2, n_vertices, 4).Slice(1, 3, 6) = pos1_data;
+    filament_data.Slice(0, 3, n_vertices, 4).Slice(1, 3, 6) = pos1_data;
+    // Direction parameter
+    filament_data.Slice(0, 0, n_vertices, 4).Slice(1, 6, 7) = 1.f;
+    filament_data.Slice(0, 1, n_vertices, 4).Slice(1, 6, 7) = -1.f;
+    filament_data.Slice(0, 2, n_vertices, 4).Slice(1, 6, 7) = -1.f;
+    filament_data.Slice(0, 3, n_vertices, 4).Slice(1, 6, 7) = 1.f;
+    // Fill in color
+    if (geometry_.HasLineColors()) {
+        const auto& colors = geometry_.GetLineColors();
+        filament_data.Slice(0, 0, n_vertices, 4).Slice(1, 7, 10) = colors;
+        filament_data.Slice(0, 1, n_vertices, 4).Slice(1, 7, 10) = colors;
+        filament_data.Slice(0, 2, n_vertices, 4).Slice(1, 7, 10) = colors;
+        filament_data.Slice(0, 3, n_vertices, 4).Slice(1, 7, 10) = colors;
+        filament_data.Slice(1, 10, 11) = 1.f;  // alpha value
+    } else {
+        filament_data.Slice(1, 7, 11) = 1.f;
+    }
+
+    // Copy per-vertex data to output array
+    const auto vertex_array_size = n_vertices * vertex_stride;
+    vdata = static_cast<float*>(malloc(vertex_array_size));
+    memcpy(vdata, filament_data.GetDataPtr(), vertex_array_size);
+
+    // Build the triangles for the wide lines
+    n_indices = geometry_.GetLineIndices().GetLength() * 6;
+    indices_bytes = n_indices * sizeof(IndexType);
+    idata = static_cast<IndexType*>(malloc(indices_bytes));
+    for (uint32_t i = 0, vertex_idx = 0; i < n_indices; vertex_idx += 4) {
+        // Triangle 1
+        idata[i++] = vertex_idx;
+        idata[i++] = vertex_idx + 1;
+        idata[i++] = vertex_idx + 2;
+        // Triangle 2
+        idata[i++] = vertex_idx + 3;
+        idata[i++] = vertex_idx + 2;
+        idata[i++] = vertex_idx + 1;
+    }
+
+    // Assign buffers back to inputs
+    *vertex_data = vdata;
+    *line_indices = idata;
+}
+
+GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
+    auto& engine = EngineInstance::GetInstance();
+    auto& resource_mgr = EngineInstance::GetResourceManager();
+
+    const uint32_t n_elements = wide_lines_ ? 11 : 7;
+    const uint32_t vertex_stride = n_elements * sizeof(float);
+    const uint32_t vertex_start_offset = 0;
+    const uint32_t next_start_offest = 3 * sizeof(float);
+    const uint32_t color_start_offset =
+            wide_lines_ ? 7 * sizeof(float) : 3 * sizeof(float);
+
+    uint32_t n_vertices = 0;
+    float* vertex_data = nullptr;
+    uint32_t n_indices = 0;
+    IndexType* line_indices = nullptr;
+    uint32_t indices_bytes = 0;
+
+    // Separate paths for thin and wide lines
+    if (wide_lines_) {
+        ConstructWideLines(n_vertices, &vertex_data, n_indices, indices_bytes,
+                           &line_indices);
+    } else {
+        ConstructThinLines(n_vertices, &vertex_data, n_indices, indices_bytes,
+                           &line_indices);
+    }
+
+    VertexBuffer* vbuf;
+    // Different GPU vertex layouts for
+    if (wide_lines_) {
+        vbuf = VertexBuffer::Builder()
+                       .bufferCount(1)
+                       .vertexCount(n_vertices)
+                       .attribute(VertexAttribute::POSITION, 0,
+                                  VertexBuffer::AttributeType::FLOAT3,
+                                  vertex_start_offset, vertex_stride)
+                       .attribute(VertexAttribute::CUSTOM0, 0,
+                                  VertexBuffer::AttributeType::FLOAT4,
+                                  next_start_offest, vertex_stride)
+                       .attribute(VertexAttribute::COLOR, 0,
+                                  VertexBuffer::AttributeType::FLOAT4,
+                                  color_start_offset, vertex_stride)
+                       .build(engine);
+    } else {
+        vbuf = VertexBuffer::Builder()
+                       .bufferCount(1)
+                       .vertexCount(n_vertices)
+                       .attribute(VertexAttribute::POSITION, 0,
+                                  VertexBuffer::AttributeType::FLOAT3,
+                                  vertex_start_offset, vertex_stride)
+                       .attribute(VertexAttribute::COLOR, 0,
+                                  VertexBuffer::AttributeType::FLOAT4,
+                                  color_start_offset, vertex_stride)
+                       .build(engine);
+    }
+
     VertexBufferHandle vb_handle;
     if (vbuf) {
         vb_handle = resource_mgr.AddVertexBuffer(vbuf);
@@ -511,12 +628,12 @@ GeometryBuffersBuilder::Buffers TLineSetBuffersBuilder::ConstructBuffers() {
         return {};
     }
 
+    // Create vertex and index buffer
     VertexBuffer::BufferDescriptor vb_descriptor(vertex_data,
                                                  n_vertices * vertex_stride);
     vb_descriptor.setCallback(GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(vb_descriptor));
 
-    // Copy line index data
     auto ib_handle =
             resource_mgr.CreateIndexBuffer(n_indices, sizeof(IndexType));
     if (!ib_handle) {

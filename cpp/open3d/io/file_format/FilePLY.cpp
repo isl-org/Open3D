@@ -32,6 +32,7 @@
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/io/VoxelGridIO.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 #include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
@@ -215,7 +216,7 @@ int ReadFaceCallBack(p_ply_argument argument) {
 namespace ply_lineset_reader {
 
 struct PLYReaderState {
-    utility::ConsoleProgressBar *progress_bar;
+    utility::ProgressBar *progress_bar;
     geometry::LineSet *lineset_ptr;
     long vertex_index;
     long vertex_num;
@@ -285,7 +286,7 @@ int ReadColorCallback(p_ply_argument argument) {
 namespace ply_voxelgrid_reader {
 
 struct PLYReaderState {
-    utility::ConsoleProgressBar *progress_bar;
+    utility::ProgressBar *progress_bar;
     std::vector<geometry::Voxel> *voxelgrid_ptr;
     Eigen::Vector3d origin;
     double voxel_size;
@@ -665,7 +666,7 @@ bool WriteTriangleMeshToPLY(const std::string &filename,
         return false;
     }
 
-    utility::ConsoleProgressBar progress_bar(
+    utility::ProgressBar progress_bar(
             static_cast<size_t>(mesh.vertices_.size() + mesh.triangles_.size()),
             "Writing PLY: ", print_progress);
     bool printed_color_warning = false;
@@ -762,7 +763,7 @@ bool ReadLineSetFromPLY(const std::string &filename,
     lineset.lines_.resize(state.line_num);
     lineset.colors_.resize(state.color_num);
 
-    utility::ConsoleProgressBar progress_bar(
+    utility::ProgressBar progress_bar(
             state.vertex_num + state.line_num + state.color_num,
             "Reading PLY: ", print_progress);
     state.progress_bar = &progress_bar;
@@ -820,7 +821,7 @@ bool WriteLineSetToPLY(const std::string &filename,
         return false;
     }
 
-    utility::ConsoleProgressBar progress_bar(
+    utility::ProgressBar progress_bar(
             static_cast<size_t>(lineset.points_.size() + lineset.lines_.size()),
             "Writing PLY: ", print_progress);
 
@@ -904,8 +905,8 @@ bool ReadVoxelGridFromPLY(const std::string &filename,
 
     voxelgrid_ptr.clear();
     voxelgrid_ptr.resize(state.voxel_num);
-    utility::ConsoleProgressBar progress_bar(state.voxel_num + state.color_num,
-                                             "Reading PLY: ", print_progress);
+    utility::ProgressBar progress_bar(state.voxel_num + state.color_num,
+                                      "Reading PLY: ", print_progress);
     state.progress_bar = &progress_bar;
 
     if (!ply_read(ply_file)) {
@@ -974,7 +975,7 @@ bool WriteVoxelGridToPLY(const std::string &filename,
         return false;
     }
 
-    utility::ConsoleProgressBar progress_bar(
+    utility::ProgressBar progress_bar(
             static_cast<size_t>(voxelgrid.voxels_.size()),
             "Writing PLY: ", print_progress);
 

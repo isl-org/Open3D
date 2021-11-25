@@ -1,4 +1,4 @@
-name: macOS CI
+name: MacOS
 
 on:
   workflow_dispatch:
@@ -39,8 +39,6 @@ jobs:
 
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
       - name: Setup cache
         uses: actions/cache@v2
         with:
@@ -94,8 +92,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
@@ -204,8 +200,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: false
 
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2

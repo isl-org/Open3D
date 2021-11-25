@@ -78,10 +78,12 @@ def multi_objects():
     sphere_colored_lit.translate((6, 1, 0))
     big_bbox = o3d.geometry.AxisAlignedBoundingBox((-pc_rad, -3, -pc_rad),
                                                    (6.0 + r, 1.0 + r, pc_rad))
+    big_bbox.color = (0.0, 0.0, 0.0)
     sphere_bbox = sphere_unlit.get_axis_aligned_bounding_box()
     sphere_bbox.color = (1.0, 0.5, 0.0)
     lines = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
         sphere_lit.get_axis_aligned_bounding_box())
+    lines.paint_uniform_color((0.0, 1.0, 0.0))
     lines_colored = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(
         sphere_colored_lit.get_axis_aligned_bounding_box())
     lines_colored.paint_uniform_color((0.0, 0.0, 1.0))
@@ -228,15 +230,15 @@ def time_animation():
 
 
 def groups():
-    building_mat = vis.rendering.Material()
+    building_mat = vis.rendering.MaterialRecord()
     building_mat.shader = "defaultLit"
     building_mat.base_color = (1.0, .90, .75, 1.0)
     building_mat.base_reflectance = 0.1
-    midrise_mat = vis.rendering.Material()
+    midrise_mat = vis.rendering.MaterialRecord()
     midrise_mat.shader = "defaultLit"
     midrise_mat.base_color = (.475, .450, .425, 1.0)
     midrise_mat.base_reflectance = 0.1
-    skyscraper_mat = vis.rendering.Material()
+    skyscraper_mat = vis.rendering.MaterialRecord()
     skyscraper_mat.shader = "defaultLit"
     skyscraper_mat.base_color = (.05, .20, .55, 1.0)
     skyscraper_mat.base_reflectance = 0.9

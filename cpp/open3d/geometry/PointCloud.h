@@ -33,6 +33,7 @@
 
 #include "open3d/geometry/Geometry3D.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 
@@ -200,8 +201,11 @@ public:
     ///
     /// \param nb_points Number of points within the radius.
     /// \param search_radius Radius of the sphere.
+    /// \param print_progress Whether to print the progress bar.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-    RemoveRadiusOutliers(size_t nb_points, double search_radius) const;
+    RemoveRadiusOutliers(size_t nb_points,
+                         double search_radius,
+                         bool print_progress = false) const;
 
     /// \brief Function to remove points that are further away from their
     /// \p nb_neighbor neighbors in average.
@@ -209,7 +213,9 @@ public:
     /// \param nb_neighbors Number of neighbors around the target point.
     /// \param std_ratio Standard deviation ratio.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-    RemoveStatisticalOutliers(size_t nb_neighbors, double std_ratio) const;
+    RemoveStatisticalOutliers(size_t nb_neighbors,
+                              double std_ratio,
+                              bool print_progress = false) const;
 
     /// \brief Function to compute the normals of a point cloud.
     ///
@@ -331,12 +337,16 @@ public:
     /// \param ransac_n Number of initial points to be considered inliers in
     /// each iteration.
     /// \param num_iterations Number of iterations.
+    /// \param seed Sets the seed value used in the random
+    /// generator, set to nullopt to use a random seed value with each function
+    /// call.
     /// \return Returns the plane model ax + by + cz + d = 0 and the indices of
     /// the plane inliers.
     std::tuple<Eigen::Vector4d, std::vector<size_t>> SegmentPlane(
             const double distance_threshold = 0.01,
             const int ransac_n = 3,
-            const int num_iterations = 100) const;
+            const int num_iterations = 100,
+            utility::optional<int> seed = utility::nullopt) const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.

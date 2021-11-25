@@ -31,19 +31,19 @@ import open3d.visualization.rendering as rendering
 def main():
     render = rendering.OffscreenRenderer(640, 480)
 
-    yellow = rendering.Material()
+    yellow = rendering.MaterialRecord()
     yellow.base_color = [1.0, 0.75, 0.0, 1.0]
     yellow.shader = "defaultLit"
 
-    green = rendering.Material()
+    green = rendering.MaterialRecord()
     green.base_color = [0.0, 0.5, 0.0, 1.0]
     green.shader = "defaultLit"
 
-    grey = rendering.Material()
+    grey = rendering.MaterialRecord()
     grey.base_color = [0.7, 0.7, 0.7, 1.0]
     grey.shader = "defaultLit"
 
-    white = rendering.Material()
+    white = rendering.MaterialRecord()
     white.base_color = [1.0, 1.0, 1.0, 1.0]
     white.shader = "defaultLit"
 

@@ -259,6 +259,11 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("remove_geometry", &O3DVisualizer::RemoveGeometry,
                  "remove_geometry(name): removes the geometry with the "
                  "name.")
+            .def("update_geometry", &O3DVisualizer::UpdateGeometry,
+                 "update_geometry(name, tpoint_cloud, update_flags): updates "
+                 "the attributes of the named geometry specified by "
+                 "update_flags with tpoint_cloud. Note: Currently this "
+                 "function only works with T Geometry Point Clouds.")
             .def("show_geometry", &O3DVisualizer::ShowGeometry,
                  "Checks or unchecks the named geometry in the list. Note that "
                  "even if show_geometry(name, True) is called, the object may "
@@ -269,6 +274,15 @@ void pybind_o3dvisualizer(py::module& m) {
                  "the name. This should be treated as read-only. Modify "
                  "visibility with show_geometry(), and other values by "
                  "removing the object and re-adding it with the new values")
+            .def("get_geometry_material", &O3DVisualizer::GetGeometryMaterial,
+                 "get_geometry_material(name): Returns the MaterialRecord "
+                 "corresponding to the name. The returned material is a copy, "
+                 "therefore modifying it directly will not change the "
+                 "visualization.")
+            .def("modify_geometry_material",
+                 &O3DVisualizer::ModifyGeometryMaterial,
+                 "modify_geometry_material(name,material): Updates the named "
+                 "geometry to use the new provided material.")
             .def("add_3d_label", &O3DVisualizer::Add3DLabel,
                  "add_3d_label([x,y,z], text): displays text anchored at the "
                  "3D coordinate specified")
@@ -330,6 +344,16 @@ void pybind_o3dvisualizer(py::module& m) {
                  "set_background(color, image=None): Sets the background color "
                  "and, optionally, the background image. Passing None for the "
                  "background image will clear any image already there.")
+            .def("set_ibl", &O3DVisualizer::SetIBL,
+                 "set_ibl(ibl_name): Sets the IBL and its matching skybox. If "
+                 "ibl_name_ibl.ktx is found in the default resource directory "
+                 "then it is used. Otherwise, ibl_name is assumed to be a path "
+                 "to the ibl KTX file.")
+            .def("set_ibl_intensity", &O3DVisualizer::SetIBLIntensity,
+                 "set_ibl_intensity(intensity): Sets the intensity of the "
+                 "current IBL")
+            .def("show_skybox", &O3DVisualizer::ShowSkybox,
+                 "Show/Hide the skybox")
             .def_property(
                     "show_settings",
                     [](const O3DVisualizer& dv) {

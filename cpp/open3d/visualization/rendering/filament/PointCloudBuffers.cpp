@@ -457,8 +457,9 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     } else if (geometry_.HasPointAttr("__visualization_scalar")) {
         // Update in FilamentScene::UpdateGeometry(), too.
         memset(uv_array, 0, uv_array_size);
-        const float* src = static_cast<const float*>(
-                geometry_.GetPointAttr("__visualization_scalar").GetDataPtr());
+        auto vis_scalars =
+                geometry_.GetPointAttr("__visualization_scalar").Contiguous();
+        const float* src = static_cast<const float*>(vis_scalars.GetDataPtr());
         const size_t n = 2 * n_vertices;
         for (size_t i = 0; i < n; i += 2) {
             uv_array[i] = *src++;
@@ -487,14 +488,22 @@ filament::Box TPointCloudBuffersBuilder::ComputeAABB() {
     auto* min_bounds_float = min_bounds.GetDataPtr<float>();
     auto* max_bounds_float = max_bounds.GetDataPtr<float>();
 
-    const filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
-                                     min_bounds_float[2]);
-    const filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
-                                     max_bounds_float[2]);
+    filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
+                               min_bounds_float[2]);
+    filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
+                               max_bounds_float[2]);
 
     Box aabb;
     aabb.set(min, max);
-
+    if (aabb.isEmpty()) {
+        min.x -= 0.1f;
+        min.y -= 0.1f;
+        min.z -= 0.1f;
+        max.x += 0.1f;
+        max.y += 0.1f;
+        max.z += 0.1f;
+        aabb.set(min, max);
+    }
     return aabb;
 }
 

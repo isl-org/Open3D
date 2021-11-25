@@ -75,7 +75,7 @@ class VideoWindow:
         self.widget3d.scene = rendering.Open3DScene(self.window.renderer)
         self.window.add_child(self.widget3d)
 
-        lit = rendering.Material()
+        lit = rendering.MaterialRecord()
         lit.shader = "defaultLit"
         tet = o3d.geometry.TriangleMesh.create_tetrahedron()
         tet.compute_vertex_normals()

@@ -270,28 +270,5 @@ private:
     VerbosityLevel level_backup_;
 };
 
-class ConsoleProgressBar {
-public:
-    ConsoleProgressBar(size_t expected_count,
-                       const std::string &progress_info,
-                       bool active = false);
-
-    void Reset(size_t expected_count,
-               const std::string &progress_info,
-               bool active);
-
-    ConsoleProgressBar &operator++();
-
-    void SetCurrentCount(size_t n);
-
-private:
-    const size_t resolution_ = 40;
-    size_t expected_count_;
-    size_t current_count_;
-    std::string progress_info_;
-    size_t progress_pixel_;
-    bool active_;
-};
-
 }  // namespace utility
 }  // namespace open3d

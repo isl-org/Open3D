@@ -305,9 +305,6 @@ public:
         tabs->AddTab("Input images", tab1);
 
         auto tab2 = std::make_shared<gui::Vert>(0, tab_margins);
-
-        output_info_ = std::make_shared<gui::Label>("");
-        output_info_->SetFontId(monospace_);
         raycast_color_image_ = std::make_shared<gui::ImageWidget>();
         raycast_depth_image_ = std::make_shared<gui::ImageWidget>();
 
@@ -317,6 +314,8 @@ public:
         tabs->AddTab("Raycast images", tab2);
 
         auto tab3 = std::make_shared<gui::Vert>(0, tab_margins);
+        output_info_ = std::make_shared<gui::Label>("");
+        output_info_->SetFontId(monospace_);
         tab3->AddChild(output_info_);
         tabs->AddTab("Info", tab3);
 

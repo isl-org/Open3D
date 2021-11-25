@@ -98,6 +98,8 @@ if os.environ["skip_notebooks"] == "true":
 
 # Allow for more time for notebook cell evaluation
 nbsphinx_timeout = 6000
+# We pre-execute nbs. Some (jupyter_visualizer.ipynb) shouldn't be executed
+nbsphinx_execute = 'never'
 # nbsphinx_allow_errors = True
 
 # Add any paths that contain templates here, relative to this directory.
