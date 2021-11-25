@@ -1249,6 +1249,11 @@ if(USE_BLAS)
             endif()
             message(STATUS "GFORTRAN_PREFIX: ${GFORTRAN_PREFIX}")
 
+            file(GLOB_RECURSE LIB_GFORTRAN /opt/homebrew/Cellar/gcc/*/libgfortran.a)
+            message(STATUS "LIB_GFORTRAN: ${LIB_GFORTRAN}")
+
+            file(GLOB_RECURSE LIB_GCC /opt/homebrew/Cellar/gcc/*/libgcc.a)
+            message(STATUS "LIB_GCC: ${LIB_GCC}")
 
             find_library(
                 LIB_GFORTRAN
