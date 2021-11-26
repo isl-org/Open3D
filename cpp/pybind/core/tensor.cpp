@@ -707,10 +707,10 @@ Ref:
             "start_dim"_a = 0, "end_dim"_a = -1);
     docstring::ClassMethodDocInject(
             m, "Tensor", "flatten",
-            {{"start_dim", "The first dimension to flatten (exclusive)"},
+            {{"start_dim", "The first dimension to flatten (inclusive)."},
              {"end_dim",
               "The last dimension to flatten, starting from start_dim "
-              "(exclusive)"}});
+              "(inclusive)."}});
 
     // See "emulating numeric types" section for Python built-in numeric ops.
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types

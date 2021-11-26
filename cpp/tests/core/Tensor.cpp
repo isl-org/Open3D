@@ -414,7 +414,7 @@ TEST_P(TensorPermuteDevices, Expand) {
 TEST_P(TensorPermuteDevices, Flatten) {
     core::Device device = GetParam();
 
-    // Flatten 0-D Tensor
+    // Flatten 0-D Tensor.
     core::Tensor src_t = core::Tensor::Init<float>(3, device);
     core::Tensor dst_t = core::Tensor::Init<float>({3}, device);
 
@@ -432,7 +432,7 @@ TEST_P(TensorPermuteDevices, Flatten) {
     EXPECT_ANY_THROW(src_t.Flatten(0, -2));
     EXPECT_ANY_THROW(src_t.Flatten(0, 1));
 
-    // Flatten 1-D Tensor
+    // Flatten 1-D Tensor.
     src_t = core::Tensor::Init<float>({1, 2, 3}, device);
     dst_t = core::Tensor::Init<float>({1, 2, 3}, device);
 
@@ -450,7 +450,7 @@ TEST_P(TensorPermuteDevices, Flatten) {
     EXPECT_ANY_THROW(src_t.Flatten(0, -2));
     EXPECT_ANY_THROW(src_t.Flatten(0, 1));
 
-    // Flatten 2-D Tensor
+    // Flatten 2-D Tensor.
     src_t = core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
     core::Tensor dst_t_flat =
             core::Tensor::Init<float>({1, 2, 3, 4, 5, 6}, device);
@@ -473,19 +473,19 @@ TEST_P(TensorPermuteDevices, Flatten) {
         EXPECT_TRUE(dst_t_unchanged.AllEqual(src_t.Flatten(dim, dim)));
     }
 
-    // Out of bounds dimensions
+    // Out of bounds dimensions.
     EXPECT_ANY_THROW(src_t.Flatten(0, 2));
     EXPECT_ANY_THROW(src_t.Flatten(0, -3));
     EXPECT_ANY_THROW(src_t.Flatten(-3, 0));
     EXPECT_ANY_THROW(src_t.Flatten(2, 0));
 
-    // end_dim is greater than start_dim
+    // end_dim is greater than start_dim.
     EXPECT_ANY_THROW(src_t.Flatten(1, 0));
     EXPECT_ANY_THROW(src_t.Flatten(-1, 0));
     EXPECT_ANY_THROW(src_t.Flatten(1, -2));
     EXPECT_ANY_THROW(src_t.Flatten(-1, -2));
 
-    // Flatten 3-D Tensor
+    // Flatten 3-D Tensor.
     src_t = core::Tensor::Init<float>(
             {{{1, 2, 3}, {4, 5, 6}}, {{7, 8, 9}, {10, 11, 12}}}, device);
     dst_t_flat = core::Tensor::Init<float>(
@@ -520,13 +520,13 @@ TEST_P(TensorPermuteDevices, Flatten) {
         EXPECT_TRUE(dst_t_unchanged.AllEqual(src_t.Flatten(dim, dim)));
     }
 
-    // Out of bounds dimensions
+    // Out of bounds dimensions.
     EXPECT_ANY_THROW(src_t.Flatten(0, 3));
     EXPECT_ANY_THROW(src_t.Flatten(0, -4));
     EXPECT_ANY_THROW(src_t.Flatten(-4, 0));
     EXPECT_ANY_THROW(src_t.Flatten(3, 0));
 
-    // end_dim is greater than start_dim
+    // end_dim is greater than start_dim.
     EXPECT_ANY_THROW(src_t.Flatten(1, 0));
     EXPECT_ANY_THROW(src_t.Flatten(2, 0));
     EXPECT_ANY_THROW(src_t.Flatten(2, 1));
