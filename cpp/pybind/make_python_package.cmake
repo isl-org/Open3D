@@ -129,3 +129,8 @@ if (BUILD_GUI)
     file(COPY ${GUI_RESOURCE_DIR}
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
 endif()
+
+# add all examples
+file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/examples/")
+file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
+    DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
