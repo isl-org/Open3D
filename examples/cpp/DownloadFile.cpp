@@ -28,22 +28,11 @@
 
 using namespace open3d;
 
-std::string JoinPath(const std::string prefix_path, const std::string path) {
-    std::string output = prefix_path + "/" + path;
-    return output;
-}
-
 void DownloadAndExtract(const std::string url,
-                        const std::string expected_sha256) {
-    const std::string filename_from_url = "test_file.zip";
-    const std::string default_data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-
-    const std::string filename_random = "random_name.zip";
-    const std::string random_dir_hierarchy =
-            utility::filesystem::GetHomeDirectory() +
-            "/test_folder1/test_folder2";
-
+                        const std::string output_filename = "",
+                        const std::string output_path = "",
+                        const bool always_download = false,
+                        const std::string expected_sha256 = "") {
     // Downloader API.
     // URL is the only compulsory input, others are optional, and passing
     // empty string "", trigers the default behaviour.
@@ -55,71 +44,47 @@ void DownloadAndExtract(const std::string url,
     // with the original file name extracted from the url,
     // `always_download` is True : If exists, it will be over-written.
     // SHA256 is not verified.
-    if (!data::DownloadFromURL(url)) {
-        utility::LogInfo("Method 1 Failed");
-    }
-    std::string file_to_extract =
-            JoinPath(default_data_root, filename_from_url);
-    if (!data::Extract(file_to_extract, default_data_root)) {
-        utility::LogInfo("Extraction Failed.");
-    }
-
-    // Download with custom name.
-    // Download in Open3D Data Root directory,
-    // with the the given name `random_name.zip`,
-    // `always_download` is False : Skip download if file exists, with correct
-    // SHA256SUM.
-    // SHA256 is required. Not providing this, will throw Runtime ERROR.
-    // Download in Open3D Data Root directory, with the given file name.
-    if (!data::DownloadFromURL(url, "", filename_random, false,
+    if (!data::DownloadFromURL(url, output_filename, output_path, false,
                                expected_sha256)) {
-        utility::LogInfo("Method 2 Failed");
+        utility::LogInfo("Download Failed");
     }
-    file_to_extract = JoinPath(default_data_root, filename_random);
-    if (!data::Extract(file_to_extract, default_data_root, "", true, true)) {
+
+    std::string filename, filepath, file_to_extract;
+
+    if (output_filename.empty()) {
+        filename = utility::filesystem::GetFileNameWithoutDirectory(url);
+    } else {
+        filename = output_filename;
+    }
+    if (output_path.empty()) {
+        filepath = utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    } else {
+        filepath = output_path;
+    }
+    file_to_extract = filepath + "/" + filename;
+
+    if (!data::Extract(file_to_extract, filepath)) {
         utility::LogInfo("Extraction Failed.");
     }
-
-    // Download in specified directory (creates the directory hierarchy if not
-    // present), with the original file name extracted from the url.
-    if (!data::DownloadFromURL(url, random_dir_hierarchy, "", false,
-                               expected_sha256)) {
-        utility::LogInfo("Method 3 Failed");
-    }
-    file_to_extract = JoinPath(random_dir_hierarchy, filename_from_url);
-    if (!data::Extract(file_to_extract, random_dir_hierarchy, "", true, true)) {
-        utility::LogInfo("Extraction Failed.");
-    }
-
-    // Download in specified directory (creates the directory hierarchy if not
-    // present), with the given name.
-    if (!data::DownloadFromURL(url, random_dir_hierarchy, filename_random,
-                               false, expected_sha256)) {
-        utility::LogInfo("Method 4 Failed");
-    }
-    file_to_extract = JoinPath(random_dir_hierarchy, filename_random);
-    if (!data::Extract(file_to_extract, random_dir_hierarchy, "", true, true)) {
-        utility::LogInfo("Extraction Failed.");
-    }
-
-    // Print calculated SHA256SUM.
-    auto file_actual_SHA256 =
-            data::GetSHA256(random_dir_hierarchy + "/random_name.zip");
-
-    utility::LogInfo("SHA256SUM: {}", file_actual_SHA256);
 }
 
 int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    const std::string url =
-            "https://github.com/reyanshsolis/rey_download/releases/download/"
-            "test_data/test_file.zip";
+    // File 1.
+    std::string url =
+            "https://github.com/isl-org/open3d_downloads/releases/download/"
+            "data-manager/test_data_00.zip";
+    std::string expected_sha256 =
+            "66ea466a02532d61dbc457abf1408afeab360d7a35e15f1479ca91c25e838d30";
+    DownloadAndExtract(url, "", "", false, expected_sha256);
 
-    const std::string expected_sha256 =
-            "844c677b4bbf9e63035331769947ada46640187ac4caeff50f22c14f76e5f814";
-
-    DownloadAndExtract(url, expected_sha256);
+    // File 2.
+    url = "https://github.com/isl-org/open3d_downloads/releases/download/"
+          "data-manager/test_data_01.zip";
+    expected_sha256 =
+            "302da0042f048af5c95c4832fe057c52425671aac14627685026c821ddcb4bfd";
+    DownloadAndExtract(url, "", "", false, expected_sha256);
 
     return 0;
 }

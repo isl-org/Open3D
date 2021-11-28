@@ -32,6 +32,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <string>
 
 #include "open3d/utility/FileSystem.h"
@@ -107,23 +108,12 @@ static size_t WriteDataCb(void* ptr, size_t size, size_t nmemb, FILE* stream) {
     return written;
 }
 
-static std::string ExtractFileNameFromURL(const std::string& url) {
-    int i = url.size();
-    for (; i >= 0; i--) {
-        if (url[i] == '/') {
-            break;
-        }
-    }
-
-    return url.substr(i + 1, url.size() - 1);
-}
-
 static std::string GetAbsoluteFilePath(const std::string& url,
                                        const std::string& output_file_path,
                                        const std::string& output_file_name) {
     std::string file_name;
     if (output_file_name.empty()) {
-        file_name = ExtractFileNameFromURL(url);
+        file_name = utility::filesystem::GetFileNameWithoutDirectory(url);
     } else {
         file_name = output_file_name;
     }
@@ -148,17 +138,17 @@ bool DownloadFromURL(const std::string& url,
                      const std::string& output_file_path,
                      const std::string& output_file_name,
                      const bool always_download,
-                     const std::string& SHA256) {
-
+                     const std::string& sha256,
+                     const bool print_progress) {
     // Get absolute file-path, from inputs.
     std::string file_path =
             GetAbsoluteFilePath(url, output_file_path, output_file_name);
 
     // Check and skip download if required.
     if (!always_download && utility::filesystem::FileExists(file_path)) {
-        if (!SHA256.empty()) {
+        if (!sha256.empty()) {
             const std::string actual_hash = GetSHA256(file_path.c_str());
-            if (SHA256 == actual_hash) {
+            if (sha256 == actual_hash) {
                 utility::LogDebug(
                         "Downloading Skipped. File already present with "
                         "expected SHA256 hash.");
@@ -193,16 +183,18 @@ bool DownloadFromURL(const std::string& url,
 
         // Write function callback.
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteDataCb);
-        // Pass file-handler to which the data will be written. 
+        // Pass file-handler to which the data will be written.
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
 
         // Progress bar options.
-        // TODO: Add Open3D progress-bar option.
-        // curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION,
-        //                  download_progress_callback);
-        // curl_easy_setopt(curl, CURLOPT_XFERINFODATA,
-        //                  static_cast<void*>(&progress_bar));
-        // curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+        if (print_progress) {
+            // TODO: Add Open3D progress-bar option.
+            // curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION,
+            //                  download_progress_callback);
+            // curl_easy_setopt(curl, CURLOPT_XFERINFODATA,
+            //                  static_cast<void*>(&progress_bar));
+            // curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
+        }
 
         // Perform a file transfer synchronously.
         res = curl_easy_perform(curl);
@@ -214,15 +206,18 @@ bool DownloadFromURL(const std::string& url,
         // File downloaded without error.
         if (res == CURLE_OK) {
             // Verify SHA256 value.
-            if (!SHA256.empty()) {
+            if (!sha256.empty()) {
                 const std::string actual_hash = GetSHA256(file_path.c_str());
-                if (SHA256 == actual_hash) {
+                if (sha256 == actual_hash) {
+                    utility::LogDebug(
+                            "Downloaded file {} with expected SHA256 hash.",
+                            file_path);
                     return true;
                 } else {
                     utility::LogWarning(
                             "SHA256 hash mismatch for file {}.\n Expected: "
                             "{}.\n Actual: {}.",
-                            file_path, SHA256, actual_hash);
+                            file_path, sha256, actual_hash);
                     return false;
                 }
             }
@@ -230,12 +225,12 @@ bool DownloadFromURL(const std::string& url,
             utility::LogDebug("Downloaded file {}.", file_path);
             return true;
         } else {
-            utility::LogWarning("Download Failed");
+            utility::LogWarning("Download Failed.");
             return false;
         }
 
     } else {
-        utility::LogWarning("Failed to initialize CURL");
+        utility::LogWarning("Failed to initialize CURL.");
         return false;
     }
 }
