@@ -38,10 +38,10 @@ extern "C" {
 #endif
 
 #ifndef _ZLIB_H
-#include "third_party/zlib/zlib.h"
+#include <zlib.h>
 #endif
 
-#include "unzip.h"
+#include "open3d/data/extract/minizip/unzip.h"
 
 /* Repair a ZIP file (missing central directory)
    file: file to recover

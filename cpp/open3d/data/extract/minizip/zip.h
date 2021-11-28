@@ -75,16 +75,16 @@ extern "C" {
 //#define HAVE_BZIP2
 
 #ifndef _ZLIB_H
-#include "third_party/zlib/zlib.h"
+#include <zlib.h>
 #endif
 
 #ifndef _ZLIBIOAPI_H
-#include "ioapi.h"
+#include "open3d/data/extract/minizip/ioapi.h"
 #endif
 
-#ifdef HAVE_BZIP2
-#include "bzlib.h"
-#endif
+// #ifdef HAVE_BZIP2
+// #include "bzlib.h"
+// #endif
 
 #define Z_BZIP2ED 12
 

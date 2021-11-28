@@ -40,6 +40,9 @@ void pybind_downloader(py::module &m_data) {
                "output_file_path"_a = "", "output_file_name"_a = "",
                "always_download"_a = true, "sha256"_a = "",
                "print_progress"_a = false);
+
+    m_data.def("get_sha256", &GetSHA256,
+               "Function to get SHA256 hash value of the file.", "file_path"_a);
 }
 
 }  // namespace data
