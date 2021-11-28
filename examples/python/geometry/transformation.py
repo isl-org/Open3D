@@ -24,10 +24,11 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/geometry/voxelization.py
+# examples/python/geometry/transformation.py
 
 import open3d as o3d
 import numpy as np
+import copy
 import os
 import sys
 
@@ -37,14 +38,12 @@ if __name__ == "__main__":
     import open3d_tutorial as o3dtut
     o3dtut.interactive = not "CI" in os.environ
 
-    mesh = o3dtut.get_bunny_mesh()
-    # fit to unit cube
-    mesh.scale(1 / np.max(mesh.get_max_bound() - mesh.get_min_bound()),
-               center=mesh.get_center())
-    print('Displaying input mesh ...')
-    o3d.visualization.draw_geometries([mesh])
-
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(
-        mesh, voxel_size=0.05)
-    print('Displaying voxel grid ...')
-    o3d.visualization.draw_geometries([voxel_grid])
+    mesh = o3d.geometry.TriangleMesh.create_coordinate_frame()
+    T = np.eye(4)
+    T[:3, :3] = mesh.get_rotation_matrix_from_xyz((0, np.pi / 3, np.pi / 2))
+    T[0, 3] = 1
+    T[1, 3] = 1.3
+    print(T)
+    mesh_t = copy.deepcopy(mesh).transform(T)
+    print('Displaying original and transformed geometries ...')
+    o3d.visualization.draw_geometries([mesh, mesh_t])
