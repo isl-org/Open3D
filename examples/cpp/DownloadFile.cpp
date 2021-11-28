@@ -28,16 +28,18 @@
 
 using namespace open3d;
 
-int main() {
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+std::string JoinPath(const std::string prefix_path, const std::string path) {
+    std::string output = prefix_path + "/" + path;
+    return output;
+}
 
-    const std::string url =
-            "https://github.com/reyanshsolis/rey_download/releases/download/"
-            "test_data/test_file.zip";
+void DownloadAndExtract(const std::string url,
+                        const std::string expected_sha256) {
+    const std::string filename_from_url = "test_file.zip";
+    const std::string default_data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
 
-    const std::string Expected_SHA256 =
-            "844c677b4bbf9e63035331769947ada46640187ac4caeff50f22c14f76e5f814";
-
+    const std::string filename_random = "random_name.zip";
     const std::string random_dir_hierarchy =
             utility::filesystem::GetHomeDirectory() +
             "/test_folder1/test_folder2";
@@ -56,6 +58,11 @@ int main() {
     if (!data::DownloadFromURL(url)) {
         utility::LogInfo("Method 1 Failed");
     }
+    std::string file_to_extract =
+            JoinPath(default_data_root, filename_from_url);
+    if (!data::Extract(file_to_extract, default_data_root)) {
+        utility::LogInfo("Extraction Failed.");
+    }
 
     // Download with custom name.
     // Download in Open3D Data Root directory,
@@ -64,23 +71,35 @@ int main() {
     // SHA256SUM.
     // SHA256 is required. Not providing this, will throw Runtime ERROR.
     // Download in Open3D Data Root directory, with the given file name.
-    if (!data::DownloadFromURL(url, "", "random_name.zip", false,
-                               Expected_SHA256)) {
+    if (!data::DownloadFromURL(url, "", filename_random, false,
+                               expected_sha256)) {
         utility::LogInfo("Method 2 Failed");
+    }
+    file_to_extract = JoinPath(default_data_root, filename_random);
+    if (!data::Extract(file_to_extract, default_data_root, "", true, true)) {
+        utility::LogInfo("Extraction Failed.");
     }
 
     // Download in specified directory (creates the directory hierarchy if not
     // present), with the original file name extracted from the url.
     if (!data::DownloadFromURL(url, random_dir_hierarchy, "", false,
-                               Expected_SHA256)) {
+                               expected_sha256)) {
         utility::LogInfo("Method 3 Failed");
+    }
+    file_to_extract = JoinPath(random_dir_hierarchy, filename_from_url);
+    if (!data::Extract(file_to_extract, random_dir_hierarchy, "", true, true)) {
+        utility::LogInfo("Extraction Failed.");
     }
 
     // Download in specified directory (creates the directory hierarchy if not
     // present), with the given name.
-    if (!data::DownloadFromURL(url, random_dir_hierarchy, "random_name.zip",
-                               false, Expected_SHA256)) {
+    if (!data::DownloadFromURL(url, random_dir_hierarchy, filename_random,
+                               false, expected_sha256)) {
         utility::LogInfo("Method 4 Failed");
+    }
+    file_to_extract = JoinPath(random_dir_hierarchy, filename_random);
+    if (!data::Extract(file_to_extract, random_dir_hierarchy, "", true, true)) {
+        utility::LogInfo("Extraction Failed.");
     }
 
     // Print calculated SHA256SUM.
@@ -88,6 +107,19 @@ int main() {
             data::GetSHA256(random_dir_hierarchy + "/random_name.zip");
 
     utility::LogInfo("SHA256SUM: {}", file_actual_SHA256);
+}
+
+int main(int argc, char *argv[]) {
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    const std::string url =
+            "https://github.com/reyanshsolis/rey_download/releases/download/"
+            "test_data/test_file.zip";
+
+    const std::string expected_sha256 =
+            "844c677b4bbf9e63035331769947ada46640187ac4caeff50f22c14f76e5f814";
+
+    DownloadAndExtract(url, expected_sha256);
 
     return 0;
 }

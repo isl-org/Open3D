@@ -758,23 +758,32 @@ open3d_import_3rdparty_library(3rdparty_curl
     INCLUDE_ALL
     LIB_DIR      ${CURL_LIB_DIR}
     LIBRARIES    ${CURL_LIBRARIES}
-    DEPENDS      ext_zlib ext_curl
+    DEPENDS      ext_zlib ext_boringssl ext_curl
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
-add_library(3rdparty_openssl INTERFACE)
-target_link_libraries(3rdparty_openssl INTERFACE
-    # /home/yixing/repo/Open3D/build/openssl/lib/libssl.a
-    /home/yixing/repo/boringssl/build/ssl/libssl.a
-    # /home/yixing/repo/Open3D/build/openssl/lib/libcrypto.a
-    /home/yixing/repo/boringssl/build/crypto/libcrypto.a
+# BoringSSL
+# include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+# open3d_import_3rdparty_library(3rdparty_boringssl
+#     HIDDEN
+#     INCLUDE_DIRS /home/rey/workspace/experiment/packages/boringssl/include/
+#     LIB_DIR      /home/rey/workspace/experiment/packages/boringssl/build/lib
+#     LIBRARIES    ssl crypto
+#     DEPENDS      ext_zlib ext_boringssl
+# )
+# list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_boringssl)
+
+add_library(3rdparty_boringssl INTERFACE)
+target_link_libraries(3rdparty_boringssl INTERFACE
+    /home/rey/workspace/experiment/packages/boringssl/build/ssl/libssl.a
+    /home/rey/workspace/experiment/packages/boringssl/build/crypto/libcrypto.a
 )
-target_include_directories(3rdparty_openssl INTERFACE
-    /home/yixing/repo/boringssl/include
+target_include_directories(3rdparty_boringssl INTERFACE
+    /home/rey/workspace/experiment/packages/boringssl/include
 )
-add_library(Open3D::3rdparty_openssl ALIAS 3rdparty_openssl)
-install(TARGETS 3rdparty_openssl EXPORT Open3DTargets)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
+add_library(Open3D::3rdparty_boringssl ALIAS 3rdparty_boringssl)
+install(TARGETS 3rdparty_boringssl EXPORT Open3DTargets)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_boringssl)
 
 # # OpenSSL
 # include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
