@@ -14,8 +14,8 @@ document.write('\
     </style>\
     <table class="version-table">\
         <tr>\
-            <td><a href="http://www.open3d.org/docs/master">master</a></td>\
-            <td><a href="http://www.open3d.org/docs/master/cpp_api">master C++</a></td>\
+            <td><a href="http://www.open3d.org/docs/latest">master</a></td>\
+            <td><a href="http://www.open3d.org/docs/latest/cpp_api">master C++</a></td>\
         </tr>\
         <tr>\
             <td><a href="http://www.open3d.org/docs/0.14.0">0.14.0 (release)</a></td>\
