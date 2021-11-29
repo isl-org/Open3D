@@ -154,8 +154,9 @@ if __name__ == "__main__":
         ind = np.arange(len(ops))  # the x locations for the groups
         width = 0.35  # the width of the bars
 
-        old_rects = ax.bar(ind, old_gmean_times, width, color='#f8f8ea')
-        new_rects = ax.bar(ind + width, new_gmean_times, width, color='r')
+        old_rects = ax.bar(ind, old_gmean_times, width, color='y')  # #f8f8ea
+        new_rects = ax.bar(ind + width, new_gmean_times, width,
+                           color='r')  # #ffeaea
 
         ax.set_ylabel('Time (ms)', fontsize=30)
         ax.set_title(
@@ -167,12 +168,15 @@ if __name__ == "__main__":
         ax.set_xticklabels(ops)
         ax.tick_params(axis='both', which='major', labelsize=26)
 
-        ax.legend((old_rects[0], new_rects[0]),
-                  ("Open3D v0.13", "Open3D v0.14"),
-                  loc='upper center',
-                  fontsize=26)
+        legend = ax.legend((old_rects[0], new_rects[0]),
+                           ("Open3D v0.13", "Open3D v0.14"),
+                           loc='upper center',
+                           fontsize=26)
+        # for text in legend.get_texts():
+        #     plt.setp(text, color='#eeeeee')
 
-        autolabel(old_rects, color="#eeeeee")
+        # #eeeeee
+        autolabel(old_rects, color="k")
         autolabel(new_rects, color="k")
 
     plt.show()
