@@ -166,7 +166,7 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
     # Always build 3rd party code in Release mode. Ignored by multi-config
     # generators (XCode, MSVC). MSVC needs matching config anyway.
-    -DCMAKE_BUILD_TYPE=Release
+    #-DCMAKE_BUILD_TYPE=Release
     -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
     -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
@@ -763,38 +763,16 @@ open3d_import_3rdparty_library(3rdparty_curl
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
 # BoringSSL
-# include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
-# open3d_import_3rdparty_library(3rdparty_boringssl
-#     HIDDEN
-#     INCLUDE_DIRS /home/rey/workspace/experiment/packages/boringssl/include/
-#     LIB_DIR      /home/rey/workspace/experiment/packages/boringssl/build/lib
-#     LIBRARIES    ssl crypto
-#     DEPENDS      ext_zlib ext_boringssl
-# )
-# list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_boringssl)
-
-add_library(3rdparty_boringssl INTERFACE)
-target_link_libraries(3rdparty_boringssl INTERFACE
-    /home/rey/workspace/experiment/packages/boringssl/build/ssl/libssl.a
-    /home/rey/workspace/experiment/packages/boringssl/build/crypto/libcrypto.a
+include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+open3d_import_3rdparty_library(3rdparty_boringssl
+    INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+    INCLUDE_ALL
+    INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+    LIB_DIR      ${BORINGSSL_LIB_DIR}
+    LIBRARIES    ${BORINGSSL_LIBRARIES}
+    DEPENDS      ext_zlib ext_boringssl
 )
-target_include_directories(3rdparty_boringssl INTERFACE
-    /home/rey/workspace/experiment/packages/boringssl/include
-)
-add_library(Open3D::3rdparty_boringssl ALIAS 3rdparty_boringssl)
-install(TARGETS 3rdparty_boringssl EXPORT Open3DTargets)
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_boringssl)
-
-# # OpenSSL
-# include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
-# open3d_import_3rdparty_library(3rdparty_openssl
-#     INCLUDE_DIRS ${OPENSSL_INCLUDE_DIRS}
-#     INCLUDE_ALL
-#     LIB_DIR      ${OPENSSL_LIB_DIR}
-#     LIBRARIES    ${OPENSSL_LIBRARIES}
-#     DEPENDS      ext_zlib ext_openssl
-# )
-# list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
 
 # PNG
 if(USE_SYSTEM_PNG)
