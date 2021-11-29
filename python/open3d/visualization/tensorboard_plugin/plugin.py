@@ -26,7 +26,6 @@
 """Open3D visualization plugin for TensorBoard."""
 import os
 import sys
-import traceback
 import threading
 import json
 
@@ -36,7 +35,6 @@ from werkzeug import wrappers
 
 if sys.platform == 'darwin':
     raise NotImplementedError("Open3D for TensorBoard does not run on macOS.")
-import open3d as o3d
 # TODO: Check for GPU / EGL else TensorBoard will crash.
 from open3d.visualization import O3DVisualizer
 from open3d.visualization import gui
@@ -46,7 +44,6 @@ from . import metadata
 from .util import Open3DPluginDataReader
 from .util import RenderUpdate
 from .util import _log
-from open3d.ml.vis import LabelLUT
 
 
 class Open3DPluginWindow:
