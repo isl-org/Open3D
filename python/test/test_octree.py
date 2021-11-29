@@ -26,8 +26,6 @@
 
 import open3d as o3d
 import numpy as np
-import time
-import pytest
 import os
 from open3d_test import test_data_dir
 
