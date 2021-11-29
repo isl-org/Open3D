@@ -21,7 +21,7 @@ def decode_name(name):
     return operand, op, dtype, size, engine
 
 
-def autolabel(rects):
+def autolabel(rects, color="k"):
     """
     Attach a text label above each bar displaying its height
     """
@@ -32,7 +32,8 @@ def autolabel(rects):
                 '%d' % int(height),
                 ha='center',
                 va='bottom',
-                fontsize=24)
+                fontsize=24,
+                color=color)
 
 
 def parse_benchmark_log_file(log_file):
@@ -102,7 +103,7 @@ if __name__ == "__main__":
 
     # operands = ["unary", "binary"]
     operands = ["binary"]
-    fig, axes = plt.subplots(len(operands), 1)
+    fig, axes = plt.subplots(len(operands), 1, figsize=(22, 10))
 
     for index, operand in enumerate(operands):
         if len(operands) > 1:
@@ -153,7 +154,7 @@ if __name__ == "__main__":
         ind = np.arange(len(ops))  # the x locations for the groups
         width = 0.35  # the width of the bars
 
-        old_rects = ax.bar(ind, old_gmean_times, width, color='y')
+        old_rects = ax.bar(ind, old_gmean_times, width, color='#f8f8ea')
         new_rects = ax.bar(ind + width, new_gmean_times, width, color='r')
 
         ax.set_ylabel('Time (ms)', fontsize=30)
@@ -171,7 +172,7 @@ if __name__ == "__main__":
                   loc='upper center',
                   fontsize=26)
 
-        autolabel(old_rects)
-        autolabel(new_rects)
+        autolabel(old_rects, color="#eeeeee")
+        autolabel(new_rects, color="k")
 
     plt.show()
