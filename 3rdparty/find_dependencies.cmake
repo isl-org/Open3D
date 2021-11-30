@@ -751,6 +751,8 @@ endif()
 # Don't move Curl below PNG. Moving Curl below PNG will throws
 # unidentified-symbols related errors.
 
+include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+
 # Curl
 include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
 open3d_import_3rdparty_library(3rdparty_curl
@@ -763,7 +765,6 @@ open3d_import_3rdparty_library(3rdparty_curl
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
 # BoringSSL
-include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
 open3d_import_3rdparty_library(3rdparty_boringssl
     INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
     INCLUDE_ALL

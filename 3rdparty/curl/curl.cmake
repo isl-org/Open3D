@@ -6,6 +6,10 @@ else()
     set(lib_name curl)
 endif()
 
+set(BSSL_DIR /home/rey/boringssl)
+#message(STATUS "BSSL_DIR ${BORINGSSL_INSTALL_DIR}")
+message(STATUS "BSSL_DIR ${BSSL_DIR}")
+
 ExternalProject_Add(
     ext_curl
     PREFIX curl
@@ -20,7 +24,7 @@ ExternalProject_Add(
         -DBUILD_TESTING=OFF
         -DCURL_DISABLE_LDAP=ON
         -DCURL_DISABLE_LDAPS=ON
-        -DOPENSSL_ROOT_DIR=/home/rey/workspace/experiment/packages/boringssl
+        -DOPENSSL_ROOT_DIR=${BSSL_DIR}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
