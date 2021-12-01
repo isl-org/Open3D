@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       developer_build:
-        description: 'Set to OFF for Release wheels'
+        description: 'Set to OFF for Release wheels.'
         required: false
         default: 'ON'
       build_viewer_app:
@@ -37,6 +37,7 @@ jobs:
       LOW_MEM_USAGE: ON
     steps:
       - name: Cancel outdated
+        if: ${{ matrix.BUILD_ML_OPS == 'OFF' && (github.event.inputs.build_viewer_app != 'OFF') }}
         uses: fkirc/skip-duplicate-actions@master
         with:
           github_token: ${{ github.token }}
@@ -71,13 +72,13 @@ jobs:
           ./util/run_ci.sh
           ccache -s
       - name: Build Open3D viewer app
-        if: ${{ ! matrix.BUILD_ML_OPS && (github.event.inputs.build_viewer_app || 'OFF') }}
+        if: ${{ matrix.BUILD_ML_OPS == 'OFF' && (github.event.inputs.build_viewer_app != 'OFF') }}
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           make -j${NPROC} Open3DViewer
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v2
-        if: ${{ ! matrix.BUILD_ML_OPS && (github.event.inputs.build_viewer_app || 'OFF') }}
+        if: ${{ matrix.BUILD_ML_OPS == 'OFF' && (github.event.inputs.build_viewer_app != 'OFF') }}
         with:
           name: open3d-app-macosx-10_15
           path: |
