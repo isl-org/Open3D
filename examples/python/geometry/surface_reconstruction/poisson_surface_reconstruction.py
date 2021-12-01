@@ -26,21 +26,29 @@
 
 import open3d as o3d
 import numpy as np
+import matplotlib.pyplot as plt
 import sys
 
-sys.path.append('..')
+sys.path.append('../..')
 import open3d_tutorial as o3dtut
 
 if __name__ == "__main__":
 
-    mesh = o3dtut.get_bunny_mesh() 
-    # fit to unit cube
-    mesh.scale(1 / np.max(mesh.get_max_bound() - mesh.get_min_bound()),
-               center=mesh.get_center())
-    print('Displaying input mesh ...')
-    o3d.visualization.draw([mesh])
+    pcd = o3dtut.get_eagle_pcd()
+    print('Displaying input pointcloud ...')
+    o3d.visualization.draw([pcd],
+                            field_of_view=60.0,
+                            eye=[-5.0, -0.0, -5.0],
+                            lookat=[1.8900, 3.2596, 0.9284],
+                            up=[0.2304, -0.8825, 0.4101])
+                            
 
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(
-        mesh, voxel_size=0.05)
-    print('Displaying voxel grid ...')
-    o3d.visualization.draw([voxel_grid])
+    print('Running Poisson surface reconstruction ...')
+    mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
+        pcd, depth=9)
+    print('Displaying reconstructed mesh ...')
+    o3d.visualization.draw([mesh],
+                            field_of_view=60.0,
+                            eye=[-5.0, -0.0, -5.0],
+                            lookat=[1.8900, 3.2596, 0.9284],
+                            up=[0.2304, -0.8825, 0.4101])

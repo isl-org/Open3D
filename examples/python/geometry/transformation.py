@@ -24,19 +24,11 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/geometry/transformation.py
-
 import open3d as o3d
 import numpy as np
 import copy
-import os
-import sys
 
 if __name__ == "__main__":
-
-    sys.path.append('..')
-    import open3d_tutorial as o3dtut
-    o3dtut.interactive = not "CI" in os.environ
 
     mesh = o3d.geometry.TriangleMesh.create_coordinate_frame()
     T = np.eye(4)
@@ -46,4 +38,4 @@ if __name__ == "__main__":
     print(T)
     mesh_t = copy.deepcopy(mesh).transform(T)
     print('Displaying original and transformed geometries ...')
-    o3d.visualization.draw_geometries([mesh, mesh_t])
+    o3d.visualization.draw([mesh, mesh_t])

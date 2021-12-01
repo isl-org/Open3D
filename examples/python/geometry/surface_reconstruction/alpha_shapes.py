@@ -26,21 +26,21 @@
 
 import open3d as o3d
 import numpy as np
+import matplotlib.pyplot as plt
 import sys
 
-sys.path.append('..')
+sys.path.append('../..')
 import open3d_tutorial as o3dtut
 
 if __name__ == "__main__":
 
-    mesh = o3dtut.get_bunny_mesh() 
-    # fit to unit cube
-    mesh.scale(1 / np.max(mesh.get_max_bound() - mesh.get_min_bound()),
-               center=mesh.get_center())
-    print('Displaying input mesh ...')
-    o3d.visualization.draw([mesh])
-
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(
-        mesh, voxel_size=0.05)
-    print('Displaying voxel grid ...')
-    o3d.visualization.draw([voxel_grid])
+    mesh = o3dtut.get_bunny_mesh()
+    pcd = mesh.sample_points_poisson_disk(750)
+    # todo: use o3d.visualization.draw() 
+    o3d.visualization.draw_geometries([pcd])
+    alpha = 0.03
+    print(f"alpha={alpha:.3f}")
+    mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, alpha)
+    mesh.compute_vertex_normals()
+    # todo: use o3d.visualization.draw()
+    o3d.visualization.draw_geometries([mesh], mesh_show_back_face=True)
