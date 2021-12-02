@@ -7,10 +7,6 @@ on:
         description: 'Set to OFF for Release wheels.'
         required: false
         default: 'ON'
-      build_viewer_app:
-        description: 'Also build the Open3D Viewer app.'
-        required: false
-        default: 'OFF'
 
   push:
     branches:
@@ -71,19 +67,19 @@ jobs:
           ./util/run_ci.sh
           ccache -s
       - name: Build Open3D viewer app
-        if: ${{ matrix.BUILD_ML_OPS == 'OFF' && (github.event.inputs.build_viewer_app != 'OFF') }}
+        if: ${{ matrix.BUILD_ML_OPS == 'OFF' }}
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           pushd build
           make -j${NPROC} Open3DViewer
-          popd
+          pushd bin
+          zip -rv open3d-app-macosx-10_15.zip Open3D.app
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v2
-        if: ${{ matrix.BUILD_ML_OPS == 'OFF' && (github.event.inputs.build_viewer_app != 'OFF') }}
+        if: ${{ matrix.BUILD_ML_OPS == 'OFF' }}
         with:
           name: open3d-app-macosx-10_15
-          path: |
-            build/bin/Open3D.app
+          path: build/bin/open3d-app-macosx-10_15.zip
           if-no-files-found: error
 
   build-wheel:
