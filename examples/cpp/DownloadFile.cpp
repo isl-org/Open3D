@@ -71,6 +71,9 @@ void DownloadAndExtract(const std::string url,
 int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
+    // visualization::webrtc_server::WebRTCWindowSystem::GetInstance()
+    //         ->EnableWebRTC();
+
     // File 1.
     std::string url =
             "https://github.com/isl-org/open3d_downloads/releases/download/"

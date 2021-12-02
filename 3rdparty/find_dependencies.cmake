@@ -767,6 +767,7 @@ open3d_import_3rdparty_library(3rdparty_curl
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
 # BoringSSL
+if(NOT BUILD_WEBRTC)
 open3d_import_3rdparty_library(3rdparty_boringssl
     INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
     INCLUDE_ALL
@@ -776,6 +777,7 @@ open3d_import_3rdparty_library(3rdparty_boringssl
     DEPENDS      ext_zlib ext_boringssl
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_boringssl)
+endif()
 
 # PNG
 if(USE_SYSTEM_PNG)
