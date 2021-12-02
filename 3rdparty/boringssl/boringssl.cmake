@@ -32,10 +32,10 @@ set(BORINGSSL_BUILD_BYPRODUCTS "<INSTALL_DIR>/src/ext_boringssl-build/ssl/libssl
                                "<INSTALL_DIR>/src/ext_boringssl-build/crypto/libcryp.a"
 )
 
-ExternalProject_Get_Property(ext_boringssl SOURCE_DIR)
+ExternalProject_Get_Property(ext_boringssl INSTALL_DIR)
 message(STATUS "BORING_SSL_INSTALL_DIR ${INSTALL_DIR}")
 
-ExternalProject_Get_Property(ext_boringssl INSTALL_DIR)
+ExternalProject_Get_Property(ext_boringssl SOURCE_DIR)
 message(STATUS "BORING_SSL_SOURCE_DIR ${SOURCE_DIR}")
 
 set(BORINGSSL_INSTALL_DIR ${INSTALL_DIR})

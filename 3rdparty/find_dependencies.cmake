@@ -751,6 +751,8 @@ endif()
 # Don't move Curl below PNG. Moving Curl below PNG will throws
 # unidentified-symbols related errors.
 
+# BoringSSL must be included before Curl to allow use of 
+# ${BORINGSSL_INSTALL_DIR} in curl.cmake
 include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
 
 # Curl
