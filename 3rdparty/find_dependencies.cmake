@@ -762,7 +762,7 @@ open3d_import_3rdparty_library(3rdparty_curl
     INCLUDE_ALL
     LIB_DIR      ${CURL_LIB_DIR}
     LIBRARIES    ${CURL_LIBRARIES}
-    DEPENDS      ext_zlib ext_boringssl ext_curl
+    DEPENDS      ext_zlib ext_curl
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
