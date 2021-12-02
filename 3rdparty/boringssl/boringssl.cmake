@@ -20,7 +20,6 @@ ExternalProject_Add(
     INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include <INSTALL_DIR>/include
     COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/src/ext_boringssl-build/ssl/libssl.a <INSTALL_DIR>/build/lib/libssl.a
     COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/src/ext_boringssl-build/crypto/libcrypto.a <INSTALL_DIR>/build/lib/libcrypto.a
-    COMMAND ${CMAKE_COMMAND} -E copy_directory <INSTALL_DIR> /home/rey/boringssl
 )
 
 #-DCMAKE_BUILD_TYPE=Release 

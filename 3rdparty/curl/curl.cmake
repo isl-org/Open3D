@@ -6,10 +6,6 @@ else()
     set(lib_name curl)
 endif()
 
-set(BSSL_DIR /home/rey/boringssl)
-#message(STATUS "BSSL_DIR ${BORINGSSL_INSTALL_DIR}")
-message(STATUS "BSSL_DIR ${BSSL_DIR}")
-
 ExternalProject_Add(
     ext_curl
     PREFIX curl
