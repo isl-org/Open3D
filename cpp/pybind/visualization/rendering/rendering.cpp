@@ -75,8 +75,10 @@ public:
         return gui::RenderToImageWithoutWindow(scene_, width_, height_);
     }
 
-    std::shared_ptr<geometry::Image> RenderToDepthImage() {
-        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_);
+    std::shared_ptr<geometry::Image> RenderToDepthImage(
+            bool z_in_view_space = false) {
+        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_,
+                                                    z_in_view_space);
     }
 
     void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
@@ -206,9 +208,12 @@ void pybind_rendering_classes(py::module &m) {
                  "returned")
             .def("render_to_depth_image",
                  &PyOffscreenRenderer::RenderToDepthImage,
+                 "z_in_view_space"_a = false,
                  "Renders scene depth buffer to a float image, blocking until "
                  "the image is returned. Pixels range from 0 (near plane) to "
-                 "1 (far plane)");
+                 "1 (far plane). If z_in_view_space is set to True then pixels "
+                 "are pre-transformed into view space (i.e., distance from "
+                 "camera).");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",

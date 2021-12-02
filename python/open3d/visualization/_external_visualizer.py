@@ -73,7 +73,7 @@ class ExternalVisualizer:
                             ]
 
         Args:
-            obj: A geometry or camera object or a list of objects. See the 
+            obj: A geometry or camera object or a list of objects. See the
             example seection for usage instructions.
 
             path: A path describing a location in the scene tree.
@@ -160,7 +160,7 @@ class ExternalVisualizer:
 
         This function is compatible with the standalone 'draw' function and can
         be used to redirect calls to the external visualizer. Note that only
-        the geometry argument is supported, all other arguments will be 
+        the geometry argument is supported, all other arguments will be
         ignored.
 
         Example:

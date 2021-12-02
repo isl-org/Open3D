@@ -28,9 +28,7 @@ import open3d as o3d
 import numpy as np
 import re
 import os
-import sys
 from open3d_test import download_fountain_dataset
-import time
 
 
 def load_fountain_dataset():
