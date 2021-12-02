@@ -35,7 +35,7 @@ void pybind_data(py::module& m) {
     py::module m_data =
             m.def_submodule("data", "Open3D example data handling module.");
     pybind_downloader(m_data);
-    pybind_extract(m_data);
+    // pybind_extract(m_data);
 }
 
 }  // namespace data
