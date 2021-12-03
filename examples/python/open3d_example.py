@@ -47,10 +47,12 @@ sys.path.append(os.path.join(_pwd, os.pardir, "test_data"))
 from download_utils import download_all_files as _download_all_files
 _download_all_files()
 
+
 def _relative_path(path):
     script_path = os.path.realpath(__file__)
     script_dir = os.path.dirname(script_path)
     return os.path.join(script_dir, path)
+
 
 def get_bunny_mesh():
     bunny_path = _relative_path("../test_data/Bunny.ply")
