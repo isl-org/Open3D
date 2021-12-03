@@ -1,0 +1,53 @@
+# Dockerfiel to *test* OpenBLAS wheel.
+
+# FROM must be called before other ARGS except for ARG BASE_IMAGE
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# For miniconda and the rest of this Dockerfile
+SHELL ["/bin/bash", "-c"]
+
+# Required build args, should be specified in docker_build.sh
+ARG PYTHON_VERSION
+RUN if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi
+
+# Prevent interactive inputs when installing packages
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV SUDO=command
+
+# Minimal dependencies
+# wget    : for downloading
+# libgl1  : available on Ubuntu ARM desktop by default
+# libgomp1: available on Ubuntu ARM desktop by default
+RUN apt-get update && apt-get install -y \
+    wget \
+    libgl1 \
+    libgomp1 \
+ && rm -rf /var/lib/apt/lists/*
+
+# Miniconda
+ENV PATH="/root/miniconda3/bin:${PATH}"
+RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh \
+ && bash Miniconda3-latest-Linux-aarch64.sh -b \
+ && rm Miniconda3-latest-Linux-aarch64.sh \
+ && conda --version
+ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
+RUN conda create -y -n open3d python=${PYTHON_VERSION} \
+ && source activate open3d
+RUN which python \
+ && python --version
+
+ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
+COPY *.whl /
+
+# Open3D Python dependencies
+RUN pip install /*.whl
+
+# Run test
+RUN python -c "import open3d.core as o3c; print(o3c.Tensor.ones((2, 2)) @ o3c.Tensor.ones((2, 2)))"
+
+RUN echo "Docker build done."

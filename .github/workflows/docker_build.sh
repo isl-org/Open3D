@@ -16,7 +16,7 @@
 #   This make the Docker image reproducible across different machines.
 set -euo pipefail
 
-__usage="USAGE:
+__usage_docker_build="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
@@ -42,15 +42,15 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 &&
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
 
-print_usage_and_exit() {
-    echo "$__usage"
+print_usage_and_exit_docker_build() {
+    echo "$__usage_docker_build"
     exit 1
 }
 
 openblas-x86_64_export_env() {
     export DOCKER_TAG=open3d-ci:openblas-x86_64
 
-    export BASE_IMAGE=ubuntu:20.04
+    export BASE_IMAGE=ubuntu:18.04
     export CMAKE_VER=cmake-3.19.7-Linux-x86_64
     export CCACHE_TAR_NAME=open3d-ci-openblas-x86_64
 }
@@ -58,7 +58,7 @@ openblas-x86_64_export_env() {
 openblas-arm64_export_env() {
     export DOCKER_TAG=open3d-ci:openblas-arm64
 
-    export BASE_IMAGE=arm64v8/ubuntu:20.04
+    export BASE_IMAGE=arm64v8/ubuntu:18.04
     export CMAKE_VER=cmake-3.19.7-Linux-aarch64
     export CCACHE_TAR_NAME=open3d-ci-openblas-arm64
 }
@@ -82,6 +82,11 @@ openblas_build() {
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
+
+    # Extract wheels
+    docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
+        bash -c "cp /*.whl /opt/mount \
+              && chown $(id -u):$(id -g) /opt/mount/*.whl"
 }
 
 cuda_wheel_build() {
@@ -102,7 +107,7 @@ cuda_wheel_build() {
         PYTHON_VERSION=3.9
     else
         echo "Invalid python version."
-        print_usage_and_exit
+        print_usage_and_exit_docker_build
     fi
     if [[ "dev" =~ ^($options)$ ]]; then
         DEVELOPER_BUILD=ON
@@ -219,7 +224,7 @@ cuda_build() {
 function main () {
     if [[ "$#" -ne 1 ]]; then
         echo "Error: invalid number of arguments: $#." >&2
-        print_usage_and_exit
+        print_usage_and_exit_docker_build
     fi
     echo "[$(basename $0)] building $1"
     case "$1" in
@@ -273,7 +278,7 @@ function main () {
             ;;
         *)
             echo "Error: invalid argument: ${1}." >&2
-            print_usage_and_exit
+            print_usage_and_exit_docker_build
             ;;
     esac
 }
