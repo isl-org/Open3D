@@ -410,8 +410,7 @@ class JupyterDocsBuilder:
             "geometry", "core", "pipelines", "visualization", "t_pipelines"
         ]
         for example_dir in example_dirs:
-            in_dir = (Path(self.current_file_dir).parent / "examples" /
-                      "python" / example_dir)
+            in_dir = (Path(self.current_file_dir) / "jupyter" / example_dir)
             out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
             out_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy(
