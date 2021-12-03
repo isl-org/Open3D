@@ -165,7 +165,7 @@ setup_args = dict(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
-        "Operating System :: MacOS :: MacOSX",
+        "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
         "Programming Language :: C",
         "Programming Language :: C++",
