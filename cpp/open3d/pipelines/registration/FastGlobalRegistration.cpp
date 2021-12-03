@@ -316,13 +316,7 @@ RegistrationResult FastGlobalRegistrationBasedOnCorrespondence(
     }
 
     if (option.tuple_test_) {
-        // for AdvancedMatching ensure the first point cloud is the larger one
-        if (source.points_.size() > target.points_.size()) {
-            corresvec = AdvancedMatching(source, target, corresvec, option);
-        } else {
-            corresvec = AdvancedMatching(target, source, corresvec, option);
-            for (auto& p : corresvec) std::swap(p.first, p.second);
-        }
+        corresvec = AdvancedMatching(source, target, corresvec, option);
     }
 
     Eigen::Matrix4d transformation;
@@ -359,8 +353,8 @@ RegistrationResult FastGlobalRegistrationBasedOnFeatureMatching(
 
     std::vector<std::pair<int, int>> corres;
     if (option.tuple_test_) {
-        // for AdvancedMatching ensure the first point cloud is the larger one
-        if (source.points_.size() > target.points_.size()) {
+        // use the smaller point cloud as the query during knn search
+        if (source.points_.size() >= target.points_.size()) {
             corres = AdvancedMatching(
                     source, target,
                     InitialMatching(source_feature, target_feature), option);
