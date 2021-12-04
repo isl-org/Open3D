@@ -26,7 +26,6 @@
 
 import open3d as o3d
 import numpy as np
-import matplotlib.pyplot as plt
 import sys
 
 sys.path.append('..')
@@ -35,14 +34,13 @@ import open3d_example as o3dex
 if __name__ == "__main__":
 
     mesh = o3dex.get_bunny_mesh()
-    pcd = mesh.sample_points_poisson_disk(750)
-    print("Displaying input pointcloud ...")
-    o3d.visualization.draw_geometries([pcd])
-    alpha = 0.03
-    print(f"alpha={alpha:.3f}")
-    print('Running alpha shapes surface reconstruction ...')
-    mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(
-        pcd, alpha)
-    mesh.compute_triangle_normals(normalized=True)
-    print("Displaying reconstructed mesh ...")
-    o3d.visualization.draw_geometries([mesh], mesh_show_back_face=True)
+    # fit to unit cube
+    mesh.scale(1 / np.max(mesh.get_max_bound() - mesh.get_min_bound()),
+               center=mesh.get_center())
+    print('Displaying input mesh ...')
+    o3d.visualization.draw([mesh])
+
+    voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(
+        mesh, voxel_size=0.05)
+    print('Displaying voxel grid ...')
+    o3d.visualization.draw([voxel_grid])

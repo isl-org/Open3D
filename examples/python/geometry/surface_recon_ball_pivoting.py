@@ -30,20 +30,20 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-sys.path.append('../..')
-import open3d_tutorial as o3dtut
+sys.path.append('..')
+import open3d_example as o3dex
 
 if __name__ == "__main__":
 
-    gt_mesh = o3dtut.get_bunny_mesh()
+    gt_mesh = o3dex.get_bunny_mesh()
     gt_mesh.compute_vertex_normals()
     pcd = gt_mesh.sample_points_poisson_disk(3000)
-    print ("Displaying input pointcloud ...")
+    print("Displaying input pointcloud ...")
     o3d.visualization.draw([pcd], point_size=5)
-                            
+
     radii = [0.005, 0.01, 0.02, 0.04]
-    print('Running Ball Pivoting surface reconstruction ...')
+    print('Running ball pivoting surface reconstruction ...')
     rec_mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
         pcd, o3d.utility.DoubleVector(radii))
-    print ("Displaying reconstructed mesh ...")
+    print("Displaying reconstructed mesh ...")
     o3d.visualization.draw([rec_mesh])

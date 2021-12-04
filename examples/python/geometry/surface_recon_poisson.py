@@ -25,30 +25,27 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import numpy as np
-import matplotlib.pyplot as plt
 import sys
 
-sys.path.append('../..')
-import open3d_tutorial as o3dtut
+sys.path.append('..')
+import open3d_example as o3dex
 
 if __name__ == "__main__":
 
-    pcd = o3dtut.get_eagle_pcd()
+    pcd = o3dex.get_eagle_pcd()
     print('Displaying input pointcloud ...')
     o3d.visualization.draw([pcd],
-                            field_of_view=60.0,
-                            eye=[-5.0, -0.0, -5.0],
-                            lookat=[1.8900, 3.2596, 0.9284],
-                            up=[0.2304, -0.8825, 0.4101])
-                            
+                           field_of_view=60.0,
+                           eye=[-5.0, -0.0, -5.0],
+                           lookat=[1.8900, 3.2596, 0.9284],
+                           up=[0.2304, -0.8825, 0.4101])
 
     print('Running Poisson surface reconstruction ...')
     mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
         pcd, depth=9)
     print('Displaying reconstructed mesh ...')
     o3d.visualization.draw([mesh],
-                            field_of_view=60.0,
-                            eye=[-5.0, -0.0, -5.0],
-                            lookat=[1.8900, 3.2596, 0.9284],
-                            up=[0.2304, -0.8825, 0.4101])
+                           field_of_view=60.0,
+                           eye=[-5.0, -0.0, -5.0],
+                           lookat=[1.8900, 3.2596, 0.9284],
+                           up=[0.2304, -0.8825, 0.4101])

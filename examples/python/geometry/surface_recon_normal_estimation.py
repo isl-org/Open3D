@@ -29,18 +29,18 @@ import numpy as np
 import sys
 
 sys.path.append('..')
-import open3d_tutorial as o3dtut
+import open3d_example as o3dex
 
 if __name__ == "__main__":
 
-    mesh = o3dtut.get_bunny_mesh() 
-    # fit to unit cube
-    mesh.scale(1 / np.max(mesh.get_max_bound() - mesh.get_min_bound()),
-               center=mesh.get_center())
-    print('Displaying input mesh ...')
-    o3d.visualization.draw([mesh])
+    gt_mesh = o3dex.get_bunny_mesh()
+    pcd = gt_mesh.sample_points_poisson_disk(5000)
+    # invalidate existing normals
+    pcd.normals = o3d.utility.Vector3dVector(np.zeros((1, 3)))
 
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(
-        mesh, voxel_size=0.05)
-    print('Displaying voxel grid ...')
-    o3d.visualization.draw([voxel_grid])
+    print("Displaying input pointcloud ...")
+    o3d.visualization.draw_geometries([pcd], point_show_normal=True)
+
+    pcd.estimate_normals()
+    print("Displaying pointcloud with normals ...")
+    o3d.visualization.draw_geometries([pcd], point_show_normal=True)
