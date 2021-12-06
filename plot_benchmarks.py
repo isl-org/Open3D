@@ -160,7 +160,7 @@ if __name__ == "__main__":
 
         ax.set_ylabel('Time (ms)', fontsize=30)
         ax.set_title(
-            f'Open3D v0.13 v.s. v0.14 {operand} op benchmark (lower is better)',
+            f'Open3D v0.13 vs. v0.14 {operand} op benchmark (lower is better)',
             fontweight="bold",
             fontsize=30)
         ax.set_xticks(ind + width / 2)
