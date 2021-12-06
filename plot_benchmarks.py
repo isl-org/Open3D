@@ -21,7 +21,7 @@ def decode_name(name):
     return operand, op, dtype, size, engine
 
 
-def autolabel(rects):
+def autolabel(rects, color="k"):
     """
     Attach a text label above each bar displaying its height
     """
@@ -31,7 +31,9 @@ def autolabel(rects):
                 1.0 * height,
                 '%d' % int(height),
                 ha='center',
-                va='bottom')
+                va='bottom',
+                fontsize=24,
+                color=color)
 
 
 def parse_benchmark_log_file(log_file):
@@ -101,7 +103,7 @@ if __name__ == "__main__":
 
     # operands = ["unary", "binary"]
     operands = ["binary"]
-    fig, axes = plt.subplots(len(operands), 1)
+    fig, axes = plt.subplots(len(operands), 1, figsize=(22, 10))
 
     for index, operand in enumerate(operands):
         if len(operands) > 1:
@@ -152,21 +154,29 @@ if __name__ == "__main__":
         ind = np.arange(len(ops))  # the x locations for the groups
         width = 0.35  # the width of the bars
 
-        old_rects = ax.bar(ind, old_gmean_times, width, color='y')
-        new_rects = ax.bar(ind + width, new_gmean_times, width, color='r')
+        old_rects = ax.bar(ind, old_gmean_times, width, color='y')  # #f8f8ea
+        new_rects = ax.bar(ind + width, new_gmean_times, width,
+                           color='r')  # #ffeaea
 
-        ax.set_ylabel('Time (ms)')
+        ax.set_ylabel('Time (ms)', fontsize=30)
         ax.set_title(
             f'Open3D v0.13 v.s. v0.14 {operand} op benchmark (lower is better)',
-            fontweight="bold")
+            fontweight="bold",
+            fontsize=30)
         ax.set_xticks(ind + width / 2)
+        ops = [op.replace("logical_", "") for op in ops]
         ax.set_xticklabels(ops)
+        ax.tick_params(axis='both', which='major', labelsize=26)
 
-        ax.legend((old_rects[0], new_rects[0]),
-                  ("Open3D v0.13", "Open3D v0.14"),
-                  loc='upper center')
+        legend = ax.legend((old_rects[0], new_rects[0]),
+                           ("Open3D v0.13", "Open3D v0.14"),
+                           loc='upper center',
+                           fontsize=26)
+        # for text in legend.get_texts():
+        #     plt.setp(text, color='#eeeeee')
 
-        autolabel(old_rects)
-        autolabel(new_rects)
+        # #eeeeee
+        autolabel(old_rects, color="k")
+        autolabel(new_rects, color="k")
 
     plt.show()
