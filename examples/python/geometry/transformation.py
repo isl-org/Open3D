@@ -38,4 +38,11 @@ if __name__ == "__main__":
     print(T)
     mesh_t = copy.deepcopy(mesh).transform(T)
     print('Displaying original and transformed geometries ...')
-    o3d.visualization.draw([mesh, mesh_t])
+    o3d.visualization.draw([{
+        "name": "Original Geometry",
+        "geometry": mesh
+    }, {
+        "name": "Transformed Geometry",
+        "geometry": mesh_t
+    }],
+                           show_ui=True)

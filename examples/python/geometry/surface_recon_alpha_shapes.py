@@ -25,11 +25,11 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import numpy as np
-import matplotlib.pyplot as plt
 import sys
+import os
 
-sys.path.append('..')
+dir_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
 if __name__ == "__main__":
