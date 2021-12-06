@@ -63,7 +63,7 @@ jobs:
           tar -czvf Open3D.tar.gz Open3D
           ls -alh
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.2.1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
