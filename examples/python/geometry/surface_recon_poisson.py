@@ -36,7 +36,7 @@ import open3d_example as o3dex
 if __name__ == "__main__":
 
     pcd = o3dex.get_eagle_pcd()
-    R = pcd.get_rotation_matrix_from_xyz((np.pi, -np.pi/4, 0))
+    R = pcd.get_rotation_matrix_from_xyz((np.pi, -np.pi / 4, 0))
     pcd.rotate(R, center=(0, 0, 0))
     print('Displaying input pointcloud ...')
     o3d.visualization.draw([pcd])
