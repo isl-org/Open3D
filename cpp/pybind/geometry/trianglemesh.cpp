@@ -89,8 +89,8 @@ void pybind_trianglemesh(py::module &m) {
             .def("remove_duplicated_triangles",
                  &TriangleMesh::RemoveDuplicatedTriangles,
                  "Function that removes duplicated triangles, i.e., removes "
-                 "triangles that reference the same three vertices, "
-                 "independent of their order.")
+                 "triangles that reference the same three vertices and have "
+                 "the same orientation.")
             .def("remove_unreferenced_vertices",
                  &TriangleMesh::RemoveUnreferencedVertices,
                  "This function removes vertices from the triangle mesh that "
