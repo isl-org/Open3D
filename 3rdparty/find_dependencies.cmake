@@ -751,10 +751,6 @@ endif()
 # Don't move Curl below PNG. Moving Curl below PNG will throws
 # unidentified-symbols related errors.
 
-# BoringSSL must be included before Curl to allow use of 
-# ${BORINGSSL_INSTALL_DIR} in curl.cmake
-include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
-
 # Curl
 include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
 open3d_import_3rdparty_library(3rdparty_curl
@@ -766,17 +762,17 @@ open3d_import_3rdparty_library(3rdparty_curl
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
-# BoringSSL
+# OpenSSL
 if(NOT BUILD_WEBRTC)
-open3d_import_3rdparty_library(3rdparty_boringssl
-    INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
+open3d_import_3rdparty_library(3rdparty_openssl
+    INCLUDE_DIRS ${OPENSSL_INCLUDE_DIRS}
     INCLUDE_ALL
-    INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
-    LIB_DIR      ${BORINGSSL_LIB_DIR}
-    LIBRARIES    ${BORINGSSL_LIBRARIES}
-    DEPENDS      ext_zlib ext_boringssl
+    LIB_DIR      ${OPENSSL_LIB_DIR}
+    LIBRARIES    ${OPENSSL_LIBRARIES}
+    DEPENDS      ext_zlib ext_openssl
 )
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_boringssl)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
 endif()
 
 # PNG

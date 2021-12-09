@@ -20,13 +20,10 @@ ExternalProject_Add(
         -DBUILD_TESTING=OFF
         -DCURL_DISABLE_LDAP=ON
         -DCURL_DISABLE_LDAPS=ON
-        -DOPENSSL_ROOT_DIR=${BORINGSSL_INSTALL_DIR}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
-
-add_dependencies(ext_curl ext_boringssl)
 
 ExternalProject_Get_Property(ext_curl INSTALL_DIR)
 set(CURL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.

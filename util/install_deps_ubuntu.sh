@@ -32,8 +32,6 @@ dependencies=(
     libudev-dev
     autoconf
     libtool
-    # BoringSSL deps
-    libunwind-dev
 )
 
 $SUDO apt-get update
