@@ -748,6 +748,37 @@ if (BUILD_LIBREALSENSE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_librealsense)
 endif()
 
+# Don't move Curl below PNG. Moving Curl below PNG will throws
+# unidentified-symbols related errors.
+
+# BoringSSL must be included before Curl to allow use of 
+# ${BORINGSSL_INSTALL_DIR} in curl.cmake
+include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+
+# Curl
+include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
+open3d_import_3rdparty_library(3rdparty_curl
+    INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
+    INCLUDE_ALL
+    LIB_DIR      ${CURL_LIB_DIR}
+    LIBRARIES    ${CURL_LIBRARIES}
+    DEPENDS      ext_zlib ext_curl
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
+
+# BoringSSL
+if(NOT BUILD_WEBRTC)
+open3d_import_3rdparty_library(3rdparty_boringssl
+    INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+    INCLUDE_ALL
+    INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+    LIB_DIR      ${BORINGSSL_LIB_DIR}
+    LIBRARIES    ${BORINGSSL_LIBRARIES}
+    DEPENDS      ext_zlib ext_boringssl
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_boringssl)
+endif()
+
 # PNG
 if(USE_SYSTEM_PNG)
     # ZLIB::ZLIB is automatically included by the PNG package.
@@ -1351,6 +1382,17 @@ if (BUILD_CUDA_MODULE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_stdgpu)
 endif ()
 
+# embree
+include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+open3d_import_3rdparty_library(3rdparty_embree
+    HIDDEN
+    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+    LIB_DIR      ${EMBREE_LIB_DIR}
+    LIBRARIES    ${EMBREE_LIBRARIES}
+    DEPENDS      ext_embree
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
+
 # WebRTC
 if(BUILD_WEBRTC)
     # Include WebRTC headers in Open3D.h.
@@ -1392,17 +1434,6 @@ else()
     # Don't include WebRTC headers in Open3D.h.
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
-
-# embree
-include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-open3d_import_3rdparty_library(3rdparty_embree
-    HIDDEN
-    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-    LIB_DIR      ${EMBREE_LIB_DIR}
-    LIBRARIES    ${EMBREE_LIBRARIES}
-    DEPENDS      ext_embree
-)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
 
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
