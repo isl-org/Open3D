@@ -24,16 +24,11 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# Helpers and monkey patches for ipynb tutorials
 import open3d as o3d
-import numpy as np
-import PIL.Image
-import IPython.display
 import os
 import urllib.request
 import tarfile
 import gzip
-import zipfile
 import shutil
 import sys
 
@@ -52,6 +47,22 @@ def _relative_path(path):
     script_path = os.path.realpath(__file__)
     script_dir = os.path.dirname(script_path)
     return os.path.join(script_dir, path)
+
+
+def get_armadillo_mesh():
+    armadillo_path = _relative_path("../test_data/Armadillo.ply")
+    if not os.path.exists(armadillo_path):
+        print("downloading armadillo mesh")
+        url = "http://graphics.stanford.edu/pub/3Dscanrep/armadillo/Armadillo.ply.gz"
+        urllib.request.urlretrieve(url, armadillo_path + ".gz")
+        print("extract armadillo mesh")
+        with gzip.open(armadillo_path + ".gz", "rb") as fin:
+            with open(armadillo_path, "wb") as fout:
+                shutil.copyfileobj(fin, fout)
+        os.remove(armadillo_path + ".gz")
+    mesh = o3d.io.read_triangle_mesh(armadillo_path)
+    mesh.compute_vertex_normals()
+    return mesh
 
 
 def get_bunny_mesh():
@@ -77,3 +88,13 @@ def get_bunny_mesh():
     mesh = o3d.io.read_triangle_mesh(bunny_path)
     mesh.compute_vertex_normals()
     return mesh
+
+
+def get_eagle_pcd():
+    path = _relative_path("../test_data/eagle.ply")
+    if not os.path.exists(path):
+        print("downloading eagle pcl")
+        url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"
+        urllib.request.urlretrieve(url, path)
+    pcd = o3d.io.read_point_cloud(path)
+    return pcd

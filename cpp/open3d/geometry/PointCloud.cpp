@@ -509,8 +509,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points,
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     std::vector<bool> mask = std::vector<bool>(points_.size());
-    utility::OMPProgressBar progress_bar(points_.size(),
-                                         "Remove radius outliers: ", true);
+    utility::OMPProgressBar progress_bar(
+            points_.size(), "Remove radius outliers: ", print_progress);
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
@@ -548,8 +548,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     std::vector<double> avg_distances = std::vector<double>(points_.size());
     std::vector<size_t> indices;
     size_t valid_distances = 0;
-    utility::OMPProgressBar progress_bar(points_.size(),
-                                         "Remove statistical outliers: ", true);
+    utility::OMPProgressBar progress_bar(
+            points_.size(), "Remove statistical outliers: ", print_progress);
 
 #pragma omp parallel for reduction(+ : valid_distances) schedule(static) num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {

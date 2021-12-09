@@ -121,6 +121,10 @@ build_all() {
 
     mkdir -p build
     cd build
+    GLIBCXX_USE_CXX11_ABI=ON
+    if [ "$BUILD_PYTORCH_OPS" == ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
+        GLIBCXX_USE_CXX11_ABI=OFF
+    fi
 
     cmakeOptions=(
         -DBUILD_SHARED_LIBS="$SHARED"
@@ -129,6 +133,7 @@ build_all() {
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
         -DBUILD_COMMON_CUDA_ARCHS=ON
         -DBUILD_COMMON_ISPC_ISAS=ON
+        -DGLIBCXX_USE_CXX11_ABI="$GLIBCXX_USE_CXX11_ABI"
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
@@ -198,6 +203,7 @@ build_pip_conda_package() {
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
         "-DBUILD_LIBREALSENSE=ON"
+        "-DGLIBCXX_USE_CXX11_ABI=OFF"
         "-DBUILD_TENSORFLOW_OPS=ON"
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
@@ -226,8 +232,8 @@ build_pip_conda_package() {
         rm -r "${rebuild_list[@]}" || true
         set -x # Echo commands on
         cmake -DBUILD_CUDA_MODULE=ON \
-              -DBUILD_COMMON_CUDA_ARCHS=ON \
-              "${cmakeOptions[@]}" ..
+            -DBUILD_COMMON_CUDA_ARCHS=ON \
+            "${cmakeOptions[@]}" ..
         set +x # Echo commands off
     fi
     echo
@@ -364,7 +370,7 @@ install_docs_dependencies() {
     command -v python
     python -V
     python -m pip install -U -q "wheel==$WHEEL_VER" \
-                                "pip==$PIP_VER"
+        "pip==$PIP_VER"
     python -m pip install -U -q "yapf==$YAPF_VER"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
@@ -407,6 +413,7 @@ build_docs() {
         "-DWITH_OPENMP=ON"
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=ON"
+        "-DGLIBCXX_USE_CXX11_ABI=OFF"
         "-DBUILD_TENSORFLOW_OPS=ON"
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUNDLE_OPEN3D_ML=ON"
