@@ -208,7 +208,6 @@ void pybind_registration_classes(py::module &m) {
             .def("__repr__",
                  [](const TransformationEstimationPointToPoint &te) {
                      return std::string(
-                                    ""
                                     "TransformationEstimationPointToPoint ") +
                             (te.with_scaling_
                                      ? std::string("with scaling.")
@@ -284,9 +283,9 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
             .def("__repr__",
                  [](const TransformationEstimationForColoredICP &te) {
                      return std::string(
-                                    "TransformationEstimationForColoredICP "
-                                    "with lambda_geometric:") +
-                            std::to_string(te.lambda_geometric_);
+                                    "TransformationEstimationForColoredICP ") +
+                            ("with lambda_geometric=" +
+                             std::to_string(te.lambda_geometric_));
                  })
             .def_readwrite(
                     "lambda_geometric",
@@ -328,9 +327,9 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
             .def("__repr__",
                  [](const TransformationEstimationForGeneralizedICP &te) {
                      return std::string(
-                                    "TransformationEstimationForGeneralizedICP "
-                                    "with epsilon:") +
-                            std::to_string(te.epsilon_);
+                                    "TransformationEstimationForGeneralizedICP"
+                                    " ") +
+                            ("with epsilon=" + std::to_string(te.epsilon_));
                  })
             .def_readwrite("epsilon",
                            &TransformationEstimationForGeneralizedICP::epsilon_,
@@ -562,7 +561,7 @@ must hold true for all edges.)");
             .def_readwrite(
                     "fitness", &RegistrationResult::fitness_,
                     "float: The overlapping area (# of inlier correspondences "
-                    "/ # of points in target). Higher is better.")
+                    "/ # of points in source). Higher is better.")
             .def("__repr__", [](const RegistrationResult &rr) {
                 return fmt::format(
                         "RegistrationResult with "
@@ -642,7 +641,7 @@ void pybind_registration_methods(py::module &m) {
           "Function for Colored ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
           "init"_a = Eigen::Matrix4d::Identity(),
-          "estimation_method"_a = TransformationEstimationForColoredICP(),
+          "estimation_method"_a = TransformationEstimationForColoredICP(0.968),
           "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_colored_icp",
                                  map_shared_argument_docstrings);
@@ -651,7 +650,8 @@ void pybind_registration_methods(py::module &m) {
           "Function for Generalized ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
           "init"_a = Eigen::Matrix4d::Identity(),
-          "estimation_method"_a = TransformationEstimationForGeneralizedICP(),
+          "estimation_method"_a =
+                  TransformationEstimationForGeneralizedICP(1e-3),
           "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_generalized_icp",
                                  map_shared_argument_docstrings);

@@ -243,6 +243,150 @@ def test_arange(device):
     np.testing.assert_equal(np_t, o3_t.cpu().numpy())
 
 
+@pytest.mark.parametrize("device", list_devices())
+def test_flatten(device):
+
+    # Flatten 0-D tensor
+    src_t = o3c.Tensor(3, dtype=o3c.Dtype.Int64).to(device)
+    dst_t = o3c.Tensor([3], dtype=o3c.Dtype.Int64).to(device)
+    assert dst_t.allclose(src_t.flatten())
+    assert dst_t.allclose(src_t.flatten(0))
+    assert dst_t.allclose(src_t.flatten(-1))
+
+    assert dst_t.allclose(src_t.flatten(0, 0))
+    assert dst_t.allclose(src_t.flatten(0, -1))
+    assert dst_t.allclose(src_t.flatten(-1, 0))
+    assert dst_t.allclose(src_t.flatten(-1, -1))
+
+    with pytest.raises(RuntimeError):
+        src_t.flatten(-2)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(1)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(0, -2)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(0, 1)
+
+    # Flatten 1-D tensor
+    src_t = o3c.Tensor([1, 2, 3], dtype=o3c.Dtype.Int64).to(device)
+    dst_t = o3c.Tensor([1, 2, 3], dtype=o3c.Dtype.Int64).to(device)
+
+    assert dst_t.allclose(src_t.flatten())
+    assert dst_t.allclose(src_t.flatten(0))
+    assert dst_t.allclose(src_t.flatten(-1))
+
+    assert dst_t.allclose(src_t.flatten(0, 0))
+    assert dst_t.allclose(src_t.flatten(0, -1))
+    assert dst_t.allclose(src_t.flatten(-1, 0))
+    assert dst_t.allclose(src_t.flatten(-1, -1))
+
+    with pytest.raises(RuntimeError):
+        src_t.flatten(-2)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(1)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(0, -2)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(0, 1)
+
+    # Flatten 2-D tensor
+    src_t = o3c.Tensor([[1, 2, 3], [4, 5, 6]], dtype=o3c.Dtype.Int64).to(device)
+    dst_t_flat = o3c.Tensor([1, 2, 3, 4, 5, 6],
+                            dtype=o3c.Dtype.Int64).to(device)
+    dst_t_unchanged = o3c.Tensor([[1, 2, 3], [4, 5, 6]],
+                                 dtype=o3c.Dtype.Int64).to(device)
+
+    assert dst_t_flat.allclose(src_t.flatten())
+    assert dst_t_flat.allclose(src_t.flatten(0))
+    assert dst_t_flat.allclose(src_t.flatten(-2))
+
+    assert dst_t_flat.allclose(src_t.flatten(0, 1))
+    assert dst_t_flat.allclose(src_t.flatten(-2, 1))
+    assert dst_t_flat.allclose(src_t.flatten(0, -1))
+    assert dst_t_flat.allclose(src_t.flatten(-2, -1))
+
+    assert dst_t_unchanged.allclose(src_t.flatten(1))
+    assert dst_t_unchanged.allclose(src_t.flatten(-1))
+
+    for dim in range(-2, 2):
+        assert dst_t_unchanged.allclose(src_t.flatten(dim, dim))
+
+    # Out of bounds dimensions
+    with pytest.raises(RuntimeError):
+        src_t.flatten(0, 2)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(0, -3)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(-3, 0)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(2, 0)
+
+    # end_dim is greater than start_dim
+    with pytest.raises(RuntimeError):
+        src_t.flatten(1, 0)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(-1, 0)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(1, -2)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(-1, -2)
+
+    # Flatten 3-D tensor
+    src_t = o3c.Tensor([[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                       dtype=o3c.Dtype.Int64).to(device)
+    dst_t_flat = o3c.Tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                            dtype=o3c.Dtype.Int64).to(device)
+    dst_t_unchanged = o3c.Tensor(
+        [[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+        dtype=o3c.Dtype.Int64).to(device)
+    dst_t_first_two_flat = o3c.Tensor(
+        [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]],
+        dtype=o3c.Dtype.Int64).to(device)
+    dst_t_last_two_flat = o3c.Tensor(
+        [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]],
+        dtype=o3c.Dtype.Int64).to(device)
+
+    assert dst_t_flat.allclose(src_t.flatten())
+    assert dst_t_flat.allclose(src_t.flatten(0))
+    assert dst_t_flat.allclose(src_t.flatten(-3))
+
+    assert dst_t_flat.allclose(src_t.flatten(0, 2))
+    assert dst_t_flat.allclose(src_t.flatten(-3, 2))
+    assert dst_t_flat.allclose(src_t.flatten(0, -1))
+    assert dst_t_flat.allclose(src_t.flatten(-3, -1))
+
+    assert dst_t_first_two_flat.allclose(src_t.flatten(0, 1))
+    assert dst_t_first_two_flat.allclose(src_t.flatten(0, -2))
+    assert dst_t_first_two_flat.allclose(src_t.flatten(-3, 1))
+    assert dst_t_first_two_flat.allclose(src_t.flatten(-3, -2))
+
+    assert dst_t_last_two_flat.allclose(src_t.flatten(1, 2))
+    assert dst_t_last_two_flat.allclose(src_t.flatten(1, -1))
+    assert dst_t_last_two_flat.allclose(src_t.flatten(-2, 2))
+    assert dst_t_last_two_flat.allclose(src_t.flatten(-2, -1))
+
+    for dim in range(-3, 3):
+        assert dst_t_unchanged.allclose(src_t.flatten(dim, dim))
+
+    # Out of bounds dimensions
+    with pytest.raises(RuntimeError):
+        src_t.flatten(0, 3)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(0, -4)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(-4, 0)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(3, 0)
+
+    # end_dim is greater than start_dim
+    with pytest.raises(RuntimeError):
+        src_t.flatten(1, 0)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(2, 0)
+    with pytest.raises(RuntimeError):
+        src_t.flatten(2, 0)
+
+
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
 @pytest.mark.parametrize("device", list_devices())
 def test_append(dtype, device):

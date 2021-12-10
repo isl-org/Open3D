@@ -286,6 +286,7 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
 
     # In the build directory
     cmake -DBUILD_CUDA_MODULE=ON \
+          -DGLIBCXX_USE_CXX11_ABI=OFF \
           -DBUILD_PYTORCH_OPS=ON \
           -DBUILD_TENSORFLOW_OPS=ON \
           -DBUNDLE_OPEN3D_ML=ON \
@@ -295,10 +296,10 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
     make -j install-pip-package
 
 .. note::
-    Importing Python libraries compiled with different CXX ABI may cause segfaults
-    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
-    and TensorFlow Python releases use the older CXX ABI; while when they are
-    compiled from source, newer ABI is enabled by default.
+    On Linux, importing Python libraries compiled with different CXX ABI may
+    cause segfaults in regex. https://stackoverflow.com/q/51382355/1255535. By
+    default, PyTorch and TensorFlow Python releases use the older CXX ABI; while
+    when compiled from source, the newer CXX11 ABI is enabled by default.
 
     When releasing Open3D as a Python package, we set
     ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,

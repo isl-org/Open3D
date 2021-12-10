@@ -315,7 +315,7 @@ void TriangleMesh::FilterSmoothLaplacianHelper(
         const std::vector<Eigen::Vector3d> &prev_vertex_normals,
         const std::vector<Eigen::Vector3d> &prev_vertex_colors,
         const std::vector<std::unordered_set<int>> &adjacency_list,
-        double lambda,
+        double lambda_filter,
         bool filter_vertex,
         bool filter_normal,
         bool filter_color) const {
@@ -342,25 +342,29 @@ void TriangleMesh::FilterSmoothLaplacianHelper(
         }
 
         if (filter_vertex) {
-            mesh->vertices_[vidx] =
-                    prev_vertices[vidx] +
-                    lambda * (vertex_sum / total_weight - prev_vertices[vidx]);
+            mesh->vertices_[vidx] = prev_vertices[vidx] +
+                                    lambda_filter * (vertex_sum / total_weight -
+                                                     prev_vertices[vidx]);
         }
         if (filter_normal) {
-            mesh->vertex_normals_[vidx] = prev_vertex_normals[vidx] +
-                                          lambda * (normal_sum / total_weight -
-                                                    prev_vertex_normals[vidx]);
+            mesh->vertex_normals_[vidx] =
+                    prev_vertex_normals[vidx] +
+                    lambda_filter * (normal_sum / total_weight -
+                                     prev_vertex_normals[vidx]);
         }
         if (filter_color) {
-            mesh->vertex_colors_[vidx] = prev_vertex_colors[vidx] +
-                                         lambda * (color_sum / total_weight -
-                                                   prev_vertex_colors[vidx]);
+            mesh->vertex_colors_[vidx] =
+                    prev_vertex_colors[vidx] +
+                    lambda_filter * (color_sum / total_weight -
+                                     prev_vertex_colors[vidx]);
         }
     }
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
-        int number_of_iterations, double lambda, FilterScope scope) const {
+        int number_of_iterations,
+        double lambda_filter,
+        FilterScope scope) const {
     bool filter_vertex =
             scope == FilterScope::All || scope == FilterScope::Vertex;
     bool filter_normal =
@@ -387,7 +391,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
                                     prev_vertex_colors, mesh->adjacency_list_,
-                                    lambda, filter_vertex, filter_normal,
+                                    lambda_filter, filter_vertex, filter_normal,
                                     filter_color);
         if (iter < number_of_iterations - 1) {
             std::swap(mesh->vertices_, prev_vertices);
@@ -400,7 +404,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
 
 std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
         int number_of_iterations,
-        double lambda,
+        double lambda_filter,
         double mu,
         FilterScope scope) const {
     bool filter_vertex =
@@ -428,7 +432,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
                                     prev_vertex_colors, mesh->adjacency_list_,
-                                    lambda, filter_vertex, filter_normal,
+                                    lambda_filter, filter_vertex, filter_normal,
                                     filter_color);
         std::swap(mesh->vertices_, prev_vertices);
         std::swap(mesh->vertex_normals_, prev_vertex_normals);

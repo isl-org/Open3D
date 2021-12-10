@@ -248,7 +248,7 @@ jobs:
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.2.1
         env:
           CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
         with:
@@ -353,7 +353,7 @@ jobs:
     needs: [build-wheel]
     steps:
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.2.1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}

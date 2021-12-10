@@ -28,7 +28,6 @@ from setuptools import setup, find_packages
 from setuptools.command.install import install as _install
 import os
 import sys
-import glob
 import ctypes
 
 data_files_spec = [
@@ -47,10 +46,10 @@ if "@BUILD_JUPYTER_EXTENSION@" == "ON":
             combine_commands,
         )
 
-        # ipywidgets and jupyterlab are required to package JS code properly. They
-        # are not used in setup.py.
-        import ipywidgets
-        import jupyterlab
+        # ipywidgets and jupyterlab are required to package JS code properly.
+        # They are not used in setup.py.
+        import ipywidgets  # noqa # pylint: disable=unused-import
+        import jupyterlab  # noqa # pylint: disable=unused-import
     except ImportError as error:
         print(error.__class__.__name__ + ": " + error.message)
         print("Run `pip install jupyter_packaging ipywidgets jupyterlab`.")
@@ -166,7 +165,7 @@ setup_args = dict(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Operating System :: POSIX :: Linux",
-        "Operating System :: MacOS :: MacOSX",
+        "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
         "Programming Language :: C",
         "Programming Language :: C++",
