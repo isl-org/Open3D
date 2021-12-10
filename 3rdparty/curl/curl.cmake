@@ -1,5 +1,8 @@
 include(ExternalProject)
 
+# We need the BORINGSSL_INSTALL_DIR variable to be set.
+include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+
 if(MSVC)
     set(lib_name curl_static)
 else()

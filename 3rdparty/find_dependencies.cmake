@@ -748,14 +748,8 @@ if (BUILD_LIBREALSENSE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_librealsense)
 endif()
 
-# Don't move Curl below PNG. Moving Curl below PNG will throws
-# unidentified-symbols related errors.
-
-# BoringSSL must be included before Curl to allow use of
-# ${BORINGSSL_INSTALL_DIR} in curl.cmake
-include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
-
 # Curl
+# Curl should be linked before PNG, otherwise it will have undefined symbols.
 include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
 open3d_import_3rdparty_library(3rdparty_curl
     INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
