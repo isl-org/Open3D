@@ -12,7 +12,6 @@ ExternalProject_Add(
     URL https://github.com/curl/curl/releases/download/curl-7_79_1/curl-7.79.1.tar.gz
     URL_HASH SHA256=370b11201349816287fb0ccc995e420277fbfcaf76206e309b3f60f0eda090c2
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/curl"
-    UPDATE_COMMAND ""
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DBUILD_SHARED_LIBS=OFF

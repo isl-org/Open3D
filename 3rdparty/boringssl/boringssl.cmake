@@ -12,7 +12,6 @@ ExternalProject_Add(
     URL https://github.com/google/boringssl/archive/refs/heads/master.zip
     URL_HASH SHA256=54d51f4873d28d5e1eb6f99a37625d3d47b1ccd1f0a93453f3871f8b5c8ad207
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/boringssl"
-    UPDATE_COMMAND ""
     CMAKE_ARGS ${ExternalProject_CMAKE_ARGS_hidden}
     INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include <INSTALL_DIR>/include
     COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/src/ext_boringssl-build/ssl/libssl.a <INSTALL_DIR>/lib/libssl.a
