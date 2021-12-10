@@ -33,6 +33,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "open3d/data/Dataset.h"
@@ -51,7 +52,7 @@ std::string GetSHA256(const std::string& file_path) {
     // license   MIT License
     std::ifstream fp(file_path.c_str(), std::ios::in | std::ios::binary);
 
-    if (not fp.good()) {
+    if (!fp.good()) {
         std::ostringstream os;
         utility::LogError("Cannot open {}", file_path);
     }

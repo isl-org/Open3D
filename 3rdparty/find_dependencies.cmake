@@ -770,8 +770,15 @@ if(NOT BUILD_WEBRTC)
         LIBRARIES    ${BORINGSSL_LIBRARIES}
         DEPENDS      ext_zlib ext_boringssl
     )
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_boringssl)
+else()
+    open3d_import_3rdparty_library(3rdparty_boringssl
+        INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+        INCLUDE_ALL
+        INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+        DEPENDS      ext_zlib ext_boringssl
+    )
 endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_boringssl)
 
 # PNG
 if(USE_SYSTEM_PNG)
