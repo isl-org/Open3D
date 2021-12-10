@@ -15,8 +15,8 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     CMAKE_ARGS ${ExternalProject_CMAKE_ARGS_hidden}
     INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include <INSTALL_DIR>/include
-    COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/src/ext_boringssl-build/ssl/libssl.a <INSTALL_DIR>/build/lib/libssl.a
-    COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/src/ext_boringssl-build/crypto/libcrypto.a <INSTALL_DIR>/build/lib/libcrypto.a
+    COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/src/ext_boringssl-build/ssl/libssl.a <INSTALL_DIR>/lib/libssl.a
+    COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/src/ext_boringssl-build/crypto/libcrypto.a <INSTALL_DIR>/lib/libcrypto.a
 )
 
 #-DCMAKE_BUILD_TYPE=Release
@@ -36,5 +36,5 @@ message(STATUS "BORING_SSL_SOURCE_DIR ${SOURCE_DIR}")
 
 set(BORINGSSL_INSTALL_DIR ${INSTALL_DIR})
 set(BORINGSSL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
-set(BORINGSSL_LIB_DIR ${INSTALL_DIR}/build/${Open3D_INSTALL_LIB_DIR})
+set(BORINGSSL_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(BORINGSSL_LIBRARIES ssl crypto)
