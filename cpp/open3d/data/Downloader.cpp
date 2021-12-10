@@ -35,6 +35,7 @@
 #include <iostream>
 #include <string>
 
+#include "open3d/data/Dataset.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
@@ -43,12 +44,11 @@
 namespace open3d {
 namespace data {
 
-/// Reference: https://gist.github.com/arrieta/7d2e196c40514d8b5e9031f2535064fc
-///\author    J. Arrieta <Juan.Arrieta@nablazerolabs.com>
-///\copyright (c) 2017 Nabla Zero Labs
-///\license   MIT License
-
 std::string GetSHA256(const std::string& file_path) {
+    // https://gist.github.com/arrieta/7d2e196c40514d8b5e9031f2535064fc
+    // author    J. Arrieta <Juan.Arrieta@nablazerolabs.com>
+    // copyright (c) 2017 Nabla Zero Labs
+    // license   MIT License
     std::ifstream fp(file_path.c_str(), std::ios::in | std::ios::binary);
 
     if (not fp.good()) {
@@ -80,26 +80,6 @@ std::string GetSHA256(const std::string& file_path) {
     }
 
     return os.str();
-}
-
-// REPLICATED FUNCTION FROM DATASET.h. TO BE REFACTORED.
-/// A dataset class locates the data root directory in the following order:
-///
-/// (a) User-specified by `data_root` when instantiating a dataset object.
-/// (b) OPEN3D_DATA_ROOT environment variable.
-/// (c) $HOME/open3d_data.
-///
-/// LocateDataRoot() shall be called when the user-specified data root is not
-/// set, i.e. in case (b) and (c).
-static std::string LocateDataRoot() {
-    std::string data_root = "";
-    if (const char* env_p = std::getenv("OPEN3D_DATA_ROOT")) {
-        data_root = std::string(env_p);
-    }
-    if (data_root.empty()) {
-        data_root = utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    }
-    return data_root;
 }
 
 static size_t WriteDataCb(void* ptr, size_t size, size_t nmemb, FILE* stream) {
@@ -161,7 +141,7 @@ bool DownloadFromURL(const std::string& url,
         }
     }
 
-    // Download Mechanisam.
+    // Download mechanism.
     CURL* curl;
     FILE* fp;
     CURLcode res;
