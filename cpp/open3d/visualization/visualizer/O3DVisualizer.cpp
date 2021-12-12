@@ -1259,7 +1259,6 @@ struct O3DVisualizer::Impl {
         UpdateSelectionPointSize(px);
 
         px = int(ConvertToScaledPixels(px));
-        utility::LogWarning("Point size in set: {}", px);
         for (auto &o : objects_) {
             o.material.point_size = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
