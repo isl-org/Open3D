@@ -311,6 +311,7 @@ struct O3DVisualizer::Impl {
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
+    bool point_size_override = false;
 
     double min_time_ = 0.0;
     double max_time_ = 0.0;
@@ -837,9 +838,8 @@ struct O3DVisualizer::Impl {
         if (material) {
             mat = *material;
             is_default_color = false;
-            auto t_cloud =
-                    std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
-            ui_state_.point_size = static_cast<int>(mat.point_size);
+            mat.point_size = ConvertToScaledPixels(int(mat.point_size));
+            mat.line_width = mat.line_width * window_->GetScaling();
         } else if (model) {
             // Adding a triangle mesh model. Shader needs to be set to
             // defaultLit for O3D shader handling logic to work.
@@ -901,6 +901,9 @@ struct O3DVisualizer::Impl {
 
             mat.base_color = CalcDefaultUnlitColor();
             mat.shader = kShaderUnlit;
+            if (cloud || t_cloud) {
+                mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
+            }
             if (lines || obb || aabb || t_lines) {
                 mat.shader = kShaderUnlitLines;
                 mat.line_width = ui_state_.line_width * window_->GetScaling();
@@ -915,7 +918,6 @@ struct O3DVisualizer::Impl {
                 mat.shader = kShaderLit;
                 is_default_color = false;
             }
-            mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
 
             // If T Geometry has a valid material convert it to MaterialRecord
             if (t_mesh && t_mesh->HasMaterial()) {
@@ -1008,7 +1010,7 @@ struct O3DVisualizer::Impl {
 
         // Bounds have changed, so update the selection point size, since they
         // depend on the bounds.
-        SetPointSize(ui_state_.point_size);
+        UpdateSelectionPointSize(ui_state_.point_size);
 
         scene_->ForceRedraw();
     }
@@ -1069,7 +1071,7 @@ struct O3DVisualizer::Impl {
 
         // Bounds have changed, so update the selection point size, since they
         // depend on the bounds.
-        SetPointSize(ui_state_.point_size);
+        UpdateSelectionPointSize(ui_state_.point_size);
 
         scene_->ForceRedraw();
     }
@@ -1240,15 +1242,8 @@ struct O3DVisualizer::Impl {
         }
     }
 
-    void SetPointSize(int px) {
-        ui_state_.point_size = px;
-        settings.point_size->SetValue(double(px));
-
+    void UpdateSelectionPointSize(int px) {
         px = int(ConvertToScaledPixels(px));
-        for (auto &o : objects_) {
-            o.material.point_size = float(px);
-            OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
-        }
         auto bbox = scene_->GetScene()->GetBoundingBox();
         auto xdim = bbox.max_bound_.x() - bbox.min_bound_.x();
         auto ydim = bbox.max_bound_.y() - bbox.min_bound_.z();
@@ -1256,7 +1251,19 @@ struct O3DVisualizer::Impl {
         auto psize = double(std::max(5, px)) * 0.000666 *
                      std::max(xdim, std::max(ydim, zdim));
         selections_->SetPointSize(psize);
+    }
 
+    void SetPointSize(int px) {
+        ui_state_.point_size = px;
+        settings.point_size->SetValue(double(px));
+        UpdateSelectionPointSize(px);
+
+        px = int(ConvertToScaledPixels(px));
+        utility::LogWarning("Point size in set: {}", px);
+        for (auto &o : objects_) {
+            o.material.point_size = float(px);
+            OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
+        }
         scene_->SetPickablePointSize(px);
         scene_->ForceRedraw();
     }
@@ -2083,6 +2090,7 @@ void O3DVisualizer::SetGroundPlane(rendering::Scene::GroundPlane plane) {
 
 void O3DVisualizer::SetPointSize(int point_size) {
     impl_->SetPointSize(point_size);
+    impl_->point_size_override = true;
 }
 
 void O3DVisualizer::SetLineWidth(int line_width) {

@@ -60,12 +60,6 @@ def draw(geometry=None,
         for a in actions:
             w.add_action(a[0], a[1])
 
-    if point_size is not None:
-        w.point_size = point_size
-
-    if line_width is not None:
-        w.line_width = line_width
-
     def add(g, n):
         if isinstance(g, dict):
             w.add_geometry(g)
@@ -99,6 +93,12 @@ def draw(geometry=None,
 
     if show_skybox is not None:
         w.show_skybox(show_skybox)
+
+    if point_size is not None:
+        w.point_size = point_size
+
+    if line_width is not None:
+        w.line_width = line_width
 
     if rpc_interface:
         w.start_rpc_interface(address="tcp://127.0.0.1:51454", timeout=10000)
