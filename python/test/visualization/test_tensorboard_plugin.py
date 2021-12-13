@@ -31,10 +31,6 @@ import webbrowser
 import shutil
 import numpy as np
 import pytest
-pytest.skip(
-    "Disabled pending merging of 3DML TB plugin branch into 3DML master. "
-    "Local test with OPEN3D_ML_ROOT set to TB plugin branch succeeds.",
-    allow_module_level=True)
 pytest.importorskip("tensorboard")
 vis = pytest.importorskip("open3d.ml.vis")
 BoundingBox3D = vis.BoundingBox3D
