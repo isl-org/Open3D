@@ -47,6 +47,8 @@
 
 */
 
+#pragma once
+
 #ifndef _ZLIBIOAPI64_H
 #define _ZLIBIOAPI64_H
 
