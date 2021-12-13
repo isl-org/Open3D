@@ -1,4 +1,10 @@
 # Try to be consistent to build_boringssl.sh as much as possible.
+#
+# Install dependencies first.
+# ```powershell
+# winget install -e --id StrawberryPerl.StrawberryPerl
+# winget install -e --id GoLang.Go
+# ```
 
 ${boringssl_commit} = "edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd"
 ${boringssl_commit_short} = ${boringssl_commit}.SubString(0,7)
@@ -29,13 +35,13 @@ cmake -DCMAKE_BUILD_TYPE=Release `
       -DCMAKE_C_VISIBILITY_PRESET=hidden `
       -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON `
       ..
-cmake --build . --config Release --parallel ${NPROC} --target ssl crypto
-cmake -E copy_directory ..\include          ${install_dir}\include
-cmake -E copy           ssl\libssl.a        ${install_dir}\lib\libssl.a
-cmake -E copy           crypto\libcrypto.a  ${install_dir}\lib\libcrypto.a
+# cmake --build . --config Release --parallel ${NPROC} --target ssl crypto
+# cmake -E copy_directory ..\include          ${install_dir}\include
+# cmake -E copy           ssl\libssl.a        ${install_dir}\lib\libssl.a
+# cmake -E copy           crypto\libcrypto.a  ${install_dir}\lib\libcrypto.a
 
-cd ${script_dir}
-tar -C ${install_dir} -czvf ${tar_name} include lib
+# cd ${script_dir}
+# tar -C ${install_dir} -czvf ${tar_name} include lib
 
 # rm -rf "${boringssl_dir}"
 # rm -rf "${install_dir}"
