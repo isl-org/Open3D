@@ -51,5 +51,5 @@ cmake -E copy           crypto\Release\crypto.lib ${install_dir}\lib\crypto.lib
 cd ${script_dir}
 tar -C ${install_dir} -czvf ${tar_name} include lib
 
-# Remove-Dir "${boringssl_dir}"
-# Remove-Dir "${install_dir}"
+Remove-Dir "${boringssl_dir}"
+Remove-Dir "${install_dir}"
