@@ -35,13 +35,13 @@ cmake -DCMAKE_BUILD_TYPE=Release `
       -DCMAKE_C_VISIBILITY_PRESET=hidden `
       -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON `
       ..
-# cmake --build . --config Release --parallel ${NPROC} --target ssl crypto
-# cmake -E copy_directory ..\include          ${install_dir}\include
-# cmake -E copy           ssl\libssl.a        ${install_dir}\lib\libssl.a
-# cmake -E copy           crypto\libcrypto.a  ${install_dir}\lib\libcrypto.a
+cmake --build . --config Release --parallel ${NPROC} --target ssl crypto
+cmake -E copy_directory ..\include          ${install_dir}\include
+cmake -E copy           ssl\libssl.a        ${install_dir}\lib\libssl.a
+cmake -E copy           crypto\libcrypto.a  ${install_dir}\lib\libcrypto.a
 
-# cd ${script_dir}
-# tar -C ${install_dir} -czvf ${tar_name} include lib
+cd ${script_dir}
+tar -C ${install_dir} -czvf ${tar_name} include lib
 
-# rm -rf "${boringssl_dir}"
-# rm -rf "${install_dir}"
+Remove-Item "${boringssl_dir}" -Force -Recurse -ErrorAction Ignore
+Remove-Item "${install_dir}" -Force -Recurse -ErrorAction Ignore
