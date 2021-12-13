@@ -45,12 +45,12 @@
 #include "open3d/data/extract/minizip/iowin32.h"
 #endif
 
-#ifdef unix
-#include <unistd.h>
-#include <utime.h>
-#else
+#ifdef WIN32
 #include <direct.h>
 #include <io.h>
+#else
+#include <unistd.h>
+#include <utime.h>
 #endif
 
 #define CASESENSITIVITY (0)
@@ -234,7 +234,7 @@ bool ExtractFromZIP(const std::string &filename,
 
 #ifdef USEWIN32IOAPI
         fill_win32_filefunc(&ffunc);
-        uf = unzOpen2(zipfilename, &ffunc);
+        uf = unzOpen2(filename.c_str(), &ffunc);
 #else
         uf = unzOpen(filename.c_str());
 #endif

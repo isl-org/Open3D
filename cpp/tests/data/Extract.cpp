@@ -40,14 +40,15 @@ TEST(Extract, ExtractFromZIP) {
 
     // Extract the test zip file.
     EXPECT_TRUE(data::Extract(file_path, extract_dir, "", true));
+    std::string extracted_folder = extract_dir + "/test_data";
+    std::string output_file = extracted_folder + "/lena_color.jpg";
 
     // Check if the extracted file exists.
-    EXPECT_TRUE(utility::filesystem::FileExists(extract_dir +
-                                                "/test_data/lena_color.jpg"));
+    EXPECT_TRUE(utility::filesystem::FileExists(output_file));
 
-    std::string extracted_folder = extract_dir + "/test_data";
     // Delete test file.
-    std::remove(extracted_folder.c_str());
+    std::remove(output_file.c_str());
+    utility::filesystem::DeleteDirectory(extracted_folder);
 
     // Currently only `.zip` files are supported.
     EXPECT_FALSE(
