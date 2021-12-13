@@ -31,14 +31,13 @@ if(BUILD_WEBRTC)
 
     ExternalProject_Get_Property(ext_openssl INSTALL_DIR)
     set(OPENSSL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
-    set(OPENSSL_LIB_DIR)
-    set(OPENSSL_LIBRARIES)
+    set(OPENSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
+    set(OPENSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
     set(CURL_OPENSSL_ROOT_DIR ${INSTALL_DIR})
 else()
     # You'll need golang to build BoringSSL.
     set(libssl_name    ${CMAKE_STATIC_LIBRARY_PREFIX}ssl${CMAKE_STATIC_LIBRARY_SUFFIX})
     set(libcrypto_name ${CMAKE_STATIC_LIBRARY_PREFIX}crypto${CMAKE_STATIC_LIBRARY_SUFFIX})
-
     ExternalProject_Add(
         ext_openssl
         PREFIX boringssl
@@ -53,7 +52,6 @@ else()
         BUILD_BYPRODUCTS <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${libssl_name}
                         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${libcrypto_name}
     )
-
     ExternalProject_Get_Property(ext_openssl INSTALL_DIR)
     set(OPENSSL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
     set(OPENSSL_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
