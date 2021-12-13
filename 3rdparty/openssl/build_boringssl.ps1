@@ -14,8 +14,13 @@ ${install_dir} = "${script_dir}\boringssl_install"
 ${boringssl_dir} = "${script_dir}\boringssl"
 ${tar_name} = "boringssl_${boringssl_commit_short}_win_${env:PROCESSOR_ARCHITECTURE}.tar.gz".ToLower()
 
-Remove-Item "${boringssl_dir}" -Force -Recurse -ErrorAction Ignore
-Remove-Item "${install_dir}" -Force -Recurse -ErrorAction Ignore
+function Remove-Dir($dir_path) {
+    # https://stackoverflow.com/a/9012108/1255535
+    Get-ChildItem -Path "${dir_path}" -Recurse | Remove-Item -Recurse -Force -ErrorAction Ignore
+    Remove-Item "${dir_path}" -Force -Recurse -ErrorAction Ignore
+}
+Remove-Dir "${boringssl_dir}"
+Remove-Dir "${install_dir}"
 
 ${NPROC} = ${env:NUMBER_OF_PROCESSORS}
 
@@ -43,5 +48,5 @@ cmake -E copy           crypto\libcrypto.a  ${install_dir}\lib\libcrypto.a
 cd ${script_dir}
 tar -C ${install_dir} -czvf ${tar_name} include lib
 
-Remove-Item "${boringssl_dir}" -Force -Recurse -ErrorAction Ignore
-Remove-Item "${install_dir}" -Force -Recurse -ErrorAction Ignore
+Remove-Dir "${boringssl_dir}"
+Remove-Dir "${install_dir}"
