@@ -13,13 +13,18 @@ set(libcrypto_name ${CMAKE_STATIC_LIBRARY_PREFIX}crypto${CMAKE_STATIC_LIBRARY_SU
 #    the same as the one used in `third_party`, as the `third_party` repo copies
 #    the boringssl code and does not use a submodule. Determine the commit id
 #    of boringssl manually.
+# 5. googlesource.com's archive does not have the same checksum each time you
+#    download (strange!), so we cannot compare checksum. Instead, we store the
+#    archive in open3d_downloads.
+#    If you want to directly download from googlesource.com, download it from:
+#    https://boringssl.googlesource.com/boringssl/+archive/${boringssl_commit}.tar.gz
 set(boringssl_commit edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd)
 
 ExternalProject_Add(
     ext_boringssl
     PREFIX boringssl
-    URL "https://boringssl.googlesource.com/boringssl/+archive/${boringssl_commit}.tar.gz"
-    URL_HASH SHA256=96d0f60f763515d96f6a56fd6f7ea2707bd1965b2a0aea0875efe8591107b7a7
+    URL "https://github.com/isl-org/open3d_downloads/releases/download/boringssl-tar/edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd.tar.gz"
+    URL_HASH SHA256=dba55d212edefed049d523c2711177914a83f849fade23c970101d285c3d4906
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/boringssl"
     CMAKE_ARGS ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_COMMAND ${CMAKE_COMMAND} --build . --config ${CMAKE_BUILD_TYPE} --target ssl crypto
