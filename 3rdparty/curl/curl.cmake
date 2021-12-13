@@ -21,7 +21,7 @@ ExternalProject_Add(
         -DOPENSSL_ROOT_DIR=${CURL_OPENSSL_ROOT_DIR}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}curl${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 add_dependencies(ext_curl ext_openssl)
@@ -30,7 +30,7 @@ ExternalProject_Get_Property(ext_curl INSTALL_DIR)
 set(CURL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(CURL_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 if(MSVC)
-    set(CURL_LIBRARIES ${lib_name}$<$<CONFIG:Debug>:d>)
+    set(CURL_LIBRARIES curl$<$<CONFIG:Debug>:d>)
 else()
-    set(CURL_LIBRARIES ${lib_name})
+    set(CURL_LIBRARIES curl)
 endif()
