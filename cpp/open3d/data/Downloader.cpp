@@ -161,17 +161,6 @@ bool DownloadFromURL(const std::string& url,
     FILE* fp;
     CURLcode res;
 
-    // TODO: remove this.
-    res = curl_global_init(CURL_GLOBAL_ALL);
-    if (res != 0) {
-        utility::LogError("Failed global init.");
-    } else {
-        utility::LogInfo("Global init success.");
-    }
-
-    // curl_version_info_data* ver = curl_version_info(CURLVERSION_NOW);
-    // utility::LogInfo("libcurl ssl_version: {}", ver->ssl_version);
-
     // Initialize Curl.
     curl = curl_easy_init();
 
