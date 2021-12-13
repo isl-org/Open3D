@@ -1,11 +1,5 @@
 include(ExternalProject)
 
-if(MSVC)
-    set(lib_name boringssl_static)
-else()
-    set(lib_name boringssl)
-endif()
-
 ExternalProject_Add(
     ext_boringssl
     PREFIX boringssl
