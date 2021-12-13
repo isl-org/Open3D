@@ -226,7 +226,10 @@ bool DownloadFromURL(const std::string& url,
             utility::LogDebug("Downloaded file {}.", file_path);
             return true;
         } else {
-            utility::LogWarning("Download Failed.");
+            utility::LogWarning(
+                    "Download failed with error code {}. Check curl.h to "
+                    "determine error type.",
+                    res);
             return false;
         }
 
