@@ -1,4 +1,13 @@
 #!/usr/bin/env bash
+# Install dependencies first.
+# ```bash
+# sudo apt-get install golang
+# ```
+#
+# ```bash
+# brew install go
+# ```
+
 set -euo pipefail
 
 boringssl_commit=edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd
