@@ -146,7 +146,7 @@ void Renderer::RenderToDepthImage(
                         if (pixels[i] == 0.f) {
                             pixels[i] = std::numeric_limits<float>::infinity();
                         } else {
-                            pixels[i] = -z_near / pixels[i];
+                            pixels[i] = z_near / pixels[i];
                         }
                     }
                 } else {
