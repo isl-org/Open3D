@@ -31,6 +31,8 @@ if(BUILD_WEBRTC)
 
     ExternalProject_Get_Property(ext_boringssl INSTALL_DIR)
     set(BORINGSSL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
+    set(BORINGSSL_LIB_DIR)
+    set(BORINGSSL_LIBRARIES)
     set(CURL_OPENSSL_ROOT_DIR ${INSTALL_DIR})
 else()
     # You'll need golang to build BoringSSL.
