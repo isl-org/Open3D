@@ -1,3 +1,7 @@
+# CMake file for consuming pre-compiled WebRTC.
+#
+# See 3rdparty/webrtc/README.md (Method 1) for more information.
+
 include(ExternalProject)
 
 set(WEBRTC_VER 60e6748)
