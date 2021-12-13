@@ -26,9 +26,21 @@
 
 #include "open3d/data/Downloader.h"
 
+// clang-format off
+// Must include openssl before curl to build on Windows.
+#include <openssl/sha.h>
+
+// https://stackoverflow.com/a/41873190/1255535
+#ifdef WINDOWS
+#pragma comment(lib, "wldap32.lib" )
+#pragma comment(lib, "crypt32.lib" )
+#pragma comment(lib, "Ws2_32.lib")
+#define CURL_STATICLIB
+#endif
+
 #include <curl/curl.h>
 #include <curl/easy.h>
-#include <openssl/sha.h>
+// clang-format on
 
 #include <fstream>
 #include <iomanip>

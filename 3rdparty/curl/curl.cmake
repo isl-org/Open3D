@@ -7,6 +7,12 @@ if(NOT DEFINED OPENSSL_ROOT_DIR_FOR_CURL)
                         "Please include openssl.cmake before including this file.")
 endif()
 
+if(MSVC)
+    set(curl_lib_name libcurl)
+else()
+    set(curl_lib_name curl)
+endif()
+
 ExternalProject_Add(
     ext_curl
     PREFIX curl
@@ -23,10 +29,15 @@ ExternalProject_Add(
         -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR_FOR_CURL}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}curl${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${curl_lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 add_dependencies(ext_curl ext_openssl)
 ExternalProject_Get_Property(ext_curl INSTALL_DIR)
 set(CURL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(CURL_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(CURL_LIBRARIES curl)
+if(MSVC)
+    set(CURL_LIBRARIES ${curl_lib_name}$<$<CONFIG:Debug>:-d>)
+else()
+    set(CURL_LIBRARIES ${curl_lib_name})
+endif()
+
