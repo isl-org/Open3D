@@ -2,11 +2,12 @@
 set -euo pipefail
 
 boringssl_commit=edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd
+boringssl_commit_short=${boringssl_commit:0:7}
 
 script_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 install_dir="${script_dir}/boringssl_install"
-boringssl_dir="${install_dir}/boringssl"
-tar_name="boringssl_$(uname)_$(uname -m)_${boringssl_commit}.tar.gz"
+boringssl_dir="${script_dir}/boringssl"
+tar_name="boringssl_${boringssl_commit_short}_$(uname)_$(uname -m).tar.gz"
 
 rm -rf "${boringssl_dir}"
 rm -rf "${install_dir}"
@@ -19,7 +20,7 @@ else
 fi
 
 git clone https://boringssl.googlesource.com/boringssl "${boringssl_dir}"
-cd boringssl
+cd "${boringssl_dir}"
 git checkout ${boringssl_commit}
 
 mkdir build
