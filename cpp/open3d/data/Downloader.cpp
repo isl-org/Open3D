@@ -32,9 +32,11 @@
 
 // https://stackoverflow.com/a/41873190/1255535
 #ifdef WINDOWS
-// #pragma comment(lib, "wldap32.lib" )
-// #pragma comment(lib, "crypt32.lib" )
-// #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "wldap32.lib" )
+#pragma comment(lib, "crypt32.lib" )
+#pragma comment(lib, "Ws2_32.lib")
+#define USE_SSLEAY
+#define USE_OPENSSL
 #define CURL_STATICLIB
 #endif
 
@@ -166,6 +168,9 @@ bool DownloadFromURL(const std::string& url,
     } else {
         utility::LogInfo("Global init success.");
     }
+
+    // curl_version_info_data* ver = curl_version_info(CURLVERSION_NOW);
+    // utility::LogInfo("libcurl ssl_version: {}", ver->ssl_version);
 
     // Initialize Curl.
     curl = curl_easy_init();
