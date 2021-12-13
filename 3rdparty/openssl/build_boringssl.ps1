@@ -4,7 +4,9 @@
 # ```powershell
 # winget install -e --id StrawberryPerl.StrawberryPerl
 # winget install -e --id GoLang.Go
+# winget install -e --id NASM.NASM
 # ```
+$ErrorActionPreference = "Stop"
 
 ${boringssl_commit} = "edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd"
 ${boringssl_commit_short} = ${boringssl_commit}.SubString(0,7)
@@ -24,9 +26,10 @@ Remove-Dir "${install_dir}"
 
 ${NPROC} = ${env:NUMBER_OF_PROCESSORS}
 
-git clone https://boringssl.googlesource.com/boringssl "${boringssl_dir}"
+git clone --depth 1 https://boringssl.googlesource.com/boringssl "${boringssl_dir}"
 cd "${boringssl_dir}"
-git checkout ${boringssl_commit}
+git fetch --depth 1 origin ${boringssl_commit}
+git checkout FETCH_HEAD
 
 mkdir build
 cd build
@@ -41,12 +44,12 @@ cmake -DCMAKE_BUILD_TYPE=Release `
       -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON `
       ..
 cmake --build . --config Release --parallel ${NPROC} --target ssl crypto
-cmake -E copy_directory ..\include          ${install_dir}\include
-cmake -E copy           ssl\libssl.a        ${install_dir}\lib\libssl.a
-cmake -E copy           crypto\libcrypto.a  ${install_dir}\lib\libcrypto.a
+cmake -E copy_directory ..\include                ${install_dir}\include
+cmake -E copy           ssl\Release\ssl.lib       ${install_dir}\lib\ssl.lib
+cmake -E copy           crypto\Release\crypto.lib ${install_dir}\lib\crypto.lib
 
 cd ${script_dir}
 tar -C ${install_dir} -czvf ${tar_name} include lib
 
-Remove-Dir "${boringssl_dir}"
-Remove-Dir "${install_dir}"
+# Remove-Dir "${boringssl_dir}"
+# Remove-Dir "${install_dir}"
