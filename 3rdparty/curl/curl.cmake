@@ -1,12 +1,8 @@
 include(ExternalProject)
 
-# We need the CURL_OPENSSL_ROOT_DIR variable to be set.
-include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
-
-if(MSVC)
-    set(lib_name curl_static)
-else()
-    set(lib_name curl)
+if(NOT DEFINED CURL_OPENSSL_ROOT_DIR)
+    message(FATAL_ERROR "CURL_OPENSSL_ROOT_DIR not set. "
+                        "Please include openssl.cmake before including this file.")
 endif()
 
 ExternalProject_Add(
@@ -28,7 +24,7 @@ ExternalProject_Add(
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
-add_dependencies(ext_curl ext_boringssl)
+add_dependencies(ext_curl ext_openssl)
 
 ExternalProject_Get_Property(ext_curl INSTALL_DIR)
 set(CURL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
