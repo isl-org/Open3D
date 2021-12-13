@@ -4,19 +4,20 @@ You have two ways to enable WebRTC in Open3D.
 - Method 1: Set `-DBUILD_WEBRTC_FROM_SOURCE=OFF` and Open3D will fetch and use
   a pre-compiled WebRTC package.
   - Method 1 Prepare-Phase: The pre-compiled WebRTC package is prepared by the Open3D dev team.
-  - Method 1 Consume-Phase: The pre-compiled WebRTC package is consumed by the Open3D build system.
-- Method 2: Set `-DBUILD_WEBRTC_FROM_SOURCE=ON` and this webrtc_build.cmake
-  will be used. This is only recommended for advanced users.
+  - Method 1 Consume-Phase: The pre-compiled WebRTC package is consumed by the Open3D CMake.
+- Method 2: Set `-DBUILD_WEBRTC_FROM_SOURCE=ON`. This is only recommended for advanced users.
 
-Files:
-```
-0001-xxx.patch x3     # Git patch for -DBUILD_WEBRTC_FROM_SOURCE=ON                                (Method 1 Prepare-Phase & Method 2)
-CMakeLists.txt        # Used by `webrtc_build.sh` to generate pre-compiled WebRTC package          (Method 1 Prepare-Phase)
-Dockerfile.webrtc     # Run this to call `webrtc_build.sh` to generate pre-compiled WebRTC package (Method 1 Prepare-Phase)
-webrtc_build.cmake    # Used by Open3D build system. Build and consume WebRTC alongside Open3D.    (Method 2)
-webrtc_build.sh       # Used by `Dockerfile.webrtc`.                                               (Method 1 Prepare-Phase)
-webrtc_common.cmake   # Specifies Common WebRTC targets.                                           (Method 1 Prepare-Phase)
-webrtc_download.cmake # Used by the Open3D build system. Consume WebRTC pre-compiled package.      (Method 1 Consume-Phase)
+```bash
+# Main entry points
+webrtc_download.cmake # Used by Open3D CMake. Consume pre-compiled WebRTC. (Method 1 Consume-Phase)
+webrtc_build.cmake    # Used by Open3D CMake. Build and consume WebRTC.    (Method 2)
+
+# Other files
+0001-xxx.patch x3     # Git patch for -DBUILD_WEBRTC_FROM_SOURCE=ON.       (Method 1 Prepare-Phase & Method 2)
+CMakeLists.txt        # Used by `webrtc_build.sh` to compile WebRTC.       (Method 1 Prepare-Phase)
+Dockerfile.webrtc     # Calls `webrtc_build.sh` to compile WebRTC.         (Method 1 Prepare-Phase)
+webrtc_build.sh       # Used by `Dockerfile.webrtc`.                       (Method 1 Prepare-Phase)
+webrtc_common.cmake   # Specifies Common WebRTC targets.                   (Method 1 Prepare-Phase)
 ```
 
 ## Method 1
