@@ -13,6 +13,7 @@ else()
     set(curl_lib_name curl)
 endif()
 
+# TODO: for MSVC https://stackoverflow.com/a/30011890/1255535
 ExternalProject_Add(
     ext_curl
     PREFIX curl
