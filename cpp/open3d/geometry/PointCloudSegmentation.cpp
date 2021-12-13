@@ -182,7 +182,8 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         // inliers.
         if (ransac_n == 3) {
             plane_model = TriangleMesh::ComputeTrianglePlane(
-                    points_[inliers[0]], points_[inliers[1]], points_[inliers[2]]);
+                    points_[inliers[0]], points_[inliers[1]],
+                    points_[inliers[2]]);
         } else {
             plane_model = GetPlaneFromPoints(points_, inliers);
         }
