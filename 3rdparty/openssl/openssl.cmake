@@ -26,14 +26,14 @@ if(BUILD_WEBRTC)
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/boringssl"
         CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include        <INSTALL_DIR>/include
+        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include <INSTALL_DIR>/include
     )
 
     ExternalProject_Get_Property(ext_openssl INSTALL_DIR)
     set(OPENSSL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
     set(OPENSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
     set(OPENSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
-    set(CURL_OPENSSL_ROOT_DIR ${INSTALL_DIR})
+    set(OPENSSL_ROOT_DIR_FOR_CURL ${INSTALL_DIR})
 else()
     # If you have to build BoringSSL, here's how to do it (install golang first):
     #
@@ -57,7 +57,7 @@ else()
     # set(OPENSSL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
     # set(OPENSSL_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
     # set(OPENSSL_LIBRARIES ssl crypto)
-    # set(CURL_OPENSSL_ROOT_DIR ${INSTALL_DIR})
+    # set(OPENSSL_ROOT_DIR_FOR_CURL ${INSTALL_DIR})
 
     # We use OpenSSL as it does not require golang to be installed.
     include(ProcessorCount)
@@ -84,6 +84,6 @@ else()
     set(OPENSSL_INCLUDE_DIRS ${INSTALL_DIR}/include/ ${INSTALL_DIR}/src/ext_openssl/) # "/" is critical.
     set(OPENSSL_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
     set(OPENSSL_LIBRARIES ssl crypto)
-    set(CURL_OPENSSL_ROOT_DIR ${INSTALL_DIR})
+    set(OPENSSL_ROOT_DIR_FOR_CURL ${INSTALL_DIR})
 endif()
 

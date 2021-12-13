@@ -1,7 +1,7 @@
 include(ExternalProject)
 
-if(NOT DEFINED CURL_OPENSSL_ROOT_DIR)
-    message(FATAL_ERROR "CURL_OPENSSL_ROOT_DIR not set. "
+if(NOT DEFINED OPENSSL_ROOT_DIR_FOR_CURL)
+    message(FATAL_ERROR "OPENSSL_ROOT_DIR_FOR_CURL not set. "
                         "Please include openssl.cmake before including this file.")
 endif()
 
@@ -18,7 +18,7 @@ ExternalProject_Add(
         -DBUILD_TESTING=OFF
         -DCURL_DISABLE_LDAP=ON
         -DCURL_DISABLE_LDAPS=ON
-        -DOPENSSL_ROOT_DIR=${CURL_OPENSSL_ROOT_DIR}
+        -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR_FOR_CURL}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}curl${CMAKE_STATIC_LIBRARY_SUFFIX}

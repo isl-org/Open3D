@@ -751,7 +751,7 @@ endif()
 # Curl
 # - Curl should be linked before PNG, otherwise it will have undefined symbols.
 # - openssl.cmake needs to be included before curl.cmake, for the
-#   CURL_OPENSSL_ROOT_DIR variable.
+#   OPENSSL_ROOT_DIR_FOR_CURL variable.
 include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
 include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
 open3d_import_3rdparty_library(3rdparty_curl
