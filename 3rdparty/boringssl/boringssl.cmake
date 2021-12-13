@@ -9,8 +9,8 @@ ExternalProject_Add(
     CMAKE_ARGS ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_COMMAND ${CMAKE_COMMAND} --build . --config ${CMAKE_BUILD_TYPE} --target ssl crypto
     INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include <INSTALL_DIR>/include
-    COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/src/ext_boringssl-build/ssl/libssl.a <INSTALL_DIR>/lib/libssl.a
-    COMMAND ${CMAKE_COMMAND} -E copy <INSTALL_DIR>/src/ext_boringssl-build/crypto/libcrypto.a <INSTALL_DIR>/lib/libcrypto.a
+    COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/ssl/libssl.a <INSTALL_DIR>/lib/libssl.a
+    COMMAND ${CMAKE_COMMAND} -E copy <BINARY_DIR>/crypto/libcrypto.a <INSTALL_DIR>/lib/libcrypto.a
 )
 
 set(BORINGSSL_BUILD_BYPRODUCTS "<INSTALL_DIR>/src/ext_boringssl-build/ssl/libssl.a"
