@@ -1,6 +1,6 @@
 include(ExternalProject)
 
-# We need the BORINGSSL_INSTALL_DIR variable to be set.
+# We need the CURL_OPENSSL_ROOT_DIR variable to be set.
 include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
 
 if(MSVC)
@@ -22,7 +22,7 @@ ExternalProject_Add(
         -DBUILD_TESTING=OFF
         -DCURL_DISABLE_LDAP=ON
         -DCURL_DISABLE_LDAPS=ON
-        -DOPENSSL_ROOT_DIR=${BORINGSSL_INSTALL_DIR}
+        -DOPENSSL_ROOT_DIR=${CURL_OPENSSL_ROOT_DIR}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
