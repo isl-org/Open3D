@@ -24,7 +24,7 @@ if(BUILD_WEBRTC)
         URL "https://github.com/isl-org/open3d_downloads/releases/download/boringssl-tar/edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd.tar.gz"
         URL_HASH SHA256=dba55d212edefed049d523c2711177914a83f849fade23c970101d285c3d4906
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/boringssl"
-        CMAKE_ARGS ${ExternalProject_CMAKE_ARGS_hidden}
+        CONFIGURE_COMMAND ""
         BUILD_COMMAND ""
         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include        <INSTALL_DIR>/include
     )
