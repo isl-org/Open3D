@@ -168,6 +168,7 @@ void FilamentCamera::SetProjection(const Eigen::Matrix3d& intrinsics,
                                    double width,
                                    double height) {
     filament::math::mat4 custom_proj;
+    filament::math::mat4 culling_proj;
     custom_proj[0][0] = 2.0 * intrinsics(0, 0) / width;
     custom_proj[0][1] = 0.0;
     custom_proj[0][2] = 0.0;
@@ -180,15 +181,19 @@ void FilamentCamera::SetProjection(const Eigen::Matrix3d& intrinsics,
 
     custom_proj[2][0] = 1.0 - 2.0 * intrinsics(0, 2) / width;
     custom_proj[2][1] = -1.0 + 2.0 * intrinsics(1, 2) / height;
-    custom_proj[2][2] = (-far - near) / (far - near);
+    custom_proj[2][2] = -1.0;
     custom_proj[2][3] = -1.0;
 
     custom_proj[3][0] = 0.0;
     custom_proj[3][1] = 0.0;
-    custom_proj[3][2] = -2.0 * far * near / (far - near);
+    custom_proj[3][2] = -2.0 * near;
     custom_proj[3][3] = 0.0;
 
-    camera_->setCustomProjection(custom_proj, near, far);
+    culling_proj = custom_proj;
+    culling_proj[2][2] = (-far - near) / (far - near);
+    culling_proj[3][2] = -2.0 * far * near / (far - near);
+
+    camera_->setCustomProjection(custom_proj, culling_proj, near, far);
 
     projection_.is_intrinsic = true;
     projection_.is_ortho = false;
