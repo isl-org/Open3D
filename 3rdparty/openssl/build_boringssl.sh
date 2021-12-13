@@ -6,6 +6,8 @@ boringssl_commit=edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd
 script_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 install_dir="${script_dir}/boringssl_install"
 boringssl_dir="${install_dir}/boringssl"
+tar_name="boringssl_$(uname)_$(uname -m)_${boringssl_commit}.tar.gz"
+
 rm -rf "${boringssl_dir}"
 rm -rf "${install_dir}"
 
@@ -38,7 +40,7 @@ cmake -E copy           ssl/libssl.a        ${install_dir}/lib/libssl.a
 cmake -E copy           crypto/libcrypto.a  ${install_dir}/lib/libcrypto.a
 
 cd ${script_dir}
-tar -C ${install_dir} -czvf boringssl.tar.gz include lib
+tar -C ${install_dir} -czvf ${tar_name} include lib
 
 rm -rf "${boringssl_dir}"
 rm -rf "${install_dir}"
