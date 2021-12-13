@@ -8,6 +8,7 @@ script_dir="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 install_dir="${script_dir}/boringssl_install"
 boringssl_dir="${script_dir}/boringssl"
 tar_name="boringssl_${boringssl_commit_short}_$(uname)_$(uname -m).tar.gz"
+tar_name=$(echo "$tar_name" | tr '[:upper:]' '[:lower:]')
 
 rm -rf "${boringssl_dir}"
 rm -rf "${install_dir}"
@@ -19,9 +20,10 @@ else
     NPROC=$(nproc)
 fi
 
-git clone https://boringssl.googlesource.com/boringssl "${boringssl_dir}"
+git clone --depth 1 https://boringssl.googlesource.com/boringssl "${boringssl_dir}"
 cd "${boringssl_dir}"
-git checkout ${boringssl_commit}
+git fetch --depth 1 origin ${boringssl_commit}
+git checkout FETCH_HEAD
 
 mkdir build
 cd build
