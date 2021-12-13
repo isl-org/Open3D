@@ -1,5 +1,8 @@
 include(ExternalProject)
 
+include(ProcessorCount)
+ProcessorCount(NPROC)
+
 ExternalProject_Add(
     ext_openssl
     PREFIX openssl
@@ -8,13 +11,13 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/openssl"
     UPDATE_COMMAND ""
     BUILD_IN_SOURCE TRUE
-    CONFIGURE_COMMAND pwd && ./config --prefix=<INSTALL_DIR> --openssldir=<INSTALL_DIR>
-    BUILD_COMMAND make 
-    INSTALL_COMMAND make install
+    CONFIGURE_COMMAND CC="${CMAKE_C_COMPILER}" && ./config --prefix=<INSTALL_DIR> --openssldir=<INSTALL_DIR>
+    BUILD_COMMAND     CC="${CMAKE_C_COMPILER}" && make -j${NPROC}
+    INSTALL_COMMAND   CC="${CMAKE_C_COMPILER}" && make install_sw
 )
 
 set(OPENSSL_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}ssl${CMAKE_STATIC_LIBRARY_SUFFIX}"
-                            "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}crypto${CMAKE_STATIC_LIBRARY_SUFFIX}"
+                             "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}crypto${CMAKE_STATIC_LIBRARY_SUFFIX}"
 )
 
 ExternalProject_Get_Property(ext_openssl INSTALL_DIR)
