@@ -33,6 +33,7 @@ ExternalProject_Add(
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${curl_lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+    BUILD_ALWAYS ON
 )
 add_dependencies(ext_curl ext_openssl)
 ExternalProject_Get_Property(ext_curl INSTALL_DIR)
