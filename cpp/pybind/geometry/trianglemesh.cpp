@@ -89,8 +89,8 @@ void pybind_trianglemesh(py::module &m) {
             .def("remove_duplicated_triangles",
                  &TriangleMesh::RemoveDuplicatedTriangles,
                  "Function that removes duplicated triangles, i.e., removes "
-                 "triangles that reference the same three vertices, "
-                 "independent of their order.")
+                 "triangles that reference the same three vertices and have "
+                 "the same orientation.")
             .def("remove_unreferenced_vertices",
                  &TriangleMesh::RemoveUnreferencedVertices,
                  "This function removes vertices from the triangle mesh that "
@@ -140,18 +140,19 @@ void pybind_trianglemesh(py::module &m) {
                  "value, :math:`N` is the  set of adjacent neighbours, "
                  ":math:`w_n` is the weighting of the neighbour based on the "
                  "inverse distance (closer neighbours have higher weight), and "
-                 "lambda is the smoothing parameter.",
-                 "number_of_iterations"_a = 1, "lambda"_a = 0.5,
+                 "lambda_filter is the smoothing parameter.",
+                 "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
                  "filter_scope"_a = MeshBase::FilterScope::All)
             .def("filter_smooth_taubin", &TriangleMesh::FilterSmoothTaubin,
                  "Function to smooth triangle mesh using method of Taubin, "
                  "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
                  "Applies in each iteration two times filter_smooth_laplacian, "
-                 "first with filter parameter lambda and second with filter "
+                 "first with filter parameter lambda_filter and second with "
+                 "filter "
                  "parameter mu as smoothing parameter. This method avoids "
                  "shrinkage of the triangle mesh.",
-                 "number_of_iterations"_a = 1, "lambda"_a = 0.5, "mu"_a = -0.53,
-                 "filter_scope"_a = MeshBase::FilterScope::All)
+                 "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
+                 "mu"_a = -0.53, "filter_scope"_a = MeshBase::FilterScope::All)
             .def("has_vertices", &TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &TriangleMesh::HasTriangles,
@@ -542,13 +543,13 @@ void pybind_trianglemesh(py::module &m) {
             m, "TriangleMesh", "filter_smooth_laplacian",
             {{"number_of_iterations",
               " Number of repetitions of this operation"},
-             {"lambda", "Filter parameter."},
+             {"lambda_filter", "Filter parameter."},
              {"scope", "Mesh property that should be filtered."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "filter_smooth_taubin",
             {{"number_of_iterations",
               " Number of repetitions of this operation"},
-             {"lambda", "Filter parameter."},
+             {"lambda_filter", "Filter parameter."},
              {"mu", "Filter parameter."},
              {"scope", "Mesh property that should be filtered."}});
     docstring::ClassMethodDocInject(
