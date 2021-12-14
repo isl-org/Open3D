@@ -26,6 +26,7 @@
 
 import open3d as o3d
 import numpy as np
+import copy
 import os
 import sys
 
@@ -34,19 +35,15 @@ sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-    N = 2000
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(N)
-    # fit to unit cube
-    pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
-              center=pcd.get_center())
-    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1,
-                                                              size=(N, 3)))
-    print('Displaying input voxel grid ...')
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
-                                                                voxel_size=0.05)
-    o3d.visualization.draw_geometries([voxel_grid])
-
-    octree = o3d.geometry.Octree(max_depth=4)
-    octree.create_from_voxel_grid(voxel_grid)
-    print('Displaying octree ..')
-    o3d.visualization.draw([octree])
+    mesh = o3dex.get_knot_mesh()
+    print("Displaying original mesh ...")
+    o3d.visualization.draw_geometries([mesh])
+    
+    print("Displaying mesh of only the first half triangles ...")
+    mesh1 = copy.deepcopy(mesh)
+    mesh1.triangles = o3d.utility.Vector3iVector(
+        np.asarray(mesh1.triangles)[:len(mesh1.triangles) // 2, :])
+    mesh1.triangle_normals = o3d.utility.Vector3dVector(
+        np.asarray(mesh1.triangle_normals)[:len(mesh1.triangle_normals) // 2, :])
+    print(mesh1.triangles)
+    o3d.visualization.draw_geometries([mesh1], mesh_show_back_face = True)

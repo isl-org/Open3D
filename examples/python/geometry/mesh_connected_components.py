@@ -26,6 +26,7 @@
 
 import open3d as o3d
 import numpy as np
+import copy
 import os
 import sys
 
@@ -34,19 +35,36 @@ sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-    N = 2000
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(N)
-    # fit to unit cube
-    pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
-              center=pcd.get_center())
-    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1,
-                                                              size=(N, 3)))
-    print('Displaying input voxel grid ...')
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
-                                                                voxel_size=0.05)
-    o3d.visualization.draw_geometries([voxel_grid])
+    mesh = o3dex.get_bunny_mesh().subdivide_midpoint(number_of_iterations=2)
+    vert = np.asarray(mesh.vertices)
+    min_vert, max_vert = vert.min(axis=0), vert.max(axis=0)
+    for _ in range(30):
+        cube = o3d.geometry.TriangleMesh.create_box()
+        cube.scale(0.005, center=cube.get_center())
+        cube.translate(
+            (
+                np.random.uniform(min_vert[0], max_vert[0]),
+                np.random.uniform(min_vert[1], max_vert[1]),
+                np.random.uniform(min_vert[2], max_vert[2]),
+            ),
+            relative=False,
+        )
+        mesh += cube
+    mesh.compute_vertex_normals()
+    print("Displaying input mesh ...")
+    o3d.visualization.draw_geometries([mesh])
 
-    octree = o3d.geometry.Octree(max_depth=4)
-    octree.create_from_voxel_grid(voxel_grid)
-    print('Displaying octree ..')
-    o3d.visualization.draw([octree])
+    print("Clustering connected triangles ...")
+    with o3d.utility.VerbosityContextManager(
+            o3d.utility.VerbosityLevel.Debug) as cm:
+        triangle_clusters, cluster_n_triangles, cluster_area = (
+            mesh.cluster_connected_triangles())
+    triangle_clusters = np.asarray(triangle_clusters)
+    cluster_n_triangles = np.asarray(cluster_n_triangles)
+    cluster_area = np.asarray(cluster_area)
+
+    print("Displaying mesh with small clusters removed ...")
+    mesh_0 = copy.deepcopy(mesh)
+    triangles_to_remove = cluster_n_triangles[triangle_clusters] < 100
+    mesh_0.remove_triangles_by_mask(triangles_to_remove)
+    o3d.visualization.draw_geometries([mesh_0])

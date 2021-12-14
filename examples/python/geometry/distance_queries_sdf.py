@@ -26,6 +26,8 @@
 
 import open3d as o3d
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as anim
 import os
 import sys
 
@@ -34,19 +36,34 @@ sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-    N = 2000
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(N)
-    # fit to unit cube
-    pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
-              center=pcd.get_center())
-    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1,
-                                                              size=(N, 3)))
-    print('Displaying input voxel grid ...')
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
-                                                                voxel_size=0.05)
-    o3d.visualization.draw_geometries([voxel_grid])
+    # Load mesh and convert to open3d.t.geometry.TriangleMesh
+    mesh = o3dex.get_armadillo_mesh()
+    mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
 
-    octree = o3d.geometry.Octree(max_depth=4)
-    octree.create_from_voxel_grid(voxel_grid)
-    print('Displaying octree ..')
-    o3d.visualization.draw([octree])
+    # Create a scene and add the triangle mesh
+    scene = o3d.t.geometry.RaycastingScene()
+    _ = scene.add_triangles(mesh)  # we do not need the geometry ID for mesh
+
+    min_bound = mesh.vertex['positions'].min(0).numpy()
+    max_bound = mesh.vertex['positions'].max(0).numpy()
+
+    xyz_range = np.linspace(min_bound, max_bound, num=64)
+
+    # query_points is a [64,64,64,3] array ..
+    query_points = np.stack(np.meshgrid(*xyz_range.T),
+                            axis=-1).astype(np.float32)
+
+    # signed distance is a [64,64,64] array
+    signed_distance = scene.compute_signed_distance(query_points)
+
+    # We can visualize the slices of the distance field directly with matplotlib
+    fig = plt.figure()
+
+    def show_slices(i=int):
+        print(i)
+        if i >= 64:
+            sys.exit()
+        plt.imshow(signed_distance.numpy()[:, :, i % 64])
+
+    animator = anim.FuncAnimation(fig, show_slices, interval=100)
+    plt.show()

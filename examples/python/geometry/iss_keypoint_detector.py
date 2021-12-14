@@ -47,4 +47,4 @@ if __name__ == "__main__":
     mesh.compute_vertex_normals()
     mesh.paint_uniform_color([0.5, 0.5, 0.5])
     keypoints.paint_uniform_color([1.0, 0.0, 0.0])
-    o3d.visualization.draw([keypoints, mesh], point_size = 5)
+    o3d.visualization.draw([keypoints, mesh], point_size=5)

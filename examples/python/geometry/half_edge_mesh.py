@@ -34,19 +34,20 @@ sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-    N = 2000
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(N)
-    # fit to unit cube
-    pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
-              center=pcd.get_center())
-    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1,
-                                                              size=(N, 3)))
-    print('Displaying input voxel grid ...')
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
-                                                                voxel_size=0.05)
-    o3d.visualization.draw_geometries([voxel_grid])
+    # Initialize a HalfEdgeTriangleMesh from TriangleMesh
+    path_to_mesh = dir_path + "/../../test_data/sphere.ply"
+    mesh = o3d.io.read_triangle_mesh(path_to_mesh)
+    bbox = o3d.geometry.AxisAlignedBoundingBox()
+    bbox.min_bound = [-1, -1, -1]
+    bbox.max_bound = [1, 0.6, 1]
+    mesh = mesh.crop(bbox)
+    het_mesh = o3d.geometry.HalfEdgeTriangleMesh.create_from_triangle_mesh(mesh)
+    o3d.visualization.draw_geometries([het_mesh], mesh_show_back_face=True)
 
-    octree = o3d.geometry.Octree(max_depth=4)
-    octree.create_from_voxel_grid(voxel_grid)
-    print('Displaying octree ..')
-    o3d.visualization.draw([octree])
+    # Colorize boundary vertices to red
+    vertex_colors = 0.75 * np.ones((len(het_mesh.vertices), 3))
+    for boundary in het_mesh.get_boundaries():
+        for vertex_id in boundary:
+            vertex_colors[vertex_id] = [1, 0, 0]
+    het_mesh.vertex_colors = o3d.utility.Vector3dVector(vertex_colors)
+    o3d.visualization.draw_geometries([het_mesh], mesh_show_back_face=True)

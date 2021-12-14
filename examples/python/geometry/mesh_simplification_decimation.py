@@ -34,19 +34,14 @@ sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-    N = 2000
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(N)
-    # fit to unit cube
-    pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
-              center=pcd.get_center())
-    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1,
-                                                              size=(N, 3)))
-    print('Displaying input voxel grid ...')
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
-                                                                voxel_size=0.05)
-    o3d.visualization.draw_geometries([voxel_grid])
+    mesh_in = o3dex.get_bunny_mesh()
+    print("\nBefore Simplification: ", mesh_in)
+    o3d.visualization.draw_geometries([mesh_in])
 
-    octree = o3d.geometry.Octree(max_depth=4)
-    octree.create_from_voxel_grid(voxel_grid)
-    print('Displaying octree ..')
-    o3d.visualization.draw([octree])
+    mesh_smp = mesh_in.simplify_quadric_decimation(target_number_of_triangles=6500)
+    print("\nAfter Simplification target number of triangles = 6500:\n", mesh_smp)
+    o3d.visualization.draw_geometries([mesh_smp])
+
+    mesh_smp = mesh_in.simplify_quadric_decimation(target_number_of_triangles=1700)
+    print("\nAfter Simplification target number of triangles = 1700:\n", mesh_smp)
+    o3d.visualization.draw_geometries([mesh_smp])

@@ -34,19 +34,14 @@ sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-    N = 2000
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(N)
-    # fit to unit cube
-    pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
-              center=pcd.get_center())
-    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1,
-                                                              size=(N, 3)))
-    print('Displaying input voxel grid ...')
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
-                                                                voxel_size=0.05)
-    o3d.visualization.draw_geometries([voxel_grid])
-
-    octree = o3d.geometry.Octree(max_depth=4)
-    octree.create_from_voxel_grid(voxel_grid)
-    print('Displaying octree ..')
-    o3d.visualization.draw([octree])
+    mesh = o3dex.get_knot_mesh()
+    print("Displaying mesh without normals ...")
+    # invalidate existing normals
+    mesh.triangle_normals = o3d.utility.Vector3dVector(np.zeros((1, 3)))
+    print ("normals: \n", np.asarray(mesh.triangle_normals))
+    o3d.visualization.draw_geometries([mesh])
+    
+    print("Computing normals and rendering it ...")
+    mesh.compute_vertex_normals()
+    print("normals: \n", np.asarray(mesh.triangle_normals))
+    o3d.visualization.draw_geometries([mesh])

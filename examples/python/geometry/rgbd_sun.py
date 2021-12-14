@@ -25,28 +25,31 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import numpy as np
+import matplotlib.pyplot as plt
 import os
-import sys
-
-dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(dir_path + "/..")
-import open3d_example as o3dex
 
 if __name__ == "__main__":
-    N = 2000
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(N)
-    # fit to unit cube
-    pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
-              center=pcd.get_center())
-    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1,
-                                                              size=(N, 3)))
-    print('Displaying input voxel grid ...')
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_point_cloud(pcd,
-                                                                voxel_size=0.05)
-    o3d.visualization.draw_geometries([voxel_grid])
+    print("Read SUN dataset")
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    color_raw = o3d.io.read_image(
+        dir_path + "/../../test_data/RGBD/other_formats/SUN_color.jpg")
+    depth_raw = o3d.io.read_image(
+        dir_path + "/../../test_data/RGBD/other_formats/SUN_depth.png")
+    rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(color_raw, depth_raw)
+    print(rgbd_image)
 
-    octree = o3d.geometry.Octree(max_depth=4)
-    octree.create_from_voxel_grid(voxel_grid)
-    print('Displaying octree ..')
-    o3d.visualization.draw([octree])
+    plt.subplot(1, 2, 1)
+    plt.title('SUN grayscale image')
+    plt.imshow(rgbd_image.color, cmap='gray')
+    plt.subplot(1, 2, 2)
+    plt.title('SUN depth image')
+    plt.imshow(rgbd_image.depth)
+    plt.show()
+
+    pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
+        rgbd_image,
+        o3d.camera.PinholeCameraIntrinsic(
+            o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault))
+    # Flip it, otherwise the pointcloud will be upside down
+    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+    o3d.visualization.draw([pcd])

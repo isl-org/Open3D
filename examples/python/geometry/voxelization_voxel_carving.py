@@ -130,7 +130,6 @@ def voxel_carving(mesh,
         print("Carve view %03d/%03d" % (cid + 1, len(camera_sphere.vertices)))
     vis.destroy_window()
 
-
     return voxel_carving
 
 
@@ -144,8 +143,8 @@ if __name__ == "__main__":
     cubic_size = 2.0
     voxel_resolution = 128.0
 
-    voxel_carving = voxel_carving(
-        mesh, output_filename, camera_path, cubic_size, voxel_resolution)
+    voxel_carving = voxel_carving(mesh, output_filename, camera_path,
+                                  cubic_size, voxel_resolution)
     print("carved voxels")
     print(voxel_carving)
     o3d.visualization.draw([voxel_carving])

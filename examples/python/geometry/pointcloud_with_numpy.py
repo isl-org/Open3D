@@ -26,40 +26,30 @@
 
 import open3d as o3d
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as ani
-import os
-import sys
-
-dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(dir_path + "/..")
-import open3d_example as o3dex
 
 if __name__ == "__main__":
-    # Load mesh and convert to open3d.t.geometry.TriangleMesh
-    mesh = o3dex.get_armadillo_mesh()
-    mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
+    # Generate some neat n times 3 matrix using a variant of sync function
+    x = np.linspace(-3, 3, 401)
+    mesh_x, mesh_y = np.meshgrid(x, x)
+    z = np.sinc((np.power(mesh_x, 2) + np.power(mesh_y, 2)))
+    z_norm = (z - z.min()) / (z.max() - z.min())
+    xyz = np.zeros((np.size(mesh_x), 3))
+    xyz[:, 0] = np.reshape(mesh_x, -1)
+    xyz[:, 1] = np.reshape(mesh_y, -1)
+    xyz[:, 2] = np.reshape(z_norm, -1)
+    print("Printing numpy array used to make Open3D pointcloud ...")
+    print(xyz)
 
-    # Create a scene and add the triangle mesh
-    scene = o3d.t.geometry.RaycastingScene()
-    _ = scene.add_triangles(mesh)  # we do not need the geometry ID for mesh
+    # Pass xyz to Open3D.o3d.geometry.PointCloud and visualize
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(xyz)
+    # add color and estimate normals for better visualization
+    pcd.paint_uniform_color([0.5, 0.5, 0.5])
+    pcd.estimate_normals()
+    print ("Displaying Open3D pointcloud made using numpy array ...")
+    o3d.visualization.draw_geometries([pcd])
 
-    min_bound = mesh.vertex['positions'].min(0).numpy()
-    max_bound = mesh.vertex['positions'].max(0).numpy()
-
-    xyz_range = np.linspace(min_bound, max_bound, num=64)
-
-    # query_points is a [32,32,32,3] array ..
-    query_points = np.stack(np.meshgrid(*xyz_range.T), axis=-1).astype(np.float32)
-
-    # signed distance is a [32,32,32] array
-    signed_distance = scene.compute_signed_distance(query_points)
-
-
-    # We can visualize a slice of the distance field directly with matplotlib
-    fig = plt.figure()
-    def show_slices(i=int):
-        print(i)
-        plt.imshow(signed_distance.numpy()[:, :, i%32])
-    animator = ani.FuncAnimation(fig, show_slices, interval = 30, blit = True)
-    plt.show()
+    # Convert Open3D.o3d.geometry.PointCloud to numpy array
+    xyz_converted = np.asarray(pcd.points)
+    print("Printing numpy array made using Open3D pointcloud ...")
+    print(xyz_converted)

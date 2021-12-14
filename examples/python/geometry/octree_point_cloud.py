@@ -38,8 +38,9 @@ if __name__ == "__main__":
     pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(N)
     # fit to unit cube
     pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
-            center=pcd.get_center())
-    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(N, 3)))
+              center=pcd.get_center())
+    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1,
+                                                              size=(N, 3)))
     print('Displaying input pointcloud ...')
     o3d.visualization.draw([pcd])
 
