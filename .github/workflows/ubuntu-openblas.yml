@@ -52,7 +52,7 @@ jobs:
   # and update the ccache artifacts on the Google Cloud bucket. Run:
   #
   # ```bash
-  # .github/workflows/docker_build.sh openblas-arm64
+  # .github/workflows/docker_build.sh openblas-arm64-py36-dev
   # gsutil cp open3d-ci-openblas-arm64.tar.gz gs://open3d-ci-cache/
   # ```
   openblas-arm64:
