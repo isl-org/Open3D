@@ -27,7 +27,6 @@
 import open3d as o3d
 import os
 
-
 if __name__ == "__main__":
     print("Reading image from file: lena_color.jpg")
     dir_path = os.path.dirname(os.path.abspath(__file__))

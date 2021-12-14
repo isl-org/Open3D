@@ -31,6 +31,7 @@ import matplotlib.image as mpimg
 import os
 import re
 
+
 # This is special function used for reading NYU pgm format
 # as it is written in big endian byte order.
 def read_nyu_pgm(filename, byteorder='>'):
@@ -57,13 +58,15 @@ if __name__ == "__main__":
     # Open3D does not support ppm/pgm file yet. Not using o3d.io.read_image here.
     # MathplotImage having some ISSUE with NYU pgm file. Not using imread for pgm.
     dir_path = os.path.dirname(os.path.abspath(__file__))
-    color_raw = mpimg.imread(dir_path + "/../../test_data/RGBD/other_formats/NYU_color.ppm")
-    depth_raw = read_nyu_pgm(dir_path + "/../../test_data/RGBD/other_formats/NYU_depth.pgm")
+    color_raw = mpimg.imread(
+        dir_path + "/../../test_data/RGBD/other_formats/NYU_color.ppm")
+    depth_raw = read_nyu_pgm(
+        dir_path + "/../../test_data/RGBD/other_formats/NYU_depth.pgm")
     color = o3d.geometry.Image(color_raw)
     depth = o3d.geometry.Image(depth_raw)
     rgbd_image = o3d.geometry.RGBDImage.create_from_nyu_format(color, depth)
     print(rgbd_image)
-    
+
     plt.subplot(1, 2, 1)
     plt.title('NYU grayscale image')
     plt.imshow(rgbd_image.color, cmap='gray')

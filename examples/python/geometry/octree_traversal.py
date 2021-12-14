@@ -33,6 +33,7 @@ dir_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
+
 def f_traverse(node, node_info):
     early_stop = False
 
@@ -61,13 +62,15 @@ def f_traverse(node, node_info):
     # early stopping: if True, traversal of children of the current node will be skipped
     return early_stop
 
+
 if __name__ == "__main__":
     N = 2000
     pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(N)
     # fit to unit cube
     pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
-            center=pcd.get_center())
-    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1, size=(N, 3)))
+              center=pcd.get_center())
+    pcd.colors = o3d.utility.Vector3dVector(np.random.uniform(0, 1,
+                                                              size=(N, 3)))
 
     octree = o3d.geometry.Octree(max_depth=4)
     octree.convert_from_point_cloud(pcd, size_expand=0.01)

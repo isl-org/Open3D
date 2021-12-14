@@ -33,6 +33,7 @@ dir_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
+
 def check_properties(name, mesh):
     mesh.compute_vertex_normals()
 
@@ -80,10 +81,13 @@ def check_properties(name, mesh):
         geoms.append(o3dex.edges_to_lineset(mesh, edges, (1, 0, 1)))
     o3d.visualization.draw_geometries(geoms, mesh_show_back_face=True)
 
+
 if __name__ == "__main__":
     check_properties('Knot', o3dex.get_knot_mesh())
-    check_properties('Moebius', o3d.geometry.TriangleMesh.create_moebius(twists=1))
+    check_properties('Moebius',
+                     o3d.geometry.TriangleMesh.create_moebius(twists=1))
     check_properties("non-manifold edge", o3dex.get_non_manifold_edge_mesh())
-    check_properties("non-manifold vertex", o3dex.get_non_manifold_vertex_mesh())
+    check_properties("non-manifold vertex",
+                     o3dex.get_non_manifold_vertex_mesh())
     check_properties("open box", o3dex.get_open_box_mesh())
     check_properties("intersecting_boxes", o3dex.get_intersecting_boxes_mesh())

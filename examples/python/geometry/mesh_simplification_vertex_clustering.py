@@ -42,12 +42,14 @@ if __name__ == "__main__":
     mesh_smp = mesh_in.simplify_vertex_clustering(
         voxel_size=voxel_size,
         contraction=o3d.geometry.SimplificationContraction.Average)
-    print("\nAfter Simplification with voxel size =",  voxel_size, ":\n", mesh_smp)
+    print("\nAfter Simplification with voxel size =", voxel_size, ":\n",
+          mesh_smp)
     o3d.visualization.draw_geometries([mesh_smp])
 
     voxel_size = max(mesh_in.get_max_bound() - mesh_in.get_min_bound()) / 16
     mesh_smp = mesh_in.simplify_vertex_clustering(
         voxel_size=voxel_size,
         contraction=o3d.geometry.SimplificationContraction.Average)
-    print("\nAfter Simplification with voxel size =",  voxel_size, ":\n", mesh_smp)
+    print("\nAfter Simplification with voxel size =", voxel_size, ":\n",
+          mesh_smp)
     o3d.visualization.draw_geometries([mesh_smp])

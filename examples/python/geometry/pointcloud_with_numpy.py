@@ -46,7 +46,7 @@ if __name__ == "__main__":
     # add color and estimate normals for better visualization
     pcd.paint_uniform_color([0.5, 0.5, 0.5])
     pcd.estimate_normals()
-    print ("Displaying Open3D pointcloud made using numpy array ...")
+    print("Displaying Open3D pointcloud made using numpy array ...")
     o3d.visualization.draw_geometries([pcd])
 
     # Convert Open3D.o3d.geometry.PointCloud to numpy array

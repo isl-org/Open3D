@@ -41,7 +41,7 @@ if __name__ == "__main__":
     vertices += np.random.uniform(0, noise, size=vertices.shape)
     mesh_in.vertices = o3d.utility.Vector3dVector(vertices)
     mesh_in.compute_vertex_normals()
-    print ("Displaying input mesh ...")
+    print("Displaying input mesh ...")
     o3d.visualization.draw_geometries([mesh_in])
 
     print("Displaying output of average mesh filter after 1 iteration ...")

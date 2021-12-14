@@ -36,13 +36,13 @@ import open3d_example as o3dex
 if __name__ == "__main__":
     mesh = o3dex.get_bunny_mesh()
     mesh.compute_vertex_normals()
-    print ("Displaying input mesh ...")
+    print("Displaying input mesh ...")
     o3d.visualization.draw([mesh])
-    
-    print ("Displaying pointcloud using uniform sampling ...")
+
+    print("Displaying pointcloud using uniform sampling ...")
     pcd = mesh.sample_points_uniformly(number_of_points=500)
     o3d.visualization.draw([pcd])
 
-    print ("Displaying pointcloud using Poisson disk sampling ...")
+    print("Displaying pointcloud using Poisson disk sampling ...")
     pcd = mesh.sample_points_poisson_disk(number_of_points=500, init_factor=5)
     o3d.visualization.draw_geometries([pcd])

@@ -38,9 +38,9 @@ if __name__ == "__main__":
     print("Displaying mesh without normals ...")
     # invalidate existing normals
     mesh.triangle_normals = o3d.utility.Vector3dVector(np.zeros((1, 3)))
-    print ("normals: \n", np.asarray(mesh.triangle_normals))
+    print("normals: \n", np.asarray(mesh.triangle_normals))
     o3d.visualization.draw_geometries([mesh])
-    
+
     print("Computing normals and rendering it ...")
     mesh.compute_vertex_normals()
     print("normals: \n", np.asarray(mesh.triangle_normals))

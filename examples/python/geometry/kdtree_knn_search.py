@@ -38,7 +38,9 @@ if __name__ == "__main__":
     pcd = o3d.io.read_point_cloud(path_to_pcd)
     pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 
-    print("Find the 2000 nearest neighbors of 50000th point, and painting them red ...")
+    print(
+        "Find the 2000 nearest neighbors of 50000th point, and painting them red ..."
+    )
     [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[50000], 2000)
     np.asarray(pcd.colors)[idx[1:], :] = [1, 0, 0]
 

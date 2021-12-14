@@ -41,14 +41,13 @@ if __name__ == "__main__":
     vertices += np.random.uniform(0, noise, size=vertices.shape)
     mesh_in.vertices = o3d.utility.Vector3dVector(vertices)
     mesh_in.compute_vertex_normals()
-    print ("Displaying input mesh ...")
+    print("Displaying input mesh ...")
     o3d.visualization.draw_geometries([mesh_in])
 
     print("Displaying output of Taubin mesh filter after 10 iteration ...")
     mesh_out = mesh_in.filter_smooth_taubin(number_of_iterations=10)
     mesh_out.compute_vertex_normals()
     o3d.visualization.draw_geometries([mesh_out])
-
 
     print("Displaying output of Taubin mesh filter after 100 iteration ...")
     mesh_out = mesh_in.filter_smooth_taubin(number_of_iterations=100)
