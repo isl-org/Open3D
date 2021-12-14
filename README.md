@@ -15,7 +15,7 @@
     <a href="https://github.com/isl-org/Open3D/releases">Viewer</a> |
     <a href="http://www.open3d.org/docs/release/contribute/contribute.html">Contribute</a> |
     <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a> |
-    <a href="https://forum.open3d.org">Forum</a>
+    <a href="https://github.com/isl-org/Open3D/discussions">Forum</a>
 </h4>
 
 Open3D is an open-source library that supports rapid development of software
@@ -94,7 +94,7 @@ top of the Open3D core library and extends it with machine learning tools for
 
 * [GitHub Issue](https://github.com/isl-org/Open3D/issues): bug reports,
   feature requests, etc.
-* [Forum](https://forum.open3d.org): discussion on the usage of Open3D.
+* [Forum](https://github.com/isl-org/Open3D/discussions): discussion on the usage of Open3D.
 * [Discord Chat](https://discord.gg/D35BGvn): online chats, discussions,
   and collaboration with other users and developers.
 
