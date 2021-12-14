@@ -107,7 +107,6 @@ def voxel_carving(mesh,
     param = ctr.convert_to_pinhole_camera_parameters()
 
     # carve voxel grid
-    pcd_agg = o3d.geometry.PointCloud()
     centers_pts = np.zeros((len(camera_sphere.vertices), 3))
     for cid, xyz in enumerate(camera_sphere.vertices):
         # get new camera pose
