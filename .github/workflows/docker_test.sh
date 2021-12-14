@@ -147,15 +147,85 @@ echo "[$(basename $0)] building $1"
 source "${HOST_OPEN3D_ROOT}/.github/workflows/docker_build.sh"
 case "$1" in
     # OpenBLAS AMD64
-    openblas-amd64)
-        openblas-amd64_export_env
+    openblas-amd64-py36-dev)
+        openblas_export_env amd64 py36 dev
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-amd64-py37-dev)
+        openblas_export_env amd64 py37 dev
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-amd64-py38-dev)
+        openblas_export_env amd64 py38 dev
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-amd64-py39-dev)
+        openblas_export_env amd64 py39 dev
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-amd64-py36)
+        openblas_export_env amd64 py36
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-amd64-py37)
+        openblas_export_env amd64 py37
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-amd64-py38)
+        openblas_export_env amd64 py38
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-amd64-py39)
+        openblas_export_env amd64 py39
         openblas_print_env
         cpp_python_linking_uninstall_test
         ;;
 
     # OpenBLAS ARM64
-    openblas-arm64)
-        openblas-arm64_export_env
+    openblas-arm64-py36-dev)
+        openblas_export_env arm64 py36 dev
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-arm64-py37-dev)
+        openblas_export_env arm64 py37 dev
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-arm64-py38-dev)
+        openblas_export_env arm64 py38 dev
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-arm64-py39-dev)
+        openblas_export_env arm64 py39 dev
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-arm64-py36)
+        openblas_export_env arm64 py36
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-arm64-py37)
+        openblas_export_env arm64 py37
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-arm64-py38)
+        openblas_export_env arm64 py38
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-arm64-py39)
+        openblas_export_env arm64 py39
         openblas_print_env
         cpp_python_linking_uninstall_test
         ;;
