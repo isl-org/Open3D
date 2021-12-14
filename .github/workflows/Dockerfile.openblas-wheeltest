@@ -26,19 +26,36 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
  && rm -rf /var/lib/apt/lists/*
 
-# Miniconda
-ENV PATH="/root/miniconda3/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh \
- && bash Miniconda3-latest-Linux-aarch64.sh -b \
- && rm Miniconda3-latest-Linux-aarch64.sh \
- && conda --version
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-RUN conda create -y -n open3d python=${PYTHON_VERSION} \
- && source activate open3d
-RUN which python \
- && python --version
+# Install Pyenv
+# Conda is not reliable on Linux ARM64.
+RUN apt-get update -y && apt-get install -y \
+    make \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    wget \
+    curl \
+    llvm \
+    libncurses5-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libffi-dev \
+    liblzma-dev \
+    python-openssl \
+    git \
+ && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth=1 git://github.com/yyuu/pyenv.git /root/.pyenv
+ENV PYENV_ROOT="/root/.pyenv"
+ENV PATH="${PYENV_ROOT}/bin:${PYENV_ROOT}/shims:${PATH}"
+RUN git clone https://github.com/momo-lab/pyenv-install-latest.git "$(pyenv root)"/plugins/pyenv-install-latest
 
-ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+# Activate Pyenv
+RUN pyenv install-latest ${PYTHON_VERSION}
+RUN pyenv global $(pyenv install-latest --print ${PYTHON_VERSION})
 
 # Open3D repo
 # Always keep /root/Open3D as the WORKDIR
