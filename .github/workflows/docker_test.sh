@@ -146,6 +146,29 @@ fi
 echo "[$(basename $0)] building $1"
 source "${HOST_OPEN3D_ROOT}/.github/workflows/docker_build.sh"
 case "$1" in
+    # OpenBLAS AMD64
+    openblas-amd64)
+        openblas-amd64_export_env
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+
+    # OpenBLAS ARM64
+    openblas-arm64)
+        openblas-arm64_export_env
+        openblas_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+
+    # CUDA wheels
+    openblas-arm64-wheel)
+        export DOCKER_TAG=open3d-ci:openblas-arm64-wheel
+        export PYTHON_VERSION=3.8
+        openblas-arm64_export_env
+        openblas-arm64-wheel
+        ;;
+
+    # ML CIs
     2-bionic)
         2-bionic_export_env
         cuda_print_env
@@ -170,22 +193,7 @@ case "$1" in
         export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
-    openblas-amd64)
-        openblas-amd64_export_env
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64)
-        openblas-arm64_export_env
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-wheel)
-        export DOCKER_TAG=open3d-ci:openblas-arm64-wheel
-        export PYTHON_VERSION=3.8
-        openblas-arm64_export_env
-        openblas-arm64-wheel
-        ;;
+
     *)
         echo "Error: invalid argument: ${1}." >&2
         print_usage_and_exit_docker_test
