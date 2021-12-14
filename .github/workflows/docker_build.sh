@@ -249,14 +249,35 @@ function main () {
     fi
     echo "[$(basename $0)] building $1"
     case "$1" in
+        # OpenBLAS AMD64
+        # openblas-amd64-py36-dev
+        # openblas-amd64-py37-dev
+        # openblas-amd64-py38-dev
+        # openblas-amd64-py39-dev
+        # openblas-amd64-py36
+        # openblas-amd64-py37
+        # openblas-amd64-py38
+        # openblas-amd64-py39
         openblas-amd64)
             openblas-amd64_export_env
             openblas_build
             ;;
-        openblas-arm64)
+
+        # OpenBLAS ARM64
+        # openblas-arm64-py36-dev
+        # openblas-arm64-py37-dev
+        # openblas-arm64-py38-dev
+        # openblas-arm64-py39-dev
+        # openblas-arm64-py36
+        # openblas-arm64-py37
+        # openblas-arm64-py38
+        # openblas-arm64-py39
+        openblas-arm64-py36-dev)
             openblas-arm64_export_env
             openblas_build
             ;;
+
+        # CUDA wheels
         cuda_wheel_py36_dev)
             cuda_wheel_build py36 dev
             ;;
@@ -281,6 +302,8 @@ function main () {
         cuda_wheel_py39)
             cuda_wheel_build py39
             ;;
+
+        # ML CIs
         2-bionic)
             2-bionic_export_env
             cuda_build
