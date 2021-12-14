@@ -140,8 +140,8 @@ public:
     TriangleMesh &RemoveDuplicatedVertices();
 
     /// \brief Function that removes duplicated triangles, i.e., removes
-    /// triangles that reference the same three vertices, independent of their
-    /// order.
+    /// triangles that reference the same three vertices and have the same
+    /// orientation.
     TriangleMesh &RemoveDuplicatedTriangles();
 
     /// \brief This function removes vertices from the triangle mesh that are
