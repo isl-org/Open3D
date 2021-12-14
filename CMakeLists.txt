@@ -15,23 +15,22 @@ endif()
 
 # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
 # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
-if(UNIX)
-    if(APPLE)
-        execute_process(COMMAND uname -m
-            OUTPUT_VARIABLE PROCESSOR_ARCH
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        if(PROCESSOR_ARCH STREQUAL "arm64")
-            set(APPLE_AARCH64 TRUE)
-        endif()
-    else()
-        execute_process(COMMAND uname -p
-            OUTPUT_VARIABLE PROCESSOR_ARCH
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        if(PROCESSOR_ARCH STREQUAL "aarch64")
-            set(LINUX_AARCH64 TRUE)
-        endif()
+if(UNIX AND NOT APPLE)
+    execute_process(COMMAND uname -p
+        OUTPUT_VARIABLE PROCESSOR_ARCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(PROCESSOR_ARCH STREQUAL "aarch64")
+        set(LINUX_AARCH64 TRUE)
+    endif()
+endif()
+if(APPLE)
+    execute_process(COMMAND uname -m
+        OUTPUT_VARIABLE PROCESSOR_ARCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(PROCESSOR_ARCH STREQUAL "arm64")
+        set(APPLE_AARCH64 TRUE)
     endif()
 endif()
 
