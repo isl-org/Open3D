@@ -129,6 +129,7 @@ RUN which python \
 RUN mkdir build \
  && cd build \
  && cmake \
+    -DBUILD_UNIT_TESTS=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \

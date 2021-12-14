@@ -17,7 +17,6 @@ __usage_docker_test="USAGE:
 OPTION:
     openblas-amd64      : OpenBLAS x86_64
     openblas-arm64      : OpenBLAS ARM64
-    openblas-arm64-wheel: OpenBLAS ARM64 test wheel with a minimal Docker
     2-bionic            : CUDA CI, 2-bionic
     3-ml-shared-bionic  : CUDA CI, 3-ml-shared-bionic
     4-ml-bionic         : CUDA CI, 4-ml-bionic
@@ -29,19 +28,6 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 &&
 print_usage_and_exit_docker_test() {
     echo "$__usage_docker_test"
     exit 1
-}
-
-openblas-arm64-wheel() {
-    echo "[openblas-arm64-wheel()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[openblas-arm64-wheel()] BASE_IMAGE: ${BASE_IMAGE}"
-    echo "[openblas-arm64-wheel()] PYTHON_VERSION: ${PYTHON_VERSION}"
-
-    pushd "${HOST_OPEN3D_ROOT}"
-    docker build --build-arg BASE_IMAGE="${BASE_IMAGE}" \
-                 --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
-                 -t "${DOCKER_TAG}" \
-                 -f .github/workflows/Dockerfile.openblas-wheel .
-    popd
 }
 
 cuda_print_env() {
@@ -228,14 +214,6 @@ case "$1" in
         openblas_export_env arm64 py39
         openblas_print_env
         cpp_python_linking_uninstall_test
-        ;;
-
-    # CUDA wheels
-    openblas-arm64-wheel)
-        export DOCKER_TAG=open3d-ci:openblas-arm64-wheel
-        export PYTHON_VERSION=3.8
-        openblas-arm64_export_env
-        openblas-arm64-wheel
         ;;
 
     # ML CIs
