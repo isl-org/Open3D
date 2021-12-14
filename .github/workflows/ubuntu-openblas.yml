@@ -12,7 +12,7 @@ env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
-  openblas-x86_64:
+  openblas-amd64:
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -29,10 +29,10 @@ jobs:
           maximize_ubuntu_github_actions_build_space
       - name: Docker build
         run: |
-          .github/workflows/docker_build.sh openblas-x86_64
+          .github/workflows/docker_build.sh openblas-amd64
       - name: Docker test
         run: |
-          .github/workflows/docker_test.sh openblas-x86_64
+          .github/workflows/docker_test.sh openblas-amd64
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@v0.2.1
         with:
@@ -42,7 +42,7 @@ jobs:
           export_default_credentials: true
       - name: Upload ccache to GCS
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-x86_64.tar.gz gs://open3d-ci-cache/ || true
+          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-amd64.tar.gz gs://open3d-ci-cache/ || true
 
 
   # How to resolve GitHub Actions ARM64 build timeout.

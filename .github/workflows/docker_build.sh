@@ -20,7 +20,7 @@ __usage_docker_build="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    openblas-x86_64    : OpenBLAS x86_64
+    openblas-amd64     : OpenBLAS AMD64
     openblas-arm64     : OpenBLAS ARM64
     cuda_wheel_py36_dev: CUDA Python 3.6 wheel, developer mode
     cuda_wheel_py37_dev: CUDA Python 3.7 wheel, developer mode
@@ -47,12 +47,12 @@ print_usage_and_exit_docker_build() {
     exit 1
 }
 
-openblas-x86_64_export_env() {
-    export DOCKER_TAG=open3d-ci:openblas-x86_64
+openblas-amd64_export_env() {
+    export DOCKER_TAG=open3d-ci:openblas-amd64
 
     export BASE_IMAGE=ubuntu:18.04
     export CMAKE_VER=cmake-3.19.7-Linux-x86_64
-    export CCACHE_TAR_NAME=open3d-ci-openblas-x86_64
+    export CCACHE_TAR_NAME=open3d-ci-openblas-amd64
 }
 
 openblas-arm64_export_env() {
@@ -228,8 +228,8 @@ function main () {
     fi
     echo "[$(basename $0)] building $1"
     case "$1" in
-        openblas-x86_64)
-            openblas-x86_64_export_env
+        openblas-amd64)
+            openblas-amd64_export_env
             openblas_build
             ;;
         openblas-arm64)

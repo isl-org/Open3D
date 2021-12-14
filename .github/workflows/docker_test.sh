@@ -15,7 +15,7 @@ __usage_docker_test="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    openblas-x86_64     : OpenBLAS x86_64
+    openblas-amd64      : OpenBLAS x86_64
     openblas-arm64      : OpenBLAS ARM64
     openblas-arm64-wheel: OpenBLAS ARM64 test wheel with a minimal Docker
     2-bionic            : CUDA CI, 2-bionic
@@ -177,8 +177,8 @@ case "$1" in
         export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
-    openblas-x86_64)
-        openblas-x86_64_export_env
+    openblas-amd64)
+        openblas-amd64_export_env
         openblas_print_env
         export BUILD_CUDA_MODULE=OFF
         export BUILD_PYTORCH_OPS=OFF
