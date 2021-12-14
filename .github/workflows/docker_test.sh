@@ -95,14 +95,14 @@ cpp_python_linking_uninstall_test() {
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c "\
         cd build \
-     && ./bin/tests --gtest_shuffle \
+     && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
     "
     restart_docker_daemon_if_on_gcloud
 
     # Python test
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        pytest python/test ${pytest_args} \
+        python -m pytest python/test ${pytest_args} \
     "
     restart_docker_daemon_if_on_gcloud
 
