@@ -33,7 +33,10 @@ import numpy as np
 import pytest
 pytest.importorskip("tensorboard")
 vis = pytest.importorskip("open3d.ml.vis")
-BoundingBox3D = vis.BoundingBox3D
+try:
+    BoundingBox3D = vis.BoundingBox3D
+except AttributeError:
+    pytestmark = pytest.mark.skip(reason="BoundingBox3D not available.")
 
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import summary
