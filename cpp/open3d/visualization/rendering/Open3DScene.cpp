@@ -342,6 +342,33 @@ void Open3DScene::RemoveGeometry(const std::string& name) {
     }
 }
 
+bool Open3DScene::GeometryIsVisible(const std::string& name) {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->GeometryIsVisible(name);
+}
+
+void Open3DScene::SetGeometryTransform(const std::string& name,
+                                       const Eigen::Matrix4d& transform) {
+    auto scene = renderer_.GetScene(scene_);
+    auto g = geometries_.find(name);
+    if (g != geometries_.end()) {
+        const Eigen::Transform<float, 3, Eigen::Affine> t(
+                transform.cast<float>());
+        scene->SetGeometryTransform(name, t);
+        if (!g->second.fast_name.empty()) {
+            scene->SetGeometryTransform(g->second.fast_name, t);
+        }
+        if (!g->second.low_name.empty()) {
+            scene->SetGeometryTransform(g->second.low_name, t);
+        }
+    }
+}
+
+Eigen::Matrix4d Open3DScene::GetGeometryTransform(const std::string& name) {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->GetGeometryTransform(name).matrix().cast<double>();
+}
+
 void Open3DScene::ModifyGeometryMaterial(const std::string& name,
                                          const MaterialRecord& mat) {
     auto scene = renderer_.GetScene(scene_);
