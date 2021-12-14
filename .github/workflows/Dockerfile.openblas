@@ -51,6 +51,9 @@ RUN which gcc \
  && which g++ \
  && g++ --version
 
+# Uncomment this line to always fetch the latest ccache
+# ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+
 # Download ccache from GCS bucket
 # If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
 # Example directory structure:
