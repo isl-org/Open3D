@@ -100,12 +100,16 @@ openblas_export_env() {
 
     if [[ "py36" =~ ^($options)$ ]]; then
         export PYTHON_VERSION=3.6
+        export DOCKER_TAG=${DOCKER_TAG}-py36
     elif [[ "py37" =~ ^($options)$ ]]; then
         export PYTHON_VERSION=3.7
+        export DOCKER_TAG=${DOCKER_TAG}-py37
     elif [[ "py38" =~ ^($options)$ ]]; then
         export PYTHON_VERSION=3.8
+        export DOCKER_TAG=${DOCKER_TAG}-py38
     elif [[ "py39" =~ ^($options)$ ]]; then
         export PYTHON_VERSION=3.9
+        export DOCKER_TAG=${DOCKER_TAG}-py39
     else
         echo "Invalid python version."
         print_usage_and_exit_docker_build
@@ -113,8 +117,10 @@ openblas_export_env() {
 
     if [[ "dev" =~ ^($options)$ ]]; then
         export DEVELOPER_BUILD=ON
+        export DOCKER_TAG=${DOCKER_TAG}-dev
     else
         export DEVELOPER_BUILD=OFF
+        export DOCKER_TAG=${DOCKER_TAG}-release
     fi
 
     # For docker_test.sh
