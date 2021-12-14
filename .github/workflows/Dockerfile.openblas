@@ -8,8 +8,12 @@ SHELL ["/bin/bash", "-c"]
 # Required build args, should be specified in docker_build.sh
 ARG CMAKE_VER
 ARG CCACHE_TAR_NAME
+ARG PYTHON_VERSION
+ARG DEVELOPER_BUILD
 RUN if [ -z "${CMAKE_VER}"       ]; then echo "Error: ARG CMAKE_VER       not specified."; exit 1; fi \
- && if [ -z "${CCACHE_TAR_NAME}" ]; then echo "Error: ARG CCACHE_TAR_NAME not specified."; exit 1; fi
+ && if [ -z "${CCACHE_TAR_NAME}" ]; then echo "Error: ARG CCACHE_TAR_NAME not specified."; exit 1; fi \
+ && if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi \
+ && if [ -z "${DEVELOPER_BUILD}" ]; then echo "Error: ARG DEVELOPER_BUILD not specified."; exit 1; fi
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -109,9 +113,9 @@ RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
 COPY . /root/Open3D
 WORKDIR /root/Open3D
 
-# Python 3.6 ###################################################################
-RUN pyenv install 3.6.15
-RUN pyenv global 3.6.15
+# Build Python wheel
+RUN pyenv install-latest ${PYTHON_VERSION}
+RUN pyenv global $(pyenv install-latest --print ${PYTHON_VERSION})
 RUN which python \
  && python --version \
  && python -m pip install -U \
@@ -121,93 +125,17 @@ RUN which python \
     yapf=="0.30.0" \
     pytest=="6.0.1"
 
-RUN rm -rf build \
- && mkdir build \
+RUN mkdir build \
  && cd build \
  && cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-    -DDEVELOPER_BUILD=OFF \
+    -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
     .. \
  && make -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc)
 RUN cp build/lib/python_package/pip_package/*.whl /
-
-# Python 3.7 ###################################################################
-RUN pyenv install 3.7.12
-RUN pyenv global 3.7.12
-RUN which python \
- && python --version \
- && python -m pip install -U \
-    pip=="21.1.1" \
-    wheel=="0.35.1" \
-    setuptools=="50.3.2" \
-    yapf=="0.30.0"
-
-RUN rm -rf build \
- && mkdir build \
- && cd build \
- && cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-    -DDEVELOPER_BUILD=OFF \
-    .. \
- && make -j$(nproc) \
- && make install-pip-package -j$(nproc) \
- && make install -j$(nproc)
-RUN cp build/lib/python_package/pip_package/*.whl /
-
-# Python 3.8 ###################################################################
-RUN pyenv install 3.8.12
-RUN pyenv global 3.8.12
-RUN which python \
- && python --version \
- && python -m pip install -U \
-    pip=="21.1.1" \
-    wheel=="0.35.1" \
-    setuptools=="50.3.2" \
-    yapf=="0.30.0"
-
-RUN rm -rf build \
- && mkdir build \
- && cd build \
- && cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-    -DDEVELOPER_BUILD=OFF \
-    .. \
- && make -j$(nproc) \
- && make install-pip-package -j$(nproc) \
- && make install -j$(nproc)
-RUN cp build/lib/python_package/pip_package/*.whl /
-
-# Python 3.9 ###################################################################
-RUN pyenv install 3.9.9
-RUN pyenv global 3.9.9
-RUN which python \
- && python --version \
- && python -m pip install -U \
-    pip=="21.1.1" \
-    wheel=="0.35.1" \
-    setuptools=="50.3.2" \
-    yapf=="0.30.0"
-
-RUN rm -rf build \
- && mkdir build \
- && cd build \
- && cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-    -DDEVELOPER_BUILD=OFF \
-    .. \
- && make -j$(nproc) \
- && make install-pip-package -j$(nproc) \
- && make install -j$(nproc)
-RUN cp build/lib/python_package/pip_package/*.whl /
-
-RUN ls -alh build/lib/python_package/pip_package/
-RUN ls -alh /
 
 # Compress ccache folder, move to / directory (optional)
 RUN ccache -s \

@@ -68,33 +68,71 @@ print_usage_and_exit_docker_build() {
     exit 1
 }
 
-openblas-amd64_export_env() {
-    export DOCKER_TAG=open3d-ci:openblas-amd64
-
-    export BASE_IMAGE=ubuntu:18.04
-    export CMAKE_VER=cmake-3.19.7-Linux-x86_64
-    export CCACHE_TAR_NAME=open3d-ci-openblas-amd64
+openblas_print_env() {
+    echo "[openblas_print_env()] DOCKER_TAG: ${DOCKER_TAG}"
+    echo "[openblas_print_env()] BASE_IMAGE: ${BASE_IMAGE}"
+    echo "[openblas_print_env()] CMAKE_VER: ${CMAKE_VER}"
+    echo "[openblas_print_env()] CCACHE_TAR_NAME: ${CCACHE_TAR_NAME}"
+    echo "[openblas_print_env()] PYTHON_VERSION: ${PYTHON_VERSION}"
+    echo "[openblas_print_env()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
 }
 
-openblas-arm64_export_env() {
-    export DOCKER_TAG=open3d-ci:openblas-arm64
+openblas_export_env() {
+    options="$(echo "$@" | tr ' ' '|')"
+    echo "[openblas_export_env()] options: ${options}"
 
-    export BASE_IMAGE=arm64v8/ubuntu:18.04
-    export CMAKE_VER=cmake-3.19.7-Linux-aarch64
-    export CCACHE_TAR_NAME=open3d-ci-openblas-arm64
+    if [[ "amd64" =~ ^($options)$ ]]; then
+        echo "[openblas_export_env()] platform AMD64"
+        export DOCKER_TAG=open3d-ci:openblas-amd64
+        export BASE_IMAGE=ubuntu:18.04
+        export CMAKE_VER=cmake-3.19.7-Linux-x86_64
+        export CCACHE_TAR_NAME=open3d-ci-openblas-amd64
+    elif [[ "arm64" =~ ^($options)$ ]]; then
+        echo "[openblas_export_env()] platform ARM64"
+        export DOCKER_TAG=open3d-ci:openblas-arm64
+        export BASE_IMAGE=arm64v8/ubuntu:18.04
+        export CMAKE_VER=cmake-3.19.7-Linux-aarch64
+        export CCACHE_TAR_NAME=open3d-ci-openblas-arm64
+    else
+        echo "Invalid platform."
+        print_usage_and_exit_docker_build
+    fi
+
+    if [[ "py36" =~ ^($options)$ ]]; then
+        export PYTHON_VERSION=3.6
+    elif [[ "py37" =~ ^($options)$ ]]; then
+        export PYTHON_VERSION=3.7
+    elif [[ "py38" =~ ^($options)$ ]]; then
+        export PYTHON_VERSION=3.8
+    elif [[ "py39" =~ ^($options)$ ]]; then
+        export PYTHON_VERSION=3.9
+    else
+        echo "Invalid python version."
+        print_usage_and_exit_docker_build
+    fi
+
+    if [[ "dev" =~ ^($options)$ ]]; then
+        export DEVELOPER_BUILD=ON
+    else
+        export DEVELOPER_BUILD=OFF
+    fi
+
+    # For docker_test.sh
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
 }
 
 openblas_build() {
-    echo "[openblas_build()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[openblas_build()] BASE_IMAGE: ${BASE_IMAGE}"
-    echo "[openblas_build()] CMAKE_VER: ${CMAKE_VER}"
-    echo "[openblas_build()] CCACHE_TAR_NAME: ${CCACHE_TAR_NAME}"
+    openblas_print_env
 
     # Docker build
     pushd "${HOST_OPEN3D_ROOT}"
     docker build --build-arg BASE_IMAGE="${BASE_IMAGE}" \
                  --build-arg CMAKE_VER="${CMAKE_VER}" \
                  --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
+                 --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+                 --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
                  -t "${DOCKER_TAG}" \
                  -f .github/workflows/Dockerfile.openblas .
     popd
@@ -250,30 +288,70 @@ function main () {
     echo "[$(basename $0)] building $1"
     case "$1" in
         # OpenBLAS AMD64
-        # openblas-amd64-py36-dev
-        # openblas-amd64-py37-dev
-        # openblas-amd64-py38-dev
-        # openblas-amd64-py39-dev
-        # openblas-amd64-py36
-        # openblas-amd64-py37
-        # openblas-amd64-py38
-        # openblas-amd64-py39
-        openblas-amd64)
-            openblas-amd64_export_env
+        openblas-amd64-py36-dev)
+            openblas_export_env amd64 py36 dev
+            openblas_build
+            ;;
+        openblas-amd64-py37-dev)
+            openblas_export_env amd64 py37 dev
+            openblas_build
+            ;;
+        openblas-amd64-py38-dev)
+            openblas_export_env amd64 py38 dev
+            openblas_build
+            ;;
+        openblas-amd64-py39-dev)
+            openblas_export_env amd64 py39 dev
+            openblas_build
+            ;;
+        openblas-amd64-py36)
+            openblas_export_env amd64 py36
+            openblas_build
+            ;;
+        openblas-amd64-py37)
+            openblas_export_env amd64 py37
+            openblas_build
+            ;;
+        openblas-amd64-py38)
+            openblas_export_env amd64 py38
+            openblas_build
+            ;;
+        openblas-amd64-py39)
+            openblas_export_env amd64 py39
             openblas_build
             ;;
 
         # OpenBLAS ARM64
-        # openblas-arm64-py36-dev
-        # openblas-arm64-py37-dev
-        # openblas-arm64-py38-dev
-        # openblas-arm64-py39-dev
-        # openblas-arm64-py36
-        # openblas-arm64-py37
-        # openblas-arm64-py38
-        # openblas-arm64-py39
         openblas-arm64-py36-dev)
-            openblas-arm64_export_env
+            openblas_export_env arm64 py36 dev
+            openblas_build
+            ;;
+        openblas-arm64-py37-dev)
+            openblas_export_env arm64 py37 dev
+            openblas_build
+            ;;
+        openblas-arm64-py38-dev)
+            openblas_export_env arm64 py38 dev
+            openblas_build
+            ;;
+        openblas-arm64-py39-dev)
+            openblas_export_env arm64 py39 dev
+            openblas_build
+            ;;
+        openblas-arm64-py36)
+            openblas_export_env arm64 py36
+            openblas_build
+            ;;
+        openblas-arm64-py37)
+            openblas_export_env arm64 py37
+            openblas_build
+            ;;
+        openblas-arm64-py38)
+            openblas_export_env arm64 py38
+            openblas_build
+            ;;
+        openblas-arm64-py39)
+            openblas_export_env arm64 py39
             openblas_build
             ;;
 

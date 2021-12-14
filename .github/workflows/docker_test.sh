@@ -57,13 +57,6 @@ cuda_print_env() {
     echo "[cuda_print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
 }
 
-openblas_print_env() {
-    echo "[openblas_print_env()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[openblas_print_env()] BASE_IMAGE=${BASE_IMAGE}"
-    echo "[openblas_print_env()] CMAKE_VER=${CMAKE_VER}"
-    echo "[openblas_print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
-}
-
 restart_docker_daemon_if_on_gcloud() {
     # Sometimes `docker run` may fail on the second run on Google Cloud with the
     # following erorr:
@@ -180,17 +173,11 @@ case "$1" in
     openblas-amd64)
         openblas-amd64_export_env
         openblas_print_env
-        export BUILD_CUDA_MODULE=OFF
-        export BUILD_PYTORCH_OPS=OFF
-        export BUILD_TENSORFLOW_OPS=OFF
         cpp_python_linking_uninstall_test
         ;;
     openblas-arm64)
         openblas-arm64_export_env
         openblas_print_env
-        export BUILD_CUDA_MODULE=OFF
-        export BUILD_PYTORCH_OPS=OFF
-        export BUILD_TENSORFLOW_OPS=OFF
         cpp_python_linking_uninstall_test
         ;;
     openblas-arm64-wheel)
