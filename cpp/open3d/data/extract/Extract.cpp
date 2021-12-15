@@ -28,6 +28,7 @@
 
 #include <unordered_map>
 
+#include "open3d/data/extract/Zip.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"

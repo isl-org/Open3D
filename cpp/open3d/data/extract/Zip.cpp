@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/data/extract/Zip.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -33,17 +35,11 @@
 
 #include <iostream>
 
-#include "open3d/data/extract/Extract.h"
-#include "open3d/data/extract/minizip/unzip.h"
+#include "open3d/data/extract/ZipImpl.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
-
-#ifdef WIN32
-#define USEWIN32IOAPI
-#include "open3d/data/extract/minizip/iowin32.h"
-#endif
 
 #ifdef WIN32
 #include <direct.h>
@@ -101,7 +97,6 @@ static int ExtractCurrentFile(unzFile uf) {
     if ((*filename_withoutpath) == '\0') {
         if (opt_do_extract_withoutpath == 0) {
             utility::LogDebug("Creating directory: {}", filename_inzip);
-            // mymkdir(filename_inzip);
             utility::filesystem::MakeDirectoryHierarchy(
                     std::string(filename_inzip));
         }
@@ -129,7 +124,6 @@ static int ExtractCurrentFile(unzFile uf) {
                 char c = *(filename_withoutpath - 1);
                 *(filename_withoutpath - 1) = '\0';
 
-                // makedir(write_filename);
                 utility::filesystem::MakeDirectoryHierarchy(
                         std::string(filename_inzip));
 
@@ -223,28 +217,28 @@ bool ExtractFromZIP(const std::string &filename,
     unzFile uf = NULL;
 
     if (!filename.empty()) {
-#ifdef USEWIN32IOAPI
-        zlib_filefunc_def ffunc;
-#endif
+        // #ifdef USEWIN32IOAPI
+        //         zlib_filefunc_def ffunc;
+        // #endif
 
         strncpy(filename_try, filename.c_str(), MAXFILENAME - 1);
         /* strncpy doesnt append the trailing NULL, of the string is too long.
          */
         filename_try[MAXFILENAME] = '\0';
 
-#ifdef USEWIN32IOAPI
-        fill_win32_filefunc(&ffunc);
-        uf = unzOpen2(filename.c_str(), &ffunc);
-#else
+        // #ifdef USEWIN32IOAPI
+        //         fill_win32_filefunc(&ffunc);
+        //         uf = unzOpen2(filename.c_str(), &ffunc);
+        // #else
         uf = unzOpen(filename.c_str());
-#endif
+        // #endif
         if (uf == NULL) {
             strcat(filename_try, ".zip");
-#ifdef USEWIN32IOAPI
-            uf = unzOpen2(filename_try, &ffunc);
-#else
+            // #ifdef USEWIN32IOAPI
+            //             uf = unzOpen2(filename_try, &ffunc);
+            // #else
             uf = unzOpen(filename_try);
-#endif
+            // #endif
         }
     }
 
