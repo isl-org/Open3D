@@ -1212,6 +1212,9 @@ TEST(PointCloud, SegmentPlane) {
 
     // TODO: seed the ransac
     ExpectEQ(plane_model, Eigen::Vector4d(-0.06, -0.10, 0.99, -1.06), 0.1);
+
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 10, 1000);
+    ExpectEQ(plane_model, Eigen::Vector4d(-0.06, -0.10, 0.99, -1.06), 0.1);
 }
 
 TEST(PointCloud, SegmentPlaneKnownPlane) {
@@ -1226,6 +1229,9 @@ TEST(PointCloud, SegmentPlaneKnownPlane) {
     Eigen::Vector4d plane_model;
     std::vector<size_t> inliers;
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 10);
+    ExpectEQ(pcd.SelectByIndex(inliers)->points_, ref);
+
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 4, 10);
     ExpectEQ(pcd.SelectByIndex(inliers)->points_, ref);
 }
 
