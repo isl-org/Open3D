@@ -1247,13 +1247,11 @@ if(USE_BLAS)
             if(RET AND NOT RET EQUAL 0)
                 message(FATAL_ERROR "Failed to run `${gfortran_bin} -print-search-dirs`")
             endif()
-            message(STATUS "gfortran_search_dirs: ${gfortran_search_dirs}")
 
             # Parse gfortran library search directories into CMake list.
             string(REGEX MATCH "libraries: =(.*)" match_result ${gfortran_search_dirs})
             if (match_result)
                 string(REPLACE ":" ";" gfortran_lib_dirs ${CMAKE_MATCH_1})
-                message(STATUS "gfortran_lib_dirs: ${gfortran_lib_dirs}")
             else()
                 message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
             endif()
@@ -1263,7 +1261,7 @@ if(USE_BLAS)
             find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
             find_library(gcc_lib NAMES libgcc.a PATHS ${gfortran_lib_dirs} REQUIRED)
 
-            # -no_compact_unwind is needed to supress compiler warnings.
+            # -no_compact_unwind is needed to suppress compiler warnings.
             target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
 
             target_link_libraries(3rdparty_blas INTERFACE
