@@ -488,8 +488,7 @@ private:
         if (win_z < far_z) {
             auto vp = scene_->GetView()->GetViewport();
             auto point = scene_->GetCamera()->Unproject(
-                    float(x), float(vp[3] - y), win_z, float(vp[2]),
-                    float(vp[3]));
+                    float(x), float(y), win_z, float(vp[2]), float(vp[3]));
             SetCenterOfRotation(point);
             interactor_->Rotate(0, 0);  // update now
         }
