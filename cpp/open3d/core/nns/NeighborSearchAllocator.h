@@ -76,14 +76,20 @@ public:
     }
 
     const TIndex* IndicesPtr() const { return indices_.GetDataPtr<TIndex>(); }
+    TIndex* IndicesPtr_() { return indices_.GetDataPtr<TIndex>(); }
 
     const T* DistancesPtr() const { return distances_.GetDataPtr<T>(); }
+    T* DistancesPtr_() { return distances_.GetDataPtr<T>(); }
 
     const TIndex* CountsPtr() const { return counts_.GetDataPtr<TIndex>(); }
+    TIndex* CountsPtr_() { return counts_.GetDataPtr<TIndex>(); }
 
     const Tensor& NeighborsIndex() const { return indices_; }
+    Tensor& NeighborsIndex_() { return indices_; }
     const Tensor& NeighborsDistance() const { return distances_; }
+    Tensor& NeighborsDistance_() { return distances_; }
     const Tensor& NeighborsCount() const { return counts_; }
+    Tensor& NeighborsCount_() { return counts_; }
 
 private:
     Tensor indices_;

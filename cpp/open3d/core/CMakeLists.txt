@@ -110,7 +110,11 @@ if (BUILD_CUDA_MODULE)
 
     target_sources(core PRIVATE
         nns/KnnSearchOps.cu
+        nns/KnnSearchOpsNew.cu
         nns/FixedRadiusSearchOps.cu
+        nns/blockselect/BlockSelectFloat32.cu
+        nns/blockselect/BlockSelectFloat64.cu
+        nns/BlockSelect.cu
     )
 endif()
 

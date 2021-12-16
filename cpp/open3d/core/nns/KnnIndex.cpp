@@ -133,8 +133,8 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        CALL(float, KnnSearchCUDA)
-        CALL(double, KnnSearchCUDA)
+        CALL(float, KnnSearchCUDANew)
+        CALL(double, KnnSearchCUDANew)
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "

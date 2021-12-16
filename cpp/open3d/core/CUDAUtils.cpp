@@ -286,6 +286,13 @@ int GetCUDACurrentWarpSize() {
     return value;
 }
 
+size_t GetCUDACurrentTotalMemSize() {
+    size_t free;
+    size_t total;
+    OPEN3D_CUDA_CHECK(cudaMemGetInfo(&free, &total));
+    return total;
+}
+
 #endif
 
 }  // namespace core
