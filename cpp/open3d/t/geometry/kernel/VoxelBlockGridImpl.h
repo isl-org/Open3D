@@ -795,7 +795,7 @@ void RayCastCPU
                 if (normal_ptr) {
                     float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
                                       normal_ptr[1] * normal_ptr[1] +
-                                      normal_ptr[2] * normal_ptr[2]);
+                                      normal_ptr[2] * normal_ptr[2]) + 1e-5;
                     w2c_transform_indexer.Rotate(
                             -normal_ptr[0] / norm, -normal_ptr[1] / norm,
                             -normal_ptr[2] / norm, normal_ptr + 0,

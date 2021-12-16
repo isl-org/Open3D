@@ -248,7 +248,7 @@ void CreateNormalMapCPU
 
                     float normal_norm =
                             sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
-                                 normal[2] * normal[2]);
+                                 normal[2] * normal[2]) + 1e-5;
                     normal[0] /= normal_norm;
                     normal[1] /= normal_norm;
                     normal[2] /= normal_norm;
