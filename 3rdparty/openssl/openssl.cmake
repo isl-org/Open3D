@@ -1,40 +1,40 @@
 include(ExternalProject)
 
-if(BUILD_WEBRTC)
-    # boringssl_commit should be consistent with the boringssl used by WEBRTC_COMMIT
-    # in 3rdparty/webrtc/webrtc_build.sh
-    #
-    # 1. Clone the webrtc repo, as described in 3rdparty/webrtc/README.md
-    # 2. Checkout the `WEBRTC_COMMIT`
-    # 3. Run `cd src/third_party` and `git log --name-status -10 boringssl`
-    # 4. Read and understand the commit log. The commit in the boringssl repo is not
-    #    the same as the one used in `third_party`, as the `third_party` repo copies
-    #    the boringssl code and does not use a submodule. Determine the commit id
-    #    of boringssl manually.
-    # 5. googlesource.com's archive does not have the same checksum each time you
-    #    download (strange!), so we cannot compare checksum. Instead, we store the
-    #    archive in open3d_downloads.
-    #    If you want to directly download from googlesource.com, download it from:
-    #    https://boringssl.googlesource.com/boringssl/+archive/${boringssl_commit}.tar.gz
-    set(boringssl_commit edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd)
+# if(BUILD_WEBRTC)
+#     # boringssl_commit should be consistent with the boringssl used by WEBRTC_COMMIT
+#     # in 3rdparty/webrtc/webrtc_build.sh
+#     #
+#     # 1. Clone the webrtc repo, as described in 3rdparty/webrtc/README.md
+#     # 2. Checkout the `WEBRTC_COMMIT`
+#     # 3. Run `cd src/third_party` and `git log --name-status -10 boringssl`
+#     # 4. Read and understand the commit log. The commit in the boringssl repo is not
+#     #    the same as the one used in `third_party`, as the `third_party` repo copies
+#     #    the boringssl code and does not use a submodule. Determine the commit id
+#     #    of boringssl manually.
+#     # 5. googlesource.com's archive does not have the same checksum each time you
+#     #    download (strange!), so we cannot compare checksum. Instead, we store the
+#     #    archive in open3d_downloads.
+#     #    If you want to directly download from googlesource.com, download it from:
+#     #    https://boringssl.googlesource.com/boringssl/+archive/${boringssl_commit}.tar.gz
+#     set(boringssl_commit edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd)
 
-    ExternalProject_Add(
-        ext_openssl
-        PREFIX openssl
-        URL "https://github.com/isl-org/open3d_downloads/releases/download/boringssl-tar/edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd.tar.gz"
-        URL_HASH SHA256=dba55d212edefed049d523c2711177914a83f849fade23c970101d285c3d4906
-        DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/boringssl"
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include <INSTALL_DIR>/include
-    )
+#     ExternalProject_Add(
+#         ext_openssl
+#         PREFIX openssl
+#         URL "https://github.com/isl-org/open3d_downloads/releases/download/boringssl-tar/edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd.tar.gz"
+#         URL_HASH SHA256=dba55d212edefed049d523c2711177914a83f849fade23c970101d285c3d4906
+#         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/boringssl"
+#         CONFIGURE_COMMAND ""
+#         BUILD_COMMAND ""
+#         INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory <SOURCE_DIR>/include <INSTALL_DIR>/include
+#     )
 
-    ExternalProject_Get_Property(ext_openssl INSTALL_DIR)
-    set(OPENSSL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
-    set(OPENSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
-    set(OPENSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
-    set(OPENSSL_ROOT_DIR_FOR_CURL ${INSTALL_DIR})
-else()
+#     ExternalProject_Get_Property(ext_openssl INSTALL_DIR)
+#     set(OPENSSL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
+#     set(OPENSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
+#     set(OPENSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
+#     set(OPENSSL_ROOT_DIR_FOR_CURL ${INSTALL_DIR})
+# else()
     # If you have to build BoringSSL, here's how to do it (install golang first):
     #
     # set(libssl_name    ${CMAKE_STATIC_LIBRARY_PREFIX}ssl${CMAKE_STATIC_LIBRARY_SUFFIX})
@@ -103,5 +103,5 @@ else()
     set(OPENSSL_INCLUDE_DIRS ${OPENSSL_ROOT_DIR_FOR_CURL}/include/) # "/" is critical.
     set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR_FOR_CURL}/lib)
     set(OPENSSL_LIBRARIES ssl crypto)
-endif()
+# endif()
 
