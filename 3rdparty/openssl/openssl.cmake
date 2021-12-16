@@ -86,22 +86,28 @@ include(ExternalProject)
     # set(OPENSSL_LIBRARIES ssl crypto)
     # set(OPENSSL_ROOT_DIR_FOR_CURL ${INSTALL_DIR})
 
-    ExternalProject_Add(
-        ext_openssl
-        PREFIX openssl
-        URL https://github.com/isl-org/open3d_downloads/releases/download/boringssl-bin/boringssl_edfe413_linux_x86_64.tar.gz
-        DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/openssl"
-        UPDATE_COMMAND ""
-        CONFIGURE_COMMAND ""
-        BUILD_COMMAND ""
-        INSTALL_COMMAND ""
-        BUILD_BYPRODUCTS ""
-    )
+ExternalProject_Add(
+    ext_openssl
+    PREFIX openssl
+    URL https://github.com/isl-org/open3d_downloads/releases/download/boringssl-bin/boringssl_edfe413_linux_x86_64.tar.gz
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/openssl"
+    UPDATE_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    BUILD_BYPRODUCTS ""
+)
 
-    ExternalProject_Get_Property(ext_openssl SOURCE_DIR)
-    set(OPENSSL_ROOT_DIR_FOR_CURL ${SOURCE_DIR})
-    set(OPENSSL_INCLUDE_DIRS ${OPENSSL_ROOT_DIR_FOR_CURL}/include/) # "/" is critical.
+ExternalProject_Get_Property(ext_openssl SOURCE_DIR)
+set(OPENSSL_ROOT_DIR_FOR_CURL ${SOURCE_DIR})
+set(OPENSSL_INCLUDE_DIRS ${OPENSSL_ROOT_DIR_FOR_CURL}/include/) # "/" is critical.
+
+if(BUILD_WEBRTC)
+    set(OPENSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
+    set(OPENSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
+else()
     set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR_FOR_CURL}/lib)
     set(OPENSSL_LIBRARIES ssl crypto)
+endif()
 # endif()
 
