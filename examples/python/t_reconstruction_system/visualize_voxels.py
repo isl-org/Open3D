@@ -1,7 +1,7 @@
 import open3d as o3d
 import numpy as np
 
-scale = 4
+scale = 8
 block_voxel_ratio = 4
 
 
