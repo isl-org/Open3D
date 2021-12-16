@@ -11,6 +11,7 @@ endif()
 # - determine "-DCMAKE_USE_OPENSSL=ON"
 # - try windows Debug/Release, static/dynamic runtime, as long as ci passing
 #   otherwise, we'll need different binaries for each case
+#   CMAKE_MSVC_RUNTIME_LIBRARY and build type for Windows
 if(MSVC)
     set(curl_lib_name libcurl)
     set(curl_cmake_extra_args "-DCMAKE_USE_OPENSSL=ON")
