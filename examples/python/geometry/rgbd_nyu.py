@@ -64,7 +64,7 @@ if __name__ == "__main__":
         dir_path + "/../../test_data/RGBD/other_formats/NYU_depth.pgm")
     color = o3d.geometry.Image(color_raw)
     depth = o3d.geometry.Image(depth_raw)
-    rgbd_image = o3d.geometry.RGBDImage.create_from_nyu_format(color, depth)
+    rgbd_image = o3d.geometry.RGBDImage.create_from_nyu_format(color, depth, convert_rgb_to_intensity = False)
     print(rgbd_image)
 
     plt.subplot(1, 2, 1)

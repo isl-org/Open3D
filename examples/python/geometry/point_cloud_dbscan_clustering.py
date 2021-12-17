@@ -26,23 +26,25 @@
 
 import open3d as o3d
 import numpy as np
-import copy
+import matplotlib.pyplot as plt
+import os
+
+dir_path = os.path.dirname(os.path.abspath(__file__))
 
 if __name__ == "__main__":
+    
+    pcd = o3d.io.read_point_cloud(dir_path + "/../../test_data/fragment.ply")
+    # Flip it, otherwise the pointcloud will be upside down
+    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+    
+    with o3d.utility.VerbosityContextManager(
+            o3d.utility.VerbosityLevel.Debug) as cm:
+        labels = np.array(
+            pcd.cluster_dbscan(eps=0.02, min_points=10, print_progress=True))
 
-    mesh = o3d.geometry.TriangleMesh.create_coordinate_frame()
-    T = np.eye(4)
-    T[:3, :3] = mesh.get_rotation_matrix_from_xyz((0, np.pi / 3, np.pi / 2))
-    T[0, 3] = 1
-    T[1, 3] = 1.3
-    print(T)
-    mesh_t = copy.deepcopy(mesh).transform(T)
-    print('Displaying original and transformed geometries ...')
-    o3d.visualization.draw([{
-        "name": "Original Geometry",
-        "geometry": mesh
-    }, {
-        "name": "Transformed Geometry",
-        "geometry": mesh_t
-    }],
-                           show_ui=True)
+    max_label = labels.max()
+    print(f"point cloud has {max_label + 1} clusters")
+    colors = plt.get_cmap("tab20")(labels / (max_label if max_label > 0 else 1))
+    colors[labels < 0] = 0
+    pcd.colors = o3d.utility.Vector3dVector(colors[:, :3])
+    o3d.visualization.draw([pcd])

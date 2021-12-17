@@ -25,32 +25,27 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import matplotlib.pyplot as plt
+import numpy as np
+import sys
 import os
 
+dir_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(dir_path + "/..")
+import open3d_example as o3dex
+
 if __name__ == "__main__":
-    print("Read SUN dataset")
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    color_raw = o3d.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/SUN_color.jpg")
-    depth_raw = o3d.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/SUN_depth.png")
-    rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(
-        color_raw, depth_raw, convert_rgb_to_intensity = False)
-    print(rgbd_image)
 
-    plt.subplot(1, 2, 1)
-    plt.title('SUN grayscale image')
-    plt.imshow(rgbd_image.color, cmap='gray')
-    plt.subplot(1, 2, 2)
-    plt.title('SUN depth image')
-    plt.imshow(rgbd_image.depth)
-    plt.show()
+    gt_mesh = o3dex.get_bunny_mesh()
+    pcd = gt_mesh.sample_points_poisson_disk(5000)
+    # invalidate existing normals
+    pcd.normals = o3d.utility.Vector3dVector(np.zeros((1, 3)))
 
-    pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
-        rgbd_image,
-        o3d.camera.PinholeCameraIntrinsic(
-            o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault))
-    # Flip it, otherwise the pointcloud will be upside down
-    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-    o3d.visualization.draw([pcd])
+    print("Displaying input pointcloud ...")
+    o3d.visualization.draw_geometries([pcd], point_show_normal=True)
+
+    pcd.estimate_normals()
+    print("Displaying pointcloud with normals ...")
+    o3d.visualization.draw_geometries([pcd], point_show_normal=True)
+
+    print("Printing the normal vectors ...")
+    print(np.asarray(pcd.normals))

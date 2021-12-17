@@ -25,13 +25,24 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
+import numpy as np
 import os
 
+dir_path = os.path.dirname(os.path.abspath(__file__))
+
 if __name__ == "__main__":
-    print("Reading pointcloud from file: fragment.pcd")
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    path_to_pcd = dir_path + "/../../test_data/fragment.pcd"
-    pcd = o3d.io.read_point_cloud(path_to_pcd)
-    print(pcd)
-    print("Saving pointcloud to file: copy_of_fragment.pcd")
-    o3d.io.write_point_cloud("copy_of_fragment.pcd", pcd)
+    # Load data
+    pcd = o3d.io.read_point_cloud(dir_path + "/../../test_data/fragment.ply")
+    vol = o3d.visualization.read_selection_polygon_volume(
+        dir_path + "/../../test_data/Crop/cropped.json")
+    chair = vol.crop_point_cloud(pcd)
+
+    chair.paint_uniform_color([0, 0, 1])
+    pcd.paint_uniform_color([1, 0, 0])
+    print ("Displaying the two point clouds used for calculating distance ...")
+    o3d.visualization.draw([pcd, chair])
+
+    dists = pcd.compute_point_cloud_distance(chair)
+    dists = np.asarray(dists)
+    print ("Printing average distance between the two point clouds ...")
+    print (dists)

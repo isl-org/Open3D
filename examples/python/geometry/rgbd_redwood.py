@@ -36,7 +36,7 @@ if __name__ == "__main__":
     depth_raw = o3d.io.read_image(dir_path +
                                   "/../../test_data/RGBD/depth/00000.png")
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
-        color_raw, depth_raw)
+        color_raw, depth_raw, convert_rgb_to_intensity = False)
     print(rgbd_image)
 
     plt.subplot(1, 2, 1)

@@ -25,13 +25,19 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
+import numpy as np
+import sys
 import os
 
+dir_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(dir_path + "/..")
+import open3d_example as o3dex
+
 if __name__ == "__main__":
-    print("Reading image from file: lena_color.jpg")
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    path_to_image = dir_path + "/../../test_data/lena_color.jpg"
-    img = o3d.io.read_image(path_to_image)
-    print(img)
-    print("Saving image to file: copy_of_lena_color.jpg")
-    o3d.io.write_image("copy_of_lena_color.jpg", img)
+
+    print("Displaying pointcloud with convex hull ...")
+    pcl = o3dex.get_bunny_mesh().sample_points_poisson_disk(number_of_points=10000)
+    hull, _ = pcl.compute_convex_hull()
+    hull_ls = o3d.geometry.LineSet.create_from_triangle_mesh(hull)
+    hull_ls.paint_uniform_color((1, 0, 0))
+    o3d.visualization.draw([pcl, hull_ls])
