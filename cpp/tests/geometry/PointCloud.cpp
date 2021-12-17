@@ -1147,7 +1147,7 @@ TEST(PointCloud, ComputeConvexHull) {
     // Degenerate input
     pcd.points_ = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
-    // allow adding random noise to fix the degenerate input
+    // Allow adding random noise to fix the degenerate input
     EXPECT_NO_THROW(pcd.ComputeConvexHull(true));
 
     // Hard-coded test
