@@ -2,8 +2,7 @@
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
-Copyright (c) 2006-2019, assimp team
-
+Copyright (c) 2006-2020, assimp team
 
 All rights reserved.
 
@@ -44,10 +43,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef OBJ_FILEDATA_H_INC
 #define OBJ_FILEDATA_H_INC
 
-#include <vector>
-#include <map>
-#include <assimp/types.h>
 #include <assimp/mesh.h>
+#include <assimp/types.h>
+#include <map>
+#include <vector>
 
 namespace Assimp {
 namespace ObjFile {
@@ -61,7 +60,7 @@ struct Material;
 //! \brief  Data structure for a simple obj-face, describes discredit,l.ation and materials
 // ------------------------------------------------------------------------------------------------
 struct Face {
-    typedef std::vector<unsigned int> IndexArray;
+    using IndexArray = std::vector<unsigned int>;
 
     //! Primitive type
     aiPrimitiveType m_PrimitiveType;
@@ -75,12 +74,8 @@ struct Face {
     Material *m_pMaterial;
 
     //! \brief  Default constructor
-    Face( aiPrimitiveType pt = aiPrimitiveType_POLYGON) 
-    : m_PrimitiveType( pt )
-    , m_vertices()
-    , m_normals()
-    , m_texturCoords()
-    , m_pMaterial( 0L ) {
+    Face(aiPrimitiveType pt = aiPrimitiveType_POLYGON) :
+            m_PrimitiveType(pt), m_vertices(), m_normals(), m_texturCoords(), m_pMaterial(0L) {
         // empty
     }
 
@@ -105,19 +100,16 @@ struct Object {
     //! Transformation matrix, stored in OpenGL format
     aiMatrix4x4 m_Transformation;
     //! All sub-objects referenced by this object
-    std::vector<Object*> m_SubObjects;
+    std::vector<Object *> m_SubObjects;
     /// Assigned meshes
     std::vector<unsigned int> m_Meshes;
 
     //! \brief  Default constructor
-    Object() 
-    : m_strObjName("") {
-        // empty
-    }
+    Object() = default;
 
     //! \brief  Destructor
     ~Object() {
-        for ( std::vector<Object*>::iterator it = m_SubObjects.begin(); it != m_SubObjects.end(); ++it) {
+        for (std::vector<Object *>::iterator it = m_SubObjects.begin(); it != m_SubObjects.end(); ++it) {
             delete *it;
         }
     }
@@ -130,7 +122,6 @@ struct Object {
 struct Material {
     //! Name of material description
     aiString MaterialName;
-
     //! Texture names
     aiString texture;
     aiString textureSpecular;
@@ -201,31 +192,26 @@ struct Material {
     ai_real clearcoat_roughness;
     //! PBR Anisotropy
     ai_real anisotropy;
-    
+
     //! Constructor
-    Material()
-    :   diffuse ( ai_real( 0.6 ), ai_real( 0.6 ), ai_real( 0.6 ) )
-    ,   alpha   (ai_real( 1.0 ) )
-    ,   shineness ( ai_real( 0.0) )
-    ,   illumination_model (1)
-    ,   ior     ( ai_real( 1.0 ) )
-    ,   transparent( ai_real( 1.0), ai_real (1.0), ai_real(1.0))
-    ,   roughness (ai_real(1.0))
-    ,   metallic (ai_real(0.0))
-    ,   sheen (ai_real(0.5))
-    ,   clearcoat_thickness (ai_real(0.0))
-    ,   clearcoat_roughness (ai_real(0.0))
-    ,   anisotropy (ai_real(0.0)) {
-        // empty
-        for (size_t i = 0; i < TextureTypeCount; ++i) {
-            clamp[ i ] = false;
-        }
+    Material() :
+            diffuse(ai_real(0.6), ai_real(0.6), ai_real(0.6)),
+            alpha(ai_real(1.0)),
+            shineness(ai_real(0.0)),
+            illumination_model(1),
+            ior(ai_real(1.0)),
+            transparent(ai_real(1.0), ai_real(1.0), ai_real(1.0)),
+            roughness (ai_real(1.0)),
+            metallic (ai_real(0.0)),
+            sheen (ai_real(0.5)),
+            clearcoat_thickness (ai_real(0.0)),
+            clearcoat_roughness (ai_real(0.0)),
+            anisotropy (ai_real(0.0)) {
+        std::fill_n(clamp, static_cast<unsigned int>(TextureTypeCount), false);
     }
 
     // Destructor
-    ~Material() {
-        // empty
-    }
+    ~Material() = default;
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -237,13 +223,13 @@ struct Mesh {
     /// The name for the mesh
     std::string m_name;
     /// Array with pointer to all stored faces
-    std::vector<Face*> m_Faces;
+    std::vector<Face *> m_Faces;
     /// Assigned material
     Material *m_pMaterial;
     /// Number of stored indices.
     unsigned int m_uiNumIndices;
     /// Number of UV
-    unsigned int m_uiUVCoordinates[ AI_MAX_NUMBER_OF_TEXTURECOORDS ];
+    unsigned int m_uiUVCoordinates[AI_MAX_NUMBER_OF_TEXTURECOORDS];
     /// Material index.
     unsigned int m_uiMaterialIndex;
     /// True, if normals are stored.
@@ -252,20 +238,19 @@ struct Mesh {
     bool m_hasVertexColors;
 
     /// Constructor
-    explicit Mesh( const std::string &name )
-    : m_name( name )
-    , m_pMaterial(NULL)
-    , m_uiNumIndices(0)
-    , m_uiMaterialIndex( NoMaterial )
-    , m_hasNormals(false) {
-        memset(m_uiUVCoordinates, 0, sizeof( unsigned int ) * AI_MAX_NUMBER_OF_TEXTURECOORDS);
+    explicit Mesh(const std::string &name) :
+            m_name(name),
+            m_pMaterial(nullptr),
+            m_uiNumIndices(0),
+            m_uiMaterialIndex(NoMaterial),
+            m_hasNormals(false) {
+        memset(m_uiUVCoordinates, 0, sizeof(unsigned int) * AI_MAX_NUMBER_OF_TEXTURECOORDS);
     }
 
     /// Destructor
     ~Mesh() {
-        for (std::vector<Face*>::iterator it = m_Faces.begin();
-            it != m_Faces.end(); ++it)
-        {
+        for (std::vector<Face *>::iterator it = m_Faces.begin();
+                it != m_Faces.end(); ++it) {
             delete *it;
         }
     }
@@ -273,17 +258,17 @@ struct Mesh {
 
 // ------------------------------------------------------------------------------------------------
 //! \struct Model
-//! \brief  Data structure to store all obj-specific model datas
+//! \brief  Data structure to store all obj-specific model data
 // ------------------------------------------------------------------------------------------------
 struct Model {
-    typedef std::map<std::string, std::vector<unsigned int>* > GroupMap;
-    typedef std::map<std::string, std::vector<unsigned int>* >::iterator GroupMapIt;
-    typedef std::map<std::string, std::vector<unsigned int>* >::const_iterator ConstGroupMapIt;
+    using GroupMap = std::map<std::string, std::vector<unsigned int> *>;
+    using GroupMapIt = std::map<std::string, std::vector<unsigned int> *>::iterator;
+    using ConstGroupMapIt = std::map<std::string, std::vector<unsigned int> *>::const_iterator;
 
     //! Model name
     std::string m_ModelName;
     //! List ob assigned objects
-    std::vector<Object*> m_Objects;
+    std::vector<Object *> m_Objects;
     //! Pointer to current object
     ObjFile::Object *m_pCurrent;
     //! Pointer to current material
@@ -311,47 +296,36 @@ struct Model {
     //! Current mesh instance
     Mesh *m_pCurrentMesh;
     //! Vector with stored meshes
-    std::vector<Mesh*> m_Meshes;
+    std::vector<Mesh *> m_Meshes;
     //! Material map
-    std::map<std::string, Material*> m_MaterialMap;
+    std::map<std::string, Material *> m_MaterialMap;
 
     //! \brief  The default class constructor
     Model() :
-        m_ModelName(""),
-        m_pCurrent(NULL),
-        m_pCurrentMaterial(NULL),
-        m_pDefaultMaterial(NULL),
-        m_pGroupFaceIDs(NULL),
-        m_strActiveGroup(""),
-        m_TextureCoordDim(0),
-        m_pCurrentMesh(NULL)
-    {
+            m_ModelName(),
+            m_pCurrent(nullptr),
+            m_pCurrentMaterial(nullptr),
+            m_pDefaultMaterial(nullptr),
+            m_pGroupFaceIDs(nullptr),
+            m_strActiveGroup(),
+            m_TextureCoordDim(0),
+            m_pCurrentMesh(nullptr) {
         // empty
     }
 
     //! \brief  The class destructor
     ~Model() {
-        // Clear all stored object instances
-        for (std::vector<Object*>::iterator it = m_Objects.begin();
-            it != m_Objects.end(); ++it) {
-            delete *it;
+        for (auto & it : m_Objects) {
+            delete it;
         }
-        m_Objects.clear();
-
-        // Clear all stored mesh instances
-        for (std::vector<Mesh*>::iterator it = m_Meshes.begin();
-            it != m_Meshes.end(); ++it) {
-            delete *it;
+        for (auto & Meshe : m_Meshes) {
+            delete Meshe;
         }
-        m_Meshes.clear();
-
-        for(GroupMapIt it = m_Groups.begin(); it != m_Groups.end(); ++it) {
-            delete it->second;
+        for (auto & Group : m_Groups) {
+            delete Group.second;
         }
-        m_Groups.clear();
-
-        for ( std::map<std::string, Material*>::iterator it = m_MaterialMap.begin(); it != m_MaterialMap.end(); ++it ) {
-            delete it->second;
+        for (auto & it : m_MaterialMap) {
+            delete it.second;
         }
     }
 };
