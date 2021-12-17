@@ -2,8 +2,8 @@ include(ExternalProject)
 include(ProcessorCount)
 ProcessorCount(NPROC)
 
-if(NOT DEFINED OPENSSL_ROOT_DIR_FOR_CURL)
-    message(FATAL_ERROR "OPENSSL_ROOT_DIR_FOR_CURL not set. "
+if(NOT DEFINED OPENSSL_ROOT_DIR)
+    message(FATAL_ERROR "OPENSSL_ROOT_DIR not set. "
                         "Please include openssl.cmake before including this file.")
 endif()
 
@@ -34,7 +34,7 @@ ExternalProject_Add(
         -DCURL_DISABLE_LDAP=ON
         -DCURL_DISABLE_LDAPS=ON
         -DCURL_USE_LIBSSH2=OFF
-        -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR_FOR_CURL}
+        -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}
         ${curl_cmake_extra_args}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS

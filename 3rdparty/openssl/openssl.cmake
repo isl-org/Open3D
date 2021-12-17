@@ -10,9 +10,7 @@ if(APPLE)
     endif()
 elseif(WIN32)
     set(BORINGSSL_URL https://github.com/isl-org/open3d_downloads/releases/download/boringssl-bin/boringssl_edfe413_win_amd64.tar.gz)
-    set(BORINGSSL_SHA256 3baeffb18f2cb3ec9674cbe85415abcdc7a23bc9289aafc6e28eb8656f67136c)
-    # set(BORINGSSL_URL https://github.com/isl-org/open3d_downloads/releases/download/boringssl-bin/_boringssl_edfe413_win_amd64.tar.gz)
-    # set(BORINGSSL_SHA256 fd538d545990a4657ee2b22c444e0baf61edaa1609f84cdfc9217659c44988c4)
+    set(BORINGSSL_SHA256 fd538d545990a4657ee2b22c444e0baf61edaa1609f84cdfc9217659c44988c4)
 else()
     if(LINUX_AARCH64)
         set(BORINGSSL_URL https://github.com/isl-org/open3d_downloads/releases/download/boringssl-bin/boringssl_edfe413_linux_aarch64.tar.gz)
@@ -37,31 +35,17 @@ ExternalProject_Add(
 )
 
 ExternalProject_Get_Property(ext_openssl SOURCE_DIR)
-set(OPENSSL_ROOT_DIR_FOR_CURL ${SOURCE_DIR})
-set(OPENSSL_INCLUDE_DIRS ${OPENSSL_ROOT_DIR_FOR_CURL}/include/) # "/" is critical.
+if(WIN32)
+    set(OPENSSL_ROOT_DIR ${SOURCE_DIR}/$<IF:$<CONFIG:Debug>,Debug,Release>)
+else()
+    set(OPENSSL_ROOT_DIR ${SOURCE_DIR})
+endif()
+set(OPENSSL_INCLUDE_DIRS ${OPENSSL_ROOT_DIR}/include/) # "/" is critical.
 
 if(BUILD_WEBRTC)
     set(OPENSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
     set(OPENSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
 else()
-    set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR_FOR_CURL}/lib)
+    set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR}/lib)
     set(OPENSSL_LIBRARIES ssl crypto)
 endif()
-
-# ExternalProject_Get_Property(ext_openssl SOURCE_DIR)
-# if(WIN32)
-#     # set(OPENSSL_ROOT_DIR_FOR_CURL "${SOURCE_DIR}/$<IF:$<CONFIG:Debug>,Debug,Release>")
-#     # set(OPENSSL_ROOT_DIR_FOR_CURL "${SOURCE_DIR}/Debug")
-#     set(OPENSSL_ROOT_DIR_FOR_CURL "C:/Users/yixing/repo/Open3D/build/openssl/src/ext_openssl/Debug")
-# else()
-#     set(OPENSSL_ROOT_DIR_FOR_CURL ${SOURCE_DIR})
-# endif()
-# set(OPENSSL_INCLUDE_DIRS ${OPENSSL_ROOT_DIR_FOR_CURL}/include/) # "/" is critical.
-
-# if(BUILD_WEBRTC)
-#     set(OPENSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
-#     set(OPENSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
-# else()
-#     set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR_FOR_CURL}/lib)
-#     set(OPENSSL_LIBRARIES ssl crypto)
-# endif()
