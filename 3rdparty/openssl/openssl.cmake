@@ -45,3 +45,21 @@ else()
     set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR_FOR_CURL}/lib)
     set(OPENSSL_LIBRARIES ssl crypto)
 endif()
+
+# ExternalProject_Get_Property(ext_openssl SOURCE_DIR)
+# if(WIN32)
+#     # set(OPENSSL_ROOT_DIR_FOR_CURL "${SOURCE_DIR}/$<IF:$<CONFIG:Debug>,Debug,Release>")
+#     # set(OPENSSL_ROOT_DIR_FOR_CURL "${SOURCE_DIR}/Debug")
+#     set(OPENSSL_ROOT_DIR_FOR_CURL "C:/Users/yixing/repo/Open3D/build/openssl/src/ext_openssl/Debug")
+# else()
+#     set(OPENSSL_ROOT_DIR_FOR_CURL ${SOURCE_DIR})
+# endif()
+# set(OPENSSL_INCLUDE_DIRS ${OPENSSL_ROOT_DIR_FOR_CURL}/include/) # "/" is critical.
+
+# if(BUILD_WEBRTC)
+#     set(OPENSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
+#     set(OPENSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
+# else()
+#     set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR_FOR_CURL}/lib)
+#     set(OPENSSL_LIBRARIES ssl crypto)
+# endif()
