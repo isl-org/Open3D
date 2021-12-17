@@ -62,7 +62,10 @@ import open3d as o3d
 from open3d.visualization.tensorboard_plugin import plugin_data_pb2
 from open3d.visualization.tensorboard_plugin import metadata
 from open3d.visualization.tensorboard_plugin.util import _log
-from open3d.ml.vis import BoundingBox3D
+try:
+    from open3d.ml.vis import BoundingBox3D
+except ImportError:
+    BoundingBox3D = None
 
 
 class _AsyncDataWriter:
@@ -329,6 +332,9 @@ def _convert_bboxes(bboxes):
         pair of dicts: geometry property dictionary, dict with labels and
         confidences. Confidence values are cast to float32.
     """
+    if BoundingBox3D is None:
+        raise AttributeError(
+            "Build Open3D with 3DML to enable writing BoundingBox3D")
 
     def append_key_values(dict1, dict2):
         for key, val2 in dict2.items():

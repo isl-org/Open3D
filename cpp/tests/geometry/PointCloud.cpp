@@ -1144,6 +1144,12 @@ TEST(PointCloud, ComputeConvexHull) {
     pcd.points_ = {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}};
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
 
+    // Degenerate input
+    pcd.points_ = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    // Allow adding random noise to fix the degenerate input
+    EXPECT_NO_THROW(pcd.ComputeConvexHull(true));
+
     // Hard-coded test
     pcd.points_ = {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}};
     std::tie(mesh, pt_map) = pcd.ComputeConvexHull();
