@@ -529,7 +529,7 @@ AxisAlignedBoundingBox Octree::GetAxisAlignedBoundingBox() const {
     return box;
 }
 
-OrientedBoundingBox Octree::GetOrientedBoundingBox() const {
+OrientedBoundingBox Octree::GetOrientedBoundingBox(bool) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
             GetAxisAlignedBoundingBox());
 }
