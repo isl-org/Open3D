@@ -14,7 +14,7 @@ ${boringssl_commit_short} = ${boringssl_commit}.SubString(0,7)
 ${script_dir} = "${PSScriptRoot}"
 ${install_dir} = "${script_dir}\boringssl_install"
 ${boringssl_dir} = "${script_dir}\boringssl"
-${tar_name} = "boringssl_${boringssl_commit_short}_win_${env:PROCESSOR_ARCHITECTURE}.tar.gz".ToLower()
+${boringssl_build_dir} = "${script_dir}\boringssl\build"
 
 function Remove-Dir($dir_path) {
     # https://stackoverflow.com/a/9012108/1255535
@@ -31,10 +31,9 @@ cd "${boringssl_dir}"
 git fetch --depth 1 origin ${boringssl_commit}
 git checkout FETCH_HEAD
 
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Release `
-      -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 `
+mkdir ${boringssl_build_dir}
+cd ${boringssl_build_dir}
+cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 `
       -DCMAKE_POSITION_INDEPENDENT_CODE=ON `
       -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW `
       -DCMAKE_POLICY_DEFAULT_CMP0063:STRING=NEW `
@@ -43,11 +42,22 @@ cmake -DCMAKE_BUILD_TYPE=Release `
       -DCMAKE_C_VISIBILITY_PRESET=hidden `
       -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON `
       ..
+
+# Release
+${tar_name} = "boringssl_${boringssl_commit_short}_win_release_${env:PROCESSOR_ARCHITECTURE}.tar.gz".ToLower()
 cmake --build . --config Release --parallel ${NPROC} --target ssl crypto
 cmake -E copy_directory ..\include                ${install_dir}\include
 cmake -E copy           ssl\Release\ssl.lib       ${install_dir}\lib\ssl.lib
 cmake -E copy           crypto\Release\crypto.lib ${install_dir}\lib\crypto.lib
+cd ${script_dir}
+tar -C ${install_dir} -czvf ${tar_name} include lib
 
+# Debug
+${tar_name} = "boringssl_${boringssl_commit_short}_win_debug_${env:PROCESSOR_ARCHITECTURE}.tar.gz".ToLower()
+cmake --build . --config Debug --parallel ${NPROC} --target ssl crypto
+cmake -E copy_directory ..\include                ${install_dir}\include
+cmake -E copy           ssl\Debug\ssl.lib       ${install_dir}\lib\ssl.lib
+cmake -E copy           crypto\Debug\crypto.lib ${install_dir}\lib\crypto.lib
 cd ${script_dir}
 tar -C ${install_dir} -czvf ${tar_name} include lib
 
