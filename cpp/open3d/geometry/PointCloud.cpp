@@ -673,8 +673,8 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
 }
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-PointCloud::ComputeConvexHull() const {
-    return Qhull::ComputeConvexHull(points_);
+PointCloud::ComputeConvexHull(bool joggle_inputs) const {
+    return Qhull::ComputeConvexHull(points_, joggle_inputs);
 }
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
