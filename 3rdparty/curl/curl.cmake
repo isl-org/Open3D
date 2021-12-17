@@ -14,7 +14,6 @@ endif()
 #   CMAKE_MSVC_RUNTIME_LIBRARY and build type for Windows
 if(MSVC)
     set(curl_lib_name libcurl)
-    set(curl_cmake_extra_args "-DCMAKE_USE_OPENSSL=ON")
 else()
     set(curl_lib_name curl)
 endif()
@@ -28,6 +27,7 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/curl"
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        -DCMAKE_USE_OPENSSL=ON
         -DBUILD_SHARED_LIBS=OFF
         -DBUILD_CURL_EXE=OFF
         -DBUILD_TESTING=OFF
@@ -35,7 +35,6 @@ ExternalProject_Add(
         -DCURL_DISABLE_LDAPS=ON
         -DCMAKE_USE_LIBSSH2=OFF
         -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}
-        ${curl_cmake_extra_args}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${curl_lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
