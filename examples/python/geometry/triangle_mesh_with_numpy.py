@@ -25,32 +25,43 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import matplotlib.pyplot as plt
+import numpy as np
 import os
+import sys
+
+dir_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(dir_path + "/..")
+import open3d_example as o3dex
 
 if __name__ == "__main__":
-    print("Read Redwood dataset")
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    color_raw = o3d.io.read_image(dir_path +
-                                  "/../../test_data/RGBD/color/00000.jpg")
-    depth_raw = o3d.io.read_image(dir_path +
-                                  "/../../test_data/RGBD/depth/00000.png")
-    rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
-        color_raw, depth_raw, convert_rgb_to_intensity = False)
-    print(rgbd_image)
+    # Read a mesh and get its data as numpy arrays.
+    mesh = o3dex.get_knot_mesh()
+    mesh.paint_uniform_color([0.5, 0.1, 0.3])
+    print('Vertices:')
+    print(np.asarray(mesh.vertices))
+    print('Vertex Colors:')
+    print(np.asarray(mesh.vertex_colors))
+    print('Vertex Normals:')
+    print(np.asarray(mesh.vertex_normals))
+    print('Triangles:')
+    print(np.asarray(mesh.triangles))
+    print('Triangle Normals:')
+    print(np.asarray(mesh.triangle_normals))
+    print("Displaying mesh ...")
+    print(mesh)
+    o3d.visualization.draw([mesh])
 
-    plt.subplot(1, 2, 1)
-    plt.title('Redwood grayscale image')
-    plt.imshow(rgbd_image.color, cmap='gray')
-    plt.subplot(1, 2, 2)
-    plt.title('Redwood depth image')
-    plt.imshow(rgbd_image.depth)
-    plt.show()
-
-    pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
-        rgbd_image,
-        o3d.camera.PinholeCameraIntrinsic(
-            o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault))
-    # Flip it, otherwise the pointcloud will be upside down
-    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-    o3d.visualization.draw([pcd])
+    # Create a mesh using numpy arrays with random colors.
+    N = 5
+    vertices = o3d.utility.Vector3dVector(
+        np.array([[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1], [0.5, 0.5, 0.5]]))
+    triangles = o3d.utility.Vector3iVector(
+        np.array([[0, 1, 2], [0, 2, 3], [0, 4, 1], [1, 4, 2], [2, 4, 3],
+                  [3, 4, 0]]))
+    mesh_np = o3d.geometry.TriangleMesh(vertices, triangles)
+    mesh_np.vertex_colors = o3d.utility.Vector3dVector(
+        np.random.uniform(0, 1, size=(N, 3)))
+    mesh_np.compute_vertex_normals()
+    print(np.asarray(mesh_np.triangle_normals))
+    print("Displaying mesh made using numpy ...")
+    o3d.visualization.draw_geometries([mesh_np])

@@ -31,12 +31,15 @@ dir_path = os.path.dirname(os.path.abspath(__file__))
 
 if __name__ == "__main__":
     pcd = o3d.io.read_point_cloud(dir_path + "/../../test_data/fragment.ply")
-    # Flip it, otherwise the pointcloud will be upside down
+    # Flip it, otherwise the pointcloud will be upside down.
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
     print(pcd)
     axis_aligned_bounding_box = pcd.get_axis_aligned_bounding_box()
     axis_aligned_bounding_box.color = (1, 0, 0)
     oriented_bounding_box = pcd.get_oriented_bounding_box()
     oriented_bounding_box.color = (0, 1, 0)
-    print ("Displaying axis_aligned_bounding_box in red and oriented bounding box in green ...")
-    o3d.visualization.draw([pcd, axis_aligned_bounding_box, oriented_bounding_box])
+    print(
+        "Displaying axis_aligned_bounding_box in red and oriented bounding box in green ..."
+    )
+    o3d.visualization.draw(
+        [pcd, axis_aligned_bounding_box, oriented_bounding_box])

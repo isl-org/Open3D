@@ -40,9 +40,9 @@ if __name__ == "__main__":
     o3d.visualization.draw([mesh])
 
     print("Displaying pointcloud using uniform sampling ...")
-    pcd = mesh.sample_points_uniformly(number_of_points=500)
-    o3d.visualization.draw([pcd])
+    pcd = mesh.sample_points_uniformly(number_of_points=1000)
+    o3d.visualization.draw([pcd], point_size=5)
 
     print("Displaying pointcloud using Poisson disk sampling ...")
-    pcd = mesh.sample_points_poisson_disk(number_of_points=500, init_factor=5)
-    o3d.visualization.draw_geometries([pcd])
+    pcd = mesh.sample_points_poisson_disk(number_of_points=1000, init_factor=5)
+    o3d.visualization.draw([pcd], point_size=5)

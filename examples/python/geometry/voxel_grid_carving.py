@@ -79,13 +79,11 @@ def voxel_carving(mesh,
                   cubic_size,
                   voxel_resolution,
                   w=300,
-                  h=300,
-                  usevoxel_carving_depth=True,
-                  surface_method='pointcloud'):
+                  h=300):
     mesh.compute_vertex_normals()
     camera_sphere = o3d.io.read_triangle_mesh(camera_path)
 
-    # setup dense voxel grid
+    # Setup dense voxel grid.
     voxel_carving = o3d.geometry.VoxelGrid.create_dense(
         width=cubic_size,
         height=cubic_size,
@@ -94,11 +92,11 @@ def voxel_carving(mesh,
         origin=[-cubic_size / 2.0, -cubic_size / 2.0, -cubic_size / 2.0],
         color=[1.0, 0.7, 0.0])
 
-    # rescale geometry
+    # Rescale geometry.
     camera_sphere = preprocess(camera_sphere)
     mesh = preprocess(mesh)
 
-    # setup visualizer to render depthmaps
+    # Setup visualizer to render depthmaps.
     vis = o3d.visualization.Visualizer()
     vis.create_window(width=w, height=h, visible=False)
     vis.add_geometry(mesh)
@@ -106,26 +104,23 @@ def voxel_carving(mesh,
     ctr = vis.get_view_control()
     param = ctr.convert_to_pinhole_camera_parameters()
 
-    # carve voxel grid
+    # Carve voxel grid.
     centers_pts = np.zeros((len(camera_sphere.vertices), 3))
     for cid, xyz in enumerate(camera_sphere.vertices):
-        # get new camera pose
+        # Get new camera pose.
         trans = get_extrinsic(xyz)
         param.extrinsic = trans
         c = np.linalg.inv(trans).dot(np.asarray([0, 0, 0, 1]).transpose())
         centers_pts[cid, :] = c[:3]
         ctr.convert_from_pinhole_camera_parameters(param)
 
-        # capture depth image and make a point cloud
+        # Capture depth image and make a point cloud.
         vis.poll_events()
         vis.update_renderer()
         depth = vis.capture_depth_float_buffer(False)
 
-        # depth map carving method
-        if usevoxel_carving_depth:
-            voxel_carving.carve_depth_map(o3d.geometry.Image(depth), param)
-        else:
-            voxel_carving.carve_silhouette(o3d.geometry.Image(depth), param)
+        # Depth map carving method.
+        voxel_carving.carve_depth_map(o3d.geometry.Image(depth), param)
         print("Carve view %03d/%03d" % (cid + 1, len(camera_sphere.vertices)))
     vis.destroy_window()
 
@@ -138,12 +133,11 @@ if __name__ == "__main__":
 
     output_filename = dir_path + "/../../test_data/voxelized.ply"
     camera_path = dir_path + "/../../test_data/sphere.ply"
-    visualization = True
     cubic_size = 2.0
     voxel_resolution = 128.0
 
-    voxel_carving = voxel_carving(mesh, output_filename, camera_path,
+    carved_voxels = voxel_carving(mesh, output_filename, camera_path,
                                   cubic_size, voxel_resolution)
-    print("carved voxels")
-    print(voxel_carving)
-    o3d.visualization.draw([voxel_carving])
+    print("Carved voxels ...")
+    print(carved_voxels)
+    o3d.visualization.draw([carved_voxels])

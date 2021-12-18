@@ -28,6 +28,7 @@ import open3d as o3d
 import numpy as np
 import copy
 
+
 def translate():
     mesh = o3d.geometry.TriangleMesh.create_coordinate_frame()
     mesh_tx = copy.deepcopy(mesh).translate((1.3, 0, 0))
@@ -61,6 +62,7 @@ def rotate():
     }],
                            show_ui=True)
 
+
 def scale():
     mesh = o3d.geometry.TriangleMesh.create_coordinate_frame()
     mesh_s = copy.deepcopy(mesh).translate((2, 0, 0))
@@ -74,6 +76,7 @@ def scale():
         "geometry": mesh_s
     }],
                            show_ui=True)
+
 
 def transform():
     mesh = o3d.geometry.TriangleMesh.create_coordinate_frame()
@@ -100,4 +103,3 @@ if __name__ == "__main__":
     rotate()
     scale()
     transform()
-    

@@ -36,7 +36,7 @@ import open3d_example as o3dex
 if __name__ == "__main__":
     mesh = o3dex.get_knot_mesh()
     print("Displaying mesh without normals ...")
-    # invalidate existing normals
+    # Invalidate existing normals.
     mesh.triangle_normals = o3d.utility.Vector3dVector(np.zeros((1, 3)))
     print("normals: \n", np.asarray(mesh.triangle_normals))
     o3d.visualization.draw_geometries([mesh])

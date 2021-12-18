@@ -26,10 +26,23 @@
 
 import open3d as o3d
 import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import os
 import re
+
+
+def visualize_rgbd(rgbd_image):
+    print(rgbd_image)
+
+    o3d.visualization.draw_geometries([rgbd_image])
+
+    pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
+        rgbd_image,
+        o3d.camera.PinholeCameraIntrinsic(
+            o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault))
+    # Flip it, otherwise the pointcloud will be upside down.
+    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+    o3d.visualization.draw_geometries([pcd])
 
 
 # This is special function used for reading NYU pgm format
@@ -53,7 +66,7 @@ def read_nyu_pgm(filename, byteorder='>'):
     return img_out
 
 
-if __name__ == "__main__":
+def nyu_dataset():
     print("Read NYU dataset")
     # Open3D does not support ppm/pgm file yet. Not using o3d.io.read_image here.
     # MathplotImage having some ISSUE with NYU pgm file. Not using imread for pgm.
@@ -64,21 +77,57 @@ if __name__ == "__main__":
         dir_path + "/../../test_data/RGBD/other_formats/NYU_depth.pgm")
     color = o3d.geometry.Image(color_raw)
     depth = o3d.geometry.Image(depth_raw)
-    rgbd_image = o3d.geometry.RGBDImage.create_from_nyu_format(color, depth, convert_rgb_to_intensity = False)
-    print(rgbd_image)
+    rgbd_image = o3d.geometry.RGBDImage.create_from_nyu_format(
+        color, depth, convert_rgb_to_intensity=False)
 
-    plt.subplot(1, 2, 1)
-    plt.title('NYU grayscale image')
-    plt.imshow(rgbd_image.color, cmap='gray')
-    plt.subplot(1, 2, 2)
-    plt.title('NYU depth image')
-    plt.imshow(rgbd_image.depth)
-    plt.show()
+    print("Displaying NYU color and depth images and pointcloud ...")
+    visualize_rgbd(rgbd_image)
 
-    pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
-        rgbd_image,
-        o3d.camera.PinholeCameraIntrinsic(
-            o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault))
-    # Flip it, otherwise the pointcloud will be upside down
-    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-    o3d.visualization.draw([pcd])
+
+def redwood_dataset():
+    print("Read Redwood dataset")
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    color_raw = o3d.io.read_image(dir_path +
+                                  "/../../test_data/RGBD/color/00000.jpg")
+    depth_raw = o3d.io.read_image(dir_path +
+                                  "/../../test_data/RGBD/depth/00000.png")
+    rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
+        color_raw, depth_raw, convert_rgb_to_intensity=False)
+
+    print("Displaying Redwood color and depth images and pointcloud ...")
+    visualize_rgbd(rgbd_image)
+
+
+def sun_dataset():
+    print("Read SUN dataset")
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    color_raw = o3d.io.read_image(
+        dir_path + "/../../test_data/RGBD/other_formats/SUN_color.jpg")
+    depth_raw = o3d.io.read_image(
+        dir_path + "/../../test_data/RGBD/other_formats/SUN_depth.png")
+    rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(
+        color_raw, depth_raw, convert_rgb_to_intensity=False)
+
+    print("Displaying SUN color and depth images and pointcloud ...")
+    visualize_rgbd(rgbd_image)
+
+
+def tum_dataset():
+    print("Read TUM dataset")
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    color_raw = o3d.io.read_image(
+        dir_path + "/../../test_data/RGBD/other_formats/TUM_color.png")
+    depth_raw = o3d.io.read_image(
+        dir_path + "/../../test_data/RGBD/other_formats/TUM_depth.png")
+    rgbd_image = o3d.geometry.RGBDImage.create_from_tum_format(
+        color_raw, depth_raw, convert_rgb_to_intensity=False)
+
+    print("Displaying TUM color and depth images and pointcloud ...")
+    visualize_rgbd(rgbd_image)
+
+
+if __name__ == "__main__":
+    nyu_dataset()
+    redwood_dataset()
+    sun_dataset()
+    tum_dataset()

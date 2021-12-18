@@ -29,7 +29,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    # Create meshes and convert to open3d.t.geometry.TriangleMesh
+    # Create meshes and convert to open3d.t.geometry.TriangleMesh .
     cube = o3d.geometry.TriangleMesh.create_box().translate([0, 0, 0])
     cube = o3d.t.geometry.TriangleMesh.from_legacy(cube)
     torus = o3d.geometry.TriangleMesh.create_torus().translate([0, 0, 2])
@@ -51,11 +51,11 @@ if __name__ == "__main__":
         width_px=640,
         height_px=480,
     )
-    # Ee can directly pass the rays tensor to the cast_rays function.
+    # We can directly pass the rays tensor to the cast_rays function.
     ans = scene.cast_rays(rays)
     plt.imshow(ans['t_hit'].numpy())
     plt.show()
     plt.imshow(np.abs(ans['primitive_normals'].numpy()))
     plt.show()
-    plt.imshow(np.abs(ans['geometry ids'].numpy()))
+    plt.imshow(np.abs(ans['geometry_ids'].numpy()), vmax=3)
     plt.show()

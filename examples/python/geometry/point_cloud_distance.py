@@ -31,7 +31,6 @@ import os
 dir_path = os.path.dirname(os.path.abspath(__file__))
 
 if __name__ == "__main__":
-    # Load data
     pcd = o3d.io.read_point_cloud(dir_path + "/../../test_data/fragment.ply")
     vol = o3d.visualization.read_selection_polygon_volume(
         dir_path + "/../../test_data/Crop/cropped.json")
@@ -39,10 +38,10 @@ if __name__ == "__main__":
 
     chair.paint_uniform_color([0, 0, 1])
     pcd.paint_uniform_color([1, 0, 0])
-    print ("Displaying the two point clouds used for calculating distance ...")
+    print("Displaying the two point clouds used for calculating distance ...")
     o3d.visualization.draw([pcd, chair])
 
     dists = pcd.compute_point_cloud_distance(chair)
     dists = np.asarray(dists)
-    print ("Printing average distance between the two point clouds ...")
-    print (dists)
+    print("Printing average distance between the two point clouds ...")
+    print(dists)

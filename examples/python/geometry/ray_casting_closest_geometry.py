@@ -42,14 +42,14 @@ if __name__ == "__main__":
         o3d.geometry.TriangleMesh.create_sphere(0.5).translate([0.7, 0.8, 0]))
 
     scene = o3d.t.geometry.RaycastingScene()
-    # Add triangle meshes and remember ids
+    # Add triangle meshes and remember ids.
     mesh_ids = {}
     mesh_ids[scene.add_triangles(cube)] = 'cube'
     mesh_ids[scene.add_triangles(sphere)] = 'sphere'
 
-    # compute range
+    # Compute range.
     xyz_range = np.linspace([-2, -2, -2], [2, 2, 2], num=64)
-    # query_points is a [64,64,64,3] array ..
+    # Query_points is a [64,64,64,3] array.
     query_points = np.stack(np.meshgrid(*xyz_range.T),
                             axis=-1).astype(np.float32)
     closest_points = scene.compute_closest_points(query_points)
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     signed_distance = distance
     closest_geometry = closest_points['geometry_ids'].numpy()
 
-    # We can visualize the slices of the distance field and closest geometry directly with matplotlib
+    # We can visualize the slices of the distance field and closest geometry directly with matplotlib.
     fig, axes = plt.subplots(1, 2)
 
     def show_slices(i=int):

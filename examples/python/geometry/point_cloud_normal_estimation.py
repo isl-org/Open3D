@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     gt_mesh = o3dex.get_bunny_mesh()
     pcd = gt_mesh.sample_points_poisson_disk(5000)
-    # invalidate existing normals
+    # Invalidate existing normals.
     pcd.normals = o3d.utility.Vector3dVector(np.zeros((1, 3)))
 
     print("Displaying input pointcloud ...")

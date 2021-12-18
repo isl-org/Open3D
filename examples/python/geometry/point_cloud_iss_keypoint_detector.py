@@ -34,7 +34,7 @@ sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-    # Compute ISS Keypoints on Armadillo
+    # Compute ISS Keypoints on armadillo pointcloud.
     mesh = o3dex.get_armadillo_mesh()
     pcd = o3d.geometry.PointCloud()
     pcd.points = mesh.vertices

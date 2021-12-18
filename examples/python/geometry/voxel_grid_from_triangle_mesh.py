@@ -36,7 +36,7 @@ import open3d_example as o3dex
 if __name__ == "__main__":
 
     mesh = o3dex.get_bunny_mesh()
-    # fit to unit cube
+    # Fit to unit cube.
     mesh.scale(1 / np.max(mesh.get_max_bound() - mesh.get_min_bound()),
                center=mesh.get_center())
     print('Displaying input mesh ...')

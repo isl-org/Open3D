@@ -28,8 +28,8 @@ import open3d as o3d
 import numpy as np
 
 if __name__ == "__main__":
-    # Generate some neat n times 3 matrix using a variant of sync function
-    x = np.linspace(-3, 3, 401)
+    # Generate some n x 3 matrix using a variant of sync function.
+    x = np.linspace(-3, 3, 201)
     mesh_x, mesh_y = np.meshgrid(x, x)
     z = np.sinc((np.power(mesh_x, 2) + np.power(mesh_y, 2)))
     z_norm = (z - z.min()) / (z.max() - z.min())
@@ -40,16 +40,17 @@ if __name__ == "__main__":
     print("Printing numpy array used to make Open3D pointcloud ...")
     print(xyz)
 
-    # Pass xyz to Open3D.o3d.geometry.PointCloud and visualize
+    # Pass xyz to Open3D.o3d.geometry.PointCloud and visualize.
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(xyz)
-    # add color and estimate normals for better visualization
+    # Add color and estimate normals for better visualization.
     pcd.paint_uniform_color([0.5, 0.5, 0.5])
     pcd.estimate_normals()
+    pcd.orient_normals_consistent_tangent_plane(1)
     print("Displaying Open3D pointcloud made using numpy array ...")
-    o3d.visualization.draw_geometries([pcd])
+    o3d.visualization.draw([pcd])
 
-    # Convert Open3D.o3d.geometry.PointCloud to numpy array
+    # Convert Open3D.o3d.geometry.PointCloud to numpy array.
     xyz_converted = np.asarray(pcd.points)
     print("Printing numpy array made using Open3D pointcloud ...")
     print(xyz_converted)

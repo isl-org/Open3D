@@ -34,6 +34,7 @@ dir_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
+
 def translate():
     pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(5000)
     pcd_tx = copy.deepcopy(pcd).translate((150, 0, 0))
@@ -67,6 +68,7 @@ def rotate():
     }],
                            show_ui=True)
 
+
 def scale():
     pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(5000)
     pcd_s = copy.deepcopy(pcd).translate((200, 0, 0))
@@ -80,6 +82,7 @@ def scale():
         "geometry": pcd_s
     }],
                            show_ui=True)
+
 
 def transform():
     pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(5000)

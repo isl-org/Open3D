@@ -52,7 +52,7 @@ if __name__ == "__main__":
         mesh += cube
     mesh.compute_vertex_normals()
     print("Displaying input mesh ...")
-    o3d.visualization.draw_geometries([mesh])
+    o3d.visualization.draw([mesh])
 
     print("Clustering connected triangles ...")
     with o3d.utility.VerbosityContextManager(
@@ -67,4 +67,4 @@ if __name__ == "__main__":
     mesh_0 = copy.deepcopy(mesh)
     triangles_to_remove = cluster_n_triangles[triangle_clusters] < 100
     mesh_0.remove_triangles_by_mask(triangles_to_remove)
-    o3d.visualization.draw_geometries([mesh_0])
+    o3d.visualization.draw([mesh_0])

@@ -25,32 +25,46 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import matplotlib.pyplot as plt
+import numpy as np
 import os
+import sys
+
+dir_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(dir_path + "/..")
+
+
+def radius_search():
+    print("Loading pointcloud ...")
+    path_to_pcd = dir_path + "/../../test_data/fragment.pcd"
+    pcd = o3d.io.read_point_cloud(path_to_pcd)
+    pcd_tree = o3d.geometry.KDTreeFlann(pcd)
+
+    print(
+        "Find the neighbors of 50000th point with distance less than 0.2, and painting them green ..."
+    )
+    [k, idx, _] = pcd_tree.search_radius_vector_3d(pcd.points[50000], 0.2)
+    np.asarray(pcd.colors)[idx[1:], :] = [0, 1, 0]
+
+    print("Displaying the final point cloud ...\n")
+    o3d.visualization.draw([pcd])
+
+
+def knn_search():
+    print("Loading pointcloud ...")
+    path_to_pcd = dir_path + "/../../test_data/fragment.pcd"
+    pcd = o3d.io.read_point_cloud(path_to_pcd)
+    pcd_tree = o3d.geometry.KDTreeFlann(pcd)
+
+    print(
+        "Find the 2000 nearest neighbors of 50000th point, and painting them red ..."
+    )
+    [k, idx, _] = pcd_tree.search_knn_vector_3d(pcd.points[50000], 2000)
+    np.asarray(pcd.colors)[idx[1:], :] = [1, 0, 0]
+
+    print("Displaying the final point cloud ...\n")
+    o3d.visualization.draw([pcd])
+
 
 if __name__ == "__main__":
-    print("Read SUN dataset")
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    color_raw = o3d.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/SUN_color.jpg")
-    depth_raw = o3d.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/SUN_depth.png")
-    rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(
-        color_raw, depth_raw, convert_rgb_to_intensity = False)
-    print(rgbd_image)
-
-    plt.subplot(1, 2, 1)
-    plt.title('SUN grayscale image')
-    plt.imshow(rgbd_image.color, cmap='gray')
-    plt.subplot(1, 2, 2)
-    plt.title('SUN depth image')
-    plt.imshow(rgbd_image.depth)
-    plt.show()
-
-    pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
-        rgbd_image,
-        o3d.camera.PinholeCameraIntrinsic(
-            o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault))
-    # Flip it, otherwise the pointcloud will be upside down
-    pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-    o3d.visualization.draw([pcd])
+    knn_search()
+    radius_search()

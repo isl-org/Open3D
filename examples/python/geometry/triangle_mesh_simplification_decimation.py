@@ -35,17 +35,15 @@ import open3d_example as o3dex
 
 if __name__ == "__main__":
     mesh_in = o3dex.get_bunny_mesh()
-    print("\nBefore Simplification: ", mesh_in)
+    print("Before Simplification: ", mesh_in)
     o3d.visualization.draw_geometries([mesh_in])
 
     mesh_smp = mesh_in.simplify_quadric_decimation(
         target_number_of_triangles=6500)
-    print("\nAfter Simplification target number of triangles = 6500:\n",
-          mesh_smp)
+    print("After Simplification target number of triangles = 6500:\n", mesh_smp)
     o3d.visualization.draw_geometries([mesh_smp])
 
     mesh_smp = mesh_in.simplify_quadric_decimation(
         target_number_of_triangles=1700)
-    print("\nAfter Simplification target number of triangles = 1700:\n",
-          mesh_smp)
+    print("After Simplification target number of triangles = 1700:\n", mesh_smp)
     o3d.visualization.draw_geometries([mesh_smp])

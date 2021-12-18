@@ -48,9 +48,7 @@ def edges_to_lineset(mesh, edges, color):
     ls = o3d.geometry.LineSet()
     ls.points = mesh.vertices
     ls.lines = edges
-    colors = np.empty((np.asarray(edges).shape[0], 3))
-    colors[:] = color
-    ls.colors = o3d.utility.Vector3dVector(colors)
+    ls.paint_uniform_color(color)
     return ls
 
 
