@@ -752,7 +752,7 @@ endif()
 # - Curl should be linked before PNG, otherwise it will have undefined symbols.
 # - openssl.cmake needs to be included before curl.cmake, for the
 #   OPENSSL_ROOT_DIR variable.
-include(${Open3D_3RDPARTY_DIR}/openssl/openssl.cmake)
+include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
 include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
 open3d_import_3rdparty_library(3rdparty_curl
     INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
@@ -770,7 +770,7 @@ if(APPLE)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
-# OpenSSL (or, BoringSSL if BUILD_WEBRTC=ON)
+# BoringSSL
 open3d_import_3rdparty_library(3rdparty_openssl
     INCLUDE_DIRS ${OPENSSL_INCLUDE_DIRS}
     INCLUDE_ALL
