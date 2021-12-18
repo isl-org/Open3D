@@ -134,6 +134,7 @@ RUN mkdir build \
           -DBUILD_CUDA_MODULE=ON \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
           -DBUILD_COMMON_ISPC_ISAS=ON \
+          -DGLIBCXX_USE_CXX11_ABI=$( { [ "$BUILD_PYTORCH_OPS" == ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; } && echo OFF || echo ON) \
           -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
           -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
           -DBUILD_UNIT_TESTS=ON \
