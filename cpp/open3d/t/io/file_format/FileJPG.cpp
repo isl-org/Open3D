@@ -31,8 +31,8 @@
 // clang-format on
 
 #include "open3d/t/io/ImageIO.h"
-#include "open3d/utility/Logging.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
