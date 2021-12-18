@@ -630,7 +630,12 @@ if(NOT USE_SYSTEM_GLFW)
         find_library(IOKIT_FRAMEWORK IOKit)
         find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
         find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
-        target_link_libraries(3rdparty_glfw INTERFACE ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK} ${CORE_FOUNDATION_FRAMEWORK} ${CORE_VIDEO_FRAMEWORK})
+        target_link_libraries(3rdparty_glfw INTERFACE
+            ${COCOA_FRAMEWORK}
+            ${IOKIT_FRAMEWORK}
+            ${CORE_FOUNDATION_FRAMEWORK}
+            ${CORE_VIDEO_FRAMEWORK}
+        )
     endif()
     if(WIN32)
         target_link_libraries(3rdparty_glfw INTERFACE gdi32)
@@ -764,9 +769,14 @@ open3d_import_3rdparty_library(3rdparty_curl
 if(APPLE)
     # Missing frameworks: https://stackoverflow.com/a/56157695/1255535
     # Link frameworks   : https://stackoverflow.com/a/18330634/1255535
-    target_link_libraries(3rdparty_curl INTERFACE "-framework Foundation")
+    # Fixes error:
+    # ```
+    # Undefined symbols for architecture arm64:
+    # "_SCDynamicStoreCopyProxies", referenced from:
+    #     _Curl_resolv in libcurl.a(hostip.c.o)
+    # ```
+    # The "Foundation" framework is already linked by GLFW.
     target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
-    set_target_properties(3rdparty_curl PROPERTIES LINK_FLAGS "-Wl,-F/Library/Frameworks")
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
 
