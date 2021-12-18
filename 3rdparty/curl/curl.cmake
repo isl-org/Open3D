@@ -9,7 +9,6 @@ endif()
 
 if(MSVC)
     set(curl_lib_name libcurl)
-    set(curl_cmake_extra_args "-DCMAKE_USE_OPENSSL=ON")
 else()
     set(curl_lib_name curl)
 endif()
@@ -28,6 +27,7 @@ ExternalProject_Add(
         -DCURL_DISABLE_LDAP=ON
         -DCURL_DISABLE_LDAPS=ON
         -DCMAKE_USE_LIBSSH2=OFF
+        -DCMAKE_USE_OPENSSL=ON
         -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}
         ${curl_cmake_extra_args}
         ${ExternalProject_CMAKE_ARGS_hidden}
