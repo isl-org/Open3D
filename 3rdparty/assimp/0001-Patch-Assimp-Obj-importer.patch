@@ -1,0 +1,212 @@
+From 434a35a92d8ea5c8b1e2a69ea7bdb8149001ed07 Mon Sep 17 00:00:00 2001
+From: Yixing Lao <yixing.lao@gmail.com>
+Date: Sat, 18 Dec 2021 01:25:40 -0800
+Subject: [PATCH] Patch Assimp Obj importer
+
+---
+ code/AssetLib/Obj/ObjFileData.h          | 27 ++++++++++++-
+ code/AssetLib/Obj/ObjFileImporter.cpp    | 35 +++++++++++++++++
+ code/AssetLib/Obj/ObjFileMtlImporter.cpp | 50 ++++++++++++++++++++++++
+ 3 files changed, 111 insertions(+), 1 deletion(-)
+
+diff --git a/code/AssetLib/Obj/ObjFileData.h b/code/AssetLib/Obj/ObjFileData.h
+index b142500..216f9bd 100644
+--- a/code/AssetLib/Obj/ObjFileData.h
++++ b/code/AssetLib/Obj/ObjFileData.h
+@@ -133,6 +133,9 @@ struct Material {
+     aiString textureSpecularity;
+     aiString textureOpacity;
+     aiString textureDisp;
++    aiString textureRoughness;
++    aiString textureMetallic;
++    aiString textureSheen;
+ 
+     enum TextureType {
+         TextureDiffuseType = 0,
+@@ -151,6 +154,9 @@ struct Material {
+         TextureSpecularityType,
+         TextureOpacityType,
+         TextureDispType,
++        TextureRoughnessType,
++        TextureMetallicType,
++        TextureSheenType,
+         TextureTypeCount
+     };
+     bool clamp[TextureTypeCount];
+@@ -174,6 +180,19 @@ struct Material {
+     //! Transparency color
+     aiColor3D transparent;
+ 
++    //! PBR Roughness
++    ai_real roughness;
++    //! PBR Metallic
++    ai_real metallic;
++    //! PBR Metallic
++    ai_real sheen;
++    //! PBR Clearcoat Thickness
++    ai_real clearcoat_thickness;
++    //! PBR Clearcoat Rougness
++    ai_real clearcoat_roughness;
++    //! PBR Anisotropy
++    ai_real anisotropy;
++
+     //! Constructor
+     Material() :
+             diffuse(ai_real(0.6), ai_real(0.6), ai_real(0.6)),
+@@ -181,7 +200,13 @@ struct Material {
+             shineness(ai_real(0.0)),
+             illumination_model(1),
+             ior(ai_real(1.0)),
+-            transparent(ai_real(1.0), ai_real(1.0), ai_real(1.0)) {
++            transparent(ai_real(1.0), ai_real(1.0), ai_real(1.0)),
++            roughness (ai_real(1.0)),
++            metallic (ai_real(0.0)),
++            sheen (ai_real(0.5)),
++            clearcoat_thickness (ai_real(0.0)),
++            clearcoat_roughness (ai_real(0.0)),
++            anisotropy (ai_real(0.0)) {
+         std::fill_n(clamp, static_cast<unsigned int>(TextureTypeCount), false);
+     }
+ 
+diff --git a/code/AssetLib/Obj/ObjFileImporter.cpp b/code/AssetLib/Obj/ObjFileImporter.cpp
+index 4e943fb..108da90 100644
+--- a/code/AssetLib/Obj/ObjFileImporter.cpp
++++ b/code/AssetLib/Obj/ObjFileImporter.cpp
+@@ -610,6 +610,11 @@ void ObjFileImporter::createMaterials(const ObjFile::Model *pModel, aiScene *pSc
+ 
+         mat->AddProperty<int>(&sm, 1, AI_MATKEY_SHADING_MODEL);
+ 
++#define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness",0,0
++#define AI_MATKEY_CLEARCOAT_ROUGHNESS "$mat.clearcoatroughness",0,0
++#define AI_MATKEY_SHEEN "$mat.sheen",0,0
++#define AI_MATKEY_ANISOTROPY "$mat.anisotropy",0,0
++
+         // Adding material colors
+         mat->AddProperty(&pCurrentMaterial->ambient, 1, AI_MATKEY_COLOR_AMBIENT);
+         mat->AddProperty(&pCurrentMaterial->diffuse, 1, AI_MATKEY_COLOR_DIFFUSE);
+@@ -618,6 +623,12 @@ void ObjFileImporter::createMaterials(const ObjFile::Model *pModel, aiScene *pSc
+         mat->AddProperty(&pCurrentMaterial->shineness, 1, AI_MATKEY_SHININESS);
+         mat->AddProperty(&pCurrentMaterial->alpha, 1, AI_MATKEY_OPACITY);
+         mat->AddProperty(&pCurrentMaterial->transparent, 1, AI_MATKEY_COLOR_TRANSPARENT);
++        mat->AddProperty(&pCurrentMaterial->roughness, 1 ,AI_MATKEY_ROUGHNESS_FACTOR);
++        mat->AddProperty(&pCurrentMaterial->metallic, 1 ,AI_MATKEY_METALLIC_FACTOR);
++        mat->AddProperty(&pCurrentMaterial->sheen, 1 ,AI_MATKEY_SHEEN);
++        mat->AddProperty(&pCurrentMaterial->clearcoat_thickness, 1 ,AI_MATKEY_CLEARCOAT_THICKNESS);
++        mat->AddProperty(&pCurrentMaterial->clearcoat_roughness, 1 ,AI_MATKEY_CLEARCOAT_ROUGHNESS);
++        mat->AddProperty(&pCurrentMaterial->anisotropy, 1 ,AI_MATKEY_ANISOTROPY);
+ 
+         // Adding refraction index
+         mat->AddProperty(&pCurrentMaterial->ior, 1, AI_MATKEY_REFRACTI);
+@@ -709,6 +720,30 @@ void ObjFileImporter::createMaterials(const ObjFile::Model *pModel, aiScene *pSc
+             }
+         }
+ 
++        if (0 != pCurrentMaterial->textureRoughness.length) {
++            mat->AddProperty(&pCurrentMaterial->textureRoughness, _AI_MATKEY_TEXTURE_BASE, aiTextureType_DIFFUSE_ROUGHNESS, 0);
++            mat->AddProperty(&uvwIndex, 1, _AI_MATKEY_UVWSRC_BASE, aiTextureType_DIFFUSE_ROUGHNESS, 0 );
++/*            if (pCurrentMaterial->clamp[ObjFile::Material::TextureSpecularityType]) {*/
++                /*addTextureMappingModeProperty(mat, aiTextureType_SHININESS);*/
++/*            }*/
++        }
++
++        if (0 != pCurrentMaterial->textureMetallic.length) {
++            mat->AddProperty(&pCurrentMaterial->textureMetallic, _AI_MATKEY_TEXTURE_BASE, aiTextureType_METALNESS, 0);
++            mat->AddProperty(&uvwIndex, 1, _AI_MATKEY_UVWSRC_BASE, aiTextureType_METALNESS, 0 );
++/*            if (pCurrentMaterial->clamp[ObjFile::Material::TextureSpecularityType]) {*/
++                /*addTextureMappingModeProperty(mat, aiTextureType_SHININESS);*/
++/*            }*/
++        }
++
++        if (0 != pCurrentMaterial->textureSheen.length) {
++            mat->AddProperty(&pCurrentMaterial->textureSheen, _AI_MATKEY_TEXTURE_BASE, aiTextureType_REFLECTION, 0);
++            mat->AddProperty(&uvwIndex, 1, _AI_MATKEY_UVWSRC_BASE, aiTextureType_REFLECTION, 0 );
++/*            if (pCurrentMaterial->clamp[ObjFile::Material::TextureSpecularityType]) {*/
++                /*addTextureMappingModeProperty(mat, aiTextureType_SHININESS);*/
++/*            }*/
++        }
++
+         // Store material property info in material array in scene
+         pScene->mMaterials[pScene->mNumMaterials] = mat;
+         pScene->mNumMaterials++;
+diff --git a/code/AssetLib/Obj/ObjFileMtlImporter.cpp b/code/AssetLib/Obj/ObjFileMtlImporter.cpp
+index 548401d..b9f5215 100644
+--- a/code/AssetLib/Obj/ObjFileMtlImporter.cpp
++++ b/code/AssetLib/Obj/ObjFileMtlImporter.cpp
+@@ -67,6 +67,9 @@ static const std::string ReflectionTexture = "refl";
+ static const std::string DisplacementTexture1 = "map_disp";
+ static const std::string DisplacementTexture2 = "disp";
+ static const std::string SpecularityTexture = "map_ns";
++static const std::string RoughnessTexture = "map_Pr";
++static const std::string MetallicTexture = "map_Pm";
++static const std::string SheenTexture = "map_Ps";
+ 
+ // texture option specific token
+ static const std::string BlendUOption = "-blendu";
+@@ -178,10 +181,45 @@ void ObjFileMtlImporter::load() {
+                     case 'e': // New material
+                         createMaterial();
+                         break;
++                    case 'o': // Norm texture
++                        --m_DataIt;
++                        getTexture();
++                        break;
+                 }
+                 m_DataIt = skipLine<DataArrayIt>(m_DataIt, m_DataItEnd, m_uiLine);
+             } break;
+ 
++            case 'P':
++                {
++                    ++m_DataIt;
++                    switch(*m_DataIt)
++                    {
++                    case 'r':
++                        ++m_DataIt;
++                        getFloatValue(m_pModel->m_pCurrentMaterial->roughness);
++                        break;
++                    case 'm':
++                        ++m_DataIt;
++                        getFloatValue(m_pModel->m_pCurrentMaterial->metallic);
++                        break;
++                    case 's':
++                        ++m_DataIt;
++                        getFloatValue(m_pModel->m_pCurrentMaterial->sheen);
++                        break;
++                    case 'c':
++                        ++m_DataIt;
++                        if (*m_DataIt == 'r') {
++                            ++m_DataIt;
++                            getFloatValue(m_pModel->m_pCurrentMaterial->clearcoat_roughness);
++                        } else {
++                            getFloatValue(m_pModel->m_pCurrentMaterial->clearcoat_thickness);
++                        }
++                        break;
++                    }
++                    m_DataIt = skipLine<DataArrayIt>( m_DataIt, m_DataItEnd, m_uiLine );
++                }
++                break;
++
+             case 'm': // Texture
+             case 'b': // quick'n'dirty - for 'bump' sections
+             case 'r': // quick'n'dirty - for 'refl' sections
+@@ -334,6 +372,18 @@ void ObjFileMtlImporter::getTexture() {
+         // Specularity scaling (glossiness)
+         out = &m_pModel->m_pCurrentMaterial->textureSpecularity;
+         clampIndex = ObjFile::Material::TextureSpecularityType;
++    } else if ( !ASSIMP_strincmp( pPtr, RoughnessTexture.c_str(), static_cast<unsigned int>(RoughnessTexture.size()))) {
++        // PBR Roughness texture
++        out = & m_pModel->m_pCurrentMaterial->textureRoughness;
++        clampIndex = ObjFile::Material::TextureRoughnessType;
++    } else if ( !ASSIMP_strincmp( pPtr, MetallicTexture.c_str(), static_cast<unsigned int>(MetallicTexture.size()))) {
++        // PBR Metallic texture
++        out = & m_pModel->m_pCurrentMaterial->textureMetallic;
++        clampIndex = ObjFile::Material::TextureMetallicType;
++    } else if (!ASSIMP_strincmp( pPtr, SheenTexture.c_str(), static_cast<unsigned int>(SheenTexture.size()))) {
++        // PBR Sheen (reflectance) texture
++        out = & m_pModel->m_pCurrentMaterial->textureSheen;
++        clampIndex = ObjFile::Material::TextureSheenType;
+     } else {
+         ASSIMP_LOG_ERROR("OBJ/MTL: Encountered unknown texture type");
+         return;
+-- 
+2.25.1
+

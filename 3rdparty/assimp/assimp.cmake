@@ -10,6 +10,8 @@ else()
     set(lib_name assimp)
 endif()
 
+find_package(Git QUIET REQUIRED)
+
 ExternalProject_Add(
     ext_assimp
     PREFIX assimp
@@ -17,7 +19,8 @@ ExternalProject_Add(
     URL_HASH SHA256=50a7bd2c8009945e1833c591d16f4f7c491a3c6190f69d9d007167aadb175c35
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
     UPDATE_COMMAND ""
-    PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${ASSIMP_PATCH_FILES} <SOURCE_DIR>/code/AssetLib/Obj
+    PATCH_COMMAND ${GIT_EXECUTABLE} init
+    COMMAND       ${GIT_EXECUTABLE} apply ${CMAKE_CURRENT_LIST_DIR}/0001-Patch-Assimp-Obj-importer.patch
     CMAKE_ARGS
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
