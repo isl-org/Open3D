@@ -149,7 +149,7 @@ git format-patch HEAD~1
 
 # Test the patch
 git reset --hard HEAD~1
-git apply 0001-Patch-Assimp-Obj-importer.patch
+git apply --ignore-space-change --ignore-whitespace 0001-Patch-Assimp-Obj-importer.patch
 git status
 ```
 
@@ -161,7 +161,8 @@ find_package(Git QUIET REQUIRED)
 ExternalProject_Add(
     ...
     PATCH_COMMAND ${GIT_EXECUTABLE} init
-    COMMAND       ${GIT_EXECUTABLE} apply /path/to/0001-Patch-Assimp-Obj-importer.patch
+    COMMAND       ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
+                  /path/to/0001-Patch-Assimp-Obj-importer.patch
     ...
 )
 ```
