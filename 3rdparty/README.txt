@@ -118,11 +118,11 @@ embree                      3.13.0                              Apache-2 license
 Embree is a collection of high-performance ray tracing kernels
 https://github.com/embree/embree
 --------------------------------------------------------------------------------
-curl                        7.79.1           https://curl.se/docs/copyright.html 
+curl                        7.79.1                                  Curl license
 Curl is a command-line tool for transferring data specified with URL syntax.
 https://github.com/curl/curl
 --------------------------------------------------------------------------------
-boringssl commit: b3ed071 https://github.com/google/boringssl/blob/master/LICENSE
-TLS/SSL and crypto library
+boringssl:                  edfe413            Dual OpenSSL, SSLeay, ISC license
+BoringSSL is a fork of OpenSSL that is designed to meet Google's needs.
 https://github.com/google/boringssl
 --------------------------------------------------------------------------------
