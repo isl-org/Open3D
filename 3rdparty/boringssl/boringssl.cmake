@@ -1,5 +1,22 @@
 include(ExternalProject)
 
+# Since boringssl requires additional dependencies, we provide prebuilt
+# boringssl for all platforms. The compilation is done by running:
+#
+# - build_boringssl.ps1: fow Windows
+# - build_boringssl.sh : for Ubuntu/macOS
+#
+# boringssl_commit in build_boringssl.xx should be consistent with the boringssl
+# used by WEBRTC_COMMIT in 3rdparty/webrtc/webrtc_build.sh
+#
+# 1. Clone the webrtc repo, as described in 3rdparty/webrtc/README.md
+# 2. Checkout the `WEBRTC_COMMIT`
+# 3. Run `cd src/third_party` and `git log --name-status -10 boringssl`
+# 4. Read and understand the commit log. The commit in the boringssl repo is not
+#    the same as the one used in `third_party`, as the `third_party` repo copies
+#    the boringssl code and does not use a submodule. Determine the commit id
+#    of boringssl manually.
+
 if(APPLE)
     if(APPLE_AARCH64)
         set(BORINGSSL_URL https://github.com/isl-org/open3d_downloads/releases/download/boringssl-bin/boringssl_edfe413_darwin_arm64.tar.gz)
