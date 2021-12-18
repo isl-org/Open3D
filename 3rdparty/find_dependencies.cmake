@@ -630,7 +630,12 @@ if(NOT USE_SYSTEM_GLFW)
         find_library(IOKIT_FRAMEWORK IOKit)
         find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
         find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
-        target_link_libraries(3rdparty_glfw INTERFACE ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK} ${CORE_FOUNDATION_FRAMEWORK} ${CORE_VIDEO_FRAMEWORK})
+        target_link_libraries(3rdparty_glfw INTERFACE
+            ${COCOA_FRAMEWORK}
+            ${IOKIT_FRAMEWORK}
+            ${CORE_FOUNDATION_FRAMEWORK}
+            ${CORE_VIDEO_FRAMEWORK}
+        )
     endif()
     if(WIN32)
         target_link_libraries(3rdparty_glfw INTERFACE gdi32)
