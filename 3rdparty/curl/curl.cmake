@@ -2,8 +2,8 @@ include(ExternalProject)
 include(ProcessorCount)
 ProcessorCount(NPROC)
 
-if(NOT DEFINED OPENSSL_ROOT_DIR)
-    message(FATAL_ERROR "OPENSSL_ROOT_DIR not set. "
+if(NOT DEFINED BORINGSSL_ROOT_DIR)
+    message(FATAL_ERROR "BORINGSSL_ROOT_DIR not set. "
                         "Please include openssl.cmake before including this file.")
 endif()
 
@@ -28,7 +28,7 @@ ExternalProject_Add(
         -DCURL_DISABLE_LDAPS=ON
         -DCMAKE_USE_LIBSSH2=OFF
         -DCMAKE_USE_OPENSSL=ON
-        -DOPENSSL_ROOT_DIR=${OPENSSL_ROOT_DIR}
+        -DOPENSSL_ROOT_DIR=${BORINGSSL_ROOT_DIR}
         ${curl_cmake_extra_args}
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
@@ -36,7 +36,7 @@ ExternalProject_Add(
     BUILD_ALWAYS ON
 )
 
-add_dependencies(ext_curl ext_openssl)
+add_dependencies(ext_curl ext_boringssl)
 
 ExternalProject_Get_Property(ext_curl INSTALL_DIR)
 set(CURL_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.

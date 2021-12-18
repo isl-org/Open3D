@@ -22,11 +22,11 @@ else()
 endif()
 
 ExternalProject_Add(
-    ext_openssl
-    PREFIX openssl
+    ext_boringssl
+    PREFIX boringssl
     URL ${BORINGSSL_URL}
     URL_HASH SHA256=${BORINGSSL_SHA256}
-    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/openssl"
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/boringssl"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
@@ -34,18 +34,18 @@ ExternalProject_Add(
     BUILD_BYPRODUCTS ""
 )
 
-ExternalProject_Get_Property(ext_openssl SOURCE_DIR)
+ExternalProject_Get_Property(ext_boringssl SOURCE_DIR)
 if(WIN32)
-    set(OPENSSL_ROOT_DIR ${SOURCE_DIR}/$<IF:$<CONFIG:Debug>,Debug,Release>)
+    set(BORINGSSL_ROOT_DIR ${SOURCE_DIR}/$<IF:$<CONFIG:Debug>,Debug,Release>)
 else()
-    set(OPENSSL_ROOT_DIR ${SOURCE_DIR})
+    set(BORINGSSL_ROOT_DIR ${SOURCE_DIR})
 endif()
-set(OPENSSL_INCLUDE_DIRS ${OPENSSL_ROOT_DIR}/include/) # "/" is critical.
+set(BORINGSSL_INCLUDE_DIRS ${BORINGSSL_ROOT_DIR}/include/) # "/" is critical.
 
 if(BUILD_WEBRTC)
-    set(OPENSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
-    set(OPENSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
+    set(BORINGSSL_LIB_DIR)   # Empty, as we use the sysmbols from WebRTC.
+    set(BORINGSSL_LIBRARIES) # Empty, as we use the sysmbols from WebRTC.
 else()
-    set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR}/lib)
-    set(OPENSSL_LIBRARIES ssl crypto)
+    set(BORINGSSL_LIB_DIR ${BORINGSSL_ROOT_DIR}/lib)
+    set(BORINGSSL_LIBRARIES ssl crypto)
 endif()
