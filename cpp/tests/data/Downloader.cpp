@@ -24,36 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Dataset.h"
-
-#include <string>
+#include "open3d/data/Downloader.h"
 
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
+#include "tests/Tests.h"
 
 namespace open3d {
-namespace data {
+namespace tests {
 
-std::string LocateDataRoot() {
-    std::string data_root = "";
-    if (const char* env_p = std::getenv("OPEN3D_DATA_ROOT")) {
-        data_root = std::string(env_p);
-    }
-    if (data_root.empty()) {
-        data_root = utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    }
-    return data_root;
+TEST(Downloader, DownloadAndVerify) {
+    // File 1.
+    std::string url =
+            "https://github.com/isl-org/open3d_downloads/releases/download/"
+            "data-manager/test_data_00.zip";
+    std::string expected_sha256 =
+            "66ea466a02532d61dbc457abf1408afeab360d7a35e15f1479ca91c25e838d30";
+
+    // Downloader API.
+    // URL is the only compulsory input, others are optional, and passing
+    // empty string "", trigers the default behaviour.
+    // open3d::data::DownloadFromURL(url, output_file_name, output_file_path,
+    //                               always_download, expected_sha256);
+
+    // Default.
+    // Download in Open3D Data Root directory,
+    // with the original file name extracted from the url,
+    // `always_download` is True : If exists, it will be over-written.
+    // SHA256 is not verified.
+    EXPECT_TRUE(data::DownloadFromURL(url));
+    EXPECT_TRUE(data::DownloadFromURL(url, "", "", false, expected_sha256));
 }
 
-Dataset::Dataset(const std::string& data_root) {
-    if (data_root.empty()) {
-        data_root_ = LocateDataRoot();
-    } else {
-        data_root_ = data_root;
-    }
-}
-
-std::string Dataset::GetDataRoot() const { return data_root_; }
-
-}  // namespace data
+}  // namespace tests
 }  // namespace open3d
