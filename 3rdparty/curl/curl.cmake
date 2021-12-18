@@ -1,6 +1,4 @@
 include(ExternalProject)
-include(ProcessorCount)
-ProcessorCount(NPROC)
 
 if(NOT DEFINED BORINGSSL_ROOT_DIR)
     message(FATAL_ERROR "BORINGSSL_ROOT_DIR not set. "
@@ -46,4 +44,3 @@ if(MSVC)
 else()
     set(CURL_LIBRARIES ${curl_lib_name})
 endif()
-

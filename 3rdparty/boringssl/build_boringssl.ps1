@@ -1,11 +1,12 @@
-# Try to be consistent to build_boringssl.sh as much as possible.
+# This script is mostly identical to build_boringssl.sh, except that it builds
+# both the release and debug versions of the library.
 #
-# Install dependencies first.
 # ```powershell
 # winget install -e --id StrawberryPerl.StrawberryPerl
 # winget install -e --id GoLang.Go
 # winget install -e --id NASM.NASM
 # ```
+
 $ErrorActionPreference = "Stop"
 
 ${boringssl_commit} = "edfe4133d28c5e39d4fce6a2554f3e2b4cafc9bd"

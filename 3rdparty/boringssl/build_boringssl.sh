@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Install dependencies first.
+#
+# Ubuntu:
 # ```bash
 # sudo apt-get install golang
 # ```
 #
+# macOS
 # ```bash
 # brew install go
 # ```
