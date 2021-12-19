@@ -118,3 +118,51 @@ embree                      3.13.0                              Apache-2 license
 Embree is a collection of high-performance ray tracing kernels
 https://github.com/embree/embree
 --------------------------------------------------------------------------------
+
+## Patching a third-party library
+
+Using `assimp` as an example.
+
+```bash
+# Do this outside of a git directory
+cd /tmp
+
+# Download the tar.gz
+wget https://github.com/assimp/assimp/archive/refs/tags/v5.1.3.tar.gz
+tar xzf v5.1.3.tar.gz
+cd assimp-5.1.3
+
+# Init git and add all source
+git init
+git add .
+git commit -am "Init commit"
+
+# Make changes to the files, commit
+cp /my/new/ObjFileData.h          code/AssetLib/Obj/ObjFileData.h
+cp /my/new/ObjFileImporter.cpp    code/AssetLib/Obj/ObjFileImporter.cpp
+cp /my/new/ObjFileMtlImporter.cpp code/AssetLib/Obj/ObjFileMtlImporter.cpp
+git add .
+git commit -am "Patch Assimp Obj importer"
+
+# Create patch file to HEAD~1
+git format-patch HEAD~1
+
+# Test the patch
+git reset --hard HEAD~1
+git apply --ignore-space-change --ignore-whitespace 0001-Patch-Assimp-Obj-importer.patch
+git status
+```
+
+Finally, this patch can be used in CMake `ExternalProject_Add` by specifying:
+
+```cmake
+find_package(Git QUIET REQUIRED)
+
+ExternalProject_Add(
+    ...
+    PATCH_COMMAND ${GIT_EXECUTABLE} init
+    COMMAND       ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
+                  /path/to/0001-Patch-Assimp-Obj-importer.patch
+    ...
+)
+```
