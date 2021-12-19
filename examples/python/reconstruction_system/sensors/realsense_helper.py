@@ -30,6 +30,7 @@
 # Please see instructions in https://github.com/IntelRealSense/librealsense/tree/master/wrappers/python
 import pyrealsense2 as rs
 
+
 def get_profiles():
     ctx = rs.context()
     devices = ctx.query_devices()
