@@ -132,5 +132,10 @@ endif()
 
 # add all examples
 file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/examples/")
+file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
+file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
+    DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
+file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/test_data/"
+    DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data")

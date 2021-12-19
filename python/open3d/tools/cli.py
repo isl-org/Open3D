@@ -126,9 +126,9 @@ class Open3DMain:
         return msg
 
     @staticmethod
-    def _exec_python_file(filename: str):
+    def _exec_python_file(filename: str, ):
         """Execute a Python file based on filename."""
-        subprocess.call([sys.executable, filename] + sys.argv[1:])
+        subprocess.call([sys.executable, filename] + sys.argv[2:])
 
     @staticmethod
     def _get_examples_dir() -> Path:
@@ -157,6 +157,8 @@ class Open3DMain:
 
         return support_choice_with_dot_py
 
+
+
     @register
     def example(self, arguments: list = sys.argv[2:]):
         """Run an example by name (or name.py)"""
@@ -170,28 +172,24 @@ class Open3DMain:
             type=Open3DMain._example_choices_type(choices.keys()),
             choices=sorted(choices.keys()))
         parser.add_argument(
-            '-p',
-            '--print',
-            required=False,
-            dest='print',
-            action='store_true',
-            help="Print example source code instead of running it")
-        parser.add_argument(
-            '-P',
-            '--pretty-print',
-            required=False,
-            dest='pretty_print',
-            action='store_true',
-            help="Like --print, but print in a rich format with line numbers")
+            "downstream_args",
+            help="Arguments for the example to be run",
+            nargs='*')
         parser.add_argument(
             '-s',
-            '--save',
+            '--show',
             required=False,
-            dest='save',
+            dest='show',
             action='store_true',
-            help="Save source code to current directory instead of running it")
+            help="Show example source code instead of running it")
+        parser.add_argument(
+            '-p',
+            '--show_pretty',
+            required=False,
+            dest='show_pretty',
+            action='store_true',
+            help="Like --show, but show in a rich format with line numbers")
 
-        # TODO: Pass the arguments to downstream correctly.
         args = parser.parse_args(arguments)
 
         examples_dir = Open3DMain._get_examples_dir()
@@ -204,17 +202,12 @@ class Open3DMain:
         if self.test_mode:
             return args
 
-        if args.save:
-            print(f"Saving example {args.name} to current directory...")
-            shutil.copy(target, '.')
-            return 0
-
-        if args.pretty_print:
+        if args.show_pretty:
             try:
-                import rich.console  # pylint: disable=C0415
-                import rich.syntax  # pylint: disable=C0415
+                import rich.console
+                import rich.syntax
             except ImportError:
-                print('To make -P work, please: python3 -m pip install rich')
+                print('To make -p work, please: python3 -m pip install rich')
                 return 1
             # https://rich.readthedocs.io/en/latest/syntax.html
             syntax = rich.syntax.Syntax.from_path(target, line_numbers=True)
@@ -222,14 +215,17 @@ class Open3DMain:
             console.print(syntax)
             return 0
 
-        if args.print:
+        if args.show:
             with open(target) as f:
                 print(f.read())
             return 0
 
         print(f"Running example {args.name} ...")
-
+        removed_args = sys.argv[1:3]
+        del sys.argv[1:3]
         runpy.run_path(target, run_name='__main__')
+        sys.argv.insert(1, removed_args[0])
+        sys.argv.insert(2, removed_args[1])
 
         return None
 
@@ -238,12 +234,18 @@ class Open3DMain:
         """Visualize a mesh or pointcloud from a file"""
         parser = argparse.ArgumentParser(prog='open3d draw',
                                          description=f"{self.example.__doc__}")
-
-        visgui = importlib.import_module("open3d.examples.gui.vis-gui")
-        sys.argv = ['vis-gui.py', sys.argv[2]]
-        visgui.main()
-
-        # TODO: Use same function to execute examples and visualization script
+        parser.add_argument(
+            "filename",
+            help="Name of the mesh or point cloud file")
+        
+        examples_dir = Open3DMain._get_examples_dir()
+        visgui = str(examples_dir / "gui" / "vis-gui.py")
+        # path for examples needs to be modified for implicit relative imports
+        sys.path.append(str(examples_dir / "gui" / "vis-gui.py"))
+        removed_arg = sys.argv[1]
+        sys.argv.pop(1)
+        runpy.run_path(visgui, run_name='__main__')
+        sys.argv.insert(1, removed_arg)
 
         return None
 
