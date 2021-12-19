@@ -604,10 +604,10 @@ if(USE_SYSTEM_GLFW)
 endif()
 if(NOT USE_SYSTEM_GLFW)
     message(STATUS "Building library 3rdparty_glfw from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/GLFW)
+    add_subdirectory(${Open3D_3RDPARTY_DIR}/glfw)
     open3d_import_3rdparty_library(3rdparty_glfw
         HEADER
-        INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/GLFW/include/
+        INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/glfw/include/
         LIBRARIES    glfw3
         DEPENDS      glfw
     )
@@ -953,7 +953,7 @@ if (BUILD_AZURE_KINECT)
 endif()
 
 # PoissonRecon
-include(${Open3D_3RDPARTY_DIR}/PoissonRecon/PoissonRecon.cmake)
+include(${Open3D_3RDPARTY_DIR}/possionrecon/possionrecon.cmake)
 open3d_import_3rdparty_library(3rdparty_poisson
     INCLUDE_DIRS ${POISSON_INCLUDE_DIRS}
     DEPENDS      ext_poisson

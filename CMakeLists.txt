@@ -239,7 +239,7 @@ if (BUILD_CUDA_MODULE
 endif()
 
 # CMake modules
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake")
 
 # Setup Python executable
 if(NOT DEFINED Python3_FIND_REGISTRY)
