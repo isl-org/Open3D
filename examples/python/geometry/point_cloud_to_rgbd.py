@@ -34,9 +34,11 @@ dir_path = os.path.dirname(os.path.abspath(__file__))
 if __name__ == '__main__':
     device = o3d.core.Device('CPU:0')
     depth = o3d.t.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/TUM_depth.png").to(device)
+        dir_path +
+        "/../../test_data/RGBD/other_formats/TUM_depth.png").to(device)
     color = o3d.t.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/TUM_color.png").to(device)
+        dir_path +
+        "/../../test_data/RGBD/other_formats/TUM_color.png").to(device)
 
     intrinsic = o3d.core.Tensor([[535.4, 0, 320.1], [0, 539.2, 247.6],
                                  [0, 0, 1]])
