@@ -1264,6 +1264,10 @@ void pybind_gui_classes(py::module &m) {
                     "Adds a tab. The first parameter is the title of the tab, "
                     "and the second parameter is a widget--normally this is a "
                     "layout.")
+            .def_property("selected_tab_index",
+                          &TabControl::GetSelectedTabIndex,
+                          &TabControl::SetSelectedTabIndex,
+                          "The index of the currently selected item")
             .def("set_on_selected_tab_changed",
                  &TabControl::SetOnSelectedTabChanged,
                  "Calls the provided callback function with the index of the "
