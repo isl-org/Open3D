@@ -226,7 +226,8 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::GetAxisAlignedBoundingBox()
     return *this;
 }
 
-OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox(bool) const {
+OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox(
+        bool robust) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
 }
 
