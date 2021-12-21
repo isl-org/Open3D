@@ -1,6 +1,6 @@
 name: Feature Request
 description: New feature request.
-title: "Comprehensive title for the build/install issue report"
+title: "Comprehensive title for the feature issue report"
 labels: [feature request]
 
 body:

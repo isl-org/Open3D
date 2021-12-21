@@ -1,0 +1,17 @@
+name: Ask Questions
+description: Ask us queries/questions related to Open3D.
+title: "Comprehensive title for the question."
+labels: [question]
+
+body:
+- type: textarea
+  attributes: 
+    label: "My Question:"
+    description: >
+      Before submitting your question:
+        1. Search for [similar questions](https://github.com/isl-org/Open3D/issues).
+        2. Please check with the [documentation](http://www.open3d.org/docs/latest/) properly.
+        3. Please check the C++ or python examples related to your application.
+
+      Please make sure to leave a reference to the document/code you're
+      referring to. 

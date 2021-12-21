@@ -1,56 +1,48 @@
-name: Bug Report
-description: Report a bug. 
-title: "Comprehensive title for the bug report."
-labels: [bug]
+name: Report Build / Installation Related Issue
+description: Report an issue if you have trouble building or installing Open3D.
+title: "Comprehensive title for the build/install issue report."
+labels: [build/install issue]
 
 body:
-- type: markdown
+- type: textarea
   attributes:
-    value: >
-      Thank you for taking the time to file a bug report. Before creating a new
-      issue, please make sure to take a few minutes to check the issue tracker
-      for existing issues about the bug. If it is a build/installation related
-      bug, then report it on `Build/Installation Issue Report`.
+    label: "Steps to reproduce:"
+    description: >
+      Thank you for taking the time to file a build/installation related issue 
+      report. Before creating a new issue, please be sure to take a few minutes
+      to check the issue tracker for existing `build/install issue`. 
 
       Before submitting issue:
         1. Search for [similar issues](https://github.com/isl-org/Open3D/issues).
         2. For Python issues, please test with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip). It may be already fixed!
-    
-- type: textarea
-  attributes: 
-    label: "Describe the issue:"
+        3. Please check with the documentation properly.
+          3.a. [Installing from PyPI or Conda](http://www.open3d.org/docs/latest/getting_started.html#installing-from-pypi-or-conda).
+          3.b. [Build from source](http://www.open3d.org/docs/latest/compilation.html#build-from-source).
+          3.c. [Experimental ARM Support](http://www.open3d.org/docs/latest/arm.html#arm-support).
+
+      Please describe the installation method in detail (e.g. building from 
+      source, Anaconda, pip). Share all the steps/commands you used to 
+      build/install Open3D. 
   validations:
     required: true
 
-- type: textarea
-  attributes:
-    label: "Example to Reproduce:"
-    description: >
-      Steps/a short code example that reproduces the problem/missing feature. It
-      should be self-contained.
-    placeholder: |
-      << your code here >>
-    render: python
-  validations:
-    required: true
-  
 - type: textarea
   attributes:
     label: "Error message:"
     description: >
-      Please include full error message, if any.
-      If you are reporting a segfault please include a GDB traceback.
+      Please include `FULL` error message, if any.
+      If you are reporting a segfault, please include a GDB traceback.
     placeholder: |
-      << Full error message >>
+      << Full traceback >>
     render: shell
 
 - type: textarea
   attributes:
-    label: "Expected behaviour:"
+    label: "Additional information:"
     description: >
-      A clear and concise description of what you expected to happen.
-  validations:
-    required: true
+      Please add any additional information that could help us diagnose the 
+      problem better. You may even attach log files, generated wheel, 
+      screenshots or any other files, that could be helpful.
 
 - type: textarea
   attributes:

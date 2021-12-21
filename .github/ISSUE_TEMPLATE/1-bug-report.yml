@@ -1,0 +1,87 @@
+name: Report Bug
+description: Report a bug (not related to building/installing Open3D). 
+title: "Comprehensive title for the bug report."
+labels: [bug]
+
+body:
+- type: markdown
+  attributes:
+    value: >
+      Thank you for taking the time to file a bug report. Before creating a new
+      issue, please be sure to take a few minutes to check the issue tracker
+      for existing bug issues. If it is a build/installation related
+      bug, then report it on `Report Build/Installation Related Issue`.
+
+      Before submitting issue:
+        1. Search for [similar issues](https://github.com/isl-org/Open3D/issues).
+        2. For Python issues, please test with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip). It may be already fixed!
+
+      Please describe the installation method in detail (e.g. building from 
+      source, Anaconda, pip). Share all the steps/commands you used to 
+      build/install Open3D. 
+- type: textarea
+  attributes: 
+    label: "Describe the issue:"
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "Example to Reproduce:"
+    description: >
+      Steps/a short code example (python or C++) reproducing the problem/missing feature. 
+      The example must be self-contained, with instructions to help us reproduce the issue.
+    placeholder: |
+      << your code here >>
+    render: python
+  validations:
+    required: true
+  
+- type: textarea
+  attributes:
+    label: "Error message:"
+    description: >
+      Please include `FULL` error message, if any. You may even submit/attach
+      the entire terminal output with the error message. 
+      If you are reporting a segfault please include a GDB traceback.
+    placeholder: |
+      << Full error message >>
+
+- type: textarea
+  attributes:
+    label: "Expected behavior:"
+    description: >
+      A clear and concise description of what you expected to happen.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "Attach any additional files required to reproduce the issue."
+    description: >
+      Attach files (or drive link if the file is large), required to reproduce the issue (for example: the data you used), if any.
+  validations:
+    required: false
+
+- type: textarea
+  attributes:
+    label: "System and Open3D/Python version information:"
+    description: >
+      Output from `import sys, open3d; print(open3d.__version__, sys.version)`.
+        - Operating system: (e.g. OSX 10.15, Ubuntu 18.04, Windows 10 64-bit)
+        - Python version: (e.g. Python 3.8 / output from `import sys  print(sys.version)`)
+        - Open3D version: (output from python: `print(open3d.__version__)`)
+        - System type: (x84 / arm / m1 / aarch / jetson-nano / jetson-tx / rpi)
+        - Is this remote workstation?: yes or no
+        - How did you install Open3D?: (e.g. pip, conda, build from source)
+        - Compiler version (if built from source): (e.g. gcc 7.5, clang 7.0)
+    placeholder: |
+      - Operating system: (e.g. OSX 10.15, Ubuntu 18.04, Windows 10 64-bit)
+      - Python version: (e.g. Python 3.8 / output from `import sys  print(sys.version)`)
+      - Open3D version: (output from python: `print(open3d.__version__)`)
+      - System type: (x84 / arm / m1 / aarch / jetson-nano / jetson-tx / rpi)
+      - Is this remote workstation?: yes or no
+      - How did you install Open3D?: (e.g. pip, conda, build from source)
+      - Compiler version (if built from source): (e.g. gcc 7.5, clang 7.0)
+  validations:
+    required: true
