@@ -66,6 +66,18 @@ void GridWithWeightCount::InsertBatch(const core::Tensor& grid_indices,
     }
 }
 
+core::Tensor GridWithWeightCount::GetWeights() const {
+    core::Tensor weights(weights_, {resolution_, resolution_, resolution_},
+                         core::Dtype::Float32);
+    return weights;
+}
+
+core::Tensor GridWithWeightCount::GetCounts() const {
+    core::Tensor counts(counts_, {resolution_, resolution_, resolution_},
+                        core::Dtype::Int32);
+    return counts;
+}
+
 int GridWithWeightCount::GetFlatIndex(int x, int y, int z) const {
     return x * resolution_ * resolution_ + y * resolution_ + z;
 }

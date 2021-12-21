@@ -52,6 +52,8 @@ void pybind_geometry_class(py::module& m) {
     grid.def(py::init<int>(), "resolution"_a);
     grid.def("insert_batch", &GridWithWeightCount::InsertBatch,
              "grid_indices"_a, "weights"_a);
+    grid.def("get_weights", &GridWithWeightCount::GetWeights);
+    grid.def("get_counts", &GridWithWeightCount::GetCounts);
 }
 
 void pybind_geometry(py::module& m) {

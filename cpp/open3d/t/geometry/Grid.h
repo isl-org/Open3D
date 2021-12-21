@@ -41,6 +41,9 @@ public:
     void InsertBatch(const core::Tensor& grid_indices,
                      const core::Tensor& weights);
 
+    core::Tensor GetWeights() const;
+    core::Tensor GetCounts() const;
+
 protected:
     int GetFlatIndex(int x, int y, int z) const;
     int resolution_;
