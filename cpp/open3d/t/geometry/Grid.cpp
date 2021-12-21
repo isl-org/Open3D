@@ -28,6 +28,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace t {
@@ -55,7 +56,7 @@ void GridWithWeightCount::InsertBatch(const core::Tensor& grid_indices,
     std::vector<int> zs = grid_indices.IndexExtract(1, 0).ToFlatVector<int>();
     std::vector<float> ws = weights.ToFlatVector<float>();
 
-#pragma omp parallel for
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
     for (size_t i = 0; i < xs.size(); i++) {
         const int index = GetFlatIndex(xs[i], ys[i], zs[i]);
 #pragma omp critical
