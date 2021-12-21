@@ -73,8 +73,6 @@
 #ifndef _ZLIBIOAPI64_H
 #define _ZLIBIOAPI64_H
 
-#pragma once
-
 #ifdef WIN32
 #include <windows.h>
 // #define USEWIN32IOAPI
@@ -137,21 +135,6 @@
 #define fseeko64 fseek
 #endif
 #endif
-#endif
-
-/*
-#ifndef ZPOS64_T
-  #ifdef _WIN32
-                #define ZPOS64_T fpos_t
-  #else
-    #include <stdint.h>
-    #define ZPOS64_T uint64_t
-  #endif
-#endif
-*/
-
-#ifdef HAVE_MINIZIP64_CONF_H
-#include "mz64conf.h"
 #endif
 
 /* a type choosen by DEFINE */
@@ -402,18 +385,6 @@ typedef struct unz_file_info_s {
     tm_unz tmu_date;
 } unz_file_info;
 
-extern int ZEXPORT unzStringFileNameCompare OF((const char *fileName1,
-                                                const char *fileName2,
-                                                int iCaseSensitivity));
-/*
-   Compare two filename (fileName1,fileName2).
-   If iCaseSenisivity = 1, comparision is case sensitivity (like strcmp)
-   If iCaseSenisivity = 2, comparision is not case sensitivity (like strcmpi
-                                or strcasecmp)
-   If iCaseSenisivity = 0, case sensitivity is defaut of your operating system
-    (like 1 on Unix, 2 on Windows)
-*/
-
 extern unzFile ZEXPORT unzOpen OF((const char *path));
 extern unzFile ZEXPORT unzOpen64 OF((const void *path));
 /*
@@ -462,23 +433,8 @@ extern int ZEXPORT unzGetGlobalInfo64 OF((unzFile file,
   No preparation of the structure is needed
   return UNZ_OK if there is no problem. */
 
-extern int ZEXPORT unzGetGlobalComment OF((unzFile file,
-                                           char *szComment,
-                                           uLong uSizeBuf));
-/*
-  Get the global comment string of the ZipFile, in the szComment buffer.
-  uSizeBuf is the size of the szComment buffer.
-  return the number of byte copied or an error code <0
-*/
-
 /***************************************************************************/
 /* Unzip package allow you browse the directory of the zipfile */
-
-extern int ZEXPORT unzGoToFirstFile OF((unzFile file));
-/*
-  Set the current file of the zipfile to the first file.
-  return UNZ_OK if there is no problem
-*/
 
 extern int ZEXPORT unzGoToNextFile OF((unzFile file));
 /*
@@ -486,40 +442,6 @@ extern int ZEXPORT unzGoToNextFile OF((unzFile file));
   return UNZ_OK if there is no problem
   return UNZ_END_OF_LIST_OF_FILE if the actual file was the latest.
 */
-
-extern int ZEXPORT unzLocateFile OF((unzFile file,
-                                     const char *szFileName,
-                                     int iCaseSensitivity));
-/*
-  Try locate the file szFileName in the zipfile.
-  For the iCaseSensitivity signification, see unzStringFileNameCompare
-
-  return value :
-  UNZ_OK if the file is found. It becomes the current file.
-  UNZ_END_OF_LIST_OF_FILE if the file is not found
-*/
-
-/* ****************************************** */
-/* Ryan supplied functions */
-/* unz_file_info contain information about a file in the zipfile */
-typedef struct unz_file_pos_s {
-    uLong pos_in_zip_directory; /* offset in zip file directory */
-    uLong num_of_file;          /* # of file */
-} unz_file_pos;
-
-extern int ZEXPORT unzGetFilePos(unzFile file, unz_file_pos *file_pos);
-
-extern int ZEXPORT unzGoToFilePos(unzFile file, unz_file_pos *file_pos);
-
-typedef struct unz64_file_pos_s {
-    ZPOS64_T pos_in_zip_directory; /* offset in zip file directory */
-    ZPOS64_T num_of_file;          /* # of file */
-} unz64_file_pos;
-
-extern int ZEXPORT unzGetFilePos64(unzFile file, unz64_file_pos *file_pos);
-
-extern int ZEXPORT unzGoToFilePos64(unzFile file,
-                                    const unz64_file_pos *file_pos);
 
 /* ****************************************** */
 
@@ -540,35 +462,11 @@ extern int ZEXPORT unzGetCurrentFileInfo OF((unzFile file,
                                              uLong extraFieldBufferSize,
                                              char *szComment,
                                              uLong commentBufferSize));
-/*
-  Get Info about the current file
-  if pfile_info!=NULL, the *pfile_info structure will contain somes info about
-        the current file
-  if szFileName!=NULL, the filemane string will be copied in szFileName
-            (fileNameBufferSize is the size of the buffer)
-  if extraField!=NULL, the extra field information will be copied in extraField
-            (extraFieldBufferSize is the size of the buffer).
-            This is the Central-header version of the extra field
-  if szComment!=NULL, the comment string of the file will be copied in szComment
-            (commentBufferSize is the size of the buffer)
-*/
-
-/** Addition for GDAL : START */
-
-extern ZPOS64_T ZEXPORT unzGetCurrentFileZStreamPos64 OF((unzFile file));
-
-/** Addition for GDAL : END */
 
 /***************************************************************************/
 /* for reading the content of the current zipfile, you can open it, read data
    from it, and close it (you can close it before reading all the file)
    */
-
-extern int ZEXPORT unzOpenCurrentFile OF((unzFile file));
-/*
-  Open for reading data the current file in the zipfile.
-  If there is no error, the return value is UNZ_OK.
-*/
 
 extern int ZEXPORT unzOpenCurrentFilePassword OF((unzFile file,
                                                   const char *password));
@@ -576,28 +474,6 @@ extern int ZEXPORT unzOpenCurrentFilePassword OF((unzFile file,
   Open for reading data the current file in the zipfile.
   password is a crypting password
   If there is no error, the return value is UNZ_OK.
-*/
-
-extern int ZEXPORT unzOpenCurrentFile2
-        OF((unzFile file, int *method, int *level, int raw));
-/*
-  Same than unzOpenCurrentFile, but open for read raw the file (not uncompress)
-    if raw==1
-  *method will receive method of compression, *level will receive level of
-     compression
-  note : you can set level parameter as NULL (if you did not want known level,
-         but you CANNOT set method parameter as NULL
-*/
-
-extern int ZEXPORT unzOpenCurrentFile3 OF(
-        (unzFile file, int *method, int *level, int raw, const char *password));
-/*
-  Same than unzOpenCurrentFile, but open for read raw the file (not uncompress)
-    if raw==1
-  *method will receive method of compression, *level will receive level of
-     compression
-  note : you can set level parameter as NULL (if you did not want known level,
-         but you CANNOT set method parameter as NULL
 */
 
 extern int ZEXPORT unzCloseCurrentFile OF((unzFile file));
@@ -619,44 +495,6 @@ extern int ZEXPORT unzReadCurrentFile OF((unzFile file,
   return <0 with error code if there is an error
     (UNZ_ERRNO for IO error, or zLib error for uncompress error)
 */
-
-extern z_off_t ZEXPORT unztell OF((unzFile file));
-
-extern ZPOS64_T ZEXPORT unztell64 OF((unzFile file));
-/*
-  Give the current position in uncompressed data
-*/
-
-extern int ZEXPORT unzeof OF((unzFile file));
-/*
-  return 1 if the end of file was reached, 0 elsewhere
-*/
-
-extern int ZEXPORT unzGetLocalExtrafield OF((unzFile file,
-                                             voidp buf,
-                                             unsigned len));
-/*
-  Read extra field from the current file (opened by unzOpenCurrentFile)
-  This is the local-header version of the extra field (sometimes, there is
-    more info in the local-header version than in the central-header)
-
-  if buf==NULL, it return the size of the local extra field
-
-  if buf!=NULL, len is the size of the buffer, the extra header is copied in
-    buf.
-  the return value is the number of bytes copied in buf, or (if <0)
-    the error code
-*/
-
-/***************************************************************************/
-
-/* Get the current file offset */
-extern ZPOS64_T ZEXPORT unzGetOffset64(unzFile file);
-extern uLong ZEXPORT unzGetOffset(unzFile file);
-
-/* Set the current file offset */
-extern int ZEXPORT unzSetOffset64(unzFile file, ZPOS64_T pos);
-extern int ZEXPORT unzSetOffset(unzFile file, uLong pos);
 
 #ifdef __cplusplus
 }

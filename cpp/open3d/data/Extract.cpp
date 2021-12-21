@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/extract/Extract.h"
+#include "open3d/data/Extract.h"
 
 #include <unordered_map>
 
-#include "open3d/data/extract/Zip.h"
+#include "open3d/data/ExtractZIP.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -52,7 +52,7 @@ bool Extract(const std::string& filename,
              const std::string& password,
              const bool always_overwrite,
              const bool print_progress) {
-    std::string format =
+    const std::string format =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
 
     utility::LogDebug("Format {} File {}", format, filename);

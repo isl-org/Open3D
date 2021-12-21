@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/extract/Extract.h"
+#include "open3d/data/Extract.h"
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"

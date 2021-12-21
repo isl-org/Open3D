@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/extract/Zip.h"
+#include "open3d/data/ExtractZIP.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -35,7 +35,7 @@
 
 #include <iostream>
 
-#include "open3d/data/extract/ZipImpl.h"
+#include "open3d/data/ExtractZIPImpl.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -88,6 +88,7 @@ static int ExtractCurrentFile(unzFile uf) {
         return UNZ_INTERNALERROR;
     }
 
+    //  If zip entry is a directory then create it on disk.
     p = filename_withoutpath = filename_inzip;
     while ((*p) != '\0') {
         if (((*p) == '/') || ((*p) == '\\')) filename_withoutpath = p + 1;
@@ -205,40 +206,18 @@ bool ExtractFromZIP(const std::string &filename,
                     const std::string &password,
                     const bool always_overwrite,
                     const bool print_progress) {
-    // const char* filename_to_extract = NULL;
-
     char filename_try[MAXFILENAME + 16] = "";
-
-    // int i;
-    // int opt_do_list = 0;
-    // int opt_do_extract_withoutpath = 0;
-    // int opt_overwrite = 1;
-
     unzFile uf = NULL;
 
     if (!filename.empty()) {
-        // #ifdef USEWIN32IOAPI
-        //         zlib_filefunc_def ffunc;
-        // #endif
-
         strncpy(filename_try, filename.c_str(), MAXFILENAME - 1);
-        /* strncpy doesnt append the trailing NULL, of the string is too long.
-         */
+        // strncpy doesnt append the trailing NULL, of the string is too long.
         filename_try[MAXFILENAME] = '\0';
 
-        // #ifdef USEWIN32IOAPI
-        //         fill_win32_filefunc(&ffunc);
-        //         uf = unzOpen2(filename.c_str(), &ffunc);
-        // #else
         uf = unzOpen(filename.c_str());
-        // #endif
         if (uf == NULL) {
             strcat(filename_try, ".zip");
-            // #ifdef USEWIN32IOAPI
-            //             uf = unzOpen2(filename_try, &ffunc);
-            // #else
             uf = unzOpen(filename_try);
-            // #endif
         }
     }
 
