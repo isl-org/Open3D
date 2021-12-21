@@ -1253,7 +1253,8 @@ if(USE_BLAS)
         # Find libgfortran.a and libgcc.a inside the gfortran library search
         # directories. This ensures that the library matches the compiler.
         find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
-        find_library(gcc_lib NAMES libgcc.a PATHS ${gfortran_lib_dirs} REQUIRED)
+        find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
+        find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
 
         include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
         open3d_import_3rdparty_library(3rdparty_blas
@@ -1266,6 +1267,7 @@ if(USE_BLAS)
         target_link_libraries(3rdparty_blas INTERFACE
             ${gfortran_lib}
             ${gcc_lib}
+            ${quadmath_lib}
         )
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
