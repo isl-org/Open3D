@@ -46,8 +46,8 @@ list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
 ExternalProject_Add(
     ext_filament
     PREFIX filament
-    URL https://github.com/isl-org/filament/archive/d1d873d27f43ba0cee1674a555cc0f18daac3008.tar.gz
-    URL_HASH SHA256=00c3f41af0fcfb2df904e1f77934f2678d943ddac5eb889788a5e22590e497bd
+    URL https://github.com/google/filament/archive/refs/tags/v1.15.1.tar.gz
+    URL_HASH SHA256=2e432129989dd7f0643df27d8fa7285e1cb6ed320e1e5c05a51ff0a508764a15
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
     CMAKE_ARGS
