@@ -76,14 +76,16 @@ FilamentView::FilamentView(filament::Engine& engine,
                            FilamentResourceManager& resource_mgr)
     : engine_(engine), resource_mgr_(resource_mgr) {
     view_ = engine_.createView();
-    view_->setSampleCount(4);
+    filament::MultiSampleAntiAliasingOptions msaa_options{true, 4, false};
+    view_->setMultiSampleAntiAliasingOptions(msaa_options);
+    //view_->setSampleCount(4);
     SetAntiAliasing(true, false);
     SetPostProcessing(true);
     SetAmbientOcclusion(true, false);
     view_->setVisibleLayers(kAllLayersMask, kMainLayer);
     SetShadowing(true, ShadowType::kPCF);
     ColorGradingParams cp(ColorGradingParams::Quality::kHigh,
-                          ColorGradingParams::ToneMapping::kUchimura);
+                          ColorGradingParams::ToneMapping::kAces);
     SetColorGrading(cp);
 
     camera_ = std::make_unique<FilamentCamera>(engine_);
@@ -150,9 +152,17 @@ void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers) {
     view_->setRenderTarget(nullptr);
 }
 
-void FilamentView::SetSampleCount(int n) { view_->setSampleCount(n); }
+void FilamentView::SetSampleCount(int n) {
+    filament::View::MultiSampleAntiAliasingOptions msaa_options;
+    msaa_options.enabled = (n > 1);
+    msaa_options.sampleCount = n;
+    view_->setMultiSampleAntiAliasingOptions(msaa_options);
+}
 
-int FilamentView::GetSampleCount() const { return view_->getSampleCount(); }
+int FilamentView::GetSampleCount() const { 
+    auto msaa_options = view_->getMultiSampleAntiAliasingOptions();
+    return msaa_options.sampleCount;
+}
 
 void FilamentView::SetViewport(std::int32_t x,
                                std::int32_t y,
@@ -226,28 +236,22 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
             break;
     }
 
-    filament::ColorGrading::ToneMapping tm =
-            filament::ColorGrading::ToneMapping::LINEAR;
+    filament::ToneMapper* tm = nullptr;
     switch (color_grading.GetToneMapping()) {
-        case ColorGradingParams::ToneMapping::kAcesLegacy:
-            tm = filament::ColorGrading::ToneMapping::ACES_LEGACY;
+        case ColorGradingParams::ToneMapping::kLinear:
+            tm = new filament::LinearToneMapper();
             break;
         case ColorGradingParams::ToneMapping::kAces:
-            tm = filament::ColorGrading::ToneMapping::ACES;
+            tm = new filament::ACESToneMapper();
             break;
         case ColorGradingParams::ToneMapping::kFilmic:
-            tm = filament::ColorGrading::ToneMapping::FILMIC;
-            break;
-        case ColorGradingParams::ToneMapping::kUchimura:
-            tm = filament::ColorGrading::ToneMapping::UCHIMURA;
-            break;
-        case ColorGradingParams::ToneMapping::kReinhard:
-            tm = filament::ColorGrading::ToneMapping::REINHARD;
+            tm = new filament::FilmicToneMapper();
             break;
         case ColorGradingParams::ToneMapping::kDisplayRange:
-            tm = filament::ColorGrading::ToneMapping::DISPLAY_RANGE;
+            tm = new filament::DisplayRangeToneMapper();
             break;
         default:
+            tm = new filament::ACESLegacyToneMapper();
             break;
     }
 
@@ -257,7 +261,7 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
     color_grading_ =
             filament::ColorGrading::Builder()
                     .quality(q)
-                    .toneMapping(tm)
+                    .toneMapper(tm)
                     .whiteBalance(color_grading.GetTemperature(),
                                   color_grading.GetTint())
                     .channelMixer(
@@ -281,10 +285,11 @@ void FilamentView::SetColorGrading(const ColorGradingParams& color_grading) {
                             eigen_to_float3(color_grading.GetHighlightScale()))
                     .build(engine_);
     view_->setColorGrading(color_grading_);
+    delete tm;
 }
 
 void FilamentView::ConfigureForColorPicking() {
-    view_->setSampleCount(1);
+    SetSampleCount(1);
     SetPostProcessing(false);
     SetAmbientOcclusion(false, false);
     SetShadowing(false, ShadowType::kPCF);

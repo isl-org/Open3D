@@ -40,13 +40,11 @@ public:
     enum class Quality : std::uint8_t { kLow, kMedium, kHigh, kUltra };
 
     enum class ToneMapping : std::uint8_t {
-        kLinear = 0,
-        kAcesLegacy = 1,
-        kAces = 2,
-        kFilmic = 3,
-        kUchimura = 4,
-        kReinhard = 5,
-        kDisplayRange = 6,
+        kLinear,
+        kAcesLegacy,
+        kAces,
+        kFilmic,
+        kDisplayRange
     };
 
     ColorGradingParams(Quality q, ToneMapping algorithm);

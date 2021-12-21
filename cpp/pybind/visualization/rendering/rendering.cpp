@@ -430,8 +430,6 @@ void pybind_rendering_classes(py::module &m) {
             .value("ACES_LEGACY", ColorGradingParams::ToneMapping::kAcesLegacy)
             .value("ACES", ColorGradingParams::ToneMapping::kAces)
             .value("FILMIC", ColorGradingParams::ToneMapping::kFilmic)
-            .value("UCHIMURA", ColorGradingParams::ToneMapping::kUchimura)
-            .value("REINHARD", ColorGradingParams::ToneMapping::kReinhard)
             .value("DISPLAY_RANGE",
                    ColorGradingParams::ToneMapping::kDisplayRange);
 
