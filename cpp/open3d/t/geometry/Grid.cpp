@@ -52,8 +52,8 @@ void GridWithWeightCount::InsertBatch(const core::Tensor& grid_indices,
     core::Tensor weights_contiguous = weights.Contiguous();
 
     std::vector<int> xs = grid_indices.IndexExtract(1, 0).ToFlatVector<int>();
-    std::vector<int> ys = grid_indices.IndexExtract(1, 0).ToFlatVector<int>();
-    std::vector<int> zs = grid_indices.IndexExtract(1, 0).ToFlatVector<int>();
+    std::vector<int> ys = grid_indices.IndexExtract(1, 1).ToFlatVector<int>();
+    std::vector<int> zs = grid_indices.IndexExtract(1, 2).ToFlatVector<int>();
     std::vector<float> ws = weights.ToFlatVector<float>();
 
 #pragma omp parallel for num_threads(utility::EstimateMaxThreads())
