@@ -167,14 +167,11 @@ std::array<int, 4> FilamentView::GetViewport() const {
 }
 
 void FilamentView::SetPostProcessing(bool enabled) {
-    post_processing_enabled_ = enabled;
     view_->setPostProcessingEnabled(enabled);
 }
 
 void FilamentView::SetAmbientOcclusion(bool enabled,
                                        bool ssct_enabled /* = false */) {
-    ao_enabled_ = enabled;
-    ao_ssct_enabled_ = ssct_enabled;
     filament::View::AmbientOcclusionOptions options;
     options.enabled = enabled;
     options.ssct.enabled = ssct_enabled;
@@ -182,8 +179,6 @@ void FilamentView::SetAmbientOcclusion(bool enabled,
 }
 
 void FilamentView::SetAntiAliasing(bool enabled, bool temporal /* = false */) {
-    aa_enabled_ = enabled;
-    aa_temporal_ = temporal;
     if (enabled) {
         filament::View::TemporalAntiAliasingOptions options;
         options.enabled = temporal;
@@ -195,8 +190,6 @@ void FilamentView::SetAntiAliasing(bool enabled, bool temporal /* = false */) {
 }
 
 void FilamentView::SetShadowing(bool enabled, ShadowType type) {
-    shadowing_enabled_ = enabled;
-    shadowing_type_ = type;
     if (enabled) {
         filament::View::ShadowType stype =
                 (type == ShadowType::kPCF) ? filament::View::ShadowType::PCF
@@ -361,17 +354,14 @@ void FilamentView::CopySettingsFrom(const FilamentView& other) {
     if (other.color_grading_) {
         view_->setColorGrading(other.color_grading_);
     }
-    post_processing_enabled_ = other.post_processing_enabled_;
-    ao_enabled_ = other.ao_enabled_;
-    ao_ssct_enabled_ = other.ao_ssct_enabled_;
-    aa_enabled_ = other.aa_enabled_;
-    aa_temporal_ = other.aa_temporal_;
-    shadowing_enabled_ = other.shadowing_enabled_;
-    shadowing_type_ = other.shadowing_type_;
-    SetShadowing(shadowing_enabled_, shadowing_type_);
-    SetAntiAliasing(aa_enabled_, aa_temporal_);
-    SetAmbientOcclusion(ao_enabled_, ao_ssct_enabled_);
-    SetPostProcessing(post_processing_enabled_);
+    auto ao_options = other.view_->getAmbientOcclusionOptions();
+    view_->setAmbientOcclusionOptions(ao_options);
+    auto aa_mode = other.view_->getAntiAliasing();
+    auto temporal_options = other.view_->getTemporalAntiAliasingOptions();
+    view_->setAntiAliasing(aa_mode);
+    view_->setTemporalAntiAliasingOptions(temporal_options);
+    view_->setShadowingEnabled(other.view_->isShadowingEnabled());
+    view_->setPostProcessingEnabled(other.view_->isPostProcessingEnabled());
 }
 
 void FilamentView::SetScene(FilamentScene& scene) {

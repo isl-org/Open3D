@@ -112,16 +112,6 @@ private:
     TextureHandle depth_buffer_;
     RenderTargetHandle render_target_;
 
-    // Parameters that must be stored to properly copy a View. Typically used
-    // when offscreen rendering
-    bool post_processing_enabled_ = true;
-    bool ao_enabled_ = true;
-    bool ao_ssct_enabled_ = false;
-    bool aa_enabled_ = true;
-    bool aa_temporal_ = false;
-    bool shadowing_enabled_ = true;
-    ShadowType shadowing_type_ = ShadowType::kPCF;
-
     filament::Engine& engine_;
     FilamentScene* scene_ = nullptr;
     FilamentResourceManager& resource_mgr_;
