@@ -151,7 +151,7 @@ if __name__ == "__main__":
             vis.update_renderer()
 
             process_time = datetime.now() - dt0
-            print("FPS: " + str(1 / process_time.total_seconds()))
+            print("\rFPS: " + str(1 / process_time.total_seconds()), end='')
             frame_count += 1
 
     finally:
