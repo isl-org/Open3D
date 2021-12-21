@@ -23,7 +23,7 @@ For all examples in this tutorial, we will be running a Python session. Please f
 
 	$ cd <... Path to Open3D on your computer...>
 	
-.. image:: ../../_static/visualization/open3d_visualizer/1. Overview.jpg
+.. image:: https://user-images.githubusercontent.com/41028320/146986379-57328766-d4b9-4858-81bb-761888660814.jpg
     :width: 700px	
     
 2. **Optionally**, if you have a ``conda`` virtual environment, activate it from the command line like so:
