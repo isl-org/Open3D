@@ -24,50 +24,50 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/Geometry.h"
-
-#include "open3d/core/TensorCheck.h"
 #include "open3d/t/geometry/Grid.h"
-#include "pybind/docstring.h"
-#include "pybind/t/geometry/geometry.h"
+
+#include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_geometry_class(py::module& m) {
-    // open3d.t.geometry.Geometry
-    py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
-            geometry(m, "Geometry", "The base geometry class.");
-
-    geometry.def("clear", &Geometry::Clear,
-                 "Clear all elements in the geometry.")
-            .def("is_empty", &Geometry::IsEmpty,
-                 "Returns ``True`` iff the geometry is empty.");
-    docstring::ClassMethodDocInject(m, "Geometry", "clear");
-    docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
-
-    py::class_<GridWithWeightCount> grid(m, "GridWithWeightCount",
-                                         "Grid with weight and count.");
-    grid.def(py::init<int>(), "resolution"_a);
-    grid.def("insert_batch", &GridWithWeightCount::InsertBatch,
-             "grid_indices"_a, "weights"_a);
+GridWithWeightCount::GridWithWeightCount(int resolution) {
+    resolution_ = resolution;
+    weights_ = std::vector<float>(resolution * resolution * resolution, 0);
+    counts_ = std::vector<int>(resolution * resolution * resolution, 0);
 }
 
-void pybind_geometry(py::module& m) {
-    py::module m_submodule = m.def_submodule(
-            "geometry", "Tensor-based geometry defining module.");
+void GridWithWeightCount::Insert(int x, int y, int z, float weight) {
+    const int index = GetFlatIndex(x, y, z);
+    weights_[index] += weight;
+    counts_[index] += 1;
+}
 
-    pybind_geometry_class(m_submodule);
-    pybind_drawable_geometry_class(m_submodule);
-    pybind_tensormap(m_submodule);
-    pybind_pointcloud(m_submodule);
-    pybind_lineset(m_submodule);
-    pybind_trianglemesh(m_submodule);
-    pybind_image(m_submodule);
-    pybind_tsdf_voxelgrid(m_submodule);
-    pybind_voxel_block_grid(m_submodule);
-    pybind_raycasting_scene(m_submodule);
+void GridWithWeightCount::InsertBatch(const core::Tensor& grid_indices,
+                                      const core::Tensor& weights) {
+    core::Tensor grid_indices_contiguous = grid_indices.Contiguous();
+    core::Tensor weights_contiguous = weights.Contiguous();
+
+    std::vector<int> xs = grid_indices.IndexExtract(1, 0).ToFlatVector<int>();
+    std::vector<int> ys = grid_indices.IndexExtract(1, 0).ToFlatVector<int>();
+    std::vector<int> zs = grid_indices.IndexExtract(1, 0).ToFlatVector<int>();
+    std::vector<float> ws = weights.ToFlatVector<float>();
+
+#pragma omp parallel for
+    for (size_t i = 0; i < xs.size(); i++) {
+        const int index = GetFlatIndex(xs[i], ys[i], zs[i]);
+#pragma omp critical
+        {
+            weights_[index] += ws[i];
+            counts_[index] += 1;
+        }
+    }
+}
+
+int GridWithWeightCount::GetFlatIndex(int x, int y, int z) const {
+    return x * resolution_ * resolution_ + y * resolution_ + z;
 }
 
 }  // namespace geometry
