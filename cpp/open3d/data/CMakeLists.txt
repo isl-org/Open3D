@@ -10,7 +10,7 @@ target_sources(data PRIVATE
 
 if(WIN32)
 target_sources(data PRIVATE
-    extract_src/minizip/ioapi32.c
+    extract_src/minizip/iowin32.c
 )
 endif()
 
