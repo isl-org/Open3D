@@ -26,12 +26,30 @@
 
 #include "open3d/data/ExtractZIP.h"
 
+#if (!defined(_WIN32)) && (!defined(WIN32)) && (!defined(__APPLE__))
+        #ifndef __USE_FILE_OFFSET64
+                #define __USE_FILE_OFFSET64
+        #endif
+        #ifndef __USE_LARGEFILE64
+                #define __USE_LARGEFILE64
+        #endif
+        #ifndef _LARGEFILE64_SOURCE
+                #define _LARGEFILE64_SOURCE
+        #endif
+        #ifndef _FILE_OFFSET_BIT
+                #define _FILE_OFFSET_BIT 64
+        #endif
+#endif
+
 #ifdef __APPLE__
-// In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no
-// need for specific 64 bit functions
+// In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no need for specific 64 bit functions
 #define FOPEN_FUNC(filename, mode) fopen(filename, mode)
+#define FTELLO_FUNC(stream) ftello(stream)
+#define FSEEKO_FUNC(stream, offset, origin) fseeko(stream, offset, origin)
 #else
 #define FOPEN_FUNC(filename, mode) fopen64(filename, mode)
+#define FTELLO_FUNC(stream) ftello64(stream)
+#define FSEEKO_FUNC(stream, offset, origin) fseeko64(stream, offset, origin)
 #endif
 
 #include <errno.h>
@@ -63,6 +81,11 @@
 #define WRITEBUFFERSIZE (8192)
 // #define WRITEBUFFERSIZE (16384)
 #define MAXFILENAME (256)
+
+#ifdef WIN32
+#define USEWIN32IOAPI
+#include "open3d/data/extract_src/minizip/iowin32.h"
+#endif
 
 namespace open3d {
 namespace data {
@@ -216,14 +239,25 @@ bool ExtractFromZIP(const std::string &filename,
     unzFile uf = NULL;
 
     if (!filename.empty()) {
+#ifdef USEWIN32IOAPI
+        zlib_filefunc64_def ffunc;
+#endif
         strncpy(filename_try, filename.c_str(), MAXFILENAME - 1);
         // strncpy doesnt append the trailing NULL, of the string is too long.
         filename_try[MAXFILENAME] = '\0';
-
+#ifdef USEWIN32IOAPI
+        fill_win32_filefunc64A(&ffunc);
+        uf = unzOpen2_64(filename.c_str(), &ffunc);
+#else
         uf = unzOpen64(filename.c_str());
+#endif
         if (uf == NULL) {
             strcat(filename_try, ".zip");
+#ifdef USEWIN32IOAPI
+            uf = unzOpen2_64(filename_try, &ffunc);
+#else
             uf = unzOpen64(filename_try);
+#endif
         }
     }
 
@@ -240,7 +274,7 @@ bool ExtractFromZIP(const std::string &filename,
 
     bool success = ExtractAll(uf, password);
 
-    unzCloseCurrentFile(uf);
+    unzClose(uf);
     return success;
 }
 
