@@ -59,16 +59,6 @@ Camera::Transform FilamentToCameraTransform(const filament::math::mat4& ft) {
     return Camera::Transform(m);
 }
 
-/*Camera::Transform FilamentToCameraTransform(const filament::math::mat4f& ft) {*/
-    /*Camera::Transform::MatrixType m;*/
-
-    /*m << ft(0, 0), ft(0, 1), ft(0, 2), ft(0, 3), ft(1, 0), ft(1, 1), ft(1, 2),*/
-            /*ft(1, 3), ft(2, 0), ft(2, 1), ft(2, 2), ft(2, 3), ft(3, 0),*/
-            /*ft(3, 1), ft(3, 2), ft(3, 3);*/
-
-    /*return Camera::Transform(m);*/
-/*}*/
-
 filament::math::mat4f CameraToFilamentTransformF(const Camera::Transform& t) {
     auto e_matrix = t.matrix();
     return filament::math::mat4f(filament::math::mat4f::row_major_init{

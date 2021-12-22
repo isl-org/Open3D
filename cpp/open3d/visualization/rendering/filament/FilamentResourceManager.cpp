@@ -596,8 +596,10 @@ RenderTargetHandle FilamentResourceManager::CreateRenderTarget(
     }
 
     auto rt = RenderTarget::Builder()
-                      .texture(RenderTarget::AttachmentPoint::COLOR, color_tex.get())
-                      .texture(RenderTarget::AttachmentPoint::DEPTH, depth_tex.get())
+                      .texture(RenderTarget::AttachmentPoint::COLOR,
+                               color_tex.get())
+                      .texture(RenderTarget::AttachmentPoint::DEPTH,
+                               depth_tex.get())
                       .build(engine_);
     handle = RegisterResource<RenderTargetHandle>(engine_, rt, render_targets_);
     return handle;
