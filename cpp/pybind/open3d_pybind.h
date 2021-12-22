@@ -40,6 +40,7 @@
 #include <corecrt.h>
 #endif
 
+#include <pybind11/detail/common.h>
 #include <pybind11/detail/internals.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
