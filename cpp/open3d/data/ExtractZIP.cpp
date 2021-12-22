@@ -26,31 +26,12 @@
 
 #include "open3d/data/ExtractZIP.h"
 
-#if (!defined(_WIN32)) && (!defined(WIN32)) && (!defined(__APPLE__))
-#ifndef __USE_FILE_OFFSET64
-#define __USE_FILE_OFFSET64
-#endif
-#ifndef __USE_LARGEFILE64
-#define __USE_LARGEFILE64
-#endif
-#ifndef _LARGEFILE64_SOURCE
-#define _LARGEFILE64_SOURCE
-#endif
-#ifndef _FILE_OFFSET_BIT
-#define _FILE_OFFSET_BIT 64
-#endif
-#endif
-
 #ifdef __APPLE__
 // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no
 // need for specific 64 bit functions
 #define FOPEN_FUNC(filename, mode) fopen(filename, mode)
-#define FTELLO_FUNC(stream) ftello(stream)
-#define FSEEKO_FUNC(stream, offset, origin) fseeko(stream, offset, origin)
 #else
 #define FOPEN_FUNC(filename, mode) fopen64(filename, mode)
-#define FTELLO_FUNC(stream) ftello64(stream)
-#define FSEEKO_FUNC(stream, offset, origin) fseeko64(stream, offset, origin)
 #endif
 
 #include <errno.h>
@@ -125,13 +106,10 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
                 std::string(filename_inzip));
     } else {
         const char *write_filename;
-        // int skip = 0;
-
         write_filename = filename_inzip;
 
         if (password.empty()) {
             err = unzOpenCurrentFilePassword(uf, NULL);
-
         } else {
             err = unzOpenCurrentFilePassword(uf, password.c_str());
         }
@@ -145,7 +123,7 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
         if (err == UNZ_OK) {
             fout = FOPEN_FUNC(write_filename, "wb");
 
-            /* some zipfile don't contain directory alone before file */
+            // some zipfile don't contain directory alone before file
             if ((fout == NULL) &&
                 (filename_withoutpath != (char *)filename_inzip)) {
                 char c = *(filename_withoutpath - 1);
@@ -180,11 +158,10 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
                         break;
                     }
             } while (err > 0);
-            if (fout) fclose(fout);
 
-            // if (err == 0)
-            //     change_file_date(write_filename, file_info.dosDate,
-            //                      file_info.tmu_date);
+            if (fout) {
+                fclose(fout);
+            }
         }
 
         if (err == UNZ_OK) {
@@ -193,8 +170,9 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
                 utility::LogWarning(
                         "Error {} with zipfile in unzCloseCurrentFile", err);
             }
-        } else
-            unzCloseCurrentFile(uf); /* don't lose the error */
+        } else {
+            unzCloseCurrentFile(uf);
+        }
     }
 
     free(buf);

@@ -38,8 +38,9 @@ TEST(Extract, ExtractFromZIP) {
     std::string file_path = utility::GetDataPathCommon("test_data_00.zip");
     std::string extract_dir = utility::GetDataPathCommon();
 
+    std::string password = "o3d_test";
     // Extract the test zip file.
-    EXPECT_TRUE(data::Extract(file_path, extract_dir, "", true));
+    EXPECT_TRUE(data::Extract(file_path, extract_dir, password, true));
     std::string extracted_folder = extract_dir + "/test_data";
     std::string output_file = extracted_folder + "/lena_color.jpg";
 
@@ -56,7 +57,7 @@ TEST(Extract, ExtractFromZIP) {
                           extract_dir, "", true));
 }
 
-TEST(Extract, ExtractFromLargeZIP) {
+TEST(Extract, DISABLED_ExtractFromLargeZIP) {
     std::string file_path = "/home/rey/Downloads/test_large_data.zip";
     std::string extract_dir = "/home/rey/";
     EXPECT_TRUE(data::Extract(file_path, extract_dir, "", true));

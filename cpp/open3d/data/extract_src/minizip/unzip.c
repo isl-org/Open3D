@@ -69,7 +69,10 @@
 #include <string.h>
 
 #ifndef NOUNCRYPT
-        #define NOUNCRYPT
+// Open3D Change:
+// The following line is commented out, to enable unzip protected files.
+// reference: https://stackoverflow.com/questions/6711173/how-to-use-unzopencurrentfilepassword
+        // #define NOUNCRYPT
 #endif
 
 #include "zlib.h"
