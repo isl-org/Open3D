@@ -26,6 +26,33 @@
 
 #include "open3d/data/ExtractZIP.h"
 
+#if (!defined(_WIN32)) && (!defined(WIN32)) && (!defined(__APPLE__))
+#ifndef __USE_FILE_OFFSET64
+#define __USE_FILE_OFFSET64
+#endif
+#ifndef __USE_LARGEFILE64
+#define __USE_LARGEFILE64
+#endif
+#ifndef _LARGEFILE64_SOURCE
+#define _LARGEFILE64_SOURCE
+#endif
+#ifndef _FILE_OFFSET_BIT
+#define _FILE_OFFSET_BIT 64
+#endif
+#endif
+
+#ifdef __APPLE__
+// In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no
+// need for specific 64 bit functions
+#define FOPEN_FUNC(filename, mode) fopen(filename, mode)
+#define FTELLO_FUNC(stream) ftello(stream)
+#define FSEEKO_FUNC(stream, offset, origin) fseeko(stream, offset, origin)
+#else
+#define FOPEN_FUNC(filename, mode) fopen64(filename, mode)
+#define FTELLO_FUNC(stream) ftello64(stream)
+#define FSEEKO_FUNC(stream, offset, origin) fseeko64(stream, offset, origin)
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -68,9 +95,9 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
     void *buf;
     uInt size_buf;
 
-    unz_file_info file_info;
-    err = unzGetCurrentFileInfo(uf, &file_info, filename_inzip,
-                                sizeof(filename_inzip), NULL, 0, NULL, 0);
+    unz_file_info64 file_info;
+    err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip,
+                                  sizeof(filename_inzip), NULL, 0, NULL, 0);
 
     if (err != UNZ_OK) {
         utility::LogWarning("Error {} with zipfile in unzGetCurrentFileInfo.",
@@ -116,7 +143,7 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
         }
 
         if (err == UNZ_OK) {
-            fout = fopen(write_filename, "wb");
+            fout = FOPEN_FUNC(write_filename, "wb");
 
             /* some zipfile don't contain directory alone before file */
             if ((fout == NULL) &&
@@ -128,7 +155,7 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
                         std::string(filename_inzip));
 
                 *(filename_withoutpath - 1) = c;
-                fout = fopen(write_filename, "wb");
+                fout = FOPEN_FUNC(write_filename, "wb");
             }
 
             if (fout == NULL) {
@@ -176,10 +203,10 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
 
 static bool ExtractAll(unzFile uf, const std::string &password) {
     uLong i;
-    unz_global_info gi;
+    unz_global_info64 gi;
     int err;
 
-    err = unzGetGlobalInfo(uf, &gi);
+    err = unzGetGlobalInfo64(uf, &gi);
     if (err != UNZ_OK) {
         utility::LogWarning("Error {} with zipfile in unzGetGlobalInfo", err);
         return false;
@@ -215,10 +242,10 @@ bool ExtractFromZIP(const std::string &filename,
         // strncpy doesnt append the trailing NULL, of the string is too long.
         filename_try[MAXFILENAME] = '\0';
 
-        uf = unzOpen(filename.c_str());
+        uf = unzOpen64(filename.c_str());
         if (uf == NULL) {
             strcat(filename_try, ".zip");
-            uf = unzOpen(filename_try);
+            uf = unzOpen64(filename_try);
         }
     }
 
