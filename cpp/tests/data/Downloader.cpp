@@ -26,6 +26,7 @@
 
 #include "open3d/data/Downloader.h"
 
+#include "open3d/data/Dataset.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -55,6 +56,10 @@ TEST(Downloader, DownloadAndVerify) {
     // SHA256 is not verified.
     EXPECT_TRUE(data::DownloadFromURL(url));
     EXPECT_TRUE(data::DownloadFromURL(url, "", "", false, expected_sha256));
+
+    const std::string data_root = data::LocateDataRoot();
+    EXPECT_TRUE(
+            utility::filesystem::RemoveFile(data_root + "/test_data_00.zip"));
 }
 
 }  // namespace tests
