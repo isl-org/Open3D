@@ -176,7 +176,7 @@ typedef struct {
     ZPOS64_T offset_local_extrafield; /* offset of the local extra field */
     uInt size_local_extrafield;       /* size of the local extra field */
     ZPOS64_T
-            pos_local_extrafield; /* position in the local extra field in read*/
+    pos_local_extrafield; /* position in the local extra field in read*/
     ZPOS64_T total_out_64;
 
     uLong crc32;      /* crc32 of all data uncompressed */
