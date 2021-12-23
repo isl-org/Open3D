@@ -26,8 +26,6 @@
 
 #include "pybind/visualization/gui/gui.h"
 
-#include <pybind11/detail/common.h>
-
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/t/geometry/Image.h"
@@ -65,6 +63,7 @@
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 #include "pybind/visualization/visualization.h"
 #include "pybind11/functional.h"
 
