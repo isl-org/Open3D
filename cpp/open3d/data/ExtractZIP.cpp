@@ -240,7 +240,7 @@ bool ExtractFromZIP(const std::string &filename,
 
     bool success = ExtractAll(uf, password);
 
-    unzCloseCurrentFile(uf);
+    unzClose(uf);
     return success;
 }
 
