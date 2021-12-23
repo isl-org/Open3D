@@ -40,5 +40,5 @@ ExternalProject_Add(
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
 set(ASSIMP_INCLUDE_DIR ${INSTALL_DIR}/include/)
-set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
+set(ASSIMP_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(ASSIMP_LIBRARIES ${lib_name})
