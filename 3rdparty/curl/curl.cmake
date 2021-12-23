@@ -14,9 +14,9 @@ endif()
 if(UNIX AND NOT APPLE AND NOT LINUX_AARCH64)
     # For ubuntu x86, we do not compile from source. Instead, we use the
     # downloaded libcurl binaries.
-    option(BUILD_CURL_FROM_SOURCE OFF)
+    option(BUILD_CURL_FROM_SOURCE "Build CURL from source" OFF)
 else()
-    option(BUILD_CURL_FROM_SOURCE ON)
+    option(BUILD_CURL_FROM_SOURCE "Build CURL from source" ON)
 endif()
 
 if(BUILD_CURL_FROM_SOURCE)
@@ -55,7 +55,7 @@ else()
     #
     # To generate pre-compiled curl:
     # 1. Use Ubuntu 18.04, not 20.04+.
-    # 2. Build Open3D as you normally would
+    # 2. -DBUILD_CURL_FROM_SOURCE=ON, build Open3D
     # 3. cd build/curl
     # 4. tar -czvf curl_7.79.1_linux_x86_64.tar.gz include lib
     ExternalProject_Add(
