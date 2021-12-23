@@ -37,8 +37,9 @@
 #pragma comment(lib, "Ws2_32.lib")
 #define USE_SSLEAY
 #define USE_OPENSSL
-#define CURL_STATICLIB
 #endif
+
+#define CURL_STATICLIB
 
 #include <curl/curl.h>
 #include <curl/easy.h>
@@ -53,8 +54,6 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
-
-#define CURL_STATICLIB
 
 namespace open3d {
 namespace data {
