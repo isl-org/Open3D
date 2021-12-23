@@ -26,23 +26,29 @@
 
 import open3d as o3d
 import numpy as np
-import sys
+import matplotlib.pyplot as plt
 import os
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(dir_path + "/..")
-import open3d_example as o3dex
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    depth = o3d.t.io.read_image(
+        dir_path + "/../../test_data/RGBD/other_formats/TUM_depth.png")
+    intrinsic = o3d.core.Tensor([[535.4, 0, 320.1], [0, 539.2, 247.6],
+                                 [0, 0, 1]])
 
-    gt_mesh = o3dex.get_bunny_mesh()
-    pcd = gt_mesh.sample_points_poisson_disk(5000)
-    # invalidate existing normals
-    pcd.normals = o3d.utility.Vector3dVector(np.zeros((1, 3)))
+    pcd = o3d.t.geometry.PointCloud.create_from_depth_image(depth,
+                                                            intrinsic,
+                                                            depth_scale=5000.0,
+                                                            depth_max=10.0)
+    o3d.visualization.draw([pcd])
+    depth_reproj = pcd.project_to_depth_image(640,
+                                              480,
+                                              intrinsic,
+                                              depth_scale=5000.0,
+                                              depth_max=10.0)
 
-    print("Displaying input pointcloud ...")
-    o3d.visualization.draw_geometries([pcd], point_show_normal=True)
-
-    pcd.estimate_normals()
-    print("Displaying pointcloud with normals ...")
-    o3d.visualization.draw_geometries([pcd], point_show_normal=True)
+    fig, axs = plt.subplots(1, 2)
+    axs[0].imshow(np.asarray(depth.to_legacy()))
+    axs[1].imshow(np.asarray(depth_reproj.to_legacy()))
+    plt.show()

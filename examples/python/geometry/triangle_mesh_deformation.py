@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/geometry/mesh_deformation.py
-
 import numpy as np
 import open3d as o3d
 import time
