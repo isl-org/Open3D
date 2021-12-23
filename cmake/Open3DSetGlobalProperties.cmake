@@ -5,6 +5,11 @@ function(open3d_set_global_properties target)
     # Tell CMake we want a compiler that supports C++14 features
     target_compile_features(${target} PUBLIC cxx_std_14)
 
+    # std::filesystem (C++17) or std::experimental::filesystem (C++14)
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(${target} PRIVATE stdc++fs)
+    endif()
+
     # Colorize GCC/Clang terminal outputs
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fdiagnostics-color=always>)

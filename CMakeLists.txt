@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.19.2)
 # - use first-class language support for ISPC (3.19.2 patch release required)
 
 if (APPLE)
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
     "Minimum OS X deployment version" FORCE)
 endif()
 

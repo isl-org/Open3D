@@ -32,7 +32,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
-#ifdef WINDOWS
+#ifdef WIN32
 #include <direct.h>
 #include <dirent/dirent.h>
 #include <io.h>
@@ -46,6 +46,15 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
+
+#ifdef WIN32
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#endif
+#ifdef __APPLE__
+// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
+#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
+#endif
+#include <experimental/filesystem>
 
 #include "open3d/utility/Logging.h"
 
@@ -257,11 +266,14 @@ bool MakeDirectoryHierarchy(const std::string &directory) {
 }
 
 bool DeleteDirectory(const std::string &directory) {
-#ifdef WINDOWS
-    return (_rmdir(directory.c_str()) == 0);
-#else
-    return (rmdir(directory.c_str()) == 0);
-#endif
+    std::error_code error;
+    if (std::experimental::filesystem::remove_all(directory, error) ==
+        static_cast<std::uintmax_t>(-1)) {
+        utility::LogWarning("Failed to remove directory {}: {}.", directory,
+                            error.message());
+        return false;
+    }
+    return true;
 }
 
 bool FileExists(const std::string &filename) {
