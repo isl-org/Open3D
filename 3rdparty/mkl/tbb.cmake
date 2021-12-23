@@ -21,11 +21,6 @@ set(STATIC_TBB_INCLUDE_DIR "${STATIC_MKL_INCLUDE_DIR}")
 set(STATIC_TBB_LIB_DIR "${STATIC_MKL_LIB_DIR}")
 set(STATIC_TBB_LIBRARIES tbb_static tbbmalloc_static)
 
-# To generate a new patch, go inside TBB source folder:
-# 1. Checkout to a new branch
-# 2. Make changes, commit
-# 3. git format-patch master
-# 4. Copy the new patch file back to Open3d.
 find_package(Git QUIET REQUIRED)
 
 ExternalProject_Add(

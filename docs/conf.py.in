@@ -285,3 +285,12 @@ def skip(app, what, name, obj, would_skip, options):
 
 def setup(app):
     app.connect("autodoc-skip-member", skip)
+    # Add Google analytics
+    app.add_js_file("https://www.googletagmanager.com/gtag/js?id=G-3TQPKGV6Z3",
+                    **{'async': 'async'})
+    app.add_js_file(None,
+                    body="""
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-3TQPKGV6Z3');""")

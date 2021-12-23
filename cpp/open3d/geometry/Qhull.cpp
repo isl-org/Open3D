@@ -39,7 +39,8 @@ namespace open3d {
 namespace geometry {
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-Qhull::ComputeConvexHull(const std::vector<Eigen::Vector3d>& points) {
+Qhull::ComputeConvexHull(const std::vector<Eigen::Vector3d>& points,
+                         bool joggle_inputs) {
     auto convex_hull = std::make_shared<TriangleMesh>();
     std::vector<size_t> pt_map;
 
@@ -55,8 +56,13 @@ Qhull::ComputeConvexHull(const std::vector<Eigen::Vector3d>& points) {
     qhull_points.append(qhull_points_data);
 
     orgQhull::Qhull qhull;
+    std::string options = "Qt";
+    if (joggle_inputs) {
+        options += " QJ";
+    }
     qhull.runQhull(qhull_points.comment().c_str(), qhull_points.dimension(),
-                   qhull_points.count(), qhull_points.coordinates(), "Qt");
+                   qhull_points.count(), qhull_points.coordinates(),
+                   options.c_str());
 
     orgQhull::QhullFacetList facets = qhull.facetList();
     convex_hull->triangles_.resize(facets.count());

@@ -65,8 +65,15 @@ public:
     virtual Eigen::Vector3d GetCenter() const = 0;
     /// Returns an axis-aligned bounding box of the geometry.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const = 0;
-    /// Returns an oriented bounding box of the geometry.
-    virtual OrientedBoundingBox GetOrientedBoundingBox() const = 0;
+
+    /// Computes the oriented bounding box based on the PCA of the convex hull.
+    /// The returned bounding box is an approximation to the minimal bounding
+    /// box.
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    virtual OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const = 0;
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
     virtual Geometry3D& Transform(const Eigen::Matrix4d& transformation) = 0;
 

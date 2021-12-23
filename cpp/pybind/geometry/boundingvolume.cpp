@@ -70,11 +70,25 @@ void pybind_boundingvolume(py::module &m) {
                         "Returns an oriented bounding box from the "
                         "AxisAlignedBoundingBox.",
                         "aabox"_a)
-            .def_static(
-                    "create_from_points",
-                    &OrientedBoundingBox::CreateFromPoints,
-                    "Creates the bounding box that encloses the set of points.",
-                    "points"_a)
+            .def_static("create_from_points",
+                        &OrientedBoundingBox::CreateFromPoints, "points"_a,
+                        "robust"_a = false,
+                        R"doc(
+Creates the oriented bounding box that encloses the set of points.
+
+Computes the oriented bounding box based on the PCA of the convex hull.
+The returned bounding box is an approximation to the minimal bounding box.
+
+Args:
+     points (open3d.utility.Vector3dVector): Input points.
+     robust (bool): If set to true uses a more robust method which works in 
+          degenerate cases but introduces noise to the points coordinates.
+
+Returns:
+     open3d.geometry.OrientedBoundingBox: The oriented bounding box. The
+     bounding box is oriented such that the axes are ordered with respect to
+     the principal components.
+)doc")
             .def("volume", &OrientedBoundingBox::Volume,
                  "Returns the volume of the bounding box.")
             .def("get_box_points", &OrientedBoundingBox::GetBoxPoints,
@@ -97,9 +111,6 @@ void pybind_boundingvolume(py::module &m) {
             {{"aabox",
               "AxisAlignedBoundingBox object from which OrientedBoundingBox is "
               "created."}});
-    docstring::ClassMethodDocInject(m, "OrientedBoundingBox",
-                                    "create_from_points",
-                                    {{"points", "A list of points."}});
 
     py::class_<AxisAlignedBoundingBox, PyGeometry3D<AxisAlignedBoundingBox>,
                std::shared_ptr<AxisAlignedBoundingBox>, Geometry3D>

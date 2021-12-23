@@ -239,16 +239,16 @@ if (BUILD_CUDA_MODULE
 endif()
 
 # CMake modules
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake")
 
 # Setup Python executable
 if(NOT DEFINED Python3_FIND_REGISTRY)
     # Only consider PATH variable on Windows by default
     set(Python3_FIND_REGISTRY NEVER)
 endif()
-find_package(Python3 3.6...<3.10
-             COMPONENTS Interpreter Development
-)
+# Requires Python 3.6+
+find_package(Python3 3.6
+             COMPONENTS Interpreter Development)
 if (Python3_FOUND)
     # Setup PYTHON_EXECUTABLE for 3rdparty modules
     # which still use the deprecated find_package(PythonInterp)
@@ -256,7 +256,7 @@ if (Python3_FOUND)
         "Deprecated path to the Python executable (for 3rdparty only)" FORCE)
 else()
     if (BUILD_PYTHON_MODULE)
-        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.9. Please ensure it is in PATH.")
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python >= 3.6. Please ensure it is in PATH.")
     endif()
 endif()
 
