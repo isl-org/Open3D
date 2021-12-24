@@ -465,7 +465,10 @@ if __name__ == "__main__":
     pwd = Path(os.path.dirname(os.path.abspath(__file__)))
     python_style_config = str(pwd.parent / ".style.yapf")
 
-    cpp_ignored_files = ['cpp/open3d/visualization/shader/Shader.h']
+    cpp_ignored_files = [
+        'cpp/open3d/visualization/shader/Shader.h',
+        "cpp/open3d/utility/LicenseGenerated.h"
+    ]
     cpp_files = _glob_files(CPP_FORMAT_DIRS,
                             ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in"])
     cpp_files = _filter_files(cpp_files, cpp_ignored_files)

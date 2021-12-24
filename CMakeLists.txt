@@ -277,6 +277,11 @@ if(NOT DEFINED PYPI_PACKAGE_NAME)
     set(PYPI_PACKAGE_NAME "open3d")
 endif()
 
+# Generate Open3D and third-party license
+# This will create cpp/open3d/utility/LicenseGenerated.h
+include(Open3DGenerateLicense)
+open3d_generate_license("${PROJECT_SOURCE_DIR}/cpp/open3d/utility/LicenseGenerated.h")
+
 # Set additional info
 set(PROJECT_EMAIL   "info@open3d.org")
 set(PROJECT_HOME    "http://www.open3d.org")

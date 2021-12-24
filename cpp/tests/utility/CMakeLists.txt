@@ -4,6 +4,7 @@ target_sources(tests PRIVATE
     Helper.cpp
     IJsonConvertible.cpp
     ISAInfo.cpp
+    License.cpp
     Logging.cpp
     Preprocessor.cpp
     ProgressBar.cpp

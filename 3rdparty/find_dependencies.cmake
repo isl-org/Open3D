@@ -130,7 +130,7 @@ function(open3d_build_3rdparty_library name)
             ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}
             LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
         )
-    endif()
+endif()
     if(arg_PUBLIC OR arg_HEADER)
         foreach(incl IN LISTS include_dirs)
             if(arg_INCLUDE_ALL)

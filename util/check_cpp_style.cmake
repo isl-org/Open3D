@@ -75,6 +75,7 @@ foreach(DIRECTORY ${CPP_FORMAT_DIRS})
     )
     set(IGNOFRED_FILES
         "${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/shader/Shader.h"
+        "${PROJECT_SOURCE_DIR}/cpp/open3d/utility/LicenseGenerated.h"
     )
     list(REMOVE_ITEM FILES ${IGNOFRED_FILES})
 

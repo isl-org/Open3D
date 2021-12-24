@@ -8,6 +8,7 @@ CMakeSettings.json
 cpp/open3d/Open3D.h
 cpp/open3d/Open3DConfig.h
 cpp/open3d/visualization/shader/Shader.h
+cpp/open3d/utility/LicenseGenerated.h
 util/pip_package/setup.py
 
 # CMake temp file from Visual Studio

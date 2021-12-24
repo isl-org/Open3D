@@ -8,6 +8,7 @@ target_sources(utility PRIVATE
     Helper.cpp
     IJsonConvertible.cpp
     ISAInfo.cpp
+    License.cpp
     Logging.cpp
     Parallel.cpp
     ProgressBar.cpp
