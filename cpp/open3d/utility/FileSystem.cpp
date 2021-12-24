@@ -55,6 +55,7 @@
 #define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
 #endif
 #include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 
 #include "open3d/utility/Logging.h"
 
@@ -267,8 +268,7 @@ bool MakeDirectoryHierarchy(const std::string &directory) {
 
 bool DeleteDirectory(const std::string &directory) {
     std::error_code error;
-    if (std::experimental::filesystem::remove_all(directory, error) ==
-        static_cast<std::uintmax_t>(-1)) {
+    if (fs::remove_all(directory, error) == static_cast<std::uintmax_t>(-1)) {
         utility::LogWarning("Failed to remove directory {}: {}.", directory,
                             error.message());
         return false;
