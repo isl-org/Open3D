@@ -33,10 +33,12 @@
 namespace open3d {
 namespace data {
 
-bool ExtractFromZIP(const std::string& filename,
-                    const std::string& extract_dir,
-                    const std::string& password = "",
-                    const bool print_progress = true);
+/// \brief Function to extract files compressed in `.zip` format.
+/// \param filename Filename including path-prefix.
+/// Example: "/path/to/file/file.zip"
+/// \param extract_dir Directory path where the file will be extracted to.
+void ExtractFromZIP(const std::string& filename,
+                    const std::string& extract_dir);
 
 }  // namespace data
 }  // namespace open3d

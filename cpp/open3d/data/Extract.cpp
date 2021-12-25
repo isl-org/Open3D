@@ -37,42 +37,28 @@
 namespace open3d {
 namespace data {
 
-static const std::unordered_map<std::string,
-                                std::function<bool(const std::string&,
-                                                   const std::string&,
-                                                   const std::string&,
-                                                   const bool print_progress)>>
+static const std::unordered_map<
+        std::string,
+        std::function<void(const std::string&, const std::string&)>>
         file_extension_to_extract_function{
                 {"zip", ExtractFromZIP},
         };
 
-bool Extract(const std::string& filename,
-             const std::string& extract_dir,
-             const std::string& password,
-             const bool print_progress) {
-    std::string format =
+void Extract(const std::string& filename, const std::string& extract_dir) {
+    const std::string format =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
 
     utility::LogDebug("Format {} File {}", format, filename);
 
-    auto map_itr = file_extension_to_extract_function.find(format);
-    if (map_itr == file_extension_to_extract_function.end()) {
-        utility::LogWarning(
+    if (file_extension_to_extract_function.count(format) == 0) {
+        utility::LogError(
                 "Extraction Failed: unknown file extension for "
                 "{} (format: {}).",
                 filename, format);
-        return false;
     }
 
-    bool success =
-            map_itr->second(filename, extract_dir, password, print_progress);
-
-    if (success) {
-        utility::LogDebug("Extraction Successful.");
-    } else {
-        utility::LogDebug("Extraction Failed.");
-    }
-    return success;
+    file_extension_to_extract_function.at(format)(filename, extract_dir);
+    utility::LogDebug("Successfully extracted {}.", filename);
 }
 
 }  // namespace data
