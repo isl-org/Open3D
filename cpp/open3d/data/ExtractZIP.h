@@ -24,6 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+// Do not include this in public facing header.
+
 #pragma once
 
 #include <string>

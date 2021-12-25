@@ -26,6 +26,9 @@
 
 #include "open3d/data/ExtractZIP.h"
 
+// Reference:
+// https://github.com/madler/zlib/blob/master/contrib/minizip/miniunz.c
+
 #ifdef __APPLE__
 // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no
 // need for specific 64 bit functions
@@ -58,8 +61,8 @@
 #endif
 
 #define CASESENSITIVITY (0)
+// If required in future, the `WRITEBUFFERSIZE` size can be increased to 16384.
 #define WRITEBUFFERSIZE (8192)
-// #define WRITEBUFFERSIZE (16384)
 #define MAXFILENAME (256)
 
 namespace open3d {
@@ -116,12 +119,13 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
             utility::LogWarning(
                     "Error {} with zipfile in unzOpenCurrentFilePassword.",
                     err);
+            return err;
         }
 
         if (err == UNZ_OK) {
             fout = FOPEN_FUNC(write_filename, "wb");
 
-            // some zipfile don't contain directory alone before file
+            // Some zipfile don't contain directory alone before file.
             if ((fout == NULL) &&
                 (filename_withoutpath != (char *)filename_inzip)) {
                 char c = *(filename_withoutpath - 1);
@@ -146,12 +150,13 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
                 err = unzReadCurrentFile(uf, buf, size_buf);
                 if (err < 0) {
                     utility::LogWarning(
-                            "Error {} with zipfile in unzReadCurrentFile", err);
+                            "Error {} with zipfile in unzReadCurrentFile.",
+                            err);
                     break;
                 }
                 if (err > 0)
                     if (fwrite(buf, err, 1, fout) != 1) {
-                        utility::LogWarning("error in writing extracted file");
+                        utility::LogWarning("Error in writing extracted file.");
                         err = UNZ_ERRNO;
                         break;
                     }
@@ -166,7 +171,7 @@ static int ExtractCurrentFile(unzFile uf, std::string password) {
             err = unzCloseCurrentFile(uf);
             if (err != UNZ_OK) {
                 utility::LogWarning(
-                        "Error {} with zipfile in unzCloseCurrentFile", err);
+                        "Error {} with zipfile in unzCloseCurrentFile.", err);
             }
         } else {
             unzCloseCurrentFile(uf);
@@ -184,7 +189,7 @@ static bool ExtractAll(unzFile uf, const std::string &password) {
 
     err = unzGetGlobalInfo64(uf, &gi);
     if (err != UNZ_OK) {
-        utility::LogWarning("Error {} with zipfile in unzGetGlobalInfo", err);
+        utility::LogWarning("Error {} with zipfile in unzGetGlobalInfo.", err);
         return false;
     }
 
@@ -196,7 +201,7 @@ static bool ExtractAll(unzFile uf, const std::string &password) {
         if ((i + 1) < gi.number_entry) {
             err = unzGoToNextFile(uf);
             if (err != UNZ_OK) {
-                utility::LogWarning("Error {} with zipfile in unzGoToNextFile",
+                utility::LogWarning("Error {} with zipfile in unzGoToNextFile.",
                                     err);
                 return false;
             }
@@ -210,10 +215,11 @@ bool ExtractFromZIP(const std::string &filename,
                     const std::string &extract_dir,
                     const std::string &password,
                     const bool print_progress) {
-    char filename_try[MAXFILENAME + 16] = "";
     unzFile uf = NULL;
 
     if (!filename.empty()) {
+        char filename_try[MAXFILENAME + 16] = "";
+
         strncpy(filename_try, filename.c_str(), MAXFILENAME - 1);
         // strncpy doesnt append the trailing NULL, of the string is too long.
         filename_try[MAXFILENAME] = '\0';
