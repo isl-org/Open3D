@@ -37,28 +37,10 @@
 #define FOPEN_FUNC(filename, mode) fopen64(filename, mode)
 #endif
 
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
 #include <unzip.h>
 
-#include <iostream>
-
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/ProgressReporters.h"
-
-#ifdef WIN32
-#include <direct.h>
-#include <io.h>
-#else
-#include <unistd.h>
-#include <utime.h>
-#endif
 
 #define CASESENSITIVITY (0)
 // If required in future, the `WRITEBUFFERSIZE` size can be increased to 16384.
@@ -73,13 +55,14 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
     char *filename_withoutpath;
     char *p;
     int err = UNZ_OK;
-    FILE *fout = NULL;
+    FILE *fout = nullptr;
     void *buf;
     uInt size_buf;
 
     unz_file_info64 file_info;
     err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip,
-                                  sizeof(filename_inzip), NULL, 0, NULL, 0);
+                                  sizeof(filename_inzip), nullptr, 0, nullptr,
+                                  0);
 
     if (err != UNZ_OK) {
         utility::LogError("Error {} with zipfile in unzGetCurrentFileInfo.",
@@ -88,7 +71,7 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
 
     size_buf = WRITEBUFFERSIZE;
     buf = (void *)malloc(size_buf);
-    if (buf == NULL) {
+    if (buf == nullptr) {
         utility::LogError("Error allocating memory.");
     }
 
@@ -108,7 +91,7 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
         write_filename = filename_inzip;
 
         if (password.empty()) {
-            err = unzOpenCurrentFilePassword(uf, NULL);
+            err = unzOpenCurrentFilePassword(uf, nullptr);
         } else {
             err = unzOpenCurrentFilePassword(uf, password.c_str());
         }
@@ -123,7 +106,7 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
             fout = FOPEN_FUNC(write_filename, "wb");
 
             // Some zipfile don't contain directory alone before file.
-            if ((fout == NULL) &&
+            if ((fout == nullptr) &&
                 (filename_withoutpath != (char *)filename_inzip)) {
                 char c = *(filename_withoutpath - 1);
                 *(filename_withoutpath - 1) = '\0';
@@ -135,12 +118,12 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
                 fout = FOPEN_FUNC(write_filename, "wb");
             }
 
-            if (fout == NULL) {
+            if (fout == nullptr) {
                 utility::LogError("Error opening {}", write_filename);
             }
         }
 
-        if (fout != NULL) {
+        if (fout != nullptr) {
             utility::LogDebug(" Extracting: {}", write_filename);
 
             do {
@@ -203,23 +186,24 @@ static void ExtractAll(unzFile uf, const std::string &password) {
 
 void ExtractFromZIP(const std::string &filename,
                     const std::string &extract_dir) {
-    unzFile uf = NULL;
+    unzFile uf = nullptr;
 
     if (!filename.empty()) {
         char filename_try[MAXFILENAME + 16] = "";
 
         strncpy(filename_try, filename.c_str(), MAXFILENAME - 1);
-        // strncpy doesnt append the trailing NULL, of the string is too long.
+        // strncpy doesnt append the trailing nullptr, of the string is too
+        // long.
         filename_try[MAXFILENAME] = '\0';
 
         uf = unzOpen64(filename.c_str());
-        if (uf == NULL) {
+        if (uf == nullptr) {
             strcat(filename_try, ".zip");
             uf = unzOpen64(filename_try);
         }
     }
 
-    if (uf == NULL) {
+    if (uf == nullptr) {
         utility::LogError("Failed to open file {}.", filename);
     }
 
