@@ -29,6 +29,25 @@
 // Reference:
 // https://github.com/madler/zlib/blob/master/contrib/minizip/miniunz.c
 
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unzip.h>
+
+#include <iostream>
+
+#include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
+
+#ifdef WIN32
+#include <direct.h>
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+
 #ifdef __APPLE__
 // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no
 // need for specific 64 bit functions
@@ -36,11 +55,6 @@
 #else
 #define FOPEN_FUNC(filename, mode) fopen64(filename, mode)
 #endif
-
-#include <unzip.h>
-
-#include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Logging.h"
 
 #define CASESENSITIVITY (0)
 // If required in future, the `WRITEBUFFERSIZE` size can be increased to 16384.
