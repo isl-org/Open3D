@@ -73,7 +73,7 @@ else()
 
     ExternalProject_Get_Property(ext_curl SOURCE_DIR)
     set(CURL_INCLUDE_DIRS ${SOURCE_DIR}/include/) # "/" is critical.
-    set(CURL_LIB_DIR ${SOURCE_DIR}/${Open3D_INSTALL_LIB_DIR})
+    set(CURL_LIB_DIR ${SOURCE_DIR}/lib)
     set(CURL_LIBRARIES ${curl_lib_name})
 endif()
 
