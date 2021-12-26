@@ -32,8 +32,8 @@
 
 // https://stackoverflow.com/a/41873190/1255535
 #ifdef WINDOWS
-#pragma comment(lib, "wldap32.lib" )
-#pragma comment(lib, "crypt32.lib" )
+#pragma comment(lib, "wldap32.lib")
+#pragma comment(lib, "crypt32.lib")
 #pragma comment(lib, "Ws2_32.lib")
 #define USE_SSLEAY
 #define USE_OPENSSL
@@ -58,11 +58,15 @@
 namespace open3d {
 namespace data {
 
+// https://gist.github.com/arrieta/7d2e196c40514d8b5e9031f2535064fc
+// author    J. Arrieta <Juan.Arrieta@nablazerolabs.com>
+// copyright (c) 2017 Nabla Zero Labs
+// license   MIT License
 std::string GetSHA256(const std::string& file_path) {
-    // https://gist.github.com/arrieta/7d2e196c40514d8b5e9031f2535064fc
-    // author    J. Arrieta <Juan.Arrieta@nablazerolabs.com>
-    // copyright (c) 2017 Nabla Zero Labs
-    // license   MIT License
+    if (!utility::filesystem::FileExists(file_path)) {
+        utility::LogError("{} does not exist.", file_path);
+    }
+
     std::ifstream fp(file_path.c_str(), std::ios::in | std::ios::binary);
 
     if (!fp.good()) {
@@ -70,9 +74,8 @@ std::string GetSHA256(const std::string& file_path) {
         utility::LogError("Cannot open {}", file_path);
     }
 
-    constexpr const std::size_t buffer_size{1 << 12};
+    constexpr const std::size_t buffer_size{1 << 12};  // 4 KiB
     char buffer[buffer_size];
-
     unsigned char hash[SHA256_DIGEST_LENGTH] = {0};
 
     SHA256_CTX ctx;
@@ -102,135 +105,76 @@ static size_t WriteDataCb(void* ptr, size_t size, size_t nmemb, FILE* stream) {
     return written;
 }
 
-static std::string GetAbsoluteFilePath(const std::string& url,
-                                       const std::string& output_file_path,
-                                       const std::string& output_file_name) {
-    std::string file_name;
-    if (output_file_name.empty()) {
-        file_name = utility::filesystem::GetFileNameWithoutDirectory(url);
-    } else {
-        file_name = output_file_name;
-    }
-
-    std::string file_path;
-    if (output_file_path.empty()) {
-        file_path = LocateDataRoot();
-    } else {
-        file_path = output_file_path;
-    }
-
-    // It will create the directory hierarchy if not present.
-    if (!utility::filesystem::DirectoryExists(file_path)) {
-        utility::filesystem::MakeDirectoryHierarchy(file_path);
-    }
-
-    file_path = file_path + '/' + file_name;
-    return file_path;
-}
-
-bool DownloadFromURL(const std::string& url,
-                     const std::string& output_file_path,
-                     const std::string& output_file_name,
-                     const bool always_download,
+void DownloadFromURL(const std::string& url,
                      const std::string& sha256,
-                     const bool print_progress) {
-    // Get absolute file-path, from inputs.
-    std::string file_path =
-            GetAbsoluteFilePath(url, output_file_path, output_file_name);
+                     const std::string& prefix,
+                     const std::string& data_root) {
+    // Always print URL to inform the user. If the download fails, the user
+    // knows the URL.
+    utility::LogInfo("Downloading {}", url);
 
-    // Check and skip download if required.
-    if (!always_download && utility::filesystem::FileExists(file_path)) {
-        if (!sha256.empty()) {
-            const std::string actual_hash = GetSHA256(file_path.c_str());
-            if (sha256 == actual_hash) {
-                utility::LogDebug(
-                        "Downloading Skipped. File already present with "
-                        "expected SHA256 hash.");
-                return true;
-            }
-        } else {
-            utility::LogError(
-                    "Setting always_download to false, requires SHA256 "
-                    "value, to verify the existing file.");
-        }
+    // Sanity checks.
+    if (sha256.size() != SHA256_DIGEST_LENGTH * 2) {
+        utility::LogError("Invalid sha256 length {}, expected to be {}.",
+                          sha256.size(), SHA256_DIGEST_LENGTH * 2);
+    }
+    if (prefix.empty()) {
+        utility::LogError("Download prefix cannot be empty.");
     }
 
-    // Download mechanism.
+    // Resolve path.
+    const std::string resolved_data_root =
+            data_root.empty() ? LocateDataRoot() : data_root;
+    const std::string file_dir = resolved_data_root + "/" + prefix;
+    const std::string file_name =
+            utility::filesystem::GetFileNameWithoutDirectory(url);
+    const std::string file_path = file_dir + "/" + file_name;
+    if (!utility::filesystem::DirectoryExists(file_dir)) {
+        utility::filesystem::MakeDirectoryHierarchy(file_dir);
+    }
+
+    // Check if the file exists.
+    if (utility::filesystem::FileExists(file_path) &&
+        GetSHA256(file_path) == sha256) {
+        utility::LogInfo("{} exists and SHA256 matches. Skipped downloading.",
+                         file_path);
+        return;
+    }
+
+    // Download.
     CURL* curl;
     FILE* fp;
     CURLcode res;
-
-    curl_version_info_data* ver = curl_version_info(CURLVERSION_NOW);
-    utility::LogInfo("libcurl ssl_version: {}", ver->ssl_version);
-
-    // Initialize Curl.
     curl = curl_easy_init();
+    if (!curl) {
+        utility::LogError("Failed to initialize CURL.");
+    }
+    fp = fopen(file_path.c_str(), "wb");
+    if (!fp) {
+        utility::LogError("Failed to open file {}.", file_path);
+    }
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);  // -L redirection.
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteDataCb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+    res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+    fclose(fp);
 
-    if (curl) {
-        fp = fopen(file_path.c_str(), "wb");
-
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-
-        // Follow redirection in link. `-L option in curl`.
-        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-
-        // TODO: Check if it is safe to skip this verification.
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
-
-        // Write function callback.
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteDataCb);
-        // Pass file-handler to which the data will be written.
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-
-        // Progress bar options.
-        if (print_progress) {
-            // TODO: Add Open3D progress-bar option.
-            // curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION,
-            //                  download_progress_callback);
-            // curl_easy_setopt(curl, CURLOPT_XFERINFODATA,
-            //                  static_cast<void*>(&progress_bar));
-            // curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0);
-        }
-
-        // Perform a file transfer synchronously.
-        res = curl_easy_perform(curl);
-        // Cleanup.
-        curl_easy_cleanup(curl);
-        // Close file.
-        fclose(fp);
-
-        // File downloaded without error.
-        if (res == CURLE_OK) {
-            // Verify SHA256 value.
-            if (!sha256.empty()) {
-                const std::string actual_hash = GetSHA256(file_path.c_str());
-                if (sha256 == actual_hash) {
-                    utility::LogDebug(
-                            "Downloaded file {} with expected SHA256 hash.",
-                            file_path);
-                    return true;
-                } else {
-                    utility::LogWarning(
-                            "SHA256 hash mismatch for file {}.\n Expected: "
-                            "{}.\n Actual: {}.",
-                            file_path, sha256, actual_hash);
-                    return false;
-                }
-            }
-
-            utility::LogDebug("Downloaded file {}.", file_path);
-            return true;
+    if (res == CURLE_OK) {
+        const std::string actual_sha256 = GetSHA256(file_path);
+        if (actual_sha256 == sha256) {
+            utility::LogInfo("Downloaded to {}", file_path);
         } else {
-            utility::LogWarning("Download failed with error code: {}.",
-                                curl_easy_strerror(res));
-
-            return false;
+            utility::LogError(
+                    "SHA256 mismatch for {}.\n- Expected: {}\n- Actual  : {}",
+                    file_path, sha256, actual_sha256);
         }
-
     } else {
-        utility::LogWarning("Failed to initialize CURL.");
-        return false;
+        utility::LogError("Download failed with error code: {}.",
+                          curl_easy_strerror(res));
     }
 }
 

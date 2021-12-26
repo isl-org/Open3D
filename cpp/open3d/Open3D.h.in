@@ -46,6 +46,7 @@
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/TensorList.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Geometry.h"
 #include "open3d/geometry/HalfEdgeTriangleMesh.h"
