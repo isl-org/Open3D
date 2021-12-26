@@ -119,7 +119,7 @@ Widget::DrawResult Widget::Draw(const DrawContext& context) {
             auto r = child->Draw(context);
             // The mouse can only be over one item, so there should never
             // be multiple items returning non-NONE.
-            if (r != DrawResult::NONE) {
+            if (r > result) {
                 result = r;
             }
         }
