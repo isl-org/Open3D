@@ -697,13 +697,12 @@ void pybind_gui_classes(py::module &m) {
     // ---- WidgetProxy ----
     py::class_<WidgetProxy, UnownedPointer<WidgetProxy>, Widget> widgetProxy(
             m, "WidgetProxy", "WidgetProxy");
-    widgetProxy.def(py::init<>(),
-                 "Creates a widget proxy")
+    widgetProxy.def(py::init<>(), "Creates a widget proxy")
             .def("__repr__",
                  [](const WidgetProxy &c) {
                      std::stringstream s;
-                     s << "Proxy (" << c.GetFrame().x << ", "
-                       << c.GetFrame().y << "), " << c.GetFrame().width << " x "
+                     s << "Proxy (" << c.GetFrame().x << ", " << c.GetFrame().y
+                       << "), " << c.GetFrame().width << " x "
                        << c.GetFrame().height;
                      return s.str();
                  })
@@ -713,8 +712,7 @@ void pybind_gui_classes(py::module &m) {
                         w.SetWidget(TakeOwnership<Widget>(proxy));
                     },
                     "Adds a proxy widget")
-            .def( "get_widget", &WidgetProxy::GetWidget,
-                  "Get proxy widget");
+            .def("get_widget", &WidgetProxy::GetWidget, "Get proxy widget");
     // ---- Button ----
     py::class_<Button, UnownedPointer<Button>, Widget> button(m, "Button",
                                                               "Button");

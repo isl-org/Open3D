@@ -148,6 +148,7 @@ class ExampleWindow:
 
         self.logo_idx = 0
         proxy = gui.WidgetProxy()
+
         def switch_proxy():
             self.logo_idx += 1
             if self.logo_idx % 3 == 0:
@@ -157,7 +158,8 @@ class ExampleWindow:
                 logo = gui.ImageWidget(basedir + "/icon-32.png")
                 proxy.set_widget(logo)
             else:
-                label = gui.Label('Open3D: A Modern Library for 3D Data Processing')
+                label = gui.Label(
+                    'Open3D: A Modern Library for 3D Data Processing')
                 proxy.set_widget(label)
             w.set_needs_layout()
 
@@ -165,7 +167,6 @@ class ExampleWindow:
         logo_btn.set_on_clicked(switch_proxy)
         collapse.add_child(logo_btn)
         collapse.add_child(proxy)
-
 
         # Add a list of items
         lv = gui.ListView()

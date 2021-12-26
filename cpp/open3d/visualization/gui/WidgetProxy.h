@@ -43,8 +43,7 @@ class Renderer;
 namespace visualization {
 namespace gui {
 
-class WidgetProxy : public Widget{
-
+class WidgetProxy : public Widget {
 public:
     WidgetProxy();
     ~WidgetProxy() override;
@@ -70,7 +69,7 @@ public:
     void SetTooltip(const char* text) override;
     const char* GetTooltip() const override;
     Size CalcPreferredSize(const LayoutContext& context,
-                                   const Constraints& constraints) const override;
+                           const Constraints& constraints) const override;
     Size CalcMinimumSize(const LayoutContext& context) const override;
     void Layout(const LayoutContext& context) override;
     DrawResult Draw(const DrawContext& context) override;
@@ -80,6 +79,7 @@ public:
 
 protected:
     virtual std::shared_ptr<Widget> GetActiveWidget() const;
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

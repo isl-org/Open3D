@@ -47,9 +47,7 @@ void WidgetProxy::SetWidget(std::shared_ptr<Widget> widget) {
     impl_->widget_ = widget;
     impl_->need_layout_ = true;
 }
-std::shared_ptr<Widget> WidgetProxy::GetWidget() {
-    return GetActiveWidget();
-}
+std::shared_ptr<Widget> WidgetProxy::GetWidget() { return GetActiveWidget(); }
 void WidgetProxy::AddChild(std::shared_ptr<Widget> child) {
     auto widget = GetActiveWidget();
     if (widget) {
@@ -152,7 +150,7 @@ const char* WidgetProxy::GetTooltip() const {
 }
 
 Size WidgetProxy::CalcPreferredSize(const LayoutContext& context,
-                               const Constraints& constraints) const {
+                                    const Constraints& constraints) const {
     auto widget = GetActiveWidget();
     if (widget) {
         return widget->CalcPreferredSize(context, constraints);
