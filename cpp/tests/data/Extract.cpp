@@ -57,9 +57,9 @@ TEST(Extract, ExtractFromZIP) {
     EXPECT_TRUE(utility::filesystem::FileExists(output_file));
 
     // Delete test file.
-    std::remove(output_file.c_str());
-    utility::filesystem::DeleteDirectory(extracted_folder);
-    std::remove(file_path.c_str());
+    EXPECT_TRUE(utility::filesystem::RemoveFile(output_file.c_str()));
+    EXPECT_TRUE(utility::filesystem::DeleteDirectory(extracted_folder));
+    EXPECT_TRUE(utility::filesystem::RemoveFile(file_path.c_str()));
 
     // Download the `test_data_00.tar.xy` test data.
     test_file_url =
@@ -72,7 +72,7 @@ TEST(Extract, ExtractFromZIP) {
     // Currently only `.zip` files are supported.
     file_path = download_dir + "/test_data_00.tar.xz";
     EXPECT_ANY_THROW(data::Extract(file_path, download_dir));
-    std::remove(file_path.c_str());
+    EXPECT_TRUE(utility::filesystem::RemoveFile(file_path.c_str()));
 }
 
 }  // namespace tests

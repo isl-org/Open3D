@@ -30,9 +30,7 @@
 
 #include "open3d/data/ExtractZIP.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
 namespace data {
@@ -47,8 +45,7 @@ static const std::unordered_map<
 void Extract(const std::string& filename, const std::string& extract_dir) {
     const std::string format =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
-
-    utility::LogDebug("Format {} File {}", format, filename);
+    utility::LogInfo("Extracting {}, to {}.", filename, extract_dir);
 
     if (file_extension_to_extract_function.count(format) == 0) {
         utility::LogError(
@@ -58,7 +55,6 @@ void Extract(const std::string& filename, const std::string& extract_dir) {
     }
 
     file_extension_to_extract_function.at(format)(filename, extract_dir);
-    utility::LogDebug("Successfully extracted {}.", filename);
 }
 
 }  // namespace data

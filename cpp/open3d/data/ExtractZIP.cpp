@@ -79,14 +79,16 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
                                   0);
 
     if (err != UNZ_OK) {
-        utility::LogError("Error {} with zipfile in unzGetCurrentFileInfo.",
-                          err);
+        utility::LogWarning("Error {} with zipfile in unzGetCurrentFileInfo.",
+                            err);
+        return err;
     }
 
     size_buf = WRITEBUFFERSIZE;
     buf = (void *)malloc(size_buf);
     if (buf == nullptr) {
-        utility::LogError("Error allocating memory.");
+        utility::LogWarning("Error allocating memory.");
+        return UNZ_INTERNALERROR;
     }
 
     //  If zip entry is a directory then create it on disk.
@@ -111,9 +113,10 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
         }
 
         if (err != UNZ_OK) {
-            utility::LogError(
+            utility::LogWarning(
                     "Error {} with zipfile in unzOpenCurrentFilePassword.",
                     err);
+            return err;
         }
 
         if (err == UNZ_OK) {
@@ -133,7 +136,7 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
             }
 
             if (fout == nullptr) {
-                utility::LogError("Error opening {}", write_filename);
+                utility::LogWarning("Error opening {}", write_filename);
             }
         }
 
@@ -143,13 +146,16 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
             do {
                 err = unzReadCurrentFile(uf, buf, size_buf);
                 if (err < 0) {
-                    utility::LogError(
+                    utility::LogWarning(
                             "Error {} with zipfile in unzReadCurrentFile.",
                             err);
+                    break;
                 }
                 if (err > 0)
                     if (fwrite(buf, err, 1, fout) != 1) {
-                        utility::LogError("Error in writing extracted file.");
+                        utility::LogWarning("Error in writing extracted file.");
+                        err = UNZ_ERRNO;
+                        break;
                     }
             } while (err > 0);
 
@@ -161,7 +167,7 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
         if (err == UNZ_OK) {
             err = unzCloseCurrentFile(uf);
             if (err != UNZ_OK) {
-                utility::LogError(
+                utility::LogWarning(
                         "Error {} with zipfile in unzCloseCurrentFile.", err);
             }
         } else {
@@ -180,19 +186,27 @@ static void ExtractAll(unzFile uf, const std::string &password) {
 
     err = unzGetGlobalInfo64(uf, &gi);
     if (err != UNZ_OK) {
-        utility::LogError("Error {} with zipfile in unzGetGlobalInfo.", err);
+        utility::LogError(
+                "Extraction failed in unzGetGlobalInfo with error code: {}.",
+                err);
     }
 
     for (i = 0; i < gi.number_entry; i++) {
-        if (ExtractCurrentFile(uf, password) != UNZ_OK) {
-            utility::LogError("Extraction failed in ExtractCurrentFile");
+        err = ExtractCurrentFile(uf, password);
+        if (err != UNZ_OK) {
+            utility::LogError(
+                    "Extraction failed in ExtractCurrentFile with error code: "
+                    "{}.",
+                    err);
         }
 
         if ((i + 1) < gi.number_entry) {
             err = unzGoToNextFile(uf);
             if (err != UNZ_OK) {
-                utility::LogError("Error {} with zipfile in unzGoToNextFile.",
-                                  err);
+                utility::LogError(
+                        "Extraction failed in unzGoToNextFile with error code: "
+                        "{}.",
+                        err);
             }
         }
     }
