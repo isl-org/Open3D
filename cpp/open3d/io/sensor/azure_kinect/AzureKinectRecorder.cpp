@@ -99,6 +99,8 @@ bool AzureKinectRecorder::CloseRecord() {
 std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
         bool write, bool enable_align_depth_to_color) {
     k4a_capture_t capture = sensor_.CaptureRawFrame();
+    if (!capture) return nullptr;
+
     if (capture != nullptr && is_record_created_ && write) {
         if (K4A_FAILED(k4a_plugin::k4a_record_write_capture(recording_,
                                                             capture))) {
