@@ -79,8 +79,7 @@ static HINSTANCE LoadK4ADllHandle(const std::string& lib_name) {
 
     HINSTANCE handle = NULL;
     for (const std::string& k4a_lib_path_hint : k4a_lib_path_hints) {
-        utility::LogDebug("Trying k4a_lib_path_hint: {}",
-                            k4a_lib_path_hint);
+        utility::LogDebug("Trying k4a_lib_path_hint: {}", k4a_lib_path_hint);
         std::string full_path = k4a_lib_path_hint + "\\" + lib_name;
         handle = LoadLibrary(TEXT(full_path.c_str()));
         if (handle != NULL) {
@@ -98,7 +97,8 @@ static HINSTANCE LoadK4ADllHandle(const std::string& lib_name) {
 static HINSTANCE GetDynamicLibHandle(const std::string& lib_name) {
     static std::unordered_map<std::string, HINSTANCE> map_lib_name_to_handle;
 
-    // Always trigger the loading of k4a.dll as it is the dependency of k4arecord.dll
+    // Always trigger the loading of k4a.dll as it is the dependency of
+    // k4arecord.dll
     if (map_lib_name_to_handle.count(k4a_lib_name) == 0) {
         map_lib_name_to_handle[k4a_lib_name] = LoadK4ADllHandle(k4a_lib_name);
     }
