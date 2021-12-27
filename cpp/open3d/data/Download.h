@@ -37,7 +37,7 @@ std::string GetSHA256(const std::string& file_path);
 
 /// \brief Download a file from URL.
 ///
-/// \param url File URL.
+/// \param url File URL. The saved file name will be the last part of the URL.
 /// \param sha256 SHA256 checksum of the file. This is required as the same
 /// URL may point to different files over time.
 /// \param prefix The file will be downloaded to `data_root/prefix`.
