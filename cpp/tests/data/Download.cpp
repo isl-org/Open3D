@@ -24,8 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Dataset.h"
 #include "open3d/data/Download.h"
+
+#include "open3d/data/Dataset.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -44,9 +45,7 @@ TEST(Downloader, DownloadAndVerify) {
     std::string prefix = "temp_test";
     std::string file_dir = data::LocateDataRoot() + "/" + prefix;
     std::string file_path = file_dir + "/" + "test_data_00.zip";
-    if (utility::filesystem::DirectoryExists(file_dir)) {
-        EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
-    }
+    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
 
     // This download shall work.
     data::DownloadFromURL(url, sha256, prefix);
@@ -63,7 +62,7 @@ TEST(Downloader, DownloadAndVerify) {
             "0000000000000000000000000000000000000000000000000000000000000000",
             prefix));
 
-    EXPECT_TRUE(utility::filesystem::RemoveFile(file_path));
+    // Clean up.
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
 }
 
