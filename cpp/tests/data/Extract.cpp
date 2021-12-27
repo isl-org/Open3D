@@ -57,7 +57,6 @@ TEST(Extract, ExtractFromZIP) {
     EXPECT_TRUE(utility::filesystem::FileExists(output_file));
 
     // Delete test file.
-    EXPECT_TRUE(utility::filesystem::RemoveFile(output_file.c_str()));
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(extracted_folder));
     EXPECT_TRUE(utility::filesystem::RemoveFile(file_path.c_str()));
 
