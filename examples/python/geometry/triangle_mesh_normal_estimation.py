@@ -26,23 +26,22 @@
 
 import open3d as o3d
 import numpy as np
-import sys
 import os
+import sys
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(dir_path + "/..")
 import open3d_example as o3dex
 
 if __name__ == "__main__":
+    mesh = o3dex.get_knot_mesh()
+    print("Displaying mesh without normals ...")
+    # Invalidate existing normals.
+    mesh.triangle_normals = o3d.utility.Vector3dVector(np.zeros((1, 3)))
+    print("normals: \n", np.asarray(mesh.triangle_normals))
+    o3d.visualization.draw_geometries([mesh])
 
-    mesh = o3dex.get_bunny_mesh()
-    # fit to unit cube
-    mesh.scale(1 / np.max(mesh.get_max_bound() - mesh.get_min_bound()),
-               center=mesh.get_center())
-    print('Displaying input mesh ...')
-    o3d.visualization.draw([mesh])
-
-    voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(
-        mesh, voxel_size=0.05)
-    print('Displaying voxel grid ...')
-    o3d.visualization.draw([voxel_grid])
+    print("Computing normals and rendering it ...")
+    mesh.compute_vertex_normals()
+    print("normals: \n", np.asarray(mesh.triangle_normals))
+    o3d.visualization.draw_geometries([mesh])

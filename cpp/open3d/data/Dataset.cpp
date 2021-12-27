@@ -34,15 +34,7 @@
 namespace open3d {
 namespace data {
 
-/// A dataset class locates the data root directory in the following order:
-///
-/// (a) User-specified by `data_root` when instantiating a dataset object.
-/// (b) OPEN3D_DATA_ROOT environment variable.
-/// (c) $HOME/open3d_data.
-///
-/// LocateDataRoot() shall be called when the user-specified data root is not
-/// set, i.e. in case (b) and (c).
-static std::string LocateDataRoot() {
+std::string LocateDataRoot() {
     std::string data_root = "";
     if (const char* env_p = std::getenv("OPEN3D_DATA_ROOT")) {
         data_root = std::string(env_p);

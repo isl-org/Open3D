@@ -114,6 +114,9 @@ public:
     virtual ProjectionMatrix GetProjectionMatrix() const = 0;
     virtual Transform GetCullingProjectionMatrix() const = 0;
 
+    /// Returns world space coordinates given an x,y position in screen
+    /// coordinates relative to upper left, the screen dimensions, and z is the
+    /// depth value (0.0 - 1.0)
     virtual Eigen::Vector3f Unproject(float x,
                                       float y,
                                       float z,
