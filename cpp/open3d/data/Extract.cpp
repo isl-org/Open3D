@@ -42,19 +42,19 @@ static const std::unordered_map<
                 {"zip", ExtractFromZIP},
         };
 
-void Extract(const std::string& filename, const std::string& extract_dir) {
+void Extract(const std::string& file_path, const std::string& extract_dir) {
     const std::string format =
-            utility::filesystem::GetFileExtensionInLowerCase(filename);
-    utility::LogInfo("Extracting {}, to {}.", filename, extract_dir);
+            utility::filesystem::GetFileExtensionInLowerCase(file_path);
+    utility::LogInfo("Extracting {}, to {}.", file_path, extract_dir);
 
     if (file_extension_to_extract_function.count(format) == 0) {
         utility::LogError(
                 "Extraction Failed: unknown file extension for "
                 "{} (format: {}).",
-                filename, format);
+                file_path, format);
     }
 
-    file_extension_to_extract_function.at(format)(filename, extract_dir);
+    file_extension_to_extract_function.at(format)(file_path, extract_dir);
 }
 
 }  // namespace data

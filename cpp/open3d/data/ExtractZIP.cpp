@@ -212,27 +212,27 @@ static void ExtractAll(unzFile uf, const std::string &password) {
     }
 }
 
-void ExtractFromZIP(const std::string &filename,
+void ExtractFromZIP(const std::string &file_path,
                     const std::string &extract_dir) {
     unzFile uf = nullptr;
 
-    if (!filename.empty()) {
-        char filename_try[MAXFILENAME + 16] = "";
+    if (!file_path.empty()) {
+        char file_path_try[MAXFILENAME + 16] = "";
 
-        strncpy(filename_try, filename.c_str(), MAXFILENAME - 1);
+        strncpy(file_path_try, file_path.c_str(), MAXFILENAME - 1);
         // strncpy doesnt append the trailing nullptr, of the string is too
         // long.
-        filename_try[MAXFILENAME] = '\0';
+        file_path_try[MAXFILENAME] = '\0';
 
-        uf = unzOpen64(filename.c_str());
+        uf = unzOpen64(file_path.c_str());
         if (uf == nullptr) {
-            strcat(filename_try, ".zip");
-            uf = unzOpen64(filename_try);
+            strcat(file_path_try, ".zip");
+            uf = unzOpen64(file_path_try);
         }
     }
 
     if (uf == nullptr) {
-        utility::LogError("Failed to open file {}.", filename);
+        utility::LogError("Failed to open file {}.", file_path);
     }
 
     // Change working directory to the extraction directory.

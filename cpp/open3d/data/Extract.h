@@ -32,10 +32,9 @@ namespace open3d {
 namespace data {
 
 /// \brief Function to extract compressed files.
-/// \param filename Filename including path-prefix.
-/// Example: "/path/to/file/file.zip"
+/// \param file_path Path to file. Example: "/path/to/file/file.zip"
 /// \param extract_dir Directory path where the file will be extracted to.
-void Extract(const std::string& filename, const std::string& extract_dir);
+void Extract(const std::string& file_path, const std::string& extract_dir);
 
 }  // namespace data
 }  // namespace open3d
