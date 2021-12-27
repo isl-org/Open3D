@@ -2,7 +2,7 @@ open3d_ispc_add_library(data OBJECT)
 
 target_sources(data PRIVATE
     Dataset.cpp
-    Downloader.cpp
+    Download.cpp
     Extract.cpp
     ExtractZIP.cpp
 )

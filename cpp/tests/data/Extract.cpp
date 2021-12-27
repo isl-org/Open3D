@@ -27,51 +27,48 @@
 #include "open3d/data/Extract.h"
 
 #include "open3d/data/Dataset.h"
-#include "open3d/data/Downloader.h"
+#include "open3d/data/Download.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/Logging.h"
 #include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
 
 TEST(Extract, ExtractFromZIP) {
+    // Directory relative to `data_root`, where files will be temp. downloaded
+    // for this test.
+    const std::string prefix = "test_extract";
+    const std::string extract_dir = data::LocateDataRoot() + "/" + prefix;
+
     // Download the `test_data_00.zip` test data.
-    std::string test_file_url =
+    std::string file_url =
             "https://github.com/isl-org/open3d_downloads/releases/download/"
             "data-manager/test_data_00.zip";
-    std::string test_file_sha256sum =
+    std::string file_sha256 =
             "66ea466a02532d61dbc457abf1408afeab360d7a35e15f1479ca91c25e838d30";
-    data::DownloadFromURL(test_file_url, "", "", false, test_file_sha256sum);
-
-    const std::string download_dir = data::LocateDataRoot();
-    std::string file_path = download_dir + "/test_data_00.zip";
+    data::DownloadFromURL(file_url, file_sha256, prefix);
 
     // Extract the test zip file.
-    EXPECT_NO_THROW(data::Extract(file_path, download_dir));
-    std::string extracted_folder = download_dir + "/test_data";
-    std::string output_file = extracted_folder + "/lena_color.jpg";
-
+    std::string file_path = extract_dir + "/test_data_00.zip";
+    EXPECT_NO_THROW(data::Extract(file_path, extract_dir));
+    std::string output_file = extract_dir + "/test_data/lena_color.jpg";
     // Check if the extracted file exists.
     EXPECT_TRUE(utility::filesystem::FileExists(output_file));
 
-    // Delete test file.
-    EXPECT_TRUE(utility::filesystem::DeleteDirectory(extracted_folder));
-    EXPECT_TRUE(utility::filesystem::RemoveFile(file_path.c_str()));
-
     // Download the `test_data_00.tar.xy` test data.
-    test_file_url =
+    file_url =
             "https://github.com/isl-org/open3d_downloads/releases/download/"
             "data-manager/test_data_00.tar.xz";
-    test_file_sha256sum =
+    file_sha256 =
             "e8072ac8c10b73a13a9b72642f3645985e74c3853a71d984d000020455c0b3b7";
-    data::DownloadFromURL(test_file_url, "", "", false, test_file_sha256sum);
+    data::DownloadFromURL(file_url, file_sha256, prefix);
 
     // Currently only `.zip` files are supported.
-    file_path = download_dir + "/test_data_00.tar.xz";
-    EXPECT_ANY_THROW(data::Extract(file_path, download_dir));
-    EXPECT_TRUE(utility::filesystem::RemoveFile(file_path.c_str()));
+    file_path = extract_dir + "/test_data_00.tar.xz";
+    EXPECT_ANY_THROW(data::Extract(file_path, extract_dir));
+
+    // Cleanup (delete temp. test data directory).
+    EXPECT_TRUE(utility::filesystem::DeleteDirectory(extract_dir));
 }
 
 }  // namespace tests
