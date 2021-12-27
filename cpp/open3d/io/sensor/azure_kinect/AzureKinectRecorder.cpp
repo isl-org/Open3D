@@ -113,7 +113,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
                              ? sensor_.transform_depth_to_color_
                              : nullptr);
     if (im_rgbd == nullptr) {
-        utility::LogInfo("Invalid capture, skipping this frame");
+        utility::LogDebug("Invalid capture, skipping this frame");
         return nullptr;
     }
     k4a_plugin::k4a_capture_release(capture);
