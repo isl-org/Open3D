@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Downloader.h"
+#include "open3d/data/Download.h"
 
 // clang-format off
 // Must include openssl before curl to build on Windows.
