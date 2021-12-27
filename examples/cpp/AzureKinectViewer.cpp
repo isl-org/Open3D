@@ -57,7 +57,7 @@ void PrintHelp() {
 }
 
 int main(int argc, char **argv) {
-    if (argc <= 1 ||
+    if (argc < 1 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
