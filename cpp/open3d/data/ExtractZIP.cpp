@@ -30,23 +30,14 @@
 // https://github.com/madler/zlib/blob/master/contrib/minizip/miniunz.c
 
 #include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unzip.h>
 
 #include <iostream>
+#include <string>
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
-
-#ifdef WIN32
-#include <direct.h>
-#include <io.h>
-#else
-#include <unistd.h>
-#endif
 
 #ifdef __APPLE__
 // In darwin and perhaps other BSD variants off_t is a 64 bit value, hence no
@@ -179,73 +170,51 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
     return err;
 }
 
-static void ExtractAll(unzFile uf, const std::string &password) {
-    uLong i;
-    unz_global_info64 gi;
-    int err;
-
-    err = unzGetGlobalInfo64(uf, &gi);
+static void CheckAndThrowError(const int err,
+                               const std::string &error_msg,
+                               unzFile uf,
+                               const std::string &original_working_dir) {
     if (err != UNZ_OK) {
-        utility::LogError(
-                "Extraction failed in unzGetGlobalInfo with error code: {}.",
-                err);
-    }
-
-    for (i = 0; i < gi.number_entry; i++) {
-        err = ExtractCurrentFile(uf, password);
-        if (err != UNZ_OK) {
+        // Revert the change of working directory.
+        if (!utility::filesystem::ChangeWorkingDirectory(
+                    original_working_dir)) {
             utility::LogError(
-                    "Extraction failed in ExtractCurrentFile with error code: "
+                    "Failed to change the current working directory back to "
                     "{}.",
-                    err);
+                    original_working_dir);
         }
+        // Close the file.
+        unzClose(uf);
 
-        if ((i + 1) < gi.number_entry) {
-            err = unzGoToNextFile(uf);
-            if (err != UNZ_OK) {
-                utility::LogError(
-                        "Extraction failed in unzGoToNextFile with error code: "
-                        "{}.",
-                        err);
-            }
-        }
+        utility::LogError("Extraction failed in {} with error code: {}.",
+                          error_msg, err);
     }
 }
 
-void ExtractFromZIP(const std::string &file_path,
-                    const std::string &extract_dir) {
-    unzFile uf = nullptr;
-
-    if (!file_path.empty()) {
-        char file_path_try[MAXFILENAME + 16] = "";
-
-        strncpy(file_path_try, file_path.c_str(), MAXFILENAME - 1);
-        // strncpy doesnt append the trailing nullptr, of the string is too
-        // long.
-        file_path_try[MAXFILENAME] = '\0';
-
-        uf = unzOpen64(file_path.c_str());
-        if (uf == nullptr) {
-            strcat(file_path_try, ".zip");
-            uf = unzOpen64(file_path_try);
-        }
-    }
-    if (uf == nullptr) {
-        utility::LogError("Failed to open file {}.", file_path);
-    }
-
+static void ExtractAll(unzFile uf,
+                       const std::string extract_dir,
+                       const std::string &password) {
+    // Save the current working dir.
     const std::string current_working_dir =
             utility::filesystem::GetWorkingDirectory();
-
     // Change working directory to the extraction directory.
     if (!utility::filesystem::ChangeWorkingDirectory(extract_dir)) {
         utility::LogError("Error extracting to {}", extract_dir);
     }
 
-    // ExtractFromZIP supports password. Can be exposed if required in future.
-    const std::string password = "";
-    ExtractAll(uf, password);
-    unzClose(uf);
+    unz_global_info64 gi;
+    int err = unzGetGlobalInfo64(uf, &gi);
+    CheckAndThrowError(err, "unzGetGlobalInfo", uf, current_working_dir);
+
+    for (uLong i = 0; i < gi.number_entry; ++i) {
+        err = ExtractCurrentFile(uf, password);
+        CheckAndThrowError(err, "ExtractCurrentFile", uf, current_working_dir);
+
+        if ((i + 1) < gi.number_entry) {
+            err = unzGoToNextFile(uf);
+            CheckAndThrowError(err, "unzGoToNextFile", uf, current_working_dir);
+        }
+    }
 
     // Revert the change of working directory.
     if (!utility::filesystem::ChangeWorkingDirectory(current_working_dir)) {
@@ -253,6 +222,22 @@ void ExtractFromZIP(const std::string &file_path,
                 "Failed to change the current working directory back to {}.",
                 current_working_dir);
     }
+}
+
+void ExtractFromZIP(const std::string &file_path,
+                    const std::string &extract_dir) {
+    unzFile uf = nullptr;
+    if (!file_path.empty()) {
+        uf = unzOpen64(file_path.c_str());
+    }
+    if (uf == nullptr) {
+        utility::LogError("Failed to open file {}.", file_path);
+    }
+
+    // ExtractFromZIP supports password. Can be exposed if required in future.
+    const std::string password = "";
+    ExtractAll(uf, extract_dir, password);
+    unzClose(uf);
 }
 
 }  // namespace data
