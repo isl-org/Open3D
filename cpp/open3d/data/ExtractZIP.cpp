@@ -47,10 +47,8 @@
 #define FOPEN_FUNC(filename, mode) fopen64(filename, mode)
 #endif
 
-#define CASESENSITIVITY (0)
 // If required in future, the `WRITEBUFFERSIZE` size can be increased to 16384.
 #define WRITEBUFFERSIZE (8192)
-#define MAXFILENAME (256)
 
 namespace open3d {
 namespace data {
@@ -87,12 +85,14 @@ static int ExtractCurrentFile(unzFile uf,
     //  If zip entry is a directory then create it on disk.
     p = filename_withoutpath = filename_inzip;
     while ((*p) != '\0') {
-        if (((*p) == '/') || ((*p) == '\\')) filename_withoutpath = p + 1;
+        if (((*p) == '/') || ((*p) == '\\')) {
+            filename_withoutpath = p + 1;
+        }
         p++;
     }
 
     if ((*filename_withoutpath) == '\0') {
-        std::string dir_path = extract_dir + "/" + filename_inzip;
+        const std::string dir_path = extract_dir + "/" + filename_inzip;
         utility::LogDebug("Creating directory: {}", dir_path);
         utility::filesystem::MakeDirectoryHierarchy(dir_path);
     } else {
@@ -107,7 +107,8 @@ static int ExtractCurrentFile(unzFile uf,
 
         if (err != UNZ_OK) {
             utility::LogWarning(
-                    "Error {} with zipfile in unzOpenCurrentFilePassword.",
+                    "Extraction failed in unzOpenCurrentFilePassword with "
+                    "error code: {}.",
                     err);
             return err;
         }
@@ -120,21 +121,15 @@ static int ExtractCurrentFile(unzFile uf,
             // Some zipfile don't contain directory alone before file.
             if ((fout == nullptr) &&
                 (filename_withoutpath != (char *)filename_inzip)) {
-                char c = *(filename_withoutpath - 1);
-                *(filename_withoutpath - 1) = '\0';
-
-                std::string dir_path = extract_dir + "/" + filename_inzip;
+                const std::string dir_path = extract_dir + "/" + filename_inzip;
                 utility::filesystem::MakeDirectoryHierarchy(dir_path);
 
-                *(filename_withoutpath - 1) = c;
-
-                file_path = extract_dir + "/" +
-                            static_cast<std::string>(write_filename);
                 fout = FOPEN_FUNC(file_path.c_str(), "wb");
             }
 
             if (fout == nullptr) {
-                utility::LogWarning("Error opening {}", file_path);
+                utility::LogWarning("Extraction failed. Error opening {}",
+                                    file_path);
             }
         }
 
@@ -145,13 +140,16 @@ static int ExtractCurrentFile(unzFile uf,
                 err = unzReadCurrentFile(uf, buf, size_buf);
                 if (err < 0) {
                     utility::LogWarning(
-                            "Error {} with zipfile in unzReadCurrentFile.",
+                            "Extraction failed in unzReadCurrentFile with "
+                            "error code: {}.",
                             err);
                     break;
                 }
                 if (err > 0)
                     if (fwrite(buf, err, 1, fout) != 1) {
-                        utility::LogWarning("Error in writing extracted file.");
+                        utility::LogWarning(
+                                "Extraction failed. Error in writing extracted "
+                                "file.");
                         err = UNZ_ERRNO;
                         break;
                     }
@@ -166,7 +164,9 @@ static int ExtractCurrentFile(unzFile uf,
             err = unzCloseCurrentFile(uf);
             if (err != UNZ_OK) {
                 utility::LogWarning(
-                        "Error {} with zipfile in unzCloseCurrentFile.", err);
+                        "Extraction failed in unzCloseCurrentFile with error "
+                        "code: {}.",
+                        err);
             }
         } else {
             unzCloseCurrentFile(uf);

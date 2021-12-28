@@ -45,7 +45,7 @@ static const std::unordered_map<
 void Extract(const std::string& file_path, const std::string& extract_dir) {
     const std::string format =
             utility::filesystem::GetFileExtensionInLowerCase(file_path);
-    utility::LogInfo("Extracting {}, to {}.", file_path, extract_dir);
+    utility::LogInfo("Extracting {}.", file_path);
 
     if (file_extension_to_extract_function.count(format) == 0) {
         utility::LogError(
@@ -55,6 +55,7 @@ void Extract(const std::string& file_path, const std::string& extract_dir) {
     }
 
     file_extension_to_extract_function.at(format)(file_path, extract_dir);
+    utility::LogInfo("Extracted to {}.", extract_dir);
 }
 
 }  // namespace data
