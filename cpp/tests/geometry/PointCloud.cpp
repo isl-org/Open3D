@@ -1171,17 +1171,17 @@ TEST(PointCloud, ComputeConvexHull) {
     std::tie(mesh, pt_map) = pcd.ComputeConvexHull();
     EXPECT_EQ(pt_map, std::vector<size_t>({7, 3, 1, 5, 6, 2, 8, 4}));
     ExpectEQ(mesh->vertices_, ApplyIndices(pcd.points_, pt_map));
-    ExpectEQ(mesh->triangles_, std::vector<Eigen::Vector3i>({{0, 1, 2},
+    ExpectEQ(mesh->triangles_, std::vector<Eigen::Vector3i>({{1, 0, 2},
                                                              {0, 3, 2},
-                                                             {4, 3, 2},
+                                                             {3, 4, 2},
                                                              {4, 5, 2},
-                                                             {4, 0, 3},
+                                                             {0, 4, 3},
                                                              {4, 0, 6},
                                                              {7, 1, 2},
-                                                             {7, 5, 2},
+                                                             {5, 7, 2},
                                                              {7, 0, 1},
-                                                             {7, 0, 6},
-                                                             {7, 4, 5},
+                                                             {0, 7, 6},
+                                                             {4, 7, 5},
                                                              {7, 4, 6}}));
 }
 
