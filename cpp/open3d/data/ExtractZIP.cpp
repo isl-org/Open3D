@@ -230,21 +230,29 @@ void ExtractFromZIP(const std::string &file_path,
             uf = unzOpen64(file_path_try);
         }
     }
-
     if (uf == nullptr) {
         utility::LogError("Failed to open file {}.", file_path);
     }
 
+    const std::string current_working_dir =
+            utility::filesystem::GetWorkingDirectory();
+
     // Change working directory to the extraction directory.
-    if (chdir(extract_dir.c_str())) {
+    if (!utility::filesystem::ChangeWorkingDirectory(extract_dir)) {
         utility::LogError("Error extracting to {}", extract_dir);
     }
 
     // ExtractFromZIP supports password. Can be exposed if required in future.
     const std::string password = "";
     ExtractAll(uf, password);
-
     unzClose(uf);
+
+    // Revert the change of working directory.
+    if (!utility::filesystem::ChangeWorkingDirectory(current_working_dir)) {
+        utility::LogError(
+                "Failed to change the current working directory back to {}.",
+                current_working_dir);
+    }
 }
 
 }  // namespace data

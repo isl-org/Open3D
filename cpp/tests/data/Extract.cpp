@@ -67,7 +67,7 @@ TEST(Extract, ExtractFromZIP) {
     file_path = extract_dir + "/test_data_00.tar.xz";
     EXPECT_ANY_THROW(data::Extract(file_path, extract_dir));
 
-    // Cleanup (delete temp. test data directory).
+    // Clean up.
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(extract_dir));
 }
 
