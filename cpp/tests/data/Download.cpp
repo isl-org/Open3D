@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Downloader.h"
+#include "open3d/data/Download.h"
 
 #include "open3d/data/Dataset.h"
 #include "open3d/utility/FileSystem.h"
@@ -36,30 +36,34 @@ namespace open3d {
 namespace tests {
 
 TEST(Downloader, DownloadAndVerify) {
-    // File 1.
     std::string url =
             "https://github.com/isl-org/open3d_downloads/releases/download/"
             "data-manager/test_data_00.zip";
-    std::string expected_sha256 =
+    std::string sha256 =
             "66ea466a02532d61dbc457abf1408afeab360d7a35e15f1479ca91c25e838d30";
 
-    // Downloader API.
-    // URL is the only compulsory input, others are optional, and passing
-    // empty string "", trigers the default behaviour.
-    // open3d::data::DownloadFromURL(url, output_file_name, output_file_path,
-    //                               always_download, expected_sha256);
+    std::string prefix = "temp_test";
+    std::string file_dir = data::LocateDataRoot() + "/" + prefix;
+    std::string file_path = file_dir + "/" + "test_data_00.zip";
+    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
 
-    // Default.
-    // Download in Open3D Data Root directory,
-    // with the original file name extracted from the url,
-    // `always_download` is True : If exists, it will be over-written.
-    // SHA256 is not verified.
-    EXPECT_TRUE(data::DownloadFromURL(url));
-    EXPECT_TRUE(data::DownloadFromURL(url, "", "", false, expected_sha256));
-
-    const std::string data_root = data::LocateDataRoot();
+    // This download shall work.
+    data::DownloadFromURL(url, sha256, prefix);
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(file_dir));
     EXPECT_TRUE(
-            utility::filesystem::RemoveFile(data_root + "/test_data_00.zip"));
+            utility::filesystem::FileExists(file_dir + "/test_data_00.zip"));
+
+    // This download shall be skipped (look at the message).
+    data::DownloadFromURL(url, sha256, prefix);
+
+    // Mismatch sha256.
+    EXPECT_ANY_THROW(data::DownloadFromURL(
+            url,
+            "0000000000000000000000000000000000000000000000000000000000000000",
+            prefix));
+
+    // Clean up.
+    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
 }
 
 }  // namespace tests
