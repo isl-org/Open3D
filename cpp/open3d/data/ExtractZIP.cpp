@@ -192,7 +192,7 @@ static void CheckAndThrowError(const int err,
 }
 
 static void ExtractAll(unzFile uf,
-                       const std::string extract_dir,
+                       const std::string &extract_dir,
                        const std::string &password) {
     // Save the current working dir.
     const std::string current_working_dir =
