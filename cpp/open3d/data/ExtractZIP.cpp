@@ -55,7 +55,9 @@
 namespace open3d {
 namespace data {
 
-static int ExtractCurrentFile(unzFile uf, const std::string &password) {
+static int ExtractCurrentFile(unzFile uf,
+                              const std::string &extract_dir,
+                              const std::string &password) {
     char filename_inzip[256];
     char *filename_withoutpath;
     char *p;
@@ -90,9 +92,9 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
     }
 
     if ((*filename_withoutpath) == '\0') {
-        utility::LogDebug("Creating directory: {}", filename_inzip);
-        utility::filesystem::MakeDirectoryHierarchy(
-                std::string(filename_inzip));
+        std::string dir_path = extract_dir + "/" + filename_inzip;
+        utility::LogDebug("Creating directory: {}", dir_path);
+        utility::filesystem::MakeDirectoryHierarchy(dir_path);
     } else {
         const char *write_filename;
         write_filename = filename_inzip;
@@ -111,7 +113,9 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
         }
 
         if (err == UNZ_OK) {
-            fout = FOPEN_FUNC(write_filename, "wb");
+            std::string file_path = extract_dir + "/" +
+                                    static_cast<std::string>(write_filename);
+            fout = FOPEN_FUNC(file_path.c_str(), "wb");
 
             // Some zipfile don't contain directory alone before file.
             if ((fout == nullptr) &&
@@ -119,15 +123,18 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
                 char c = *(filename_withoutpath - 1);
                 *(filename_withoutpath - 1) = '\0';
 
-                utility::filesystem::MakeDirectoryHierarchy(
-                        std::string(filename_inzip));
+                std::string dir_path = extract_dir + "/" + filename_inzip;
+                utility::filesystem::MakeDirectoryHierarchy(dir_path);
 
                 *(filename_withoutpath - 1) = c;
-                fout = FOPEN_FUNC(write_filename, "wb");
+
+                file_path = extract_dir + "/" +
+                            static_cast<std::string>(write_filename);
+                fout = FOPEN_FUNC(file_path.c_str(), "wb");
             }
 
             if (fout == nullptr) {
-                utility::LogWarning("Error opening {}", write_filename);
+                utility::LogWarning("Error opening {}", file_path);
             }
         }
 
@@ -170,60 +177,6 @@ static int ExtractCurrentFile(unzFile uf, const std::string &password) {
     return err;
 }
 
-static void CheckAndThrowError(const int err,
-                               const std::string &error_msg,
-                               unzFile uf,
-                               const std::string &original_working_dir) {
-    if (err != UNZ_OK) {
-        // Revert the change of working directory.
-        if (!utility::filesystem::ChangeWorkingDirectory(
-                    original_working_dir)) {
-            utility::LogError(
-                    "Failed to change the current working directory back to "
-                    "{}.",
-                    original_working_dir);
-        }
-        // Close the file.
-        unzClose(uf);
-
-        utility::LogError("Extraction failed in {} with error code: {}.",
-                          error_msg, err);
-    }
-}
-
-static void ExtractAll(unzFile uf,
-                       const std::string &extract_dir,
-                       const std::string &password) {
-    // Save the current working dir.
-    const std::string current_working_dir =
-            utility::filesystem::GetWorkingDirectory();
-    // Change working directory to the extraction directory.
-    if (!utility::filesystem::ChangeWorkingDirectory(extract_dir)) {
-        utility::LogError("Error extracting to {}", extract_dir);
-    }
-
-    unz_global_info64 gi;
-    int err = unzGetGlobalInfo64(uf, &gi);
-    CheckAndThrowError(err, "unzGetGlobalInfo", uf, current_working_dir);
-
-    for (uLong i = 0; i < gi.number_entry; ++i) {
-        err = ExtractCurrentFile(uf, password);
-        CheckAndThrowError(err, "ExtractCurrentFile", uf, current_working_dir);
-
-        if ((i + 1) < gi.number_entry) {
-            err = unzGoToNextFile(uf);
-            CheckAndThrowError(err, "unzGoToNextFile", uf, current_working_dir);
-        }
-    }
-
-    // Revert the change of working directory.
-    if (!utility::filesystem::ChangeWorkingDirectory(current_working_dir)) {
-        utility::LogError(
-                "Failed to change the current working directory back to {}.",
-                current_working_dir);
-    }
-}
-
 void ExtractFromZIP(const std::string &file_path,
                     const std::string &extract_dir) {
     unzFile uf = nullptr;
@@ -234,9 +187,44 @@ void ExtractFromZIP(const std::string &file_path,
         utility::LogError("Failed to open file {}.", file_path);
     }
 
+    unz_global_info64 gi;
+    int err = unzGetGlobalInfo64(uf, &gi);
+    if (err != UNZ_OK) {
+        // Close file, before throwing exception.
+        unzClose(uf);
+        utility::LogError(
+                "Extraction failed in unzGetGlobalInfo with error code: {}.",
+                err);
+    }
+
     // ExtractFromZIP supports password. Can be exposed if required in future.
     const std::string password = "";
-    ExtractAll(uf, extract_dir, password);
+
+    for (uLong i = 0; i < gi.number_entry; ++i) {
+        err = ExtractCurrentFile(uf, extract_dir, password);
+        if (err != UNZ_OK) {
+            // Close file, before throwing exception.
+            unzClose(uf);
+            utility::LogError(
+                    "Extraction failed in ExtractCurrentFile with error code: "
+                    "{}.",
+                    err);
+        }
+
+        if ((i + 1) < gi.number_entry) {
+            err = unzGoToNextFile(uf);
+            if (err != UNZ_OK) {
+                // Close file, before throwing exception.
+                unzClose(uf);
+                utility::LogError(
+                        "Extraction failed in ExtractCurrentFile with error "
+                        "code: {}.",
+                        err);
+            }
+        }
+    }
+
+    // Extracted Successfully. Close File.
     unzClose(uf);
 }
 
