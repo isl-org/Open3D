@@ -210,7 +210,9 @@ Eigen::Matrix3d Geometry3D::GetRotationMatrixFromYXZ(
 Eigen::Matrix3d Geometry3D::GetRotationMatrixFromAxisAngle(
         const Eigen::Vector3d& rotation) {
     const double phi = rotation.norm();
-    return Eigen::AngleAxisd(phi, rotation / phi).toRotationMatrix();
+    const Eigen::Vector3d axis =
+            phi > 0 ? rotation / phi : Eigen::Vector3d::Zero().eval();
+    return Eigen::AngleAxisd(phi, axis).toRotationMatrix();
 }
 
 Eigen::Matrix3d Geometry3D::GetRotationMatrixFromQuaternion(
