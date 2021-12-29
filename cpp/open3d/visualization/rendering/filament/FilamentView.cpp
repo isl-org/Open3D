@@ -78,7 +78,6 @@ FilamentView::FilamentView(filament::Engine& engine,
     view_ = engine_.createView();
     filament::MultiSampleAntiAliasingOptions msaa_options{true, 4, false};
     view_->setMultiSampleAntiAliasingOptions(msaa_options);
-    // view_->setSampleCount(4);
     SetAntiAliasing(true, false);
     SetPostProcessing(true);
     SetAmbientOcclusion(true, false);
