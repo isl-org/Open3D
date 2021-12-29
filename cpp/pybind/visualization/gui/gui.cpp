@@ -696,7 +696,25 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- WidgetProxy ----
     py::class_<WidgetProxy, UnownedPointer<WidgetProxy>, Widget> widgetProxy(
-            m, "WidgetProxy", "WidgetProxy");
+            m, "WidgetProxy",
+            "Widget container to delegate any widget dynamically."
+            " Widget can not be managed dynamically. Although it is allowed"
+            " to add more child widgets, it's impossible to replace some child"
+            " with new on or remove children. WidgetProxy is designed to solve"
+            " this problem."
+            " When WidgetProxy is created, it's invisible and disabled, so it"
+            " won't be drawn or layout, seeming like it does not exist. When"
+            " a widget is set by  set_widget, all  Widget's APIs will be"
+            " conducted to that child widget. It looks like WidgetProxy is"
+            " that widget."
+            " At any time, a new widget could be set, to replace the old one."
+            " and the old widget will be destroyed."
+            " Due to the content changing after a new widget is set or cleared,"
+            " a relayout of Window might be called after set_widget."
+            " The delegated widget could be retrieved by  get_widget in case"
+            "  you need to access it directly, like get check status of a"
+            " CheckBox. API other than  set_widget and get_widget has"
+            " completely same functions as Widget.");
     widgetProxy.def(py::init<>(), "Creates a widget proxy")
             .def("__repr__",
                  [](const WidgetProxy &c) {
@@ -711,8 +729,18 @@ void pybind_gui_classes(py::module &m) {
                     [](WidgetProxy &w, UnownedPointer<Widget> proxy) {
                         w.SetWidget(TakeOwnership<Widget>(proxy));
                     },
-                    "Adds a proxy widget")
-            .def("get_widget", &WidgetProxy::GetWidget, "Get proxy widget");
+                    "set a new widget to be delegated by this one."
+                    " After set_widget, the previously delegated widget ,"
+                    " will be abandon all calls to Widget's API will be "
+                    " conducted to widget. Before any set_widget call, "
+                    " this widget is invisible and disabled, seems it "
+                    " does not exist because it won't be drawn or in a "
+                    "layout.")
+            .def("get_widget", &WidgetProxy::GetWidget,
+                 "Retrieve current delegated widget."
+                 "return instance of current delegated widget set by "
+                 "set_widget. An empty pointer will be returned "
+                 "if there is none.");
     // ---- Button ----
     py::class_<Button, UnownedPointer<Button>, Widget> button(m, "Button",
                                                               "Button");
