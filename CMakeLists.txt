@@ -238,9 +238,6 @@ if (BUILD_CUDA_MODULE
         "Workaround this bug by setting the CUDA standard to C++17.")
 endif()
 
-# Force C++17
-set(CMAKE_CXX_STANDARD 17)
-
 # CMake modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake")
 
