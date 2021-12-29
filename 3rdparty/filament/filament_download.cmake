@@ -25,8 +25,8 @@ else()
         set(FILAMENT_SHA256 2c48431c37d1f9c67c81949441f3d6f593c495c235525b32e4e67f826c268ca9)
         string(APPEND lib_dir /x86_64)
     else()      # Linux: Check glibc version and use open3d filament binary if new (Ubuntu 20.04 and similar)
-        set(FILAMENT_URL https://github.com/google/filament/releases/download/v1.15.1/filament-v1.15.1-linux.tgz)
-        set(FILAMENT_SHA256 7311bf21bf836cc85b636de408ab81db3f2e148052502ff846835c63d1a26ae2)
+        set(FILAMENT_URL https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.15.1-linux.tgz)
+        set(FILAMENT_SHA256 005d6ea95b2f84cb5bbdb1f3882ea7be775bbac95c7656360489aa20ada6ec79)
         string(APPEND lib_dir /x86_64)
         # NOTE: Uncertain if 20.04 will need its own version so leaving below in
         # for now
