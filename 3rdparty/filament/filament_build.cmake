@@ -46,8 +46,10 @@ list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
 ExternalProject_Add(
     ext_filament
     PREFIX filament
-    URL https://github.com/google/filament/archive/refs/tags/v1.15.1.tar.gz
-    URL_HASH SHA256=2e432129989dd7f0643df27d8fa7285e1cb6ed320e1e5c05a51ff0a508764a15
+    GIT_REPOSITORY https://github.com/isl-org/filament
+    GIT_TAG release
+    #URL https://github.com/google/filament/archive/refs/tags/v1.15.1.tar.gz
+    #URL_HASH SHA256=2e432129989dd7f0643df27d8fa7285e1cb6ed320e1e5c05a51ff0a508764a15
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
     CMAKE_ARGS
@@ -63,7 +65,7 @@ ExternalProject_Add(
         -DCMAKE_INSTALL_PREFIX=${FILAMENT_ROOT}
         -DUSE_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}
         -DUSE_STATIC_LIBCXX=ON
-        -DFILAMENT_SUPPORTS_VULKAN=OFF
+        #-DFILAMENT_SUPPORTS_VULKAN=OFF
         -DFILAMENT_SKIP_SAMPLES=ON
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
     BUILD_BYPRODUCTS ${lib_byproducts}
