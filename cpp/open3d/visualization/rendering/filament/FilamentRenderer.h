@@ -126,7 +126,6 @@ private:
     filament::Engine& engine_;
     filament::Renderer* renderer_ = nullptr;
     filament::SwapChain* swap_chain_ = nullptr;
-    filament::SwapChain* swap_chain_cached_ = nullptr;
 
     std::unordered_map<REHandle_abstract, std::unique_ptr<FilamentScene>>
             scenes_;
