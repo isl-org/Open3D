@@ -392,8 +392,9 @@ static void DisplayDirectoryTreeImpl(const fs::path &current_path,
         std::sort(files_in_directory.begin(), files_in_directory.end());
 
         for (auto &filename : files_in_directory) {
-            std::string filename_without_path =
-                    GetFileNameWithoutDirectory(filename);
+            const std::string filename_str = filename.string();
+            const std::string filename_without_path =
+                    GetFileNameWithoutDirectory(filename_str);
             if (fs::is_directory(filename)) {
                 utility::LogInfo("{} [+] {}", lead_indentation_spaces,
                                  filename_without_path);
@@ -411,7 +412,8 @@ static void DisplayDirectoryTreeImpl(const fs::path &current_path,
                 time_str.pop_back();
                 utility::LogInfo("{} {},\t {} bytes,\t last modified time: {}",
                                  lead_indentation_spaces, filename_without_path,
-                                 ComputeFileSizeInBytes(filename), time_str);
+                                 ComputeFileSizeInBytes(filename_str),
+                                 time_str);
             } else {
                 utility::LogInfo("{} [?] {}", lead_indentation_spaces,
                                  filename_without_path);
