@@ -344,6 +344,7 @@ TEST(FileSystem, MakeDirectoryHierarchy) {
 
 // ----------------------------------------------------------------------------
 // Note: DeleteDirectory can delete one dir at a time.
+// Equivalent to 'rm -rf ...'.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, DeleteDirectory) {
     std::string path = "test";
@@ -406,6 +407,11 @@ TEST(FileSystem, File_Exists_Remove) {
 
     status = utility::filesystem::DeleteDirectory("test");
     EXPECT_TRUE(status);
+}
+
+TEST(FileSystem, ComputeFileSize) {
+    const std::string file_path = utility::GetDataPathCommon("fragment.ply");
+    EXPECT_EQ(utility::filesystem::ComputeFileSizeInBytes(file_path), 6081011);
 }
 
 // ----------------------------------------------------------------------------

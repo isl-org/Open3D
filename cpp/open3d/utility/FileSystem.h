@@ -78,6 +78,8 @@ bool DeleteDirectory(const std::string &directory);
 
 bool FileExists(const std::string &filename);
 
+std::uintmax_t ComputeFileSizeInBytes(const std::string &filename);
+
 bool RemoveFile(const std::string &filename);
 
 bool ListDirectory(const std::string &directory,

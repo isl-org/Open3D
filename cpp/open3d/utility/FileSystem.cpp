@@ -238,9 +238,7 @@ bool ChangeWorkingDirectory(const std::string &directory) {
 }
 
 bool DirectoryExists(const std::string &directory) {
-    struct stat info;
-    if (stat(directory.c_str(), &info) == -1) return false;
-    return S_ISDIR(info.st_mode);
+    return fs::is_directory(directory);
 }
 
 bool MakeDirectory(const std::string &directory) {
@@ -277,15 +275,20 @@ bool DeleteDirectory(const std::string &directory) {
 }
 
 bool FileExists(const std::string &filename) {
-#ifdef WINDOWS
-    struct _stat64 info;
-    if (_stat64(filename.c_str(), &info) == -1) return false;
-    return S_ISREG(info.st_mode);
-#else
-    struct stat info;
-    if (stat(filename.c_str(), &info) == -1) return false;
-    return S_ISREG(info.st_mode);
-#endif
+    return (fs::exists(filename) && fs::is_regular_file(filename));
+}
+
+std::uintmax_t ComputeFileSizeInBytes(const std::string &filename) {
+    if (!FileExists(filename)) {
+        utility::LogError("File {} does not exists.", filename);
+    }
+    auto err = std::error_code{};
+    auto filesize = fs::file_size(filename, err);
+    if (filesize != static_cast<uintmax_t>(-1)) {
+        return filesize;
+    }
+
+    return static_cast<uintmax_t>(-1);
 }
 
 bool RemoveFile(const std::string &filename) {
