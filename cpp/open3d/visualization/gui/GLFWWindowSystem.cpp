@@ -198,7 +198,7 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
     // Note: The following is necessary to get Vulkan working on Linux and
     // Windows platforms. Commented out for now because we are forcing OpenGL on
     // those platforms for now.
-    //glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     auto* glfw_window = glfwCreateWindow(width, height, title, NULL, NULL);
 
     glfwSetWindowUserPointer(glfw_window, o3d_window);
@@ -565,7 +565,7 @@ void GLFWWindowSystem::ResizeRenderer(OSWindow w,
     // on other platforms.
     void* native_win = GetNativeDrawable(w);
     gui::ResizeMetalLayer(native_win);
-    //renderer->UpdateSwapChain();
+    // renderer->UpdateSwapChain();
 #endif  // __APPLE__
 }
 
