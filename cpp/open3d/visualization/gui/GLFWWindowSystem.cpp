@@ -195,6 +195,10 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
     glfwWindowHint(GLFW_FLOATING,
                    ((flags & FLAG_TOPMOST) != 0 ? GLFW_TRUE : GLFW_FALSE));
 
+    // Note: The following is necessary to get Vulkan working on Linux and
+    // Windows platforms. Commented out for now because we are forcing OpenGL on
+    // those platforms for now.
+    //glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     auto* glfw_window = glfwCreateWindow(width, height, title, NULL, NULL);
 
     glfwSetWindowUserPointer(glfw_window, o3d_window);

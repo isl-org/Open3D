@@ -160,17 +160,17 @@ struct Application::Impl {
         InitWindowSystem();
 
         // Initialize rendering
-#ifdef __linux
+#ifdef __APPLE__
+        visualization::rendering::EngineInstance::SelectBackend(
+                visualization::rendering::EngineInstance::RenderingType::
+                        kDefault);
+#else
         // NOTE: On Linux the latest Filament selects Vulkan backend by default
         // which fails to initialize for some as yet to be determined reason.
         // Therefore, we are still forcing Linux to use OpenGL backend.
         visualization::rendering::EngineInstance::SelectBackend(
                 visualization::rendering::EngineInstance::RenderingType::
                         kOpenGL);
-#else
-        visualization::rendering::EngineInstance::SelectBackend(
-                visualization::rendering::EngineInstance::RenderingType::
-                        kDefault);
 #endif
     }
 
