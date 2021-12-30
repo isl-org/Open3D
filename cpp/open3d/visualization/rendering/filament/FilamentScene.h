@@ -352,6 +352,8 @@ private:
     bool skybox_enabled_ = false;
     std::weak_ptr<filament::IndirectLight> indirect_light_;
     std::weak_ptr<filament::Skybox> skybox_;
+    IndirectLightHandle ibl_handle_;
+    SkyboxHandle skybox_handle_;
     LightEntity sun_;
 };
 

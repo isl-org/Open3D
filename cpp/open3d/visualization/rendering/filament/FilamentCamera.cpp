@@ -89,6 +89,8 @@ FilamentCamera::FilamentCamera(filament::Engine& engine) : engine_(engine) {
 
 FilamentCamera::~FilamentCamera() {
     engine_.destroyCameraComponent(camera_entity_);
+    engine_.destroy(camera_entity_);
+    camera_entity_.clear();
 }
 
 void FilamentCamera::CopyFrom(const Camera* camera) {
