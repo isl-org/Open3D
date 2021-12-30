@@ -29,7 +29,7 @@
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable : 4068)
+#pragma warning(disable : 4068 4293)
 #endif  // _MSC_VER
 
 #include <filament/Engine.h>

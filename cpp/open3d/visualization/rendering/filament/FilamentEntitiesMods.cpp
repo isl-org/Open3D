@@ -27,9 +27,10 @@
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 
 // 4068: Filament has some clang-specific vectorizing pragma's that MSVC flags
+// 4293: Filament has some generic bit shifting code that triggers this warning
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable : 4068)
+#pragma warning(disable : 4068 4293)
 #endif  // _MSC_VER
 
 #include <filament/MaterialInstance.h>
