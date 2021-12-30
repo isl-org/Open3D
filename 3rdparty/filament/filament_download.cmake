@@ -14,7 +14,7 @@ else()
     # Setup download links
     if(WIN32)
         set(FILAMENT_URL https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.15.1-windows.tgz)
-        set(FILAMENT_SHA256 278b48b2273dbdf204543ab615d701a8015968e1ca37142483e9203611531109)
+        set(FILAMENT_SHA256 a8d57b84495e145b00bc554f30f9018a8775edb03015438bf0eefce905aa28f4)
         if (STATIC_WINDOWS_RUNTIME)
             string(APPEND lib_dir /x86_64/mt)
         else()
