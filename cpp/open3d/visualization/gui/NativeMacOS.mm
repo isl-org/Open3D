@@ -100,7 +100,9 @@ void ShowNativeAlert(const char *message) {
     [alert runModal];
 }
 
-/*void* SetupMetalLayer(void* nativeView) {
+// NOTE: SetupMetalLayer and ResizeMetalLayer were both adapted from Filament
+// examples.
+void* SetupMetalLayer(void* nativeView) {
     NSView* view = (NSView*) nativeView;
     [view setWantsLayer:YES];
     CAMetalLayer* metalLayer = [CAMetalLayer layer];
@@ -109,6 +111,13 @@ void ShowNativeAlert(const char *message) {
     // It's important to set the drawableSize to the actual backing pixels. When rendering
     // full-screen, we can skip the macOS compositor if the size matches the display size.
     metalLayer.drawableSize = [view convertSizeToBacking:view.bounds.size];
+
+    // In its implementation of vkGetPhysicalDeviceSurfaceCapabilitiesKHR,
+    // MoltenVK takes into consideration bot hthe size (in points) of the
+    // bounds, and the contentsScale of the CAMetalLayer from which the Vulkan
+    // surface was created.
+    // See also https://github.com/KhronosGroup/MoltenVK/issues/428
+    metalLayer.contentsScale = view.window.backingScaleFactor;
 
     // This is set to NO by default, but is also important to ensure we can bypass the compositor
     // in full-screen mode
@@ -124,9 +133,9 @@ void* ResizeMetalLayer(void* nativeView) {
     NSView* view = (NSView*) nativeView;
     CAMetalLayer* metalLayer = (CAMetalLayer*)view.layer;
     metalLayer.drawableSize = [view convertSizeToBacking:view.bounds.size];
+    metalLayer.contentsScale = view.window.backingScaleFactor;
     return metalLayer;
 }
-*/
 
 void SetNativeMenubar(void* menubar) {
     NSMenu *menu = (NSMenu*)menubar;

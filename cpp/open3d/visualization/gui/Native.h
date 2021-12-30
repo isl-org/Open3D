@@ -46,6 +46,8 @@ void ShowNativeAlert(const char* message);
 #ifdef __APPLE__
 void MacTransformIntoApp();
 void SetNativeMenubar(void* menubar);
+void* SetupMetalLayer(void* nsview);
+void* ResizeMetalLayer(void* nsview); 
 #endif  // __APPLE_
 
 #if defined(__APPLE__) || defined(_WIN32)
