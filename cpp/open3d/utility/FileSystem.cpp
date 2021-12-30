@@ -382,31 +382,39 @@ static void DisplayDirectoryTreeImpl(const fs::path &current_path,
     if (fs::exists(current_path) && fs::is_directory(current_path)) {
         std::string lead_indentation_spaces =
                 std::string(current_depth * 4, ' ');
-        for (const auto &entry : fs::directory_iterator(current_path)) {
-            auto filename = entry.path().filename();
+        // Sort files in dir. in alphabetical order.
+        // Reference:
+        // https://stackoverflow.com/questions/30983154/get-an-ordered-list-of-files-in-a-folder/30983352
+        std::vector<fs::path> files_in_directory;
+        std::copy(fs::directory_iterator(current_path),
+                  fs::directory_iterator(),
+                  std::back_inserter(files_in_directory));
+        std::sort(files_in_directory.begin(), files_in_directory.end());
 
-            if (fs::is_directory(entry.status())) {
+        for (auto &filename : files_in_directory) {
+            std::string filename_without_path =
+                    GetFileNameWithoutDirectory(filename);
+            if (fs::is_directory(filename)) {
                 utility::LogInfo("{} [+] {}", lead_indentation_spaces,
-                                 filename);
+                                 filename_without_path);
                 if (current_depth < max_depth) {
-                    DisplayDirectoryTreeImpl(entry, current_depth + 1,
+                    DisplayDirectoryTreeImpl(filename, current_depth + 1,
                                              max_depth);
                 }
-            } else if (fs::is_regular_file(entry.status())) {
+            } else if (fs::is_regular_file(filename)) {
                 const time_t cftime = std::chrono::system_clock::to_time_t(
-                        fs::last_write_time(entry));
+                        fs::last_write_time(filename));
                 // asctime returns char* in format:
                 // `Sun Sep 16 01:03:52 1973\n\0`
                 // which is converted to string and `\n` is removed.
                 std::string time_str = std::asctime(std::localtime(&cftime));
                 time_str.pop_back();
                 utility::LogInfo("{} {},\t {} bytes,\t last modified time: {}",
-                                 lead_indentation_spaces, filename,
-                                 ComputeFileSizeInBytes(entry.path().string()),
-                                 time_str);
+                                 lead_indentation_spaces, filename_without_path,
+                                 ComputeFileSizeInBytes(filename), time_str);
             } else {
                 utility::LogInfo("{} [?] {}", lead_indentation_spaces,
-                                 filename);
+                                 filename_without_path);
             }
         }
     }

@@ -520,9 +520,9 @@ TEST(FileSystem, ListFilesInDirectoryWithExtension) {
     EXPECT_TRUE(status);
 }
 
-TEST(FileSystem, DISABLED_DisplayDirectoryTree) {
+TEST(FileSystem, DisplayDirectoryTree) {
     const std::string file_path = utility::GetDataPathCommon();
-    utility::filesystem::DisplayDirectoryTree(file_path, 0);
+    utility::filesystem::DisplayDirectoryTree(file_path, 2);
 }
 
 // ----------------------------------------------------------------------------
