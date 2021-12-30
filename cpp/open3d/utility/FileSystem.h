@@ -97,6 +97,8 @@ std::vector<std::string> FindFilesRecursively(
         const std::string &directory,
         std::function<bool(const std::string &)> is_match);
 
+void DisplayDirectoryTree(const std::string &path, int depth_level = 0);
+
 // wrapper for fopen that enables unicode paths on Windows
 FILE *FOpen(const std::string &filename, const std::string &mode);
 std::string GetIOErrorString(const int errnoVal);
