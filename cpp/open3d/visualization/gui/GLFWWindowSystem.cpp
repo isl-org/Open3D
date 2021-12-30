@@ -188,6 +188,7 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
 
 #if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
     bool visible = !(flags & FLAG_HIDDEN);
     glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
@@ -542,8 +543,13 @@ void* GLFWWindowSystem::GetNativeDrawable(OSWindow w) {
 }
 
 rendering::FilamentRenderer* GLFWWindowSystem::CreateRenderer(OSWindow w) {
+    void* native_swap_chain = GetNativeDrawable(w);
+#ifdef __APPLE__
+    // Need to setup Metal layer for Metal and Vulkan rendering on Mac
+    native_swap_chain = gui::SetupMetalLayer(native_swap_chain);
+#endif
     return new rendering::FilamentRenderer(
-            rendering::EngineInstance::GetInstance(), GetNativeDrawable(w),
+            rendering::EngineInstance::GetInstance(), native_swap_chain,
             rendering::EngineInstance::GetResourceManager());
 }
 
@@ -553,7 +559,9 @@ void GLFWWindowSystem::ResizeRenderer(OSWindow w,
     // We need to recreate the swap chain after resizing a window on macOS
     // otherwise things look very wrong. SwapChain does not need to be resized
     // on other platforms.
-    renderer->UpdateSwapChain();
+    void* native_win = GetNativeDrawable(w);
+    gui::ResizeMetalLayer(native_win);
+    //renderer->UpdateSwapChain();
 #endif  // __APPLE__
 }
 
