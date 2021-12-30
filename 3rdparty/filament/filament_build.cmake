@@ -28,6 +28,7 @@ set(filament_LIBRARIES
     meshoptimizer
     smol-v
     utils
+    vkshaders
 )
 
 # Locate byproducts
