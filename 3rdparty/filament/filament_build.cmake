@@ -41,6 +41,10 @@ if(APPLE)
     endif()
 endif()
 
+if(LINUX_AARCH64)
+    set(lib_dir lib/aarch64)
+endif()
+
 set(lib_byproducts ${filament_LIBRARIES})
 list(TRANSFORM lib_byproducts PREPEND ${FILAMENT_ROOT}/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
 list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
