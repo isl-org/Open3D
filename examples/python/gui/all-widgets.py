@@ -178,7 +178,7 @@ class ExampleWindow:
         pop_widget_btn.vertical_padding_em = 0
         stack = gui.WidgetStack()
         stack.set_on_top(lambda w: print(f'New widget is: {w.text}'))
-        hz.add_child(gui.Label('WidgetStack Demo: '))
+        hz.add_child(gui.Label('WidgetStack '))
         hz.add_child(push_widget_btn)
         hz.add_child(pop_widget_btn)
         hz.add_child(stack)
