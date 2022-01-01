@@ -163,10 +163,33 @@ class ExampleWindow:
                 proxy.set_widget(label)
             w.set_needs_layout()
 
-        logo_btn = gui.Button('Switch Logo')
+        logo_btn = gui.Button('Switch Logo By WidgetProxy')
+        logo_btn.vertical_padding_em = 0
         logo_btn.set_on_clicked(switch_proxy)
         collapse.add_child(logo_btn)
         collapse.add_child(proxy)
+
+        # Widget stack demo
+        self._widget_idx = 0
+        hz = gui.Horiz(spacing=5)
+        push_widget_btn = gui.Button('Push widget')
+        push_widget_btn.vertical_padding_em = 0
+        pop_widget_btn = gui.Button('Pop widget')
+        pop_widget_btn.vertical_padding_em = 0
+        stack = gui.WidgetStack()
+        stack.set_on_top(lambda w: print(f'New widget is: {w.text}'))
+        hz.add_child(gui.Label('WidgetStack Demo: '))
+        hz.add_child(push_widget_btn)
+        hz.add_child(pop_widget_btn)
+        hz.add_child(stack)
+        collapse.add_child(hz)
+
+        def push_widget():
+            self._widget_idx += 1
+            stack.set_widget(gui.Label(f'Widget {self._widget_idx}'))
+
+        push_widget_btn.set_on_clicked(push_widget)
+        pop_widget_btn.set_on_clicked(stack.pop_widget)
 
         # Add a list of items
         lv = gui.ListView()
