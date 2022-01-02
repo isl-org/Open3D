@@ -52,7 +52,7 @@ def timer(func):
 
 
 def registerableCLI(cls):
-    """Class decorator to register methodss with @register into a set."""
+    """Class decorator to register methods with @register into a set."""
     cls.registered_commands = set([])
     for name in dir(cls):
         method = getattr(cls, name)
@@ -124,11 +124,17 @@ class Open3DMain:
     def _usage(self) -> str:
         """Compose deterministic usage message based on registered_commands."""
         # TODO: add some color to commands
-        msg = "open3d <command> <additional_arguments>\n\n"
+        msg = "\n    open3d <command> <additional_arguments>\n\n"
         msg += "commands:\n"
         space = 20
         for command in sorted(self.registered_commands):
             msg += f"    {command}{' ' * (space - len(command))}|-> {getattr(self, command).__doc__}\n"
+        msg += "\nfor example:"
+        # TODO: store the examples within the functions for modularity
+        msg += (    "\n    Run mesh_deformation.py example in the geometry category:"
+                    "\n        open3d example geometry/mesh_deformation\n"
+                    "\n    Run Open3D viewer:"
+                    "\n        open3d draw"     )
         return msg
 
     @staticmethod
@@ -149,7 +155,8 @@ class Open3DMain:
         """Get a set of all available category names."""
         examples_dir = Open3DMain._get_examples_dir()
         all_categories = [x.name for x in examples_dir.iterdir() if x.is_dir()]
-        # TODO: remove pycache from all_categories
+        if "__pycache__" in all_categories:
+            all_categories.remove("__pycache__")
         return all_categories
 
     @staticmethod
@@ -167,7 +174,8 @@ class Open3DMain:
         category_path = os.path.join(examples_dir, category)
         examples_in_category = Path(category_path).rglob('*.py')
         example_names = {f.stem: f.parent for f in examples_in_category}
-        # TODO: remove init from example_names
+        if "__init__" in example_names:
+            example_names.pop("__init__")
         return example_names
 
     @staticmethod
@@ -192,8 +200,7 @@ class Open3DMain:
             msg = "open3d example <category>/<name> <example_args ...>\n\n"
             msg += "categories:\n"
             for category in sorted(self._get_example_categories()):
-                if str(category) != "__pycache__":
-                    msg += "  " + str(category) + "\n"
+                msg += "  " + str(category) + "\n"
             msg += "\nto view the example in each category run:\n"
             msg += "  open3d example --list category\n "
             return msg
@@ -220,8 +227,9 @@ class Open3DMain:
             dest='list',
             action='store_true',
             help='List all categories or examples available\n'
-                 'usage: open3d --list \n'
-                 '       open3d --list <category>\n ')
+                 'usage       :  open3d example --list \n'
+                 '               open3d example --list <category>\n'
+                 'for example :  open3d example --list geometry\n ')
         parser.add_argument(
             '-s',
             '--show',
@@ -229,7 +237,8 @@ class Open3DMain:
             dest='show',
             action='store_true',
             help='Show example source code instead of running it\n'
-                 'usage: open3d example --show <category>/<example_name>\n ')
+                 'usage       :  open3d example --show <category>/<example_name>\n'
+                 'for example :  open3d example --show geometry/mesh_deformation\n ')
         parser.add_argument(
             '-p',
             '--show_pretty',
@@ -237,13 +246,14 @@ class Open3DMain:
             dest='show_pretty',
             action='store_true',
             help='Like --show, but show in a rich format with line numbers\n'
-                 'usage: open3d example --show_pretty <category>/<example_name>\n ')
+                 'usage       :  open3d example --show_pretty <category>/<example_name>\n'
+                 'for example :  open3d example --show_pretty geometry/mesh_deformation\n ')
         parser.add_argument(
             '-h',
             '--help', 
             action='help', 
             help='Show this help message and exit\n'
-                 'usage: open3d example --help\n ')
+                 'usage       :  open3d example --help\n ')
 
         args = parser.parse_args(arguments)
 
@@ -251,17 +261,22 @@ class Open3DMain:
             if args.list:
                 print("categories: ")
                 for category in sorted(self._get_example_categories()):
-                    if str(category) != "__pycache__":
-                        print ("  " + str(category))
-                print("\nto view the example in each category run:")
-                print("  open3d example --list category\n")
+                    print ("  " + str(category))
+                print("\nTo view the example in each category run:")
+                print("  open3d example --list <category>\n")
+                return 0
             else:
                 sys.stderr.write('error: the following arguments are required: name\n')
                 parser.print_help()
                 return 1
         
-        category = args.name.split('/')[0]
-        example = args.name.split('/')[1]
+        try:
+            category = args.name.split('/')[0]
+            example = args.name.split('/')[1]
+        except:
+            category = args.name
+            example = ""
+
         if category not in self._get_example_categories():
             print ('error: invalid category provided: ' + category)
             parser.print_help()
@@ -271,7 +286,7 @@ class Open3DMain:
             print("examples in " + category + ": ")
             for examples_in_category in sorted(self._get_examples_in_category(category)):
                 print ("  " + str(examples_in_category))
-            print("\nto view all categories run:")
+            print("\nTo view all categories run:")
             print("  open3d example --list\n")
             return 0
 
@@ -287,7 +302,7 @@ class Open3DMain:
                 import rich.console
                 import rich.syntax
             except ImportError:
-                print('To make -p work, please: python3 -m pip install rich')
+                print('To make -p work, please run: python3 -m pip install rich')
                 return 1
             # https://rich.readthedocs.io/en/latest/syntax.html
             syntax = rich.syntax.Syntax.from_path(target, line_numbers=True)
@@ -313,7 +328,7 @@ class Open3DMain:
     def draw(self, arguments: list = sys.argv[2:]):
         """Visualize a mesh or pointcloud from a file"""
         parser = Open3DArgumentParser(prog='open3d draw',
-                                         description=f"{self.example.__doc__}")
+                                         description=f"{self.draw.__doc__}")
         parser.add_argument(
             "filename",
             help="Name of the mesh or point cloud file")
