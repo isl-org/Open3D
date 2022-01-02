@@ -48,6 +48,8 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/__init__.py")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/app/__init__.py"
+               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/app/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/gui/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/gui/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/rendering/__init__.py"

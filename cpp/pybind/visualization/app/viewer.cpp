@@ -24,43 +24,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/visualization/visualization.h"
-
-#include "pybind/visualization/gui/gui.h"
-#include "pybind/visualization/rendering/material.h"
-#include "pybind/visualization/rendering/rendering.h"
 #include "pybind/visualization/app/viewer.h"
 
-#ifdef BUILD_WEBRTC
-#include "pybind/visualization/webrtc_server/webrtc_window_system.h"
-#endif
+#include "open3d/visualization/app/Viewer.h"
+#include "pybind/docstring.h"
 
 namespace open3d {
 namespace visualization {
+namespace app {
 
-void pybind_visualization(py::module &m) {
-    py::module m_visualization = m.def_submodule("visualization");
-    pybind_renderoption(m_visualization);
-    pybind_viewcontrol(m_visualization);
-    pybind_visualizer(m_visualization);
-    pybind_visualization_utility(m_visualization);
-    pybind_renderoption_method(m_visualization);
-    pybind_viewcontrol_method(m_visualization);
-    pybind_visualizer_method(m_visualization);
-    pybind_visualization_utility_methods(m_visualization);
-    rendering::pybind_material(m_visualization);  // For RPC serialization
+static void pybind_app_functions(py::module &m) {
+    m.def(
+            "run_viewer",
+            [](const std::vector<std::string> args) {
+                const char **argv = new const char *[args.size()];
+                for (uint it = 0; it < args.size(); it++) {
+                    argv[it] = args[it].c_str();
+                }
+                RunViewer(args.size(), argv);
+                delete[] argv;
+                return 0;
+            },
+            "args"_a);
 
-#ifdef BUILD_GUI
-    rendering::pybind_rendering(m_visualization);
-    gui::pybind_gui(m_visualization);
-    pybind_o3dvisualizer(m_visualization);
-    app::pybind_app(m_visualization);
-#endif
-
-#ifdef BUILD_WEBRTC
-    webrtc_server::pybind_webrtc_server(m_visualization);
-#endif
+    docstring::FunctionDocInject(m, "run_viewer",
+                                 {{"args",
+                                   "Command line arguments containing the "
+                                   "filename of the geometry to visualize."}});
 }
 
+void pybind_app(py::module &m) {
+    py::module m_submodule = m.def_submodule(
+            "app", "Functionality for running the open3d viewer.");
+    pybind_app_functions(m_submodule);
+}
+
+}  // namespace app
 }  // namespace visualization
 }  // namespace open3d

@@ -24,43 +24,53 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/visualization/visualization.h"
+#include <string>
+#include <iostream>
+#include "open3d/visualization/app/Viewer.h"
+#include "open3d/visualization/gui/Native.h"
+#include "open3d/visualization/visualizer/GuiVisualizer.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/visualization/gui/Application.h"
 
-#include "pybind/visualization/gui/gui.h"
-#include "pybind/visualization/rendering/material.h"
-#include "pybind/visualization/rendering/rendering.h"
-#include "pybind/visualization/app/viewer.h"
+using namespace open3d;
+using namespace open3d::geometry;
+using namespace open3d::visualization;
 
-#ifdef BUILD_WEBRTC
-#include "pybind/visualization/webrtc_server/webrtc_window_system.h"
-#endif
+namespace {
+static const std::string gUsage = "Usage: Open3DViewer [meshfile|pointcloud]";
+}  // namespace
 
 namespace open3d {
 namespace visualization {
+namespace app {
 
-void pybind_visualization(py::module &m) {
-    py::module m_visualization = m.def_submodule("visualization");
-    pybind_renderoption(m_visualization);
-    pybind_viewcontrol(m_visualization);
-    pybind_visualizer(m_visualization);
-    pybind_visualization_utility(m_visualization);
-    pybind_renderoption_method(m_visualization);
-    pybind_viewcontrol_method(m_visualization);
-    pybind_visualizer_method(m_visualization);
-    pybind_visualization_utility_methods(m_visualization);
-    rendering::pybind_material(m_visualization);  // For RPC serialization
+int RunViewer(int argc, const char *argv[]) {
+    const char *path = nullptr;
+    if (argc > 1) {
+        path = argv[1];
+        if (argc > 2) {
+            utility::LogWarning(gUsage.c_str());
+        }
+    }
 
-#ifdef BUILD_GUI
-    rendering::pybind_rendering(m_visualization);
-    gui::pybind_gui(m_visualization);
-    pybind_o3dvisualizer(m_visualization);
-    app::pybind_app(m_visualization);
-#endif
+    auto &app = gui::Application::GetInstance();
+    app.Initialize(argc, argv);
 
-#ifdef BUILD_WEBRTC
-    webrtc_server::pybind_webrtc_server(m_visualization);
-#endif
+    auto vis = std::make_shared<GuiVisualizer>("Open3D", WIDTH, HEIGHT);
+    bool is_path_valid = (path && path[0] != '\0');
+    if (is_path_valid) {
+        vis->LoadGeometry(path);
+    }
+    gui::Application::GetInstance().AddWindow(vis);
+    // when Run() ends, Filament will be stopped, so we can't be holding on
+    // to any GUI objects.
+    vis.reset();
+
+    app.Run();
+
+    return 0;
 }
 
+}  // namespace app
 }  // namespace visualization
 }  // namespace open3d
