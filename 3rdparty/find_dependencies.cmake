@@ -1308,12 +1308,14 @@ if(USE_BLAS)
             # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
             find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
             find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
-            # find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
             target_link_libraries(3rdparty_blas INTERFACE
                 ${gfortran_lib}
                 ${gcc_lib}
-                # ${quadmath_lib}
             )
+            if(LINUX_AARCH64)
+                find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
+                target_link_libraries(3rdparty_blas INTERFACE ${quadmath_lib})
+            endif()
             if(APPLE_AARCH64)
                 # Suppress Apple compiler warnigns.
                 target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
@@ -1323,6 +1325,18 @@ if(USE_BLAS)
             # The temporary solution is to link the shared library libgfortran.so.
             # If we distribute a Python wheel, the user's system will also need
             # to have libgfortran.so preinstalled.
+            #
+            # If you have to link libgfortran.a statically
+            # - Read https://gcc.gnu.org/wiki/InstallingGCC
+            # - Run `gfortran --version`, e.g. you get 9.3.0
+            # - Checkout gcc source code to the corresponding version
+            # - Configure with
+            #   ${PWD}/../gcc/configure --prefix=${HOME}/gcc-9.3.0 \
+            #                           --enable-languages=c,c++,fortran \
+            #                           --with-pic --disable-multilib
+            # - make install -j$(nproc) # This will take a while
+            # - Change this cmake file to libgfortran.a statically
+            #   You'll still need the libgcc.a and libquadmath.a
             target_link_libraries(3rdparty_blas INTERFACE gfortran)
         endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
