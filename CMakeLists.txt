@@ -71,9 +71,12 @@ option(BUILD_JUPYTER_EXTENSION    "Build Jupyter, requires BUILD_WEBRTC=ON"  OFF
 # 3rd-party build options
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           ON )
-    option(BUILD_BLAS_FROM_SOURCE "Build OpenBLAS from source"               ON )
 else()
     option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           OFF)
+endif()
+if(USE_BLAS)
+    option(BUILD_BLAS_FROM_SOURCE "Build OpenBLAS from source"               ON )
+else()
     option(BUILD_BLAS_FROM_SOURCE "Build OpenBLAS from source"               OFF)
 endif()
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
