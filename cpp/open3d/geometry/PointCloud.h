@@ -70,7 +70,8 @@ public:
     Eigen::Vector3d GetMaxBound() const override;
     Eigen::Vector3d GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    OrientedBoundingBox GetOrientedBoundingBox() const override;
+    OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override;
     PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
     PointCloud &Translate(const Eigen::Vector3d &translation,
                           bool relative = true) override;
@@ -299,8 +300,13 @@ public:
     std::vector<double> ComputeNearestNeighborDistance() const;
 
     /// Function that computes the convex hull of the point cloud using qhull
+    /// \param joggle_inputs If true allows the algorithm to add random noise
+    ///        to the points to work around degenerate inputs. This adds the
+    ///        'QJ' option to the qhull command.
+    /// \returns The triangle mesh of the convex hull and the list of point
+    ///          indices that are part of the convex hull.
     std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-    ComputeConvexHull() const;
+    ComputeConvexHull(bool joggle_inputs = false) const;
 
     /// \brief This is an implementation of the Hidden Point Removal operator
     /// described in Katz et. al. 'Direct Visibility of Point Sets', 2007.

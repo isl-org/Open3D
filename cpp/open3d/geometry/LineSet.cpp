@@ -56,8 +56,8 @@ AxisAlignedBoundingBox LineSet::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(points_);
 }
 
-OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromPoints(points_);
+OrientedBoundingBox LineSet::GetOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(points_, robust);
 }
 
 LineSet &LineSet::Transform(const Eigen::Matrix4d &transformation) {

@@ -11,7 +11,7 @@ System requirements
 * C++14 compiler:
 
   * Ubuntu 18.04+: GCC 5+, Clang 7+
-  * macOS 10.14+: XCode 8.0+
+  * macOS 10.15+: XCode 8.0+
   * Windows 10 (64-bit): Visual Studio 2019+
 
 * CMake: 3.19+

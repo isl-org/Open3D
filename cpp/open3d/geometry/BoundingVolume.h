@@ -74,7 +74,8 @@ public:
     virtual Eigen::Vector3d GetMaxBound() const override;
     virtual Eigen::Vector3d GetCenter() const override;
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
+    virtual OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust) const override;
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
@@ -125,8 +126,12 @@ public:
     /// bounding box that could be computed for example with O'Rourke's
     /// algorithm (cf. http://cs.smith.edu/~jorourke/Papers/MinVolBox.pdf,
     /// https://www.geometrictools.com/Documentation/MinimumVolumeBox.pdf)
+    /// \param points The input points
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
     static OrientedBoundingBox CreateFromPoints(
-            const std::vector<Eigen::Vector3d>& points);
+            const std::vector<Eigen::Vector3d>& points, bool robust = false);
 
 public:
     /// The center point of the bounding box.
@@ -176,7 +181,8 @@ public:
     virtual Eigen::Vector3d GetMaxBound() const override;
     virtual Eigen::Vector3d GetCenter() const override;
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
+    virtual OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override;
     virtual AxisAlignedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual AxisAlignedBoundingBox& Translate(

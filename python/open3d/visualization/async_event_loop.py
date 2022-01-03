@@ -71,7 +71,6 @@ class _AsyncEventLoop:
         """Enqueue task, wait for completion and return result. Can run in any
         thread.
         """
-        from open3d.visualization.tensorboard_plugin.util import _log
         if not self._started:
             raise RuntimeError("GUI thread has exited.")
 

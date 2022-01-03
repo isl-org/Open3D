@@ -67,8 +67,8 @@ AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(points_);
 }
 
-OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromPoints(points_);
+OrientedBoundingBox PointCloud::GetOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(points_, robust);
 }
 
 PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
@@ -673,8 +673,8 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
 }
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-PointCloud::ComputeConvexHull() const {
-    return Qhull::ComputeConvexHull(points_);
+PointCloud::ComputeConvexHull(bool joggle_inputs) const {
+    return Qhull::ComputeConvexHull(points_, joggle_inputs);
 }
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>

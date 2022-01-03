@@ -58,7 +58,7 @@ void PrintHelp() {
 }
 
 int main(int argc, char **argv) {
-    if (argc <= 1 ||
+    if (argc < 1 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
         auto im_rgbd =
                 recorder.RecordFrame(flag_record, enable_align_depth_to_color);
         if (im_rgbd == nullptr) {
-            utility::LogInfo("Invalid capture, skipping this frame");
+            utility::LogDebug("Invalid capture, skipping this frame");
             continue;
         }
 

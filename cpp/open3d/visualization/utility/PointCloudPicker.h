@@ -53,7 +53,8 @@ public:
     Eigen::Vector3d GetMaxBound() const final;
     Eigen::Vector3d GetCenter() const final;
     geometry::AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const final;
-    geometry::OrientedBoundingBox GetOrientedBoundingBox() const final;
+    geometry::OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const final;
     PointCloudPicker& Transform(const Eigen::Matrix4d& transformation) override;
     PointCloudPicker& Translate(const Eigen::Vector3d& translation,
                                 bool relative = true) override;
