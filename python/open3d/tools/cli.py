@@ -75,6 +75,14 @@ class Open3DArgumentParser(argparse.ArgumentParser):
         sys.exit(2)
 
 
+class CommandHelp:
+
+    def __init__(self, description, usage, example):
+        self.description = description
+        self.usage = usage
+        self.example = example
+
+
 @registerableCLI
 class Open3DMain:
 
@@ -86,25 +94,36 @@ class Open3DMain:
 
         print(self._get_friend_links())
 
-        parser = Open3DArgumentParser(description="Open3D CLI",
-                                         usage=self._usage(), add_help=False,
-                                         formatter_class=argparse.RawTextHelpFormatter)
-        parser.add_argument(
-            'command',
-            help="command from the above list to run")
-        parser.add_argument(
-            '-V', 
-            '--version', 
-            action='version', 
-            version='Open3D v0.14.1', 
-            help="Show program's version number and exit\n"
-                 "usage: open3d --verison\n ")
-        parser.add_argument(
-            '-h',
-            '--help', 
-            action='help', 
-            help='Show this help message and exit\n'
-                 'usage: open3d --help\n ')
+        self.command_helper = dict()
+        for command in sorted(self.registered_commands):
+            try:
+                self.command_helper[command] = CommandHelp(
+                    description=getattr(self, command).__doc__.split('|')[0],
+                    usage=getattr(self, command).__doc__.split('|')[1],
+                    example=getattr(self, command).__doc__.split('|')[2])
+            except:
+                print("Error: ", command,
+                      getattr(self, command).__doc__.split('|'))
+                exit()
+
+        parser = Open3DArgumentParser(
+            description="Open3D CLI",
+            usage=self._usage(),
+            add_help=False,
+            formatter_class=argparse.RawTextHelpFormatter)
+        parser.add_argument('command',
+                            help="command from the above list to run")
+        parser.add_argument('-V',
+                            '--version',
+                            action='version',
+                            version='Open3D v0.14.1',
+                            help="Show program's version number and exit\n"
+                            "usage : open3d --verison\n ")
+        parser.add_argument('-h',
+                            '--help',
+                            action='help',
+                            help='Show this help message and exit\n'
+                            'usage : open3d --help\n ')
 
         self.main_parser = parser
 
@@ -124,21 +143,17 @@ class Open3DMain:
     def _usage(self) -> str:
         """Compose deterministic usage message based on registered_commands."""
         # TODO: add some color to commands
-        msg = "\n    open3d <command> <additional_arguments>\n\n"
-        msg += "commands:\n"
-        space = 20
+        msg = '\n    open3d <command> <additional_arguments ...>\n\n' \
+              'commands:\n'
+        space = 15
         for command in sorted(self.registered_commands):
-            msg += f"    {command}{' ' * (space - len(command))}|-> {getattr(self, command).__doc__}\n"
-        msg += "\nfor example:"
-        # TODO: store the examples within the functions for modularity
-        msg += (    "\n    Run mesh_deformation.py example in the geometry category:"
-                    "\n        open3d example geometry/mesh_deformation\n"
-                    "\n    Run Open3D viewer:"
-                    "\n        open3d draw"     )
+            msg += f"  {command}{' ' * (space - len(command))}{self.command_helper[command].description}\n"
+            msg += f"  {' ' * space}usage       :  {self.command_helper[command].usage}\n"
+            msg += f"  {' ' * space}for example :  {self.command_helper[command].example}\n\n"
         return msg
 
     @staticmethod
-    def _exec_python_file(filename: str, ):
+    def _exec_python_file(filename: str,):
         """Execute a Python file based on filename."""
         subprocess.call([sys.executable, filename] + sys.argv[2:])
 
@@ -146,7 +161,8 @@ class Open3DMain:
     def _get_examples_dir() -> Path:
         """Get the path to the examples directory."""
         tools_path = os.path.dirname(os.path.abspath(__file__))
-        examples_path = os.path.join(os.path.dirname(tools_path), "../../examples/python/")
+        examples_path = os.path.join(os.path.dirname(tools_path),
+                                     "../../examples/python/")
         examples_dir = Path(examples_path)
         return examples_dir
 
@@ -189,47 +205,48 @@ class Open3DMain:
 
         return support_choice_with_dot_py
 
-
-
     @register
     def example(self, arguments: list = sys.argv[2:]):
-        """Run an example by category/name (or category/name.py)"""
+        'Run an example by category/name (or category/name.py) |' \
+        'open3d example <category>/<name> <example_args ...> |' \
+        'open3d example geometry/mesh_deformation'
 
-        def usage():
+        def usage_long():
             # TODO: add some color to commands
-            msg = "open3d example <category>/<name> <example_args ...>\n\n"
+            msg = self.command_helper["example"].usage
+            msg += "\n\n"
             msg += "categories:\n"
             for category in sorted(self._get_example_categories()):
                 msg += "  " + str(category) + "\n"
-            msg += "\nto view the example in each category run:\n"
+            msg += "\nTo view the example in each category run:\n"
             msg += "  open3d example --list category\n "
             return msg
 
         choices = Open3DMain._get_available_examples()
 
-        parser = Open3DArgumentParser(prog='open3d example',
-                                         description=f"{self.example.__doc__}",
-                                         usage=usage(), add_help=False,
-                                         formatter_class=argparse.RawTextHelpFormatter)
+        parser = Open3DArgumentParser(
+            prog='open3d example',
+            description=self.command_helper["example"].description,
+            usage=usage_long(),
+            add_help=False,
+            formatter_class=argparse.RawTextHelpFormatter)
         parser.add_argument(
             "name",
             nargs='?',
             help="Category/name of an example (supports .py extension too)\n",
             type=Open3DMain._example_choices_type(choices.keys()))
-        parser.add_argument(
-            "example_args",
-            nargs='*',
-            help='Arguments for the example to be run\n')
-        parser.add_argument(
-            '-l',
-            '--list',
-            required=False,
-            dest='list',
-            action='store_true',
-            help='List all categories or examples available\n'
-                 'usage       :  open3d example --list \n'
-                 '               open3d example --list <category>\n'
-                 'for example :  open3d example --list geometry\n ')
+        parser.add_argument("example_args",
+                            nargs='*',
+                            help='Arguments for the example to be run\n')
+        parser.add_argument('-l',
+                            '--list',
+                            required=False,
+                            dest='list',
+                            action='store_true',
+                            help='List all categories or examples available\n'
+                            'usage       :  open3d example --list \n'
+                            '               open3d example --list <category>\n'
+                            'for example :  open3d example --list geometry\n ')
         parser.add_argument(
             '-s',
             '--show',
@@ -237,8 +254,8 @@ class Open3DMain:
             dest='show',
             action='store_true',
             help='Show example source code instead of running it\n'
-                 'usage       :  open3d example --show <category>/<example_name>\n'
-                 'for example :  open3d example --show geometry/mesh_deformation\n ')
+            'usage       :  open3d example --show <category>/<example_name>\n'
+            'for example :  open3d example --show geometry/mesh_deformation\n ')
         parser.add_argument(
             '-p',
             '--show_pretty',
@@ -246,14 +263,14 @@ class Open3DMain:
             dest='show_pretty',
             action='store_true',
             help='Like --show, but show in a rich format with line numbers\n'
-                 'usage       :  open3d example --show_pretty <category>/<example_name>\n'
-                 'for example :  open3d example --show_pretty geometry/mesh_deformation\n ')
-        parser.add_argument(
-            '-h',
-            '--help', 
-            action='help', 
-            help='Show this help message and exit\n'
-                 'usage       :  open3d example --help\n ')
+            'usage       :  open3d example --show_pretty <category>/<example_name>\n'
+            'for example :  open3d example --show_pretty geometry/mesh_deformation\n '
+        )
+        parser.add_argument('-h',
+                            '--help',
+                            action='help',
+                            help='Show this help message and exit\n'
+                            'usage       :  open3d example --help\n ')
 
         args = parser.parse_args(arguments)
 
@@ -261,15 +278,16 @@ class Open3DMain:
             if args.list:
                 print("categories: ")
                 for category in sorted(self._get_example_categories()):
-                    print ("  " + str(category))
+                    print("  " + str(category))
                 print("\nTo view the example in each category run:")
                 print("  open3d example --list <category>\n")
                 return 0
             else:
-                sys.stderr.write('error: the following arguments are required: name\n')
+                sys.stderr.write(
+                    'error: the following arguments are required: name\n')
                 parser.print_help()
                 return 1
-        
+
         try:
             category = args.name.split('/')[0]
             example = args.name.split('/')[1]
@@ -278,31 +296,35 @@ class Open3DMain:
             example = ""
 
         if category not in self._get_example_categories():
-            print ('error: invalid category provided: ' + category)
+            print('error: invalid category provided: ' + category)
             parser.print_help()
             return 1
 
         if args.list:
             print("examples in " + category + ": ")
-            for examples_in_category in sorted(self._get_examples_in_category(category)):
-                print ("  " + str(examples_in_category))
+            for examples_in_category in sorted(
+                    self._get_examples_in_category(category)):
+                print("  " + str(examples_in_category))
             print("\nTo view all categories run:")
             print("  open3d example --list\n")
             return 0
 
         examples_dir = Open3DMain._get_examples_dir()
         examples_in_category = self._get_examples_in_category(category)
-        target = str(
-            (examples_dir / category / examples_in_category[example] / f"{example}.py").resolve())
+        target = str((examples_dir / category / examples_in_category[example] /
+                      f"{example}.py").resolve())
         # path for examples needs to be modified for implicit relative imports
-        sys.path.append(str((examples_dir / category / examples_in_category[example]).resolve()))
+        sys.path.append(
+            str((examples_dir / category /
+                 examples_in_category[example]).resolve()))
 
         if args.show_pretty:
             try:
                 import rich.console
                 import rich.syntax
             except ImportError:
-                print('To make -p work, please run: python3 -m pip install rich')
+                print(
+                    'To make -p work, please run: python3 -m pip install rich')
                 return 1
             # https://rich.readthedocs.io/en/latest/syntax.html
             syntax = rich.syntax.Syntax.from_path(target, line_numbers=True)
@@ -326,13 +348,31 @@ class Open3DMain:
 
     @register
     def draw(self, arguments: list = sys.argv[2:]):
-        """Visualize a mesh or pointcloud from a file"""
-        parser = Open3DArgumentParser(prog='open3d draw',
-                                         description=f"{self.draw.__doc__}")
-        parser.add_argument(
-            "filename",
-            help="Name of the mesh or point cloud file")
-        
+        'Visualize a mesh or pointcloud from a file |' \
+        'open3d draw <filename> |' \
+        'open3d draw'
+
+        parser = Open3DArgumentParser(
+            prog='open3d draw',
+            description=self.command_helper["draw"].description,
+            usage=self.command_helper["draw"].usage,
+            add_help=False,
+            formatter_class=argparse.RawTextHelpFormatter)
+
+        parser.add_argument("filename",
+                            nargs='?',
+                            help="Name of the mesh or point cloud file")
+        parser.add_argument('-h',
+                            '--help',
+                            action='help',
+                            help='Show this help message and exit\n'
+                            'usage       :  open3d example --help\n ')
+
+        args = parser.parse_args(arguments)
+
+        if args.filename == None:
+            parser.print_help()
+
         examples_dir = Open3DMain._get_examples_dir()
         visgui = str(examples_dir / "gui" / "vis-gui.py")
         # path for examples needs to be modified for implicit relative imports
@@ -341,7 +381,6 @@ class Open3DMain:
         sys.argv.pop(1)
         runpy.run_path(visgui, run_name='__main__')
         sys.argv.insert(1, removed_arg)
-
         return None
 
 
