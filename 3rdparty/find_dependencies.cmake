@@ -1246,7 +1246,24 @@ endif()
 
 # MKL/BLAS
 if(USE_BLAS)
-    if(BUILD_BLAS_FROM_SOURCE)
+    if (NOT BUILD_BLAS_FROM_SOURCE)
+        find_package(BLAS)
+        find_package(LAPACK)
+        find_package(LAPACKE)
+        if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
+            message(STATUS "System BLAS/LAPACK/LAPACKE found.")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
+                ${BLAS_LIBRARIES}
+                ${LAPACK_LIBRARIES}
+                ${LAPACKE_LIBRARIES}
+            )
+        else()
+            message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting BUILD_BLAS_FROM_SOURCE=ON.")
+            set(BUILD_BLAS_FROM_SOURCE ON)
+        endif()
+    endif()
+
+    if (BUILD_BLAS_FROM_SOURCE)
         # Install gfortran first for compiling OpenBLAS/Lapack from source.
         message(STATUS "Building OpenBLAS with LAPACK from source")
 
@@ -1309,21 +1326,6 @@ if(USE_BLAS)
         endif()
 
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
-    else()
-        find_package(BLAS)
-        find_package(LAPACK)
-        find_package(LAPACKE)
-        if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
-            message(STATUS "System BLAS/LAPACK/LAPACKE found.")
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
-                ${BLAS_LIBRARIES}
-                ${LAPACK_LIBRARIES}
-                ${LAPACKE_LIBRARIES}
-            )
-        else()
-            message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting BUILD_BLAS_FROM_SOURCE=ON.")
-            set(BUILD_BLAS_FROM_SOURCE ON)
-        endif()
     endif()
 else()
     include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
