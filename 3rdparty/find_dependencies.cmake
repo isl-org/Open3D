@@ -1312,10 +1312,6 @@ if(USE_BLAS)
                 ${gfortran_lib}
                 ${gcc_lib}
             )
-            if(LINUX_AARCH64)
-                find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
-                target_link_libraries(3rdparty_blas INTERFACE ${quadmath_lib})
-            endif()
             if(APPLE_AARCH64)
                 # Suppress Apple compiler warnigns.
                 target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
@@ -1335,8 +1331,11 @@ if(USE_BLAS)
             #                           --enable-languages=c,c++,fortran \
             #                           --with-pic --disable-multilib
             # - make install -j$(nproc) # This will take a while
-            # - Change this cmake file to libgfortran.a statically
-            #   You'll still need the libgcc.a and libquadmath.a
+            # - Change this cmake file to libgfortran.a statically.
+            # - Link
+            #   - libgfortran.a
+            #   - libgcc.a
+            #   - libquadmath.a
             target_link_libraries(3rdparty_blas INTERFACE gfortran)
         endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
