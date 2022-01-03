@@ -1303,29 +1303,29 @@ if(USE_BLAS)
             message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
         endif()
 
-        # Find libgfortran.a and libgcc.a inside the gfortran library search
-        # directories. This ensures that the library matches the compiler.
-        find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
-        find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
-        if(LINUX_AARCH64)
+        if(LINUX_AARCH64 OR APPLE_AARCH64)
+            # Find libgfortran.a and libgcc.a inside the gfortran library search
+            # directories. This ensures that the library matches the compiler.
+            # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
+            find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
+            find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
             find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
-        endif()
-
-        if(APPLE_AARCH64)
-            # Suppress Apple compiler warnigns.
-            target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
-        endif()
-
-        target_link_libraries(3rdparty_blas INTERFACE
-            ${gfortran_lib}
-            ${gcc_lib}
-        )
-        if(LINUX_AARCH64)
             target_link_libraries(3rdparty_blas INTERFACE
+                ${gfortran_lib}
+                ${gcc_lib}
                 ${quadmath_lib}
             )
+            if(APPLE_AARCH64)
+                # Suppress Apple compiler warnigns.
+                target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
+            endif()
+        elseif(UNIX AND NOT APPLE)
+            # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
+            # The temporary solution is to link the shared library libgfortran.so.
+            # If we distribute a Python wheel, the user's system will also need
+            # to have libgfortran.so preinstalled.
+            target_link_libraries(3rdparty_blas INTERFACE gfortran)
         endif()
-
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
 else()
