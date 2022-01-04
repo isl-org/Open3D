@@ -1,28 +1,56 @@
 name: Report Build / Installation Related Issue
-description: Report an issue if you have trouble building or installing Open3D.
-title: "Comprehensive title for the build/install issue report."
+description: I have trouble installing or compiling Open3D.
+title: "Summarize the issue and your environments (e.g., \"Cannot compile on Ubuntu 20.04 with OpenBLAS\")"
 labels: [build/install issue]
 
 body:
+
+- type: checkboxes
+  attributes:
+    label: "I confirm that before submitting the issue I have taken the following steps:"
+    description: It is required to mark the checkboxes, before submitting the issue.
+    options:
+      - label: "I have searched for [similar issues](https://github.com/isl-org/Open3D/issues)."
+        required: true
+      - label: "For Python issues, I have tested with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip). (It may be already fixed!)"
+        required: true
+      - label: "I have checked with the [latest documentation](http://www.open3d.org/docs/latest/) properly. [For example: [Installing from PyPI](http://www.open3d.org/docs/latest/getting_started.html#installing-from-pypi-or-conda), [Build from source](http://www.open3d.org/docs/latest/compilation.html#build-from-source), [ARM Support](http://www.open3d.org/docs/latest/arm.html#arm-support)]."
+        required: true
+
 - type: textarea
   attributes:
     label: "Steps to reproduce:"
     description: >
-      Thank you for taking the time to file a build/installation related issue 
-      report. Before creating a new issue, please be sure to take a few minutes
-      to check the issue tracker for existing `build/install issue`. 
+      Please provide step-by-step instructions on how to reproduce the issue. 
+      Describe the installation method (e.g. building from source, Anaconda, 
+      pip). Providing *detailed* instructions is crucial for other to help with
+      the issues. Here is an example for reference you may modify.
+    value: >
+      #### I first clone Open3D by:
 
-      Before submitting issue:
-        1. Search for [similar issues](https://github.com/isl-org/Open3D/issues).
-        2. For Python issues, please test with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip). It may be already fixed!
-        3. Please check with the documentation properly.
-          3.a. [Installing from PyPI or Conda](http://www.open3d.org/docs/latest/getting_started.html#installing-from-pypi-or-conda).
-          3.b. [Build from source](http://www.open3d.org/docs/latest/compilation.html#build-from-source).
-          3.c. [Experimental ARM Support](http://www.open3d.org/docs/latest/arm.html#arm-support).
+      ```
 
-      Please describe the installation method in detail (e.g. building from 
-      source, Anaconda, pip). Share all the steps/commands you used to 
-      build/install Open3D. 
+      git clone https://github.com/isl-org/Open3D.git
+
+      cd Open3D
+
+      ```
+      
+
+      #### Then, I build Open3D (on Ubuntu 20.04, with CUDA 11.5) with:
+
+      ```
+
+      mkdir build
+
+      cd build
+
+      cmake -DBUILD_SHARED_LIBS=OFF -DBUILD_CUDA_MODULE=OFF -DUSE_BLAS=ON -DBUILD_WEBRTC=OFF ..
+
+      make -j$(nproc)
+
+      ```
+ 
   validations:
     required: true
 
@@ -30,39 +58,51 @@ body:
   attributes:
     label: "Error message:"
     description: >
-      Please include `FULL` error message, if any.
-      If you are reporting a segfault, please include a GDB traceback.
+      Provide the *full* error message. It is even better to provide your 
+      terminal commands and the full terminal outputs. If you are 
+      reporting a segfault, please include a GDB traceback.
+
+      When I build Open3D, I get the following error:
     placeholder: |
-      << Full traceback >>
+      Building OpenBLAS with LAPACK from source
+      CMake Error at 3rdparty/find_dependencies.cmake:1227 (message):
+      gfortran is required to compile LAPACK from source.  On Ubuntu, please
+      install by `apt install gfortran`.  On macOS, please install by `brew
+      install gfortran`.
+      Call Stack (most recent call first):
+      CMakeLists.txt:446 (include)
+  
+      Here's the full terminal output with my commands:
+      (you may drag and drop a .txt file in `Additional information`)
     render: shell
+  validations:
+    required: true
 
 - type: textarea
   attributes:
     label: "Additional information:"
     description: >
       Please add any additional information that could help us diagnose the 
-      problem better. You may even attach log files, generated wheel, 
-      screenshots or any other files, that could be helpful.
+      problem better. Provide screenshots if applicable. You may even attach
+      log files, generated wheel, or any other files, that could be helpful.
 
 - type: textarea
   attributes:
     label: "System and Open3D/Python version information:"
-    description: >
-      Output from `import sys, open3d; print(open3d.__version__, sys.version)`.
-        - Operating system: (e.g. OSX 10.15, Ubuntu 18.04, Windows 10 64-bit)
-        - Python version: (e.g. Python 3.8 / output from `import sys  print(sys.version)`)
-        - Open3D version: (output from python: `print(open3d.__version__)`)
-        - System type: (x84 / arm / m1 / aarch / jetson-nano / jetson-tx / rpi)
-        - Is this remote workstation?: yes or no
-        - How did you install Open3D?: (e.g. pip, conda, build from source)
-        - Compiler version (if built from source): (e.g. gcc 7.5, clang 7.0)
-    placeholder: |
+    value: >
       - Operating system: (e.g. OSX 10.15, Ubuntu 18.04, Windows 10 64-bit)
+
       - Python version: (e.g. Python 3.8 / output from `import sys  print(sys.version)`)
+
       - Open3D version: (output from python: `print(open3d.__version__)`)
+
       - System type: (x84 / arm / m1 / aarch / jetson-nano / jetson-tx / rpi)
+
       - Is this remote workstation?: yes or no
+
       - How did you install Open3D?: (e.g. pip, conda, build from source)
+
       - Compiler version (if built from source): (e.g. gcc 7.5, clang 7.0)
+    render: markdown
   validations:
     required: true

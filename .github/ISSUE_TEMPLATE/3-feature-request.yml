@@ -1,21 +1,39 @@
 name: Feature Request
-description: New feature request.
-title: "Comprehensive title for the feature issue report"
+description: New feature request. Request to add some new functionality or improve the existing ones.
+title: "Summarize your request. (e.g., \"Request to add ROS to Open3D PointCloud conversion support?\")"
 labels: [feature request]
 
 body:
+- type: checkboxes
+  attributes:
+    label: "I confirm that before submitting the issue I have taken the following steps:"
+    description: It is required to mark the checkboxes, before submitting the issue.
+    options:
+      - label: "I have searched for [similar issues](https://github.com/isl-org/Open3D/issues)."
+        required: true
+      - label: "I have checked with the [latest documentation](http://www.open3d.org/docs/latest/) properly. [For example: [Installing from PyPI](http://www.open3d.org/docs/latest/getting_started.html#installing-from-pypi-or-conda), [Build from source](http://www.open3d.org/docs/latest/compilation.html#build-from-source), [ARM Support](http://www.open3d.org/docs/latest/arm.html#arm-support)]."
+        required: true
+
 - type: markdown
   attributes:
+    
     value: >
-        If you're looking to request a new feature or change in functionality,
-        including adding or changing the meaning of arguments to an existing 
-        function.
+
 
 - type: textarea
   attributes:
+    description: >
+        If you're looking to request a new feature or change in functionality,
+        including adding or changing the meaning of arguments to an existing 
+        function.
     label: "Proposed new feature or change:"
   validations:
     required: true
+
+- type: textarea
+  attributes:
+    label: "References:"
+    description: Please share some references that can help us know more about this feature and try to implement the same. For ex. research paper, open-source codes, stackoverflow, etc. 
 
 - type: textarea
   attributes:
