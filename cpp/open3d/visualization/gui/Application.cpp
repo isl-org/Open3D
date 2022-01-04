@@ -161,13 +161,16 @@ struct Application::Impl {
 
         // Initialize rendering
 #ifdef __APPLE__
+        // NOTE: Keeping separate #define for APPLE since we intend to
+        // enable the Metal backend at some point.
         visualization::rendering::EngineInstance::SelectBackend(
                 visualization::rendering::EngineInstance::RenderingType::
-                        kDefault);
+                        kOpenGL);
 #else
-        // NOTE: On Linux the latest Filament selects Vulkan backend by default
-        // which fails to initialize for some as yet to be determined reason.
-        // Therefore, we are still forcing Linux to use OpenGL backend.
+        // NOTE: On Linux the latest Filament selects Vulkan backend by
+        // default which has some rendering anomalies with SSAO (which
+        // we have reported to Filament team). Therefore, we are still
+        // forcing Linux to use OpenGL backend.
         visualization::rendering::EngineInstance::SelectBackend(
                 visualization::rendering::EngineInstance::RenderingType::
                         kOpenGL);

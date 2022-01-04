@@ -188,7 +188,11 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
 
 #if __APPLE__
     glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    // Note: The following line is necessary to get Metal backend to work. We
+    // currently force Filament to select the OpenGL backend but I am leaving
+    // the following line in the code as a reminder for when we enable the Metal
+    // backend.
+    // glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 #endif
     bool visible = !(flags & FLAG_HIDDEN);
     glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
@@ -343,8 +347,7 @@ void GLFWWindowSystem::WindowMovedCallback(GLFWwindow* window,
                                            int os_x,
                                            int os_y) {
 #ifdef __APPLE__
-    // On macOS we need to recreate the swap chain if the window changes
-    // size OR MOVES!
+    // Special handling may be required on Apple for resize and move events.
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     w->OnResize();
 #endif
@@ -548,10 +551,6 @@ void* GLFWWindowSystem::GetNativeDrawable(OSWindow w) {
 
 rendering::FilamentRenderer* GLFWWindowSystem::CreateRenderer(OSWindow w) {
     void* native_swap_chain = GetNativeDrawable(w);
-#ifdef __APPLE__
-    // Need to setup Metal layer for Metal and Vulkan rendering on Mac
-    native_swap_chain = gui::SetupMetalLayer(native_swap_chain);
-#endif
     return new rendering::FilamentRenderer(
             rendering::EngineInstance::GetInstance(), native_swap_chain,
             rendering::EngineInstance::GetResourceManager());
@@ -559,14 +558,9 @@ rendering::FilamentRenderer* GLFWWindowSystem::CreateRenderer(OSWindow w) {
 
 void GLFWWindowSystem::ResizeRenderer(OSWindow w,
                                       rendering::FilamentRenderer* renderer) {
-#if __APPLE__
-    // We need to recreate the swap chain after resizing a window on macOS
-    // otherwise things look very wrong. SwapChain does not need to be resized
-    // on other platforms.
-    void* native_win = GetNativeDrawable(w);
-    gui::ResizeMetalLayer(native_win);
-    // renderer->UpdateSwapChain();
-#endif  // __APPLE__
+    // NOTE: Nothing currently needs to be done here. However, if and when we
+    // enable the Metal backend on Apple then ResizeMetalLayer will need to be
+    // called here.
 }
 
 MenuBase* GLFWWindowSystem::CreateOSMenu() {
