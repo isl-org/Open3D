@@ -16,45 +16,24 @@
 #   This make the Docker image reproducible across different machines.
 set -euo pipefail
 
-__usage_docker_build="USAGE:
+__usage="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    # OpenBLAS AMD64
-    openblas-amd64-py36-dev: OpenBLAS AMD64 3.6 wheel, developer mode
-    openblas-amd64-py37-dev: OpenBLAS AMD64 3.7 wheel, developer mode
-    openblas-amd64-py38-dev: OpenBLAS AMD64 3.8 wheel, developer mode
-    openblas-amd64-py39-dev: OpenBLAS AMD64 3.9 wheel, developer mode
-    openblas-amd64-py36    : OpenBLAS AMD64 3.6 wheel, release mode
-    openblas-amd64-py37    : OpenBLAS AMD64 3.7 wheel, release mode
-    openblas-amd64-py38    : OpenBLAS AMD64 3.8 wheel, release mode
-    openblas-amd64-py39    : OpenBLAS AMD64 3.9 wheel, release mode
-
-    # OpenBLAS ARM64
-    openblas-arm64-py36-dev: OpenBLAS ARM64 3.6 wheel, developer mode
-    openblas-arm64-py37-dev: OpenBLAS ARM64 3.7 wheel, developer mode
-    openblas-arm64-py38-dev: OpenBLAS ARM64 3.8 wheel, developer mode
-    openblas-arm64-py39-dev: OpenBLAS ARM64 3.9 wheel, developer mode
-    openblas-arm64-py36    : OpenBLAS ARM64 3.6 wheel, release mode
-    openblas-arm64-py37    : OpenBLAS ARM64 3.7 wheel, release mode
-    openblas-arm64-py38    : OpenBLAS ARM64 3.8 wheel, release mode
-    openblas-arm64-py39    : OpenBLAS ARM64 3.9 wheel, release mode
-
-    # CUDA wheels
-    cuda_wheel_py36_dev    : CUDA Python 3.6 wheel, developer mode
-    cuda_wheel_py37_dev    : CUDA Python 3.7 wheel, developer mode
-    cuda_wheel_py38_dev    : CUDA Python 3.8 wheel, developer mode
-    cuda_wheel_py39_dev    : CUDA Python 3.9 wheel, developer mode
-    cuda_wheel_py36        : CUDA Python 3.6 wheel, release mode
-    cuda_wheel_py37        : CUDA Python 3.7 wheel, release mode
-    cuda_wheel_py38        : CUDA Python 3.8 wheel, release mode
-    cuda_wheel_py39        : CUDA Python 3.9 wheel, release mode
-
-    # ML CIs
-    2-bionic            : CUDA CI, 2-bionic
-    3-ml-shared-bionic  : CUDA CI, 3-ml-shared-bionic
-    4-ml-bionic         : CUDA CI, 4-ml-bionic
-    5-ml-focal          : CUDA CI, 5-ml-focal
+    openblas-x86_64    : OpenBLAS x86_64
+    openblas-arm64     : OpenBLAS ARM64
+    cuda_wheel_py36_dev: CUDA Python 3.6 wheel, developer mode
+    cuda_wheel_py37_dev: CUDA Python 3.7 wheel, developer mode
+    cuda_wheel_py38_dev: CUDA Python 3.8 wheel, developer mode
+    cuda_wheel_py39_dev: CUDA Python 3.9 wheel, developer mode
+    cuda_wheel_py36    : CUDA Python 3.6 wheel, release mode
+    cuda_wheel_py37    : CUDA Python 3.7 wheel, release mode
+    cuda_wheel_py38    : CUDA Python 3.8 wheel, release mode
+    cuda_wheel_py39    : CUDA Python 3.9 wheel, release mode
+    2-bionic           : CUDA CI, 2-bionic
+    3-ml-shared-bionic : CUDA CI, 3-ml-shared-bionic
+    4-ml-bionic        : CUDA CI, 4-ml-bionic
+    5-ml-focal         : CUDA CI, 5-ml-focal
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
@@ -63,82 +42,38 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 &&
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
 
-print_usage_and_exit_docker_build() {
-    echo "$__usage_docker_build"
+print_usage_and_exit() {
+    echo "$__usage"
     exit 1
 }
 
-openblas_print_env() {
-    echo "[openblas_print_env()] DOCKER_TAG: ${DOCKER_TAG}"
-    echo "[openblas_print_env()] BASE_IMAGE: ${BASE_IMAGE}"
-    echo "[openblas_print_env()] CMAKE_VER: ${CMAKE_VER}"
-    echo "[openblas_print_env()] CCACHE_TAR_NAME: ${CCACHE_TAR_NAME}"
-    echo "[openblas_print_env()] PYTHON_VERSION: ${PYTHON_VERSION}"
-    echo "[openblas_print_env()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
+openblas-x86_64_export_env() {
+    export DOCKER_TAG=open3d-ci:openblas-x86_64
+
+    export BASE_IMAGE=ubuntu:20.04
+    export CMAKE_VER=cmake-3.19.7-Linux-x86_64
+    export CCACHE_TAR_NAME=open3d-ci-openblas-x86_64
 }
 
-openblas_export_env() {
-    options="$(echo "$@" | tr ' ' '|')"
-    echo "[openblas_export_env()] options: ${options}"
+openblas-arm64_export_env() {
+    export DOCKER_TAG=open3d-ci:openblas-arm64
 
-    if [[ "amd64" =~ ^($options)$ ]]; then
-        echo "[openblas_export_env()] platform AMD64"
-        export DOCKER_TAG=open3d-ci:openblas-amd64
-        export BASE_IMAGE=ubuntu:18.04
-        export CMAKE_VER=cmake-3.19.7-Linux-x86_64
-        export CCACHE_TAR_NAME=open3d-ci-openblas-amd64
-    elif [[ "arm64" =~ ^($options)$ ]]; then
-        echo "[openblas_export_env()] platform ARM64"
-        export DOCKER_TAG=open3d-ci:openblas-arm64
-        export BASE_IMAGE=arm64v8/ubuntu:18.04
-        export CMAKE_VER=cmake-3.19.7-Linux-aarch64
-        export CCACHE_TAR_NAME=open3d-ci-openblas-arm64
-    else
-        echo "Invalid platform."
-        print_usage_and_exit_docker_build
-    fi
-
-    if [[ "py36" =~ ^($options)$ ]]; then
-        export PYTHON_VERSION=3.6
-        export DOCKER_TAG=${DOCKER_TAG}-py36
-    elif [[ "py37" =~ ^($options)$ ]]; then
-        export PYTHON_VERSION=3.7
-        export DOCKER_TAG=${DOCKER_TAG}-py37
-    elif [[ "py38" =~ ^($options)$ ]]; then
-        export PYTHON_VERSION=3.8
-        export DOCKER_TAG=${DOCKER_TAG}-py38
-    elif [[ "py39" =~ ^($options)$ ]]; then
-        export PYTHON_VERSION=3.9
-        export DOCKER_TAG=${DOCKER_TAG}-py39
-    else
-        echo "Invalid python version."
-        print_usage_and_exit_docker_build
-    fi
-
-    if [[ "dev" =~ ^($options)$ ]]; then
-        export DEVELOPER_BUILD=ON
-        export DOCKER_TAG=${DOCKER_TAG}-dev
-    else
-        export DEVELOPER_BUILD=OFF
-        export DOCKER_TAG=${DOCKER_TAG}-release
-    fi
-
-    # For docker_test.sh
-    export BUILD_CUDA_MODULE=OFF
-    export BUILD_PYTORCH_OPS=OFF
-    export BUILD_TENSORFLOW_OPS=OFF
+    export BASE_IMAGE=arm64v8/ubuntu:20.04
+    export CMAKE_VER=cmake-3.19.7-Linux-aarch64
+    export CCACHE_TAR_NAME=open3d-ci-openblas-arm64
 }
 
 openblas_build() {
-    openblas_print_env
+    echo "[openblas_build()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[openblas_build()] BASE_IMAGE: ${BASE_IMAGE}"
+    echo "[openblas_build()] CMAKE_VER: ${CMAKE_VER}"
+    echo "[openblas_build()] CCACHE_TAR_NAME: ${CCACHE_TAR_NAME}"
 
     # Docker build
     pushd "${HOST_OPEN3D_ROOT}"
     docker build --build-arg BASE_IMAGE="${BASE_IMAGE}" \
                  --build-arg CMAKE_VER="${CMAKE_VER}" \
                  --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
-                 --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
-                 --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
                  -t "${DOCKER_TAG}" \
                  -f .github/workflows/Dockerfile.openblas .
     popd
@@ -147,11 +82,6 @@ openblas_build() {
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
-
-    # Extract wheels
-    docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-        bash -c "cp /*.whl /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/*.whl"
 }
 
 cuda_wheel_build() {
@@ -172,7 +102,7 @@ cuda_wheel_build() {
         PYTHON_VERSION=3.9
     else
         echo "Invalid python version."
-        print_usage_and_exit_docker_build
+        print_usage_and_exit
     fi
     if [[ "dev" =~ ^($options)$ ]]; then
         DEVELOPER_BUILD=ON
@@ -289,79 +219,18 @@ cuda_build() {
 function main () {
     if [[ "$#" -ne 1 ]]; then
         echo "Error: invalid number of arguments: $#." >&2
-        print_usage_and_exit_docker_build
+        print_usage_and_exit
     fi
     echo "[$(basename $0)] building $1"
     case "$1" in
-        # OpenBLAS AMD64
-        openblas-amd64-py36-dev)
-            openblas_export_env amd64 py36 dev
+        openblas-x86_64)
+            openblas-x86_64_export_env
             openblas_build
             ;;
-        openblas-amd64-py37-dev)
-            openblas_export_env amd64 py37 dev
+        openblas-arm64)
+            openblas-arm64_export_env
             openblas_build
             ;;
-        openblas-amd64-py38-dev)
-            openblas_export_env amd64 py38 dev
-            openblas_build
-            ;;
-        openblas-amd64-py39-dev)
-            openblas_export_env amd64 py39 dev
-            openblas_build
-            ;;
-        openblas-amd64-py36)
-            openblas_export_env amd64 py36
-            openblas_build
-            ;;
-        openblas-amd64-py37)
-            openblas_export_env amd64 py37
-            openblas_build
-            ;;
-        openblas-amd64-py38)
-            openblas_export_env amd64 py38
-            openblas_build
-            ;;
-        openblas-amd64-py39)
-            openblas_export_env amd64 py39
-            openblas_build
-            ;;
-
-        # OpenBLAS ARM64
-        openblas-arm64-py36-dev)
-            openblas_export_env arm64 py36 dev
-            openblas_build
-            ;;
-        openblas-arm64-py37-dev)
-            openblas_export_env arm64 py37 dev
-            openblas_build
-            ;;
-        openblas-arm64-py38-dev)
-            openblas_export_env arm64 py38 dev
-            openblas_build
-            ;;
-        openblas-arm64-py39-dev)
-            openblas_export_env arm64 py39 dev
-            openblas_build
-            ;;
-        openblas-arm64-py36)
-            openblas_export_env arm64 py36
-            openblas_build
-            ;;
-        openblas-arm64-py37)
-            openblas_export_env arm64 py37
-            openblas_build
-            ;;
-        openblas-arm64-py38)
-            openblas_export_env arm64 py38
-            openblas_build
-            ;;
-        openblas-arm64-py39)
-            openblas_export_env arm64 py39
-            openblas_build
-            ;;
-
-        # CUDA wheels
         cuda_wheel_py36_dev)
             cuda_wheel_build py36 dev
             ;;
@@ -386,8 +255,6 @@ function main () {
         cuda_wheel_py39)
             cuda_wheel_build py39
             ;;
-
-        # ML CIs
         2-bionic)
             2-bionic_export_env
             cuda_build
@@ -406,7 +273,7 @@ function main () {
             ;;
         *)
             echo "Error: invalid argument: ${1}." >&2
-            print_usage_and_exit_docker_build
+            print_usage_and_exit
             ;;
     esac
 }

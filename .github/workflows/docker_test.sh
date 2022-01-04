@@ -11,41 +11,22 @@
 
 set -euo pipefail
 
-__usage_docker_test="USAGE:
+__usage="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    # OpenBLAS AMD64
-    openblas-amd64-py36-dev: OpenBLAS AMD64 3.6 wheel, developer mode
-    openblas-amd64-py37-dev: OpenBLAS AMD64 3.7 wheel, developer mode
-    openblas-amd64-py38-dev: OpenBLAS AMD64 3.8 wheel, developer mode
-    openblas-amd64-py39-dev: OpenBLAS AMD64 3.9 wheel, developer mode
-    openblas-amd64-py36    : OpenBLAS AMD64 3.6 wheel, release mode
-    openblas-amd64-py37    : OpenBLAS AMD64 3.7 wheel, release mode
-    openblas-amd64-py38    : OpenBLAS AMD64 3.8 wheel, release mode
-    openblas-amd64-py39    : OpenBLAS AMD64 3.9 wheel, release mode
-
-    # OpenBLAS ARM64
-    openblas-arm64-py36-dev: OpenBLAS ARM64 3.6 wheel, developer mode
-    openblas-arm64-py37-dev: OpenBLAS ARM64 3.7 wheel, developer mode
-    openblas-arm64-py38-dev: OpenBLAS ARM64 3.8 wheel, developer mode
-    openblas-arm64-py39-dev: OpenBLAS ARM64 3.9 wheel, developer mode
-    openblas-arm64-py36    : OpenBLAS ARM64 3.6 wheel, release mode
-    openblas-arm64-py37    : OpenBLAS ARM64 3.7 wheel, release mode
-    openblas-arm64-py38    : OpenBLAS ARM64 3.8 wheel, release mode
-    openblas-arm64-py39    : OpenBLAS ARM64 3.9 wheel, release mode
-
-    # ML CIs
-    2-bionic            : CUDA CI, 2-bionic
-    3-ml-shared-bionic  : CUDA CI, 3-ml-shared-bionic
-    4-ml-bionic         : CUDA CI, 4-ml-bionic
-    5-ml-focal          : CUDA CI, 5-ml-focal
+    openblas-x86_64    : OpenBLAS x86_64
+    openblas-arm64     : OpenBLAS ARM64
+    2-bionic           : CUDA CI, 2-bionic
+    3-ml-shared-bionic : CUDA CI, 3-ml-shared-bionic
+    4-ml-bionic        : CUDA CI, 4-ml-bionic
+    5-ml-focal         : CUDA CI, 5-ml-focal
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
 
-print_usage_and_exit_docker_test() {
-    echo "$__usage_docker_test"
+print_usage_and_exit() {
+    echo "$__usage"
     exit 1
 }
 
@@ -60,6 +41,13 @@ cuda_print_env() {
     echo "[cuda_print_env()] SHARED=${SHARED}"
     echo "[cuda_print_env()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[cuda_print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+}
+
+openblas_print_env() {
+    echo "[openblas_print_env()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[openblas_print_env()] BASE_IMAGE=${BASE_IMAGE}"
+    echo "[openblas_print_env()] CMAKE_VER=${CMAKE_VER}"
+    echo "[openblas_print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
 }
 
 restart_docker_daemon_if_on_gcloud() {
@@ -114,14 +102,14 @@ cpp_python_linking_uninstall_test() {
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c "\
         cd build \
-     && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+     && ./bin/tests --gtest_shuffle \
     "
     restart_docker_daemon_if_on_gcloud
 
     # Python test
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        python -m pytest python/test ${pytest_args} \
+        pytest python/test ${pytest_args} \
     "
     restart_docker_daemon_if_on_gcloud
 
@@ -146,96 +134,11 @@ cpp_python_linking_uninstall_test() {
 
 if [[ "$#" -ne 1 ]]; then
     echo "Error: invalid number of arguments." >&2
-    print_usage_and_exit_docker_test
+    print_usage_and_exit
 fi
 echo "[$(basename $0)] building $1"
 source "${HOST_OPEN3D_ROOT}/.github/workflows/docker_build.sh"
 case "$1" in
-    # OpenBLAS AMD64
-    openblas-amd64-py36-dev)
-        openblas_export_env amd64 py36 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py37-dev)
-        openblas_export_env amd64 py37 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py38-dev)
-        openblas_export_env amd64 py38 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py39-dev)
-        openblas_export_env amd64 py39 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py36)
-        openblas_export_env amd64 py36
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py37)
-        openblas_export_env amd64 py37
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py38)
-        openblas_export_env amd64 py38
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py39)
-        openblas_export_env amd64 py39
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-
-    # OpenBLAS ARM64
-    openblas-arm64-py36-dev)
-        openblas_export_env arm64 py36 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py37-dev)
-        openblas_export_env arm64 py37 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py38-dev)
-        openblas_export_env arm64 py38 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py39-dev)
-        openblas_export_env arm64 py39 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py36)
-        openblas_export_env arm64 py36
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py37)
-        openblas_export_env arm64 py37
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py38)
-        openblas_export_env arm64 py38
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py39)
-        openblas_export_env arm64 py39
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-
-    # ML CIs
     2-bionic)
         2-bionic_export_env
         cuda_print_env
@@ -260,9 +163,24 @@ case "$1" in
         export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
-
+    openblas-x86_64)
+        openblas-x86_64_export_env
+        openblas_print_env
+        export BUILD_CUDA_MODULE=OFF
+        export BUILD_PYTORCH_OPS=OFF
+        export BUILD_TENSORFLOW_OPS=OFF
+        cpp_python_linking_uninstall_test
+        ;;
+    openblas-arm64)
+        openblas-arm64_export_env
+        openblas_print_env
+        export BUILD_CUDA_MODULE=OFF
+        export BUILD_PYTORCH_OPS=OFF
+        export BUILD_TENSORFLOW_OPS=OFF
+        cpp_python_linking_uninstall_test
+        ;;
     *)
         echo "Error: invalid argument: ${1}." >&2
-        print_usage_and_exit_docker_test
+        print_usage_and_exit
         ;;
 esac
