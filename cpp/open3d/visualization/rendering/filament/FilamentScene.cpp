@@ -174,7 +174,21 @@ FilamentScene::FilamentScene(filament::Engine& engine,
     // covers up any SceneWidgets in the window.
 }
 
-FilamentScene::~FilamentScene() {}
+FilamentScene::~FilamentScene() {
+    for (auto& le : lights_) {
+        engine_.destroy(le.second.filament_entity);
+        le.second.filament_entity.clear();
+    }
+    engine_.destroy(sun_.filament_entity);
+    sun_.filament_entity.clear();
+    if (ibl_handle_) {
+        resource_mgr_.Destroy(ibl_handle_);
+    }
+    if (skybox_handle_) {
+        resource_mgr_.Destroy(skybox_handle_);
+    }
+    engine_.destroy(scene_);
+}
 
 Scene* FilamentScene::Copy() {
     auto copy = new FilamentScene(engine_, resource_mgr_, renderer_);
@@ -1546,6 +1560,9 @@ Eigen::Vector3f FilamentScene::GetSunLightDirection() {
 }
 
 bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
+    auto old_ibl = ibl_handle_;
+    auto old_sky = skybox_handle_;
+
     // Load IBL
     std::string ibl_path = ibl_name + std::string("_ibl.ktx");
     rendering::IndirectLightHandle new_ibl =
@@ -1559,6 +1576,10 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
         indirect_light_ = wlight;
         if (ibl_enabled_) scene_->setIndirectLight(light.get());
         ibl_name_ = ibl_name;
+        ibl_handle_ = new_ibl;
+        if (old_ibl) {
+            resource_mgr_.Destroy(old_ibl);
+        }
     }
 
     // Load matching skybox
@@ -1571,6 +1592,10 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
         if (skybox_enabled_) {
             scene_->setSkybox(skybox.get());
             ShowSkybox(true);
+        }
+        skybox_handle_ = sky;
+        if (old_sky) {
+            resource_mgr_.Destroy(old_sky);
         }
     }
 

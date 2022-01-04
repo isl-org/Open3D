@@ -25,6 +25,7 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
+import numpy as np
 import os
 import urllib.request
 import tarfile
@@ -43,10 +44,95 @@ from download_utils import download_all_files as _download_all_files
 _download_all_files()
 
 
+def edges_to_lineset(mesh, edges, color):
+    ls = o3d.geometry.LineSet()
+    ls.points = mesh.vertices
+    ls.lines = edges
+    ls.paint_uniform_color(color)
+    return ls
+
+
 def _relative_path(path):
     script_path = os.path.realpath(__file__)
     script_dir = os.path.dirname(script_path)
     return os.path.join(script_dir, path)
+
+
+def get_non_manifold_edge_mesh():
+    verts = np.array(
+        [[-1, 0, 0], [0, 1, 0], [1, 0, 0], [0, -1, 0], [0, 0, 1]],
+        dtype=np.float64,
+    )
+    triangles = np.array([[0, 1, 3], [1, 2, 3], [1, 3, 4]])
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(verts)
+    mesh.triangles = o3d.utility.Vector3iVector(triangles)
+    mesh.compute_vertex_normals()
+    mesh.rotate(
+        mesh.get_rotation_matrix_from_xyz((np.pi / 4, 0, np.pi / 4)),
+        center=mesh.get_center(),
+    )
+    return mesh
+
+
+def get_non_manifold_vertex_mesh():
+    verts = np.array(
+        [
+            [-1, 0, -1],
+            [1, 0, -1],
+            [0, 1, -1],
+            [0, 0, 0],
+            [-1, 0, 1],
+            [1, 0, 1],
+            [0, 1, 1],
+        ],
+        dtype=np.float64,
+    )
+    triangles = np.array([
+        [0, 1, 2],
+        [0, 1, 3],
+        [1, 2, 3],
+        [2, 0, 3],
+        [4, 5, 6],
+        [4, 5, 3],
+        [5, 6, 3],
+        [4, 6, 3],
+    ])
+    mesh = o3d.geometry.TriangleMesh()
+    mesh.vertices = o3d.utility.Vector3dVector(verts)
+    mesh.triangles = o3d.utility.Vector3iVector(triangles)
+    mesh.compute_vertex_normals()
+    mesh.rotate(
+        mesh.get_rotation_matrix_from_xyz((np.pi / 4, 0, np.pi / 4)),
+        center=mesh.get_center(),
+    )
+    return mesh
+
+
+def get_open_box_mesh():
+    mesh = o3d.geometry.TriangleMesh.create_box()
+    mesh.triangles = o3d.utility.Vector3iVector(np.asarray(mesh.triangles)[:-2])
+    mesh.compute_vertex_normals()
+    mesh.rotate(
+        mesh.get_rotation_matrix_from_xyz((0.8 * np.pi, 0, 0.66 * np.pi)),
+        center=mesh.get_center(),
+    )
+    return mesh
+
+
+def get_intersecting_boxes_mesh():
+    mesh0 = o3d.geometry.TriangleMesh.create_box()
+    T = np.eye(4)
+    T[:, 3] += (0.5, 0.5, 0.5, 0)
+    mesh1 = o3d.geometry.TriangleMesh.create_box()
+    mesh1.transform(T)
+    mesh = mesh0 + mesh1
+    mesh.compute_vertex_normals()
+    mesh.rotate(
+        mesh.get_rotation_matrix_from_xyz((0.7 * np.pi, 0, 0.6 * np.pi)),
+        center=mesh.get_center(),
+    )
+    return mesh
 
 
 def get_armadillo_mesh():
@@ -86,6 +172,12 @@ def get_bunny_mesh():
         os.remove(bunny_path + ".tar.gz")
         shutil.rmtree(os.path.join(os.path.dirname(bunny_path), "bunny"))
     mesh = o3d.io.read_triangle_mesh(bunny_path)
+    mesh.compute_vertex_normals()
+    return mesh
+
+
+def get_knot_mesh():
+    mesh = o3d.io.read_triangle_mesh(_relative_path("../test_data/knot.ply"))
     mesh.compute_vertex_normals()
     return mesh
 

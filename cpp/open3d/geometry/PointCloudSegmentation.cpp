@@ -180,8 +180,14 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
 
         // Fit model to num_model_parameters randomly selected points among the
         // inliers.
-        plane_model = TriangleMesh::ComputeTrianglePlane(
-                points_[inliers[0]], points_[inliers[1]], points_[inliers[2]]);
+        if (ransac_n == 3) {
+            plane_model = TriangleMesh::ComputeTrianglePlane(
+                    points_[inliers[0]], points_[inliers[1]],
+                    points_[inliers[2]]);
+        } else {
+            plane_model = GetPlaneFromPoints(points_, inliers);
+        }
+
         if (plane_model.isZero(0)) {
             continue;
         }
