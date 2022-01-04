@@ -146,9 +146,27 @@ class ExampleWindow:
         switch.set_on_clicked(self._on_switch)
         collapse.add_child(switch)
 
-        # Add a simple image
-        logo = gui.ImageWidget(basedir + "/icon-32.png")
-        collapse.add_child(logo)
+        self.logo_idx = 0
+        proxy = gui.WidgetProxy()
+
+        def switch_proxy():
+            self.logo_idx += 1
+            if self.logo_idx % 3 == 0:
+                proxy.set_widget(None)
+            elif self.logo_idx % 3 == 1:
+                # Add a simple image
+                logo = gui.ImageWidget(basedir + "/icon-32.png")
+                proxy.set_widget(logo)
+            else:
+                label = gui.Label(
+                    'Open3D: A Modern Library for 3D Data Processing')
+                proxy.set_widget(label)
+            w.set_needs_layout()
+
+        logo_btn = gui.Button('Switch Logo')
+        logo_btn.set_on_clicked(switch_proxy)
+        collapse.add_child(logo_btn)
+        collapse.add_child(proxy)
 
         # Add a list of items
         lv = gui.ListView()

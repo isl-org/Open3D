@@ -160,16 +160,19 @@ TEST(PointCloud, GetOrientedBoundingBox) {
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
     pcd = geometry::PointCloud({{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}});
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
+    EXPECT_NO_THROW(pcd.GetOrientedBoundingBox(true));
 
     // Line
     pcd = geometry::PointCloud({{0, 0, 0}, {1, 1, 1}});
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
     pcd = geometry::PointCloud({{0, 0, 0}, {1, 1, 1}, {2, 2, 2}, {3, 3, 3}});
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
+    EXPECT_NO_THROW(pcd.GetOrientedBoundingBox(true));
 
     // Plane
     pcd = geometry::PointCloud({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}});
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
+    EXPECT_NO_THROW(pcd.GetOrientedBoundingBox(true));
 
     // Valid 4 points
     pcd = geometry::PointCloud({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 1, 1}});
@@ -198,6 +201,12 @@ TEST(PointCloud, GetOrientedBoundingBox) {
                                                 {3, 0, 1},
                                                 {3, 2, 0},
                                                 {3, 2, 1}})));
+
+    // Check for a bug where the OBB rotation contained a reflection for this
+    // example.
+    pcd = geometry::PointCloud({{0, 2, 4}, {7, 9, 1}, {5, 2, 0}, {3, 8, 7}});
+    obb = pcd.GetOrientedBoundingBox();
+    EXPECT_GT(obb.R_.determinant(), 0.999);
 }
 
 TEST(PointCloud, Transform) {
@@ -1162,17 +1171,17 @@ TEST(PointCloud, ComputeConvexHull) {
     std::tie(mesh, pt_map) = pcd.ComputeConvexHull();
     EXPECT_EQ(pt_map, std::vector<size_t>({7, 3, 1, 5, 6, 2, 8, 4}));
     ExpectEQ(mesh->vertices_, ApplyIndices(pcd.points_, pt_map));
-    ExpectEQ(mesh->triangles_, std::vector<Eigen::Vector3i>({{0, 1, 2},
+    ExpectEQ(mesh->triangles_, std::vector<Eigen::Vector3i>({{1, 0, 2},
                                                              {0, 3, 2},
-                                                             {4, 3, 2},
+                                                             {3, 4, 2},
                                                              {4, 5, 2},
-                                                             {4, 0, 3},
+                                                             {0, 4, 3},
                                                              {4, 0, 6},
                                                              {7, 1, 2},
-                                                             {7, 5, 2},
+                                                             {5, 7, 2},
                                                              {7, 0, 1},
-                                                             {7, 0, 6},
-                                                             {7, 4, 5},
+                                                             {0, 7, 6},
+                                                             {4, 7, 5},
                                                              {7, 4, 6}}));
 }
 

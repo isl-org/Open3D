@@ -22,7 +22,7 @@ Supported Python versions:
 Supported operating systems:
 
 * Ubuntu 18.04+
-* macOS 10.14+
+* macOS 10.15+
 * Windows 10 (64-bit)
 
 If you have other Python versions (e.g. Python 2) or operating systems, please
