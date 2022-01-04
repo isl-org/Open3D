@@ -18,13 +18,11 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     ccache \
     clang-7 \
+    gfortran \
     git  \
-    libblas-dev  \
     libc++-7-dev \
     libc++abi-7-dev \
     libglu1-mesa-dev \
-    liblapack-dev  \
-    liblapacke-dev \
     libosmesa6-dev \
     libsdl2-dev \
     libtbb-dev \
