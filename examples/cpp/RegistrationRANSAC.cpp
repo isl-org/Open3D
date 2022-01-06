@@ -34,13 +34,14 @@ using namespace open3d;
 
 std::tuple<std::shared_ptr<geometry::PointCloud>,
            std::shared_ptr<pipelines::registration::Feature>>
-PreprocessPointCloud(const char *file_name) {
+PreprocessPointCloud(const char *file_name, const float voxel_size) {
     auto pcd = open3d::io::CreatePointCloudFromFile(file_name);
-    auto pcd_down = pcd->VoxelDownSample(0.05);
+    auto pcd_down = pcd->VoxelDownSample(voxel_size);
     pcd_down->EstimateNormals(
-            open3d::geometry::KDTreeSearchParamHybrid(0.1, 30));
+            open3d::geometry::KDTreeSearchParamHybrid(2 * voxel_size, 30));
     auto pcd_fpfh = pipelines::registration::ComputeFPFHFeature(
-            *pcd_down, open3d::geometry::KDTreeSearchParamHybrid(0.25, 100));
+            *pcd_down,
+            open3d::geometry::KDTreeSearchParamHybrid(5 * voxel_size, 100));
     return std::make_tuple(pcd_down, pcd_fpfh);
 }
 
@@ -63,9 +64,12 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > RegistrationRANSAC source_pcd target_pcd [--method=feature_matching] [--mutual_filter] [--visualize]");
+    utility::LogInfo("    > RegistrationRANSAC source_pcd target_pcd"
+                     "[--method=feature_matching] "
+                     "[--voxel_size=0.05] [--distance_multiplier=1.5]"
+                     "[--max_iterations 1000000] [--confidence 0.999]"
+                     "[--mutual_filter]");
     // clang-format on
-    utility::LogInfo("");
 }
 
 int main(int argc, char *argv[]) {
@@ -77,11 +81,6 @@ int main(int argc, char *argv[]) {
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
-    }
-
-    bool visualize = false;
-    if (utility::ProgramOptionExists(argc, argv, "--visualize")) {
-        visualize = true;
     }
 
     std::string method = "";
@@ -103,12 +102,21 @@ int main(int argc, char *argv[]) {
     if (utility::ProgramOptionExists(argc, argv, "--mutual_filter")) {
         mutual_filter = true;
     }
+    float voxel_size =
+            utility::GetProgramOptionAsDouble(argc, argv, "--voxel_size", 0.05);
+    float distance_multiplier = utility::GetProgramOptionAsDouble(
+            argc, argv, "--distance_multiplier", 1.5);
+    float distance_threshold = voxel_size * distance_multiplier;
+    int max_iterations = utility::GetProgramOptionAsInt(
+            argc, argv, "--max_iterations", 1000000);
+    float confidence = utility::GetProgramOptionAsDouble(argc, argv,
+                                                         "--confidence", 0.999);
 
     // Prepare input
     std::shared_ptr<geometry::PointCloud> source, target;
     std::shared_ptr<pipelines::registration::Feature> source_fpfh, target_fpfh;
-    std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1]);
-    std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2]);
+    std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1], voxel_size);
+    std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2], voxel_size);
 
     pipelines::registration::RegistrationResult registration_result;
 
@@ -121,26 +129,22 @@ int main(int argc, char *argv[]) {
                     0.9);
     auto correspondence_checker_distance =
             pipelines::registration::CorrespondenceCheckerBasedOnDistance(
-                    0.075);
-    auto correspondence_checker_normal =
-            pipelines::registration::CorrespondenceCheckerBasedOnNormal(
-                    0.52359878);
+                    distance_threshold);
     correspondence_checker.push_back(correspondence_checker_edge_length);
     correspondence_checker.push_back(correspondence_checker_distance);
-    correspondence_checker.push_back(correspondence_checker_normal);
 
     if (method == kMethodFeature) {
         registration_result = pipelines::registration::
                 RegistrationRANSACBasedOnFeatureMatching(
                         *source, *target, *source_fpfh, *target_fpfh,
-                        mutual_filter, 0.075,
+                        mutual_filter, distance_threshold,
                         pipelines::registration::
                                 TransformationEstimationPointToPoint(false),
                         3, correspondence_checker,
                         pipelines::registration::RANSACConvergenceCriteria(
-                                100000, 0.999));
+                                max_iterations, confidence));
     } else if (method == kMethodCorres) {
-        // Use mutual filter by default
+        // Manually search correspondences
         int nPti = int(source->points_.size());
         int nPtj = int(target->points_.size());
 
@@ -178,32 +182,31 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            utility::LogDebug("{:d} points remain", mutual.size());
+            utility::LogDebug("{:d} points remain after mutual filter",
+                              mutual.size());
             registration_result = pipelines::registration::
                     RegistrationRANSACBasedOnCorrespondence(
-                            *source, *target, mutual, 0.075,
+                            *source, *target, mutual, distance_threshold,
                             pipelines::registration::
                                     TransformationEstimationPointToPoint(false),
                             3, correspondence_checker,
                             pipelines::registration::RANSACConvergenceCriteria(
-                                    100000, 0.999));
+                                    max_iterations, confidence));
         } else {
             utility::LogDebug("{:d} points remain", corres_ji.size());
             registration_result = pipelines::registration::
                     RegistrationRANSACBasedOnCorrespondence(
-                            *source, *target, corres_ji, 0.075,
+                            *source, *target, corres_ji, distance_threshold,
                             pipelines::registration::
                                     TransformationEstimationPointToPoint(false),
                             3, correspondence_checker,
                             pipelines::registration::RANSACConvergenceCriteria(
-                                    100000, 0.999));
+                                    max_iterations, confidence));
         }
     }
 
-    if (visualize) {
-        VisualizeRegistration(*source, *target,
-                              registration_result.transformation_);
-    }
+    VisualizeRegistration(*source, *target,
+                          registration_result.transformation_);
 
     return 0;
 }
