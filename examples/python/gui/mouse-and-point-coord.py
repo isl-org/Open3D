@@ -103,7 +103,7 @@ class ExampleApp:
                     text = ""
                 else:
                     world = self.widget3d.scene.camera.unproject(
-                        event.x, event.y, depth, self.widget3d.frame.width,
+                        x, (self.widget3d.frame.height - y), depth, self.widget3d.frame.width,
                         self.widget3d.frame.height)
                     text = "({:.3f}, {:.3f}, {:.3f})".format(
                         world[0], world[1], world[2])
