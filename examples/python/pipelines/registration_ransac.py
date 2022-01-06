@@ -57,7 +57,18 @@ if __name__ == '__main__':
         help=
         'multipler used to compute distance threshold between correspondences. Threshold is computed by voxel_size * distance_multiplier.'
     )
-    parser.add_argument('--mutual_filter', action='store_true')
+    parser.add_argument('--max_iterations',
+                        type=int,
+                        default=1000000,
+                        help='number of max RANSAC iterations')
+    parser.add_argument('--confidence',
+                        type=float,
+                        default=0.999,
+                        help='RANSAC confidence')
+    parser.add_argument(
+        '--mutual_filter',
+        action='store_true',
+        help='whether to use mutual filter for putative correspondences')
 
     args = parser.parse_args()
 
@@ -91,7 +102,7 @@ if __name__ == '__main__':
                 distance_threshold)
         ],
         criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(
-            1000000, 0.999))
+            args.max_iterations, args.confidence))
 
     src_down.paint_uniform_color([1, 0, 0])
     dst_down.paint_uniform_color([0, 1, 0])
