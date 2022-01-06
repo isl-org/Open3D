@@ -91,7 +91,8 @@ public:
     Eigen::Vector3d GetMaxBound() const override;
     Eigen::Vector3d GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    OrientedBoundingBox GetOrientedBoundingBox() const override;
+    OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override;
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
     VoxelGrid &Translate(const Eigen::Vector3d &translation,
                          bool relative = true) override;

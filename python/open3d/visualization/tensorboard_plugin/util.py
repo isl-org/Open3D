@@ -38,8 +38,10 @@ from tensorboard.compat.tensorflow_stub.pywrap_tensorflow import masked_crc32c
 
 import open3d as o3d
 from open3d.visualization import rendering
-from open3d.ml.vis import Colormap
-from open3d.ml.vis import LabelLUT
+# TODO(@ssheorey) Colormap and LabelLUT are duplicated from Open3D-ML. Remove
+# duplicates when 3DML is available on Windows.
+from .colormap import Colormap
+from .labellut import LabelLUT
 from . import plugin_data_pb2
 from . import metadata
 

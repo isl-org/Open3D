@@ -604,10 +604,10 @@ if(USE_SYSTEM_GLFW)
 endif()
 if(NOT USE_SYSTEM_GLFW)
     message(STATUS "Building library 3rdparty_glfw from source")
-    add_subdirectory(${Open3D_3RDPARTY_DIR}/GLFW)
+    add_subdirectory(${Open3D_3RDPARTY_DIR}/glfw)
     open3d_import_3rdparty_library(3rdparty_glfw
         HEADER
-        INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/GLFW/include/
+        INCLUDE_DIRS ${Open3D_3RDPARTY_DIR}/glfw/include/
         LIBRARIES    glfw3
         DEPENDS      glfw
     )
@@ -630,7 +630,12 @@ if(NOT USE_SYSTEM_GLFW)
         find_library(IOKIT_FRAMEWORK IOKit)
         find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
         find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
-        target_link_libraries(3rdparty_glfw INTERFACE ${COCOA_FRAMEWORK} ${IOKIT_FRAMEWORK} ${CORE_FOUNDATION_FRAMEWORK} ${CORE_VIDEO_FRAMEWORK})
+        target_link_libraries(3rdparty_glfw INTERFACE
+            ${COCOA_FRAMEWORK}
+            ${IOKIT_FRAMEWORK}
+            ${CORE_FOUNDATION_FRAMEWORK}
+            ${CORE_VIDEO_FRAMEWORK}
+        )
     endif()
     if(WIN32)
         target_link_libraries(3rdparty_glfw INTERFACE gdi32)
@@ -747,6 +752,44 @@ if (BUILD_LIBREALSENSE)
     endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_librealsense)
 endif()
+
+# Curl
+# - Curl should be linked before PNG, otherwise it will have undefined symbols.
+# - openssl.cmake needs to be included before curl.cmake, for the
+#   BORINGSSL_ROOT_DIR variable.
+include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
+open3d_import_3rdparty_library(3rdparty_curl
+    INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
+    INCLUDE_ALL
+    LIB_DIR      ${CURL_LIB_DIR}
+    LIBRARIES    ${CURL_LIBRARIES}
+    DEPENDS      ext_zlib ext_curl
+)
+if(APPLE)
+    # Missing frameworks: https://stackoverflow.com/a/56157695/1255535
+    # Link frameworks   : https://stackoverflow.com/a/18330634/1255535
+    # Fixes error:
+    # ```
+    # Undefined symbols for architecture arm64:
+    # "_SCDynamicStoreCopyProxies", referenced from:
+    #     _Curl_resolv in libcurl.a(hostip.c.o)
+    # ```
+    # The "Foundation" framework is already linked by GLFW.
+    target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
+endif()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_curl)
+
+# BoringSSL
+open3d_import_3rdparty_library(3rdparty_openssl
+    INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+    INCLUDE_ALL
+    INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
+    LIB_DIR      ${BORINGSSL_LIB_DIR}
+    LIBRARIES    ${BORINGSSL_LIBRARIES}
+    DEPENDS      ext_zlib ext_boringssl
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openssl)
 
 # PNG
 if(USE_SYSTEM_PNG)
@@ -953,7 +996,7 @@ if (BUILD_AZURE_KINECT)
 endif()
 
 # PoissonRecon
-include(${Open3D_3RDPARTY_DIR}/PoissonRecon/PoissonRecon.cmake)
+include(${Open3D_3RDPARTY_DIR}/possionrecon/possionrecon.cmake)
 open3d_import_3rdparty_library(3rdparty_poisson
     INCLUDE_DIRS ${POISSON_INCLUDE_DIRS}
     DEPENDS      ext_poisson
@@ -1397,6 +1440,17 @@ if (BUILD_CUDA_MODULE)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_stdgpu)
 endif ()
 
+# embree
+include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+open3d_import_3rdparty_library(3rdparty_embree
+    HIDDEN
+    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+    LIB_DIR      ${EMBREE_LIB_DIR}
+    LIBRARIES    ${EMBREE_LIBRARIES}
+    DEPENDS      ext_embree
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
+
 # WebRTC
 if(BUILD_WEBRTC)
     # Include WebRTC headers in Open3D.h.
@@ -1438,17 +1492,6 @@ else()
     # Don't include WebRTC headers in Open3D.h.
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
-
-# embree
-include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-open3d_import_3rdparty_library(3rdparty_embree
-    HIDDEN
-    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-    LIB_DIR      ${EMBREE_LIB_DIR}
-    LIBRARIES    ${EMBREE_LIBRARIES}
-    DEPENDS      ext_embree
-)
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_embree)
 
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.

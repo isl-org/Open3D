@@ -32,6 +32,8 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 
+using std::round;
+
 void ProjectCPU(
         core::Tensor& depth,
         utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
@@ -68,6 +70,8 @@ void ProjectCPU(
 
         // coordinate in image (in pixel)
         transform_indexer.Project(xc, yc, zc, &u, &v);
+        u = round(u);
+        v = round(v);
         if (!depth_indexer.InBoundary(u, v) || zc <= 0 || zc > depth_max) {
             return;
         }
