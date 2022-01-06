@@ -64,11 +64,11 @@ public:
 public:
     // dataset_points must be float32.
     bool SetTensorData(const Tensor &dataset_points,
-                       const Dtype index_dtype = core::Int32) override;
+                       const Dtype index_dtype = core::Int64) override;
 
     bool SetTensorData(const Tensor &dataset_points,
                        double radius,
-                       const Dtype index_dtype = core::Int32) override {
+                       const Dtype index_dtype = core::Int64) override {
         utility::LogError(
                 "FaissIndex::SetTensorData with radius not implemented.");
     }
