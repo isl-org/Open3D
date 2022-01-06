@@ -83,6 +83,7 @@ void KnnSearchCUDASingle(const Tensor& points,
     Tensor buf_indices =
             Tensor::Empty({tile_rows, num_cols * knn}, Dtype::Int32, device);
 
+    // Iterate row-wise.
     for (int i = 0; i < num_queries; i += tile_rows) {
         int num_queries_i = std::min(tile_rows, num_queries - i);
         Tensor queries_i = queries.Slice(0, i, i + num_queries_i);
@@ -90,6 +91,7 @@ void KnnSearchCUDASingle(const Tensor& points,
         Tensor buf_distances_row_view =
                 buf_distances.Slice(0, 0, num_queries_i);
         Tensor buf_indices_row_view = buf_indices.Slice(0, 0, num_queries_i);
+        // Iterate col-wise.
         for (int j = 0; j < num_points; j += tile_cols) {
             int num_points_j = std::min(tile_cols, num_points - j);
             int col_j = j / tile_cols;
@@ -105,7 +107,7 @@ void KnnSearchCUDASingle(const Tensor& points,
 
             // Calculate -2*d*q
             AddMM(queries_i, points_j.T(), temp_distances_view, -2.0, 0.0);
-            temp_distances_view.Add_(query_norms_i.View({num_queries_i, 1}));
+            // Topk selection & Add |d|^2, |q|^2
             if (tile_cols == num_points) {
                 Tensor out_indices_view =
                         output_allocator.NeighborsIndex_()
@@ -117,12 +119,16 @@ void KnnSearchCUDASingle(const Tensor& points,
                                 .Slice(0, i, i + num_queries_i);
                 runL2SelectMin<T>(stream, temp_distances_view, point_norms_j,
                                   out_distances_view, out_indices_view, knn);
+                out_distances_view.Add_(query_norms_i.View({num_queries_i, 1}));
             } else {
                 runL2SelectMin<T>(stream, temp_distances_view, point_norms_j,
                                   buf_distances_col_view, buf_indices_col_view,
                                   knn);
+                buf_distances_col_view.Add_(
+                        query_norms_i.View({num_queries_i, 1}));
             }
         }
+        // Write results to output tensor.
         if (tile_cols != num_points) {
             runIncrementIndex<T>(stream, buf_indices_row_view, knn, tile_cols);
             runBlockSelectPair(buf_distances_row_view.GetDataPtr<T>(),
