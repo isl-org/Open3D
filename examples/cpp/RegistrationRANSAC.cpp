@@ -86,15 +86,17 @@ int main(int argc, char *argv[]) {
     std::string method = "";
     const std::string kMethodFeature = "feature_matching";
     const std::string kMethodCorres = "correspondence";
+    const std::string kMethodFGR = "fgr";
     if (utility::ProgramOptionExists(argc, argv, "--method")) {
         method = utility::GetProgramOptionAsString(argc, argv, "--method");
     } else {
         method = "feature_matching";
     }
-    if (method != kMethodFeature && method != kMethodCorres) {
+    if (method != kMethodFeature && method != kMethodCorres &&
+        method != kMethodFGR) {
         utility::LogInfo(
                 "--method must be \'feature_matching\' or "
-                "\'correspondence\'");
+                "\'correspondence\' or \'fgr\'");
         return 1;
     }
 
@@ -203,6 +205,13 @@ int main(int argc, char *argv[]) {
                             pipelines::registration::RANSACConvergenceCriteria(
                                     max_iterations, confidence));
         }
+    } else if (method == kMethodFGR) {
+        registration_result = pipelines::registration::
+                FastGlobalRegistrationBasedOnFeatureMatching(
+                        *source, *target, *source_fpfh, *target_fpfh,
+                        pipelines::registration::FastGlobalRegistrationOption(
+                                1.4, true, true, distance_threshold,
+                                max_iterations, 0.95, 1000));
     }
 
     VisualizeRegistration(*source, *target,
