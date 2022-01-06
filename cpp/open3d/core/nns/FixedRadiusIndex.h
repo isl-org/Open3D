@@ -133,7 +133,7 @@ void BuildSpatialHashTableCPU(const Tensor& points,
 /// \param neighbors_distances   The output tensor that saves the resulting
 ///        neighbor distances.
 ///
-template <class T>
+template <class T, class TIndex>
 void FixedRadiusSearchCPU(const Tensor& points,
                           const Tensor& queries,
                           double radius,
@@ -201,7 +201,7 @@ void FixedRadiusSearchCPU(const Tensor& points,
 /// \param neighbors_distances   The output tensor that saves the resulting
 ///        neighbor distances.
 ///
-template <class T>
+template <class T, class TIndex>
 void HybridSearchCPU(const Tensor& points,
                      const Tensor& queries,
                      double radius,
@@ -311,7 +311,7 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
 /// \param neighbors_distances   The output tensor that saves the resulting
 /// neighbor distances.
 ///
-template <class T>
+template <class T, class TIndex>
 void FixedRadiusSearchCUDA(const Tensor& points,
                            const Tensor& queries,
                            double radius,
@@ -379,7 +379,7 @@ void FixedRadiusSearchCUDA(const Tensor& points,
 /// \param neighbors_distances   The output tensor that saves the resulting
 ///        neighbor distances.
 ///
-template <class T>
+template <class T, class TIndex>
 void HybridSearchCUDA(const Tensor& points,
                       const Tensor& queries,
                       double radius,

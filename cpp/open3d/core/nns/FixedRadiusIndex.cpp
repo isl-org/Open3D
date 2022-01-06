@@ -80,6 +80,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 
     dataset_points_ = dataset_points.Contiguous();
     points_row_splits_ = points_row_splits.Contiguous();
+    index_dtype_ = index_dtype;
 
     const int64_t num_dataset_points = GetDatasetSize();
     const int64_t num_batch = points_row_splits.GetShape()[0] - 1;
@@ -144,6 +145,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         double radius,
         bool sort) const {
     const Dtype dtype = GetDtype();
+    const Dtype index_dtype = GetIndexDtype();
     const Device device = GetDevice();
 
     // Check device and dtype.
@@ -179,23 +181,27 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
             hash_table_cell_splits_, Metric::L2, false, true, sort,     \
             neighbors_index, neighbors_row_splits, neighbors_distance
 
-#define CALL_RADIUS(type, fn)               \
-    if (Dtype::FromType<type>() == dtype) { \
-        fn<type>(RADIUS_PARAMETERS);        \
+#define CALL_RADIUS(type, index_type, fn)               \
+    if (Dtype::FromType<type>() == dtype && Dtype::FromType<index_type>() == index_dtype) { \
+        fn<type, index_type>(RADIUS_PARAMETERS);        \
     }
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        CALL_RADIUS(float, FixedRadiusSearchCUDA)
-        CALL_RADIUS(double, FixedRadiusSearchCUDA)
+        CALL_RADIUS(float, int32_t, FixedRadiusSearchCUDA)
+        CALL_RADIUS(float, int64_t, FixedRadiusSearchCUDA)
+        CALL_RADIUS(double, int32_t, FixedRadiusSearchCUDA)
+        CALL_RADIUS(double, int64_t, FixedRadiusSearchCUDA)
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
-        CALL_RADIUS(float, FixedRadiusSearchCPU)
-        CALL_RADIUS(double, FixedRadiusSearchCPU)
+        CALL_RADIUS(float, int32_t, FixedRadiusSearchCPU)
+        CALL_RADIUS(float, int64_t, FixedRadiusSearchCPU)
+        CALL_RADIUS(double, int32_t, FixedRadiusSearchCPU)
+        CALL_RADIUS(double, int64_t, FixedRadiusSearchCPU)
     }
 
     return std::make_tuple(neighbors_index, neighbors_distance,
@@ -216,6 +222,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
         double radius,
         int max_knn) const {
     const Dtype dtype = GetDtype();
+    const Dtype index_dtype = GetIndexDtype();
     const Device device = GetDevice();
 
     // Check device and dtype.
@@ -250,23 +257,27 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
             hash_table_cell_splits_, Metric::L2, neighbors_index,        \
             neighbors_count, neighbors_distance
 
-#define CALL_HYBRID(type, fn)               \
-    if (Dtype::FromType<type>() == dtype) { \
-        fn<type>(HYBRID_PARAMETERS);        \
+#define CALL_HYBRID(type, index_type, fn)               \
+    if (Dtype::FromType<type>() == dtype && Dtype::FromType<index_type>() == index_dtype) { \
+        fn<type, index_type>(HYBRID_PARAMETERS);        \
     }
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        CALL_HYBRID(float, HybridSearchCUDA)
-        CALL_HYBRID(double, HybridSearchCUDA)
+        CALL_HYBRID(float, int32_t, HybridSearchCUDA)
+        CALL_HYBRID(float, int64_t, HybridSearchCUDA)
+        CALL_HYBRID(double, int32_t, HybridSearchCUDA)
+        CALL_HYBRID(double, int64_t, HybridSearchCUDA)
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
-        CALL_HYBRID(float, HybridSearchCPU)
-        CALL_HYBRID(double, HybridSearchCPU)
+        CALL_HYBRID(float, int32_t, HybridSearchCPU)
+        CALL_HYBRID(float, int64_t, HybridSearchCPU)
+        CALL_HYBRID(double, int32_t, HybridSearchCPU)
+        CALL_HYBRID(double, int64_t, HybridSearchCPU)
     }
 
     return std::make_tuple(neighbors_index.View({num_query_points, max_knn}),
