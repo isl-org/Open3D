@@ -307,7 +307,6 @@ public:
         auto tab2 = std::make_shared<gui::Vert>(0, tab_margins);
         raycast_color_image_ = std::make_shared<gui::ImageWidget>();
         raycast_depth_image_ = std::make_shared<gui::ImageWidget>();
-
         tab2->AddChild(raycast_color_image_);
         tab2->AddFixed(vspacing);
         tab2->AddChild(raycast_depth_image_);
@@ -576,9 +575,8 @@ protected:
                        raycast_depth_colored]() {
                     this->input_color_image_->UpdateImage(color);
                     this->input_depth_image_->UpdateImage(depth_colored);
-                    this->raycast_color_image_->UpdateImage(raycast_color);
-                    this->raycast_depth_image_->UpdateImage(
-                            raycast_depth_colored);
+                    this->raycast_color_image_->UpdateImage(color);
+                    this->raycast_depth_image_->UpdateImage(depth_colored);
                     this->SetNeedsLayout();  // size of image changed
 
                     geometry::AxisAlignedBoundingBox bbox(
