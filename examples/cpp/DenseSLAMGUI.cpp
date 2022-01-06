@@ -333,8 +333,7 @@ public:
                 auto pcd = model_->ExtractPointCloud(
                         prop_values_.pointcloud_size, 3.0);
                 auto pcd_legacy =
-                        std::make_shared<open3d::geometry::PointCloud>(
-                                pcd.ToLegacy());
+                        std::make_shared<geometry::PointCloud>(pcd.ToLegacy());
                 io::WritePointCloud("scene.ply", *pcd_legacy);
 
                 utility::LogInfo("Writing trajectory to trajectory.log...");
@@ -544,8 +543,8 @@ protected:
 
         is_scene_updated_ = false;
 
-        color = std::make_shared<open3d::geometry::Image>(ref_color.ToLegacy());
-        depth_colored = std::make_shared<open3d::geometry::Image>(
+        color = std::make_shared<geometry::Image>(ref_color.ToLegacy());
+        depth_colored = std::make_shared<geometry::Image>(
                 ref_depth
                         .ColorizeDepth(depth_scale, 0.3, prop_values_.depth_max)
                         .ToLegacy());
@@ -649,9 +648,9 @@ protected:
                                          prop_values_.depth_max,
                                          prop_values_.raycast_color);
 
-            auto K_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
-                    intrinsic_t);
-            auto T_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
+            auto K_eigen =
+                    core::eigen_converter::TensorToEigenMatrixXd(intrinsic_t);
+            auto T_eigen = core::eigen_converter::TensorToEigenMatrixXd(
                     T_frame_to_model);
             traj_param.extrinsic_ = T_eigen;
             trajectory_->parameters_.push_back(traj_param);
@@ -696,28 +695,28 @@ protected:
                 traj->colors_.push_back(kTangoSkyBlueDark);
             }
 
-            frustum = open3d::geometry::LineSet::CreateCameraVisualization(
+            frustum = geometry::LineSet::CreateCameraVisualization(
                     color->width_, color->height_, K_eigen, T_eigen.inverse(),
                     0.2);
             frustum->PaintUniformColor(kTangoOrange);
 
             // TODO: update support for timages-image conversion
-            color = std::make_shared<open3d::geometry::Image>(
+            color = std::make_shared<geometry::Image>(
                     input_frame.GetDataAsImage("color").ToLegacy());
-            depth_colored = std::make_shared<open3d::geometry::Image>(
+            depth_colored = std::make_shared<geometry::Image>(
                     input_frame.GetDataAsImage("depth")
                             .ColorizeDepth(depth_scale, 0.3,
                                            prop_values_.depth_max)
                             .ToLegacy());
 
             if (prop_values_.raycast_color) {
-                raycast_color = std::make_shared<open3d::geometry::Image>(
+                raycast_color = std::make_shared<geometry::Image>(
                         raycast_frame.GetDataAsImage("color")
                                 .To(core::Dtype::UInt8, false, 255.0f)
                                 .ToLegacy());
             }
 
-            raycast_depth_colored = std::make_shared<open3d::geometry::Image>(
+            raycast_depth_colored = std::make_shared<geometry::Image>(
                     raycast_frame.GetDataAsImage("depth")
                             .ColorizeDepth(depth_scale, 0.3,
                                            prop_values_.depth_max)
