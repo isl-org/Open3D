@@ -16,11 +16,6 @@ body:
       - label: "I have checked the [release documentation](http://www.open3d.org/docs/release/) and the [latest documentation](http://www.open3d.org/docs/latest/) (for `master` branch)."
         required: true
 
-- type: markdown
-  attributes:
-
-    value: >
-
 - type: textarea
   attributes:
     description: >
