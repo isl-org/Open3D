@@ -48,7 +48,7 @@ bool NearestNeighborSearch::KnnIndex() {
         } else {
 #ifdef WITH_FAISS
             faiss_index_.reset(new nns::FaissIndex());
-            return faiss_index_->SetTensorData(dataset_points_);
+            return faiss_index_->SetTensorData(dataset_points_, index_dtype_);
 #else
             utility::LogError(
                     "Currently, Faiss is disabled. Please recompile Open3D "
@@ -74,7 +74,8 @@ bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
 #ifdef BUILD_CUDA_MODULE
         fixed_radius_index_.reset(new nns::FixedRadiusIndex());
         return fixed_radius_index_->SetTensorData(dataset_points_,
-                                                  radius.value());
+                                                  radius.value(),
+                                                  index_dtype_);
 #else
         utility::LogError(
                 "FixedRadiusIndex with GPU tensor is disabled since "
@@ -94,7 +95,8 @@ bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
 #ifdef BUILD_CUDA_MODULE
         fixed_radius_index_.reset(new nns::FixedRadiusIndex());
         return fixed_radius_index_->SetTensorData(dataset_points_,
-                                                  radius.value());
+                                                  radius.value(),
+                                                  index_dtype_);
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please recompile Open3D with "

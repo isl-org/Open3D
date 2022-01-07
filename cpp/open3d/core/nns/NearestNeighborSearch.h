@@ -50,7 +50,8 @@ public:
     /// be 2D, with shape {n, d}.
     NearestNeighborSearch(const Tensor &dataset_points)
         : dataset_points_(dataset_points){};
-
+    NearestNeighborSearch(const Tensor &dataset_points, const Dtype index_dtype)
+        : dataset_points_(dataset_points), index_dtype_(index_dtype){};
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
     NearestNeighborSearch &operator=(const NearestNeighborSearch &) = delete;
