@@ -52,6 +52,12 @@ public:
     Color GetTextColor() const;
     void SetTextColor(const Color& color);
 
+    float GetTextScale() const;
+    /// Sets the scale factor for the text sprite. It does not change the
+    /// underlying font size but scales how large it appears. Warning: large
+    /// scale factors may result in blurry text.
+    void SetTextScale(float scale);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;
