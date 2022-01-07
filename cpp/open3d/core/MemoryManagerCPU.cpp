@@ -31,8 +31,6 @@
 namespace open3d {
 namespace core {
 
-CPUMemoryManager::CPUMemoryManager() {}
-
 void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     void* ptr;
     ptr = std::malloc(byte_size);

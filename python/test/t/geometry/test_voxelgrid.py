@@ -73,9 +73,9 @@ def test_integration(device):
 
     volume = o3d.t.geometry.TSDFVoxelGrid(
         {
-            'tsdf': o3d.core.Dtype.Float32,
-            'weight': o3d.core.Dtype.UInt16,
-            'color': o3d.core.Dtype.UInt16
+            'tsdf': o3d.core.float32,
+            'weight': o3d.core.uint16,
+            'color': o3d.core.uint16
         },
         voxel_size=voxel_size,
         sdf_trunc=sdf_trunc,
@@ -86,25 +86,25 @@ def test_integration(device):
     intrinsic = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
 
-    intrinsic = o3d.core.Tensor(intrinsic.intrinsic_matrix,
-                                o3d.core.Dtype.Float32, device)
+    intrinsic = o3d.core.Tensor(intrinsic.intrinsic_matrix, o3d.core.float32,
+                                device)
 
     camera_poses = read_trajectory(test_data_path + "RGBD/odometry.log")
 
     for i in range(len(camera_poses)):
         color = o3d.io.read_image(test_data_path +
                                   "RGBD/color/{:05d}.jpg".format(i))
-        color = o3d.t.geometry.Image.from_legacy_image(color, device=device)
+        color = o3d.t.geometry.Image.from_legacy(color, device=device)
 
         depth = o3d.io.read_image(test_data_path +
                                   "RGBD/depth/{:05d}.png".format(i))
-        depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
+        depth = o3d.t.geometry.Image.from_legacy(depth, device=device)
 
         extrinsic = o3d.core.Tensor(np.linalg.inv(camera_poses[i].pose),
-                                    o3d.core.Dtype.Float32, device)
+                                    o3d.core.float32, device)
         volume.integrate(depth, color, intrinsic, extrinsic, 1000.0, 3.0)
 
-    pcd = volume.extract_surface_points().to_legacy_pointcloud()
+    pcd = volume.extract_surface_points().to_legacy()
     pcd_gt = o3d.io.read_point_cloud(test_data_path +
                                      "RGBD/example_tsdf_pcd.ply")
 
@@ -128,9 +128,9 @@ def test_raycast(device):
 
     volume = o3d.t.geometry.TSDFVoxelGrid(
         {
-            'tsdf': o3d.core.Dtype.Float32,
-            'weight': o3d.core.Dtype.UInt16,
-            'color': o3d.core.Dtype.UInt16
+            'tsdf': o3d.core.float32,
+            'weight': o3d.core.uint16,
+            'color': o3d.core.uint16
         },
         voxel_size=voxel_size,
         sdf_trunc=sdf_trunc,
@@ -141,22 +141,22 @@ def test_raycast(device):
     intrinsic = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
 
-    intrinsic = o3d.core.Tensor(intrinsic.intrinsic_matrix,
-                                o3d.core.Dtype.Float32, device)
+    intrinsic = o3d.core.Tensor(intrinsic.intrinsic_matrix, o3d.core.float32,
+                                device)
 
     camera_poses = read_trajectory(test_data_path + "RGBD/odometry.log")
 
     for i in range(len(camera_poses)):
         color = o3d.io.read_image(test_data_path +
                                   "RGBD/color/{:05d}.jpg".format(i))
-        color = o3d.t.geometry.Image.from_legacy_image(color, device=device)
+        color = o3d.t.geometry.Image.from_legacy(color, device=device)
 
         depth = o3d.io.read_image(test_data_path +
                                   "RGBD/depth/{:05d}.png".format(i))
-        depth = o3d.t.geometry.Image.from_legacy_image(depth, device=device)
+        depth = o3d.t.geometry.Image.from_legacy(depth, device=device)
 
         extrinsic = o3d.core.Tensor(np.linalg.inv(camera_poses[i].pose),
-                                    o3d.core.Dtype.Float32, device)
+                                    o3d.core.float32, device)
         volume.integrate(depth, color, intrinsic, extrinsic, 1000.0, 3.0)
         if i == len(camera_poses) - 1:
             vertexmap, _, _ = volume.raycast(intrinsic, extrinsic,

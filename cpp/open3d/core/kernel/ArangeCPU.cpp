@@ -25,9 +25,9 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Arange.h"
-#include "open3d/core/kernel/CPULauncher.h"
 
 namespace open3d {
 namespace core {
@@ -43,7 +43,7 @@ void ArangeCPU(const Tensor& start,
         scalar_t sstep = step.Item<scalar_t>();
         scalar_t* dst_ptr = dst.GetDataPtr<scalar_t>();
         int64_t n = dst.GetLength();
-        CPULauncher::LaunchGeneralKernel(n, [&](int64_t workload_idx) {
+        ParallelFor(start.GetDevice(), n, [&](int64_t workload_idx) {
             dst_ptr[workload_idx] =
                     sstart + static_cast<scalar_t>(sstep * workload_idx);
         });

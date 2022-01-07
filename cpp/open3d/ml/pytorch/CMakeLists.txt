@@ -1,17 +1,16 @@
-message(STATUS "Building PyTorch ops")
-
 if(BUILD_CUDA_MODULE)
     message(STATUS "Building PyTorch ops with CUDA")
+else()
+    message(STATUS "Building PyTorch ops")
 endif()
 
 find_package(Pytorch REQUIRED)
-find_package(nanoflann REQUIRED)
-find_package(parallelstl REQUIRED)
-if(BUILD_CUDA_MODULE)
-    find_package(CUB REQUIRED)
-    find_package(CUTLASS REQUIRED)
-endif()
 
+if (Python3_VERSION VERSION_GREATER_EQUAL 3.9 AND Pytorch_VERSION VERSION_LESS 1.8.0)
+    message(FATAL_ERROR "Please update to PyTorch 1.8.0+ to build PyTorch Ops "
+    "with Python 3.9 to prevent a segmentation fault. See "
+    "https://github.com/pytorch/pytorch/issues/50014 for details")
+endif()
 
 add_library(open3d_torch_ops SHARED)
 
@@ -57,9 +56,13 @@ target_sources(open3d_torch_ops PRIVATE
 )
 
 target_sources(open3d_torch_ops PRIVATE
+    ragged_tensor/RaggedTensor.cpp)
+
+target_sources(open3d_torch_ops PRIVATE
     pointnet/BallQueryOps.cpp
     pointnet/InterpolateOps.cpp
     pointnet/SamplingOps.cpp
+    pvcnn/TrilinearDevoxelizeOps.cpp
 )
 
 target_sources(open3d_torch_ops PRIVATE
@@ -94,6 +97,7 @@ if (BUILD_CUDA_MODULE)
         pointnet/BallQueryKernel.cu
         pointnet/InterpolateKernel.cu
         pointnet/SamplingKernel.cu
+        pvcnn/TrilinearDevoxelizeKernel.cu
     )
 
     target_sources(open3d_torch_ops PRIVATE
@@ -106,6 +110,7 @@ if (BUILD_CUDA_MODULE)
         ../contrib/InterpolatePoints.cu
         ../contrib/Nms.cu
         ../contrib/RoiPoolKernel.cu
+        ../contrib/TrilinearDevoxelize.cu
     )
 endif()
 
@@ -124,30 +129,36 @@ set_target_properties(open3d_torch_ops PROPERTIES
 set_target_properties(open3d_torch_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_torch_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
-if (BUILD_CUDA_MODULE)
-    target_include_directories(open3d_torch_ops SYSTEM PRIVATE
-        ${CUB_INCLUDE_DIR}
-        ${CUTLASS_INCLUDE_DIR}
-    )
-endif()
-
 target_include_directories(open3d_torch_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
-    ${nanoflann_INCLUDE_DIR}
-    ${parallelstl_INCLUDE_DIR}
     ${TORCH_INCLUDE_DIRS}
 )
 
 target_link_libraries(open3d_torch_ops PRIVATE
-    3rdparty_tbb
     torch_cpu
-    ${EIGEN3_TARGET}
-    ${FMT_TARGET}
     Open3D::Open3D
+    Open3D::3rdparty_eigen3
+    Open3D::3rdparty_fmt
+    Open3D::3rdparty_nanoflann
+    Open3D::3rdparty_parallelstl
+    Open3D::3rdparty_tbb
 )
 
 if (BUILD_CUDA_MODULE)
     target_link_libraries(open3d_torch_ops PRIVATE
+        Open3D::3rdparty_cutlass
         ${TORCH_LIBRARIES}
+        CUDA::cuda_driver
     )
+
+    if (TARGET Open3D::3rdparty_cub)
+        target_link_libraries(open3d_torch_ops PRIVATE
+            Open3D::3rdparty_cub
+        )
+    endif()
 endif()
+
+install(TARGETS open3d_torch_ops EXPORT Open3DTorchOps
+    LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
+)
+install(EXPORT Open3DTorchOps NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})

@@ -39,8 +39,9 @@
 #include "open3d/io/ModelIO.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "open3d/utility/Console.h"
+#include "open3d/io/rpc/ZMQReceiver.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"
 #include "open3d/visualization/gui/Checkbox.h"
@@ -57,7 +58,7 @@
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/rendering/Camera.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/RenderToBuffer.h"
@@ -68,7 +69,7 @@
 #include "open3d/visualization/visualizer/GuiSettingsModel.h"
 #include "open3d/visualization/visualizer/GuiSettingsView.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
-#include "open3d/visualization/visualizer/Receiver.h"
+#include "open3d/visualization/visualizer/MessageProcessor.h"
 
 #define LOAD_IN_NEW_WINDOW 0
 
@@ -240,7 +241,7 @@ std::shared_ptr<gui::Dialog> CreateContactDialog(gui::Window *window) {
             "Discord channel:");
     auto right_col = std::make_shared<gui::Label>(
             "http://www.open3d.org\n"
-            "http://github.org/intel-isl/Open3D\n"
+            "http://github.org/isl-org/Open3D\n"
             "http://www.open3d.org/index.php/subscribe/\n"
             "https://discord.gg/D35BGvn");
     auto ok = std::make_shared<gui::Button>("OK");
@@ -328,15 +329,18 @@ enum MenuId {
 };
 
 struct GuiVisualizer::Impl {
+    GuiVisualizer *visualizer_;
+
     std::shared_ptr<gui::SceneWidget> scene_wgt_;
     std::shared_ptr<gui::VGrid> help_keys_;
     std::shared_ptr<gui::VGrid> help_camera_;
-    std::shared_ptr<Receiver> receiver_;
+    std::shared_ptr<io::rpc::ZMQReceiver> receiver_;
+    std::shared_ptr<MessageProcessor> message_processor_;
 
     struct Settings {
-        rendering::Material lit_material_;
-        rendering::Material unlit_material_;
-        rendering::Material normal_depth_material_;
+        rendering::MaterialRecord lit_material_;
+        rendering::MaterialRecord unlit_material_;
+        rendering::MaterialRecord normal_depth_material_;
 
         GuiSettingsModel model_;
         std::shared_ptr<gui::Vert> wgt_base;
@@ -349,7 +353,7 @@ struct GuiVisualizer::Impl {
     } settings_;
 
     rendering::TriangleMeshModel loaded_model_;
-
+    std::shared_ptr<geometry::PointCloud> loaded_pcd_;
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
 
@@ -369,6 +373,7 @@ struct GuiVisualizer::Impl {
         settings_.view_->ShowFileMaterialEntry(false);
 
         settings_.model_.SetMaterialsToDefault();
+        settings_.view_->EnableEstimateNormals(false);
         // model's OnChanged callback will get called (if set), which will
         // update everything.
     }
@@ -423,6 +428,11 @@ struct GuiVisualizer::Impl {
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
+        // Does user want Point Cloud normals estimated?
+        if (settings_.model_.GetUserWantsEstimateNormals()) {
+            RunNormalEstimation();
+        }
+
         // Make sure scene redraws once changes have been applied
         scene_wgt_->ForceRedraw();
 
@@ -438,29 +448,7 @@ struct GuiVisualizer::Impl {
                                                         loaded_model_);
         } else {
             UpdateMaterials(renderer, current_materials);
-            switch (settings_.model_.GetMaterialType()) {
-                case GuiSettingsModel::MaterialType::LIT:
-                    scene_wgt_->GetScene()->UpdateMaterial(
-                            settings_.lit_material_);
-                    break;
-                case GuiSettingsModel::MaterialType::UNLIT:
-                    scene_wgt_->GetScene()->UpdateMaterial(
-                            settings_.unlit_material_);
-                    break;
-                case GuiSettingsModel::MaterialType::NORMAL_MAP: {
-                    settings_.normal_depth_material_.shader = "normals";
-                    scene_wgt_->GetScene()->UpdateMaterial(
-                            settings_.normal_depth_material_);
-                } break;
-                case GuiSettingsModel::MaterialType::DEPTH: {
-                    settings_.normal_depth_material_.shader = "depth";
-                    scene_wgt_->GetScene()->UpdateMaterial(
-                            settings_.normal_depth_material_);
-                } break;
-
-                default:
-                    break;
-            }
+            UpdateSceneMaterial();
         }
 
         auto *view = scene_wgt_->GetRenderView();
@@ -487,7 +475,8 @@ private:
                         const GuiSettingsModel::LightingProfile &lighting) {
         auto scene = scene_wgt_->GetScene();
         auto *render_scene = scene->GetScene();
-        if (lighting.use_default_ibl) {
+        if (lighting.use_default_ibl &&
+            !settings_.model_.GetUserHasCustomizedLighting()) {
             this->SetIBL(renderer, "");
         }
 
@@ -519,6 +508,68 @@ private:
             render_scene->SetSunLightDirection(lighting.sun_dir);
         }
         render_scene->EnableSunLight(lighting.sun_enabled);
+    }
+
+    void RunNormalEstimation() {
+        if (loaded_pcd_) {
+            gui::Application::GetInstance().PostToMainThread(
+                    visualizer_, [this]() {
+                        auto &theme = visualizer_->GetTheme();
+                        auto loading_dlg =
+                                std::make_shared<gui::Dialog>("Loading");
+                        auto vert = std::make_shared<gui::Vert>(
+                                0, gui::Margins(theme.font_size));
+                        auto loading_text = std::string(
+                                "Estimating normals. Be patient. This may take "
+                                "a while. ");
+                        vert->AddChild(std::make_shared<gui::Label>(
+                                loading_text.c_str()));
+                        loading_dlg->AddChild(vert);
+                        visualizer_->ShowDialog(loading_dlg);
+                    });
+
+            gui::Application::GetInstance().RunInThread([this]() {
+                loaded_pcd_->EstimateNormals();
+                loaded_pcd_->NormalizeNormals();
+
+                gui::Application::GetInstance().PostToMainThread(
+                        visualizer_, [this]() {
+                            auto scene3d = scene_wgt_->GetScene();
+                            scene3d->ClearGeometry();
+                            rendering::MaterialRecord mat;
+                            scene3d->AddGeometry(MODEL_NAME, loaded_pcd_.get(),
+                                                 mat);
+                            UpdateSceneMaterial();
+                        });
+                gui::Application::GetInstance().PostToMainThread(
+                        visualizer_, [this]() { visualizer_->CloseDialog(); });
+            });
+        }
+    }
+
+    void UpdateSceneMaterial() {
+        switch (settings_.model_.GetMaterialType()) {
+            case GuiSettingsModel::MaterialType::LIT:
+                scene_wgt_->GetScene()->UpdateMaterial(settings_.lit_material_);
+                break;
+            case GuiSettingsModel::MaterialType::UNLIT:
+                scene_wgt_->GetScene()->UpdateMaterial(
+                        settings_.unlit_material_);
+                break;
+            case GuiSettingsModel::MaterialType::NORMAL_MAP: {
+                settings_.normal_depth_material_.shader = "normals";
+                scene_wgt_->GetScene()->UpdateMaterial(
+                        settings_.normal_depth_material_);
+            } break;
+            case GuiSettingsModel::MaterialType::DEPTH: {
+                settings_.normal_depth_material_.shader = "depth";
+                scene_wgt_->GetScene()->UpdateMaterial(
+                        settings_.normal_depth_material_);
+            } break;
+
+            default:
+                break;
+        }
     }
 
     void UpdateMaterials(rendering::Renderer &renderer,
@@ -589,6 +640,20 @@ GuiVisualizer::GuiVisualizer(
       impl_(new GuiVisualizer::Impl()) {
     Init();
     SetGeometry(geometries[0], false);  // also updates the camera
+
+    // Create a message processor for incoming messages.
+    auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
+                              const std::string &path, int time,
+                              const std::string &layer) {
+        // Rather than duplicating the logic to figure out the correct material,
+        // just add with the default material and pretend the user changed the
+        // current material and update everyone's material.
+        impl_->scene_wgt_->GetScene()->AddGeometry(path, geom.get(),
+                                                   rendering::MaterialRecord());
+        impl_->UpdateFromModel(GetRenderer(), true);
+    };
+    impl_->message_processor_ =
+            std::make_shared<MessageProcessor>(this, on_geometry);
 }
 
 void GuiVisualizer::Init() {
@@ -613,7 +678,7 @@ void GuiVisualizer::Init() {
         file_menu->AddItem("Open...", FILE_OPEN, gui::KEY_O);
         file_menu->AddItem("Export Current Image...", FILE_EXPORT_RGB);
         file_menu->AddSeparator();
-#if WIN32
+#if defined(WIN32)
         file_menu->AddItem("Exit", FILE_QUIT);
 #elif !defined(__APPLE__)  // quit goes in app menu on macOS
         file_menu->AddItem("Quit", FILE_QUIT, gui::KEY_Q);
@@ -642,6 +707,9 @@ void GuiVisualizer::Init() {
 
         gui::Application::GetInstance().SetMenubar(menu);
     }
+
+    // Implementation needs the GuiVisualizer
+    impl_->visualizer_ = this;
 
     // Create scene
     impl_->scene_wgt_ = std::make_shared<gui::SceneWidget>();
@@ -738,10 +806,24 @@ void GuiVisualizer::Init() {
     // ... lighting and materials
     settings.view_ = std::make_shared<GuiSettingsView>(
             settings.model_, theme, resource_path, [this](const char *name) {
-                std::string resource_path =
-                        gui::Application::GetInstance().GetResourcePath();
-                impl_->SetIBL(GetRenderer(),
-                              resource_path + "/" + name + "_ibl.ktx");
+                if (std::string(name) ==
+                    std::string(GuiSettingsModel::CUSTOM_IBL)) {
+                    auto dlg = std::make_shared<gui::FileDialog>(
+                            gui::FileDialog::Mode::OPEN, "Open HDR Map",
+                            GetTheme());
+                    dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
+                    dlg->SetOnCancel([this]() { CloseDialog(); });
+                    dlg->SetOnDone([this](const char *path) {
+                        CloseDialog();
+                        impl_->SetIBL(GetRenderer(), path);
+                    });
+                    ShowDialog(dlg);
+                } else {
+                    std::string resource_path =
+                            gui::Application::GetInstance().GetResourcePath();
+                    impl_->SetIBL(GetRenderer(),
+                                  resource_path + "/" + name + "_ibl.ktx");
+                }
             });
     settings.model_.SetOnChanged([this](bool material_type_changed) {
         impl_->settings_.view_->Update();
@@ -789,7 +871,7 @@ void GuiVisualizer::SetGeometry(
 
     impl_->SetMaterialsToDefault();
 
-    rendering::Material loaded_material;
+    rendering::MaterialRecord loaded_material;
     if (loaded_model) {
         scene3d->AddModel(MODEL_NAME, impl_->loaded_model_);
         impl_->settings_.model_.SetDisplayingPointClouds(false);
@@ -816,6 +898,7 @@ void GuiVisualizer::SetGeometry(
             scene3d->AddGeometry(MODEL_NAME, pcd.get(), loaded_material);
 
             impl_->settings_.model_.SetDisplayingPointClouds(true);
+            impl_->settings_.view_->EnableEstimateNormals(true);
             if (!impl_->settings_.model_.GetUserHasChangedLightingProfile()) {
                 auto &profile =
                         GuiSettingsModel::GetDefaultPointCloudLightingProfile();
@@ -886,39 +969,17 @@ void GuiVisualizer::Layout(const gui::LayoutContext &context) {
 }
 
 void GuiVisualizer::StartRPCInterface(const std::string &address, int timeout) {
-#ifdef BUILD_RPC_INTERFACE
-    auto on_geometry = [this](std::shared_ptr<geometry::Geometry3D> geom,
-                              const std::string &path, int time,
-                              const std::string &layer) {
-        // Rather than duplicating the logic to figure out the correct material,
-        // just add with the default material and pretend the user changed the
-        // current material and update everyone's material.
-        impl_->scene_wgt_->GetScene()->AddGeometry(path, geom.get(),
-                                                   rendering::Material());
-        impl_->UpdateFromModel(GetRenderer(), true);
-    };
-    impl_->receiver_ =
-            std::make_shared<Receiver>(address, timeout, this, on_geometry);
+    impl_->receiver_ = std::make_shared<io::rpc::ZMQReceiver>(address, timeout);
+    impl_->receiver_->SetMessageProcessor(impl_->message_processor_);
     try {
         utility::LogInfo("Starting to listen on {}", address);
         impl_->receiver_->Start();
     } catch (std::exception &e) {
         utility::LogWarning("Failed to start RPC interface: {}", e.what());
     }
-#else
-    utility::LogWarning(
-            "GuiVisualizer::StartRPCInterface: RPC interface not built");
-#endif
 }
 
-void GuiVisualizer::StopRPCInterface() {
-#ifdef BUILD_RPC_INTERFACE
-    impl_->receiver_.reset();
-#else
-    utility::LogWarning(
-            "GuiVisualizer::StopRPCInterface: RPC interface not built");
-#endif
-}
+void GuiVisualizer::StopRPCInterface() { impl_->receiver_.reset(); }
 
 bool GuiVisualizer::SetIBL(const char *path) {
     auto result = impl_->SetIBL(GetRenderer(), path);
@@ -952,6 +1013,7 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
         // clear current model
         impl_->loaded_model_.meshes_.clear();
         impl_->loaded_model_.materials_.clear();
+        impl_->loaded_pcd_.reset();
 
         auto geometry_type = io::ReadFileGeometryType(path);
 
@@ -994,13 +1056,14 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
             if (success) {
                 utility::LogInfo("Successfully read {}", path.c_str());
                 UpdateProgress(ioProgressAmount);
-                if (!cloud->HasNormals()) {
+                if (!cloud->HasNormals() && !cloud->HasColors()) {
                     cloud->EstimateNormals();
                 }
                 UpdateProgress(0.666f);
                 cloud->NormalizeNormals();
                 UpdateProgress(0.75f);
                 geometry = cloud;
+                impl_->loaded_pcd_ = cloud;
             } else {
                 utility::LogWarning("Failed to read points {}", path.c_str());
                 cloud.reset();

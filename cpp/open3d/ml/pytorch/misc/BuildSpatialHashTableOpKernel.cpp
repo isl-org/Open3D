@@ -25,7 +25,7 @@
 // ----------------------------------------------------------------------------
 //
 
-#include "open3d/ml/impl/misc/FixedRadiusSearch.h"
+#include "open3d/core/nns/FixedRadiusSearchImpl.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
@@ -36,7 +36,7 @@ void BuildSpatialHashTableCPU(const torch::Tensor& points,
                               const std::vector<uint32_t>& hash_table_splits,
                               torch::Tensor& hash_table_index,
                               torch::Tensor& hash_table_cell_splits) {
-    open3d::ml::impl::BuildSpatialHashTableCPU(
+    open3d::core::nns::impl::BuildSpatialHashTableCPU(
             points.size(0), points.data_ptr<T>(), T(radius),
             points_row_splits.size(0), points_row_splits.data_ptr<int64_t>(),
             hash_table_splits.data(), hash_table_cell_splits.size(0),

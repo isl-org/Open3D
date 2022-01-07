@@ -47,9 +47,9 @@ public:
         int64_t* ret_keep_indices = nullptr;
         output_allocator.AllocKeepIndices(&ret_keep_indices,
                                           keep_indices.size());
-        OPEN3D_ML_CUDA_CHECK(cudaMemcpy(ret_keep_indices, keep_indices.data(),
-                                        keep_indices.size() * sizeof(int64_t),
-                                        cudaMemcpyHostToDevice));
+        OPEN3D_CUDA_CHECK(cudaMemcpy(ret_keep_indices, keep_indices.data(),
+                                     keep_indices.size() * sizeof(int64_t),
+                                     cudaMemcpyHostToDevice));
     }
 };
 

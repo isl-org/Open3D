@@ -28,6 +28,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <vector>
 
 #include "open3d/geometry/Geometry.h"
 #include "open3d/utility/Eigen.h"
@@ -64,8 +65,15 @@ public:
     virtual Eigen::Vector3d GetCenter() const = 0;
     /// Returns an axis-aligned bounding box of the geometry.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const = 0;
-    /// Returns an oriented bounding box of the geometry.
-    virtual OrientedBoundingBox GetOrientedBoundingBox() const = 0;
+
+    /// Computes the oriented bounding box based on the PCA of the convex hull.
+    /// The returned bounding box is an approximation to the minimal bounding
+    /// box.
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    virtual OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const = 0;
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
     virtual Geometry3D& Transform(const Eigen::Matrix4d& transformation) = 0;
 
@@ -155,6 +163,14 @@ protected:
     /// \param normals A list of normals to be transformed.
     void TransformNormals(const Eigen::Matrix4d& transformation,
                           std::vector<Eigen::Vector3d>& normals) const;
+
+    /// \brief Transforms all covariance matrices with the transformation.
+    ///
+    /// \param transformation 4x4 matrix for transformation.
+    /// \param covariances A list of covariance matrices to be transformed.
+    void TransformCovariances(const Eigen::Matrix4d& transformation,
+                              std::vector<Eigen::Matrix3d>& covariances) const;
+
     /// \brief Apply translation to the geometry coordinates.
     ///
     /// \param translation A 3D vector to transform the geometry.
@@ -192,6 +208,13 @@ protected:
     /// \param normals A list of normals to be transformed.
     void RotateNormals(const Eigen::Matrix3d& R,
                        std::vector<Eigen::Vector3d>& normals) const;
+
+    /// \brief Rotate all covariance matrices with the rotation matrix \p R.
+    ///
+    /// \param R A 3x3 rotation matrix
+    /// \param covariances A list of covariance matrices to be transformed.
+    void RotateCovariances(const Eigen::Matrix3d& R,
+                           std::vector<Eigen::Matrix3d>& covariances) const;
 };
 
 }  // namespace geometry

@@ -31,8 +31,8 @@
 
 #include <algorithm>
 
-#include "open3d/utility/Console.h"
-#include "tests/UnitTest.h"
+#include "open3d/utility/Logging.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -353,11 +353,18 @@ TEST(FileSystem, DeleteDirectory) {
     status = utility::filesystem::MakeDirectory(path);
     EXPECT_TRUE(status);
 
+    status = utility::filesystem::MakeDirectory(path + "/sub_dir");
+    EXPECT_TRUE(status);
+    FILE *file = utility::filesystem::FOpen(path + "/file_name.txt", "w");
+    fclose(file);
+
     status = utility::filesystem::DeleteDirectory(path);
     EXPECT_TRUE(status);
 
+    // std::filesystem::remove_all() won't throw error if the directory doesn't
+    // exist.
     status = utility::filesystem::DeleteDirectory(path);
-    EXPECT_FALSE(status);
+    EXPECT_TRUE(status);
 }
 
 TEST(FileSystem, File_Exists_Remove) {

@@ -31,12 +31,46 @@
 #include "open3d/core/CUDAUtils.h"
 
 #if defined(__CUDACC__)
+
+#if defined(__CUDA_ARCH__)
+#if __CUDA_ARCH__ < 600
+__device__ double atomicAdd(double *address, double val) {
+    unsigned long long int *address_as_ull = (unsigned long long int *)address;
+    unsigned long long int old = *address_as_ull, assumed;
+
+    do {
+        assumed = old;
+        old = atomicCAS(
+                address_as_ull, assumed,
+                __double_as_longlong(val + __longlong_as_double(assumed)));
+
+        // Note: uses integer comparison to avoid hang in case of NaN (since NaN
+        // != NaN)
+    } while (assumed != old);
+
+    return __longlong_as_double(old);
+}
+#endif
+#endif
+
 #define OPEN3D_ATOMIC_ADD(X, Y) atomicAdd(X, Y)
-#define ISNAN(X) isnan(X)
 #else
 #define OPEN3D_ATOMIC_ADD(X, Y) (*X).fetch_add(Y)
-#define ISNAN(X) std::isnan(X)
 #endif
+
+namespace open3d {
+template <typename scalar_t, typename T>
+OPEN3D_HOST_DEVICE bool IsClose(const scalar_t &x,
+                                const T &y,
+                                const double rtol = 1e-4) {
+    return ((x > (1.0 - rtol) * y) && (x < (1.0 + rtol) * y));
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE scalar_t Square(const scalar_t &x) {
+    return x * x;
+}
+}  // namespace open3d
 
 // https://stackoverflow.com/a/51549250
 #ifdef __CUDACC__

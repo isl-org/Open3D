@@ -29,7 +29,6 @@
 # (2) make.py generate Python api docs, one ".rst" file per class / function
 # (3) make.py calls the actual `sphinx-build`
 
-from __future__ import print_function
 import argparse
 import subprocess
 import sys
@@ -37,13 +36,13 @@ import importlib
 import os
 import inspect
 import shutil
-import warnings
-import weakref
-from tempfile import mkdtemp
 import re
 from pathlib import Path
 import nbformat
 import nbconvert
+import ssl
+import certifi
+import urllib.request
 
 
 def _create_or_clear_dir(dir_path):
@@ -52,6 +51,18 @@ def _create_or_clear_dir(dir_path):
         print("Removed directory %s" % dir_path)
     os.makedirs(dir_path)
     print("Created directory %s" % dir_path)
+
+
+def _update_file(src, dst):
+    """Copies a file if the destination does not exist or is older."""
+    if Path(dst).exists():
+        src_stat = os.stat(src)
+        dst_stat = os.stat(dst)
+        if src_stat.st_mtime - dst_stat.st_mtime <= 0:
+            print("Copy skipped: {}".format(dst))
+            return
+    print("Copy: {}\n   -> {}".format(src, dst))
+    shutil.copy2(src, dst)
 
 
 class PyAPIDocsBuilder:
@@ -126,7 +137,6 @@ class PyAPIDocsBuilder:
 
     def _generate_function_doc(self, full_module_name, function_name,
                                output_path):
-        # print("Generating docs: %s" % (output_path,))
         out_string = ""
         out_string += "%s.%s" % (full_module_name, function_name)
         out_string += "\n" + "-" * len(out_string)
@@ -138,7 +148,6 @@ class PyAPIDocsBuilder:
             f.write(out_string)
 
     def _generate_class_doc(self, full_module_name, class_name, output_path):
-        # print("Generating docs: %s" % (output_path,))
         out_string = ""
         out_string += "%s.%s" % (full_module_name, class_name)
         out_string += "\n" + "-" * len(out_string)
@@ -146,7 +155,9 @@ class PyAPIDocsBuilder:
         out_string += "\n\n" + ".. autoclass:: %s" % class_name
         out_string += "\n    :members:"
         out_string += "\n    :undoc-members:"
-        out_string += "\n    :inherited-members:"
+        if not (full_module_name.startswith("open3d.ml.tf") or
+                full_module_name.startswith("open3d.ml.torch")):
+            out_string += "\n    :inherited-members:"
         out_string += "\n"
 
         with open(output_path, "w") as f:
@@ -155,7 +166,6 @@ class PyAPIDocsBuilder:
     def _generate_module_doc(self, full_module_name, class_names,
                              function_names, sub_module_names,
                              sub_module_doc_path):
-        # print("Generating docs: %s" % (sub_module_doc_path,))
         class_names = sorted(class_names)
         function_names = sorted(function_names)
         out_string = ""
@@ -210,7 +220,7 @@ class PyAPIDocsBuilder:
         class_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isclass(obj[1])
+            if inspect.isclass(obj[1]) and not obj[0].startswith('_')
         ]
         for class_name in class_names:
             file_name = "%s.%s.rst" % (full_module_name, class_name)
@@ -225,7 +235,7 @@ class PyAPIDocsBuilder:
         function_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isroutine(obj[1])
+            if inspect.isroutine(obj[1]) and not obj[0].startswith('_')
         ]
         for function_name in function_names:
             file_name = "%s.%s.rst" % (full_module_name, function_name)
@@ -242,7 +252,7 @@ class PyAPIDocsBuilder:
         sub_module_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.ismodule(obj[1])
+            if inspect.ismodule(obj[1]) and not obj[0].startswith('_')
         ]
         documented_sub_module_names = [
             sub_module_name for sub_module_name in sub_module_names if "%s.%s" %
@@ -275,7 +285,9 @@ class SphinxDocsBuilder:
     (3) Calls `sphinx-build` with the user argument
     """
 
-    def __init__(self, html_output_dir, is_release, skip_notebooks):
+    def __init__(self, current_file_dir, html_output_dir, is_release,
+                 skip_notebooks):
+        self.current_file_dir = current_file_dir
         self.html_output_dir = html_output_dir
         self.is_release = is_release
         self.skip_notebooks = skip_notebooks
@@ -284,6 +296,14 @@ class SphinxDocsBuilder:
         """
         Call Sphinx command with hard-coded "html" target
         """
+        # Copy docs files from Open3D-ML repo
+        OPEN3D_ML_ROOT = os.environ.get(
+            "OPEN3D_ML_ROOT",
+            os.path.join(self.current_file_dir, "../../Open3D-ML"))
+        if os.path.isdir(OPEN3D_ML_ROOT):
+            shutil.copy(os.path.join(OPEN3D_ML_ROOT, "docs", "tensorboard.md"),
+                        self.current_file_dir)
+
         build_dir = os.path.join(self.html_output_dir, "html")
 
         if self.is_release:
@@ -355,6 +375,15 @@ class JupyterDocsBuilder:
         self.current_file_dir = current_file_dir
         print("Notebook execution mode: {}".format(self.execute_notebooks))
 
+    def overwrite_tutorial_file(self, url, output_file, output_file_path):
+        with urllib.request.urlopen(
+                url,
+                context=ssl.create_default_context(cafile=certifi.where()),
+        ) as response:
+            with open(output_file, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        shutil.move(output_file, output_file_path)
+
     def run(self):
         if self.execute_notebooks == "never":
             return
@@ -373,16 +402,15 @@ class JupyterDocsBuilder:
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
-        nb_direct_copy = ['tensor.ipynb']
+        nb_direct_copy = [
+            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration.ipynb',
+            'jupyter_visualization.ipynb'
+        ]
         example_dirs = [
-            "geometry",
-            "core",
-            "pipelines",
-            "visualization",
+            "geometry", "core", "pipelines", "visualization", "t_pipelines"
         ]
         for example_dir in example_dirs:
-            in_dir = (Path(self.current_file_dir).parent / "examples" /
-                      "python" / example_dir)
+            in_dir = (Path(self.current_file_dir) / "jupyter" / example_dir)
             out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
             out_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy(
@@ -397,12 +425,16 @@ class JupyterDocsBuilder:
 
             for nb_in_path in in_dir.glob("*.ipynb"):
                 nb_out_path = out_dir / nb_in_path.name
-                if not nb_out_path.is_file():
-                    print("Copy: {}\n   -> {}".format(nb_in_path, nb_out_path))
-                    shutil.copy(nb_in_path, nb_out_path)
-                else:
-                    print("Copy skipped: {}.format(nb_out_path)")
+                _update_file(nb_in_path, nb_out_path)
                 nb_paths.append(nb_out_path)
+
+            # Copy the 'images' dir present in some example dirs.
+            if (in_dir / "images").is_dir():
+                if (out_dir / "images").exists():
+                    shutil.rmtree(out_dir / "images")
+                print("Copy: {}\n   -> {}".format(in_dir / "images",
+                                                  out_dir / "images"))
+                shutil.copytree(in_dir / "images", out_dir / "images")
 
         # Execute Jupyter notebooks
         for nb_path in nb_paths:
@@ -431,14 +463,20 @@ class JupyterDocsBuilder:
                 try:
                     ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
                 except nbconvert.preprocessors.execute.CellExecutionError:
-                    print(
-                        "Execution of {} failed, this will cause Travis to fail."
-                        .format(nb_path.name))
-                    if "TRAVIS" in os.environ:
+                    print("Execution of {} failed, this will cause CI to fail.".
+                          format(nb_path.name))
+                    if "GITHUB_ACTIONS" in os.environ:
                         raise
 
                 with open(nb_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
+
+        url = "https://github.com/isl-org/Open3D/files/7592880/t_icp_registration.zip"
+        output_file = "t_icp_registration.ipynb"
+        output_file_path = os.path.join(
+            self.current_file_dir,
+            "tutorial/t_pipelines/t_icp_registration.ipynb")
+        self.overwrite_tutorial_file(url, output_file, output_file_path)
 
 
 if __name__ == "__main__":
@@ -524,7 +562,7 @@ if __name__ == "__main__":
         print("Building Sphinx docs")
         skip_notebooks = (args.execute_notebooks == "never" and
                           args.clean_notebooks)
-        sdb = SphinxDocsBuilder(html_output_dir, args.is_release,
+        sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release,
                                 skip_notebooks)
         sdb.run()
     else:

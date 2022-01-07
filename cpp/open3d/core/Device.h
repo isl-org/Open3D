@@ -28,8 +28,8 @@
 #include <string>
 #include <vector>
 
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -42,22 +42,20 @@ public:
     enum class DeviceType { CPU = 0, CUDA = 1 };
 
     /// Default constructor.
-    Device() : device_type_(DeviceType::CPU), device_id_(0) {
-        AssertCPUDeviceIDIsZero();
-    }
+    Device() = default;
 
     /// Constructor with device specified.
-    Device(DeviceType device_type, int device_id)
+    explicit Device(DeviceType device_type, int device_id)
         : device_type_(device_type), device_id_(device_id) {
         AssertCPUDeviceIDIsZero();
     }
 
     /// Constructor from device type string and device id.
-    Device(const std::string& device_type, int device_id)
+    explicit Device(const std::string& device_type, int device_id)
         : Device(device_type + ":" + std::to_string(device_id)) {}
 
     /// Constructor from string, e.g. "CUDA:0".
-    Device(const std::string& type_colon_id)
+    explicit Device(const std::string& type_colon_id)
         : device_type_(StringToDeviceType(type_colon_id)),
           device_id_(StringToDeviceId(type_colon_id)) {
         AssertCPUDeviceIDIsZero();
@@ -69,6 +67,10 @@ public:
     }
 
     bool operator!=(const Device& other) const { return !operator==(other); }
+
+    bool operator<(const Device& other) const {
+        return ToString() < other.ToString();
+    }
 
     std::string ToString() const {
         std::string str = "";
@@ -126,9 +128,18 @@ protected:
     }
 
 protected:
-    DeviceType device_type_;
-    int device_id_;
+    DeviceType device_type_ = DeviceType::CPU;
+    int device_id_ = 0;
 };
 
 }  // namespace core
 }  // namespace open3d
+
+namespace std {
+template <>
+struct hash<open3d::core::Device> {
+    std::size_t operator()(const open3d::core::Device& device) const {
+        return std::hash<std::string>{}(device.ToString());
+    }
+};
+}  // namespace std

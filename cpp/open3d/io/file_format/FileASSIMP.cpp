@@ -28,19 +28,19 @@
 #include <numeric>
 #include <vector>
 
+#include "assimp/GltfMaterial.h"
 #include "assimp/Importer.hpp"
 #include "assimp/ProgressHandler.hpp"
-#include "assimp/pbrmaterial.h"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/ModelIO.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/utility/ProgressReporters.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Model.h"
 
 #define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
@@ -55,11 +55,12 @@ FileGeometry ReadFileGeometryTypeFBX(const std::string& path) {
     return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
 }
 
-const unsigned int kPostProcessFlags =
-        aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices |
-        aiProcess_ImproveCacheLocality | aiProcess_RemoveRedundantMaterials |
-        aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_SortByPType |
-        aiProcess_FindDegenerates | aiProcess_OptimizeMeshes |
+const unsigned int kPostProcessFlags_compulsory =
+        aiProcess_JoinIdenticalVertices;
+
+const unsigned int kPostProcessFlags_fast =
+        aiProcessPreset_TargetRealtime_Fast |
+        aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes |
         aiProcess_PreTransformVertices;
 
 struct TextureImages {
@@ -145,10 +146,10 @@ bool ReadTriangleMeshUsingASSIMP(
         const ReadTriangleMeshOptions& params /*={}*/) {
     Assimp::Importer importer;
 
-    unsigned int post_process_flags = 0;
+    unsigned int post_process_flags = kPostProcessFlags_compulsory;
 
     if (params.enable_post_processing) {
-        post_process_flags = kPostProcessFlags;
+        post_process_flags = kPostProcessFlags_fast;
     }
 
     const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
@@ -239,10 +240,8 @@ bool ReadTriangleMeshUsingASSIMP(
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
         mesh_material.baseColor =
                 MaterialParameter::CreateRGB(color.r, color.g, color.b);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
-                 mesh_material.baseMetallic);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
-                 mesh_material.baseRoughness);
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, mesh_material.baseMetallic);
+        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, mesh_material.baseRoughness);
         // NOTE: We prefer sheen to reflectivity so the following code works
         // since if sheen is not present it won't modify baseReflectance
         mat->Get(AI_MATKEY_REFLECTIVITY, mesh_material.baseReflectance);
@@ -307,7 +306,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
     // is silent on this salient point).
     importer.SetProgressHandler(
             new AssimpProgress(params, readfile_total / progress_total));
-    const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
+    const auto* scene =
+            importer.ReadFile(filename.c_str(), kPostProcessFlags_fast);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;
@@ -386,7 +386,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
 
-        visualization::rendering::Material o3d_mat;
+        visualization::rendering::MaterialRecord o3d_mat;
 
         o3d_mat.name = mat->GetName().C_Str();
 
@@ -395,10 +395,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
         o3d_mat.base_color = Eigen::Vector4f(color.r, color.g, color.b, 1.f);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
-                 o3d_mat.base_metallic);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
-                 o3d_mat.base_roughness);
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, o3d_mat.base_metallic);
+        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, o3d_mat.base_roughness);
         mat->Get(AI_MATKEY_REFLECTIVITY, o3d_mat.base_reflectance);
         mat->Get(AI_MATKEY_SHEEN, o3d_mat.base_reflectance);
 

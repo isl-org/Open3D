@@ -31,7 +31,7 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
@@ -55,15 +55,20 @@ void Unproject(const core::Tensor& depth,
                 "values.");
     }
 
-    core::Device device = depth.GetDevice();
-    core::Device::DeviceType device_type = device.GetType();
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
 
     static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
-    core::Tensor extrinsics_d =
-            extrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
+    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
 
+    const core::Device device = depth.GetDevice();
+
+    if (image_colors.has_value()) {
+        core::AssertTensorDevice(image_colors.value(), device);
+    }
+
+    const core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
         UnprojectCPU(depth, image_colors, points, colors, intrinsics_d,
                      extrinsics_d, depth_scale, depth_max, stride);
@@ -90,15 +95,26 @@ void Project(
                 "values.");
     }
 
-    core::Device device = depth.GetDevice();
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(extrinsics, {4, 4});
+
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
+    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
+
+    const core::Device device = depth.GetDevice();
+
+    if (image_colors.has_value()) {
+        core::AssertTensorDevice(image_colors.value(), device);
+    }
 
     core::Device::DeviceType device_type = device.GetType();
     if (device_type == core::Device::DeviceType::CPU) {
-        ProjectCPU(depth, image_colors, points, colors, intrinsics, extrinsics,
-                   depth_scale, depth_max);
+        ProjectCPU(depth, image_colors, points, colors, intrinsics_d,
+                   extrinsics_d, depth_scale, depth_max);
     } else if (device_type == core::Device::DeviceType::CUDA) {
-        CUDA_CALL(ProjectCUDA, depth, image_colors, points, colors, intrinsics,
-                  extrinsics, depth_scale, depth_max);
+        CUDA_CALL(ProjectCUDA, depth, image_colors, points, colors,
+                  intrinsics_d, extrinsics_d, depth_scale, depth_max);
     } else {
         utility::LogError("Unimplemented device");
     }

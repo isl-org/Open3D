@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # The following environment variables are required:
 SUDO=${SUDO:=sudo}
@@ -13,116 +14,51 @@ if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
         BUILD_CUDA_MODULE=OFF
     fi
 fi
-BUILD_COMMON_CUDA_ARCHS=${BUILD_COMMON_CUDA_ARCHS:-OFF}
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
 if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$BUILD_CUDA_MODULE" == OFF ]; then
     BUILD_PYTORCH_OPS=OFF # PyTorch Ops requires CUDA + CUDNN to build
 fi
-BUILD_RPC_INTERFACE=${BUILD_RPC_INTERFACE:-ON}
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
 # CUDA
-CUDA_VERSION=("11-0" "11.0")
-CUDNN_MAJOR_VERSION=8
-CUDNN_VERSION="8.0.5.39-1+cuda11.0"
+if [[ $BUILD_TENSORFLOW_OPS == ON || $BUILD_PYTORCH_OPS == ON || \
+    $UBUNTU_VERSION != bionic ]]; then
+    # CUDA version in sync with PyTorch and Tensorflow
+    CUDA_VERSION=("11-0" "11.0")
+    CUDNN_MAJOR_VERSION=8
+    CUDNN_VERSION="8.0.5.39-1+cuda11.0"
+    GCC_MAX_VER=9
+else
+    # Without MLOps, ensure Open3D works with the lowest supported CUDA version
+    # Not available in Nvidia focal repos
+    CUDA_VERSION=("10-1" "10.1")
+    CUDNN_MAJOR_VERSION=8
+    CUDNN_VERSION="8.0.5.39-1+cuda10.1"
+    GCC_MAX_VER=7
+fi
 # ML
-TENSORFLOW_VER="2.4.1"
-# TORCH_CUDA_GLNX_VER="1.7.1+cu110"
-# TORCH_CPU_GLNX_VER="1.7.1+cpu"
+TENSORFLOW_VER="2.5.2"
+TENSORBOARD_VER="2.5"
+# TORCH_CUDA_GLNX_VER="1.8.2+cu110"
+# TORCH_CPU_GLNX_VER="1.8.2+cpu"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
-TORCH_CUDA_GLNX_URL="https://github.com/intel-isl/open3d_downloads/releases/download/torch1.7.1/torch-1.7.1-${PYTHON_VER}-linux_x86_64.whl"
-TORCH_MACOS_VER="1.7.1"
+TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.2/torch-1.8.2-${PYTHON_VER}-linux_x86_64.whl"
+TORCH_MACOS_VER="1.8.2"
+TORCH_MACOS_URL="https://download.pytorch.org/whl/lts/1.8/torch_lts.html"
 # Python
-CONDA_BUILD_VER="3.20.0"
+CONDA_BUILD_VER="3.21.4"
 PIP_VER="21.1.1"
 WHEEL_VER="0.35.1"
 STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
+PYTEST_RANDOMLY_VER="3.8.0"
 SCIPY_VER="1.5.4"
 YAPF_VER="0.30.0"
 
-# Documentation
-SPHINX_VER=3.5.4
-SPHINX_RTD_VER=0.5.1
-NBSPHINX_VER=0.8.3
-MATPLOTLIB_VER=3.3.3
-M2R2_VER=0.2.7
-JINJA2_VER=2.11.3 # jinja2 3.x is not compatible with this sphinx version
-
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
-
-install_cuda_toolkit() {
-
-    SUDO=${SUDO:-sudo}
-    options="$(echo "$@" | tr ' ' '|')"
-
-    if [[ $UBUNTU_VERSION == "bionic" ]]; then
-        echo "Installing CUDA ${CUDA_VERSION[1]} with apt from bionic repos..."
-        $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 /"
-    elif [[ $UBUNTU_VERSION == "focal" ]]; then
-        echo "Installing CUDA ${CUDA_VERSION[1]} with apt from focal repos..."
-        $SUDO apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/7fa2af80.pub
-        $SUDO apt-add-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64 /"
-    else
-        echo "Unsupported OS or version $UBUNTU_VERSION for CUDA toolkit" \
-            " install." && return 1
-    fi
-    $SUDO apt-get install --yes --no-install-recommends "cuda-toolkit-${CUDA_VERSION[0]}"
-    if [ "${CUDA_VERSION[1]}" == "10.1" ]; then
-        echo "CUDA 10.1 needs CUBLAS 10.2. Symlinks ensure this is found by cmake"
-        dpkg -L libcublas10 libcublas-dev | while read -r cufile; do
-            if [ -f "$cufile" ] && [ ! -e "${cufile/10.2/10.1}" ]; then
-                set -x
-                $SUDO ln -s "$cufile" "${cufile/10.2/10.1}"
-                set +x
-            fi
-        done
-    fi
-    options="$(echo "$@" | tr ' ' '|')"
-    if [[ "with-cudnn" =~ ^($options)$ ]]; then
-        # The repository method can cause "File has unexpected size" error so
-        # we use a tar file copy approach instead. The scripts are taken from
-        # CentOS 6 nvidia-docker scripts. The CUDA version and CUDNN version
-        # should be the same as the repository method. Ref:
-        # https://gitlab.com/nvidia/container-images/cuda/-/blob/2d67fde701915bd88a15038895203c894b36d3dd/dist/10.1/centos6-x86_64/devel/cudnn7/Dockerfile#L9
-        # $SUDO apt-get install --yes --no-install-recommends curl
-        # CUDNN_DOWNLOAD_SUM=7eaec8039a2c30ab0bc758d303588767693def6bf49b22485a2c00bf2e136cb3
-        # curl -fsSL http://developer.download.nvidia.com/compute/redist/cudnn/v7.6.5/cudnn-10.1-linux-x64-v7.6.5.32.tgz -O
-        # echo "$CUDNN_DOWNLOAD_SUM  cudnn-10.1-linux-x64-v7.6.5.32.tgz" | sha256sum -c -
-        # $SUDO tar --no-same-owner -xzf cudnn-10.1-linux-x64-v7.6.5.32.tgz -C /usr/local
-        # rm cudnn-10.1-linux-x64-v7.6.5.32.tgz
-        # $SUDO ldconfig
-        # CUDNN is now part of the main CUDA repo, so re-trying apt install
-        echo "Installing cuDNN ${CUDNN_VERSION} with apt ..."
-        $SUDO apt-get install --yes --no-install-recommends \
-            "libcudnn${CUDNN_MAJOR_VERSION}=$CUDNN_VERSION" \
-            "libcudnn${CUDNN_MAJOR_VERSION}-dev=$CUDNN_VERSION"
-    fi
-    $SUDO update-alternatives --install /usr/local/cuda cuda \
-        "/usr/local/cuda-${CUDA_VERSION[1]}" 100
-    CUDA_TOOLKIT_DIR=/usr/local/cuda-${CUDA_VERSION[1]}
-    set +u -x # Disable "unbound variable is error" since that gives a false alarm error below:
-    export PATH="${CUDA_TOOLKIT_DIR}/bin${PATH:+:$PATH}"
-    export LD_LIBRARY_PATH="${CUDA_TOOLKIT_DIR}/extras/CUPTI/lib64:$CUDA_TOOLKIT_DIR/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-    set -u +x
-    # Ensure g++ < 10 is installed for CUDA 11.0
-    cpp_version=$(c++ --version 2>/dev/null | grep -o -E '([0-9]+\.)+[0-9]+' | head -1)
-    if dpkg --compare-versions "$cpp_version" ge-nl 10; then
-        $SUDO apt-get install --yes --no-install-recommends g++-9 gcc-9
-        $SUDO update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-9 70 \
-            --slave /usr/bin/gcc gcc /usr/bin/gcc-9
-        $SUDO update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-9 70 \
-            --slave /usr/bin/g++ g++ /usr/bin/g++-9
-    fi
-    if [[ "purge-cache" =~ ^($options)$ ]]; then
-        $SUDO apt-get clean
-        $SUDO rm -rf /var/lib/apt/lists/*
-    fi
-}
 
 install_python_dependencies() {
 
@@ -134,8 +70,8 @@ install_python_dependencies() {
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
         setuptools=="$STOOLS_VER"
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
-        python -m pip install -U pytest=="$PYTEST_VER"
-        python -m pip install -U scipy=="$SCIPY_VER"
+        python -m pip install -U scipy=="$SCIPY_VER" pytest=="$PYTEST_VER" \
+            pytest-randomly=="$PYTEST_RANDOMLY_VER"
     fi
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow-gpu
@@ -163,7 +99,7 @@ install_python_dependencies() {
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             python -m pip install -U "${TORCH_CUDA_GLNX_URL}"
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            python -m pip install -U torch=="$TORCH_MACOS_VER"
+            python -m pip install -U torch=="$TORCH_MACOS_VER" -f "$TORCH_MACOS_URL"
         else
             echo "unknown OS $OSTYPE"
             exit 1
@@ -178,41 +114,6 @@ install_python_dependencies() {
     fi
 }
 
-install_librealsense2() {
-
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo Installing librealsense
-        echo Reference: https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
-        $SUDO apt-key adv --keyserver keys.gnupg.net --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE ||
-            $SUDO apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE
-
-        $SUDO apt-add-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo ${UBUNTU_VERSION} main" -u
-        $SUDO apt-get install --yes --no-install-recommends librealsense2-dkms librealsense2-udev-rules librealsense2-dev
-        $SUDO apt-get install --yes --no-install-recommends librealsense2-utils
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        brew install librealsense
-    else
-        echo "Unsupported OS $OSTYPE"
-        exit 1
-    fi
-}
-
-install_azure_kinect_dependencies() {
-
-    echo "Installing Azure Kinect dependencies"
-
-    SUDO=${SUDO:-sudo}
-    curl https://packages.microsoft.com/keys/microsoft.asc | $SUDO apt-key add -
-    $SUDO apt-add-repository --yes https://packages.microsoft.com/ubuntu/18.04/prod
-
-    # Accept EULA using a workaround
-    # https://github.com/microsoft/Azure-Kinect-Sensor-SDK/issues/1190#issuecomment-618473882
-    echo 'libk4a1.4 libk4a1.4/accepted-eula-hash string 0f5d5c5de396e4fee4c0753a21fee0c1ed726cf0316204edda484f08cb266d76' | $SUDO debconf-set-selections
-    echo 'libk4a1.4 libk4a1.4/accept-eula boolean true' | $SUDO debconf-set-selections
-
-    $SUDO apt-get --yes install libk4a1.4 libk4a1.4-dev k4a-tools
-}
-
 build_all() {
 
     echo "Using cmake: $(command -v cmake)"
@@ -220,17 +121,22 @@ build_all() {
 
     mkdir -p build
     cd build
+    GLIBCXX_USE_CXX11_ABI=ON
+    if [ "$BUILD_PYTORCH_OPS" == ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; then
+        GLIBCXX_USE_CXX11_ABI=OFF
+    fi
 
-    cmakeOptions=(-DBUILD_SHARED_LIBS="$SHARED"
+    cmakeOptions=(
+        -DBUILD_SHARED_LIBS="$SHARED"
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_LIBREALSENSE=ON
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
-        -DBUILD_COMMON_CUDA_ARCHS=OFF
+        -DBUILD_COMMON_CUDA_ARCHS=ON
+        -DBUILD_COMMON_ISPC_ISAS=ON
+        -DGLIBCXX_USE_CXX11_ABI="$GLIBCXX_USE_CXX11_ABI"
         -DBUILD_TENSORFLOW_OPS="$BUILD_TENSORFLOW_OPS"
         -DBUILD_PYTORCH_OPS="$BUILD_PYTORCH_OPS"
-        -DBUILD_RPC_INTERFACE="$BUILD_RPC_INTERFACE"
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
-        -DPYTHON_EXECUTABLE="$(command -v python)"
         -DBUILD_UNIT_TESTS=ON
         -DBUILD_BENCHMARKS=ON
         -DBUILD_EXAMPLES=OFF
@@ -294,15 +200,15 @@ build_pip_conda_package() {
     pushd build # PWD=Open3D/build
     cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+        "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
         "-DBUILD_LIBREALSENSE=ON"
+        "-DGLIBCXX_USE_CXX11_ABI=OFF"
         "-DBUILD_TENSORFLOW_OPS=ON"
         "-DBUILD_PYTORCH_OPS=ON"
-        "-DBUILD_RPC_INTERFACE=ON"
         "-DBUILD_FILAMENT_FROM_SOURCE=$BUILD_FILAMENT_FROM_SOURCE"
         "-DBUILD_JUPYTER_EXTENSION=$BUILD_JUPYTER_EXTENSION"
         "-DCMAKE_INSTALL_PREFIX=$OPEN3D_INSTALL_DIR"
-        "-DPYTHON_EXECUTABLE=$(command -v python)"
         "-DCMAKE_BUILD_TYPE=Release"
         "-DBUILD_UNIT_TESTS=OFF"
         "-DBUILD_BENCHMARKS=OFF"
@@ -326,7 +232,8 @@ build_pip_conda_package() {
         rm -r "${rebuild_list[@]}" || true
         set -x # Echo commands on
         cmake -DBUILD_CUDA_MODULE=ON \
-            -DBUILD_COMMON_CUDA_ARCHS="${BUILD_COMMON_CUDA_ARCHS}" "${cmakeOptions[@]}" ..
+            -DBUILD_COMMON_CUDA_ARCHS=ON \
+            "${cmakeOptions[@]}" ..
         set +x # Echo commands off
     fi
     echo
@@ -400,8 +307,11 @@ test_wheel() {
 run_python_tests() {
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
-    python -m pip install -U pytest=="$PYTEST_VER"
-    python -m pip install -U scipy=="$SCIPY_VER"
+    python -m pip install -U pytest=="$PYTEST_VER" \
+        pytest-randomly=="$PYTEST_RANDOMLY_VER" \
+        scipy=="$SCIPY_VER" \
+        tensorboard=="$TENSORBOARD_VER"
+    echo Add --randomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
     if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
         echo Testing ML Ops disabled
@@ -413,8 +323,9 @@ run_python_tests() {
 
 # Use: run_unit_tests
 run_cpp_unit_tests() {
-    unitTestFlags=
+    unitTestFlags=--gtest_shuffle
     [ "${LOW_MEM_USAGE-}" = "ON" ] && unitTestFlags="--gtest_filter=-*Reduce*Sum*"
+    echo "Run ./bin/tests $unitTestFlags --gtest_random_seed=SEED to repeat this test sequence."
     ./bin/tests "$unitTestFlags"
     echo
 }
@@ -424,7 +335,7 @@ run_cpp_unit_tests() {
 test_cpp_example() {
     # Now I am in Open3D/build/
     cd ..
-    git clone https://github.com/intel-isl/open3d-cmake-find-package.git
+    git clone https://github.com/isl-org/open3d-cmake-find-package.git
     cd open3d-cmake-find-package
     mkdir build
     cd build
@@ -458,16 +369,10 @@ install_docs_dependencies() {
     echo Install Python dependencies for building docs
     command -v python
     python -V
-    python -m pip install -U -q \
-        "wheel==$WHEEL_VER" \
-        "pip==$PIP_VER" \
-        "matplotlib==$MATPLOTLIB_VER" \
-        "sphinx==$SPHINX_VER" \
-        "sphinx-rtd-theme==$SPHINX_RTD_VER" \
-        "nbsphinx==$NBSPHINX_VER" \
-        "m2r2==$M2R2_VER" \
-        "jinja2==$JINJA2_VER"
+    python -m pip install -U -q "wheel==$WHEEL_VER" \
+        "pip==$PIP_VER"
     python -m pip install -U -q "yapf==$YAPF_VER"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
     echo
@@ -476,7 +381,8 @@ install_docs_dependencies() {
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-torch.txt"
-        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt"
+        python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt" ||
+            python -m pip install tensorflow # FIXME: Remove after Open3D-ML update
     else
         echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
     fi
@@ -507,16 +413,17 @@ build_docs() {
         "-DWITH_OPENMP=ON"
         "-DBUILD_AZURE_KINECT=ON"
         "-DBUILD_LIBREALSENSE=ON"
+        "-DGLIBCXX_USE_CXX11_ABI=OFF"
         "-DBUILD_TENSORFLOW_OPS=ON"
         "-DBUILD_PYTORCH_OPS=ON"
-        "-DBUILD_RPC_INTERFACE=ON"
         "-DBUNDLE_OPEN3D_ML=ON"
     )
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
-        -DBUILD_JUPYTER_EXTENSION=OFF \
         -DENABLE_HEADLESS_RENDERING=ON \
         -DBUILD_GUI=OFF \
+        -DBUILD_WEBRTC=OFF \
+        -DBUILD_JUPYTER_EXTENSION=OFF \
         ..
     make install-pip-package -j$NPROC
     make -j$NPROC
@@ -532,9 +439,10 @@ build_docs() {
     echo
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
-        -DBUILD_JUPYTER_EXTENSION=ON \
         -DENABLE_HEADLESS_RENDERING=OFF \
         -DBUILD_GUI=ON \
+        -DBUILD_WEBRTC=ON \
+        -DBUILD_JUPYTER_EXTENSION=OFF \
         ..
     make install-pip-package -j$NPROC
     make -j$NPROC

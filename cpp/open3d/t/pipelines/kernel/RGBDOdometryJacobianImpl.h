@@ -41,6 +41,7 @@ using t::geometry::kernel::TransformIndexer;
 
 #ifndef __CUDACC__
 using std::abs;
+using std::isnan;
 using std::max;
 #endif
 
@@ -65,7 +66,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
         float* J_ij,
         float& r) {
     float* source_v = source_vertex_indexer.GetDataPtr<float>(x, y);
-    if (ISNAN(source_v[0])) {
+    if (isnan(source_v[0])) {
         return false;
     }
 
@@ -88,7 +89,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianPointToPlane(
     int vi = static_cast<int>(v);
     float* target_v = target_vertex_indexer.GetDataPtr<float>(ui, vi);
     float* target_n = target_normal_indexer.GetDataPtr<float>(ui, vi);
-    if (ISNAN(target_v[0]) || ISNAN(target_n[0])) {
+    if (isnan(target_v[0]) || isnan(target_n[0])) {
         return false;
     }
 
@@ -129,7 +130,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
     const float sobel_scale = 0.125;
 
     float* source_v = source_vertex_indexer.GetDataPtr<float>(x, y);
-    if (ISNAN(source_v[0])) {
+    if (isnan(source_v[0])) {
         return false;
     }
 
@@ -153,7 +154,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianIntensity(
 
     float depth_t = *target_depth_indexer.GetDataPtr<float>(u_t, v_t);
     float diff_D = depth_t - T_source_to_target_v[2];
-    if (ISNAN(depth_t) || abs(diff_D) > depth_outlier_trunc) {
+    if (isnan(depth_t) || abs(diff_D) > depth_outlier_trunc) {
         return false;
     }
 
@@ -206,7 +207,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
     const float sobel_scale = 0.125;
 
     float* source_v = source_vertex_indexer.GetDataPtr<float>(x, y);
-    if (ISNAN(source_v[0])) {
+    if (isnan(source_v[0])) {
         return false;
     }
 
@@ -230,7 +231,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
 
     float depth_t = *target_depth_indexer.GetDataPtr<float>(u_t, v_t);
     float diff_D = depth_t - T_source_to_target_v[2];
-    if (ISNAN(depth_t) || abs(diff_D) > depth_outlier_trunc) {
+    if (isnan(depth_t) || abs(diff_D) > depth_outlier_trunc) {
         return false;
     }
 
@@ -238,7 +239,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianHybrid(
                  (*target_depth_dx_indexer.GetDataPtr<float>(u_t, v_t));
     float dDdy = sobel_scale *
                  (*target_depth_dy_indexer.GetDataPtr<float>(u_t, v_t));
-    if (ISNAN(dDdx) || ISNAN(dDdy)) {
+    if (isnan(dDdx) || isnan(dDdy)) {
         return false;
     }
 

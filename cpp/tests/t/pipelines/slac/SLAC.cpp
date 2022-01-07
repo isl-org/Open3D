@@ -41,7 +41,7 @@
 #include "open3d/t/pipelines/slac/SLACOptimizer.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Timer.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -50,12 +50,6 @@ class SLACPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(SLAC,
                          SLACPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
-
-class SLACPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        SLAC,
-        SLACPermuteDevicePairs,
-        testing::ValuesIn(SLACPermuteDevicePairs::TestCases()));
 
 // PointCloud is similar if fitness is higher and rmse is lower than tolerance
 // threshold.
@@ -66,7 +60,7 @@ static bool IsPointCloudSimilar(t::geometry::PointCloud source,
                                 float inlier_rmse_threshold = 0.0001) {
     auto result = t::pipelines::registration::EvaluateRegistration(
             source, target, /*search_distance*/ voxel_size,
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")));
     if (result.fitness_ >= inlier_fitness_threshold &&
         result.inlier_rmse_ <= inlier_rmse_threshold) {
         return true;
@@ -77,9 +71,8 @@ static bool IsPointCloudSimilar(t::geometry::PointCloud source,
 TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     core::Device device = GetParam();
 
-    std::string dataset_folder =
-            std::string(TEST_DATA_DIR) +
-            "/reconstruction_system/livingroom1_clean_micro";
+    std::string dataset_folder = utility::GetDataPathCommon(
+            "reconstruction_system/livingroom1_clean_micro");
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string scene_folder = dataset_folder + "/test_scene";
     std::string slac_folder = dataset_folder + "/output_slac";
@@ -92,8 +85,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
         utility::LogError(
                 "No fragment found in {}, please make sure the test dataset "
                 "has been downloaded in "
-                "open3d_downloads/tests/reconstruction_system/ been "
-                "downloaded.",
+                "GetDataPathDownload(\"tests/reconstruction_system/\").",
                 fragment_folder);
     }
     std::sort(fragment_fnames.begin(), fragment_fnames.end());
@@ -129,13 +121,13 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     // AssertSavedCorrespondences();
 
     // Write control grids.
-    auto hashmap = control_grid.GetHashmap();
-    core::Tensor active_addrs;
-    hashmap->GetActiveIndices(active_addrs);
-    active_addrs = active_addrs.To(core::Dtype::Int64);
+    auto hashmap = control_grid.GetHashMap();
+    core::Tensor active_buf_indices;
+    hashmap->GetActiveIndices(active_buf_indices);
+    active_buf_indices = active_buf_indices.To(core::Int64);
 
     hashmap->GetKeyTensor()
-            .IndexGet({active_addrs})
+            .IndexGet({active_buf_indices})
             .Save(params.GetSubfolderName() + "/ctr_grid_keys.npy");
     // Check if same.
     core::Tensor output_control_grid_keys = core::Tensor::Load(
@@ -144,7 +136,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
             test_slac_folder + "/0.050" + "/ctr_grid_keys.npy");
 
     hashmap->GetValueTensor()
-            .IndexGet({active_addrs})
+            .IndexGet({active_buf_indices})
             .Save(params.GetSubfolderName() + "/ctr_grid_values.npy");
     // Check if same.
     core::Tensor output_control_grid_values = core::Tensor::Load(
@@ -187,9 +179,8 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
 TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     core::Device device = GetParam();
 
-    std::string dataset_folder =
-            std::string(TEST_DATA_DIR) +
-            "/reconstruction_system/livingroom1_clean_micro";
+    std::string dataset_folder = utility::GetDataPathCommon(
+            "reconstruction_system/livingroom1_clean_micro");
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string color_folder = dataset_folder + "/image";
     std::string depth_folder = dataset_folder + "/depth";
@@ -225,9 +216,9 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     float depth_scale = 1000.f;
     float max_depth = 3.f;
     float sdf_trunc = 0.04f;
-    t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
-                                           {"weight", core::Dtype::UInt16},
-                                           {"color", core::Dtype::UInt16}},
+    t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Float32},
+                                           {"weight", core::UInt16},
+                                           {"color", core::UInt16}},
                                           voxel_size, sdf_trunc, 16,
                                           block_count, device);
 
@@ -284,10 +275,6 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
             ++k;
             utility::LogDebug("{}: Deformation + Integration takes {}", k,
                               timer.GetDuration());
-
-#ifdef BUILD_CUDA_MODULE
-            core::CUDACachedMemoryManager::ReleaseCache();
-#endif
         }
     }
 

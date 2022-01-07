@@ -35,8 +35,10 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Eigen.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace geometry {
@@ -46,6 +48,7 @@ PointCloud &PointCloud::Clear() {
     normals_.clear();
     colors_.clear();
     color_gradients_.clear();
+    covariances_.clear();
     return *this;
 }
 
@@ -65,13 +68,14 @@ AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(points_);
 }
 
-OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromPoints(points_);
+OrientedBoundingBox PointCloud::GetOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(points_, robust);
 }
 
 PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
     TransformPoints(transformation, points_);
     TransformNormals(transformation, normals_);
+    TransformCovariances(transformation, covariances_);
     return *this;
 }
 
@@ -91,6 +95,7 @@ PointCloud &PointCloud::Rotate(const Eigen::Matrix3d &R,
                                const Eigen::Vector3d &center) {
     RotatePoints(R, points_, center);
     RotateNormals(R, normals_);
+    RotateCovariances(R, covariances_);
     return *this;
 }
 
@@ -146,7 +151,8 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
     std::vector<double> distances(points_.size());
     KDTreeFlann kdtree;
     kdtree.SetGeometry(target);
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices(1);
         std::vector<double> dists(1);
@@ -164,9 +170,10 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
 
 PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
                                               bool remove_infinite) {
-    bool has_normal = HasNormals();
-    bool has_color = HasColors();
-    bool has_color_gradient = HasColorGradients();
+    const bool has_normal = HasNormals();
+    const bool has_color = HasColors();
+    const bool has_color_gradient = HasColorGradients();
+    const bool has_covariance = HasCovariances();
     size_t old_point_num = points_.size();
     size_t k = 0;                                 // new index
     for (size_t i = 0; i < old_point_num; i++) {  // old index
@@ -181,12 +188,14 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
             if (has_normal) normals_[k] = normals_[i];
             if (has_color) colors_[k] = colors_[i];
             if (has_color_gradient) color_gradients_[k] = color_gradients_[i];
+            if (has_covariance) covariances_[k] = covariances_[i];
             k++;
         }
     }
     points_.resize(k);
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
+    if (has_covariance) covariances_.resize(k);
     utility::LogDebug(
             "[RemoveNonFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
@@ -196,9 +205,10 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
 std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
         const std::vector<size_t> &indices, bool invert /* = false */) const {
     auto output = std::make_shared<PointCloud>();
-    bool has_normals = HasNormals();
-    bool has_colors = HasColors();
-    bool has_color_gradient = HasColorGradients();
+    const bool has_normals = HasNormals();
+    const bool has_colors = HasColors();
+    const bool has_color_gradient = HasColorGradients();
+    const bool has_covariance = HasCovariances();
 
     std::vector<bool> mask = std::vector<bool>(points_.size(), invert);
     for (size_t i : indices) {
@@ -212,6 +222,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
             if (has_colors) output->colors_.push_back(colors_[i]);
             if (has_color_gradient)
                 output->color_gradients_.push_back(color_gradients_[i]);
+            if (has_covariance) output->covariances_.push_back(covariances_[i]);
         }
     }
     utility::LogDebug(
@@ -239,6 +250,10 @@ public:
         if (cloud.HasColorGradients()) {
             color_gradient_ += cloud.color_gradients_[index];
         }
+
+        if (cloud.HasCovariances()) {
+            covariance_ += cloud.covariances_[index];
+        }
         num_of_points_++;
     }
 
@@ -259,12 +274,17 @@ public:
         return color_gradient_ / double(num_of_points_);
     }
 
+    Eigen::Matrix3d GetAverageCovariance() const {
+        return covariance_ / double(num_of_points_);
+    }
+
 public:
     int num_of_points_ = 0;
     Eigen::Vector3d point_ = Eigen::Vector3d::Zero();
     Eigen::Vector3d normal_ = Eigen::Vector3d::Zero();
     Eigen::Vector3d color_ = Eigen::Vector3d::Zero();
     Eigen::Vector3d color_gradient_ = Eigen::Vector3d::Zero();
+    Eigen::Matrix3d covariance_ = Eigen::Matrix3d::Zero();
 };
 
 class point_cubic_id {
@@ -297,6 +317,9 @@ public:
             } else {
                 color_ += cloud.colors_[index];
             }
+        }
+        if (cloud.HasCovariances()) {
+            covariance_ += cloud.covariances_[index];
         }
         point_cubic_id new_id;
         new_id.point_id = index;
@@ -352,18 +375,25 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
                 int(floor(ref_coord(2)));
         voxelindex_to_accpoint[voxel_index].AddPoint(*this, i);
     }
-
+    const bool has_normals = HasNormals();
+    const bool has_colors = HasColors();
+    const bool has_color_gradients = HasColorGradients();
+    const bool has_covariances = HasCovariances();
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
-        if (HasNormals()) {
+        if (has_normals) {
             output->normals_.push_back(accpoint.second.GetAverageNormal());
         }
-        if (HasColors()) {
+        if (has_colors) {
             output->colors_.push_back(accpoint.second.GetAverageColor());
         }
-        if (HasColorGradients()) {
-            output->color_gradients_.push_back(
+        if (has_color_gradients) {
+            output->color_gradients_.emplace_back(
                     accpoint.second.GetAverageColorGradient());
+        }
+        if (has_covariances) {
+            output->covariances_.emplace_back(
+                    accpoint.second.GetAverageCovariance());
         }
     }
     utility::LogDebug(
@@ -411,7 +441,10 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
         voxelindex_to_accpoint[voxel_index].AddPoint(
                 *this, static_cast<size_t>(i), cid, approximate_class);
     }
-
+    const bool has_normals = HasNormals();
+    const bool has_colors = HasColors();
+    const bool has_color_gradients = HasColorGradients();
+    const bool has_covariances = HasCovariances();
     int cnt = 0;
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
     cubic_id.setConstant(-1);
@@ -419,19 +452,23 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
             voxelindex_to_accpoint.size());
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
-        if (HasNormals()) {
+        if (has_normals) {
             output->normals_.push_back(accpoint.second.GetAverageNormal());
         }
-        if (HasColors()) {
+        if (has_colors) {
             if (approximate_class) {
                 output->colors_.push_back(accpoint.second.GetMaxClass());
             } else {
                 output->colors_.push_back(accpoint.second.GetAverageColor());
             }
         }
-        if (HasColorGradients()) {
-            output->color_gradients_.push_back(
+        if (has_color_gradients) {
+            output->color_gradients_.emplace_back(
                     accpoint.second.GetAverageColorGradient());
+        }
+        if (has_covariances) {
+            output->covariances_.emplace_back(
+                    accpoint.second.GetAverageCovariance());
         }
         auto original_id = accpoint.second.GetOriginalID();
         for (int i = 0; i < (int)original_id.size(); i++) {
@@ -496,7 +533,9 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
 }
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
+PointCloud::RemoveRadiusOutliers(size_t nb_points,
+                                 double search_radius,
+                                 bool print_progress /* = false */) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogError(
                 "[RemoveRadiusOutliers] Illegal input parameters,"
@@ -505,13 +544,17 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     std::vector<bool> mask = std::vector<bool>(points_.size());
-#pragma omp parallel for schedule(static)
+    utility::OMPProgressBar progress_bar(
+            points_.size(), "Remove radius outliers: ", print_progress);
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
         size_t nb_neighbors = kdtree.SearchRadius(points_[i], search_radius,
                                                   tmp_indices, dist);
         mask[i] = (nb_neighbors > nb_points);
+        ++progress_bar;
     }
     std::vector<size_t> indices;
     for (size_t i = 0; i < mask.size(); i++) {
@@ -524,7 +567,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points, double search_radius) const {
 
 std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
 PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
-                                      double std_ratio) const {
+                                      double std_ratio,
+                                      bool print_progress /* = false */) const {
     if (nb_neighbors < 1 || std_ratio <= 0) {
         utility::LogError(
                 "[RemoveStatisticalOutliers] Illegal input parameters, number "
@@ -539,8 +583,10 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     std::vector<double> avg_distances = std::vector<double>(points_.size());
     std::vector<size_t> indices;
     size_t valid_distances = 0;
+    utility::OMPProgressBar progress_bar(
+            points_.size(), "Remove statistical outliers: ", print_progress);
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for reduction(+ : valid_distances) schedule(static) num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
         std::vector<int> tmp_indices;
         std::vector<double> dist;
@@ -553,6 +599,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
             mean = std::accumulate(dist.begin(), dist.end(), 0.0) / dist.size();
         }
         avg_distances[i] = mean;
+        ++progress_bar;
     }
     if (valid_distances == 0) {
         return std::make_tuple(std::make_shared<PointCloud>(),
@@ -647,6 +694,38 @@ void PointCloud::EstimateColorGradients(
     }
 }
 
+std::vector<Eigen::Matrix3d> PointCloud::EstimatePerPointCovariances(
+        const PointCloud &input,
+        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
+    const auto &points = input.points_;
+    std::vector<Eigen::Matrix3d> covariances;
+    covariances.resize(points.size());
+
+    KDTreeFlann kdtree;
+    kdtree.SetGeometry(input);
+#pragma omp parallel for schedule(static)
+    for (int i = 0; i < (int)points.size(); i++) {
+        std::vector<int> indices;
+        std::vector<double> distance2;
+        if (kdtree.Search(points[i], search_param, indices, distance2) >= 3) {
+            auto covariance = utility::ComputeCovariance(points, indices);
+            if (input.HasCovariances() && covariance.isIdentity(1e-4)) {
+                covariances[i] = input.covariances_[i];
+            } else {
+                covariances[i] = covariance;
+            }
+        } else {
+            covariances[i] = Eigen::Matrix3d::Identity();
+        }
+    }
+    return covariances;
+}
+
+void PointCloud::EstimateCovariances(
+        const KDTreeSearchParam &search_param /* = KDTreeSearchParamKNN()*/) {
+    this->covariances_ = EstimatePerPointCovariances(*this, search_param);
+}
+
 std::tuple<Eigen::Vector3d, Eigen::Matrix3d>
 PointCloud::ComputeMeanAndCovariance() const {
     if (IsEmpty()) {
@@ -664,7 +743,8 @@ std::vector<double> PointCloud::ComputeMahalanobisDistance() const {
     Eigen::Matrix3d covariance;
     std::tie(mean, covariance) = ComputeMeanAndCovariance();
     Eigen::Matrix3d cov_inv = covariance.inverse();
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         Eigen::Vector3d p = points_[i] - mean;
         mahalanobis[i] = std::sqrt(p.transpose() * cov_inv * p);
@@ -679,7 +759,8 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
 
     std::vector<double> nn_dis(points_.size());
     KDTreeFlann kdtree(*this);
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)points_.size(); i++) {
         std::vector<int> indices(2);
         std::vector<double> dists(2);
@@ -696,8 +777,8 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
 }
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-PointCloud::ComputeConvexHull() const {
-    return Qhull::ComputeConvexHull(points_);
+PointCloud::ComputeConvexHull(bool joggle_inputs) const {
+    return Qhull::ComputeConvexHull(points_, joggle_inputs);
 }
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>

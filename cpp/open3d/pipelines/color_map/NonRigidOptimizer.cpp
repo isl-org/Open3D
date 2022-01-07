@@ -36,6 +36,7 @@
 #include "open3d/pipelines/color_map/ColorMapUtils.h"
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Parallel.h"
 
 namespace Eigen {
 
@@ -104,7 +105,7 @@ static std::tuple<MatOutType, VecOutType, double> ComputeJTJandJTrNonRigid(
             }
             r2_sum_private += r * r;
         }
-#pragma omp critical
+#pragma omp critical(ComputeJTJandJTrNonRigid)
         {
             JTJ += JTJ_private;
             JTr += JTr_private;
@@ -218,11 +219,11 @@ static void ComputeJacobianAndResidualNonRigid(
     r = (gray - proxy_intensity[vid]);
 }
 
-geometry::TriangleMesh RunNonRigidOptimizer(
-        const geometry::TriangleMesh& mesh,
-        const std::vector<geometry::RGBDImage>& images_rgbd,
-        const camera::PinholeCameraTrajectory& camera_trajectory,
-        const NonRigidOptimizerOption& option) {
+std::pair<geometry::TriangleMesh, camera::PinholeCameraTrajectory>
+RunNonRigidOptimizer(const geometry::TriangleMesh& mesh,
+                     const std::vector<geometry::RGBDImage>& images_rgbd,
+                     const camera::PinholeCameraTrajectory& camera_trajectory,
+                     const NonRigidOptimizerOption& option) {
     // The following properties will change during optimization.
     geometry::TriangleMesh opt_mesh = mesh;
     camera::PinholeCameraTrajectory opt_camera_trajectory = camera_trajectory;
@@ -302,7 +303,8 @@ geometry::TriangleMesh RunNonRigidOptimizer(
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         double residual_reg = 0.0;
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int c = 0; c < n_camera; c++) {
             int nonrigidval = warping_fields[c].anchor_w_ *
                               warping_fields[c].anchor_h_ * 2;
@@ -362,7 +364,7 @@ geometry::TriangleMesh RunNonRigidOptimizer(
             }
             opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
 
-#pragma omp critical
+#pragma omp critical(RunNonRigidOptimizer)
             {
                 residual += r2;
                 residual_reg += rr_reg;
@@ -411,7 +413,7 @@ geometry::TriangleMesh RunNonRigidOptimizer(
                             option.image_boundary_margin_,
                             option.invisible_vertex_color_knn_);
 
-    return opt_mesh;
+    return std::make_pair(opt_mesh, opt_camera_trajectory);
 }
 
 }  // namespace color_map

@@ -137,6 +137,9 @@ public:
     int GetPointSize() const;
     void SetPointSize(int size);
 
+    bool GetUserWantsEstimateNormals();
+    void EstimateNormalsClicked();
+
     bool GetDisplayingPointClouds() const;
     /// If true, enables point size
     void SetDisplayingPointClouds(bool displaying);
@@ -162,6 +165,7 @@ private:
     bool user_has_changed_lighting_profile_ = false;
     bool user_has_customized_lighting_ = false;
     bool displaying_point_clouds_ = false;
+    bool user_wants_estimate_normals_ = false;
 
     std::function<void(bool)> on_changed_;
 

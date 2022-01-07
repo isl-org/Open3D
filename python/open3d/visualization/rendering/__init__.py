@@ -1,3 +1,4 @@
+# ----------------------------------------------------------------------------
 # -                        Open3D: www.open3d.org                            -
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
@@ -22,6 +23,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
+"""Functionality for Physically Based Rendering."""
 
 if "@BUILD_GUI@" == "ON":
     import open3d

@@ -33,8 +33,9 @@
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace io {
@@ -248,7 +249,7 @@ bool WriteTriangleMeshToOBJ(const std::string& filename,
     file << "# number of vertices: " << mesh.vertices_.size() << std::endl;
     file << "# number of triangles: " << mesh.triangles_.size() << std::endl;
 
-    utility::ConsoleProgressBar progress_bar(
+    utility::ProgressBar progress_bar(
             mesh.vertices_.size() + mesh.triangles_.size(),
             "Writing OBJ: ", print_progress);
 

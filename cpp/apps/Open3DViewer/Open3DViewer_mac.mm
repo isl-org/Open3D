@@ -68,7 +68,7 @@ protected:
                 // This will set the users personal default to use Open3D for
                 // the file types below. THIS SHOULD ONLY BE CALLED
                 // AFTER THE USER EXPLICITLY CONFIRMS THAT THEY WANT TO DO THIS!
-                CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.intel-isl.open3d.Open3D";
+                CFStringRef open3dBundleId = (__bridge CFStringRef)@"com.isl-org.open3d.Open3D";
                 // The UTIs should match what we declare in Info.plist
                 LSSetDefaultRoleHandlerForContentType(
                     (__bridge CFStringRef)@"public.gl-transmission-format",

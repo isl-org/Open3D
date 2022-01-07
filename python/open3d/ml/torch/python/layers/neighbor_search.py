@@ -25,6 +25,7 @@
 # ----------------------------------------------------------------------------
 
 from ...python import ops
+from ....torch import classes
 import torch
 
 __all__ = ['FixedRadiusSearch', 'RadiusSearch', 'KNNSearch']
@@ -86,9 +87,9 @@ class FixedRadiusSearch(torch.nn.Module):
 
         Arguments:
 
-          points: The 3D positions of the input points.
+          points: The 3D positions of the input points. It can be a RaggedTensor.
 
-          queries: The 3D positions of the query points.
+          queries: The 3D positions of the query points. It can be a RaggedTensor.
 
           radius: A scalar with the neighborhood radius
 
@@ -125,6 +126,13 @@ class FixedRadiusSearch(torch.nn.Module):
             Note that the distances are squared if metric is L2.
             This is a zero length Tensor if 'return_distances' is False.
         """
+        if isinstance(points, classes.RaggedTensor):
+            points_row_splits = points.row_splits
+            points = points.values
+        if isinstance(queries, classes.RaggedTensor):
+            queries_row_splits = queries.row_splits
+            queries = queries.values
+
         if points_row_splits is None:
             points_row_splits = torch.LongTensor([0, points.shape[0]])
         if queries_row_splits is None:

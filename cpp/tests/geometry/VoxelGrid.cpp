@@ -29,7 +29,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

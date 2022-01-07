@@ -15,7 +15,7 @@
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EposePRESS OR
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 // AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -30,8 +30,9 @@
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
@@ -39,22 +40,17 @@ namespace pipelines {
 namespace kernel {
 
 core::Tensor RtToTransformation(const core::Tensor &R, const core::Tensor &t) {
-    core::Device device = R.GetDevice();
-    core::Dtype dtype = R.GetDtype();
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(t, {3});
+    core::AssertTensorDtypes(R, {core::Float32, core::Float64});
 
-    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
-        utility::LogError(
-                " [RtToTransformation]: Only Float32 abd Float64 supported, "
-                "but got {} ",
-                dtype.ToString());
-    }
+    const core::Device device = R.GetDevice();
+    const core::Dtype dtype = R.GetDtype();
+
+    core::AssertTensorDtype(t, dtype);
+    core::AssertTensorDevice(t, device);
 
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
-    R.AssertShape({3, 3});
-    R.AssertDtype(dtype);
-    t.AssertShape({3});
-    t.AssertDevice(device);
-    t.AssertDtype(dtype);
 
     // Rotation.
     transformation.SetItem(
@@ -91,17 +87,11 @@ static void PoseToTransformationDevice(
 }
 
 core::Tensor PoseToTransformation(const core::Tensor &pose) {
-    core::Device device = pose.GetDevice();
-    core::Dtype dtype = pose.GetDtype();
+    core::AssertTensorShape(pose, {6});
+    core::AssertTensorDtypes(pose, {core::Float32, core::Float64});
 
-    if (dtype != core::Dtype::Float32 && dtype != core::Dtype::Float64) {
-        utility::LogError(
-                " [PoseToTransformation]: Only Float32 abd Float64 supported, "
-                "but got {} ",
-                dtype.ToString());
-    }
-
-    pose.AssertShape({6});
+    const core::Device device = pose.GetDevice();
+    const core::Dtype dtype = pose.GetDtype();
     core::Tensor transformation = core::Tensor::Zeros({4, 4}, dtype, device);
     transformation = transformation.Contiguous();
     core::Tensor pose_ = pose.Contiguous();
@@ -126,11 +116,13 @@ void DecodeAndSolve6x6(const core::Tensor &A_reduction,
                        float &inlier_residual,
                        int &inlier_count) {
     const core::Device host(core::Device("CPU:0"));
-    core::Tensor A_1x29_host = A_reduction.To(host, core::Dtype::Float64);
+    core::Tensor A_1x29_host = A_reduction.To(host, core::Float64);
+    core::AssertTensorShape(A_reduction, {29});
+
     double *A_1x29_ptr = A_1x29_host.GetDataPtr<double>();
 
-    core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Dtype::Float64, host);
-    core::Tensor Atb = core::Tensor::Empty({6}, core::Dtype::Float64, host);
+    core::Tensor AtA = core::Tensor::Empty({6, 6}, core::Float64, host);
+    core::Tensor Atb = core::Tensor::Empty({6}, core::Float64, host);
 
     double *AtA_local_ptr = AtA.GetDataPtr<double>();
     double *Atb_local_ptr = Atb.GetDataPtr<double>();

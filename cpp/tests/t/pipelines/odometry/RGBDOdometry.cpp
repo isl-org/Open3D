@@ -34,7 +34,7 @@
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -43,12 +43,6 @@ class OdometryPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Odometry,
                          OdometryPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
-
-class OdometryPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        Odometry,
-        OdometryPermuteDevicePairs,
-        testing::ValuesIn(OdometryPermuteDevicePairs::TestCases()));
 
 core::Tensor CreateIntrisicTensor() {
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
@@ -72,9 +66,9 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
     const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
+            utility::GetDataPathCommon("RGBD/depth/00000.png"));
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
+            utility::GetDataPathCommon("RGBD/depth/00002.png"));
 
     src_depth = src_depth.To(device);
     dst_depth = dst_depth.To(device);
@@ -93,7 +87,7 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
             dst_depth_processed.CreateVertexMap(intrinsic_t, NAN);
 
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
     for (int i = 0; i < 20; ++i) {
         auto result = t::pipelines::odometry::ComputeOdometryResultPointToPlane(
                 src_vertex_map.AsTensor(), dst_vertex_map.AsTensor(),
@@ -123,7 +117,7 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
             host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
-            trans.To(host, core::Dtype::Float64).Inverse());
+            trans.To(host, core::Float64).Inverse());
     core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 3e-4);
 }
@@ -140,13 +134,13 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
     const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
+            utility::GetDataPathCommon("RGBD/depth/00000.png"));
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
+            utility::GetDataPathCommon("RGBD/depth/00002.png"));
     t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00000.jpg");
+            utility::GetDataPathCommon("RGBD/color/00000.jpg"));
     t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00002.jpg");
+            utility::GetDataPathCommon("RGBD/color/00002.jpg"));
 
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);
@@ -161,7 +155,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
             src, dst, intrinsic_t, trans, depth_scale, depth_max,
             std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
@@ -190,7 +184,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
             host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
-            result.transformation_.To(host, core::Dtype::Float64).Inverse());
+            result.transformation_.To(host, core::Float64).Inverse());
     core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
 }
@@ -207,13 +201,13 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
     const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
+            utility::GetDataPathCommon("RGBD/depth/00000.png"));
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
+            utility::GetDataPathCommon("RGBD/depth/00002.png"));
     t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00000.jpg");
+            utility::GetDataPathCommon("RGBD/color/00000.jpg"));
     t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00002.jpg");
+            utility::GetDataPathCommon("RGBD/color/00002.jpg"));
 
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);
@@ -228,7 +222,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
             src, dst, intrinsic_t, trans, depth_scale, depth_max,
             std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
@@ -257,7 +251,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
             host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
-            result.transformation_.To(host, core::Dtype::Float64).Inverse());
+            result.transformation_.To(host, core::Float64).Inverse());
     core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
 }
@@ -274,13 +268,13 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     const float depth_diff = 0.07;
 
     t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00000.png");
+            utility::GetDataPathCommon("RGBD/depth/00000.png"));
     t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/depth/00002.png");
+            utility::GetDataPathCommon("RGBD/depth/00002.png"));
     t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00000.jpg");
+            utility::GetDataPathCommon("RGBD/color/00000.jpg"));
     t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            std::string(TEST_DATA_DIR) + "/RGBD/color/00002.jpg");
+            utility::GetDataPathCommon("RGBD/color/00002.jpg"));
 
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);
@@ -295,7 +289,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
 
     core::Tensor intrinsic_t = CreateIntrisicTensor();
     core::Tensor trans =
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0"));
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
     auto result = t::pipelines::odometry::RGBDOdometryMultiScale(
             src, dst, intrinsic_t, trans, depth_scale, depth_max,
             std::vector<t::pipelines::odometry::OdometryConvergenceCriteria>{
@@ -324,7 +318,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
             host);
 
     core::Tensor Tdiff = T2.Inverse().Matmul(T0).Matmul(
-            result.transformation_.To(host, core::Dtype::Float64).Inverse());
+            result.transformation_.To(host, core::Float64).Inverse());
     core::Tensor Ttrans = Tdiff.Slice(0, 0, 3).Slice(1, 3, 4);
     EXPECT_LE(Ttrans.T().Matmul(Ttrans).Item<double>(), 5e-5);
 }

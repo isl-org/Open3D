@@ -29,16 +29,16 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/hashmap/CPU/TBBHashmap.h"
+#include "open3d/core/hashmap/CPU/TBBHashBackend.h"
 #include "open3d/core/hashmap/Dispatch.h"
-#include "open3d/core/kernel/CPULauncher.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/t/geometry/kernel/TSDFVoxelGridImpl.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
@@ -68,7 +68,7 @@ struct Coord3iHash {
     }
 };
 
-void TouchCPU(std::shared_ptr<core::Hashmap>&
+void TouchCPU(std::shared_ptr<core::HashMap>&
                       hashmap,  // dummy for now, one pass insertion is faster
               const core::Tensor& points,
               core::Tensor& voxel_block_coords,
@@ -82,32 +82,25 @@ void TouchCPU(std::shared_ptr<core::Hashmap>&
     const float* pcd_ptr = static_cast<const float*>(points.GetDataPtr());
 
     tbb::concurrent_unordered_set<Coord3i, Coord3iHash> set;
-    core::kernel::CPULauncher::LaunchGeneralKernel(
-            n, [&](int64_t workload_idx) {
-                float x = pcd_ptr[3 * workload_idx + 0];
-                float y = pcd_ptr[3 * workload_idx + 1];
-                float z = pcd_ptr[3 * workload_idx + 2];
+    core::ParallelFor(core::Device("CPU:0"), n, [&](int64_t workload_idx) {
+        float x = pcd_ptr[3 * workload_idx + 0];
+        float y = pcd_ptr[3 * workload_idx + 1];
+        float z = pcd_ptr[3 * workload_idx + 2];
 
-                int xb_lo = static_cast<int>(
-                        std::floor((x - sdf_trunc) / block_size));
-                int xb_hi = static_cast<int>(
-                        std::floor((x + sdf_trunc) / block_size));
-                int yb_lo = static_cast<int>(
-                        std::floor((y - sdf_trunc) / block_size));
-                int yb_hi = static_cast<int>(
-                        std::floor((y + sdf_trunc) / block_size));
-                int zb_lo = static_cast<int>(
-                        std::floor((z - sdf_trunc) / block_size));
-                int zb_hi = static_cast<int>(
-                        std::floor((z + sdf_trunc) / block_size));
-                for (int xb = xb_lo; xb <= xb_hi; ++xb) {
-                    for (int yb = yb_lo; yb <= yb_hi; ++yb) {
-                        for (int zb = zb_lo; zb <= zb_hi; ++zb) {
-                            set.emplace(xb, yb, zb);
-                        }
-                    }
+        int xb_lo = static_cast<int>(std::floor((x - sdf_trunc) / block_size));
+        int xb_hi = static_cast<int>(std::floor((x + sdf_trunc) / block_size));
+        int yb_lo = static_cast<int>(std::floor((y - sdf_trunc) / block_size));
+        int yb_hi = static_cast<int>(std::floor((y + sdf_trunc) / block_size));
+        int zb_lo = static_cast<int>(std::floor((z - sdf_trunc) / block_size));
+        int zb_hi = static_cast<int>(std::floor((z + sdf_trunc) / block_size));
+        for (int xb = xb_lo; xb <= xb_hi; ++xb) {
+            for (int yb = yb_lo; yb <= yb_hi; ++yb) {
+                for (int zb = zb_lo; zb <= zb_hi; ++zb) {
+                    set.emplace(xb, yb, zb);
                 }
-            });
+            }
+        }
+    });
 
     int64_t block_count = set.size();
     if (block_count == 0) {
@@ -117,8 +110,8 @@ void TouchCPU(std::shared_ptr<core::Hashmap>&
                 "especially depth_scale and voxel_size");
     }
 
-    voxel_block_coords = core::Tensor({block_count, 3}, core::Dtype::Int32,
-                                      points.GetDevice());
+    voxel_block_coords =
+            core::Tensor({block_count, 3}, core::Int32, points.GetDevice());
     int* block_coords_ptr = static_cast<int*>(voxel_block_coords.GetDataPtr());
     int count = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++count) {

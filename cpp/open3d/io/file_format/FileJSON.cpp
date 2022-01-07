@@ -30,7 +30,7 @@
 #include <sstream>
 
 #include "open3d/io/IJsonConvertibleIO.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 

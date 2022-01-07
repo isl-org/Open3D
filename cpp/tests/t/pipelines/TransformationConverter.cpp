@@ -28,7 +28,7 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -38,18 +38,10 @@ INSTANTIATE_TEST_SUITE_P(TransformationConverter,
                          TransformationConverterPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class TransformationConverterPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        TransformationConverter,
-        TransformationConverterPermuteDevicePairs,
-        testing::ValuesIn(
-                TransformationConverterPermuteDevicePairs::TestCases()));
-
 TEST_P(TransformationConverterPermuteDevices, RtToTransformation) {
     core::Device device = GetParam();
 
-    for (const core::Dtype& dtype :
-         {core::Dtype::Float32, core::Dtype::Float64}) {
+    for (const core::Dtype& dtype : {core::Float32, core::Float64}) {
         core::Tensor rotation = core::Tensor::Eye(3, dtype, device);
         core::Tensor translation = core::Tensor::Zeros({3}, dtype, device);
         core::Tensor transformation_ =
@@ -63,8 +55,7 @@ TEST_P(TransformationConverterPermuteDevices, RtToTransformation) {
 TEST_P(TransformationConverterPermuteDevices, PoseToTransformation) {
     core::Device device = GetParam();
 
-    for (const core::Dtype& dtype :
-         {core::Dtype::Float32, core::Dtype::Float64}) {
+    for (const core::Dtype& dtype : {core::Float32, core::Float64}) {
         core::Tensor pose = core::Tensor::Zeros({6}, dtype, device);
         core::Tensor transformation_ =
                 t::pipelines::kernel::PoseToTransformation(pose);

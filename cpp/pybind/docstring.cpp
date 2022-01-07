@@ -33,8 +33,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace docstring {
@@ -299,7 +299,7 @@ std::string FunctionDoc::ToGoogleDocString() const {
 }
 
 std::string FunctionDoc::NamespaceFix(const std::string& s) {
-    std::string rc = std::regex_replace(s, std::regex("::"), ".");
+    std::string rc = std::regex_replace(s, std::regex("::(\\S)"), ".$1");
     rc = std::regex_replace(rc, std::regex("open3d\\.(cpu|cuda)\\.pybind\\."),
                             "open3d.");
     return rc;

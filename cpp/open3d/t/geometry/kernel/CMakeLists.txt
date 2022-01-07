@@ -1,12 +1,16 @@
-add_library(tgeometry_kernel OBJECT)
+open3d_ispc_add_library(tgeometry_kernel OBJECT)
 
 target_sources(tgeometry_kernel PRIVATE
     Image.cpp
     ImageCPU.cpp
     PointCloud.cpp
     PointCloudCPU.cpp
+    Transform.cpp
+    TransformCPU.cpp
     TSDFVoxelGrid.cpp
     TSDFVoxelGridCPU.cpp
+    VoxelBlockGrid.cpp
+    VoxelBlockGridCPU.cpp
 )
 
 if (BUILD_CUDA_MODULE)
@@ -14,7 +18,9 @@ if (BUILD_CUDA_MODULE)
         ImageCUDA.cu
         NPPImage.cpp
         PointCloudCUDA.cu
+        TransformCUDA.cu
         TSDFVoxelGridCUDA.cu
+        VoxelBlockGridCUDA.cu
     )
 endif()
 

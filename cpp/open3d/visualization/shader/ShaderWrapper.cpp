@@ -27,7 +27,7 @@
 #include "open3d/visualization/shader/ShaderWrapper.h"
 
 #include "open3d/geometry/Geometry.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace visualization {

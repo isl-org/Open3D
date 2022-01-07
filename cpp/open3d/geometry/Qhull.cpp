@@ -33,13 +33,14 @@
 #include "libqhullcpp/QhullVertexSet.h"
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-Qhull::ComputeConvexHull(const std::vector<Eigen::Vector3d>& points) {
+Qhull::ComputeConvexHull(const std::vector<Eigen::Vector3d>& points,
+                         bool joggle_inputs) {
     auto convex_hull = std::make_shared<TriangleMesh>();
     std::vector<size_t> pt_map;
 
@@ -55,8 +56,13 @@ Qhull::ComputeConvexHull(const std::vector<Eigen::Vector3d>& points) {
     qhull_points.append(qhull_points_data);
 
     orgQhull::Qhull qhull;
+    std::string options = "Qt";
+    if (joggle_inputs) {
+        options += " QJ";
+    }
     qhull.runQhull(qhull_points.comment().c_str(), qhull_points.dimension(),
-                   qhull_points.count(), qhull_points.coordinates(), "Qt");
+                   qhull_points.count(), qhull_points.coordinates(),
+                   options.c_str());
 
     orgQhull::QhullFacetList facets = qhull.facetList();
     convex_hull->triangles_.resize(facets.count());
@@ -92,10 +98,24 @@ Qhull::ComputeConvexHull(const std::vector<Eigen::Vector3d>& points) {
         tidx++;
     }
 
+    auto center = convex_hull->GetCenter();
     for (Eigen::Vector3i& triangle : convex_hull->triangles_) {
         triangle(0) = vert_map[triangle(0)];
         triangle(1) = vert_map[triangle(1)];
         triangle(2) = vert_map[triangle(2)];
+
+        Eigen::Vector3d e1 = convex_hull->vertices_[triangle(1)] -
+                             convex_hull->vertices_[triangle(0)];
+        Eigen::Vector3d e2 = convex_hull->vertices_[triangle(2)] -
+                             convex_hull->vertices_[triangle(0)];
+        auto normal = e1.cross(e2);
+
+        auto triangle_center = (1. / 3) * (convex_hull->vertices_[triangle(0)] +
+                                           convex_hull->vertices_[triangle(1)] +
+                                           convex_hull->vertices_[triangle(2)]);
+        if (normal.dot(triangle_center - center) < 0) {
+            std::swap(triangle(0), triangle(1));
+        }
     }
 
     return std::make_tuple(convex_hull, pt_map);
@@ -118,6 +138,7 @@ Qhull::ComputeDelaunayTetrahedralization(
     if (points.size() == 4) {
         delaunay_triangulation->vertices_ = points;
         delaunay_triangulation->tetras_.push_back(Vector4i(0, 1, 2, 3));
+        pt_map.insert(pt_map.end(), {0, 1, 2, 3});
         return std::make_tuple(delaunay_triangulation, pt_map);
     }
 

@@ -32,7 +32,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
-#ifdef WINDOWS
+#ifdef WIN32
 #include <direct.h>
 #include <dirent/dirent.h>
 #include <io.h>
@@ -47,11 +47,61 @@
 #include <unistd.h>
 #endif
 
-#include "open3d/utility/Console.h"
+#ifdef WIN32
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#endif
+#ifdef __APPLE__
+// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
+#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
+#endif
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace utility {
 namespace filesystem {
+
+static std::string GetEnvVar(const std::string &env_var) {
+    if (const char *env_p = std::getenv(env_var.c_str())) {
+        return std::string(env_p);
+    } else {
+        return "";
+    }
+}
+
+std::string GetHomeDirectory() {
+    std::string home_dir = "";
+#ifdef WINDOWS
+    // %USERPROFILE%
+    // %HOMEDRIVE%
+    // %HOMEPATH%
+    // %HOME%
+    // C:/
+    home_dir = GetEnvVar("USERPROFILE");
+    if (home_dir.empty() || !DirectoryExists(home_dir)) {
+        home_dir = GetEnvVar("HOMEDRIVE");
+        if (home_dir.empty() || !DirectoryExists(home_dir)) {
+            home_dir = GetEnvVar("HOMEPATH");
+            if (home_dir.empty() || !DirectoryExists(home_dir)) {
+                home_dir = GetEnvVar("HOME");
+                if (home_dir.empty() || !DirectoryExists(home_dir)) {
+                    home_dir = "C:/";
+                }
+            }
+        }
+    }
+#else
+    // $HOME
+    // /
+    home_dir = GetEnvVar("HOME");
+    if (home_dir.empty() || !DirectoryExists(home_dir)) {
+        home_dir = "/";
+    }
+#endif
+    return home_dir;
+}
 
 std::string GetFileExtensionInLowerCase(const std::string &filename) {
     size_t dot_pos = filename.find_last_of(".");
@@ -217,11 +267,13 @@ bool MakeDirectoryHierarchy(const std::string &directory) {
 }
 
 bool DeleteDirectory(const std::string &directory) {
-#ifdef WINDOWS
-    return (_rmdir(directory.c_str()) == 0);
-#else
-    return (rmdir(directory.c_str()) == 0);
-#endif
+    std::error_code error;
+    if (fs::remove_all(directory, error) == static_cast<std::uintmax_t>(-1)) {
+        utility::LogWarning("Failed to remove directory {}: {}.", directory,
+                            error.message());
+        return false;
+    }
+    return true;
 }
 
 bool FileExists(const std::string &filename) {

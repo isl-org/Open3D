@@ -1,4 +1,4 @@
-add_library(pipelines OBJECT)
+open3d_ispc_add_library(pipelines OBJECT)
 
 target_sources(pipelines PRIVATE
     color_map/ColorMapUtils.cpp
@@ -21,6 +21,7 @@ target_sources(pipelines PRIVATE
     registration/CorrespondenceChecker.cpp
     registration/FastGlobalRegistration.cpp
     registration/Feature.cpp
+    registration/GeneralizedICP.cpp
     registration/GlobalOptimization.cpp
     registration/PoseGraph.cpp
     registration/Registration.cpp

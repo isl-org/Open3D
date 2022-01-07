@@ -164,7 +164,7 @@ static CorrespondenceSetPixelWise ComputeCorrespondence(
                 }
             }
         }
-#pragma omp critical
+#pragma omp critical(ComputeCorrespondence)
         {
             MergeCorrespondenceMaps(correspondence_map, depth_buffer,
                                     correspondence_map_private,
@@ -279,7 +279,7 @@ static Eigen::Matrix6d CreateInformationMatrix(
             G_r_private(5) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
-#pragma omp critical
+#pragma omp critical(CreateInformationMatrix)
         { GTG += GTG_private; }
     }
     return GTG;

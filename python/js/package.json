@@ -6,7 +6,7 @@
   "main": "lib/index.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/intel-isl/Open3D.git"
+    "url": "https://github.com/isl-org/Open3D.git"
   },
   "license": "MIT",
   "keywords": [

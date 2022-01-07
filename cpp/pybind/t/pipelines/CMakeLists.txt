@@ -8,8 +8,13 @@ target_sources(pybind PRIVATE
 
 target_sources(pybind PRIVATE
     registration/registration.cpp
+    registration/robust_kernel.cpp
 )
 
 target_sources(pybind PRIVATE
     slac/slac.cpp
+)
+
+target_sources(pybind PRIVATE
+    slam/slam.cpp
 )

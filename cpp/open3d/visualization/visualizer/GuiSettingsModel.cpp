@@ -26,7 +26,7 @@
 
 #include "open3d/visualization/visualizer/GuiSettingsModel.h"
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace visualization {
@@ -239,6 +239,7 @@ void GuiSettingsModel::SetBackgroundColor(const Eigen::Vector3f& color) {
 const GuiSettingsModel::LightingProfile& GuiSettingsModel::GetLighting() const {
     return lighting_;
 }
+
 void GuiSettingsModel::SetLightingProfile(const LightingProfile& profile) {
     lighting_ = profile;
     user_has_changed_lighting_profile_ = true;
@@ -360,6 +361,20 @@ int GuiSettingsModel::GetPointSize() const {
 void GuiSettingsModel::SetPointSize(int size) {
     current_materials_.point_size = float(size);
     NotifyChanged(true);
+}
+
+bool GuiSettingsModel::GetUserWantsEstimateNormals() {
+    if (user_wants_estimate_normals_) {
+        user_wants_estimate_normals_ = false;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void GuiSettingsModel::EstimateNormalsClicked() {
+    user_wants_estimate_normals_ = true;
+    NotifyChanged();
 }
 
 bool GuiSettingsModel::GetDisplayingPointClouds() const {

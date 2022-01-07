@@ -29,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/RGBDImage.h"
 #include "pybind/docstring.h"
 #include "pybind/pybind_utils.h"
@@ -93,8 +94,7 @@ void pybind_image(py::module &m) {
               "consistency, and avoid using width, height, u, v, x, y for "
               "coordinates.",
               "rows"_a = 0, "cols"_a = 0, "channels"_a = 1,
-              "dtype"_a = core::Dtype::Float32,
-              "device"_a = core::Device("CPU:0"))
+              "dtype"_a = core::Float32, "device"_a = core::Device("CPU:0"))
             .def(py::init<core::Tensor &>(),
                  "Construct from a tensor. The tensor won't be copied and "
                  "memory will be shared.",
@@ -103,10 +103,20 @@ void pybind_image(py::module &m) {
                                     map_shared_argument_docstrings);
     // Buffer protocol.
     image.def_buffer([](Image &I) -> py::buffer_info {
-        return py::buffer_info(I.GetDataPtr(), I.GetDtype().ByteSize(),
+        if (I.GetDevice().GetType() != core::Device::DeviceType::CPU) {
+            utility::LogError(
+                    "Cannot convert image buffer since it's not on CPU. "
+                    "Convert to CPU image by calling .cpu() first.");
+        }
+        core::SizeVector strides_in_bytes = I.AsTensor().GetStrides();
+        const int64_t element_byte_size = I.GetDtype().ByteSize();
+        for (size_t i = 0; i < strides_in_bytes.size(); i++) {
+            strides_in_bytes[i] *= element_byte_size;
+        }
+        return py::buffer_info(I.GetDataPtr(), element_byte_size,
                                pybind_utils::DtypeToArrayFormat(I.GetDtype()),
                                I.AsTensor().NumDims(), I.AsTensor().GetShape(),
-                               I.AsTensor().GetStrides());
+                               strides_in_bytes);
     });
     // Info.
     image.def_property_readonly("dtype", &Image::GetDtype,
@@ -215,13 +225,18 @@ void pybind_image(py::module &m) {
               "device"_a, "copy"_a = false);
     image.def("clone", &Image::Clone,
               "Returns a copy of the Image on the same device.");
-    image.def("cpu", &Image::CPU,
-              "Transfer the Image to CPU. If the Image is "
-              "already on CPU, no copy will be performed.");
     image.def(
-            "cuda", &Image::CUDA,
-            "Transfer the Image to a CUDA device. If the Image is "
-            "already on the specified CUDA device, no copy will be performed.",
+            "cpu",
+            [](const Image &image) { return image.To(core::Device("CPU:0")); },
+            "Transfer the image to CPU. If the image "
+            "is already on CPU, no copy will be performed.");
+    image.def(
+            "cuda",
+            [](const Image &image, int device_id) {
+                return image.To(core::Device("CUDA", device_id));
+            },
+            "Transfer the image to a CUDA device. If the image is already "
+            "on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
 
     // Conversion.
@@ -241,10 +256,9 @@ void pybind_image(py::module &m) {
               "If true, a new tensor is always created; if false, the copy is "
               "avoided when the original tensor already has the targeted "
               "dtype."}});
-    image.def("to_legacy_image", &Image::ToLegacyImage,
-              "Convert to legacy Image type.");
-    image.def_static("from_legacy_image", &Image::FromLegacyImage,
-                     "image_legacy"_a, "device"_a = core::Device("CPU:0"),
+    image.def("to_legacy", &Image::ToLegacy, "Convert to legacy Image type.");
+    image.def_static("from_legacy", &Image::FromLegacy, "image_legacy"_a,
+                     "device"_a = core::Device("CPU:0"),
                      "Create a Image from a legacy Open3D Image.");
     image.def("as_tensor", &Image::AsTensor);
 
@@ -252,7 +266,7 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "Image", "get_max_bound");
     docstring::ClassMethodDocInject(m, "Image", "clear");
     docstring::ClassMethodDocInject(m, "Image", "is_empty");
-    docstring::ClassMethodDocInject(m, "Image", "to_legacy_image");
+    docstring::ClassMethodDocInject(m, "Image", "to_legacy");
 
     py::class_<RGBDImage, PyGeometry<RGBDImage>, std::shared_ptr<RGBDImage>,
                Geometry>
@@ -292,16 +306,25 @@ void pybind_image(py::module &m) {
                  "copy"_a = false)
             .def("clone", &RGBDImage::Clone,
                  "Returns a copy of the RGBDImage on the same device.")
-            .def("cpu", &RGBDImage::CPU,
-                 "Transfer the RGBDImage to CPU. If the RGBDImage is "
-                 "already on CPU, no copy will be performed.")
-            .def("cuda", &RGBDImage::CUDA,
-                 "Transfer the RGBDImage to a CUDA device. If the RGBDImage is "
-                 "already on the specified CUDA device, no copy will be "
-                 "performed.",
-                 "device_id"_a = 0)
+            .def(
+                    "cpu",
+                    [](const RGBDImage &rgbd_image) {
+                        return rgbd_image.To(core::Device("CPU:0"));
+                    },
+                    "Transfer the RGBD image to CPU. If the RGBD image "
+                    "is already on CPU, no copy will be performed.")
+            .def(
+                    "cuda",
+                    [](const RGBDImage &rgbd_image, int device_id) {
+                        return rgbd_image.To(core::Device("CUDA", device_id));
+                    },
+                    "Transfer the RGBD image to a CUDA device. If the RGBD "
+                    "image is already "
+                    "on the specified CUDA device, no copy will be performed.",
+                    "device_id"_a = 0)
+
             // Conversion.
-            .def("to_legacy_rgbd_image", &RGBDImage::ToLegacyRGBDImage,
+            .def("to_legacy", &RGBDImage::ToLegacy,
                  "Convert to legacy RGBDImage type.")
             // Description.
             .def("__repr__", &RGBDImage::ToString);
@@ -310,7 +333,7 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "RGBDImage", "get_max_bound");
     docstring::ClassMethodDocInject(m, "RGBDImage", "clear");
     docstring::ClassMethodDocInject(m, "RGBDImage", "is_empty");
-    docstring::ClassMethodDocInject(m, "RGBDImage", "to_legacy_rgbd_image");
+    docstring::ClassMethodDocInject(m, "RGBDImage", "to_legacy");
     docstring::ClassMethodDocInject(m, "RGBDImage", "__init__",
                                     map_shared_argument_docstrings);
 }

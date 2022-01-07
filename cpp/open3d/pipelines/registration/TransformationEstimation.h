@@ -50,6 +50,7 @@ enum class TransformationEstimationType {
     PointToPoint = 1,
     PointToPlane = 2,
     ColoredICP = 3,
+    GeneralizedICP = 4,
 };
 
 /// \class TransformationEstimation

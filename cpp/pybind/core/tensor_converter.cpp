@@ -27,7 +27,7 @@
 #include "pybind/core/tensor_converter.h"
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #ifdef _MSC_VER
 #pragma warning(disable : 4996)  // Use of [[deprecated]] feature
 #endif
@@ -161,7 +161,7 @@ Tensor PyTupleToTensor(const py::tuple& tuple,
 Tensor DoubleToTensor(double scalar_value,
                       utility::optional<Dtype> dtype,
                       utility::optional<Device> device) {
-    Dtype dtype_value = Dtype::Float64;
+    Dtype dtype_value = core::Float64;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
     }
@@ -169,7 +169,7 @@ Tensor DoubleToTensor(double scalar_value,
     if (device.has_value()) {
         device_value = device.value();
     }
-    return Tensor(std::vector<double>{scalar_value}, {}, Dtype::Float64,
+    return Tensor(std::vector<double>{scalar_value}, {}, core::Float64,
                   device_value)
             .To(dtype_value);
 }
@@ -177,7 +177,7 @@ Tensor DoubleToTensor(double scalar_value,
 Tensor IntToTensor(int64_t scalar_value,
                    utility::optional<Dtype> dtype,
                    utility::optional<Device> device) {
-    Dtype dtype_value = Dtype::Int64;
+    Dtype dtype_value = core::Int64;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
     }
@@ -185,7 +185,7 @@ Tensor IntToTensor(int64_t scalar_value,
     if (device.has_value()) {
         device_value = device.value();
     }
-    return Tensor(std::vector<int64_t>{scalar_value}, {}, Dtype::Int64,
+    return Tensor(std::vector<int64_t>{scalar_value}, {}, core::Int64,
                   device_value)
             .To(dtype_value);
 }
@@ -193,7 +193,7 @@ Tensor IntToTensor(int64_t scalar_value,
 Tensor BoolToTensor(bool scalar_value,
                     utility::optional<Dtype> dtype,
                     utility::optional<Device> device) {
-    Dtype dtype_value = Dtype::Bool;
+    Dtype dtype_value = core::Bool;
     if (dtype.has_value()) {
         dtype_value = dtype.value();
     }
@@ -201,8 +201,7 @@ Tensor BoolToTensor(bool scalar_value,
     if (device.has_value()) {
         device_value = device.value();
     }
-    return Tensor(std::vector<bool>{scalar_value}, {}, Dtype::Bool,
-                  device_value)
+    return Tensor(std::vector<bool>{scalar_value}, {}, core::Bool, device_value)
             .To(dtype_value);
 }
 
@@ -250,58 +249,6 @@ Tensor PyHandleToTensor(const py::handle& handle,
     } else {
         utility::LogError("PyHandleToTensor has invalid input type {}.",
                           class_name);
-    }
-}
-
-SizeVector PyTupleToSizeVector(const py::tuple& tuple) {
-    SizeVector shape;
-    for (const py::handle item : tuple) {
-        if (std::string(py::str(item.get_type())) == "<class 'int'>") {
-            shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
-        } else {
-            utility::LogError(
-                    "The tuple must be a 1D tuple of integers, but got {}.",
-                    item.attr("__str__")());
-        }
-    }
-    return shape;
-}
-
-SizeVector PyListToSizeVector(const py::list& list) {
-    SizeVector shape;
-    for (const py::handle item : list) {
-        if (std::string(py::str(item.get_type())) == "<class 'int'>") {
-            shape.push_back(static_cast<int64_t>(item.cast<py::int_>()));
-        } else {
-            utility::LogError(
-                    "The list must be a 1D list of integers, but got {}.",
-                    item.attr("__str__")());
-        }
-    }
-    return shape;
-}
-
-SizeVector PyHandleToSizeVector(const py::handle& handle) {
-    std::string class_name(py::str(handle.get_type()));
-    if (class_name == "<class 'int'>") {
-        return SizeVector{static_cast<int64_t>(handle.cast<py::int_>())};
-    } else if (class_name == "<class 'list'>") {
-        return PyListToSizeVector(handle.cast<py::list>());
-    } else if (class_name == "<class 'tuple'>") {
-        return PyTupleToSizeVector(handle.cast<py::tuple>());
-    } else if (class_name.find("SizeVector") != std::string::npos) {
-        try {
-            SizeVector* sv = handle.cast<SizeVector*>();
-            return SizeVector(sv->begin(), sv->end());
-        } catch (...) {
-            utility::LogError(
-                    "PyHandleToSizeVector: cannot cast to SizeVector.");
-        }
-    } else {
-        utility::LogError(
-                "PyHandleToSizeVector has invalid input type {}. Only int, "
-                "tuple and list are supported.",
-                class_name);
     }
 }
 

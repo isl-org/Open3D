@@ -27,12 +27,10 @@
 
 #define EIGEN_USE_GPU
 #include "FixedRadiusSearchOpKernel.h"
-#include "open3d/ml/Helper.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/nns/FixedRadiusSearchImpl.cuh"
 
 using namespace open3d;
-using namespace open3d::ml;
-using namespace open3d::ml::impl;
 using namespace fixed_radius_search_opkernel;
 using namespace tensorflow;
 
@@ -41,7 +39,8 @@ class FixedRadiusSearchOpKernelCUDA : public FixedRadiusSearchOpKernel {
 public:
     explicit FixedRadiusSearchOpKernelCUDA(OpKernelConstruction* construction)
         : FixedRadiusSearchOpKernel(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,
@@ -62,7 +61,7 @@ public:
         size_t temp_size = 0;
 
         // determine temp_size
-        FixedRadiusSearchCUDA(
+        open3d::core::nns::impl::FixedRadiusSearchCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
@@ -85,7 +84,7 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually run the search
-        FixedRadiusSearchCUDA(
+        open3d::core::nns::impl::FixedRadiusSearchCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),

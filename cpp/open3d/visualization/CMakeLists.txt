@@ -1,4 +1,4 @@
-add_library(visualization OBJECT)
+open3d_ispc_add_library(visualization OBJECT)
 
 target_sources(visualization PRIVATE
     shader/GeometryRenderer.cpp
@@ -42,6 +42,10 @@ target_sources(visualization PRIVATE
     visualizer/VisualizerWithVertexSelection.cpp
 )
 
+target_sources(visualization PRIVATE
+    rendering/Material.cpp  # For RPC serialization
+)
+
 if (BUILD_GUI)
     target_sources(visualization PRIVATE
         rendering/Camera.cpp
@@ -80,6 +84,7 @@ if (BUILD_GUI)
     )
 
     target_sources(visualization PRIVATE
+        visualizer/MessageProcessor.cpp
         visualizer/GuiSettingsModel.cpp
         visualizer/GuiSettingsView.cpp
         visualizer/GuiVisualizer.cpp
@@ -89,14 +94,8 @@ if (BUILD_GUI)
     )
 endif()
 
-if (BUILD_RPC_INTERFACE)
-    target_sources(visualization PRIVATE
-        visualizer/Receiver.cpp
-    )
-endif()
 
-
-include(add_encoded_shader)
+include(Open3DAddEncodedShader)
 
 open3d_add_encoded_shader(shader
     OUTPUT_HEADER

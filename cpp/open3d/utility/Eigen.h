@@ -40,7 +40,7 @@ typedef Eigen::Matrix<double, 6, 1> Vector6d;
 typedef Eigen::Matrix<uint8_t, 3, 1> Vector3uint8;
 
 /// Use Eigen::DontAlign for matrices inside classes which are exposed in the
-/// Open3D headers https://github.com/intel-isl/Open3D/issues/653
+/// Open3D headers https://github.com/isl-org/Open3D/issues/653
 typedef Eigen::Matrix<double, 6, 6, Eigen::DontAlign> Matrix6d_u;
 typedef Eigen::Matrix<double, 4, 4, Eigen::DontAlign> Matrix4d_u;
 
@@ -57,6 +57,9 @@ using Vector3uint8_allocator = Eigen::aligned_allocator<Eigen::Vector3uint8>;
 using Vector4i_allocator = Eigen::aligned_allocator<Eigen::Vector4i>;
 using Vector4d_allocator = Eigen::aligned_allocator<Eigen::Vector4d>;
 using Vector6d_allocator = Eigen::aligned_allocator<Eigen::Vector6d>;
+
+/// Genretate a skew-symmetric matrix from a vector 3x1.
+Eigen::Matrix3d SkewMatrix(const Eigen::Vector3d &vec);
 
 /// Function to transform 6D motion vector to 4D motion matrix
 /// Reference:

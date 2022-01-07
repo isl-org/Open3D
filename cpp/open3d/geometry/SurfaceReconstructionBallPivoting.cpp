@@ -32,7 +32,7 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {
@@ -336,6 +336,7 @@ public:
         const BallPivotingVertexPtr opp = edge->GetOppositeVertex();
         if (opp == nullptr) {
             utility::LogError("edge->GetOppositeVertex() returns nullptr.");
+            assert(opp == nullptr);
         }
         utility::LogDebug("[FindCandidateVertex] edge=({}, {}), opp={}",
                           src->idx_, tgt->idx_, opp->idx_);

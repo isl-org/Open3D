@@ -49,7 +49,7 @@ static PointCloud CreateTPCDFromFile(
         const core::Device& device = core::Device("CPU:0")) {
     std::shared_ptr<open3d::geometry::PointCloud> pcd =
             open3d::io::CreatePointCloudFromFile(fname);
-    return PointCloud::FromLegacyPointCloud(*pcd, core::Dtype::Float32, device);
+    return PointCloud::FromLegacy(*pcd, core::Float32, device);
 }
 
 static void FillInRigidAlignmentTerm(Tensor& AtA,
@@ -65,8 +65,9 @@ static void FillInRigidAlignmentTerm(Tensor& AtA,
     tpcd_i.Transform(Ti);
     tpcd_j.Transform(Tj);
 
-    kernel::FillInRigidAlignmentTerm(AtA, Atb, residual, tpcd_i.GetPoints(),
-                                     tpcd_j.GetPoints(),
+    kernel::FillInRigidAlignmentTerm(AtA, Atb, residual,
+                                     tpcd_i.GetPointPositions(),
+                                     tpcd_j.GetPointPositions(),
                                      tpcd_i.GetPointNormals(), i, j, threshold);
 }
 
@@ -95,16 +96,16 @@ void FillInRigidAlignmentTerm(Tensor& AtA,
         PointCloud tpcd_j = CreateTPCDFromFile(fnames[j], device);
 
         PointCloud tpcd_i_indexed(
-                tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}));
+                tpcd_i.GetPointPositions().IndexGet({corres_ij.T()[0]}));
         tpcd_i_indexed.SetPointNormals(
                 tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]}));
         PointCloud tpcd_j_indexed(
-                tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}));
+                tpcd_j.GetPointPositions().IndexGet({corres_ij.T()[1]}));
 
         Tensor Ti = EigenMatrixToTensor(pose_graph.nodes_[i].pose_)
-                            .To(device, core::Dtype::Float32);
+                            .To(device, core::Float32);
         Tensor Tj = EigenMatrixToTensor(pose_graph.nodes_[j].pose_)
-                            .To(device, core::Dtype::Float32);
+                            .To(device, core::Float32);
 
         FillInRigidAlignmentTerm(AtA, Atb, residual, tpcd_i_indexed,
                                  tpcd_j_indexed, Ti, Tj, i, j,
@@ -144,8 +145,8 @@ static void FillInSLACAlignmentTerm(Tensor& AtA,
     PointCloud tpcd_nonrigid_i = ctr_grid.Deform(tpcd_param_i);
     PointCloud tpcd_nonrigid_j = ctr_grid.Deform(tpcd_param_j);
 
-    Tensor Cps = tpcd_nonrigid_i.GetPoints();
-    Tensor Cqs = tpcd_nonrigid_j.GetPoints();
+    Tensor Cps = tpcd_nonrigid_i.GetPointPositions();
+    Tensor Cqs = tpcd_nonrigid_j.GetPointPositions();
     Tensor Cnormal_ps = tpcd_nonrigid_i.GetPointNormals();
 
     Tensor Ri = Ti.Slice(0, 0, 3).Slice(1, 0, 3);
@@ -195,12 +196,12 @@ void FillInSLACAlignmentTerm(Tensor& AtA,
         PointCloud tpcd_j = CreateTPCDFromFile(fnames[j], device);
 
         PointCloud tpcd_i_indexed(
-                tpcd_i.GetPoints().IndexGet({corres_ij.T()[0]}));
+                tpcd_i.GetPointPositions().IndexGet({corres_ij.T()[0]}));
         tpcd_i_indexed.SetPointNormals(
                 tpcd_i.GetPointNormals().IndexGet({corres_ij.T()[0]}));
 
         PointCloud tpcd_j_indexed(
-                tpcd_j.GetPoints().IndexGet({corres_ij.T()[1]}));
+                tpcd_j.GetPointPositions().IndexGet({corres_ij.T()[1]}));
         tpcd_j_indexed.SetPointNormals(
                 tpcd_j.GetPointNormals().IndexGet({corres_ij.T()[1]}));
 
@@ -210,11 +211,11 @@ void FillInSLACAlignmentTerm(Tensor& AtA,
 
         // Load poses.
         auto Ti = EigenMatrixToTensor(pose_graph.nodes_[i].pose_)
-                          .To(device, core::Dtype::Float32);
+                          .To(device, core::Float32);
         auto Tj = EigenMatrixToTensor(pose_graph.nodes_[j].pose_)
-                          .To(device, core::Dtype::Float32);
+                          .To(device, core::Float32);
         auto Tij = EigenMatrixToTensor(edge.transformation_)
-                           .To(device, core::Dtype::Float32);
+                           .To(device, core::Float32);
 
         // Fill In.
         FillInSLACAlignmentTerm(AtA, Atb, residual, ctr_grid, tpcd_param_i,
@@ -237,13 +238,14 @@ void FillInSLACRegularizerTerm(Tensor& AtA,
                                int n_frags,
                                const SLACOptimizerParams& params,
                                const SLACDebugOption& debug_option) {
-    Tensor active_addrs, nb_addrs, nb_masks;
-    std::tie(active_addrs, nb_addrs, nb_masks) = ctr_grid.GetNeighborGridMap();
+    Tensor active_buf_indices, nb_buf_indices, nb_masks;
+    std::tie(active_buf_indices, nb_buf_indices, nb_masks) =
+            ctr_grid.GetNeighborGridMap();
 
     Tensor positions_init = ctr_grid.GetInitPositions();
     Tensor positions_curr = ctr_grid.GetCurrPositions();
-    kernel::FillInSLACRegularizerTerm(AtA, Atb, residual, active_addrs,
-                                      nb_addrs, nb_masks, positions_init,
+    kernel::FillInSLACRegularizerTerm(AtA, Atb, residual, active_buf_indices,
+                                      nb_buf_indices, nb_masks, positions_init,
                                       positions_curr,
                                       n_frags * params.regularizer_weight_,
                                       n_frags, ctr_grid.GetAnchorIdx());

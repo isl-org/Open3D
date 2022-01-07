@@ -31,7 +31,7 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/pipelines/color_map/NonRigidOptimizer.h"
 #include "open3d/pipelines/color_map/RigidOptimizer.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
 
 namespace open3d {

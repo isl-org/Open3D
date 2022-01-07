@@ -6,12 +6,6 @@ if(BUILD_CUDA_MODULE)
 endif()
 
 find_package(Tensorflow REQUIRED)
-find_package(nanoflann REQUIRED)
-find_package(parallelstl REQUIRED)
-if(BUILD_CUDA_MODULE)
-    find_package(CUB REQUIRED)
-    find_package(CUTLASS REQUIRED)
-endif()
 
 
 add_library(open3d_tf_ops SHARED)
@@ -65,11 +59,7 @@ target_sources(open3d_tf_ops PRIVATE
     pointnet/InterpolateOps.cpp
     pointnet/RoiPoolOps.cpp
     pointnet/SamplingOps.cpp
-)
-
-target_sources(open3d_tf_ops PRIVATE
-    tf_neighbors/tf_batch_neighbors.cpp
-    tf_neighbors/tf_neighbors.cpp
+    pvcnn/TrilinearDevoxelizeOps.cpp
 )
 
 target_sources(open3d_tf_ops PRIVATE
@@ -80,7 +70,6 @@ target_sources(open3d_tf_ops PRIVATE
 target_sources(open3d_tf_ops PRIVATE
     ../contrib/Cloud.cpp
     ../contrib/GridSubsampling.cpp
-    ../contrib/neighbors.cpp
     ../contrib/Nms.cpp
 )
 
@@ -113,6 +102,7 @@ if (BUILD_CUDA_MODULE)
         pointnet/InterpolateOpKernel.cu
         pointnet/RoiPoolOpKernel.cu
         pointnet/SamplingOpKernel.cu
+        pvcnn/TrilinearDevoxelizeKernel.cu
     )
 
     target_sources(open3d_tf_ops PRIVATE
@@ -125,6 +115,7 @@ if (BUILD_CUDA_MODULE)
         ../contrib/InterpolatePoints.cu
         ../contrib/Nms.cu
         ../contrib/RoiPoolKernel.cu
+        ../contrib/TrilinearDevoxelize.cu
     )
 endif()
 
@@ -144,22 +135,9 @@ set_target_properties(open3d_tf_ops PROPERTIES
 set_target_properties(open3d_tf_ops PROPERTIES PREFIX "")
 set_target_properties(open3d_tf_ops PROPERTIES DEBUG_POSTFIX "_debug")
 
-# enable c++11
-set_target_properties(open3d_tf_ops PROPERTIES
-        CXX_STANDARD 11
-        CXX_STANDARD_REQUIRED ON
-        CXX_EXTENSIONS OFF
-        CUDA_STANDARD 11
-)
-
 target_compile_definitions(open3d_tf_ops PRIVATE "${Tensorflow_DEFINITIONS}")
 
 if (BUILD_CUDA_MODULE)
-    target_include_directories(open3d_tf_ops SYSTEM PRIVATE
-        ${CUB_INCLUDE_DIR}
-        ${CUTLASS_INCLUDE_DIR}
-    )
-
     target_compile_definitions(open3d_tf_ops PRIVATE "BUILD_CUDA_MODULE")
 endif()
 
@@ -169,14 +147,32 @@ endif()
 target_include_directories(open3d_tf_ops SYSTEM PRIVATE
     ${PROJECT_SOURCE_DIR}/cpp
     ${Tensorflow_INCLUDE_DIR}
-    ${nanoflann_INCLUDE_DIR}
-    ${parallelstl_INCLUDE_DIR}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
 target_link_libraries(open3d_tf_ops PRIVATE
-    3rdparty_tbb
     ${Tensorflow_FRAMEWORK_LIB}
-    ${FMT_TARGET}
     Open3D::Open3D
+    Open3D::3rdparty_fmt
+    Open3D::3rdparty_nanoflann
+    Open3D::3rdparty_parallelstl
+    Open3D::3rdparty_tbb
 )
+
+if (BUILD_CUDA_MODULE)
+    target_link_libraries(open3d_tf_ops PRIVATE
+        Open3D::3rdparty_cutlass
+        CUDA::cuda_driver
+    )
+
+    if (TARGET Open3D::3rdparty_cub)
+        target_link_libraries(open3d_tf_ops PRIVATE
+            Open3D::3rdparty_cub
+        )
+    endif()
+endif()
+
+install(TARGETS open3d_tf_ops EXPORT Open3DTFOps
+    LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
+)
+install(EXPORT Open3DTFOps NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})

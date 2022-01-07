@@ -31,7 +31,7 @@
 
 #include "open3d/Macro.h"
 #include "open3d/core/Dispatch.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -63,7 +63,9 @@ public:
 
     Dtype() : Dtype(DtypeCode::Undefined, 1, "Undefined") {}
 
-    Dtype(DtypeCode dtype_code, int64_t byte_size, const std::string &name);
+    explicit Dtype(DtypeCode dtype_code,
+                   int64_t byte_size,
+                   const std::string &name);
 
     /// Convert from C++ types to Dtype. Known types are explicitly specialized,
     /// e.g. FromType<float>(). Unsupported type results in an exception.
@@ -90,6 +92,19 @@ private:
     int64_t byte_size_;
     char name_[max_name_len_];  // MSVC warns if std::string is exported to DLL.
 };
+
+OPEN3D_API extern const Dtype Undefined;
+OPEN3D_API extern const Dtype Float32;
+OPEN3D_API extern const Dtype Float64;
+OPEN3D_API extern const Dtype Int8;
+OPEN3D_API extern const Dtype Int16;
+OPEN3D_API extern const Dtype Int32;
+OPEN3D_API extern const Dtype Int64;
+OPEN3D_API extern const Dtype UInt8;
+OPEN3D_API extern const Dtype UInt16;
+OPEN3D_API extern const Dtype UInt32;
+OPEN3D_API extern const Dtype UInt64;
+OPEN3D_API extern const Dtype Bool;
 
 template <>
 inline const Dtype Dtype::FromType<float>() {

@@ -73,11 +73,11 @@ public:
     explicit Widget(const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Widget();
 
-    void AddChild(std::shared_ptr<Widget> child);
-    const std::vector<std::shared_ptr<Widget>> GetChildren() const;
+    virtual void AddChild(std::shared_ptr<Widget> child);
+    virtual const std::vector<std::shared_ptr<Widget>> GetChildren() const;
 
     /// Returns the frame size in pixels.
-    const Rect& GetFrame() const;
+    virtual const Rect& GetFrame() const;
     /// The frame is in pixels. The size of a pixel varies on different
     /// and operatings sytems now frequently scale text sizes on high DPI
     /// monitors. Prefer using a Layout to using this function, but if you
@@ -86,18 +86,18 @@ public:
     /// according to the scaling factor of the window.
     virtual void SetFrame(const Rect& f);
 
-    const Color& GetBackgroundColor() const;
-    bool IsDefaultBackgroundColor() const;
-    void SetBackgroundColor(const Color& color);
+    virtual const Color& GetBackgroundColor() const;
+    virtual bool IsDefaultBackgroundColor() const;
+    virtual void SetBackgroundColor(const Color& color);
 
-    bool IsVisible() const;
+    virtual bool IsVisible() const;
     virtual void SetVisible(bool vis);
 
-    bool IsEnabled() const;
+    virtual bool IsEnabled() const;
     virtual void SetEnabled(bool enabled);
 
-    void SetTooltip(const char* text);
-    const char* GetTooltip() const;
+    virtual void SetTooltip(const char* text);
+    virtual const char* GetTooltip() const;
 
     static constexpr int DIM_GROW = 10000;
     struct Constraints {

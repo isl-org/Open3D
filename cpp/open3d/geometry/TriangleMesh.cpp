@@ -37,7 +37,8 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace geometry {
@@ -143,9 +144,7 @@ TriangleMesh &TriangleMesh::ComputeTriangleNormals(
 }
 
 TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
-    if (!HasTriangleNormals()) {
-        ComputeTriangleNormals(false);
-    }
+    ComputeTriangleNormals(false);
     vertex_normals_.resize(vertices_.size(), Eigen::Vector3d::Zero());
     for (size_t i = 0; i < triangles_.size(); i++) {
         auto &triangle = triangles_[i];
@@ -316,7 +315,7 @@ void TriangleMesh::FilterSmoothLaplacianHelper(
         const std::vector<Eigen::Vector3d> &prev_vertex_normals,
         const std::vector<Eigen::Vector3d> &prev_vertex_colors,
         const std::vector<std::unordered_set<int>> &adjacency_list,
-        double lambda,
+        double lambda_filter,
         bool filter_vertex,
         bool filter_normal,
         bool filter_color) const {
@@ -343,25 +342,29 @@ void TriangleMesh::FilterSmoothLaplacianHelper(
         }
 
         if (filter_vertex) {
-            mesh->vertices_[vidx] =
-                    prev_vertices[vidx] +
-                    lambda * (vertex_sum / total_weight - prev_vertices[vidx]);
+            mesh->vertices_[vidx] = prev_vertices[vidx] +
+                                    lambda_filter * (vertex_sum / total_weight -
+                                                     prev_vertices[vidx]);
         }
         if (filter_normal) {
-            mesh->vertex_normals_[vidx] = prev_vertex_normals[vidx] +
-                                          lambda * (normal_sum / total_weight -
-                                                    prev_vertex_normals[vidx]);
+            mesh->vertex_normals_[vidx] =
+                    prev_vertex_normals[vidx] +
+                    lambda_filter * (normal_sum / total_weight -
+                                     prev_vertex_normals[vidx]);
         }
         if (filter_color) {
-            mesh->vertex_colors_[vidx] = prev_vertex_colors[vidx] +
-                                         lambda * (color_sum / total_weight -
-                                                   prev_vertex_colors[vidx]);
+            mesh->vertex_colors_[vidx] =
+                    prev_vertex_colors[vidx] +
+                    lambda_filter * (color_sum / total_weight -
+                                     prev_vertex_colors[vidx]);
         }
     }
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
-        int number_of_iterations, double lambda, FilterScope scope) const {
+        int number_of_iterations,
+        double lambda_filter,
+        FilterScope scope) const {
     bool filter_vertex =
             scope == FilterScope::All || scope == FilterScope::Vertex;
     bool filter_normal =
@@ -388,7 +391,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
                                     prev_vertex_colors, mesh->adjacency_list_,
-                                    lambda, filter_vertex, filter_normal,
+                                    lambda_filter, filter_vertex, filter_normal,
                                     filter_color);
         if (iter < number_of_iterations - 1) {
             std::swap(mesh->vertices_, prev_vertices);
@@ -401,7 +404,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
 
 std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
         int number_of_iterations,
-        double lambda,
+        double lambda_filter,
         double mu,
         FilterScope scope) const {
     bool filter_vertex =
@@ -429,7 +432,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
                                     prev_vertex_colors, mesh->adjacency_list_,
-                                    lambda, filter_vertex, filter_normal,
+                                    lambda_filter, filter_vertex, filter_normal,
                                     filter_color);
         std::swap(mesh->vertices_, prev_vertices);
         std::swap(mesh->vertex_normals_, prev_vertex_normals);
@@ -939,7 +942,8 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
     // precompute all neighbours
     utility::LogDebug("Precompute Neighbours");
     std::vector<std::vector<int>> nbs(vertices_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int idx = 0; idx < int(vertices_.size()); ++idx) {
         std::vector<double> dists2;
         kdtree.SearchRadius(vertices_[idx], eps, nbs[idx], dists2);
@@ -1234,7 +1238,7 @@ double TriangleMesh::GetVolume() const {
 
     double volume = 0;
     int64_t num_triangles = triangles_.size();
-#pragma omp parallel for reduction(+ : volume)
+#pragma omp parallel for reduction(+ : volume) num_threads(utility::EstimateMaxThreads())
     for (int64_t tidx = 0; tidx < num_triangles; ++tidx) {
         volume += GetSignedVolumeOfTriangle(tidx);
     }
@@ -1375,6 +1379,12 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
         const Eigen::Vector3d &p0 = vertices_[tria_p(0)];
         const Eigen::Vector3d &p1 = vertices_[tria_p(1)];
         const Eigen::Vector3d &p2 = vertices_[tria_p(2)];
+
+        const Eigen::Vector3d bb_min1 =
+                p0.array().min(p1.array().min(p2.array()));
+        const Eigen::Vector3d bb_max1 =
+                p0.array().max(p1.array().max(p2.array()));
+
         for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
             const Eigen::Vector3i &tria_q = triangles_[tidx1];
             // check if neighbour triangle
@@ -1390,7 +1400,14 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
             const Eigen::Vector3d &q0 = vertices_[tria_q(0)];
             const Eigen::Vector3d &q1 = vertices_[tria_q(1)];
             const Eigen::Vector3d &q2 = vertices_[tria_q(2)];
-            if (IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
+
+            const Eigen::Vector3d bb_min2 =
+                    q0.array().min(q1.array().min(q2.array()));
+            const Eigen::Vector3d bb_max2 =
+                    q0.array().max(q1.array().max(q2.array()));
+            if (IntersectionTest::AABBAABB(bb_min1, bb_max1, bb_min2,
+                                           bb_max2) &&
+                IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
                 self_intersecting_triangles.push_back(
                         Eigen::Vector2i(tidx0, tidx1));
             }
@@ -1439,7 +1456,8 @@ TriangleMesh::ClusterConnectedTriangles() const {
     utility::LogDebug("[ClusterConnectedTriangles] Compute triangle adjacency");
     auto edges_to_triangles = GetEdgeToTrianglesMap();
     std::vector<std::unordered_set<int>> adjacency_list(triangles_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
         const auto &triangle = triangles_[tidx];
         for (auto tnb :
@@ -1520,6 +1538,7 @@ void TriangleMesh::RemoveTrianglesByMask(
     }
 
     bool has_tri_normal = HasTriangleNormals();
+    bool has_tri_uvs = HasTriangleUvs();
     int to_tidx = 0;
     for (size_t from_tidx = 0; from_tidx < triangles_.size(); ++from_tidx) {
         if (!triangle_mask[from_tidx]) {
@@ -1527,12 +1546,22 @@ void TriangleMesh::RemoveTrianglesByMask(
             if (has_tri_normal) {
                 triangle_normals_[to_tidx] = triangle_normals_[from_tidx];
             }
+            if (has_tri_uvs) {
+                triangle_uvs_[to_tidx * 3] = triangle_uvs_[from_tidx * 3];
+                triangle_uvs_[to_tidx * 3 + 1] =
+                        triangle_uvs_[from_tidx * 3 + 1];
+                triangle_uvs_[to_tidx * 3 + 2] =
+                        triangle_uvs_[from_tidx * 3 + 2];
+            }
             to_tidx++;
         }
     }
     triangles_.resize(to_tidx);
     if (has_tri_normal) {
         triangle_normals_.resize(to_tidx);
+    }
+    if (has_tri_uvs) {
+        triangle_uvs_.resize(to_tidx * 3);
     }
 }
 

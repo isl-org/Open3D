@@ -26,8 +26,8 @@
 
 #include "open3d/io/FeatureIO.h"
 
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace io {

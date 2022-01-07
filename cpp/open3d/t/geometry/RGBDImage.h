@@ -73,7 +73,7 @@ public:
 
     /// Compute min 2D coordinates for the data (always {0,0}).
     core::Tensor GetMinBound() const {
-        return core::Tensor::Zeros({2}, core::Dtype::Int64);
+        return core::Tensor::Zeros({2}, core::Int64);
     };
 
     /// Compute max 2D coordinates for the data.
@@ -81,7 +81,7 @@ public:
         return core::Tensor(
                 std::vector<int64_t>{color_.GetCols() + depth_.GetCols(),
                                      color_.GetRows()},
-                {2}, core::Dtype::Int64);
+                {2}, core::Int64);
     };
 
     /// Transfer the RGBD image to a specified device.
@@ -97,23 +97,10 @@ public:
     /// Returns copy of the RGBD image on the same device.
     RGBDImage Clone() const { return To(color_.GetDevice(), /*copy=*/true); }
 
-    /// Transfer the RGBD image to CPU.
-    ///
-    /// If the RGBD image is already on CPU, no copy will be performed.
-    RGBDImage CPU() const { return To(core::Device("CPU:0")); }
-
-    /// Transfer the RGBD image to a CUDA device.
-    ///
-    /// If the RGBD image is already on the specified CUDA device, no copy will
-    /// be performed.
-    RGBDImage CUDA(int device_id = 0) const {
-        return To(core::Device(core::Device::DeviceType::CUDA, device_id));
-    }
-
     /// Convert to the legacy RGBDImage format.
-    open3d::geometry::RGBDImage ToLegacyRGBDImage() const {
-        return open3d::geometry::RGBDImage(color_.ToLegacyImage(),
-                                           depth_.ToLegacyImage());
+    open3d::geometry::RGBDImage ToLegacy() const {
+        return open3d::geometry::RGBDImage(color_.ToLegacy(),
+                                           depth_.ToLegacy());
     }
 
     /// Text description.

@@ -17,11 +17,12 @@ Supported Python versions:
 * 3.6
 * 3.7
 * 3.8
+* 3.9
 
 Supported operating systems:
 
 * Ubuntu 18.04+
-* macOS 10.14+
+* macOS 10.15+
 * Windows 10 (64-bit)
 
 If you have other Python versions (e.g. Python 2) or operating systems, please
@@ -62,20 +63,23 @@ version (``HEAD`` of ``master`` branch):
 :Linux: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-manylinux_2_27_x86_64.whl>`__
         `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-manylinux_2_27_x86_64.whl>`__
         `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
+        `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_27_x86_64.whl>`__
 
 :MacOS: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-macosx_10_14_x86_64.whl>`__
         `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_14_x86_64.whl>`__
         `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_10_14_x86_64.whl>`__
+        `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-macosx_10_14_x86_64.whl>`__
 
 :Windows: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-win_amd64.whl>`__
         `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-win_amd64.whl>`__
         `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
+        `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-win_amd64.whl>`__
 
-Please use these links from the `latest version of this page <http://www.open3d.org/docs/latest/getting_started.html>`__ only. For example, to install the latest development version on Linux for Python 3.8:
+Please use these links from the `latest version of this page <http://www.open3d.org/docs/latest/getting_started.html>`__ only. For example, to install the latest development version on Linux for Python 3.9:
 
 .. code-block:: bash
 
-    pip install --user --pre https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-linux_x86_64.whl
+    pip install --user --pre https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-linux_x86_64.whl
 
 .. note::
    The development wheels for Linux are named according to PEP600. Please
@@ -102,7 +106,7 @@ Docker
 ------
 
 If you want to install the Open3D Python packages in a docker conatiner you will
-need to install a minimum set of dependencies. For more details please see `this issue <https://github.com/intel-isl/Open3D/issues/3388>`__.
+need to install a minimum set of dependencies. For more details please see `this issue <https://github.com/isl-org/Open3D/issues/3388>`__.
 
 A minimal ``Dockerfile`` looks like this:
 
@@ -115,7 +119,6 @@ A minimal ``Dockerfile`` looks like this:
     RUN apt-get update && apt-get install --no-install-recommends -y \
         libgl1 \
         libgomp1 \
-        libusb-1.0-0 \
         python3-pip \
         && rm -rf /var/lib/apt/lists/*
 
@@ -137,11 +140,23 @@ Now, try importing Open3D.
 If this works, congratulations, now Open3D has been successfully installed!
 
 
+Troubleshooting:
+^^^^^^^^^^^^^^^^
+
+If you get an error when importing Open3D, enable detailed Python warnings to
+help troubleshoot the issue:
+
+.. code-block:: bash
+
+    python -W default -c "import open3d as o3d"
+
+
 Running Open3D tutorials
 ========================
 
 A complete set of Python tutorials and testing data will also be copied to
-demonstrate the usage of Open3D Python interface. See ``examples/python`` for all Python examples.
+demonstrate the usage of Open3D Python interface. See ``examples/python`` for
+all Python examples.
 
 .. note:: Open3D's Python tutorial utilizes some external packages: ``numpy``,
     ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction

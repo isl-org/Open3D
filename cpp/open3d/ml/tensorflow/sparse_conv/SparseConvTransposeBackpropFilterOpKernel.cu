@@ -26,7 +26,7 @@
 
 #define EIGEN_USE_GPU
 #include "SparseConvTransposeBackpropFilterOpKernel.h"
-#include "open3d/ml/Helper.h"
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/ml/impl/sparse_conv/SparseConvTransposeBackpropFilter.cuh"
 
 using namespace open3d;
@@ -41,7 +41,8 @@ public:
     explicit SparseConvTransposeBackpropFilterOpKernelCUDA(
             OpKernelConstruction* construction)
         : SparseConvTransposeBackpropFilterOpKernel<TIndex>(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,

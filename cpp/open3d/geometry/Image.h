@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "open3d/geometry/Geometry2D.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 

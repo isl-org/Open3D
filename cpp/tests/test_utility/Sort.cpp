@@ -28,8 +28,8 @@
 
 #include <algorithm>
 
-#include "open3d/utility/Console.h"
-#include "tests/UnitTest.h"
+#include "open3d/utility/Logging.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

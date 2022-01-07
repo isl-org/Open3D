@@ -51,7 +51,6 @@ void PrintHelp() {
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
-    using namespace flann;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 

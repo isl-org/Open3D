@@ -57,33 +57,47 @@ namespace impl {
 /// \param points    Array with the point positions. The shape is
 ///        [num_points,NDIM].
 ///
-/// \param voxel_size    The edge lenghts of the voxel. The shape is [NDIM]
+/// \param batch_size    The batch size of points.
 ///
-/// \param points_range_min    The lower bound of the domain to be voxelized.
+/// \param row_splits    row_splits for defining batches.
+///
+/// \param voxel_size    The edge lenghts of the voxel. The shape is
+///        [NDIM]. This pointer points to host memory!
+///
+/// \param points_range_min    The lower bound of the domain to be
+/// voxelized.
 ///        The shape is [NDIM].
+///        This pointer points to host memory!
 ///
-/// \param points_range_max    The upper bound of the domain to be voxelized.
+/// \param points_range_max    The upper bound of the domain to be
+/// voxelized.
 ///        The shape is [NDIM].
+///        This pointer points to host memory!
 ///
-/// \param max_points_per_voxel    This parameter limits the number of points
+/// \param max_points_per_voxel    This parameter limits the number of
+/// points
 ///        that are recorderd for each voxel.
 ///
-/// \param max_voxels    This parameter limits the number of voxels that will
-///        be generated.
+/// \param max_voxels    This parameter limits the number of voxels that
+///        will be generated.
 ///
 /// \param output_allocator    An object that implements functions for
-///         allocating the output arrays. The object must implement functions
-///         AllocVoxelCoords(int32_t** ptr, int64_t rows, int64_t cols),
-///         AllocVoxelPointIndices(int64_t** ptr, int64_t size), and
-///         AllocVoxelPointRowSplits(int64_t** ptr, int64_t size). All
-///         functions should allocate memory and return a pointer to that memory
-///         in ptr. The argments size, rows, and cols define the size of the
-///         array as the number of elements. All functions must accept zero
-///         size arguments. In this case ptr does not need to be set.
+///         allocating the output arrays. The object must implement
+///         functions AllocVoxelCoords(int32_t** ptr, int64_t rows,
+///         int64_t cols), AllocVoxelPointIndices(int64_t** ptr, int64_t
+///         size), AllocVoxelPointRowSplits(int64_t** ptr, int64_t
+///         size) and AllocVoxelBatchSplits(int64_t** ptr, int64_t size).
+///         All functions should allocate memory and return a pointer
+///         to that memory in ptr. The argments size, rows, and cols
+///         define the size of the array as the number of elements.
+///         All functions must accept zero size arguments. In this case
+///         ptr does not need to be set.
 ///
 template <class T, int NDIM, class OUTPUT_ALLOCATOR>
-void VoxelizeCPU(size_t num_points,
+void VoxelizeCPU(const size_t num_points,
                  const T* const points,
+                 const size_t batch_size,
+                 const int64_t* const row_splits,
                  const T* const voxel_size,
                  const T* const points_range_min,
                  const T* const points_range_max,
@@ -105,7 +119,19 @@ void VoxelizeCPU(size_t num_points,
             strides[i] *= extents[j];
         }
     }
-    const int64_t invalid_hash = strides[NDIM - 1] * extents[NDIM - 1];
+    const int64_t batch_hash = strides[NDIM - 1] * extents[NDIM - 1];
+    const int64_t invalid_hash = batch_hash * batch_size;
+
+    std::vector<int64_t> indices_batches(num_points, 0);
+    tbb::parallel_for(tbb::blocked_range<int64_t>(0, batch_size),
+                      [&](const tbb::blocked_range<int64_t>& r) {
+                          for (int64_t i = r.begin(); i != r.end(); ++i) {
+                              for (int64_t idx = row_splits[i];
+                                   idx < row_splits[i + 1]; ++idx) {
+                                  indices_batches[idx] = i;
+                              }
+                          }
+                      });
 
     auto CoordFn = [&](const Vec_t& point) {
         auto coords = ((point - points_range_min_vec) * inv_voxel_size)
@@ -113,52 +139,81 @@ void VoxelizeCPU(size_t num_points,
         return coords;
     };
 
-    auto HashFn = [&](const Vec_t& point) {
+    auto HashFn = [&](const Vec_t& point, const int64_t& idx) {
         if ((point >= points_range_min_vec && point <= points_range_max_vec)
                     .all()) {
             auto coords = CoordFn(point);
-            int64_t linear_idx = coords.dot(strides);
-            return linear_idx;
+            int64_t hash = coords.dot(strides);
+            hash += indices_batches[idx] * batch_hash;
+            return hash;
         }
         return invalid_hash;
     };
 
     std::vector<std::pair<int64_t, int64_t>> hashes_indices(num_points);
+    std::vector<uint64_t> num_voxels(batch_size, 0);
+
     tbb::parallel_for(tbb::blocked_range<int64_t>(0, num_points),
                       [&](const tbb::blocked_range<int64_t>& r) {
                           for (int64_t i = r.begin(); i != r.end(); ++i) {
                               Vec_t pos(points + NDIM * i);
-                              hashes_indices[i].first = HashFn(pos);
+                              hashes_indices[i].first = HashFn(pos, i);
                               hashes_indices[i].second = i;
                           }
                       });
+
     tbb::parallel_sort(hashes_indices);
 
-    uint64_t num_voxels = 1;
-    tbb::parallel_for(tbb::blocked_range<int64_t>(1, hashes_indices.size()),
+    tbb::parallel_for(
+            tbb::blocked_range<int64_t>(0, hashes_indices.size()),
+            [&](const tbb::blocked_range<int64_t>& r) {
+                for (int64_t i = r.begin(); i != r.end(); ++i) {
+                    int64_t batch_id = hashes_indices[i].first / batch_hash;
+                    if (batch_id >= batch_size) break;
+                    if (i == 0) {
+                        core::AtomicFetchAddRelaxed(&num_voxels[batch_id], 1);
+                        continue;
+                    }
+                    int64_t batch_id_prev =
+                            hashes_indices[i - 1].first / batch_hash;
+                    if ((batch_id != batch_id_prev) ||
+                        (hashes_indices[i].first !=
+                         hashes_indices[i - 1].first)) {
+                        core::AtomicFetchAddRelaxed(&num_voxels[batch_id], 1);
+                    }
+                }
+            });
+
+    tbb::parallel_for(tbb::blocked_range<int64_t>(0, batch_size),
                       [&](const tbb::blocked_range<int64_t>& r) {
                           for (int64_t i = r.begin(); i != r.end(); ++i) {
-                              if (hashes_indices[i - 1].first !=
-                                  hashes_indices[i].first) {
-                                  core::AtomicFetchAddRelaxed(&num_voxels, 1);
-                              }
+                              num_voxels[i] = std::min(int64_t(num_voxels[i]),
+                                                       max_voxels);
                           }
                       });
-    if (invalid_hash == hashes_indices.back().first) {
-        --num_voxels;
+
+    int64_t* out_batch_splits = nullptr;
+    output_allocator.AllocVoxelBatchSplits(&out_batch_splits, batch_size + 1);
+    out_batch_splits[0] = 0;
+
+    // prefix sum for batch_splits
+    for (int64_t i = 1; i < batch_size + 1; ++i) {
+        out_batch_splits[i] = out_batch_splits[i - 1] + num_voxels[i - 1];
     }
-    num_voxels = std::min(int64_t(num_voxels), max_voxels);
+
+    uint64_t total_voxels = out_batch_splits[batch_size];
 
     int32_t* out_voxel_coords = nullptr;
-    output_allocator.AllocVoxelCoords(&out_voxel_coords, num_voxels, NDIM);
+    output_allocator.AllocVoxelCoords(&out_voxel_coords, total_voxels, NDIM);
+
     int64_t* out_voxel_row_splits = nullptr;
     output_allocator.AllocVoxelPointRowSplits(&out_voxel_row_splits,
-                                              num_voxels + 1);
+                                              total_voxels + 1);
 
     std::vector<int64_t> tmp_point_indices;
     {
         int64_t hash_i = 0;  // index into the vector hashes_indices
-        for (int64_t voxel_i = 0; voxel_i < num_voxels; ++voxel_i) {
+        for (int64_t voxel_i = 0; voxel_i < total_voxels; ++voxel_i) {
             // compute voxel coord and the prefix sum value
             auto coord = CoordFn(
                     Vec_t(points + hashes_indices[hash_i].second * NDIM));
@@ -170,6 +225,8 @@ void VoxelizeCPU(size_t num_points,
             // add up to max_points_per_voxel indices for this voxel
             int64_t points_per_voxel = 0;
             const int64_t current_hash = hashes_indices[hash_i].first;
+            int64_t batch_id = current_hash / batch_hash;
+            num_voxels[batch_id]--;
             for (; hash_i < hashes_indices.size(); ++hash_i) {
                 if (current_hash != hashes_indices[hash_i].first) {
                     // new voxel starts -> break
@@ -180,9 +237,20 @@ void VoxelizeCPU(size_t num_points,
                     ++points_per_voxel;
                 }
             }
+
+            // skip voxels exceeding max_voxel
+            if (num_voxels[batch_id] == 0) {
+                for (; hash_i < hashes_indices.size(); ++hash_i) {
+                    if ((int64_t)(hashes_indices[hash_i].first / batch_hash) !=
+                        batch_id) {
+                        break;
+                    }
+                }
+            }
         }
-        out_voxel_row_splits[num_voxels] = tmp_point_indices.size();
+        out_voxel_row_splits[total_voxels] = tmp_point_indices.size();
     }
+
     int64_t* out_point_indices = nullptr;
     output_allocator.AllocVoxelPointIndices(&out_point_indices,
                                             tmp_point_indices.size());

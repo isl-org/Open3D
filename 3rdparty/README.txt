@@ -9,7 +9,7 @@ libusb. Run corresponding script file under "script" directory to automatically
 config them.
 
 --------------------------------------------------------------------------------
-Eigen                       3.3.2                            Mainly MPL2 license
+Eigen                       3.4                              Mainly MPL2 license
 A high-level C++ library of template headers for linear algebra, matrix and
 vector operations, numerical solvers and related algorithms
 http://eigen.tuxfamily.org/
@@ -52,7 +52,7 @@ dirent                      1.21                                     MIT license
 https://github.com/tronkko/dirent
 A C/C++ programming interface for cross-platform filesystem
 --------------------------------------------------------------------------------
-librealsense                2.40.0                               Apache-2 license
+librealsense                2.44.0                               Apache-2 license
 A cross-platform library for capturing data from the Intel RealSense F200,
 SR300, R200 and L500 cameras
 https://github.com/IntelRealSense/librealsense
@@ -69,7 +69,7 @@ tinyobjloader                v1.0.0                                  MIT license
 Tiny but powerful single file wavefront obj loader
 https://github.com/syoyo/tinyobjloader
 --------------------------------------------------------------------------------
-pybind11                    v2.5.0                                   BSD license
+pybind11                    v2.6.2                                   BSD license
 Python binding for C++11
 https://github.com/pybind/pybind11
 --------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ nanoflann                   1.3.1                                    BSD license
 A C++11 header-only library for Nearest Neighbor (NN) search with KD-trees
 https://github.com/jlblancoc/nanoflann
 --------------------------------------------------------------------------------
-CUTLASS                     1.3.2                                    BSD license
+CUTLASS                     1.3.3                                    BSD license
 CUDA Templates for Linear Algebra Subroutines
 https://github.com/NVIDIA/cutlass
 --------------------------------------------------------------------------------
@@ -110,3 +110,67 @@ https://github.com/zeromq/libzmq
 cppzmq                      4.6.0                                    MIT license
 Header-only C++ binding for libzmq
 https://github.com/zeromq/cppzmq
+As an alternative, you can modify 3rdparty/zeromq/zeromq_build.cmake to fetch
+zeromq from our fork
+https://github.com/isl-org/libzmq
+--------------------------------------------------------------------------------
+embree                      3.13.0                              Apache-2 license
+Embree is a collection of high-performance ray tracing kernels
+https://github.com/embree/embree
+--------------------------------------------------------------------------------
+curl                        7.79.1                                  Curl license
+Curl is a command-line tool for transferring data specified with URL syntax.
+https://github.com/curl/curl
+--------------------------------------------------------------------------------
+boringssl:                  edfe413            Dual OpenSSL, SSLeay, ISC license
+BoringSSL is a fork of OpenSSL that is designed to meet Google's needs.
+https://github.com/google/boringssl
+--------------------------------------------------------------------------------
+
+## Patching a third-party library
+
+Using `assimp` as an example.
+
+```bash
+# Do this outside of a git directory
+cd /tmp
+
+# Download the tar.gz
+wget https://github.com/assimp/assimp/archive/refs/tags/v5.1.3.tar.gz
+tar xzf v5.1.3.tar.gz
+cd assimp-5.1.3
+
+# Init git and add all source
+git init
+git add .
+git commit -am "Init commit"
+
+# Make changes to the files, commit
+cp /my/new/ObjFileData.h          code/AssetLib/Obj/ObjFileData.h
+cp /my/new/ObjFileImporter.cpp    code/AssetLib/Obj/ObjFileImporter.cpp
+cp /my/new/ObjFileMtlImporter.cpp code/AssetLib/Obj/ObjFileMtlImporter.cpp
+git add .
+git commit -am "Patch Assimp Obj importer"
+
+# Create patch file to HEAD~1
+git format-patch HEAD~1
+
+# Test the patch
+git reset --hard HEAD~1
+git apply --ignore-space-change --ignore-whitespace 0001-Patch-Assimp-Obj-importer.patch
+git status
+```
+
+Finally, this patch can be used in CMake `ExternalProject_Add` by specifying:
+
+```cmake
+find_package(Git QUIET REQUIRED)
+
+ExternalProject_Add(
+    ...
+    PATCH_COMMAND ${GIT_EXECUTABLE} init
+    COMMAND       ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
+                  /path/to/0001-Patch-Assimp-Obj-importer.patch
+    ...
+)
+```

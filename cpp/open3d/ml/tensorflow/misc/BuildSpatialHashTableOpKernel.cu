@@ -27,12 +27,10 @@
 
 #define EIGEN_USE_GPU
 #include "BuildSpatialHashTableOpKernel.h"
-#include "open3d/ml/Helper.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/nns/FixedRadiusSearchImpl.cuh"
 
 using namespace open3d;
-using namespace open3d::ml;
-using namespace open3d::ml::impl;
 using namespace tensorflow;
 
 template <class T>
@@ -41,7 +39,8 @@ public:
     explicit BuildSpatialHashTableOpKernelCUDA(
             OpKernelConstruction* construction)
         : BuildSpatialHashTableOpKernel(construction) {
-        texture_alignment = GetCUDACurrentDeviceTextureAlignment();
+        texture_alignment =
+                open3d::core::GetCUDACurrentDeviceTextureAlignment();
     }
 
     void Kernel(tensorflow::OpKernelContext* context,
@@ -57,7 +56,7 @@ public:
         size_t temp_size = 0;
 
         // determine temp_size
-        BuildSpatialHashTableCUDA(
+        open3d::core::nns::impl::BuildSpatialHashTableCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 points.shape().dim_size(0), points.flat<T>().data(),
                 radius.scalar<T>()(), points_row_splits.shape().dim_size(0),
@@ -75,7 +74,7 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually build the table
-        BuildSpatialHashTableCUDA(
+        open3d::core::nns::impl::BuildSpatialHashTableCUDA(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 points.shape().dim_size(0), points.flat<T>().data(),
                 radius.scalar<T>()(), points_row_splits.shape().dim_size(0),

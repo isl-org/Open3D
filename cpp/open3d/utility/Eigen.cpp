@@ -29,7 +29,7 @@
 #include <Eigen/Geometry>
 #include <Eigen/Sparse>
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace utility {
@@ -189,7 +189,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
             JTr_private.noalias() += J_r * w * r;
             r2_sum_private += r * r;
         }
-#pragma omp critical
+#pragma omp critical(ComputeJTJandJTr)
         {
             JTJ += JTJ_private;
             JTr += JTr_private;
@@ -236,7 +236,7 @@ std::tuple<MatType, VecType, double> ComputeJTJandJTr(
                 r2_sum_private += r[j] * r[j];
             }
         }
-#pragma omp critical
+#pragma omp critical(ComputeJTJandJTr)
         {
             JTJ += JTJ_private;
             JTr += JTr_private;
@@ -304,6 +304,9 @@ Eigen::Vector3d ColorToDouble(const Eigen::Vector3uint8 &rgb) {
 template <typename IdxType>
 Eigen::Matrix3d ComputeCovariance(const std::vector<Eigen::Vector3d> &points,
                                   const std::vector<IdxType> &indices) {
+    if (indices.empty()) {
+        return Eigen::Matrix3d::Identity();
+    }
     Eigen::Matrix3d covariance;
     Eigen::Matrix<double, 9, 1> cumulants;
     cumulants.setZero();
@@ -380,5 +383,16 @@ template Eigen::Matrix3d ComputeCovariance(
 template std::tuple<Eigen::Vector3d, Eigen::Matrix3d> ComputeMeanAndCovariance(
         const std::vector<Eigen::Vector3d> &points,
         const std::vector<int> &indices);
+
+Eigen::Matrix3d SkewMatrix(const Eigen::Vector3d &vec) {
+    Eigen::Matrix3d skew;
+    // clang-format off
+    skew << 0,      -vec.z(),  vec.y(),
+            vec.z(), 0,       -vec.x(),
+           -vec.y(), vec.x(),  0;
+    // clang-format on
+    return skew;
+}
+
 }  // namespace utility
 }  // namespace open3d

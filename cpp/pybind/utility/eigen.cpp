@@ -430,6 +430,17 @@ Example usage
             }),
             py::none(), py::none(), "");
 
+    auto matrix3dvector =
+            pybind_eigen_vector_of_matrix<Eigen::Matrix3d,
+                                          std::allocator<Eigen::Matrix3d>>(
+                    m, "Matrix3dVector", "std::vector<Eigen::Matrix3d>");
+    matrix3dvector.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Convert float64 numpy array of shape ``(n, 3, 3)`` to "
+                       "Open3D format.";
+            }),
+            py::none(), py::none(), "");
+
     auto matrix4dvector = pybind_eigen_vector_of_matrix<Eigen::Matrix4d>(
             m, "Matrix4dVector", "std::vector<Eigen::Matrix4d>");
     matrix4dvector.attr("__doc__") = docstring::static_property(

@@ -1,30 +1,9 @@
-if (NOT PYTHON_EXECUTABLE)
-    message(FATAL_ERROR "PYTHON_EXECUTABLE should be set in top level CMakeLists.txt")
+if (NOT Python3_EXECUTABLE)
+    message(FATAL_ERROR "Python 3 not found in top level file")
 endif()
 
 # We need to get python version to configure some meta files
-execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d.%d' % (sys.version_info.major, sys.version_info.minor))"
-    OUTPUT_VARIABLE PYTHON_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-message(STATUS "Using Python version: ${PYTHON_VERSION}")
-
-execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d' % (sys.version_info.major,))"
-    OUTPUT_VARIABLE PYTHON_VERSION_MAJOR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
-
-if (${PYTHON_VERSION_MAJOR} EQUAL 2)
-    message(FATAL_ERROR "Python 2 is no longer supported. Please check your \
-            your Python version with `python --version`. To use Python 3, do \
-            one of the following: \
-            (1) activate a Python 3 virtual environment; \
-            (2) specify the Python path explicitly with -DPYTHON_EXECUTABLE=/path/to/python3; \
-            (3) add Python 3 to the PATH environment variable.")
-endif()
+set(PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 
 
 pybind11_add_module(pybind)
@@ -105,7 +84,7 @@ set(GENERATED_OUTPUTS "")
 if (BUILD_TENSORFLOW_OPS)
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
-            COMMAND ${PYTHON_EXECUTABLE} generate_tf_ops_wrapper.py --input "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/tf/python/ops/ops.py.in" --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops>
+            COMMAND ${Python3_EXECUTABLE} generate_tf_ops_wrapper.py --input "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/tf/python/ops/ops.py.in" --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops>
                         DEPENDS open3d_tf_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py" )
@@ -119,7 +98,7 @@ endif()
 if (BUILD_PYTORCH_OPS)
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
-            COMMAND ${PYTHON_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow"
+            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow"
                         DEPENDS open3d_torch_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py and return_types.py" )
@@ -128,7 +107,7 @@ if (BUILD_PYTORCH_OPS)
     # get the pytorch version information again here for _build_config.py
     # because it is not safe to call find_package(Pytorch) again.
     execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} "-c"
+        COMMAND ${Python3_EXECUTABLE} "-c"
                 "import torch; print(torch.__version__, end='')"
         OUTPUT_VARIABLE Pytorch_VERSION)
 endif()
@@ -195,7 +174,7 @@ add_custom_target(python-package
 
 # Use `make pip-package` to create the pip package in the build directory
 add_custom_target(pip-package
-    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
+    COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
     COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
@@ -206,7 +185,7 @@ add_custom_target(pip-package
 add_custom_target(install-pip-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
-            -DPYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
+            -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_install_pip_package.cmake
     DEPENDS pip-package
 )
@@ -218,7 +197,7 @@ add_custom_target(install-pip-package
 # for deployment.
 # Ref: https://stackoverflow.com/a/33791008/1255535
 add_custom_target(install-python-package
-    COMMAND ${PYTHON_EXECUTABLE} setup.py install --single-version-externally-managed --root=/
+    COMMAND ${Python3_EXECUTABLE} setup.py install --single-version-externally-managed --root=/
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
 )
@@ -239,7 +218,7 @@ add_custom_target(conda-package
 # the ${PYTHON_PACKAGE_DST_DIR}, so if we make pip and conda package one-by-one,
 # the previous one will be deleted.
 add_custom_target(pip-conda-package
-    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
+    COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
     COMMAND conda-build conda_meta --channel conda-forge --output-folder conda_package
     COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
     COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"

@@ -1,0 +1,142 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018-2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+
+// To generate plugin_data_pb2.py, use this command:
+// protoc -I=. --python_out=. plugin_data.proto
+// copy over license and use make apply-style to correct formatting.
+
+syntax = "proto3";
+
+package tensorboard.open3d;
+
+// A Open3DPluginData encapsulates information on which plugins are able to make
+// use of a certain summary value.
+message Open3DPluginData {
+    // Version 14 is the only supported version.
+    int32 version = 1;
+
+    enum GeometryProperty {
+        /* Reserved: [0..64) */
+        vertex_positions = 0;
+        vertex_normals = 1;
+        vertex_colors = 2;
+        vertex_texture_uvs = 3;
+        triangle_indices = 4;
+        triangle_colors = 5;
+        triangle_normals = 6;
+        triangle_texture_uvs = 7;
+        line_indices = 8;
+        line_colors = 9;
+
+        /* Reserved: [64..80) */
+        material_scalar_metallic = 64;
+        material_scalar_roughness = 65;
+        material_scalar_reflectance = 66;
+        /* material_scalar_sheen_roughness = 67; */
+        material_scalar_clear_coat = 68;
+        material_scalar_clear_coat_roughness = 69;
+        material_scalar_anisotropy = 70;
+        material_scalar_ambient_occlusion = 71;
+        /* material_scalar_ior = 72; */
+        material_scalar_transmission = 73;
+        /* material_scalar_micro_thickness = 74; */
+        material_scalar_thickness = 75;
+        material_scalar_absorption_distance = 76;
+
+        /* Reserved: [80..96) */
+        material_vector_base_color = 80;
+        /* material_vector_sheen_color = 81; */
+        /* material_vector_anisotropy_direction = 82; */
+        material_vector_normal = 83;
+        /* material_vector_bent_normal = 84; */
+        /* material_vector_clear_coat_normal = 85; */
+        /* material_vector_emissive = 86; */
+        /* material_vector_post_lighting_color = 87; */
+        material_vector_absorption_color = 88;
+
+        /* Reserved: [96..128) */
+        material_texture_map_metallic = 96;
+        material_texture_map_roughness = 97;
+        material_texture_map_reflectance = 98;
+        /* material_texture_map_sheen_roughness = 99; */
+        material_texture_map_clear_coat = 100;
+        material_texture_map_clear_coat_roughness = 101;
+        material_texture_map_anisotropy = 102;
+        material_texture_map_ambient_occlusion = 103;
+        /* material_texture_map_ior = 104; */
+        material_texture_map_transmission = 105;
+        /* material_texture_map_micro_thickness = 106; */
+        material_texture_map_thickness = 107;
+        material_texture_map_albedo = 108;  // same as *_base_color
+        /* material_texture_map_sheen_color = 109; */
+        /* material_texture_map_anisotropy_direction = 110; */
+        material_texture_map_normal = 111;
+        /* material_texture_map_bent_normal = 112; */
+        /* material_texture_map_clear_coat_normal = 113; */
+        /* material_texture_map_emissive = 114; */
+        /* material_texture_map_post_lighting_color = 115; */
+        material_texture_map_absorption_color = 116;
+        material_texture_map_ao_rough_metal = 117;  // ao + roughness + metallic
+    }
+
+    // Pick up the tensor for a property (geometry_property) from a previous
+    // step (step_ref)
+    message PropertyReference {
+        GeometryProperty geometry_property = 1;
+        uint64 step_ref = 2;
+    }
+
+    // Data start and data size for a single geometry msgpack
+    message StartSize {
+        uint64 start = 1;
+        uint64 size = 2;
+        uint32 masked_crc32c = 3;
+        uint64 aux_start = 4;
+        uint64 aux_size = 5;
+        uint32 aux_masked_crc32c = 6;
+    }
+
+    // Index for a batch of geometry data
+    message BatchIndex {
+        string filename = 1;
+        repeated StartSize start_size = 2;
+    }
+
+    repeated PropertyReference property_references = 2;
+    BatchIndex batch_index = 3;
+}
+
+message InferenceData {
+    message InferenceResult {
+        int32 label = 1;
+        float confidence = 2;
+    }
+    repeated InferenceResult inference_result = 1;
+}
+
+message LabelToNames {
+    map<int32, string> label_to_names = 1;
+}

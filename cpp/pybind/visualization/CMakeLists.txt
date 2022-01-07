@@ -4,6 +4,7 @@ target_sources(pybind PRIVATE
     viewcontrol.cpp
     visualization.cpp
     visualizer.cpp
+    rendering/material.cpp  # for RPC serialization
 )
 
 if (BUILD_GUI)

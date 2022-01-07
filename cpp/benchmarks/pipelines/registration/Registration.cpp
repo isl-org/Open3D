@@ -34,33 +34,34 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
-#include "open3d/utility/Console.h"
-
-// Testing parameters:
-// Filename for pointcloud registration data.
-static const std::string source_pointcloud_filename =
-        TEST_DATA_DIR "/ICP/cloud_bin_0.pcd";
-static const std::string target_pointcloud_filename =
-        TEST_DATA_DIR "/ICP/cloud_bin_1.pcd";
-
-static const std::string source_colored_pcd_filename =
-        TEST_DATA_DIR "/ColoredICP/frag_115.ply";
-static const std::string target_colored_pcd_filename =
-        TEST_DATA_DIR "/ColoredICP/frag_116.ply";
-
-static const double voxel_downsampling_factor = 0.05;
-
-// ICP ConvergenceCriteria.
-static const double relative_fitness = 1e-6;
-static const double relative_rmse = 1e-6;
-static const int max_iterations = 1;
-
-// NNS parameter.
-static const double max_correspondence_distance = 0.15;
+#include "open3d/utility/DataManager.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace pipelines {
 namespace registration {
+
+// Testing parameters:
+// Filename for pointcloud registration data.
+static const std::string source_pointcloud_filename =
+        utility::GetDataPathCommon("ICP/cloud_bin_0.pcd");
+static const std::string target_pointcloud_filename =
+        utility::GetDataPathCommon("ICP/cloud_bin_1.pcd");
+
+static const std::string source_colored_pcd_filename =
+        utility::GetDataPathCommon("ColoredICP/frag_115.ply");
+static const std::string target_colored_pcd_filename =
+        utility::GetDataPathCommon("ColoredICP/frag_116.ply");
+
+static const double voxel_downsampling_factor = 0.02;
+
+// ICP ConvergenceCriteria.
+static const double relative_fitness = 1e-6;
+static const double relative_rmse = 1e-6;
+static const int max_iterations = 30;
+
+// NNS parameter.
+static const double max_correspondence_distance = 0.05;
 
 static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
         const std::string& source_filename,
@@ -85,8 +86,8 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
     return std::make_tuple(source, target);
 }
 
-static void BenchmarkRegistrationICPLegacy(
-        benchmark::State& state, const TransformationEstimationType& type) {
+static void BenchmarkICPLegacy(benchmark::State& state,
+                               const TransformationEstimationType& type) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
@@ -126,9 +127,9 @@ static void BenchmarkRegistrationICPLegacy(
                       reg_result.inlier_rmse_);
 }
 
-static void BenchmarkRegistrationColoredICPLegacy(benchmark::State& state,
-                                                  double voxel_size,
-                                                  double iterations) {
+static void BenchmarkColoredICPLegacy(benchmark::State& state,
+                                      double voxel_size,
+                                      double iterations) {
     geometry::PointCloud source;
     geometry::PointCloud target;
 
@@ -157,20 +158,17 @@ static void BenchmarkRegistrationColoredICPLegacy(benchmark::State& state,
     }
 }
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationICPLegacy,
-                  PointToPlane / Legacy,
+BENCHMARK_CAPTURE(BenchmarkICPLegacy,
+                  PointToPlane / CPU,
                   TransformationEstimationType::PointToPlane)
         ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationICPLegacy,
-                  PointToPoint / Legacy,
+BENCHMARK_CAPTURE(BenchmarkICPLegacy,
+                  PointToPoint / CPU,
                   TransformationEstimationType::PointToPoint)
         ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(BenchmarkRegistrationColoredICPLegacy,
-                  ColoredICP / Legacy,
-                  0.0125,
-                  20)
+BENCHMARK_CAPTURE(BenchmarkColoredICPLegacy, ColoredICP / CPU, 0.0125, 20)
         ->Unit(benchmark::kMillisecond);
 
 }  // namespace registration

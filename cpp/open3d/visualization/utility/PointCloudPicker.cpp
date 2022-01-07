@@ -28,7 +28,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace visualization {
@@ -76,10 +76,12 @@ geometry::AxisAlignedBoundingBox PointCloudPicker::GetAxisAlignedBoundingBox()
     }
 }
 
-geometry::OrientedBoundingBox PointCloudPicker::GetOrientedBoundingBox() const {
+geometry::OrientedBoundingBox PointCloudPicker::GetOrientedBoundingBox(
+        bool robust) const {
     if (pointcloud_ptr_) {
         return geometry::OrientedBoundingBox::CreateFromPoints(
-                ((const geometry::PointCloud&)(*pointcloud_ptr_)).points_);
+                ((const geometry::PointCloud&)(*pointcloud_ptr_)).points_,
+                robust);
     } else {
         return geometry::OrientedBoundingBox();
     }

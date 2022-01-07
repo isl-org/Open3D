@@ -1,4 +1,4 @@
-name: Documentation build
+name: Documentation
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-18.04
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master
@@ -32,8 +32,6 @@ jobs:
 
       - name: Checkout Open3D source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Maximize build space
         run: |
@@ -43,7 +41,7 @@ jobs:
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
         with:
-          repository: intel-isl/Open3D-ML
+          repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
@@ -64,7 +62,7 @@ jobs:
         with:
           python-version: 3.6
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.2.1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
@@ -103,8 +101,24 @@ jobs:
         run: |
           # Compress and upload the docs, only for master branch
           docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
-          tar_file="${{ github.sha }}.tar.gz"
+          tar_file="${{ github.sha }}_ready.tar.gz"
           rm -rf ${tar_file}
           tar -C ${docs_out_dir} -czvf ${tar_file} html
           gsutil cp ${tar_file} gs://open3d-docs/${tar_file}
-          echo "Download the docs at: https://storage.googleapis.com/open3d-docs/${tar_file}"
+          echo "Docs archive uploaded to:"
+          echo "https://storage.googleapis.com/open3d-docs/${tar_file}"
+
+      - name: Check wheels and ready documentation archive
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+            if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
+                -eq 4 ]; then
+                echo "All wheels and docs available. Making docs ready."
+                # Remove all marker files: Note _ at end of pattern.
+                gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
+                # Rename docs archive:
+                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
+                    gs://open3d-docs/${{ github.sha }}.tar.gz
+            else
+                echo "All wheels / docs not available yet."
+            fi

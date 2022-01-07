@@ -34,7 +34,7 @@ namespace utility {
 
 void pybind_utility(py::module &m) {
     py::module m_submodule = m.def_submodule("utility");
-    pybind_console(m_submodule);
+    pybind_logging(m_submodule);
     pybind_eigen(m_submodule);
 }
 

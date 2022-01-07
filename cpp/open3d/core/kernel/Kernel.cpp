@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {

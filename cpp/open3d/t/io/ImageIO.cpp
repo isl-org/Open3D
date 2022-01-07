@@ -29,8 +29,8 @@
 #include <unordered_map>
 
 #include "open3d/io/ImageIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
@@ -95,7 +95,7 @@ bool WriteImage(const std::string &filename,
                 "Write geometry::Image failed: unknown file extension.");
         return false;
     }
-    return map_itr->second(filename, image.CPU(), quality);
+    return map_itr->second(filename, image.To(core::Device("CPU:0")), quality);
 }
 
 }  // namespace io

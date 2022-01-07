@@ -54,7 +54,7 @@
 #endif  // _MSC_VER
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
@@ -245,7 +245,7 @@ void FilamentRenderer::RequestReadPixels(
         int height,
         std::function<void(std::shared_ptr<core::Tensor>)> callback) {
     core::SizeVector shape{height, width, 3};
-    core::Dtype dtype = core::Dtype::UInt8;
+    core::Dtype dtype = core::UInt8;
     int64_t nbytes = shape.NumElements() * dtype.ByteSize();
 
     auto image = std::make_shared<core::Tensor>(shape, dtype);

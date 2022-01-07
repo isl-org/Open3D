@@ -1,3 +1,6 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
 // Copyright (c) 2018-2021 www.open3d.org
@@ -20,6 +23,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
+
 #pragma once
 
 //#include "open3d/ml/impl/misc/VoxelPooling.h"
@@ -66,6 +70,16 @@ public:
         *ptr = (int64_t*)flat_tensor.data();
     }
 
+    void AllocVoxelBatchSplits(int64_t** ptr, int64_t num) {
+        using namespace tensorflow;
+        *ptr = nullptr;
+        Tensor* tensor = 0;
+        TensorShape shape({num});
+        OP_REQUIRES_OK(context, context->allocate_output(3, shape, &tensor));
+        auto flat_tensor = tensor->flat<int64>();
+        *ptr = (int64_t*)flat_tensor.data();
+    }
+
 private:
     tensorflow::OpKernelContext* context;
 };
@@ -85,9 +99,10 @@ public:
     void Compute(tensorflow::OpKernelContext* context) override {
         using namespace tensorflow;
         const Tensor& points = context->input(0);
-        const Tensor& voxel_size = context->input(1);
-        const Tensor& points_range_min = context->input(2);
-        const Tensor& points_range_max = context->input(3);
+        const Tensor& row_splits = context->input(1);
+        const Tensor& voxel_size = context->input(2);
+        const Tensor& points_range_min = context->input(3);
+        const Tensor& points_range_max = context->input(4);
 
         {
             using namespace open3d::ml::op_util;
@@ -103,12 +118,14 @@ public:
                             "the number of dimensions must be in [1,..,8]"));
         }
 
-        Kernel(context, points, voxel_size, points_range_min, points_range_max);
+        Kernel(context, points, row_splits, voxel_size, points_range_min,
+               points_range_max);
     }
 
     // Function with the device specific code
     virtual void Kernel(tensorflow::OpKernelContext* context,
                         const tensorflow::Tensor& points,
+                        const tensorflow::Tensor& row_splits,
                         const tensorflow::Tensor& voxel_size,
                         const tensorflow::Tensor& points_range_min,
                         const tensorflow::Tensor& points_range_max) = 0;

@@ -32,6 +32,7 @@
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace pipelines {
@@ -59,19 +60,22 @@ static std::tuple<bool, T> QueryImageIntensity(
         const camera::PinholeCameraParameters& camera_parameter,
         utility::optional<int> channel,
         int image_boundary_margin) {
-    float u, v, depth;
+    // We use double here for u, v such that it is consistent with 0.12 release
+    // numerically, since double->float->int can be different from double->int.
+    double u, v, depth;
     std::tie(u, v, depth) = Project3DPointAndGetUVDepth(V, camera_parameter);
+
     // TODO: check why we use the u, ve before warpping for TestImageBoundary.
     if (img.TestImageBoundary(u, v, image_boundary_margin)) {
         if (optional_warping_field.has_value()) {
             Eigen::Vector2d uv_shift =
                     optional_warping_field.value().GetImageWarpingField(u, v);
-            u = static_cast<float>(uv_shift(0));
-            v = static_cast<float>(uv_shift(1));
+            u = uv_shift(0);
+            v = uv_shift(1);
         }
         if (img.TestImageBoundary(u, v, image_boundary_margin)) {
-            int u_round = int(u);
-            int v_round = int(v);
+            int u_round = int(round(u));
+            int v_round = int(round(v));
             if (channel.has_value()) {
                 return std::make_tuple(
                         true,
@@ -147,14 +151,16 @@ CreateVertexAndImageVisibility(
     std::vector<std::vector<int>> visibility_vertex_to_image;
     visibility_vertex_to_image.resize(n_vertex);
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int camera_id = 0; camera_id < int(n_camera); camera_id++) {
         for (int vertex_id = 0; vertex_id < int(n_vertex); vertex_id++) {
             Eigen::Vector3d X = mesh.vertices_[vertex_id];
             float u, v, d;
             std::tie(u, v, d) = Project3DPointAndGetUVDepth(
                     X, camera_trajectory.parameters_[camera_id]);
-            int u_d = int(round(u)), v_d = int(round(v));
+            int u_d = int(round(u));
+            int v_d = int(round(v));
             // Skip if vertex in image boundary.
             if (d < 0.0 ||
                 !images_depth[camera_id].TestImageBoundary(u_d, v_d)) {
@@ -178,7 +184,7 @@ CreateVertexAndImageVisibility(
                 continue;
             }
             visibility_image_to_vertex[camera_id].push_back(vertex_id);
-#pragma omp critical
+#pragma omp critical(CreateVertexAndImageVisibility)
             { visibility_vertex_to_image[vertex_id].push_back(camera_id); }
         }
     }
@@ -206,7 +212,8 @@ void SetProxyIntensityForVertex(
     auto n_vertex = mesh.vertices_.size();
     proxy_intensity.resize(n_vertex);
 
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(n_vertex); i++) {
         proxy_intensity[i] = 0.0;
         float sum = 0.0;
@@ -251,7 +258,8 @@ void SetGeometryColorAverage(
     mesh.vertex_colors_.resize(n_vertex);
     std::vector<size_t> valid_vertices;
     std::vector<size_t> invalid_vertices;
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)n_vertex; i++) {
         mesh.vertex_colors_[i] = Eigen::Vector3d::Zero();
         double sum = 0.0;
@@ -283,7 +291,7 @@ void SetGeometryColorAverage(
                 sum += 1.0;
             }
         }
-#pragma omp critical
+#pragma omp critical(SetGeometryColorAverage)
         {
             if (sum > 0.0) {
                 mesh.vertex_colors_[i] /= sum;
@@ -297,7 +305,8 @@ void SetGeometryColorAverage(
         std::shared_ptr<geometry::TriangleMesh> valid_mesh =
                 mesh.SelectByIndex(valid_vertices);
         geometry::KDTreeFlann kd_tree(*valid_mesh);
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int i = 0; i < (int)invalid_vertices.size(); ++i) {
             size_t invalid_vertex = invalid_vertices[i];
             std::vector<int> indices;  // indices to valid_mesh

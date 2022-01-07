@@ -29,23 +29,34 @@
 #include <vector>
 
 #include "open3d/core/Device.h"
+#include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 #ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
+#include "open3d/core/CUDAUtils.h"
 #endif
 
 namespace open3d {
 namespace tests {
 
+class PermuteDtypesWithBool : public testing::TestWithParam<core::Dtype> {
+public:
+    static std::vector<core::Dtype> TestCases() {
+        return {
+                core::Bool,  core::UInt8,   core::Int8,    core::UInt16,
+                core::Int16, core::UInt32,  core::Int32,   core::UInt64,
+                core::Int64, core::Float32, core::Float64,
+        };
+    }
+};
+
 class PermuteDevices : public testing::TestWithParam<core::Device> {
 public:
     static std::vector<core::Device> TestCases() {
 #ifdef BUILD_CUDA_MODULE
-        std::shared_ptr<core::CUDAState> cuda_state =
-                core::CUDAState::GetInstance();
-        if (cuda_state->GetNumDevices() >= 1) {
+        const int device_count = core::cuda::DeviceCount();
+        if (device_count >= 1) {
             return {
                     core::Device("CPU:0"),
                     core::Device("CUDA:0"),
@@ -67,9 +78,8 @@ class PermuteDevicesWithFaiss : public testing::TestWithParam<core::Device> {
 public:
     static std::vector<core::Device> TestCases() {
 #if defined(BUILD_CUDA_MODULE) && defined(WITH_FAISS)
-        std::shared_ptr<core::CUDAState> cuda_state =
-                core::CUDAState::GetInstance();
-        if (cuda_state->GetNumDevices() >= 1) {
+        const int device_count = core::cuda::DeviceCount();
+        if (device_count >= 1) {
             return {
                     core::Device("CPU:0"),
                     core::Device("CUDA:0"),
@@ -92,9 +102,8 @@ class PermuteDevicePairs
 public:
     static std::vector<std::pair<core::Device, core::Device>> TestCases() {
 #ifdef BUILD_CUDA_MODULE
-        std::shared_ptr<core::CUDAState> cuda_state =
-                core::CUDAState::GetInstance();
-        if (cuda_state->GetNumDevices() > 1) {
+        const int device_count = core::cuda::DeviceCount();
+        if (device_count > 1) {
             // To test multiple CUDA devices, we only need to test CUDA 0 and 1.
             return {
                     {core::Device("CPU:0"), core::Device("CPU:0")},    // 0
@@ -107,7 +116,7 @@ public:
                     {core::Device("CUDA:1"), core::Device("CUDA:0")},  // 7
                     {core::Device("CUDA:1"), core::Device("CUDA:1")},  // 8
             };
-        } else if (cuda_state->GetNumDevices() == 1) {
+        } else if (device_count == 1) {
             return {
                     {core::Device("CPU:0"), core::Device("CPU:0")},
                     {core::Device("CPU:0"), core::Device("CUDA:0")},

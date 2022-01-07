@@ -26,11 +26,9 @@ target_sources(tests PRIVATE
     file_format/FileXYZRGB.cpp
 )
 
-if (BUILD_RPC_INTERFACE)
-    target_sources(tests PRIVATE
-        rpc/RemoteFunctions.cpp
-    )
-endif()
+target_sources(tests PRIVATE
+    rpc/RemoteFunctions.cpp
+)
 
 if (BUILD_AZURE_KINECT)
     target_sources(tests PRIVATE

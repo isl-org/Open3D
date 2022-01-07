@@ -1,4 +1,29 @@
-#!/usr/bin/env python
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+
 import open3d.visualization.gui as gui
 import os.path
 
@@ -121,9 +146,27 @@ class ExampleWindow:
         switch.set_on_clicked(self._on_switch)
         collapse.add_child(switch)
 
-        # Add a simple image
-        logo = gui.ImageWidget(basedir + "/icon-32.png")
-        collapse.add_child(logo)
+        self.logo_idx = 0
+        proxy = gui.WidgetProxy()
+
+        def switch_proxy():
+            self.logo_idx += 1
+            if self.logo_idx % 3 == 0:
+                proxy.set_widget(None)
+            elif self.logo_idx % 3 == 1:
+                # Add a simple image
+                logo = gui.ImageWidget(basedir + "/icon-32.png")
+                proxy.set_widget(logo)
+            else:
+                label = gui.Label(
+                    'Open3D: A Modern Library for 3D Data Processing')
+                proxy.set_widget(label)
+            w.set_needs_layout()
+
+        logo_btn = gui.Button('Switch Logo')
+        logo_btn.set_on_clicked(switch_proxy)
+        collapse.add_child(logo_btn)
+        collapse.add_child(proxy)
 
         # Add a list of items
         lv = gui.ListView()

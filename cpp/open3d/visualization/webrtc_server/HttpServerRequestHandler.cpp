@@ -36,7 +36,7 @@
 
 #include <functional>
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace visualization {
@@ -84,9 +84,9 @@ public:
 
         utility::LogDebug(
                 "request_uri: {}, local_uri: {}, request_method: {}, "
-                "query_string: {}, content_length, answer: {}.",
+                "query_string: {}, content_length: {}, answer: {}.",
                 req_info->request_uri, req_info->local_uri,
-                req_info->request_method, req_info->request_method,
+                req_info->request_method,
                 req_info->query_string ? req_info->query_string : "nullptr",
                 req_info->content_length, answer);
         return ret;

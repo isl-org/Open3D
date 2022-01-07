@@ -1,6 +1,28 @@
-# Open3D: www.open3d.org
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 
 # examples/python/pipelines/color_map_optimization_for_reconstruction_system.py
 
@@ -107,27 +129,27 @@ def main(config, keys):
 
     # Before full optimization, let's just visualize texture map
     # with given geometry, RGBD images, and camera poses.
-    mesh_optimized = o3d.pipelines.color_map.run_rigid_optimizer(
+    mesh, camera = o3d.pipelines.color_map.run_rigid_optimizer(
         mesh, rgbd_images, camera,
         o3d.pipelines.color_map.RigidOptimizerOption(maximum_iteration=0))
-    o3d.visualization.draw_geometries([mesh_optimized])
+    o3d.visualization.draw_geometries([mesh])
     o3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
-                     "color_map_before_optimization.ply"), mesh_optimized)
+                     "color_map_before_optimization.ply"), mesh)
 
     # Optimize texture and save the mesh as texture_mapped.ply
     # This is implementation of following paper
     # Q.-Y. Zhou and V. Koltun,
     # Color Map Optimization for 3D Reconstruction with Consumer Depth Cameras,
     # SIGGRAPH 2014
-    mesh_optimized = o3d.pipelines.color_map.run_non_rigid_optimizer(
+    mesh, camera = o3d.pipelines.color_map.run_non_rigid_optimizer(
         mesh, rgbd_images, camera,
         o3d.pipelines.color_map.NonRigidOptimizerOption(
             maximum_iteration=300, maximum_allowable_depth=config["max_depth"]))
-    o3d.visualization.draw_geometries([mesh_optimized])
+    o3d.visualization.draw_geometries([mesh])
     o3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],
-                     "color_map_after_optimization.ply"), mesh_optimized)
+                     "color_map_after_optimization.ply"), mesh)
 
 
 if __name__ == "__main__":

@@ -39,7 +39,7 @@ test_data_dir = os.path.join(_pwd, os.pardir, os.pardir, "examples",
 # Whenever you import open3d_test, the test data will be downloaded
 # automatically to Open3D/examples/test_data/open3d_downloads. Therefore, make
 # sure to import open3d_test or anything inside open3d_test before running
-# unit tests. See https://github.com/intel-isl/open3d_downloads for details on
+# unit tests. See https://github.com/isl-org/open3d_downloads for details on
 # how to manage the test data files.
 sys.path.append(test_data_dir)
 from download_utils import download_all_files as _download_all_files
@@ -96,7 +96,7 @@ def download_fountain_dataset():
     fountain_zip_path = os.path.join(test_data_dir, "fountain.zip")
     if not os.path.exists(fountain_path):
         print("Downloading fountain dataset")
-        url = "https://github.com/intel-isl/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"
+        url = "https://github.com/isl-org/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"
         urllib.request.urlretrieve(url, fountain_zip_path)
         print("Extracting fountain dataset")
         with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:

@@ -46,13 +46,25 @@ void ComputeOdometryResultPointToPlane(
         int &inlier_count,
         const float depth_outlier_trunc,
         const float depth_huber_delta) {
-    core::Device device = source_vertex_map.GetDevice();
+    // Only Float32 is supported as of now. TODO. Support Float64.
+    core::AssertTensorDtypes(source_vertex_map, {core::Float32});
+
+    const core::Dtype supported_dtype = source_vertex_map.GetDtype();
+    const core::Device device = source_vertex_map.GetDevice();
+
+    core::AssertTensorDtype(target_vertex_map, supported_dtype);
+    core::AssertTensorDtype(target_normal_map, supported_dtype);
+
+    core::AssertTensorDevice(target_vertex_map, device);
+    core::AssertTensorDevice(target_normal_map, device);
+
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
 
     static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
     core::Tensor trans_d =
-            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+            init_source_to_target.To(host, core::Float64).Contiguous();
 
     if (device.GetType() == core::Device::DeviceType::CPU) {
         ComputeOdometryResultPointToPlaneCPU(
@@ -68,6 +80,7 @@ void ComputeOdometryResultPointToPlane(
         utility::LogError("Unimplemented device.");
     }
 }
+
 void ComputeOdometryResultIntensity(const core::Tensor &source_depth,
                                     const core::Tensor &target_depth,
                                     const core::Tensor &source_intensity,
@@ -82,13 +95,34 @@ void ComputeOdometryResultIntensity(const core::Tensor &source_depth,
                                     int &inlier_count,
                                     const float depth_outlier_trunc,
                                     const float intensity_huber_delta) {
-    static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
-    core::Tensor trans_d =
-            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+    // Only Float32 is supported as of now. TODO. Support Float64.
+    core::AssertTensorDtypes(source_vertex_map, {core::Float32});
 
-    core::Device device = source_vertex_map.GetDevice();
+    const core::Dtype supported_dtype = source_vertex_map.GetDtype();
+    const core::Device device = source_vertex_map.GetDevice();
+
+    core::AssertTensorDtype(source_depth, supported_dtype);
+    core::AssertTensorDtype(target_depth, supported_dtype);
+    core::AssertTensorDtype(source_intensity, supported_dtype);
+    core::AssertTensorDtype(target_intensity, supported_dtype);
+    core::AssertTensorDtype(target_intensity_dx, supported_dtype);
+    core::AssertTensorDtype(target_intensity_dy, supported_dtype);
+
+    core::AssertTensorDevice(source_depth, device);
+    core::AssertTensorDevice(target_depth, device);
+    core::AssertTensorDevice(source_intensity, device);
+    core::AssertTensorDevice(target_intensity, device);
+    core::AssertTensorDevice(target_intensity_dx, device);
+    core::AssertTensorDevice(target_intensity_dy, device);
+
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
+
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
+    core::Tensor trans_d =
+            init_source_to_target.To(host, core::Float64).Contiguous();
+
     if (device.GetType() == core::Device::DeviceType::CPU) {
         ComputeOdometryResultIntensityCPU(
                 source_depth, target_depth, source_intensity, target_intensity,
@@ -123,13 +157,38 @@ void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
                                  const float depth_outlier_trunc,
                                  const float depth_huber_delta,
                                  const float intensity_huber_delta) {
-    static const core::Device host("CPU:0");
-    core::Tensor intrinsics_d =
-            intrinsics.To(host, core::Dtype::Float64).Contiguous();
-    core::Tensor trans_d =
-            init_source_to_target.To(host, core::Dtype::Float64).Contiguous();
+    // Only Float32 is supported as of now. TODO. Support Float64.
+    core::AssertTensorDtypes(source_vertex_map, {core::Float32});
 
-    core::Device device = source_vertex_map.GetDevice();
+    const core::Dtype supported_dtype = source_vertex_map.GetDtype();
+    const core::Device device = source_vertex_map.GetDevice();
+
+    core::AssertTensorDtype(source_depth, supported_dtype);
+    core::AssertTensorDtype(target_depth, supported_dtype);
+    core::AssertTensorDtype(source_intensity, supported_dtype);
+    core::AssertTensorDtype(target_intensity, supported_dtype);
+    core::AssertTensorDtype(target_depth_dx, supported_dtype);
+    core::AssertTensorDtype(target_depth_dy, supported_dtype);
+    core::AssertTensorDtype(target_intensity_dx, supported_dtype);
+    core::AssertTensorDtype(target_intensity_dy, supported_dtype);
+
+    core::AssertTensorDevice(source_depth, device);
+    core::AssertTensorDevice(target_depth, device);
+    core::AssertTensorDevice(source_intensity, device);
+    core::AssertTensorDevice(target_intensity, device);
+    core::AssertTensorDevice(target_depth_dx, device);
+    core::AssertTensorDevice(target_depth_dy, device);
+    core::AssertTensorDevice(target_intensity_dx, device);
+    core::AssertTensorDevice(target_intensity_dy, device);
+
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
+
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
+    core::Tensor trans_d =
+            init_source_to_target.To(host, core::Float64).Contiguous();
+
     if (device.GetType() == core::Device::DeviceType::CPU) {
         ComputeOdometryResultHybridCPU(
                 source_depth, target_depth, source_intensity, target_intensity,

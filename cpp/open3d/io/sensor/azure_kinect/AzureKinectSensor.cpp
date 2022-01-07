@@ -34,6 +34,7 @@
 
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/io/sensor/azure_kinect/K4aPlugin.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace io {
@@ -150,6 +151,8 @@ k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
 std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame(
         bool enable_align_depth_to_color) const {
     k4a_capture_t capture = CaptureRawFrame();
+    if (!capture) return nullptr;
+
     auto im_rgbd = DecompressCapture(
             capture,
             enable_align_depth_to_color ? transform_depth_to_color_ : nullptr);
@@ -177,7 +180,8 @@ void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
     }
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
 #pragma omp parallel for collapse(3) schedule(static)
 #endif

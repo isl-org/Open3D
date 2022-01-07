@@ -1,3 +1,29 @@
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+
 from . import gui
 from . import O3DVisualizer
 
@@ -13,8 +39,12 @@ def draw(geometry=None,
          field_of_view=60.0,
          bg_color=(1.0, 1.0, 1.0, 1.0),
          bg_image=None,
+         ibl=None,
+         ibl_intensity=None,
+         show_skybox=None,
          show_ui=None,
          point_size=None,
+         line_width=None,
          animation_time_step=1.0,
          animation_duration=None,
          rpc_interface=False,
@@ -32,6 +62,9 @@ def draw(geometry=None,
 
     if point_size is not None:
         w.point_size = point_size
+
+    if line_width is not None:
+        w.line_width = line_width
 
     def add(g, n):
         if isinstance(g, dict):
@@ -57,6 +90,15 @@ def draw(geometry=None,
 
     if show_ui is not None:
         w.show_settings = show_ui
+
+    if ibl is not None:
+        w.set_ibl(ibl)
+
+    if ibl_intensity is not None:
+        w.set_ibl_intensity(ibl_intensity)
+
+    if show_skybox is not None:
+        w.show_skybox(show_skybox)
 
     if rpc_interface:
         w.start_rpc_interface(address="tcp://127.0.0.1:51454", timeout=10000)

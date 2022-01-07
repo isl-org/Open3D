@@ -14,9 +14,9 @@ Recommended procedure
 1. Download, build from source, and familiarize yourself with Open3D
 2. Read the :ref:`style_guide` and install required tools
 3. Check existing classes, examples, and related code
-4. Fork Open3D on `GitHub <https://github.com/intel-isl/Open3D>`_
+4. Fork Open3D on `GitHub <https://github.com/isl-org/Open3D>`_
 5. Create new features in your fork. Do not forget unit tests and documentation. Double-check the :ref:`style_guide`
-6. Make a pull request to the `master branch <https://github.com/intel-isl/Open3D/tree/master>`_
+6. Make a pull request to the `master branch <https://github.com/isl-org/Open3D/tree/master>`_
 7. Make sure your PR passes the CI tests. If it doesn’t, fix the code until it builds and passes the CI tests
 8. Your PR will be assigned to reviewers
 9. Engage with your reviewers during the review process. Address issues or concerns raised during the review. Don’t let the review die.
@@ -80,7 +80,7 @@ You want to contribute to Open3D by reviewing code. Your mission is to help deve
 Recommended procedure
 -----------------------
 
- 1. Check the list of `open pull requests <https://github.com/intel-isl/Open3D/pulls>`_ and pick one that doesn’t yet have a reviewer. Leave a comment on the PR mentioning your interest: e.g., “I could help review this PR.”
+ 1. Check the list of `open pull requests <https://github.com/isl-org/Open3D/pulls>`_ and pick one that doesn’t yet have a reviewer. Leave a comment on the PR mentioning your interest: e.g., “I could help review this PR.”
  2. A project maintainer will assign you to the PR as a reviewer
  3. Use `Reviewable <https://reviewable.io/reviews>`_ to perform the code review
  4. When you begin the review, post a comment to indicate that you have started: e.g., “Starting to review this PR.”

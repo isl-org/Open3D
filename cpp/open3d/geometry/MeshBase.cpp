@@ -38,7 +38,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {
@@ -66,8 +66,8 @@ AxisAlignedBoundingBox MeshBase::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
 }
 
-OrientedBoundingBox MeshBase::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromPoints(vertices_);
+OrientedBoundingBox MeshBase::GetOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(vertices_, robust);
 }
 
 MeshBase &MeshBase::Transform(const Eigen::Matrix4d &transformation) {

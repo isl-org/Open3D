@@ -35,7 +35,7 @@
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/VoxelGrid.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {
@@ -529,7 +529,7 @@ AxisAlignedBoundingBox Octree::GetAxisAlignedBoundingBox() const {
     return box;
 }
 
-OrientedBoundingBox Octree::GetOrientedBoundingBox() const {
+OrientedBoundingBox Octree::GetOrientedBoundingBox(bool robust) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
             GetAxisAlignedBoundingBox());
 }

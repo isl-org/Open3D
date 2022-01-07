@@ -22,7 +22,7 @@ requirements:
         - python
         - jupyterlab
         - jupyter
-        - addict # Open3D-ML deps starts here (https://github.com/intel-isl/Open3D-ML/blob/master/requirements.txt)
+        - addict # Open3D-ML deps starts here (https://github.com/isl-org/Open3D-ML/blob/master/requirements.txt)
         - pandas
         - plyfile
         - pyyaml

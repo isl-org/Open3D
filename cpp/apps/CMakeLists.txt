@@ -17,7 +17,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
 
         set(MACOSX_BUNDLE_NAME ${APP_NAME})
         set(MACOSX_BUNDLE_EXECUTABLE_NAME ${APP_NAME})
-        set(MACOSX_BUNDLE_GUI_IDENTIFIER com.intel-isl.open3d.${APP_NAME})
+        set(MACOSX_BUNDLE_GUI_IDENTIFIER com.isl-org.open3d.${APP_NAME})
         set(MACOSX_BUNDLE_ICON_FILE "AppIcon")
         set(MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
@@ -49,6 +49,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     open3d_show_and_abort_on_warning(${TARGET_NAME})
     open3d_set_global_properties(${TARGET_NAME})
+    open3d_link_3rdparty_libraries(${TARGET_NAME})
 
     # Copy the resource files. This needs to be done as a post-build step
     # because on macOS, we don't know the bundle directory until build time

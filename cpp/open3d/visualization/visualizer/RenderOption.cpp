@@ -31,7 +31,7 @@
 
 #include <algorithm>
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace visualization {

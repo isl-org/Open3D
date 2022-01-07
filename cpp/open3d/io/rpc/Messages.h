@@ -25,25 +25,33 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
-#include <boost/predef/other/endian.h>
 
+#include <array>
+#include <cstring>
 #include <map>
 #include <msgpack.hpp>
 #include <string>
 #include <vector>
 
-#if BOOST_ENDIAN_LITTLE_BYTE
-#define ENDIANNESS_STR "<"
-#elif BOOST_ENDIAN_BIG_BYTE
-#define ENDIANNESS_STR ">"
-#else
-#error Cannot determine endianness
-#endif
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace io {
 namespace rpc {
 namespace messages {
+
+inline std::string EndiannessStr() {
+    auto IsLittleEndian = []() -> bool {
+        uint32_t a = 1;
+        uint8_t b;
+        // Use memcpy as a reliable way to access a single byte.
+        // Other approaches, e.g. union, often rely on undefined behaviour.
+        std::memcpy(&b, &a, sizeof(uint8_t));
+        return b == 1;
+    };
+
+    return IsLittleEndian() ? "<" : ">";
+}
 
 /// Template function for converting types to their string representation.
 /// E.g. TypeStr<float>() -> "<f4"
@@ -53,11 +61,11 @@ inline std::string TypeStr() {
 }
 template <>
 inline std::string TypeStr<float>() {
-    return ENDIANNESS_STR "f4";
+    return EndiannessStr() + "f4";
 }
 template <>
 inline std::string TypeStr<double>() {
-    return ENDIANNESS_STR "f8";
+    return EndiannessStr() + "f8";
 }
 template <>
 inline std::string TypeStr<int8_t>() {
@@ -65,15 +73,15 @@ inline std::string TypeStr<int8_t>() {
 }
 template <>
 inline std::string TypeStr<int16_t>() {
-    return ENDIANNESS_STR "i2";
+    return EndiannessStr() + "i2";
 }
 template <>
 inline std::string TypeStr<int32_t>() {
-    return ENDIANNESS_STR "i4";
+    return EndiannessStr() + "i4";
 }
 template <>
 inline std::string TypeStr<int64_t>() {
-    return ENDIANNESS_STR "i8";
+    return EndiannessStr() + "i8";
 }
 template <>
 inline std::string TypeStr<uint8_t>() {
@@ -81,18 +89,16 @@ inline std::string TypeStr<uint8_t>() {
 }
 template <>
 inline std::string TypeStr<uint16_t>() {
-    return ENDIANNESS_STR "u2";
+    return EndiannessStr() + "u2";
 }
 template <>
 inline std::string TypeStr<uint32_t>() {
-    return ENDIANNESS_STR "u4";
+    return EndiannessStr() + "u4";
 }
 template <>
 inline std::string TypeStr<uint64_t>() {
-    return ENDIANNESS_STR "u8";
+    return EndiannessStr() + "u8";
 }
-
-#undef ENDIANNESS_STR
 
 /// Array structure inspired by msgpack_numpy but not directly compatible
 /// because they use bin-type for the map keys and we must use string.
@@ -117,6 +123,8 @@ inline std::string TypeStr<uint64_t>() {
 struct Array {
     static std::string MsgId() { return "array"; }
 
+    /// Creates an Array from a pointer. The caller is responsible for keeping
+    /// the pointer valid during the lifetime of the Array object.
     template <class T>
     static Array FromPtr(const T* const ptr,
                          const std::vector<int64_t>& shape) {
@@ -129,6 +137,26 @@ struct Array {
         arr.data.size = uint32_t(sizeof(T) * num);
         return arr;
     }
+
+    /// Creates an Array from a Tensor. This will copy the tensor to
+    /// contiguous CPU memory if necessary and the returned array will keep
+    /// a reference.
+    static Array FromTensor(const core::Tensor& tensor) {
+        // We require the tensor to be contiguous and to use the CPU.
+        auto t = tensor.To(core::Device("CPU:0")).Contiguous();
+        auto a = DISPATCH_DTYPE_TO_TEMPLATE(t.GetDtype(), [&]() {
+            auto arr = messages::Array::FromPtr(
+                    (scalar_t*)t.GetDataPtr(),
+                    static_cast<std::vector<int64_t>>(t.GetShape()));
+            arr.tensor_ = t;
+            return arr;
+        });
+        return a;
+    }
+
+    // Object for keeping a reference to the tensor. not meant to be serialized.
+    core::Tensor tensor_;
+
     std::string type;
     std::vector<int64_t> shape;
     msgpack::type::raw_ref data;
@@ -246,6 +274,12 @@ struct Array {
 struct MeshData {
     static std::string MsgId() { return "mesh_data"; }
 
+    /// The original Open3D geometry type from which the MeshData object has
+    /// been created. This is one of "PointCloud", "LineSet", "TriangleMesh". If
+    /// this field is empty Open3D will infer the type based on the presence of
+    /// lines and faces.
+    std::string o3d_type;
+
     /// shape must be [num_verts,3]
     Array vertices;
     /// stores arbitrary attributes for each vertex, hence the first dim must
@@ -266,17 +300,32 @@ struct MeshData {
     /// The array can be of rank 1 or 2.
     /// An array of rank 2 with shape [num_lines,n] defines num_lines linestrips
     /// with n vertices. If the rank of the array is 1 then linestrips with
-    /// different number of veertices are stored sequentially. Each linestrip is
+    /// different number of vertices are stored sequentially. Each linestrip is
     /// stored as a sequence 'n i1 i2 ... in' with n>=2. The type of the array
     /// must be int32_t or int64_t
     Array lines;
     /// stores arbitrary attributes for each line
     std::map<std::string, Array> line_attributes;
 
+    /// Material for DrawableGeometry
+    std::string material = "";
+    /// Material scalar properties
+    std::map<std::string, float> material_scalar_attributes;
+    /// Material vector[4] properties
+    std::map<std::string, std::array<float, 4>> material_vector_attributes;
     /// map of arrays that can be interpreted as textures
-    std::map<std::string, Array> textures;
+    std::map<std::string, Array> texture_maps;
+
+    void SetO3DTypeToPointCloud() { o3d_type = "PointCloud"; }
+    void SetO3DTypeToLineSet() { o3d_type = "LineSet"; }
+    void SetO3DTypeToTriangleMesh() { o3d_type = "TriangleMesh"; }
+
+    bool O3DTypeIsPointCloud() const { return o3d_type == "PointCloud"; }
+    bool O3DTypeIsLineSet() const { return o3d_type == "LineSet"; }
+    bool O3DTypeIsTriangleMesh() const { return o3d_type == "TriangleMesh"; }
 
     bool CheckVertices(std::string& errstr) const {
+        if (vertices.shape.empty()) return true;
         std::string tmp = "invalid vertices array:";
         bool status = vertices.CheckNonEmpty(tmp) &&
                       vertices.CheckShape({-1, 3}, tmp);
@@ -322,20 +371,38 @@ struct MeshData {
         return status;
     }
 
+    bool CheckO3DType(std::string& errstr) const {
+        if (o3d_type.empty() || O3DTypeIsPointCloud() || O3DTypeIsLineSet() ||
+            O3DTypeIsTriangleMesh()) {
+            return true;
+        } else {
+            errstr +=
+                    " invalid o3d_type. Expected 'PointCloud', 'TriangleMesh', "
+                    "or 'LineSet' but got '" +
+                    o3d_type + "'.";
+            return false;
+        }
+    }
+
     bool CheckMessage(std::string& errstr) const {
         std::string tmp = "invalid mesh_data message:";
-        bool status = CheckVertices(errstr) && CheckFaces(errstr);
+        bool status =
+                CheckO3DType(tmp) && CheckVertices(tmp) && CheckFaces(tmp);
         if (!status) errstr += tmp;
         return status;
     }
 
-    MSGPACK_DEFINE_MAP(vertices,
+    MSGPACK_DEFINE_MAP(o3d_type,
+                       vertices,
                        vertex_attributes,
                        faces,
                        face_attributes,
                        lines,
                        line_attributes,
-                       textures);
+                       material,
+                       material_scalar_attributes,
+                       material_vector_attributes,
+                       texture_maps);
 };
 
 /// struct for defining a "set_mesh_data" message, which adds or replaces mesh

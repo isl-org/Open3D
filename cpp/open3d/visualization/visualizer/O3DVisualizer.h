@@ -28,7 +28,7 @@
 
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Window.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/visualizer/O3DVisualizerSelections.h"
 
@@ -65,7 +65,7 @@ public:
         std::shared_ptr<geometry::Geometry3D> geometry;
         std::shared_ptr<t::geometry::Geometry> tgeometry;
         std::shared_ptr<rendering::TriangleMeshModel> model;
-        rendering::Material material;
+        rendering::MaterialRecord material;
         std::string group;
         double time = 0.0;
         bool is_visible = true;
@@ -79,7 +79,7 @@ public:
                 gui::SceneWidget::Controls::ROTATE_CAMERA;
         Shader scene_shader = Shader::STANDARD;
         bool show_settings = false;
-        bool show_skybox = false;
+        bool show_skybox = true;
         bool show_axes = false;
         bool show_ground = false;
         rendering::Scene::GroundPlane ground_plane =
@@ -115,34 +115,55 @@ public:
 
     void SetShader(Shader shader);
 
+    /// Adds a legacy geometry to the Visualizer
     void AddGeometry(const std::string& name,
                      std::shared_ptr<geometry::Geometry3D> geom,
-                     const rendering::Material* material = nullptr,
+                     const rendering::MaterialRecord* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
+    /// Adds a t-geometry to the Visualizer, only DrawableGeometries are
+    /// supported.
     void AddGeometry(const std::string& name,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
-                     const rendering::Material* material = nullptr,
+                     const rendering::MaterialRecord* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
+    /// Adds a triangle mesh model to the Visualizer.
     void AddGeometry(const std::string& name,
                      std::shared_ptr<rendering::TriangleMeshModel> tgeom,
-                     const rendering::Material* material = nullptr,
+                     const rendering::MaterialRecord* material = nullptr,
                      const std::string& group = "",
                      double time = 0.0,
                      bool is_visible = true);
 
+    /// Removes the named geometry from the Visualizer
     void RemoveGeometry(const std::string& name);
 
+    /// Updates `update_flags` attributes of named geometry with the matching
+    /// attributes from `tgeom`
+    void UpdateGeometry(const std::string& name,
+                        std::shared_ptr<t::geometry::Geometry> tgeom,
+                        uint32_t update_flags);
+
+    /// Show/hide the named geometry
     void ShowGeometry(const std::string& name, bool show);
 
+    /// Returns Visualizer's internal DrawObject for the named geometry
     DrawObject GetGeometry(const std::string& name) const;
+    rendering::MaterialRecord GetGeometryMaterial(
+            const std::string& name) const;
 
+    void ModifyGeometryMaterial(const std::string& name,
+                                const rendering::MaterialRecord* material);
+
+    /// Adds a label with text `text` at the 3D position `pos`.
     void Add3DLabel(const Eigen::Vector3f& pos, const char* text);
+
+    /// Clears all 3D labels created with `Add3DLabel`
     void Clear3DLabels();
 
     void SetupCamera(float fov,
@@ -160,6 +181,8 @@ public:
 
     void ShowSettings(bool show);
     void ShowSkybox(bool show);
+    void SetIBL(const std::string& path);
+    void SetIBLIntensity(float intensity);
     void ShowAxes(bool show);
     void ShowGround(bool show);
     void SetGroundPlane(rendering::Scene::GroundPlane plane);
@@ -196,7 +219,7 @@ public:
     UIState GetUIState() const;
     rendering::Open3DScene* GetScene() const;
 
-    /// Starts the RPC interface. See io/rpc/ReceiverBase for the parameters.
+    /// Starts the RPC interface. See io/rpc/ZMQReceiver for the parameters.
     void StartRPCInterface(const std::string& address, int timeout);
 
     void StopRPCInterface();

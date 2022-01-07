@@ -6,6 +6,8 @@ else()
     set(lib_name z)
 endif()
 
+find_package(Git QUIET REQUIRED)
+
 ExternalProject_Add(
     ext_zlib
     PREFIX zlib
@@ -13,6 +15,9 @@ ExternalProject_Add(
     URL_HASH SHA256=629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/zlib"
     UPDATE_COMMAND ""
+    PATCH_COMMAND ${GIT_EXECUTABLE} init
+    COMMAND       ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace
+                  ${CMAKE_CURRENT_LIST_DIR}/0001-patch-zlib-to-enable-unzip.patch
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         # zlib needs visiible symbols for examples. Disabling example building causes

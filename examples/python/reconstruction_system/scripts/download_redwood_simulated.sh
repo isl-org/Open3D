@@ -6,13 +6,13 @@ download_redwood_scene()
     DATA_NAME=$1
 
     # Source: http://redwood-data.org/indoor/data/$DATA_NAME-color.zip
-    wget https://github.com/intel-isl/open3d_downloads/releases/download/redwood-simulated/$DATA_NAME-color.zip
-    
+    wget https://github.com/isl-org/open3d_downloads/releases/download/redwood-simulated/$DATA_NAME-color.zip
+
     # Source: http://redwood-data.org/indoor/data/$DATA_NAME-depth-clean.zip
-    wget https://github.com/intel-isl/open3d_downloads/releases/download/redwood-simulated/$DATA_NAME-depth-clean.zip
-    
+    wget https://github.com/isl-org/open3d_downloads/releases/download/redwood-simulated/$DATA_NAME-depth-clean.zip
+
     # Source: http://redwood-data.org/indoor/data/$DATA_NAME-depth-simulated.zip
-    wget https://github.com/intel-isl/open3d_downloads/releases/download/redwood-simulated/$DATA_NAME-depth-simulated.zip
+    wget https://github.com/isl-org/open3d_downloads/releases/download/redwood-simulated/$DATA_NAME-depth-simulated.zip
 
 }
 

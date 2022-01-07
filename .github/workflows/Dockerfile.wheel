@@ -1,0 +1,131 @@
+# FROM must be called before other ARGS except for ARG BASE_IMAGE
+ARG BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+FROM ${BASE_IMAGE}
+
+# Customizable build arguments from cuda.yml
+ARG DEVELOPER_BUILD=ON
+ARG CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
+ARG CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+ARG CCACHE_VERSION=4.3
+ARG PYTHON_VERSION=3.6
+
+# Forward all ARG to ENV
+# ci_utils.sh requires these environment variables
+ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
+ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
+ENV CMAKE_VERSION=${CMAKE_VERSION}
+ARG CCACHE_VERSION=${CCACHE_VERSION}
+ENV PYTHON_VERSION=${PYTHON_VERSION}
+
+# Prevent interactive inputs when installing packages
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV SUDO=command
+
+# Miniconda requires bash as the default shell.
+SHELL ["/bin/bash", "-c"]
+
+# Dependencies: basic
+RUN apt-get update && apt-get install -y \
+    git  \
+    wget \
+    curl \
+ && rm -rf /var/lib/apt/lists/*
+
+# Dependencies: cmake
+RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -xf ${CMAKE_VERSION}.tar.gz \
+ && cp -ar ${CMAKE_VERSION} ${HOME}
+ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
+
+# Dependencies: ccache
+WORKDIR /root
+RUN git clone https://github.com/ccache/ccache.git \
+ && cd ccache \
+ && git checkout v${CCACHE_VERSION} -b ${CCACHE_VERSION} \
+ && mkdir build \
+ && cd build \
+ && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON .. \
+ && make install -j$(nproc) \
+ && which ccache \
+ && ccache --version \
+ && ccache -s
+
+# Download ccache from GCS bucket (optional)
+# Example directory structure:
+# CCACHE_DIR        = ~/.cache/ccache
+# CCACHE_DIR_NAME   = ccache
+# CCACHE_DIR_PARENT = ~/.cache
+RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && mkdir -p ${CCACHE_DIR_PARENT} \
+ && cd ${CCACHE_DIR_PARENT} \
+ && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi
+# We need to set ccache size explicitly with -M, otherwise the defualt size is
+# *not* determined by ccache's default, but the downloaded ccache file's config.
+RUN ccache -M 5G \
+ && ccache -s
+
+# Miniconda
+ENV PATH="/root/miniconda3/bin:${PATH}"
+RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+ && bash Miniconda3-latest-Linux-x86_64.sh -b \
+ && rm Miniconda3-latest-Linux-x86_64.sh \
+ && conda --version
+ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
+RUN conda create -y -n open3d python=${PYTHON_VERSION} \
+ && source activate open3d
+RUN which python \
+ && python --version
+
+# Checkout Open3D-ML master branch
+# TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
+ENV OPEN3D_ML_ROOT=/root/Open3D-ML
+RUN git clone https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
+
+# Open3D C++ dependencies
+# Done before copying the full Open3D directory for better Docker caching
+COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
+RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
+ && rm -rf /var/lib/apt/lists/*
+
+# Open3D Python dependencies
+COPY ./util/ci_utils.sh /root/Open3D/util/
+COPY ./python/requirements.txt /root/Open3D/python/
+COPY ./python/requirements_jupyter.txt /root/Open3D/python/
+RUN source /root/Open3D/util/ci_utils.sh \
+ && install_python_dependencies with-conda with-cuda with-jupyter
+
+# Open3D Jupyter dependencies
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+ && apt-get install -y nodejs \
+ && rm -rf /var/lib/apt/lists/* \
+ && node --version
+RUN npm install -g yarn \
+ && yarn --version
+
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
+COPY . /root/Open3D
+WORKDIR /root/Open3D
+
+# Build python wheel
+RUN export NPROC=$(nproc) \
+ && export SHARED=OFF \
+ && export BUILD_TENSORFLOW_OPS=ON \
+ && export BUILD_PYTORCH_OPS=ON \
+ && source /root/Open3D/util/ci_utils.sh \
+ && build_pip_conda_package build_azure_kinect build_jupyter
+
+# Compress ccache folder, move to / directory
+RUN ccache -s \
+ && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && cd ${CCACHE_DIR_PARENT} \
+ && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME}
+
+RUN echo "Docker build done."

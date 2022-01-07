@@ -37,10 +37,9 @@ namespace core {
 static core::Tensor GetColPermutation(const Tensor& ipiv,
                                       int number_of_indices,
                                       int number_of_rows) {
-    Tensor full_ipiv = Tensor::Arange(0, number_of_rows, 1, core::Dtype::Int32,
-                                      Device("CPU:0"));
-    Tensor ipiv_cpu =
-            ipiv.To(Device("CPU:0"), core::Dtype::Int32, /*copy=*/false);
+    Tensor full_ipiv =
+            Tensor::Arange(0, number_of_rows, 1, core::Int32, Device("CPU:0"));
+    Tensor ipiv_cpu = ipiv.To(Device("CPU:0"), core::Int32, /*copy=*/false);
     const int* ipiv_ptr = static_cast<const int*>(ipiv_cpu.GetDataPtr());
     int* full_ipiv_ptr = static_cast<int*>(full_ipiv.GetDataPtr());
     for (int i = 0; i < number_of_indices; i++) {
@@ -50,7 +49,7 @@ static core::Tensor GetColPermutation(const Tensor& ipiv,
     }
     // This is column permutation for P, where P.A = L.U.
     // Int64 is required by AdvancedIndexing.
-    return full_ipiv.To(ipiv.GetDevice(), core::Dtype::Int64, /*copy=*/false);
+    return full_ipiv.To(ipiv.GetDevice(), core::Int64, /*copy=*/false);
 }
 
 // Decompose output in P, L, U matrix form.
@@ -79,24 +78,19 @@ static void OutputToPLU(const Tensor& output,
 }
 
 void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
-    Device device = A.GetDevice();
-    // Check dtypes.
-    Dtype dtype = A.GetDtype();
-    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-        utility::LogError(
-                "Only tensors with Float32 or Float64 are supported, but "
-                "received {}.",
-                dtype.ToString());
-    }
+    AssertTensorDtypes(A, {Float32, Float64});
+
+    const Device device = A.GetDevice();
+    const Dtype dtype = A.GetDtype();
 
     // Check dimensions.
-    SizeVector A_shape = A.GetShape();
+    const SizeVector A_shape = A.GetShape();
     if (A_shape.size() != 2) {
         utility::LogError("Tensor must be 2D, but got {}D.", A_shape.size());
     }
 
-    int64_t rows = A_shape[0];
-    int64_t cols = A_shape[1];
+    const int64_t rows = A_shape[0];
+    const int64_t cols = A_shape[1];
     if (rows == 0 || cols == 0) {
         utility::LogError(
                 "Tensor shapes should not contain dimensions with zero.");
@@ -115,7 +109,7 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         int64_t ipiv_len = std::min(rows, cols);
-        ipiv = core::Tensor::Empty({ipiv_len}, core::Dtype::Int32, device);
+        ipiv = core::Tensor::Empty({ipiv_len}, core::Int32, device);
         void* ipiv_data = ipiv.GetDataPtr();
         LUCUDA(A_data, ipiv_data, rows, cols, dtype, device);
 #else
@@ -124,9 +118,9 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
     } else {
         Dtype ipiv_dtype;
         if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
-            ipiv_dtype = Dtype::Int32;
+            ipiv_dtype = core::Int32;
         } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
-            ipiv_dtype = Dtype::Int64;
+            ipiv_dtype = core::Int64;
         } else {
             utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
         }
@@ -145,6 +139,8 @@ void LU(const Tensor& A,
         Tensor& lower,
         Tensor& upper,
         const bool permute_l) {
+    AssertTensorDtypes(A, {Float32, Float64});
+
     // Get output matrix and ipiv.
     core::Tensor ipiv, output;
     LUIpiv(A, ipiv, output);

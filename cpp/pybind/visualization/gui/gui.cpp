@@ -26,8 +26,6 @@
 
 #include "pybind/visualization/gui/gui.h"
 
-#include <pybind11/detail/common.h>
-
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/t/geometry/Image.h"
@@ -58,6 +56,7 @@
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/gui/Widget.h"
+#include "open3d/visualization/gui/WidgetProxy.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
@@ -65,6 +64,7 @@
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 #include "pybind/visualization/visualization.h"
 #include "pybind11/functional.h"
 
@@ -174,10 +174,13 @@ std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
 }
 
 std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height) {
+        rendering::Open3DScene *scene,
+        int width,
+        int height,
+        bool z_in_view_space /* = false */) {
     return Application::GetInstance().RenderToDepthImage(
             scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
-            height);
+            height, z_in_view_space);
 }
 
 enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
@@ -271,10 +274,9 @@ void pybind_gui_classes(py::module &m) {
                         InitializeForPython(resource_dir);
                     },
                     "Initializes the application with location of the "
-                    "resources "
-                    "provided by the caller. One of the `initialize` functions "
-                    "_must_ be called prior to using anything in the gui "
-                    "module")
+                    "resources provided by the caller. One of the `initialize` "
+                    "functions _must_ be called prior to using anything in the "
+                    "gui module")
             .def("add_font", &Application::AddFont,
                  "Adds a font. Must be called after initialize() and before "
                  "a window is created. Returns the font id, which can be used "
@@ -368,10 +370,8 @@ void pybind_gui_classes(py::module &m) {
                         instance.AddWindow(TakeOwnership(window));
                     },
                     "Adds a window to the application. This is only necessary "
-                    "when "
-                    "creating object that is a Window directly, rather than "
-                    "with "
-                    "create_window")
+                    "when creating an object that is a Window directly, rather "
+                    "than with create_window")
             .def("run_in_thread", &Application::RunInThread,
                  "Runs function in a separate thread. Do not call GUI "
                  "functions on this thread, call post_to_main_thread() if "
@@ -694,6 +694,53 @@ void pybind_gui_classes(py::module &m) {
                  "it requires some internal setup in order to function "
                  "properly");
 
+    // ---- WidgetProxy ----
+    py::class_<WidgetProxy, UnownedPointer<WidgetProxy>, Widget> widgetProxy(
+            m, "WidgetProxy",
+            "Widget container to delegate any widget dynamically."
+            " Widget can not be managed dynamically. Although it is allowed"
+            " to add more child widgets, it's impossible to replace some child"
+            " with new on or remove children. WidgetProxy is designed to solve"
+            " this problem."
+            " When WidgetProxy is created, it's invisible and disabled, so it"
+            " won't be drawn or layout, seeming like it does not exist. When"
+            " a widget is set by  set_widget, all  Widget's APIs will be"
+            " conducted to that child widget. It looks like WidgetProxy is"
+            " that widget."
+            " At any time, a new widget could be set, to replace the old one."
+            " and the old widget will be destroyed."
+            " Due to the content changing after a new widget is set or cleared,"
+            " a relayout of Window might be called after set_widget."
+            " The delegated widget could be retrieved by  get_widget in case"
+            "  you need to access it directly, like get check status of a"
+            " CheckBox. API other than  set_widget and get_widget has"
+            " completely same functions as Widget.");
+    widgetProxy.def(py::init<>(), "Creates a widget proxy")
+            .def("__repr__",
+                 [](const WidgetProxy &c) {
+                     std::stringstream s;
+                     s << "Proxy (" << c.GetFrame().x << ", " << c.GetFrame().y
+                       << "), " << c.GetFrame().width << " x "
+                       << c.GetFrame().height;
+                     return s.str();
+                 })
+            .def(
+                    "set_widget",
+                    [](WidgetProxy &w, UnownedPointer<Widget> proxy) {
+                        w.SetWidget(TakeOwnership<Widget>(proxy));
+                    },
+                    "set a new widget to be delegated by this one."
+                    " After set_widget, the previously delegated widget ,"
+                    " will be abandon all calls to Widget's API will be "
+                    " conducted to widget. Before any set_widget call, "
+                    " this widget is invisible and disabled, seems it "
+                    " does not exist because it won't be drawn or in a "
+                    "layout.")
+            .def("get_widget", &WidgetProxy::GetWidget,
+                 "Retrieve current delegated widget."
+                 "return instance of current delegated widget set by "
+                 "set_widget. An empty pointer will be returned "
+                 "if there is none.");
     // ---- Button ----
     py::class_<Button, UnownedPointer<Button>, Widget> button(m, "Button",
                                                               "Button");
@@ -1264,6 +1311,10 @@ void pybind_gui_classes(py::module &m) {
                     "Adds a tab. The first parameter is the title of the tab, "
                     "and the second parameter is a widget--normally this is a "
                     "layout.")
+            .def_property("selected_tab_index",
+                          &TabControl::GetSelectedTabIndex,
+                          &TabControl::SetSelectedTabIndex,
+                          "The index of the currently selected item")
             .def("set_on_selected_tab_changed",
                  &TabControl::SetOnSelectedTabChanged,
                  "Calls the provided callback function with the index of the "
@@ -1666,6 +1717,7 @@ void pybind_gui_classes(py::module &m) {
             py::none(), py::none(), "");
     filedlg_mode.value("OPEN", FileDialog::Mode::OPEN)
             .value("SAVE", FileDialog::Mode::SAVE)
+            .value("OPEN_DIR", FileDialog::Mode::OPEN_DIR)
             .export_values();
     filedlg.def(py::init<FileDialog::Mode, const char *, const Theme &>(),
                 "Creates either an open or save file dialog. The first "

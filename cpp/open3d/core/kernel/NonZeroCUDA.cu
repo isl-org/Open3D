@@ -101,7 +101,7 @@ Tensor NonZeroCUDA(const Tensor& src) {
     const size_t num_non_zeros = non_zero_indices.size();
 
     SizeVector result_shape{num_dims, static_cast<int64_t>(num_non_zeros)};
-    Tensor result(result_shape, Dtype::Int64, src.GetDevice());
+    Tensor result(result_shape, core::Int64, src.GetDevice());
     TensorIterator result_iter(result);
 
     index_last = index_first + num_non_zeros;

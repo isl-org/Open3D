@@ -26,6 +26,21 @@
 
 #pragma once
 
+// If performing a debug build with VS2022 (_MSC_VER == 1930) we need to include
+// corecrt.h before pybind so that the _STL_ASSERT macro is defined in a
+// compatible way.
+//
+// pybind11/pybind11.h includes pybind11/detail/common.h, which undefines _DEBUG
+// whilst including the Python headers (which in turn include corecrt.h). This
+// alters how the _STL_ASSERT macro is defined and causes the build to fail.
+//
+// see https://github.com/microsoft/onnxruntime/issues/9735
+//
+#if defined(_MSC_VER) && defined(_DEBUG) && _MSC_VER >= 1930
+#include <corecrt.h>
+#endif
+
+#include <pybind11/detail/common.h>
 #include <pybind11/detail/internals.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
@@ -38,6 +53,10 @@
 #include "open3d/pipelines/registration/PoseGraph.h"
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Optional.h"
+
+// We include the type caster for tensor here because it must be included in
+// every compilation unit.
+#include "pybind/core/tensor_type_caster.h"
 
 namespace py = pybind11;
 using namespace py::literals;
@@ -56,6 +75,7 @@ PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector3i>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2d>);
 PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Vector2i>);
+PYBIND11_MAKE_OPAQUE(std::vector<Eigen::Matrix3d>);
 PYBIND11_MAKE_OPAQUE(temp_eigen_matrix4d);
 PYBIND11_MAKE_OPAQUE(temp_eigen_vector4i);
 PYBIND11_MAKE_OPAQUE(

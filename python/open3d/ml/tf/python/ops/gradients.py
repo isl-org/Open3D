@@ -282,3 +282,15 @@ def _sparse_conv_transpose_grad(op, grad):
     )
 
     return [filter_grad] + [None] + [inp_features_grad] + [None] * 7
+
+
+@_ops.RegisterGradient("Open3DTrilinearDevoxelize")
+def _trilinear_devoxelize_gradient(op, grad_out, grad_inds, grad_wgts):
+
+    inds = op.outputs[1]
+    wgts = op.outputs[2]
+    r = op.attrs[1]
+
+    grad_input = _lib.trilinear_devoxelize_grad(grad_out, inds, wgts, r)
+
+    return None, grad_input
