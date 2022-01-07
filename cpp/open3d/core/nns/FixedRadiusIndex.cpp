@@ -182,7 +182,8 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
             neighbors_index, neighbors_row_splits, neighbors_distance
 
 #define CALL_RADIUS(type, index_type, fn)               \
-    if (Dtype::FromType<type>() == dtype && Dtype::FromType<index_type>() == index_dtype) { \
+    if (Dtype::FromType<type>() == dtype &&             \
+        Dtype::FromType<index_type>() == index_dtype) { \
         fn<type, index_type>(RADIUS_PARAMETERS);        \
     }
 
@@ -258,7 +259,8 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
             neighbors_count, neighbors_distance
 
 #define CALL_HYBRID(type, index_type, fn)               \
-    if (Dtype::FromType<type>() == dtype && Dtype::FromType<index_type>() == index_dtype) { \
+    if (Dtype::FromType<type>() == dtype &&             \
+        Dtype::FromType<index_type>() == index_dtype) { \
         fn<type, index_type>(HYBRID_PARAMETERS);        \
     }
 

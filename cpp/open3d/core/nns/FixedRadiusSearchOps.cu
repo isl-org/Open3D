@@ -218,8 +218,8 @@ void HybridSearchCUDA(const Tensor& points,
             const Tensor& points_row_splits, const Tensor& hash_table_splits, \
             Tensor& hash_table_index, Tensor& hash_table_cell_splits);
 
-#define INSTANTIATE_RADIUS(T, TIndex)                                                  \
-    template void FixedRadiusSearchCUDA<T, TIndex>(                                    \
+#define INSTANTIATE_RADIUS(T, TIndex)                                          \
+    template void FixedRadiusSearchCUDA<T, TIndex>(                            \
             const Tensor& points, const Tensor& queries, double radius,        \
             const Tensor& points_row_splits, const Tensor& queries_row_splits, \
             const Tensor& hash_table_splits, const Tensor& hash_table_index,   \
@@ -228,8 +228,8 @@ void HybridSearchCUDA(const Tensor& points,
             const bool sort, Tensor& neighbors_index,                          \
             Tensor& neighbors_row_splits, Tensor& neighbors_distance);
 
-#define INSTANTIATE_HYBRID(T, TIndex)                                                  \
-    template void HybridSearchCUDA<T, TIndex>(                                         \
+#define INSTANTIATE_HYBRID(T, TIndex)                                          \
+    template void HybridSearchCUDA<T, TIndex>(                                 \
             const Tensor& points, const Tensor& queries, double radius,        \
             int max_knn, const Tensor& points_row_splits,                      \
             const Tensor& queries_row_splits, const Tensor& hash_table_splits, \

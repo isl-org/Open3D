@@ -573,11 +573,12 @@ void FixedRadiusSearchCPU(int64_t* query_neighbors_row_splits,
             hash_table_cell_splits_size, hash_table_cell_splits,            \
             hash_table_index, output_allocator
 
-#define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)            \
-    if (METRIC == metric && IGNORE_QUERY_POINT == ignore_query_point &&        \
-        RETURN_DISTANCES == return_distances)                                  \
-        _FixedRadiusSearchCPU<T, TIndex, OUTPUT_ALLOCATOR, METRIC, IGNORE_QUERY_POINT, \
-                              RETURN_DISTANCES>(FN_PARAMETERS);
+#define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)     \
+    if (METRIC == metric && IGNORE_QUERY_POINT == ignore_query_point && \
+        RETURN_DISTANCES == return_distances)                           \
+        _FixedRadiusSearchCPU<T, TIndex, OUTPUT_ALLOCATOR, METRIC,      \
+                              IGNORE_QUERY_POINT, RETURN_DISTANCES>(    \
+                FN_PARAMETERS);
 
 #define CALL_TEMPLATE2(METRIC)         \
     CALL_TEMPLATE(METRIC, true, true)  \

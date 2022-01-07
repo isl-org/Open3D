@@ -348,7 +348,11 @@ void CountNeighbors(const cudaStream_t& stream,
 }
 
 /// Kernel for WriteNeighborsIndicesAndDistances
-template <class T, class TIndex, int METRIC, bool IGNORE_QUERY_POINT, bool RETURN_DISTANCES>
+template <class T,
+          class TIndex,
+          int METRIC,
+          bool IGNORE_QUERY_POINT,
+          bool RETURN_DISTANCES>
 __global__ void WriteNeighborsIndicesAndDistancesKernel(
         TIndex* __restrict__ indices,
         T* __restrict__ distances,
@@ -497,12 +501,12 @@ void WriteNeighborsIndicesAndDistances(
             hash_table_cell_splits, hash_table_cell_splits_size, query_points, \
             num_queries, points, inv_voxel_size, radius, threshold
 
-#define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)            \
-    if (METRIC == metric && IGNORE_QUERY_POINT == ignore_query_point &&        \
-        RETURN_DISTANCES == return_distances) {                                \
-        WriteNeighborsIndicesAndDistancesKernel<T, TIndex, METRIC, IGNORE_QUERY_POINT, \
-                                                RETURN_DISTANCES>              \
-                <<<grid, block, 0, stream>>>(FN_PARAMETERS);                   \
+#define CALL_TEMPLATE(METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES)      \
+    if (METRIC == metric && IGNORE_QUERY_POINT == ignore_query_point &&  \
+        RETURN_DISTANCES == return_distances) {                          \
+        WriteNeighborsIndicesAndDistancesKernel<                         \
+                T, TIndex, METRIC, IGNORE_QUERY_POINT, RETURN_DISTANCES> \
+                <<<grid, block, 0, stream>>>(FN_PARAMETERS);             \
     }
 
 #define CALL_TEMPLATE2(METRIC)         \
@@ -718,10 +722,10 @@ void WriteNeighborsHybrid(const cudaStream_t& stream,
             query_points, num_queries, points, inv_voxel_size, radius, \
             threshold, max_knn
 
-#define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                     \
-    if (METRIC == metric && RETURN_DISTANCES == return_distances) { \
-        WriteNeighborsHybridKernel<T, TIndex, METRIC, RETURN_DISTANCES>     \
-                <<<grid, block, 0, stream>>>(FN_PARAMETERS);        \
+#define CALL_TEMPLATE(METRIC, RETURN_DISTANCES)                         \
+    if (METRIC == metric && RETURN_DISTANCES == return_distances) {     \
+        WriteNeighborsHybridKernel<T, TIndex, METRIC, RETURN_DISTANCES> \
+                <<<grid, block, 0, stream>>>(FN_PARAMETERS);            \
     }
 
 #define CALL_TEMPLATE2(METRIC)  \

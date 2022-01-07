@@ -98,7 +98,8 @@ TEST(FixedRadiusIndex, SearchRadius) {
     // int32
     // Set up index.
     float radius = 0.1;
-    core::nns::FixedRadiusIndex index32(dataset_points, radius, core::Dtype::Int32);
+    core::nns::FixedRadiusIndex index32(dataset_points, radius,
+                                        core::Dtype::Int32);
 
     // if raidus == 0.1
     core::Tensor indices, distances, neighbors_row_splits;
@@ -119,7 +120,8 @@ TEST(FixedRadiusIndex, SearchRadius) {
 
     // int64
     // Set up index.
-    core::nns::FixedRadiusIndex index64(dataset_points, radius, core::Dtype::Int64);
+    core::nns::FixedRadiusIndex index64(dataset_points, radius,
+                                        core::Dtype::Int64);
 
     // if raidus == 0.1
     shape = core::SizeVector{2};
@@ -190,7 +192,8 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
     // Set up index.
     float radius = 0.5;
     core::nns::FixedRadiusIndex index32;
-    index32.SetTensorData(dataset_points, dataset_points_row_splits, radius, core::Dtype::Int32);
+    index32.SetTensorData(dataset_points, dataset_points_row_splits, radius,
+                          core::Dtype::Int32);
     std::vector<int32_t> gt_indices32 = {
             3,  1,  9,  7,  2,  8,  2,  7,  2,  0,  5,  0,  5,  4,  0,  7,
             6,  7,  5,  0,  8,  9,  6,  3,  1,  8,  2,  6,  1,  7,  0,  4,
@@ -210,9 +213,9 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
     std::vector<int32_t> indices_vector32 = indices.ToFlatVector<int32_t>();
     std::vector<float> distances_vector32 = distances.ToFlatVector<float>();
     std::vector<int32_t> gt_indices_sorted32(gt_indices32.begin(),
-                                           gt_indices32.end());
+                                             gt_indices32.end());
     std::vector<float> gt_distances_sorted32(gt_distances.begin(),
-                                           gt_distances.end());
+                                             gt_distances.end());
 
     for (size_t i = 0; i < gt_neighbors_row_splits.size() - 1; i++) {
         int64_t size_i =
@@ -228,9 +231,11 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
 
         // Sort gt indices and distances
         std::vector<size_t> gt_p_i = FindPermutation<int32_t>(
-                gt_indices_sorted32.data() + gt_neighbors_row_splits[i], size_i);
-        ApplyPermutation(gt_indices_sorted32.data() + gt_neighbors_row_splits[i],
-                         gt_p_i);
+                gt_indices_sorted32.data() + gt_neighbors_row_splits[i],
+                size_i);
+        ApplyPermutation(
+                gt_indices_sorted32.data() + gt_neighbors_row_splits[i],
+                gt_p_i);
         ApplyPermutation(
                 gt_distances_sorted32.data() + gt_neighbors_row_splits[i],
                 gt_p_i);
@@ -250,7 +255,8 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
     // int64
     // Set up index.
     core::nns::FixedRadiusIndex index64;
-    index64.SetTensorData(dataset_points, dataset_points_row_splits, radius, core::Dtype::Int64);
+    index64.SetTensorData(dataset_points, dataset_points_row_splits, radius,
+                          core::Dtype::Int64);
     std::vector<int64_t> gt_indices64 = {
             3,  1,  9,  7,  2,  8,  2,  7,  2,  0,  5,  0,  5,  4,  0,  7,
             6,  7,  5,  0,  8,  9,  6,  3,  1,  8,  2,  6,  1,  7,  0,  4,
@@ -269,9 +275,9 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
     std::vector<int64_t> indices_vector64 = indices.ToFlatVector<int64_t>();
     std::vector<float> distances_vector64 = distances.ToFlatVector<float>();
     std::vector<int64_t> gt_indices_sorted64(gt_indices64.begin(),
-                                           gt_indices64.end());
+                                             gt_indices64.end());
     std::vector<float> gt_distances_sorted64(gt_distances.begin(),
-                                           gt_distances.end());
+                                             gt_distances.end());
 
     for (size_t i = 0; i < gt_neighbors_row_splits.size() - 1; i++) {
         int64_t size_i =
@@ -287,9 +293,11 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
 
         // Sort gt indices and distances
         std::vector<size_t> gt_p_i = FindPermutation<int64_t>(
-                gt_indices_sorted64.data() + gt_neighbors_row_splits[i], size_i);
-        ApplyPermutation(gt_indices_sorted64.data() + gt_neighbors_row_splits[i],
-                         gt_p_i);
+                gt_indices_sorted64.data() + gt_neighbors_row_splits[i],
+                size_i);
+        ApplyPermutation(
+                gt_indices_sorted64.data() + gt_neighbors_row_splits[i],
+                gt_p_i);
         ApplyPermutation(
                 gt_distances_sorted64.data() + gt_neighbors_row_splits[i],
                 gt_p_i);
@@ -329,7 +337,8 @@ TEST(FixedRadiusIndex, SearchHybrid) {
     // Set up index.
     float radius = 0.1;
     int max_knn = 3;
-    core::nns::FixedRadiusIndex index32(dataset_points, radius, core::Dtype::Int32);
+    core::nns::FixedRadiusIndex index32(dataset_points, radius,
+                                        core::Dtype::Int32);
 
     // if raidus == 0.1
     core::Tensor indices, distances, counts;
@@ -352,7 +361,8 @@ TEST(FixedRadiusIndex, SearchHybrid) {
 
     // int64
     // Set up index.
-    core::nns::FixedRadiusIndex index64(dataset_points, radius, core::Dtype::Int64);
+    core::nns::FixedRadiusIndex index64(dataset_points, radius,
+                                        core::Dtype::Int64);
 
     // if raidus == 0.1
     gt_indices = core::Tensor::Init<int64_t>({{1, 4, -1}}, device);
@@ -409,7 +419,8 @@ TEST(FixedRadiusIndex, SearchHybridBatch) {
     float radius = 0.5;
     int max_knn = 3;
     core::nns::FixedRadiusIndex index;
-    index.SetTensorData(dataset_points, dataset_points_row_splits, radius, core::Dtype::Int32);
+    index.SetTensorData(dataset_points, dataset_points_row_splits, radius,
+                        core::Dtype::Int32);
     std::vector<int32_t> gt_indices32 = {
             3,  1,  9,  7,  -1, -1, 2,  -1, -1, 8,  2,  -1, 7,  -1, -1,
             2,  0,  -1, 5,  -1, -1, 0,  5,  -1, 4,  0,  7,  7,  5,  0,
@@ -428,7 +439,8 @@ TEST(FixedRadiusIndex, SearchHybridBatch) {
 
     // int64
     // Set up index.
-    index.SetTensorData(dataset_points, dataset_points_row_splits, radius, core::Dtype::Int64);
+    index.SetTensorData(dataset_points, dataset_points_row_splits, radius,
+                        core::Dtype::Int64);
     std::vector<int64_t> gt_indices64 = {
             3,  1,  9,  7,  -1, -1, 2,  -1, -1, 8,  2,  -1, 7,  -1, -1,
             2,  0,  -1, 5,  -1, -1, 0,  5,  -1, 4,  0,  7,  7,  5,  0,
