@@ -7,26 +7,25 @@ body:
 
 - type: checkboxes
   attributes:
-    label: "I confirm that before submitting the issue I have taken the following steps:"
-    description: It is required to mark the checkboxes, before submitting the issue.
+    label: "Checklist"
     options:
       - label: "I have searched for [similar issues](https://github.com/isl-org/Open3D/issues)."
         required: true
-      - label: "For Python issues, I have tested with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip). (It may be already fixed!)"
+      - label: "For Python issues, I have tested with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip)."
         required: true
-      - label: "I have checked with the [latest documentation](http://www.open3d.org/docs/latest/) properly. [For example: [Installing from PyPI](http://www.open3d.org/docs/latest/getting_started.html#installing-from-pypi-or-conda), [Build from source](http://www.open3d.org/docs/latest/compilation.html#build-from-source), [ARM Support](http://www.open3d.org/docs/latest/arm.html#arm-support)]."
+      - label: "I have checked the [release documentation](http://www.open3d.org/docs/release/) and the [latest documentation](http://www.open3d.org/docs/latest/) (for `master` branch)."
         required: true
 
 - type: textarea
   attributes:
-    label: "Steps to reproduce:"
+    label: "Steps to reproduce the issue"
     description: >
-      Please provide step-by-step instructions on how to reproduce the issue. 
-      Describe the installation method (e.g. building from source, Anaconda, 
-      pip). Providing *detailed* instructions is crucial for other to help with
+      Please provide step-by-step instructions on how to reproduce the issue.
+      Describe the installation method (e.g. building from source or pip).
+      Providing *detailed* instructions is crucial for other to help with
       the issues. Here is an example for reference you may modify.
     value: >
-      #### I first clone Open3D by:
+      #### I first cloned Open3D by:
 
       ```
 
@@ -35,7 +34,7 @@ body:
       cd Open3D
 
       ```
-      
+
 
       #### Then, I build Open3D (on Ubuntu 20.04, with CUDA 11.5) with:
 
@@ -50,19 +49,18 @@ body:
       make -j$(nproc)
 
       ```
- 
+
   validations:
     required: true
 
 - type: textarea
   attributes:
-    label: "Error message:"
+    label: "Error message"
     description: >
-      Provide the *full* error message. It is even better to provide your 
-      terminal commands and the full terminal outputs. If you are 
-      reporting a segfault, please include a GDB traceback.
+      Provide the *full* error message. It is even better to provide your
+      terminal commands and the full terminal outputs. If you are
+      reporting a segfault, please include a debugger backtrace.
 
-      When I build Open3D, I get the following error:
     placeholder: |
       Building OpenBLAS with LAPACK from source
       CMake Error at 3rdparty/find_dependencies.cmake:1227 (message):
@@ -71,7 +69,7 @@ body:
       install gfortran`.
       Call Stack (most recent call first):
       CMakeLists.txt:446 (include)
-  
+
       Here's the full terminal output with my commands:
       (you may drag and drop a .txt file in `Additional information`)
     render: shell
@@ -80,15 +78,15 @@ body:
 
 - type: textarea
   attributes:
-    label: "Additional information:"
+    label: "Additional information"
     description: >
-      Please add any additional information that could help us diagnose the 
-      problem better. Provide screenshots if applicable. You may even attach
+      Please add any additional information that could help us diagnose the
+      problem better. Provide screenshots if applicable. You may attach
       log files, generated wheel, or any other files, that could be helpful.
 
 - type: textarea
   attributes:
-    label: "System and Open3D/Python version information:"
+    label: "Open3D, Python and System information"
     value: >
       - Operating system: (e.g. OSX 10.15, Ubuntu 18.04, Windows 10 64-bit)
 
