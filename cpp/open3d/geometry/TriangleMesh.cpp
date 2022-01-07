@@ -1379,6 +1379,12 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
         const Eigen::Vector3d &p0 = vertices_[tria_p(0)];
         const Eigen::Vector3d &p1 = vertices_[tria_p(1)];
         const Eigen::Vector3d &p2 = vertices_[tria_p(2)];
+
+        const Eigen::Vector3d bb_min1 =
+                p0.array().min(p1.array().min(p2.array()));
+        const Eigen::Vector3d bb_max1 =
+                p0.array().max(p1.array().max(p2.array()));
+
         for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
             const Eigen::Vector3i &tria_q = triangles_[tidx1];
             // check if neighbour triangle
@@ -1394,7 +1400,14 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
             const Eigen::Vector3d &q0 = vertices_[tria_q(0)];
             const Eigen::Vector3d &q1 = vertices_[tria_q(1)];
             const Eigen::Vector3d &q2 = vertices_[tria_q(2)];
-            if (IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
+
+            const Eigen::Vector3d bb_min2 =
+                    q0.array().min(q1.array().min(q2.array()));
+            const Eigen::Vector3d bb_max2 =
+                    q0.array().max(q1.array().max(q2.array()));
+            if (IntersectionTest::AABBAABB(bb_min1, bb_max1, bb_min2,
+                                           bb_max2) &&
+                IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
                 self_intersecting_triangles.push_back(
                         Eigen::Vector2i(tidx0, tidx1));
             }
