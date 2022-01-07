@@ -142,16 +142,16 @@ function(open3d_set_global_properties target)
     # (from pybind11)
     # macOS: -x: strip local symbols
     # Linux: defaults
-    if(UNIX AND CMAKE_STRIP)
-        get_target_property(target_type ${target} TYPE)
-        if(target_type MATCHES
-                MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
-            add_custom_command(TARGET ${target} POST_BUILD
-                COMMAND
-                $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
-                $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
-                COMMAND_EXPAND_LISTS)
-        endif()
-    endif()
+    # if(UNIX AND CMAKE_STRIP)
+    #     get_target_property(target_type ${target} TYPE)
+    #     if(target_type MATCHES
+    #             MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
+    #         add_custom_command(TARGET ${target} POST_BUILD
+    #             COMMAND
+    #             $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
+    #             $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
+    #             COMMAND_EXPAND_LISTS)
+    #     endif()
+    # endif()
 
 endfunction()

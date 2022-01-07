@@ -2,59 +2,101 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
+# For the rest of this Dockerfile
+SHELL ["/bin/bash", "-c"]
+
+# Required build args, should be specified in docker_build.sh
 ARG CMAKE_VER
 ARG CCACHE_TAR_NAME
-
+ARG PYTHON_VERSION
+ARG DEVELOPER_BUILD
 RUN if [ -z "${CMAKE_VER}"       ]; then echo "Error: ARG CMAKE_VER       not specified."; exit 1; fi \
- && if [ -z "${CCACHE_TAR_NAME}" ]; then echo "Error: ARG CCACHE_TAR_NAME not specified."; exit 1; fi
+ && if [ -z "${CCACHE_TAR_NAME}" ]; then echo "Error: ARG CCACHE_TAR_NAME not specified."; exit 1; fi \
+ && if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi \
+ && if [ -z "${DEVELOPER_BUILD}" ]; then echo "Error: ARG DEVELOPER_BUILD not specified."; exit 1; fi
 
-# Non-interactive dpkg
+# Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV SUDO=command
 
-# Open3D dependencies
+# Minimal dependencies for running Docker
+# wget    : for downloading
+# libgl1  : available on Ubuntu ARM desktop by default
+# libgomp1: available on Ubuntu ARM desktop by default
 RUN apt-get update && apt-get install -y \
-    apt-utils  \
-    autoconf \
-    build-essential \
-    ccache \
-    clang-7 \
-    git  \
-    libblas-dev  \
-    libc++-7-dev \
-    libc++abi-7-dev \
-    libglu1-mesa-dev \
-    liblapack-dev  \
-    liblapacke-dev \
-    libosmesa6-dev \
-    libsdl2-dev \
-    libtbb-dev \
-    libtool \
-    libudev-dev \
-    libxi-dev \
-    ninja-build \
     wget \
-    xorg-dev \
+    libgl1 \
+    libgomp1 \
  && rm -rf /var/lib/apt/lists/*
 
-# No virtual environment is needed, default to python 3.6
+# Minimal dependencies for building
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-dev \
-    python3-pip \
-    python3-setuptools \
+    build-essential \
+    clang-7 \
+    curl \
+    git  \
+    wget \
  && rm -rf /var/lib/apt/lists/*
-RUN ln -s /usr/bin/python3 /usr/local/bin/python \
- && ln -s /usr/bin/python3-config /usr/local/bin/python-config \
- && ln -s /usr/bin/pip3 /usr/local/bin/pip
 
-# Python dependencies
-RUN python -m pip install -U \
-    pip=="21.1.1" \
-    wheel=="0.35.1" \
-    setuptools=="50.3.2" \
-    yapf=="0.30.0" \
-    pytest=="6.0.1" \
-    scipy=="1.5.4"
+# Install ccache after build-essential (gcc, g++).
+# Open3D CMake can detect and use ccache automatically, except for OpenBLAS.
+# Setting the /usr/lib/ccache path is necessary to cache OpenBLAS build.
+RUN apt-get update && apt-get install -y \
+    ccache \
+ && rm -rf /var/lib/apt/lists/*
+ENV PATH="/usr/lib/ccache:${PATH}"
+RUN which gcc \
+ && gcc --version \
+ && which g++ \
+ && g++ --version
+
+# Uncomment this line to always fetch the latest ccache
+# ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+
+# Download ccache from GCS bucket
+# If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
+# Example directory structure:
+# - CCACHE_DIR        = ~/.cache/ccache
+# - CCACHE_DIR_NAME   = ccache
+# - CCACHE_DIR_PARENT = ~/.cache
+RUN CCACHE_DIR=$(ccache -p | grep "cache_dir =" | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && mkdir -p ${CCACHE_DIR_PARENT} \
+ && cd ${CCACHE_DIR_PARENT} \
+ && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi \
+ && mkdir -p ${CCACHE_DIR}
+RUN ccache -M 5G \
+ && ccache -s
+
+# Install Pyenv
+# Conda is not reliable on Linux ARM64.
+RUN apt-get update -y && apt-get install -y \
+    make \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    wget \
+    curl \
+    llvm \
+    libncurses5-dev \
+    libncursesw5-dev \
+    xz-utils \
+    tk-dev \
+    libffi-dev \
+    liblzma-dev \
+    python-openssl \
+    git \
+ && rm -rf /var/lib/apt/lists/*
+RUN git clone --depth=1 git://github.com/yyuu/pyenv.git /root/.pyenv
+ENV PYENV_ROOT="/root/.pyenv"
+ENV PATH="${PYENV_ROOT}/bin:${PYENV_ROOT}/shims:${PATH}"
+RUN git clone https://github.com/momo-lab/pyenv-install-latest.git "$(pyenv root)"/plugins/pyenv-install-latest
 
 # CMake
 # PWD is /, camke will be installed to /root/${CMAKE_VER}/bin/cmake
@@ -64,57 +106,45 @@ RUN CMAKE_VER_NUMBERS=$(echo "${CMAKE_VER}" | cut -d"-" -f2) \
  && cp -ar ${CMAKE_VER} ${HOME}
 ENV PATH=${HOME}/${CMAKE_VER}/bin:${PATH}
 
-# Download ccache from GCS bucket
-# If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
-# Example directory structure:
-# - CCACHE_DIR        = ~/.cache/ccache
-# - CCACHE_DIR_NAME   = ccache
-# - CCACHE_DIR_PARENT = ~/.cache
-RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
- && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
- && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
- && mkdir -p ${CCACHE_DIR_PARENT} \
- && cd ${CCACHE_DIR_PARENT} \
- && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
- && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi \
- && mkdir -p ${CCACHE_DIR}
-# We need to set ccache size explicitly with -M, otherwise the defualt size is
-# *not* determined by ccache's default, but the downloaded ccache file's config.
-RUN ccache -M 5G \
- && ccache -s
+# Open3D C++ dependencies
+# Done before copying the full Open3D directory for better Docker caching
+COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
+RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
+ && rm -rf /var/lib/apt/lists/*
 
 # Open3D repo
 # Always keep /root/Open3D as the WORKDIR
 COPY . /root/Open3D
 WORKDIR /root/Open3D
 
-# `docker build` will build Open3D. The unit tests will be executed later in
-# during `docker run`
-WORKDIR /root/Open3D
+# Build Python wheel
+RUN pyenv install-latest ${PYTHON_VERSION}
+RUN pyenv global $(pyenv install-latest --print ${PYTHON_VERSION})
+RUN which python \
+ && python --version \
+ && python -m pip install -U \
+    pip=="21.1.1" \
+    wheel=="0.35.1" \
+    setuptools=="50.3.2" \
+    yapf=="0.30.0" \
+    pytest=="6.0.1"
+
 RUN mkdir build \
  && cd build \
  && cmake \
-    -DUSE_BLAS=ON \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DBUILD_SHARED_LIBS=ON \
-    -DBUILD_GUI=ON \
-    -DBUILD_WEBRTC=OFF \
-    -DCMAKE_C_COMPILER=gcc \
-    -DCMAKE_CXX_COMPILER=g++ \
-    -DBUILD_FILAMENT_FROM_SOURCE=ON \
-    -DGLIBCXX_USE_CXX11_ABI=ON \
-    -DBUILD_TENSORFLOW_OPS=OFF \
-    -DBUILD_PYTORCH_OPS=OFF \
     -DBUILD_UNIT_TESTS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
+    -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
     .. \
  && make -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc)
+RUN cp build/lib/python_package/pip_package/*.whl /
 
 # Compress ccache folder, move to / directory (optional)
 RUN ccache -s \
- && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR=$(ccache -p | grep "cache_dir =" | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \

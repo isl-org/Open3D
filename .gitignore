@@ -1,3 +1,5 @@
+*.whl
+
 # Windows build temp cmake file
 CMakeSettings.json
 

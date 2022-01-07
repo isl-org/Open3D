@@ -176,6 +176,7 @@ add_custom_target(python-package
 add_custom_target(pip-package
     COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
     COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
+    COMMAND cp ${PYTHON_PACKAGE_DST_DIR}/pip_package/*.whl ${PROJECT_SOURCE_DIR}
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
 )
