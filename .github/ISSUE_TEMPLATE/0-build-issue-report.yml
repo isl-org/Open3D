@@ -1,4 +1,4 @@
-name: Report Build / Installation Related Issue
+name: Report an Installation or Build Issue
 description: I have trouble installing or compiling Open3D.
 title: "Summarize the issue and your environments (e.g., \"Cannot compile on Ubuntu 20.04 with OpenBLAS\")"
 labels: [build/install issue]
@@ -60,7 +60,6 @@ body:
       Provide the *full* error message. It is even better to provide your
       terminal commands and the full terminal outputs. If you are
       reporting a segfault, please include a debugger backtrace.
-
     placeholder: |
       Building OpenBLAS with LAPACK from source
       CMake Error at 3rdparty/find_dependencies.cmake:1227 (message):
@@ -78,14 +77,6 @@ body:
 
 - type: textarea
   attributes:
-    label: "Additional information"
-    description: >
-      Please add any additional information that could help us diagnose the
-      problem better. Provide screenshots if applicable. You may attach
-      log files, generated wheel, or any other files, that could be helpful.
-
-- type: textarea
-  attributes:
     label: "Open3D, Python and System information"
     value: >
       - Operating system: (e.g. OSX 10.15, Ubuntu 18.04, Windows 10 64-bit)
@@ -94,7 +85,7 @@ body:
 
       - Open3D version: (output from python: `print(open3d.__version__)`)
 
-      - System type: (x84 / arm / m1 / aarch / jetson-nano / jetson-tx / rpi)
+      - System type: (x84 / arm64 / apple-silicon / jetson / rpi)
 
       - Is this remote workstation?: yes or no
 
@@ -104,3 +95,11 @@ body:
     render: markdown
   validations:
     required: true
+
+- type: textarea
+  attributes:
+    label: "Additional information"
+    description: >
+      Please add any additional information that could help us diagnose the
+      problem better. Provide screenshots if applicable. You may attach
+      log files, generated wheel, or any other files, that could be helpful.

@@ -1,7 +1,7 @@
 contact_links:
-  - name: Link to Documentation and Tutorials
+  - name: Links to Open3D Documentation and Tutorials
     url: http://www.open3d.org/docs/latest/
-    about: "Read the tutorials to learn how to use Open3D better."
-  - name: Link to Join Discord
+    about: "Read the documentation and tutorials for Open3D."
+  - name: Link to Open3D Discord Server
     url: https://discord.gg/D35BGvn
-    about: "If you have a quick question about Open3D / how to use it in your project, or you would like to discuss development-related matters."
+    about: "Get in touch with the Open3D community on Discord."

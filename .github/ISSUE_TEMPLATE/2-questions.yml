@@ -1,38 +1,26 @@
-name: Ask Questions
-description: Ask us queries/questions related to Open3D.
+name: Ask a Question
+description: Ask a question on how to use Open3D, how to implement something, etc.
 title: "Summarize the question. (e.g., \"How to run reconstruction system with RealSense D435i? \")"
 labels: [question]
 
 body:
+
 - type: checkboxes
   attributes:
-    label: "I confirm that before submitting the question I have taken the following steps:"
-    description: It is required to mark the checkboxes, before submitting the issue.
+    label: "Checklist"
     options:
       - label: "I have searched for [similar issues](https://github.com/isl-org/Open3D/issues)."
         required: true
-      - label: "For Python issues, I have tested with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip). (It may be already fixed!)"
+      - label: "For Python issues, I have tested with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip)."
         required: true
-      - label: "I have checked with the [latest documentation](http://www.open3d.org/docs/latest/) properly." 
+      - label: "I have checked the [release documentation](http://www.open3d.org/docs/release/) and the [latest documentation](http://www.open3d.org/docs/latest/) (for `master` branch)."
         required: true
-
-# - type: checkboxes
-#   attributes:
-#     label: "I confirm that before submitting the issue I have taken the following steps:"
-#     description: It is required to mark the checkboxes, before submitting the issue.
-#     options:
-#       - label: "Search for [similar issues](https://github.com/isl-org/Open3D/issues)."
-#         required: true
-#       - label: "For Python issues, please test with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip). It may be already fixed!"
-#         required: true
-#       - label: "I have checked with the [latest documentation](http://www.open3d.org/docs/latest/) and the related C++ or python [examples](https://github.com/isl-org/Open3D/tree/master/examples) properly."
-#         required: true
 
 - type: textarea
-  attributes: 
-    label: "My Question:"
+  attributes:
+    label: "My Question"
     description: >
-      Provide the *detailed* description of your query. Kindly attach code 
+      Provide the *detailed* description of your query. Kindly attach code
       snippets, screen-shots, data files used in your application, etc.
   validations:
     required: true
