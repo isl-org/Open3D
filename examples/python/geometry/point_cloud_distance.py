@@ -28,13 +28,14 @@ import open3d as o3d
 import numpy as np
 import os, sys
 
-dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(dir_path))
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+sys.path.append(pyexample_path)
 
 if __name__ == "__main__":
-    pcd = o3d.io.read_point_cloud(dir_path + "/../../test_data/fragment.ply")
+    pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, 'fragment.ply'))
     vol = o3d.visualization.read_selection_polygon_volume(
-        dir_path + "/../../test_data/Crop/cropped.json")
+        os.path.join(test_data_path, 'Crop', 'cropped.json'))
     chair = vol.crop_point_cloud(pcd)
 
     chair.paint_uniform_color([0, 0, 1])

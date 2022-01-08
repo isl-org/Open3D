@@ -29,8 +29,8 @@ import numpy as np
 import sys
 import os
 
-dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(dir_path))
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
 
 import open3d_example as o3dex
 

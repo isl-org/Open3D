@@ -28,7 +28,7 @@
 
 import numpy as np
 import open3d as o3d
-import sys
+import os, sys
 sys.path.append("../utility")
 from visualization import draw_registration_result_original_color
 import argparse
