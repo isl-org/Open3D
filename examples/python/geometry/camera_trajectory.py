@@ -58,9 +58,11 @@ if __name__ == "__main__":
     print(np.asarray(trajectory.parameters[0].extrinsic))
     for i in range(5):
         im1 = o3d.io.read_image(
-            os.path.join(test_data_path, 'RGBD','depth','{:05d}.png'.format(i)))
+            os.path.join(test_data_path, 'RGBD', 'depth',
+                         '{:05d}.png'.format(i)))
         im2 = o3d.io.read_image(
-            os.path.join(test_data_path, 'RGBD','color','{:05d}.jpg'.format(i)))
+            os.path.join(test_data_path, 'RGBD', 'color',
+                         '{:05d}.jpg'.format(i)))
         im = o3d.geometry.RGBDImage.create_from_color_and_depth(
             im2, im1, 1000.0, 5.0, False)
         pcd = o3d.geometry.PointCloud.create_from_rgbd_image(

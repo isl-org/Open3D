@@ -36,8 +36,10 @@ test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 if __name__ == "__main__":
 
     print("Load two aligned point clouds.")
-    pcd0 = o3d.io.read_point_cloud(os.path.join(test_data_path, 'Feature', 'cloud_bin_0.pcd'))
-    pcd1 = o3d.io.read_point_cloud(os.path.join(test_data_path, 'Feature', 'cloud_bin_1.pcd'))
+    pcd0 = o3d.io.read_point_cloud(
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_0.pcd'))
+    pcd1 = o3d.io.read_point_cloud(
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_1.pcd'))
     pcd0.paint_uniform_color([1, 0.706, 0])
     pcd1.paint_uniform_color([0, 0.651, 0.929])
     o3d.visualization.draw_geometries([pcd0, pcd1])

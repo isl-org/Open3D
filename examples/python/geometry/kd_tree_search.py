@@ -33,6 +33,7 @@ pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 sys.path.append(pyexample_path)
 
+
 def radius_search():
     print("Loading pointcloud ...")
     path_to_pcd = os.path.join(test_data_path, 'fragment.pcd')

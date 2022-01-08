@@ -34,6 +34,7 @@ sys.path.append(pyexample_path)
 
 from utility.file import check_folder_structure, extract_rgbd_frames
 
+
 def set_default_value(config, key, value):
     if key not in config:
         config[key] = value
