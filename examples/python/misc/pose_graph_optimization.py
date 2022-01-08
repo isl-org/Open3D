@@ -53,7 +53,7 @@ if __name__ == "__main__":
     print(
         "Optimizing Fragment o3d.pipelines.registration.PoseGraph using open3d ..."
     )
-    data_path = "../../test_data/GraphOptimization/"
+
     pose_graph_fragment = o3d.io.read_pose_graph(
         os.path.join(test_data_path, 'GraphOptimization',
                      'pose_graph_example_fragment.json'))

@@ -32,8 +32,6 @@ pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 sys.path.append(pyexample_path)
 
-import open3d_example as o3dex
-
 if __name__ == "__main__":
     print("Load a ply point cloud, crop it, and render it")
     pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, 'fragment.ply'))
