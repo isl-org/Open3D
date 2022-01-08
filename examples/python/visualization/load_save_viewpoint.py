@@ -28,6 +28,10 @@
 
 import numpy as np
 import open3d as o3d
+import os
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 
 def save_view_point(pcd, filename):
@@ -52,6 +56,6 @@ def load_view_point(pcd, filename):
 
 
 if __name__ == "__main__":
-    pcd = o3d.io.read_point_cloud("../../test_data/fragment.pcd")
+    pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, "fragment.pcd"))
     save_view_point(pcd, "viewpoint.json")
     load_view_point(pcd, "viewpoint.json")

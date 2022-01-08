@@ -31,6 +31,9 @@ import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
 
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+
 
 def custom_draw_geometry(pcd):
     # The following code achieves the same effect as:
@@ -69,7 +72,8 @@ def custom_draw_geometry_load_option(pcd):
     vis = o3d.visualization.Visualizer()
     vis.create_window()
     vis.add_geometry(pcd)
-    vis.get_render_option().load_from_json("../../test_data/renderoption.json")
+    vis.get_render_option().load_from_json(
+        os.path.join(test_data_path, 'renderoption.json'))
     vis.run()
     vis.destroy_window()
 
@@ -83,7 +87,7 @@ def custom_draw_geometry_with_key_callback(pcd):
 
     def load_render_option(vis):
         vis.get_render_option().load_from_json(
-            "../../test_data/renderoption.json")
+            os.path.join(test_data_path, 'renderoption.json'))
         return False
 
     def capture_depth(vis):
@@ -110,13 +114,16 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
     custom_draw_geometry_with_camera_trajectory.index = -1
     custom_draw_geometry_with_camera_trajectory.trajectory =\
             o3d.io.read_pinhole_camera_trajectory(
-                    "../../test_data/camera_trajectory.json")
+                os.path.join(test_data_path, 'camera_trajectory.json'))
     custom_draw_geometry_with_camera_trajectory.vis = o3d.visualization.Visualizer(
     )
-    if not os.path.exists("../../test_data/image/"):
-        os.makedirs("../../test_data/image/")
-    if not os.path.exists("../../test_data/depth/"):
-        os.makedirs("../../test_data/depth/")
+    image_path = os.path.join(test_data_path, 'image')
+    if not os.path.exists(image_path):
+        os.makedirs(image_path)
+    depth_path = os.path.join(test_data_path, 'depth')
+    if not os.path.exists(depth_path):
+        os.makedirs(depth_path)
+    render_option_path = os.path.join(test_data_path, 'renderoption.json')
 
     def move_forward(vis):
         # This function is called within the o3d.visualization.Visualizer::run() loop
@@ -132,9 +139,9 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
             print("Capture image {:05d}".format(glb.index))
             depth = vis.capture_depth_float_buffer(False)
             image = vis.capture_screen_float_buffer(False)
-            plt.imsave("../../test_data/depth/{:05d}.png".format(glb.index),\
+            plt.imsave(os.path.join(depth_path, '{:05d}.png'.format(glb.index)),\
                     np.asarray(depth), dpi = 1)
-            plt.imsave("../../test_data/image/{:05d}.png".format(glb.index),\
+            plt.imsave(os.path.join(image_path, '{:05d}.png'.format(glb.index)),\
                     np.asarray(image), dpi = 1)
             # vis.capture_depth_image("depth/{:05d}.png".format(glb.index), False)
             # vis.capture_screen_image("image/{:05d}.png".format(glb.index), False)
@@ -150,14 +157,14 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
     vis = custom_draw_geometry_with_camera_trajectory.vis
     vis.create_window()
     vis.add_geometry(pcd)
-    vis.get_render_option().load_from_json("../../test_data/renderoption.json")
+    vis.get_render_option().load_from_json(render_option_path)
     vis.register_animation_callback(move_forward)
     vis.run()
     vis.destroy_window()
 
 
 if __name__ == "__main__":
-    pcd = o3d.io.read_point_cloud("../../test_data/fragment.ply")
+    pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, 'fragment.pcd'))
 
     print("1. Customized visualization to mimic DrawGeometry")
     custom_draw_geometry(pcd)
