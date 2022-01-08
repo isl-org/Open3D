@@ -86,17 +86,15 @@ int main(int argc, char *argv[]) {
     std::string method = "";
     const std::string kMethodFeature = "feature_matching";
     const std::string kMethodCorres = "correspondence";
-    const std::string kMethodFGR = "fgr";
     if (utility::ProgramOptionExists(argc, argv, "--method")) {
         method = utility::GetProgramOptionAsString(argc, argv, "--method");
     } else {
         method = "feature_matching";
     }
-    if (method != kMethodFeature && method != kMethodCorres &&
-        method != kMethodFGR) {
+    if (method != kMethodFeature && method != kMethodCorres) {
         utility::LogInfo(
                 "--method must be \'feature_matching\' or "
-                "\'correspondence\' or \'fgr\'");
+                "\'correspondence\'.");
         return 1;
     }
 
@@ -168,7 +166,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (mutual_filter) {
-            pipelines::registration::CorrespondenceSet mutual;
+            pipelines::registration::CorrespondenceSet mutual_corres;
             for (auto &corres : corres_ji) {
                 int j = corres(1);
                 int j2i = corres(0);
@@ -180,15 +178,15 @@ int main(int argc, char *argv[]) {
                         corres_tmp, dist_tmp);
                 int i2j = corres_tmp[0];
                 if (i2j == j) {
-                    mutual.push_back(corres);
+                    mutual_corres.push_back(corres);
                 }
             }
 
             utility::LogDebug("{:d} points remain after mutual filter",
-                              mutual.size());
+                              mutual_corres.size());
             registration_result = pipelines::registration::
                     RegistrationRANSACBasedOnCorrespondence(
-                            *source, *target, mutual, distance_threshold,
+                            *source, *target, mutual_corres, distance_threshold,
                             pipelines::registration::
                                     TransformationEstimationPointToPoint(false),
                             3, correspondence_checker,
@@ -205,13 +203,6 @@ int main(int argc, char *argv[]) {
                             pipelines::registration::RANSACConvergenceCriteria(
                                     max_iterations, confidence));
         }
-    } else if (method == kMethodFGR) {
-        registration_result = pipelines::registration::
-                FastGlobalRegistrationBasedOnFeatureMatching(
-                        *source, *target, *source_fpfh, *target_fpfh,
-                        pipelines::registration::FastGlobalRegistrationOption(
-                                1.4, true, true, distance_threshold,
-                                max_iterations, 0.95, 1000));
     }
 
     VisualizeRegistration(*source, *target,
