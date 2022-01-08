@@ -31,7 +31,8 @@ import os
 import sys
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(dir_path + "/..")
+sys.path.append(os.path.dirname(dir_path))
+
 import open3d_example as o3dex
 
 if __name__ == "__main__":

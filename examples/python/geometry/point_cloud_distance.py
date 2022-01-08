@@ -26,9 +26,10 @@
 
 import open3d as o3d
 import numpy as np
-import os
+import os, sys
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(dir_path))
 
 if __name__ == "__main__":
     pcd = o3d.io.read_point_cloud(dir_path + "/../../test_data/fragment.ply")

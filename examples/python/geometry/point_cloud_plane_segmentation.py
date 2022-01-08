@@ -25,9 +25,10 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import os
+import os, sys
 
 dir_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(dir_path))
 
 if __name__ == "__main__":
 
