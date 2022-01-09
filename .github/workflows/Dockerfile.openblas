@@ -93,7 +93,7 @@ RUN apt-get update -y && apt-get install -y \
     python-openssl \
     git \
  && rm -rf /var/lib/apt/lists/*
-RUN git clone --depth=1 git://github.com/yyuu/pyenv.git /root/.pyenv
+RUN git clone --depth=1 https://github.com/yyuu/pyenv.git /root/.pyenv
 ENV PYENV_ROOT="/root/.pyenv"
 ENV PATH="${PYENV_ROOT}/bin:${PYENV_ROOT}/shims:${PATH}"
 RUN git clone https://github.com/momo-lab/pyenv-install-latest.git "$(pyenv root)"/plugins/pyenv-install-latest
