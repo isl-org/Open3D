@@ -29,6 +29,10 @@
 import open3d as o3d
 import numpy as np
 
+import os, sys
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+
 
 def evaluate(pcd_target, pcd_source, feature_target, feature_source):
     tree_target = o3d.geometry.KDTreeFlann(feature_target)
@@ -43,13 +47,13 @@ def evaluate(pcd_target, pcd_source, feature_target, feature_source):
 
 if __name__ == "__main__":
     pcd_target = o3d.io.read_point_cloud(
-        "../../test_data/Feature/cloud_bin_0.pcd")
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_0.pcd'))
     pcd_source = o3d.io.read_point_cloud(
-        "../../test_data/Feature/cloud_bin_1.pcd")
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_1.pcd'))
     feature_target = o3d.io.read_feature(
-        "../../test_data/Feature/cloud_bin_0.fpfh.bin")
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_0.fpfh.bin'))
     feature_source = o3d.io.read_feature(
-        "../../test_data/Feature/cloud_bin_1.fpfh.bin")
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_1.fpfh.bin'))
     pt_dis = evaluate(pcd_target, pcd_source, feature_target, feature_source)
     num_good = sum(pt_dis < 0.075)
     print(

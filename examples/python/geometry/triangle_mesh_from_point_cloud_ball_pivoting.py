@@ -28,8 +28,9 @@ import open3d as o3d
 import sys
 import os
 
-dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(dir_path + "/..")
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
 import open3d_example as o3dex
 
 if __name__ == "__main__":

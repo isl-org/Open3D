@@ -29,13 +29,14 @@ import numpy as np
 import os
 import sys
 
-dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(dir_path + "/..")
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+sys.path.append(pyexample_path)
 
 
 def radius_search():
     print("Loading pointcloud ...")
-    path_to_pcd = dir_path + "/../../test_data/fragment.pcd"
+    path_to_pcd = os.path.join(test_data_path, 'fragment.pcd')
     pcd = o3d.io.read_point_cloud(path_to_pcd)
     pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 
@@ -51,7 +52,7 @@ def radius_search():
 
 def knn_search():
     print("Loading pointcloud ...")
-    path_to_pcd = dir_path + "/../../test_data/fragment.pcd"
+    path_to_pcd = os.path.join(test_data_path, 'fragment.pcd')
     pcd = o3d.io.read_point_cloud(path_to_pcd)
     pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 

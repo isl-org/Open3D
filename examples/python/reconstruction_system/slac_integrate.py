@@ -28,12 +28,14 @@
 
 import numpy as np
 import open3d as o3d
-import sys
+import os, sys
 
-sys.path.append("../utility")
-from file import join, get_rgbd_file_lists
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
 
-sys.path.append(".")
+from utility.file import join, get_rgbd_file_lists
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
 def run(config):
