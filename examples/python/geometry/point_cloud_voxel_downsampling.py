@@ -25,13 +25,15 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import os
+import os, sys
 
-dir_path = os.path.dirname(os.path.abspath(__file__))
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+sys.path.append(pyexample_path)
 
 if __name__ == "__main__":
     print("Load a ply point cloud, print it, and render it")
-    pcd = o3d.io.read_point_cloud(dir_path + "/../../test_data/fragment.ply")
+    pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, 'fragment.ply'))
     # Flip it, otherwise the pointcloud will be upside down.
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
     print(pcd)

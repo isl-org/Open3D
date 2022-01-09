@@ -28,11 +28,15 @@
 
 import numpy as np
 import open3d as o3d
-import sys
-sys.path.append("../utility")
-from file import join, get_file_list, write_poses_to_log
-from visualization import draw_registration_result_original_color
-sys.path.append(".")
+import os, sys
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from utility.file import join, get_file_list, write_poses_to_log
+from utility.visualization import draw_registration_result_original_color
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 

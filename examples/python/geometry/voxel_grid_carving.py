@@ -29,8 +29,10 @@ import numpy as np
 import sys
 import os
 
-dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(dir_path + "/..")
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+sys.path.append(pyexample_path)
+
 import open3d_example as o3dex
 
 
@@ -131,8 +133,8 @@ if __name__ == "__main__":
 
     mesh = o3dex.get_armadillo_mesh()
 
-    output_filename = dir_path + "/../../test_data/voxelized.ply"
-    camera_path = dir_path + "/../../test_data/sphere.ply"
+    output_filename = os.path.join(test_data_path, 'voxelized.ply')
+    camera_path = os.path.join(test_data_path, 'sphere.ply')
     cubic_size = 2.0
     voxel_resolution = 128.0
 
