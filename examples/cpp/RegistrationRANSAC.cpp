@@ -33,6 +33,7 @@
 using namespace open3d;
 
 std::tuple<std::shared_ptr<geometry::PointCloud>,
+           std::shared_ptr<geometry::PointCloud>,
            std::shared_ptr<pipelines::registration::Feature>>
 PreprocessPointCloud(const char *file_name, const float voxel_size) {
     auto pcd = open3d::io::CreatePointCloudFromFile(file_name);
@@ -42,7 +43,7 @@ PreprocessPointCloud(const char *file_name, const float voxel_size) {
     auto pcd_fpfh = pipelines::registration::ComputeFPFHFeature(
             *pcd_down,
             open3d::geometry::KDTreeSearchParamHybrid(5 * voxel_size, 100));
-    return std::make_tuple(pcd_down, pcd_fpfh);
+    return std::make_tuple(pcd, pcd_down, pcd_fpfh);
 }
 
 void VisualizeRegistration(const open3d::geometry::PointCloud &source,
@@ -113,10 +114,13 @@ int main(int argc, char *argv[]) {
                                                          "--confidence", 0.999);
 
     // Prepare input
-    std::shared_ptr<geometry::PointCloud> source, target;
+    std::shared_ptr<geometry::PointCloud> source, source_down, target,
+            target_down;
     std::shared_ptr<pipelines::registration::Feature> source_fpfh, target_fpfh;
-    std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1], voxel_size);
-    std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2], voxel_size);
+    std::tie(source, source_down, source_fpfh) =
+            PreprocessPointCloud(argv[1], voxel_size);
+    std::tie(target, target_down, target_fpfh) =
+            PreprocessPointCloud(argv[2], voxel_size);
 
     pipelines::registration::RegistrationResult registration_result;
 
@@ -136,7 +140,7 @@ int main(int argc, char *argv[]) {
     if (method == kMethodFeature) {
         registration_result = pipelines::registration::
                 RegistrationRANSACBasedOnFeatureMatching(
-                        *source, *target, *source_fpfh, *target_fpfh,
+                        *source_down, *target_down, *source_fpfh, *target_fpfh,
                         mutual_filter, distance_threshold,
                         pipelines::registration::
                                 TransformationEstimationPointToPoint(false),
@@ -145,8 +149,8 @@ int main(int argc, char *argv[]) {
                                 max_iterations, confidence));
     } else if (method == kMethodCorres) {
         // Manually search correspondences
-        int nPti = int(source->points_.size());
-        int nPtj = int(target->points_.size());
+        int nPti = int(source_down->points_.size());
+        int nPtj = int(target_down->points_.size());
 
         geometry::KDTreeFlann feature_tree_i(*source_fpfh);
         geometry::KDTreeFlann feature_tree_j(*target_fpfh);
@@ -186,7 +190,8 @@ int main(int argc, char *argv[]) {
                               mutual_corres.size());
             registration_result = pipelines::registration::
                     RegistrationRANSACBasedOnCorrespondence(
-                            *source, *target, mutual_corres, distance_threshold,
+                            *source_down, *target_down, mutual_corres,
+                            distance_threshold,
                             pipelines::registration::
                                     TransformationEstimationPointToPoint(false),
                             3, correspondence_checker,
@@ -196,7 +201,8 @@ int main(int argc, char *argv[]) {
             utility::LogDebug("{:d} points remain", corres_ji.size());
             registration_result = pipelines::registration::
                     RegistrationRANSACBasedOnCorrespondence(
-                            *source, *target, corres_ji, distance_threshold,
+                            *source_down, *target_down, corres_ji,
+                            distance_threshold,
                             pipelines::registration::
                                     TransformationEstimationPointToPoint(false),
                             3, correspondence_checker,

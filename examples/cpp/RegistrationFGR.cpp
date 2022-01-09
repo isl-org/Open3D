@@ -33,6 +33,7 @@
 using namespace open3d;
 
 std::tuple<std::shared_ptr<geometry::PointCloud>,
+           std::shared_ptr<geometry::PointCloud>,
            std::shared_ptr<pipelines::registration::Feature>>
 PreprocessPointCloud(const char *file_name, const float voxel_size) {
     auto pcd = open3d::io::CreatePointCloudFromFile(file_name);
@@ -42,7 +43,7 @@ PreprocessPointCloud(const char *file_name, const float voxel_size) {
     auto pcd_fpfh = pipelines::registration::ComputeFPFHFeature(
             *pcd_down,
             open3d::geometry::KDTreeSearchParamHybrid(5 * voxel_size, 100));
-    return std::make_tuple(pcd_down, pcd_fpfh);
+    return std::make_tuple(pcd, pcd_down, pcd_fpfh);
 }
 
 void VisualizeRegistration(const open3d::geometry::PointCloud &source,
@@ -93,15 +94,19 @@ int main(int argc, char *argv[]) {
             utility::GetProgramOptionAsInt(argc, argv, "--max_tuples", 1000);
 
     // Prepare input
-    std::shared_ptr<geometry::PointCloud> source, target;
+    std::shared_ptr<geometry::PointCloud> source, source_down, target,
+            target_down;
     std::shared_ptr<pipelines::registration::Feature> source_fpfh, target_fpfh;
-    std::tie(source, source_fpfh) = PreprocessPointCloud(argv[1], voxel_size);
-    std::tie(target, target_fpfh) = PreprocessPointCloud(argv[2], voxel_size);
+    std::tie(source, source_down, source_fpfh) =
+            PreprocessPointCloud(argv[1], voxel_size);
+    std::tie(target, target_down, target_fpfh) =
+            PreprocessPointCloud(argv[2], voxel_size);
 
     pipelines::registration::RegistrationResult registration_result =
             pipelines::registration::
                     FastGlobalRegistrationBasedOnFeatureMatching(
-                            *source, *target, *source_fpfh, *target_fpfh,
+                            *source_down, *target_down, *source_fpfh,
+                            *target_fpfh,
                             pipelines::registration::
                                     FastGlobalRegistrationOption(
                                             /* decrease_mu =  */ 1.4, true,

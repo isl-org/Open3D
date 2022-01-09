@@ -107,4 +107,4 @@ if __name__ == '__main__':
     src_down.paint_uniform_color([1, 0, 0])
     dst_down.paint_uniform_color([0, 1, 0])
     o3d.visualization.draw(
-        [src_down.transform(result.transformation), dst_down])
+        [src.transform(result.transformation), dst])
