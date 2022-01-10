@@ -43,5 +43,10 @@ TEST(Dataset, LocateDataRoot) {
     EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
 }
 
+TEST(Dataset, DownloadDatasets) {
+    data::dataset::Open3DSampleData sample_data;
+    sample_data.DisplayDataTree();
+}
+
 }  // namespace tests
 }  // namespace open3d

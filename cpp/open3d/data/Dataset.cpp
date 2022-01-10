@@ -93,8 +93,8 @@ static void DownloadFromMirrors(
                 success = true;
             } catch (const std::exception& ex) {
                 success = false;
-                utility::LogWarning("Failed to download from {}.",
-                                    it.second[i]);
+                utility::LogWarning("Failed to download from {}. Expection {}.",
+                                    it.second[i], ex.what());
             }
         }
         if (!success) {
