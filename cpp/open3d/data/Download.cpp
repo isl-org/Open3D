@@ -105,25 +105,27 @@ std::string GetMD5(const std::string& file_path) {
         utility::LogError("{} does not exist.", file_path);
     }
 
-    std::ifstream fp(file_path.c_str(), std::ios::ate);
+    std::ifstream fp(file_path.c_str(), std::ios::in | std::ios::binary);
 
     if (!fp.good()) {
         std::ostringstream os;
         utility::LogError("Cannot open {}", file_path);
     }
 
-    std::ifstream::pos_type fileSize;
-    char* memBlock;
-
-    fileSize = fp.tellg();
-    memBlock = new char[fileSize];
-    fp.seekg(0, std::ios::beg);
-    fp.read(memBlock, fileSize);
-    fp.close();
-
+    constexpr const std::size_t buffer_size{1 << 12};  // 4 KiB
+    char buffer[buffer_size];
     unsigned char hash[MD5_DIGEST_LENGTH] = {0};
-    // Get MD5 sum
-    MD5((unsigned char*)memBlock, fileSize, hash);
+
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
+
+    while (fp.good()) {
+        fp.read(buffer, buffer_size);
+        MD5_Update(&ctx, buffer, fp.gcount());
+    }
+
+    MD5_Final(hash, &ctx);
+    fp.close();
 
     std::ostringstream os;
     os << std::hex << std::setfill('0');
