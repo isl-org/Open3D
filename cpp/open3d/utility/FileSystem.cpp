@@ -279,6 +279,21 @@ bool FileExists(const std::string &filename) {
     return (fs::exists(filename) && fs::is_regular_file(filename));
 }
 
+void CopyFile(const std::string &src_path,
+              const std::string &dst_path,
+              const bool overwrite_existing) {
+    try {
+        fs::copy_options options = fs::copy_options::recursive;
+        if (overwrite_existing) {
+            options = options | fs::copy_options::overwrite_existing;
+        }
+
+        fs::copy(src_path, dst_path, options);
+    } catch (std::exception &e) {
+        utility::LogError("Failed to copy {} to {}. Exception: {}.", e.what());
+    }
+}
+
 std::uintmax_t ComputeFileSizeInBytes(const std::string &filename) {
     if (!FileExists(filename)) {
         utility::LogError("File {} does not exists.", filename);
@@ -403,17 +418,9 @@ static void DisplayDirectoryTreeImpl(const fs::path &current_path,
                                              max_depth);
                 }
             } else if (fs::is_regular_file(filename)) {
-                const time_t cftime = std::chrono::system_clock::to_time_t(
-                        fs::last_write_time(filename));
-                // asctime returns char* in format:
-                // `Sun Sep 16 01:03:52 1973\n\0`
-                // which is converted to string and `\n` is removed.
-                std::string time_str = std::asctime(std::localtime(&cftime));
-                time_str.pop_back();
-                utility::LogInfo("{} {},\t {} bytes,\t last modified time: {}",
-                                 lead_indentation_spaces, filename_without_path,
-                                 ComputeFileSizeInBytes(filename_str),
-                                 time_str);
+                utility::LogInfo("{} {},\t {} bytes", lead_indentation_spaces,
+                                 filename_without_path,
+                                 ComputeFileSizeInBytes(filename_str));
             } else {
                 utility::LogInfo("{} [?] {}", lead_indentation_spaces,
                                  filename_without_path);

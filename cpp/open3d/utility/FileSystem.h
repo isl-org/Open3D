@@ -78,6 +78,10 @@ bool DeleteDirectory(const std::string &directory);
 
 bool FileExists(const std::string &filename);
 
+void CopyFile(const std::string &src_path,
+              const std::string &dst_path,
+              const bool overwrite_existing = true);
+
 std::uintmax_t ComputeFileSizeInBytes(const std::string &filename);
 
 bool RemoveFile(const std::string &filename);
