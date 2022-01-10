@@ -292,7 +292,9 @@ static e_ply_type GetPlyType(const core::Dtype &dtype) {
         return PLY_DOUBLE;
     } else {
         utility::LogError(
-                "Data-type {} is not supported in WritePointCloudToPLY.",
+                "Data-type {} is not supported in WritePointCloudToPLY. "
+                "Supported data-types include UInt8, UInt16, Int32, Float32 "
+                "and Float64.",
                 dtype.ToString());
     }
 }
