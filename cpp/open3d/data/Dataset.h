@@ -27,9 +27,21 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace open3d {
 namespace data {
+
+/// A dataset class locates the data root directory in the following order:
+///
+/// (a) User-specified by `data_root` when instantiating a dataset object.
+/// (b) OPEN3D_DATA_ROOT environment variable.
+/// (c) $HOME/open3d_data.
+///
+/// LocateDataRoot() shall be called when the user-specified data root is not
+/// set, i.e. in case (b) and (c).
+std::string LocateDataRoot();
 
 /// \class Dataset
 /// \brief Base Open3D dataset class.
@@ -54,27 +66,74 @@ namespace data {
 ///   the code and load their own data in a similar way.
 class Dataset {
 public:
-    Dataset(const std::string& data_root = "");
-    virtual ~Dataset() {}
+    Dataset(const std::string& prefix = "", const std::string& data_root = "");
+
+    ~Dataset() {}
+
+    void DisplayDataTree(const int depth_level = 0) const;
+
+    /// \brief Display dataset related information, such as source, type, data
+    /// loader functionalities, usage, licence, and other useful informations.
+    const std::string Help() const;
+
+    void DeleteDownloadFiles() const;
+    void DeleteExtractFiles() const;
 
     /// Get data root directory. The data root is set at construction time or
     /// automatically determined.
-    std::string GetDataRoot() const;
+    const std::string GetDataRoot() const { return data_root_; }
+
+public:
+    std::vector<std::string> download_filenames_;
 
 protected:
     /// Open3D data root.
     std::string data_root_;
+    std::string prefix_;
+    std::string extract_prefix_;
+    std::string download_prefix_;
+    std::string path_to_extract_;
+    std::string path_to_download_;
 };
 
-/// A dataset class locates the data root directory in the following order:
-///
-/// (a) User-specified by `data_root` when instantiating a dataset object.
-/// (b) OPEN3D_DATA_ROOT environment variable.
-/// (c) $HOME/open3d_data.
-///
-/// LocateDataRoot() shall be called when the user-specified data root is not
-/// set, i.e. in case (b) and (c).
-std::string LocateDataRoot();
+class TemplateDataset : public Dataset {
+public:
+    TemplateDataset(
+            const std::string& prefix,
+            const std::unordered_map<std::string, std::vector<std::string>>&
+                    md5_to_mirror_urls,
+            const bool no_extract = false,
+            const std::string& data_root = "");
+
+    ~TemplateDataset() {}
+
+private:
+    const std::unordered_map<std::string, std::vector<std::string>>
+            md5_to_mirror_urls_;
+    std::unordered_map<std::string, std::string> filenames_to_md5_;
+};
+
+namespace dataset {
+
+static std::unordered_map<std::string, std::vector<std::string>>
+        mirrors_open3d_sample_data{
+                {"919880e42a741a50ed8cda34129dc3d7",
+                 {"https://github.com/isl-org/open3d_downloads/releases/"
+                  "download/00.14.01_sample_data/"
+                  "open3d_sample_data_00140100.zip"}}};
+
+class Open3DSampleData : public TemplateDataset {
+public:
+    Open3DSampleData(const std::string& prefix = "Open3DSampleData",
+                     const std::string& data_root = "")
+        : TemplateDataset(prefix, mirrors_open3d_sample_data) {
+        path_ = path_to_extract_;
+    }
+
+    std::string path_;
+};
+
+}  // namespace dataset
 
 }  // namespace data
 }  // namespace open3d
