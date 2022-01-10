@@ -29,11 +29,17 @@
 import numpy as np
 import open3d as o3d
 
+import os, sys
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+
 if __name__ == "__main__":
 
     print("Load two aligned point clouds.")
-    pcd0 = o3d.io.read_point_cloud("../../test_data/Feature/cloud_bin_0.pcd")
-    pcd1 = o3d.io.read_point_cloud("../../test_data/Feature/cloud_bin_1.pcd")
+    pcd0 = o3d.io.read_point_cloud(
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_0.pcd'))
+    pcd1 = o3d.io.read_point_cloud(
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_1.pcd'))
     pcd0.paint_uniform_color([1, 0.706, 0])
     pcd1.paint_uniform_color([0, 0.651, 0.929])
     o3d.visualization.draw_geometries([pcd0, pcd1])
@@ -41,9 +47,10 @@ if __name__ == "__main__":
     print("Black : matching distance > 0.2")
     print("White : matching distance = 0")
     feature0 = o3d.io.read_feature(
-        "../../test_data/Feature/cloud_bin_0.fpfh.bin")
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_0.fpfh.bin'))
     feature1 = o3d.io.read_feature(
-        "../../test_data/Feature/cloud_bin_1.fpfh.bin")
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_1.fpfh.bin'))
+
     fpfh_tree = o3d.geometry.KDTreeFlann(feature1)
     for i in range(len(pcd0.points)):
         [_, idx, _] = fpfh_tree.search_knn_vector_xd(feature0.data[:, i], 1)
@@ -57,9 +64,10 @@ if __name__ == "__main__":
     print("Black : matching distance > 0.2")
     print("White : matching distance = 0")
     feature0 = o3d.io.read_feature(
-        "../../test_data/Feature/cloud_bin_0.d32.bin")
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_0.d32.bin'))
     feature1 = o3d.io.read_feature(
-        "../../test_data/Feature/cloud_bin_1.d32.bin")
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_1.d32.bin'))
+
     fpfh_tree = o3d.geometry.KDTreeFlann(feature1)
     for i in range(len(pcd0.points)):
         [_, idx, _] = fpfh_tree.search_knn_vector_xd(feature0.data[:, i], 1)

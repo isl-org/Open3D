@@ -264,6 +264,8 @@ class ReconstructionWindow:
         set_enabled(self.adjustable_prop_grid, True)
 
     def _on_close(self):
+        self.is_done = True
+
         if self.is_started:
             print('Saving model to {}...'.format(config.path_npz))
             self.model.voxel_grid.save(config.path_npz)

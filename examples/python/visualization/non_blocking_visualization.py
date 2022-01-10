@@ -29,11 +29,17 @@
 import open3d as o3d
 import numpy as np
 import copy
+import os
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 if __name__ == "__main__":
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
-    source_raw = o3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_0.pcd")
-    target_raw = o3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_1.pcd")
+    source_raw = o3d.io.read_point_cloud(
+        os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
+    target_raw = o3d.io.read_point_cloud(
+        os.path.join(test_data_path, 'ICP', 'cloud_bin_1.pcd'))
     source = source_raw.voxel_down_sample(voxel_size=0.02)
     target = target_raw.voxel_down_sample(voxel_size=0.02)
     trans = [[0.862, 0.011, -0.507, 0.0], [-0.139, 0.967, -0.215, 0.7],

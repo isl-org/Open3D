@@ -27,11 +27,19 @@
 # examples/python/pipelines/rgbd_integration_uniform.py
 
 import open3d as o3d
-from trajectory_io import read_trajectory
 import numpy as np
 
+import os, sys
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+sys.path.append(pyexample_path)
+
+from geometry.trajectory_io import read_trajectory
+
 if __name__ == "__main__":
-    camera_poses = read_trajectory("../../test_data/RGBD/odometry.log")
+    camera_poses = read_trajectory(
+        os.path.join(test_data_path, 'RGBD', 'odometry.log'))
     camera_intrinsics = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     volume = o3d.pipelines.integration.UniformTSDFVolume(
@@ -44,9 +52,12 @@ if __name__ == "__main__":
     for i in range(len(camera_poses)):
         print("Integrate {:d}-th image into the volume.".format(i))
         color = o3d.io.read_image(
-            "../../test_data/RGBD/color/{:05d}.jpg".format(i))
+            os.path.join(test_data_path, 'RGBD', 'color',
+                         '{:05d}.jpg'.format(i)))
         depth = o3d.io.read_image(
-            "../../test_data/RGBD/depth/{:05d}.png".format(i))
+            os.path.join(test_data_path, 'RGBD', 'depth',
+                         '{:05d}.png'.format(i)))
+
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
             color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False)
         volume.integrate(

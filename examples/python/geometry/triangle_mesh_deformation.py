@@ -30,9 +30,10 @@ import time
 import os
 import sys
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, "../misc"))
-import meshes
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+import misc.meshes as meshes
 
 
 def problem0():
