@@ -104,6 +104,6 @@ if __name__ == '__main__':
         criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(
             args.max_iterations, args.confidence))
 
-    src_down.paint_uniform_color([1, 0, 0])
-    dst_down.paint_uniform_color([0, 1, 0])
+    src.paint_uniform_color([1, 0, 0])
+    dst.paint_uniform_color([0, 1, 0])
     o3d.visualization.draw([src.transform(result.transformation), dst])
