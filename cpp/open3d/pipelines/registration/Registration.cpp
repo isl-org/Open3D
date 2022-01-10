@@ -87,35 +87,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     return result;
 }
 
-static RegistrationResult EvaluateRANSACBasedOnCorrespondence(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const CorrespondenceSet &corres,
-        double max_correspondence_distance,
-        const Eigen::Matrix4d &transformation) {
-    RegistrationResult result(transformation);
-    double error2 = 0.0;
-    int good = 0;
-    double max_dis2 = max_correspondence_distance * max_correspondence_distance;
-    for (const auto &c : corres) {
-        double dis2 =
-                (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
-        if (dis2 < max_dis2) {
-            good++;
-            error2 += dis2;
-            result.correspondence_set_.push_back(c);
-        }
-    }
-    if (good == 0) {
-        result.fitness_ = 0.0;
-        result.inlier_rmse_ = 0.0;
-    } else {
-        result.fitness_ = (double)good / (double)corres.size();
-        result.inlier_rmse_ = std::sqrt(error2 / (double)good);
-    }
-    return result;
-}
-
 RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -214,6 +185,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
     }
 
     RegistrationResult best_result;
+    geometry::KDTreeFlann kdtree(target);
     int exit_itr = -1;
 
 #pragma omp parallel
@@ -250,8 +222,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 
                 geometry::PointCloud pcd = source;
                 pcd.Transform(transformation);
-                auto result = EvaluateRANSACBasedOnCorrespondence(
-                        pcd, target, corres, max_correspondence_distance,
+                auto result = GetRegistrationResultAndCorrespondences(
+                        pcd, target, kdtree, max_correspondence_distance,
                         transformation);
 
                 if (result.IsBetterRANSACThan(best_result_local)) {
