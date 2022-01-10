@@ -66,7 +66,7 @@ std::string LocateDataRoot();
 ///   the code and load their own data in a similar way.
 class Dataset {
 public:
-    Dataset(const std::string& prefix = "", const std::string& data_root = "");
+    Dataset(const std::string& prefix, const std::string& data_root = "");
 
     ~Dataset() {}
 
@@ -133,7 +133,57 @@ public:
     std::string path_;
 };
 
-}  // namespace dataset
+static std::unordered_map<std::string, std::vector<std::string>>
+        mirrors_redwood_livingroom_fragments{
+                {"36e0eb23a66ccad6af52c05f8390d33e",
+                 {"http://redwood-data.org/indoor/data/"
+                  "livingroom1-fragments-ply.zip",
+                  "https://github.com/isl-org/open3d_downloads/releases/"
+                  "download/redwood/livingroom1-fragments-ply.zip"}}};
 
+class RedwoodLivingRoomFragments : public TemplateDataset {
+public:
+    RedwoodLivingRoomFragments(
+            const std::string& prefix = "RedwoodLivingRoomFragments",
+            const std::string& data_root = "")
+        : TemplateDataset(prefix, mirrors_redwood_livingroom_fragments) {
+        path_to_extract_ = TemplateDataset::path_to_extract_;
+        path_to_fragments_.reserve(57);
+        for (int i = 0; i < 57; ++i) {
+            path_to_fragments_.push_back(path_to_extract_ + "/cloud_bin_" +
+                                         std::to_string(i) + ".ply");
+        }
+    }
+
+    std::string path_to_extract_;
+    std::vector<std::string> path_to_fragments_;
+};
+
+static std::unordered_map<std::string, std::vector<std::string>>
+        mirrors_redwood_office_fragments{
+                {"c519fe0495b3c731ebe38ae3a227ac25",
+                 {"http://redwood-data.org/indoor/data/"
+                  "office1-fragments-ply.zip",
+                  "https://github.com/isl-org/open3d_downloads/releases/"
+                  "download/redwood/office1-fragments-ply.zip"}}};
+
+class RedwoodOfficeFragments : public TemplateDataset {
+public:
+    RedwoodOfficeFragments(const std::string& prefix = "RedwoodOfficeFragments",
+                           const std::string& data_root = "")
+        : TemplateDataset(prefix, mirrors_redwood_office_fragments) {
+        path_to_extract_ = TemplateDataset::path_to_extract_;
+        path_to_fragments_.reserve(57);
+        for (int i = 0; i < 52; ++i) {
+            path_to_fragments_.push_back(path_to_extract_ + "/cloud_bin_" +
+                                         std::to_string(i) + ".ply");
+        }
+    }
+
+    std::string path_to_extract_;
+    std::vector<std::string> path_to_fragments_;
+};
+
+}  // namespace dataset
 }  // namespace data
 }  // namespace open3d

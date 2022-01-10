@@ -35,17 +35,30 @@ namespace open3d {
 namespace tests {
 
 TEST(Dataset, LocateDataRoot) {
-    data::Dataset ds;
+    // Prefix cannot be empty.
+    data::Dataset ds("some_prefix");
     EXPECT_EQ(ds.GetDataRoot(),
               utility::filesystem::GetHomeDirectory() + "/open3d_data");
 
-    data::Dataset ds_custom("/my/custom/data_root");
+    data::Dataset ds_custom("some_prefix", "/my/custom/data_root");
     EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
 }
 
 TEST(Dataset, DownloadDatasets) {
     data::dataset::Open3DSampleData sample_data;
     sample_data.DisplayDataTree();
+
+    data::dataset::RedwoodLivingRoomFragments livingroom_frag;
+    livingroom_frag.DisplayDataTree();
+    EXPECT_EQ(livingroom_frag.path_to_extract_,
+              utility::filesystem::GetHomeDirectory() +
+                      "/open3d_data/extract/RedwoodLivingRoomFragments");
+
+    data::dataset::RedwoodOfficeFragments office_frag;
+    office_frag.DisplayDataTree();
+    EXPECT_EQ(office_frag.path_to_extract_,
+              utility::filesystem::GetHomeDirectory() +
+                      "/open3d_data/extract/RedwoodOfficeFragments");
 }
 
 }  // namespace tests
