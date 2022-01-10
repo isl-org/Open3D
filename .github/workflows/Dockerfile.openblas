@@ -46,10 +46,18 @@ RUN apt-get update && apt-get install -y \
     ccache \
  && rm -rf /var/lib/apt/lists/*
 ENV PATH="/usr/lib/ccache:${PATH}"
-RUN which gcc \
+RUN mkdir -p /usr/lib/ccache \
+ && ln -sf $(which ccache) /usr/lib/ccache/gcc \
+ && ln -sf $(which ccache) /usr/lib/ccache/g++ \
+ && ln -sf $(which ccache) /usr/lib/ccache/clang-7
+RUN echo ${PATH} \
+ && ls -alh /usr/lib/ccache \
+ && echo "gcc=$(which gcc)" \
  && gcc --version \
- && which g++ \
- && g++ --version
+ && echo "g++=$(which g++)" \
+ && g++ --version \
+ && echo "clang-7=$(which clang-7)" \
+ && clang-7 --version
 
 # Uncomment this line to always fetch the latest ccache
 # ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
