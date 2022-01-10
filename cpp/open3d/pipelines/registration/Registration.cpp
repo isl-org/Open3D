@@ -229,7 +229,9 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 if (result.IsBetterRANSACThan(best_result_local)) {
                     best_result_local = result;
 
-                    // Update exit condition if necessary
+                    // Update exit condition if necessary.
+                    // If confidence is 1.0, then it is safely inf, we always
+                    // consume all the iterations.
                     double exit_itr_d =
                             std::log(1.0 - criteria.confidence_) /
                             std::log(1.0 - std::pow(result.fitness_, ransac_n));
