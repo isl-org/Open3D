@@ -40,12 +40,16 @@ namespace eigen_converter {
 /// \brief Converts a Eigen matrix of shape (M, N) with alignment A and type T
 /// to a Tensor.
 ///
-/// \param matrix A templated Eigen matrix.
-/// \return A tensor converted from the Eigen matrix.
-template <class T, int M, int N, int A>
-core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
-    core::Dtype dtype = core::Dtype::FromType<T>();
-    Eigen::Matrix<T, M, N, Eigen::RowMajor> matrix_row_major = matrix;
+/// \param matrix An Eigen matrix (e.g. Eigen::Matrix3f) or vector (e.g.
+/// Eigen::Vector3d).
+/// \return A tensor converted from the Eigen matrix. The resuliting Tensor is
+/// always 2D.
+template <class Derived>
+core::Tensor EigenMatrixToTensor(const Eigen::MatrixBase<Derived> &matrix) {
+    typedef typename Derived::Scalar Scalar;
+    core::Dtype dtype = core::Dtype::FromType<Scalar>();
+    Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+            matrix_row_major = matrix;
     return core::Tensor(matrix_row_major.data(), {matrix.rows(), matrix.cols()},
                         dtype);
 }
