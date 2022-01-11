@@ -78,6 +78,8 @@ bool DeleteDirectory(const std::string &directory);
 
 bool FileExists(const std::string &filename);
 
+bool CopyFile(const std::string &src_path, const std::string &dst_path);
+
 bool RemoveFile(const std::string &filename);
 
 bool ListDirectory(const std::string &directory,
