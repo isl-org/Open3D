@@ -264,7 +264,21 @@ let WebRtcStreamer = (function() {
                     widthInputElt.value = this.videoWidth;
                 }
             };
-
+            // document.addEventListener('keydown', (event) => {
+            //     var open3dKeyEvent = {
+            //         window_uid: windowUID,
+            //         class_name: 'KeyEvent',
+            //         type: 'KEY_DOWN',
+            //         key: {
+            //             key: event.key,
+            //             code: event.code,
+            //             location: event.location,
+            //             repeat: event.repeat,
+            //         },
+            //     };
+            //     console.log('keydown: ', open3dKeyEvent);
+            //     this.sendJsonData(open3dKeyEvent);
+            // }, true);
             this.videoElt.addEventListener('mousedown', (event) => {
                 event.preventDefault();
                 var open3dMouseEvent = {
