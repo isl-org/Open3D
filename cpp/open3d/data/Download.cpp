@@ -28,7 +28,6 @@
 
 // clang-format off
 // Must include openssl before curl to build on Windows.
-#include <openssl/sha.h>
 #include <openssl/md5.h>
 
 // https://stackoverflow.com/a/41873190/1255535
@@ -58,47 +57,6 @@
 
 namespace open3d {
 namespace data {
-
-// https://gist.github.com/arrieta/7d2e196c40514d8b5e9031f2535064fc
-// author    J. Arrieta <Juan.Arrieta@nablazerolabs.com>
-// copyright (c) 2017 Nabla Zero Labs
-// license   MIT License
-std::string GetSHA256(const std::string& file_path) {
-    if (!utility::filesystem::FileExists(file_path)) {
-        utility::LogError("{} does not exist.", file_path);
-    }
-
-    std::ifstream fp(file_path.c_str(), std::ios::in | std::ios::binary);
-
-    if (!fp.good()) {
-        std::ostringstream os;
-        utility::LogError("Cannot open {}", file_path);
-    }
-
-    constexpr const std::size_t buffer_size{1 << 12};  // 4 KiB
-    char buffer[buffer_size];
-    unsigned char hash[SHA256_DIGEST_LENGTH] = {0};
-
-    SHA256_CTX ctx;
-    SHA256_Init(&ctx);
-
-    while (fp.good()) {
-        fp.read(buffer, buffer_size);
-        SHA256_Update(&ctx, buffer, fp.gcount());
-    }
-
-    SHA256_Final(hash, &ctx);
-    fp.close();
-
-    std::ostringstream os;
-    os << std::hex << std::setfill('0');
-
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
-        os << std::setw(2) << static_cast<unsigned int>(hash[i]);
-    }
-
-    return os.str();
-}
 
 std::string GetMD5(const std::string& file_path) {
     if (!utility::filesystem::FileExists(file_path)) {

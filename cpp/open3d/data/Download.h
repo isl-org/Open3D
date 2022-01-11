@@ -31,10 +31,6 @@
 namespace open3d {
 namespace data {
 
-/// \brief Computes SHA256 Hash for the given file.
-/// \param file_path Path to the file.
-std::string GetSHA256(const std::string& file_path);
-
 /// \brief Computes MD5 Hash for the given file.
 /// \param file_path Path to the file.
 std::string GetMD5(const std::string& file_path);
