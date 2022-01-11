@@ -247,6 +247,32 @@ let WebRtcStreamer = (function() {
 
             var o3dmouseButtons = ['LEFT', 'MIDDLE', 'RIGHT'];
 
+            // Can not get this.videoElt.addEventListener("keydown") to work.
+            // Therefore, for each active WebRTC window, we register an event
+            // listener attached to the document element.
+            // - open3dKeyEvent will only be sent if the current windowUID
+            //   matches the global document.activeWindowUID.
+            // - mousedown and touchstart event set the document.activeWindowUID.
+            // - onloadedmetadata event also sets the document.activeWindowUID.
+            //   The last initalization window is set as active.
+            document.addEventListener('keydown', (event) => {
+                if (document.activeWindowUID != windowUID) {
+                    return;
+                }
+                var open3dKeyEvent = {
+                    window_uid: windowUID,
+                    class_name: 'KeyEvent',
+                    type: 'KEY_DOWN',
+                    key: {
+                        key: event.key,
+                        code: event.code,
+                        location: event.location,
+                        repeat: event.repeat,
+                    },
+                };
+                console.log('keydown: ', open3dKeyEvent);
+                this.sendJsonData(open3dKeyEvent);
+            }, true);
             this.videoElt.addEventListener('contextmenu', (event) => {
                 event.preventDefault();
             }, false);
@@ -264,22 +290,8 @@ let WebRtcStreamer = (function() {
                     widthInputElt.value = this.videoWidth;
                 }
             };
-            // document.addEventListener('keydown', (event) => {
-            //     var open3dKeyEvent = {
-            //         window_uid: windowUID,
-            //         class_name: 'KeyEvent',
-            //         type: 'KEY_DOWN',
-            //         key: {
-            //             key: event.key,
-            //             code: event.code,
-            //             location: event.location,
-            //             repeat: event.repeat,
-            //         },
-            //     };
-            //     console.log('keydown: ', open3dKeyEvent);
-            //     this.sendJsonData(open3dKeyEvent);
-            // }, true);
             this.videoElt.addEventListener('mousedown', (event) => {
+                document.activeWindowUID = windowUID;
                 event.preventDefault();
                 var open3dMouseEvent = {
                     window_uid: windowUID,
@@ -296,6 +308,7 @@ let WebRtcStreamer = (function() {
                 this.sendJsonData(open3dMouseEvent);
             }, false);
             this.videoElt.addEventListener('touchstart', (event) => {
+                document.activeWindowUID = windowUID;
                 event.preventDefault();
                 var rect = event.target.getBoundingClientRect();
                 var open3dMouseEvent = {
