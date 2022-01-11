@@ -87,6 +87,27 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     return result;
 }
 
+static double EvaluateInlierCorrespondenceRatio(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const CorrespondenceSet &corres,
+        double max_correspondence_distance,
+        const Eigen::Matrix4d &transformation) {
+    RegistrationResult result(transformation);
+
+    int inlier_corres = 0;
+    double max_dis2 = max_correspondence_distance * max_correspondence_distance;
+    for (const auto &c : corres) {
+        double dis2 =
+                (source.points_[c[0]] - target.points_[c[1]]).squaredNorm();
+        if (dis2 < max_dis2) {
+            inlier_corres++;
+        }
+    }
+
+    return double(inlier_corres) / double(corres.size());
+}
+
 RegistrationResult EvaluateRegistration(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -186,13 +207,14 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 
     RegistrationResult best_result;
     geometry::KDTreeFlann kdtree(target);
-    int exit_itr = -1;
+    int est_k_global = criteria.max_iteration_;
+    int total_validation = 0;
 
 #pragma omp parallel
     {
         CorrespondenceSet ransac_corres(ransac_n);
         RegistrationResult best_result_local;
-        int exit_itr_local = criteria.max_iteration_;
+        int est_k_local = criteria.max_iteration_;
         unsigned int seed_val =
                 seed.has_value() ? seed.value() : std::random_device{}();
         utility::UniformRandIntGenerator rand_generator(
@@ -200,7 +222,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 
 #pragma omp for nowait
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
-            if (itr < exit_itr_local) {
+            if (itr < est_k_global) {
                 for (int j = 0; j < ransac_n; j++) {
                     ransac_corres[j] = corres[rand_generator()];
                 }
@@ -220,6 +242,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 }
                 if (!check) continue;
 
+                // Expensive validation
                 geometry::PointCloud pcd = source;
                 pcd.Transform(transformation);
                 auto result = GetRegistrationResultAndCorrespondences(
@@ -229,33 +252,51 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 if (result.IsBetterRANSACThan(best_result_local)) {
                     best_result_local = result;
 
+                    double corres_inlier_ratio =
+                            EvaluateInlierCorrespondenceRatio(
+                                    pcd, target, corres,
+                                    max_correspondence_distance,
+                                    transformation);
+
                     // Update exit condition if necessary.
                     // If confidence is 1.0, then it is safely inf, we always
                     // consume all the iterations.
-                    double exit_itr_d =
+                    double est_k_local_d =
                             std::log(1.0 - criteria.confidence_) /
-                            std::log(1.0 - std::pow(result.fitness_, ransac_n));
-                    exit_itr_local =
-                            exit_itr_d < double(criteria.max_iteration_)
-                                    ? static_cast<int>(std::ceil(exit_itr_d))
-                                    : exit_itr_local;
+                            std::log(1.0 -
+                                     std::pow(corres_inlier_ratio, ransac_n));
+                    est_k_local =
+                            est_k_local_d < est_k_global
+                                    ? static_cast<int>(std::ceil(est_k_local_d))
+                                    : est_k_local;
+                    utility::LogDebug(
+                            "Thread {:06d}: registration fitness={:.3f}, "
+                            "corres inlier ratio={:.3f}, "
+                            "Est. max k = {}",
+                            itr, result.fitness_, corres_inlier_ratio,
+                            est_k_local_d);
                 }
-            }  // if < exit_itr_local
+#pragma omp critical
+                {
+                    total_validation += 1;
+                    if (est_k_local < est_k_global) {
+                        est_k_global = est_k_local;
+                    }
+                }
+            }  // if
         }      // for loop
+
 #pragma omp critical(RegistrationRANSACBasedOnCorrespondence)
         {
             if (best_result_local.IsBetterRANSACThan(best_result)) {
                 best_result = best_result_local;
             }
-            if (exit_itr_local > exit_itr) {
-                exit_itr = exit_itr_local;
-            }
         }
     }
     utility::LogDebug(
-            "RANSAC exits at {:d}-th iteration: inlier ratio {:e}, "
+            "RANSAC exits after {:d} validations. Best inlier ratio {:e}, "
             "RMSE {:e}",
-            exit_itr, best_result.fitness_, best_result.inlier_rmse_);
+            total_validation, best_result.fitness_, best_result.inlier_rmse_);
     return best_result;
 }
 
