@@ -275,7 +275,7 @@ bool DeleteDirectory(const std::string &directory) {
 }
 
 bool FileExists(const std::string &filename) {
-    return (fs::exists(filename) && fs::is_regular_file(filename));
+    return fs::exists(filename) && fs::is_regular_file(filename);
 }
 
 bool CopyFile(const std::string &src_path, const std::string &dst_path) {
