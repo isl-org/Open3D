@@ -28,7 +28,7 @@
 
 // clang-format off
 // Must include openssl before curl to build on Windows.
-#include <openssl/sha.h>
+#include <openssl/md5.h>
 
 // https://stackoverflow.com/a/41873190/1255535
 #ifdef WINDOWS
@@ -58,11 +58,7 @@
 namespace open3d {
 namespace data {
 
-// https://gist.github.com/arrieta/7d2e196c40514d8b5e9031f2535064fc
-// author    J. Arrieta <Juan.Arrieta@nablazerolabs.com>
-// copyright (c) 2017 Nabla Zero Labs
-// license   MIT License
-std::string GetSHA256(const std::string& file_path) {
+std::string GetMD5(const std::string& file_path) {
     if (!utility::filesystem::FileExists(file_path)) {
         utility::LogError("{} does not exist.", file_path);
     }
@@ -76,23 +72,23 @@ std::string GetSHA256(const std::string& file_path) {
 
     constexpr const std::size_t buffer_size{1 << 12};  // 4 KiB
     char buffer[buffer_size];
-    unsigned char hash[SHA256_DIGEST_LENGTH] = {0};
+    unsigned char hash[MD5_DIGEST_LENGTH] = {0};
 
-    SHA256_CTX ctx;
-    SHA256_Init(&ctx);
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
 
     while (fp.good()) {
         fp.read(buffer, buffer_size);
-        SHA256_Update(&ctx, buffer, fp.gcount());
+        MD5_Update(&ctx, buffer, fp.gcount());
     }
 
-    SHA256_Final(hash, &ctx);
+    MD5_Final(hash, &ctx);
     fp.close();
 
     std::ostringstream os;
     os << std::hex << std::setfill('0');
 
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i) {
+    for (int i = 0; i < MD5_DIGEST_LENGTH; ++i) {
         os << std::setw(2) << static_cast<unsigned int>(hash[i]);
     }
 
@@ -105,18 +101,18 @@ static size_t WriteDataCb(void* ptr, size_t size, size_t nmemb, FILE* stream) {
     return written;
 }
 
-void DownloadFromURL(const std::string& url,
-                     const std::string& sha256,
-                     const std::string& prefix,
-                     const std::string& data_root) {
+std::string DownloadFromURL(const std::string& url,
+                            const std::string& md5,
+                            const std::string& prefix,
+                            const std::string& data_root) {
     // Always print URL to inform the user. If the download fails, the user
     // knows the URL.
     utility::LogInfo("Downloading {}", url);
 
     // Sanity checks.
-    if (sha256.size() != SHA256_DIGEST_LENGTH * 2) {
-        utility::LogError("Invalid sha256 length {}, expected to be {}.",
-                          sha256.size(), SHA256_DIGEST_LENGTH * 2);
+    if (md5.size() != MD5_DIGEST_LENGTH * 2) {
+        utility::LogError("Invalid md5 length {}, expected to be {}.",
+                          md5.size(), MD5_DIGEST_LENGTH * 2);
     }
     if (prefix.empty()) {
         utility::LogError("Download prefix cannot be empty.");
@@ -135,10 +131,10 @@ void DownloadFromURL(const std::string& url,
 
     // Check if the file exists.
     if (utility::filesystem::FileExists(file_path) &&
-        GetSHA256(file_path) == sha256) {
-        utility::LogInfo("{} exists and SHA256 matches. Skipped downloading.",
+        GetMD5(file_path) == md5) {
+        utility::LogInfo("{} exists and md5 matches. Skipped downloading.",
                          file_path);
-        return;
+        return file_path;
     }
 
     // Download.
@@ -164,18 +160,20 @@ void DownloadFromURL(const std::string& url,
     fclose(fp);
 
     if (res == CURLE_OK) {
-        const std::string actual_sha256 = GetSHA256(file_path);
-        if (actual_sha256 == sha256) {
+        const std::string actual_md5 = GetMD5(file_path);
+        if (actual_md5 == md5) {
             utility::LogInfo("Downloaded to {}", file_path);
         } else {
             utility::LogError(
-                    "SHA256 mismatch for {}.\n- Expected: {}\n- Actual  : {}",
-                    file_path, sha256, actual_sha256);
+                    "MD5 mismatch for {}.\n- Expected: {}\n- Actual  : {}",
+                    file_path, md5, actual_md5);
         }
     } else {
         utility::LogError("Download failed with error code: {}.",
                           curl_easy_strerror(res));
     }
+
+    return file_path;
 }
 
 }  // namespace data

@@ -39,8 +39,7 @@ TEST(Downloader, DownloadAndVerify) {
     std::string url =
             "https://github.com/isl-org/open3d_downloads/releases/download/"
             "data-manager/test_data_00.zip";
-    std::string sha256 =
-            "66ea466a02532d61dbc457abf1408afeab360d7a35e15f1479ca91c25e838d30";
+    std::string md5 = "996987b27c4497dbb951ec056c9684f4";
 
     std::string prefix = "temp_test";
     std::string file_dir = data::LocateDataRoot() + "/" + prefix;
@@ -48,19 +47,18 @@ TEST(Downloader, DownloadAndVerify) {
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
 
     // This download shall work.
-    data::DownloadFromURL(url, sha256, prefix);
+    EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
     EXPECT_TRUE(utility::filesystem::DirectoryExists(file_dir));
-    EXPECT_TRUE(
-            utility::filesystem::FileExists(file_dir + "/test_data_00.zip"));
+    EXPECT_TRUE(utility::filesystem::FileExists(file_path));
+    EXPECT_EQ(data::GetMD5(file_path), md5);
 
-    // This download shall be skipped (look at the message).
-    data::DownloadFromURL(url, sha256, prefix);
+    // This download shall be skipped as the file already exists (look at the
+    // message).
+    EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
 
-    // Mismatch sha256.
+    // Mismatch md5.
     EXPECT_ANY_THROW(data::DownloadFromURL(
-            url,
-            "0000000000000000000000000000000000000000000000000000000000000000",
-            prefix));
+            url, "00000000000000000000000000000000", prefix));
 
     // Clean up.
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));

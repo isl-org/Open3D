@@ -37,34 +37,33 @@ namespace tests {
 TEST(Extract, ExtractFromZIP) {
     // Directory relative to `data_root`, where files will be temp. downloaded
     // for this test.
-    const std::string prefix = "test_extract";
+    const std::string prefix = "open3d_tmp/test_extract";
     const std::string extract_dir = data::LocateDataRoot() + "/" + prefix;
+    EXPECT_TRUE(utility::filesystem::DeleteDirectory(extract_dir));
 
     // Download the `test_data_00.zip` test data.
-    std::string file_url =
+    std::string url =
             "https://github.com/isl-org/open3d_downloads/releases/download/"
             "data-manager/test_data_00.zip";
-    std::string file_sha256 =
-            "66ea466a02532d61dbc457abf1408afeab360d7a35e15f1479ca91c25e838d30";
-    data::DownloadFromURL(file_url, file_sha256, prefix);
+    std::string md5 = "996987b27c4497dbb951ec056c9684f4";
+    std::string file_path = extract_dir + "/test_data_00.zip";
+    // This download shall work.
+    EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
 
     // Extract the test zip file.
-    std::string file_path = extract_dir + "/test_data_00.zip";
     EXPECT_NO_THROW(data::Extract(file_path, extract_dir));
     std::string output_file = extract_dir + "/test_data/lena_color.jpg";
     // Check if the extracted file exists.
     EXPECT_TRUE(utility::filesystem::FileExists(output_file));
 
     // Download the `test_data_00.tar.xy` test data.
-    file_url =
-            "https://github.com/isl-org/open3d_downloads/releases/download/"
-            "data-manager/test_data_00.tar.xz";
-    file_sha256 =
-            "e8072ac8c10b73a13a9b72642f3645985e74c3853a71d984d000020455c0b3b7";
-    data::DownloadFromURL(file_url, file_sha256, prefix);
+    url = "https://github.com/isl-org/open3d_downloads/releases/download/"
+          "data-manager/test_data_00.tar.xz";
+    md5 = "61dec8a20bfe288f0bfa7cb38597587f";
+    file_path = extract_dir + "/test_data_00.tar.xz";
+    EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
 
     // Currently only `.zip` files are supported.
-    file_path = extract_dir + "/test_data_00.tar.xz";
     EXPECT_ANY_THROW(data::Extract(file_path, extract_dir));
 
     // Clean up.
