@@ -253,8 +253,8 @@ let WebRtcStreamer = (function() {
             // - open3dKeyEvent will only be sent if the current windowUID
             //   matches the global document.activeWindowUID.
             // - mousedown and touchstart event set the document.activeWindowUID.
-            // - onloadedmetadata event also sets the document.activeWindowUID.
-            //   The last initalization window is set as active.
+            // - At initiliazation, the document.activeWindowUID is null,
+            //   thus no event will be sent until the user clicks on a window.
             document.addEventListener('keydown', (event) => {
                 if (document.activeWindowUID != windowUID) {
                     return;
