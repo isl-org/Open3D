@@ -127,23 +127,15 @@ static core::Dtype GetDtype(e_ply_type type) {
     // Currently, we are not doing datatype conversions, so some of the ply
     // datatypes are not included.
 
-    if (type == PLY_UINT8) {
+    if (type == PLY_UINT8 || type == PLY_UCHAR) {
         return core::UInt8;
     } else if (type == PLY_UINT16) {
         return core::UInt16;
-    } else if (type == PLY_INT32) {
+    } else if (type == PLY_INT32 || type == PLY_INT) {
         return core::Int32;
-    } else if (type == PLY_FLOAT32) {
+    } else if (type == PLY_FLOAT32 || type == PLY_FLOAT) {
         return core::Float32;
-    } else if (type == PLY_FLOAT64) {
-        return core::Float64;
-    } else if (type == PLY_UCHAR) {
-        return core::UInt8;
-    } else if (type == PLY_INT) {
-        return core::Int32;
-    } else if (type == PLY_FLOAT) {
-        return core::Float32;
-    } else if (type == PLY_DOUBLE) {
+    } else if (type == PLY_FLOAT64 || type == PLY_DOUBLE) {
         return core::Float64;
     } else {
         return core::Undefined;
@@ -289,23 +281,21 @@ bool ReadPointCloudFromPLY(const std::string &filename,
 
 static e_ply_type GetPlyType(const core::Dtype &dtype) {
     if (dtype == core::UInt8) {
-        return PLY_UINT8;
+        return PLY_UCHAR;
     } else if (dtype == core::UInt16) {
         return PLY_UINT16;
     } else if (dtype == core::Int32) {
-        return PLY_INT32;
-    } else if (dtype == core::Float32) {
-        return PLY_FLOAT32;
-    } else if (dtype == core::Float64) {
-        return PLY_FLOAT64;
-    } else if (dtype == core::UInt8) {
-        return PLY_UCHAR;
-    } else if (dtype == core::Int32) {
-        return PLY_INT32;
+        return PLY_INT;
     } else if (dtype == core::Float32) {
         return PLY_FLOAT;
-    } else {
+    } else if (dtype == core::Float64) {
         return PLY_DOUBLE;
+    } else {
+        utility::LogError(
+                "Data-type {} is not supported in WritePointCloudToPLY. "
+                "Supported data-types include UInt8, UInt16, Int32, Float32 "
+                "and Float64.",
+                dtype.ToString());
     }
 }
 
