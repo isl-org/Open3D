@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace pipelines {
@@ -65,7 +66,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                         Eigen::Vector2i(i, indices[0]));
             }
         }
-#pragma omp critical
+#pragma omp critical(GetRegistrationResultAndCorrespondences)
         {
             for (int i = 0; i < (int)correspondence_set_private.size(); i++) {
                 result.correspondence_set_.push_back(
@@ -144,6 +145,14 @@ RegistrationResult RegistrationICP(
                 "TransformationEstimationPointToPlane and "
                 "TransformationEstimationColoredICP "
                 "require pre-computed normal vectors for target PointCloud.");
+    }
+    if ((estimation.GetTransformationEstimationType() ==
+         TransformationEstimationType::GeneralizedICP) &&
+        (!target.HasCovariances() || !source.HasCovariances())) {
+        utility::LogError(
+                "TransformationEstimationForGeneralizedICP require "
+                "pre-computed per point covariances matrices for source and "
+                "target PointCloud.");
     }
 
     Eigen::Matrix4d transformation = init;
@@ -312,7 +321,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     geometry::KDTreeFlann kdtree_target(target_feature);
     pipelines::registration::CorrespondenceSet corres_ij(num_src_pts);
 
-#pragma omp for nowait
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < num_src_pts; i++) {
         std::vector<int> corres_tmp(1);
         std::vector<double> dist_tmp(1);
@@ -328,7 +337,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         geometry::KDTreeFlann kdtree_source(source_feature);
         pipelines::registration::CorrespondenceSet corres_ji(num_tgt_pts);
 
-#pragma omp for nowait
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
         for (int j = 0; j < num_tgt_pts; ++j) {
             std::vector<int> corres_tmp(1);
             std::vector<double> dist_tmp(1);
@@ -353,7 +362,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                               corres_mutual.size());
             return RegistrationRANSACBasedOnCorrespondence(
                     source, target, corres_mutual, max_correspondence_distance,
-                    estimation, ransac_n, checkers, criteria);
+                    estimation, ransac_n, checkers, criteria, seed);
         }
         utility::LogDebug(
                 "Too few correspondences after mutual filter, fall back to "
@@ -362,7 +371,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 
     return RegistrationRANSACBasedOnCorrespondence(
             source, target, corres_ij, max_correspondence_distance, estimation,
-            ransac_n, checkers, criteria);
+            ransac_n, checkers, criteria, seed);
 }
 
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
@@ -410,7 +419,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
             G_r_private(5) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
-#pragma omp critical
+#pragma omp critical(GetInformationMatrixFromPointClouds)
         { GTG += GTG_private; }
     }
     return GTG;
