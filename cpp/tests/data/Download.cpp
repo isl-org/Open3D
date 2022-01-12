@@ -50,11 +50,7 @@ TEST(Downloader, DownloadAndVerify) {
     EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
     EXPECT_TRUE(utility::filesystem::DirectoryExists(file_dir));
     EXPECT_TRUE(utility::filesystem::FileExists(file_path));
-
     EXPECT_EQ(data::GetMD5(file_path), md5);
-    EXPECT_EQ(
-            data::GetSHA256(file_path),
-            "66ea466a02532d61dbc457abf1408afeab360d7a35e15f1479ca91c25e838d30");
 
     // This download shall be skipped as the file already exists (look at the
     // message).

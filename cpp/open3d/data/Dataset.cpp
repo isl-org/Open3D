@@ -110,8 +110,7 @@ TemplateDataset::TemplateDataset(const std::string& prefix,
             Extract(download_file_path, path_to_extract_);
         } else {
             utility::filesystem::MakeDirectoryHierarchy(path_to_extract_);
-            utility::filesystem::CopyFile(download_file_path, path_to_extract_,
-                                          true);
+            utility::filesystem::CopyFile(download_file_path, path_to_extract_);
         }
     }
 }

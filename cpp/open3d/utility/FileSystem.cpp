@@ -275,35 +275,20 @@ bool DeleteDirectory(const std::string &directory) {
 }
 
 bool FileExists(const std::string &filename) {
-    return (fs::exists(filename) && fs::is_regular_file(filename));
+    return fs::exists(filename) && fs::is_regular_file(filename);
 }
 
-void CopyFile(const std::string &src_path,
-              const std::string &dst_path,
-              const bool overwrite_existing) {
+bool CopyFile(const std::string &src_path, const std::string &dst_path) {
     try {
-        fs::copy_options options = fs::copy_options::recursive;
-        if (overwrite_existing) {
-            options = options | fs::copy_options::overwrite_existing;
-        }
-
-        fs::copy(src_path, dst_path, options);
+        fs::copy(src_path, dst_path,
+                 fs::copy_options::recursive |
+                         fs::copy_options::overwrite_existing);
     } catch (std::exception &e) {
-        utility::LogError("Failed to copy {} to {}. Exception: {}.", e.what());
+        utility::LogWarning("Failed to copy {} to {}. Exception: {}.", src_path,
+                            dst_path, e.what());
+        return false;
     }
-}
-
-std::uintmax_t ComputeFileSizeInBytes(const std::string &filename) {
-    if (!FileExists(filename)) {
-        utility::LogError("File {} does not exists.", filename);
-    }
-    auto err = std::error_code{};
-    auto filesize = fs::file_size(filename, err);
-    if (filesize != static_cast<uintmax_t>(-1)) {
-        return filesize;
-    }
-
-    return static_cast<uintmax_t>(-1);
+    return true;
 }
 
 bool RemoveFile(const std::string &filename) {
@@ -385,57 +370,6 @@ std::vector<std::string> FindFilesRecursively(
     }
 
     return matches;
-}
-
-// Reference:
-// https://github.com/fenbf/articles/blob/master/cpp17/filesystemTest.cpp
-// Adapted from Modern C++ Programming Cookbook.
-static void DisplayDirectoryTreeImpl(const fs::path &current_path,
-                                     int current_depth,
-                                     int max_depth) {
-    if (fs::exists(current_path) && fs::is_directory(current_path)) {
-        std::string lead_indentation_spaces =
-                std::string(current_depth * 4, ' ');
-        // Sort files in dir. in alphabetical order.
-        // Reference:
-        // https://stackoverflow.com/questions/30983154/get-an-ordered-list-of-files-in-a-folder/30983352
-        std::vector<fs::path> files_in_directory;
-        std::copy(fs::directory_iterator(current_path),
-                  fs::directory_iterator(),
-                  std::back_inserter(files_in_directory));
-        std::sort(files_in_directory.begin(), files_in_directory.end());
-
-        for (auto &filename : files_in_directory) {
-            const std::string filename_str = filename.string();
-            const std::string filename_without_path =
-                    GetFileNameWithoutDirectory(filename_str);
-            if (fs::is_directory(filename)) {
-                utility::LogInfo("{} [+] {}", lead_indentation_spaces,
-                                 filename_without_path);
-                if (current_depth < max_depth) {
-                    DisplayDirectoryTreeImpl(filename, current_depth + 1,
-                                             max_depth);
-                }
-            } else if (fs::is_regular_file(filename)) {
-                utility::LogInfo("{} {},\t {} bytes", lead_indentation_spaces,
-                                 filename_without_path,
-                                 ComputeFileSizeInBytes(filename_str));
-            } else {
-                utility::LogInfo("{} [?] {}", lead_indentation_spaces,
-                                 filename_without_path);
-            }
-        }
-    }
-}
-
-void DisplayDirectoryTree(const std::string &path, int depth_level) {
-    if (path.empty()) {
-        utility::LogError("Path cannot be empty.");
-    }
-    if (!DirectoryExists(path)) {
-        utility::LogError("Directory {} does not exists.", path);
-    }
-    DisplayDirectoryTreeImpl(path, 0, depth_level);
 }
 
 FILE *FOpen(const std::string &filename, const std::string &mode) {

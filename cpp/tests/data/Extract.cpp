@@ -37,7 +37,7 @@ namespace tests {
 TEST(Extract, ExtractFromZIP) {
     // Directory relative to `data_root`, where files will be temp. downloaded
     // for this test.
-    const std::string prefix = "open3d_tmp/test_extract";
+    const std::string prefix = "test_extract";
     const std::string extract_dir = data::LocateDataRoot() + "/" + prefix;
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(extract_dir));
 

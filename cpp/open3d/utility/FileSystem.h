@@ -78,11 +78,7 @@ bool DeleteDirectory(const std::string &directory);
 
 bool FileExists(const std::string &filename);
 
-void CopyFile(const std::string &src_path,
-              const std::string &dst_path,
-              const bool overwrite_existing = true);
-
-std::uintmax_t ComputeFileSizeInBytes(const std::string &filename);
+bool CopyFile(const std::string &src_path, const std::string &dst_path);
 
 bool RemoveFile(const std::string &filename);
 
@@ -100,8 +96,6 @@ bool ListFilesInDirectoryWithExtension(const std::string &directory,
 std::vector<std::string> FindFilesRecursively(
         const std::string &directory,
         std::function<bool(const std::string &)> is_match);
-
-void DisplayDirectoryTree(const std::string &path, int depth_level = 0);
 
 // wrapper for fopen that enables unicode paths on Windows
 FILE *FOpen(const std::string &filename, const std::string &mode);
