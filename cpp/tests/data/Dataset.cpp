@@ -26,6 +26,7 @@
 
 #include "open3d/data/Dataset.h"
 
+#include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -48,6 +49,8 @@ TEST(Dataset, DownloadDatasets) {
     data::dataset::SamplePCDFragments sample_data;
     utility::LogInfo("SamplePCDFragments dataset information: \n{}\n",
                      sample_data.help_);
+    t::geometry::PointCloud pcd;
+    EXPECT_TRUE(t::io::ReadPointCloud(sample_data.path_to_fragments_[0], pcd));
 }
 
 }  // namespace tests

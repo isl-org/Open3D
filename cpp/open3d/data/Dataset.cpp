@@ -73,17 +73,6 @@ void Dataset::DeleteExtractFiles() const {
     utility::filesystem::DeleteDirectory(path_to_extract_);
 }
 
-static bool VerifyFiles(const std::string& data_path,
-                        const std::unordered_map<std::string, std::string>&
-                                file_name_to_file_md5) {
-    for (auto& file : file_name_to_file_md5) {
-        const std::string file_path = data_path + "/" + file.first;
-        if (!utility::filesystem::FileExists(file_path)) return false;
-        if (GetMD5(file_path) != file.second) return false;
-    }
-    return true;
-}
-
 TemplateDataset::TemplateDataset(const std::string& prefix,
                                  const std::vector<std::string>& url_mirrors,
                                  const std::string& md5,
@@ -97,11 +86,7 @@ TemplateDataset::TemplateDataset(const std::string& prefix,
             utility::filesystem::DirectoryExists(path_to_extract_);
 
     if (!is_extract_present) {
-        // // Check cached download.
-        if (!VerifyFiles(path_to_download_, {{filename, md5}})) {
-            DownloadFromMirrorURLs(url_mirrors, md5, download_prefix_,
-                                   data_root_);
-        }
+        DownloadFromMirrorURLs(url_mirrors, md5, download_prefix_, data_root_);
 
         // Extract / Copy data.
         const std::string download_file_path =
