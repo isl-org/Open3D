@@ -45,20 +45,9 @@ TEST(Dataset, LocateDataRoot) {
 }
 
 TEST(Dataset, DownloadDatasets) {
-    data::dataset::Open3DSampleData sample_data;
-    sample_data.DisplayDataTree();
-
-    data::dataset::RedwoodLivingRoomFragments livingroom_frag;
-    livingroom_frag.DisplayDataTree();
-    EXPECT_EQ(livingroom_frag.path_to_extract_,
-              utility::filesystem::GetHomeDirectory() +
-                      "/open3d_data/extract/RedwoodLivingRoomFragments");
-
-    data::dataset::RedwoodOfficeFragments office_frag;
-    office_frag.DisplayDataTree();
-    EXPECT_EQ(office_frag.path_to_extract_,
-              utility::filesystem::GetHomeDirectory() +
-                      "/open3d_data/extract/RedwoodOfficeFragments");
+    data::dataset::SamplePCDFragments sample_data;
+    utility::LogInfo("SamplePCDFragments dataset information: \n{}\n",
+                     sample_data.help_);
 }
 
 }  // namespace tests

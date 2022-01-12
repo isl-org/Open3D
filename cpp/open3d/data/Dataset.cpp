@@ -65,42 +65,12 @@ Dataset::Dataset(const std::string& prefix, const std::string& data_root)
     path_to_extract_ = data_root_ + "/" + extract_prefix_;
 }
 
-void Dataset::DisplayDataTree(const int depth_level) const {
-    utility::LogInfo("Extract Path: {}", path_to_extract_);
-    utility::LogInfo("Download Path: {}", path_to_download_);
-    utility::LogInfo("");
-    utility::filesystem::DisplayDirectoryTree(path_to_extract_, depth_level);
-}
-
 void Dataset::DeleteDownloadFiles() const {
     utility::filesystem::DeleteDirectory(path_to_download_);
 }
 
 void Dataset::DeleteExtractFiles() const {
     utility::filesystem::DeleteDirectory(path_to_extract_);
-}
-
-static void DownloadFromMirrors(
-        const std::string& prefix,
-        const std::unordered_map<std::string, std::vector<std::string>>&
-                md5_to_mirror_urls,
-        const std::string& data_root) {
-    for (auto& it : md5_to_mirror_urls) {
-        bool success = false;
-        for (size_t i = 0; i < it.second.size() && !success; ++i) {
-            try {
-                DownloadFromURL(it.second[i], it.first, prefix, data_root);
-                success = true;
-            } catch (const std::exception& ex) {
-                success = false;
-                utility::LogWarning("Failed to download from {}. Expection {}.",
-                                    it.second[i], ex.what());
-            }
-        }
-        if (!success) {
-            utility::LogError("Download Failed.");
-        }
-    }
 }
 
 static bool VerifyFiles(const std::string& data_path,
@@ -114,41 +84,34 @@ static bool VerifyFiles(const std::string& data_path,
     return true;
 }
 
-TemplateDataset::TemplateDataset(
-        const std::string& prefix,
-        const std::unordered_map<std::string, std::vector<std::string>>&
-                md5_to_mirror_urls,
-        const bool no_extract,
-        const std::string& data_root)
-    : Dataset(prefix, data_root), md5_to_mirror_urls_(md5_to_mirror_urls) {
-    // Set filenames_to_md5_
-    for (auto& it : md5_to_mirror_urls) {
-        const std::string filename =
-                utility::filesystem::GetFileNameWithoutDirectory(it.second[0]);
-        filenames_to_md5_[filename] = it.first;
-    }
+TemplateDataset::TemplateDataset(const std::string& prefix,
+                                 const std::vector<std::string>& url_mirrors,
+                                 const std::string& md5,
+                                 const bool no_extract,
+                                 const std::string& data_root)
+    : Dataset(prefix, data_root) {
+    const std::string filename =
+            utility::filesystem::GetFileNameWithoutDirectory(url_mirrors[0]);
 
     const bool is_extract_present =
             utility::filesystem::DirectoryExists(path_to_extract_);
 
     if (!is_extract_present) {
         // // Check cached download.
-        if (!VerifyFiles(path_to_download_, filenames_to_md5_)) {
-            DownloadFromMirrors(download_prefix_, md5_to_mirror_urls_,
-                                data_root_);
+        if (!VerifyFiles(path_to_download_, {{filename, md5}})) {
+            DownloadFromMirrorURLs(url_mirrors, md5, download_prefix_,
+                                   data_root_);
         }
 
         // Extract / Copy data.
-        for (auto& it : filenames_to_md5_) {
-            const std::string download_file_path =
-                    path_to_download_ + "/" + it.first;
-            if (!no_extract) {
-                Extract(download_file_path, path_to_extract_);
-            } else {
-                utility::filesystem::MakeDirectoryHierarchy(path_to_extract_);
-                utility::filesystem::CopyFile(download_file_path,
-                                              path_to_extract_, true);
-            }
+        const std::string download_file_path =
+                path_to_download_ + "/" + filename;
+        if (!no_extract) {
+            Extract(download_file_path, path_to_extract_);
+        } else {
+            utility::filesystem::MakeDirectoryHierarchy(path_to_extract_);
+            utility::filesystem::CopyFile(download_file_path, path_to_extract_,
+                                          true);
         }
     }
 }

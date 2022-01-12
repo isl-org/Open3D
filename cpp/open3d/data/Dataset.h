@@ -30,6 +30,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "open3d/utility/Logging.h"
+
 namespace open3d {
 namespace data {
 
@@ -70,12 +72,6 @@ public:
 
     ~Dataset() {}
 
-    void DisplayDataTree(const int depth_level = 0) const;
-
-    /// \brief Display dataset related information, such as source, type, data
-    /// loader functionalities, usage, licence, and other useful informations.
-    const std::string Help() const;
-
     void DeleteDownloadFiles() const;
     void DeleteExtractFiles() const;
 
@@ -83,104 +79,137 @@ public:
     /// automatically determined.
     const std::string GetDataRoot() const { return data_root_; }
 
-public:
-    std::vector<std::string> download_filenames_;
-
 protected:
     /// Open3D data root.
     std::string data_root_;
+
+public:
+    /// Dataset prefix.
     std::string prefix_;
+    /// Dataset help string containing informations such as source,
+    /// documentation link, functionalities, usage, licence, and other useful
+    /// informations.
+    std::string help_;
+
+    // Derived members, for convinience.
+protected:
+    /// extract_prefix_ = "/extract/" + prefix_
     std::string extract_prefix_;
+    /// download_prefix_ = "/download/" + prefix_
     std::string download_prefix_;
-    std::string path_to_extract_;
+    /// download_prefix_ = data_root_ + "/download/" + prefix_
     std::string path_to_download_;
+    /// path_to_extract_ = data_root_ + "/extract/" + prefix_
+    std::string path_to_extract_;
 };
 
 class TemplateDataset : public Dataset {
 public:
-    TemplateDataset(
-            const std::string& prefix,
-            const std::unordered_map<std::string, std::vector<std::string>>&
-                    md5_to_mirror_urls,
-            const bool no_extract = false,
-            const std::string& data_root = "");
+    TemplateDataset(const std::string& prefix,
+                    const std::vector<std::string>& url_mirrors,
+                    const std::string& md5,
+                    const bool no_extract = false,
+                    const std::string& data_root = "");
 
     ~TemplateDataset() {}
-
-private:
-    const std::unordered_map<std::string, std::vector<std::string>>
-            md5_to_mirror_urls_;
-    std::unordered_map<std::string, std::string> filenames_to_md5_;
 };
 
 namespace dataset {
 
-static std::unordered_map<std::string, std::vector<std::string>>
-        mirrors_open3d_sample_data{
-                {"919880e42a741a50ed8cda34129dc3d7",
-                 {"https://github.com/isl-org/open3d_downloads/releases/"
-                  "download/00.14.01_sample_data/"
-                  "open3d_sample_data_00140100.zip"}}};
-
-class Open3DSampleData : public TemplateDataset {
+class SamplePCDFragments : public TemplateDataset {
 public:
-    Open3DSampleData(const std::string& prefix = "Open3DSampleData",
-                     const std::string& data_root = "")
-        : TemplateDataset(prefix, mirrors_open3d_sample_data) {
-        path_ = path_to_extract_;
+    SamplePCDFragments(const std::string& prefix = "SamplePCDFragments",
+                       const std::string& data_root = "")
+        : TemplateDataset(
+                  prefix,
+                  {"https://github.com/isl-org/open3d_downloads/releases/"
+                   "download/sample-pcd-fragments/SamplePCDFragments.zip"},
+                  "4d39442a86e9fe80c967a6c513d57442") {
+        path_to_extract_ = Dataset::path_to_extract_;
+
+        for (int i = 0; i < 3; ++i) {
+            path_to_fragments_.push_back(path_to_extract_ + "/cloud_bin_" +
+                                         std::to_string(i) + ".pcd");
+        }
+
+        // clang-format off
+        Dataset::help_ = 
+            "\n Colored point-cloud fragments of living-room from ICL-NUIM "
+            "\n RGBD Benchmark Dataset in PCD format."
+            "\n Information: "
+            "\n  Type: Point cloud fragments [contains points, colors, normals, curvature]."
+            "\n  Format: PCD Binary."
+            "\n  Source: ICL-NUIM RGBD Benchmark Dataset."
+            "\n  MD5: 4d39442a86e9fe80c967a6c513d57442"
+            "\n  "
+            "\n  Contents of SamplePCDFragments.zip:"
+            "\n  SamplePCDFragments"
+            "\n    ├── cloud_bin_0.pcd"
+            "\n    ├── cloud_bin_1.pcd"
+            "\n    ├── cloud_bin_2.pcd"
+            "\n    └── init.log"
+            "\n "
+            "\n Application: Used in Open3D ICP registration demo examples."
+            "\n "
+            "\n Licence: The data is released under Creative Commons 3.0 (CC BY 3.0), "
+            "\n          see http://creativecommons.org/licenses/by/3.0/.";
+        // clang-format on
     }
 
-    std::string path_;
+    // Path to PCD point-cloud fragments.
+    // path_to_fragments_[x] return path to `cloud_bin_x.pcd` where x is from 0
+    // to 2.
+    std::vector<std::string> path_to_fragments_;
 };
-
-static std::unordered_map<std::string, std::vector<std::string>>
-        mirrors_redwood_livingroom_fragments{
-                {"36e0eb23a66ccad6af52c05f8390d33e",
-                 {"http://redwood-data.org/indoor/data/"
-                  "livingroom1-fragments-ply.zip",
-                  "https://github.com/isl-org/open3d_downloads/releases/"
-                  "download/redwood/livingroom1-fragments-ply.zip"}}};
 
 class RedwoodLivingRoomFragments : public TemplateDataset {
 public:
     RedwoodLivingRoomFragments(
             const std::string& prefix = "RedwoodLivingRoomFragments",
             const std::string& data_root = "")
-        : TemplateDataset(prefix, mirrors_redwood_livingroom_fragments) {
-        path_to_extract_ = TemplateDataset::path_to_extract_;
+        : TemplateDataset(
+                  prefix,
+                  {"http://redwood-data.org/indoor/data/"
+                   "livingroom1-fragments-ply.zip",
+                   "https://github.com/isl-org/open3d_downloads/releases/"
+                   "download/redwood/livingroom1-fragments-ply.zip"},
+                  "36e0eb23a66ccad6af52c05f8390d33e") {
         path_to_fragments_.reserve(57);
         for (int i = 0; i < 57; ++i) {
-            path_to_fragments_.push_back(path_to_extract_ + "/cloud_bin_" +
-                                         std::to_string(i) + ".ply");
+            path_to_fragments_.push_back(Dataset::path_to_extract_ +
+                                         "/cloud_bin_" + std::to_string(i) +
+                                         ".ply");
         }
     }
 
-    std::string path_to_extract_;
+    // Path to PLY point-cloud fragments.
+    // path_to_fragments_[x] return path to `cloud_bin_x.ply` where x is from 0
+    // to 56.
     std::vector<std::string> path_to_fragments_;
 };
-
-static std::unordered_map<std::string, std::vector<std::string>>
-        mirrors_redwood_office_fragments{
-                {"c519fe0495b3c731ebe38ae3a227ac25",
-                 {"http://redwood-data.org/indoor/data/"
-                  "office1-fragments-ply.zip",
-                  "https://github.com/isl-org/open3d_downloads/releases/"
-                  "download/redwood/office1-fragments-ply.zip"}}};
 
 class RedwoodOfficeFragments : public TemplateDataset {
 public:
     RedwoodOfficeFragments(const std::string& prefix = "RedwoodOfficeFragments",
                            const std::string& data_root = "")
-        : TemplateDataset(prefix, mirrors_redwood_office_fragments) {
-        path_to_extract_ = TemplateDataset::path_to_extract_;
+        : TemplateDataset(
+                  prefix,
+                  {"http://redwood-data.org/indoor/data/"
+                   "office1-fragments-ply.zip",
+                   "https://github.com/isl-org/open3d_downloads/releases/"
+                   "download/redwood/office1-fragments-ply.zip"},
+                  "c519fe0495b3c731ebe38ae3a227ac25") {
         path_to_fragments_.reserve(57);
         for (int i = 0; i < 52; ++i) {
-            path_to_fragments_.push_back(path_to_extract_ + "/cloud_bin_" +
-                                         std::to_string(i) + ".ply");
+            path_to_fragments_.push_back(Dataset::path_to_extract_ +
+                                         "/cloud_bin_" + std::to_string(i) +
+                                         ".ply");
         }
     }
 
-    std::string path_to_extract_;
+    // Path to PLY point-cloud fragments.
+    // path_to_fragments_[x] return path to `cloud_bin_x.ply` where x is from 0
+    // to 51.
     std::vector<std::string> path_to_fragments_;
 };
 

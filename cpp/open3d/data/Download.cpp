@@ -218,5 +218,23 @@ std::string DownloadFromURL(const std::string& url,
     return file_path;
 }
 
+std::string DownloadFromMirrorURLs(const std::vector<std::string>& mirror_urls,
+                                   const std::string& md5,
+                                   const std::string& prefix,
+                                   const std::string& data_root) {
+    std::string file_path;
+    for (size_t i = 0; i < mirror_urls.size(); ++i) {
+        try {
+            file_path = DownloadFromURL(mirror_urls[i], md5, prefix, data_root);
+            return file_path;
+        } catch (const std::exception& ex) {
+            utility::LogWarning("Failed to download from {}. Expection {}.",
+                                mirror_urls[i], ex.what());
+        }
+    }
+
+    utility::LogError("Downloading failed from available mirrors.");
+}
+
 }  // namespace data
 }  // namespace open3d
