@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2018 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,6 @@
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace pipelines {
@@ -66,7 +65,7 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                         Eigen::Vector2i(i, indices[0]));
             }
         }
-#pragma omp critical(GetRegistrationResultAndCorrespondences)
+#pragma omp critical
         {
             for (int i = 0; i < (int)correspondence_set_private.size(); i++) {
                 result.correspondence_set_.push_back(
@@ -146,14 +145,6 @@ RegistrationResult RegistrationICP(
                 "TransformationEstimationColoredICP "
                 "require pre-computed normal vectors for target PointCloud.");
     }
-    if ((estimation.GetTransformationEstimationType() ==
-         TransformationEstimationType::GeneralizedICP) &&
-        (!target.HasCovariances() || !source.HasCovariances())) {
-        utility::LogError(
-                "TransformationEstimationForGeneralizedICP require "
-                "pre-computed per point covariances matrices for source and "
-                "target PointCloud.");
-    }
 
     Eigen::Matrix4d transformation = init;
     geometry::KDTreeFlann kdtree;
@@ -176,7 +167,6 @@ RegistrationResult RegistrationICP(
         result = GetRegistrationResultAndCorrespondences(
                 pcd, target, kdtree, max_correspondence_distance,
                 transformation);
-
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
             std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
@@ -197,9 +187,9 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         int ransac_n /* = 3*/,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers /* = {}*/,
-        const RANSACConvergenceCriteria &criteria
-        /* = RANSACConvergenceCriteria()*/,
-        utility::optional<unsigned int> seed /* = utility::nullopt*/) {
+        const RANSACConvergenceCriteria &criteria,
+        /* = RANSACConvergenceCriteria()*/
+        utility::optional<unsigned int> seed) {
     if (ransac_n < 3 || (int)corres.size() < ransac_n ||
         max_correspondence_distance <= 0.0) {
         return RegistrationResult();
@@ -215,16 +205,13 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         CorrespondenceSet ransac_corres(ransac_n);
         RegistrationResult best_result_local;
         int est_k_local = criteria.max_iteration_;
-        unsigned int seed_val =
-                seed.has_value() ? seed.value() : std::random_device{}();
-        utility::UniformRandIntGenerator rand_generator(
-                0, static_cast<int>(corres.size()) - 1, seed_val);
+        utility::UniformRandIntGenerator rand_gen(0, corres.size() - 1, 0);
 
 #pragma omp for nowait
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
             if (itr < est_k_global) {
                 for (int j = 0; j < ransac_n; j++) {
-                    ransac_corres[j] = corres[rand_generator()];
+                    ransac_corres[j] = corres[rand_gen()];
                 }
 
                 Eigen::Matrix4d transformation =
@@ -312,9 +299,9 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         int ransac_n /* = 3*/,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers /* = {}*/,
-        const RANSACConvergenceCriteria &criteria
-        /* = RANSACConvergenceCriteria()*/,
-        utility::optional<unsigned int> seed /* = utility::nullopt*/) {
+        const RANSACConvergenceCriteria &criteria,
+        /* = RANSACConvergenceCriteria()*/
+        utility::optional<unsigned int> seed) {
     if (ransac_n < 3 || max_correspondence_distance <= 0.0) {
         return RegistrationResult();
     }
@@ -325,7 +312,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     geometry::KDTreeFlann kdtree_target(target_feature);
     pipelines::registration::CorrespondenceSet corres_ij(num_src_pts);
 
-#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
+#pragma omp for nowait
     for (int i = 0; i < num_src_pts; i++) {
         std::vector<int> corres_tmp(1);
         std::vector<double> dist_tmp(1);
@@ -341,7 +328,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         geometry::KDTreeFlann kdtree_source(source_feature);
         pipelines::registration::CorrespondenceSet corres_ji(num_tgt_pts);
 
-#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
+#pragma omp for nowait
         for (int j = 0; j < num_tgt_pts; ++j) {
             std::vector<int> corres_tmp(1);
             std::vector<double> dist_tmp(1);
@@ -366,7 +353,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                               corres_mutual.size());
             return RegistrationRANSACBasedOnCorrespondence(
                     source, target, corres_mutual, max_correspondence_distance,
-                    estimation, ransac_n, checkers, criteria, seed);
+                    estimation, ransac_n, checkers, criteria);
         }
         utility::LogDebug(
                 "Too few correspondences after mutual filter, fall back to "
@@ -375,7 +362,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
 
     return RegistrationRANSACBasedOnCorrespondence(
             source, target, corres_ij, max_correspondence_distance, estimation,
-            ransac_n, checkers, criteria, seed);
+            ransac_n, checkers, criteria);
 }
 
 Eigen::Matrix6d GetInformationMatrixFromPointClouds(
@@ -423,7 +410,7 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
             G_r_private(5) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
-#pragma omp critical(GetInformationMatrixFromPointClouds)
+#pragma omp critical
         { GTG += GTG_private; }
     }
     return GTG;
