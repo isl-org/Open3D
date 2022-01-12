@@ -216,7 +216,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         int est_k_local = criteria.max_iteration_;
         unsigned int seed_val =
                 seed.has_value() ? seed.value() : std::random_device{}();
-        utility::UniformRandIntGenerator rand_gen(0, corres.size() - 1, seed);
+        utility::UniformRandIntGenerator rand_gen(0, corres.size() - 1,
+                                                  seed_val);
 
 #pragma omp for nowait
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
