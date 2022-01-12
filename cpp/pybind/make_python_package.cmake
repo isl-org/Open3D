@@ -46,6 +46,8 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"
                "${PYTHON_PACKAGE_DST_DIR}/setup.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/__init__.py")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/tools/app.py"
+               "${PYTHON_PACKAGE_DST_DIR}/open3d/app.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/app/__init__.py"

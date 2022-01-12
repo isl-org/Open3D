@@ -45,6 +45,9 @@ namespace visualization {
 namespace app {
 
 int RunViewer(int argc, const char *argv[]) {
+    std::function<void(const std::string &)> print_fcn = utility::Logger::GetInstance().GetPrintFunction();
+    utility::Logger::GetInstance().ResetPrintFunction();
+    
     const char *path = nullptr;
     if (argc > 1) {
         path = argv[1];
@@ -67,7 +70,8 @@ int RunViewer(int argc, const char *argv[]) {
     vis.reset();
 
     app.Run();
-
+    
+    utility::Logger::GetInstance().SetPrintFunction(print_fcn);
     return 0;
 }
 
