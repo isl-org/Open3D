@@ -63,6 +63,7 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
             o3d.pipelines.registration.FastGlobalRegistrationOption(
                 maximum_correspondence_distance=distance_threshold))
     if config["global_registration"] == "ransac":
+        # Fallback to preset parameters that works better
         result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh, False, distance_threshold,
             o3d.pipelines.registration.TransformationEstimationPointToPoint(

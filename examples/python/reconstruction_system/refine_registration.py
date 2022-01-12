@@ -102,6 +102,9 @@ def multiscale_icp(source,
                     o3d.pipelines.registration.ICPConvergenceCriteria(
                         max_iteration=iter))
             if config["icp_method"] == "color":
+                # Colored ICP is sensitive to threshold.
+                # Fallback to preset distance threshold that works better.
+                # TODO: make it adjustable in the upgraded system.
                 result_icp = o3d.pipelines.registration.registration_colored_icp(
                     source_down, target_down, voxel_size[scale],
                     current_transformation,
