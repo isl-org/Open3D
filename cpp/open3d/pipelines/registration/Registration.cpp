@@ -198,7 +198,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 &checkers /* = {}*/,
         const RANSACConvergenceCriteria &criteria,
         /* = RANSACConvergenceCriteria()*/
-        utility::optional<unsigned int> seed) {
+        utility::optional<unsigned int> seed /* = utility::nullopt*/) {
     if (ransac_n < 3 || (int)corres.size() < ransac_n ||
         max_correspondence_distance <= 0.0) {
         return RegistrationResult();
@@ -214,7 +214,9 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         CorrespondenceSet ransac_corres(ransac_n);
         RegistrationResult best_result_local;
         int est_k_local = criteria.max_iteration_;
-        utility::UniformRandIntGenerator rand_gen(0, corres.size() - 1, 0);
+        unsigned int seed_val =
+                seed.has_value() ? seed.value() : std::random_device{}();
+        utility::UniformRandIntGenerator rand_gen(0, corres.size() - 1, seed);
 
 #pragma omp for nowait
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
@@ -310,7 +312,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
                 &checkers /* = {}*/,
         const RANSACConvergenceCriteria &criteria,
         /* = RANSACConvergenceCriteria()*/
-        utility::optional<unsigned int> seed) {
+        utility::optional<unsigned int> seed /* = utility::nullopt*/) {
     if (ransac_n < 3 || max_correspondence_distance <= 0.0) {
         return RegistrationResult();
     }

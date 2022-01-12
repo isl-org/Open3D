@@ -6,11 +6,15 @@
 
 import numpy as np
 import open3d as o3d
-import sys
-sys.path.append("../utility")
-from file import join, get_file_list, write_poses_to_log
-# from visualization import draw_registration_result_original_color
-sys.path.append(".")
+import os, sys
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from utility.file import join, get_file_list, write_poses_to_log
+from utility.visualization import draw_registration_result_original_color
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 
@@ -81,6 +85,16 @@ def multiscale_icp(source,
                     current_transformation,
                     o3d.pipelines.registration.
                     TransformationEstimationForColoredICP(),
+                    o3d.pipelines.registration.ICPConvergenceCriteria(
+                        relative_fitness=1e-6,
+                        relative_rmse=1e-6,
+                        max_iteration=iter))
+            if config["icp_method"] == "generalized":
+                result_icp = o3d.pipelines.registration.registration_generalized_icp(
+                    source_down, target_down, distance_threshold,
+                    current_transformation,
+                    o3d.pipelines.registration.
+                    TransformationEstimationForGeneralizedICP(),
                     o3d.pipelines.registration.ICPConvergenceCriteria(
                         relative_fitness=1e-6,
                         relative_rmse=1e-6,
