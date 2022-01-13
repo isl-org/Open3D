@@ -46,6 +46,8 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"
                "${PYTHON_PACKAGE_DST_DIR}/setup.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/__init__.py")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/tools/cli.py"
+               "${PYTHON_PACKAGE_DST_DIR}/open3d/tools/cli.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/gui/__init__.py"
@@ -130,7 +132,7 @@ if (BUILD_GUI)
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
 endif()
 
-# add all examples
+# Add all examples to installation directory.
 file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/examples/")
 file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"

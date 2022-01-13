@@ -25,6 +25,7 @@
 # ----------------------------------------------------------------------------
 
 import argparse
+import argcomplete
 import math
 import os
 import runpy
@@ -35,6 +36,8 @@ import timeit
 from functools import wraps
 from pathlib import Path
 import importlib
+
+from jupyter_packaging.setupbase import get_version
 
 
 def timer(func):
@@ -116,7 +119,7 @@ class Open3DMain:
         parser.add_argument('-V',
                             '--version',
                             action='version',
-                            version='Open3D v0.14.1',
+                            version=self._get_version(),
                             help="Show program's version number and exit\n"
                             "usage : open3d --verison\n ")
         parser.add_argument('-h',
@@ -193,6 +196,12 @@ class Open3DMain:
         if "__init__" in example_names:
             example_names.pop("__init__")
         return example_names
+
+    @staticmethod
+    def _get_version() -> str:
+        """Get the current Open3D version."""
+        import open3d
+        return "Open3D " + open3d.__version__
 
     @staticmethod
     def _example_choices_type(choices):
@@ -373,14 +382,12 @@ class Open3DMain:
         if args.filename == None:
             parser.print_help()
 
-        examples_dir = Open3DMain._get_examples_dir()
-        visgui = str(examples_dir / "gui" / "vis-gui.py")
-        # path for examples needs to be modified for implicit relative imports
-        sys.path.append(str(examples_dir / "gui" / "vis-gui.py"))
         removed_arg = sys.argv[1]
         sys.argv.pop(1)
-        runpy.run_path(visgui, run_name='__main__')
+        import open3d.app as app
+        app.main()
         sys.argv.insert(1, removed_arg)
+
         return None
 
 
