@@ -34,7 +34,8 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
-#include "open3d/utility/DataManager.h"
+// #include "open3d/utility/DataManager.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -42,14 +43,6 @@ namespace pipelines {
 namespace registration {
 
 // Testing parameters:
-// Filename for pointcloud registration data.
-static const std::string source_pointcloud_filename =
-        utility::GetDataPathCommon("ICP/cloud_bin_0.pcd");
-static const std::string target_pointcloud_filename =
-        utility::GetDataPathCommon("ICP/cloud_bin_1.pcd");
-
-static const double voxel_downsampling_factor = 0.02;
-
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
@@ -83,12 +76,12 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
 
 static void BenchmarkICPLegacy(benchmark::State& state,
                                const TransformationEstimationType& type) {
-    geometry::PointCloud source;
-    geometry::PointCloud target;
-
-    std::tie(source, target) = LoadPointCloud(source_pointcloud_filename,
-                                              target_pointcloud_filename,
-                                              voxel_downsampling_factor);
+    data::dataset::SamplePCDFragments pcd_fragments;
+    geometry::PointCloud source, target;
+    std::tie(source, target) =
+            LoadPointCloud(pcd_fragments.path_to_fragments_[0],
+                           pcd_fragments.path_to_fragments_[1],
+                           /*voxel_downsampling_factor =*/0.02);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {

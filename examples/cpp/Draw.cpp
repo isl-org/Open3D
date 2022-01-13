@@ -183,8 +183,9 @@ void Selections() {
               << std::endl;
     std::cout << "            three points from the target." << std::endl;
 
-    const auto cloud0_path = TEST_DIR + "/ICP/cloud_bin_0.pcd";
-    const auto cloud1_path = TEST_DIR + "/ICP/cloud_bin_2.pcd";
+    data::dataset::SamplePCDFragments pcd_fragments;
+    const std::string cloud0_path = pcd_fragments.path_to_fragments_[0];
+    const std::string cloud1_path = pcd_fragments.path_to_fragments_[1];
     auto source = std::make_shared<geometry::PointCloud>();
     io::ReadPointCloud(cloud0_path, *source);
     if (source->points_.empty()) {

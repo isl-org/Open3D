@@ -148,7 +148,8 @@ Contents of SamplePCDFragments.zip:
 
 Data Members:
     path_to_fragments_ : List of path to PCD point-cloud fragments.
-        path_to_fragments_[x] returns path to `cloud_bin_x.pcd` where x is from 0 to 2.
+                         path_to_fragments_[x] returns path to `cloud_bin_x.pcd`
+                         where x is from 0 to 2.
 
 Application: Used in Open3D ICP registration demo examples.
 
