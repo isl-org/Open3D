@@ -224,7 +224,7 @@ class Open3DMain:
             for category in sorted(self._get_example_categories()):
                 msg += "  " + str(category) + "\n"
             msg += "\nTo view the example in each category run:\n"
-            msg += "  open3d example --list category\n "
+            msg += "  open3d example --list <category>\n "
             return msg
 
         choices = Open3DMain._get_available_examples()
