@@ -142,6 +142,8 @@ __global__ void l2SelectMinK(T* productDistances,
                              int32_t* outIndices,
                              int k,
                              int dim,
+                             int num_cols,
+                             int tile_cols,
                              T initK) {
     // Each block handles a single row of the distances (results)
     constexpr int kNumWarps = ThreadsPerBlock / kWarpSize;
@@ -161,19 +163,19 @@ __global__ void l2SelectMinK(T* productDistances,
     int i = threadIdx.x;
 
     for (; i < limit; i += blockDim.x) {
-        T v = centroidDistances[i] + productDistances[row * dim + i];
+        T v = centroidDistances[i] + productDistances[row * tile_cols + i];
         heap.add(v, i);
     }
 
     if (i < dim) {
-        T v = centroidDistances[i] + productDistances[row * dim + i];
+        T v = centroidDistances[i] + productDistances[row * tile_cols + i];
         heap.addThreadQ(v, i);
     }
 
     heap.reduce();
     for (int i = threadIdx.x; i < k; i += blockDim.x) {
-        outDistances[row * k + i] = smemK[i];
-        outIndices[row * k + i] = smemV[i];
+        outDistances[row * k * num_cols + i] = smemK[i];
+        outIndices[row * k * num_cols + i] = smemV[i];
     }
 }
 
@@ -183,7 +185,9 @@ void runL2SelectMin(const cudaStream_t stream,
                     Tensor& centroidDistances,
                     Tensor& outDistances,
                     Tensor& outIndices,
-                    int k) {
+                    int k,
+                    int num_cols,
+                    int tile_cols) {
     OPEN3D_ASSERT(productDistances.GetShape(0) == outDistances.GetShape(0));
     OPEN3D_ASSERT(productDistances.GetShape(0) == outIndices.GetShape(0));
     OPEN3D_ASSERT(centroidDistances.GetShape(0) ==
@@ -210,15 +214,16 @@ void runL2SelectMin(const cudaStream_t stream,
     } else {
         auto grid = dim3(outDistances.GetShape(0));
 
-#define RUN_L2_SELECT(BLOCK, NUM_WARP_Q, NUM_THREAD_Q)         \
-    do {                                                       \
-        l2SelectMinK<T, NUM_WARP_Q, NUM_THREAD_Q, BLOCK>       \
-                <<<grid, BLOCK, 0, stream>>>(                  \
-                        productDistances.GetDataPtr<T>(),      \
-                        centroidDistances.GetDataPtr<T>(),     \
-                        outDistances.GetDataPtr<T>(),          \
-                        outIndices.GetDataPtr<int32_t>(), k,   \
-                        productDistances.GetShape(1), 100000); \
+#define RUN_L2_SELECT(BLOCK, NUM_WARP_Q, NUM_THREAD_Q)                     \
+    do {                                                                   \
+        l2SelectMinK<T, NUM_WARP_Q, NUM_THREAD_Q, BLOCK>                   \
+                <<<grid, BLOCK, 0, stream>>>(                              \
+                        productDistances.GetDataPtr<T>(),                  \
+                        centroidDistances.GetDataPtr<T>(),                 \
+                        outDistances.GetDataPtr<T>(),                      \
+                        outIndices.GetDataPtr<int32_t>(), k,               \
+                        productDistances.GetShape(1), num_cols, tile_cols, \
+                        Limits<T>::getMax());                              \
     } while (0)
 
         // block size 128 for everything <= 1024

@@ -118,12 +118,13 @@ void KnnSearchCUDASingle(const Tensor& points,
                                 .View({num_queries, knn})
                                 .Slice(0, i, i + num_queries_i);
                 runL2SelectMin<T>(stream, temp_distances_view, point_norms_j,
-                                  out_distances_view, out_indices_view, knn);
+                                  out_distances_view, out_indices_view, knn,
+                                  num_cols, tile_cols);
                 out_distances_view.Add_(query_norms_i.View({num_queries_i, 1}));
             } else {
                 runL2SelectMin<T>(stream, temp_distances_view, point_norms_j,
                                   buf_distances_col_view, buf_indices_col_view,
-                                  knn);
+                                  knn, num_cols, tile_cols);
                 buf_distances_col_view.Add_(
                         query_norms_i.View({num_queries_i, 1}));
             }

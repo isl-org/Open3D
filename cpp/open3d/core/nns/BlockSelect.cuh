@@ -128,8 +128,8 @@ __global__ void blockSelectPair(K* inK,
     heap.reduce();
 
     for (int i = threadIdx.x; i < k; i += ThreadsPerBlock) {
-        outK[row * dim + i] = smemK[i];
-        outV[row * dim + i] = smemV[i];
+        outK[row * k + i] = smemK[i];
+        outV[row * k + i] = smemV[i];
     }
 }
 
