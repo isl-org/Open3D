@@ -345,6 +345,7 @@ struct O3DVisualizer::Impl {
         Checkbox *show_skybox;
         Checkbox *show_axes;
         Checkbox *show_ground;
+        Checkbox *inspection_mode;
         Combobox *ground_plane;
         ColorEdit *bg_color;
         Slider *point_size;
@@ -357,6 +358,7 @@ struct O3DVisualizer::Impl {
         Combobox *ibl_names;
         Slider *ibl_intensity;
         Slider *sun_intensity;
+        Checkbox *sun_follows_camera;
         VectorEdit *sun_dir;
         ColorEdit *sun_color;
 
@@ -562,6 +564,8 @@ struct O3DVisualizer::Impl {
         settings.show_ground->SetOnChecked(
                 [this](bool is_checked) { this->ShowGround(is_checked); });
 
+        settings.inspection_mode = new Checkbox("Inspection Mode");
+
         settings.ground_plane = new Combobox();
         settings.ground_plane->AddItem("XZ");
         settings.ground_plane->AddItem("XY");
@@ -585,6 +589,7 @@ struct O3DVisualizer::Impl {
         settings.scene_panel->AddChild(GiveOwnership(h));
         settings.scene_panel->AddChild(GiveOwnership(settings.show_ground));
         settings.scene_panel->AddChild(GiveOwnership(settings.ground_plane));
+        settings.scene_panel->AddChild(GiveOwnership(settings.inspection_mode));
 
         settings.bg_color = new ColorEdit();
         settings.bg_color->SetValue(ui_state_.bg_color.x(),
@@ -718,6 +723,7 @@ struct O3DVisualizer::Impl {
         grid->AddChild(std::make_shared<Label>("Intensity"));
         grid->AddChild(GiveOwnership(settings.sun_intensity));
 
+
         settings.sun_dir = new VectorEdit();
         settings.sun_dir->SetValue(ui_state_.sun_dir);
         settings.sun_dir->SetOnValueChanged([this](const Eigen::Vector3f &dir) {
@@ -735,6 +741,10 @@ struct O3DVisualizer::Impl {
                 });
         grid->AddChild(std::make_shared<Label>("Direction"));
         grid->AddChild(GiveOwnership(settings.sun_dir));
+
+        settings.sun_follows_camera = new gui::Checkbox(" ");
+        grid->AddChild(GiveOwnership(settings.sun_follows_camera));
+        grid->AddChild(std::make_shared<gui::Label>("Sun Follows Camera"));
 
         settings.sun_color = new ColorEdit();
         settings.sun_color->SetValue(ui_state_.sun_color);
