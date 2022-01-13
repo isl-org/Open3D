@@ -60,7 +60,7 @@ std::string DownloadFromURL(const std::string& url,
 
 /// \brief Download a file from list of mirror URLs.
 ///
-/// \param url_mirrors List of file mirror URLs for the same file. The saved
+/// \param urls List of file mirror URLs for the same file. The saved
 /// file name will be the last part of the URL.
 /// \param md5 MD5 checksum of the file. This is required as the same URL may
 /// point to different files over time.
@@ -72,10 +72,10 @@ std::string DownloadFromURL(const std::string& url,
 /// see open3d::data::Dataset class.
 /// \returns Path to downloaded file.
 /// \throw std::runtime_error If the download fails.
-std::string DownloadFromMirrorURLs(const std::vector<std::string>& url_mirrors,
-                                   const std::string& md5,
-                                   const std::string& prefix,
-                                   const std::string& data_root = "");
+std::string DownloadFromURL(const std::vector<std::string>& urls,
+                            const std::string& md5,
+                            const std::string& prefix,
+                            const std::string& data_root = "");
 
 }  // namespace data
 }  // namespace open3d

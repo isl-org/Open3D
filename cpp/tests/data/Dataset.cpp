@@ -48,7 +48,7 @@ TEST(Dataset, LocateDataRoot) {
 TEST(Dataset, DownloadDatasets) {
     data::dataset::SamplePCDFragments sample_data;
     utility::LogInfo("SamplePCDFragments dataset information: \n{}\n",
-                     sample_data.help_);
+                     sample_data.GetHelp());
     t::geometry::PointCloud pcd;
     EXPECT_TRUE(t::io::ReadPointCloud(sample_data.path_to_fragments_[0], pcd));
 }

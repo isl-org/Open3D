@@ -57,45 +57,34 @@ Dataset::Dataset(const std::string& prefix, const std::string& data_root)
     if (prefix_.empty()) {
         utility::LogError("prefix cannot be empty.");
     }
-
-    // Initialize paths, to be used by other helper functions.
-    download_prefix_ = "download/" + prefix_;
-    path_to_download_ = data_root_ + "/" + download_prefix_;
-    extract_prefix_ = "extract/" + prefix_;
-    path_to_extract_ = data_root_ + "/" + extract_prefix_;
 }
 
-void Dataset::DeleteDownloadFiles() const {
-    utility::filesystem::DeleteDirectory(path_to_download_);
-}
-
-void Dataset::DeleteExtractFiles() const {
-    utility::filesystem::DeleteDirectory(path_to_extract_);
-}
-
-TemplateDataset::TemplateDataset(const std::string& prefix,
-                                 const std::vector<std::string>& url_mirrors,
-                                 const std::string& md5,
-                                 const bool no_extract,
-                                 const std::string& data_root)
+SimpleDataset::SimpleDataset(const std::string& prefix,
+                             const std::vector<std::string>& urls,
+                             const std::string& md5,
+                             const bool no_extract,
+                             const std::string& data_root)
     : Dataset(prefix, data_root) {
     const std::string filename =
-            utility::filesystem::GetFileNameWithoutDirectory(url_mirrors[0]);
+            utility::filesystem::GetFileNameWithoutDirectory(urls[0]);
 
     const bool is_extract_present =
-            utility::filesystem::DirectoryExists(path_to_extract_);
+            utility::filesystem::DirectoryExists(Dataset::GetExtractDir());
 
     if (!is_extract_present) {
-        DownloadFromMirrorURLs(url_mirrors, md5, download_prefix_, data_root_);
+        const std::string download_file_path = DownloadFromURL(
+                urls, md5,
+                Dataset::GetDownloadDir(/*relative_to_data_root*/ true),
+                data_root_);
 
         // Extract / Copy data.
-        const std::string download_file_path =
-                path_to_download_ + "/" + filename;
         if (!no_extract) {
-            Extract(download_file_path, path_to_extract_);
+            Extract(download_file_path, Dataset::GetExtractDir());
         } else {
-            utility::filesystem::MakeDirectoryHierarchy(path_to_extract_);
-            utility::filesystem::CopyFile(download_file_path, path_to_extract_);
+            utility::filesystem::MakeDirectoryHierarchy(
+                    Dataset::GetExtractDir());
+            utility::filesystem::CopyFile(download_file_path,
+                                          Dataset::GetExtractDir());
         }
     }
 }
