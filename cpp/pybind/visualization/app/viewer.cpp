@@ -36,14 +36,13 @@ namespace app {
 static void pybind_app_functions(py::module &m) {
     m.def(
             "run_viewer",
-            [](const std::vector<std::string> args) {
+            [](const std::vector<std::string> &args) {
                 const char **argv = new const char *[args.size()];
-                for (uint it = 0; it < args.size(); it++) {
+                for (size_t it = 0; it < args.size(); it++) {
                     argv[it] = args[it].c_str();
                 }
                 RunViewer(args.size(), argv);
                 delete[] argv;
-                return 0;
             },
             "args"_a);
 

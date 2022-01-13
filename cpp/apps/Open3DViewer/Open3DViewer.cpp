@@ -34,5 +34,8 @@ using namespace open3d::visualization::app;
 #if __APPLE__
 // Open3DViewer_mac.mm
 #else
-int main(int argc, const char *argv[]) { return RunViewer(argc, argv); }
+int main(int argc, const char *argv[]) {
+    RunViewer(argc, argv);
+    return 0;
+}
 #endif  // __APPLE__

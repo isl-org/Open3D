@@ -27,22 +27,10 @@
 #include <memory>
 
 namespace open3d {
-namespace geometry {
-class Geometry;
-}
-namespace visualizer {
-class GuiVisualizer;
-}
-}  // namespace open3d
-
-#define WIDTH 1280
-#define HEIGHT 960
-
-namespace open3d {
 namespace visualization {
 namespace app {
 
-int RunViewer(int argc, const char *argv[]);
+void RunViewer(int argc, const char *argv[]);
 
 }  // namespace app
 }  // namespace visualization

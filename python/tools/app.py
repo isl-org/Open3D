@@ -35,8 +35,6 @@ def main():
         args.append(sys.argv[1])
     o3d.visualization.app.run_viewer(args)
 
-    o3d.utility.reset_print_function()
-
 
 if __name__ == "__main__":
     sys.exit(main())

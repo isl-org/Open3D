@@ -46,7 +46,7 @@ namespace open3d {
 namespace visualization {
 namespace app {
 
-int RunViewer(int argc, const char *argv[]) {
+void RunViewer(int argc, const char *argv[]) {
     std::function<void(const std::string &)> print_fcn =
             utility::Logger::GetInstance().GetPrintFunction();
     utility::Logger::GetInstance().ResetPrintFunction();
@@ -62,20 +62,22 @@ int RunViewer(int argc, const char *argv[]) {
     auto &app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
 
-    auto vis = std::make_shared<GuiVisualizer>("Open3D", WIDTH, HEIGHT);
+    const int width = 1280;
+    const int height = 960;
+    auto vis = std::make_shared<open3d::visualization::GuiVisualizer>(
+            "Open3D", width, height);
     bool is_path_valid = (path && path[0] != '\0');
     if (is_path_valid) {
         vis->LoadGeometry(path);
     }
     gui::Application::GetInstance().AddWindow(vis);
-    // when Run() ends, Filament will be stopped, so we can't be holding on
+    // When Run() ends, Filament will be stopped, so we can't be holding on
     // to any GUI objects.
     vis.reset();
 
     app.Run();
 
     utility::Logger::GetInstance().SetPrintFunction(print_fcn);
-    return 0;
 }
 
 }  // namespace app
