@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/linalg/AddMM.h"
 #include "open3d/core/nns/BlockSelect.cuh"
@@ -34,29 +35,44 @@
 #include "open3d/core/nns/L2Select.cuh"
 #include "open3d/core/nns/NeighborSearchAllocator.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
 namespace core {
 namespace nns {
 
-template <class T>
+template <class T, class OUTPUT_ALLOCATOR>
 void KnnSearchCUDASingle(const Tensor& points,
                          const Tensor& queries,
                          int knn,
-                         Tensor& neighbors_index,
-                         Tensor& neighbors_distance) {
+                         OUTPUT_ALLOCATOR& output_allocator,
+                         int64_t* query_neighbors_row_splits) {
     const cudaStream_t stream = cuda::GetStream();
-
-    Device device = points.GetDevice();
-    Dtype dtype = points.GetDtype();
-    NeighborSearchAllocator<T> output_allocator(device);
-
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     int dim = points.GetShape(1);
+    Device device = points.GetDevice();
+    Dtype dtype = points.GetDtype();
+
+    if (num_points == 0 || num_queries == 0) {
+        std::fill(query_neighbors_row_splits,
+                  query_neighbors_row_splits + num_queries + 1, 0);
+        int32_t* indices_ptr;
+        T* distances_ptr;
+
+        output_allocator.AllocIndices(&indices_ptr, 0);
+        output_allocator.AllocDistances(&distances_ptr, 0);
+    }
+
     knn = num_points > knn ? knn : num_points;
 
     // Allocate output tensors.
+    query_neighbors_row_splits[0] = 0;
+    std::fill(query_neighbors_row_splits + 1,
+              query_neighbors_row_splits + num_queries + 1, knn);
+    utility::InclusivePrefixSum(query_neighbors_row_splits + 1,
+                                query_neighbors_row_splits + num_queries + 1,
+                                query_neighbors_row_splits + 1);
     int32_t* indices_ptr;
     T* distances_ptr;
     const size_t num_indices = knn * num_queries;
@@ -140,10 +156,6 @@ void KnnSearchCUDASingle(const Tensor& points,
                                buf_distances_row_view.GetShape(0), stream);
         }
     }
-    neighbors_index =
-            output_allocator.NeighborsIndex().View({num_queries, knn});
-    neighbors_distance =
-            output_allocator.NeighborsDistance().View({num_queries, knn});
 }
 template <class T>
 void KnnSearchCUDANew(const Tensor& points,
@@ -152,17 +164,88 @@ void KnnSearchCUDANew(const Tensor& points,
                       const Tensor& queries_row_splits,
                       int knn,
                       Tensor& neighbors_index,
+                      Tensor& neighbors_row_splits,
                       Tensor& neighbors_distance) {
-    // TODO: add batch support.
-    KnnSearchCUDASingle<T>(points, queries, knn, neighbors_index,
-                           neighbors_distance);
+    int num_points = points.GetShape(0);
+    int num_queries = queries.GetShape(0);
+    Device device = points.GetDevice();
+
+    const int batch_size = points_row_splits.GetShape(0) - 1;
+
+    std::vector<NeighborSearchAllocator<T>> batch_output_allocators(
+            batch_size, NeighborSearchAllocator<T>(device));
+
+    int64_t last_neighbors_count = 0;
+    for (int i = 0; i < batch_size; ++i) {
+        const Tensor points_i =
+                points.Slice(0, points_row_splits[i].Item<int64_t>(),
+                             points_row_splits[i + 1].Item<int64_t>());
+        const Tensor queries_i =
+                queries.Slice(0, queries_row_splits[i].Item<int64_t>(),
+                              queries_row_splits[i + 1].Item<int64_t>());
+        int64_t num_queries_i = queries_i.GetShape(0);
+        int64_t* neighbors_row_splits_i =
+                neighbors_row_splits.GetDataPtr<int64_t>() +
+                queries_row_splits[i].Item<int64_t>();
+
+        KnnSearchCUDASingle<T>(points_i, queries_i, knn,
+                               batch_output_allocators[i],
+                               neighbors_row_splits_i);
+
+        if (i > 0) {
+            for (int j = 0; j <= num_queries_i; ++j) {
+                neighbors_row_splits_i[j] += last_neighbors_count;
+            }
+        }
+        last_neighbors_count = neighbors_row_splits_i[num_queries_i];
+    }
+
+    if (batch_size == 1) {
+        neighbors_index = batch_output_allocators[0].NeighborsIndex().View(
+                {num_queries, -1});
+        neighbors_distance =
+                batch_output_allocators[0].NeighborsDistance().View(
+                        {num_queries, -1});
+        return;
+    }
+
+    // combine results
+    NeighborSearchAllocator<T> output_allocator(device);
+    int64_t neighbors_size = 0;
+    for (const auto& a : batch_output_allocators) {
+        neighbors_size += a.NeighborsIndex().GetShape(0);
+    }
+    int32_t* neighbors_index_ptr;
+    T* neighbors_distance_ptr;
+    output_allocator.AllocIndices(&neighbors_index_ptr, neighbors_size);
+    output_allocator.AllocDistances(&neighbors_distance_ptr, neighbors_size);
+
+    last_neighbors_count = 0;
+    for (int i = 0; i < batch_size; ++i) {
+        auto& a = batch_output_allocators[i];
+        int64_t offset = points_row_splits[i].Item<int64_t>();
+        int64_t num_neighbors_i = a.NeighborsIndex().GetShape(0);
+        if (num_neighbors_i) {
+            Tensor NeighborIndexAccumulated = a.NeighborsIndex().Add(offset);
+            MemoryManager::Memcpy(neighbors_index_ptr + last_neighbors_count,
+                                  device, a.IndicesPtr(), device,
+                                  sizeof(int32_t) * num_neighbors_i);
+            MemoryManager::Memcpy(neighbors_distance_ptr + last_neighbors_count,
+                                  device, a.DistancesPtr(), device,
+                                  sizeof(T) * num_neighbors_i);
+            last_neighbors_count += num_neighbors_i;
+        }
+    }
+    neighbors_index = output_allocator.NeighborsIndex();
+    neighbors_distance = output_allocator.NeighborsDistance();
 }
 
 #define INSTANTIATE(T)                                                        \
     template void KnnSearchCUDANew<T>(                                        \
             const Tensor& points, const Tensor& points_row_splits,            \
             const Tensor& queries, const Tensor& queries_row_splits, int knn, \
-            Tensor& neighbors_index, Tensor& neighbors_distance);
+            Tensor& neighbors_index, Tensor& neighbors_row_splits,            \
+            Tensor& neighbors_distance);
 
 INSTANTIATE(float)
 INSTANTIATE(double)

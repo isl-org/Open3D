@@ -120,10 +120,12 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     Tensor queries_row_splits_ = queries_row_splits.Contiguous();
 
     Tensor neighbors_index, neighbors_distance;
+    Tensor neighbors_row_splits =
+            Tensor::Empty({query_points.GetShape(0) + 1}, Int64);
 
 #define FN_PARAMETERS                                                        \
     dataset_points_, points_row_splits_, query_points_, queries_row_splits_, \
-            knn, neighbors_index, neighbors_distance
+            knn, neighbors_index, neighbors_row_splits, neighbors_distance
 
 #define CALL(type, fn)                                              \
     if (Dtype::FromType<type>() == dtype) {                         \
