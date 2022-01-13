@@ -26,4 +26,9 @@
 
 #include "open3d/Open3D.h"
 
-int main(int argc, char **argv) { open3d::utility::LogInfo("Hello world!"); }
+using namespace open3d;
+
+int main(int argc, char **argv) {
+    utility::LogInfo("Hello world!");
+    return 0;
+}
