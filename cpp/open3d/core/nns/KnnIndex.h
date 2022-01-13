@@ -46,7 +46,7 @@ void KnnSearchCUDA(const Tensor& points,
                    Tensor& neighbors_index,
                    Tensor& neighbors_distance);
 
-template <class T>
+template <class T, class TIndex>
 void KnnSearchCUDANew(const Tensor& points,
                       const Tensor& points_row_splits,
                       const Tensor& queries,

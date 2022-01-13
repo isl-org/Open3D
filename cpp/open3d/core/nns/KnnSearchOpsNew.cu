@@ -41,7 +41,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR>
 void KnnSearchCUDASingle(const Tensor& points,
                          const Tensor& queries,
                          int knn,
@@ -57,7 +57,7 @@ void KnnSearchCUDASingle(const Tensor& points,
     if (num_points == 0 || num_queries == 0) {
         std::fill(query_neighbors_row_splits,
                   query_neighbors_row_splits + num_queries + 1, 0);
-        int32_t* indices_ptr;
+        TIndex* indices_ptr;
         T* distances_ptr;
 
         output_allocator.AllocIndices(&indices_ptr, 0);
@@ -73,7 +73,7 @@ void KnnSearchCUDASingle(const Tensor& points,
     utility::InclusivePrefixSum(query_neighbors_row_splits + 1,
                                 query_neighbors_row_splits + num_queries + 1,
                                 query_neighbors_row_splits + 1);
-    int32_t* indices_ptr;
+    TIndex* indices_ptr;
     T* distances_ptr;
     const size_t num_indices = knn * num_queries;
 
@@ -149,7 +149,7 @@ void KnnSearchCUDASingle(const Tensor& points,
         if (tile_cols != num_points) {
             runIncrementIndex<T>(stream, buf_indices_row_view, knn, tile_cols);
             runBlockSelectPair(buf_distances_row_view.GetDataPtr<T>(),
-                               buf_indices_row_view.GetDataPtr<int32_t>(),
+                               buf_indices_row_view.GetDataPtr<TIndex>(),
                                output_allocator.DistancesPtr_() + knn * i,
                                output_allocator.IndicesPtr_() + knn * i, false,
                                knn, buf_distances_row_view.GetShape(1),
@@ -157,7 +157,7 @@ void KnnSearchCUDASingle(const Tensor& points,
         }
     }
 }
-template <class T>
+template <class T, class TIndex>
 void KnnSearchCUDANew(const Tensor& points,
                       const Tensor& points_row_splits,
                       const Tensor& queries,
@@ -172,8 +172,8 @@ void KnnSearchCUDANew(const Tensor& points,
 
     const int batch_size = points_row_splits.GetShape(0) - 1;
 
-    std::vector<NeighborSearchAllocator<T>> batch_output_allocators(
-            batch_size, NeighborSearchAllocator<T>(device));
+    std::vector<NeighborSearchAllocator<T, TIndex>> batch_output_allocators(
+            batch_size, NeighborSearchAllocator<T, TIndex>(device));
 
     int64_t last_neighbors_count = 0;
     for (int i = 0; i < batch_size; ++i) {
@@ -188,9 +188,9 @@ void KnnSearchCUDANew(const Tensor& points,
                 neighbors_row_splits.GetDataPtr<int64_t>() +
                 queries_row_splits[i].Item<int64_t>();
 
-        KnnSearchCUDASingle<T>(points_i, queries_i, knn,
-                               batch_output_allocators[i],
-                               neighbors_row_splits_i);
+        KnnSearchCUDASingle<T, TIndex>(points_i, queries_i, knn,
+                                       batch_output_allocators[i],
+                                       neighbors_row_splits_i);
 
         if (i > 0) {
             for (int j = 0; j <= num_queries_i; ++j) {
@@ -210,12 +210,12 @@ void KnnSearchCUDANew(const Tensor& points,
     }
 
     // combine results
-    NeighborSearchAllocator<T> output_allocator(device);
+    NeighborSearchAllocator<T, TIndex> output_allocator(device);
     int64_t neighbors_size = 0;
     for (const auto& a : batch_output_allocators) {
         neighbors_size += a.NeighborsIndex().GetShape(0);
     }
-    int32_t* neighbors_index_ptr;
+    TIndex* neighbors_index_ptr;
     T* neighbors_distance_ptr;
     output_allocator.AllocIndices(&neighbors_index_ptr, neighbors_size);
     output_allocator.AllocDistances(&neighbors_distance_ptr, neighbors_size);
@@ -229,7 +229,7 @@ void KnnSearchCUDANew(const Tensor& points,
             Tensor NeighborIndexAccumulated = a.NeighborsIndex().Add(offset);
             MemoryManager::Memcpy(neighbors_index_ptr + last_neighbors_count,
                                   device, a.IndicesPtr(), device,
-                                  sizeof(int32_t) * num_neighbors_i);
+                                  sizeof(TIndex) * num_neighbors_i);
             MemoryManager::Memcpy(neighbors_distance_ptr + last_neighbors_count,
                                   device, a.DistancesPtr(), device,
                                   sizeof(T) * num_neighbors_i);
@@ -240,15 +240,17 @@ void KnnSearchCUDANew(const Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-#define INSTANTIATE(T)                                                        \
-    template void KnnSearchCUDANew<T>(                                        \
+#define INSTANTIATE(T, TIndex)                                                \
+    template void KnnSearchCUDANew<T, TIndex>(                                \
             const Tensor& points, const Tensor& points_row_splits,            \
             const Tensor& queries, const Tensor& queries_row_splits, int knn, \
             Tensor& neighbors_index, Tensor& neighbors_row_splits,            \
             Tensor& neighbors_distance);
 
-INSTANTIATE(float)
-INSTANTIATE(double)
+INSTANTIATE(float, int32_t)
+INSTANTIATE(float, int64_t)
+INSTANTIATE(double, int32_t)
+INSTANTIATE(double, int64_t)
 
 }  // namespace nns
 }  // namespace core

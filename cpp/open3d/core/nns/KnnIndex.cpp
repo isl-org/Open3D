@@ -129,7 +129,7 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
 
 #define CALL(type, fn)                                              \
     if (Dtype::FromType<type>() == dtype) {                         \
-        fn<type>(FN_PARAMETERS);                                    \
+        fn<type, int32_t>(FN_PARAMETERS);                           \
         return std::make_pair(neighbors_index, neighbors_distance); \
     }
 

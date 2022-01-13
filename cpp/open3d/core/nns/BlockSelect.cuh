@@ -143,10 +143,30 @@ void runBlockSelectPair(float* inK,
                         int num_points,
                         cudaStream_t stream);
 
+void runBlockSelectPair(float* inK,
+                        int64_t* inV,
+                        float* outK,
+                        int64_t* outV,
+                        bool dir,
+                        int k,
+                        int dim,
+                        int num_points,
+                        cudaStream_t stream);
+
 void runBlockSelectPair(double* inK,
                         int32_t* inV,
                         double* outK,
                         int32_t* outV,
+                        bool dir,
+                        int k,
+                        int dim,
+                        int num_points,
+                        cudaStream_t stream);
+
+void runBlockSelectPair(double* inK,
+                        int64_t* inV,
+                        double* outK,
+                        int64_t* outV,
                         bool dir,
                         int k,
                         int dim,
