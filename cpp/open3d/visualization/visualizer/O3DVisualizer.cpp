@@ -564,8 +564,6 @@ struct O3DVisualizer::Impl {
         settings.show_ground->SetOnChecked(
                 [this](bool is_checked) { this->ShowGround(is_checked); });
 
-        settings.inspection_mode = new Checkbox("Inspection Mode");
-
         settings.ground_plane = new Combobox();
         settings.ground_plane->AddItem("XZ");
         settings.ground_plane->AddItem("XY");
@@ -589,7 +587,6 @@ struct O3DVisualizer::Impl {
         settings.scene_panel->AddChild(GiveOwnership(h));
         settings.scene_panel->AddChild(GiveOwnership(settings.show_ground));
         settings.scene_panel->AddChild(GiveOwnership(settings.ground_plane));
-        settings.scene_panel->AddChild(GiveOwnership(settings.inspection_mode));
 
         settings.bg_color = new ColorEdit();
         settings.bg_color->SetValue(ui_state_.bg_color.x(),
@@ -635,6 +632,10 @@ struct O3DVisualizer::Impl {
             }
         });
 
+        settings.inspection_mode = new Checkbox("");
+        settings.inspection_mode->SetOnChecked(
+                [this](bool enable) { this->EnableInspectionMode(enable); });
+
         auto *grid = new VGrid(2, v_spacing);
         settings.scene_panel->AddChild(GiveOwnership(grid));
 
@@ -646,6 +647,8 @@ struct O3DVisualizer::Impl {
         grid->AddChild(GiveOwnership(settings.shader));
         grid->AddChild(std::make_shared<Label>("Lighting"));
         grid->AddChild(GiveOwnership(settings.lighting));
+        grid->AddChild(std::make_shared<Label>("Inspection Mode"));
+        grid->AddChild(GiveOwnership(settings.inspection_mode));
 
         // Light list
         settings.light_panel = new CollapsableVert("Lighting", 0, margins);
@@ -1248,6 +1251,10 @@ struct O3DVisualizer::Impl {
             scene_->GetScene()->ShowGroundPlane(ui_state_.show_ground, plane);
             scene_->ForceRedraw();
         }
+    }
+
+    void EnableInspectionMode(bool enable) {
+        utility::LogWarning("Enable inspection mode!");
     }
 
     void SetPointSize(int px) {
@@ -2089,6 +2096,10 @@ void O3DVisualizer::ShowGround(bool show) { impl_->ShowGround(show); }
 
 void O3DVisualizer::SetGroundPlane(rendering::Scene::GroundPlane plane) {
     impl_->SetGroundPlane(plane);
+}
+
+void O3DVisualizer::EnableInspectionMode(bool enable) {
+    impl_->EnableInspectionMode(enable);
 }
 
 void O3DVisualizer::SetPointSize(int point_size) {
