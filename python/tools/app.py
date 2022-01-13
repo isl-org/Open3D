@@ -28,6 +28,7 @@ import open3d as o3d
 import os
 import sys
 
+
 def main():
     args = [os.path.abspath(__file__)]
     if len(sys.argv) > 1:
@@ -36,5 +37,6 @@ def main():
 
     o3d.utility.reset_print_function()
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     sys.exit(main())

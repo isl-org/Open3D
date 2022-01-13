@@ -742,12 +742,13 @@ class AppWindow:
                     if len(meshinfo.mesh.vertex_colors) == 0:
                         meshinfo.mesh.paint_uniform_color([1, 1, 1])
                 for meshinfo in model.meshes:
-                    geometries.append(
-                        (meshinfo.mesh_name, meshinfo.mesh, model.materials[meshinfo.material_idx]))
+                    geometries.append((meshinfo.mesh_name, meshinfo.mesh,
+                                       model.materials[meshinfo.material_idx]))
             # Make sure the mesh has texture coordinates
             for meshinfo in model.meshes:
                 if not meshinfo.mesh.has_triangle_uvs():
-                    uv = np.array([[0.0, 0.0]] * (3 * len(meshinfo.mesh.triangles)))
+                    uv = np.array([[0.0, 0.0]] *
+                                  (3 * len(meshinfo.mesh.triangles)))
                     meshinfo.mesh.triangle_uvs = o3d.utility.Vector2dVector(uv)
         else:
             print("[Info]", path, "appears to be a point cloud")

@@ -24,13 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <string>
-#include <iostream>
 #include "open3d/visualization/app/Viewer.h"
-#include "open3d/visualization/gui/Native.h"
-#include "open3d/visualization/visualizer/GuiVisualizer.h"
+
+#include <iostream>
+#include <string>
+
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/Native.h"
+#include "open3d/visualization/visualizer/GuiVisualizer.h"
 
 using namespace open3d;
 using namespace open3d::geometry;
@@ -45,9 +47,10 @@ namespace visualization {
 namespace app {
 
 int RunViewer(int argc, const char *argv[]) {
-    std::function<void(const std::string &)> print_fcn = utility::Logger::GetInstance().GetPrintFunction();
+    std::function<void(const std::string &)> print_fcn =
+            utility::Logger::GetInstance().GetPrintFunction();
     utility::Logger::GetInstance().ResetPrintFunction();
-    
+
     const char *path = nullptr;
     if (argc > 1) {
         path = argv[1];
@@ -70,7 +73,7 @@ int RunViewer(int argc, const char *argv[]) {
     vis.reset();
 
     app.Run();
-    
+
     utility::Logger::GetInstance().SetPrintFunction(print_fcn);
     return 0;
 }

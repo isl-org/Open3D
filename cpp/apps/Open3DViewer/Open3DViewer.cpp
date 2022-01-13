@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <string>
+
 #include "open3d/Open3D.h"
 #include "open3d/visualization/app/Viewer.h"
 
@@ -33,6 +34,5 @@ using namespace open3d::visualization::app;
 #if __APPLE__
 // Open3DViewer_mac.mm
 #else
-int main(int argc, const char *argv[]) {
-    return RunViewer(argc, argv); }
+int main(int argc, const char *argv[]) { return RunViewer(argc, argv); }
 #endif  // __APPLE__

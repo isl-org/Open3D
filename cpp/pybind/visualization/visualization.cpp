@@ -26,10 +26,10 @@
 
 #include "pybind/visualization/visualization.h"
 
+#include "pybind/visualization/app/viewer.h"
 #include "pybind/visualization/gui/gui.h"
 #include "pybind/visualization/rendering/material.h"
 #include "pybind/visualization/rendering/rendering.h"
-#include "pybind/visualization/app/viewer.h"
 
 #ifdef BUILD_WEBRTC
 #include "pybind/visualization/webrtc_server/webrtc_window_system.h"
