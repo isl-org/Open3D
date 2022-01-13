@@ -164,8 +164,7 @@ class Open3DMain:
     def _get_examples_dir() -> Path:
         """Get the path to the examples directory."""
         tools_path = os.path.dirname(os.path.abspath(__file__))
-        examples_path = os.path.join(os.path.dirname(tools_path),
-                                     "../../examples/python/")
+        examples_path = os.path.join(os.path.dirname(tools_path), "examples")
         examples_dir = Path(examples_path)
         return examples_dir
 
@@ -204,15 +203,11 @@ class Open3DMain:
         return "Open3D " + open3d.__version__
 
     @staticmethod
-    def _example_choices_type(choices):
-
-        def support_choice_with_dot_py(choice):
-            if choice.endswith('.py') and choice.split('.')[0] in choices:
-                # try to find and remove python file extension
-                return choice.split('.')[0]
-            return choice
-
-        return support_choice_with_dot_py
+    def _support_choice_with_dot_py(choice):
+        if choice.endswith('.py'):
+            # try to find and remove python file extension
+            return choice.split('.')[0]
+        return choice
 
     @register
     def example(self, arguments: list = sys.argv[2:]):
@@ -222,7 +217,8 @@ class Open3DMain:
 
         def usage_long():
             # TODO: add some color to commands
-            msg = self.command_helper["example"].usage
+            msg = "      " + self.command_helper["example"].usage
+            msg += "\nfor example: " + self.command_helper["example"].example
             msg += "\n\n"
             msg += "categories:\n"
             for category in sorted(self._get_example_categories()):
@@ -243,7 +239,7 @@ class Open3DMain:
             "name",
             nargs='?',
             help="Category/name of an example (supports .py extension too)\n",
-            type=Open3DMain._example_choices_type(choices.keys()))
+            type=Open3DMain._support_choice_with_dot_py)
         parser.add_argument("example_args",
                             nargs='*',
                             help='Arguments for the example to be run\n')
@@ -303,6 +299,7 @@ class Open3DMain:
         except:
             category = args.name
             example = ""
+            args.list = True
 
         if category not in self._get_example_categories():
             print('error: invalid category provided: ' + category)
@@ -375,7 +372,7 @@ class Open3DMain:
                             '--help',
                             action='help',
                             help='Show this help message and exit\n'
-                            'usage       :  open3d example --help\n ')
+                            'usage       :  open3d draw --help\n ')
 
         args = parser.parse_args(arguments)
 
