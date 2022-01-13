@@ -722,38 +722,30 @@ class AppWindow:
     def load(self, path):
         self._scene.scene.clear_geometry()
 
-        geometries = []
+        geometry = None
         geometry_type = o3d.io.read_file_geometry_type(path)
 
-        model = None
+        mesh = None
         if geometry_type & o3d.io.CONTAINS_TRIANGLES:
-            model = o3d.io.read_triangle_model(path)
-        if model is not None:
-            num_triangles = []
-            for meshinfo in model.meshes:
-                num_triangles.append(len(meshinfo.mesh.triangles))
-            if sum(num_triangles) == 0:
+            mesh = o3d.io.read_triangle_mesh(path)
+        if mesh is not None:
+            if len(mesh.triangles) == 0:
                 print(
                     "[WARNING] Contains 0 triangles, will read as point cloud")
-                model = None
+                mesh = None
             else:
-                for meshinfo in model.meshes:
-                    meshinfo.mesh.compute_vertex_normals()
-                    if len(meshinfo.mesh.vertex_colors) == 0:
-                        meshinfo.mesh.paint_uniform_color([1, 1, 1])
-                for meshinfo in model.meshes:
-                    geometries.append((meshinfo.mesh_name, meshinfo.mesh,
-                                       model.materials[meshinfo.material_idx]))
+                mesh.compute_vertex_normals()
+                if len(mesh.vertex_colors) == 0:
+                    mesh.paint_uniform_color([1, 1, 1])
+                geometry = mesh
             # Make sure the mesh has texture coordinates
-            for meshinfo in model.meshes:
-                if not meshinfo.mesh.has_triangle_uvs():
-                    uv = np.array([[0.0, 0.0]] *
-                                  (3 * len(meshinfo.mesh.triangles)))
-                    meshinfo.mesh.triangle_uvs = o3d.utility.Vector2dVector(uv)
+            if not mesh.has_triangle_uvs():
+                uv = np.array([[0.0, 0.0]] * (3 * len(mesh.triangles)))
+                mesh.triangle_uvs = o3d.utility.Vector2dVector(uv)
         else:
             print("[Info]", path, "appears to be a point cloud")
 
-        if len(geometries) == 0:
+        if geometry is None:
             cloud = None
             try:
                 cloud = o3d.io.read_point_cloud(path)
@@ -764,16 +756,15 @@ class AppWindow:
                 if not cloud.has_normals():
                     cloud.estimate_normals()
                 cloud.normalize_normals()
-                geometries.append(("__model__", cloud, self.settings.material))
+                geometry = cloud
             else:
                 print("[WARNING] Failed to read points", path)
 
-        if len(geometries) != 0:
+        if geometry is not None:
             try:
-                for (name, geometry, material) in geometries:
-                    material.shader = "defaultLit"
-                    self._scene.scene.add_geometry(name, geometry, material)
-                bounds = self._scene.scene.bounding_box
+                self._scene.scene.add_geometry("__model__", geometry,
+                                               self.settings.material)
+                bounds = geometry.get_axis_aligned_bounding_box()
                 self._scene.setup_camera(60, bounds, bounds.get_center())
             except Exception as e:
                 print(e)
