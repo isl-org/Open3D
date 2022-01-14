@@ -1210,8 +1210,9 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         for (size_t i = 0; i < impl_->ui_lines_.size() - 1; i += 2) {
             auto& p0 = impl_->ui_lines_[i];
             auto& p1 = impl_->ui_lines_[i + 1];
-            draw_list->AddLine({float(p0.x()), float(p0.y())},
-                               {float(p1.x()), float(p1.y())}, ui_color, 2);
+            draw_list->AddLine({float(p0.x() + f.x), float(p0.y() + f.y)},
+                               {float(p1.x() + f.x), float(p1.y() + f.y)},
+                               ui_color, 2);
         }
     }
 
