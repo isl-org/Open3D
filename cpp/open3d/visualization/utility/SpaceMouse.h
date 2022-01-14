@@ -26,7 +26,7 @@
 
 #pragma once
 
-#ifndef USE_SPNAV
+#ifdef USE_SPNAV
 #include <memory>
 #include <map>
 #include <functional>
