@@ -77,6 +77,9 @@ public:
         virtual ~MouseInteractor() = default;
 
         virtual rendering::MatrixInteractorLogic& GetMatrixInteractor() = 0;
+#ifdef USE_SPNAV
+        virtual void SpaceMouse(const ::open3d::visualization::SpaceMouseEvent& evt) {};
+#endif
         virtual void Mouse(const MouseEvent& e) = 0;
         virtual void Key(const KeyEvent& e) = 0;
         virtual bool Tick(const TickEvent& e) { return false; }

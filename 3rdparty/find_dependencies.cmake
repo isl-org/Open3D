@@ -1493,37 +1493,18 @@ else()
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
 
+# spnav
 open3d_find_package_3rdparty_library(3rdparty_spnav
-        PUBLIC
         PACKAGE spnav
         INCLUDE_DIRS SPNAV_INCLUDE_DIR
         LIBRARIES SPNAV_LIBRARY
         )
-#open3d_find_package_3rdparty_library(3rdparty_spnav
-#        HEADER
-#        PACKAGE spnav
-#        TARGETS spnav::spnav
-#        )
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_spnav)
 if(3rdparty_spnav_FOUND)
     add_definitions(-DUSE_SPNAV)
 endif()
 
-#find_package(spnav)
-#if(spnav_FOUND)
-#    add_library(3rdparty_spnav INTERFACE)
-#    target_include_directories(3rdparty_spnav INTERFACE ${SPNAV_INCLUDE_DIR})
-#    target_link_libraries(3rdparty_spnav INTERFACE ${SPNAV_LIBRARY})
-#    if(NOT BUILD_SHARED_LIBS)
-#        install(TARGETS 3rdparty_spnav EXPORT ${PROJECT_NAME}Targets
-#                RUNTIME DESTINATION ${Open3D_INSTALL_BIN_DIR}
-#                ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}
-#                LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
-#                )
-#    endif()
-#    set(SPNAV_TARGET 3rdparty_spnav)
-#    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${SPNAV_TARGET})
-#    add_definitions(-DUSE_SPNAV)
-#endif()
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
+message("models: ${Open3D_3RDPARTY_EXTERNAL_MODULES}")
 list(REMOVE_DUPLICATES Open3D_3RDPARTY_EXTERNAL_MODULES)
