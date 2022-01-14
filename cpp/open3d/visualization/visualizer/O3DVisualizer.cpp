@@ -1254,6 +1254,9 @@ struct O3DVisualizer::Impl {
     }
 
     void EnableInspectionMode(bool enable) {
+        ShowSkybox(enable);
+        auto o3dscene = scene_->GetScene();
+        o3dscene->SetBackground({1.f, 1.f, 1.f, 1.f});
         utility::LogWarning("Enable inspection mode!");
     }
 
