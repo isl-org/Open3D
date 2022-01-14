@@ -101,7 +101,7 @@ RUN which python \
 # Checkout Open3D-ML master branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
 ENV OPEN3D_ML_ROOT=/root/Open3D-ML
-RUN git clone --depth 1 https://github.com/intel-isl/Open3D-ML.git ${OPEN3D_ML_ROOT}
+RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
 
 # Open3D repo
 # Always keep /root/Open3D as the WORKDIR
@@ -134,6 +134,7 @@ RUN mkdir build \
           -DBUILD_CUDA_MODULE=ON \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
           -DBUILD_COMMON_ISPC_ISAS=ON \
+          -DGLIBCXX_USE_CXX11_ABI=$( { [ "$BUILD_PYTORCH_OPS" == ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; } && echo OFF || echo ON) \
           -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
           -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
           -DBUILD_UNIT_TESTS=ON \

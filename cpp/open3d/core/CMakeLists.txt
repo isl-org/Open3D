@@ -63,6 +63,8 @@ target_sources(core PRIVATE
     linalg/SVDCPU.cpp
     linalg/Tri.cpp
     linalg/TriCPU.cpp
+    linalg/AddMM.cpp
+    linalg/AddMMCPU.cpp
 )
 
 target_sources(core PRIVATE
@@ -103,6 +105,7 @@ if (BUILD_CUDA_MODULE)
         linalg/SolveCUDA.cpp
         linalg/SVDCUDA.cpp
         linalg/TriCUDA.cu
+        linalg/AddMMCUDA.cpp
     )
 
     target_sources(core PRIVATE

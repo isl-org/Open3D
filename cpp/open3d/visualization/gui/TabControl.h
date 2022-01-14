@@ -50,6 +50,8 @@ public:
     DrawResult Draw(const DrawContext& context) override;
 
     void SetOnSelectedTabChanged(std::function<void(int)> on_changed);
+    void SetSelectedTabIndex(int index);
+    int GetSelectedTabIndex();
 
 private:
     struct Impl;

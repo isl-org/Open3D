@@ -30,6 +30,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
+import os, sys
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+sys.path.append(pyexample_path)
+
 import open3d as o3d
 #conda install pillow matplotlib
 
@@ -37,7 +42,7 @@ if __name__ == "__main__":
 
     print("Testing image in open3d ...")
     print("Convert an image to numpy and draw it with matplotlib.")
-    x = o3d.io.read_image("../../test_data/image.PNG")
+    x = o3d.io.read_image(os.path.join(test_data_path, 'image.PNG'))
     print(x)
     plt.imshow(np.asarray(x))
     plt.show()
@@ -45,7 +50,7 @@ if __name__ == "__main__":
     print(
         "Convet a numpy image to o3d.geometry.Image and show it with DrawGeomtries()."
     )
-    y = mpimg.imread("../../test_data/lena_color.jpg")
+    y = mpimg.imread(os.path.join(test_data_path, 'lena_color.jpg'))
     print(y.shape)
     yy = o3d.geometry.Image(y)
     print(yy)
@@ -66,7 +71,7 @@ if __name__ == "__main__":
     plt.show()
 
     print("Testing basic image processing module.")
-    im_raw = mpimg.imread("../../test_data/lena_color.jpg")
+    im_raw = mpimg.imread(os.path.join(test_data_path, 'lena_color.jpg'))
     im = o3d.geometry.Image(im_raw)
     im_g3 = im.filter(o3d.geometry.ImageFilterType.Gaussian3)
     im_g5 = im.filter(o3d.geometry.ImageFilterType.Gaussian5)
@@ -92,5 +97,3 @@ if __name__ == "__main__":
             plt.subplot(4, pyramid_levels, i * 4 + j + 1)
             plt.imshow(switcher.get(i)[j])
     plt.show()
-
-    print("")

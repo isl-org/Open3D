@@ -30,6 +30,10 @@ import open3d as o3d
 import numpy as np
 import time
 import copy
+import os
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 
 def visualize_non_blocking(vis, pcds):
@@ -39,7 +43,7 @@ def visualize_non_blocking(vis, pcds):
     vis.update_renderer()
 
 
-pcd_orig = o3d.io.read_point_cloud("../../test_data/fragment.pcd")
+pcd_orig = o3d.io.read_point_cloud(os.path.join(test_data_path, 'fragment.pcd'))
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 pcd_orig.transform(flip_transform)
 n_pcd = 5

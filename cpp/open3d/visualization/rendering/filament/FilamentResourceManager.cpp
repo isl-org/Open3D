@@ -465,6 +465,7 @@ TextureHandle FilamentResourceManager::CreateTexture(
         auto texture = LoadTextureFromImage(img, srgb);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+        textures_[handle].use_count++;
         texture_cache_[hash] = handle;
     }
 
@@ -484,6 +485,7 @@ TextureHandle FilamentResourceManager::CreateTexture(
         auto texture = LoadTextureFromImage(copy, srgb);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+        textures_[handle].use_count++;
         texture_cache_[hash] = handle;
     }
 

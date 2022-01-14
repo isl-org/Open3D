@@ -1,0 +1,35 @@
+name: Feature Request
+description: New feature request. Request to add some new functionality or improve the existing ones.
+title: "Summarize your request. (e.g., \"Request to add ROS to Open3D PointCloud conversion support?\")"
+labels: [feature request]
+
+body:
+
+- type: checkboxes
+  attributes:
+    label: "Checklist"
+    options:
+      - label: "I have searched for [similar issues](https://github.com/isl-org/Open3D/issues)."
+        required: true
+      - label: "For Python issues, I have tested with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip)."
+        required: true
+      - label: "I have checked the [release documentation](http://www.open3d.org/docs/release/) and the [latest documentation](http://www.open3d.org/docs/latest/) (for `master` branch)."
+        required: true
+
+- type: textarea
+  attributes:
+    description: >
+        Describe what feature you'd like to have in Open3D.
+    label: "Proposed new feature or change"
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "References"
+    description: Please share some references that can help us know more about this feature and try to implement the same. For ex. research paper, open-source codes, stackoverflow, etc.
+
+- type: textarea
+  attributes:
+    label: "Additional information"
+    description: Add any other context or screenshots about the feature request here.

@@ -106,7 +106,7 @@ void Actions() {
         utility::LogError(
                 "Please download the Standford Bunny dataset using:\n"
                 "   cd <open3d_dir>/examples/python\n"
-                "   python -c 'from open3d_tutorial import *; "
+                "   python -c 'from open3d_example import *; "
                 "get_bunny_mesh()'");
         return;
     }

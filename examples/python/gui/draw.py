@@ -33,7 +33,7 @@ import random
 import sys
 
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-import open3d_tutorial as o3dtut
+import open3d_example as o3dex
 
 SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -98,7 +98,7 @@ def actions():
     SOURCE_NAME = "Source"
     RESULT_NAME = "Result (Poisson reconstruction)"
     TRUTH_NAME = "Ground truth"
-    bunny = o3dtut.get_bunny_mesh()
+    bunny = o3dex.get_bunny_mesh()
     bunny.paint_uniform_color((1, 0.75, 0))
     bunny.compute_vertex_normals()
     cloud = o3d.geometry.PointCloud()

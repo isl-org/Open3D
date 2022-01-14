@@ -120,7 +120,7 @@ void pybind_registration_classes(py::module &m) {
             .def_readwrite("fitness", &RegistrationResult::fitness_,
                            "float: The overlapping area (# of inlier "
                            "correspondences "
-                           "/ # of points in target). Higher is better.")
+                           "/ # of points in source). Higher is better.")
             .def_readwrite("save_loss_log", &RegistrationResult::save_loss_log_,
                            "To store iteration-wise information in "
                            "`loss_log_`, mark this as `True`.")
@@ -277,7 +277,9 @@ static const std::unordered_map<std::string, std::string>
                 {"estimation_method",
                  "Estimation method. One of "
                  "(``TransformationEstimationPointToPoint``, "
-                 "``TransformationEstimationPointToPlane``)"},
+                 "``TransformationEstimationPointToPlane``, "
+                 "``TransformationEstimationForColoredICP``, "
+                 "``TransformationEstimationForGeneralizedICP``)"},
                 {"init_source_to_target", "Initial transformation estimation"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},

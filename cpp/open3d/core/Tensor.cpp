@@ -656,6 +656,42 @@ Tensor Tensor::Reshape(const SizeVector& dst_shape) const {
     }
 }
 
+Tensor Tensor::Flatten(int64_t start_dim /*= 0*/,
+                       int64_t end_dim /*= -1*/) const {
+    int64_t num_dims = NumDims();
+    if (num_dims == 0) {
+        // Flattening a 0-d tensor is equivalent to flattening the tensor
+        // reshaped to 1-d. Technically, we cannot have a start_dim or end_dim,
+        // since a 0-d tensor cannot be indexed, e.g. np.array(100)[0] is not
+        // valid. But start_dim = 0 and end_dim = -1 are the default parameter
+        // values so we make an exception case for 0-d. We reshape it to 1-d for
+        // boundary checks of start_dim and end_dim.
+        return Reshape({1}).Flatten(start_dim, end_dim);
+    }
+    core::SizeVector shape = GetShape();
+    core::SizeVector dst_shape;
+    start_dim = shape_util::WrapDim(start_dim, num_dims, false);
+    end_dim = shape_util::WrapDim(end_dim, num_dims, false);
+    if (end_dim < start_dim) {
+        utility::LogError(
+                "start_dim {} must be smaller or equal to end_dim {}.",
+                start_dim, end_dim);
+    }
+    // Multiply the flattened dimensions together.
+    int64_t flat_dimension_size = 1;
+    for (int64_t dim = 0; dim < num_dims; dim++) {
+        if (dim >= start_dim && dim <= end_dim) {
+            flat_dimension_size *= shape[dim];
+            if (dim == end_dim) {
+                dst_shape.push_back(flat_dimension_size);
+            }
+        } else {
+            dst_shape.push_back(shape[dim]);
+        }
+    }
+    return Reshape(dst_shape);
+}
+
 Tensor Tensor::View(const SizeVector& dst_shape) const {
     SizeVector inferred_dst_shape =
             shape_util::InferShape(dst_shape, NumElements());

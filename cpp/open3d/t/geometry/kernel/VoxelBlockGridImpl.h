@@ -793,9 +793,11 @@ void RayCastCPU
                 }
 
                 if (normal_ptr) {
+                    constexpr float EPSILON = 1e-5f;
                     float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
                                       normal_ptr[1] * normal_ptr[1] +
                                       normal_ptr[2] * normal_ptr[2]);
+                    norm = std::max(norm, EPSILON);
                     w2c_transform_indexer.Rotate(
                             -normal_ptr[0] / norm, -normal_ptr[1] / norm,
                             -normal_ptr[2] / norm, normal_ptr + 0,

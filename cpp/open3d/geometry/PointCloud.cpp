@@ -67,8 +67,8 @@ AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(points_);
 }
 
-OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromPoints(points_);
+OrientedBoundingBox PointCloud::GetOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(points_, robust);
 }
 
 PointCloud &PointCloud::Transform(const Eigen::Matrix4d &transformation) {
@@ -509,8 +509,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points,
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
     std::vector<bool> mask = std::vector<bool>(points_.size());
-    utility::OMPProgressBar progress_bar(points_.size(),
-                                         "Remove radius outliers: ", true);
+    utility::OMPProgressBar progress_bar(
+            points_.size(), "Remove radius outliers: ", print_progress);
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
@@ -548,8 +548,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
     std::vector<double> avg_distances = std::vector<double>(points_.size());
     std::vector<size_t> indices;
     size_t valid_distances = 0;
-    utility::OMPProgressBar progress_bar(points_.size(),
-                                         "Remove statistical outliers: ", true);
+    utility::OMPProgressBar progress_bar(
+            points_.size(), "Remove statistical outliers: ", print_progress);
 
 #pragma omp parallel for reduction(+ : valid_distances) schedule(static) num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < int(points_.size()); i++) {
@@ -673,8 +673,8 @@ std::vector<double> PointCloud::ComputeNearestNeighborDistance() const {
 }
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-PointCloud::ComputeConvexHull() const {
-    return Qhull::ComputeConvexHull(points_);
+PointCloud::ComputeConvexHull(bool joggle_inputs) const {
+    return Qhull::ComputeConvexHull(points_, joggle_inputs);
 }
 
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>

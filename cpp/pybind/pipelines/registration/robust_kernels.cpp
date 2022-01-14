@@ -28,14 +28,12 @@
 // Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
 // ----------------------------------------------------------------------------
 
-#include <pybind11/attr.h>
-#include <pybind11/pybind11.h>
-
 #include <memory>
 
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 #include "pybind/pipelines/registration/registration.h"
 
 namespace open3d {

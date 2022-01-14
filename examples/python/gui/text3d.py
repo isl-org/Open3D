@@ -70,7 +70,10 @@ def low_level():
     mat.point_size = 5 * w.scaling
     widget3d.scene.add_geometry("Points", points, mat)
     for idx in range(0, len(points.points)):
-        widget3d.add_3d_label(points.points[idx], "{}".format(idx))
+        l = widget3d.add_3d_label(points.points[idx], "{}".format(idx))
+        l.color = gui.Color(points.colors[idx][0], points.colors[idx][1],
+                            points.colors[idx][2])
+        l.scale = np.random.uniform(0.5, 3.0)
     bbox = widget3d.scene.bounding_box
     widget3d.setup_camera(60.0, bbox, bbox.get_center())
     w.add_child(widget3d)

@@ -28,6 +28,10 @@
 
 import open3d as o3d
 
+import os
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+
 
 def custom_key_action_without_kb_repeat_delay(pcd):
     rotating = False
@@ -63,7 +67,7 @@ def custom_key_action_without_kb_repeat_delay(pcd):
 
 
 if __name__ == "__main__":
-    pcd = o3d.io.read_point_cloud("../../test_data/fragment.ply")
+    pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, 'fragment.ply'))
 
     print(
         "Customized visualization with smooth key action (without keyboard repeat delay)"

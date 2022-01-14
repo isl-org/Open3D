@@ -140,8 +140,8 @@ public:
     TriangleMesh &RemoveDuplicatedVertices();
 
     /// \brief Function that removes duplicated triangles, i.e., removes
-    /// triangles that reference the same three vertices, independent of their
-    /// order.
+    /// triangles that reference the same three vertices and have the same
+    /// orientation.
     TriangleMesh &RemoveDuplicatedTriangles();
 
     /// \brief This function removes vertices from the triangle mesh that are
@@ -204,25 +204,25 @@ public:
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
-    /// \param lambda is the smoothing parameter.
+    /// \param lambda_filter is the smoothing parameter.
     std::shared_ptr<TriangleMesh> FilterSmoothLaplacian(
             int number_of_iterations,
-            double lambda,
+            double lambda_filter,
             FilterScope scope = FilterScope::All) const;
 
     /// \brief Function to smooth triangle mesh using method of Taubin,
     /// "Curve and Surface Smoothing Without Shrinkage", 1995.
     /// Applies in each iteration two times FilterSmoothLaplacian, first
-    /// with lambda and second with mu as smoothing parameter.
+    /// with lambda_filter and second with mu as smoothing parameter.
     /// This method avoids shrinkage of the triangle mesh.
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
-    /// \param lambda is the filter parameter
+    /// \param lambda_filter is the filter parameter
     /// \param mu is the filter parameter
     std::shared_ptr<TriangleMesh> FilterSmoothTaubin(
             int number_of_iterations,
-            double lambda = 0.5,
+            double lambda_filter = 0.5,
             double mu = -0.53,
             FilterScope scope = FilterScope::All) const;
 
@@ -750,7 +750,7 @@ protected:
             const std::vector<Eigen::Vector3d> &prev_vertex_normals,
             const std::vector<Eigen::Vector3d> &prev_vertex_colors,
             const std::vector<std::unordered_set<int>> &adjacency_list,
-            double lambda,
+            double lambda_filter,
             bool filter_vertex,
             bool filter_normal,
             bool filter_color) const;

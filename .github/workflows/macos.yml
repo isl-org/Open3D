@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       developer_build:
-        description: 'Set to OFF for Release wheels'
+        description: 'Set to OFF for Release wheels.'
         required: false
         default: 'ON'
 
@@ -66,6 +66,21 @@ jobs:
           ccache -s
           ./util/run_ci.sh
           ccache -s
+      - name: Build Open3D viewer app
+        if: ${{ matrix.BUILD_ML_OPS == 'OFF' }}
+        run: |
+          PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
+          pushd build
+          make -j${NPROC} Open3DViewer
+          pushd bin
+          zip -rv open3d-app-macosx-10_15.zip Open3D.app
+      - name: Upload Open3D viewer app
+        uses: actions/upload-artifact@v2
+        if: ${{ matrix.BUILD_ML_OPS == 'OFF' }}
+        with:
+          name: open3d-app-macosx-10_15
+          path: build/bin/open3d-app-macosx-10_15.zip
+          if-no-files-found: error
 
   build-wheel:
     name: Build wheel
@@ -159,7 +174,7 @@ jobs:
 
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.2.1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
@@ -240,7 +255,7 @@ jobs:
     needs: [build-wheel]
     steps:
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.2.1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}

@@ -172,7 +172,18 @@ void pybind_pointcloud(py::module &m) {
                  "Function to compute the distance from a point to its nearest "
                  "neighbor in the point cloud")
             .def("compute_convex_hull", &PointCloud::ComputeConvexHull,
-                 "Computes the convex hull of the point cloud.")
+                 "joggle_inputs"_a = false, R"doc(
+Computes the convex hull of the point cloud.
+
+Args:
+     joggle_inputs (bool): If True allows the algorithm to add random noise to
+          the points to work around degenerate inputs. This adds the 'QJ' 
+          option to the qhull command.
+
+Returns:
+     tuple(open3d.geometry.TriangleMesh, list): The triangle mesh of the convex
+     hull and the list of point indices that are part of the convex hull.
+)doc")
             .def("hidden_point_removal", &PointCloud::HiddenPointRemoval,
                  "Removes hidden points from a point cloud and returns a mesh "
                  "of the remaining points. Based on Katz et al. 'Direct "
@@ -320,8 +331,6 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
                                     "compute_mahalanobis_distance");
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_nearest_neighbor_distance");
-    docstring::ClassMethodDocInject(m, "PointCloud", "compute_convex_hull",
-                                    {{"input", "The input point cloud."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "hidden_point_removal",
             {{"input", "The input point cloud."},
