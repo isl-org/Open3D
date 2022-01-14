@@ -26,7 +26,7 @@
 
 #ifdef USE_SPNAV
 #include "open3d/visualization/utility/SpaceMouse.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 #include <spnav.h>
 
