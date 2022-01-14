@@ -74,7 +74,7 @@ SimpleDataset::SimpleDataset(const std::string& prefix,
     if (!is_extract_present) {
         const std::string download_file_path = DownloadFromURL(
                 urls, md5,
-                Dataset::GetDownloadDir(/*relative_to_data_root*/ true),
+                Dataset::GetDownloadDir(/*relative_to_data_root =*/true),
                 data_root_);
 
         // Extract / Copy data.

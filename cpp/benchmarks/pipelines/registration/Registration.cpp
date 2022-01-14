@@ -30,12 +30,11 @@
 
 #include <Eigen/Eigen>
 
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
-// #include "open3d/utility/DataManager.h"
-#include "open3d/data/Dataset.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {

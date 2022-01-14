@@ -33,7 +33,6 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
-#include "open3d/utility/DataManager.h"
 
 namespace open3d {
 namespace t {

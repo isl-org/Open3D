@@ -36,6 +36,13 @@
 namespace open3d {
 namespace tests {
 
+static t::geometry::PointCloud CreateTPCDFromFile(
+        const std::string& fname,
+        const core::Device& device = core::Device("CPU:0")) {
+    auto pcd = io::CreatePointCloudFromFile(fname);
+    return t::geometry::PointCloud::FromLegacy(*pcd, core::Float32, device);
+}
+
 class ControlGridPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(ControlGrid,
                          ControlGridPermuteDevices,
@@ -47,9 +54,8 @@ TEST_P(ControlGridPermuteDevices, Touch) {
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
     data::dataset::SamplePCDFragments pcd_fragments;
-    t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(pcd_fragments.path_to_fragments_[0], pcd);
-    pcd = pcd.To(device);
+    t::geometry::PointCloud pcd =
+            CreateTPCDFromFile(pcd_fragments.path_to_fragments_[0], device);
 
     cgrid.Touch(pcd);
 
@@ -61,9 +67,8 @@ TEST_P(ControlGridPermuteDevices, Deform) {
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
     data::dataset::SamplePCDFragments pcd_fragments;
-    t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(pcd_fragments.path_to_fragments_[0], pcd);
-    pcd = pcd.To(device);
+    t::geometry::PointCloud pcd =
+            CreateTPCDFromFile(pcd_fragments.path_to_fragments_[0], device);
 
     cgrid.Touch(pcd);
     cgrid.Compactify();
@@ -82,9 +87,8 @@ TEST_P(ControlGridPermuteDevices, Regularizer) {
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
     data::dataset::SamplePCDFragments pcd_fragments;
-    t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(pcd_fragments.path_to_fragments_[0], pcd);
-    pcd = pcd.To(device);
+    t::geometry::PointCloud pcd =
+            CreateTPCDFromFile(pcd_fragments.path_to_fragments_[0], device);
 
     cgrid.Touch(pcd);
     cgrid.Compactify();
