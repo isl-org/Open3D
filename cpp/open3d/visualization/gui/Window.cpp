@@ -244,6 +244,7 @@ struct Window::Impl {
     Widget* mouse_grabber_widget_ = nullptr;  // only if not ImGUI widget
     Widget* focus_widget_ =
             nullptr;  // only used if ImGUI isn't taking keystrokes
+    bool is_focusing_ = false;
     bool wants_auto_size_ = false;
     bool wants_auto_center_ = false;
     bool needs_layout_ = true;
@@ -450,6 +451,9 @@ const std::vector<std::shared_ptr<Widget>>& Window::GetChildren() const {
     return impl_->children_;
 }
 
+bool Window::CallKeyInterceptor(const KeyEvent &e) {
+    return false;
+}
 void* Window::MakeDrawContextCurrent() const {
     auto old_context = ImGui::GetCurrentContext();
     ImGui::SetCurrentContext(impl_->imgui_.context);
@@ -1045,6 +1049,17 @@ void Window::OnResize() {
     PostRedraw();
 }
 
+#ifdef USE_SPNAV
+void Window::OnSpaceMouseEvent(const open3d::visualization::SpaceMouseEvent& e) {
+    if (impl_->focus_widget_ == nullptr || !impl_->is_focusing_) {
+        return;
+    }
+    impl_->focus_widget_->SpaceMouse(e);
+}
+#endif
+void Window::OnFocus(bool focused) {
+    impl_->is_focusing_ = focused;
+}
 void Window::OnMouseEvent(const MouseEvent& e) {
     MakeDrawContextCurrent();
 
@@ -1174,8 +1189,6 @@ void Window::OnKeyEvent(const KeyEvent& e) {
         this_mod = int(KeyModifier::ALT);
     } else if (e.key == KEY_META) {
         this_mod = int(KeyModifier::META);
-    } else if (e.key == KEY_ESCAPE) {
-        Close();
     }
 
     if (e.type == KeyEvent::UP) {
@@ -1192,8 +1205,12 @@ void Window::OnKeyEvent(const KeyEvent& e) {
 
     // If an ImGUI widget is not getting keystrokes, we can send them to
     // non-ImGUI widgets
-    if (ImGui::GetCurrentContext()->ActiveId == 0 && impl_->focus_widget_) {
-        impl_->focus_widget_->Key(e);
+    if (ImGui::GetCurrentContext()->ActiveId == 0) {
+        if (!CallKeyInterceptor(e)) {
+            if (impl_->focus_widget_) {
+                impl_->focus_widget_->Key(e);
+            }
+        }
     }
 
     RestoreDrawContext(old_context);

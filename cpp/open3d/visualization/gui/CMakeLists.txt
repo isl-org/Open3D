@@ -21,6 +21,7 @@ target_sources(GUI PRIVATE
     Label3D.cpp
     Layout.cpp
     ListView.cpp
+    MultiSelectListView.cpp
     Menu.cpp
     MenuImgui.cpp
     NumberEdit.cpp
@@ -40,6 +41,7 @@ target_sources(GUI PRIVATE
     VectorEdit.cpp
     Widget.cpp
     WidgetProxy.cpp
+    WidgetStack.cpp
     Window.cpp
 )
 

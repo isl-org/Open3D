@@ -207,6 +207,7 @@ GLFWWindowSystem::OSWindow GLFWWindowSystem::CreateOSWindow(Window* o3d_window,
     glfwSetCharCallback(glfw_window, CharCallback);
     glfwSetDropCallback(glfw_window, DragDropCallback);
     glfwSetWindowCloseCallback(glfw_window, CloseCallback);
+    glfwSetWindowFocusCallback(glfw_window, FocusCallback);
 
     return glfw_window;
 }
@@ -535,6 +536,11 @@ void GLFWWindowSystem::DragDropCallback(GLFWwindow* window,
 void GLFWWindowSystem::CloseCallback(GLFWwindow* window) {
     Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
     w->Close();
+}
+
+void GLFWWindowSystem::FocusCallback(GLFWwindow* window, int focused) {
+    Window* w = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    w->OnFocus(focused == GLFW_TRUE);
 }
 
 void* GLFWWindowSystem::GetNativeDrawable(OSWindow w) {

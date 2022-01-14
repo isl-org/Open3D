@@ -39,6 +39,9 @@
 
 namespace open3d {
 namespace visualization {
+#ifdef USE_SPNAV
+struct SpaceMouseEvent;
+#endif
 namespace gui {
 
 class Dialog;
@@ -192,15 +195,19 @@ protected:
     LayoutContext GetLayoutContext();
 
     const std::vector<std::shared_ptr<Widget>>& GetChildren() const;
-
+    virtual bool CallKeyInterceptor(const KeyEvent &e);
 public:
     // these are intended for internal delivery of events
     void OnDraw();
     void OnResize();
     void OnMouseEvent(const MouseEvent& e);
+#ifdef USE_SPNAV
+    void OnSpaceMouseEvent(const open3d::visualization::SpaceMouseEvent& e);
+#endif
     void OnKeyEvent(const KeyEvent& e);
     void OnTextInput(const TextInputEvent& e);
     void OnTickEvent(const TickEvent& e);
+    void OnFocus(bool focused);
 
     WindowSystem::OSWindow GetOSWindow() const;
 

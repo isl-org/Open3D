@@ -44,6 +44,7 @@
 #include "open3d/visualization/gui/Label3D.h"
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/ListView.h"
+#include "open3d/visualization/gui/MultiSelectListView.h"
 #include "open3d/visualization/gui/NumberEdit.h"
 #include "open3d/visualization/gui/ProgressBar.h"
 #include "open3d/visualization/gui/SceneWidget.h"
@@ -57,6 +58,7 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/gui/Widget.h"
 #include "open3d/visualization/gui/WidgetProxy.h"
+#include "open3d/visualization/gui/WidgetStack.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
@@ -108,6 +110,7 @@ public:
         : Super(title, x, y, width, height, flags) {}
 
     std::function<void(const LayoutContext &)> on_layout_;
+    void SetOnKey(std::function<bool(const KeyEvent &)> f) { on_key_ = f; }
 
 protected:
     void Layout(const LayoutContext &context) {
@@ -122,6 +125,17 @@ protected:
             Super::Layout(context);
         }
     }
+
+    bool CallKeyInterceptor(const KeyEvent &e) override {
+        if (on_key_) {
+            return on_key_(e);
+        } else {
+            return false;
+        }
+    }
+
+private:
+    std::function<bool(const KeyEvent &)> on_key_;
 };
 
 // atexit: Filament crashes if the engine was not destroyed before exit().
@@ -444,6 +458,11 @@ void pybind_gui_classes(py::module &m) {
                     "and device pixels (read-only)")
             .def_property_readonly("is_visible", &PyWindow::IsVisible,
                                    "True if window is visible (read-only)")
+            .def("set_on_key", &PyWindow::SetOnKey,
+                 "Sets a callback for key events. This callback is passed "
+                 "a KeyEvent object. The callback must return "
+                 "True to stop more dispatching or False to dispatch"
+                 "to focused widget")
             .def("show", &PyWindow::Show, "Shows or hides the window")
             .def("close", &PyWindow::Close,
                  "Closes the window and destroys it, unless an on_close "
@@ -621,6 +640,21 @@ void pybind_gui_classes(py::module &m) {
             .def_readwrite("width", &Size::width)
             .def_readwrite("height", &Size::height);
 
+    class WidgetContainer {
+    public:
+        WidgetContainer() = default;
+        WidgetContainer(std::shared_ptr<Widget> widget) {widget_ = widget; }
+        ~WidgetContainer() = default;
+        void Set(std::shared_ptr<Widget> widget) { widget_ = widget;}
+        void Clear() { widget_.reset(); }
+    private:
+        std::shared_ptr<Widget> widget_;
+    };
+
+    py::class_<WidgetContainer, std::shared_ptr<WidgetContainer>> container(m, "WidgetContainer", "Stores shared ptr of widget");
+    container.def(py::init<>())
+            .def("clear", &WidgetContainer::Clear, "Clear widget");
+
     // ---- Widget ----
     // The holder for Widget and all derived classes is UnownedPointer because
     // a Widget may own Filament resources, so we cannot have Python holding
@@ -670,7 +704,9 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "add_child",
                     [](Widget &w, UnownedPointer<Widget> child) {
-                        w.AddChild(TakeOwnership<Widget>(child));
+                        auto sp_child = TakeOwnership<Widget>(child);
+                        w.AddChild(sp_child);
+                        return std::make_shared<WidgetContainer>(sp_child);
                     },
                     "Adds a child widget")
             .def("get_children", &Widget::GetChildren,
@@ -726,8 +762,10 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def(
                     "set_widget",
-                    [](WidgetProxy &w, UnownedPointer<Widget> proxy) {
-                        w.SetWidget(TakeOwnership<Widget>(proxy));
+                    [](WidgetProxy &w, UnownedPointer<Widget> proxy) -> std::shared_ptr<WidgetContainer> {
+                        auto sp_child = TakeOwnership<Widget>(proxy);
+                        w.SetWidget(sp_child);
+                        return std::make_shared<WidgetContainer>(sp_child);
                     },
                     "set a new widget to be delegated by this one."
                     " After set_widget, the previously delegated widget ,"
@@ -741,6 +779,24 @@ void pybind_gui_classes(py::module &m) {
                  "return instance of current delegated widget set by "
                  "set_widget. An empty pointer will be returned "
                  "if there is none.");
+    // ---- WidgetStack ----
+    py::class_<WidgetStack, UnownedPointer<WidgetStack>, WidgetProxy> widgetStack(
+            m, "WidgetStack", "WidgetStack");
+    widgetStack.def(py::init<>(),
+                    "Creates a widget proxy")
+            .def("__repr__",
+                 [](const WidgetStack &c) {
+                   std::stringstream s;
+                   s << "Stack (" << c.GetFrame().x << ", "
+                     << c.GetFrame().y << "), " << c.GetFrame().width << " x "
+                     << c.GetFrame().height;
+                   return s.str();
+                 })
+            .def(
+                    "pop_widget", &WidgetStack::PopWidget,
+                    "pop the latest widget set to stack by set_widget")
+            .def( "set_on_top", &WidgetStack::SetOnTop,
+                  "Callback(widget) called while a widget becomes the top one of stack");
     // ---- Button ----
     py::class_<Button, UnownedPointer<Button>, Widget> button(m, "Button",
                                                               "Button");
@@ -762,6 +818,11 @@ void pybind_gui_classes(py::module &m) {
             .def_property(
                     "is_on", &Button::GetIsOn, &Button::SetOn,
                     "True if the button is toggleable and in the on state")
+            .def_property(
+                    "min_width", &Button::GetMinWidth, &Button::SetMinWidth,
+                    "Minimum width of button, -1 if never set, width >= 10000"
+                    "indicates as width as possible."
+                    )
             // It is not possible to overload properties. But we want users
             // to be able to say "o.padding = 1.4" or "o.padding = 1",
             // and float and int are different types. Fortunately, we want
@@ -1026,6 +1087,30 @@ void pybind_gui_classes(py::module &m) {
                                    "The text of the currently selected item")
             .def("set_on_selection_changed", &ListView::SetOnValueChanged,
                  "Calls f(new_val, is_double_click) when user changes "
+                 "selection");
+
+    // ---- MultiSelectListView ----
+    py::class_<MultiSelectListView, UnownedPointer<MultiSelectListView>, Widget> mslistview(
+            m, "MultiSelectListView", "Displays a multiple selected list of text");
+    mslistview.def(py::init<>(), "Creates an empty list")
+            .def("__repr__",
+                 [](const MultiSelectListView &lv) {
+                     std::stringstream s;
+                     s << "Label (" << lv.GetFrame().x << ", "
+                       << lv.GetFrame().y << "), " << lv.GetFrame().width
+                       << " x " << lv.GetFrame().height;
+                     return s.str();
+                 })
+            .def("set_items", &MultiSelectListView::SetItems,
+                 "Sets the list to display the list of items provided")
+            .def("get_selected_indices", &MultiSelectListView::GetSelectedIndices,
+                 "Get indices of all selected items")
+            .def("set_selected_index", &MultiSelectListView::SetSelectedIndex,
+                 "Set selected status of an item")
+            .def("get_value", &MultiSelectListView::GetValue,
+                 "Get text of an item")
+            .def("set_on_selection_changed", &MultiSelectListView::SetOnValueChanged,
+                 "Calls f(index, new_val, is_double_click) when user changes "
                  "selection");
 
     // ---- NumberEdit ----
@@ -1313,7 +1398,9 @@ void pybind_gui_classes(py::module &m) {
                     "add_tab",
                     [](TabControl &tabs, const char *name,
                        UnownedPointer<Widget> panel) {
-                        tabs.AddTab(name, TakeOwnership<Widget>(panel));
+                        auto tab = TakeOwnership<Widget>(panel);
+                        tabs.AddTab(name, tab);
+                        return std::make_shared<WidgetContainer>(tab);
                     },
                     "Adds a tab. The first parameter is the title of the tab, "
                     "and the second parameter is a widget--normally this is a "
@@ -1552,6 +1639,8 @@ void pybind_gui_classes(py::module &m) {
             // TODO: write the proper constructor
             //        .def(py::init([]() { return new Layout1D(Layout1D::VERT,
             //        0, Margins(), {}); }))
+            .def_property("spacing", &Layout1D::GetSpacing,
+                          &Layout1D::SetSpacing, "spacing between items")
             .def("add_fixed", &Layout1D::AddFixed,
                  "Adds a fixed amount of empty space to the layout")
             .def(

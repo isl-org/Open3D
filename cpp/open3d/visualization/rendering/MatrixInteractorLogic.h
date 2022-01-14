@@ -72,7 +72,7 @@ public:
 
     virtual void RotateZWorld(int dx, int dy, const Eigen::Vector3f& forward);
 
-    enum class DragType { MOUSE, WHEEL, TWO_FINGER };
+    enum class DragType { MOUSE, WHEEL, TWO_FINGER, SPACE_MOUSE };
 
     /// Moves the matrix along the forward axis. (This is one type
     /// of zoom.)

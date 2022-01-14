@@ -50,6 +50,9 @@ class Geometry;
 }  // namespace t
 
 namespace visualization {
+#ifdef USE_SPNAV
+struct SpaceMouseEvent;
+#endif
 namespace rendering {
 class Camera;
 class CameraManipulator;
@@ -190,6 +193,9 @@ public:
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;
+#ifdef USE_SPNAV
+    Widget::EventResult SpaceMouse(const ::open3d::visualization::SpaceMouseEvent& e) override;
+#endif
     Widget::EventResult Key(const KeyEvent& e) override;
     Widget::DrawResult Tick(const TickEvent& e) override;
 

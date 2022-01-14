@@ -172,14 +172,20 @@ void pybind_visualizer(py::module &m) {
                             "Visualizer with editing capabilities.");
     py::detail::bind_default_constructor<VisualizerWithEditing>(
             visualizer_edit);
-    visualizer_edit.def(py::init<double, bool, const std::string &>())
+    visualizer_edit.def(py::init<double, const std::string &>())
             .def("__repr__",
                  [](const VisualizerWithEditing &vis) {
                      return std::string("VisualizerWithEditing with name ") +
                             vis.GetWindowName();
                  })
             .def("get_picked_points", &VisualizerWithEditing::GetPickedPoints,
-                 "Function to get picked points");
+                 "Function to get picked points")
+            .def("get_editing_geometry",
+                 &VisualizerWithEditing::GetEditingGeometry,
+                 "Function to get editing geometry")
+            .def("get_discarded_geometry",
+                 &VisualizerWithEditing::GetDiscardedGeometry,
+                 "Function to get the other part of original geometry");
 
     py::class_<VisualizerWithVertexSelection,
                PyVisualizer<VisualizerWithVertexSelection>,

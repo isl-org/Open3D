@@ -51,6 +51,7 @@ struct Button::Impl {
     bool is_toggleable_ = false;
     bool is_on_ = false;
     std::function<void()> on_clicked_;
+    int min_width_ = 0;
 };
 
 Button::Button(const char* title) : impl_(new Button::Impl()) {
@@ -81,6 +82,12 @@ void Button::SetPaddingEm(float horiz_ems, float vert_ems) {
     impl_->padding_vertical_em_ = vert_ems;
 }
 
+void Button::SetMinWidth(int width) {
+    impl_->min_width_ = width;
+}
+int Button::GetMinWidth() {
+    return impl_->min_width_;
+}
 bool Button::GetIsToggleable() const { return impl_->is_toggleable_; }
 
 void Button::SetToggleable(bool toggles) { impl_->is_toggleable_ = toggles; }
@@ -102,9 +109,10 @@ Size Button::CalcPreferredSize(const LayoutContext& context,
     auto em = float(context.theme.font_size);
     auto padding_horiz = int(std::ceil(impl_->padding_horizontal_em_ * em));
     auto padding_vert = int(std::ceil(impl_->padding_vertical_em_ * em));
+    Size ret;
     if (impl_->image_) {
         auto size = impl_->image_->CalcPreferredSize(context, constraints);
-        return Size(size.width + 2 * padding_horiz,
+        ret = Size(size.width + 2 * padding_horiz,
                     size.height + 2 * padding_vert);
     } else {
         auto font = ImGui::GetFont();
@@ -123,12 +131,14 @@ Size Button::CalcPreferredSize(const LayoutContext& context,
         // ImGUI will position the text so that the descender is cut off,
         // because it is assuming that it gets a little extra on the bottom.
         // This looks really bad...)
-        return Size(
+        ret = Size(
                 int(std::ceil(size.x + 2.0f + imguiVertPadding)) +
                         2 * padding_horiz,
                 int(std::ceil(ImGui::GetTextLineHeight() + imguiVertPadding)) +
                         2 * padding_vert);
     }
+    ret.width = std::max(ret.width, impl_->min_width_);
+    return ret;
 }
 
 Widget::DrawResult Button::Draw(const DrawContext& context) {

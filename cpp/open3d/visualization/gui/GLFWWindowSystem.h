@@ -105,6 +105,7 @@ private:
     static void CharCallback(GLFWwindow* window, unsigned int utf32char);
     static void DragDropCallback(GLFWwindow*, int count, const char* paths[]);
     static void CloseCallback(GLFWwindow* window);
+    static void FocusCallback(GLFWwindow* window, int focused);
 };
 
 }  // namespace gui

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,53 +26,42 @@
 
 #pragma once
 
-#include "open3d/visualization/gui/Widget.h"
-
 #include <functional>
+#include <string>
 
-#include "open3d/visualization/gui/UIImage.h"
+#include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
 namespace visualization {
 namespace gui {
 
-class Button : public Widget {
+class MultiSelectListView : public Widget {
+    using Super = Widget;
+
 public:
-    explicit Button(const char* title);
-    explicit Button(std::shared_ptr<UIImage> image);
-    ~Button();
+    MultiSelectListView();
+    virtual ~MultiSelectListView();
 
-    /// Returns the text of the button. If the button is an image, will return
-    /// "".
-    const char* GetText() const;
-    /// Sets the text of the button. Do not call if this is an image button.
-    void SetText(const char* text);
+    void SetItems(const std::vector<std::string>& items);
 
-    /// Returns the padding, in units of ems
-    float GetHorizontalPaddingEm() const;
-    float GetVerticalPaddingEm() const;
-    /// Sets the padding, in units of ems. Note that for text buttons, a
-    /// padding of (0, 0) will not actually give a padding of 0, there will
-    /// be a small padding because having zero padding looks horrible and
-    /// because this way a vertical padding of zero is exactly the same
-    /// size as a text row, which means the button is the same size as the
-    /// the other text-based widgets, so it will look nice with them.
-    void SetPaddingEm(float horiz_ems, float vert_ems);
-    void SetMinWidth(int width);
-    int GetMinWidth();
-
-    bool GetIsToggleable() const;
-    void SetToggleable(bool toggles);
-
-    bool GetIsOn() const;
-    void SetOn(bool is_on);
+    /// Returns the currently selected item in the list.
+    std::vector<int> GetSelectedIndices() const;
+    /// Returns the value of the currently selected item in the list.
+    const char * GetValue(int index) const;
+    /// Selects the indicated row of the list. Does not call onValueChanged.
+    void SetSelectedIndex(int index, bool selected);
 
     Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;
 
+    Size CalcMinimumSize(const LayoutContext& context) const override;
+
     DrawResult Draw(const DrawContext& context) override;
 
-    void SetOnClicked(std::function<void()> on_clicked);
+    /// Calls onValueChanged(const char *selectedText, bool isDoubleClick)
+    /// when the list selection changes because of user action.
+    void SetOnValueChanged(
+            std::function<void(int, const char*, bool)> on_value_changed);
 
 private:
     struct Impl;

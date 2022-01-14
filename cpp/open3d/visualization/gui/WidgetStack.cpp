@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,29 +24,42 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/visualizer/GuiWidgets.h"
+#include "WidgetStack.h"
 
-#include "open3d/visualization/gui/Theme.h"
+#include <stack>
 
 namespace open3d {
 namespace visualization {
+namespace gui {
+struct WidgetStack::Impl {
+    std::stack<std::shared_ptr<Widget>> widgets_;
+    std::function<void(std::shared_ptr<Widget>)> on_top_callback_;
+};
 
-SmallButton::SmallButton(const char *title) : gui::Button(title) {}
+WidgetStack::WidgetStack() : impl_(new WidgetStack::Impl()) {}
+WidgetStack::~WidgetStack() {}
 
-gui::Size SmallButton::CalcPreferredSize(const gui::LayoutContext &context,
-                                         const Constraints &constraints) const {
-    auto em = context.theme.font_size;
-    auto size = Super::CalcPreferredSize(context, constraints);
-    size.height = int(std::round(1.2 * em));
-    if (size.width < DIM_GROW) {
-        size.width -= em;
+void WidgetStack::SetWidget(std::shared_ptr<Widget> widget) {
+    impl_->widgets_.push(widget);
+    WidgetProxy::SetWidget(widget);
+}
+std::shared_ptr<Widget> WidgetStack::PopWidget() {
+    std::shared_ptr<Widget> ret;
+    if (!impl_->widgets_.empty()) {
+        ret = impl_->widgets_.top();
+        impl_->widgets_.pop();
+        if (!impl_->widgets_.empty()) {
+            WidgetProxy::SetWidget(impl_->widgets_.top());
+        } else {
+            WidgetProxy::SetWidget(nullptr);
+        }
     }
-    return size;
+    return ret;
+}
+void WidgetStack::SetOnTop(std::function<void(std::shared_ptr<Widget>)> onTopCallback) {
+    impl_->on_top_callback_ = onTopCallback;
 }
 
-SmallToggleButton::SmallToggleButton(const char *title) : SmallButton(title) {
-    SetToggleable(true);
-}
-
+}  // namespace gui
 }  // namespace visualization
 }  // namespace open3d

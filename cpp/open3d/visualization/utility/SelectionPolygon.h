@@ -71,6 +71,10 @@ public:
             const geometry::PointCloud &input, const ViewControl &view);
     std::shared_ptr<geometry::TriangleMesh> CropTriangleMesh(
             const geometry::TriangleMesh &input, const ViewControl &view);
+    std::vector<size_t> CropPointCloudIndex(const geometry::PointCloud &input,
+                                            const ViewControl &view);
+    std::vector<size_t> CropTriangleMeshIndex(
+            const geometry::TriangleMesh &input, const ViewControl &view);
     std::shared_ptr<SelectionPolygonVolume> CreateSelectionPolygonVolume(
             const ViewControl &view);
 

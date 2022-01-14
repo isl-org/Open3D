@@ -39,6 +39,7 @@
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/visualizer/GuiSettingsModel.h"
 #include "open3d/visualization/visualizer/GuiWidgets.h"
+#include "open3d/visualization/utility/SpaceMouse.h"
 
 namespace open3d {
 namespace visualization {
