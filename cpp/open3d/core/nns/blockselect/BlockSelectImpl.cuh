@@ -63,7 +63,9 @@
             int dim, int num_points, cudaStream_t stream) {                    \
         auto grid = dim3(num_points);                                          \
                                                                                \
-        constexpr int kBlockSelectNumThreads = (WARP_Q <= 1024) ? 128 : 64;    \
+        constexpr int kBlockSelectNumThreads =                                 \
+                (WARP_Q <= 1024) ? 128 * 4 / sizeof(TYPE)                      \
+                                 : 64 * 4 / sizeof(TYPE);                      \
         auto block = dim3(kBlockSelectNumThreads);                             \
                                                                                \
         OPEN3D_ASSERT(k <= WARP_Q);                                            \

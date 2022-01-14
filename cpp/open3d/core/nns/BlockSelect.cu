@@ -269,10 +269,10 @@ BLOCK_SELECT_DECL(double, int64_t, true, 64);
 BLOCK_SELECT_DECL(double, int64_t, true, 128);
 BLOCK_SELECT_DECL(double, int64_t, true, 256);
 BLOCK_SELECT_DECL(double, int64_t, true, 512);
-BLOCK_SELECT_DECL(double, int64_t, true, 1024);
-#if GPU_MAX_SELECTION_K >= 2048
-BLOCK_SELECT_DECL(double, int64_t, true, 2048);
-#endif
+// BLOCK_SELECT_DECL(double, int64_t, true, 1024);
+// #if GPU_MAX_SELECTION_K >= 2048
+// BLOCK_SELECT_DECL(double, int64_t, true, 2048);
+// #endif
 
 BLOCK_SELECT_DECL(double, int64_t, false, 1);
 BLOCK_SELECT_DECL(double, int64_t, false, 32);
@@ -280,10 +280,10 @@ BLOCK_SELECT_DECL(double, int64_t, false, 64);
 BLOCK_SELECT_DECL(double, int64_t, false, 128);
 BLOCK_SELECT_DECL(double, int64_t, false, 256);
 BLOCK_SELECT_DECL(double, int64_t, false, 512);
-BLOCK_SELECT_DECL(double, int64_t, false, 1024);
-#if GPU_MAX_SELECTION_K >= 2048
-BLOCK_SELECT_DECL(double, int64_t, false, 2048);
-#endif
+// BLOCK_SELECT_DECL(double, int64_t, false, 1024);
+// #if GPU_MAX_SELECTION_K >= 2048
+// BLOCK_SELECT_DECL(double, int64_t, false, 2048);
+// #endif
 void runBlockSelectPair(double* inK,
                         int64_t* inV,
                         double* outK,
@@ -308,13 +308,14 @@ void runBlockSelectPair(double* inK,
             BLOCK_SELECT_PAIR_CALL(double, int64_t, true, 256);
         } else if (k <= 512) {
             BLOCK_SELECT_PAIR_CALL(double, int64_t, true, 512);
-        } else if (k <= 1024) {
-            BLOCK_SELECT_PAIR_CALL(double, int64_t, true, 1024);
-#if GPU_MAX_SELECTION_K >= 2048
-        } else if (k <= 2048) {
-            BLOCK_SELECT_PAIR_CALL(double, int64_t, true, 2048);
-#endif
         }
+        //         else if (k <= 1024) {
+        //             BLOCK_SELECT_PAIR_CALL(double, int64_t, true, 1024);
+        // #if GPU_MAX_SELECTION_K >= 2048
+        //         } else if (k <= 2048) {
+        //             BLOCK_SELECT_PAIR_CALL(double, int64_t, true, 2048);
+        // #endif
+        //         }
     } else {
         if (k == 1) {
             BLOCK_SELECT_PAIR_CALL(double, int64_t, false, 1);
@@ -328,13 +329,14 @@ void runBlockSelectPair(double* inK,
             BLOCK_SELECT_PAIR_CALL(double, int64_t, false, 256);
         } else if (k <= 512) {
             BLOCK_SELECT_PAIR_CALL(double, int64_t, false, 512);
-        } else if (k <= 1024) {
-            BLOCK_SELECT_PAIR_CALL(double, int64_t, false, 1024);
-#if GPU_MAX_SELECTION_K >= 2048
-        } else if (k <= 2048) {
-            BLOCK_SELECT_PAIR_CALL(double, int64_t, false, 2048);
-#endif
         }
+        //         else if (k <= 1024) {
+        //             BLOCK_SELECT_PAIR_CALL(double, int64_t, false, 1024);
+        // #if GPU_MAX_SELECTION_K >= 2048
+        //         } else if (k <= 2048) {
+        //             BLOCK_SELECT_PAIR_CALL(double, int64_t, false, 2048);
+        // #endif
+        //         }
     }
 }
 
