@@ -26,7 +26,7 @@ else()
         string(APPEND lib_dir /x86_64)
     else() # Linux
         set(FILAMENT_URL https://github.com/isl-org/open3d_downloads/releases/download/filament/filament-v1.15.1-linux.tgz)
-        set(FILAMENT_SHA256 005d6ea95b2f84cb5bbdb1f3882ea7be775bbac95c7656360489aa20ada6ec79)
+        set(FILAMENT_SHA256 5e77765885ff22a9528cdd8ac262d53c7b2e9f7a3381f7b39ee7bf8b6ef76e9b)
         string(APPEND lib_dir /x86_64)
     endif()
 
