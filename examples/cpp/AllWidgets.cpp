@@ -27,8 +27,17 @@
 #include "open3d/Open3D.h"
 
 using namespace open3d;
+using namespace open3d::visualization;
 
-int main(int argc, char **argv) {
-    utility::LogInfo("Hello world!");
+class AllWidgetsApp {
+public:
+    AllWidgetsApp() { gui::Application::GetInstance(); }
+
+    void Run() { utility::LogInfo("AllWidgetsApp::Run"); }
+};
+
+int main(int argc, char** argv) {
+    auto& app = gui::Application::GetInstance();
+    app.Run();
     return 0;
 }
