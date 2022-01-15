@@ -101,7 +101,6 @@ RUN apt-get update -y && apt-get install -y \
 RUN git clone --depth=1 https://github.com/pyenv/pyenv.git /root/.pyenv
 ENV PYENV_ROOT="/root/.pyenv"
 ENV PATH="${PYENV_ROOT}/bin:${PYENV_ROOT}/shims:${PATH}"
-RUN git clone https://github.com/momo-lab/pyenv-install-latest.git "$(pyenv root)"/plugins/pyenv-install-latest
 
 # CMake
 # PWD is /, cmake will be installed to /root/${CMAKE_VER}/bin/cmake
@@ -123,8 +122,8 @@ COPY . /root/Open3D
 WORKDIR /root/Open3D
 
 # Build Python wheel
-RUN pyenv install-latest ${PYTHON_VERSION}
-RUN pyenv global $(pyenv install-latest --print ${PYTHON_VERSION})
+RUN pyenv install $(pyenv install --list | sort -r --version-sort | grep -m1 "^ *${PYTHON_VERSION}\.")
+RUN pyenv local $(pyenv versions | grep ${PYTHON_VERSION})
 RUN which python \
  && python --version \
  && python -m pip install -U \
