@@ -54,9 +54,9 @@ if __name__ == '__main__':
         '--distance_multiplier',
         type=float,
         default=1.5,
-        help=
-        'multipler used to compute distance threshold between correspondences. Threshold is computed by voxel_size * distance_multiplier.'
-    )
+        help='multipler used to compute distance threshold'
+        'between correspondences.'
+        'Threshold is computed by voxel_size * distance_multiplier.')
     parser.add_argument('--max_iterations',
                         type=int,
                         default=64,
