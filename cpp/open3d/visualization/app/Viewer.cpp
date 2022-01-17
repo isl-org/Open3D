@@ -34,17 +34,13 @@
 #include "open3d/visualization/gui/Native.h"
 #include "open3d/visualization/visualizer/GuiVisualizer.h"
 
-using namespace open3d;
-using namespace open3d::geometry;
-using namespace open3d::visualization;
-
-namespace {
-static const std::string gUsage = "Usage: Open3DViewer [meshfile|pointcloud]";
-}  // namespace
-
 namespace open3d {
 namespace visualization {
 namespace app {
+
+static const std::string usage = "usage: ./Open3D [meshfile|pointcloud]";
+static const int width = 1280;
+static const int height = 960;
 
 void RunViewer(int argc, const char *argv[]) {
     std::function<void(const std::string &)> print_fcn =
@@ -52,22 +48,18 @@ void RunViewer(int argc, const char *argv[]) {
     utility::Logger::GetInstance().ResetPrintFunction();
 
     const char *path = nullptr;
-    if (argc > 1) {
+    if (argc == 2) {
         path = argv[1];
-        if (argc > 2) {
-            utility::LogWarning(gUsage.c_str());
-        }
+    } else if (argc > 2) {
+        utility::LogWarning(usage.c_str());
     }
 
     auto &app = gui::Application::GetInstance();
     app.Initialize(argc, argv);
 
-    const int width = 1280;
-    const int height = 960;
     auto vis = std::make_shared<open3d::visualization::GuiVisualizer>(
             "Open3D", width, height);
-    bool is_path_valid = (path && path[0] != '\0');
-    if (is_path_valid) {
+    if (path && path[0] != '\0') {
         vis->LoadGeometry(path);
     }
     gui::Application::GetInstance().AddWindow(vis);

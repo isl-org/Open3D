@@ -46,10 +46,12 @@ static void pybind_app_functions(py::module &m) {
             },
             "args"_a);
 
-    docstring::FunctionDocInject(m, "run_viewer",
-                                 {{"args",
-                                   "Command line arguments containing the "
-                                   "filename of the geometry to visualize."}});
+    docstring::FunctionDocInject(
+            m, "run_viewer",
+            {{"args",
+              "List of arguments containing the path of the calling program "
+              "(which should be in the same directory as the gui resoruces "
+              "folder) and the optional path of the geometry to visualize."}});
 }
 
 void pybind_app(py::module &m) {
