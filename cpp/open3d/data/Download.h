@@ -36,10 +36,6 @@ namespace data {
 /// \param file_path Path to the file.
 std::string GetMD5(const std::string& file_path);
 
-/// \brief Computes MD5 Hash for the given file.
-/// \param file_path Path to the file.
-std::string GetMD5(const std::string& file_path);
-
 /// \brief Download a file from URL.
 ///
 /// \param url File URL. The saved file name will be the last part of the URL.
