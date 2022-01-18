@@ -28,6 +28,7 @@
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/Image.h"
+#include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
@@ -1331,7 +1332,15 @@ void pybind_gui_classes(py::module &m) {
                  "Add a 3D text label to the scene. The label will be anchored "
                  "at the specified 3D point.")
             .def("remove_3d_label", &PySceneWidget::RemoveLabel,
-                 "Removes the 3D text label from the scene");
+                 "Removes the 3D text label from the scene")
+            .def("start_edit",
+                 &PySceneWidget::StartEdit,
+                 "Start editing")
+            .def("stop_edit", &PySceneWidget::StopEdit,
+                 "Stop editing")
+            .def("crop_selected", &PySceneWidget::CropSelected,
+                 "Crop selected and return selected + left point cloud")
+            ;
 
     // ---- Slider ----
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(

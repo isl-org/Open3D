@@ -190,6 +190,29 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
     return *this;
 }
 
+std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<PointCloud>>
+PointCloud::Split(const std::vector<size_t> &indices) const {
+    std::shared_ptr<PointCloud> sel = std::make_shared<PointCloud>();
+    std::shared_ptr<PointCloud> left = std::make_shared<PointCloud>();
+    bool has_normals = HasNormals();
+    bool has_colors = HasColors();
+    bool has_covariance = HasCovariances();
+
+    std::vector<bool> mask = std::vector<bool>(points_.size(), false);
+    for (size_t i : indices) {
+        mask[i] = true;
+    }
+
+    for (size_t i = 0; i < points_.size(); i++) {
+        auto &output = mask[i] ? sel : left;
+        output->points_.push_back(points_[i]);
+        if (has_normals) output->normals_.push_back(normals_[i]);
+        if (has_colors) output->colors_.push_back(colors_[i]);
+        if (has_covariance) output->covariances_.push_back(covariances_[i]);
+    }
+    return std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<PointCloud>>
+            (sel, left);
+}
 std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
         const std::vector<size_t> &indices, bool invert /* = false */) const {
     auto output = std::make_shared<PointCloud>();

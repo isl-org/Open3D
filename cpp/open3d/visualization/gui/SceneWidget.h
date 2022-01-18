@@ -41,6 +41,7 @@ class PinholeCameraIntrinsic;
 namespace geometry {
 class AxisAlignedBoundingBox;
 class Geometry3D;
+class PointCloud;
 }  // namespace geometry
 
 namespace t {
@@ -187,6 +188,12 @@ public:
     enum class PolygonPickAction { CANCEL = 0, SELECT };
     void DoPolygonPick(PolygonPickAction action);
 
+    void StartEdit(std::shared_ptr<const geometry::PointCloud> cloud);
+    void StopEdit();
+    // crop selected
+    // the returned tuple<0> is selected point cloud, tuple<1> is left
+    // if tuple<0> is nullptr, and tuple<1> is nullptr, the selection is empty
+    std::tuple<std::shared_ptr<geometry::PointCloud>, std::shared_ptr<geometry::PointCloud>> CropSelected();
     // 3D Labels
     std::shared_ptr<Label3D> AddLabel(const Eigen::Vector3f& pos,
                                       const char* text);
