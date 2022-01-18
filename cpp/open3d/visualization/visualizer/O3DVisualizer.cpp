@@ -301,6 +301,7 @@ struct O3DVisualizer::Impl {
     std::set<std::string> added_names_;
     std::set<std::string> added_groups_;
     std::vector<DrawObject> objects_;
+    std::vector<DrawObject> inspection_objects_;
     std::shared_ptr<O3DVisualizerSelections> selections_;
     bool polygon_selection_unselects_ = false;
     bool selections_need_update_ = true;
@@ -726,7 +727,6 @@ struct O3DVisualizer::Impl {
         grid->AddChild(std::make_shared<Label>("Intensity"));
         grid->AddChild(GiveOwnership(settings.sun_intensity));
 
-
         settings.sun_dir = new VectorEdit();
         settings.sun_dir->SetValue(ui_state_.sun_dir);
         settings.sun_dir->SetOnValueChanged([this](const Eigen::Vector3f &dir) {
@@ -1144,6 +1144,76 @@ struct O3DVisualizer::Impl {
         }
     }
 
+    void CreateInspectionModeMaterial(MaterialRecord &inspect_mat) {
+        if (inspect_mat.shader == "defaultLit") {
+            // Set parameters for 'simple' rendering
+            inspect_mat.base_metallic = 0.f;
+            inspect_mat.base_roughness = 0.1f;
+            inspect_mat.base_reflectance = 0.6f;
+            inspect_mat.base_clearcoat = 0.f;
+            inspect_mat.base_anisotropy = 0.f;
+            inspect_mat.normal_img.reset();
+            inspect_mat.ao_img.reset();
+            inspect_mat.metallic_img.reset();
+            inspect_mat.roughness_img.reset();
+            inspect_mat.reflectance_img.reset();
+            inspect_mat.sRGB_color = false;
+            inspect_mat.sRGB_vertex_color = true;
+        }
+    }
+
+    void UpdateGeometryForInspectionMode(bool enable) {
+        if (enable) {
+            // Copy the objects...
+            for (auto &o : objects_) {
+                scene_->GetScene()->ShowGeometry(o.name, false);
+                inspection_objects_.push_back(o);
+                inspection_objects_.back().name = o.name + "_inspect";
+            }
+            // Add inspection objects to scene
+            for (auto &o : inspection_objects_) {
+                CreateInspectionModeMaterial(o.material);
+                if (o.geometry) {
+                    // Need to compute triangle normals for triangle meshes
+                    if (o.geometry->GetGeometryType() ==
+                        geometry::Geometry::GeometryType::TriangleMesh) {
+                        auto tmesh = std::dynamic_pointer_cast<
+                                geometry::TriangleMesh>(o.geometry);
+                        if (tmesh->HasVertexNormals()) {
+                            auto new_mesh =
+                                    std::make_shared<geometry::TriangleMesh>(
+                                            tmesh->vertices_,
+                                            tmesh->triangles_);
+                            new_mesh->triangle_uvs_ = tmesh->triangle_uvs_;
+                            if (!tmesh->HasTriangleNormals()) {
+                                new_mesh->ComputeTriangleNormals();
+                            } else {
+                                new_mesh->triangle_normals_ =
+                                        tmesh->triangle_normals_;
+                            }
+                            o.geometry = new_mesh;
+                        }
+                    }
+                    scene_->GetScene()->AddGeometry(o.name, o.geometry.get(),
+                                                    o.material);
+                } else if (o.tgeometry) {
+                    scene_->GetScene()->AddGeometry(o.name, o.tgeometry.get(),
+                                                    o.material);
+                }
+            }
+        } else {
+            // Remove inspection geometries
+            for (auto &o : inspection_objects_) {
+                scene_->GetScene()->RemoveGeometry(o.name);
+            }
+            inspection_objects_.clear();
+            // Show original geometries
+            for (auto &o : objects_) {
+                scene_->GetScene()->ShowGeometry(o.name, true);
+            }
+        }
+    }
+
     void Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
         scene_->AddLabel(pos, text);
     }
@@ -1253,11 +1323,65 @@ struct O3DVisualizer::Impl {
         }
     }
 
+    void EnableSunFollowsCamera(bool enable) {
+        auto low_scene = scene_->GetScene()->GetScene();
+        if (enable) {
+            scene_->SetOnCameraChanged([this](rendering::Camera *cam) {
+                auto low_scene = scene_->GetScene()->GetScene();
+                low_scene->SetSunLightDirection(cam->GetForwardVector());
+            });
+            low_scene->SetSunLightDirection(
+                    scene_->GetScene()->GetCamera()->GetForwardVector());
+            scene_->SetSunInteractorEnabled(false);
+        } else {
+            scene_->SetOnCameraChanged(
+                    std::function<void(rendering::Camera *)>());
+            scene_->SetSunInteractorEnabled(true);
+            low_scene->SetSunLightDirection(ui_state_.sun_dir);
+        }
+    }
+
+    void EnableInspectionRelatedUI(bool enable) {
+        settings.show_skybox->SetEnabled(enable);
+        settings.shader->SetEnabled(enable);
+        settings.lighting->SetEnabled(enable);
+        settings.use_ibl->SetEnabled(enable);
+        settings.ibl_intensity->SetEnabled(enable);
+        settings.ibl_names->SetEnabled(enable);
+        settings.use_sun->SetEnabled(enable);
+        settings.sun_intensity->SetEnabled(enable);
+        settings.sun_dir->SetEnabled(enable);
+        settings.sun_color->SetEnabled(enable);
+    }
+
     void EnableInspectionMode(bool enable) {
-        ShowSkybox(enable);
         auto o3dscene = scene_->GetScene();
-        o3dscene->SetBackground({1.f, 1.f, 1.f, 1.f});
-        utility::LogWarning("Enable inspection mode!");
+        auto view = o3dscene->GetView();
+        auto low_scene = o3dscene->GetScene();
+        if (enable) {
+            // Set lighting environment for inspection
+            o3dscene->SetBackground({1.f, 1.f, 1.f, 1.f});
+            low_scene->ShowSkybox(false);
+            low_scene->EnableIndirectLight(false);
+            low_scene->EnableSunLight(true);
+            low_scene->EnableSunLightShadows(false);
+            low_scene->SetSunLightIntensity(160000.f);
+            view->SetShadowing(false, View::ShadowType::kPCF);
+            view->SetPostProcessing(false);
+            EnableSunFollowsCamera(true);
+            // Update geometry for inspection
+            UpdateGeometryForInspectionMode(true);
+            EnableInspectionRelatedUI(false);
+            // Force screen redraw
+            scene_->ForceRedraw();
+        } else {
+            view->SetPostProcessing(true);
+            view->SetShadowing(true, View::ShadowType::kPCF);
+            EnableSunFollowsCamera(false);
+            UpdateGeometryForInspectionMode(false);
+            EnableInspectionRelatedUI(true);
+            SetUIState(ui_state_);
+        }
     }
 
     void SetPointSize(int px) {

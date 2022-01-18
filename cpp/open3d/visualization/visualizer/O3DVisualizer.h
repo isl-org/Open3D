@@ -186,6 +186,7 @@ public:
     void ShowAxes(bool show);
     void ShowGround(bool show);
     void SetGroundPlane(rendering::Scene::GroundPlane plane);
+    void EnableSunFollowsCamera(bool enable);
     void EnableInspectionMode(bool enable);
     void SetPointSize(int point_size);
     void SetLineWidth(int line_width);
