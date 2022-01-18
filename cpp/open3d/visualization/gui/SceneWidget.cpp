@@ -31,6 +31,7 @@
 #include <Eigen/Geometry>
 #include <set>
 #include <unordered_set>
+#include <chrono>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/BoundingVolume.h"
@@ -52,6 +53,7 @@
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
 #include "open3d/visualization/utility/SpaceMouse.h"
+#include "open3d/geometry/PointCloud.h"
 
 namespace open3d {
 namespace visualization {
@@ -791,6 +793,424 @@ private:
     SceneWidget::MouseInteractor* override_ = nullptr;
 };
 
+// jgq - lego - editor
+// ----------------------------------------------------------------------------
+class Editor {
+public:
+    enum class SelectionType { None, Rectangle, Polygon, Circle};
+    using Target = std::shared_ptr<const geometry::PointCloud>;
+    using CloudPair = std::tuple<
+            std::shared_ptr<geometry::PointCloud>,
+            std::shared_ptr<geometry::PointCloud>>;
+    explicit Editor(rendering::Open3DScene* scene, rendering::Camera* camera) {
+        scene_ = scene;
+        camera_ = camera;
+    }
+    ~Editor() = default;
+
+    void Start(Target target) {
+        Stop();
+        target_ = target;
+    }
+    void Stop() {
+        if(Started()) {
+            target_.reset();
+            SetSelection(SelectionType::None);
+        }
+    }
+    bool Started() { return bool(target_);}
+
+    CloudPair Split() {
+        if (!Started() || type_ == SelectionType::None || selection_.size() < 2) {
+            return CloudPair{nullptr, nullptr};
+        }
+        if (type_ == SelectionType::Polygon && selection_.size() < 3) {
+            return CloudPair{nullptr, nullptr};
+        }
+
+        CloudPair cropped;
+        switch(type_) {
+            case SelectionType::Polygon:
+                cropped = CropPolygon();
+                break;
+            case SelectionType::Rectangle:
+                cropped = CropRectangle();
+                break;
+            case SelectionType::Circle:
+                cropped = CropCircle();
+                break;
+            default:
+                return CloudPair{nullptr, nullptr};
+        }
+        SetSelection(SelectionType::None);
+        return cropped;
+    }
+    bool SetSelection(SelectionType type) {
+        if (type_ != type) {
+            type_ = type;
+            selection_.clear();
+            return true;
+        }
+        return false;
+    }
+#ifdef USE_SPNAV
+    Widget::EventResult SpaceMouse(const SpaceMouseEvent& e) {
+        if(Started()) {
+            return Widget::EventResult::CONSUMED;
+        }
+        return Widget::EventResult::DISCARD;
+    }
+#endif
+    Widget::EventResult Mouse(const MouseEvent& e) {
+        if (!Started()) {
+            return Widget::EventResult::DISCARD;
+        }
+        if (e.type == MouseEvent::Type::BUTTON_DOWN) {
+            if (e.button.button == MouseButton::MIDDLE) {
+                SetSelection(SelectionType::None);
+            } else if(e.button.button == MouseButton::LEFT &&
+                      e.button.count == 1) {
+                bool changed = false;
+                if(e.modifiers == int(KeyModifier::NONE)) {
+                    changed = SetSelection(SelectionType::Rectangle);
+                } else if(e.modifiers == int(KeyModifier::CTRL)) {
+                    changed = SetSelection(SelectionType::Polygon);
+                } else if(e.modifiers == int(KeyModifier::SHIFT)) {
+                    changed = SetSelection(SelectionType::Circle);
+                }
+                if (changed) {
+                    AddPoint(e.x, e.y);
+                } else if (type_ == SelectionType::Polygon) {
+                    AddPoint(e.x, e.y);
+                } else if(type_ == SelectionType::Rectangle ||
+                           type_ == SelectionType::Circle) {
+                    selection_.clear();
+                    AddPoint(e.x, e.y);
+                }
+            } else if(e.button.button == MouseButton::RIGHT &&
+                       e.button.count == 1) {
+                if (type_ == SelectionType::Polygon) {
+                    if (!selection_.empty()) {
+                        selection_.pop_back();
+                    }
+                } else {
+                    SetSelection(SelectionType::None);
+                }
+            }
+        } else if (e.type == MouseEvent::Type::DRAG) {
+            if(type_ == SelectionType::Rectangle ||
+                type_ == SelectionType::Circle) {
+                AddPoint(e.x, e.y);
+            }
+        }
+        return Widget::EventResult::CONSUMED;
+    }
+    Widget::DrawResult Draw(const DrawContext& context, const Rect &frame) {
+        auto col_fill = colorToImguiRGBA(Color(0.5f, 0.0f, 0.5f, 0.5f));
+        auto col_line = colorToImguiRGBA(Color(1.0f, 0.0f, 0.0f, 1.0f));
+        switch (type_) {
+            case SelectionType::None:
+                break;
+            case SelectionType::Rectangle:
+                if (selection_.size() == 2) {
+                    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+                    auto p0 = PointAt(0, frame.x, frame.y);
+                    auto p1 = PointAt(1, frame.x, frame.y);
+                    draw_list->AddRectFilled({p0.x(), p0.y()},
+                                             {p1.x(), p1.y()},
+                                             col_fill);
+                }
+                break;
+            case SelectionType::Polygon:
+                if (selection_.size() >= 2) {
+                    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+                    for (auto i = 0; i < (int)selection_.size(); i++) {
+                        auto p0 = PointAt(i, frame.x, frame.y);
+                        auto p1 = PointAt((i+1)%(int(selection_.size())), frame.x, frame.y);
+                        draw_list->AddLine({float(p0.x()), float(p0.y())},
+                                           {float(p1.x()), float(p1.y())},
+                                           col_line, 2);
+                    }
+                }
+                break;
+            case SelectionType::Circle:
+                if (selection_.size() == 2) {
+                    ImDrawList* draw_list = ImGui::GetWindowDrawList();
+                    auto p0 = PointAt(0, frame.x, frame.y);
+                    auto p1 = PointAt(1, frame.x, frame.y);
+                    auto radius = (p0-p1).norm();
+                    int segs = int(radius * 12 / 20);
+                    draw_list->AddCircleFilled({p0.x(), p0.y()},
+                                               radius, col_fill, segs);
+                }
+                break;
+        }
+        return Widget::DrawResult::NONE;
+    }
+
+private:
+    template <class T>
+    class Seg {
+    public:
+        Seg(const Eigen::Vector2<T> &p0, const Eigen::Vector2<T> &p1)
+            : p0_(p0), p1_(p1){
+        }
+        const Eigen::Vector2<T> &p0_, &p1_;
+        bool cross(const Seg &other) const {
+            auto v0 = other.p0_ - p0_;
+            auto v1 = other.p1_ - p1_;
+            auto vm = p1_ - p0_;
+            return mul(v0, vm) * mul(v1, vm) <= 0;
+        }
+        T mul(const Eigen::Vector2<T> &v0, const Eigen::Vector2<T> &v1) const {
+            return v0.x()*v1.y() - v1.x() * v0.y();
+        }
+        static bool cross(const Seg &s0, const Seg &s1) {
+            return s0.cross(s1) && s1.cross(s0);
+        }
+    };
+    void AddPoint(int x, int y) {
+        if (type_ == SelectionType::None) {
+            return;
+        }
+        if(selection_.empty()) {
+            selection_.emplace_back(x, y);
+            return;
+        }
+        switch(type_) {
+            case SelectionType::Rectangle:
+            case SelectionType::Circle:
+                if (selection_.size() == 1) {
+                    selection_.emplace_back(x, y);
+                } else {
+                    selection_[1] = Eigen::Vector2i(x, y);
+                }
+                break;
+            case SelectionType::Polygon: {
+                Eigen::Vector2i p(x, y);
+                auto segs = selection_.size() - 1;
+                if (segs > 2) {
+                    // check if latest segment is crossing any previous one
+                    Seg<int> s0(selection_[selection_.size()-1], p);
+                    bool cross = false;
+                    for (size_t idx = selection_.size()-2; idx > 0; --idx) {
+                        Seg<int> s1(selection_[idx], selection_[idx-1]);
+                        if (Seg<int>::cross(s0, s1)) {
+                            cross = true;
+                            break;
+                        }
+                    }
+                    if (cross) {
+                        // abandon cross polygon point
+                        break;
+                    }
+                }
+                selection_.push_back(p);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    Eigen::Vector2f PointAt(int i) {
+        return PointAt(i, 0, 0);
+    }
+    Eigen::Vector2f PointAt(int i, int x, int y) {
+        auto &p = selection_[i];
+        return Eigen::Vector2f{float(p.x() + x), float(p.y()+y)};
+    }
+    CloudPair CropPolygon() {
+        auto &input = target_->points_;
+        if (input.size() < 100000) {
+            return CropPolygonNoOmp();
+        }
+        auto fmvp = camera_->GetProjectionMatrix() * camera_->GetViewMatrix();
+        auto mvp = fmvp.cast<double>();
+        auto vp = scene_->GetView()->GetViewport(); // x,y,w,h
+        double half_width = (double)vp[2] * 0.5;
+        double half_height = (double)vp[3] * 0.5;
+        std::vector<Eigen::Vector2d> sels;
+        for (auto &sel : selection_) {
+            sels.emplace_back(sel.x(), vp[3]-sel.y());
+        }
+
+        std::vector<size_t> output_index;
+#pragma omp parallel for schedule(static)  shared(output_index, input, sels, half_width, half_height, mvp)
+        for (size_t k = 0; k < input.size(); k++) {
+            std::vector<double> nodes;
+            const auto &point = input[k];
+            Eigen::Vector4d pos =
+                    mvp * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
+            if (pos(3) != 0.0)  {
+                pos /= pos(3);
+                double x = (pos(0) + 1.0) * half_width;
+                double y = (pos(1) + 1.0) * half_height;
+                for(size_t i = 0; i < sels.size(); i++) {
+                    size_t j = (i + 1) % sels.size();
+                    auto &curr = sels[i];
+                    auto &next = sels[j];
+                    if ((curr(1) < y && next(1) >= y) ||
+                        (next(1) < y && curr(1) >= y)) {
+                        nodes.push_back(curr(0) +
+                                        (y - curr(1)) /
+                                        (next(1) - curr(1)) *
+                                        (next(0) - curr(0)));
+                    }
+                }
+                std::sort(nodes.begin(), nodes.end());
+                auto loc = std::lower_bound(nodes.begin(), nodes.end(), x);
+                if (std::distance(nodes.begin(), loc) % 2 == 1) {
+#pragma omp critical
+                    output_index.push_back(k);
+                }
+            }
+        }
+
+        return target_->Split(output_index);
+    }
+    CloudPair CropPolygonNoOmp() {
+        auto &input = target_->points_;
+        auto fmvp = camera_->GetProjectionMatrix() * camera_->GetViewMatrix();
+        auto mvp = fmvp.cast<double>();
+        auto vp = scene_->GetView()->GetViewport(); // x,y,w,h
+        double half_width = (double)vp[2] * 0.5;
+        double half_height = (double)vp[3] * 0.5;
+        std::vector<Eigen::Vector2d> sels;
+        for (auto &sel : selection_) {
+            sels.emplace_back(sel.x(), vp[3]-sel.y());
+        }
+
+        std::vector<size_t> output_index;
+        size_t k;
+        auto total = input.size();
+        for (k = 0; k < total; k++) {
+            std::vector<double> nodes;
+            const auto &point = input[k];
+            Eigen::Vector4d pos =
+                    mvp * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
+            if (pos(3) != 0.0)  {
+                pos /= pos(3);
+                double x = (pos(0) + 1.0) * half_width;
+                double y = (pos(1) + 1.0) * half_height;
+                for(size_t i = 0; i < sels.size(); i++) {
+                    size_t j = (i + 1) % sels.size();
+                    auto &curr = sels[i];
+                    auto &next = sels[j];
+                    if ((curr(1) < y && next(1) >= y) ||
+                        (next(1) < y && curr(1) >= y)) {
+                        nodes.push_back(curr(0) +
+                                        (y - curr(1)) /
+                                        (next(1) - curr(1)) *
+                                        (next(0) - curr(0)));
+                    }
+                }
+                std::sort(nodes.begin(), nodes.end());
+                auto loc = std::lower_bound(nodes.begin(), nodes.end(), x);
+                if (std::distance(nodes.begin(), loc) % 2 == 1) {
+                    output_index.push_back(k);
+                }
+            }
+        }
+
+        return target_->Split(output_index);
+    }
+    CloudPair CropRectangle() {
+        auto &input = target_->points_;
+        auto fmvp = camera_->GetProjectionMatrix() * camera_->GetViewMatrix();
+        auto mvp = fmvp.cast<double>();
+        auto vp = scene_->GetView()->GetViewport(); // x,y,w,h
+        double half_width = (double)vp[2] * 0.5;
+        double half_height = (double)vp[3] * 0.5;
+        std::vector<Eigen::Vector2d> sels;
+        for (auto &sel : selection_) {
+            sels.emplace_back(sel.x(), vp[3]-sel.y());
+        }
+
+        auto minX = std::min(sels[0].x(), sels[1].x());
+        auto maxX = std::max(sels[0].x(), sels[1].x());
+        auto minY = std::min(sels[0].y(), sels[1].y());
+        auto maxY = std::max(sels[0].y(), sels[1].y());
+        std::vector<size_t> output_index;
+#pragma omp parallel for schedule(static)  shared(output_index, input, sels, half_width, half_height, mvp, minX, minY, maxX, maxY)
+        for (size_t k = 0; k < input.size(); k++) {
+            const auto &point = input[k];
+            Eigen::Vector4d pos =
+                    mvp * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
+            if (pos(3) != 0.0)  {
+                pos /= pos(3);
+                double x = (pos(0) + 1.0) * half_width;
+                double y = (pos(1) + 1.0) * half_height;
+                if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+#pragma omp critical
+                    output_index.push_back(k);
+                }
+            }
+        }
+
+        return target_->Split(output_index);
+    }
+    CloudPair CropCircle() {
+        auto &input = target_->points_;
+        auto fmvp = camera_->GetProjectionMatrix() * camera_->GetViewMatrix();
+        auto mvp = fmvp.cast<double>();
+        auto vp = scene_->GetView()->GetViewport(); // x,y,w,h
+        double half_width = (double)vp[2] * 0.5;
+        double half_height = (double)vp[3] * 0.5;
+        std::vector<Eigen::Vector2d> sels;
+        for (auto &sel : selection_) {
+            sels.emplace_back(sel.x(), vp[3]-sel.y());
+        }
+        auto &center = sels[0];
+        Eigen::Vector2d d{sels[1].x() - center.x(), sels[1].y() - center.y()};
+        auto s = d.squaredNorm();
+        auto radius = d.norm();
+        auto minX = center.x() - radius;
+        auto maxX = center.x() + radius;
+        auto minY = center.y() - radius;
+        auto maxY = center.y() + radius;
+        std::vector<size_t> output_index;
+
+#pragma omp parallel for schedule(static)  shared(output_index, input, sels, half_width, half_height, mvp, minX, minY, maxX, maxY,  center, s)
+        for (size_t k = 0; k < input.size(); k++) {
+            const auto &point = input[k];
+            Eigen::Vector4d pos =
+                    mvp * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
+            if (pos(3) != 0.0)  {
+                pos /= pos(3);
+                double x = (pos(0) + 1.0) * half_width;
+                double y = (pos(1) + 1.0) * half_height;
+                if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+                    Eigen::Vector2d p(x - center.x(), y - center.y());
+                    if(p.squaredNorm() < s) {
+#pragma omp critical
+                        output_index.push_back(k);
+                    }
+                }
+            }
+        }
+
+        return target_->Split(output_index);
+    }
+    uint32_t GetIndexForColor(geometry::Image *image, int x, int y) {
+        uint8_t *rgb = image->PointerAt<uint8_t>(x, y, 0);
+        const unsigned int red = (static_cast<unsigned int>(rgb[0]) << 16);
+        const unsigned int green = (static_cast<unsigned int>(rgb[1]) << 8);
+        const unsigned int blue = (static_cast<unsigned int>(rgb[2]));
+        return (red | green | blue);
+    }
+    // The maximum pickable point is one less than FFFFFF, because that would
+    // be white, which is the color of the background.
+    // static const unsigned int kNoIndex = 0x00ffffff;  // unused, but real
+    static const unsigned int kMeshIndex = 0x00fffffe;
+    static const unsigned int kMaxPickableIndex = 0x00fffffd;
+    inline bool IsValidIndex(uint32_t idx) { return (idx <= kMaxPickableIndex); }
+private:
+    rendering::Open3DScene* scene_;
+    rendering::Camera* camera_;
+    Target target_;
+    std::vector<Eigen::Vector2i> selection_;
+    SelectionType type_ = SelectionType::None;
+};
 // ----------------------------------------------------------------------------
 namespace {
 static int g_next_button_id = 1;
@@ -809,6 +1229,7 @@ struct SceneWidget::Impl {
     SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
     bool scene_caching_enabled_ = false;
     std::vector<Eigen::Vector2i> ui_lines_;
+    std::shared_ptr<Editor> editor_;
     std::unordered_set<std::shared_ptr<Label3D>> labels_3d_;
     struct {
         Eigen::Matrix3d matrix;
@@ -989,6 +1410,7 @@ void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {
                     impl_->ui_lines_ = lines;
                     ForceRedraw();
                 });
+        impl_->editor_ = std::make_shared<Editor>(impl_->scene_.get(), view->GetCamera());
     }
 }
 
@@ -1008,6 +1430,15 @@ void SceneWidget::DoPolygonPick(PolygonPickAction action) {
     };
 }
 
+void SceneWidget::StartEdit(std::shared_ptr<const geometry::PointCloud> cloud) {
+    impl_->editor_->Start(cloud);
+}
+void SceneWidget::StopEdit() {
+    impl_->editor_->Stop();
+}
+std::tuple<std::shared_ptr<geometry::PointCloud>, std::shared_ptr<geometry::PointCloud>> SceneWidget::CropSelected() {
+    return impl_->editor_->Split();
+}
 std::shared_ptr<rendering::Open3DScene> SceneWidget::GetScene() const {
     return impl_->scene_;
 }
@@ -1216,6 +1647,10 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         }
     }
 
+    if (impl_->editor_) {
+        impl_->editor_->Draw(context, f);
+    }
+
     ImGui::End();
 
     return Widget::DrawResult::NONE;
@@ -1224,7 +1659,9 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
 #ifdef USE_SPNAV
 Widget::EventResult SceneWidget::SpaceMouse(const SpaceMouseEvent& e) {
     SetRenderQuality(Quality::FAST);
-    impl_->controls_->SpaceMouse(e);
+    if(!impl_->editor_ || impl_->editor_->SpaceMouse(e) == Widget::EventResult::DISCARD) {
+        impl_->controls_->SpaceMouse(e);
+    }
     return Widget::EventResult::CONSUMED;
 }
 #endif
@@ -1251,7 +1688,9 @@ Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
     MouseEvent local = e;
     local.x -= frame.x;
     local.y -= frame.y;
-    impl_->controls_->Mouse(local);
+    if(!impl_->editor_ || impl_->editor_->Mouse(local) == Widget::EventResult::DISCARD) {
+        impl_->controls_->Mouse(local);
+    }
 
     if (impl_->on_camera_changed_) {
         impl_->on_camera_changed_(GetCamera());
