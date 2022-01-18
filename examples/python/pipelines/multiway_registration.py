@@ -105,3 +105,22 @@ if __name__ == "__main__":
         pose_graph = full_registration(pcds_down,
                                     max_correspondence_distance_coarse,
                                     max_correspondence_distance_fine)
+
+    print("Optimizing PoseGraph ...")
+    option = o3d.pipelines.registration.GlobalOptimizationOption(
+        max_correspondence_distance=max_correspondence_distance_fine,
+        edge_prune_threshold=0.25,
+        reference_node=0)
+    with o3d.utility.VerbosityContextManager(
+            o3d.utility.VerbosityLevel.Debug) as cm:
+        o3d.pipelines.registration.global_optimization(
+            pose_graph,
+            o3d.pipelines.registration.GlobalOptimizationLevenbergMarquardt(),
+            o3d.pipelines.registration.GlobalOptimizationConvergenceCriteria(),
+            option)
+
+    print("Transform points and display")
+    for point_id in range(len(pcds_down)):
+        print(pose_graph.nodes[point_id].pose)
+        pcds_down[point_id].transform(pose_graph.nodes[point_id].pose)
+    o3d.visualization.draw(pcds_down)
