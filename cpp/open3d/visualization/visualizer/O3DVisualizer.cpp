@@ -1352,6 +1352,8 @@ struct O3DVisualizer::Impl {
         settings.sun_intensity->SetEnabled(enable);
         settings.sun_dir->SetEnabled(enable);
         settings.sun_color->SetEnabled(enable);
+        settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]->SetEnabled(
+                enable);
     }
 
     void EnableInspectionMode(bool enable) {
