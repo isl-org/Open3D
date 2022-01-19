@@ -92,6 +92,7 @@ private:
         size_t start_index;
 
         Obj(const std::string &n, size_t start) : name(n), start_index(start){};
+        bool IsValid() const { return !name.empty(); }
     };
 
 public:
@@ -122,11 +123,7 @@ public:
                                              return value < o.start_index;
                                          });
             if (next == objects_.end()) {
-                utility::LogError("First object != 0");
-            }
-            if (next == objects_.end()) {
                 return objects_.back();
-
             } else {
                 --next;
                 return *next;
@@ -226,6 +223,7 @@ void PickPointsInteractor::SetPickableGeometry(
             }
         }
     }
+    lookup_->Add("", points_.size());
 
     if (points_.size() > kMaxPickableIndex) {
         utility::LogWarning(
@@ -420,9 +418,11 @@ void PickPointsInteractor::OnPickImageDone(
                     }
                 }
                 auto &o = lookup_->ObjectForIndex(best_idx);
-                size_t obj_idx = best_idx - o.start_index;
-                indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(
-                        obj_idx, points_[best_idx]));
+                if (o.IsValid()) {
+                    size_t obj_idx = best_idx - o.start_index;
+                    indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(
+                            obj_idx, points_[best_idx]));
+                }
             }
         } else {
             // Use polygon fill algorithm to find the pixels that need to be
@@ -566,9 +566,11 @@ void PickPointsInteractor::OnPickImageDone(
             // Now add everything that was "filled"
             for (auto idx : raw_indices) {
                 auto &o = lookup_->ObjectForIndex(idx);
-                size_t obj_idx = idx - o.start_index;
-                indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(
-                        obj_idx, points_[idx]));
+                if (o.IsValid()) {
+                    size_t obj_idx = idx - o.start_index;
+                    indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>
+                            (obj_idx, points_[idx]));
+                }
             }
         }
 
