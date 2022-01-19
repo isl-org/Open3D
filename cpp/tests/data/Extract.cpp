@@ -52,7 +52,7 @@ TEST(Extract, ExtractFromZIP) {
 
     // Extract the test zip file.
     EXPECT_NO_THROW(data::Extract(file_path, extract_dir));
-    std::string output_file = extract_dir + "/test_data/lena_color.jpg";
+    std::string output_file = extract_dir + "/test_data/Juneau.jpg";
     // Check if the extracted file exists.
     EXPECT_TRUE(utility::filesystem::FileExists(output_file));
 
