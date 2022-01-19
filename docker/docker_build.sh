@@ -57,7 +57,7 @@ OPTION:
     5-ml-focal          : CUDA CI, 5-ml-focal
 "
 
-HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
+HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 # Shared variables
 CCACHE_VERSION=4.3
