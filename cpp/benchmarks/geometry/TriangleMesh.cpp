@@ -34,16 +34,18 @@ namespace open3d {
 namespace pipelines {
 namespace registration {
 
-static const std::string pcd_without_nan =
+// This pcd does not contains non-finite points.
+// TODO: Change this to pcd with non-finite poins.
+static const std::string input_pcd =
         std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
 
-// TODO Test with a pointcloud with nan data.
-// static const std::string pcd_with_nan =
-//         std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
-
 static void BenchmarkCreateFromPointCloudBallPivoting(
-        benchmark::State& state, const std::string input_pcd) {
+        benchmark::State& state, const bool remove_non_finite_points) {
     auto pcd = io::CreatePointCloudFromFile(input_pcd);
+
+    if (remove_non_finite_points) {
+        pcd->RemoveNonFinitePoints();
+    }
 
     std::vector<double> distance = pcd->ComputeNearestNeighborDistance();
     size_t n = distance.size();
@@ -66,14 +68,11 @@ static void BenchmarkCreateFromPointCloudBallPivoting(
 }
 
 BENCHMARK_CAPTURE(BenchmarkCreateFromPointCloudBallPivoting,
-                  PCD_without_nan,
-                  pcd_without_nan)
+                  Without Non Finite Points,
+                  /*remove_non_finite_points*/ true)
         ->Unit(benchmark::kMillisecond);
 
-// BENCHMARK_CAPTURE(BenchmarkCreateFromPointCloudBallPivoting,
-//                   PCD_with_nan,
-//                   pcd_with_nan)
-//         ->Unit(benchmark::kMillisecond);
+// TODO: Add BENCHMARK for case `With Non Finite Points`.
 
 }  // namespace registration
 }  // namespace pipelines
