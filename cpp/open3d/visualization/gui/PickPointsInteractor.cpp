@@ -223,6 +223,7 @@ void PickPointsInteractor::SetPickableGeometry(
             }
         }
     }
+    // add safety but invalid obj
     lookup_->Add("", points_.size());
 
     if (points_.size() > kMaxPickableIndex) {
@@ -420,8 +421,9 @@ void PickPointsInteractor::OnPickImageDone(
                 auto &o = lookup_->ObjectForIndex(best_idx);
                 if (o.IsValid()) {
                     size_t obj_idx = best_idx - o.start_index;
-                    indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(
-                            obj_idx, points_[best_idx]));
+                    indices[o.name].push_back(
+                            std::pair<size_t, Eigen::Vector3d>(
+                                    obj_idx, points_[best_idx]));
                 }
             }
         } else {
@@ -568,8 +570,9 @@ void PickPointsInteractor::OnPickImageDone(
                 auto &o = lookup_->ObjectForIndex(idx);
                 if (o.IsValid()) {
                     size_t obj_idx = idx - o.start_index;
-                    indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>
-                            (obj_idx, points_[idx]));
+                    indices[o.name].push_back(
+                            std::pair<size_t, Eigen::Vector3d>(obj_idx,
+                                                               points_[idx]));
                 }
             }
         }
