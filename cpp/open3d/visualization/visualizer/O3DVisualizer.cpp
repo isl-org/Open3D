@@ -1144,14 +1144,22 @@ struct O3DVisualizer::Impl {
         }
     }
 
-    void CreateInspectionModeMaterial(MaterialRecord &inspect_mat) {
+    void CreateInspectionModeMaterial(MaterialRecord &inspect_mat,
+                                      bool pcd = false) {
         if (inspect_mat.shader == "defaultLit") {
             // Set parameters for 'simple' rendering
+            inspect_mat.base_color = {1.f, 1.f, 1.f, 1.f};
             inspect_mat.base_metallic = 0.f;
-            inspect_mat.base_roughness = 0.1f;
-            inspect_mat.base_reflectance = 0.6f;
+            if (pcd) {
+                inspect_mat.base_roughness = 0.1f;
+                inspect_mat.base_reflectance = 0.6f;
+            } else {
+                inspect_mat.base_roughness = 0.5f;
+                inspect_mat.base_reflectance = 0.8f;
+            }
             inspect_mat.base_clearcoat = 0.f;
             inspect_mat.base_anisotropy = 0.f;
+            inspect_mat.albedo_img.reset();
             inspect_mat.normal_img.reset();
             inspect_mat.ao_img.reset();
             inspect_mat.metallic_img.reset();
@@ -1172,10 +1180,13 @@ struct O3DVisualizer::Impl {
             }
             // Add inspection objects to scene
             for (auto &o : inspection_objects_) {
-                CreateInspectionModeMaterial(o.material);
+                auto gtype = o.geometry->GetGeometryType();
+                CreateInspectionModeMaterial(
+                        o.material,
+                        gtype == geometry::Geometry::GeometryType::PointCloud);
                 if (o.geometry) {
                     // Need to compute triangle normals for triangle meshes
-                    if (o.geometry->GetGeometryType() ==
+                    if (gtype ==
                         geometry::Geometry::GeometryType::TriangleMesh) {
                         auto tmesh = std::dynamic_pointer_cast<
                                 geometry::TriangleMesh>(o.geometry);
@@ -1191,6 +1202,7 @@ struct O3DVisualizer::Impl {
                                 new_mesh->triangle_normals_ =
                                         tmesh->triangle_normals_;
                             }
+                            new_mesh->vertex_colors_ = tmesh->vertex_colors_;
                             o.geometry = new_mesh;
                         }
                     }
@@ -1354,6 +1366,7 @@ struct O3DVisualizer::Impl {
         settings.sun_color->SetEnabled(enable);
         settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]->SetEnabled(
                 enable);
+        settings.point_size->SetEnabled(enable);
     }
 
     void EnableInspectionMode(bool enable) {
