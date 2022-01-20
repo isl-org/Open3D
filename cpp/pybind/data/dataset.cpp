@@ -45,13 +45,13 @@ void pybind_sample_icp_pointclouds(py::module& m) {
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SampleICPPointClouds", "data_root"_a = "")
             .def_property_readonly(
-                    "paths", &SampleICPPointClouds::GetPaths,
+                    "paths",
+                    [](const SampleICPPointClouds& sample_icp_pointclouds) {
+                        return sample_icp_pointclouds.GetPaths();
+                    },
                     "List of path to point-cloud fragments. "
                     "paths[x] returns path to `cloud_bin_x.pcd` point-cloud "
-                    "where x is from 0 to 2.")
-            .def("path", &SampleICPPointClouds::GetPath,
-                 "Returns path of the point-cloud at given index.", "index"_a);
-    docstring::ClassMethodDocInject(m, "SampleICPPointClouds", "path");
+                    "where x is from 0 to 2.");
     docstring::ClassMethodDocInject(m, "SampleICPPointClouds", "paths");
 }
 
@@ -66,13 +66,14 @@ void pybind_redwood_living_room_fragments(py::module& m) {
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "RedwoodLivingRoomFragments", "data_root"_a = "")
             .def_property_readonly(
-                    "paths", &RedwoodLivingRoomFragments::GetPaths,
+                    "paths",
+                    [](const RedwoodLivingRoomFragments&
+                               redwood_living_room_fragments) {
+                        return redwood_living_room_fragments.GetPaths();
+                    },
                     "List of path to point-cloud fragments. "
                     "paths[x] returns path to `cloud_bin_x.pcd` point-cloud "
-                    "where x is from 0 to 56.")
-            .def("path", &RedwoodLivingRoomFragments::GetPath,
-                 "Returns path of the point-cloud at given index.", "index"_a);
-    docstring::ClassMethodDocInject(m, "RedwoodLivingRoomFragments", "path");
+                    "where x is from 0 to 56.");
     docstring::ClassMethodDocInject(m, "RedwoodLivingRoomFragments", "paths");
 }
 
@@ -85,13 +86,13 @@ void pybind_redwood_office_fragments(py::module& m) {
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "RedwoodOfficeFragments", "data_root"_a = "")
             .def_property_readonly(
-                    "paths", &RedwoodOfficeFragments::GetPaths,
+                    "paths",
+                    [](const RedwoodOfficeFragments& redwood_office_fragments) {
+                        return redwood_office_fragments.GetPaths();
+                    },
                     "List of path to point-cloud fragments. "
                     "paths[x] returns path to `cloud_bin_x.pcd` point-cloud "
-                    "where x is from 0 to 56.")
-            .def("path", &RedwoodOfficeFragments::GetPath,
-                 "Returns path of the point-cloud at given index.", "index"_a);
-    docstring::ClassMethodDocInject(m, "RedwoodOfficeFragments", "path");
+                    "where x is from 0 to 51.");
     docstring::ClassMethodDocInject(m, "RedwoodOfficeFragments", "paths");
 }
 
