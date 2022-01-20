@@ -41,26 +41,27 @@ TEST(Extract, ExtractFromZIP) {
     const std::string extract_dir = data::LocateDataRoot() + "/" + prefix;
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(extract_dir));
 
-    // Download the `test_data_00.zip` test data.
+    // Download the `test_data_v2_00.zip` test data.
     std::string url =
             "https://github.com/isl-org/open3d_downloads/releases/download/"
-            "data-manager/test_data_00.zip";
-    std::string md5 = "996987b27c4497dbb951ec056c9684f4";
-    std::string file_path = extract_dir + "/test_data_00.zip";
+            "data-manager/test_data_v2_00.zip";
+    std::string md5 = "bc47a5e33d33e717259e3a37fa5eebef";
+    std::string file_path = extract_dir + "/test_data_v2_00.zip";
     // This download shall work.
     EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
 
     // Extract the test zip file.
     EXPECT_NO_THROW(data::Extract(file_path, extract_dir));
-    std::string output_file = extract_dir + "/test_data/lena_color.jpg";
+    std::string output_file =
+            extract_dir + "/test_data_v2_00/test_data/Juneau.jpg";
     // Check if the extracted file exists.
     EXPECT_TRUE(utility::filesystem::FileExists(output_file));
 
-    // Download the `test_data_00.tar.xy` test data.
+    // Download the `test_data_v2_00.tar.xz` test data.
     url = "https://github.com/isl-org/open3d_downloads/releases/download/"
-          "data-manager/test_data_00.tar.xz";
-    md5 = "61dec8a20bfe288f0bfa7cb38597587f";
-    file_path = extract_dir + "/test_data_00.tar.xz";
+          "data-manager/test_data_v2_00.tar.xz";
+    md5 = "7c682c7af4ef9bda1fc854b008ae2bef";
+    file_path = extract_dir + "/test_data_v2_00.tar.xz";
     EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
 
     // Currently only `.zip` files are supported.
