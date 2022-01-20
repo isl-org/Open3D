@@ -1180,16 +1180,14 @@ struct O3DVisualizer::Impl {
             }
             // Add inspection objects to scene
             for (auto &o : inspection_objects_) {
-                auto gtype = o.geometry->GetGeometryType();
                 CreateInspectionModeMaterial(
                         o.material,
-                        gtype == geometry::Geometry::GeometryType::PointCloud);
+                        o.geometry->GetGeometryType() ==
+                                geometry::Geometry::GeometryType::PointCloud);
                 if (o.geometry) {
                     // Need to compute triangle normals for triangle meshes
-                    if (gtype ==
-                        geometry::Geometry::GeometryType::TriangleMesh) {
-                        auto tmesh = std::dynamic_pointer_cast<
-                                geometry::TriangleMesh>(o.geometry);
+                    if (auto tmesh = std::dynamic_pointer_cast<
+                                geometry::TriangleMesh>(o.geometry)) {
                         if (tmesh->HasVertexNormals()) {
                             auto new_mesh =
                                     std::make_shared<geometry::TriangleMesh>(
