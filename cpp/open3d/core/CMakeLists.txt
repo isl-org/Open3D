@@ -127,11 +127,6 @@ if (BUILD_ISPC_MODULE)
     )
 endif()
 
-if (WITH_FAISS)
-    target_sources(core PRIVATE
-        nns/FaissIndex.cpp
-    )
-endif()
 
 open3d_show_and_abort_on_warning(core)
 open3d_set_global_properties(core)
