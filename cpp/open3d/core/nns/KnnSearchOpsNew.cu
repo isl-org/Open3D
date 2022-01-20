@@ -47,13 +47,13 @@ void KnnSearchCUDASingle(const Tensor& points,
                          int knn,
                          OUTPUT_ALLOCATOR& output_allocator,
                          int64_t* query_neighbors_row_splits) {
-    const cudaStream_t stream = cuda::GetStream();
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     int dim = points.GetShape(1);
     Device device = points.GetDevice();
     Dtype dtype = points.GetDtype();
 
+    // Return if input points are empty.
     if (num_points == 0 || num_queries == 0) {
         std::fill(query_neighbors_row_splits,
                   query_neighbors_row_splits + num_queries + 1, 0);
@@ -80,7 +80,7 @@ void KnnSearchCUDASingle(const Tensor& points,
     output_allocator.AllocIndices(&indices_ptr, num_indices);
     output_allocator.AllocDistances(&distances_ptr, num_indices);
 
-    // Calculate norms, |d|^2, |q|^2.
+    // Calculate norms, |p|^2, |q|^2.
     Tensor point_norms = points.Mul(points).Sum({1});
     Tensor query_norms = queries.Mul(queries).Sum({1});
 
@@ -107,53 +107,62 @@ void KnnSearchCUDASingle(const Tensor& points,
         Tensor buf_distances_row_view =
                 buf_distances.Slice(0, 0, num_queries_i);
         Tensor buf_indices_row_view = buf_indices.Slice(0, 0, num_queries_i);
-        // Iterate col-wise.
-        for (int j = 0; j < num_points; j += tile_cols) {
-            int num_points_j = std::min(tile_cols, num_points - j);
-            int col_j = j / tile_cols;
-            Tensor points_j = points.Slice(0, j, j + num_points_j);
-            Tensor point_norms_j = point_norms.Slice(0, j, j + num_points_j);
-            Tensor temp_distances_view =
-                    temp_distances.Slice(0, 0, num_queries_i)
-                            .Slice(1, 0, num_points_j);
-            Tensor buf_distances_col_view = buf_distances_row_view.Slice(
-                    1, knn * col_j, (col_j + 1) * knn);
-            Tensor buf_indices_col_view = buf_indices_row_view.Slice(
-                    1, knn * col_j, (col_j + 1) * knn);
+        {
+            CUDAScopedStream scoped_stream(CUDAScopedStream::CreateNewStream);
+            cudaStream_t cur_stream = cuda::GetStream();
+            for (int j = 0; j < num_points; j += tile_cols) {
+                int num_points_j = std::min(tile_cols, num_points - j);
+                int col_j = j / tile_cols;
+                Tensor points_j = points.Slice(0, j, j + num_points_j);
+                Tensor point_norms_j =
+                        point_norms.Slice(0, j, j + num_points_j);
+                Tensor temp_distances_view =
+                        temp_distances.Slice(0, 0, num_queries_i)
+                                .Slice(1, 0, num_points_j);
+                Tensor buf_distances_col_view = buf_distances_row_view.Slice(
+                        1, knn * col_j, (col_j + 1) * knn);
+                Tensor buf_indices_col_view = buf_indices_row_view.Slice(
+                        1, knn * col_j, (col_j + 1) * knn);
 
-            // Calculate -2*d*q
-            AddMM(queries_i, points_j.T(), temp_distances_view, -2.0, 0.0);
-            // Topk selection & Add |d|^2, |q|^2
-            if (tile_cols == num_points) {
-                Tensor out_indices_view =
-                        output_allocator.NeighborsIndex_()
-                                .View({num_queries, knn})
-                                .Slice(0, i, i + num_queries_i);
-                Tensor out_distances_view =
-                        output_allocator.NeighborsDistance_()
-                                .View({num_queries, knn})
-                                .Slice(0, i, i + num_queries_i);
-                runL2SelectMin<T>(stream, temp_distances_view, point_norms_j,
-                                  out_distances_view, out_indices_view, knn,
-                                  num_cols, tile_cols);
-                out_distances_view.Add_(query_norms_i.View({num_queries_i, 1}));
-            } else {
-                runL2SelectMin<T>(stream, temp_distances_view, point_norms_j,
-                                  buf_distances_col_view, buf_indices_col_view,
-                                  knn, num_cols, tile_cols);
-                buf_distances_col_view.Add_(
-                        query_norms_i.View({num_queries_i, 1}));
+                // Calculate -2*p*q
+                AddMM(queries_i, points_j.T(), temp_distances_view, -2.0, 0.0);
+                // Topk selection & Add |p|^2, |q|^2 with fused kernel
+                if (tile_cols == num_points) {
+                    Tensor out_indices_view =
+                            output_allocator.NeighborsIndex_()
+                                    .View({num_queries, knn})
+                                    .Slice(0, i, i + num_queries_i);
+                    Tensor out_distances_view =
+                            output_allocator.NeighborsDistance_()
+                                    .View({num_queries, knn})
+                                    .Slice(0, i, i + num_queries_i);
+                    runL2SelectMin<T>(cur_stream, temp_distances_view,
+                                      point_norms_j, out_distances_view,
+                                      out_indices_view, knn, num_cols,
+                                      tile_cols);
+                    out_distances_view.Add_(
+                            query_norms_i.View({num_queries_i, 1}));
+                } else {
+                    runL2SelectMin<T>(cur_stream, temp_distances_view,
+                                      point_norms_j, buf_distances_col_view,
+                                      buf_indices_col_view, knn, num_cols,
+                                      tile_cols);
+                    buf_distances_col_view.Add_(
+                            query_norms_i.View({num_queries_i, 1}));
+                }
             }
-        }
-        // Write results to output tensor.
-        if (tile_cols != num_points) {
-            runIncrementIndex<T>(stream, buf_indices_row_view, knn, tile_cols);
-            runBlockSelectPair(buf_distances_row_view.GetDataPtr<T>(),
-                               buf_indices_row_view.GetDataPtr<TIndex>(),
-                               output_allocator.DistancesPtr_() + knn * i,
-                               output_allocator.IndicesPtr_() + knn * i, false,
-                               knn, buf_distances_row_view.GetShape(1),
-                               buf_distances_row_view.GetShape(0), stream);
+            // Write results to output tensor.
+            if (tile_cols != num_points) {
+                runIncrementIndex<T>(cur_stream, buf_indices_row_view, knn,
+                                     tile_cols);
+                runBlockSelectPair(
+                        cur_stream, buf_distances_row_view.GetDataPtr<T>(),
+                        buf_indices_row_view.GetDataPtr<TIndex>(),
+                        output_allocator.DistancesPtr_() + knn * i,
+                        output_allocator.IndicesPtr_() + knn * i, false, knn,
+                        buf_distances_row_view.GetShape(1),
+                        buf_distances_row_view.GetShape(0));
+            }
         }
     }
 }

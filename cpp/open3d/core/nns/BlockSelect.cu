@@ -60,15 +60,15 @@ BLOCK_SELECT_DECL(float, int32_t, false, 1024);
 #if GPU_MAX_SELECTION_K >= 2048
 BLOCK_SELECT_DECL(float, int32_t, false, 2048);
 #endif
-void runBlockSelectPair(float* inK,
+void runBlockSelectPair(cudaStream_t stream,
+                        float* inK,
                         int32_t* inV,
                         float* outK,
                         int32_t* outV,
                         bool dir,
                         int k,
                         int dim,
-                        int num_points,
-                        cudaStream_t stream) {
+                        int num_points) {
     OPEN3D_ASSERT(k <= GPU_MAX_SELECTION_K);
 
     if (dir) {
@@ -134,15 +134,15 @@ BLOCK_SELECT_DECL(float, int64_t, false, 1024);
 #if GPU_MAX_SELECTION_K >= 2048
 BLOCK_SELECT_DECL(float, int64_t, false, 2048);
 #endif
-void runBlockSelectPair(float* inK,
+void runBlockSelectPair(cudaStream_t stream,
+                        float* inK,
                         int64_t* inV,
                         float* outK,
                         int64_t* outV,
                         bool dir,
                         int k,
                         int dim,
-                        int num_points,
-                        cudaStream_t stream) {
+                        int num_points) {
     OPEN3D_ASSERT(k <= GPU_MAX_SELECTION_K);
 
     if (dir) {
@@ -209,15 +209,15 @@ BLOCK_SELECT_DECL(double, int32_t, false, 1024);
 #if GPU_MAX_SELECTION_K >= 2048
 BLOCK_SELECT_DECL(double, int32_t, false, 2048);
 #endif
-void runBlockSelectPair(double* inK,
+void runBlockSelectPair(cudaStream_t stream,
+                        double* inK,
                         int32_t* inV,
                         double* outK,
                         int32_t* outV,
                         bool dir,
                         int k,
                         int dim,
-                        int num_points,
-                        cudaStream_t stream) {
+                        int num_points) {
     OPEN3D_ASSERT(k <= GPU_MAX_SELECTION_K);
 
     if (dir) {
@@ -284,15 +284,15 @@ BLOCK_SELECT_DECL(double, int64_t, false, 512);
 // #if GPU_MAX_SELECTION_K >= 2048
 // BLOCK_SELECT_DECL(double, int64_t, false, 2048);
 // #endif
-void runBlockSelectPair(double* inK,
+void runBlockSelectPair(cudaStream_t stream,
+                        double* inK,
                         int64_t* inV,
                         double* outK,
                         int64_t* outV,
                         bool dir,
                         int k,
                         int dim,
-                        int num_points,
-                        cudaStream_t stream) {
+                        int num_points) {
     OPEN3D_ASSERT(k <= GPU_MAX_SELECTION_K);
 
     if (dir) {

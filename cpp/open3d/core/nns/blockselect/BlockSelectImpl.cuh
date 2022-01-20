@@ -31,17 +31,17 @@
 
 #define BLOCK_SELECT_DECL(TYPE, TINDEX, DIR, WARP_Q)                           \
     extern void runBlockSelect_##TYPE##_##TINDEX##_##DIR##_##WARP_Q##_(        \
-            TYPE* in, TYPE* outK, TINDEX* outV, bool dir, int k, int dim,      \
-            int num_points, cudaStream_t stream);                              \
+            cudaStream_t stream, TYPE* in, TYPE* outK, TINDEX* outV, bool dir, \
+            int k, int dim, int num_points);                                   \
                                                                                \
     extern void runBlockSelectPair_##TYPE##_##TINDEX##_##DIR##_##WARP_Q##_(    \
-            TYPE* inK, TINDEX* inV, TYPE* outK, TINDEX* outV, bool dir, int k, \
-            int dim, int num_points, cudaStream_t stream);
+            cudaStream_t stream, TYPE* inK, TINDEX* inV, TYPE* outK,           \
+            TINDEX* outV, bool dir, int k, int dim, int num_points);
 
 #define BLOCK_SELECT_IMPL(TYPE, TINDEX, DIR, WARP_Q, THREAD_Q)                 \
     void runBlockSelect_##TYPE##_##TINDEX##_##DIR##_##WARP_Q##_(               \
-            TYPE* in, TYPE* outK, TINDEX* outV, bool dir, int k, int dim,      \
-            int num_points, cudaStream_t stream) {                             \
+            cudaStream_t stream, TYPE* in, TYPE* outK, TINDEX* outV, bool dir, \
+            int k, int dim, int num_points) {                                  \
         auto grid = dim3(num_points);                                          \
                                                                                \
         constexpr int kBlockSelectNumThreads = (WARP_Q <= 1024) ? 128 : 64;    \
@@ -59,13 +59,13 @@
     }                                                                          \
                                                                                \
     void runBlockSelectPair_##TYPE##_##TINDEX##_##DIR##_##WARP_Q##_(           \
-            TYPE* inK, TINDEX* inV, TYPE* outK, TINDEX* outV, bool dir, int k, \
-            int dim, int num_points, cudaStream_t stream) {                    \
+            cudaStream_t stream, TYPE* inK, TINDEX* inV, TYPE* outK,           \
+            TINDEX* outV, bool dir, int k, int dim, int num_points) {          \
         auto grid = dim3(num_points);                                          \
                                                                                \
         constexpr int kBlockSelectNumThreads =                                 \
-                (WARP_Q <= 1024) ? 128 * 4 / sizeof(TYPE)                      \
-                                 : 64 * 4 / sizeof(TYPE);                      \
+                sizeof(TYPE) == 4 ? ((WARP_Q <= 1024) ? 128 : 64)              \
+                                  : ((WARP_Q <= 512) ? 64 : 32);               \
         auto block = dim3(kBlockSelectNumThreads);                             \
                                                                                \
         OPEN3D_ASSERT(k <= WARP_Q);                                            \
@@ -81,8 +81,8 @@
 
 #define BLOCK_SELECT_CALL(TYPE, TINDEX, DIR, WARP_Q)        \
     runBlockSelect_##TYPE##_##TINDEX##_##DIR##_##WARP_Q##_( \
-            in, outK, outV, dir, k, dim, num_points, stream)
+            stream, in, outK, outV, dir, k, dim, num_points)
 
 #define BLOCK_SELECT_PAIR_CALL(TYPE, TINDEX, DIR, WARP_Q)       \
     runBlockSelectPair_##TYPE##_##TINDEX##_##DIR##_##WARP_Q##_( \
-            inK, inV, outK, outV, dir, k, dim, num_points, stream)
+            stream, inK, inV, outK, outV, dir, k, dim, num_points)

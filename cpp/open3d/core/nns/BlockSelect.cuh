@@ -133,45 +133,45 @@ __global__ void blockSelectPair(K* inK,
     }
 }
 
-void runBlockSelectPair(float* inK,
+void runBlockSelectPair(cudaStream_t stream,
+                        float* inK,
                         int32_t* inV,
                         float* outK,
                         int32_t* outV,
                         bool dir,
                         int k,
                         int dim,
-                        int num_points,
-                        cudaStream_t stream);
+                        int num_points);
 
-void runBlockSelectPair(float* inK,
+void runBlockSelectPair(cudaStream_t stream,
+                        float* inK,
                         int64_t* inV,
                         float* outK,
                         int64_t* outV,
                         bool dir,
                         int k,
                         int dim,
-                        int num_points,
-                        cudaStream_t stream);
+                        int num_points);
 
-void runBlockSelectPair(double* inK,
+void runBlockSelectPair(cudaStream_t stream,
+                        double* inK,
                         int32_t* inV,
                         double* outK,
                         int32_t* outV,
                         bool dir,
                         int k,
                         int dim,
-                        int num_points,
-                        cudaStream_t stream);
+                        int num_points);
 
-void runBlockSelectPair(double* inK,
+void runBlockSelectPair(cudaStream_t stream,
+                        double* inK,
                         int64_t* inV,
                         double* outK,
                         int64_t* outV,
                         bool dir,
                         int k,
                         int dim,
-                        int num_points,
-                        cudaStream_t stream);
+                        int num_points);
 
 }  // namespace core
 }  // namespace open3d
