@@ -75,11 +75,11 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
 
 static void BenchmarkICPLegacy(benchmark::State& state,
                                const TransformationEstimationType& type) {
-    data::dataset::SamplePCDFragments pcd_fragments;
+    data::dataset::SampleICPPointClouds sample_icp_pointclouds;
     geometry::PointCloud source, target;
     std::tie(source, target) =
-            LoadPointCloud(pcd_fragments.path_to_fragments_[0],
-                           pcd_fragments.path_to_fragments_[1],
+            LoadPointCloud(sample_icp_pointclouds.GetPath(0),
+                           sample_icp_pointclouds.GetPath(1),
                            /*voxel_downsampling_factor =*/0.02);
 
     std::shared_ptr<TransformationEstimation> estimation;

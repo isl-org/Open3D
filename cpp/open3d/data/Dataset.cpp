@@ -47,8 +47,10 @@ std::string LocateDataRoot() {
     return data_root;
 }
 
-Dataset::Dataset(const std::string& prefix, const std::string& data_root)
-    : prefix_(prefix) {
+Dataset::Dataset(const std::string& prefix,
+                 const std::string& help_string,
+                 const std::string& data_root)
+    : prefix_(prefix), help_string_(help_string) {
     if (data_root.empty()) {
         data_root_ = LocateDataRoot();
     } else {
@@ -63,8 +65,9 @@ SimpleDataset::SimpleDataset(const std::string& prefix,
                              const std::vector<std::string>& urls,
                              const std::string& md5,
                              const bool no_extract,
+                             const std::string& help_string,
                              const std::string& data_root)
-    : Dataset(prefix, data_root) {
+    : Dataset(prefix, help_string, data_root) {
     const std::string filename =
             utility::filesystem::GetFileNameWithoutDirectory(urls[0]);
 
