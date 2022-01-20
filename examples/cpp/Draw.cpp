@@ -183,19 +183,19 @@ void Selections() {
               << std::endl;
     std::cout << "            three points from the target." << std::endl;
 
-    data::dataset::SamplePCDFragments pcd_fragments;
-    const std::string cloud0_path = pcd_fragments.path_to_fragments_[0];
-    const std::string cloud1_path = pcd_fragments.path_to_fragments_[1];
+    data::dataset::SampleICPPointClouds sample_icp_pointclouds;
     auto source = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud(cloud0_path, *source);
+    io::ReadPointCloud(sample_icp_pointclouds.GetPath(0), *source);
     if (source->points_.empty()) {
-        utility::LogError("Could not open {}", cloud0_path);
+        utility::LogError("Could not open {}",
+                          sample_icp_pointclouds.GetPath(0));
         return;
     }
     auto target = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud(cloud1_path, *target);
+    io::ReadPointCloud(sample_icp_pointclouds.GetPath(1), *target);
     if (target->points_.empty()) {
-        utility::LogError("Could not open {}", cloud1_path);
+        utility::LogError("Could not open {}",
+                          sample_icp_pointclouds.GetPath(1));
         return;
     }
     source->PaintUniformColor({1.000, 0.706, 0.000});

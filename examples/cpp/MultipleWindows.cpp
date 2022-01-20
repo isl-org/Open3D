@@ -107,13 +107,13 @@ private:
         // This is NOT the UI thread, need to call PostToMainThread() to
         // update the scene or any part of the UI.
 
-        data::dataset::SamplePCDFragments pcd_fragments;
+        data::dataset::SampleICPPointClouds sample_icp_pointclouds;
         geometry::AxisAlignedBoundingBox bounds;
         Eigen::Vector3d extent;
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
             cloud_ = std::make_shared<geometry::PointCloud>();
-            io::ReadPointCloud(pcd_fragments.path_to_fragments_[0], *cloud_);
+            io::ReadPointCloud(sample_icp_pointclouds.GetPath(0), *cloud_);
             bounds = cloud_->GetAxisAlignedBoundingBox();
             extent = bounds.GetExtent();
         }
