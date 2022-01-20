@@ -648,7 +648,7 @@ struct O3DVisualizer::Impl {
         grid->AddChild(GiveOwnership(settings.shader));
         grid->AddChild(std::make_shared<Label>("Lighting"));
         grid->AddChild(GiveOwnership(settings.lighting));
-        grid->AddChild(std::make_shared<Label>("Inspection Mode"));
+        grid->AddChild(std::make_shared<Label>("Basic Mode"));
         grid->AddChild(GiveOwnership(settings.inspection_mode));
 
         // Light list
