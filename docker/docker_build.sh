@@ -140,7 +140,7 @@ openblas_build() {
                  --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
                  --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
                  -t "${DOCKER_TAG}" \
-                 -f .github/workflows/Dockerfile.openblas .
+                 -f docker/Dockerfile.openblas .
     popd
 
     # Extract ccache
@@ -192,7 +192,7 @@ cuda_wheel_build() {
         --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         -t open3d-ci:wheel \
-        -f .github/workflows/Dockerfile.wheel .
+        -f docker/Dockerfile.wheel .
     popd
 
     # Extract pip wheel, conda package, ccache
@@ -230,7 +230,7 @@ cuda_build() {
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         -t "${DOCKER_TAG}" \
-        -f .github/workflows/Dockerfile.cuda .
+        -f docker/Dockerfile.cuda .
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
