@@ -26,8 +26,6 @@
 #pragma once
 
 #include "open3d/core/nns/kernel/BlockMerge.cuh"
-#include "open3d/core/nns/kernel/Comparator.cuh"
-#include "open3d/core/nns/kernel/Math.cuh"
 #include "open3d/core/nns/kernel/MergeNetwork.cuh"
 #include "open3d/core/nns/kernel/Pair.cuh"
 #include "open3d/core/nns/kernel/PtxUtils.cuh"
@@ -44,67 +42,46 @@ template <int NumWarps,
           typename K,
           typename V,
           int NumWarpQ,
-          bool Dir,
-          typename Comp>
+          bool Dir>
 struct FinalBlockMerge {};
 
-template <int NumThreads,
-          typename K,
-          typename V,
-          int NumWarpQ,
-          bool Dir,
-          typename Comp>
-struct FinalBlockMerge<1, NumThreads, K, V, NumWarpQ, Dir, Comp> {
+template <int NumThreads, typename K, typename V, int NumWarpQ, bool Dir>
+struct FinalBlockMerge<1, NumThreads, K, V, NumWarpQ, Dir> {
     static inline __device__ void merge(K* sharedK, V* sharedV) {
         // no merge required; single warp
     }
 };
 
-template <int NumThreads,
-          typename K,
-          typename V,
-          int NumWarpQ,
-          bool Dir,
-          typename Comp>
-struct FinalBlockMerge<2, NumThreads, K, V, NumWarpQ, Dir, Comp> {
+template <int NumThreads, typename K, typename V, int NumWarpQ, bool Dir>
+struct FinalBlockMerge<2, NumThreads, K, V, NumWarpQ, Dir> {
     static inline __device__ void merge(K* sharedK, V* sharedV) {
         // Final merge doesn't need to fully merge the second list
         blockMerge<NumThreads, K, V, NumThreads / (kWarpSize * 2), NumWarpQ,
-                   !Dir, Comp, false>(sharedK, sharedV);
+                   !Dir, false>(sharedK, sharedV);
     }
 };
 
-template <int NumThreads,
-          typename K,
-          typename V,
-          int NumWarpQ,
-          bool Dir,
-          typename Comp>
-struct FinalBlockMerge<4, NumThreads, K, V, NumWarpQ, Dir, Comp> {
+template <int NumThreads, typename K, typename V, int NumWarpQ, bool Dir>
+struct FinalBlockMerge<4, NumThreads, K, V, NumWarpQ, Dir> {
     static inline __device__ void merge(K* sharedK, V* sharedV) {
         blockMerge<NumThreads, K, V, NumThreads / (kWarpSize * 2), NumWarpQ,
-                   !Dir, Comp>(sharedK, sharedV);
+                   !Dir>(sharedK, sharedV);
         // Final merge doesn't need to fully merge the second list
         blockMerge<NumThreads, K, V, NumThreads / (kWarpSize * 4), NumWarpQ * 2,
-                   !Dir, Comp, false>(sharedK, sharedV);
+                   !Dir, false>(sharedK, sharedV);
     }
 };
 
-template <int NumThreads,
-          typename K,
-          typename V,
-          int NumWarpQ,
-          bool Dir,
-          typename Comp>
-struct FinalBlockMerge<8, NumThreads, K, V, NumWarpQ, Dir, Comp> {
+template <int NumThreads, typename K, typename V, int NumWarpQ, bool Dir>
+struct FinalBlockMerge<8, NumThreads, K, V, NumWarpQ, Dir> {
     static inline __device__ void merge(K* sharedK, V* sharedV) {
         blockMerge<NumThreads, K, V, NumThreads / (kWarpSize * 2), NumWarpQ,
-                   !Dir, Comp>(sharedK, sharedV);
+                   !Dir>(sharedK, sharedV);
         blockMerge<NumThreads, K, V, NumThreads / (kWarpSize * 4), NumWarpQ * 2,
-                   !Dir, Comp>(sharedK, sharedV);
+                   !Dir>(sharedK, sharedV);
         // Final merge doesn't need to fully merge the second list
         blockMerge<NumThreads, K, V, NumThreads / (kWarpSize * 8), NumWarpQ * 4,
-                   !Dir, Comp, false>(sharedK, sharedV);
+                   !Dir, false>(sharedK, sharedV);
     }
 };
 
@@ -113,7 +90,6 @@ struct FinalBlockMerge<8, NumThreads, K, V, NumWarpQ, Dir, Comp> {
 template <typename K,
           typename V,
           bool Dir,
-          typename Comp,
           int NumWarpQ,
           int NumThreadQ,
           int ThreadsPerBlock>
@@ -157,7 +133,8 @@ struct BlockSelect {
     }
 
     __device__ inline void addThreadQ(K k, V v) {
-        if (Dir ? Comp::gt(k, warpKTop) : Comp::lt(k, warpKTop)) {
+        // if (Dir ? Comp::gt(k, warpKTop) : Comp::lt(k, warpKTop)) {
+        if (Dir ? k > warpKTop : k < warpKTop) {
             // Rotate right
 #pragma unroll
             for (int i = NumThreadQ - 1; i > 0; --i) {
@@ -211,7 +188,7 @@ struct BlockSelect {
         int laneId = getLaneId();
 
         // Sort all of the per-thread queues
-        warpSortAnyRegisters<K, V, NumThreadQ, !Dir, Comp>(threadK, threadV);
+        warpSortAnyRegisters<K, V, NumThreadQ, !Dir>(threadK, threadV);
 
         constexpr int kNumWarpQRegisters = NumWarpQ / kWarpSize;
         K warpKRegisters[kNumWarpQRegisters];
@@ -228,7 +205,7 @@ struct BlockSelect {
         // The warp queue is already sorted, and now that we've sorted the
         // per-thread queue, merge both sorted lists together, producing
         // one sorted list
-        warpMergeAnyRegisters<K, V, kNumWarpQRegisters, NumThreadQ, !Dir, Comp,
+        warpMergeAnyRegisters<K, V, kNumWarpQRegisters, NumThreadQ, !Dir,
                               false>(warpKRegisters, warpVRegisters, threadK,
                                      threadV);
 
@@ -261,8 +238,8 @@ struct BlockSelect {
         // All warp queues are contiguous in smem.
         // Now, we have kNumWarps lists of NumWarpQ elements.
         // This is a power of 2.
-        FinalBlockMerge<kNumWarps, ThreadsPerBlock, K, V, NumWarpQ, Dir,
-                        Comp>::merge(sharedK, sharedV);
+        FinalBlockMerge<kNumWarps, ThreadsPerBlock, K, V, NumWarpQ, Dir>::merge(
+                sharedK, sharedV);
 
         // The block-wide merge has a trailing syncthreads
     }
@@ -297,20 +274,16 @@ struct BlockSelect {
 };
 
 /// Specialization for k == 1 (NumWarpQ == 1)
-template <typename K,
-          typename V,
-          bool Dir,
-          typename Comp,
-          int NumThreadQ,
-          int ThreadsPerBlock>
-struct BlockSelect<K, V, Dir, Comp, 1, NumThreadQ, ThreadsPerBlock> {
+template <typename K, typename V, bool Dir, int NumThreadQ, int ThreadsPerBlock>
+struct BlockSelect<K, V, Dir, 1, NumThreadQ, ThreadsPerBlock> {
     static constexpr int kNumWarps = ThreadsPerBlock / kWarpSize;
 
     __device__ inline BlockSelect(K initK, V initV, K* smemK, V* smemV, int k)
         : threadK(initK), threadV(initV), sharedK(smemK), sharedV(smemV) {}
 
     __device__ inline void addThreadQ(K k, V v) {
-        bool swap = Dir ? Comp::gt(k, threadK) : Comp::lt(k, threadK);
+        // bool swap = Dir ? Comp::gt(k, threadK) : Comp::lt(k, threadK);
+        bool swap = Dir ? k > threadK : k < threadK;
         threadK = swap ? k : threadK;
         threadV = swap ? v : threadV;
     }
@@ -357,7 +330,9 @@ struct BlockSelect<K, V, Dir, Comp, 1, NumThreadQ, ThreadsPerBlock> {
                 K k = sharedK[i];
                 V v = sharedV[i];
 
-                bool swap = Dir ? Comp::gt(k, threadK) : Comp::lt(k, threadK);
+                // bool swap = Dir ? Comp::gt(k, threadK) : Comp::lt(k,
+                // threadK);
+                bool swap = Dir ? k > threadK : k < threadK;
                 threadK = swap ? k : threadK;
                 threadV = swap ? v : threadV;
             }
@@ -390,7 +365,6 @@ struct BlockSelect<K, V, Dir, Comp, 1, NumThreadQ, ThreadsPerBlock> {
 template <typename K,
           typename V,
           bool Dir,
-          typename Comp,
           int NumWarpQ,
           int NumThreadQ,
           int ThreadsPerBlock>
@@ -423,7 +397,8 @@ struct WarpSelect {
     }
 
     __device__ inline void addThreadQ(K k, V v) {
-        if (Dir ? Comp::gt(k, warpKTop) : Comp::lt(k, warpKTop)) {
+        // if (Dir ? Comp::gt(k, warpKTop) : Comp::lt(k, warpKTop)) {
+        if (Dir ? k > warpKTop : k < warpKTop) {
             // Rotate right
 #pragma unroll
             for (int i = NumThreadQ - 1; i > 0; --i) {
@@ -472,12 +447,12 @@ struct WarpSelect {
     /// list across both
     __device__ inline void mergeWarpQ() {
         // Sort all of the per-thread queues
-        warpSortAnyRegisters<K, V, NumThreadQ, !Dir, Comp>(threadK, threadV);
+        warpSortAnyRegisters<K, V, NumThreadQ, !Dir>(threadK, threadV);
 
         // The warp queue is already sorted, and now that we've sorted the
         // per-thread queue, merge both sorted lists together, producing
         // one sorted list
-        warpMergeAnyRegisters<K, V, kNumWarpQRegisters, NumThreadQ, !Dir, Comp,
+        warpMergeAnyRegisters<K, V, kNumWarpQRegisters, NumThreadQ, !Dir,
                               false>(warpK, warpV, threadK, threadV);
     }
 
@@ -536,20 +511,16 @@ struct WarpSelect {
 };
 
 /// Specialization for k == 1 (NumWarpQ == 1)
-template <typename K,
-          typename V,
-          bool Dir,
-          typename Comp,
-          int NumThreadQ,
-          int ThreadsPerBlock>
-struct WarpSelect<K, V, Dir, Comp, 1, NumThreadQ, ThreadsPerBlock> {
+template <typename K, typename V, bool Dir, int NumThreadQ, int ThreadsPerBlock>
+struct WarpSelect<K, V, Dir, 1, NumThreadQ, ThreadsPerBlock> {
     static constexpr int kNumWarps = ThreadsPerBlock / kWarpSize;
 
     __device__ inline WarpSelect(K initK, V initV, int k)
         : threadK(initK), threadV(initV) {}
 
     __device__ inline void addThreadQ(K k, V v) {
-        bool swap = Dir ? Comp::gt(k, threadK) : Comp::lt(k, threadK);
+        // bool swap = Dir ? Comp::gt(k, threadK) : Comp::lt(k, threadK);
+        bool swap = Dir ? k > threadK : k < threadK;
         threadK = swap ? k : threadK;
         threadV = swap ? v : threadV;
     }

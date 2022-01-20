@@ -28,12 +28,12 @@
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/linalg/AddMM.h"
-#include "open3d/core/nns/kernel/BlockSelect.cuh"
-#include "open3d/core/nns/kernel/DistancesUtils.cuh"
 #include "open3d/core/nns/KnnIndex.h"
-#include "open3d/core/nns/KnnSearchImplNew.cuh"
-#include "open3d/core/nns/kernel/L2Select.cuh"
+#include "open3d/core/nns/kernel/BlockSelectKernel.cuh"
+#include "open3d/core/nns/kernel/DistancesUtils.cuh"
+// #include "open3d/core/nns/KnnSearchImplNew.cuh"
 #include "open3d/core/nns/NeighborSearchAllocator.h"
+#include "open3d/core/nns/kernel/L2Select.cuh"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/ParallelScan.h"
 
@@ -87,8 +87,8 @@ void KnnSearchCUDASingle(const Tensor& points,
     // Divide queries and points into chunks (rows and cols).
     int tile_rows = 0;
     int tile_cols = 0;
-    impl::chooseTileSize(num_queries, num_points, dim, sizeof(T), tile_rows,
-                         tile_cols);
+    chooseTileSize(num_queries, num_points, dim, sizeof(T), tile_rows,
+                   tile_cols);
     int num_cols = utility::DivUp(num_points, tile_cols);
 
     // Allocate temporary memory space.
@@ -153,8 +153,8 @@ void KnnSearchCUDASingle(const Tensor& points,
             }
             // Write results to output tensor.
             if (tile_cols != num_points) {
-                runIncrementIndex<T>(cur_stream, buf_indices_row_view, knn,
-                                     tile_cols);
+                runIncrementIndex<TIndex>(cur_stream, buf_indices_row_view, knn,
+                                          tile_cols);
                 runBlockSelectPair(
                         cur_stream, buf_distances_row_view.GetDataPtr<T>(),
                         buf_indices_row_view.GetDataPtr<TIndex>(),

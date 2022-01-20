@@ -55,27 +55,6 @@ struct Limits<double> {
     static __device__ __host__ inline float getMin() { return kDoubleMin; }
     static __device__ __host__ inline float getMax() { return kDoubleMax; }
 };
-// inline __device__ __host__ half kGetHalf(unsigned short v) {
-// #if CUDA_VERSION >= 9000
-//     __half_raw h;
-//     h.x = v;
-//     return __half(h);
-// #else
-//     half h;
-//     h.x = v;
-//     return h;
-// #endif
-// }
-
-// template <>
-// struct Limits<half> {
-//     static __device__ __host__ inline half getMin() {
-//         return kGetHalf(0xfbffU);
-//     }
-//     static __device__ __host__ inline half getMax() {
-//         return kGetHalf(0x7bffU);
-//     }
-// };
 
 constexpr int kIntMax = std::numeric_limits<int>::max();
 constexpr int kIntMin = std::numeric_limits<int>::lowest();

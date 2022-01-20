@@ -37,8 +37,6 @@
 namespace open3d {
 namespace core {
 
-// constexpr int kWarpSize = 32;
-
 template <typename U, typename V>
 constexpr __host__ __device__ auto divDown(U a, V b) -> decltype(a + b) {
     return (a / b);

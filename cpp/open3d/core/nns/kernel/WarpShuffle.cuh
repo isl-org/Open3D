@@ -27,7 +27,6 @@
 
 #include <cuda.h>
 
-
 namespace open3d {
 namespace core {
 

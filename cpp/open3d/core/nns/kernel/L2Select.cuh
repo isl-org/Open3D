@@ -151,9 +151,8 @@ __global__ void l2SelectMinK(T* productDistances,
     __shared__ T smemK[kNumWarps * NumWarpQ];
     __shared__ int smemV[kNumWarps * NumWarpQ];
 
-    BlockSelect<T, int, false, Comparator<T>, NumWarpQ, NumThreadQ,
-                ThreadsPerBlock>
-            heap(initK, -1, smemK, smemV, k);
+    BlockSelect<T, int, false, NumWarpQ, NumThreadQ, ThreadsPerBlock> heap(
+            initK, -1, smemK, smemV, k);
 
     int row = blockIdx.x;
 

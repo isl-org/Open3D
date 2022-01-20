@@ -49,9 +49,8 @@ __global__ void blockSelect(K* in,
     __shared__ K smemK[kNumWarps * NumWarpQ];
     __shared__ IndexType smemV[kNumWarps * NumWarpQ];
 
-    BlockSelect<K, IndexType, Dir, Comparator<K>, NumWarpQ, NumThreadQ,
-                ThreadsPerBlock>
-            heap(initK, initV, smemK, smemV, k);
+    BlockSelect<K, IndexType, Dir, NumWarpQ, NumThreadQ, ThreadsPerBlock> heap(
+            initK, initV, smemK, smemV, k);
 
     // Grid is exactly sized to rows available
     int row = blockIdx.x;
@@ -100,9 +99,8 @@ __global__ void blockSelectPair(K* inK,
     __shared__ K smemK[kNumWarps * NumWarpQ];
     __shared__ IndexType smemV[kNumWarps * NumWarpQ];
 
-    BlockSelect<K, IndexType, Dir, Comparator<K>, NumWarpQ, NumThreadQ,
-                ThreadsPerBlock>
-            heap(initK, initV, smemK, smemV, k);
+    BlockSelect<K, IndexType, Dir, NumWarpQ, NumThreadQ, ThreadsPerBlock> heap(
+            initK, initV, smemK, smemV, k);
 
     // Grid is exactly sized to rows available
     int row = blockIdx.x;

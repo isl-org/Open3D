@@ -28,7 +28,6 @@
 #include <cuda.h>
 
 #include "open3d/core/nns/kernel/BlockMerge.cuh"
-// #include "open3d/core/nns/Math.cuh"
 #include "open3d/core/nns/kernel/PtxUtils.cuh"
 #include "open3d/core/nns/kernel/ReductionOps.cuh"
 #include "open3d/utility/Helper.h"

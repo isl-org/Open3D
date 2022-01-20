@@ -28,7 +28,6 @@
 
 #include <cuda.h>
 
-#include "open3d/core/nns/kernel/Math.cuh"
 #include "open3d/core/nns/kernel/PtxUtils.cuh"
 #include "open3d/core/nns/kernel/WarpShuffle.cuh"
 
@@ -43,7 +42,7 @@ struct Pair {
     constexpr __device__ inline Pair(K key, V value) : k(key), v(value) {}
 
     __device__ inline bool operator==(const Pair<K, V>& rhs) const {
-        return Math<K>::eq(k, rhs.k) && Math<V>::eq(v, rhs.v);
+        return k == rhs.k && v == rhs.v;
     }
 
     __device__ inline bool operator!=(const Pair<K, V>& rhs) const {
@@ -51,13 +50,11 @@ struct Pair {
     }
 
     __device__ inline bool operator<(const Pair<K, V>& rhs) const {
-        return Math<K>::lt(k, rhs.k) ||
-               (Math<K>::eq(k, rhs.k) && Math<V>::lt(v, rhs.v));
+        return k < rhs.k || (k == rhs.k && v < rhs.v);
     }
 
     __device__ inline bool operator>(const Pair<K, V>& rhs) const {
-        return Math<K>::gt(k, rhs.k) ||
-               (Math<K>::eq(k, rhs.k) && Math<V>::gt(v, rhs.v));
+        return k > rhs.k || (k == rhs.k && v > rhs.v);
     }
 
     K k;

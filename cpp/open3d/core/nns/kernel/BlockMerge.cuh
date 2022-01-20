@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
-#include "open3d/core/nns/kernel/Comparator.cuh"
 #include "open3d/core/nns/kernel/DeviceDefs.cuh"
 #include "open3d/core/nns/kernel/StaticUtils.cuh"
 namespace open3d {
@@ -39,7 +38,6 @@ template <int NumThreads,
           int L,
           bool AllThreads,
           bool Dir,
-          typename Comp,
           bool FullMerge>
 inline __device__ void blockMergeSmall(K* listK, V* listV) {
     static_assert(isPowerOf2(L), "L must be a power-of-2");
@@ -65,7 +63,8 @@ inline __device__ void blockMergeSmall(K* listK, V* listV) {
         K ka = listK[pos];
         K kb = listK[pos + stride];
 
-        bool swap = Dir ? Comp::gt(ka, kb) : Comp::lt(ka, kb);
+        // bool swap = Dir ? Comp::gt(ka, kb) : Comp::lt(ka, kb);
+        bool swap = Dir ? ka > kb : ka < kb;
         listK[pos] = swap ? kb : ka;
         listK[pos + stride] = swap ? ka : kb;
 
@@ -96,7 +95,8 @@ inline __device__ void blockMergeSmall(K* listK, V* listV) {
             K ka = listK[pos];
             K kb = listK[pos + stride];
 
-            bool swap = Dir ? Comp::gt(ka, kb) : Comp::lt(ka, kb);
+            // bool swap = Dir ? Comp::gt(ka, kb) : Comp::lt(ka, kb);
+            bool swap = Dir ? ka > kb : ka < kb;
             listK[pos] = swap ? kb : ka;
             listK[pos + stride] = swap ? ka : kb;
 
@@ -127,7 +127,6 @@ template <int NumThreads,
           typename V,
           int L,
           bool Dir,
-          typename Comp,
           bool FullMerge>
 inline __device__ void blockMergeLarge(K* listK, V* listV) {
     static_assert(isPowerOf2(L), "L must be a power-of-2");
@@ -150,7 +149,8 @@ inline __device__ void blockMergeLarge(K* listK, V* listV) {
         K ka = listK[pos];
         K kb = listK[pos + stride];
 
-        bool swap = Dir ? Comp::gt(ka, kb) : Comp::lt(ka, kb);
+        // bool swap = Dir ? Comp::gt(ka, kb) : Comp::lt(ka, kb);
+        bool swap = Dir ? ka > kb : ka < kb;
         listK[pos] = swap ? kb : ka;
         listK[pos + stride] = swap ? ka : kb;
 
@@ -186,7 +186,8 @@ inline __device__ void blockMergeLarge(K* listK, V* listV) {
             K ka = listK[pos];
             K kb = listK[pos + stride];
 
-            bool swap = Dir ? Comp::gt(ka, kb) : Comp::lt(ka, kb);
+            // bool swap = Dir ? Comp::gt(ka, kb) : Comp::lt(ka, kb);
+            bool swap = Dir ? ka > kb : ka < kb;
             listK[pos] = swap ? kb : ka;
             listK[pos + stride] = swap ? ka : kb;
 
@@ -219,7 +220,6 @@ template <int NumThreads,
           int N,
           int L,
           bool Dir,
-          typename Comp,
           bool SmallerThanBlock,
           bool FullMerge>
 struct BlockMerge {};
@@ -231,9 +231,8 @@ template <int NumThreads,
           int N,
           int L,
           bool Dir,
-          typename Comp,
           bool FullMerge>
-struct BlockMerge<NumThreads, K, V, N, L, Dir, Comp, true, FullMerge> {
+struct BlockMerge<NumThreads, K, V, N, L, Dir, true, FullMerge> {
     static inline __device__ void merge(K* listK, V* listV) {
         constexpr int kNumParallelMerges = NumThreads / L;
         constexpr int kNumIterations = N / kNumParallelMerges;
@@ -245,16 +244,16 @@ struct BlockMerge<NumThreads, K, V, N, L, Dir, Comp, true, FullMerge> {
 
         if (N < kNumParallelMerges) {
             // We only need L threads per each list to perform the merge
-            blockMergeSmall<NumThreads, K, V, N, L, false, Dir, Comp,
-                            FullMerge>(listK, listV);
+            blockMergeSmall<NumThreads, K, V, N, L, false, Dir, FullMerge>(
+                    listK, listV);
         } else {
             // All threads participate
 #pragma unroll
             for (int i = 0; i < kNumIterations; ++i) {
                 int start = i * kNumParallelMerges * 2 * L;
 
-                blockMergeSmall<NumThreads, K, V, N, L, true, Dir, Comp,
-                                FullMerge>(listK + start, listV + start);
+                blockMergeSmall<NumThreads, K, V, N, L, true, Dir, FullMerge>(
+                        listK + start, listV + start);
             }
         }
     }
@@ -267,17 +266,16 @@ template <int NumThreads,
           int N,
           int L,
           bool Dir,
-          typename Comp,
           bool FullMerge>
-struct BlockMerge<NumThreads, K, V, N, L, Dir, Comp, false, FullMerge> {
+struct BlockMerge<NumThreads, K, V, N, L, Dir, false, FullMerge> {
     static inline __device__ void merge(K* listK, V* listV) {
         // Each pair of lists is merged sequentially
 #pragma unroll
         for (int i = 0; i < N; ++i) {
             int start = i * 2 * L;
 
-            blockMergeLarge<NumThreads, K, V, L, Dir, Comp, FullMerge>(
-                    listK + start, listV + start);
+            blockMergeLarge<NumThreads, K, V, L, Dir, FullMerge>(listK + start,
+                                                                 listV + start);
         }
     }
 };
@@ -288,12 +286,11 @@ template <int NumThreads,
           int N,
           int L,
           bool Dir,
-          typename Comp,
           bool FullMerge = true>
 inline __device__ void blockMerge(K* listK, V* listV) {
     constexpr bool kSmallerThanBlock = (L <= NumThreads);
 
-    BlockMerge<NumThreads, K, V, N, L, Dir, Comp, kSmallerThanBlock,
+    BlockMerge<NumThreads, K, V, N, L, Dir, kSmallerThanBlock,
                FullMerge>::merge(listK, listV);
 }
 
