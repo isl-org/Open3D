@@ -47,6 +47,7 @@ struct ListView::Impl {
     std::string imgui_id_;
     std::vector<std::string> items_;
     int selected_index_ = NO_SELECTION;
+    int max_items_ = -1;
     std::function<void(const char *, bool)> on_value_changed_;
 };
 
@@ -72,6 +73,9 @@ const char *ListView::GetSelectedValue() const {
     }
 }
 
+void ListView::SetMaxVisibleItems(int items) {
+    impl_->max_items_ = items;
+}
 void ListView::SetSelectedIndex(int index) {
     impl_->selected_index_ = std::min(int(impl_->items_.size() - 1), index);
 }
@@ -94,7 +98,12 @@ Size ListView::CalcPreferredSize(const LayoutContext &context,
         size.x = std::max(size.x, item_size.x);
         size.y += ImGui::GetFrameHeight();
     }
-    return Size(int(std::ceil(size.x + 2.0f * padding.x)), Widget::DIM_GROW);
+    auto h = Widget::DIM_GROW;
+    if (impl_->max_items_ > 0) {
+        auto items = std::min(int(impl_->items_.size()), impl_->max_items_);
+        h = int(ImGui::GetFrameHeight() * (float)items + 2.0f * padding.y);
+    }
+    return Size(int(std::ceil(size.x + 2.0f * padding.x)), h);
 }
 
 Size ListView::CalcMinimumSize(const LayoutContext &context) const {
