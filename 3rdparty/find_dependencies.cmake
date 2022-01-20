@@ -1246,7 +1246,7 @@ endif()
 
 # MKL/BLAS
 if(USE_BLAS)
-    if (NOT BUILD_BLAS_FROM_SOURCE)
+    if (USE_SYSTEM_BLAS)
         find_package(BLAS)
         find_package(LAPACK)
         find_package(LAPACKE)
@@ -1258,12 +1258,12 @@ if(USE_BLAS)
                 ${LAPACKE_LIBRARIES}
             )
         else()
-            message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting BUILD_BLAS_FROM_SOURCE=ON.")
-            set(BUILD_BLAS_FROM_SOURCE ON)
+            message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting USE_SYSTEM_BLAS=OFF.")
+            set(USE_SYSTEM_BLAS OFF)
         endif()
     endif()
 
-    if (BUILD_BLAS_FROM_SOURCE)
+    if (NOT USE_SYSTEM_BLAS)
         # Install gfortran first for compiling OpenBLAS/Lapack from source.
         message(STATUS "Building OpenBLAS with LAPACK from source")
 
