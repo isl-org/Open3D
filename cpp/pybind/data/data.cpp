@@ -35,35 +35,40 @@ namespace open3d {
 namespace data {
 
 void pybind_data_classes(py::module& m) {
-//     // open3d.data.Dataset
-//     py::class_<Dataset, PyDataset<Dataset>, std::shared_ptr<Dataset>> dataset(
-//             m, "Dataset", "The base dataset class.");
-//     dataset.def(py::init<const std::string&, const std::string&>(), "prefix"_a,
-//                 "data_root"_a = "")
-//             .def("get_data_root", &Dataset::GetDataRoot,
-//                  "Returns data root path.")
-//             .def("get_extract_dir", &Dataset::GetExtractDir,
-//                  "Returns data extract directory path.",
-//                  "relative_to_data_root"_a = false)
-//             .def("get_download_dir", &Dataset::GetDownloadDir,
-//                  "Returns data download directory path.",
-//                  "relative_to_data_root"_a = false)
-//             .def("get_help", &Dataset::GetHelp,
-//                  "Returns string of helpful documentation.");
-//     docstring::ClassMethodDocInject(m, "Dataset", "get_data_root");
-//     docstring::ClassMethodDocInject(m, "Dataset", "get_extract_dir");
-//     docstring::ClassMethodDocInject(m, "Dataset", "get_download_dir");
-//     docstring::ClassMethodDocInject(m, "Dataset", "get_help");
+    // open3d.data.Dataset
+    py::class_<Dataset, PyDataset<Dataset>, std::shared_ptr<Dataset>> dataset(
+            m, "Dataset", "The base dataset class.");
+    dataset.def(py::init<const std::string&, const std::string&,
+                         const std::string&>(),
+                "prefix"_a, "help"_a = "", "data_root"_a = "")
+            .def_property_readonly("data_root", &Dataset::GetDataRoot,
+                                   "Returns data root path.")
+            .def_property_readonly("prefix", &Dataset::GetPrefix,
+                                   "Returns data prefix.")
+            .def_property_readonly("help_string", &Dataset::GetHelpString,
+                                   "Returns string of helpful documentation.")
+            .def("extract_dir", &Dataset::GetExtractDir,
+                 "Returns data extract directory path.",
+                 "relative_to_data_root"_a = false)
+            .def("download_dir", &Dataset::GetDownloadDir,
+                 "Returns data download directory path.",
+                 "relative_to_data_root"_a = false);
+    docstring::ClassMethodDocInject(m, "Dataset", "data_root");
+    docstring::ClassMethodDocInject(m, "Dataset", "prefix");
+    docstring::ClassMethodDocInject(m, "Dataset", "help_string");
+    docstring::ClassMethodDocInject(m, "Dataset", "extract_dir");
+    docstring::ClassMethodDocInject(m, "Dataset", "download_dir");
 
-//     // open3d.data.SimpleDataset
-//     py::class_<SimpleDataset, PySimpleDataset<SimpleDataset>,
-//                std::shared_ptr<SimpleDataset>, Dataset>
-//             simple_dataset(m, "SimpleDataset", "Simple dataset class.");
-//     simple_dataset.def(
-//             py::init<const std::string&, const std::vector<std::string>&,
-//                      const std::string&, const bool, const std::string&>(),
-//             "prefix"_a, "urls"_a, "md5"_a, "no_extract"_a = false,
-//             "data_root"_a = "");
+    // open3d.data.SimpleDataset
+    py::class_<SimpleDataset, PySimpleDataset<SimpleDataset>,
+               std::shared_ptr<SimpleDataset>, Dataset>
+            simple_dataset(m, "SimpleDataset", "Simple dataset class.");
+    simple_dataset.def(
+            py::init<const std::string&, const std::vector<std::string>&,
+                     const std::string&, const bool, const std::string&,
+                     const std::string&>(),
+            "prefix"_a, "urls"_a, "md5"_a, "no_extract"_a = false,
+            "help_string"_a = "", "data_root"_a = "");
 }
 
 void pybind_data(py::module& m) {
