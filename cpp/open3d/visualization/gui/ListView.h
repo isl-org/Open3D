@@ -57,6 +57,7 @@ public:
     Size CalcMinimumSize(const LayoutContext& context) const override;
 
     DrawResult Draw(const DrawContext& context) override;
+    void SetMaxVisibleItems(int items);
 
     /// Calls onValueChanged(const char *selectedText, bool isDoubleClick)
     /// when the list selection changes because of user action.

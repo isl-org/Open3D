@@ -1084,6 +1084,8 @@ void pybind_gui_classes(py::module &m) {
             .def_property("selected_index", &ListView::GetSelectedIndex,
                           &ListView::SetSelectedIndex,
                           "The index of the currently selected item")
+            .def("set_max_visible_items", &ListView::SetMaxVisibleItems,
+                 "Set max showed items number, it controls the height of list")
             .def_property_readonly("selected_value",
                                    &ListView::GetSelectedValue,
                                    "The text of the currently selected item")
