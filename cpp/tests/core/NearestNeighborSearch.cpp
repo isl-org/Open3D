@@ -171,32 +171,62 @@ TEST_P(NNSPermuteDevices, FixedRadiusSearch) {
             {{0.064705, 0.043921, 0.087843}}, device);
     core::Tensor gt_indices, gt_distances;
 
+    // int32
     // Set up index.
-    core::nns::NearestNeighborSearch nns(dataset_points);
+    core::nns::NearestNeighborSearch nns32(dataset_points, core::Int32);
 
     // If radius <= 0.
     if (device.GetType() == core::Device::DeviceType::CUDA) {
-        EXPECT_THROW(nns.FixedRadiusIndex(-1.0), std::runtime_error);
-        EXPECT_THROW(nns.FixedRadiusIndex(0.0), std::runtime_error);
+        EXPECT_THROW(nns32.FixedRadiusIndex(-1.0), std::runtime_error);
+        EXPECT_THROW(nns32.FixedRadiusIndex(0.0), std::runtime_error);
     } else {
-        nns.FixedRadiusIndex();
-        EXPECT_THROW(nns.FixedRadiusSearch(query_points, -1.0),
+        nns32.FixedRadiusIndex();
+        EXPECT_THROW(nns32.FixedRadiusSearch(query_points, -1.0),
                      std::runtime_error);
-        EXPECT_THROW(nns.FixedRadiusSearch(query_points, 0.0),
+        EXPECT_THROW(nns32.FixedRadiusSearch(query_points, 0.0),
                      std::runtime_error);
     }
 
     // If raidus == 0.1.
-    nns.FixedRadiusIndex(0.1);
+    nns32.FixedRadiusIndex(0.1);
     std::tuple<core::Tensor, core::Tensor, core::Tensor> result;
     core::SizeVector shape{2};
     gt_indices = core::Tensor::Init<int32_t>({1, 4}, device);
     gt_distances = core::Tensor::Init<double>({0.00626358, 0.00747938}, device);
 
-    result = nns.FixedRadiusSearch(query_points, 0.1);
+    result = nns32.FixedRadiusSearch(query_points, 0.1);
     core::Tensor indices = std::get<0>(result);
     core::Tensor distances = std::get<1>(result);
-    indices = indices.To(core::Int32);
+
+    EXPECT_EQ(indices.GetShape(), shape);
+    EXPECT_EQ(distances.GetShape(), shape);
+    EXPECT_TRUE(indices.AllClose(gt_indices));
+    EXPECT_TRUE(distances.AllClose(gt_distances));
+
+    // int64
+    // Set up index.
+    core::nns::NearestNeighborSearch nns64(dataset_points, core::Int64);
+
+    // If radius <= 0.
+    if (device.GetType() == core::Device::DeviceType::CUDA) {
+        EXPECT_THROW(nns64.FixedRadiusIndex(-1.0), std::runtime_error);
+        EXPECT_THROW(nns64.FixedRadiusIndex(0.0), std::runtime_error);
+    } else {
+        nns64.FixedRadiusIndex();
+        EXPECT_THROW(nns64.FixedRadiusSearch(query_points, -1.0),
+                     std::runtime_error);
+        EXPECT_THROW(nns64.FixedRadiusSearch(query_points, 0.0),
+                     std::runtime_error);
+    }
+
+    // If raidus == 0.1.
+    nns64.FixedRadiusIndex(0.1);
+    gt_indices = core::Tensor::Init<int64_t>({1, 4}, device);
+    gt_distances = core::Tensor::Init<double>({0.00626358, 0.00747938}, device);
+
+    result = nns64.FixedRadiusSearch(query_points, 0.1);
+    indices = std::get<0>(result);
+    distances = std::get<1>(result);
 
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
@@ -221,15 +251,16 @@ TEST(NearestNeighborSearch, MultiRadiusSearch) {
     core::Tensor radius;
     core::Tensor gt_indices, gt_distances;
 
+    // int32
     // Set up index.
-    core::nns::NearestNeighborSearch nns(dataset_points);
-    nns.MultiRadiusIndex();
+    core::nns::NearestNeighborSearch nns32(dataset_points, core::Int32);
+    nns32.MultiRadiusIndex();
 
     // If radius <= 0.
     radius = core::Tensor::Init<double>({1.0, 0.0});
-    EXPECT_THROW(nns.MultiRadiusSearch(query_points, radius),
+    EXPECT_THROW(nns32.MultiRadiusSearch(query_points, radius),
                  std::runtime_error);
-    EXPECT_THROW(nns.MultiRadiusSearch(query_points, radius),
+    EXPECT_THROW(nns32.MultiRadiusSearch(query_points, radius),
                  std::runtime_error);
 
     // If radius == 0.1.
@@ -240,10 +271,36 @@ TEST(NearestNeighborSearch, MultiRadiusSearch) {
     gt_distances = core::Tensor::Init<double>(
             {0.00626358, 0.00747938, 0.00626358, 0.00747938});
 
-    result = nns.MultiRadiusSearch(query_points, radius);
+    result = nns32.MultiRadiusSearch(query_points, radius);
     core::Tensor indices = std::get<0>(result);
     core::Tensor distances = std::get<1>(result);
-    indices = indices.To(core::Int32);
+
+    EXPECT_EQ(indices.GetShape(), shape);
+    EXPECT_EQ(distances.GetShape(), shape);
+    EXPECT_TRUE(indices.AllClose(gt_indices));
+    EXPECT_TRUE(distances.AllClose(gt_distances));
+
+    // int64
+    // Set up index.
+    core::nns::NearestNeighborSearch nns64(dataset_points, core::Int64);
+    nns64.MultiRadiusIndex();
+
+    // If radius <= 0.
+    radius = core::Tensor::Init<double>({1.0, 0.0});
+    EXPECT_THROW(nns64.MultiRadiusSearch(query_points, radius),
+                 std::runtime_error);
+    EXPECT_THROW(nns64.MultiRadiusSearch(query_points, radius),
+                 std::runtime_error);
+
+    // If radius == 0.1.
+    radius = core::Tensor::Init<double>({0.1, 0.1});
+    gt_indices = core::Tensor::Init<int64_t>({1, 4, 1, 4});
+    gt_distances = core::Tensor::Init<double>(
+            {0.00626358, 0.00747938, 0.00626358, 0.00747938});
+
+    result = nns64.MultiRadiusSearch(query_points, radius);
+    indices = std::get<0>(result);
+    distances = std::get<1>(result);
 
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
@@ -269,11 +326,12 @@ TEST_P(NNSPermuteDevices, HybridSearch) {
             core::Tensor::Init<float>({{0.064705, 0.043921, 0.087843}}, device);
     core::Tensor gt_indices, gt_distances, gt_counts;
 
+    // int32
     // Set up index.
-    core::nns::NearestNeighborSearch nns(dataset_points);
+    core::nns::NearestNeighborSearch nns32(dataset_points, core::Int32);
     double radius = 0.1;
     int max_knn = 3;
-    nns.HybridIndex(radius);
+    nns32.HybridIndex(radius);
 
     // test.
     core::Tensor indices, distances, counts;
@@ -284,9 +342,27 @@ TEST_P(NNSPermuteDevices, HybridSearch) {
             core::Tensor::Init<float>({{0.00626358, 0.00747938, 0}}, device);
     gt_counts = core::Tensor::Init<int32_t>({2}, device);
     std::tie(indices, distances, counts) =
-            nns.HybridSearch(query_points, radius, max_knn);
-    indices = indices.To(core::Int32);
-    counts = counts.To(core::Int32);
+            nns32.HybridSearch(query_points, radius, max_knn);
+
+    EXPECT_EQ(indices.GetShape(), shape);
+    EXPECT_EQ(distances.GetShape(), shape);
+    EXPECT_EQ(counts.GetShape(), shape_counts);
+    EXPECT_TRUE(indices.AllClose(gt_indices));
+    EXPECT_TRUE(distances.AllClose(gt_distances));
+    EXPECT_TRUE(counts.AllClose(gt_counts));
+
+    // int64
+    // Set up index.
+    core::nns::NearestNeighborSearch nns64(dataset_points, core::Int64);
+    nns64.HybridIndex(radius);
+
+    // test.
+    gt_indices = core::Tensor::Init<int64_t>({{1, 4, -1}}, device);
+    gt_distances =
+            core::Tensor::Init<float>({{0.00626358, 0.00747938, 0}}, device);
+    gt_counts = core::Tensor::Init<int64_t>({2}, device);
+    std::tie(indices, distances, counts) =
+            nns64.HybridSearch(query_points, radius, max_knn);
 
     EXPECT_EQ(indices.GetShape(), shape);
     EXPECT_EQ(distances.GetShape(), shape);
