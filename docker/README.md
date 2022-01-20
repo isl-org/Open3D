@@ -1,7 +1,4 @@
-# Running workflows locally
-
-You may run the Ubuntu CI workflows locally on a Linux, macOS and Windows host.
-This allows you to debug CI issues in a local environment.
+# Open3D Docker
 
 ## Dependencies
 
