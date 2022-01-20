@@ -29,10 +29,9 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/linalg/AddMM.h"
 #include "open3d/core/nns/KnnIndex.h"
-#include "open3d/core/nns/kernel/BlockSelectKernel.cuh"
-#include "open3d/core/nns/kernel/DistancesUtils.cuh"
-// #include "open3d/core/nns/KnnSearchImplNew.cuh"
 #include "open3d/core/nns/NeighborSearchAllocator.h"
+#include "open3d/core/nns/kernel/BlockSelect.cuh"
+#include "open3d/core/nns/kernel/DistancesUtils.cuh"
 #include "open3d/core/nns/kernel/L2Select.cuh"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/ParallelScan.h"
@@ -166,6 +165,7 @@ void KnnSearchCUDASingle(const Tensor& points,
         }
     }
 }
+
 template <class T, class TIndex>
 void KnnSearchCUDANew(const Tensor& points,
                       const Tensor& points_row_splits,

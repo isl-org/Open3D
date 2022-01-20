@@ -114,7 +114,6 @@ if (BUILD_CUDA_MODULE)
         nns/FixedRadiusSearchOps.cu
         nns/kernel/BlockSelectFloat32.cu
         nns/kernel/BlockSelectFloat64.cu
-        nns/kernel/BlockSelect.cu
     )
 endif()
 
