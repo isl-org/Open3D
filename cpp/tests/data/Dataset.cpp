@@ -61,7 +61,7 @@ TEST(Dataset, DownloadDatasets) {
     utility::LogInfo("SampleICPPointClouds dataset information: \n{}\n",
                      sample_icp_pointclouds.GetHelpString());
     t::geometry::PointCloud pcd;
-    EXPECT_TRUE(t::io::ReadPointCloud(sample_icp_pointclouds.GetPath(0), pcd));
+    EXPECT_TRUE(t::io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), pcd));
 }
 
 }  // namespace tests
