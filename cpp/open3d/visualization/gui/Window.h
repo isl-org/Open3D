@@ -154,6 +154,7 @@ public:
     void ShowDialog(std::shared_ptr<Dialog> dlg);
     /// Closes the dialog.
     void CloseDialog();
+    std::shared_ptr<Dialog> GetDialog();
 
     void ShowMessageBox(const char* title, const char* message);
 
