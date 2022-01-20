@@ -177,13 +177,16 @@ public:
                             const char *function,
                             const char *format,
                             Args &&... args) {
-        if (sizeof...(Args) > 0) {
-            Logger::GetInstance().VWarning(
-                    file, line, function,
-                    FormatArgs(format, fmt::make_format_args(args...)));
-        } else {
-            Logger::GetInstance().VWarning(file, line, function,
-                                           std::string(format));
+        if (Logger::GetInstance().GetVerbosityLevel() >=
+            VerbosityLevel::Warning) {
+            if (sizeof...(Args) > 0) {
+                Logger::GetInstance().VWarning(
+                        file, line, function,
+                        FormatArgs(format, fmt::make_format_args(args...)));
+            } else {
+                Logger::GetInstance().VWarning(file, line, function,
+                                               std::string(format));
+            }
         }
     }
     template <typename... Args>
@@ -192,13 +195,15 @@ public:
                          const char *function,
                          const char *format,
                          Args &&... args) {
-        if (sizeof...(Args) > 0) {
-            Logger::GetInstance().VInfo(
-                    file, line, function,
-                    FormatArgs(format, fmt::make_format_args(args...)));
-        } else {
-            Logger::GetInstance().VInfo(file, line, function,
-                                        std::string(format));
+        if (Logger::GetInstance().GetVerbosityLevel() >= VerbosityLevel::Info) {
+            if (sizeof...(Args) > 0) {
+                Logger::GetInstance().VInfo(
+                        file, line, function,
+                        FormatArgs(format, fmt::make_format_args(args...)));
+            } else {
+                Logger::GetInstance().VInfo(file, line, function,
+                                            std::string(format));
+            }
         }
     }
     template <typename... Args>
@@ -207,13 +212,16 @@ public:
                           const char *function,
                           const char *format,
                           Args &&... args) {
-        if (sizeof...(Args) > 0) {
-            Logger::GetInstance().VDebug(
-                    file, line, function,
-                    FormatArgs(format, fmt::make_format_args(args...)));
-        } else {
-            Logger::GetInstance().VDebug(file, line, function,
-                                         std::string(format));
+        if (Logger::GetInstance().GetVerbosityLevel() >=
+            VerbosityLevel::Debug) {
+            if (sizeof...(Args) > 0) {
+                Logger::GetInstance().VDebug(
+                        file, line, function,
+                        FormatArgs(format, fmt::make_format_args(args...)));
+            } else {
+                Logger::GetInstance().VDebug(file, line, function,
+                                             std::string(format));
+            }
         }
     }
 
