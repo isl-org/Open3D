@@ -57,7 +57,8 @@ void pybind_core_nns(py::module &m) {
                 "dataset_points of shape {n_dataset, d}.");
 
     // Constructors.
-    nns.def(py::init<const Tensor &>(), "dataset_points"_a);
+    nns.def(py::init<const Tensor &, const Dtype>(), "dataset_points"_a,
+            "index_dtype"_a);
 
     // Index functions.
     nns.def("knn_index", &NearestNeighborSearch::KnnIndex,
