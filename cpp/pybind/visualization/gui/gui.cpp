@@ -508,6 +508,7 @@ void pybind_gui_classes(py::module &m) {
                         w.ShowDialog(TakeOwnership<Dialog>(dlg));
                     },
                     "Displays the dialog")
+            .def("get_dialog", &PyWindow::GetDialog, "Get current dialog")
             .def("close_dialog", &PyWindow::CloseDialog,
                  "Closes the current dialog")
             .def("show_message_box", &PyWindow::ShowMessageBox,
@@ -1196,6 +1197,9 @@ void pybind_gui_classes(py::module &m) {
         using Super = SceneWidget;
 
     public:
+        using PickMap = std::map<
+                std::string, std::shared_ptr<geometry::PointCloud>>;
+        using PickNotify = std::function<void(std::string, size_t)>;
         void SetOnMouse(std::function<int(const MouseEvent &)> f) {
             on_mouse_ = f;
         }
@@ -1243,7 +1247,39 @@ void pybind_gui_classes(py::module &m) {
             }
         }
 
+        void StartPickPoint(PickMap &geometries, int point_size, PickNotify on_picked) {
+            picking_ = geometries;
+            on_picked_ = on_picked;
+            SetViewControls(Controls::PICK_POINTS);
+            std::vector<PickableGeometry> geos;
+            for (auto & g: geometries) {
+                geos.emplace_back(g.first, g.second.get());
+            }
+            SetPickableGeometry(geos);
+            SetPickablePointSize(point_size);
+            SetOnPointsPicked([this](const std::map<std::string,
+                    std::vector<std::pair<size_t, Eigen::Vector3d>>>& pts,
+                                 int) {
+                for(auto &p : pts) {
+                    auto &name = p.first;
+                    for(auto &e : p.second) {
+                        if (on_picked_) {
+                            on_picked_(name, e.first);
+                        }
+                    }
+                }
+            });
+        }
+        void StopPickPoint(Controls mode) {
+            picking_.clear();
+            on_picked_ = nullptr;
+            SetViewControls(mode);
+            SetPickableGeometry({});
+        }
+
     private:
+        PickMap picking_;
+        PickNotify on_picked_;
         std::function<int(const MouseEvent &)> on_mouse_;
         std::function<int(const KeyEvent &)> on_key_;
     };
@@ -1340,6 +1376,10 @@ void pybind_gui_classes(py::module &m) {
                  "Stop editing")
             .def("crop_selected", &PySceneWidget::CropSelected,
                  "Crop selected and return selected + left point cloud")
+            .def("pick_point", &PySceneWidget::StartPickPoint,
+                 "Start picking point")
+            .def("stop_pick", &PySceneWidget::StopPickPoint,
+                 "Stop picking point")
             ;
 
     // ---- Slider ----

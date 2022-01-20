@@ -675,6 +675,9 @@ void Window::CloseDialog() {
     // get merged in with this one by the OS.
     PostRedraw();
 }
+std::shared_ptr<Dialog> Window::GetDialog() {
+    return impl_->active_dialog_;
+}
 
 void Window::ShowMessageBox(const char* title, const char* message) {
     auto em = GetTheme().font_size;
