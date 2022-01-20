@@ -27,11 +27,11 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/nns/Limits.cuh"
-#include "open3d/core/nns/Pair.cuh"
-#include "open3d/core/nns/Reduction.cuh"
-#include "open3d/core/nns/ReductionOperation.cuh"
-#include "open3d/core/nns/Select.cuh"
+#include "open3d/core/nns/kernel/Limits.cuh"
+#include "open3d/core/nns/kernel/Pair.cuh"
+#include "open3d/core/nns/kernel/Reduction.cuh"
+#include "open3d/core/nns/kernel/ReductionOps.cuh"
+#include "open3d/core/nns/kernel/Select.cuh"
 #include "open3d/utility/Helper.h"
 namespace open3d {
 namespace core {

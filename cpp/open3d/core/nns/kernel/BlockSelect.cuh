@@ -26,7 +26,7 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/nns/Select.cuh"
+#include "open3d/core/nns/kernel/Select.cuh"
 namespace open3d {
 namespace core {
 

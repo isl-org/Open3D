@@ -28,12 +28,9 @@
 
 #include <cuda.h>
 
-// #include <faiss/gpu/utils/MathOperators.cuh>
-// #include <faiss/gpu/utils/WarpShuffles.cuh>
-
-#include "open3d/core/nns/Math.cuh"
-#include "open3d/core/nns/PtxUtils.cuh"
-#include "open3d/core/nns/WarpShuffle.cuh"
+#include "open3d/core/nns/kernel/Math.cuh"
+#include "open3d/core/nns/kernel/PtxUtils.cuh"
+#include "open3d/core/nns/kernel/WarpShuffle.cuh"
 
 namespace open3d {
 namespace core {

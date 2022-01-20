@@ -27,7 +27,6 @@
 
 #include <cuda.h>
 
-// #include <faiss/gpu/utils/DeviceDefs.cuh>
 
 namespace open3d {
 namespace core {

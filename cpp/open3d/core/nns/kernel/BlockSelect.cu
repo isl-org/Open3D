@@ -23,8 +23,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-#include "open3d/core/nns/DeviceDefs.cuh"
-#include "open3d/core/nns/blockselect/BlockSelectImpl.cuh"
+#include "open3d/core/nns/kernel/DeviceDefs.cuh"
+#include "open3d/core/nns/kernel/BlockSelectImpl.cuh"
 
 namespace open3d {
 namespace core {

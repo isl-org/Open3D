@@ -25,14 +25,14 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
-#include "open3d/core/nns/BlockMerge.cuh"
-#include "open3d/core/nns/Comparator.cuh"
-#include "open3d/core/nns/Math.cuh"
-#include "open3d/core/nns/MergeNetwork.cuh"
-#include "open3d/core/nns/Pair.cuh"
-#include "open3d/core/nns/PtxUtils.cuh"
-#include "open3d/core/nns/Reduction.cuh"
-#include "open3d/core/nns/StaticUtils.cuh"
+#include "open3d/core/nns/kernel/BlockMerge.cuh"
+#include "open3d/core/nns/kernel/Comparator.cuh"
+#include "open3d/core/nns/kernel/Math.cuh"
+#include "open3d/core/nns/kernel/MergeNetwork.cuh"
+#include "open3d/core/nns/kernel/Pair.cuh"
+#include "open3d/core/nns/kernel/PtxUtils.cuh"
+#include "open3d/core/nns/kernel/Reduction.cuh"
+#include "open3d/core/nns/kernel/StaticUtils.cuh"
 
 namespace open3d {
 namespace core {

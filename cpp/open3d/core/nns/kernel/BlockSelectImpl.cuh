@@ -26,8 +26,8 @@
 #pragma once
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/core/nns/BlockSelect.cuh"
-#include "open3d/core/nns/Limits.cuh"
+#include "open3d/core/nns/kernel/BlockSelect.cuh"
+#include "open3d/core/nns/kernel/Limits.cuh"
 
 #define BLOCK_SELECT_DECL(TYPE, TINDEX, DIR, WARP_Q)                           \
     extern void runBlockSelect_##TYPE##_##TINDEX##_##DIR##_##WARP_Q##_(        \

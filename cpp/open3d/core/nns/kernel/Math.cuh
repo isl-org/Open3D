@@ -25,9 +25,6 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
-// #include <faiss/gpu/utils/ConversionOperators.cuh>
-// #include <faiss/gpu/utils/Float16.cuh>
-
 //
 // Templated wrappers to express math for different scalar and vector
 // types, so kernels can have the same written form but can operate

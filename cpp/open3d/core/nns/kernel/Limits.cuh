@@ -25,10 +25,9 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
-// #include <faiss/gpu/utils/Pair.cuh>
 #include <limits>
 
-#include "open3d/core/nns/Pair.cuh"
+#include "open3d/core/nns/kernel/Pair.cuh"
 
 namespace open3d {
 namespace core {

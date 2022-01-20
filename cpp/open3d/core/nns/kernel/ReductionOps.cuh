@@ -28,11 +28,8 @@
 
 #include <cuda.h>
 
-#include "open3d/core/nns/Limits.cuh"
-#include "open3d/core/nns/Pair.cuh"
-// #include <faiss/gpu/utils/Limits.cuh>
-// #include <faiss/gpu/utils/MathOperators.cuh>
-// #include <faiss/gpu/utils/Pair.cuh>
+#include "open3d/core/nns/kernel/Limits.cuh"
+#include "open3d/core/nns/kernel/Pair.cuh"
 
 namespace open3d {
 namespace core {

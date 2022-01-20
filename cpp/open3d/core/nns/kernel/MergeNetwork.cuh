@@ -25,16 +25,9 @@
 // ----------------------------------------------------------------------------
 #pragma once
 
-// #include <faiss/gpu/utils/StaticUtils.h>
-
-// #include <faiss/gpu/utils/DeviceDefs.cuh>
-// #include <faiss/gpu/utils/MergeNetworkUtils.cuh>
-// #include <faiss/gpu/utils/PtxUtils.cuh>
-// #include <faiss/gpu/utils/WarpShuffles.cuh>
-
-#include "open3d/core/nns/PtxUtils.cuh"
-#include "open3d/core/nns/StaticUtils.cuh"
-#include "open3d/core/nns/WarpShuffle.cuh"
+#include "open3d/core/nns/kernel/PtxUtils.cuh"
+#include "open3d/core/nns/kernel/StaticUtils.cuh"
+#include "open3d/core/nns/kernel/WarpShuffle.cuh"
 
 namespace open3d {
 namespace core {

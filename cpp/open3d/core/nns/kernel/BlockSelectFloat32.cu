@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/nns/blockselect/BlockSelectImpl.cuh"
+#include "open3d/core/nns/kernel/BlockSelectImpl.cuh"
 
 namespace open3d {
 namespace core {

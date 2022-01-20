@@ -112,9 +112,9 @@ if (BUILD_CUDA_MODULE)
         nns/KnnSearchOps.cu
         nns/KnnSearchOpsNew.cu
         nns/FixedRadiusSearchOps.cu
-        nns/blockselect/BlockSelectFloat32.cu
-        nns/blockselect/BlockSelectFloat64.cu
-        nns/BlockSelect.cu
+        nns/kernel/BlockSelectFloat32.cu
+        nns/kernel/BlockSelectFloat64.cu
+        nns/kernel/BlockSelect.cu
     )
 endif()
 

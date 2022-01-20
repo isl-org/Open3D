@@ -26,17 +26,11 @@
 #pragma once
 
 #include <cuda.h>
-// #include <faiss/gpu/utils/StaticUtils.h>
 
-// #include <faiss/gpu/utils/DeviceDefs.cuh>
-// #include <faiss/gpu/utils/PtxUtils.cuh>
-// #include <faiss/gpu/utils/ReductionOperators.cuh>
-// #include <faiss/gpu/utils/WarpShuffles.cuh>
-
-#include "open3d/core/nns/BlockMerge.cuh"
+#include "open3d/core/nns/kernel/BlockMerge.cuh"
 // #include "open3d/core/nns/Math.cuh"
-#include "open3d/core/nns/PtxUtils.cuh"
-#include "open3d/core/nns/ReductionOperation.cuh"
+#include "open3d/core/nns/kernel/PtxUtils.cuh"
+#include "open3d/core/nns/kernel/ReductionOps.cuh"
 #include "open3d/utility/Helper.h"
 
 namespace open3d {
