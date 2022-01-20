@@ -134,7 +134,7 @@ void Logger::SetPrintFunction(
     impl_->print_fcn_ = print_fcn;
 }
 
-std::function<void(const std::string &)> Logger::GetPrintFunction() {
+const std::function<void(const std::string &)> Logger::GetPrintFunction() {
     return impl_->print_fcn_;
 }
 

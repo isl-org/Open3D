@@ -148,7 +148,7 @@ public:
     void ResetPrintFunction();
 
     /// Get the print function used by the Logger.
-    std::function<void(const std::string &)> GetPrintFunction();
+    const std::function<void(const std::string &)> GetPrintFunction();
 
     /// Set global verbosity level of Open3D.
     ///
