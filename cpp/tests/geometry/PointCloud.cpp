@@ -29,7 +29,6 @@
 #include <algorithm>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
-#include "open3d/data/Dataset.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/RGBDImage.h"
@@ -1187,12 +1186,11 @@ TEST(PointCloud, ComputeConvexHull) {
 }
 
 TEST(PointCloud, HiddenPointRemoval) {
-    data::dataset::SamplePCDFragments pcd_fragments;
     geometry::PointCloud pcd;
-    io::ReadPointCloud(pcd_fragments.path_to_fragments_[0], pcd);
-    EXPECT_EQ(pcd.points_.size(), 198835);
-    ExpectEQ(pcd.GetMaxBound(), Eigen::Vector3d(3.960771, 2.424900, 2.553656));
-    ExpectEQ(pcd.GetMinBound(), Eigen::Vector3d(0.550781, 0.832031, 0.558593));
+    io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd);
+    EXPECT_EQ(pcd.points_.size(), 196133);
+    ExpectEQ(pcd.GetMaxBound(), Eigen::Vector3d(3.96609, 2.427476, 2.55859));
+    ExpectEQ(pcd.GetMinBound(), Eigen::Vector3d(0.558594, 0.832031, 0.566637));
 
     // Hard-coded test
     std::shared_ptr<geometry::TriangleMesh> mesh;
@@ -1200,29 +1198,27 @@ TEST(PointCloud, HiddenPointRemoval) {
     std::tie(mesh, pt_map) =
             pcd.HiddenPointRemoval(Eigen::Vector3d{0, 0, 5}, 5 * 100);
     ExpectEQ(mesh->vertices_, ApplyIndices(pcd.points_, pt_map));
-    EXPECT_EQ(mesh->vertices_.size(), 24917);
+    EXPECT_EQ(mesh->vertices_.size(), 24581);
 }
 
 TEST(PointCloud, ClusterDBSCAN) {
-    data::dataset::SamplePCDFragments pcd_fragments;
     geometry::PointCloud pcd;
-    io::ReadPointCloud(pcd_fragments.path_to_fragments_[0], pcd);
-    EXPECT_EQ(pcd.points_.size(), 198835);
+    io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd);
+    EXPECT_EQ(pcd.points_.size(), 196133);
 
     // Hard-coded test
     std::vector<int> cluster = pcd.ClusterDBSCAN(0.02, 10, false);
-    EXPECT_EQ(cluster.size(), 198835);
+    EXPECT_EQ(cluster.size(), 196133);
     std::unordered_set<int> cluster_set(cluster.begin(), cluster.end());
     EXPECT_EQ(cluster_set.size(), 11);
     int cluster_sum = std::accumulate(cluster.begin(), cluster.end(), 0);
-    EXPECT_EQ(cluster_sum, 396044);
+    EXPECT_EQ(cluster_sum, 398580);
 }
 
 TEST(PointCloud, SegmentPlane) {
-    data::dataset::SamplePCDFragments pcd_fragments;
     geometry::PointCloud pcd;
-    io::ReadPointCloud(pcd_fragments.path_to_fragments_[0], pcd);
-    EXPECT_EQ(pcd.points_.size(), 198835);
+    io::ReadPointCloud(utility::GetDataPathCommon("fragment.pcd"), pcd);
+    EXPECT_EQ(pcd.points_.size(), 113662);
 
     // Hard-coded test
     Eigen::Vector4d plane_model;
@@ -1230,12 +1226,10 @@ TEST(PointCloud, SegmentPlane) {
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 1000);
 
     // TODO: seed the ransac
-    ExpectEQ(plane_model, Eigen::Vector4d(0.00422, 0.99983, 0.01766, -2.43657),
-             0.1);
+    ExpectEQ(plane_model, Eigen::Vector4d(-0.06, -0.10, 0.99, -1.06), 0.1);
 
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 10, 1000);
-    ExpectEQ(plane_model, Eigen::Vector4d(0.32579, 0.07088, 0.94277, -2.55508),
-             0.1);
+    ExpectEQ(plane_model, Eigen::Vector4d(-0.06, -0.10, 0.99, -1.06), 0.1);
 }
 
 TEST(PointCloud, SegmentPlaneKnownPlane) {
