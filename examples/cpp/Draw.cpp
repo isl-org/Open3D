@@ -185,17 +185,17 @@ void Selections() {
 
     data::dataset::SampleICPPointClouds sample_icp_pointclouds;
     auto source = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud(sample_icp_pointclouds.GetPath(0), *source);
+    io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), *source);
     if (source->points_.empty()) {
         utility::LogError("Could not open {}",
-                          sample_icp_pointclouds.GetPath(0));
+                          sample_icp_pointclouds.GetPaths(0));
         return;
     }
     auto target = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud(sample_icp_pointclouds.GetPath(1), *target);
+    io::ReadPointCloud(sample_icp_pointclouds.GetPaths(1), *target);
     if (target->points_.empty()) {
         utility::LogError("Could not open {}",
-                          sample_icp_pointclouds.GetPath(1));
+                          sample_icp_pointclouds.GetPaths(1));
         return;
     }
     source->PaintUniformColor({1.000, 0.706, 0.000});

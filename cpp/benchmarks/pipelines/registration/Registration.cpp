@@ -78,8 +78,8 @@ static void BenchmarkICPLegacy(benchmark::State& state,
     data::dataset::SampleICPPointClouds sample_icp_pointclouds;
     geometry::PointCloud source, target;
     std::tie(source, target) =
-            LoadPointCloud(sample_icp_pointclouds.GetPath(0),
-                           sample_icp_pointclouds.GetPath(1),
+            LoadPointCloud(sample_icp_pointclouds.GetPaths(0),
+                           sample_icp_pointclouds.GetPaths(1),
                            /*voxel_downsampling_factor =*/0.02);
 
     std::shared_ptr<TransformationEstimation> estimation;

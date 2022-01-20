@@ -113,7 +113,7 @@ private:
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
             cloud_ = std::make_shared<geometry::PointCloud>();
-            io::ReadPointCloud(sample_icp_pointclouds.GetPath(0), *cloud_);
+            io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), *cloud_);
             bounds = cloud_->GetAxisAlignedBoundingBox();
             extent = bounds.GetExtent();
         }

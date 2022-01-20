@@ -155,7 +155,7 @@ Licence: The data is released under Creative Commons 3.0 (CC BY 3.0),
     }
 
     std::vector<std::string> GetPaths() const { return path_to_pointclouds_; }
-    std::string GetPath(size_t index) const {
+    std::string GetPaths(size_t index) const {
         if (index > 2) {
             utility::LogError(
                     "Invalid index. Expected index between 0 to 2 but got {}.",
@@ -190,7 +190,8 @@ public:
         }
     }
 
-    std::string GetPath(size_t index) const {
+    std::vector<std::string> GetPaths() const { return path_to_pointclouds_; }
+    std::string GetPaths(size_t index) const {
         if (index > 56) {
             utility::LogError(
                     "Invalid index. Expected index between 0 to 56 but got {}.",
@@ -198,7 +199,6 @@ public:
         }
         return path_to_pointclouds_[index];
     }
-    std::vector<std::string> GetPaths() const { return path_to_pointclouds_; }
 
 private:
     // Path to PLY point-cloud fragments.
@@ -226,7 +226,7 @@ public:
     }
 
     std::vector<std::string> GetPaths() const { return path_to_pointclouds_; }
-    std::string GetPath(size_t index) const {
+    std::string GetPaths(size_t index) const {
         if (index > 51) {
             utility::LogError(
                     "Invalid index. Expected index between 0 to 51 but got {}.",
