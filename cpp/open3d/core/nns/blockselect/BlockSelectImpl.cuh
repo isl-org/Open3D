@@ -44,7 +44,9 @@
             int k, int dim, int num_points) {                                  \
         auto grid = dim3(num_points);                                          \
                                                                                \
-        constexpr int kBlockSelectNumThreads = (WARP_Q <= 1024) ? 128 : 64;    \
+        constexpr int kBlockSelectNumThreads =                                 \
+                sizeof(TYPE) == 4 ? ((WARP_Q <= 1024) ? 128 : 64)              \
+                                  : ((WARP_Q <= 512) ? 64 : 32);               \
         auto block = dim3(kBlockSelectNumThreads);                             \
                                                                                \
         OPEN3D_ASSERT(k <= WARP_Q);                                            \

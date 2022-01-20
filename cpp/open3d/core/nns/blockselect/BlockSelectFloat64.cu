@@ -72,13 +72,13 @@ BLOCK_SELECT_IMPL(double, int64_t, false, 256, 4);
 BLOCK_SELECT_IMPL(double, int64_t, true, 512, 8);
 BLOCK_SELECT_IMPL(double, int64_t, false, 512, 8);
 
-// BLOCK_SELECT_IMPL(double, int64_t, true, 1024, 8);
-// BLOCK_SELECT_IMPL(double, int64_t, false, 1024, 8);
+BLOCK_SELECT_IMPL(double, int64_t, true, 1024, 8);
+BLOCK_SELECT_IMPL(double, int64_t, false, 1024, 8);
 
-// #if GPU_MAX_SELECTION_K >= 2048
-// BLOCK_SELECT_IMPL(double, int64_t, true, 2048, 8);
-// BLOCK_SELECT_IMPL(double, int64_t, false, 2048, 8);
-// #endif
+#if GPU_MAX_SELECTION_K >= 2048
+BLOCK_SELECT_IMPL(double, int64_t, true, 2048, 8);
+BLOCK_SELECT_IMPL(double, int64_t, false, 2048, 8);
+#endif
 
 }  // namespace core
 }  // namespace open3d
