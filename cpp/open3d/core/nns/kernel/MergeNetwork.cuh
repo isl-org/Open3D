@@ -139,7 +139,7 @@ inline __device__ void warpBitonicMergeLE16(K& k, V& v) {
     static_assert(isPowerOf2(L), "L must be a power-of-2");
     static_assert(L <= kWarpSize / 2, "merge list size must be <= 16");
 
-    int laneId = getLaneId();
+    int lane_id = getLaneId();
 
     if (!IsBitonic) {
         // Reverse the first comparison stage.
@@ -149,7 +149,7 @@ inline __device__ void warpBitonicMergeLE16(K& k, V& v) {
         V otherV = shfl_xor(v, 2 * L - 1);
 
         // Whether we are the lesser thread in the exchange
-        bool small = (laneId & L) == 0;
+        bool small = (lane_id & L) == 0;
 
         if (Dir) {
             // See the comment above how performing both of these
@@ -173,7 +173,7 @@ inline __device__ void warpBitonicMergeLE16(K& k, V& v) {
         V otherV = shfl_xor(v, stride);
 
         // Whether we are the lesser thread in the exchange
-        bool small = (laneId & stride) == 0;
+        bool small = (lane_id & stride) == 0;
 
         if (Dir) {
             // bool s = small ? Comp::gt(k, otherK) : Comp::lt(k, otherK);
