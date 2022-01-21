@@ -54,40 +54,64 @@ std::string LocateDataRoot();
 ///   (c) $HOME/open3d_data.
 ///   By default, (c) will be used, and it is also the recommended way.
 /// - When a dataset object is instantiated, the corresponding data will be
-///   downloaded and extracted. If the data already exists and the checksum
-///   matches, the download will be skipped.
+///   downloaded in `data_root/download/prefix/` and extracted or copied to
+///   `data_root/extract/prefix/`. If the extracted data directory exists, the
+///   files will be used without validation. If it does not exists, and the
+///   valid downloaded file exists, the data will be extracted from the
+///   downloaded file. If downloaded file does not exists, or validates against
+///   the provided MD5, it will be re-downloaded.
 /// - After the data is downloaded and extracted, the dataset object will NOT
 ///   load the data for you. Instead, you will get the paths to the data files
 ///   and use Open3D's I/O functions to load the data. This design exposes where
 ///   the data is stored and how the data is loaded, allowing users to modify
-///   the code and load their own data in a similar way.
+///   the code and load their own data in a similar way. Please check the
+///   documentation of the specific dataset to know more about the specific
+///   functionalities provided for it.
 class Dataset {
 public:
-    Dataset(const std::string& prefix, const std::string& data_root = "");
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param prefix Prefix of the dataset. The data is downloaded in
+    /// `open3d_root/download/prefix/` and extracted in
+    /// `open3d_root/extract/prefix/`.
+    /// \param help_string Helpful documentation string related to the dataset
+    /// and available functionalities
+    /// \param data_root Path to `open3d_root`, which contains all the
+    /// downloaded and extracted files.
+    /// The data root directory is located in the following order:
+    ///   (a) User-specified by `data_root` when instantiating a dataset object.
+    ///   (b) OPEN3D_DATA_ROOT environment variable.
+    ///   (c) $HOME/open3d_data.
+    ///   By default, (c) will be used, and it is also the recommended way.
+    Dataset(const std::string& prefix,
+            const std::string& help_string = "",
+            const std::string& data_root = "");
 
     virtual ~Dataset() {}
 
     /// Get data root directory. The data root is set at construction time or
     /// automatically determined.
     const std::string GetDataRoot() const { return data_root_; }
+    /// Get prefix for the dataset.
+    const std::string GetPrefix() const { return prefix_; }
+    /// Get help string for the dataset.
+    const std::string GetHelpString() const { return help_string_; }
 
+    /// Get path to extract directory.
+    /// \param relative_to_data_root If true, the path is relative to open3d
+    /// data root, otherwise it is absolute. (Default: false).
     const std::string GetExtractDir(
             const bool relative_to_data_root = false) const {
         return relative_to_data_root ? "extract/" + prefix_
                                      : data_root_ + "/extract/" + prefix_;
     }
+    /// Get path to download directory.
+    /// \param relative_to_data_root If true, the path is relative to open3d
+    /// data root, otherwise it is absolute. (Default: false).
     const std::string GetDownloadDir(
             const bool relative_to_data_root = false) const {
         return relative_to_data_root ? "download/" + prefix_
                                      : data_root_ + "/download/" + prefix_;
-    }
-
-    const std::string GetHelp() const {
-        if (help_.empty()) {
-            utility::LogError("No help string is provided.");
-        }
-
-        return help_;
     }
 
 protected:
@@ -98,15 +122,19 @@ protected:
     /// Dataset help string containing informations such as source,
     /// documentation link, functionalities, usage, licence, and other useful
     /// informations.
-    std::string help_;
+    std::string help_string_;
 };
 
+/// \class SimpleDataset
+/// \brief This class allows user to create simple dataset which includes single
+/// file downloading and extracting / copying.
 class SimpleDataset : public Dataset {
 public:
     SimpleDataset(const std::string& prefix,
                   const std::vector<std::string>& urls,
                   const std::string& md5,
                   const bool no_extract = false,
+                  const std::string& help_string = "",
                   const std::string& data_root = "");
 
     virtual ~SimpleDataset() {}
@@ -114,56 +142,75 @@ public:
 
 namespace dataset {
 
-class SamplePCDFragments : public SimpleDataset {
+/// \class SampleICPPointClouds
+/// \brief Dataset class for `SampleICPPointClouds` contains 3 `pointclouds` of
+/// `pcd binary` format. These pointclouds have `positions, colors, normals,
+/// curvatures`. This dataset is used in Open3D for ICP tutorials, examples,
+/// unit-tests, benchmarks.
+/// \copyright Creative Commons 3.0 (CC BY 3.0).
+class SampleICPPointClouds : public SimpleDataset {
 public:
-    SamplePCDFragments(const std::string& prefix = "SamplePCDFragments",
-                       const std::string& data_root = "")
+    SampleICPPointClouds(const std::string& prefix = "SampleICPPointClouds",
+                         const std::string& data_root = "")
         : SimpleDataset(
                   prefix,
                   {"https://github.com/isl-org/open3d_downloads/releases/"
-                   "download/sample-pcd-fragments/SamplePCDFragments.zip"},
-                  "4d39442a86e9fe80c967a6c513d57442") {
+                   "download/sample-icp-pointclouds/SampleICPPointClouds.zip"},
+                  "3ee7a2631caa3c47a333972e3c4fb315") {
         for (int i = 0; i < 3; ++i) {
-            path_to_fragments_.push_back(Dataset::GetExtractDir() +
-                                         "/cloud_bin_" + std::to_string(i) +
-                                         ".pcd");
+            path_to_pointclouds_.push_back(Dataset::GetExtractDir() +
+                                           "/cloud_bin_" + std::to_string(i) +
+                                           ".pcd");
         }
 
-        Dataset::help_ = std::string(R""""(
+        Dataset::help_string_ = std::string(R""""(
 Colored point-cloud fragments of living-room from ICL-NUIM
 RGBD Benchmark Dataset in PCD format.
 
 Information:
 - Type: Point cloud fragments [contains points, colors, normals, curvature].
 - Format: PCD Binary.
-- Source: ICL-NUIM RGBD Benchmark Dataset.
-- MD5: 4d39442a86e9fe80c967a6c513d57442
 
-Contents of SamplePCDFragments.zip:
-    SamplePCDFragments
+Contents of SampleICPPointClouds.zip:
+    SampleICPPointClouds
     ├── cloud_bin_0.pcd
     ├── cloud_bin_1.pcd
-    ├── cloud_bin_2.pcd
-    └── init.log
+    └── cloud_bin_2.pcd
 
-Data Members:
-    path_to_fragments_ : List of path to PCD point-cloud fragments.
-                         path_to_fragments_[x] returns path to `cloud_bin_x.pcd`
-                         where x is from 0 to 2.
-
-Application: Used in Open3D ICP registration demo examples.
-
+Source: ICL-NUIM RGBD Benchmark Dataset.
 Licence: The data is released under Creative Commons 3.0 (CC BY 3.0),
          see http://creativecommons.org/licenses/by/3.0/.
      )"""");
     }
 
+    /// \brief Returns list of paths to the pointclouds.
+    /// GetPaths()[x] returns path to `cloud_bin_x.pcd` pointcloud, where X is
+    /// between 0 to 2.
+    std::vector<std::string> GetPaths() const { return path_to_pointclouds_; }
+    /// \brief Returns path to the pointcloud at index.
+    /// GetPaths(x) returns path to `cloud_bin_x.pcd` pointcloud, where X is
+    /// between 0 to 2.
+    std::string GetPaths(size_t index) const {
+        if (index > 2) {
+            utility::LogError(
+                    "Invalid index. Expected index between 0 to 2 but got {}.",
+                    index);
+        }
+        return path_to_pointclouds_[index];
+    }
+
+private:
     // List of path to PCD point-cloud fragments.
-    // path_to_fragments_[x] returns path to `cloud_bin_x.pcd` where x is from 0
-    // to 2.
-    std::vector<std::string> path_to_fragments_;
+    // path_to_pointclouds_[x] returns path to `cloud_bin_x.pcd` where x is from
+    // 0 to 2.
+    std::vector<std::string> path_to_pointclouds_;
 };
 
+/// \class RedwoodLivingRoomFragments
+/// \brief Dataset class for `RedwoodLivingRoomFragments` contains 57
+/// `pointclouds` of `ply binary` format. These pointclouds have positions,
+/// colors, normals, curvatures.
+/// \copyright Creative Commons 3.0 (CC BY 3.0).
 class RedwoodLivingRoomFragments : public SimpleDataset {
 public:
     RedwoodLivingRoomFragments(
@@ -175,20 +222,60 @@ public:
                          "https://github.com/isl-org/open3d_downloads/releases/"
                          "download/redwood/livingroom1-fragments-ply.zip"},
                         "36e0eb23a66ccad6af52c05f8390d33e") {
-        path_to_fragments_.reserve(57);
+        path_to_pointclouds_.reserve(57);
         for (int i = 0; i < 57; ++i) {
-            path_to_fragments_.push_back(Dataset::GetExtractDir() +
-                                         "/cloud_bin_" + std::to_string(i) +
-                                         ".ply");
+            path_to_pointclouds_.push_back(Dataset::GetExtractDir() +
+                                           "/cloud_bin_" + std::to_string(i) +
+                                           ".ply");
         }
+        Dataset::help_string_ = std::string(R""""(
+Colored point-cloud fragments of living-room-1 from ICL-NUIM
+RGBD Benchmark Dataset in PLY format.
+
+Information:
+- Type: Point cloud fragments [contains points, colors, normals, curvature].
+- Format: PLY Binary.
+
+Contents of livingroom1-fragments-ply.zip:
+    RedwoodLivingRoomFragments
+    ├── cloud_bin_0.ply
+    ├── cloud_bin_1.ply
+    |   ...
+    └── cloud_bin_56.ply
+
+Source: ICL-NUIM RGBD Benchmark Dataset.
+Licence: The data is released under Creative Commons 3.0 (CC BY 3.0),
+         see http://creativecommons.org/licenses/by/3.0/.
+     )"""");
     }
 
+    /// GetPaths()[x] returns path to `cloud_bin_x.ply` pointcloud, where x is
+    /// between 0 to 56.
+    std::vector<std::string> GetPaths() const { return path_to_pointclouds_; }
+    /// \brief Returns path to the pointcloud at index.
+    /// GetPaths(x) returns path to `cloud_bin_x.ply` pointcloud, where x is
+    /// between 0 to 56.
+    std::string GetPaths(size_t index) const {
+        if (index > 56) {
+            utility::LogError(
+                    "Invalid index. Expected index between 0 to 56 but got {}.",
+                    index);
+        }
+        return path_to_pointclouds_[index];
+    }
+
+private:
     // Path to PLY point-cloud fragments.
-    // path_to_fragments_[x] return path to `cloud_bin_x.ply` where x is from 0
-    // to 56.
-    std::vector<std::string> path_to_fragments_;
+    // path_to_pointclouds_[x] return path to `cloud_bin_x.ply` where x is from
+    // 0 to 56.
+    std::vector<std::string> path_to_pointclouds_;
 };
 
+/// \class RedwoodOfficeFragments
+/// \brief Dataset class for `RedwoodOfficeFragments` contains 51
+/// `pointclouds` of `ply binary` format. These pointclouds have positions,
+/// colors, normals, curvatures.
+/// \copyright Creative Commons 3.0 (CC BY 3.0).
 class RedwoodOfficeFragments : public SimpleDataset {
 public:
     RedwoodOfficeFragments(const std::string& prefix = "RedwoodOfficeFragments",
@@ -199,18 +286,53 @@ public:
                          "https://github.com/isl-org/open3d_downloads/releases/"
                          "download/redwood/office1-fragments-ply.zip"},
                         "c519fe0495b3c731ebe38ae3a227ac25") {
-        path_to_fragments_.reserve(57);
+        path_to_pointclouds_.reserve(57);
         for (int i = 0; i < 52; ++i) {
-            path_to_fragments_.push_back(Dataset::GetExtractDir() +
-                                         "/cloud_bin_" + std::to_string(i) +
-                                         ".ply");
+            path_to_pointclouds_.push_back(Dataset::GetExtractDir() +
+                                           "/cloud_bin_" + std::to_string(i) +
+                                           ".ply");
         }
+        Dataset::help_string_ = std::string(R""""(
+Colored point-cloud fragments of office-1 from ICL-NUIM
+RGBD Benchmark Dataset in PLY format.
+
+Information:
+- Type: Point cloud fragments [contains points, colors, normals, curvature].
+- Format: PLY Binary.
+
+Contents of office1-fragments-ply.zip:
+    RedwoodOfficeFragments
+    ├── cloud_bin_0.ply
+    ├── cloud_bin_1.ply
+    |   ...
+    └── cloud_bin_51.ply
+
+Source: ICL-NUIM RGBD Benchmark Dataset.
+Licence: The data is released under Creative Commons 3.0 (CC BY 3.0),
+         see http://creativecommons.org/licenses/by/3.0/.
+     )"""");
     }
 
+    /// \brief GetPaths()[x] returns path to `cloud_bin_x.ply` pointcloud, where
+    /// X is between 0 to 51.
+    std::vector<std::string> GetPaths() const { return path_to_pointclouds_; }
+    /// \brief Returns path to the pointcloud at index.
+    /// GetPaths(x) returns path to `cloud_bin_x.ply` pointcloud, where x is
+    /// between 0 to 51.
+    std::string GetPaths(size_t index) const {
+        if (index > 51) {
+            utility::LogError(
+                    "Invalid index. Expected index between 0 to 51 but got {}.",
+                    index);
+        }
+        return path_to_pointclouds_[index];
+    }
+
+private:
     // Path to PLY point-cloud fragments.
-    // path_to_fragments_[x] return path to `cloud_bin_x.ply` where x is from 0
-    // to 51.
-    std::vector<std::string> path_to_fragments_;
+    // path_to_pointclouds_[x] return path to `cloud_bin_x.ply` where x is from
+    // 0 to 51.
+    std::vector<std::string> path_to_pointclouds_;
 };
 
 }  // namespace dataset
