@@ -26,9 +26,10 @@
 
 # examples/python/utility/downloader.py
 
-import zipfile
 import os
 import sys
+import zipfile
+
 if (sys.version_info > (3, 0)):
     pyver = 3
     from urllib.request import Request, urlopen
@@ -55,10 +56,10 @@ def get_redwood_dataset():
             print("")
 
 
-def file_downloader(url):
+def file_downloader(url, out_dir="."):
     file_name = url.split('/')[-1]
     u = urlopen(url)
-    f = open(file_name, "wb")
+    f = open(os.path.join(out_dir, file_name), "wb")
     if pyver == 2:
         meta = u.info()
         file_size = int(meta.getheaders("Content-Length")[0])
