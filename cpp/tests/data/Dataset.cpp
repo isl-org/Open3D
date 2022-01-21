@@ -46,14 +46,10 @@ TEST(Dataset, DatasetBase) {
     EXPECT_EQ(ds_custom.GetPrefix(), "some_prefix");
     EXPECT_EQ(ds_custom.GetHelpString(), "some help documentation string");
     EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
-    EXPECT_EQ(ds_custom.GetDownloadDir(/*relative_to_data_root =*/false),
+    EXPECT_EQ(ds_custom.GetDownloadDir(),
               "/my/custom/data_root/download/some_prefix");
-    EXPECT_EQ(ds_custom.GetExtractDir(/*relative_to_data_root =*/false),
+    EXPECT_EQ(ds_custom.GetExtractDir(),
               "/my/custom/data_root/extract/some_prefix");
-    EXPECT_EQ(ds_custom.GetDownloadDir(/*relative_to_data_root =*/true),
-              "download/some_prefix");
-    EXPECT_EQ(ds_custom.GetExtractDir(/*relative_to_data_root =*/true),
-              "extract/some_prefix");
 }
 
 TEST(Dataset, DownloadDatasets) {
