@@ -89,15 +89,15 @@ public:
 
     virtual ~Dataset() {}
 
-    /// Get data root directory. The data root is set at construction time or
-    /// automatically determined.
+    /// \brief Get data root directory. The data root is set at construction
+    /// time or automatically determined.
     const std::string GetDataRoot() const { return data_root_; }
-    /// Get prefix for the dataset.
+    /// \brief Get prefix for the dataset.
     const std::string GetPrefix() const { return prefix_; }
-    /// Get help string for the dataset.
+    /// \brief Get help string for the dataset.
     const std::string GetHelpString() const { return help_string_; }
 
-    /// Get path to extract directory.
+    /// \brief Get path to extract directory.
     /// \param relative_to_data_root If true, the path is relative to open3d
     /// data root, otherwise it is absolute. (Default: false).
     const std::string GetExtractDir(
@@ -105,7 +105,7 @@ public:
         return relative_to_data_root ? "extract/" + prefix_
                                      : data_root_ + "/extract/" + prefix_;
     }
-    /// Get path to download directory.
+    /// \brief Get path to download directory.
     /// \param relative_to_data_root If true, the path is relative to open3d
     /// data root, otherwise it is absolute. (Default: false).
     const std::string GetDownloadDir(
@@ -228,6 +228,7 @@ public:
                                            "/cloud_bin_" + std::to_string(i) +
                                            ".ply");
         }
+
         Dataset::help_string_ = std::string(R""""(
 Colored point-cloud fragments of living-room-1 from ICL-NUIM
 RGBD Benchmark Dataset in PLY format.
@@ -249,8 +250,8 @@ Licence: The data is released under Creative Commons 3.0 (CC BY 3.0),
      )"""");
     }
 
-    /// GetPaths()[x] returns path to `cloud_bin_x.ply` pointcloud, where x is
-    /// between 0 to 56.
+    /// \brief GetPaths()[x] returns path to `cloud_bin_x.ply` pointcloud, where
+    /// x is between 0 to 56.
     std::vector<std::string> GetPaths() const { return path_to_pointclouds_; }
     /// \brief Returns path to the pointcloud at index.
     /// GetPaths(x) returns path to `cloud_bin_x.ply` pointcloud, where x is
@@ -292,6 +293,7 @@ public:
                                            "/cloud_bin_" + std::to_string(i) +
                                            ".ply");
         }
+
         Dataset::help_string_ = std::string(R""""(
 Colored point-cloud fragments of office-1 from ICL-NUIM
 RGBD Benchmark Dataset in PLY format.
@@ -333,7 +335,7 @@ private:
     // path_to_pointclouds_[x] return path to `cloud_bin_x.ply` where x is from
     // 0 to 51.
     std::vector<std::string> path_to_pointclouds_;
-};
+};  // namespace data
 
 }  // namespace dataset
 }  // namespace data

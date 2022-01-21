@@ -35,22 +35,33 @@
 namespace open3d {
 namespace tests {
 
-TEST(Dataset, LocateDataRoot) {
+TEST(Dataset, DatasetBase) {
     // Prefix cannot be empty.
     data::Dataset ds("some_prefix");
     EXPECT_EQ(ds.GetDataRoot(),
               utility::filesystem::GetHomeDirectory() + "/open3d_data");
 
-    data::Dataset ds_custom("some_prefix", "/my/custom/data_root");
+    data::Dataset ds_custom("some_prefix", "some help documentation string",
+                            "/my/custom/data_root");
+    EXPECT_EQ(ds_custom.GetPrefix(), "some_prefix");
+    EXPECT_EQ(ds_custom.GetHelpString(), "some help documentation string");
     EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
+    EXPECT_EQ(ds_custom.GetDownloadDir(/*relative_to_data_root =*/false),
+              "/my/custom/data_root/download/some_prefix");
+    EXPECT_EQ(ds_custom.GetExtractDir(/*relative_to_data_root =*/false),
+              "/my/custom/data_root/extract/some_prefix");
+    EXPECT_EQ(ds_custom.GetDownloadDir(/*relative_to_data_root =*/true),
+              "download/some_prefix");
+    EXPECT_EQ(ds_custom.GetExtractDir(/*relative_to_data_root =*/true),
+              "extract/some_prefix");
 }
 
 TEST(Dataset, DownloadDatasets) {
-    data::dataset::SamplePCDFragments sample_data;
-    utility::LogInfo("SamplePCDFragments dataset information: \n{}\n",
-                     sample_data.GetHelp());
+    data::dataset::SampleICPPointClouds sample_icp_pointclouds;
+    utility::LogInfo("SampleICPPointClouds dataset information: \n{}\n",
+                     sample_icp_pointclouds.GetHelpString());
     t::geometry::PointCloud pcd;
-    EXPECT_TRUE(t::io::ReadPointCloud(sample_data.path_to_fragments_[0], pcd));
+    EXPECT_TRUE(t::io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), pcd));
 }
 
 }  // namespace tests
