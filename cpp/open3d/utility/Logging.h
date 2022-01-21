@@ -147,6 +147,9 @@ public:
     /// Reset the print function to the default one (print to console).
     void ResetPrintFunction();
 
+    /// Get the print function used by the Logger.
+    const std::function<void(const std::string &)> GetPrintFunction();
+
     /// Set global verbosity level of Open3D.
     ///
     /// \param verbosity_level Messages with equal or less than verbosity_level

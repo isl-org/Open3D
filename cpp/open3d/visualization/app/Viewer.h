@@ -27,13 +27,19 @@
 #include <memory>
 
 namespace open3d {
-namespace geometry {
-class Geometry;
-}
-namespace visualizer {
-class GuiVisualizer;
-}
-}  // namespace open3d
+namespace visualization {
+namespace app {
 
-#define WIDTH 1280
-#define HEIGHT 960
+/// Runs Open3D Viewer. This function is called when the standalone viewer app
+/// is run or when the draw command is called from the command line interface.
+
+/// \param argc (argument count) is the number of arguments in \p argv .
+/// \param argv (argument vector) is the array of arguments stored as character
+/// arrays. It contains the path of the calling program (which should be in the
+/// same directory as the gui resoruces folder) as the first argument. The
+/// optional second argument is the path of the geometry file to be visualized
+void RunViewer(int argc, const char *argv[]);
+
+}  // namespace app
+}  // namespace visualization
+}  // namespace open3d
