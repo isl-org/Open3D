@@ -149,19 +149,19 @@ inline __device__ void warpBitonicMergeLE16(K& k, V& v) {
         V otherV = shfl_xor(v, 2 * L - 1);
 
         // Whether we are the lesser thread in the exchange
-        bool small = !(laneId & L);
+        bool small = (laneId & L) == 0;
 
         if (Dir) {
             // See the comment above how performing both of these
             // comparisons in the warp seems to win out over the
             // alternatives in practice
             // bool s = small ? Comp::gt(k, otherK) : Comp::lt(k, otherK);
-            bool s = small ? k > otherK : k < otherK;
+            bool s = small ? (k > otherK) : (k < otherK);
             assign(s, k, otherK);
             assign(s, v, otherV);
 
         } else {
-            bool s = small ? k > otherK : k < otherK;
+            bool s = small ? (k < otherK) : (k > otherK);
             assign(s, k, otherK);
             assign(s, v, otherV);
         }
@@ -173,17 +173,17 @@ inline __device__ void warpBitonicMergeLE16(K& k, V& v) {
         V otherV = shfl_xor(v, stride);
 
         // Whether we are the lesser thread in the exchange
-        bool small = !(laneId & stride);
+        bool small = (laneId & stride) == 0;
 
         if (Dir) {
             // bool s = small ? Comp::gt(k, otherK) : Comp::lt(k, otherK);
-            bool s = small ? k > otherK : k < otherK;
+            bool s = small ? (k > otherK) : (k < otherK);
             assign(s, k, otherK);
             assign(s, v, otherV);
 
         } else {
             // bool s = small ? Comp::lt(k, otherK) : Comp::gt(k, otherK);
-            bool s = small ? k < otherK : k > otherK;
+            bool s = small ? (k < otherK) : (k > otherK);
             assign(s, k, otherK);
             assign(s, v, otherV);
         }

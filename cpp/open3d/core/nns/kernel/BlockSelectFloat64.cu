@@ -209,5 +209,6 @@ void runBlockSelectPair(cudaStream_t stream,
         }
     }
 }
+
 }  // namespace core
 }  // namespace open3d
