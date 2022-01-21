@@ -39,6 +39,7 @@ from collections import OrderedDict
 import numpy as np
 import open3d as o3d
 from scipy.spatial import cKDTree
+import nvidia_smi
 
 from benchmark_utils import measure_time, print_system_info, print_table
 
@@ -141,6 +142,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # devices
+    nvidia_smi.nvmlInit()
+    handle = nvidia_smi.nvmlDeviceGetHandleByIndex(0)
     o3d_cpu_dev = o3d.core.Device()
     o3d_cuda_dev = o3d.core.Device(o3d.core.Device.CUDA, 0)
 
@@ -165,8 +168,8 @@ if __name__ == "__main__":
     methods = [
         NNS(o3d_cuda_dev, args.search_type, "int"),
         NNS(o3d_cuda_dev, args.search_type, "long"),
-        NNS(o3d_cpu_dev, args.search_type, "int"),
-        NNS(o3d_cpu_dev, args.search_type, "long"),
+        # NNS(o3d_cpu_dev, args.search_type, "int"),
+        # NNS(o3d_cpu_dev, args.search_type, "long"),
     ]
     neighbors = (1, 37, 64)
 
@@ -204,6 +207,9 @@ if __name__ == "__main__":
                 ans = measure_time(lambda: method.search(
                     index, queries, dict(knn=knn, radius=radius)))
                 example_results['search'] = ans
+
+                info = nvidia_smi.nvmlDeviceGetMemoryInfo(handle)
+                example_results['memory'] = info.used / 1024. / 1024.
 
                 results[
                     f'{example_name} n={points.shape[0]} k={knn}'] = example_results

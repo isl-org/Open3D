@@ -99,13 +99,13 @@ def measure_time(fn, min_samples=10, max_samples=100, max_time_in_sec=10.0):
 
 def print_table(methods, results):
     headers = [''] + [f'{n}_setup' for n in methods
-                     ] + [f'{n}_search' for n in methods]
+                     ] + [f'{n}_search' for n in methods] + [f'{n}_memory' for n in methods]
     rows = []
 
     for x in results[0]:
         r = [x] + list(
             map(np.median, [r[x]['setup'] for r in results] +
-                [r[x]['search'] for r in results]))
+                [r[x]['search'] for r in results] + [r[x]['memory'] for r in results]))
         rows.append(r)
 
     print(tabulate.tabulate(rows, headers=headers))
