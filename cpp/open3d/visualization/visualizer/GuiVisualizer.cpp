@@ -315,6 +315,7 @@ private:
 }  // namespace
 
 const std::string MODEL_NAME = "__model__";
+const std::string INSPECT_MODEL_NAME = "__inspect_model__";
 
 enum MenuId {
     FILE_OPEN,
@@ -358,6 +359,7 @@ struct GuiVisualizer::Impl {
     std::shared_ptr<gui::Menu> app_menu_;
 
     bool sun_follows_camera_ = false;
+    bool basic_mode_enabled_ = false;
 
     void InitializeMaterials(rendering::Renderer &renderer,
                              const std::string &resource_path) {
@@ -410,6 +412,63 @@ struct GuiVisualizer::Impl {
         settings_.wgt_mouse_ibl->SetOn(mode == Controls::ROTATE_IBL);
     }
 
+    void SetBasicModeGeometry(bool enable) {
+        auto o3dscene = scene_wgt_->GetScene();
+        // Setup inspection material
+        rendering::MaterialRecord inspect_mat;
+        inspect_mat.base_color = {1.f, 1.f, 1.f, 1.f};
+        inspect_mat.base_metallic = 0.f;
+        inspect_mat.base_clearcoat = 0.f;
+        inspect_mat.base_anisotropy = 0.f;
+        inspect_mat.sRGB_color = false;
+        inspect_mat.sRGB_vertex_color = true;
+
+        if (!enable) {
+            o3dscene->RemoveGeometry(INSPECT_MODEL_NAME);
+            o3dscene->ShowGeometry(MODEL_NAME, true);
+        } else {
+            // Create inspection geometry
+            if (loaded_pcd_ && loaded_pcd_->HasNormals()) {
+                utility::LogWarning("In loaded pcd");
+                inspect_mat.base_roughness = 0.1f;
+                inspect_mat.base_reflectance = 0.6f;
+                o3dscene->ShowGeometry(MODEL_NAME, false);
+                o3dscene->AddGeometry(INSPECT_MODEL_NAME, loaded_pcd_.get(), inspect_mat);
+            } else {
+                inspect_mat.base_roughness = 0.5f;
+                inspect_mat.base_reflectance = 0.8f;
+            }
+        }
+    }
+
+    void SetBasicMode(bool enable) {
+        auto o3dscene = scene_wgt_->GetScene();
+        auto view = o3dscene->GetView();
+        auto low_scene = o3dscene->GetScene();
+
+        // Set lighting environment for inspection
+        if (enable) {
+            // Set lighting environment for inspection
+            o3dscene->SetBackground({1.f, 1.f, 1.f, 1.f});
+            low_scene->ShowSkybox(false);
+            low_scene->EnableIndirectLight(false);
+            low_scene->EnableSunLight(true);
+            low_scene->EnableSunLightShadows(false);
+            low_scene->SetSunLightIntensity(160000.f);
+            view->SetShadowing(false, rendering::View::ShadowType::kPCF);
+            view->SetPostProcessing(false);
+            // Update geometry for inspection
+            //UpdateGeometryForInspectionMode(true);
+        } else {
+            view->SetPostProcessing(true);
+            view->SetShadowing(true, rendering::View::ShadowType::kPCF);
+            //UpdateGeometryForInspectionMode(false);
+        }
+
+        // Update geometry for basic mode
+        SetBasicModeGeometry(enable);
+    }
+
     void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
         auto bcolor = settings_.model_.GetBackgroundColor();
         scene_wgt_->GetScene()->SetBackground(
@@ -426,14 +485,19 @@ struct GuiVisualizer::Impl {
                 settings_.model_.GetShowGround(),
                 rendering::Scene::GroundPlane::XZ);
 
-        UpdateLighting(renderer, settings_.model_.GetLighting());
-
         // Does user want Point Cloud normals estimated?
         if (settings_.model_.GetUserWantsEstimateNormals()) {
             RunNormalEstimation();
         }
 
-        // Make sure scene redraws once changes have been applied
+        if (settings_.model_.GetBasicMode() != basic_mode_enabled_) {
+            basic_mode_enabled_ = settings_.model_.GetBasicMode();
+            SetBasicMode(basic_mode_enabled_);
+        }
+
+        UpdateLighting(renderer, settings_.model_.GetLighting());
+
+         // Make sure scene redraws once changes have been applied
         scene_wgt_->ForceRedraw();
 
         // Bail early if there were no material property changes
@@ -889,7 +953,9 @@ void GuiVisualizer::SetGeometry(
             geometry::Geometry::GeometryType::PointCloud) {
             auto pcd = std::static_pointer_cast<const geometry::PointCloud>(g);
 
-            if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
+            if (pcd->HasNormals()) {
+                loaded_material.shader = "defaultLit";
+            } else if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
                 loaded_material.shader = "defaultUnlit";
             } else {
                 loaded_material.shader = "defaultLit";
