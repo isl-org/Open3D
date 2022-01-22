@@ -164,7 +164,7 @@ Contents of livingroom1-fragments-ply.zip:
     RedwoodLivingRoomFragments
     ├── cloud_bin_0.ply
     ├── cloud_bin_1.ply
-    |   ...
+    │   ...
     └── cloud_bin_56.ply
 
 Source: ICL-NUIM RGBD Benchmark Dataset.
@@ -194,8 +194,8 @@ RedwoodOfficeFragments::RedwoodOfficeFragments(const std::string& prefix,
                      "https://github.com/isl-org/open3d_downloads/releases/"
                      "download/redwood/office1-fragments-ply.zip"},
                     "c519fe0495b3c731ebe38ae3a227ac25") {
-    paths_.reserve(57);
-    for (int i = 0; i < 52; ++i) {
+    paths_.reserve(53);
+    for (int i = 0; i < 53; ++i) {
         paths_.push_back(Dataset::GetExtractDir() + "/cloud_bin_" +
                          std::to_string(i) + ".ply");
     }
@@ -212,8 +212,8 @@ Contents of office1-fragments-ply.zip:
     RedwoodOfficeFragments
     ├── cloud_bin_0.ply
     ├── cloud_bin_1.ply
-    |   ...
-    └── cloud_bin_51.ply
+    │   ...
+    └── cloud_bin_52.ply
 
 Source: ICL-NUIM RGBD Benchmark Dataset.
 Licence: Creative Commons 3.0 (CC BY 3.0).
@@ -226,9 +226,9 @@ MD5: 36e0eb23a66ccad6af52c05f8390d33e
 }
 
 std::string RedwoodOfficeFragments::GetPaths(size_t index) const {
-    if (index > 51) {
+    if (index > 52) {
         utility::LogError(
-                "Invalid index. Expected index between 0 to 51 but got {}.",
+                "Invalid index. Expected index between 0 to 52 but got {}.",
                 index);
     }
     return paths_[index];
