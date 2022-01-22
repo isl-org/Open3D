@@ -346,7 +346,7 @@ struct O3DVisualizer::Impl {
         Checkbox *show_skybox;
         Checkbox *show_axes;
         Checkbox *show_ground;
-        Checkbox *inspection_mode;
+        Checkbox *basic_mode;
         Combobox *ground_plane;
         ColorEdit *bg_color;
         Slider *point_size;
@@ -633,8 +633,8 @@ struct O3DVisualizer::Impl {
             }
         });
 
-        settings.inspection_mode = new Checkbox("");
-        settings.inspection_mode->SetOnChecked(
+        settings.basic_mode = new Checkbox("");
+        settings.basic_mode->SetOnChecked(
                 [this](bool enable) { this->EnableInspectionMode(enable); });
 
         auto *grid = new VGrid(2, v_spacing);
@@ -649,7 +649,7 @@ struct O3DVisualizer::Impl {
         grid->AddChild(std::make_shared<Label>("Lighting"));
         grid->AddChild(GiveOwnership(settings.lighting));
         grid->AddChild(std::make_shared<Label>("Basic Mode"));
-        grid->AddChild(GiveOwnership(settings.inspection_mode));
+        grid->AddChild(GiveOwnership(settings.basic_mode));
 
         // Light list
         settings.light_panel = new CollapsableVert("Lighting", 0, margins);
