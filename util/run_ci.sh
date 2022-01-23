@@ -9,7 +9,7 @@ echo "nproc = $(getconf _NPROCESSORS_ONLN) NPROC = ${NPROC}"
 
 install_python_dependencies with-unit-test purge-cache
 
-build_all
+build_all pack
 
 echo "Building examples iteratively..."
 make VERBOSE=1 -j"$NPROC" build-examples-iteratively
