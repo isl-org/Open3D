@@ -36,6 +36,7 @@ pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 sys.path.append(pyexample_path)
 
+
 def draw_registration_result(source, target, transformation):
     source_temp = copy.deepcopy(source)
     target_temp = copy.deepcopy(target)
@@ -44,6 +45,7 @@ def draw_registration_result(source, target, transformation):
     source_temp.transform(transformation)
     o3d.visualization.draw([source_temp, target_temp])
 
+
 def apply_noise(pcd, mu, sigma):
     noisy_pcd = copy.deepcopy(pcd)
     points = np.asarray(noisy_pcd.points)
@@ -51,12 +53,15 @@ def apply_noise(pcd, mu, sigma):
     noisy_pcd.points = o3d.utility.Vector3dVector(points)
     return noisy_pcd
 
+
 if __name__ == "__main__":
-    source = o3d.io.read_point_cloud(os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
-    target = o3d.io.read_point_cloud(os.path.join(test_data_path, 'ICP', 'cloud_bin_1.pcd'))
+    source = o3d.io.read_point_cloud(
+        os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
+    target = o3d.io.read_point_cloud(
+        os.path.join(test_data_path, 'ICP', 'cloud_bin_1.pcd'))
     trans_init = np.asarray([[0.862, 0.011, -0.507, 0.5],
-                            [-0.139, 0.967, -0.215, 0.7],
-                            [0.487, 0.255, 0.835, -1.4], [0.0, 0.0, 0.0, 1.0]])
+                             [-0.139, 0.967, -0.215, 0.7],
+                             [0.487, 0.255, 0.835, -1.4], [0.0, 0.0, 0.0, 1.0]])
 
     # Mean and standard deviation.
     mu, sigma = 0, 0.1
@@ -76,9 +81,8 @@ if __name__ == "__main__":
     loss = o3d.pipelines.registration.TukeyLoss(k=sigma)
     print("Using robust loss:", loss)
     p2l = o3d.pipelines.registration.TransformationEstimationPointToPlane(loss)
-    reg_p2l = o3d.pipelines.registration.registration_icp(source_noisy, target,
-                                                        threshold, trans_init,
-                                                        p2l)
+    reg_p2l = o3d.pipelines.registration.registration_icp(
+        source_noisy, target, threshold, trans_init, p2l)
     print(reg_p2l)
     print("Transformation is:")
     print(reg_p2l.transformation)

@@ -35,16 +35,19 @@ pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 sys.path.append(pyexample_path)
 
+
 def load_point_clouds(voxel_size=0.0):
     pcds = []
     for i in range(3):
-        pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, 'ICP', 'cloud_bin_%d.pcd' %i))
+        pcd = o3d.io.read_point_cloud(
+            os.path.join(test_data_path, 'ICP', 'cloud_bin_%d.pcd' % i))
         pcd_down = pcd.voxel_down_sample(voxel_size=voxel_size)
         pcds.append(pcd_down)
     return pcds
 
+
 def pairwise_registration(source, target, max_correspondence_distance_coarse,
-                      max_correspondence_distance_fine):
+                          max_correspondence_distance_fine):
     print("Apply point-to-plane ICP")
     icp_coarse = o3d.pipelines.registration.registration_icp(
         source, target, max_correspondence_distance_coarse, np.identity(4),
@@ -69,8 +72,9 @@ def full_registration(pcds, max_correspondence_distance_coarse,
     for source_id in range(n_pcds):
         for target_id in range(source_id + 1, n_pcds):
             transformation_icp, information_icp = pairwise_registration(
-                pcds[source_id], pcds[target_id], max_correspondence_distance_coarse,
-                      max_correspondence_distance_fine)
+                pcds[source_id], pcds[target_id],
+                max_correspondence_distance_coarse,
+                max_correspondence_distance_fine)
             print("Build o3d.pipelines.registration.PoseGraph")
             if target_id == source_id + 1:  # odometry case
                 odometry = np.dot(transformation_icp, odometry)
@@ -92,6 +96,7 @@ def full_registration(pcds, max_correspondence_distance_coarse,
                                                              uncertain=True))
     return pose_graph
 
+
 if __name__ == "__main__":
     voxel_size = 0.02
     pcds_down = load_point_clouds(voxel_size)
@@ -103,8 +108,8 @@ if __name__ == "__main__":
     with o3d.utility.VerbosityContextManager(
             o3d.utility.VerbosityLevel.Debug) as cm:
         pose_graph = full_registration(pcds_down,
-                                    max_correspondence_distance_coarse,
-                                    max_correspondence_distance_fine)
+                                       max_correspondence_distance_coarse,
+                                       max_correspondence_distance_fine)
 
     print("Optimizing PoseGraph ...")
     option = o3d.pipelines.registration.GlobalOptimizationOption(

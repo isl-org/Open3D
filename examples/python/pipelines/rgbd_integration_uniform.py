@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/pipelines/rgbd_integration_uniform.py
-
 import open3d as o3d
 import numpy as np
 

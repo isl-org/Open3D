@@ -36,14 +36,18 @@ pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 sys.path.append(pyexample_path)
 
+
 def draw_registration_result(source, target, transformation):
     source_temp = copy.deepcopy(source)
     source_temp.transform(transformation)
     o3d.visualization.draw([source_temp, target])
 
+
 print("Load two point clouds and show initial pose ...")
-source = o3d.io.read_point_cloud(os.path.join(test_data_path, 'ColoredICP', 'frag_115.ply'))
-target = o3d.io.read_point_cloud(os.path.join(test_data_path, 'ColoredICP', 'frag_116.ply'))
+source = o3d.io.read_point_cloud(
+    os.path.join(test_data_path, 'ColoredICP', 'frag_115.ply'))
+target = o3d.io.read_point_cloud(
+    os.path.join(test_data_path, 'ColoredICP', 'frag_116.ply'))
 
 if __name__ == "__main__":
     # Draw initial alignment.
@@ -77,9 +81,8 @@ if __name__ == "__main__":
         result_icp = o3d.pipelines.registration.registration_colored_icp(
             source_down, target_down, radius, current_transformation,
             o3d.pipelines.registration.TransformationEstimationForColoredICP(),
-            o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-6,
-                                                            relative_rmse=1e-6,
-                                                            max_iteration=iter))
+            o3d.pipelines.registration.ICPConvergenceCriteria(
+                relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=iter))
         current_transformation = result_icp.transformation
         print(result_icp, "\n")
     draw_registration_result(source, target, result_icp.transformation)

@@ -24,11 +24,8 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/visualization/non_blocking_visualization.py
-
 import open3d as o3d
 import numpy as np
-import copy
 import os
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

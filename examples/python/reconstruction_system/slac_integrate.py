@@ -33,7 +33,7 @@ import os, sys
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from utility.file import join, get_rgbd_file_lists
+from open3d_example import join, get_rgbd_file_lists
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

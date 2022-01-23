@@ -24,9 +24,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/misc/realsense.py
-
-# Simple example to show RealSense camera discovery and frame capture
+"""Demonstrate RealSense camera discovery and frame capture"""
 
 import open3d as o3d
 

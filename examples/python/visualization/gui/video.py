@@ -32,9 +32,11 @@ import os
 import time
 import threading
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-RGB_DIR = os.path.join(SCRIPT_DIR, "../../test_data/RGBD/color")
-DEPTH_DIR = os.path.join(SCRIPT_DIR, "../../test_data/RGBD/depth")
+pyexample_path = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+RGB_DIR = os.path.join(test_data_path, 'RGBD', 'color')
+DEPTH_DIR = os.path.join(test_data_path, 'RGBD', 'depth')
 
 
 def rescale_greyscale(img):
