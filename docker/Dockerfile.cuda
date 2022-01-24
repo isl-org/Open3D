@@ -147,7 +147,7 @@ RUN mkdir build \
  && make VERBOSE=1 -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
- && { if [ $PACKAGE == ON ] ; then make package ; fi ; }
+ && { if [ "$PACKAGE" == "ON" ] ; then make package ; fi ; }
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
@@ -156,7 +156,7 @@ RUN ccache -s \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
  && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
- && { if [ $PACKAGE == ON ] ; then mv build/package/*.tar.xz / ; fi ; } \
+ && { if [ "$PACKAGE" == "ON" ] ; then mv /root/Open3D/build/package/open3d-devel*.tar.xz / ; fi ; } \
  && ls -alh /
 
 RUN echo "Docker build done."

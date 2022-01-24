@@ -9,7 +9,6 @@ on:
     types: [opened, reopened, synchronize]
 
 env:
-  GCE_PROJECT: ${{ secrets.GCE_PROJECT }}
   GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
   GCE_CLI_GHA_VERSION: "302.0.0"
 
@@ -124,19 +123,21 @@ jobs:
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
             --command="sudo Open3D/docker/docker_build.sh ${CI_CONFIG}"
-          gcloud compute scp --zone="${GCE_ZONE}" \
-            "${INSTANCE_NAME}":/opt/mount/open3d-devel-linux*.tar.xz $PWD
+          if [ ${{ matrix.CI_CONFIG }} == '3-ml-shared-bionic' ]; then
+              gcloud compute scp --zone="${GCE_ZONE}" \
+                "${INSTANCE_NAME}":/opt/mount/open3d-devel-linux*.tar.xz $PWD
+          fi
 
       - name: Upload package
         if: ${{ matrix.CI_CONFIG == '3-ml-shared-bionic' }}
         uses: actions/upload-artifact@v2
         with:
-          name: open3d-devel-linux-x86_64
+          name: open3d-devel-linux-x86_64-cuda
           path: open3d-devel-linux*.tar.xz
           if-no-files-found: error
 
       - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' && matrix.CI_CONFIG == '3-ml-shared-bionic' }}
+        if: ${{ github.ref != 'refs/heads/master' && matrix.CI_CONFIG == '3-ml-shared-bionic' }}
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \

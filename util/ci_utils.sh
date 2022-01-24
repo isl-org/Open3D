@@ -150,8 +150,7 @@ build_all() {
     make VERBOSE=1 -j"$NPROC"
     make VERBOSE=1 install -j"$NPROC"
     if [[ "$SHARED" == "ON" ]]; then
-        echo "Packaging Open3D..."
-        make VERBOSE=1 package
+        make package
     fi
     make VERBOSE=1 install-pip-package -j"$NPROC"
     echo

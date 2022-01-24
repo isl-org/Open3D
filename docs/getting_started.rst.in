@@ -23,24 +23,38 @@ complete pre-built binary package archives for all supported platforms on
 `v0.15`). Also, the latest development version (`HEAD` of `master` branch)
 binary package archives are provided here:
 
-:Linux (glibc 2.27+, CUDA 11.x): `x86_64
-                                 <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
-                                 `armv8
-                                 <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-armv8-@OPEN3D_VERSION_FULL@.tar.xz>`__
+:Linux (glibc 2.27+): `x86_64
+                      <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
+                      `x86_64 CUDA 11.x
+                      <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
+                      `armv8
+                      <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-armv8-@OPEN3D_VERSION_FULL@.tar.xz>`__
 
 :MacOSX v10.15+: `x86_64
                  <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-darwin-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
 
 :Windows 10+: `x86_64 Release
-              <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-x86_64-@OPEN3D_VERSION_FULL@.zip>`__
+              <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@.zip>`__
               `x86_64 Debug
-              <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-x86_64-@OPEN3D_VERSION_FULL@-dbg.zip>`__
+              <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@-dbg.zip>`__
 
 If you need only a subset of features, or a custom build configuration, please
 refer to :ref:`compilation` and compile Open3D from source.
 
-.. _install_open3d_python:
+Try it
+------
 
+To use Open3D in your C++ project, checkout the following example CMake
+projects:
+
+* `Find Pre-Installed Open3D Package in CMake <https://github.com/isl-org/open3d-cmake-find-package>`__
+* `Use Open3D as a CMake External Project <https://github.com/isl-org/open3d-cmake-external-project>`__
+
+The C++ code examples in the `examples/cpp` folder of the repository illistrate
+a lot of the functionality available in Open3D and are a good place to start
+using Open3D in your projects.
+
+.. _install_open3d_python:
 
 Python
 ======
