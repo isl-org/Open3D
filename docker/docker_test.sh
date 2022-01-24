@@ -42,7 +42,7 @@ OPTION:
     5-ml-focal          : CUDA CI, 5-ml-focal
 "
 
-HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/../.. >/dev/null 2>&1 && pwd)"
+HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
 print_usage_and_exit_docker_test() {
     echo "$__usage_docker_test"
@@ -149,7 +149,7 @@ if [[ "$#" -ne 1 ]]; then
     print_usage_and_exit_docker_test
 fi
 echo "[$(basename $0)] building $1"
-source "${HOST_OPEN3D_ROOT}/.github/workflows/docker_build.sh"
+source "${HOST_OPEN3D_ROOT}/docker/docker_build.sh"
 case "$1" in
     # OpenBLAS AMD64
     openblas-amd64-py36-dev)

@@ -24,16 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <memory>
+#pragma once
+
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace geometry {
-class Geometry;
-}
-namespace visualizer {
-class GuiVisualizer;
-}
-}  // namespace open3d
+namespace visualization {
+namespace app {
 
-#define WIDTH 1280
-#define HEIGHT 960
+void pybind_app(py::module &m);
+
+}  // namespace app
+}  // namespace visualization
+}  // namespace open3d
