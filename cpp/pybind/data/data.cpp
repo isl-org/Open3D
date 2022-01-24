@@ -46,10 +46,16 @@ void pybind_data_classes(py::module& m) {
             .def_property_readonly("prefix", &Dataset::GetPrefix,
                                    "Returns data prefix.")
             .def_property_readonly("help_string", &Dataset::GetHelpString,
-                                   "Returns string of helpful documentation.");
+                                   "Returns string of helpful documentation.")
+            .def_property_readonly("download_dir", &Dataset::GetDownloadDir,
+                                   "Returns data download path.")
+            .def_property_readonly("extract_dir", &Dataset::GetExtractDir,
+                                   "Returns data extract path.");
     docstring::ClassMethodDocInject(m, "Dataset", "data_root");
     docstring::ClassMethodDocInject(m, "Dataset", "prefix");
     docstring::ClassMethodDocInject(m, "Dataset", "help_string");
+    docstring::ClassMethodDocInject(m, "Dataset", "download_dir");
+    docstring::ClassMethodDocInject(m, "Dataset", "extract_dir");
 
     // open3d.data.SimpleDataset
     py::class_<SimpleDataset, PySimpleDataset<SimpleDataset>,

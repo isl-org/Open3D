@@ -72,7 +72,7 @@ void pybind_redwood_living_room_fragments(py::module& m) {
                         return redwood_living_room_fragments.GetPaths();
                     },
                     "List of path to point-cloud fragments. "
-                    "paths[x] returns path to `cloud_bin_x.pcd` point-cloud "
+                    "paths[x] returns path to `cloud_bin_x.ply` point-cloud "
                     "where x is from 0 to 56.");
     docstring::ClassMethodDocInject(m, "RedwoodLivingRoomFragments", "paths");
 }
@@ -91,7 +91,7 @@ void pybind_redwood_office_fragments(py::module& m) {
                         return redwood_office_fragments.GetPaths();
                     },
                     "List of path to point-cloud fragments. "
-                    "paths[x] returns path to `cloud_bin_x.pcd` point-cloud "
+                    "paths[x] returns path to `cloud_bin_x.ply` point-cloud "
                     "where x is from 0 to 51.");
     docstring::ClassMethodDocInject(m, "RedwoodOfficeFragments", "paths");
 }
