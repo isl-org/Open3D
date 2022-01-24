@@ -116,7 +116,6 @@ install_python_dependencies() {
 
 build_all() {
 
-    options="$(echo "$@" | tr ' ' '|')"
     echo "Using cmake: $(command -v cmake)"
     cmake --version
 
@@ -149,10 +148,10 @@ build_all() {
     echo
     echo "Build & install Open3D..."
     make VERBOSE=1 -j"$NPROC"
-    make install -j"$NPROC"
-    if [[ "pack" =~ ^($options)$ ]]; then
+    make VERBOSE=1 install -j"$NPROC"
+    if [[ "$SHARED" == "ON" ]]; then
         echo "Packaging Open3D..."
-        cpack --config CPackConfig.cmake
+        make VERBOSE=1 package
     fi
     make VERBOSE=1 install-pip-package -j"$NPROC"
     echo

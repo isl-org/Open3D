@@ -217,6 +217,7 @@ cuda_build() {
     echo "[cuda_build()] SHARED=${SHARED}"
     echo "[cuda_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[cuda_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+    echo "[cuda_build()] PACKAGE=${PACKAGE}"
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -229,13 +230,14 @@ cuda_build() {
         --build-arg SHARED="${SHARED}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+        --build-arg PACKAGE="${PACKAGE}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.cuda .
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-        bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
+        bash -c "cp /*.tar.* /opt/mount \
+              && chown $(id -u):$(id -g) /opt/mount/*.tar.*"
 }
 
 2-bionic_export_env() {
@@ -248,6 +250,7 @@ cuda_build() {
     export SHARED=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=OFF
 }
 
 3-ml-shared-bionic_export_env() {
@@ -260,6 +263,7 @@ cuda_build() {
     export SHARED=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
 }
 
 4-ml-bionic_export_env() {
@@ -272,6 +276,7 @@ cuda_build() {
     export SHARED=OFF
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=OFF
 }
 
 5-ml-focal_export_env() {
@@ -284,6 +289,7 @@ cuda_build() {
     export SHARED=OFF
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=OFF
 }
 
 function main () {

@@ -3,10 +3,47 @@
 Getting started
 ###############
 
+.. _install_open3d_c++:
+
+C++
+===
+
+Open3D C++ development libraries are available in Debian (since `bullseye`)
+repositories and in derivatives, such as Ubuntu 21.10+. To install, use:
+
+.. code-block:: bash
+
+    sudo apt install libopen3d-dev
+
+However, other OS repositories may not contain Open3D, the version available may
+be old or may not contain all features. Also, it may be inconvenient to use if
+you do not have admin access on the system. We provide up to date and feature
+complete pre-built binary package archives for all supported platforms on
+`Github releases <https://github.com/isl-org/Open3D/releases>`__ (since
+`v0.15`). Also, the latest development version (`HEAD` of `master` branch)
+binary package archives are provided here:
+
+:Linux (glibc 2.27+, CUDA 11.x): `x86_64
+                                 <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
+                                 `armv8
+                                 <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-armv8-@OPEN3D_VERSION_FULL@.tar.xz>`__
+
+:MacOSX v10.15+: `x86_64
+                 <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-darwin-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
+
+:Windows 10+: `x86_64 Release
+              <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-x86_64-@OPEN3D_VERSION_FULL@.zip>`__
+              `x86_64 Debug
+              <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-x86_64-@OPEN3D_VERSION_FULL@-dbg.zip>`__
+
+If you need only a subset of features, or a custom build configuration, please
+refer to :ref:`compilation` and compile Open3D from source.
+
 .. _install_open3d_python:
 
-Installing from PyPI or Conda
-=============================
+
+Python
+======
 
 Open3D Python packages are distributed via
 `PyPI <https://pypi.org/project/open3d/>`_ and
@@ -25,8 +62,8 @@ Supported operating systems:
 * macOS 10.15+
 * Windows 10 (64-bit)
 
-If you have other Python versions (e.g. Python 2) or operating systems, please
-refer to :ref:`compilation` and compile Open3D from source.
+If you have other Python versions or operating systems, please refer to
+:ref:`compilation` and compile Open3D from source.
 
 Pip (PyPI)
 ----------
@@ -105,7 +142,7 @@ Conda
 Docker
 ------
 
-If you want to install the Open3D Python packages in a docker conatiner you will
+If you want to install the Open3D Python packages in a docker container you will
 need to install a minimum set of dependencies. For more details please see `this issue <https://github.com/isl-org/Open3D/issues/3388>`__.
 
 A minimal ``Dockerfile`` looks like this:
