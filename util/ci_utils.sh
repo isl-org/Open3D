@@ -5,6 +5,10 @@ set -euo pipefail
 SUDO=${SUDO:=sudo}
 UBUNTU_VERSION=${UBUNTU_VERSION:="$(lsb_release -cs 2>/dev/null || true)"} # Empty in macOS
 
+DEVELOPER_BUILD="${DEVELOPER_BUILD:-ON}"
+if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+    DEVELOPER_BUILD="ON"
+fi
 SHARED=${SHARED:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
@@ -127,6 +131,7 @@ build_all() {
     fi
 
     cmakeOptions=(
+        -DDEVELOPER_BUILD=$DEVELOPER_BUILD
         -DBUILD_SHARED_LIBS="$SHARED"
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_LIBREALSENSE=ON
@@ -176,9 +181,7 @@ build_pip_conda_package() {
         echo "Open3D-ML not available."
         BUNDLE_OPEN3D_ML=OFF
     fi
-    if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
-        DEVELOPER_BUILD="ON"
-    else
+    if [[ "$DEVELOPER_BUILD" == "OFF" ]]; then
         echo "Building for a new Open3D release"
     fi
     if [[ "build_azure_kinect" =~ ^($options)$ ]]; then

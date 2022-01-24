@@ -125,7 +125,7 @@ jobs:
             --command="sudo Open3D/docker/docker_build.sh ${CI_CONFIG}"
           if [ ${{ matrix.CI_CONFIG }} == '3-ml-shared-bionic' ]; then
               gcloud compute scp --zone="${GCE_ZONE}" \
-                "${INSTANCE_NAME}":/opt/mount/open3d-devel-linux*.tar.xz $PWD
+                "${INSTANCE_NAME}":open3d-devel-linux*.tar.xz "$PWD"
           fi
 
       - name: Upload package
@@ -141,8 +141,8 @@ jobs:
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
-            --command="ls -alh /opt/mount \
-                       && gsutil cp /opt/mount/open3d-devel-linux-*.tar.xz \
+            --command="ls -alh \
+                       && gsutil cp open3d-devel-linux-*.tar.xz \
                        gs://open3d-releases-master/devel/"
 
       - name: VM run docker

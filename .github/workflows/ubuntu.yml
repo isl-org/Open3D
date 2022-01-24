@@ -30,7 +30,8 @@ jobs:
       SHARED: ${{ matrix.CONFIG }}
       BUILD_CUDA_MODULE: OFF
       BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
-      BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
+      BUILD_PYTORCH_OPS: OFF  # CUDA required
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Cancel outdated
         uses: fkirc/skip-duplicate-actions@master

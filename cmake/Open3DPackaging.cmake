@@ -18,15 +18,6 @@ if (BUILD_CUDA_MODULE)
 endif()
 set(CPACK_PACKAGE_FILE_NAME
     "open3d-devel-${_sys}-${OPEN3D_VERSION_FULL}")
-if (MSVC)   # https://stackoverflow.com/a/69359398
-    set(DEBUG_TAG
-        <IF:$<OR:$<CONFIG:RelWithDebInfo>,$<CONFIG:Debug>>,"-dbg","">)
-    set(CPACK_PROPERTIES_FILE "${CMAKE_BINARY_DIR}/Open3DCPackProperties.cmake")
-    # allows use of generator expression to retrieve CONFIG
-    file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/Open3DCPackProperties.cmake"
-        CONTENT "set(CPACK_PACKAGE_FILE_NAME
-        \"${CPACK_PACKAGE_FILE_NAME}${DEBUG_TAG}\")\n")
-endif()
 set(CPACK_THREADS 0)
 
 include(CPack)

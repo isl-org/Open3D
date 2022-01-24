@@ -21,12 +21,13 @@ env:
   PYTEST_VER: "6.0.1"
   PYTEST_RANDOMLY_VER: "3.8.0"
   SCIPY_VER: "1.5.4"
-  JEDI_VER: "0.17.2" # https://github.com/ipython/ipython/issues/12740
-  IDNA_VER: "2.8" # https://github.com/psf/requests/issues/5710
+  JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
+  IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
   CONDA_BUILD_VER: "3.21.4"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
+  DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
   windows:
@@ -88,19 +89,26 @@ jobs:
           echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - name: Checkout source code
         uses: actions/checkout@v2
+
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
           python-version: 3.6
+
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
           cd ${{ env.BUILD_DIR }}
+          if (${env:DEVELOPER_BUILD} -ne "OFF") {
+            ${env:DEVELOPER_BUILD}="ON"
+          }
           cmake -G "Visual Studio 16 2019" -A x64 `
+            -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
@@ -111,6 +119,7 @@ jobs:
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA }} `
             ${{ env.SRC_DIR }}
+
       - name: Build
         working-directory: ${{ env.BUILD_DIR }}
         run: |
@@ -127,8 +136,12 @@ jobs:
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target package
+          if ("${{ matrix.CONFIG }}" -eq "Debug") {
+              Get-ChildItem package/open3d-devel-*.zip | Rename-Item -NewName `
+                  {$_.name -Replace '.zip','-dbg.zip'}
+          }
           $DEVEL_PKG_NAME=(Get-ChildItem package/open3d-devel-*.zip).Name
-          echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME"  | Out-File -FilePath `
+          echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" | Out-File -FilePath `
             $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload package
@@ -221,8 +234,6 @@ jobs:
           - is_master: false
             python_version: 3.9
 
-    env:
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
