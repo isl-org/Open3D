@@ -344,6 +344,7 @@ TEST(FileSystem, MakeDirectoryHierarchy) {
 
 // ----------------------------------------------------------------------------
 // Note: DeleteDirectory can delete one dir at a time.
+// Equivalent to `rm -rf ...`.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, DeleteDirectory) {
     std::string path = "test";
