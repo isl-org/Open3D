@@ -69,13 +69,13 @@ struct Limits<float> {
     static __device__ __host__ inline float getMax() { return kFloatMax; }
 };
 
-constexpr float kDoubleMax = std::numeric_limits<double>::max();
-constexpr float kDoubleMin = std::numeric_limits<double>::lowest();
+constexpr double kDoubleMax = std::numeric_limits<double>::max();
+constexpr double kDoubleMin = std::numeric_limits<double>::lowest();
 
 template <>
 struct Limits<double> {
-    static __device__ __host__ inline float getMin() { return kDoubleMin; }
-    static __device__ __host__ inline float getMax() { return kDoubleMax; }
+    static __device__ __host__ inline double getMin() { return kDoubleMin; }
+    static __device__ __host__ inline double getMax() { return kDoubleMax; }
 };
 
 constexpr int kIntMax = std::numeric_limits<int>::max();
