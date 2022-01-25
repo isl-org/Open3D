@@ -45,18 +45,10 @@ the following commands:
 
     cd Docker
 
-    ./docker_build.sh openblas-arm64-py36-dev  # Python 3.6 wheel, dev mode
-    ./docker_build.sh openblas-arm64-py37-dev  # Python 3.7 wheel, dev mode
-    ./docker_build.sh openblas-arm64-py38-dev  # Python 3.8 wheel, dev mode
-    ./docker_build.sh openblas-arm64-py39-dev  # Python 3.9 wheel, dev mode
     ./docker_build.sh openblas-arm64-py36      # Python 3.6 wheel, release mode
     ./docker_build.sh openblas-arm64-py37      # Python 3.7 wheel, release mode
     ./docker_build.sh openblas-arm64-py38      # Python 3.8 wheel, release mode
     ./docker_build.sh openblas-arm64-py39      # Python 3.9 wheel, release mode
-
-The release mode is pretty much the same as the dev mode, except that the
-version number of the release mode does not contain the commit id. Typically,
-using the dev mode is sufficient for most users.
 
 After running ``docker_build.sh``, you shall see a ``.whl`` file generated the
 current directly on the host. Then simply install the ``.whl`` file by:
@@ -99,7 +91,7 @@ Install the following system dependencies:
     ./util/install_deps_ubuntu.sh
     sudo apt-get install -y clang-7  # Or any >= 7 version of clang.
 
-``ccache`` is recommended to cache the compilation:
+``ccache`` is recommended to speed up subsequent builds:
 
 .. code-block:: bash
 
@@ -137,7 +129,7 @@ Build
     # Build C++ library
     make -j$(nproc)
 
-    # Run Open3D C++ Viewer App (only available on when -DBUILD_GUI=ON)
+    # Run Open3D C++ Viewer App (only available when -DBUILD_GUI=ON)
     ./bin/Open3D/Open3D
 
     # Install Open3D python package
