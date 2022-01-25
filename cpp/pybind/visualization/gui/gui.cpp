@@ -114,7 +114,7 @@ public:
     void SetOnKey(std::function<bool(const KeyEvent &)> f) { on_key_ = f; }
 
 protected:
-    void Layout(const LayoutContext &context) {
+    void Layout(const LayoutContext &context) override {
         if (on_layout_) {
             // the Python callback sizes the children
             on_layout_(context);
@@ -1378,6 +1378,8 @@ void pybind_gui_classes(py::module &m) {
                  "Stop editing")
             .def("crop_selected", &PySceneWidget::CropSelected,
                  "Crop selected and return selected + left point cloud")
+            .def("collect_selected_indices", &PySceneWidget::CollectSelectedIndices,
+                 "collect selected indices")
             .def("pick_point", &PySceneWidget::StartPickPoint,
                  "Start picking point")
             .def("stop_pick", &PySceneWidget::StopPickPoint,
