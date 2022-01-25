@@ -23,6 +23,9 @@ util/conda_package/dist/
 doxygen/
 node_modules/
 
+# Third party pre-compiled binaries
+3rdparty/filament/*.tar.gz
+
 # Editor files
 *.*~
 

@@ -1,0 +1,59 @@
+FROM ubuntu:18.04
+
+ARG FILAMENT_URL
+ARG CMAKE_URL
+ARG FILAMENT_TAR
+
+# Basic dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    build-essential \
+ && rm -rf /var/lib/apt/lists/*
+
+# Official Filament dependencies
+RUN apt-get update && apt-get install -y \
+    clang-7  \
+    libglu1-mesa-dev \
+    libc++-7-dev \
+    libc++abi-7-dev \
+    ninja-build \
+    libxi-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+# Additional Filament dependencies
+RUN apt-get update && apt-get install -y \
+    libegl1-mesa-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN wget -O cmake_src.tar.gz -q ${CMAKE_URL} \
+ && mkdir cmake_src \
+ && tar -zxf cmake_src.tar.gz -C cmake_src --strip-components=1 \
+ && rm -rf cmake_src.tar.gz
+ENV PATH=/cmake_src/bin:${PATH}
+
+RUN wget -O filament_src.tar.gz -q ${FILAMENT_URL} \
+ && mkdir filament_src \
+ && tar -zxf filament_src.tar.gz -C filament_src --strip-components=1 \
+ && rm -rf filament_src.tar.gz
+
+# Build flags shall be consistent with filament_build.cmake
+WORKDIR /filament_src
+RUN mkdir build_dir \
+ && cd build_dir \
+ && cmake \
+        -DCMAKE_C_COMPILER=clang-7 \
+        -DCMAKE_CXX_COMPILER=clang++-7 \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_CXX_FLAGS="-fno-builtin" \
+        -DFILAMENT_ENABLE_JAVA=OFF \
+        -DCMAKE_INSTALL_PREFIX=/filament \
+        -DUSE_STATIC_LIBCXX=ON \
+        -DFILAMENT_SKIP_SAMPLES=ON \
+        -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+        .. \
+ && make -j$(nproc) \
+ && make install -j$(nproc)
+
+WORKDIR /
+RUN tar -czf /${FILAMENT_TAR} filament
