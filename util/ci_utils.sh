@@ -42,12 +42,12 @@ fi
 # ML
 TENSORFLOW_VER="2.5.2"
 TENSORBOARD_VER="2.5"
-# TORCH_CUDA_GLNX_VER="1.8.2+cu110"
-# TORCH_CPU_GLNX_VER="1.8.2+cpu"
+TORCH_CPU_GLNX_VER="1.8.2+cpu"
+# TORCH_CUDA_GLNX_VER="1.8.2+cu111"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.2/torch-1.8.2-${PYTHON_VER}-linux_x86_64.whl"
 TORCH_MACOS_VER="1.8.2"
-TORCH_MACOS_URL="https://download.pytorch.org/whl/lts/1.8/torch_lts.html"
+TORCH_REPO_URL="https://download.pytorch.org/whl/lts/1.8/torch_lts.html"
 # Python
 CONDA_BUILD_VER="3.21.4"
 PIP_VER="21.1.1"
@@ -77,11 +77,11 @@ install_python_dependencies() {
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow-gpu
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
-        # TORCH_ARCH_GLNX_VER="$TORCH_CUDA_GLNX_VER"
+        TORCH_GLNX="$TORCH_CUDA_GLNX_URL"
     else
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow-gpu
-        # TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
+        TORCH_GLNX="torch==$TORCH_CPU_GLNX_VER"
     fi
 
     # TODO: modify other locations to use requirements.txt
@@ -98,9 +98,10 @@ install_python_dependencies() {
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            python -m pip install -U "${TORCH_CUDA_GLNX_URL}"
+            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
+
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            python -m pip install -U torch=="$TORCH_MACOS_VER" -f "$TORCH_MACOS_URL"
+            python -m pip install -U torch=="$TORCH_MACOS_VER" -f "$TORCH_REPO_URL"
         else
             echo "unknown OS $OSTYPE"
             exit 1
