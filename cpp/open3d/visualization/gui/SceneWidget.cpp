@@ -428,6 +428,7 @@ public:
                   camera, MIN_FAR_PLANE)),
           scene_(scene), camera_(camera) {
         SetInteractor(camera_controls_.get());
+        (void) camera_->GetViewMatrix(); // disable compiling warning
     }
 #ifdef USE_SPNAV
     void SpaceMouse(const ::open3d::visualization::SpaceMouseEvent& evt) override {
@@ -808,56 +809,77 @@ public:
     }
     ~Editor() = default;
 
-    void Start(Target target) {
+    void Start(Target target, std::function<void(bool)> selectionCallback) {
         Stop();
         target_ = target;
+        callback_ = selectionCallback;
+        editable_ = false;
+        checkEditable();
     }
     void Stop() {
         if(Started()) {
             target_.reset();
             SetSelection(SelectionType::None);
+            checkEditable();
+            callback_ = nullptr;
         }
     }
     bool Started() { return bool(target_);}
 
-    CloudPair Split() {
-        if (!Started() || type_ == SelectionType::None || selection_.size() < 2) {
-            return CloudPair{nullptr, nullptr};
-        }
-        if (type_ == SelectionType::Polygon && selection_.size() < 3) {
-            return CloudPair{nullptr, nullptr};
+    std::vector<size_t> CollectSelectedIndex() {
+        if (!allowEdit()) {
+            return std::vector<size_t>{};
         }
 
-        CloudPair cropped;
         switch(type_) {
             case SelectionType::Polygon:
-                cropped = CropPolygon();
-                break;
+                return CropPolygon();
             case SelectionType::Rectangle:
-                cropped = CropRectangle();
-                break;
+                return CropRectangle();
             case SelectionType::Circle:
-                cropped = CropCircle();
-                break;
+                return CropCircle();
             default:
-                return CloudPair{nullptr, nullptr};
+                return std::vector<size_t>{};
+        }
+    }
+    CloudPair Split() {
+        auto indices = CollectSelectedIndex();
+        if (indices.empty()) {
+            return CloudPair{nullptr, nullptr};
         }
         SetSelection(SelectionType::None);
-        return cropped;
+        return target_->Split(indices);
     }
     bool SetSelection(SelectionType type) {
         if (type_ != type) {
             type_ = type;
             selection_.clear();
+            checkEditable();
             return true;
         }
         return false;
     }
+    bool allowEdit() {
+        bool editable = false;
+        if (Started()) {
+            if (type_ == SelectionType::Rectangle ||
+                type_ == SelectionType::Circle) {
+                editable = selection_.size() > 1;
+            } else if(type_ == SelectionType::Polygon) {
+                editable = selection_.size() > 2;
+            }
+        }
+        return editable;
+    }
+    void checkEditable() {
+        auto state = allowEdit();
+        if (editable_ != state && callback_) {
+            editable_ = state;
+            callback_(editable_);
+        }
+    }
 #ifdef USE_SPNAV
     Widget::EventResult SpaceMouse(const SpaceMouseEvent& e) {
-        if(Started()) {
-            return Widget::EventResult::CONSUMED;
-        }
         return Widget::EventResult::DISCARD;
     }
 #endif
@@ -868,10 +890,14 @@ public:
         if (e.type == MouseEvent::Type::BUTTON_DOWN) {
             if (e.button.button == MouseButton::MIDDLE) {
                 SetSelection(SelectionType::None);
-            } else if(e.button.button == MouseButton::LEFT &&
-                      e.button.count == 1) {
+                return Widget::EventResult::CONSUMED;
+            }
+
+            if(e.button.button == MouseButton::LEFT &&
+                    e.button.count == 1 &&
+                    e.modifiers != int(KeyModifier::NONE)) {
                 bool changed = false;
-                if(e.modifiers == int(KeyModifier::NONE)) {
+                if(e.modifiers == int(KeyModifier::ALT)) {
                     changed = SetSelection(SelectionType::Rectangle);
                 } else if(e.modifiers == int(KeyModifier::CTRL)) {
                     changed = SetSelection(SelectionType::Polygon);
@@ -887,23 +913,29 @@ public:
                     selection_.clear();
                     AddPoint(e.x, e.y);
                 }
-            } else if(e.button.button == MouseButton::RIGHT &&
+                return Widget::EventResult::CONSUMED;
+            }
+
+            if(e.button.button == MouseButton::RIGHT &&
                        e.button.count == 1) {
                 if (type_ == SelectionType::Polygon) {
                     if (!selection_.empty()) {
                         selection_.pop_back();
+                        checkEditable();
                     }
                 } else {
                     SetSelection(SelectionType::None);
                 }
+                return Widget::EventResult::CONSUMED;
             }
         } else if (e.type == MouseEvent::Type::DRAG) {
             if(type_ == SelectionType::Rectangle ||
                 type_ == SelectionType::Circle) {
                 AddPoint(e.x, e.y);
+                return Widget::EventResult::CONSUMED;
             }
         }
-        return Widget::EventResult::CONSUMED;
+        return Widget::EventResult::DISCARD;
     }
     Widget::DrawResult Draw(const DrawContext& context, const Rect &frame) {
         auto col_fill = colorToImguiRGBA(Color(0.5f, 0.0f, 0.5f, 0.5f));
@@ -975,42 +1007,43 @@ private:
         }
         if(selection_.empty()) {
             selection_.emplace_back(x, y);
-            return;
-        }
-        switch(type_) {
-            case SelectionType::Rectangle:
-            case SelectionType::Circle:
-                if (selection_.size() == 1) {
-                    selection_.emplace_back(x, y);
-                } else {
-                    selection_[1] = Eigen::Vector2i(x, y);
-                }
-                break;
-            case SelectionType::Polygon: {
-                Eigen::Vector2i p(x, y);
-                auto segs = selection_.size() - 1;
-                if (segs > 2) {
-                    // check if latest segment is crossing any previous one
-                    Seg<int> s0(selection_[selection_.size()-1], p);
-                    bool cross = false;
-                    for (size_t idx = selection_.size()-2; idx > 0; --idx) {
-                        Seg<int> s1(selection_[idx], selection_[idx-1]);
-                        if (Seg<int>::cross(s0, s1)) {
-                            cross = true;
+        } else {
+            switch(type_) {
+                case SelectionType::Rectangle:
+                case SelectionType::Circle:
+                    if (selection_.size() == 1) {
+                        selection_.emplace_back(x, y);
+                    } else {
+                        selection_[1] = Eigen::Vector2i(x, y);
+                    }
+                    break;
+                case SelectionType::Polygon: {
+                    Eigen::Vector2i p(x, y);
+                    auto segs = selection_.size() - 1;
+                    if (segs > 2) {
+                        // check if latest segment is crossing any previous one
+                        Seg<int> s0(selection_[selection_.size()-1], p);
+                        bool cross = false;
+                        for (size_t idx = selection_.size()-2; idx > 0; --idx) {
+                            Seg<int> s1(selection_[idx], selection_[idx-1]);
+                            if (Seg<int>::cross(s0, s1)) {
+                                cross = true;
+                                break;
+                            }
+                        }
+                        if (cross) {
+                            // abandon cross polygon point
                             break;
                         }
                     }
-                    if (cross) {
-                        // abandon cross polygon point
-                        break;
-                    }
+                    selection_.push_back(p);
+                    break;
                 }
-                selection_.push_back(p);
-                break;
+                default:
+                    break;
             }
-            default:
-                break;
         }
+        checkEditable();
     }
     Eigen::Vector2f PointAt(int i) {
         return PointAt(i, 0, 0);
@@ -1019,10 +1052,10 @@ private:
         auto &p = selection_[i];
         return Eigen::Vector2f{float(p.x() + x), float(p.y()+y)};
     }
-    CloudPair CropPolygon() {
+    std::vector<size_t> CropPolygon() {
         auto &input = target_->points_;
         if (input.size() < 100000) {
-            return CropPolygonNoOmp();
+            return std::vector<size_t>{};
         }
         auto fmvp = camera_->GetProjectionMatrix() * camera_->GetViewMatrix();
         auto mvp = fmvp.cast<double>();
@@ -1066,7 +1099,7 @@ private:
             }
         }
 
-        return target_->Split(output_index);
+        return output_index;
     }
     CloudPair CropPolygonNoOmp() {
         auto &input = target_->points_;
@@ -1114,7 +1147,7 @@ private:
 
         return target_->Split(output_index);
     }
-    CloudPair CropRectangle() {
+    std::vector<size_t> CropRectangle() {
         auto &input = target_->points_;
         auto fmvp = camera_->GetProjectionMatrix() * camera_->GetViewMatrix();
         auto mvp = fmvp.cast<double>();
@@ -1147,9 +1180,9 @@ private:
             }
         }
 
-        return target_->Split(output_index);
+        return output_index;
     }
-    CloudPair CropCircle() {
+    std::vector<size_t> CropCircle() {
         auto &input = target_->points_;
         auto fmvp = camera_->GetProjectionMatrix() * camera_->GetViewMatrix();
         auto mvp = fmvp.cast<double>();
@@ -1189,7 +1222,7 @@ private:
             }
         }
 
-        return target_->Split(output_index);
+        return output_index;
     }
     uint32_t GetIndexForColor(geometry::Image *image, int x, int y) {
         uint8_t *rgb = image->PointerAt<uint8_t>(x, y, 0);
@@ -1208,6 +1241,8 @@ private:
     rendering::Open3DScene* scene_;
     rendering::Camera* camera_;
     Target target_;
+    bool editable_ = false;
+    std::function<void(bool)> callback_;
     std::vector<Eigen::Vector2i> selection_;
     SelectionType type_ = SelectionType::None;
 };
@@ -1430,14 +1465,19 @@ void SceneWidget::DoPolygonPick(PolygonPickAction action) {
     };
 }
 
-void SceneWidget::StartEdit(std::shared_ptr<const geometry::PointCloud> cloud) {
-    impl_->editor_->Start(cloud);
+void SceneWidget::StartEdit(std::shared_ptr<const geometry::PointCloud> cloud,
+                            std::function<void(bool)> selectionCallback) {
+    impl_->editor_->Start(cloud, selectionCallback);
 }
 void SceneWidget::StopEdit() {
     impl_->editor_->Stop();
 }
 std::tuple<std::shared_ptr<geometry::PointCloud>, std::shared_ptr<geometry::PointCloud>> SceneWidget::CropSelected() {
     return impl_->editor_->Split();
+}
+
+std::vector<size_t> SceneWidget::CollectSelectedIndices() {
+    return impl_->editor_->CollectSelectedIndex();
 }
 std::shared_ptr<rendering::Open3DScene> SceneWidget::GetScene() const {
     return impl_->scene_;

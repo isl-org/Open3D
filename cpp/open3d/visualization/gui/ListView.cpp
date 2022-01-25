@@ -100,8 +100,9 @@ Size ListView::CalcPreferredSize(const LayoutContext &context,
     }
     auto h = Widget::DIM_GROW;
     if (impl_->max_items_ > 0) {
-        auto items = std::min(int(impl_->items_.size()), impl_->max_items_);
-        h = int(ImGui::GetFrameHeight() * (float)items + 2.0f * padding.y);
+        auto nr = std::max(int(impl_->items_.size()), 3);
+        nr = std::min(nr, impl_->max_items_);
+        h = int(ImGui::GetFrameHeight() * (float)nr + 2.0f * padding.y);
     }
     return Size(int(std::ceil(size.x + 2.0f * padding.x)), h);
 }
