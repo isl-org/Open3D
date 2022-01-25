@@ -16,27 +16,32 @@ repositories and in derivatives, such as Ubuntu 21.10+. To install, use:
     sudo apt install libopen3d-dev
 
 However, other OS repositories may not contain Open3D, the version available may
-be old or may not contain all features. Also, it may be inconvenient to use if
-you do not have admin access on the system. We provide up to date and feature
-complete pre-built binary package archives for all supported platforms on
-`Github releases <https://github.com/isl-org/Open3D/releases>`__ (since
-`v0.15`). Also, the latest development version (`HEAD` of `master` branch)
+not be current or may not contain all features. Also, it may be inconvenient to
+use if you do not have admin access on the system. We provide up to date and
+feature complete pre-built binary package archives for all supported platforms
+on `Github releases <https://github.com/isl-org/Open3D/releases>`__ (since
+`v0.15`). Also, the latest development version (``HEAD`` of ``master`` branch)
 binary package archives are provided here:
 
-:Linux (glibc 2.27+): `x86_64
-                      <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
-                      `x86_64 CUDA 11.x
-                      <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
-                      `armv8
-                      <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-armv8-@OPEN3D_VERSION_FULL@.tar.xz>`__
+:Linux (glibc 2.27+):
+    .. hlist::
+        :columns: 4
 
-:MacOSX v10.15+: `x86_64
-                 <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-darwin-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
+        * `x86_64 <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
+        * `x86_64 with CUDA 11.x <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
 
-:Windows 10+: `x86_64 Release
-              <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@.zip>`__
-              `x86_64 Debug
-              <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@-dbg.zip>`__
+:MacOSX v10.15+:
+    .. hlist::
+        :columns: 4
+
+        * `x86_64 <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-darwin-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
+
+:Windows 10+:
+    .. hlist::
+        :columns: 4
+
+        * `x86_64 Release <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@.zip>`__
+        * `x86_64 Debug <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@-dbg.zip>`__
 
 If you need only a subset of features, or a custom build configuration, please
 refer to :ref:`compilation` and compile Open3D from source.
@@ -50,7 +55,7 @@ projects:
 * `Find Pre-Installed Open3D Package in CMake <https://github.com/isl-org/open3d-cmake-find-package>`__
 * `Use Open3D as a CMake External Project <https://github.com/isl-org/open3d-cmake-external-project>`__
 
-The C++ code examples in the `examples/cpp` folder of the repository illistrate
+The C++ code examples in the `examples/cpp` folder of the repository illustrate
 a lot of the functionality available in Open3D and are a good place to start
 using Open3D in your projects.
 
@@ -65,10 +70,13 @@ Open3D Python packages are distributed via
 
 Supported Python versions:
 
-* 3.6
-* 3.7
-* 3.8
-* 3.9
+.. hlist::
+    :columns: 4
+
+    * 3.6
+    * 3.7
+    * 3.8
+    * 3.9
 
 Supported operating systems:
 
@@ -111,20 +119,27 @@ Development version (pip)
 To test the latest features in Open3D, download and install the development
 version (``HEAD`` of ``master`` branch):
 
-:Linux: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-manylinux_2_27_x86_64.whl>`__
-        `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-manylinux_2_27_x86_64.whl>`__
-        `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
-        `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_27_x86_64.whl>`__
+.. list-table::
+    :stub-columns: 1
+    :widths: auto
 
-:MacOS: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-macosx_10_15_x86_64.whl>`__
-        `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_15_x86_64.whl>`__
-        `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_10_15_x86_64.whl>`__
-        `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-macosx_10_15_x86_64.whl>`__
+    * - Linux
+      - `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_27_x86_64.whl>`__
 
-:Windows: `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-win_amd64.whl>`__
-        `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-win_amd64.whl>`__
-        `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
-        `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-win_amd64.whl>`__
+    * - MacOS
+      - `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-macosx_10_15_x86_64.whl>`__
+      - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_15_x86_64.whl>`__
+      - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_10_15_x86_64.whl>`__
+      - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-macosx_10_15_x86_64.whl>`__
+
+    * - Windows
+      - `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-win_amd64.whl>`__
+      - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-win_amd64.whl>`__
+      - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
+      - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-win_amd64.whl>`__
 
 Please use these links from the `latest version of this page <http://www.open3d.org/docs/latest/getting_started.html>`__ only. For example, to install the latest development version on Linux for Python 3.9:
 
