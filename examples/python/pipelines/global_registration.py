@@ -23,7 +23,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-
 """Registration algorithms that do not require an initial alignment"""
 
 import open3d as o3d

@@ -89,10 +89,7 @@ public:
 /// terminated early with some confidence_. Early termination takes place when
 /// the number of iteration reaches k = log(1 - confidence)/log(1 -
 /// fitness^{ransac_n}), where ransac_n is the number of points used during a
-/// ransac iteration. Note that the validation is the most computational
-/// expensive operator in an iteration. Most iterations do not do full
-/// validation. It is crucial to control confidence_ so that the computation
-/// time is acceptable.
+/// ransac iteration. Use confidence=1.0 to avoid early termination.
 class RANSACConvergenceCriteria {
 public:
     /// \brief Parameterized Constructor.
@@ -102,7 +99,8 @@ public:
     /// early termination.
     RANSACConvergenceCriteria(int max_iteration = 100000,
                               double confidence = 0.999)
-        : max_iteration_(max_iteration), confidence_(confidence) {}
+        : max_iteration_(max_iteration),
+          confidence_(std::max(std::min(confidence, 1.0), 0.0)) {}
 
     ~RANSACConvergenceCriteria() {}
 

@@ -23,7 +23,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-
 """Build a KDTree and use it for neighbour search"""
 
 import open3d as o3d

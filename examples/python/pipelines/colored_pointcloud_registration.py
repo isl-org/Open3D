@@ -23,7 +23,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-
 """ICP variant that uses both geometry and color for registration"""
 
 import open3d as o3d

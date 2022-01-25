@@ -23,7 +23,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-
 """Align multiple pieces of geometry in a global space"""
 
 import open3d as o3d

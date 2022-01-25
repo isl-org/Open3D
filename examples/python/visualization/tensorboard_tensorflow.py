@@ -34,9 +34,8 @@ import tensorflow as tf
 
 BASE_LOGDIR = "demo_logs/tf/"
 MODEL_DIR = os.path.join(
-        os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),
-    "test_data", "monkey")
+    os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.realpath(__file__)))), "test_data", "monkey")
 
 
 def small_scale(run_name="small_scale"):

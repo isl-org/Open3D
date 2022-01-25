@@ -54,17 +54,19 @@ def preprocess_point_cloud(pcd, config):
 
 
 def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
     distance_threshold = config["voxel_size"] * 1.4
     if config["global_registration"] == "fgr":
-        result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
+        result = o3d.pipelines.registration.registration_fast_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh,
             o3d.pipelines.registration.FastGlobalRegistrationOption(
                 maximum_correspondence_distance=distance_threshold))
     if config["global_registration"] == "ransac":
+        # Fallback to preset parameters that works better
         result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-            source, target, source_fpfh, target_fpfh, True, distance_threshold,
+            source, target, source_fpfh, target_fpfh, False, distance_threshold,
             o3d.pipelines.registration.TransformationEstimationPointToPoint(
-                False), 3,
+                False), 4,
             [
                 o3d.pipelines.registration.
                 CorrespondenceCheckerBasedOnEdgeLength(0.9),

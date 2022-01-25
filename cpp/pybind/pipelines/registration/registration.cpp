@@ -133,12 +133,8 @@ void pybind_registration_classes(py::module &m) {
             "when the number of iterations reaches ``k = "
             "log(1 - confidence)/log(1 - fitness^{ransac_n})``, "
             "where ``ransac_n`` is the number of points used "
-            "during a ransac iteration. Note "
-            "that the validation is the most computational "
-            "expensive operator in an iteration. Most "
-            "iterations do not do full validation. It is "
-            "crucial to control ``confidence`` so that the "
-            "computation time is acceptable.");
+            "during a ransac iteration. Use confidence=1.0 "
+            "to avoid early termination.");
     py::detail::bind_copy_functions<RANSACConvergenceCriteria>(ransac_criteria);
     ransac_criteria
             .def(py::init([](int max_iteration, double confidence) {
@@ -152,7 +148,7 @@ void pybind_registration_classes(py::module &m) {
             .def_readwrite(
                     "confidence", &RANSACConvergenceCriteria::confidence_,
                     "Desired probability of success. Used for estimating early "
-                    "termination.")
+                    "termination. Use 1.0 to avoid early termination.")
             .def("__repr__", [](const RANSACConvergenceCriteria &c) {
                 return fmt::format(
                         "RANSACConvergenceCriteria "

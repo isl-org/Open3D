@@ -37,20 +37,24 @@ namespace open3d {
 namespace core {
 namespace eigen_converter {
 
-/// \brief Converts a Eigen matrix of shape (M, N) with alignment A and type T
-/// to a Tensor.
+/// \brief Converts a eigen matrix of shape (M, N) with alignment A and type T
+/// to a tensor.
 ///
-/// \param matrix A templated Eigen matrix.
-/// \return A tensor converted from the Eigen matrix.
-template <class T, int M, int N, int A>
-core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
-    core::Dtype dtype = core::Dtype::FromType<T>();
-    Eigen::Matrix<T, M, N, Eigen::RowMajor> matrix_row_major = matrix;
+/// \param matrix An eigen matrix (e.g. Eigen::Matrix3f) or vector (e.g.
+/// Eigen::Vector3d).
+/// \return A tensor converted from the eigen matrix. The resuliting tensor is
+/// always 2D.
+template <class Derived>
+core::Tensor EigenMatrixToTensor(const Eigen::MatrixBase<Derived> &matrix) {
+    typedef typename Derived::Scalar Scalar;
+    core::Dtype dtype = core::Dtype::FromType<Scalar>();
+    Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+            matrix_row_major = matrix;
     return core::Tensor(matrix_row_major.data(), {matrix.rows(), matrix.cols()},
                         dtype);
 }
 
-/// \brief Converts a 2D Tensor to Eigen::MatrixXd of same shape. Regardless of
+/// \brief Converts a 2D tensor to Eigen::MatrixXd of same shape. Regardless of
 /// the tensor dtype, the output will be converted to double.
 ///
 /// \param tensor A 2D tensor.
@@ -58,7 +62,7 @@ core::Tensor EigenMatrixToTensor(const Eigen::Matrix<T, M, N, A> &matrix) {
 Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 TensorToEigenMatrixXd(const core::Tensor &tensor);
 
-/// \brief Converts a 2D Tensor to Eigen::MatrixXf of same shape. Regardless of
+/// \brief Converts a 2D tensor to Eigen::MatrixXf of same shape. Regardless of
 /// the tensor dtype, the output will be converted to float.
 ///
 /// \param tensor A 2D tensor.
@@ -66,7 +70,7 @@ TensorToEigenMatrixXd(const core::Tensor &tensor);
 Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 TensorToEigenMatrixXf(const core::Tensor &tensor);
 
-/// \brief Converts a 2D Tensor to Eigen::MatrixXi of same shape. Regardless of
+/// \brief Converts a 2D tensor to Eigen::MatrixXi of same shape. Regardless of
 /// the tensor dtype, the output will be converted to int.
 ///
 /// \param tensor A 2D tensor.
