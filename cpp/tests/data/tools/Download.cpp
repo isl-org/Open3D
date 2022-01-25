@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Download.h"
+#include "open3d/data/tools/Download.h"
 
 #include "open3d/data/Dataset.h"
 #include "open3d/utility/FileSystem.h"
@@ -47,17 +47,17 @@ TEST(Downloader, DownloadAndVerify) {
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
 
     // This download shall work.
-    EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
+    EXPECT_EQ(data::tools::DownloadFromURL(url, md5, prefix), file_path);
     EXPECT_TRUE(utility::filesystem::DirectoryExists(file_dir));
     EXPECT_TRUE(utility::filesystem::FileExists(file_path));
-    EXPECT_EQ(data::GetMD5(file_path), md5);
+    EXPECT_EQ(data::tools::GetMD5(file_path), md5);
 
     // This download shall be skipped as the file already exists (look at the
     // message).
-    EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
+    EXPECT_EQ(data::tools::DownloadFromURL(url, md5, prefix), file_path);
 
     // Mismatch md5.
-    EXPECT_ANY_THROW(data::DownloadFromURL(
+    EXPECT_ANY_THROW(data::tools::DownloadFromURL(
             url, "00000000000000000000000000000000", prefix));
 
     // Clean up.

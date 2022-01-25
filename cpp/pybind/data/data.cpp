@@ -69,10 +69,73 @@ void pybind_data_classes(py::module& m) {
             "help_string"_a = "", "data_root"_a = "");
 }
 
+void pybind_sample_icp_pointclouds(py::module& m) {
+    py::class_<SampleICPPointClouds, PySimpleDataset<SampleICPPointClouds>,
+               std::shared_ptr<SampleICPPointClouds>, SimpleDataset>
+            sample_icp_pointclouds(m, "SampleICPPointClouds",
+                                   "SampleICPPointClouds dataset.");
+    sample_icp_pointclouds
+            .def(py::init<const std::string&, const std::string&>(),
+                 "prefix"_a = "SampleICPPointClouds", "data_root"_a = "")
+            .def_property_readonly(
+                    "paths",
+                    [](const SampleICPPointClouds& sample_icp_pointclouds) {
+                        return sample_icp_pointclouds.GetPaths();
+                    },
+                    "List of path to point-cloud fragments. "
+                    "paths[x] returns path to `cloud_bin_x.pcd` point-cloud "
+                    "where x is from 0 to 2.");
+    docstring::ClassMethodDocInject(m, "SampleICPPointClouds", "paths");
+}
+
+void pybind_redwood_living_room_fragments(py::module& m) {
+    py::class_<RedwoodLivingRoomFragments,
+               PySimpleDataset<RedwoodLivingRoomFragments>,
+               std::shared_ptr<RedwoodLivingRoomFragments>, SimpleDataset>
+            redwood_living_room_fragments(
+                    m, "RedwoodLivingRoomFragments",
+                    "RedwoodLivingRoomFragments dataset.");
+    redwood_living_room_fragments
+            .def(py::init<const std::string&, const std::string&>(),
+                 "prefix"_a = "RedwoodLivingRoomFragments", "data_root"_a = "")
+            .def_property_readonly(
+                    "paths",
+                    [](const RedwoodLivingRoomFragments&
+                               redwood_living_room_fragments) {
+                        return redwood_living_room_fragments.GetPaths();
+                    },
+                    "List of path to point-cloud fragments. "
+                    "paths[x] returns path to `cloud_bin_x.ply` point-cloud "
+                    "where x is from 0 to 56.");
+    docstring::ClassMethodDocInject(m, "RedwoodLivingRoomFragments", "paths");
+}
+
+void pybind_redwood_office_fragments(py::module& m) {
+    py::class_<RedwoodOfficeFragments, PySimpleDataset<RedwoodOfficeFragments>,
+               std::shared_ptr<RedwoodOfficeFragments>, SimpleDataset>
+            redwood_office_fragments(m, "RedwoodOfficeFragments",
+                                     "RedwoodOfficeFragments dataset.");
+    redwood_office_fragments
+            .def(py::init<const std::string&, const std::string&>(),
+                 "prefix"_a = "RedwoodOfficeFragments", "data_root"_a = "")
+            .def_property_readonly(
+                    "paths",
+                    [](const RedwoodOfficeFragments& redwood_office_fragments) {
+                        return redwood_office_fragments.GetPaths();
+                    },
+                    "List of path to point-cloud fragments. "
+                    "paths[x] returns path to `cloud_bin_x.ply` point-cloud "
+                    "where x is from 0 to 51.");
+    docstring::ClassMethodDocInject(m, "RedwoodOfficeFragments", "paths");
+}
+
 void pybind_data(py::module& m) {
     py::module m_submodule = m.def_submodule("data", "Data handling module.");
     pybind_data_classes(m_submodule);
-    dataset::pybind_dataset(m_submodule);
+
+    pybind_sample_icp_pointclouds(m_submodule);
+    pybind_redwood_living_room_fragments(m_submodule);
+    pybind_redwood_office_fragments(m_submodule);
 }
 
 }  // namespace data

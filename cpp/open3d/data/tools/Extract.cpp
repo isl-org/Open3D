@@ -24,16 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Extract.h"
+#include "open3d/data/tools/Extract.h"
 
 #include <unordered_map>
 
-#include "open3d/data/ExtractZIP.h"
+#include "open3d/data/tools/ExtractZIP.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace data {
+namespace tools {
 
 static const std::unordered_map<
         std::string,
@@ -58,5 +59,6 @@ void Extract(const std::string& file_path, const std::string& extract_dir) {
     utility::LogInfo("Extracted to {}.", extract_dir);
 }
 
+}  // namespace tools
 }  // namespace data
 }  // namespace open3d

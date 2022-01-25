@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Download.h"
+#include "open3d/data/tools/Download.h"
 
 // clang-format off
 // Must include openssl before curl to build on Windows.
@@ -57,6 +57,7 @@
 
 namespace open3d {
 namespace data {
+namespace tools {
 
 std::string GetMD5(const std::string& file_path) {
     if (!utility::filesystem::FileExists(file_path)) {
@@ -192,5 +193,6 @@ std::string DownloadFromURL(const std::vector<std::string>& mirror_urls,
     utility::LogError("Downloading failed from available mirrors.");
 }
 
+}  // namespace tools
 }  // namespace data
 }  // namespace open3d

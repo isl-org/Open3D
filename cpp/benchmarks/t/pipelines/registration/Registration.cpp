@@ -99,7 +99,7 @@ static void BenchmarkICP(benchmark::State& state,
                          const core::Dtype& dtype,
                          const TransformationEstimationType& type) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Error);
-    data::dataset::SampleICPPointClouds sample_icp_pointclouds;
+    data::SampleICPPointClouds sample_icp_pointclouds;
     geometry::PointCloud source, target;
     std::tie(source, target) = LoadTensorPointCloudFromFile(
             sample_icp_pointclouds.GetPaths(0),

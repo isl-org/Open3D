@@ -134,8 +134,6 @@ public:
     virtual ~SimpleDataset() {}
 };
 
-namespace dataset {
-
 /// \class SampleICPPointClouds
 /// \brief Dataset class for `SampleICPPointClouds` contains 3 `pointclouds` of
 /// `pcd binary` format. These pointclouds have `positions, colors, normals,
@@ -214,6 +212,5 @@ private:
     std::vector<std::string> paths_;
 };
 
-}  // namespace dataset
 }  // namespace data
 }  // namespace open3d

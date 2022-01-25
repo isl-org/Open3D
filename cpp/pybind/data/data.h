@@ -33,14 +33,9 @@ namespace data {
 
 void pybind_data(py::module& m);
 
-namespace dataset {
-
-void pybind_dataset(py::module& m);
 void pybind_sample_pcd_fragments(py::module& m);
 void pybind_redwood_living_room_fragments(py::module& m);
 void pybind_redwood_office_fragments(py::module& m);
-
-}  // namespace dataset
 
 }  // namespace data
 }  // namespace open3d

@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/ExtractZIP.h"
+#include "open3d/data/tools/ExtractZIP.h"
 
 // Reference:
 // https://github.com/madler/zlib/blob/master/contrib/minizip/miniunz.c
@@ -52,6 +52,7 @@
 
 namespace open3d {
 namespace data {
+namespace tools {
 
 static int ExtractCurrentFile(unzFile uf,
                               const std::string &extract_dir,
@@ -228,5 +229,6 @@ void ExtractFromZIP(const std::string &file_path,
     unzClose(uf);
 }
 
+}  // namespace tools
 }  // namespace data
 }  // namespace open3d
