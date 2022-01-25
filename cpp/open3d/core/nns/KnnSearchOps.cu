@@ -72,10 +72,9 @@ void KnnSearchCUDABruteForce(const Tensor& points,
 
     // Allocate output tensors.
     query_neighbors_row_splits[0] = 0;
-    std::fill(query_neighbors_row_splits + 1,
-              query_neighbors_row_splits + num_queries + 1, knn);
-    utility::InclusivePrefixSum(query_neighbors_row_splits + 1,
-                                query_neighbors_row_splits + num_queries + 1,
+    std::vector<uint32_t> neighbors_count(num_queries, knn);
+    utility::InclusivePrefixSum(neighbors_count.data(),
+                                neighbors_count.data() + neighbors_count.size(),
                                 query_neighbors_row_splits + 1);
     TIndex* indices_ptr;
     T* distances_ptr;
@@ -144,10 +143,9 @@ void KnnSearchCUDAOptimized(const Tensor& points,
 
     // Allocate output tensors.
     query_neighbors_row_splits[0] = 0;
-    std::fill(query_neighbors_row_splits + 1,
-              query_neighbors_row_splits + num_queries + 1, knn);
-    utility::InclusivePrefixSum(query_neighbors_row_splits + 1,
-                                query_neighbors_row_splits + num_queries + 1,
+    std::vector<uint32_t> neighbors_count(num_queries, knn);
+    utility::InclusivePrefixSum(neighbors_count.data(),
+                                neighbors_count.data() + neighbors_count.size(),
                                 query_neighbors_row_splits + 1);
     TIndex* indices_ptr;
     T* distances_ptr;
