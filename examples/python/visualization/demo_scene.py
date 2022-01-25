@@ -46,7 +46,7 @@ cd examples/test_data
 wget https://github.com/isl-org/open3d_downloads/releases/download/o3d_demo_scene/demo_scene_assets.tgz
 tar xzvf demo_scene_assets.tgz
 cd ../..
-python examples/python/visualization/gui/demo_scene.py
+python examples/python/visualization/demo_scene.py
 ```
 """)
         exit(1)

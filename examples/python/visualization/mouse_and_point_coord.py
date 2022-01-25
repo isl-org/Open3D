@@ -30,8 +30,7 @@ import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 import os
 
-pyexample_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 

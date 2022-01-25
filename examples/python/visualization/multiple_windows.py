@@ -30,8 +30,7 @@ import os
 import threading
 import time
 
-pyexample_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 CLOUD_NAME = "points"

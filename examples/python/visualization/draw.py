@@ -32,8 +32,7 @@ import os
 import random
 import sys
 
-pyexample_path = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 sys.path.append(pyexample_path)
 
