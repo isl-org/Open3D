@@ -233,9 +233,10 @@ set(PROJECT_ISSUES      "https://github.com/isl-org/Open3D/issues")
 
 project(Open3D
     VERSION ${OPEN3D_VERSION}
-    # set PROJECT_DESCRIPTION
+    # Set PROJECT_DESCRIPTION
     DESCRIPTION "Open3D: A Modern Library for 3D Data Processing."
-    HOMEPAGE_URL "http://www.open3d.org"  # sets PROJECT_HOMEPAGE_URL
+    # Set PROJECT_HOMEPAGE_URL
+    HOMEPAGE_URL "http://www.open3d.org"
     LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 

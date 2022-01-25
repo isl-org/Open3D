@@ -52,7 +52,7 @@ OPTION:
 
     # ML CIs
     2-bionic                    : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-bionic-RELEASE  : CUDA CI, 3-ml-shared-bionic, release mode
+    3-ml-shared-bionic-release  : CUDA CI, 3-ml-shared-bionic, release mode
     3-ml-shared-bionic          : CUDA CI, 3-ml-shared-bionic, developer mode
     4-ml-bionic                 : CUDA CI, 4-ml-bionic, developer mode
     5-ml-focal                  : CUDA CI, 5-ml-focal, developer mode
@@ -267,7 +267,7 @@ cuda_build() {
     export PACKAGE=ON
 }
 
-3-ml-shared-bionic-RELEASE_export_env() {
+3-ml-shared-bionic-release_export_env() {
     export DOCKER_TAG=open3d-ci:3-ml-shared-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
@@ -412,8 +412,8 @@ function main () {
             2-bionic_export_env
             cuda_build
             ;;
-        3-ml-shared-bionic-RELEASE)
-            3-ml-shared-bionic-RELEASE_export_env
+        3-ml-shared-bionic-release)
+            3-ml-shared-bionic-release_export_env
             cuda_build
             ;;
         3-ml-shared-bionic)

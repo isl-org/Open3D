@@ -20,9 +20,6 @@ if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
 fi
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
-if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$BUILD_CUDA_MODULE" == OFF ]; then
-    BUILD_PYTORCH_OPS=OFF # PyTorch Ops requires CUDA + CUDNN to build
-fi
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:

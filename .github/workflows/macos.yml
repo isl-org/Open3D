@@ -24,12 +24,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BUILD_ML_OPS: [ON, OFF]
+        CONFIG: [ON, OFF]
     env:
-      SHARED: ${{ matrix.BUILD_ML_OPS }}
+      SHARED: ${{ matrix.CONFIG }}
       BUILD_CUDA_MODULE: OFF
-      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
-      BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
+      BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
       LOW_MEM_USAGE: ON
     steps:
       - name: Cancel outdated
@@ -68,7 +68,7 @@ jobs:
           DEVEL_PKG_NAME="$(basename package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
       - name: Build Open3D viewer app
-        if: ${{ matrix.BUILD_ML_OPS == 'OFF' }}
+        if: ${{ matrix.CONFIG == 'OFF' }}
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           pushd build
@@ -103,7 +103,7 @@ jobs:
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v2
-        if: ${{ matrix.BUILD_ML_OPS == 'OFF' }}
+        if: ${{ matrix.CONFIG == 'OFF' }}
         with:
           name: open3d-app-macosx-10_15
           path: build/bin/open3d-app-macosx-10_15.zip

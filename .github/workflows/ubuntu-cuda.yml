@@ -125,19 +125,16 @@ jobs:
                     && ls -alh Open3D \
                     && nvidia-smi"
       - name: VM build docker
-        env:
-          CI_BUILD_CONFIG: ${{ matrix.CI_CONFIG }}
         run: |
-          if [ "${CI_CONFIG}"=="3-ml-shared-bionic" ] && \
-            [ "${DEVELOPER_BUILD}"=="OFF" ]; then
-            export CI_BUILD_CONFIG=${CI_BUILD_CONFIG}-RELEASE
+          if [ "${CI_CONFIG}" == "3-ml-shared-bionic" ] && [ "$DEVELOPER_BUILD" == "OFF" ]; then
+            export RELEASE_TAG="-release"
           fi
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
-            --command="sudo Open3D/docker/docker_build.sh ${CI_BUILD_CONFIG}"
-          if [ ${{ matrix.CI_CONFIG }} == '3-ml-shared-bionic' ]; then
-              gcloud compute scp --zone="${GCE_ZONE}" \
-                "${INSTANCE_NAME}":open3d-devel-linux*.tar.xz "$PWD"
+            --command="sudo Open3D/docker/docker_build.sh ${CI_CONFIG}${RELEASE_TAG:-}"
+          if [ "${CI_CONFIG}" == '3-ml-shared-bionic' ]; then
+            gcloud compute scp --zone="${GCE_ZONE}" \
+              "${INSTANCE_NAME}":open3d-devel-linux*.tar.xz "$PWD"
           fi
 
       - name: Upload package
