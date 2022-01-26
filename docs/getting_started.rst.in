@@ -191,8 +191,8 @@ provided here:
     .. hlist::
         :columns: 4
 
-        * `x86_64 <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-@OPEN3D_VERSION_FULL@.tar.xz>`__
-        * `x86_64 with CUDA 11.x <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
+        * `x86_64 (pre CXX11 ABI) <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-pre-cxx11-abi-@OPEN3D_VERSION_FULL@.tar.xz>`__
+        * `x86_64 (pre CXX11 ABI) with CUDA 11.x <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-pre-cxx11-abi-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
 
 :MacOSX v10.15+:
     .. hlist::
@@ -220,17 +220,21 @@ Extract the archive and move the contents to a local folder (such as
 
 .. code-block:: bash
 
-    $ tree -L 2 Open3D_install
     Open3D_install
     ├── include
     │   └── open3d
+    │       ├── core
+    │       ├── ...
+    │       ├── Open3DConfig.h
+    │       ├── Open3D.h
+    │       ├── ...
     └── lib
         ├── cmake
+        │   └── Open3D
         ├── libOpen3D.so
         ├── open3d_tf_ops.so
         └── open3d_torch_ops.so
 
-    4 directories, 3 files
 
 In Windows, you will have an additional ``bin`` folder with ``Open3D.dll``. Some
 files may be absent in the case of unsupported functionality.  Now add the
@@ -240,11 +244,19 @@ with Open3D:
 .. code-block:: bash
 
     export Open3D_ROOT="$HOME/Documents/Open3D_install"
+
     # Now compile and link your program with Open3D.
-    c++ -I"$Open3D_ROOT"/include -L"$Open3D_ROOT"/lib -lopen3d your_open3d_app.cpp
-    # Ensure libopen3d.so can be found by the system library loader at run time:
+    c++ -I"$Open3D_ROOT"/include -L"$Open3D_ROOT"/lib -lOpen3D your_open3d_app.cpp
+
+    # On Linux, if the Open3D package has a pre-cxx11-abi tag, define this macro
+    # to tell g++ to use the old C++ ABI. Do not link libraries with different
+    # ABIs.
+    g++ -I"$Open3D_ROOT"/include -L"$Open3D_ROOT"/lib -lOpen3D -D_GLIBCXX_USE_CXX11_ABI=0 your_open3d_app.cpp
+
+    # Ensure libOpen3D.so can be found by the system library loader at run time:
     # For Linux:
     export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$Open3D_ROOT/lib
+
     # For macOS:
     export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH:+$DYLD_LIBRARY_PATH:}$Open3D_ROOT/lib
 
@@ -252,9 +264,9 @@ For Windows (MSVC), add ``$Open3D_ROOT/include`` and ``$Open3D_ROOT/lib`` and to
 your MSVC solution's include and library paths respectively. The ``lib`` folder
 contains the import library, while the DLL is in the ``$Open3D_ROOT/bin``
 folder. You can copy this to the build output folder of your application (or add
-it `$Open3D_ROOT/bin`` to the ``PATH`` environment variable) to ensure that it
+it ``$Open3D_ROOT/bin`` to the ``PATH`` environment variable) to ensure that it
 is found at runtime.  Ensure that you use the debug or release version of the
-library if you build in `Debug` or `Release` mode respectively.
+library if you build in ``Debug`` or ``Release`` mode respectively.
 
 The C++ code examples in the ``examples/cpp`` folder of the repository illustrate
 a lot of the functionality available in Open3D and are a good place to start

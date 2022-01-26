@@ -13,11 +13,21 @@ set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/package")
 set(CPACK_PACKAGE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 string(TOLOWER ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR} _sys)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if (GLIBCXX_USE_CXX11_ABI)  # Name follows libtorch convention
+        set(_sys ${_sys}-cxx11-abi)
+    else()
+        set(_sys ${_sys}-pre-cxx11-abi)
+    endif()
+endif()
 if (BUILD_CUDA_MODULE)
     set(_sys ${_sys}-cuda)
 endif()
+if (NOT MSVC)
+    set(CPACK_STRIP_FILES ON)  # Don't strip MSVC Debug build
+endif()
 set(CPACK_PACKAGE_FILE_NAME
     "open3d-devel-${_sys}-${OPEN3D_VERSION_FULL}")
-set(CPACK_THREADS 0)
+set(CPACK_THREADS 0)  # Use all cores for compressing package
 
 include(CPack)
