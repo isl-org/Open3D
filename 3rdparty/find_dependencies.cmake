@@ -1040,7 +1040,6 @@ else()
         TARGETS OpenGL::GL
     )
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_opengl)
 
 # imgui
 if(BUILD_GUI)

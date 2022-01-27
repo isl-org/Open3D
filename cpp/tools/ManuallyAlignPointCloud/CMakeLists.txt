@@ -9,6 +9,7 @@ target_link_libraries(ManuallyAlignPointCloud PRIVATE
     Open3D::Open3D
     Open3D::3rdparty_jsoncpp
     Open3D::3rdparty_tinyfiledialogs
+    Open3D::3rdparty_opengl
 )
 
 set_target_properties(ManuallyAlignPointCloud PROPERTIES FOLDER "Tools")
