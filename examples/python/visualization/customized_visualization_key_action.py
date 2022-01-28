@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/visualization/customized_visualization_key_action.py
-
 import open3d as o3d
 
 import os

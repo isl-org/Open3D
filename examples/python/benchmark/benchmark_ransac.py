@@ -24,17 +24,14 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/benchmark/benchmark_ransac.py
-
 import os
 import sys
-sys.path.append("../pipelines")
-sys.path.append("../geometry")
-sys.path.append("../utility")
 import numpy as np
-from file import *
-from visualization import *
-from downloader import *
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import *
 
 do_visualization = False
 
@@ -70,9 +67,13 @@ def execute_global_registration(source, target, source_fpfh, target_fpfh,
                 0.9),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
                 distance_threshold)
-        ], o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.999))
+        ], o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.999))
     return result
 
+
+dataset_path = os.path.join(os.path.dirname(pyexample_path), 'test_data',
+                            'benchmark_data')
+dataset_names = ['livingroom1', 'livingroom2', 'office1', 'office2']
 
 if __name__ == "__main__":
     # data preparation

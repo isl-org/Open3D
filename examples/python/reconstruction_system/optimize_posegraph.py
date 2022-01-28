@@ -27,12 +27,7 @@
 # examples/python/reconstruction_system/optimize_posegraph.py
 
 import open3d as o3d
-import os, sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-from utility.file import join
+from os.path import join
 
 
 def run_posegraph_optimization(pose_graph_name, pose_graph_optimized_name,

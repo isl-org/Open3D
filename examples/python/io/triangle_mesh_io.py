@@ -24,38 +24,17 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/utility/visualization.py
-
-import copy
 import open3d as o3d
+import os
 
-flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
+if __name__ == "__main__":
 
-def draw_geometries_flip(pcds):
-    pcds_transform = []
-    for pcd in pcds:
-        pcd_temp = copy.deepcopy(pcd)
-        pcd_temp.transform(flip_transform)
-        pcds_transform.append(pcd_temp)
-    o3d.visualization.draw_geometries(pcds_transform)
-
-
-def draw_registration_result(source, target, transformation):
-    source_temp = copy.deepcopy(source)
-    target_temp = copy.deepcopy(target)
-    source_temp.paint_uniform_color([1, 0.706, 0])
-    target_temp.paint_uniform_color([0, 0.651, 0.929])
-    source_temp.transform(transformation)
-    source_temp.transform(flip_transform)
-    target_temp.transform(flip_transform)
-    o3d.visualization.draw_geometries([source_temp, target_temp])
-
-
-def draw_registration_result_original_color(source, target, transformation):
-    source_temp = copy.deepcopy(source)
-    target_temp = copy.deepcopy(target)
-    source_temp.transform(transformation)
-    source_temp.transform(flip_transform)
-    target_temp.transform(flip_transform)
-    o3d.visualization.draw_geometries([source_temp, target_temp])
+    print("Reading mesh from file: knot.ply")
+    path_to_mesh = os.path.join(test_data_path, 'knot.ply')
+    mesh = o3d.io.read_triangle_mesh(path_to_mesh)
+    print(mesh)
+    print("Saving mesh to file: copy_of_knot.ply")
+    o3d.io.write_triangle_mesh("copy_of_knot.ply", mesh)

@@ -27,6 +27,10 @@
 import open3d as o3d
 
 import argparse
+import os, sys
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 
 def preprocess_point_cloud(pcd, voxel_size):
@@ -44,8 +48,18 @@ def preprocess_point_cloud(pcd, voxel_size):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         'Global point cloud registration example with RANSAC')
-    parser.add_argument('src', type=str, help='path to src point cloud')
-    parser.add_argument('dst', type=str, help='path to dst point cloud')
+    parser.add_argument('src',
+                        type=str,
+                        default=os.path.join(test_data_path, 'ICP',
+                                             'cloud_bin_0.pcd'),
+                        nargs='?',
+                        help='path to src point cloud')
+    parser.add_argument('dst',
+                        type=str,
+                        default=os.path.join(test_data_path, 'ICP',
+                                             'cloud_bin_1.pcd'),
+                        nargs='?',
+                        help='path to dst point cloud')
     parser.add_argument('--voxel_size',
                         type=float,
                         default=0.05,
