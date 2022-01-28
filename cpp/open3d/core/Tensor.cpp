@@ -27,7 +27,6 @@
 #include "open3d/core/Tensor.h"
 
 #include <numeric>
-#include <sstream>
 
 #include "open3d/core/AdvancedIndexing.h"
 #include "open3d/core/Blob.h"
@@ -38,6 +37,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorFormatter.h"
 #include "open3d/core/TensorFunction.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
@@ -751,64 +751,7 @@ Tensor Tensor::Contiguous() const {
     }
 }
 
-std::string Tensor::ToString(bool with_suffix,
-                             const std::string& indent) const {
-    std::ostringstream rc;
-    if (GetDevice().GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
-        Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
-        rc << host_contiguous_tensor.ToString(false, "");
-    } else {
-        if (shape_.NumElements() == 0) {
-            rc << indent;
-            rc << "0-element Tensor";
-        } else if (shape_.size() == 0) {
-            rc << indent;
-            rc << ScalarPtrToString(data_ptr_);
-        } else if (shape_.size() == 1) {
-            const char* ptr = static_cast<const char*>(data_ptr_);
-            rc << "[";
-            std::string delim = "";
-            int64_t element_byte_size = dtype_.ByteSize();
-            for (int64_t i = 0; i < shape_.NumElements(); ++i) {
-                rc << delim << ScalarPtrToString(ptr);
-                delim = " ";
-                ptr += element_byte_size;
-            }
-            rc << "]";
-        } else {
-            rc << "[";
-            std::string delim = "";
-            std::string child_indent = "";
-            for (int64_t i = 0; i < shape_[0]; ++i) {
-                rc << delim << child_indent
-                   << this->operator[](i).ToString(false, indent + " ");
-                delim = ",\n";
-                child_indent = indent + " ";
-            }
-            rc << "]";
-        }
-    }
-    if (with_suffix) {
-        rc << fmt::format("\nTensor[shape={}, stride={}, {}, {}, {}]",
-                          shape_.ToString(), strides_.ToString(),
-                          dtype_.ToString(), GetDevice().ToString(), data_ptr_);
-    }
-    return rc.str();
-}
-
-std::string Tensor::ScalarPtrToString(const void* ptr) const {
-    std::string str = "";
-    if (dtype_ == core::Bool) {
-        str = *static_cast<const unsigned char*>(ptr) ? "True" : "False";
-    } else if (dtype_.IsObject()) {
-        str = fmt::format("{}", fmt::ptr(ptr));
-    } else {
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype_, [&]() {
-            str = fmt::format("{}", *static_cast<const scalar_t*>(ptr));
-        });
-    }
-    return str;
-}
+std::string Tensor::ToString() const { return FormatTensor(*this); }
 
 Tensor Tensor::operator[](int64_t i) const { return IndexExtract(0, i); }
 

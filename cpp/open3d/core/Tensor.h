@@ -500,8 +500,7 @@ public:
     /// and have the targeted dtype.
     Tensor To(const Device& device, Dtype dtype, bool copy = false) const;
 
-    std::string ToString(bool with_suffix = true,
-                         const std::string& indent = "") const;
+    std::string ToString() const;
 
     /// Extract the i-th Tensor along the first axis, returning a new view.
     Tensor operator[](int64_t i) const;
@@ -1244,9 +1243,6 @@ public:
     /// same memory with the original tensor. This is equivalent to
     /// Tensor::cend().
     ConstIterator end() const { return cend(); }
-
-protected:
-    std::string ScalarPtrToString(const void* ptr) const;
 
 private:
     /// Create a n-D tensor with initializer list.

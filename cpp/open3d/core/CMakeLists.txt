@@ -14,6 +14,7 @@ target_sources(core PRIVATE
     SizeVector.cpp
     Tensor.cpp
     TensorCheck.cpp
+    TensorFormatter.cpp
     TensorFunction.cpp
     TensorKey.cpp
     TensorList.cpp

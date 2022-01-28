@@ -15,6 +15,7 @@ target_sources(tests PRIVATE
     SizeVector.cpp
     Tensor.cpp
     TensorCheck.cpp
+    TensorFormatter.cpp
     TensorFunction.cpp
     TensorList.cpp
     TensorObject.cpp
