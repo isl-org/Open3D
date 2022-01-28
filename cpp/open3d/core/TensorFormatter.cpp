@@ -26,6 +26,7 @@
 
 #include "open3d/core/TensorFormatter.h"
 
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -34,6 +35,74 @@
 
 namespace open3d {
 namespace core {
+
+// Global singleton class
+class PrintOptionsState {
+public:
+    static PrintOptionsState& GetInstance() {
+        static PrintOptionsState instance;
+        return instance;
+    }
+    PrintOptionsState(const PrintOptionsState&) = delete;
+    PrintOptionsState& operator=(const PrintOptionsState&) = delete;
+
+    void SetPrintOptions(const PrintOptions& print_options) {
+        print_options_ = print_options;
+    }
+    const PrintOptions& GetPrintOptions() const { return print_options_; }
+
+private:
+    PrintOptionsState();
+    PrintOptions print_options_;
+};
+
+void SetPrintOptions(utility::optional<int> precision,
+                     utility::optional<int> threshold,
+                     utility::optional<int> edgeitems,
+                     utility::optional<int> linewidth,
+                     utility::optional<std::string> profile,
+                     utility::optional<bool> sci_mode) {
+    PrintOptions print_options;
+    if (profile.has_value()) {
+        if (profile.value() == "default") {
+            print_options.precision_ = 4;
+            print_options.threshold_ = 1000;
+            print_options.edgeitems_ = 3;
+            print_options.linewidth_ = 80;
+        } else if (profile.value() == "short") {
+            print_options.precision_ = 2;
+            print_options.threshold_ = 1000;
+            print_options.edgeitems_ = 2;
+            print_options.linewidth_ = 80;
+        } else if (profile.value() == "full") {
+            print_options.precision_ = 4;
+            print_options.threshold_ = std::numeric_limits<int>::max();
+            print_options.edgeitems_ = 3;
+            print_options.linewidth_ = 80;
+        } else {
+            utility::LogWarning("Unknown profile: {}", profile.value());
+        }
+    }
+    if (precision.has_value()) {
+        print_options.precision_ = precision.value();
+    }
+    if (threshold.has_value()) {
+        print_options.threshold_ = threshold.value();
+    }
+    if (edgeitems.has_value()) {
+        print_options.edgeitems_ = edgeitems.value();
+    }
+    if (linewidth.has_value()) {
+        print_options.linewidth_ = linewidth.value();
+    }
+    print_options.sci_mode_ = sci_mode;
+
+    PrintOptionsState::GetInstance().SetPrintOptions(print_options);
+}
+
+PrintOptions GetPrintOptions() {
+    return PrintOptionsState::GetInstance().GetPrintOptions();
+}
 
 static std::string ScalarPtrToString(const void* ptr, const Dtype& dtype) {
     std::string str = "";

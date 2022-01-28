@@ -31,9 +31,28 @@
 #include <string>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace core {
+
+struct PrintOptions {
+    int precision_ = 4;
+    int threshold_ = 1000;
+    int edgeitems_ = 3;
+    int linewidth_ = 80;
+    utility::optional<bool> sci_mode_ = utility::nullopt;
+};
+
+/// \brief Set options for printing tensors.
+void SetPrintOptions(utility::optional<int> precision,
+                     utility::optional<int> threshold,
+                     utility::optional<int> edgeitems,
+                     utility::optional<int> linewidth,
+                     utility::optional<std::string> profile,
+                     utility::optional<bool> sci_mode);
+
+PrintOptions GetPrintOptions();
 
 std::string FormatTensor(const Tensor& tensor, bool with_suffix = true);
 
