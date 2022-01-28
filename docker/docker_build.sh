@@ -54,7 +54,8 @@ OPTION:
     2-bionic                    : CUDA CI, 2-bionic, developer mode
     3-ml-shared-bionic-release  : CUDA CI, 3-ml-shared-bionic, release mode
     3-ml-shared-bionic          : CUDA CI, 3-ml-shared-bionic, developer mode
-    4-ml-bionic                 : CUDA CI, 4-ml-bionic, developer mode
+    4-shared-bionic             : CUDA CI, 4-shared-bionic, developer mode
+    4-shared-bionic-release     : CUDA CI, 4-shared-bionic, release mode
     5-ml-focal                  : CUDA CI, 5-ml-focal, developer mode
 "
 
@@ -280,17 +281,30 @@ cuda_build() {
     export PACKAGE=ON
 }
 
-4-ml-bionic_export_env() {
-    export DOCKER_TAG=open3d-ci:4-ml-bionic
+4-shared-bionic_export_env() {
+    export DOCKER_TAG=open3d-ci:4-shared-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-4-ml-bionic
+    export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
     export PYTHON_VERSION=3.6
-    export SHARED=OFF
-    export BUILD_TENSORFLOW_OPS=ON
-    export BUILD_PYTORCH_OPS=ON
-    export PACKAGE=OFF
+    export SHARED=ON
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=ON
+}
+
+4-shared-bionic_-release_export_env() {
+    export DOCKER_TAG=open3d-ci:4-shared-bionic
+
+    export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=ON
 }
 
 5-ml-focal_export_env() {
@@ -420,8 +434,12 @@ function main () {
             3-ml-shared-bionic_export_env
             cuda_build
             ;;
-        4-ml-bionic)
-            4-ml-bionic_export_env
+        4-shared-bionic-release)
+            4-shared-bionic-release_export_env
+            cuda_build
+            ;;
+        4-shared-bionic)
+            4-shared-bionic_export_env
             cuda_build
             ;;
         5-ml-focal)

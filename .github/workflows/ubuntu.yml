@@ -25,12 +25,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        CONFIG: [ON, OFF]
+        SHARED: [ON, OFF]
+        MLOPS: [ON, OFF]
+        exclude:
+          - SHARED: OFF
+            MLOPS: ON
     env:
-      SHARED: ${{ matrix.CONFIG }}
+      SHARED: ${{ matrix.SHARED }}
       BUILD_CUDA_MODULE: OFF
-      BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
-      BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.MLOPS }}
+      BUILD_PYTORCH_OPS: ${{ matrix.MLOPS }}
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Cancel outdated

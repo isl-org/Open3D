@@ -47,12 +47,13 @@ jobs:
         include:
           - CI_CONFIG: 2-bionic
           - CI_CONFIG: 3-ml-shared-bionic
-          - CI_CONFIG: 4-ml-bionic
+          - CI_CONFIG: 4-shared-bionic
           - CI_CONFIG: 5-ml-focal
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
       CI_CONFIG          : ${{ matrix.CI_CONFIG }}
+      BUILD_PACKAGE      : ${{ contains(['3-ml-shared-bionic', '4-shared-bionic'], matrix.CI_CONFIG) }}
       GCE_INSTANCE_PREFIX: open3d-ci-${{ matrix.CI_CONFIG }}
       DOCKER_TAG         : open3d-ci:${{ matrix.CI_CONFIG }}
       CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}
@@ -126,19 +127,19 @@ jobs:
                     && nvidia-smi"
       - name: VM build docker
         run: |
-          if [ "${CI_CONFIG}" == "3-ml-shared-bionic" ] && [ "$DEVELOPER_BUILD" == "OFF" ]; then
+          if [ "${BUILD_PACKAGE}" == "true" ] && [ "$DEVELOPER_BUILD" == "OFF" ]; then
             export RELEASE_TAG="-release"
           fi
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
             --command="sudo Open3D/docker/docker_build.sh ${CI_CONFIG}${RELEASE_TAG:-}"
-          if [ "${CI_CONFIG}" == '3-ml-shared-bionic' ]; then
+          if [ "${BUILD_PACKAGE}" == 'true' ]; then
             gcloud compute scp --zone="${GCE_ZONE}" \
               "${INSTANCE_NAME}":open3d-devel-linux*.tar.xz "$PWD"
           fi
 
       - name: Upload package
-        if: ${{ matrix.CI_CONFIG == '3-ml-shared-bionic' }}
+        if: ${{ env.BUILD_PACKAGE == 'true' }}
         uses: actions/upload-artifact@v2
         with:
           name: open3d-devel-linux-x86_64-cuda
@@ -146,7 +147,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' && matrix.CI_CONFIG == '3-ml-shared-bionic' }}
+        if: ${{ github.ref == 'refs/heads/master' && env.CI_CONFIG == 'true' }}
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \

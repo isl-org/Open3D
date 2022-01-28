@@ -36,10 +36,12 @@ OPTION:
     openblas-arm64-py39    : OpenBLAS ARM64 3.9 wheel, release mode
 
     # ML CIs
-    2-bionic            : CUDA CI, 2-bionic
-    3-ml-shared-bionic  : CUDA CI, 3-ml-shared-bionic
-    4-ml-bionic         : CUDA CI, 4-ml-bionic
-    5-ml-focal          : CUDA CI, 5-ml-focal
+    2-bionic                    : CUDA CI, 2-bionic
+    3-ml-shared-bionic          : CUDA CI, 3-ml-shared-bionic
+    3-ml-shared-bionic-release  : CUDA CI, 3-ml-shared-bionic-release (same as above)
+    4-shared-bionic             : CUDA CI, 4-shared-bionic
+    4-shared-bionic-release     : CUDA CI, 4-shared-bionic-release (same as above)
+    5-ml-focal                  : CUDA CI, 5-ml-focal
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -248,8 +250,20 @@ case "$1" in
         export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
-    4-ml-bionic)
-        4-ml-bionic_export_env
+    3-ml-shared-bionic-release)
+        3-ml-shared-bionic-release_export_env
+        cuda_print_env
+        export BUILD_CUDA_MODULE=ON
+        cpp_python_linking_uninstall_test
+        ;;
+    4-shared-bionic)
+        4-shared-bionic_export_env
+        cuda_print_env
+        export BUILD_CUDA_MODULE=ON
+        cpp_python_linking_uninstall_test
+        ;;
+    4-shared-bionic-release)
+        4-shared-bionic-release_export_env
         cuda_print_env
         export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
