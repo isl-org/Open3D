@@ -44,7 +44,6 @@ TEST(Dataset, DatasetBase) {
     data::Dataset ds_custom("some_prefix", "some help documentation string",
                             "/my/custom/data_root");
     EXPECT_EQ(ds_custom.GetPrefix(), "some_prefix");
-    EXPECT_EQ(ds_custom.GetHelpString(), "some help documentation string");
     EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
     EXPECT_EQ(ds_custom.GetDownloadDir(),
               "/my/custom/data_root/download/some_prefix");
@@ -54,8 +53,6 @@ TEST(Dataset, DatasetBase) {
 
 TEST(Dataset, SampleICPPointClouds) {
     data::SampleICPPointClouds sample_icp_pointclouds;
-    utility::LogInfo("SampleICPPointClouds dataset information: \n{}\n",
-                     sample_icp_pointclouds.GetHelpString());
     t::geometry::PointCloud pcd;
     EXPECT_TRUE(t::io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), pcd));
 }

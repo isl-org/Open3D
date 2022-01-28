@@ -45,15 +45,12 @@ void pybind_data_classes(py::module& m) {
                                    "Returns data root path.")
             .def_property_readonly("prefix", &Dataset::GetPrefix,
                                    "Returns data prefix.")
-            .def_property_readonly("help_string", &Dataset::GetHelpString,
-                                   "Returns string of helpful documentation.")
             .def_property_readonly("download_dir", &Dataset::GetDownloadDir,
                                    "Returns data download path.")
             .def_property_readonly("extract_dir", &Dataset::GetExtractDir,
                                    "Returns data extract path.");
     docstring::ClassMethodDocInject(m, "Dataset", "data_root");
     docstring::ClassMethodDocInject(m, "Dataset", "prefix");
-    docstring::ClassMethodDocInject(m, "Dataset", "help_string");
     docstring::ClassMethodDocInject(m, "Dataset", "download_dir");
     docstring::ClassMethodDocInject(m, "Dataset", "extract_dir");
 
@@ -66,7 +63,7 @@ void pybind_data_classes(py::module& m) {
                      const std::string&, const bool, const std::string&,
                      const std::string&>(),
             "prefix"_a, "urls"_a, "md5"_a, "no_extract"_a = false,
-            "help_string"_a = "", "data_root"_a = "");
+            "data_root"_a = "");
 }
 
 void pybind_sample_icp_pointclouds(py::module& m) {

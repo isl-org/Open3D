@@ -74,8 +74,6 @@ public:
     /// \param prefix Prefix of the dataset. The data is downloaded in
     /// `${data_root}/download/${prefix}/` and extracted in
     /// `${data_root}/extract/${prefix}/`.
-    /// \param help_string Helpful documentation string related to the dataset
-    /// and available functionalities.
     /// \param data_root Path to `${data_root}`, which contains all the
     /// downloaded and extracted files.
     /// The data root directory is located in the following order:
@@ -83,9 +81,7 @@ public:
     ///   (b) OPEN3D_DATA_ROOT environment variable.
     ///   (c) $HOME/open3d_data.
     ///   By default, (c) will be used, and it is also the recommended way.
-    Dataset(const std::string& prefix,
-            const std::string& help_string = "",
-            const std::string& data_root = "");
+    Dataset(const std::string& prefix, const std::string& data_root = "");
 
     virtual ~Dataset() {}
 
@@ -94,8 +90,6 @@ public:
     const std::string GetDataRoot() const { return data_root_; }
     /// \brief Get prefix for the dataset.
     const std::string GetPrefix() const { return prefix_; }
-    /// \brief Get help string for the dataset.
-    const std::string GetHelpString() const { return help_string_; }
 
     /// \brief Get absolute path to download directory. i.e.
     /// ${data_root}/${download_prefix}/${prefix}
@@ -113,10 +107,6 @@ protected:
     std::string data_root_;
     /// Dataset prefix.
     std::string prefix_;
-    /// Dataset help string containing informations such as source,
-    /// documentation link, functionalities, usage, licence, and other useful
-    /// informations.
-    std::string help_string_;
 };
 
 /// \class SimpleDataset
@@ -128,7 +118,6 @@ public:
                   const std::vector<std::string>& urls,
                   const std::string& md5,
                   const bool no_extract = false,
-                  const std::string& help_string = "",
                   const std::string& data_root = "");
 
     virtual ~SimpleDataset() {}

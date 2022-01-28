@@ -47,10 +47,8 @@ std::string LocateDataRoot() {
     return data_root;
 }
 
-Dataset::Dataset(const std::string& prefix,
-                 const std::string& help_string,
-                 const std::string& data_root)
-    : prefix_(prefix), help_string_(help_string) {
+Dataset::Dataset(const std::string& prefix, const std::string& data_root)
+    : prefix_(prefix) {
     if (data_root.empty()) {
         data_root_ = LocateDataRoot();
     } else {
@@ -65,9 +63,8 @@ SimpleDataset::SimpleDataset(const std::string& prefix,
                              const std::vector<std::string>& urls,
                              const std::string& md5,
                              const bool no_extract,
-                             const std::string& help_string,
                              const std::string& data_root)
-    : Dataset(prefix, help_string, data_root) {
+    : Dataset(prefix, data_root) {
     const std::string filename =
             utility::filesystem::GetFileNameWithoutDirectory(urls[0]);
 
@@ -103,28 +100,6 @@ SampleICPPointClouds::SampleICPPointClouds(const std::string& prefix,
         paths_.push_back(Dataset::GetExtractDir() + "/cloud_bin_" +
                          std::to_string(i) + ".pcd");
     }
-
-    this->help_string_ = std::string(R"""(
-Colored point-cloud fragments of living-room from ICL-NUIM
-RGBD Benchmark Dataset in PCD format.
-
-Information:
-- Type: Point cloud fragments [contains points, colors, normals, curvature].
-- Format: PCD Binary.
-
-Contents of SampleICPPointClouds.zip:
-    SampleICPPointClouds
-    ├── cloud_bin_0.pcd
-    ├── cloud_bin_1.pcd
-    └── cloud_bin_2.pcd
-
-Source: ICL-NUIM RGBD Benchmark Dataset.
-Licence: Creative Commons 3.0 (CC BY 3.0).
-
-Download Mirror:
-- https://github.com/isl-org/open3d_downloads/releases/download/sample-icp-pointclouds/SampleICPPointClouds.zip
-MD5: 3ee7a2631caa3c47a333972e3c4fb315
-     )""");
 }
 
 std::string SampleICPPointClouds::GetPaths(size_t index) const {
@@ -149,30 +124,6 @@ RedwoodLivingRoomFragments::RedwoodLivingRoomFragments(
         paths_.push_back(Dataset::GetExtractDir() + "/cloud_bin_" +
                          std::to_string(i) + ".ply");
     }
-
-    this->help_string_ = std::string(R"""(
-Colored point-cloud fragments of living-room-1 from ICL-NUIM
-RGBD Benchmark Dataset in PLY format.
-
-Information:
-- Type: Point cloud fragments [contains points, colors, normals, curvature].
-- Format: PLY Binary.
-
-Contents of livingroom1-fragments-ply.zip:
-    RedwoodLivingRoomFragments
-    ├── cloud_bin_0.ply
-    ├── cloud_bin_1.ply
-    │   ...
-    └── cloud_bin_56.ply
-
-Source: ICL-NUIM RGBD Benchmark Dataset.
-Licence: Creative Commons 3.0 (CC BY 3.0).
-
-Download Mirrors:
-- http://redwood-data.org/indoor/data/livingroom1-fragments-ply.zip
-- https://github.com/isl-org/open3d_downloads/releases/download/redwood/livingroom1-fragments-ply.zip
-MD5: 36e0eb23a66ccad6af52c05f8390d33e
-     )""");
 }
 
 std::string RedwoodLivingRoomFragments::GetPaths(size_t index) const {
@@ -197,30 +148,6 @@ RedwoodOfficeFragments::RedwoodOfficeFragments(const std::string& prefix,
         paths_.push_back(Dataset::GetExtractDir() + "/cloud_bin_" +
                          std::to_string(i) + ".ply");
     }
-
-    this->help_string_ = std::string(R"""(
-Colored point-cloud fragments of office-1 from ICL-NUIM
-RGBD Benchmark Dataset in PLY format.
-
-Information:
-- Type: Point cloud fragments [contains points, colors, normals, curvature].
-- Format: PLY Binary.
-
-Contents of office1-fragments-ply.zip:
-    RedwoodOfficeFragments
-    ├── cloud_bin_0.ply
-    ├── cloud_bin_1.ply
-    │   ...
-    └── cloud_bin_52.ply
-
-Source: ICL-NUIM RGBD Benchmark Dataset.
-Licence: Creative Commons 3.0 (CC BY 3.0).
-
-Download Mirrors:
-- http://redwood-data.org/indoor/data/office1-fragments-ply.zip
-- https://github.com/isl-org/open3d_downloads/releases/download/redwood/office1-fragments-ply.zip
-MD5: 36e0eb23a66ccad6af52c05f8390d33e
-     )""");
 }
 
 std::string RedwoodOfficeFragments::GetPaths(size_t index) const {
