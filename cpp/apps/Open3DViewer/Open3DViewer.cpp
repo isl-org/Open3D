@@ -24,51 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "Open3DViewer.h"
-
 #include <string>
 
 #include "open3d/Open3D.h"
-#include "open3d/visualization/gui/Native.h"
-#include "open3d/visualization/visualizer/GuiVisualizer.h"
+#include "open3d/visualization/app/Viewer.h"
 
-using namespace open3d;
-using namespace open3d::geometry;
-using namespace open3d::visualization;
-
-namespace {
-static const std::string gUsage = "Usage: Open3DViewer [meshfile|pointcloud]";
-}  // namespace
-
-int Run(int argc, const char *argv[]) {
-    const char *path = nullptr;
-    if (argc > 1) {
-        path = argv[1];
-        if (argc > 2) {
-            utility::LogWarning(gUsage.c_str());
-        }
-    }
-
-    auto &app = gui::Application::GetInstance();
-    app.Initialize(argc, argv);
-
-    auto vis = std::make_shared<GuiVisualizer>("Open3D", WIDTH, HEIGHT);
-    bool is_path_valid = (path && path[0] != '\0');
-    if (is_path_valid) {
-        vis->LoadGeometry(path);
-    }
-    gui::Application::GetInstance().AddWindow(vis);
-    // when Run() ends, Filament will be stopped, so we can't be holding on
-    // to any GUI objects.
-    vis.reset();
-
-    app.Run();
-
-    return 0;
-}
+using namespace open3d::visualization::app;
 
 #if __APPLE__
 // Open3DViewer_mac.mm
 #else
-int main(int argc, const char *argv[]) { return Run(argc, argv); }
+int main(int argc, const char *argv[]) {
+    RunViewer(argc, argv);
+    return 0;
+}
 #endif  // __APPLE__
