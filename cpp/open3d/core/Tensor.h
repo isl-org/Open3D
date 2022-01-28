@@ -500,7 +500,7 @@ public:
     /// and have the targeted dtype.
     Tensor To(const Device& device, Dtype dtype, bool copy = false) const;
 
-    std::string ToString() const;
+    std::string ToString(bool with_suffix = true) const;
 
     /// Extract the i-th Tensor along the first axis, returning a new view.
     Tensor operator[](int64_t i) const;

@@ -751,7 +751,9 @@ Tensor Tensor::Contiguous() const {
     }
 }
 
-std::string Tensor::ToString() const { return FormatTensor(*this); }
+std::string Tensor::ToString(bool with_suffix) const {
+    return FormatTensor(*this, with_suffix);
+}
 
 Tensor Tensor::operator[](int64_t i) const { return IndexExtract(0, i); }
 

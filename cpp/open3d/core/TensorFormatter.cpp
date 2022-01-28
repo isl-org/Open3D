@@ -98,7 +98,9 @@ static std::string ToString(const Tensor& tensor,
     return rc.str();
 }
 
-std::string FormatTensor(const Tensor& tensor) { return ToString(tensor); }
+std::string FormatTensor(const Tensor& tensor, bool with_suffix) {
+    return ToString(tensor, with_suffix);
+}
 
 }  // namespace core
 }  // namespace open3d

@@ -35,7 +35,7 @@
 namespace open3d {
 namespace core {
 
-std::string FormatTensor(const Tensor& tensor);
+std::string FormatTensor(const Tensor& tensor, bool with_suffix = true);
 
 }  // namespace core
 }  // namespace open3d

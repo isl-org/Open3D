@@ -76,30 +76,30 @@ TEST_P(TensorFormatterPermuteDevices, FormatTensor) {
 
     // 0D
     t = core::Tensor::Ones({}, core::Float32, device);
-    EXPECT_EQ(t.ToString(), R"(1.0)");
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(1.0)");
     t = core::Tensor::Full({}, std::numeric_limits<float>::quiet_NaN(),
                            core::Float32, device);
-    EXPECT_EQ(t.ToString(), R"(nan)");
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
     t = core::Tensor::Full({}, std::numeric_limits<double>::quiet_NaN(),
                            core::Float32, device);  // Casting
-    EXPECT_EQ(t.ToString(), R"(nan)");
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
 
     // 1D float
     t = core::Tensor(std::vector<float>{0, 1, 2, 3, 4}, {5}, core::Float32,
                      device);
-    EXPECT_EQ(t.ToString(), R"([0.0 1.0 2.0 3.0 4.0])");
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"([0.0 1.0 2.0 3.0 4.0])");
 
     // 1D int
     std::vector<int32_t> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
                               12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
     t = core::Tensor(vals, {24}, core::Int32, device);
     EXPECT_EQ(
-            t.ToString(),
+            t.ToString(/*with_suffix=*/false),
             R"([0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23])");
 
     // 2D
     t = core::Tensor(vals, {6, 4}, core::Int32, device);
-    EXPECT_EQ(t.ToString(),
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[0 1 2 3],
  [4 5 6 7],
  [8 9 10 11],
@@ -109,7 +109,7 @@ TEST_P(TensorFormatterPermuteDevices, FormatTensor) {
 
     // 3D
     t = core::Tensor(vals, {2, 3, 4}, core::Int32, device);
-    EXPECT_EQ(t.ToString(),
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[[0 1 2 3],
   [4 5 6 7],
   [8 9 10 11]],
@@ -119,7 +119,7 @@ TEST_P(TensorFormatterPermuteDevices, FormatTensor) {
 
     // 4D
     t = core::Tensor(vals, {2, 3, 2, 2}, core::Int32, device);
-    EXPECT_EQ(t.ToString(),
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[[[0 1],
    [2 3]],
   [[4 5],
@@ -136,7 +136,7 @@ TEST_P(TensorFormatterPermuteDevices, FormatTensor) {
     // Boolean
     t = core::Tensor(std::vector<bool>{true, false, true, true, false, false},
                      {2, 3}, core::Bool, device);
-    EXPECT_EQ(t.ToString(),
+    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
               R"([[True False True],
  [True False False]])");
 }
