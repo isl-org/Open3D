@@ -24,9 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/visualization/load_save_viewpoint.py
-
-import numpy as np
 import open3d as o3d
 import os
 

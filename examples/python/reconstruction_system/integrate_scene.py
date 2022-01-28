@@ -34,7 +34,7 @@ import open3d as o3d
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from utility.file import *
+from open3d_example import *
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from make_fragments import read_rgbd_image

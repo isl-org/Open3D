@@ -62,6 +62,7 @@ function(open3d_print_configuration_summary)
     message(STATUS "================================================================================")
     message(STATUS "Third-Party Dependencies:")
     set(3RDPARTY_DEPENDENCIES
+        BLAS
         Eigen3
         faiss
         filament

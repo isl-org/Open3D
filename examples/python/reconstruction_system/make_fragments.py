@@ -34,8 +34,7 @@ import open3d as o3d
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from utility.file import join, make_clean_folder, get_rgbd_file_lists
-from utility.opencv import initialize_opencv
+from open3d_example import join, make_clean_folder, get_rgbd_file_lists, initialize_opencv
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_fragment
