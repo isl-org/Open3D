@@ -1107,6 +1107,8 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def("set_items", &MultiSelectListView::SetItems,
                  "Sets the list to display the list of items provided")
+            .def("set_max_visible_items", &MultiSelectListView::SetMaxVisibleItems,
+                 "Set max showed items number, it controls the height of list")
             .def("get_selected_indices", &MultiSelectListView::GetSelectedIndices,
                  "Get indices of all selected items")
             .def("set_selected_index", &MultiSelectListView::SetSelectedIndex,

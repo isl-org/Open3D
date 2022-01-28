@@ -43,6 +43,7 @@ public:
     virtual ~MultiSelectListView();
 
     void SetItems(const std::vector<std::string>& items);
+    void SetMaxVisibleItems(int items);
 
     /// Returns the currently selected item in the list.
     std::vector<int> GetSelectedIndices() const;

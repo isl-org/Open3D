@@ -46,6 +46,7 @@ struct MultiSelectListView::Impl {
     std::string imgui_id_;
     std::vector<std::string> items_;
     std::vector<bool> select_status_;
+    int max_items_ = -1;
     std::function<void(int, const char *, bool)> on_value_changed_;
 };
 
@@ -63,6 +64,9 @@ void MultiSelectListView::SetItems(const std::vector<std::string> &items) {
     }
 }
 
+void MultiSelectListView::SetMaxVisibleItems(int items) {
+    impl_->max_items_ = items;
+}
 
 /// Returns the currently selected item in the list.
 std::vector<int> MultiSelectListView::GetSelectedIndices() const {
@@ -106,7 +110,13 @@ Size MultiSelectListView::CalcPreferredSize(const LayoutContext &context,
         size.x = std::max(size.x, item_size.x);
         size.y += ImGui::GetFrameHeight();
     }
-    return Size(int(std::ceil(size.x + 2.0f * padding.x)), Widget::DIM_GROW);
+    auto h = Widget::DIM_GROW;
+    if (impl_->max_items_ > 0) {
+        auto nr = std::max(int(impl_->items_.size()), 3);
+        nr = std::min(nr, impl_->max_items_);
+        h = int(ImGui::GetFrameHeight() * (float)nr + 2.0f * padding.y);
+    }
+    return Size(int(std::ceil(size.x + 2.0f * padding.x)), h);
 }
 
 Size MultiSelectListView::CalcMinimumSize(const LayoutContext &context) const {
