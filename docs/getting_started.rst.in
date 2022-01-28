@@ -237,43 +237,20 @@ Extract the archive and move the contents to a local folder (such as
 
 
 In Windows, you will have an additional ``bin`` folder with ``Open3D.dll``. Some
-files may be absent in the case of unsupported functionality.  Now add the
-``include`` and ``lib`` folders to your compiler options to build your program
-with Open3D:
+files may be absent in the case of unsupported functionality. To use Open3D with 
+your programs through `cmake`, add ``-D Open3D_ROOT=~/Documents/Open3D_install`` 
+to your CMake configure command line. See the following example CMake projects for
+reference:
 
-.. code-block:: bash
+* `Find Pre-Installed Open3D Package in CMake <https://github.com/isl-org/open3d-cmake-find-package>`__
+* `Use Open3D as a CMake External Project <https://github.com/isl-org/open3d-cmake-external-project>`__
 
-    export Open3D_ROOT="$HOME/Documents/Open3D_install"
-
-    # Now compile and link your program with Open3D.
-    c++ -I"$Open3D_ROOT"/include -L"$Open3D_ROOT"/lib -lOpen3D your_open3d_app.cpp
-
-    # On Linux, if the Open3D package has a pre-cxx11-abi tag, define this macro
-    # to tell g++ to use the old C++ ABI. Do not link libraries with different
-    # ABIs.
-    g++ -I"$Open3D_ROOT"/include -L"$Open3D_ROOT"/lib -lOpen3D -D_GLIBCXX_USE_CXX11_ABI=0 your_open3d_app.cpp
-
-    # Ensure libOpen3D.so can be found by the system library loader at run time:
-    # For Linux:
-    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$Open3D_ROOT/lib
-
-    # For macOS:
-    export DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH:+$DYLD_LIBRARY_PATH:}$Open3D_ROOT/lib
-
-For Windows (MSVC), add ``$Open3D_ROOT/include`` and ``$Open3D_ROOT/lib`` and to
-your MSVC solution's include and library paths respectively. The ``lib`` folder
-contains the import library, while the DLL is in the ``$Open3D_ROOT/bin``
-folder. You can copy this to the build output folder of your application (or add
-it ``$Open3D_ROOT/bin`` to the ``PATH`` environment variable) to ensure that it
-is found at runtime.  Ensure that you use the debug or release version of the
-library if you build in ``Debug`` or ``Release`` mode respectively.
+.. warning:: In Linux, do not link code with different CXX11 ABIs, since this will 
+    most likely cause linker errors or crashes. Most system libraries in recent Linux
+    versions (e.g. if the OS came with GCC versions 5+) use the CXX11 ABI, while PyTorch 
+    and Tensorflow libraries typically use the pre CXX11 ABI. You can build Open3D 
+    from source with your chosen ABI by setting ``GLIBCXX_USE_CXX11_ABI`` in CMake.
 
 The C++ code examples in the ``examples/cpp`` folder of the repository illustrate
 a lot of the functionality available in Open3D and are a good place to start
 using Open3D in your projects.
-
-For more complex or cross platform projects, you can use CMake to configure your
-build. See the following example CMake projects as reference:
-
-* `Find Pre-Installed Open3D Package in CMake <https://github.com/isl-org/open3d-cmake-find-package>`__
-* `Use Open3D as a CMake External Project <https://github.com/isl-org/open3d-cmake-external-project>`__
