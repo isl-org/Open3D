@@ -52,7 +52,7 @@ public:
     const PrintOptions& GetPrintOptions() const { return print_options_; }
 
 private:
-    PrintOptionsState();
+    PrintOptionsState() {}
     PrintOptions print_options_;
 };
 
@@ -103,6 +103,17 @@ void SetPrintOptions(utility::optional<int> precision,
 PrintOptions GetPrintOptions() {
     return PrintOptionsState::GetInstance().GetPrintOptions();
 }
+
+class Formatter {
+public:
+    Formatter(const Tensor& tensor) {}
+
+private:
+    bool floating_dtype_;
+    bool int_mode_ = true;
+    bool sci_mode_ = false;
+    int max_width_ = 1;
+};
 
 static std::string ScalarPtrToString(const void* ptr, const Dtype& dtype) {
     std::string str = "";
