@@ -27,20 +27,30 @@
 #include "pybind/data/data.h"
 
 #include "open3d/data/Dataset.h"
-#include "pybind/data/data_trampoline.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
 namespace data {
 
+template <class DatasetBase = Dataset>
+class PyDataset : public DatasetBase {
+public:
+    using DatasetBase::DatasetBase;
+};
+
+template <class SimpleDatasetBase = SimpleDataset>
+class PySimpleDataset : public PyDataset<SimpleDatasetBase> {
+public:
+    using PyDataset<SimpleDatasetBase>::PyDataset;
+};
+
 void pybind_data_classes(py::module& m) {
     // open3d.data.Dataset
     py::class_<Dataset, PyDataset<Dataset>, std::shared_ptr<Dataset>> dataset(
             m, "Dataset", "The base dataset class.");
-    dataset.def(py::init<const std::string&, const std::string&,
-                         const std::string&>(),
-                "prefix"_a, "help"_a = "", "data_root"_a = "")
+    dataset.def(py::init<const std::string&, const std::string&>(), "prefix"_a,
+                "data_root"_a = "")
             .def_property_readonly("data_root", &Dataset::GetDataRoot,
                                    "Returns data root path.")
             .def_property_readonly("prefix", &Dataset::GetPrefix,
@@ -60,8 +70,7 @@ void pybind_data_classes(py::module& m) {
             simple_dataset(m, "SimpleDataset", "Simple dataset class.");
     simple_dataset.def(
             py::init<const std::string&, const std::vector<std::string>&,
-                     const std::string&, const bool, const std::string&,
-                     const std::string&>(),
+                     const std::string&, const bool, const std::string&>(),
             "prefix"_a, "urls"_a, "md5"_a, "no_extract"_a = false,
             "data_root"_a = "");
 }

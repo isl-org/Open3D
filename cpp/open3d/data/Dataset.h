@@ -135,11 +135,11 @@ public:
                          const std::string& data_root = "");
 
     /// \brief Returns list of paths to the pointclouds.
-    /// GetPaths()[x] returns path to `cloud_bin_x.pcd` pointcloud, where X is
+    /// GetPaths()[x] returns path to `cloud_bin_x.pcd` pointcloud, where `x` is
     /// between 0 to 2.
     std::vector<std::string> GetPaths() const { return paths_; }
     /// \brief Returns path to the pointcloud at index.
-    /// GetPaths(x) returns path to `cloud_bin_x.pcd` pointcloud, where X is
+    /// GetPaths(x) returns path to `cloud_bin_x.pcd` pointcloud, where `x` is
     /// between 0 to 2.
     std::string GetPaths(size_t index) const;
 

@@ -52,7 +52,7 @@ TEST(Extract, ExtractFromZIP) {
 
     // Extract the test zip file.
     EXPECT_NO_THROW(utility::Extract(file_path, extract_dir));
-    std::string output_file =
+    url = "https://github.com/isl-org/open3d_downloads/releases/download/"
           "data-manager/test_data_v2_00.tar.xz";
     md5 = "7c682c7af4ef9bda1fc854b008ae2bef";
     file_path = extract_dir + "/test_data_v2_00.tar.xz";
