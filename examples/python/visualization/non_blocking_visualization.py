@@ -24,6 +24,8 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+# examples/python/visualization/non_blocking_visualization.py
+
 import open3d as o3d
 import numpy as np
 import os

@@ -24,6 +24,8 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+# examples/python/visualization/interactive_visualization.py
+
 import numpy as np
 import copy
 import open3d as o3d

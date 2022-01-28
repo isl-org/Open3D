@@ -24,6 +24,8 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+# examples/python/reconstruction_system/make_fragments.py
+
 import math
 import os, sys
 import numpy as np
