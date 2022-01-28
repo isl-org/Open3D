@@ -4,10 +4,7 @@ ARM support
 ===========
 
 Open3D provides experimental support for 64-bit ARM architecture (``arm64``
-or ``aarch64``) on Linux. Open3D needs to be compiled from source to run on ARM.
-
-System requirements
--------------------
+or ``aarch64``) on Linux.
 
 * 64-bit ARM processor and 64-bit Linux operating system. Check the output of
   ``uname -p`` and it should show ``aarch64``.
@@ -15,13 +12,74 @@ System requirements
   available, the Open3D GUI will compile but it won't run. In this case, we
   recommend setting ``-DBUILD_GUI=OFF`` during the ``cmake`` configuration step.
 
+Starting from Open3D 0.14, we provide pre-compiled ARM64 wheels for Linux.
+Install by:
 
-Building Open3D on ARM64
+.. code-block:: bash
+
+    pip install open3d
+    python -c "import open3d; print(open3d.__version__)"
+
+Building Open3D Python Wheel with Docker
+----------------------------------------
+
+This is recommended for Python users. By using Docker, the only dependency to
+install is the Docker engine itself. This is especially useful since ARM64 Linux
+has many variants and it could be difficult to configure all dependencies
+manually.
+
+First, install Docker following the `official guide <https://docs.docker.com/get-docker/>`_.
+Also, complete the `post-installation steps for Linux https://docs.docker.com/engine/install/linux-postinstall/>`_.
+Make sure that ``docker`` can be executed without root privileges. To verify
+Docker is installed correctly, run:
+
+.. code-block:: bash
+
+    # You should be able to run this without sudo.
+    docker run hello-world
+
+The next step is to build Open3D Python wheel with Docker. You can run one of
+the following commands:
+
+.. code-block:: bash
+
+    cd Docker
+
+    ./docker_build.sh openblas-arm64-py36      # Python 3.6 wheel, release mode
+    ./docker_build.sh openblas-arm64-py37      # Python 3.7 wheel, release mode
+    ./docker_build.sh openblas-arm64-py38      # Python 3.8 wheel, release mode
+    ./docker_build.sh openblas-arm64-py39      # Python 3.9 wheel, release mode
+
+After running ``docker_build.sh``, you shall see a ``.whl`` file generated the
+current directly on the host. Then simply install the ``.whl`` file by:
+
+.. code-block:: bash
+
+    # (Activate the virtual environment first)
+    pip install open3d-*.whl
+
+You can even cross-compile an ARM64 wheel on an x86-64 host. Install Docker and
+Qemu:
+
+.. code-block:: bash
+
+    sudo apt-get --yes install qemu binfmt-support qemu-user-static
+
+and follow the same steps as above.
+
+
+Building Open3D directly
 ------------------------
 
-Note: If you encounter build issues, check the ``arm64`` section of
-``.github/workflows/openblas.yml`` for the full CI build scripts on ARM64.
+You may run into issues building Open3D directly on your ARM64 machine due to
+dependency conflicts or version incompatibilities. In general, we recommend
+building from a clean OS and only install the required dependencies by Open3D.
+It has been reported by users that some globally installed packages (e.g.
+TBB, Parallel STL, BLAS, LAPACK) may cause compatibility issues if they are not
+the same version as the one used by Open3D.
 
+If you only need the Python wheel, consider using the Docker build method or
+install Open3D via ``pip install open3d`` directly.
 
 Install dependencies
 ````````````````````
@@ -30,28 +88,23 @@ Install the following system dependencies:
 
 .. code-block:: bash
 
-    sudo apt-get update -y
-    sudo apt-get install -y apt-utils build-essential git cmake
-    sudo apt-get install -y python3 python3-dev python3-pip
-    sudo apt-get install -y xorg-dev libglu1-mesa-dev
-    sudo apt-get install -y libblas-dev liblapack-dev liblapacke-dev
-    sudo apt-get install -y libsdl2-dev libc++-7-dev libc++abi-7-dev libxi-dev
-    sudo apt-get install -y clang-7
+    ./util/install_deps_ubuntu.sh
+    sudo apt-get install -y clang-7  # Or any >= 7 version of clang.
 
-Optionally, ``virtualenv`` and ``ccache`` are recommended. Note that conda does
-not support ARM.
+``ccache`` is recommended to speed up subsequent builds:
 
 .. code-block:: bash
 
-    sudo apt-get install -y python3-virtualenv ccache
+    sudo apt-get install -y ccache
 
 If the Open3D build system complains about ``CMake xxx or higher is required``,
 refer to one of the following options:
 
 * `Compile CMake from source <https://cmake.org/install/>`_
+* Download the pre-compiled ``aarch64`` CMake from `CMake releases <https://github.com/Kitware/CMake/releases/>`_,
+  and setup ``PATH`` accordingly.
 * Install with ``snap``: ``sudo snap install cmake --classic``
 * Install with ``pip`` (run inside a Python virtual environment): ``pip install cmake``
-
 
 Build
 `````
@@ -70,35 +123,20 @@ Build
 
     # Configure
     # > Set -DBUILD_CUDA_MODULE=ON if CUDA is available (e.g. on Nvidia Jetson)
-    # > Set -DBUILD_GUI=ON if OpenGL is available (e.g. on Nvidia Jetson)
-    # > We don't support TensorFlow and PyTorch on ARM officially
-    cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_SHARED_LIBS=ON \
-        -DBUILD_CUDA_MODULE=OFF \
-        -DBUILD_GUI=OFF \
-        -DBUILD_TENSORFLOW_OPS=OFF \
-        -DBUILD_PYTORCH_OPS=OFF \
-        -DBUILD_UNIT_TESTS=ON \
-        -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-        ..
+    # > Set -DBUILD_GUI=ON if full OpenGL is available (e.g. on Nvidia Jetson)
+    cmake -DBUILD_CUDA_MODULE=OFF -DBUILD_GUI=OFF ..
 
     # Build C++ library
     make -j$(nproc)
 
-    # Run tests (optional)
-    make tests -j$(nproc)
-    ./bin/tests --gtest_filter="-*Reduce*Sum*"
-
-    # Install C++ package (optional)
-    make install
-
-    # Install Open3D python package (optional)
-    make install-pip-package -j$(nproc)
-    python -c "import open3d; print(open3d)"
-
-    # Run Open3D GUI (optional, available on when -DBUILD_GUI=ON)
+    # Run Open3D C++ Viewer App (only available when -DBUILD_GUI=ON)
     ./bin/Open3D/Open3D
+
+    # Install Open3D python package
+    make install-pip-package -j$(nproc)
+
+    # Test import Open3D python package
+    python -c "import open3d; print(open3d)"
 
 
 Nvidia Jetson

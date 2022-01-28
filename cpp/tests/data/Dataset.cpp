@@ -26,6 +26,7 @@
 
 #include "open3d/data/Dataset.h"
 
+#include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
@@ -34,13 +35,29 @@
 namespace open3d {
 namespace tests {
 
-TEST(Dataset, LocateDataRoot) {
-    data::Dataset ds;
+TEST(Dataset, DatasetBase) {
+    // Prefix cannot be empty.
+    data::Dataset ds("some_prefix");
     EXPECT_EQ(ds.GetDataRoot(),
               utility::filesystem::GetHomeDirectory() + "/open3d_data");
 
-    data::Dataset ds_custom("/my/custom/data_root");
+    data::Dataset ds_custom("some_prefix", "some help documentation string",
+                            "/my/custom/data_root");
+    EXPECT_EQ(ds_custom.GetPrefix(), "some_prefix");
+    EXPECT_EQ(ds_custom.GetHelpString(), "some help documentation string");
     EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
+    EXPECT_EQ(ds_custom.GetDownloadDir(),
+              "/my/custom/data_root/download/some_prefix");
+    EXPECT_EQ(ds_custom.GetExtractDir(),
+              "/my/custom/data_root/extract/some_prefix");
+}
+
+TEST(Dataset, DownloadDatasets) {
+    data::dataset::SampleICPPointClouds sample_icp_pointclouds;
+    utility::LogInfo("SampleICPPointClouds dataset information: \n{}\n",
+                     sample_icp_pointclouds.GetHelpString());
+    t::geometry::PointCloud pcd;
+    EXPECT_TRUE(t::io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), pcd));
 }
 
 }  // namespace tests

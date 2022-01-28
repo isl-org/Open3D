@@ -212,7 +212,7 @@ bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
         }
 
         found_ear = false;
-        for (int i = 1; i < n - 2; i++) {
+        for (int i = 1; i < n - 1; i++) {
             const Eigen::Vector3d &v1 =
                     mesh.vertices_[indices[i]] - mesh.vertices_[indices[i - 1]];
             const Eigen::Vector3d &v2 =
