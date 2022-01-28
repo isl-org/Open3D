@@ -31,6 +31,8 @@
 - Convert frames to point cloud, optionally with normals.
 - Visualize point cloud video and results.
 - Save point clouds and RGBD images for selected frames.
+
+For this example, Open3D must be built with -DBUILD_LIBREALSENSE=ON
 """
 
 import os

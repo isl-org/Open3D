@@ -140,33 +140,43 @@ void ShowNativeFileDialog(FileDialog::Mode type,
                           std::function<void()> on_cancel) {
     NSSavePanel *dlg; // NSOpenPanel inherits from NSSavePanel, oddly enough
     if (type == FileDialog::Mode::OPEN) {
-        NSOpenPanel *open_dlg = [NSOpenPanel openPanel];
+        NSOpenPanel* open_dlg = [NSOpenPanel openPanel];
         open_dlg.allowsMultipleSelection = NO;
         open_dlg.canChooseDirectories = NO;
         open_dlg.canChooseFiles = YES;
+        dlg = open_dlg;
+    } else if (type == FileDialog::Mode::OPEN_DIR) {
+        NSOpenPanel *open_dlg = [NSOpenPanel openPanel];
+        open_dlg.allowsMultipleSelection = NO;
+        open_dlg.canChooseDirectories = YES;
+        open_dlg.canChooseFiles = NO;
         dlg = open_dlg;
     } else {
         dlg = [NSSavePanel savePanel];
     }
     dlg.directoryURL = [NSURL fileURLWithPath:[NSString stringWithUTF8String:path.c_str()]];
 
-    if (!filters.empty()) {  // [NSMutableArray arrayWidthCapacity:0] returns nil
-        NSMutableArray *allowed = [NSMutableArray arrayWithCapacity:2 * filters.size()];
-        for (auto &f : filters) {
-            if (f.first.empty() || f.first == "*.*") {
-                continue;
-            }
-            std::vector<std::string> exts = utility::SplitString(f.first, ", ");
-            for (std::string ext : exts) {  // ext is a copy; might modify it
-                if (ext[0] == '.') {  // macOS assumes the dot in the extension
-                    ext = ext.substr(1);
+    if (type != FileDialog::Mode::OPEN_DIR) {
+        if (!filters.empty()) {  // [NSMutableArray arrayWidthCapacity:0] returns nil
+            NSMutableArray *allowed = [NSMutableArray arrayWithCapacity:2 * filters.size()];
+            for (auto &f : filters) {
+                if (f.first.empty() || f.first == "*.*") {
+                    continue;
                 }
-                [allowed addObject:[NSString stringWithUTF8String:ext.c_str()]];
+                std::vector<std::string> exts = utility::SplitString(f.first, ", ");
+                for (std::string ext : exts) {  // ext is a copy; might modify it
+                    if (ext[0] == '.') {  // macOS assumes the dot in the extension
+                        ext = ext.substr(1);
+                    }
+                    [allowed addObject:[NSString stringWithUTF8String:ext.c_str()]];
+                }
             }
+            dlg.allowedFileTypes = allowed;
         }
-        dlg.allowedFileTypes = allowed;
+        dlg.allowsOtherFileTypes = YES;
+    } else {
+        dlg.allowsOtherFileTypes = NO;
     }
-    dlg.allowsOtherFileTypes = YES;
 
     NSWindow *current = NSApp.mainWindow;
     [dlg beginWithCompletionHandler:^(NSModalResponse result) {

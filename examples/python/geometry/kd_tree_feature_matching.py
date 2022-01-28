@@ -24,38 +24,53 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/misc/evaluate_geometric_feature.py
-
-import open3d as o3d
 import numpy as np
+import open3d as o3d
 
 import os, sys
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
-
-def evaluate(pcd_target, pcd_source, feature_target, feature_source):
-    tree_target = o3d.geometry.KDTreeFlann(feature_target)
-    pt_dis = np.zeros(len(pcd_source.points))
-    for i in range(len(pcd_source.points)):
-        [_, idx,
-         _] = tree_target.search_knn_vector_xd(feature_source.data[:, i], 1)
-        pt_dis[i] = np.linalg.norm(pcd_source.points[i] -
-                                   pcd_target.points[idx[0]])
-    return pt_dis
-
-
 if __name__ == "__main__":
-    pcd_target = o3d.io.read_point_cloud(
+
+    print("Load two aligned point clouds.")
+    pcd0 = o3d.io.read_point_cloud(
         os.path.join(test_data_path, 'Feature', 'cloud_bin_0.pcd'))
-    pcd_source = o3d.io.read_point_cloud(
+    pcd1 = o3d.io.read_point_cloud(
         os.path.join(test_data_path, 'Feature', 'cloud_bin_1.pcd'))
-    feature_target = o3d.io.read_feature(
+    pcd0.paint_uniform_color([1, 0.706, 0])
+    pcd1.paint_uniform_color([0, 0.651, 0.929])
+    o3d.visualization.draw_geometries([pcd0, pcd1])
+    print("Load their FPFH feature and evaluate.")
+    print("Black : matching distance > 0.2")
+    print("White : matching distance = 0")
+    feature0 = o3d.io.read_feature(
         os.path.join(test_data_path, 'Feature', 'cloud_bin_0.fpfh.bin'))
-    feature_source = o3d.io.read_feature(
+    feature1 = o3d.io.read_feature(
         os.path.join(test_data_path, 'Feature', 'cloud_bin_1.fpfh.bin'))
-    pt_dis = evaluate(pcd_target, pcd_source, feature_target, feature_source)
-    num_good = sum(pt_dis < 0.075)
-    print(
-        "{:.2f}% points in source pointcloud successfully found their correspondence."
-        .format(num_good * 100.0 / len(pcd_source.points)))
+
+    fpfh_tree = o3d.geometry.KDTreeFlann(feature1)
+    for i in range(len(pcd0.points)):
+        [_, idx, _] = fpfh_tree.search_knn_vector_xd(feature0.data[:, i], 1)
+        dis = np.linalg.norm(pcd0.points[i] - pcd1.points[idx[0]])
+        c = (0.2 - np.fmin(dis, 0.2)) / 0.2
+        pcd0.colors[i] = [c, c, c]
+    o3d.visualization.draw_geometries([pcd0])
+    print("")
+
+    print("Load their L32D feature and evaluate.")
+    print("Black : matching distance > 0.2")
+    print("White : matching distance = 0")
+    feature0 = o3d.io.read_feature(
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_0.d32.bin'))
+    feature1 = o3d.io.read_feature(
+        os.path.join(test_data_path, 'Feature', 'cloud_bin_1.d32.bin'))
+
+    fpfh_tree = o3d.geometry.KDTreeFlann(feature1)
+    for i in range(len(pcd0.points)):
+        [_, idx, _] = fpfh_tree.search_knn_vector_xd(feature0.data[:, i], 1)
+        dis = np.linalg.norm(pcd0.points[i] - pcd1.points[idx[0]])
+        c = (0.2 - np.fmin(dis, 0.2)) / 0.2
+        pcd0.colors[i] = [c, c, c]
+    o3d.visualization.draw_geometries([pcd0])
+    print("")
