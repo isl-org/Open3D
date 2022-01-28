@@ -1,5 +1,5 @@
 target_sources(tests PRIVATE
     Dataset.cpp
-    Download.cpp
-    Extract.cpp
+    tools/Download.cpp
+    tools/Extract.cpp
 )

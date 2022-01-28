@@ -24,20 +24,18 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// Do not include this in public facing header.
-
 #pragma once
 
-#include <string>
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
 namespace data {
 
-/// \brief Function to extract files compressed in `.zip` format.
-/// \param file_path Path to file. Example: "/path/to/file/file.zip"
-/// \param extract_dir Directory path where the file will be extracted to.
-void ExtractFromZIP(const std::string& file_path,
-                    const std::string& extract_dir);
+void pybind_data(py::module& m);
+
+void pybind_sample_pcd_fragments(py::module& m);
+void pybind_redwood_living_room_fragments(py::module& m);
+void pybind_redwood_office_fragments(py::module& m);
 
 }  // namespace data
 }  // namespace open3d

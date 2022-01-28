@@ -24,39 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Extract.h"
+// Do not include this in public facing header.
 
-#include <unordered_map>
+#pragma once
 
-#include "open3d/data/ExtractZIP.h"
-#include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Logging.h"
+#include <string>
 
 namespace open3d {
-namespace data {
+namespace utility {
 
-static const std::unordered_map<
-        std::string,
-        std::function<void(const std::string&, const std::string&)>>
-        file_extension_to_extract_function{
-                {"zip", ExtractFromZIP},
-        };
+/// \brief Function to extract files compressed in `.zip` format.
+/// \param file_path Path to file. Example: "/path/to/file/file.zip"
+/// \param extract_dir Directory path where the file will be extracted to.
+void ExtractFromZIP(const std::string& file_path,
+                    const std::string& extract_dir);
 
-void Extract(const std::string& file_path, const std::string& extract_dir) {
-    const std::string format =
-            utility::filesystem::GetFileExtensionInLowerCase(file_path);
-    utility::LogInfo("Extracting {}.", file_path);
-
-    if (file_extension_to_extract_function.count(format) == 0) {
-        utility::LogError(
-                "Extraction Failed: unknown file extension for "
-                "{} (format: {}).",
-                file_path, format);
-    }
-
-    file_extension_to_extract_function.at(format)(file_path, extract_dir);
-    utility::LogInfo("Extracted to {}.", extract_dir);
-}
-
-}  // namespace data
+}  // namespace utility
 }  // namespace open3d

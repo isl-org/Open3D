@@ -24,41 +24,26 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Dataset.h"
+#pragma once
 
-#include "open3d/t/io/PointCloudIO.h"
-#include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/Logging.h"
-#include "tests/Tests.h"
+#include "open3d/data/Dataset.h"
+#include "pybind/data/data.h"
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace tests {
+namespace data {
 
-TEST(Dataset, DatasetBase) {
-    // Prefix cannot be empty.
-    data::Dataset ds("some_prefix");
-    EXPECT_EQ(ds.GetDataRoot(),
-              utility::filesystem::GetHomeDirectory() + "/open3d_data");
+template <class DatasetBase = Dataset>
+class PyDataset : public DatasetBase {
+public:
+    using DatasetBase::DatasetBase;
+};
 
-    data::Dataset ds_custom("some_prefix", "some help documentation string",
-                            "/my/custom/data_root");
-    EXPECT_EQ(ds_custom.GetPrefix(), "some_prefix");
-    EXPECT_EQ(ds_custom.GetHelpString(), "some help documentation string");
-    EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
-    EXPECT_EQ(ds_custom.GetDownloadDir(),
-              "/my/custom/data_root/download/some_prefix");
-    EXPECT_EQ(ds_custom.GetExtractDir(),
-              "/my/custom/data_root/extract/some_prefix");
-}
+template <class SimpleDatasetBase = SimpleDataset>
+class PySimpleDataset : public PyDataset<SimpleDatasetBase> {
+public:
+    using PyDataset<SimpleDatasetBase>::PyDataset;
+};
 
-TEST(Dataset, SampleICPPointClouds) {
-    data::SampleICPPointClouds sample_icp_pointclouds;
-    utility::LogInfo("SampleICPPointClouds dataset information: \n{}\n",
-                     sample_icp_pointclouds.GetHelpString());
-    t::geometry::PointCloud pcd;
-    EXPECT_TRUE(t::io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), pcd));
-}
-
-}  // namespace tests
+}  // namespace data
 }  // namespace open3d

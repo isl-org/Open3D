@@ -24,41 +24,39 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Dataset.h"
+#include "open3d/utility/Extract.h"
 
-#include "open3d/t/io/PointCloudIO.h"
+#include <unordered_map>
+
+#include "open3d/utility/ExtractZIP.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
-#include "tests/Tests.h"
 
 namespace open3d {
-namespace tests {
+namespace utility {
 
-TEST(Dataset, DatasetBase) {
-    // Prefix cannot be empty.
-    data::Dataset ds("some_prefix");
-    EXPECT_EQ(ds.GetDataRoot(),
-              utility::filesystem::GetHomeDirectory() + "/open3d_data");
+static const std::unordered_map<
+        std::string,
+        std::function<void(const std::string&, const std::string&)>>
+        file_extension_to_extract_function{
+                {"zip", ExtractFromZIP},
+        };
 
-    data::Dataset ds_custom("some_prefix", "some help documentation string",
-                            "/my/custom/data_root");
-    EXPECT_EQ(ds_custom.GetPrefix(), "some_prefix");
-    EXPECT_EQ(ds_custom.GetHelpString(), "some help documentation string");
-    EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
-    EXPECT_EQ(ds_custom.GetDownloadDir(),
-              "/my/custom/data_root/download/some_prefix");
-    EXPECT_EQ(ds_custom.GetExtractDir(),
-              "/my/custom/data_root/extract/some_prefix");
+void Extract(const std::string& file_path, const std::string& extract_dir) {
+    const std::string format =
+            utility::filesystem::GetFileExtensionInLowerCase(file_path);
+    utility::LogInfo("Extracting {}.", file_path);
+
+    if (file_extension_to_extract_function.count(format) == 0) {
+        utility::LogError(
+                "Extraction Failed: unknown file extension for "
+                "{} (format: {}).",
+                file_path, format);
+    }
+
+    file_extension_to_extract_function.at(format)(file_path, extract_dir);
+    utility::LogInfo("Extracted to {}.", extract_dir);
 }
 
-TEST(Dataset, SampleICPPointClouds) {
-    data::SampleICPPointClouds sample_icp_pointclouds;
-    utility::LogInfo("SampleICPPointClouds dataset information: \n{}\n",
-                     sample_icp_pointclouds.GetHelpString());
-    t::geometry::PointCloud pcd;
-    EXPECT_TRUE(t::io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), pcd));
-}
-
-}  // namespace tests
+}  // namespace utility
 }  // namespace open3d

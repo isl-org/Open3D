@@ -28,8 +28,8 @@
 
 #include <string>
 
-#include "open3d/data/Download.h"
-#include "open3d/data/Extract.h"
+#include "open3d/utility/Download.h"
+#include "open3d/utility/Extract.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
@@ -78,11 +78,11 @@ SimpleDataset::SimpleDataset(const std::string& prefix,
         // `download_dir` is relative path from `${data_root}`.
         const std::string download_dir = "download/" + GetPrefix();
         const std::string download_file_path =
-                DownloadFromURL(urls, md5, download_dir, data_root_);
+                utility::DownloadFromURL(urls, md5, download_dir, data_root_);
 
         // Extract / Copy data.
         if (!no_extract) {
-            Extract(download_file_path, Dataset::GetExtractDir());
+            utility::Extract(download_file_path, Dataset::GetExtractDir());
         } else {
             utility::filesystem::MakeDirectoryHierarchy(
                     Dataset::GetExtractDir());
@@ -91,8 +91,6 @@ SimpleDataset::SimpleDataset(const std::string& prefix,
         }
     }
 }
-
-namespace dataset {
 
 SampleICPPointClouds::SampleICPPointClouds(const std::string& prefix,
                                            const std::string& data_root)
@@ -233,8 +231,6 @@ std::string RedwoodOfficeFragments::GetPaths(size_t index) const {
     }
     return paths_[index];
 }
-
-}  // namespace dataset
 
 }  // namespace data
 }  // namespace open3d

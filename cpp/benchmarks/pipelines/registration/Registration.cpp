@@ -75,7 +75,7 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
 
 static void BenchmarkICPLegacy(benchmark::State& state,
                                const TransformationEstimationType& type) {
-    data::dataset::SampleICPPointClouds sample_icp_pointclouds;
+    data::SampleICPPointClouds sample_icp_pointclouds;
     geometry::PointCloud source, target;
     std::tie(source, target) =
             LoadPointCloud(sample_icp_pointclouds.GetPaths(0),

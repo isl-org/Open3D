@@ -183,7 +183,7 @@ void Selections() {
               << std::endl;
     std::cout << "            three points from the target." << std::endl;
 
-    data::dataset::SampleICPPointClouds sample_icp_pointclouds;
+    data::SampleICPPointClouds sample_icp_pointclouds;
     auto source = std::make_shared<geometry::PointCloud>();
     io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), *source);
     if (source->points_.empty()) {

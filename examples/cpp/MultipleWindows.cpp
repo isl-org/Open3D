@@ -107,7 +107,7 @@ private:
         // This is NOT the UI thread, need to call PostToMainThread() to
         // update the scene or any part of the UI.
 
-        data::dataset::SampleICPPointClouds sample_icp_pointclouds;
+        data::SampleICPPointClouds sample_icp_pointclouds;
         geometry::AxisAlignedBoundingBox bounds;
         Eigen::Vector3d extent;
         {

@@ -87,6 +87,8 @@ public:
             const std::string& help_string = "",
             const std::string& data_root = "");
 
+    virtual ~Dataset() {}
+
     /// \brief Get data root directory. The data root is set at construction
     /// time or automatically determined.
     const std::string GetDataRoot() const { return data_root_; }
@@ -128,9 +130,9 @@ public:
                   const bool no_extract = false,
                   const std::string& help_string = "",
                   const std::string& data_root = "");
-};
 
-namespace dataset {
+    virtual ~SimpleDataset() {}
+};
 
 /// \class SampleICPPointClouds
 /// \brief Dataset class for `SampleICPPointClouds` contains 3 `pointclouds` of
@@ -210,6 +212,5 @@ private:
     std::vector<std::string> paths_;
 };
 
-}  // namespace dataset
 }  // namespace data
 }  // namespace open3d

@@ -24,45 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Download.h"
+#pragma once
 
-#include "open3d/data/Dataset.h"
-#include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/Logging.h"
-#include "tests/Tests.h"
+#include <string>
 
 namespace open3d {
-namespace tests {
+namespace utility {
 
-TEST(Downloader, DownloadAndVerify) {
-    std::string url =
-            "https://github.com/isl-org/open3d_downloads/releases/download/"
-            "data-manager/test_data_00.zip";
-    std::string md5 = "996987b27c4497dbb951ec056c9684f4";
+/// \brief Function to extract compressed files.
+/// \param file_path Path to file. Example: "/path/to/file/file.zip"
+/// \param extract_dir Directory path where the file will be extracted to.
+void Extract(const std::string& file_path, const std::string& extract_dir);
 
-    std::string prefix = "temp_test";
-    std::string file_dir = data::LocateDataRoot() + "/" + prefix;
-    std::string file_path = file_dir + "/" + "test_data_00.zip";
-    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
-
-    // This download shall work.
-    EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(file_dir));
-    EXPECT_TRUE(utility::filesystem::FileExists(file_path));
-    EXPECT_EQ(data::GetMD5(file_path), md5);
-
-    // This download shall be skipped as the file already exists (look at the
-    // message).
-    EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
-
-    // Mismatch md5.
-    EXPECT_ANY_THROW(data::DownloadFromURL(
-            url, "00000000000000000000000000000000", prefix));
-
-    // Clean up.
-    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
-}
-
-}  // namespace tests
+}  // namespace utility
 }  // namespace open3d
