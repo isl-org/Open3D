@@ -40,7 +40,7 @@ class Open3DArgumentParser(argparse.ArgumentParser):
         sys.exit(2)
 
 
-def get_examples_dict() -> dict:
+def get_examples_dict():
     examples_dict = {
         "geometry": [
             "camera_trajectory", "kd_tree_search", "octree_find_leaf",
@@ -82,7 +82,7 @@ def get_examples_dict() -> dict:
     return examples_dict
 
 
-def get_examples_dir() -> Path:
+def get_examples_dir():
     """Get the path to the examples directory."""
     tools_path = os.path.dirname(os.path.abspath(__file__))
     examples_path = os.path.join(os.path.dirname(tools_path), "examples")
@@ -90,14 +90,14 @@ def get_examples_dir() -> Path:
     return examples_dir
 
 
-def get_example_categories() -> list:
+def get_example_categories():
     """Get a set of all available category names."""
     examples_dict = get_examples_dict()
     all_categories = [category for category in examples_dict]
     return all_categories
 
 
-def get_examples_in_category(category) -> set:
+def get_examples_in_category(category):
     """Get a set of example names in given cateogry."""
     examples_dict = get_examples_dict()
     examples_dir = get_examples_dir()
@@ -108,7 +108,7 @@ def get_examples_in_category(category) -> set:
     return example_names
 
 
-def support_choice_with_dot_py(choice) -> str:
+def support_choice_with_dot_py(choice):
     if choice.endswith(".py"):
         return choice[:-3]
     return choice
