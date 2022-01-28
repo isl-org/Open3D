@@ -80,6 +80,14 @@ public:
 
     bool IsObject() const { return dtype_code_ == DtypeCode::Object; }
 
+    bool IsBool() const { return dtype_code_ == DtypeCode::Bool; }
+
+    bool IsInt() const { return dtype_code_ == DtypeCode::Int; }
+
+    bool IsUInt() const { return dtype_code_ == DtypeCode::UInt; }
+
+    bool IsFloat() const { return dtype_code_ == DtypeCode::Float; }
+
     std::string ToString() const { return name_; }
 
     bool operator==(const Dtype &other) const;
