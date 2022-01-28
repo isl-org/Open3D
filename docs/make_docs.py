@@ -275,6 +275,21 @@ class PyAPIDocsBuilder:
         )
 
 
+class PyExampleDocsBuilder:
+
+    def __init__(self, input_dir, output_dir="python_example"):
+        # Interate each folder and .py files in input_dir
+        #
+        # E.g. generate .rst files like the following:
+        #
+        # docs/python_example/geometry/point_cloud.rst:
+        #     - examples/python/geometry/point_cloud_*.py
+        pass
+
+    def generate_rst(self):
+        pass
+
+
 class SphinxDocsBuilder:
     """
     SphinxDocsBuilder calls Python api docs generation and then calls
@@ -507,10 +522,16 @@ if __name__ == "__main__":
         help="Jupyter notebook execution mode.",
     )
     parser.add_argument(
-        "--pyapi_rst",
+        "--py_api_rst",
         default="always",
         choices=("always", "never"),
         help="Build Python API documentation in reST format.",
+    )
+    parser.add_argument(
+        "--py_example_rst",
+        default="always",
+        choices=("always", "never"),
+        help="Build Python example documentation in reST format.",
     )
     parser.add_argument(
         "--sphinx",
@@ -545,18 +566,25 @@ if __name__ == "__main__":
         print("Removed directory %s" % cpp_build_dir)
 
     # Python API reST docs
-    if not args.pyapi_rst == "never":
+    if not args.py_api_rst == "never":
         print("Building Python API reST")
         pd = PyAPIDocsBuilder()
         pd.generate_rst()
 
+    # Python example reST docs
+    py_example_input_dir = os.path.join(pwd, "..", "examples", "python")
+    if not args.py_example_rst == "never":
+        print("Building Python example reST")
+        pe = PyExampleDocsBuilder(py_example_input_dir)
+        pe.generate_rst()
+
+    # Jupyter docs (needs execution)
     if not args.execute_notebooks == "never":
         print("Building Jupyter docs")
         jdb = JupyterDocsBuilder(pwd, args.clean_notebooks,
                                  args.execute_notebooks)
         jdb.run()
 
-    # Sphinx is hard-coded to build with the "html" option
     # To customize build, run sphinx-build manually
     if args.sphinx:
         print("Building Sphinx docs")
