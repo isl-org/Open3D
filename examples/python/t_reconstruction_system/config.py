@@ -68,6 +68,14 @@ class ConfigParser(configargparse.ArgParser):
         input_parser.add(
             '--path_intrinsic', type=str,
             help='Path to the intrinsic.json config file.'
+            'If the intrinsic matrix for color image is different,'
+            'specify it by --path_color_intrinsic.'
+            'By default PrimeSense intrinsics is used.')
+        input_parser.add(
+            '--path_color_intrinsic', type=str,
+            help='Path to the intrinsic.json config file.'
+            'If the intrinsic matrix for color image is different,'
+            'specify it by --path_color_intrinsic.'
             'By default PrimeSense intrinsics is used.')
         input_parser.add(
             '--depth_min', type=float,

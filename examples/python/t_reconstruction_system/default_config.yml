@@ -7,6 +7,7 @@ path_dataset: ''
 depth_folder: depth
 color_folder: color
 path_intrinsic: ''
+path_color_intrinsic: ''
 depth_min: 0.1
 depth_max: 3.0
 depth_scale: 1000.0

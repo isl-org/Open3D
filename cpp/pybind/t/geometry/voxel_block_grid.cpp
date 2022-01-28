@@ -144,6 +144,18 @@ void pybind_voxel_block_grid(py::module& m) {
 
     vbg.def("integrate",
             py::overload_cast<const core::Tensor&, const Image&, const Image&,
+                              const core::Tensor&, const core::Tensor&,
+                              const core::Tensor&, float, float>(
+                    &VoxelBlockGrid::Integrate),
+            "Specific operation for TSDF volumes."
+            "Integrate an RGB-D frame in the selected block coordinates using "
+            "pinhole camera model.",
+            "block_coords"_a, "depth"_a, "color"_a, "depth_intrinsic"_a,
+            "color_intrinsic"_a, "extrinsic"_a, "depth_scale"_a = 1000.0f,
+            "depth_max"_a = 3.0f);
+
+    vbg.def("integrate",
+            py::overload_cast<const core::Tensor&, const Image&, const Image&,
                               const core::Tensor&, const core::Tensor&, float,
                               float>(&VoxelBlockGrid::Integrate),
             "Specific operation for TSDF volumes."
