@@ -75,71 +75,123 @@ TEST_P(TensorFormatterPermuteDevices, FormatTensor) {
     core::Tensor t;
 
     // 0D
-    t = core::Tensor::Ones({}, core::Float32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(1.0)");
-    t = core::Tensor::Full({}, std::numeric_limits<float>::quiet_NaN(),
-                           core::Float32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
-    t = core::Tensor::Full({}, std::numeric_limits<double>::quiet_NaN(),
-                           core::Float32, device);  // Casting
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
+    t = core::Tensor::Init<int>({3}, device);
+    EXPECT_EQ(t.ToString(), R"(tensor(3))");
 
-    // 1D float
-    t = core::Tensor(std::vector<float>{0, 1, 2, 3, 4}, {5}, core::Float32,
-                     device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"([0.0 1.0 2.0 3.0 4.0])");
+    t = core::Tensor::Init<float>({3.14}, device);
+    EXPECT_EQ(t.ToString(), R"(tensor(3.1400))");
 
-    // 1D int
-    std::vector<int32_t> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
-                              12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23};
-    t = core::Tensor(vals, {24}, core::Int32, device);
-    EXPECT_EQ(
-            t.ToString(/*with_suffix=*/false),
-            R"([0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23])");
+    // t = core::Tensor::Init<double>({std::nan}, device);
+    // EXPECT_EQ(t.ToString(), R"(tensor(nan))");
+
+    // t = core::Tensor::Init<double>({std::inf}, device);
+    // EXPECT_EQ(t.ToString(), R"(tensor(inf))");
+
+    // t = core::Tensor::Init<double>({-std::inf}, device);
+    // EXPECT_EQ(t.ToString(), R"(tensor(inf))");
+
+    // 1D
+    t = core::Tensor::Init<int>({1, 2, 3}, device);
+    EXPECT_EQ(t.ToString(), R"(tensor([1, 2, 3]))");
+
+    t = core::Tensor::Init<bool>({true, false}, device);
+    EXPECT_EQ(t.ToString(), R"(tensor([ True, False]))");
 
     // 2D
-    t = core::Tensor(vals, {6, 4}, core::Int32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"([[0 1 2 3],
- [4 5 6 7],
- [8 9 10 11],
- [12 13 14 15],
- [16 17 18 19],
- [20 21 22 23]])");
+    t = core::Tensor::Init<int>({{1, 2, 3}, {4, 5, 6}}, device);
+    EXPECT_EQ(t.ToString(),
+              R"(tensor([[1, 2, 3],
+        [4, 5, 6]]))");
+
+    t = core::Tensor::Init<float>({{1.2, 2, 3}, {4, 5, 6}}, device);
+    EXPECT_EQ(t.ToString(),
+              R"(tensor([[1.2000, 2.0000, 3.0000],
+        [4.0000, 5.0000, 6.0000]]))");
 
     // 3D
-    t = core::Tensor(vals, {2, 3, 4}, core::Int32, device);
+    t = core::Tensor::Init<int>(
+            {{{1, 2, 3}, {4, 5, 6}}, {{7, 8, 9}, {10, 11, 12}}}, device);
     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"([[[0 1 2 3],
-  [4 5 6 7],
-  [8 9 10 11]],
- [[12 13 14 15],
-  [16 17 18 19],
-  [20 21 22 23]]])");
+              R"(tensor([[[ 1,  2,  3],
+         [ 4,  5,  6]],
 
-    // 4D
-    t = core::Tensor(vals, {2, 3, 2, 2}, core::Int32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"([[[[0 1],
-   [2 3]],
-  [[4 5],
-   [6 7]],
-  [[8 9],
-   [10 11]]],
- [[[12 13],
-   [14 15]],
-  [[16 17],
-   [18 19]],
-  [[20 21],
-   [22 23]]]])");
-
-    // Boolean
-    t = core::Tensor(std::vector<bool>{true, false, true, true, false, false},
-                     {2, 3}, core::Bool, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false),
-              R"([[True False True],
- [True False False]])");
+        [[ 7,  8,  9],
+         [10, 11, 12]]]))");
 }
+
+// TEST_P(TensorFormatterPermuteDevices, FormatTensor) {
+//     core::Device device = GetParam();
+//     core::Tensor t;
+
+//     // 0D
+//     t = core::Tensor::Ones({}, core::Float32, device);
+//     EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(1.0)");
+//     t = core::Tensor::Full({}, std::numeric_limits<float>::quiet_NaN(),
+//                            core::Float32, device);
+//     EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
+//     t = core::Tensor::Full({}, std::numeric_limits<double>::quiet_NaN(),
+//                            core::Float32, device);  // Casting
+//     EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
+
+//     // 1D float
+//     t = core::Tensor(std::vector<float>{0, 1, 2, 3, 4}, {5}, core::Float32,
+//                      device);
+//     EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"([0.0 1.0 2.0 3.0 4.0])");
+
+//     // 1D int
+//     std::vector<int32_t> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
+//                               12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+//                               23};
+//     t = core::Tensor(vals, {24}, core::Int32, device);
+//     EXPECT_EQ(
+//             t.ToString(/*with_suffix=*/false),
+//             R"([0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22
+//             23])");
+
+//     // 2D
+//     t = core::Tensor(vals, {6, 4}, core::Int32, device);
+//     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
+//               R"([[0 1 2 3],
+//  [4 5 6 7],
+//  [8 9 10 11],
+//  [12 13 14 15],
+//  [16 17 18 19],
+//  [20 21 22 23]])");
+
+//     // 3D
+//     t = core::Tensor(vals, {2, 3, 4}, core::Int32, device);
+//     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
+//               R"([[[0 1 2 3],
+//   [4 5 6 7],
+//   [8 9 10 11]],
+//  [[12 13 14 15],
+//   [16 17 18 19],
+//   [20 21 22 23]]])");
+
+//     // 4D
+//     t = core::Tensor(vals, {2, 3, 2, 2}, core::Int32, device);
+//     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
+//               R"([[[[0 1],
+//    [2 3]],
+//   [[4 5],
+//    [6 7]],
+//   [[8 9],
+//    [10 11]]],
+//  [[[12 13],
+//    [14 15]],
+//   [[16 17],
+//    [18 19]],
+//   [[20 21],
+//    [22 23]]]])");
+
+//     // Boolean
+//     t = core::Tensor(std::vector<bool>{true, false, true, true, false,
+//     false},
+//                      {2, 3}, core::Bool, device);
+//     EXPECT_EQ(t.ToString(/*with_suffix=*/false),
+//               R"([[True False True],
+//  [True False False]])");
+// }
 
 }  // namespace tests
 }  // namespace open3d
