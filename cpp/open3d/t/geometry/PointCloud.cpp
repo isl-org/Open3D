@@ -568,9 +568,15 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
     core::Tensor color =
             core::Tensor::Zeros({height, width, 3}, core::UInt8, device_);
-    kernel::pointcloud::Project(depth, color, GetPointPositions(),
-                                GetPointColors(), intrinsics, extrinsics,
-                                depth_scale, depth_max);
+
+    // Assume point colors are Float32 for kernel dispatch
+    core::Tensor point_colors = GetPointColors();
+    if (point_colors.GetDtype() == core::Dtype::UInt8) {
+        point_colors = point_colors.To(core::Dtype::Float32) / 255.0;
+    }
+
+    kernel::pointcloud::Project(depth, color, GetPointPositions(), point_colors,
+                                intrinsics, extrinsics, depth_scale, depth_max);
 
     return geometry::RGBDImage(color, depth);
 }

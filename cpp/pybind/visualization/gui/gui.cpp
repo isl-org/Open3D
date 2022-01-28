@@ -1033,7 +1033,14 @@ void pybind_gui_classes(py::module &m) {
                           "The position of the text in 3D coordinates")
             .def_property("color", &Label3D::GetTextColor,
                           &Label3D::SetTextColor,
-                          "The color of the text (gui.Color)");
+                          "The color of the text (gui.Color)")
+            .def_property(
+                    "scale", &Label3D::GetTextScale, &Label3D::SetTextScale,
+                    "The scale of the 3D label. When set to 1.0 (the default) "
+                    "text will be rendered at its native font size. Larger and "
+                    "smaller values of scale will enlarge or shrink the "
+                    "rendered text. Note: large values of scale may result in "
+                    "blurry text as the underlying font is not resized.");
 
     // ---- ListView ----
     py::class_<ListView, UnownedPointer<ListView>, Widget> listview(

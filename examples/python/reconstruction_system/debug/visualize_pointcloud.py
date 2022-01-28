@@ -31,9 +31,11 @@ import json
 import math
 import sys
 import open3d as o3d
-sys.path.append("../utility")
-from file import *
-from visualization import *
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+from open3d_example import *
+
 sys.path.append(".")
 from initialize_config import *
 from make_fragments import *

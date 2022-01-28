@@ -13,6 +13,10 @@ if (BUILD_GUI)
     )
 
     target_sources(pybind PRIVATE
+        app/viewer.cpp
+    )
+
+    target_sources(pybind PRIVATE
         gui/events.cpp
         gui/gui.cpp
     )
