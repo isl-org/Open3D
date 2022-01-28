@@ -59,7 +59,8 @@ public:
     /// Due to content and layout changing of the new widget, the relayout
     /// of Window might need be called.
     /// \param widget Widget to push into stack to be topmost showing wiget.
-    void SetWidget(std::shared_ptr<Widget> widget) override;
+    void PushWidget(std::shared_ptr<Widget> widget);
+
     /// \brief Pop the top most widget.
     ///
     /// Due to content and layout changing of the new widget, the relayout
@@ -67,6 +68,7 @@ public:
     /// \param widget Widget to push into stack to be topmost showing wiget.
     /// \return widget is popped, or NULL if no widget in the stack.
     std::shared_ptr<Widget> PopWidget();
+
     /// \brief Setup a callback while a widget is popped out and a new widget
     /// becomes the topmost one.
     ///

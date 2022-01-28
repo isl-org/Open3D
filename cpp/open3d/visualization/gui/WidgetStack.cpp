@@ -39,9 +39,9 @@ struct WidgetStack::Impl {
 WidgetStack::WidgetStack() : impl_(new WidgetStack::Impl()) {}
 WidgetStack::~WidgetStack() = default;
 
-void WidgetStack::SetWidget(std::shared_ptr<Widget> widget) {
+void WidgetStack::PushWidget(std::shared_ptr<Widget> widget) {
     impl_->widgets_.push(widget);
-    WidgetProxy::SetWidget(widget);
+    SetWidget(widget);
 }
 
 std::shared_ptr<Widget> WidgetStack::PopWidget() {
@@ -50,12 +50,12 @@ std::shared_ptr<Widget> WidgetStack::PopWidget() {
         ret = impl_->widgets_.top();
         impl_->widgets_.pop();
         if (!impl_->widgets_.empty()) {
-            WidgetProxy::SetWidget(impl_->widgets_.top());
+            SetWidget(impl_->widgets_.top());
             if (impl_->on_top_callback_) {
                 impl_->on_top_callback_(impl_->widgets_.top());
             }
         } else {
-            WidgetProxy::SetWidget(nullptr);
+            SetWidget(nullptr);
         }
     }
     return ret;

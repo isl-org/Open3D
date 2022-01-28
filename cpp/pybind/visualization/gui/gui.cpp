@@ -747,9 +747,9 @@ void pybind_gui_classes(py::module &m) {
     py::class_<WidgetStack, UnownedPointer<WidgetStack>, WidgetProxy>
             widgetStack(m, "WidgetStack",
                         "A widget stack saves all widgets pushed into by "
-                        "set_widget and always shows the top one. The "
-                        "WidgetStack is a subclass of WidgetProxy, in another"
-                        "word, the topmost widget will delegate it self to "
+                        "push_widget and always shows the top one. The "
+                        "WidgetStack is a subclass of WidgetProxy, in other"
+                        "words, the topmost widget will delegate itself to "
                         "WidgetStack. pop_widget will remove the topmost "
                         "widget and callback set by set_on_top taking the "
                         "new topmost widget will be called. The WidgetStack "
@@ -767,6 +767,10 @@ void pybind_gui_classes(py::module &m) {
                        << c.GetFrame().height;
                      return s.str();
                  })
+            .def("push_widget", &WidgetStack::PushWidget,
+                 "push a new widget onto the WidgetStack's stack, hiding "
+                 "whatever widget was there before and making the new widget "
+                 "visible.")
             .def("pop_widget", &WidgetStack::PopWidget,
                  "pop the topmost widget in the stack. The new topmost widget"
                  "of stack will be the widget on the show in GUI.")

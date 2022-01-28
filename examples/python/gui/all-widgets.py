@@ -186,7 +186,7 @@ class ExampleWindow:
 
         def push_widget():
             self._widget_idx += 1
-            stack.set_widget(gui.Label(f'Widget {self._widget_idx}'))
+            stack.push_widget(gui.Label(f'Widget {self._widget_idx}'))
 
         push_widget_btn.set_on_clicked(push_widget)
         pop_widget_btn.set_on_clicked(stack.pop_widget)
