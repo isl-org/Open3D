@@ -433,7 +433,8 @@ struct GuiVisualizer::Impl {
                 inspect_mat.base_roughness = 0.1f;
                 inspect_mat.base_reflectance = 0.6f;
                 o3dscene->ShowGeometry(MODEL_NAME, false);
-                o3dscene->AddGeometry(INSPECT_MODEL_NAME, loaded_pcd_.get(), inspect_mat);
+                o3dscene->AddGeometry(INSPECT_MODEL_NAME, loaded_pcd_.get(),
+                                      inspect_mat);
             } else {
                 inspect_mat.base_roughness = 0.5f;
                 inspect_mat.base_reflectance = 0.8f;
@@ -458,11 +459,11 @@ struct GuiVisualizer::Impl {
             view->SetShadowing(false, rendering::View::ShadowType::kPCF);
             view->SetPostProcessing(false);
             // Update geometry for inspection
-            //UpdateGeometryForInspectionMode(true);
+            // UpdateGeometryForInspectionMode(true);
         } else {
             view->SetPostProcessing(true);
             view->SetShadowing(true, rendering::View::ShadowType::kPCF);
-            //UpdateGeometryForInspectionMode(false);
+            // UpdateGeometryForInspectionMode(false);
         }
 
         // Update geometry for basic mode
@@ -497,7 +498,7 @@ struct GuiVisualizer::Impl {
 
         UpdateLighting(renderer, settings_.model_.GetLighting());
 
-         // Make sure scene redraws once changes have been applied
+        // Make sure scene redraws once changes have been applied
         scene_wgt_->ForceRedraw();
 
         // Bail early if there were no material property changes
