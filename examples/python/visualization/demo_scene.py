@@ -23,10 +23,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-
-#
-# Demo scene demonstrating models, built-in shapes, and materials
-#
+"""Demo scene demonstrating models, built-in shapes, and materials"""
 
 import math
 import numpy as np
@@ -48,7 +45,7 @@ cd examples/test_data
 wget https://github.com/isl-org/open3d_downloads/releases/download/o3d_demo_scene/demo_scene_assets.tgz
 tar xzvf demo_scene_assets.tgz
 cd ../..
-python examples/python/gui/demo-scene.py
+python examples/python/visualization/demo_scene.py
 ```
 """)
         exit(1)

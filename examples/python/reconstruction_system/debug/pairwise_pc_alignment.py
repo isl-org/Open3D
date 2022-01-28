@@ -29,8 +29,11 @@
 import argparse
 import json
 import sys
-sys.path.append("../utility")
-from file import *
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+from open3d_example import *
+
 sys.path.append(".")
 from initialize_config import *
 from register_fragments import *

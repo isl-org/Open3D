@@ -106,7 +106,7 @@ details, including other required packages)::
 
     cd examples/python/reconstruction_system/
     python run_system.py --make --register --refine --integrate config/realsense.json
-    python ../pipelines/color_map_optimization_for_reconstruction_system.py  --config config/realsense.json
+    python color_map_optimization_for_reconstruction_system.py  --config config/realsense.json
 
 The reconstruction result below was obtained with the ``L515_JackJack`` dataset
 with the configuration changes::
