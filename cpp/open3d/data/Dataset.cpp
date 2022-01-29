@@ -190,7 +190,7 @@ Bunny::Bunny(const std::string& prefix, const std::string& data_root)
     path_ = Dataset::GetExtractDir() + "/Bunny.ply";
 }
 
-RedwoodLivingRoomFragments::RedwoodLivingRoomFragments(
+RedwoodLivingRoomPointClouds::RedwoodLivingRoomPointClouds(
         const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"http://redwood-data.org/indoor/data/"
@@ -205,7 +205,7 @@ RedwoodLivingRoomFragments::RedwoodLivingRoomFragments(
     }
 }
 
-std::string RedwoodLivingRoomFragments::GetPaths(size_t index) const {
+std::string RedwoodLivingRoomPointClouds::GetPaths(size_t index) const {
     if (index > 56) {
         utility::LogError(
                 "Invalid index. Expected index between 0 to 56 but got {}.",
@@ -214,8 +214,8 @@ std::string RedwoodLivingRoomFragments::GetPaths(size_t index) const {
     return paths_[index];
 }
 
-RedwoodOfficeFragments::RedwoodOfficeFragments(const std::string& prefix,
-                                               const std::string& data_root)
+RedwoodOfficePointClouds::RedwoodOfficePointClouds(const std::string& prefix,
+                                                   const std::string& data_root)
     : SimpleDataset(prefix,
                     {"http://redwood-data.org/indoor/data/"
                      "office1-fragments-ply.zip",
@@ -229,7 +229,7 @@ RedwoodOfficeFragments::RedwoodOfficeFragments(const std::string& prefix,
     }
 }
 
-std::string RedwoodOfficeFragments::GetPaths(size_t index) const {
+std::string RedwoodOfficePointClouds::GetPaths(size_t index) const {
     if (index > 52) {
         utility::LogError(
                 "Invalid index. Expected index between 0 to 52 but got {}.",

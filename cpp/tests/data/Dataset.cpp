@@ -325,5 +325,92 @@ TEST(Dataset, Bunny) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
+TEST(Dataset, RedwoodLivingRoomPointClouds) {
+    const std::string prefix = "O3DTestRedwoodLivingRoomPointClouds";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::RedwoodLivingRoomPointClouds living_room(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Methods to get path.
+    std::vector<std::string> paths;
+    paths.reserve(57);
+    for (int i = 0; i < 57; ++i) {
+        paths.push_back(extract_dir + "/cloud_bin_" + std::to_string(i) +
+                        ".ply");
+    }
+    EXPECT_EQ(living_room.GetPaths(), paths);
+    for (size_t i = 0; i < paths.size(); ++i) {
+        EXPECT_EQ(living_room.GetPaths(i), paths[i]);
+        // Check if the file actually exists.
+        EXPECT_TRUE(utility::filesystem::FileExists(living_room.GetPaths(i)));
+    }
+
+    // Basic methods.
+    EXPECT_EQ(living_room.GetPrefix(), prefix);
+    EXPECT_EQ(living_room.GetDataRoot(), data_root);
+    EXPECT_EQ(living_room.GetDownloadDir(), download_dir);
+    EXPECT_EQ(living_room.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, RedwoodOfficePointClouds) {
+    const std::string prefix = "O3DTestRedwoodOfficePointClouds";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::RedwoodOfficePointClouds office(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Methods to get path.
+    std::vector<std::string> paths;
+    paths.reserve(53);
+    for (int i = 0; i < 53; ++i) {
+        paths.push_back(extract_dir + "/cloud_bin_" + std::to_string(i) +
+                        ".ply");
+    }
+    EXPECT_EQ(office.GetPaths(), paths);
+    for (size_t i = 0; i < paths.size(); ++i) {
+        EXPECT_EQ(office.GetPaths(i), paths[i]);
+        // Check if the file actually exists.
+        EXPECT_TRUE(utility::filesystem::FileExists(office.GetPaths(i)));
+    }
+
+    EXPECT_EQ(office.GetPaths(), paths);
+    for (size_t i = 0; i < paths.size(); ++i) {
+        EXPECT_EQ(office.GetPaths(i), paths[i]);
+        // Check if the file actually exists.
+        EXPECT_TRUE(utility::filesystem::FileExists(office.GetPaths(i)));
+    }
+
+    // Basic methods.
+    EXPECT_EQ(office.GetPrefix(), prefix);
+    EXPECT_EQ(office.GetDataRoot(), data_root);
+    EXPECT_EQ(office.GetDownloadDir(), download_dir);
+    EXPECT_EQ(office.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
 }  // namespace tests
 }  // namespace open3d

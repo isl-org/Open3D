@@ -170,8 +170,8 @@ private:
 
 /// \class DemoCropPointCloud
 /// \brief Data class for `DemoCropPointCloud` contains a point cloud, and
-/// cropped.json (a saved selected polygon volume file). This dataset is used in
-/// Open3D for point cloud crop demo.
+/// `cropped.json` (a saved selected polygon volume file). This dataset is used
+/// in Open3D for point cloud crop demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoCropPointCloud : public SimpleDataset {
 public:
@@ -205,13 +205,13 @@ public:
     std::vector<std::string> GetPathsPointClouds() const {
         return paths_pointclouds_;
     }
-    /// \brief Returns list of saved FPFH features binary for point clouds,
-    /// respectively, of size 2.
+    /// \brief Returns list of paths to saved FPFH features binary for point
+    /// clouds, respectively, of size 2.
     std::vector<std::string> GetPathsFPFHFeatures() const {
         return paths_fpfh_features_;
     }
-    /// \brief Returns list of saved L32D features binary for point clouds,
-    /// respectively, of size 2.
+    /// \brief Returns list of paths to saved L32D features binary for point
+    /// clouds, respectively, of size 2.
     std::vector<std::string> GetPathsL32DFeatures() const {
         return paths_l32d_features_;
     }
@@ -285,46 +285,45 @@ private:
     std::string path_;
 };
 
-/// \class RedwoodLivingRoomFragments
-/// \brief Dataset class for `RedwoodLivingRoomFragments` contains 57
-/// `pointclouds` of `ply binary` format. These pointclouds have positions,
-/// colors, normals, curvatures.
+/// \class RedwoodLivingRoomPointClouds
+/// \brief Dataset class for `RedwoodLivingRoomPointClouds` contains 57
+/// `pointclouds` of `ply binary` format.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class RedwoodLivingRoomFragments : public SimpleDataset {
+class RedwoodLivingRoomPointClouds : public SimpleDataset {
 public:
-    RedwoodLivingRoomFragments(
-            const std::string& prefix = "RedwoodLivingRoomFragments",
+    RedwoodLivingRoomPointClouds(
+            const std::string& prefix = "RedwoodLivingRoomPointClouds",
             const std::string& data_root = "");
 
-    /// \brief Returns list of paths to ply point-cloud fragments of size 56.
+    /// \brief Returns list of paths to ply point-cloud fragments of size 57.
     std::vector<std::string> GetPaths() const { return paths_; }
     /// \brief Returns path to the ply point-cloud fragment at index (from 0 to
-    /// 56).
+    /// 57).
     std::string GetPaths(size_t index) const;
 
 private:
-    /// List of paths to ply point-cloud fragments of size 56.
+    /// List of paths to ply point-cloud fragments of size 57.
     std::vector<std::string> paths_;
 };
 
-/// \class RedwoodOfficeFragments
-/// \brief Dataset class for `RedwoodOfficeFragments` contains 51
-/// `pointclouds` of `ply binary` format. These pointclouds have positions,
-/// colors, normals, curvatures.
+/// \class RedwoodOfficePointClouds
+/// \brief Dataset class for `RedwoodOfficePointClouds` contains 53
+/// `pointclouds` of `ply binary` format.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class RedwoodOfficeFragments : public SimpleDataset {
+class RedwoodOfficePointClouds : public SimpleDataset {
 public:
-    RedwoodOfficeFragments(const std::string& prefix = "RedwoodOfficeFragments",
-                           const std::string& data_root = "");
+    RedwoodOfficePointClouds(
+            const std::string& prefix = "RedwoodOfficePointClouds",
+            const std::string& data_root = "");
 
-    /// \brief Returns list of paths to ply point-cloud fragments of size 51.
+    /// \brief Returns list of paths to ply point-cloud fragments of size 53.
     std::vector<std::string> GetPaths() const { return paths_; }
     /// \brief Returns path to the ply point-cloud fragment at index (from 0 to
-    /// 51).
+    /// 53).
     std::string GetPaths(size_t index) const;
 
 private:
-    /// List of paths to ply point-cloud fragments of size 51.
+    /// List of paths to ply point-cloud fragments of size 53.
     std::vector<std::string> paths_;
 };
 
