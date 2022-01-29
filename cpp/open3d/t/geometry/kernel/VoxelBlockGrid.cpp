@@ -106,38 +106,45 @@ void GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor& buf_indices,
     }
 }
 
-#define DISPATCH_VALUE_DTYPE_TO_TEMPLATE(WEIGHT_DTYPE, COLOR_DTYPE, ...)   \
-    [&] {                                                                  \
-        if (WEIGHT_DTYPE == open3d::core::Float32 &&                       \
-            COLOR_DTYPE == open3d::core::Float32) {                        \
-            using weight_t = float;                                        \
-            using color_t = float;                                         \
-            return __VA_ARGS__();                                          \
-        } else if (WEIGHT_DTYPE == open3d::core::UInt16 &&                 \
-                   COLOR_DTYPE == open3d::core::UInt16) {                  \
-            using weight_t = uint16_t;                                     \
-            using color_t = uint16_t;                                      \
-            return __VA_ARGS__();                                          \
-        } else {                                                           \
-            utility::LogError("Unsupported value data type combination."); \
-        }                                                                  \
+#define DISPATCH_VALUE_DTYPE_TO_TEMPLATE(WEIGHT_DTYPE, COLOR_DTYPE, ...)    \
+    [&] {                                                                   \
+        if (WEIGHT_DTYPE == open3d::core::Float32 &&                        \
+            COLOR_DTYPE == open3d::core::Float32) {                         \
+            using weight_t = float;                                         \
+            using color_t = float;                                          \
+            return __VA_ARGS__();                                           \
+        } else if (WEIGHT_DTYPE == open3d::core::UInt16 &&                  \
+                   COLOR_DTYPE == open3d::core::UInt16) {                   \
+            using weight_t = uint16_t;                                      \
+            using color_t = uint16_t;                                       \
+            return __VA_ARGS__();                                           \
+        } else {                                                            \
+            utility::LogError(                                              \
+                    "Unsupported value data type combination. Expected "    \
+                    "(float, float) or (uint16, uint16), but received ({} " \
+                    "{}).",                                                 \
+                    WEIGHT_DTYPE.ToString(), COLOR_DTYPE.ToString());       \
+        }                                                                   \
     }()
 
-#define DISPATCH_INPUT_DTYPE_TO_TEMPLATE(DEPTH_DTYPE, COLOR_DTYPE, ...)    \
-    [&] {                                                                  \
-        if (DEPTH_DTYPE == open3d::core::Float32 &&                        \
-            COLOR_DTYPE == open3d::core::Float32) {                        \
-            using input_depth_t = float;                                   \
-            using input_color_t = float;                                   \
-            return __VA_ARGS__();                                          \
-        } else if (DEPTH_DTYPE == open3d::core::UInt16 &&                  \
-                   COLOR_DTYPE == open3d::core::UInt8) {                   \
-            using input_depth_t = uint16_t;                                \
-            using input_color_t = uint8_t;                                 \
-            return __VA_ARGS__();                                          \
-        } else {                                                           \
-            utility::LogError("Unsupported input data type combination."); \
-        }                                                                  \
+#define DISPATCH_INPUT_DTYPE_TO_TEMPLATE(DEPTH_DTYPE, COLOR_DTYPE, ...)        \
+    [&] {                                                                      \
+        if (DEPTH_DTYPE == open3d::core::Float32 &&                            \
+            COLOR_DTYPE == open3d::core::Float32) {                            \
+            using input_depth_t = float;                                       \
+            using input_color_t = float;                                       \
+            return __VA_ARGS__();                                              \
+        } else if (DEPTH_DTYPE == open3d::core::UInt16 &&                      \
+                   COLOR_DTYPE == open3d::core::UInt8) {                       \
+            using input_depth_t = uint16_t;                                    \
+            using input_color_t = uint8_t;                                     \
+            return __VA_ARGS__();                                              \
+        } else {                                                               \
+            utility::LogError(                                                 \
+                    "Unsupported input data type combination. Expected "       \
+                    "(float, float) or (uint16, uint8), but received ({} {})", \
+                    DEPTH_DTYPE.ToString(), COLOR_DTYPE.ToString());           \
+        }                                                                      \
     }()
 
 void Integrate(const core::Tensor& depth,
