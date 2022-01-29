@@ -98,6 +98,8 @@ def run(config):
     fragment_folder = join(path_dataset, config["folder_fragment"])
 
     k = 0
+    depth_scale = float(config['depth_scale'])
+    depth_max = float(config['max_depth'])
     for i in range(len(posegraph.nodes)):
         fragment_pose_graph = o3d.io.read_pose_graph(
             join(fragment_folder, "fragment_optimized_%03d.json" % i))
@@ -115,16 +117,15 @@ def run(config):
             print('Deforming and integrating Frame {:3d}'.format(k))
             rgbd_projected = ctr_grid.deform(rgbd, intrinsic_t,
                                              extrinsic_local_t,
-                                             config["depth_scale"],
-                                             config["max_depth"])
+                                             depth_scale, depth_max)
 
             frustum_block_coords = voxel_grid.compute_unique_block_coordinates(
                 rgbd_projected.depth, intrinsic_t, extrinsic_t,
-                config['depth_scale'], config['max_depth'])
+                depth_scale, depth_max)
 
             voxel_grid.integrate(frustum_block_coords, rgbd_projected.depth,
-                                 rgbd_projected.color, intrinsic_t, intrinsic_t, extrinsic_t,
-                                 config["depth_scale"], config["max_depth"])
+                                 rgbd_projected.color, intrinsic_t, extrinsic_t,
+                                 depth_scale, depth_max)
             k = k + 1
 
     if (config["save_output_as"] == "pointcloud"):
