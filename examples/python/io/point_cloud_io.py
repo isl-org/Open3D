@@ -24,42 +24,18 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/geometry/trajectory_io.py
+import open3d as o3d
+import os
 
-import numpy as np
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
+if __name__ == "__main__":
 
-class CameraPose:
-
-    def __init__(self, meta, mat):
-        self.metadata = meta
-        self.pose = mat
-
-    def __str__(self):
-        return 'Metadata : ' + ' '.join(map(str, self.metadata)) + '\n' + \
-            "Pose : " + "\n" + np.array_str(self.pose)
-
-
-def read_trajectory(filename):
-    traj = []
-    with open(filename, 'r') as f:
-        metastr = f.readline()
-        while metastr:
-            metadata = list(map(int, metastr.split()))
-            mat = np.zeros(shape=(4, 4))
-            for i in range(4):
-                matstr = f.readline()
-                mat[i, :] = np.fromstring(matstr, dtype=float, sep=' \t')
-            traj.append(CameraPose(metadata, mat))
-            metastr = f.readline()
-    return traj
-
-
-def write_trajectory(traj, filename):
-    with open(filename, 'w') as f:
-        for x in traj:
-            p = x.pose.tolist()
-            f.write(' '.join(map(str, x.metadata)) + '\n')
-            f.write('\n'.join(
-                ' '.join(map('{0:.12f}'.format, p[i])) for i in range(4)))
-            f.write('\n')
+    print("Reading pointcloud from file: fragment.pcd")
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    path_to_pcd = os.path.join(test_data_path, 'fragment.pcd')
+    pcd = o3d.io.read_point_cloud(path_to_pcd)
+    print(pcd)
+    print("Saving pointcloud to file: copy_of_fragment.pcd")
+    o3d.io.write_point_cloud("copy_of_fragment.pcd", pcd)

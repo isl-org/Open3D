@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/pipelines/color_map_optimization_for_reconstruction_system.py
-
 import argparse
 import os
 import sys
@@ -34,10 +32,7 @@ import open3d as o3d
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
-
-from geometry.trajectory_io import *
-from reconstruction_system.initialize_config import *
-from utility.file import *
+from open3d_example import *
 
 
 def parse_keys(filename):

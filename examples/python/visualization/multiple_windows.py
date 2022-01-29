@@ -30,7 +30,8 @@ import os
 import threading
 import time
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 CLOUD_NAME = "points"
 
@@ -96,7 +97,7 @@ class MultiWinApp:
         # the scene or any part of the UI.
 
         self.cloud = o3d.io.read_point_cloud(
-            SCRIPT_DIR + "/../../test_data/ICP/cloud_bin_0.pcd")
+            os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
         bounds = self.cloud.get_axis_aligned_bounding_box()
         extent = bounds.get_extent()
 

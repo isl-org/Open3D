@@ -24,17 +24,17 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/utility/opencv.py
+import open3d as o3d
+import os
 
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
-def initialize_opencv():
-    opencv_installed = True
-    try:
-        import cv2
-    except ImportError:
-        pass
-        print("OpenCV is not detected. Using Identity as an initial")
-        opencv_installed = False
-    if opencv_installed:
-        print("OpenCV is detected. Using ORB + 5pt algorithm")
-    return opencv_installed
+if __name__ == "__main__":
+
+    print("Reading image from file: lena_color.jpg")
+    path_to_image = os.path.join(test_data_path, 'lena_color.jpg')
+    img = o3d.io.read_image(path_to_image)
+    print(img)
+    print("Saving image to file: copy_of_lena_color.jpg")
+    o3d.io.write_image("copy_of_lena_color.jpg", img)
