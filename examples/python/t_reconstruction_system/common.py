@@ -150,33 +150,6 @@ def save_poses(
         o3d.io.write_pose_graph(path_trajectory, pose_graph)
 
 
-def init_volume(mode, config):
-    if config.engine == 'legacy':
-        return o3d.pipelines.integration.ScalableTSDFVolume(
-            voxel_length=config.voxel_size,
-            sdf_trunc=config.sdf_trunc,
-            color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
-
-    elif config.engine == 'tensor':
-        if mode == 'scene':
-            block_count = config.block_count
-        else:
-            block_count = config.block_count
-        return o3d.t.geometry.TSDFVoxelGrid(
-            {
-                'tsdf': o3d.core.Dtype.Float32,
-                'weight': o3d.core.Dtype.UInt16,
-                'color': o3d.core.Dtype.UInt16
-            },
-            voxel_size=config.voxel_size,
-            sdf_trunc=config.sdf_trunc,
-            block_resolution=16,
-            block_count=block_count,
-            device=o3d.core.Device(config.device))
-    else:
-        print('Unsupported engine {}'.format(config.engine))
-
-
 def extract_pointcloud(volume, config, file_name=None):
     if config.engine == 'legacy':
         mesh = volume.extract_triangle_mesh()
