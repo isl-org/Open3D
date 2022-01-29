@@ -99,11 +99,10 @@ static void BenchmarkICP(benchmark::State& state,
                          const core::Dtype& dtype,
                          const TransformationEstimationType& type) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Error);
-    data::SampleICPPointClouds sample_icp_pointclouds;
+    data::DemoICPPointClouds demo_icp_pointclouds;
     geometry::PointCloud source, target;
     std::tie(source, target) = LoadTensorPointCloudFromFile(
-            sample_icp_pointclouds.GetPaths(0),
-            sample_icp_pointclouds.GetPaths(1),
+            demo_icp_pointclouds.GetPaths(0), demo_icp_pointclouds.GetPaths(1),
             /*voxel_downsampling_factor =*/0.02, dtype, device);
 
     std::shared_ptr<TransformationEstimation> estimation;

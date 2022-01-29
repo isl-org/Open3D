@@ -89,26 +89,105 @@ SimpleDataset::SimpleDataset(const std::string& prefix,
     }
 }
 
-SampleICPPointClouds::SampleICPPointClouds(const std::string& prefix,
-                                           const std::string& data_root)
+DemoICPPointClouds::DemoICPPointClouds(const std::string& prefix,
+                                       const std::string& data_root)
     : SimpleDataset(
               prefix,
-              {"https://github.com/isl-org/open3d_downloads/releases/"
-               "download/sample-icp-pointclouds/SampleICPPointClouds.zip"},
-              "3ee7a2631caa3c47a333972e3c4fb315") {
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "290122-demo-icp-pointclouds/DemoICPPointClouds.zip"},
+              "76cf67ab1af942e3c4d5e97b9c2ae58f") {
     for (int i = 0; i < 3; ++i) {
         paths_.push_back(Dataset::GetExtractDir() + "/cloud_bin_" +
                          std::to_string(i) + ".pcd");
     }
 }
 
-std::string SampleICPPointClouds::GetPaths(size_t index) const {
+std::string DemoICPPointClouds::GetPaths(size_t index) const {
     if (index > 2) {
         utility::LogError(
                 "Invalid index. Expected index between 0 to 2 but got {}.",
                 index);
     }
     return paths_[index];
+}
+
+DemoColoredICPPointClouds::DemoColoredICPPointClouds(
+        const std::string& prefix, const std::string& data_root)
+    : SimpleDataset(
+              prefix,
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "290122-demo-icp-pointclouds/DemoColoredICPPointClouds.zip"},
+              "bf8d469e892d76f2e69e1213207c0e30") {
+    paths_.push_back(Dataset::GetExtractDir() + "/frag_115.ply");
+    paths_.push_back(Dataset::GetExtractDir() + "/frag_116.ply");
+}
+
+std::string DemoColoredICPPointClouds::GetPaths(size_t index) const {
+    if (index > 1) {
+        utility::LogError(
+                "Invalid index. Expected index between 0 to 1 but got {}.",
+                index);
+    }
+    return paths_[index];
+}
+
+DemoCropPointCloud::DemoCropPointCloud(const std::string& prefix,
+                                       const std::string& data_root)
+    : SimpleDataset(
+              prefix,
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "290122-demo-crop-pointcloud/DemoCropPointCloud.zip"},
+              "12dbcdddd3f0865d8312929506135e23") {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    path_pointcloud_ = extract_dir + "/fragment.ply";
+    path_cropped_json_ = extract_dir + "/cropped.json";
+}
+
+DemoPointCloudFeatureMatching::DemoPointCloudFeatureMatching(
+        const std::string& prefix, const std::string& data_root)
+    : SimpleDataset(prefix,
+                    {"https://github.com/isl-org/open3d_downloads/releases/"
+                     "download/290122-demo-pointcloud-feature-matching/"
+                     "DemoPointCloudFeatureMatching.zip"},
+                    "02f0703ce0cbf4df78ce2602ae33fc79") {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    paths_pointclouds_ = {extract_dir + "/cloud_bin_0.pcd",
+                          extract_dir + "/cloud_bin_1.pcd"};
+    paths_fpfh_features_ = {extract_dir + "/cloud_bin_0.fpfh.bin",
+                            extract_dir + "/cloud_bin_1.fpfh.bin"};
+    paths_l32d_features_ = {extract_dir + "/cloud_bin_0.d32.bin",
+                            extract_dir + "/cloud_bin_1.d32.bin"};
+}
+
+DemoPoseGraphOptimization::DemoPoseGraphOptimization(
+        const std::string& prefix, const std::string& data_root)
+    : SimpleDataset(prefix,
+                    {"https://github.com/isl-org/open3d_downloads/releases/"
+                     "download/290122-demo-pose-graph-optimization/"
+                     "DemoPoseGraphOptimization.zip"},
+                    "af085b28d79dea7f0a50aef50c96b62c") {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    path_pose_graph_fragment_ =
+            extract_dir + "/pose_graph_example_fragment.json";
+    path_pose_graph_global_ = extract_dir + "/pose_graph_example_global.json";
+}
+
+Armadillo::Armadillo(const std::string& prefix, const std::string& data_root)
+    : SimpleDataset(prefix,
+                    {"https://github.com/isl-org/open3d_downloads/releases/"
+                     "download/stanford-mesh/Armadillo.ply"},
+                    "9e68ff1b1cc914ed88cd84f6a8235021",
+                    /*no_extract =*/true) {
+    path_ = Dataset::GetExtractDir() + "/Armadillo.ply";
+}
+
+Bunny::Bunny(const std::string& prefix, const std::string& data_root)
+    : SimpleDataset(prefix,
+                    {"https://github.com/isl-org/open3d_downloads/releases/"
+                     "download/stanford-mesh/Bunny.ply"},
+                    "568f871d1a221ba6627569f1e6f9a3f2",
+                    /*no_extract =*/true) {
+    path_ = Dataset::GetExtractDir() + "/Bunny.ply";
 }
 
 RedwoodLivingRoomFragments::RedwoodLivingRoomFragments(

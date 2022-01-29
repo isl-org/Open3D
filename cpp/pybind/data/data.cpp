@@ -75,23 +75,23 @@ void pybind_data_classes(py::module& m) {
             "data_root"_a = "");
 }
 
-void pybind_sample_icp_pointclouds(py::module& m) {
-    py::class_<SampleICPPointClouds, PySimpleDataset<SampleICPPointClouds>,
-               std::shared_ptr<SampleICPPointClouds>, SimpleDataset>
-            sample_icp_pointclouds(m, "SampleICPPointClouds",
-                                   "SampleICPPointClouds dataset.");
-    sample_icp_pointclouds
+void pybind_demo_icp_pointclouds(py::module& m) {
+    py::class_<DemoICPPointClouds, PySimpleDataset<DemoICPPointClouds>,
+               std::shared_ptr<DemoICPPointClouds>, SimpleDataset>
+            demo_icp_pointclouds(m, "DemoICPPointClouds",
+                                 "DemoICPPointClouds dataset.");
+    demo_icp_pointclouds
             .def(py::init<const std::string&, const std::string&>(),
-                 "prefix"_a = "SampleICPPointClouds", "data_root"_a = "")
+                 "prefix"_a = "DemoICPPointClouds", "data_root"_a = "")
             .def_property_readonly(
                     "paths",
-                    [](const SampleICPPointClouds& sample_icp_pointclouds) {
-                        return sample_icp_pointclouds.GetPaths();
+                    [](const DemoICPPointClouds& demo_icp_pointclouds) {
+                        return demo_icp_pointclouds.GetPaths();
                     },
                     "List of path to point-cloud fragments. "
                     "paths[x] returns path to `cloud_bin_x.pcd` point-cloud "
                     "where x is from 0 to 2.");
-    docstring::ClassMethodDocInject(m, "SampleICPPointClouds", "paths");
+    docstring::ClassMethodDocInject(m, "DemoICPPointClouds", "paths");
 }
 
 void pybind_redwood_living_room_fragments(py::module& m) {
@@ -139,7 +139,7 @@ void pybind_data(py::module& m) {
     py::module m_submodule = m.def_submodule("data", "Data handling module.");
     pybind_data_classes(m_submodule);
 
-    pybind_sample_icp_pointclouds(m_submodule);
+    pybind_demo_icp_pointclouds(m_submodule);
     pybind_redwood_living_room_fragments(m_submodule);
     pybind_redwood_office_fragments(m_submodule);
 }
