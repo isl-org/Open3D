@@ -1,3 +1,6 @@
+.. role:: bash(code)
+   :language: bash
+
 .. _getting_started:
 
 Getting started
@@ -125,8 +128,24 @@ A minimal ``Dockerfile`` looks like this:
     # Install Open3D from the pypi repositories
     RUN python3 -m pip install --no-cache-dir --upgrade open3d
 
-.. note:: If you need ``CUDA`` support, follow these `directions.
-    <https://docs.docker.com/config/containers/resource_constraints/#gpu>`__
+
+If you have an NVIDIA GPU and want to use it for computation (``CUDA``) or
+visualization, follow these `directions.
+<https://docs.docker.com/config/containers/resource_constraints/#gpu>`__
+
+To run GUI applications from the docker container, add these options to the
+:bash:`docker run` command line to ensure that docker has access to the:
+
+1. GPU:
+
+  - Intel:  :bash:`--privileged --device=/dev/dri:/dev/dri`
+
+  - Nvidia: :bash:`--gpus 'all,"capabilities=compute,utility,graphics"'`
+
+2. X server:
+    :bash:`-v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY`
+
+Also see the `docker tutorial for ROS <http://wiki.ros.org/docker/Tutorials/Hardware%20Acceleration>`__ for more information.
 
 Try it
 ------
