@@ -132,6 +132,7 @@ RUN mkdir build \
  && cd build \
  && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
           -DCMAKE_BUILD_TYPE=Release \
+          -DDEVELOPER_BUILD="${DEVELOPER_BUILD}" \
           -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=ON \
           -DBUILD_COMMON_CUDA_ARCHS=ON \

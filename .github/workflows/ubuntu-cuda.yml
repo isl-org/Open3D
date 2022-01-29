@@ -53,7 +53,7 @@ jobs:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
       CI_CONFIG          : ${{ matrix.CI_CONFIG }}
-      BUILD_PACKAGE      : contains(fromJson('["3-ml-shared-bionic", "4-shared-bionic"]'), matrix.CI_CONFIG)
+      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-bionic", "4-shared-bionic"]'), matrix.CI_CONFIG) }}
       GCE_INSTANCE_PREFIX: open3d-ci-${{ matrix.CI_CONFIG }}
       DOCKER_TAG         : open3d-ci:${{ matrix.CI_CONFIG }}
       CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}

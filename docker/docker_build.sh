@@ -294,7 +294,7 @@ cuda_build() {
     export PACKAGE=ON
 }
 
-4-shared-bionic_-release_export_env() {
+4-shared-bionic-release_export_env() {
     export DOCKER_TAG=open3d-ci:4-shared-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04

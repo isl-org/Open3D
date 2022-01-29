@@ -185,13 +185,13 @@ binary package archive from `Github releases
 package archives contain the Open3D shared library built with all supported
 features and are available for the main supported platforms. Also, the latest
 development version (``HEAD`` of ``master`` branch) binary package archives are
-provided here:
+provided here [#]_:
 
 :Linux (Ubuntu 18.04+ or glibc 2.27+ [#]_):
     .. hlist::
         :columns: 2
 
-        * `x86_64 (CXX11 ABI) <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-cxx11-abi-@OPEN3D_VERSION_FULL@.tar.xz>`__
+        * `x86_64 (CXX11 ABI [#]_) <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-cxx11-abi-@OPEN3D_VERSION_FULL@.tar.xz>`__
         * `x86_64 (CXX11 ABI) with CUDA 11.x <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-cxx11-abi-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
         * `x86_64 (pre CXX11 ABI) <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-pre-cxx11-abi-@OPEN3D_VERSION_FULL@.tar.xz>`__
         * `x86_64 (pre CXX11 ABI) with CUDA 11.x <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-pre-cxx11-abi-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
@@ -209,7 +209,13 @@ provided here:
         * `x86_64 Release <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@.zip>`__
         * `x86_64 Debug <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-windows-amd64-@OPEN3D_VERSION_FULL@-dbg.zip>`__
 
+.. [#] Please use these links from the `latest version of this page <http://www.open3d.org/docs/latest/getting_started.html>`__
+    only.
 .. [#] To check the `glibc` version on your system, run :code:`ldd --version`
+.. [#] In Linux, do not link code with different CXX11 ABIs, since this will
+    most likely cause linker errors or crashes. Most system libraries in recent
+    Linux versions (e.g. if the OS came with GCC versions 5+) use the CXX11 ABI,
+    while PyTorch and Tensorflow libraries typically use the pre CXX11 ABI.
 
 If you need only a subset of features, or a custom build configuration, please
 refer to :ref:`compilation` and compile Open3D from source.
@@ -246,12 +252,6 @@ reference:
 
 * `Find Pre-Installed Open3D Package in CMake <https://github.com/isl-org/open3d-cmake-find-package>`__
 * `Use Open3D as a CMake External Project <https://github.com/isl-org/open3d-cmake-external-project>`__
-
-.. warning:: In Linux, do not link code with different CXX11 ABIs, since this will
-    most likely cause linker errors or crashes. Most system libraries in recent Linux
-    versions (e.g. if the OS came with GCC versions 5+) use the CXX11 ABI, while PyTorch
-    and Tensorflow libraries typically use the pre CXX11 ABI. You can build Open3D
-    from source with your chosen ABI by setting ``GLIBCXX_USE_CXX11_ABI`` in CMake.
 
 The C++ code examples in the ``examples/cpp`` folder of the repository illustrate
 a lot of the functionality available in Open3D and are a good place to start
