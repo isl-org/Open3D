@@ -30,7 +30,6 @@
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/Utility.h"
-#include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/t/geometry/kernel/VoxelBlockGrid.h"
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/FileSystem.h"
