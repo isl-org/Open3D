@@ -174,8 +174,12 @@ TEST(Dataset, DemoCropPointCloud) {
 
     // Methods to get path.
     EXPECT_EQ(demo_crop_pcd.GetPathPointCloud(), extract_dir + "/fragment.ply");
+    EXPECT_TRUE(
+            utility::filesystem::FileExists(demo_crop_pcd.GetPathPointCloud()));
     EXPECT_EQ(demo_crop_pcd.GetPathCroppedJSON(),
               extract_dir + "/cropped.json");
+    EXPECT_TRUE(utility::filesystem::FileExists(
+            demo_crop_pcd.GetPathCroppedJSON()));
 
     // Basic methods.
     EXPECT_EQ(demo_crop_pcd.GetPrefix(), prefix);
@@ -325,7 +329,7 @@ TEST(Dataset, Bunny) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
-TEST(Dataset, RedwoodLivingRoomPointClouds) {
+TEST(Dataset, DISABLED_RedwoodLivingRoomPointClouds) {
     const std::string prefix = "O3DTestRedwoodLivingRoomPointClouds";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -365,7 +369,7 @@ TEST(Dataset, RedwoodLivingRoomPointClouds) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
-TEST(Dataset, RedwoodOfficePointClouds) {
+TEST(Dataset, DISABLED_RedwoodOfficePointClouds) {
     const std::string prefix = "O3DTestRedwoodOfficePointClouds";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";

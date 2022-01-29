@@ -155,44 +155,41 @@ void pybind_demo_pointcloud_feature_matching(py::module& m) {
     py::class_<DemoPointCloudFeatureMatching,
                PySimpleDataset<DemoPointCloudFeatureMatching>,
                std::shared_ptr<DemoPointCloudFeatureMatching>, SimpleDataset>
-            demo_pointcloud_feature_matching(
+            demo_feature_matching(
                     m, "DemoPointCloudFeatureMatching",
                     "Data class for `DemoPointCloudFeatureMatching` contains 2 "
                     "pointcloud fragments and their respective FPFH features "
                     "and L32D features. This dataset is used in Open3D for "
                     "point cloud feature matching demo.");
-    demo_pointcloud_feature_matching
+    demo_feature_matching
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "DemoPointCloudFeatureMatching",
                  "data_root"_a = "")
             .def_property_readonly(
-                    "path_pointclouds",
+                    "paths_pointclouds",
                     [](const DemoPointCloudFeatureMatching&
-                               demo_pointcloud_feature_matching) {
-                        return demo_pointcloud_feature_matching
-                                .GetPathsPointClouds();
+                               demo_feature_matching) {
+                        return demo_feature_matching.GetPathsPointClouds();
                     },
                     "List of paths to point clouds, of size 2.")
             .def_property_readonly(
                     "paths_fpfh_features",
                     [](const DemoPointCloudFeatureMatching&
-                               demo_pointcloud_feature_matching) {
-                        return demo_pointcloud_feature_matching
-                                .GetPathsPointClouds();
+                               demo_feature_matching) {
+                        return demo_feature_matching.GetPathsFPFHFeatures();
                     },
                     "List of paths to saved FPFH features binary for point "
                     "clouds, respectively, of size 2.")
             .def_property_readonly(
                     "paths_l32d_features",
                     [](const DemoPointCloudFeatureMatching&
-                               demo_pointcloud_feature_matching) {
-                        return demo_pointcloud_feature_matching
-                                .GetPathsPointClouds();
+                               demo_feature_matching) {
+                        return demo_feature_matching.GetPathsL32DFeatures();
                     },
                     "List of paths to saved L32D features binary for point "
                     "clouds, respectively, of size 2.");
     docstring::ClassMethodDocInject(m, "DemoPointCloudFeatureMatching",
-                                    "path_pointclouds");
+                                    "paths_pointclouds");
     docstring::ClassMethodDocInject(m, "DemoPointCloudFeatureMatching",
                                     "paths_fpfh_features");
     docstring::ClassMethodDocInject(m, "DemoPointCloudFeatureMatching",
@@ -246,7 +243,7 @@ void pybind_armadillo(py::module& m) {
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "Armadillo", "data_root"_a = "")
             .def_property_readonly(
-                    "paths",
+                    "path",
                     [](const Armadillo& armadillo) {
                         return armadillo.GetPath();
                     },
@@ -264,7 +261,7 @@ void pybind_bunny(py::module& m) {
     bunny.def(py::init<const std::string&, const std::string&>(),
               "prefix"_a = "Bunny", "data_root"_a = "")
             .def_property_readonly(
-                    "paths", [](const Bunny& bunny) { return bunny.GetPath(); },
+                    "path", [](const Bunny& bunny) { return bunny.GetPath(); },
                     "Path to the Bunny.ply mesh.");
     docstring::ClassMethodDocInject(m, "Bunny", "path");
 }
@@ -320,6 +317,7 @@ void pybind_data(py::module& m) {
     pybind_demo_colored_icp_pointclouds(m_submodule);
     pybind_demo_crop_pointcloud(m_submodule);
     pybind_demo_pointcloud_feature_matching(m_submodule);
+    pybind_demo_pose_graph_optimization(m_submodule);
     pybind_armadillo(m_submodule);
     pybind_bunny(m_submodule);
     pybind_redwood_living_room_pointcloud(m_submodule);
