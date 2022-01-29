@@ -165,6 +165,7 @@ class ExampleWindow:
 
         logo_btn = gui.Button('Switch Logo By WidgetProxy')
         logo_btn.vertical_padding_em = 0
+        logo_btn.background_color = gui.Color(r=0, b=0.5, g=0)
         logo_btn.set_on_clicked(switch_proxy)
         collapse.add_child(logo_btn)
         collapse.add_child(proxy)
@@ -193,8 +194,9 @@ class ExampleWindow:
 
         # Add a list of items
         lv = gui.ListView()
-        lv.set_items(["Ground", "Trees", "Buildings" "Cars", "People"])
+        lv.set_items(["Ground", "Trees", "Buildings", "Cars", "People", "Cats"])
         lv.selected_index = lv.selected_index + 2  # initially is -1, so now 1
+        lv.set_max_visible_items(4)
         lv.set_on_selection_changed(self._on_list)
         collapse.add_child(lv)
 
