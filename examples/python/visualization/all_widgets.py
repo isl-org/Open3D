@@ -164,6 +164,7 @@ class ExampleWindow:
             w.set_needs_layout()
 
         logo_btn = gui.Button('Switch Logo')
+        logo_btn.background_color = gui.Color(r=0, b=0.5, g=0)
         logo_btn.set_on_clicked(switch_proxy)
         collapse.add_child(logo_btn)
         collapse.add_child(proxy)
