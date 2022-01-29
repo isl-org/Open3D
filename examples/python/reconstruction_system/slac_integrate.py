@@ -116,12 +116,12 @@ def run(config):
 
             print('Deforming and integrating Frame {:3d}'.format(k))
             rgbd_projected = ctr_grid.deform(rgbd, intrinsic_t,
-                                             extrinsic_local_t,
-                                             depth_scale, depth_max)
+                                             extrinsic_local_t, depth_scale,
+                                             depth_max)
 
             frustum_block_coords = voxel_grid.compute_unique_block_coordinates(
-                rgbd_projected.depth, intrinsic_t, extrinsic_t,
-                depth_scale, depth_max)
+                rgbd_projected.depth, intrinsic_t, extrinsic_t, depth_scale,
+                depth_max)
 
             voxel_grid.integrate(frustum_block_coords, rgbd_projected.depth,
                                  rgbd_projected.color, intrinsic_t, extrinsic_t,
