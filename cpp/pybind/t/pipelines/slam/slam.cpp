@@ -75,7 +75,7 @@ void pybind_slam_model(py::module &m) {
 
     model.def(py::init<>());
     model.def(py::init<float, int, int, core::Tensor, core::Device>(),
-              "Constructor of a TSDFVoxelGrid", "voxel_size"_a,
+              "Constructor of a VoxelBlockGrid", "voxel_size"_a,
               "block_resolution"_a = 16, " block_count"_a = 10000,
               "transformation"_a = core::Tensor::Eye(4, core::Float64,
                                                      core::Device("CPU:0")),
@@ -127,7 +127,7 @@ void pybind_slam_model(py::module &m) {
             "get_hashmap", &Model::GetHashMap,
             "Get the underlying hash map from 3D coordinates to voxel blocks.");
     model.def_readwrite("voxel_grid", &Model::voxel_grid_,
-                        "Get the maintained TSDFVoxelGrid.");
+                        "Get the maintained VoxelBlockGrid.");
     model.def_readwrite("transformation_frame_to_world",
                         &Model::T_frame_to_world_,
                         "Get the 4x4 transformation matrix from the current "
