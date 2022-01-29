@@ -125,34 +125,30 @@ public:
 };
 
 /// \class DemoICPPointClouds
-/// \brief Dataset class for `DemoICPPointClouds` contains 3 `pointclouds` of
-/// `pcd binary` format. These pointclouds have `positions, colors, normals,
-/// curvatures`. This dataset is used in Open3D for ICP demo.
+/// \brief Data class for `DemoICPPointClouds` contains 3 `pointclouds` of
+/// `pcd binary` format. This dataset is used in Open3D for ICP demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoICPPointClouds : public SimpleDataset {
 public:
     DemoICPPointClouds(const std::string& prefix = "DemoICPPointClouds",
                        const std::string& data_root = "");
 
-    /// \brief Returns list of list of 3 point cloud paths.
-    /// Use `GetPaths()[0]`, `GetPaths()[1]`, and `GetPaths()[2]` to access the
-    /// paths.
+    /// \brief Returns list of 3 point cloud paths. Use `GetPaths()[0]`,
+    /// `GetPaths()[1]`, and `GetPaths()[2]` to access the paths.
     std::vector<std::string> GetPaths() const { return paths_; }
-    /// \brief Returns path to the point cloud at index.
-    /// Use `GetPaths(0)`, `GetPaths(1)`, and `GetPaths(2)` to access the paths.
+    /// \brief Returns path to the point cloud at index. Use `GetPaths(0)`,
+    /// `GetPaths(1)`, and `GetPaths(2)` to access the paths.
     std::string GetPaths(size_t index) const;
 
 private:
     // List of path to PCD point-cloud fragments.
-    // paths_[x] returns path to `cloud_bin_x.pcd` where x is from
-    // 0 to 2.
     std::vector<std::string> paths_;
 };
 
 /// \class DemoColoredICPPointClouds
-/// \brief Dataset class for `DemoICPPointClouds` contains 3 `pointclouds` of
-/// `pcd binary` format. These pointclouds have `positions, colors, normals,
-/// curvatures`. This dataset is used in Open3D for ICP demo.
+/// \brief Data class for `DemoColoredICPPointClouds` contains 2
+/// `pointclouds` of `ply` format. This dataset is used in Open3D for
+/// Colored-ICP demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoColoredICPPointClouds : public SimpleDataset {
 public:
@@ -160,96 +156,132 @@ public:
             const std::string& prefix = "DemoColoredICPPointClouds",
             const std::string& data_root = "");
 
-    /// \brief Returns list of list of 2 point cloud paths.
-    /// Use `GetPaths()[0]`, and `GetPaths()[1]` to access the paths.
+    /// \brief Returns list of list of 2 point cloud paths. Use `GetPaths()[0]`,
+    /// and `GetPaths()[1]` to access the paths.
     std::vector<std::string> GetPaths() const { return paths_; }
-    /// \brief Returns path to the point cloud at index.
-    /// Use `GetPaths(0)`, and `GetPaths(1)` to access the paths.
+    /// \brief Returns path to the point cloud at index. Use `GetPaths(0)`, and
+    /// `GetPaths(1)` to access the paths.
     std::string GetPaths(size_t index) const;
 
 private:
     // List of path to PCD point-cloud fragments.
-    // paths_[x] returns path to `cloud_bin_x.pcd` where x is from
-    // 0 to 2.
     std::vector<std::string> paths_;
 };
 
+/// \class DemoCropPointCloud
+/// \brief Data class for `DemoCropPointCloud` contains a point cloud, and
+/// cropped.json (a saved selected polygon volume file). This dataset is used in
+/// Open3D for point cloud crop demo.
+/// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoCropPointCloud : public SimpleDataset {
 public:
     DemoCropPointCloud(const std::string& prefix = "DemoCropPointCloud",
                        const std::string& data_root = "");
 
+    /// \brief Returns path to example point cloud.
     std::string GetPathPointCloud() const { return path_pointcloud_; }
+    /// \brief Returns path to saved selected polygon volume file.
     std::string GetPathCroppedJSON() const { return path_cropped_json_; }
 
 private:
+    // Path to example point cloud.
     std::string path_pointcloud_;
+    // Path to saved selected polygon volume file.
     std::string path_cropped_json_;
 };
 
+/// \class DemoPointCloudFeatureMatching
+/// \brief Data class for `DemoPointCloudFeatureMatching` contains 2
+/// pointcloud fragments and their respective FPFH features and L32D features.
+/// This dataset is used in Open3D for point cloud feature matching demo.
+/// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoPointCloudFeatureMatching : public SimpleDataset {
 public:
     DemoPointCloudFeatureMatching(
             const std::string& prefix = "DemoPointCloudFeatureMatching",
             const std::string& data_root = "");
 
+    /// \brief Returns list of paths to point clouds, of size 2.
     std::vector<std::string> GetPathsPointClouds() const {
         return paths_pointclouds_;
     }
+    /// \brief Returns list of saved FPFH features binary for point clouds,
+    /// respectively, of size 2.
     std::vector<std::string> GetPathsFPFHFeatures() const {
         return paths_fpfh_features_;
     }
+    /// \brief Returns list of saved L32D features binary for point clouds,
+    /// respectively, of size 2.
     std::vector<std::string> GetPathsL32DFeatures() const {
         return paths_l32d_features_;
     }
 
 private:
+    /// List of paths to point clouds, of size 2.
     std::vector<std::string> paths_pointclouds_;
+    /// List of saved FPFH features binary for point clouds,
+    /// respectively, of size 2.
     std::vector<std::string> paths_fpfh_features_;
+    /// List of saved L32D features binary for point clouds,
+    /// respectively, of size 2.
     std::vector<std::string> paths_l32d_features_;
 };
 
+/// \class DemoPoseGraphOptimization
+/// \brief Data class for `DemoPoseGraphOptimization` contains an example
+/// fragment pose graph, and global pose graph. This dataset is used in Open3D
+/// for pose graph optimization demo.
 class DemoPoseGraphOptimization : public SimpleDataset {
 public:
     DemoPoseGraphOptimization(
             const std::string& prefix = "DemoPoseGraphOptimization",
             const std::string& data_root = "");
 
+    /// \brief Returns path to example global pose graph (json).
     std::string GetPathPoseGraphFragment() const {
         return path_pose_graph_fragment_;
     }
+    /// \brief Returns path to example fragment pose graph (json).
     std::string GetPathPoseGraphGlobal() const {
         return path_pose_graph_global_;
     }
 
 private:
+    /// Path to example global pose graph (json).
     std::string path_pose_graph_fragment_;
+    /// Path to example fragment pose graph (json).
     std::string path_pose_graph_global_;
 };
 
+/// \class Armadillo
+/// \brief Data class for `Armadillo` contains the `Armadillo.ply` mesh from the
+/// `Stanford 3D Scanning Repository`.
 class Armadillo : public SimpleDataset {
 public:
     Armadillo(const std::string& prefix = "Armadillo",
               const std::string& data_root = "");
 
-    /// \brief Returns path to the bunny.ply pointcloud.
+    /// \brief Returns path to the Armadillo.ply mesh.
     std::string GetPath() const { return path_; };
 
 private:
-    // path to Armadillo.ply file.
+    /// Path to the Armadillo.ply mesh.
     std::string path_;
 };
 
+/// \class Bunny
+/// \brief Data class for `Bunny` contains the `Bunny.ply` mesh from the
+/// `Stanford 3D Scanning Repository`.
 class Bunny : public SimpleDataset {
 public:
     Bunny(const std::string& prefix = "Bunny",
           const std::string& data_root = "");
 
-    /// \brief Returns path to the bunny.ply pointcloud.
+    /// \brief Returns path to the Bunny.ply mesh.
     std::string GetPath() const { return path_; };
 
 private:
-    // path to Bunny.ply file.
+    // path to Bunny.ply mesh.
     std::string path_;
 };
 
@@ -264,18 +296,14 @@ public:
             const std::string& prefix = "RedwoodLivingRoomFragments",
             const std::string& data_root = "");
 
-    /// \brief GetPaths()[x] returns path to `cloud_bin_x.ply` pointcloud, where
-    /// x is between 0 to 56.
+    /// \brief Returns list of paths to ply point-cloud fragments of size 56.
     std::vector<std::string> GetPaths() const { return paths_; }
-    /// \brief Returns path to the pointcloud at index.
-    /// GetPaths(x) returns path to `cloud_bin_x.ply` pointcloud, where x is
-    /// between 0 to 56.
+    /// \brief Returns path to the ply point-cloud fragment at index (from 0 to
+    /// 56).
     std::string GetPaths(size_t index) const;
 
 private:
-    // Path to PLY point-cloud fragments.
-    // paths_[x] return path to `cloud_bin_x.ply` where x is from
-    // 0 to 56.
+    /// List of paths to ply point-cloud fragments of size 56.
     std::vector<std::string> paths_;
 };
 
@@ -289,18 +317,14 @@ public:
     RedwoodOfficeFragments(const std::string& prefix = "RedwoodOfficeFragments",
                            const std::string& data_root = "");
 
-    /// \brief GetPaths()[x] returns path to `cloud_bin_x.ply` pointcloud, where
-    /// X is between 0 to 51.
+    /// \brief Returns list of paths to ply point-cloud fragments of size 51.
     std::vector<std::string> GetPaths() const { return paths_; }
-    /// \brief Returns path to the pointcloud at index.
-    /// GetPaths(x) returns path to `cloud_bin_x.ply` pointcloud, where x is
-    /// between 0 to 51.
+    /// \brief Returns path to the ply point-cloud fragment at index (from 0 to
+    /// 51).
     std::string GetPaths(size_t index) const;
 
 private:
-    // Path to PLY point-cloud fragments.
-    // paths_[x] return path to `cloud_bin_x.ply` where x is from
-    // 0 to 51.
+    /// List of paths to ply point-cloud fragments of size 51.
     std::vector<std::string> paths_;
 };
 
