@@ -363,7 +363,7 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
 
     const int down_factor = 8;
     core::Tensor range_minmax_map;
-    kernel::tsdf::EstimateRange(
+    kernel::voxel_grid::EstimateRange(
             block_coords, range_minmax_map, intrinsic, extrinsic, height, width,
             down_factor, block_resolution_, voxel_size_, depth_min, depth_max);
 
