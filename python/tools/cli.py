@@ -42,9 +42,7 @@ class _Open3DArgumentParser(argparse.ArgumentParser):
 
 def _get_examples_dict():
     examples_dict = {
-        "camera": [
-            "camera_trajectory",
-        ],
+        "camera": ["camera_trajectory",],
         "geometry": [
             "image_processing",
             "kd_tree_feature_matching",
@@ -110,9 +108,7 @@ def _get_examples_dict():
             "rgbd_odometry",
             "robust_icp",
         ],
-        "utility": [
-            "vector",
-        ],
+        "utility": ["vector",],
         "visualization": [
             "add_geometry",
             "all_widgets",
@@ -349,9 +345,10 @@ def main():
     args = main_parser.parse_args()
     if args.command in subparsers.choices.keys():
         return args.func(subparsers.choices[args.command], args)
-    else :
+    else:
         main_parser.print_help()
         return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
