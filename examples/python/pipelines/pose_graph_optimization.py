@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/misc/pose_graph_optimization.py
-
 import open3d as o3d
 import numpy as np
 
