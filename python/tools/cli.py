@@ -189,16 +189,16 @@ def draw(parser, args):
 
 
 def main():
-    print("*******************************************************\n"
-          "**                       Open3D                      **\n"
-          "**      A Modern Library for 3D Data Processing      **\n"
-          "*******************************************************\n\n"
-          "Docs:     http://www.open3d.org/docs/release/\n"
-          "GitHub:   https://github.com/isl-org/Open3D\n"
-          "Discord:  https://discord.com/invite/D35BGvn\n")
+    print(f"*******************************************************\n"
+          f"** Open3D: A Modern Library for 3D Data Processing   **\n"
+          f"**                                                   **\n"
+          f"** Version {open3d.__version__: <25}                 **\n"
+          f"** Docs    http://www.open3d.org/docs                **\n"
+          f"** Code    https://github.com/isl-org/Open3D         **\n"
+          f"*******************************************************")
 
     main_parser = Open3DArgumentParser(
-        description="Open3D CLI",
+        description="Open3D commad-line tools",
         add_help=False,
         formatter_class=argparse.RawTextHelpFormatter)
     main_parser.add_argument("-V",
