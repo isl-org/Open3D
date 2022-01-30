@@ -405,8 +405,9 @@ class ReconstructionWindow:
                     self.update_box.checked) \
                     or (self.idx == 3) \
                     or (self.idx == n_files - 1):
-                pcd = self.model.voxel_grid.extract_point_cloud().to(
-                    o3d.core.Device('CPU:0'))
+                pcd = self.model.voxel_grid.extract_point_cloud(
+                    3.0, self.est_point_count_slider.int_value).to(
+                        o3d.core.Device('CPU:0'))
                 self.is_scene_updated = True
             else:
                 self.is_scene_updated = False
