@@ -417,8 +417,8 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
     return renderings_map;
 }
 
-PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
-                                             float weight_threshold) {
+PointCloud VoxelBlockGrid::ExtractPointCloud(float weight_threshold,
+                                             int estimated_point_number) {
     AssertInitialized();
     core::Tensor active_buf_indices;
     block_hashmap_->GetActiveIndices(active_buf_indices);
@@ -436,20 +436,21 @@ PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
     kernel::voxel_grid::ExtractPointCloud(
             active_buf_indices, active_nb_buf_indices, active_nb_masks,
             block_keys, block_value_map, points, normals, colors,
-            block_resolution_, voxel_size_, weight_threshold, estimated_number);
+            block_resolution_, voxel_size_, weight_threshold,
+            estimated_point_number);
 
-    auto pcd = PointCloud(points.Slice(0, 0, estimated_number));
-    pcd.SetPointNormals(normals.Slice(0, 0, estimated_number));
+    auto pcd = PointCloud(points.Slice(0, 0, estimated_point_number));
+    pcd.SetPointNormals(normals.Slice(0, 0, estimated_point_number));
 
     if (colors.GetLength() == normals.GetLength()) {
-        pcd.SetPointColors(colors.Slice(0, 0, estimated_number));
+        pcd.SetPointColors(colors.Slice(0, 0, estimated_point_number));
     }
 
     return pcd;
 }
 
-TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
-                                                 float weight_threshold) {
+TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(float weight_threshold,
+                                                 int estimated_vertex_number) {
     AssertInitialized();
     core::Tensor active_buf_indices_i32 = block_hashmap_->GetActiveIndices();
     core::Tensor active_nb_buf_indices, active_nb_masks;
@@ -467,7 +468,6 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
                                iota_map);
 
     core::Tensor vertices, triangles, vertex_normals, vertex_colors;
-    int vertex_count = estimated_number;
 
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
     TensorMap block_value_map =
@@ -476,7 +476,7 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
             active_buf_indices_i32, inverse_index_map, active_nb_buf_indices,
             active_nb_masks, block_keys, block_value_map, vertices, triangles,
             vertex_normals, vertex_colors, block_resolution_, voxel_size_,
-            weight_threshold, vertex_count);
+            weight_threshold, estimated_vertex_number);
 
     TriangleMesh mesh(vertices, triangles);
     mesh.SetVertexNormals(vertex_normals);

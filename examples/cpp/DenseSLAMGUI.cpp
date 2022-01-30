@@ -331,7 +331,7 @@ public:
             if (is_started_) {
                 utility::LogInfo("Writing reconstruction to scene.ply...");
                 auto pcd = model_->ExtractPointCloud(
-                        prop_values_.pointcloud_size, 3.0);
+                        3.0, prop_values_.pointcloud_size);
                 auto pcd_legacy =
                         std::make_shared<geometry::PointCloud>(pcd.ToLegacy());
                 io::WritePointCloud("scene.ply", *pcd_legacy);
@@ -729,8 +729,8 @@ protected:
                 idx == depth_files.size() - 1) {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 surface_.pcd =
-                        model_->ExtractPointCloud(prop_values_.pointcloud_size,
-                                                  std::min<float>(idx, 3.0f))
+                        model_->ExtractPointCloud(std::min<float>(idx, 3.0f),
+                                                  prop_values_.pointcloud_size)
                                 .To(core::Device("CPU:0"));
                 is_scene_updated_ = true;
             }

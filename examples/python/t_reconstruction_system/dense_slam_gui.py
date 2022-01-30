@@ -95,7 +95,8 @@ class ReconstructionWindow:
 
         est_point_count_label = gui.Label('Est. points')
         self.est_point_count_slider = gui.Slider(gui.Slider.INT)
-        self.est_point_count_slider.set_limits(3000000, 10000000)
+        self.est_point_count_slider.set_limits(500000, 8000000)
+        self.est_point_count_slider.int_value = config.est_point_count
         self.fixed_prop_grid.add_child(est_point_count_label)
         self.fixed_prop_grid.add_child(self.est_point_count_slider)
 

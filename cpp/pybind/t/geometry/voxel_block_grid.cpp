@@ -192,12 +192,12 @@ void pybind_voxel_block_grid(py::module& m) {
     vbg.def("extract_point_cloud", &VoxelBlockGrid::ExtractPointCloud,
             "Specific operation for TSDF volumes."
             "Extract point cloud at isosurface points.",
-            "point_cloud_size_estimate"_a = -1, "weight_threshold"_a = 3.0f);
+            "weight_threshold"_a = 3.0f, "estimated_point_number"_a = -1);
 
     vbg.def("extract_triangle_mesh", &VoxelBlockGrid::ExtractTriangleMesh,
             "Specific operation for TSDF volumes."
             "Extract triangle mesh at isosurface points.",
-            "vertex_size_estimate"_a = -1, "weight_threshold"_a = 3.0f);
+            "weight_threshold"_a = 3.0f, "estimated_vertex_number"_a = -1);
 
     vbg.def("save", &VoxelBlockGrid::Save,
             "Save the voxel block grid to a npz file."

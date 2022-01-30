@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--pointcloud",
                 "pcd_" + device.ToString() + ".ply");
-        auto pcd = model.ExtractPointCloud(-1);
+        auto pcd = model.ExtractPointCloud();
         auto pcd_legacy =
                 std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
         open3d::io::WritePointCloud(filename, *pcd_legacy);
@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--mesh", "mesh_" + device.ToString() + ".ply");
-        auto mesh = model.ExtractTriangleMesh(-1);
+        auto mesh = model.ExtractTriangleMesh();
         auto mesh_legacy = std::make_shared<open3d::geometry::TriangleMesh>(
                 mesh.ToLegacy());
         open3d::io::WriteTriangleMesh(filename, *mesh_legacy);

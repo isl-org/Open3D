@@ -135,6 +135,9 @@ class ConfigParser(configargparse.ArgParser):
             '--sdf_trunc', type=float,
             help='Truncation distance for signed distance.')
         integration_parser.add(
+            '--est_point_count', type=int,
+            help='Estimated point cloud size for surface extraction.')
+        integration_parser.add(
             '--block_count', type=int,
             help='Pre-allocated voxel block count for volumetric integration.')
         integration_parser.add(

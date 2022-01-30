@@ -208,8 +208,11 @@ public:
     /// where we assume a reliable surface point comes from the fusion of at
     /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
     /// observations.
-    PointCloud ExtractPointCloud(int estimate_number = -1,
-                                 float weight_threshold = 3.0f);
+    /// Estimated point numbers optionally speeds up the process by a one-pass
+    /// extraction with pre-allocated buffers. Use -1 when no estimate is
+    /// available.
+    PointCloud ExtractPointCloud(float weight_threshold = 3.0f,
+                                 int estimated_point_number = -1);
 
     /// Specific operation for TSDF volumes.
     /// Extract mesh near iso-surfaces with Marching Cubes.
@@ -217,8 +220,11 @@ public:
     /// where we assume a reliable surface point comes from the fusion of at
     /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
     /// observations.
-    TriangleMesh ExtractTriangleMesh(int estimate_number = -1,
-                                     float weight_threshold = 3.0f);
+    /// Estimated point numbers optionally speeds up the process by a one-pass
+    /// extraction with pre-allocated buffers. Use -1 when no estimate is
+    /// available.
+    TriangleMesh ExtractTriangleMesh(float weight_threshold = 3.0f,
+                                     int estimated_vertex_numer = -1);
 
     /// Save a voxel block grid to a .npz file.
     void Save(const std::string &file_name) const;
