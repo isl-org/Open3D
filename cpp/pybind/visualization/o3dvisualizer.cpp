@@ -352,7 +352,7 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("set_ibl_intensity", &O3DVisualizer::SetIBLIntensity,
                  "set_ibl_intensity(intensity): Sets the intensity of the "
                  "current IBL")
-            .def("enable_basic_mode", &O3DVisualizer::EnableInspectionMode,
+            .def("enable_basic_mode", &O3DVisualizer::EnableBasicMode,
                  "enable_basic_mode(enable): Enables/disables basic mode for "
                  "simplified lighting envirnment.")
             .def("show_skybox", &O3DVisualizer::ShowSkybox,
