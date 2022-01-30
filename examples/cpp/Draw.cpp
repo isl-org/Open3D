@@ -100,16 +100,9 @@ void Actions() {
     const char *RESULT_NAME = "Result (Poisson reconstruction)";
     const char *TRUTH_NAME = "Ground truth";
 
+    data::Bunny bunny_data;
     auto bunny = std::make_shared<geometry::TriangleMesh>();
-    io::ReadTriangleMesh(TEST_DIR + "/Bunny.ply", *bunny);
-    if (bunny->vertices_.empty()) {
-        utility::LogError(
-                "Please download the Standford Bunny dataset using:\n"
-                "   cd <open3d_dir>/examples/python\n"
-                "   python -c 'from open3d_example import *; "
-                "get_bunny_mesh()'");
-        return;
-    }
+    io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
 
     bunny->PaintUniformColor({1, 0.75, 0});
     bunny->ComputeVertexNormals();

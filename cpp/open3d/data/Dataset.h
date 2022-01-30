@@ -126,7 +126,7 @@ public:
 
 /// \class DemoICPPointClouds
 /// \brief Data class for `DemoICPPointClouds` contains 3 `pointclouds` of
-/// `pcd binary` format. This dataset is used in Open3D for ICP demo.
+/// `pcd binary` format. This data is used in Open3D for ICP demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoICPPointClouds : public SimpleDataset {
 public:
@@ -147,7 +147,7 @@ private:
 
 /// \class DemoColoredICPPointClouds
 /// \brief Data class for `DemoColoredICPPointClouds` contains 2
-/// `pointclouds` of `ply` format. This dataset is used in Open3D for
+/// `pointclouds` of `ply` format. This data is used in Open3D for
 /// Colored-ICP demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoColoredICPPointClouds : public SimpleDataset {
@@ -170,7 +170,7 @@ private:
 
 /// \class DemoCropPointCloud
 /// \brief Data class for `DemoCropPointCloud` contains a point cloud, and
-/// `cropped.json` (a saved selected polygon volume file). This dataset is used
+/// `cropped.json` (a saved selected polygon volume file). This data is used
 /// in Open3D for point cloud crop demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoCropPointCloud : public SimpleDataset {
@@ -193,7 +193,7 @@ private:
 /// \class DemoPointCloudFeatureMatching
 /// \brief Data class for `DemoPointCloudFeatureMatching` contains 2
 /// pointcloud fragments and their respective FPFH features and L32D features.
-/// This dataset is used in Open3D for point cloud feature matching demo.
+/// This data is used in Open3D for point cloud feature matching demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoPointCloudFeatureMatching : public SimpleDataset {
 public:
@@ -229,7 +229,7 @@ private:
 
 /// \class DemoPoseGraphOptimization
 /// \brief Data class for `DemoPoseGraphOptimization` contains an example
-/// fragment pose graph, and global pose graph. This dataset is used in Open3D
+/// fragment pose graph, and global pose graph. This data is used in Open3D
 /// for pose graph optimization demo.
 class DemoPoseGraphOptimization : public SimpleDataset {
 public:
@@ -253,35 +253,125 @@ private:
     std::string path_pose_graph_global_;
 };
 
+/// \class SamplePointCloudPCD
+/// \brief Data class for `SamplePointCloudPCD` contains the `fragment.pcd`
+/// point cloud mesh from the `Redwood Living Room` dataset.
+class SamplePointCloudPCD : public SimpleDataset {
+public:
+    SamplePointCloudPCD(const std::string& prefix = "SamplePointCloudPCD",
+                        const std::string& data_root = "");
+
+    /// \brief Returns path to the `pcd` format point cloud.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to the `pcd` format point cloud.
+    std::string path_;
+};
+
+/// \class SamplePointCloudPLY
+/// \brief Data class for `SamplePointCloudPLY` contains the `fragment.ply`
+/// point cloud mesh from the `Redwood Living Room` dataset.
+class SamplePointCloudPLY : public SimpleDataset {
+public:
+    SamplePointCloudPLY(const std::string& prefix = "SamplePointCloudPLY",
+                        const std::string& data_root = "");
+
+    /// \brief Returns path to the `ply` format point cloud.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to the `ply` format point cloud.
+    std::string path_;
+};
+
+// /// \class SampleFountainRGBDDataset
+// class SampleFountainRGBDDataset : public SimpleDataset {
+// public:
+//     SampleFountainRGBDDataset(
+//             const std::string& prefix = "SampleFountainRGBDDataset",
+//             const std::string& data_root = "");
+
+//     std::string GetPathsImage() const { return paths_image_; };
+//     std::string GetPathsDepth() const { return paths_depth_; };
+//     std::string GetPathsKeyLog() const { return paths_key_log_; };
+
+// private:
+//     std::vector<std::string> paths_image_;
+//     std::vector<string> paths_depth_;
+//     std::vector<string> paths_key_log_;
+// };
+
+// class SampleBagRealSense;
+
+/// \class Eagle
+class Eagle : public SimpleDataset {
+public:
+    Eagle(const std::string& prefix = "Eagle",
+          const std::string& data_root = "");
+
+    /// \brief Returns path to the EaglePointCloud.ply.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to EaglePointCloud.ply.
+    std::string path_;
+};
+
 /// \class Armadillo
-/// \brief Data class for `Armadillo` contains the `Armadillo.ply` mesh from the
+/// \brief Data class for `Armadillo` contains the `ArmadilloMesh.ply` from the
 /// `Stanford 3D Scanning Repository`.
 class Armadillo : public SimpleDataset {
 public:
     Armadillo(const std::string& prefix = "Armadillo",
               const std::string& data_root = "");
 
-    /// \brief Returns path to the Armadillo.ply mesh.
+    /// \brief Returns path to the ArmadilloMesh.ply.
     std::string GetPath() const { return path_; };
 
 private:
-    /// Path to the Armadillo.ply mesh.
+    /// Path to the ArmadilloMesh.ply.
     std::string path_;
 };
 
 /// \class Bunny
-/// \brief Data class for `Bunny` contains the `Bunny.ply` mesh from the
+/// \brief Data class for `Bunny` contains the `BunnyMesh.ply` from the
 /// `Stanford 3D Scanning Repository`.
 class Bunny : public SimpleDataset {
 public:
     Bunny(const std::string& prefix = "Bunny",
           const std::string& data_root = "");
 
-    /// \brief Returns path to the Bunny.ply mesh.
+    /// \brief Returns path to the BunnyMesh.ply.
     std::string GetPath() const { return path_; };
 
 private:
-    // path to Bunny.ply mesh.
+    /// Path to BunnyMesh.ply.
+    std::string path_;
+};
+
+class Knot : public SimpleDataset {
+public:
+    Knot(const std::string& prefix = "Knot", const std::string& data_root = "");
+
+    /// \brief Returns path to the KnotMesh.ply.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to KnotMesh.ply mesh.
+    std::string path_;
+};
+
+class Juneau : public SimpleDataset {
+public:
+    Juneau(const std::string& prefix = "Juneau",
+           const std::string& data_root = "");
+
+    /// \brief Returns path to the JuneauImage.jgp.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to JuneauImage.jgp.
     std::string path_;
 };
 

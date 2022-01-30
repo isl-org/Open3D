@@ -99,15 +99,19 @@ def actions():
     SOURCE_NAME = "Source"
     RESULT_NAME = "Result (Poisson reconstruction)"
     TRUTH_NAME = "Ground truth"
-    bunny = o3dex.get_bunny_mesh()
-    bunny.paint_uniform_color((1, 0.75, 0))
-    bunny.compute_vertex_normals()
+
+    bunny = o3d.data.Bunny()
+    bunny_mesh = o3d.io.read_triangle_mesh(bunny.path)
+    bunny_mesh.compute_vertex_normals()
+
+    bunny_mesh.paint_uniform_color((1, 0.75, 0))
+    bunny_mesh.compute_vertex_normals()
     cloud = o3d.geometry.PointCloud()
-    cloud.points = bunny.vertices
-    cloud.normals = bunny.vertex_normals
+    cloud.points = bunny_mesh.vertices
+    cloud.normals = bunny_mesh.vertex_normals
 
     def make_mesh(o3dvis):
-        # TODO: call o3dvis.get_geometry instead of using bunny
+        # TODO: call o3dvis.get_geometry instead of using bunny_mesh
         mesh, _ = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(
             cloud)
         mesh.paint_uniform_color((1, 1, 1))
@@ -125,7 +129,7 @@ def actions():
         "geometry": cloud
     }, {
         "name": TRUTH_NAME,
-        "geometry": bunny,
+        "geometry": bunny_mesh,
         "is_visible": False
     }],
              actions=[("Create Mesh", make_mesh),

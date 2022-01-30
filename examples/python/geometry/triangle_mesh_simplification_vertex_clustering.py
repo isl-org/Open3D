@@ -35,7 +35,10 @@ sys.path.append(pyexample_path)
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-    mesh_in = o3dex.get_bunny_mesh()
+    bunny = o3d.data.Bunny()
+    mesh_in = o3d.io.read_triangle_mesh(bunny.path)
+    mesh_in.compute_vertex_normals()
+
     print("Before Simplification: ", mesh_in)
     o3d.visualization.draw_geometries([mesh_in])
 

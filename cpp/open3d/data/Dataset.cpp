@@ -172,22 +172,69 @@ DemoPoseGraphOptimization::DemoPoseGraphOptimization(
     path_pose_graph_global_ = extract_dir + "/pose_graph_example_global.json";
 }
 
+SamplePointCloudPCD::SamplePointCloudPCD(const std::string& prefix,
+                                         const std::string& data_root)
+    : SimpleDataset(prefix,
+                    {"https://github.com/isl-org/open3d_downloads/releases/"
+                     "download/290122-sample-pointclouds/fragment.pcd"},
+                    "f3a613fd2bdecd699aabdd858fb29606",
+                    /*no_extract =*/true) {
+    path_ = Dataset::GetExtractDir() + "/fragment.pcd";
+}
+
+SamplePointCloudPLY::SamplePointCloudPLY(const std::string& prefix,
+                                         const std::string& data_root)
+    : SimpleDataset(prefix,
+                    {"https://github.com/isl-org/open3d_downloads/releases/"
+                     "download/290122-sample-pointclouds/fragment.ply"},
+                    "831ecffd4d7cbbbe02494c5c351aa6e5",
+                    /*no_extract =*/true) {
+    path_ = Dataset::GetExtractDir() + "/fragment.ply";
+}
+
+Eagle::Eagle(const std::string& prefix, const std::string& data_root)
+    : SimpleDataset(prefix,
+                    {"https://github.com/isl-org/open3d_downloads/releases/"
+                     "download/290122-sample-pointclouds/EaglePointCloud.ply"},
+                    "e4e6c77bc548e7eb7548542a0220ad78",
+                    /*no_extract =*/true) {
+    path_ = Dataset::GetExtractDir() + "/EaglePointCloud.ply";
+}
+
 Armadillo::Armadillo(const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/stanford-mesh/Armadillo.ply"},
+                     "download/290122-sample-meshs/ArmadilloMesh.ply"},
                     "9e68ff1b1cc914ed88cd84f6a8235021",
                     /*no_extract =*/true) {
-    path_ = Dataset::GetExtractDir() + "/Armadillo.ply";
+    path_ = Dataset::GetExtractDir() + "/ArmadilloMesh.ply";
 }
 
 Bunny::Bunny(const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/stanford-mesh/Bunny.ply"},
+                     "download/290122-sample-meshs/BunnyMesh.ply"},
                     "568f871d1a221ba6627569f1e6f9a3f2",
                     /*no_extract =*/true) {
-    path_ = Dataset::GetExtractDir() + "/Bunny.ply";
+    path_ = Dataset::GetExtractDir() + "/BunnyMesh.ply";
+}
+
+Knot::Knot(const std::string& prefix, const std::string& data_root)
+    : SimpleDataset(prefix,
+                    {"https://github.com/isl-org/open3d_downloads/releases/"
+                     "download/290122-sample-meshs/KnotMesh.ply"},
+                    "568f871d1a221ba6627569f1e6f9a3f2",
+                    /*no_extract =*/true) {
+    path_ = Dataset::GetExtractDir() + "/KnotMesh.ply";
+}
+
+Juneau::Juneau(const std::string& prefix, const std::string& data_root)
+    : SimpleDataset(prefix,
+                    {"https://github.com/isl-org/open3d_downloads/releases/"
+                     "download/290122-sample-images/JuneauImage.jpg"},
+                    "a090f6342893bdf0caefd83c6debbecd",
+                    /*no_extract =*/true) {
+    path_ = Dataset::GetExtractDir() + "/JuneauImage.jpg";
 }
 
 RedwoodLivingRoomPointClouds::RedwoodLivingRoomPointClouds(

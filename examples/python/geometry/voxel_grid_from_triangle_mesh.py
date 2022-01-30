@@ -35,8 +35,10 @@ sys.path.append(pyexample_path)
 import open3d_example as o3dex
 
 if __name__ == "__main__":
+    bunny = o3d.data.Bunny()
+    mesh = o3d.io.read_triangle_mesh(bunny.path)
+    mesh.compute_vertex_normals()
 
-    mesh = o3dex.get_bunny_mesh()
     # Fit to unit cube.
     mesh.scale(1 / np.max(mesh.get_max_bound() - mesh.get_min_bound()),
                center=mesh.get_center())

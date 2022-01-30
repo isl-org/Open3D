@@ -34,9 +34,10 @@ sys.path.append(pyexample_path)
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-
-    gt_mesh = o3dex.get_bunny_mesh()
+    bunny = o3d.data.Bunny()
+    gt_mesh = o3d.io.read_triangle_mesh(bunny.path)
     gt_mesh.compute_vertex_normals()
+
     pcd = gt_mesh.sample_points_poisson_disk(3000)
     print("Displaying input pointcloud ...")
     o3d.visualization.draw([pcd], point_size=5)
