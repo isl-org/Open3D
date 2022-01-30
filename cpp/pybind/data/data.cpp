@@ -236,17 +236,17 @@ void pybind_sample_pointcloud_pcd(py::module& m) {
     // open3d.data.SamplePointCloudPCD
     py::class_<SamplePointCloudPCD, PySimpleDataset<SamplePointCloudPCD>,
                std::shared_ptr<SamplePointCloudPCD>, SimpleDataset>
-            pointcloud_pcd(m, "SamplePointCloudPCD",
+            pcd_pointcloud(m, "SamplePointCloudPCD",
                            "Data class for `SamplePointCloudPCD` contains the "
                            "`fragment.pcd` point cloud mesh from the `Redwood "
                            "Living Room` dataset.");
-    pointcloud_pcd
+    pcd_pointcloud
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SamplePointCloudPCD", "data_root"_a = "")
             .def_property_readonly(
                     "path",
-                    [](const SamplePointCloudPCD& pointcloud_pcd) {
-                        return pointcloud_pcd.GetPath();
+                    [](const SamplePointCloudPCD& pcd_pointcloud) {
+                        return pcd_pointcloud.GetPath();
                     },
                     "Path to the `pcd` format point cloud.");
     docstring::ClassMethodDocInject(m, "SamplePointCloudPCD", "path");
@@ -256,17 +256,17 @@ void pybind_sample_pointcloud_ply(py::module& m) {
     // open3d.data.SamplePointCloudPLY
     py::class_<SamplePointCloudPLY, PySimpleDataset<SamplePointCloudPLY>,
                std::shared_ptr<SamplePointCloudPLY>, SimpleDataset>
-            pointcloud_ply(m, "SamplePointCloudPLY",
+            ply_pointcloud(m, "SamplePointCloudPLY",
                            "Data class for `SamplePointCloudPLY` contains the "
                            "`fragment.pcd` point cloud mesh from the `Redwood "
                            "Living Room` dataset.");
-    pointcloud_ply
+    ply_pointcloud
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SamplePointCloudPLY", "data_root"_a = "")
             .def_property_readonly(
                     "path",
-                    [](const SamplePointCloudPLY& pointcloud_ply) {
-                        return pointcloud_ply.GetPath();
+                    [](const SamplePointCloudPLY& ply_pointcloud) {
+                        return ply_pointcloud.GetPath();
                     },
                     "Path to the `ply` format point cloud.");
     docstring::ClassMethodDocInject(m, "SamplePointCloudPLY", "path");

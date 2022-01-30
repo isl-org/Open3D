@@ -230,6 +230,78 @@ def test_demo_pose_graph_optimization():
     shutil.rmtree(extract_dir, ignore_errors=True)
 
 
+def test_sample_pointcloud_pcd():
+    prefix = "O3DTestSamplePointCloudPCD"
+    data_root = os.path.join(Path.home(), "open3d_data")
+    download_dir = os.path.join(data_root, "download", prefix)
+    extract_dir = os.path.join(data_root, "extract", prefix)
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+    pcd_pointcloud = o3d.data.SamplePointCloudPCD(prefix)
+    assert os.path.isdir(download_dir) == True
+
+    assert pcd_pointcloud.path == extract_dir + "/fragment.pcd"
+    assert os.path.isfile(pcd_pointcloud.path) == True
+
+    assert pcd_pointcloud.prefix == prefix
+    assert pcd_pointcloud.data_root == data_root
+    assert pcd_pointcloud.download_dir == download_dir
+    assert pcd_pointcloud.extract_dir == extract_dir
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+
+def test_sample_pointcloud_ply():
+    prefix = "O3DTestSamplePointCloudPLY"
+    data_root = os.path.join(Path.home(), "open3d_data")
+    download_dir = os.path.join(data_root, "download", prefix)
+    extract_dir = os.path.join(data_root, "extract", prefix)
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+    ply_pointcloud = o3d.data.SamplePointCloudPCD(prefix)
+    assert os.path.isdir(download_dir) == True
+
+    assert ply_pointcloud.path == extract_dir + "/fragment.ply"
+    assert os.path.isfile(ply_pointcloud.path) == True
+
+    assert ply_pointcloud.prefix == prefix
+    assert ply_pointcloud.data_root == data_root
+    assert ply_pointcloud.download_dir == download_dir
+    assert ply_pointcloud.extract_dir == extract_dir
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+
+def test_eagle():
+    prefix = "O3DTestEagle"
+    data_root = os.path.join(Path.home(), "open3d_data")
+    download_dir = os.path.join(data_root, "download", prefix)
+    extract_dir = os.path.join(data_root, "extract", prefix)
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+    eagle = o3d.data.Eagle(prefix)
+    assert os.path.isdir(download_dir) == True
+
+    assert eagle.path == extract_dir + "/EaglePointCloud.ply"
+    assert os.path.isfile(eagle.path) == True
+
+    assert eagle.prefix == prefix
+    assert eagle.data_root == data_root
+    assert eagle.download_dir == download_dir
+    assert eagle.extract_dir == extract_dir
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+
 def test_armadillo():
     prefix = "O3DTestArmadillo"
     data_root = os.path.join(Path.home(), "open3d_data")
@@ -242,7 +314,7 @@ def test_armadillo():
     armadillo = o3d.data.Armadillo(prefix)
     assert os.path.isdir(download_dir) == True
 
-    assert armadillo.path == extract_dir + "/Armadillo.ply"
+    assert armadillo.path == extract_dir + "/ArmadilloMesh.ply"
     assert os.path.isfile(armadillo.path) == True
 
     assert armadillo.prefix == prefix
@@ -266,13 +338,61 @@ def test_bunny():
     bunny = o3d.data.Bunny(prefix)
     assert os.path.isdir(download_dir) == True
 
-    assert bunny.path == extract_dir + "/Bunny.ply"
+    assert bunny.path == extract_dir + "/BunnyMesh.ply"
     assert os.path.isfile(bunny.path) == True
 
     assert bunny.prefix == prefix
     assert bunny.data_root == data_root
     assert bunny.download_dir == download_dir
     assert bunny.extract_dir == extract_dir
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+
+def test_knot():
+    prefix = "O3DTestKnot"
+    data_root = os.path.join(Path.home(), "open3d_data")
+    download_dir = os.path.join(data_root, "download", prefix)
+    extract_dir = os.path.join(data_root, "extract", prefix)
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+    knot = o3d.data.Knot(prefix)
+    assert os.path.isdir(download_dir) == True
+
+    assert knot.path == extract_dir + "/KnotMesh.ply"
+    assert os.path.isfile(knot.path) == True
+
+    assert knot.prefix == prefix
+    assert knot.data_root == data_root
+    assert knot.download_dir == download_dir
+    assert knot.extract_dir == extract_dir
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+
+def test_juneau():
+    prefix = "O3DTestJuneau"
+    data_root = os.path.join(Path.home(), "open3d_data")
+    download_dir = os.path.join(data_root, "download", prefix)
+    extract_dir = os.path.join(data_root, "extract", prefix)
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+    juneau = o3d.data.Juneau(prefix)
+    assert os.path.isdir(download_dir) == True
+
+    assert juneau.path == extract_dir + "/JuneauImage.jpg"
+    assert os.path.isfile(juneau.path) == True
+
+    assert juneau.prefix == prefix
+    assert juneau.data_root == data_root
+    assert juneau.download_dir == download_dir
+    assert juneau.extract_dir == extract_dir
 
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)
