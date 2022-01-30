@@ -649,6 +649,7 @@ protected:
             }
             model_->SynthesizeModelFrame(raycast_frame, depth_scale, 0.1,
                                          prop_values_.depth_max,
+                                         prop_values_.trunc_voxel_multiplier,
                                          prop_values_.raycast_color);
 
             auto K_eigen =

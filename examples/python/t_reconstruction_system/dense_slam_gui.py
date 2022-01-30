@@ -86,6 +86,13 @@ class ReconstructionWindow:
         self.fixed_prop_grid.add_child(voxel_size_label)
         self.fixed_prop_grid.add_child(self.voxel_size_slider)
 
+        trunc_multiplier_label = gui.Label('Trunc multiplier')
+        self.trunc_multiplier_slider = gui.Slider(gui.Slider.DOUBLE)
+        self.trunc_multiplier_slider.set_limits(1.0, 20.0)
+        self.trunc_multiplier_slider.double_value = config.trunc_voxel_multiplier
+        self.fixed_prop_grid.add_child(trunc_multiplier_label)
+        self.fixed_prop_grid.add_child(self.trunc_multiplier_slider)
+
         est_block_count_label = gui.Label('Est. blocks')
         self.est_block_count_slider = gui.Slider(gui.Slider.INT)
         self.est_block_count_slider.set_limits(40000, 100000)
@@ -386,10 +393,12 @@ class ReconstructionWindow:
             self.model.update_frame_pose(self.idx, T_frame_to_model)
             self.model.integrate(input_frame,
                                  float(self.scale_slider.int_value),
-                                 self.max_slider.double_value)
+                                 self.max_slider.double_value,
+                                 self.trunc_multiplier_slider.double_value)
             self.model.synthesize_model_frame(
                 raycast_frame, float(self.scale_slider.int_value),
                 config.depth_min, self.max_slider.double_value,
+                self.trunc_multiplier_slider.double_value,
                 self.raycast_box.checked)
 
             if (self.idx % self.interval_slider.int_value == 0 and
