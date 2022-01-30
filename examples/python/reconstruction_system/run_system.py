@@ -38,7 +38,7 @@ import open3d as o3d
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from utility.file import check_folder_structure
+from open3d_example import check_folder_structure
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from initialize_config import initialize_config

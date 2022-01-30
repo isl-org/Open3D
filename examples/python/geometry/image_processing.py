@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/misc/color_image.py
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -41,11 +39,9 @@ import open3d as o3d
 if __name__ == "__main__":
 
     print("Testing image in open3d ...")
-    print("Convert an image to numpy and draw it with matplotlib.")
+    print("Convert an image to numpy")
     x = o3d.io.read_image(os.path.join(test_data_path, 'image.PNG'))
-    print(x)
-    plt.imshow(np.asarray(x))
-    plt.show()
+    print(np.asarray(x))
 
     print(
         "Convet a numpy image to o3d.geometry.Image and show it with DrawGeomtries()."
@@ -64,11 +60,8 @@ if __name__ == "__main__":
     print(zz)
     o3d.visualization.draw_geometries([zz])
 
-    print("Write the previous image to file then load it with matplotlib.")
+    print("Write the previous image to file.")
     o3d.io.write_image("test.jpg", zz, quality=100)
-    zzz = mpimg.imread("test.jpg")
-    plt.imshow(zzz)
-    plt.show()
 
     print("Testing basic image processing module.")
     im_raw = mpimg.imread(os.path.join(test_data_path, 'Juneau.jpg'))

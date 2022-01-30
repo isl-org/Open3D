@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/visualization/remove_geometry.py
-
 import open3d as o3d
 import numpy as np
 import time
