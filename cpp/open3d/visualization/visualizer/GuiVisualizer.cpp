@@ -354,6 +354,7 @@ struct GuiVisualizer::Impl {
     } settings_;
 
     rendering::TriangleMeshModel loaded_model_;
+    rendering::TriangleMeshModel basic_model_;
     std::shared_ptr<geometry::PointCloud> loaded_pcd_;
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
@@ -412,32 +413,53 @@ struct GuiVisualizer::Impl {
         settings_.wgt_mouse_ibl->SetOn(mode == Controls::ROTATE_IBL);
     }
 
+    void ModifyMaterialForBasicMode(rendering::MaterialRecord &basic_mat) {
+        // Set parameters for 'simple' rendering
+        basic_mat.base_color = {1.f, 1.f, 1.f, 1.f};
+        basic_mat.base_metallic = 0.f;
+        basic_mat.base_roughness = 0.5f;
+        basic_mat.base_reflectance = 0.8f;
+        basic_mat.base_clearcoat = 0.f;
+        basic_mat.base_anisotropy = 0.f;
+        basic_mat.albedo_img.reset();
+        basic_mat.normal_img.reset();
+        basic_mat.ao_img.reset();
+        basic_mat.metallic_img.reset();
+        basic_mat.roughness_img.reset();
+        basic_mat.reflectance_img.reset();
+        basic_mat.sRGB_color = false;
+        basic_mat.sRGB_vertex_color = true;
+    }
+
     void SetBasicModeGeometry(bool enable) {
         auto o3dscene = scene_wgt_->GetScene();
-        // Setup inspection material
-        rendering::MaterialRecord inspect_mat;
-        inspect_mat.base_color = {1.f, 1.f, 1.f, 1.f};
-        inspect_mat.base_metallic = 0.f;
-        inspect_mat.base_clearcoat = 0.f;
-        inspect_mat.base_anisotropy = 0.f;
-        inspect_mat.sRGB_color = false;
-        inspect_mat.sRGB_vertex_color = true;
 
-        if (!enable) {
-            o3dscene->RemoveGeometry(INSPECT_MODEL_NAME);
-            o3dscene->ShowGeometry(MODEL_NAME, true);
-        } else {
-            // Create inspection geometry
-            if (loaded_pcd_ && loaded_pcd_->HasNormals()) {
-                utility::LogWarning("In loaded pcd");
-                inspect_mat.base_roughness = 0.1f;
-                inspect_mat.base_reflectance = 0.6f;
+        // Only need to deal with triangle models...
+        if (loaded_model_.meshes_.size() > 0) {
+            if (enable) {
+                for (auto &mat : loaded_model_.materials_) {
+                    rendering::MaterialRecord m(mat);
+                    ModifyMaterialForBasicMode(m);
+                    basic_model_.materials_.emplace_back(m);
+                }
+                for (auto &mi : loaded_model_.meshes_) {
+                    auto new_mesh = std::make_shared<geometry::TriangleMesh>(
+                            mi.mesh->vertices_, mi.mesh->triangles_);
+                    new_mesh->vertex_colors_ = mi.mesh->vertex_colors_;
+                    if (mi.mesh->HasTriangleNormals()) {
+                        new_mesh->triangle_normals_ =
+                                mi.mesh->triangle_normals_;
+                    } else {
+                        new_mesh->ComputeTriangleNormals();
+                    }
+                    basic_model_.meshes_.push_back(
+                            {new_mesh, mi.mesh_name, mi.material_idx});
+                }
                 o3dscene->ShowGeometry(MODEL_NAME, false);
-                o3dscene->AddGeometry(INSPECT_MODEL_NAME, loaded_pcd_.get(),
-                                      inspect_mat);
+                o3dscene->AddModel(INSPECT_MODEL_NAME, basic_model_);
             } else {
-                inspect_mat.base_roughness = 0.5f;
-                inspect_mat.base_reflectance = 0.8f;
+                o3dscene->RemoveGeometry(INSPECT_MODEL_NAME);
+                o3dscene->ShowGeometry(MODEL_NAME, true);
             }
         }
     }
@@ -452,18 +474,11 @@ struct GuiVisualizer::Impl {
             // Set lighting environment for inspection
             o3dscene->SetBackground({1.f, 1.f, 1.f, 1.f});
             low_scene->ShowSkybox(false);
-            low_scene->EnableIndirectLight(false);
-            low_scene->EnableSunLight(true);
-            low_scene->EnableSunLightShadows(false);
-            low_scene->SetSunLightIntensity(160000.f);
             view->SetShadowing(false, rendering::View::ShadowType::kPCF);
             view->SetPostProcessing(false);
-            // Update geometry for inspection
-            // UpdateGeometryForInspectionMode(true);
         } else {
             view->SetPostProcessing(true);
             view->SetShadowing(true, rendering::View::ShadowType::kPCF);
-            // UpdateGeometryForInspectionMode(false);
         }
 
         // Update geometry for basic mode

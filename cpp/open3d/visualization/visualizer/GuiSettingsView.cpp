@@ -447,8 +447,10 @@ void GuiSettingsView::Update() {
 }
 
 void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
+    // Enable/disable UI elements
     show_skybox_->SetEnabled(!enable);
     lighting_profile_->SetEnabled(!enable);
+    ibls_->SetEnabled(!enable);
     ibl_enabled_->SetEnabled(!enable);
     ibl_intensity_->SetEnabled(!enable);
     sun_enabled_->SetEnabled(!enable);
@@ -460,7 +462,22 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
     material_color_->SetEnabled(!enable);
     prefab_material_->SetEnabled(!enable);
     sun_follows_camera_->SetChecked(enable);
-    model_.SetSunFollowsCamera(enable);
+
+    // Set lighting environment for basic/non-basic mode
+    auto lighting = model_.GetLighting();  // copy
+    if (enable) {
+        lighting.ibl_enabled = !enable;
+        lighting.sun_enabled = enable;
+        lighting.sun_intensity = 160000.f;
+        sun_enabled_->SetChecked(true);
+        ibl_enabled_->SetChecked(false);
+        sun_intensity_->SetValue(160000.0);
+        model_.SetCustomLighting(lighting);
+        model_.SetSunFollowsCamera(true);
+    } else {
+        model_.SetLightingProfile(GuiSettingsModel::lighting_profiles_[0]);
+        model_.SetSunFollowsCamera(false);
+    }
 }
 
 }  // namespace visualization
