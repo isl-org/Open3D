@@ -121,6 +121,21 @@ public:
           dtype_(dtype),
           blob_(blob) {}
 
+    /// Constructor from raw host buffer. This creates a Tensor wrapper for
+    /// externally managed memory.
+    Tensor(void* data_ptr,
+           Dtype dtype,
+           const SizeVector& shape,
+           const SizeVector& strides = {},
+           const Device& device = Device("CPU:0"))
+        : shape_(shape), strides_(strides), data_ptr_(data_ptr), dtype_(dtype) {
+        if (strides_.empty()) {
+            strides_ = shape_util::DefaultStrides(shape);
+        }
+        // blob with no-op deleter
+        blob_ = std::make_shared<Blob>(device, (void*)data_ptr_, [](void*) {});
+    }
+
     /// Copy constructor performs a "shallow" copy of the Tensor.
     /// This takes a lvalue input, e.g. `Tensor dst(src)`.
     Tensor(const Tensor& other) = default;
