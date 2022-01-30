@@ -232,13 +232,69 @@ void pybind_demo_pose_graph_optimization(py::module& m) {
                                     "path_pose_graph_global");
 }
 
+void pybind_sample_pointcloud_pcd(py::module& m) {
+    // open3d.data.SamplePointCloudPCD
+    py::class_<SamplePointCloudPCD, PySimpleDataset<SamplePointCloudPCD>,
+               std::shared_ptr<SamplePointCloudPCD>, SimpleDataset>
+            pointcloud_pcd(m, "SamplePointCloudPCD",
+                           "Data class for `SamplePointCloudPCD` contains the "
+                           "`fragment.pcd` point cloud mesh from the `Redwood "
+                           "Living Room` dataset.");
+    pointcloud_pcd
+            .def(py::init<const std::string&, const std::string&>(),
+                 "prefix"_a = "SamplePointCloudPCD", "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const SamplePointCloudPCD& pointcloud_pcd) {
+                        return pointcloud_pcd.GetPath();
+                    },
+                    "Path to the `pcd` format point cloud.");
+    docstring::ClassMethodDocInject(m, "SamplePointCloudPCD", "path");
+}
+
+void pybind_sample_pointcloud_ply(py::module& m) {
+    // open3d.data.SamplePointCloudPLY
+    py::class_<SamplePointCloudPLY, PySimpleDataset<SamplePointCloudPLY>,
+               std::shared_ptr<SamplePointCloudPLY>, SimpleDataset>
+            pointcloud_ply(m, "SamplePointCloudPLY",
+                           "Data class for `SamplePointCloudPLY` contains the "
+                           "`fragment.pcd` point cloud mesh from the `Redwood "
+                           "Living Room` dataset.");
+    pointcloud_ply
+            .def(py::init<const std::string&, const std::string&>(),
+                 "prefix"_a = "SamplePointCloudPLY", "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const SamplePointCloudPLY& pointcloud_ply) {
+                        return pointcloud_ply.GetPath();
+                    },
+                    "Path to the `ply` format point cloud.");
+    docstring::ClassMethodDocInject(m, "SamplePointCloudPLY", "path");
+}
+
+void pybind_eagle(py::module& m) {
+    // open3d.data.Eagle
+    py::class_<Eagle, PySimpleDataset<Eagle>, std::shared_ptr<Eagle>,
+               SimpleDataset>
+            eagle(m, "Eagle",
+                  "Data class for `Eagle` contains the `EaglePointCloud.ply` "
+                  "file.");
+    eagle.def(py::init<const std::string&, const std::string&>(),
+              "prefix"_a = "Eagle", "data_root"_a = "")
+            .def_property_readonly(
+                    "path", [](const Eagle& eagle) { return eagle.GetPath(); },
+                    "Path to the `EaglePointCloud.ply` file.");
+    docstring::ClassMethodDocInject(m, "Eagle", "path");
+}
+
 void pybind_armadillo(py::module& m) {
     // open3d.data.Armadillo
     py::class_<Armadillo, PySimpleDataset<Armadillo>,
                std::shared_ptr<Armadillo>, SimpleDataset>
             armadillo(m, "Armadillo",
-                      "Data class for `Armadillo` contains the `Armadillo.ply` "
-                      "mesh from the `Stanford 3D Scanning Repository`.");
+                      "Data class for `Armadillo` contains the "
+                      "`ArmadilloMesh.ply` from the `Stanford 3D Scanning "
+                      "Repository`.");
     armadillo
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "Armadillo", "data_root"_a = "")
@@ -247,7 +303,7 @@ void pybind_armadillo(py::module& m) {
                     [](const Armadillo& armadillo) {
                         return armadillo.GetPath();
                     },
-                    "Path to the Armadillo.ply mesh.");
+                    "Path to the `ArmadilloMesh.ply` file.");
     docstring::ClassMethodDocInject(m, "Armadillo", "path");
 }
 
@@ -256,14 +312,44 @@ void pybind_bunny(py::module& m) {
     py::class_<Bunny, PySimpleDataset<Bunny>, std::shared_ptr<Bunny>,
                SimpleDataset>
             bunny(m, "Bunny",
-                  "Data class for `Bunny` contains the `Bunny.ply` "
-                  "mesh from the `Stanford 3D Scanning Repository`.");
+                  "Data class for `Bunny` contains the `BunnyMesh.ply` from "
+                  "the `Stanford 3D Scanning Repository`.");
     bunny.def(py::init<const std::string&, const std::string&>(),
               "prefix"_a = "Bunny", "data_root"_a = "")
             .def_property_readonly(
                     "path", [](const Bunny& bunny) { return bunny.GetPath(); },
-                    "Path to the Bunny.ply mesh.");
+                    "Path to the `BunnyMesh.ply` file.");
     docstring::ClassMethodDocInject(m, "Bunny", "path");
+}
+
+void pybind_knot(py::module& m) {
+    // open3d.data.Knot
+    py::class_<Bunny, PySimpleDataset<Knot>, std::shared_ptr<Knot>,
+               SimpleDataset>
+            knot(m, "Knot",
+                 "Data class for `Knot` contains the `KnotMesh.ply`.");
+    knot.def(py::init<const std::string&, const std::string&>(),
+             "prefix"_a = "Knot", "data_root"_a = "")
+            .def_property_readonly(
+                    "path", [](const Knot& knot) { return knot.GetPath(); },
+                    "Path to the `KnotMesh.ply` file.");
+    docstring::ClassMethodDocInject(m, "Knot", "path");
+}
+
+void pybind_juneau(py::module& m) {
+    // open3d.data.Juneau
+    py::class_<Bunny, PySimpleDataset<Juneau>, std::shared_ptr<Juneau>,
+               SimpleDataset>
+            juneau(m, "Juneau",
+                   "Data class for `Juneau` contains the `JuneauImage.jpg` "
+                   "file.");
+    juneau.def(py::init<const std::string&, const std::string&>(),
+               "prefix"_a = "Juneau", "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const Juneau& juneau) { return juneau.GetPath(); },
+                    "Path to the `JuneauImage.jgp` file.");
+    docstring::ClassMethodDocInject(m, "Juneau", "path");
 }
 
 void pybind_redwood_living_room_pointcloud(py::module& m) {
@@ -318,8 +404,13 @@ void pybind_data(py::module& m) {
     pybind_demo_crop_pointcloud(m_submodule);
     pybind_demo_pointcloud_feature_matching(m_submodule);
     pybind_demo_pose_graph_optimization(m_submodule);
+    pybind_sample_pointcloud_pcd(m_submodule);
+    pybind_sample_pointcloud_ply(m_submodule);
+    pybind_eagle(m_submodule);
     pybind_armadillo(m_submodule);
     pybind_bunny(m_submodule);
+    pybind_knot(m_submodule);
+    pybind_juneau(m_submodule);
     pybind_redwood_living_room_pointcloud(m_submodule);
     pybind_redwood_office_pointcloud(m_submodule);
 }

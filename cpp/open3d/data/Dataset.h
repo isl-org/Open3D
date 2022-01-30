@@ -305,16 +305,17 @@ private:
 // class SampleBagRealSense;
 
 /// \class Eagle
+/// \brief Data class for `Eagle` contains the `EaglePointCloud.ply` file.
 class Eagle : public SimpleDataset {
 public:
     Eagle(const std::string& prefix = "Eagle",
           const std::string& data_root = "");
 
-    /// \brief Returns path to the EaglePointCloud.ply.
+    /// \brief Returns path to the `EaglePointCloud.ply`.
     std::string GetPath() const { return path_; };
 
 private:
-    /// Path to EaglePointCloud.ply.
+    /// Path to `EaglePointCloud.ply` file.
     std::string path_;
 };
 
@@ -326,11 +327,11 @@ public:
     Armadillo(const std::string& prefix = "Armadillo",
               const std::string& data_root = "");
 
-    /// \brief Returns path to the ArmadilloMesh.ply.
+    /// \brief Returns path to the `ArmadilloMesh.ply`.
     std::string GetPath() const { return path_; };
 
 private:
-    /// Path to the ArmadilloMesh.ply.
+    /// Path to the `ArmadilloMesh.ply` file.
     std::string path_;
 };
 
@@ -342,36 +343,40 @@ public:
     Bunny(const std::string& prefix = "Bunny",
           const std::string& data_root = "");
 
-    /// \brief Returns path to the BunnyMesh.ply.
+    /// \brief Returns path to the `BunnyMesh.ply`.
     std::string GetPath() const { return path_; };
 
 private:
-    /// Path to BunnyMesh.ply.
+    /// Path to `BunnyMesh.ply` file.
     std::string path_;
 };
 
+/// \class Knot
+/// \brief Data class for `Knot` contains the `KnotMesh.ply` file.
 class Knot : public SimpleDataset {
 public:
     Knot(const std::string& prefix = "Knot", const std::string& data_root = "");
 
-    /// \brief Returns path to the KnotMesh.ply.
+    /// \brief Returns path to the `KnotMesh.ply`.
     std::string GetPath() const { return path_; };
 
 private:
-    /// Path to KnotMesh.ply mesh.
+    /// Path to `KnotMesh.ply` file.
     std::string path_;
 };
 
+/// \class Juneau
+/// \brief Data class for `Juneau` contains the `JuneauImage.jpg` file.
 class Juneau : public SimpleDataset {
 public:
     Juneau(const std::string& prefix = "Juneau",
            const std::string& data_root = "");
 
-    /// \brief Returns path to the JuneauImage.jgp.
+    /// \brief Returns path to the `JuneauImage.jgp`.
     std::string GetPath() const { return path_; };
 
 private:
-    /// Path to JuneauImage.jgp.
+    /// Path to `JuneauImage.jgp` file.
     std::string path_;
 };
 
