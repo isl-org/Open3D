@@ -437,28 +437,33 @@ struct GuiVisualizer::Impl {
         // Only need to deal with triangle models...
         if (loaded_model_.meshes_.size() > 0) {
             if (enable) {
-                for (auto &mat : loaded_model_.materials_) {
-                    rendering::MaterialRecord m(mat);
-                    ModifyMaterialForBasicMode(m);
-                    basic_model_.materials_.emplace_back(m);
-                }
-                for (auto &mi : loaded_model_.meshes_) {
-                    auto new_mesh = std::make_shared<geometry::TriangleMesh>(
-                            mi.mesh->vertices_, mi.mesh->triangles_);
-                    new_mesh->vertex_colors_ = mi.mesh->vertex_colors_;
-                    if (mi.mesh->HasTriangleNormals()) {
-                        new_mesh->triangle_normals_ =
-                                mi.mesh->triangle_normals_;
-                    } else {
-                        new_mesh->ComputeTriangleNormals();
+                if (basic_model_.meshes_.size() == 0) {
+                    for (auto &mat : loaded_model_.materials_) {
+                        rendering::MaterialRecord m(mat);
+                        ModifyMaterialForBasicMode(m);
+                        basic_model_.materials_.emplace_back(m);
                     }
-                    basic_model_.meshes_.push_back(
-                            {new_mesh, mi.mesh_name, mi.material_idx});
+                    for (auto &mi : loaded_model_.meshes_) {
+                        auto new_mesh =
+                                std::make_shared<geometry::TriangleMesh>(
+                                        mi.mesh->vertices_,
+                                        mi.mesh->triangles_);
+                        new_mesh->vertex_colors_ = mi.mesh->vertex_colors_;
+                        if (mi.mesh->HasTriangleNormals()) {
+                            new_mesh->triangle_normals_ =
+                                    mi.mesh->triangle_normals_;
+                        } else {
+                            new_mesh->ComputeTriangleNormals();
+                        }
+                        basic_model_.meshes_.push_back(
+                                {new_mesh, mi.mesh_name, mi.material_idx});
+                    }
+                    o3dscene->AddModel(INSPECT_MODEL_NAME, basic_model_);
                 }
+                o3dscene->ShowGeometry(INSPECT_MODEL_NAME, true);
                 o3dscene->ShowGeometry(MODEL_NAME, false);
-                o3dscene->AddModel(INSPECT_MODEL_NAME, basic_model_);
             } else {
-                o3dscene->RemoveGeometry(INSPECT_MODEL_NAME);
+                o3dscene->ShowGeometry(INSPECT_MODEL_NAME, false);
                 o3dscene->ShowGeometry(MODEL_NAME, true);
             }
         }
@@ -1095,6 +1100,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
         // clear current model
         impl_->loaded_model_.meshes_.clear();
         impl_->loaded_model_.materials_.clear();
+        impl_->basic_model_.meshes_.clear();
+        impl_->basic_model_.materials_.clear();
         impl_->loaded_pcd_.reset();
 
         auto geometry_type = io::ReadFileGeometryType(path);
