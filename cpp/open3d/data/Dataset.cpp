@@ -192,6 +192,64 @@ SamplePointCloudPLY::SamplePointCloudPLY(const std::string& prefix,
     path_ = Dataset::GetExtractDir() + "/fragment.ply";
 }
 
+SampleRGBDImageNYU::SampleRGBDImageNYU(const std::string& prefix,
+                                       const std::string& data_root)
+    : SimpleDataset(
+              prefix,
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "290122-sample-rgbd-image/SampleRGBDImageNYU.zip"},
+              "b0baaf892c7ff9b202eb5fb40c5f7b58") {
+    path_color_ = Dataset::GetExtractDir() + "/NYU_color.ppm";
+    path_depth_ = Dataset::GetExtractDir() + "/NYU_depth.pgm";
+}
+
+SampleRGBDImageSUN::SampleRGBDImageSUN(const std::string& prefix,
+                                       const std::string& data_root)
+    : SimpleDataset(
+              prefix,
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "290122-sample-rgbd-image/SampleRGBDImageSUN.zip"},
+              "b1a430586547c8986bdf8b36179a8e67") {
+    path_color_ = Dataset::GetExtractDir() + "/SUN_color.jpg";
+    path_depth_ = Dataset::GetExtractDir() + "/SUN_depth.png";
+}
+
+SampleRGBDImageTUM::SampleRGBDImageTUM(const std::string& prefix,
+                                       const std::string& data_root)
+    : SimpleDataset(
+              prefix,
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "290122-sample-rgbd-image/SampleRGBDImageTUM.zip"},
+              "91758d42b142dbad7b0d90e857ad47a8") {
+    path_color_ = Dataset::GetExtractDir() + "/TUM_color.png";
+    path_depth_ = Dataset::GetExtractDir() + "/TUM_depth.png";
+}
+
+SampleRGBDDatasetICL::SampleRGBDDatasetICL(const std::string& prefix,
+                                           const std::string& data_root)
+    : SimpleDataset(
+              prefix,
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "290122-sample-rgbd-image/SampleRGBDDatasetICL.zip"},
+              "3af3b6ee53e4d64396537553995d9556") {
+    const std::string extract_dir = Dataset::GetExtractDir();
+
+    paths_color_ = {
+            extract_dir + "/color/00000.jpg", extract_dir + "/color/00001.jpg",
+            extract_dir + "/color/00002.jpg", extract_dir + "/color/00003.jpg",
+            extract_dir + "/color/00004.jpg"};
+
+    paths_depth_ = {
+            extract_dir + "/depth/00000.png", extract_dir + "/depth/00001.png",
+            extract_dir + "/depth/00002.png", extract_dir + "/depth/00003.png",
+            extract_dir + "/depth/00004.png"};
+
+    path_trajectory_log_ = extract_dir + "/trajectory.log";
+    path_odometry_log_ = extract_dir + "/odometry.log";
+    path_rgbd_match_ = extract_dir + "/rgbd.match";
+    path_reconstruction_ = extract_dir + "/example_tsdf_pcd.ply";
+}
+
 Eagle::Eagle(const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"

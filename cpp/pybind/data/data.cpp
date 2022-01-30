@@ -242,6 +242,113 @@ void pybind_sample_pointcloud_ply(py::module& m) {
     docstring::ClassMethodDocInject(m, "SamplePointCloudPLY", "path");
 }
 
+void pybind_sample_rgbd_image_nyu(py::module& m) {
+    // open3d.data.SampleRGBDImageNYU
+    py::class_<SampleRGBDImageNYU, PySimpleDataset<SampleRGBDImageNYU>,
+               std::shared_ptr<SampleRGBDImageNYU>, SimpleDataset>
+            rgbd_image_nyu(m, "SampleRGBDImageNYU",
+                           "Data class for `SampleRGBDImageNYU` contains a "
+                           "color image `NYU_color.ppm` and a depth image "
+                           "`NYU_depth.pgm` sample from NYU RGBD dataset.");
+    rgbd_image_nyu
+            .def(py::init<const std::string&, const std::string&>(),
+                 "prefix"_a = "SampleRGBDImageNYU", "data_root"_a = "")
+            .def_property_readonly("path_color",
+                                   &SampleRGBDImageNYU::GetPathColor,
+                                   "Path to color image sample.")
+            .def_property_readonly("path_depth",
+                                   &SampleRGBDImageNYU::GetPathDepth,
+                                   "Path to depth image sample.");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageNYU", "path_color");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageNYU", "path_depth");
+}
+
+void pybind_sample_rgbd_image_sun(py::module& m) {
+    // open3d.data.SampleRGBDImageSUN
+    py::class_<SampleRGBDImageSUN, PySimpleDataset<SampleRGBDImageSUN>,
+               std::shared_ptr<SampleRGBDImageSUN>, SimpleDataset>
+            rgbd_image_sun(m, "SampleRGBDImageSUN",
+                           "Data class for `SampleRGBDImageSUN` contains a "
+                           "color image `SUN_color.jpg` and a depth image "
+                           "`SUN_depth.png` sample from SUN RGBD dataset.");
+    rgbd_image_sun
+            .def(py::init<const std::string&, const std::string&>(),
+                 "prefix"_a = "SampleRGBDImageSUN", "data_root"_a = "")
+            .def_property_readonly("path_color",
+                                   &SampleRGBDImageSUN::GetPathColor,
+                                   "Path to color image sample.")
+            .def_property_readonly("path_depth",
+                                   &SampleRGBDImageSUN::GetPathDepth,
+                                   "Path to depth image sample.");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageSUN", "path_color");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageSUN", "path_depth");
+}
+
+void pybind_sample_rgbd_image_tum(py::module& m) {
+    // open3d.data.SampleRGBDImageTUM
+    py::class_<SampleRGBDImageTUM, PySimpleDataset<SampleRGBDImageTUM>,
+               std::shared_ptr<SampleRGBDImageTUM>, SimpleDataset>
+            rgbd_image_tum(m, "SampleRGBDImageTUM",
+                           "Data class for `SampleRGBDImageTUM` contains a "
+                           "color image `TUM_color.png` and a depth image "
+                           "`TUM_depth.png` sample from TUM RGBD dataset.");
+    rgbd_image_tum
+            .def(py::init<const std::string&, const std::string&>(),
+                 "prefix"_a = "SampleRGBDImageTUM", "data_root"_a = "")
+            .def_property_readonly("path_color",
+                                   &SampleRGBDImageTUM::GetPathColor,
+                                   "Path to color image sample.")
+            .def_property_readonly("path_depth",
+                                   &SampleRGBDImageTUM::GetPathDepth,
+                                   "Path to depth image sample.");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageTUM", "path_color");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageTUM", "path_depth");
+}
+
+void pybind_sample_rgbd_dataset_icl(py::module& m) {
+    // open3d.data.SampleRGBDDatasetICL
+    py::class_<SampleRGBDDatasetICL, PySimpleDataset<SampleRGBDDatasetICL>,
+               std::shared_ptr<SampleRGBDDatasetICL>, SimpleDataset>
+            rgbd_dataset_icl(m, "SampleRGBDDatasetICL",
+                             "Data class for `SampleRGBDDatasetICL` contains a "
+                             "color image `TUM_color.png` and a depth image "
+                             "`TUM_depth.png` sample from TUM RGBD dataset.");
+    rgbd_dataset_icl
+            .def(py::init<const std::string&, const std::string&>(),
+                 "prefix"_a = "SampleRGBDDatasetICL", "data_root"_a = "")
+            .def_property_readonly(
+                    "paths_color", &SampleRGBDDatasetICL::GetPathsColor,
+                    "List of path to color image sample, of size 5.")
+            .def_property_readonly(
+                    "paths_depth", &SampleRGBDDatasetICL::GetPathsDepth,
+                    "List of path to depth image sample, of size 5.")
+            .def_property_readonly(
+                    "path_trajectory_log",
+                    &SampleRGBDDatasetICL::GetPathTrajectoryLog,
+                    "Path to camera trajectory log file `trajectory.log`.")
+            .def_property_readonly(
+                    "path_odometry_log",
+                    &SampleRGBDDatasetICL::GetPathOdometryLog,
+                    "Path to camera odometry log file `odometry.log`.")
+            .def_property_readonly(
+                    "path_rgbd_match", &SampleRGBDDatasetICL::GetPathRGBDMatch,
+                    "Path to color and depth image match file `rgbd.match`.")
+            .def_property_readonly(
+                    "path_reconstruction",
+                    &SampleRGBDDatasetICL::GetPathReconstruction,
+                    "Path to pointcloud reconstruction from TSDF.");
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL", "paths_color");
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL", "paths_depth");
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
+                                    "path_trajectory_log");
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
+                                    "path_odometry_log");
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
+                                    "path_rgbd_match");
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
+                                    "path_reconstruction");
+}
+
 void pybind_eagle(py::module& m) {
     // open3d.data.Eagle
     py::class_<Eagle, PySimpleDataset<Eagle>, std::shared_ptr<Eagle>,
@@ -369,6 +476,10 @@ void pybind_data(py::module& m) {
     pybind_demo_pose_graph_optimization(m_submodule);
     pybind_sample_pointcloud_pcd(m_submodule);
     pybind_sample_pointcloud_ply(m_submodule);
+    pybind_sample_rgbd_image_nyu(m_submodule);
+    pybind_sample_rgbd_image_sun(m_submodule);
+    pybind_sample_rgbd_image_tum(m_submodule);
+    pybind_sample_rgbd_dataset_icl(m_submodule);
     pybind_eagle(m_submodule);
     pybind_armadillo(m_submodule);
     pybind_bunny(m_submodule);

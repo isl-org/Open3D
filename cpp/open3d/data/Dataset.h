@@ -253,6 +253,8 @@ private:
     std::string path_pose_graph_global_;
 };
 
+// class DemoVisualizationSceneAssets
+
 /// \class SamplePointCloudPCD
 /// \brief Data class for `SamplePointCloudPCD` contains the `fragment.pcd`
 /// point cloud mesh from the `Redwood Living Room` dataset.
@@ -285,24 +287,126 @@ private:
     std::string path_;
 };
 
-// /// \class SampleFountainRGBDDataset
+/// \class SampleFountainRGBDDataset
 // class SampleFountainRGBDDataset : public SimpleDataset {
 // public:
 //     SampleFountainRGBDDataset(
 //             const std::string& prefix = "SampleFountainRGBDDataset",
 //             const std::string& data_root = "");
 
-//     std::string GetPathsImage() const { return paths_image_; };
-//     std::string GetPathsDepth() const { return paths_depth_; };
-//     std::string GetPathsKeyLog() const { return paths_key_log_; };
+//     std::vector<std::string> GetPathsImage() const { return paths_color_; };
+//     std::vector<std::string> GetPathsDepth() const { return paths_depth_; };
+//     std::vector<std::string> GetPathsKeyLog() const { return paths_key_log_;
+//     };
 
 // private:
-//     std::vector<std::string> paths_image_;
-//     std::vector<string> paths_depth_;
-//     std::vector<string> paths_key_log_;
+//     std::vector<std::string> paths_color_;
+//     std::vector<std::string> paths_depth_;
+//     std::vector<std::string> paths_key_log_;
 // };
 
-// class SampleBagRealSense;
+/// \class SampleRGBDImageNYU
+/// \brief Data class for `SampleRGBDImageNYU` contains a color image
+/// `NYU_color.ppm` and a depth image `NYU_depth.pgm` sample from NYU RGBD
+/// dataset.
+class SampleRGBDImageNYU : public SimpleDataset {
+public:
+    SampleRGBDImageNYU(const std::string& prefix = "SampleRGBDImageNYU",
+                       const std::string& data_root = "");
+
+    /// \brief Returns path to color image sample.
+    std::string GetPathColor() const { return path_color_; };
+    /// \brief Returns path to depth image sample.
+    std::string GetPathDepth() const { return path_depth_; };
+
+private:
+    /// Path to color image sample.
+    std::string path_color_;
+    /// Path to depth image sample.
+    std::string path_depth_;
+};
+
+/// \class SampleRGBDImageSUN
+/// \brief Data class for `SampleRGBDImageSUN` contains a color image
+/// `SUN_color.jpg` and a depth image `SUN_depth.png` sample from SUN RGBD
+/// dataset.
+class SampleRGBDImageSUN : public SimpleDataset {
+public:
+    SampleRGBDImageSUN(const std::string& prefix = "SampleRGBDImageSUN",
+                       const std::string& data_root = "");
+
+    /// \brief Returns path to color image sample.
+    std::string GetPathColor() const { return path_color_; };
+    /// \brief Returns path to depth image sample.
+    std::string GetPathDepth() const { return path_depth_; };
+
+private:
+    /// Path to color image sample.
+    std::string path_color_;
+    /// Path to depth image sample.
+    std::string path_depth_;
+};
+
+/// \class SampleRGBDImageTUM
+/// \brief Data class for `SampleRGBDImageTUM` contains a color image
+/// `TUM_color.png` and a depth image `TUM_depth.png` sample from TUM RGBD
+/// dataset.
+class SampleRGBDImageTUM : public SimpleDataset {
+public:
+    SampleRGBDImageTUM(const std::string& prefix = "SampleRGBDImageTUM",
+                       const std::string& data_root = "");
+
+    /// \brief Returns path to color image sample.
+    std::string GetPathColor() const { return path_color_; };
+    /// \brief Returns path to depth image sample.
+    std::string GetPathDepth() const { return path_depth_; };
+
+private:
+    /// Path to color image sample.
+    std::string path_color_;
+    /// Path to depth image sample.
+    std::string path_depth_;
+};
+
+/// \class SampleRGBDDatasetICL
+/// \brief Data class for `SampleRGBDDatasetICL` contains a sample set of 5
+/// color and depth images from ICL-NUIM RGBD dataset living-room1. It also
+/// contains example `camera trajectory log`, `odometry log`, `rgbd match`, and
+/// `point cloud reconstruction using TSDF`.
+class SampleRGBDDatasetICL : public SimpleDataset {
+public:
+    SampleRGBDDatasetICL(const std::string& prefix = "SampleRGBDDatasetICL",
+                         const std::string& data_root = "");
+
+    /// \brief Returns List of paths to color image samples of size 5.
+    std::vector<std::string> GetPathsColor() const { return paths_color_; };
+    /// \brief Returns List of paths to depth image samples of size 5.
+    std::vector<std::string> GetPathsDepth() const { return paths_depth_; };
+
+    /// \brief Returns path to camera trajectory log file `trajectory.log`.
+    std::string GetPathTrajectoryLog() const { return path_trajectory_log_; };
+    /// \brief Returns path to camera trajectory log file `trajectory.log`.
+    std::string GetPathOdometryLog() const { return path_odometry_log_; };
+    /// \brief Returns path to color and depth image match file `rgbd.match`.
+    std::string GetPathRGBDMatch() const { return path_rgbd_match_; };
+    /// \brief Returns path to pointcloud reconstruction from TSDF.
+    std::string GetPathReconstruction() const { return path_reconstruction_; };
+
+private:
+    /// List of paths to color image samples of size 5.
+    std::vector<std::string> paths_color_;
+    /// List of paths to depth image samples of size 5.
+    std::vector<std::string> paths_depth_;
+
+    /// Path to camera trajectory log file `trajectory.log`.
+    std::string path_trajectory_log_;
+    /// Path to camera odometry log file `odometry.log`.
+    std::string path_odometry_log_;
+    /// Path to color and depth image match file `rgbd.match`.
+    std::string path_rgbd_match_;
+    /// Path to pointcloud reconstruction from TSDF.
+    std::string path_reconstruction_;
+};
 
 /// \class Eagle
 /// \brief Data class for `Eagle` contains the `EaglePointCloud.ply` file.

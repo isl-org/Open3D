@@ -278,6 +278,127 @@ def test_sample_pointcloud_ply():
     shutil.rmtree(extract_dir, ignore_errors=True)
 
 
+def test_sample_rgbd_image_nyu():
+    prefix = "O3DTestSampleRGBDImageNYU"
+    data_root = os.path.join(Path.home(), "open3d_data")
+    download_dir = os.path.join(data_root, "download", prefix)
+    extract_dir = os.path.join(data_root, "extract", prefix)
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+    rgbd_image_nyu = o3d.data.SampleRGBDImageNYU(prefix)
+    assert os.path.isdir(download_dir) == True
+
+    assert rgbd_image_nyu.path_color == extract_dir + "/NYU_color.ppm"
+    assert os.path.isfile(rgbd_image_nyu.path_color) == True
+
+    assert rgbd_image_nyu.path_depth == extract_dir + "/NYU_depth.pgm"
+    assert os.path.isfile(rgbd_image_nyu.path_depth) == True
+
+    assert rgbd_image_nyu.prefix == prefix
+    assert rgbd_image_nyu.data_root == data_root
+    assert rgbd_image_nyu.download_dir == download_dir
+    assert rgbd_image_nyu.extract_dir == extract_dir
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+
+def test_sample_rgbd_image_sun():
+    prefix = "O3DTestSampleRGBDImageSUN"
+    data_root = os.path.join(Path.home(), "open3d_data")
+    download_dir = os.path.join(data_root, "download", prefix)
+    extract_dir = os.path.join(data_root, "extract", prefix)
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+    rgbd_image_sun = o3d.data.SampleRGBDImageSUN(prefix)
+    assert os.path.isdir(download_dir) == True
+
+    assert rgbd_image_sun.path_color == extract_dir + "/SUN_color.jpg"
+    assert os.path.isfile(rgbd_image_sun.path_color) == True
+
+    assert rgbd_image_sun.path_depth == extract_dir + "/SUN_depth.png"
+    assert os.path.isfile(rgbd_image_sun.path_depth) == True
+
+    assert rgbd_image_sun.prefix == prefix
+    assert rgbd_image_sun.data_root == data_root
+    assert rgbd_image_sun.download_dir == download_dir
+    assert rgbd_image_sun.extract_dir == extract_dir
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+
+def test_sample_rgbd_image_tum():
+    prefix = "O3DTestSampleRGBDImageTUM"
+    data_root = os.path.join(Path.home(), "open3d_data")
+    download_dir = os.path.join(data_root, "download", prefix)
+    extract_dir = os.path.join(data_root, "extract", prefix)
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+    rgbd_image_tum = o3d.data.SampleRGBDImageTUM(prefix)
+    assert os.path.isdir(download_dir) == True
+
+    assert rgbd_image_tum.path_color == extract_dir + "/TUM_color.png"
+    assert os.path.isfile(rgbd_image_tum.path_color) == True
+
+    assert rgbd_image_tum.path_depth == extract_dir + "/TUM_depth.png"
+    assert os.path.isfile(rgbd_image_tum.path_depth) == True
+
+    assert rgbd_image_tum.prefix == prefix
+    assert rgbd_image_tum.data_root == data_root
+    assert rgbd_image_tum.download_dir == download_dir
+    assert rgbd_image_tum.extract_dir == extract_dir
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+
+def test_sample_rgbd_dataset_icl():
+    prefix = "O3DTestSampleRGBDDatasetICL"
+    data_root = os.path.join(Path.home(), "open3d_data")
+    download_dir = os.path.join(data_root, "download", prefix)
+    extract_dir = os.path.join(data_root, "extract", prefix)
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+    rgbd_dataset_icl = o3d.data.SampleRGBDDatasetICL(prefix)
+    assert os.path.isdir(download_dir) == True
+
+    paths_color = [
+        extract_dir + "/color/00000.jpg", extract_dir + "/color/00001.jpg",
+        extract_dir + "/color/00002.jpg", extract_dir + "/color/00003.jpg",
+        extract_dir + "/color/00004.jpg"
+    ]
+
+    assert rgbd_dataset_icl.paths_color == paths_color
+    for path in rgbd_dataset_icl.paths_color:
+        assert os.path.isfile(path) == True
+
+    paths_depth = [
+        extract_dir + "/depth/00000.png", extract_dir + "/depth/00001.png",
+        extract_dir + "/depth/00002.png", extract_dir + "/depth/00003.png",
+        extract_dir + "/depth/00004.png"
+    ]
+    assert rgbd_dataset_icl.paths_depth == paths_depth
+    for path in rgbd_dataset_icl.paths_depth:
+        assert os.path.isfile(path) == True
+
+    assert rgbd_dataset_icl.prefix == prefix
+    assert rgbd_dataset_icl.data_root == data_root
+    assert rgbd_dataset_icl.download_dir == download_dir
+    assert rgbd_dataset_icl.extract_dir == extract_dir
+
+    shutil.rmtree(download_dir, ignore_errors=True)
+    shutil.rmtree(extract_dir, ignore_errors=True)
+
+
 def test_eagle():
     prefix = "O3DTestEagle"
     data_root = os.path.join(Path.home(), "open3d_data")

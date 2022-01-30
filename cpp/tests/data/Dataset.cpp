@@ -331,6 +331,162 @@ TEST(Dataset, SamplePointCloudPLY) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
+TEST(Dataset, SampleRGBDImageNYU) {
+    const std::string prefix = "O3DTestSampleRGBDImageNYU";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::SampleRGBDImageNYU rgbd_nyu(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    EXPECT_EQ(rgbd_nyu.GetPathColor(), extract_dir + "/NYU_color.ppm");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_nyu.GetPathColor()));
+    EXPECT_EQ(rgbd_nyu.GetPathDepth(), extract_dir + "/NYU_depth.pgm");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_nyu.GetPathDepth()));
+
+    // Basic method.
+    EXPECT_EQ(rgbd_nyu.GetPrefix(), prefix);
+    EXPECT_EQ(rgbd_nyu.GetDataRoot(), data_root);
+    EXPECT_EQ(rgbd_nyu.GetDownloadDir(), download_dir);
+    EXPECT_EQ(rgbd_nyu.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, SampleRGBDImageSUN) {
+    const std::string prefix = "O3DTestSampleRGBDImageSUN";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::SampleRGBDImageSUN rgbd_sun(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    EXPECT_EQ(rgbd_sun.GetPathColor(), extract_dir + "/SUN_color.jpg");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_sun.GetPathColor()));
+    EXPECT_EQ(rgbd_sun.GetPathDepth(), extract_dir + "/SUN_depth.png");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_sun.GetPathDepth()));
+
+    // Basic method.
+    EXPECT_EQ(rgbd_sun.GetPrefix(), prefix);
+    EXPECT_EQ(rgbd_sun.GetDataRoot(), data_root);
+    EXPECT_EQ(rgbd_sun.GetDownloadDir(), download_dir);
+    EXPECT_EQ(rgbd_sun.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, SampleRGBDImageTUM) {
+    const std::string prefix = "O3DTestSampleRGBDImageTUM";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::SampleRGBDImageTUM rgbd_tum(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    EXPECT_EQ(rgbd_tum.GetPathColor(), extract_dir + "/TUM_color.png");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_tum.GetPathColor()));
+    EXPECT_EQ(rgbd_tum.GetPathDepth(), extract_dir + "/TUM_depth.png");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_tum.GetPathDepth()));
+
+    // Basic method.
+    EXPECT_EQ(rgbd_tum.GetPrefix(), prefix);
+    EXPECT_EQ(rgbd_tum.GetDataRoot(), data_root);
+    EXPECT_EQ(rgbd_tum.GetDownloadDir(), download_dir);
+    EXPECT_EQ(rgbd_tum.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, SampleRGBDDatasetICL) {
+    const std::string prefix = "SampleRGBDDatasetICL";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::SampleRGBDDatasetICL rgbd_icl(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    const std::vector<std::string> paths_color = {
+            extract_dir + "/color/00000.jpg", extract_dir + "/color/00001.jpg",
+            extract_dir + "/color/00002.jpg", extract_dir + "/color/00003.jpg",
+            extract_dir + "/color/00004.jpg"};
+    EXPECT_EQ(rgbd_icl.GetPathsColor(), paths_color);
+
+    const std::vector<std::string> paths_depth = {
+            extract_dir + "/depth/00000.png", extract_dir + "/depth/00001.png",
+            extract_dir + "/depth/00002.png", extract_dir + "/depth/00003.png",
+            extract_dir + "/depth/00004.png"};
+    EXPECT_EQ(rgbd_icl.GetPathsDepth(), paths_depth);
+    for (size_t i = 0; i < paths_color.size(); ++i) {
+        EXPECT_TRUE(
+                utility::filesystem::FileExists(rgbd_icl.GetPathsColor()[i]));
+        EXPECT_TRUE(
+                utility::filesystem::FileExists(rgbd_icl.GetPathsDepth()[i]));
+    }
+
+    EXPECT_EQ(rgbd_icl.GetPathTrajectoryLog(), extract_dir + "/trajectory.log");
+    EXPECT_TRUE(
+            utility::filesystem::FileExists(rgbd_icl.GetPathTrajectoryLog()));
+
+    EXPECT_EQ(rgbd_icl.GetPathOdometryLog(), extract_dir + "/odometry.log");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_icl.GetPathOdometryLog()));
+
+    EXPECT_EQ(rgbd_icl.GetPathRGBDMatch(), extract_dir + "/rgbd.match");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_icl.GetPathRGBDMatch()));
+
+    EXPECT_EQ(rgbd_icl.GetPathReconstruction(),
+              extract_dir + "/example_tsdf_pcd.ply");
+    EXPECT_TRUE(
+            utility::filesystem::FileExists(rgbd_icl.GetPathReconstruction()));
+
+    // Basic method.
+    EXPECT_EQ(rgbd_icl.GetPrefix(), prefix);
+    EXPECT_EQ(rgbd_icl.GetDataRoot(), data_root);
+    EXPECT_EQ(rgbd_icl.GetDownloadDir(), download_dir);
+    EXPECT_EQ(rgbd_icl.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
 TEST(Dataset, Eagle) {
     const std::string prefix = "O3DTestEagle";
     const std::string data_root =
