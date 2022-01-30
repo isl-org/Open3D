@@ -263,7 +263,7 @@ def test_sample_pointcloud_ply():
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)
 
-    ply_pointcloud = o3d.data.SamplePointCloudPCD(prefix)
+    ply_pointcloud = o3d.data.SamplePointCloudPLY(prefix)
     assert os.path.isdir(download_dir) == True
 
     assert ply_pointcloud.path == extract_dir + "/fragment.ply"
