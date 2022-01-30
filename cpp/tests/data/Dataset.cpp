@@ -62,16 +62,18 @@ TEST(Dataset, SimpleDataset) {
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
     const std::vector<std::string> url_mirrors = {
-            "https://github.com/isl-org/open3d_downloads/releases/download/"
-            "stanford-mesh/Bunny.ply"};
+            "https://github.com/isl-org/open3d_downloads/releases/"
+            "download/290122-sample-meshs/BunnyMesh.ply"};
     const std::string md5 = "568f871d1a221ba6627569f1e6f9a3f2";
 
     data::SimpleDataset simple_dataset(prefix, url_mirrors, md5,
                                        /*no_extact*/ true);
 
     // Check if file is downloaded and extracted / copied.
-    EXPECT_TRUE(utility::filesystem::FileExists(download_dir + "/Bunny.ply"));
-    EXPECT_TRUE(utility::filesystem::FileExists(extract_dir + "/Bunny.ply"));
+    EXPECT_TRUE(
+            utility::filesystem::FileExists(download_dir + "/BunnyMesh.ply"));
+    EXPECT_TRUE(
+            utility::filesystem::FileExists(extract_dir + "/BunnyMesh.ply"));
 
     // Basic methods.
     EXPECT_EQ(simple_dataset.GetPrefix(), prefix);
@@ -267,6 +269,99 @@ TEST(Dataset, DemoPoseGraphOptimization) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
+TEST(Dataset, SamplePointCloudPCD) {
+    const std::string prefix = "O3DTestSamplePointCloudPCD";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::SamplePointCloudPCD pointcloud_pcd(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    EXPECT_EQ(pointcloud_pcd.GetPath(), extract_dir + "/fragment.pcd");
+    // Check if the file actually exists.
+    EXPECT_TRUE(utility::filesystem::FileExists(pointcloud_pcd.GetPath()));
+
+    // Basic method.
+    EXPECT_EQ(pointcloud_pcd.GetPrefix(), prefix);
+    EXPECT_EQ(pointcloud_pcd.GetDataRoot(), data_root);
+    EXPECT_EQ(pointcloud_pcd.GetDownloadDir(), download_dir);
+    EXPECT_EQ(pointcloud_pcd.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, SamplePointCloudPLY) {
+    const std::string prefix = "O3DTestSamplePointCloudPLY";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::SamplePointCloudPLY pointcloud_ply(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    EXPECT_EQ(pointcloud_ply.GetPath(), extract_dir + "/fragment.ply");
+    // Check if the file actually exists.
+    EXPECT_TRUE(utility::filesystem::FileExists(pointcloud_ply.GetPath()));
+
+    // Basic method.
+    EXPECT_EQ(pointcloud_ply.GetPrefix(), prefix);
+    EXPECT_EQ(pointcloud_ply.GetDataRoot(), data_root);
+    EXPECT_EQ(pointcloud_ply.GetDownloadDir(), download_dir);
+    EXPECT_EQ(pointcloud_ply.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, Eagle) {
+    const std::string prefix = "O3DTestEagle";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::Eagle eagle(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    EXPECT_EQ(eagle.GetPath(), extract_dir + "/EaglePointCloud.ply");
+    // Check if the file actually exists.
+    EXPECT_TRUE(utility::filesystem::FileExists(eagle.GetPath()));
+
+    // Basic method.
+    EXPECT_EQ(eagle.GetPrefix(), prefix);
+    EXPECT_EQ(eagle.GetDataRoot(), data_root);
+    EXPECT_EQ(eagle.GetDownloadDir(), download_dir);
+    EXPECT_EQ(eagle.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
 TEST(Dataset, Armadillo) {
     const std::string prefix = "O3DTestArmadillo";
     const std::string data_root =
@@ -283,7 +378,7 @@ TEST(Dataset, Armadillo) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Method to get path.
-    EXPECT_EQ(armadillo.GetPath(), extract_dir + "/Armadillo.ply");
+    EXPECT_EQ(armadillo.GetPath(), extract_dir + "/ArmadilloMesh.ply");
     // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(armadillo.GetPath()));
 
@@ -314,7 +409,7 @@ TEST(Dataset, Bunny) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Method to get path.
-    EXPECT_EQ(bunny.GetPath(), extract_dir + "/Bunny.ply");
+    EXPECT_EQ(bunny.GetPath(), extract_dir + "/BunnyMesh.ply");
     // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(bunny.GetPath()));
 
@@ -323,6 +418,68 @@ TEST(Dataset, Bunny) {
     EXPECT_EQ(bunny.GetDataRoot(), data_root);
     EXPECT_EQ(bunny.GetDownloadDir(), download_dir);
     EXPECT_EQ(bunny.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, Knot) {
+    const std::string prefix = "O3DTestKnot";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::Knot knot(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    EXPECT_EQ(knot.GetPath(), extract_dir + "/KnotMesh.ply");
+    // Check if the file actually exists.
+    EXPECT_TRUE(utility::filesystem::FileExists(knot.GetPath()));
+
+    // Basic method.
+    EXPECT_EQ(knot.GetPrefix(), prefix);
+    EXPECT_EQ(knot.GetDataRoot(), data_root);
+    EXPECT_EQ(knot.GetDownloadDir(), download_dir);
+    EXPECT_EQ(knot.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, Juneau) {
+    const std::string prefix = "O3DTestJuneau";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::Juneau juneau(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    EXPECT_EQ(juneau.GetPath(), extract_dir + "/JuneauImage.jpg");
+    // Check if the file actually exists.
+    EXPECT_TRUE(utility::filesystem::FileExists(juneau.GetPath()));
+
+    // Basic method.
+    EXPECT_EQ(juneau.GetPrefix(), prefix);
+    EXPECT_EQ(juneau.GetDataRoot(), data_root);
+    EXPECT_EQ(juneau.GetDownloadDir(), download_dir);
+    EXPECT_EQ(juneau.GetExtractDir(), extract_dir);
 
     // Delete dataset.
     utility::filesystem::DeleteDirectory(download_dir);

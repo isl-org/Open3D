@@ -223,7 +223,7 @@ Knot::Knot(const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
                      "download/290122-sample-meshs/KnotMesh.ply"},
-                    "568f871d1a221ba6627569f1e6f9a3f2",
+                    "bfc9f132ecdfb7f9fdc42abf620170fc",
                     /*no_extract =*/true) {
     path_ = Dataset::GetExtractDir() + "/KnotMesh.ply";
 }

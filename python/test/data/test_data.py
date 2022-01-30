@@ -51,7 +51,8 @@ def test_simple_dataset_base():
     download_dir = os.path.join(data_root, "download", prefix)
     extract_dir = os.path.join(data_root, "extract", prefix)
     url_mirrors = [
-        "https://github.com/isl-org/open3d_downloads/releases/download/stanford-mesh/Bunny.ply"
+        "https://github.com/isl-org/open3d_downloads/releases/download/"
+        "290122-sample-meshs/BunnyMesh.ply"
     ]
     md5 = "568f871d1a221ba6627569f1e6f9a3f2"
 
@@ -63,8 +64,8 @@ def test_simple_dataset_base():
                                             md5,
                                             no_extract=True)
 
-    assert os.path.isfile(extract_dir + "/Bunny.ply") == True
-    assert os.path.isfile(download_dir + "/Bunny.ply") == True
+    assert os.path.isfile(extract_dir + "/BunnyMesh.ply") == True
+    assert os.path.isfile(download_dir + "/BunnyMesh.ply") == True
 
     assert simple_dataset.prefix == prefix
     assert simple_dataset.data_root == data_root
