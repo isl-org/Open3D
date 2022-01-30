@@ -112,14 +112,14 @@ void pybind_slam_model(py::module &m) {
     model.def("extract_pointcloud", &Model::ExtractPointCloud,
               py::call_guard<py::gil_scoped_release>(),
               "Extract point cloud from the volumetric model.",
-              "estimated_number"_a = -1, "weight_threshold"_a = 3.0);
+              "weight_threshold"_a = 3.0, "estimated_number"_a = -1);
     docstring::ClassMethodDocInject(m, "Model", "extract_pointcloud",
                                     map_shared_argument_docstrings);
 
     model.def("extract_trianglemesh", &Model::ExtractTriangleMesh,
               py::call_guard<py::gil_scoped_release>(),
               "Extract triangle mesh from the volumetric model.",
-              "estimated_number"_a = -1, "weight_threshold"_a = 3.0);
+              "weight_threshold"_a = 3.0, "estimated_number"_a = -1);
     docstring::ClassMethodDocInject(m, "Model", "extract_trianglemesh",
                                     map_shared_argument_docstrings);
 

@@ -111,14 +111,14 @@ void Model::Integrate(const Frame& input_frame,
                           extrinsic);
 }
 
-t::geometry::PointCloud Model::ExtractPointCloud(int estimated_number,
-                                                 float weight_threshold) {
-    return voxel_grid_.ExtractPointCloud(estimated_number, weight_threshold);
+t::geometry::PointCloud Model::ExtractPointCloud(float weight_threshold,
+                                                 int estimated_number) {
+    return voxel_grid_.ExtractPointCloud(weight_threshold, estimated_number);
 }
 
-t::geometry::TriangleMesh Model::ExtractTriangleMesh(int estimated_number,
-                                                     float weight_threshold) {
-    return voxel_grid_.ExtractTriangleMesh(estimated_number, weight_threshold);
+t::geometry::TriangleMesh Model::ExtractTriangleMesh(float weight_threshold,
+                                                     int estimated_number) {
+    return voxel_grid_.ExtractTriangleMesh(weight_threshold, estimated_number);
 }
 
 core::HashMap Model::GetHashMap() { return voxel_grid_.GetHashMap(); }
