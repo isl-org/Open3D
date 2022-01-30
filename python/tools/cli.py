@@ -32,7 +32,7 @@ from pathlib import Path
 import open3d
 
 
-class Open3DArgumentParser(argparse.ArgumentParser):
+class _Open3DArgumentParser(argparse.ArgumentParser):
 
     def error(self, message):
         sys.stderr.write("error: %s\n" % message)
@@ -40,67 +40,130 @@ class Open3DArgumentParser(argparse.ArgumentParser):
         sys.exit(2)
 
 
-def get_examples_dict():
+def _get_examples_dict():
     examples_dict = {
+        "camera": [
+            "camera_trajectory",
+        ],
         "geometry": [
-            "camera_trajectory", "kd_tree_search", "octree_find_leaf",
-            "octree_from_voxel_grid", "octree_point_cloud", "octree_traversal",
-            "point_cloud_bounding_box", "point_cloud_convex_hull",
-            "point_cloud_crop", "point_cloud_dbscan_clustering",
-            "point_cloud_distance", "point_cloud_hidden_point_removal",
+            "image_processing",
+            "kd_tree_feature_matching",
+            "kd_tree_search",
+            "octree_find_leaf",
+            "octree_from_voxel_grid",
+            "octree_point_cloud",
+            "octree_traversal",
+            "point_cloud_bounding_box",
+            "point_cloud_convex_hull",
+            "point_cloud_crop",
+            "point_cloud_dbscan_clustering",
+            "point_cloud_distance",
+            "point_cloud_hidden_point_removal",
             "point_cloud_iss_keypoint_detector",
             "point_cloud_normal_estimation",
             "point_cloud_outlier_removal_radius",
-            "point_cloud_outlier_removal_statistical", "point_cloud_paint",
-            "point_cloud_plane_segmentation", "point_cloud_to_depth",
-            "point_cloud_to_rgbd", "point_cloud_transformation",
-            "point_cloud_voxel_downsampling", "point_cloud_with_numpy",
-            "ray_casting_closest_geometry", "ray_casting_sdf",
-            "ray_casting_to_image", "rgbd_datasets", "trajectory_io",
-            "triangle_mesh_connected_components", "triangle_mesh_cropping",
-            "triangle_mesh_deformation", "triangle_mesh_filtering_average",
-            "triangle_mesh_from_point_clolud_alpha_shapes",
+            "point_cloud_outlier_removal_statistical",
+            "point_cloud_paint",
+            "point_cloud_plane_segmentation",
+            "point_cloud_to_depth",
+            "point_cloud_to_rgbd",
+            "point_cloud_transformation",
+            "point_cloud_voxel_downsampling",
+            "point_cloud_with_numpy",
+            "ray_casting_closest_geometry",
+            "ray_casting_sdf",
+            "ray_casting_to_image",
+            "rgbd_datasets",
+            "triangle_mesh_connected_components",
+            "triangle_mesh_cropping",
+            "triangle_mesh_deformation",
+            "triangle_mesh_filtering_average",
+            "triangle_mesh_from_point_cloud_alpha_shapes",
             "triangle_mesh_from_point_cloud_ball_pivoting",
             "triangle_mesh_from_point_cloud_poisson",
-            "triangle_mesh_normal_estimation", "triangle_mesh_properties",
-            "triangle_mesh_sampling", "triangle_mesh_simplification_decimation",
+            "triangle_mesh_normal_estimation",
+            "triangle_mesh_properties",
+            "triangle_mesh_sampling",
+            "triangle_mesh_simplification_decimation",
             "triangle_mesh_simplification_vertex_clustering",
-            "triangle_mesh_subdivision", "triangle_mesh_transformation",
-            "triangle_mesh_with_numpy", "voxel_grid_carving",
-            "voxel_grid_from_point_cloud", "voxel_grid_from_triangle_mesh"
+            "triangle_mesh_subdivision",
+            "triangle_mesh_transformation",
+            "triangle_mesh_with_numpy",
+            "voxel_grid_carving",
+            "voxel_grid_from_point_cloud",
+            "voxel_grid_from_triangle_mesh",
         ],
-        # "pipelines": [],
-        # "utility": [],
+        "io": [
+            "image_io",
+            "point_cloud_io",
+            "realsense_io",
+            "triangle_mesh_io",
+        ],
+        "pipelines": [
+            "colored_pointcloud_registration",
+            "icp_registration",
+            "multiway_registration",
+            "pose_graph_optimization",
+            "registration_fgr",
+            "registration_ransac",
+            "rgbd_integration_uniform",
+            "rgbd_odometry",
+            "robust_icp",
+        ],
+        "utility": [
+            "vector",
+        ],
         "visualization": [
-            "customized_visualization_key_action", "customized_visualization",
-            "headless_rendering", "interactive_visualization",
-            "load_save_viewpoint", "non_blocking_visualization",
-            "remove_geometry"
+            "add_geometry",
+            "all_widgets",
+            "customized_visualization_key_action",
+            "customized_visualization",
+            "demo_scene",
+            "draw_webrtc",
+            "draw",
+            "headless_rendering",
+            "interactive_visualization",
+            "line_width",
+            "load_save_viewpoint",
+            "mouse_and_point_coord",
+            "multiple_windows",
+            "non_blocking_visualization",
+            "non_english",
+            "online_processing",
+            "remove_geometry",
+            "render_to_image",
+            "tensorboard_pytorch",
+            "tensorboard_tensorflow",
+            "text3d",
+            "textured_mesh",
+            "textured_model",
+            "video",
+            "vis_gui",
         ]
     }
 
     return examples_dict
 
 
-def get_examples_dir():
+def _get_examples_dir():
     """Get the path to the examples directory."""
     tools_path = os.path.dirname(os.path.abspath(__file__))
-    examples_path = os.path.join(os.path.dirname(tools_path), "examples")
+    examples_path = os.path.join(os.path.dirname(tools_path), "../examples/python")
     examples_dir = Path(examples_path)
     return examples_dir
 
 
-def get_example_categories():
+def _get_example_categories():
     """Get a set of all available category names."""
-    examples_dict = get_examples_dict()
+    examples_dict = _get_examples_dict()
     all_categories = [category for category in examples_dict]
     return all_categories
 
 
-def get_examples_in_category(category):
+def _get_examples_in_category(category):
     """Get a set of example names in given cateogry."""
-    examples_dict = get_examples_dict()
-    examples_dir = get_examples_dir()
+    examples_dict = _get_examples_dict()
+    examples_dir = _get_examples_dir()
     category_path = os.path.join(examples_dir, category)
     example_names = {
         name: Path(category_path) for name in examples_dict[category]
@@ -108,26 +171,26 @@ def get_examples_in_category(category):
     return example_names
 
 
-def support_choice_with_dot_py(choice):
+def _support_choice_with_dot_py(choice):
     if choice.endswith(".py"):
         return choice[:-3]
     return choice
 
 
-def example_help_categories():
+def _example_help_categories():
     msg = f"\ncategories:\n"
-    for category in sorted(get_example_categories()):
+    for category in sorted(_get_example_categories()):
         msg += f"  {category}\n"
     msg += ("\nTo view the example in each category run:\n"
             "  open3d example --list category\n ")
     return msg
 
 
-def example(parser, args):
+def _example(parser, args):
 
     if args.category_example == None:
         if args.list:
-            print(example_help_categories())
+            print(_example_help_categories())
         else:
             parser.print_help()
         return 0
@@ -139,21 +202,21 @@ def example(parser, args):
         category = args.category_example
         example = ""
 
-    if category not in get_example_categories():
+    if category not in _get_example_categories():
         print("error: invalid category provided: " + category)
         parser.print_help()
         return 1
 
     if args.list or example == "":
         print("examples in " + category + ": ")
-        for examples_in_category in sorted(get_examples_in_category(category)):
+        for examples_in_category in sorted(_get_examples_in_category(category)):
             print("  " + str(examples_in_category))
         print("\nTo view all categories run:")
         print("  open3d example --list\n")
         return 0
 
-    examples_dir = get_examples_dir()
-    examples_in_category = get_examples_in_category(category)
+    examples_dir = _get_examples_dir()
+    examples_in_category = _get_examples_in_category(category)
     target = str((examples_dir / category / examples_in_category[example] /
                   f"{example}.py").resolve())
     # path for examples needs to be modified for implicit relative imports
@@ -175,7 +238,7 @@ def example(parser, args):
     return None
 
 
-def draw(parser, args):
+def _draw(parser, args):
     if args.filename == None:
         parser.print_help()
 
@@ -197,7 +260,7 @@ def main():
           f"** Code    https://github.com/isl-org/Open3D         **\n"
           f"*******************************************************")
 
-    main_parser = Open3DArgumentParser(
+    main_parser = _Open3DArgumentParser(
         description="Open3D commad-line tools",
         add_help=False,
         formatter_class=argparse.RawTextHelpFormatter)
@@ -225,7 +288,7 @@ def main():
     parser_example = subparsers.add_parser(
         "example",
         add_help=False,
-        description=example_help + example_help_categories(),
+        description=example_help + _example_help_categories(),
         help=example_help,
         formatter_class=argparse.RawTextHelpFormatter)
     parser_example.add_argument(
@@ -233,7 +296,7 @@ def main():
         nargs="?",
         help=
         "Category/example_name of an example (supports .py extension too)\n",
-        type=support_choice_with_dot_py)
+        type=_support_choice_with_dot_py)
     parser_example.add_argument("example_args",
                                 nargs="*",
                                 help="Arguments for the example to be run\n")
@@ -262,7 +325,7 @@ def main():
                                 action="help",
                                 help="Show this help message and exit\n"
                                 "usage       :  open3d example --help\n ")
-    parser_example.set_defaults(func=example)
+    parser_example.set_defaults(func=_example)
 
     draw_help = ("Visualize a mesh or pointcloud from a file\n"
                  "for example :  open3d draw")
@@ -281,11 +344,13 @@ def main():
                              action="help",
                              help="Show this help message and exit\n"
                              "usage :  open3d draw --help\n ")
-    parser_draw.set_defaults(func=draw)
+    parser_draw.set_defaults(func=_draw)
 
     args = main_parser.parse_args()
-    args.func(subparsers.choices[args.command], args)
-
+    if args.command:
+        args.func(subparsers.choices[args.command], args)
+    else :
+        main_parser.print_help()
 
 if __name__ == "__main__":
     sys.exit(main())
