@@ -101,29 +101,47 @@ cpp_python_linking_uninstall_test() {
         docker_run="docker run"
     fi
 
-    # Config-dependent argument: pytest_args
-    if [ "${BUILD_PYTORCH_OPS}" == "OFF" ] || [ "${BUILD_TENSORFLOW_OPS}" == "OFF" ]; then
-        pytest_args="--ignore python/test/ml_ops/"
-    else
-        pytest_args=""
-    fi
+    # # Config-dependent argument: pytest_args
+    # if [ "${BUILD_PYTORCH_OPS}" == "OFF" ] || [ "${BUILD_TENSORFLOW_OPS}" == "OFF" ]; then
+    #     pytest_args="--ignore python/test/ml_ops/"
+    # else
+    #     pytest_args=""
+    # fi
 
-    restart_docker_daemon_if_on_gcloud
+    # restart_docker_daemon_if_on_gcloud
 
-    # C++ test
-    echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
-    ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c "\
-        cd build \
-     && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
-    "
-    restart_docker_daemon_if_on_gcloud
+    # # C++ test
+    # echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
+    # ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c "\
+    #     cd build \
+    #  && ./bin/tests --gtest_shuffle --gtest_filter=-*Reduce*Sum* \
+    # "
+    # restart_docker_daemon_if_on_gcloud
 
-    # Python test
-    echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
+    # # Python test
+    # echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
+    # ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
+    #     python -m pytest python/test ${pytest_args} \
+    # "
+    # restart_docker_daemon_if_on_gcloud
+    
+    # Command-line tools test
+    echo "testing Open3D command-line tools"
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        python -m pytest python/test ${pytest_args} \
+            open3d \
+         && open3d -h \
+         && open3d --help \
+         && open3d -V \
+         && open3d --version \
+         && open3d example -h \
+         && open3d example --help \
+         && open3d example -l \
+         && open3d example --list \
+         && open3d example -l io \
+         && open3d example --list io \
+         && open3d example -s io/image_io \
+         && open3d example --show io/image_io \
     "
-    restart_docker_daemon_if_on_gcloud
 
     # C++ linking
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\

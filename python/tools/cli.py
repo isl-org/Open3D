@@ -37,7 +37,7 @@ class _Open3DArgumentParser(argparse.ArgumentParser):
     def error(self, message):
         sys.stderr.write("error: %s\n" % message)
         self.print_help()
-        sys.exit(2)
+        self.exit(2)
 
 
 def _get_examples_dict():
@@ -148,7 +148,7 @@ def _get_examples_dict():
 def _get_examples_dir():
     """Get the path to the examples directory."""
     tools_path = os.path.dirname(os.path.abspath(__file__))
-    examples_path = os.path.join(os.path.dirname(tools_path), "../examples/python")
+    examples_path = os.path.join(os.path.dirname(tools_path), "examples")
     examples_dir = Path(examples_path)
     return examples_dir
 
@@ -205,7 +205,7 @@ def _example(parser, args):
     if category not in _get_example_categories():
         print("error: invalid category provided: " + category)
         parser.print_help()
-        return 1
+        parser.exit(2)
 
     if args.list or example == "":
         print("examples in " + category + ": ")
@@ -235,7 +235,7 @@ def _example(parser, args):
     sys.argv.insert(1, removed_args[0])
     sys.argv.insert(2, removed_args[1])
 
-    return None
+    return 0
 
 
 def _draw(parser, args):
@@ -248,7 +248,7 @@ def _draw(parser, args):
     app.main()
     sys.argv.insert(1, removed_arg)
 
-    return None
+    return 0
 
 
 def main():
@@ -347,10 +347,11 @@ def main():
     parser_draw.set_defaults(func=_draw)
 
     args = main_parser.parse_args()
-    if args.command:
-        args.func(subparsers.choices[args.command], args)
+    if args.command in subparsers.choices.keys():
+        return args.func(subparsers.choices[args.command], args)
     else :
         main_parser.print_help()
+        return 0
 
 if __name__ == "__main__":
     sys.exit(main())

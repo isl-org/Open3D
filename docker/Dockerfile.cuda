@@ -144,7 +144,8 @@ RUN mkdir build \
           .. \
  && make VERBOSE=1 -j$(nproc) \
  && make install-pip-package -j$(nproc) \
- && make install -j$(nproc)
+ && make install -j$(nproc) \
+ && pyenv rehash
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
