@@ -187,7 +187,7 @@ public:
     void ShowGround(bool show);
     void SetGroundPlane(rendering::Scene::GroundPlane plane);
     void EnableSunFollowsCamera(bool enable);
-    void EnableInspectionMode(bool enable);
+    void EnableBasicMode(bool enable);
     void SetPointSize(int point_size);
     void SetLineWidth(int line_width);
     void EnableGroup(const std::string& group, bool enable);

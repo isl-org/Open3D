@@ -635,7 +635,7 @@ struct O3DVisualizer::Impl {
 
         settings.basic_mode = new Checkbox("");
         settings.basic_mode->SetOnChecked(
-                [this](bool enable) { this->EnableInspectionMode(enable); });
+                [this](bool enable) { this->EnableBasicMode(enable); });
 
         auto *grid = new VGrid(2, v_spacing);
         settings.scene_panel->AddChild(GiveOwnership(grid));
@@ -1193,7 +1193,6 @@ struct O3DVisualizer::Impl {
                                     std::make_shared<geometry::TriangleMesh>(
                                             tmesh->vertices_,
                                             tmesh->triangles_);
-                            new_mesh->triangle_uvs_ = tmesh->triangle_uvs_;
                             if (!tmesh->HasTriangleNormals()) {
                                 new_mesh->ComputeTriangleNormals();
                             } else {
@@ -1367,7 +1366,7 @@ struct O3DVisualizer::Impl {
         settings.point_size->SetEnabled(enable);
     }
 
-    void EnableInspectionMode(bool enable) {
+    void EnableBasicMode(bool enable) {
         auto o3dscene = scene_->GetScene();
         auto view = o3dscene->GetView();
         auto low_scene = o3dscene->GetScene();
@@ -2238,8 +2237,8 @@ void O3DVisualizer::SetGroundPlane(rendering::Scene::GroundPlane plane) {
     impl_->SetGroundPlane(plane);
 }
 
-void O3DVisualizer::EnableInspectionMode(bool enable) {
-    impl_->EnableInspectionMode(enable);
+void O3DVisualizer::EnableBasicMode(bool enable) {
+    impl_->EnableBasicMode(enable);
 }
 
 void O3DVisualizer::SetPointSize(int point_size) {
