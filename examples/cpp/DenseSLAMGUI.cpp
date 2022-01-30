@@ -191,12 +191,17 @@ public:
         /// Property panels
         fixed_props_ = std::make_shared<PropertyPanel>(spacing, left_margin);
         fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
-                                   1000, 1, 5000,
+                                   1000, 1000, 5000,
                                    "Scale factor applied to the depth values "
                                    "from the depth image.");
         fixed_props_->AddFloatSlider("Voxel size", &prop_values_.voxel_size,
                                      3.0 / 512, 0.004, 0.01,
                                      "Voxel size for the TSDF voxel grid.");
+        fixed_props_->AddFloatSlider(
+                "Trunc multiplier", &prop_values_.trunc_voxel_multiplier, 8.0,
+                1.0, 20.0,
+                "Truncate distance multiplier (in voxel size) to control "
+                "the volumetric surface thickness.");
         fixed_props_->AddIntSlider(
                 "Block count", &prop_values_.bucket_count, 40000, 10000, 100000,
                 "Number of estimated voxel blocks for spatial "
@@ -263,10 +268,6 @@ public:
                                     camera::PinholeCameraTrajectory>();
 
                             float voxel_size = prop_values_.voxel_size;
-                            // The SDF truncation distance is empirically set to
-                            // 6 * voxel_size. Further SDF measurements can be
-                            // regarded as outliers and truncated for a smooth
-                            // result.
                             // The volumetric hash map maps 3D coordinates to
                             // 16^3 voxel blocks, to ensure a globally sparse
                             // locally dense data structure. This captures the
@@ -412,6 +413,7 @@ protected:
         std::atomic<int> depth_scale;
         std::atomic<int> bucket_count;
         std::atomic<double> voxel_size;
+        std::atomic<double> trunc_voxel_multiplier;
         std::atomic<double> depth_max;
         std::atomic<double> depth_diff;
         std::atomic<bool> raycast_color;
@@ -642,7 +644,8 @@ protected:
             model_->UpdateFramePose(idx, T_frame_to_model);
             if (tracking_success) {
                 model_->Integrate(input_frame, depth_scale,
-                                  prop_values_.depth_max);
+                                  prop_values_.depth_max,
+                                  prop_values_.trunc_voxel_multiplier);
             }
             model_->SynthesizeModelFrame(raycast_frame, depth_scale, 0.1,
                                          prop_values_.depth_max,

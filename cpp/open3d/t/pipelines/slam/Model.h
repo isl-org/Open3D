@@ -72,6 +72,7 @@ public:
                               float depth_scale,
                               float depth_min,
                               float depth_max,
+                              float trunc_voxel_multiplier = 8.0,
                               bool enable_color = true);
 
     /// Track using PointToPlane depth odometry.
@@ -94,7 +95,8 @@ public:
     /// camera.
     void Integrate(const Frame& input_frame,
                    float depth_scale,
-                   float depth_max);
+                   float depth_max,
+                   float trunc_voxel_multiplier = 8.0f);
 
     /// Extract surface point cloud for visualization / model saving.
     /// \param weight_threshold Weight threshold of the TSDF voxels to prune

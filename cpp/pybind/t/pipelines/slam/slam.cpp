@@ -90,7 +90,8 @@ void pybind_slam_model(py::module &m) {
               py::call_guard<py::gil_scoped_release>(),
               "Synthesize frame from the volumetric model using ray casting.",
               "model_frame"_a, "depth_scale"_a = 1000.0, "depth_min"_a = 0.1,
-              "depth_max"_a = 3.0, "enable_color"_a = false);
+              "depth_max"_a = 3.0, "trunc_voxel_multiplier"_a = 8.0,
+              "enable_color"_a = false);
     docstring::ClassMethodDocInject(m, "Model", "synthesize_model_frame",
                                     map_shared_argument_docstrings);
 
@@ -105,7 +106,8 @@ void pybind_slam_model(py::module &m) {
     model.def("integrate", &Model::Integrate,
               py::call_guard<py::gil_scoped_release>(),
               "Integrate an input frame to a volume.", "input_frame"_a,
-              "depth_scale"_a = 1000.0, "depth_max"_a = 3.0);
+              "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
+              "trunc_voxel_multiplier"_a = 8.0);
     docstring::ClassMethodDocInject(m, "Model", "integrate",
                                     map_shared_argument_docstrings);
 

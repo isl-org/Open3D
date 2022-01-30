@@ -290,9 +290,10 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
                                const core::Tensor &intrinsic,
                                const core::Tensor &extrinsic,
                                float depth_scale,
-                               float depth_max) {
+                               float depth_max,
+                               float trunc_voxel_multiplier) {
     Integrate(block_coords, depth, Image(), intrinsic, intrinsic, extrinsic,
-              depth_scale, depth_max);
+              depth_scale, depth_max, trunc_voxel_multiplier);
 }
 
 void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
@@ -301,9 +302,10 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
                                const core::Tensor &intrinsic,
                                const core::Tensor &extrinsic,
                                float depth_scale,
-                               float depth_max) {
+                               float depth_max,
+                               float trunc_voxel_multiplier) {
     Integrate(block_coords, depth, color, intrinsic, intrinsic, extrinsic,
-              depth_scale, depth_max);
+              depth_scale, depth_max, trunc_voxel_multiplier);
 }
 
 void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
@@ -313,7 +315,8 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
                                const core::Tensor &color_intrinsic,
                                const core::Tensor &extrinsic,
                                float depth_scale,
-                               float depth_max) {
+                               float depth_max,
+                               float trunc_voxel_multiplier) {
     AssertInitialized();
     bool integrate_color = color.AsTensor().NumElements() > 0;
 
@@ -334,12 +337,11 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
     TensorMap block_value_map =
             ConstructTensorMap(*block_hashmap_, name_attr_map_);
 
-    float trunc_multiplier = block_resolution_ * 0.5;
     kernel::voxel_grid::Integrate(
             depth.AsTensor(), color.AsTensor(), buf_indices, block_keys,
             block_value_map, depth_intrinsic, color_intrinsic, extrinsic,
-            block_resolution_, voxel_size_, voxel_size_ * trunc_multiplier,
-            depth_scale, depth_max);
+            block_resolution_, voxel_size_,
+            voxel_size_ * trunc_voxel_multiplier, depth_scale, depth_max);
 }
 
 TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
@@ -351,7 +353,8 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
                                   float depth_scale,
                                   float depth_min,
                                   float depth_max,
-                                  float weight_threshold) {
+                                  float weight_threshold,
+                                  float trunc_voxel_multiplier) {
     AssertInitialized();
     CheckBlockCoorinates(block_coords);
     CheckIntrinsicTensor(intrinsic);
@@ -405,14 +408,13 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
                 core::Tensor({height, width, channel}, dtype, device);
     }
 
-    float trunc_multiplier = block_resolution_ * 0.5;
     TensorMap block_value_map =
             ConstructTensorMap(*block_hashmap_, name_attr_map_);
     kernel::voxel_grid::RayCast(
             block_hashmap_, block_value_map, range_minmax_map, renderings_map,
             intrinsic, extrinsic, height, width, block_resolution_, voxel_size_,
-            voxel_size_ * trunc_multiplier, depth_scale, depth_min, depth_max,
-            weight_threshold);
+            voxel_size_ * trunc_voxel_multiplier, depth_scale, depth_min,
+            depth_max, weight_threshold);
 
     return renderings_map;
 }

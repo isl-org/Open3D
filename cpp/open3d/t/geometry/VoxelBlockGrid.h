@@ -133,11 +133,11 @@ public:
                                            const core::Tensor &extrinsic,
                                            float depth_scale = 1000.0f,
                                            float depth_max = 3.0f,
-                                           float trunc_voxel_multiplier = 4.0);
+                                           float trunc_voxel_multiplier = 8.0);
 
     /// Obtain active block coordinates from a point cloud.
     core::Tensor GetUniqueBlockCoordinates(const PointCloud &pcd,
-                                           float trunc_voxel_multiplier = 4.0);
+                                           float trunc_voxel_multiplier = 8.0);
 
     /// Specific operation for TSDF volumes.
     /// Integrate an RGB-D frame in the selected block coordinates using pinhole
@@ -159,7 +159,8 @@ public:
                    const core::Tensor &color_intrinsic,
                    const core::Tensor &extrinsic,
                    float depth_scale = 1000.0f,
-                   float depth_max = 3.0f);
+                   float depth_max = 3.0f,
+                   float trunc_voxel_multiplier = 8.0f);
 
     /// Specific operation for TSDF volumes.
     /// Similar to RGB-D integration, but uses the same intrinsics for depth and
@@ -170,7 +171,8 @@ public:
                    const core::Tensor &intrinsic,
                    const core::Tensor &extrinsic,
                    float depth_scale = 1000.0f,
-                   float depth_max = 3.0f);
+                   float depth_max = 3.0f,
+                   float trunc_voxel_multiplier = 8.0f);
 
     /// Specific operation for TSDF volumes.
     /// Similar to RGB-D integration, but only applied to depth.
@@ -179,7 +181,8 @@ public:
                    const core::Tensor &intrinsic,
                    const core::Tensor &extrinsic,
                    float depth_scale = 1000.0f,
-                   float depth_max = 3.0f);
+                   float depth_max = 3.0f,
+                   float trunc_voxel_multiplier = 8.0f);
 
     /// Specific operation for TSDF volumes.
     /// Perform volumetric ray casting in the selected block coordinates.
@@ -200,7 +203,8 @@ public:
                       float depth_scale = 1000.0f,
                       float depth_min = 0.1f,
                       float depth_max = 3.0f,
-                      float weight_threshold = 3.0f);
+                      float weight_threshold = 3.0f,
+                      float trunc_voxel_multiplier = 8.0f);
 
     /// Specific operation for TSDF volumes.
     /// Extract point cloud at isosurface points.

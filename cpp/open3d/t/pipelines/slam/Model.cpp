@@ -58,13 +58,14 @@ void Model::SynthesizeModelFrame(Frame& raycast_frame,
                                  float depth_scale,
                                  float depth_min,
                                  float depth_max,
+                                 float trunc_voxel_multiplier,
                                  bool enable_color) {
     auto result = voxel_grid_.RayCast(
             frustum_block_coords_, raycast_frame.GetIntrinsics(),
             t::geometry::InverseTransformation(GetCurrentFramePose()),
             raycast_frame.GetWidth(), raycast_frame.GetHeight(),
             {"depth", "color"}, depth_scale, depth_min, depth_max,
-            std::min(frame_id_ * 1.0f, 3.0f));
+            std::min(frame_id_ * 1.0f, 3.0f), trunc_voxel_multiplier);
     raycast_frame.SetData("depth", result["depth"]);
     if (enable_color) {
         raycast_frame.SetData("color", result["color"]);
@@ -99,14 +100,16 @@ odometry::OdometryResult Model::TrackFrameToModel(const Frame& input_frame,
 
 void Model::Integrate(const Frame& input_frame,
                       float depth_scale,
-                      float depth_max) {
+                      float depth_max,
+                      float trunc_voxel_multiplier) {
     t::geometry::Image depth = input_frame.GetDataAsImage("depth");
     t::geometry::Image color = input_frame.GetDataAsImage("color");
     core::Tensor intrinsic = input_frame.GetIntrinsics();
     core::Tensor extrinsic =
             t::geometry::InverseTransformation(GetCurrentFramePose());
     frustum_block_coords_ = voxel_grid_.GetUniqueBlockCoordinates(
-            depth, intrinsic, extrinsic, depth_scale, depth_max);
+            depth, intrinsic, extrinsic, depth_scale, depth_max,
+            trunc_voxel_multiplier);
     voxel_grid_.Integrate(frustum_block_coords_, depth, color, intrinsic,
                           extrinsic);
 }
