@@ -113,9 +113,11 @@ static VoxelBlockGrid Integrate(const core::HashBackendType &backend,
                               ->To(device);
 
         core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
-                depth, intrinsic, extrinsics[i], depth_scale, depth_max);
+                depth, intrinsic, extrinsics[i], depth_scale, depth_max,
+                /*trunc_multiplier=*/4.0);
         vbg.Integrate(frustum_block_coords, depth, color, intrinsic,
-                      extrinsics[i]);
+                      extrinsics[i], depth_scale, depth_max,
+                      /*trunc multiplier*/ resolution * 0.5);
     }
 
     return vbg;
@@ -219,7 +221,7 @@ TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
     std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
     const float depth_scale = 1000.0;
     const float depth_max = 3.0;
-
+    const float trunc_voxel_multiplier = 4.0;
     for (auto backend : backends) {
         auto vbg = VoxelBlockGrid({"tsdf", "weight", "color"},
                                   {core::Float32, core::Float32, core::UInt16},
@@ -232,11 +234,13 @@ TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
                                           std::string(TEST_DATA_DIR), i))
                               ->To(device);
         core::Tensor block_coords_from_depth = vbg.GetUniqueBlockCoordinates(
-                depth, intrinsic, extrinsics[i], depth_scale, depth_max);
+                depth, intrinsic, extrinsics[i], depth_scale, depth_max,
+                trunc_voxel_multiplier);
 
         PointCloud pcd = PointCloud::CreateFromDepthImage(
                 depth, intrinsic, extrinsics[i], depth_scale, depth_max, 4);
-        core::Tensor block_coords_from_pcd = vbg.GetUniqueBlockCoordinates(pcd);
+        core::Tensor block_coords_from_pcd =
+                vbg.GetUniqueBlockCoordinates(pcd, trunc_voxel_multiplier);
 
         // Hard-coded result -- implementation could change,
         // freeze result of test_data when stable.
