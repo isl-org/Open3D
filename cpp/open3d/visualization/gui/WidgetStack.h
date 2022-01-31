@@ -26,10 +26,10 @@
 
 #pragma once
 
-#include <open3d/visualization/gui/WidgetProxy.h>
-
 #include <functional>
 #include <memory>
+
+#include "open3d/visualization/gui/WidgetProxy.h"
 
 namespace open3d {
 namespace visualization {

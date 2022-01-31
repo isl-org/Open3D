@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "WidgetStack.h"
+#include "open3d/visualization/gui/WidgetStack.h"
 
 #include <stack>
 
