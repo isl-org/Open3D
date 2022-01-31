@@ -34,20 +34,18 @@ test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 if __name__ == "__main__":
 
     print("Load two aligned point clouds.")
-    pcd0 = o3d.io.read_point_cloud(
-        os.path.join(test_data_path, 'Feature', 'cloud_bin_0.pcd'))
-    pcd1 = o3d.io.read_point_cloud(
-        os.path.join(test_data_path, 'Feature', 'cloud_bin_1.pcd'))
+    demo_data = o3d.data.demo_pointcloud_feature_matching()
+    pcd0 = o3d.io.read_point_cloud(demo_data.paths_pointcloud[0])
+    pcd1 = o3d.io.read_point_cloud(demo_data.paths_pointcloud[1])
+
     pcd0.paint_uniform_color([1, 0.706, 0])
     pcd1.paint_uniform_color([0, 0.651, 0.929])
     o3d.visualization.draw_geometries([pcd0, pcd1])
     print("Load their FPFH feature and evaluate.")
     print("Black : matching distance > 0.2")
     print("White : matching distance = 0")
-    feature0 = o3d.io.read_feature(
-        os.path.join(test_data_path, 'Feature', 'cloud_bin_0.fpfh.bin'))
-    feature1 = o3d.io.read_feature(
-        os.path.join(test_data_path, 'Feature', 'cloud_bin_1.fpfh.bin'))
+    feature0 = o3d.io.read_feature(demo_data.paths_fpfh_feature[0])
+    feature1 = o3d.io.read_feature(demo_data.paths_fpfh_feature[1])
 
     fpfh_tree = o3d.geometry.KDTreeFlann(feature1)
     for i in range(len(pcd0.points)):
@@ -61,10 +59,8 @@ if __name__ == "__main__":
     print("Load their L32D feature and evaluate.")
     print("Black : matching distance > 0.2")
     print("White : matching distance = 0")
-    feature0 = o3d.io.read_feature(
-        os.path.join(test_data_path, 'Feature', 'cloud_bin_0.d32.bin'))
-    feature1 = o3d.io.read_feature(
-        os.path.join(test_data_path, 'Feature', 'cloud_bin_1.d32.bin'))
+    feature0 = o3d.io.read_feature(demo_data.paths_l32d_feature[0])
+    feature1 = o3d.io.read_feature(demo_data.paths_l32d_feature[1])
 
     fpfh_tree = o3d.geometry.KDTreeFlann(feature1)
     for i in range(len(pcd0.points)):

@@ -161,25 +161,25 @@ void pybind_demo_pointcloud_feature_matching(py::module& m) {
                  "prefix"_a = "DemoPointCloudFeatureMatching",
                  "data_root"_a = "")
             .def_property_readonly(
-                    "paths_pointclouds",
+                    "paths_pointcloud",
                     &DemoPointCloudFeatureMatching::GetPathsPointClouds,
                     "List of paths to point clouds, of size 2.")
             .def_property_readonly(
-                    "paths_fpfh_features",
+                    "paths_fpfh_feature",
                     &DemoPointCloudFeatureMatching::GetPathsFPFHFeatures,
                     "List of paths to saved FPFH features binary for point "
                     "clouds, respectively, of size 2.")
             .def_property_readonly(
-                    "paths_l32d_features",
+                    "paths_l32d_feature",
                     &DemoPointCloudFeatureMatching::GetPathsL32DFeatures,
                     "List of paths to saved L32D features binary for point "
                     "clouds, respectively, of size 2.");
     docstring::ClassMethodDocInject(m, "DemoPointCloudFeatureMatching",
-                                    "paths_pointclouds");
+                                    "paths_pointcloud");
     docstring::ClassMethodDocInject(m, "DemoPointCloudFeatureMatching",
-                                    "paths_fpfh_features");
+                                    "paths_fpfh_feature");
     docstring::ClassMethodDocInject(m, "DemoPointCloudFeatureMatching",
-                                    "paths_l32d_features");
+                                    "paths_l32d_feature");
 }
 
 void pybind_demo_pose_graph_optimization(py::module& m) {

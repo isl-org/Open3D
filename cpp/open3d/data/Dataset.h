@@ -203,28 +203,28 @@ public:
 
     /// \brief Returns list of paths to point clouds, of size 2.
     std::vector<std::string> GetPathsPointClouds() const {
-        return paths_pointclouds_;
+        return paths_pointcloud_;
     }
     /// \brief Returns list of paths to saved FPFH features binary for point
     /// clouds, respectively, of size 2.
     std::vector<std::string> GetPathsFPFHFeatures() const {
-        return paths_fpfh_features_;
+        return paths_fpfh_feature_;
     }
     /// \brief Returns list of paths to saved L32D features binary for point
     /// clouds, respectively, of size 2.
     std::vector<std::string> GetPathsL32DFeatures() const {
-        return paths_l32d_features_;
+        return paths_l32d_feature_;
     }
 
 private:
     /// List of paths to point clouds, of size 2.
-    std::vector<std::string> paths_pointclouds_;
+    std::vector<std::string> paths_pointcloud_;
     /// List of saved FPFH features binary for point clouds,
     /// respectively, of size 2.
-    std::vector<std::string> paths_fpfh_features_;
+    std::vector<std::string> paths_fpfh_feature_;
     /// List of saved L32D features binary for point clouds,
     /// respectively, of size 2.
-    std::vector<std::string> paths_l32d_features_;
+    std::vector<std::string> paths_l32d_feature_;
 };
 
 /// \class DemoPoseGraphOptimization

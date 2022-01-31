@@ -169,28 +169,28 @@ def test_demo_pointcloud_feature_matching():
     demo_feature_matching = o3d.data.DemoPointCloudFeatureMatching(prefix)
     assert os.path.isdir(download_dir) == True
 
-    paths_pointclouds = [
+    paths_pointcloud = [
         extract_dir + "/cloud_bin_0.pcd", extract_dir + "/cloud_bin_1.pcd"
     ]
-    assert demo_feature_matching.paths_pointclouds == paths_pointclouds
-    assert os.path.isfile(demo_feature_matching.paths_pointclouds[0]) == True
-    assert os.path.isfile(demo_feature_matching.paths_pointclouds[1]) == True
+    assert demo_feature_matching.paths_pointcloud == paths_pointcloud
+    assert os.path.isfile(demo_feature_matching.paths_pointcloud[0]) == True
+    assert os.path.isfile(demo_feature_matching.paths_pointcloud[1]) == True
 
-    paths_fpfh_features = [
+    paths_fpfh_feature = [
         extract_dir + "/cloud_bin_0.fpfh.bin",
         extract_dir + "/cloud_bin_1.fpfh.bin"
     ]
-    assert demo_feature_matching.paths_fpfh_features == paths_fpfh_features
-    assert os.path.isfile(demo_feature_matching.paths_fpfh_features[0]) == True
-    assert os.path.isfile(demo_feature_matching.paths_fpfh_features[1]) == True
+    assert demo_feature_matching.paths_fpfh_feature == paths_fpfh_feature
+    assert os.path.isfile(demo_feature_matching.paths_fpfh_feature[0]) == True
+    assert os.path.isfile(demo_feature_matching.paths_fpfh_feature[1]) == True
 
-    paths_l32d_features = [
+    paths_l32d_feature = [
         extract_dir + "/cloud_bin_0.d32.bin",
         extract_dir + "/cloud_bin_1.d32.bin"
     ]
-    assert demo_feature_matching.paths_l32d_features == paths_l32d_features
-    assert os.path.isfile(demo_feature_matching.paths_l32d_features[0]) == True
-    assert os.path.isfile(demo_feature_matching.paths_l32d_features[1]) == True
+    assert demo_feature_matching.paths_l32d_feature == paths_l32d_feature
+    assert os.path.isfile(demo_feature_matching.paths_l32d_feature[0]) == True
+    assert os.path.isfile(demo_feature_matching.paths_l32d_feature[1]) == True
 
     assert demo_feature_matching.prefix == prefix
     assert demo_feature_matching.data_root == data_root

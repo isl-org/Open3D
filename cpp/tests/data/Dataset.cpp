@@ -210,21 +210,19 @@ TEST(Dataset, DemoPointCloudFeatureMatching) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Methods to get path.
-    const std::vector<std::string> paths_pointclouds = {
+    const std::vector<std::string> paths_pointcloud = {
             extract_dir + "/cloud_bin_0.pcd", extract_dir + "/cloud_bin_1.pcd"};
-    EXPECT_EQ(demo_feature_matching.GetPathsPointClouds(), paths_pointclouds);
+    EXPECT_EQ(demo_feature_matching.GetPathsPointClouds(), paths_pointcloud);
 
-    const std::vector<std::string> paths_fpfh_features = {
+    const std::vector<std::string> paths_fpfh_feature = {
             extract_dir + "/cloud_bin_0.fpfh.bin",
             extract_dir + "/cloud_bin_1.fpfh.bin"};
-    EXPECT_EQ(demo_feature_matching.GetPathsFPFHFeatures(),
-              paths_fpfh_features);
+    EXPECT_EQ(demo_feature_matching.GetPathsFPFHFeatures(), paths_fpfh_feature);
 
-    const std::vector<std::string> paths_l32d_features = {
+    const std::vector<std::string> paths_l32d_feature = {
             extract_dir + "/cloud_bin_0.d32.bin",
             extract_dir + "/cloud_bin_1.d32.bin"};
-    EXPECT_EQ(demo_feature_matching.GetPathsL32DFeatures(),
-              paths_l32d_features);
+    EXPECT_EQ(demo_feature_matching.GetPathsL32DFeatures(), paths_l32d_feature);
 
     // Basic methods.
     EXPECT_EQ(demo_feature_matching.GetPrefix(), prefix);

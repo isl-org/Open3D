@@ -53,8 +53,8 @@ def radius_search():
 
 def knn_search():
     print("Loading pointcloud ...")
-    path_to_pcd = os.path.join(test_data_path, 'fragment.pcd')
-    pcd = o3d.io.read_point_cloud(path_to_pcd)
+    sample_pcd = o3d.data.SamplePointCloudPCD()
+    pcd = o3d.io.read_point_cloud(sample_pcd.path)
     pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 
     print(

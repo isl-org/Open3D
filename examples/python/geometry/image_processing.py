@@ -46,7 +46,8 @@ if __name__ == "__main__":
     print(
         "Convet a numpy image to o3d.geometry.Image and show it with DrawGeomtries()."
     )
-    y = mpimg.imread(os.path.join(test_data_path, 'Juneau.jpg'))
+    sample_image = o3d.data.Juneau()
+    y = mpimg.imread(sample_image.path)
     print(y.shape)
     yy = o3d.geometry.Image(y)
     print(yy)
@@ -64,7 +65,8 @@ if __name__ == "__main__":
     o3d.io.write_image("test.jpg", zz, quality=100)
 
     print("Testing basic image processing module.")
-    im_raw = mpimg.imread(os.path.join(test_data_path, 'Juneau.jpg'))
+    sample_image = o3d.data.Juneau()
+    im_raw = mpimg.imread(sample_image.path)
     im = o3d.geometry.Image(im_raw)
     im_g3 = im.filter(o3d.geometry.ImageFilterType.Gaussian3)
     im_g5 = im.filter(o3d.geometry.ImageFilterType.Gaussian5)

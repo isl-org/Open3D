@@ -151,12 +151,12 @@ DemoPointCloudFeatureMatching::DemoPointCloudFeatureMatching(
                      "DemoPointCloudFeatureMatching.zip"},
                     "02f0703ce0cbf4df78ce2602ae33fc79") {
     const std::string extract_dir = Dataset::GetExtractDir();
-    paths_pointclouds_ = {extract_dir + "/cloud_bin_0.pcd",
-                          extract_dir + "/cloud_bin_1.pcd"};
-    paths_fpfh_features_ = {extract_dir + "/cloud_bin_0.fpfh.bin",
-                            extract_dir + "/cloud_bin_1.fpfh.bin"};
-    paths_l32d_features_ = {extract_dir + "/cloud_bin_0.d32.bin",
-                            extract_dir + "/cloud_bin_1.d32.bin"};
+    paths_pointcloud_ = {extract_dir + "/cloud_bin_0.pcd",
+                         extract_dir + "/cloud_bin_1.pcd"};
+    paths_fpfh_feature_ = {extract_dir + "/cloud_bin_0.fpfh.bin",
+                           extract_dir + "/cloud_bin_1.fpfh.bin"};
+    paths_l32d_feature_ = {extract_dir + "/cloud_bin_0.d32.bin",
+                           extract_dir + "/cloud_bin_1.d32.bin"};
 }
 
 DemoPoseGraphOptimization::DemoPoseGraphOptimization(
