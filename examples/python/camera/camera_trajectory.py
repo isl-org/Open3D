@@ -50,14 +50,14 @@ if __name__ == "__main__":
     pcds = []
     redwood_rgbd = o3d.data.SampleRGBDDatasetICL()
     trajectory = o3d.io.read_pinhole_camera_trajectory(
-        redwood_rgbd.path_trajectory_log)
+        redwood_rgbd.trajectory_log_path)
     o3d.io.write_pinhole_camera_trajectory("test.json", trajectory)
     print(trajectory)
     print(trajectory.parameters[0].extrinsic)
     print(np.asarray(trajectory.parameters[0].extrinsic))
     for i in range(5):
-        im1 = o3d.io.read_image(redwood_rgbd.paths_depth[i])
-        im2 = o3d.io.read_image(redwood_rgbd.paths_color[i])
+        im1 = o3d.io.read_image(redwood_rgbd.depth_paths[i])
+        im2 = o3d.io.read_image(redwood_rgbd.color_paths[i])
         im = o3d.geometry.RGBDImage.create_from_color_and_depth(
             im2, im1, 1000.0, 5.0, False)
         pcd = o3d.geometry.PointCloud.create_from_rgbd_image(

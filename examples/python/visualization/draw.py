@@ -100,7 +100,7 @@ def actions():
     RESULT_NAME = "Result (Poisson reconstruction)"
     TRUTH_NAME = "Ground truth"
 
-    bunny = o3d.data.Bunny()
+    bunny = o3d.data.BunnyMesh()
     bunny_mesh = o3d.io.read_triangle_mesh(bunny.path)
     bunny_mesh.compute_vertex_normals()
 

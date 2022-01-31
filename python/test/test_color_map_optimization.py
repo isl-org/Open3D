@@ -34,16 +34,16 @@ from open3d_test import download_fountain_dataset
 def load_fountain_dataset():
     rgbd_images = []
     fountain_rgbd_dataset = o3d.data.SampleFountainRGBDDataset()
-    for i in range(len(fountain_rgbd_dataset.paths_depth)):
-        depth = o3d.io.read_image(fountain_rgbd_dataset.paths_depth[i])
-        color = o3d.io.read_image(fountain_rgbd_dataset.paths_color[i])
+    for i in range(len(fountain_rgbd_dataset.depth_paths)):
+        depth = o3d.io.read_image(fountain_rgbd_dataset.depth_paths[i])
+        color = o3d.io.read_image(fountain_rgbd_dataset.color_paths[i])
         rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
             color, depth, convert_rgb_to_intensity=False)
         rgbd_images.append(rgbd_image)
 
     camera_trajectory = o3d.io.read_pinhole_camera_trajectory(
-        fountain_rgbd_dataset.path_keyframe_poses_log)
-    mesh = o3d.io.read_triangle_mesh(fountain_rgbd_dataset.path_reconstruction)
+        fountain_rgbd_dataset.keyframe_poses_log_path)
+    mesh = o3d.io.read_triangle_mesh(fountain_rgbd_dataset.reconstruction_path)
 
     return mesh, rgbd_images, camera_trajectory
 

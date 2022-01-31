@@ -141,16 +141,16 @@ void pybind_demo_crop_pointcloud(py::module& m) {
     demo_crop_pointcloud
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "DemoCropPointCloud", "data_root"_a = "")
-            .def_property_readonly("path_pointcloud",
-                                   &DemoCropPointCloud::GetPathPointCloud,
+            .def_property_readonly("pointcloud_path",
+                                   &DemoCropPointCloud::GetPointCloudPath,
                                    "Path to the example point cloud.")
             .def_property_readonly(
-                    "path_cropped_json",
-                    &DemoCropPointCloud::GetPathCroppedJSON,
+                    "cropped_json_path",
+                    &DemoCropPointCloud::GetCroppedJSONPath,
                     "Path to the saved selected polygon volume file.");
-    docstring::ClassMethodDocInject(m, "DemoCropPointCloud", "path_pointcloud");
+    docstring::ClassMethodDocInject(m, "DemoCropPointCloud", "pointcloud_path");
     docstring::ClassMethodDocInject(m, "DemoCropPointCloud",
-                                    "path_cropped_json");
+                                    "cropped_json_path");
 }
 
 void pybind_demo_pointcloud_feature_matching(py::module& m) {
@@ -169,28 +169,28 @@ void pybind_demo_pointcloud_feature_matching(py::module& m) {
                  "prefix"_a = "DemoPointCloudFeatureMatching",
                  "data_root"_a = "")
             .def_property_readonly(
-                    "paths_pointcloud",
-                    &DemoPointCloudFeatureMatching::GetPathsPointCloud,
-                    "List of 2 point cloud paths. Use `paths_pointcloud[0]`, "
-                    "and `paths_pointcloud[1]`, to access the paths.")
+                    "pointcloud_paths",
+                    &DemoPointCloudFeatureMatching::GetPointCloudPaths,
+                    "List of 2 point cloud paths. Use `pointcloud_paths[0]`, "
+                    "and `pointcloud_paths[1]`, to access the paths.")
             .def_property_readonly(
-                    "paths_fpfh_feature",
-                    &DemoPointCloudFeatureMatching::GetPathsFPFHFeature,
+                    "fpfh_feature_paths",
+                    &DemoPointCloudFeatureMatching::GetFPFHFeaturePaths,
                     "List of 2 saved FPFH feature binary of the respective "
-                    "point cloud paths. Use `paths_fpfh_feature[0]`, "
-                    "and `paths_fpfh_feature[1]`, to access the paths.")
+                    "point cloud paths. Use `fpfh_feature_paths[0]`, "
+                    "and `fpfh_feature_paths[1]`, to access the paths.")
             .def_property_readonly(
-                    "paths_l32d_feature",
-                    &DemoPointCloudFeatureMatching::GetPathsL32DFeature,
+                    "l32d_feature_paths",
+                    &DemoPointCloudFeatureMatching::GetL32DFeaturePaths,
                     "List of 2 saved L32D feature binary of the respective "
-                    "point cloud paths. Use `paths_l32d_feature[0]`, "
-                    "and `paths_l32d_feature[1]`, to access the paths.");
+                    "point cloud paths. Use `l32d_feature_paths[0]`, "
+                    "and `l32d_feature_paths[1]`, to access the paths.");
     docstring::ClassMethodDocInject(m, "DemoPointCloudFeatureMatching",
-                                    "paths_pointcloud");
+                                    "pointcloud_paths");
     docstring::ClassMethodDocInject(m, "DemoPointCloudFeatureMatching",
-                                    "paths_fpfh_feature");
+                                    "fpfh_feature_paths");
     docstring::ClassMethodDocInject(m, "DemoPointCloudFeatureMatching",
-                                    "paths_l32d_feature");
+                                    "l32d_feature_paths");
 }
 
 void pybind_demo_pose_graph_optimization(py::module& m) {
@@ -208,17 +208,17 @@ void pybind_demo_pose_graph_optimization(py::module& m) {
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "DemoPoseGraphOptimization", "data_root"_a = "")
             .def_property_readonly(
-                    "path_pose_graph_fragment",
-                    &DemoPoseGraphOptimization::GetPathPoseGraphFragment,
+                    "pose_graph_fragment_path",
+                    &DemoPoseGraphOptimization::GetPoseGraphFragmentPath,
                     "Path to example global pose graph (json).")
             .def_property_readonly(
-                    "path_pose_graph_global",
-                    &DemoPoseGraphOptimization::GetPathPoseGraphGlobal,
+                    "pose_graph_global_path",
+                    &DemoPoseGraphOptimization::GetPoseGraphGlobalPath,
                     "Path to example fragment pose graph (json).");
     docstring::ClassMethodDocInject(m, "DemoPoseGraphOptimization",
-                                    "path_pose_graph_fragment");
+                                    "pose_graph_fragment_path");
     docstring::ClassMethodDocInject(m, "DemoPoseGraphOptimization",
-                                    "path_pose_graph_global");
+                                    "pose_graph_global_path");
 }
 
 void pybind_sample_pointcloud_pcd(py::module& m) {
@@ -265,10 +265,10 @@ void pybind_sample_rgbd_image_nyu(py::module& m) {
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SampleRGBDImageNYU", "data_root"_a = "")
             .def_property_readonly("path_color",
-                                   &SampleRGBDImageNYU::GetPathColor,
+                                   &SampleRGBDImageNYU::GetColorPath,
                                    "Path to color image sample.")
             .def_property_readonly("path_depth",
-                                   &SampleRGBDImageNYU::GetPathDepth,
+                                   &SampleRGBDImageNYU::GetDepthPath,
                                    "Path to depth image sample.");
     docstring::ClassMethodDocInject(m, "SampleRGBDImageNYU", "path_color");
     docstring::ClassMethodDocInject(m, "SampleRGBDImageNYU", "path_depth");
@@ -286,10 +286,10 @@ void pybind_sample_rgbd_image_sun(py::module& m) {
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SampleRGBDImageSUN", "data_root"_a = "")
             .def_property_readonly("path_color",
-                                   &SampleRGBDImageSUN::GetPathColor,
+                                   &SampleRGBDImageSUN::GetColorPath,
                                    "Path to color image sample.")
             .def_property_readonly("path_depth",
-                                   &SampleRGBDImageSUN::GetPathDepth,
+                                   &SampleRGBDImageSUN::GetDepthPath,
                                    "Path to depth image sample.");
     docstring::ClassMethodDocInject(m, "SampleRGBDImageSUN", "path_color");
     docstring::ClassMethodDocInject(m, "SampleRGBDImageSUN", "path_depth");
@@ -307,10 +307,10 @@ void pybind_sample_rgbd_image_tum(py::module& m) {
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SampleRGBDImageTUM", "data_root"_a = "")
             .def_property_readonly("path_color",
-                                   &SampleRGBDImageTUM::GetPathColor,
+                                   &SampleRGBDImageTUM::GetColorPath,
                                    "Path to color image sample.")
             .def_property_readonly("path_depth",
-                                   &SampleRGBDImageTUM::GetPathDepth,
+                                   &SampleRGBDImageTUM::GetDepthPath,
                                    "Path to depth image sample.");
     docstring::ClassMethodDocInject(m, "SampleRGBDImageTUM", "path_color");
     docstring::ClassMethodDocInject(m, "SampleRGBDImageTUM", "path_depth");
@@ -328,40 +328,40 @@ void pybind_sample_rgbd_dataset_icl(py::module& m) {
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SampleRGBDDatasetICL", "data_root"_a = "")
             .def_property_readonly(
-                    "paths_color", &SampleRGBDDatasetICL::GetPathsColor,
+                    "color_paths", &SampleRGBDDatasetICL::GetColorPaths,
                     "List of paths to color image samples of size 5. Use "
-                    "`paths_color[0]`, `paths_color[1]` ... `paths_color[4]` "
+                    "`color_paths[0]`, `color_paths[1]` ... `color_paths[4]` "
                     "to access the paths.")
             .def_property_readonly(
-                    "paths_depth", &SampleRGBDDatasetICL::GetPathsDepth,
+                    "depth_paths", &SampleRGBDDatasetICL::GetDepthPaths,
                     "List of paths to depth image samples of size 5. Use "
-                    "`paths_depth[0]`, `paths_depth[1]` ... `paths_depth[4]` "
+                    "`depth_paths[0]`, `depth_paths[1]` ... `depth_paths[4]` "
                     "to access the paths.")
             .def_property_readonly(
-                    "path_trajectory_log",
-                    &SampleRGBDDatasetICL::GetPathTrajectoryLog,
+                    "trajectory_log_path",
+                    &SampleRGBDDatasetICL::GetTrajectoryLogPath,
                     "Path to camera trajectory log file `trajectory.log`.")
             .def_property_readonly(
-                    "path_odometry_log",
-                    &SampleRGBDDatasetICL::GetPathOdometryLog,
+                    "odometry_log_path",
+                    &SampleRGBDDatasetICL::GetOdometryLogPath,
                     "Path to camera odometry log file `odometry.log`.")
             .def_property_readonly(
-                    "path_rgbd_match", &SampleRGBDDatasetICL::GetPathRGBDMatch,
+                    "rgbd_match_path", &SampleRGBDDatasetICL::GetRGBDMatchPath,
                     "Path to color and depth image match file `rgbd.match`.")
             .def_property_readonly(
-                    "path_reconstruction",
-                    &SampleRGBDDatasetICL::GetPathReconstruction,
+                    "reconstruction_path",
+                    &SampleRGBDDatasetICL::GetReconstructionPath,
                     "Path to pointcloud reconstruction from TSDF.");
-    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL", "paths_color");
-    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL", "paths_depth");
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL", "color_paths");
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL", "depth_paths");
     docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
-                                    "path_trajectory_log");
+                                    "trajectory_log_path");
     docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
-                                    "path_odometry_log");
+                                    "odometry_log_path");
     docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
-                                    "path_rgbd_match");
+                                    "rgbd_match_path");
     docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
-                                    "path_reconstruction");
+                                    "reconstruction_path");
 }
 
 void pybind_sample_fountain_rgbd_dataset(py::module& m) {
@@ -380,122 +380,125 @@ void pybind_sample_fountain_rgbd_dataset(py::module& m) {
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SampleFountainRGBDDataset", "data_root"_a = "")
             .def_property_readonly(
-                    "paths_color", &SampleFountainRGBDDataset::GetPathsColor,
+                    "color_paths", &SampleFountainRGBDDataset::GetColorPaths,
                     "List of paths to color image samples of size 33. Use "
-                    "`paths_color[0]`, `paths_color[1]` ... `paths_color[32]` "
+                    "`color_paths[0]`, `color_paths[1]` ... `color_paths[32]` "
                     "to access the paths.")
             .def_property_readonly(
-                    "paths_depth", &SampleFountainRGBDDataset::GetPathsDepth,
+                    "depth_paths", &SampleFountainRGBDDataset::GetDepthPaths,
                     "List of paths to depth image samples of size 33. Use "
-                    "`paths_depth[0]`, `paths_depth[1]` ... `paths_depth[32]` "
+                    "`depth_paths[0]`, `depth_paths[1]` ... `depth_paths[32]` "
                     "to access the paths.")
             .def_property_readonly(
-                    "path_keyframe_poses_log",
-                    &SampleFountainRGBDDataset::GetPathKeyframePosesLog,
+                    "keyframe_poses_log_path",
+                    &SampleFountainRGBDDataset::GetKeyframePosesLogPath,
                     "Path to camera poses at keyfragmes log file `key.log`.")
             .def_property_readonly(
-                    "path_reconstruction",
-                    &SampleFountainRGBDDataset::GetPathReconstruction,
+                    "reconstruction_path",
+                    &SampleFountainRGBDDataset::GetReconstructionPath,
                     "Path to mesh reconstruction.");
     docstring::ClassMethodDocInject(m, "SampleFountainRGBDDataset",
-                                    "paths_color");
+                                    "color_paths");
     docstring::ClassMethodDocInject(m, "SampleFountainRGBDDataset",
-                                    "paths_depth");
+                                    "depth_paths");
     docstring::ClassMethodDocInject(m, "SampleFountainRGBDDataset",
-                                    "path_keyframe_poses_log");
+                                    "keyframe_poses_log_path");
     docstring::ClassMethodDocInject(m, "SampleFountainRGBDDataset",
-                                    "path_reconstruction");
+                                    "reconstruction_path");
 }
 
 void pybind_eagle(py::module& m) {
-    // open3d.data.Eagle
-    py::class_<Eagle, PySimpleDataset<Eagle>, std::shared_ptr<Eagle>,
-               SimpleDataset>
-            eagle(m, "Eagle",
-                  "Data class for `Eagle` contains the `EaglePointCloud.ply` "
+    // open3d.data.EaglePointCloud
+    py::class_<EaglePointCloud, PySimpleDataset<EaglePointCloud>,
+               std::shared_ptr<EaglePointCloud>, SimpleDataset>
+            eagle(m, "EaglePointCloud",
+                  "Data class for `EaglePointCloud` contains the "
+                  "`EaglePointCloud.ply` "
                   "file.");
     eagle.def(py::init<const std::string&, const std::string&>(),
-              "prefix"_a = "Eagle", "data_root"_a = "")
-            .def_property_readonly("path", &Eagle::GetPath,
+              "prefix"_a = "EaglePointCloud", "data_root"_a = "")
+            .def_property_readonly("path", &EaglePointCloud::GetPath,
                                    "Path to the `EaglePointCloud.ply` file.");
-    docstring::ClassMethodDocInject(m, "Eagle", "path");
+    docstring::ClassMethodDocInject(m, "EaglePointCloud", "path");
 }
 
 void pybind_armadillo(py::module& m) {
-    // open3d.data.Armadillo
-    py::class_<Armadillo, PySimpleDataset<Armadillo>,
-               std::shared_ptr<Armadillo>, SimpleDataset>
-            armadillo(m, "Armadillo",
-                      "Data class for `Armadillo` contains the "
+    // open3d.data.ArmadilloMesh
+    py::class_<ArmadilloMesh, PySimpleDataset<ArmadilloMesh>,
+               std::shared_ptr<ArmadilloMesh>, SimpleDataset>
+            armadillo(m, "ArmadilloMesh",
+                      "Data class for `ArmadilloMesh` contains the "
                       "`ArmadilloMesh.ply` from the `Stanford 3D Scanning "
                       "Repository`.");
     armadillo
             .def(py::init<const std::string&, const std::string&>(),
-                 "prefix"_a = "Armadillo", "data_root"_a = "")
-            .def_property_readonly("path", &Armadillo::GetPath,
+                 "prefix"_a = "ArmadilloMesh", "data_root"_a = "")
+            .def_property_readonly("path", &ArmadilloMesh::GetPath,
                                    "Path to the `ArmadilloMesh.ply` file.");
-    docstring::ClassMethodDocInject(m, "Armadillo", "path");
+    docstring::ClassMethodDocInject(m, "ArmadilloMesh", "path");
 }
 
 void pybind_bunny(py::module& m) {
-    // open3d.data.Bunny
-    py::class_<Bunny, PySimpleDataset<Bunny>, std::shared_ptr<Bunny>,
-               SimpleDataset>
-            bunny(m, "Bunny",
-                  "Data class for `Bunny` contains the `BunnyMesh.ply` from "
+    // open3d.data.BunnyMesh
+    py::class_<BunnyMesh, PySimpleDataset<BunnyMesh>,
+               std::shared_ptr<BunnyMesh>, SimpleDataset>
+            bunny(m, "BunnyMesh",
+                  "Data class for `BunnyMesh` contains the `BunnyMesh.ply` "
+                  "from "
                   "the `Stanford 3D Scanning Repository`.");
     bunny.def(py::init<const std::string&, const std::string&>(),
-              "prefix"_a = "Bunny", "data_root"_a = "")
-            .def_property_readonly("path", &Bunny::GetPath,
+              "prefix"_a = "BunnyMesh", "data_root"_a = "")
+            .def_property_readonly("path", &BunnyMesh::GetPath,
                                    "Path to the `BunnyMesh.ply` file.");
-    docstring::ClassMethodDocInject(m, "Bunny", "path");
+    docstring::ClassMethodDocInject(m, "BunnyMesh", "path");
 }
 
 void pybind_knot(py::module& m) {
-    // open3d.data.Knot
-    py::class_<Knot, PySimpleDataset<Knot>, std::shared_ptr<Knot>,
+    // open3d.data.KnotMesh
+    py::class_<KnotMesh, PySimpleDataset<KnotMesh>, std::shared_ptr<KnotMesh>,
                SimpleDataset>
-            knot(m, "Knot",
-                 "Data class for `Knot` contains the `KnotMesh.ply`.");
+            knot(m, "KnotMesh",
+                 "Data class for `KnotMesh` contains the `KnotMesh.ply`.");
     knot.def(py::init<const std::string&, const std::string&>(),
-             "prefix"_a = "Knot", "data_root"_a = "")
-            .def_property_readonly("path", &Knot::GetPath,
+             "prefix"_a = "KnotMesh", "data_root"_a = "")
+            .def_property_readonly("path", &KnotMesh::GetPath,
                                    "Path to the `KnotMesh.ply` file.");
-    docstring::ClassMethodDocInject(m, "Knot", "path");
+    docstring::ClassMethodDocInject(m, "KnotMesh", "path");
 }
 
 void pybind_juneau(py::module& m) {
-    // open3d.data.Juneau
-    py::class_<Juneau, PySimpleDataset<Juneau>, std::shared_ptr<Juneau>,
-               SimpleDataset>
-            juneau(m, "Juneau",
-                   "Data class for `Juneau` contains the `JuneauImage.jpg` "
+    // open3d.data.JuneauImage
+    py::class_<JuneauImage, PySimpleDataset<JuneauImage>,
+               std::shared_ptr<JuneauImage>, SimpleDataset>
+            juneau(m, "JuneauImage",
+                   "Data class for `JuneauImage` contains the "
+                   "`JuneauImage.jpg` "
                    "file.");
     juneau.def(py::init<const std::string&, const std::string&>(),
-               "prefix"_a = "Juneau", "data_root"_a = "")
-            .def_property_readonly("path", &Juneau::GetPath,
+               "prefix"_a = "JuneauImage", "data_root"_a = "")
+            .def_property_readonly("path", &JuneauImage::GetPath,
                                    "Path to the `JuneauImage.jgp` file.");
-    docstring::ClassMethodDocInject(m, "Juneau", "path");
+    docstring::ClassMethodDocInject(m, "JuneauImage", "path");
 }
 
-void pybind_redwood_living_room_pointcloud(py::module& m) {
+void pybind_redwood_living_room_pointclouds(py::module& m) {
     // open3d.data.RedwoodLivingRoomPointClouds
     py::class_<RedwoodLivingRoomPointClouds,
                PySimpleDataset<RedwoodLivingRoomPointClouds>,
                std::shared_ptr<RedwoodLivingRoomPointClouds>, SimpleDataset>
-            redwood_living_room_pointcloud(
+            redwood_living_room_pointclouds(
                     m, "RedwoodLivingRoomPointClouds",
                     "Dataset class for `RedwoodLivingRoomPointClouds` contains "
                     "57 `pointclouds` of `ply binary` format.");
-    redwood_living_room_pointcloud
+    redwood_living_room_pointclouds
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "RedwoodLivingRoomPointClouds",
                  "data_root"_a = "")
             .def_property_readonly(
                     "paths",
                     [](const RedwoodLivingRoomPointClouds&
-                               redwood_living_room_pointcloud) {
-                        return redwood_living_room_pointcloud.GetPaths();
+                               redwood_living_room_pointclouds) {
+                        return redwood_living_room_pointclouds.GetPaths();
                     },
                     "List of paths to ply point-cloud fragments of size 57. "
                     "Use `paths[0]`, `paths[1]` ... `paths[56]` to access the "
@@ -503,23 +506,23 @@ void pybind_redwood_living_room_pointcloud(py::module& m) {
     docstring::ClassMethodDocInject(m, "RedwoodLivingRoomPointClouds", "paths");
 }
 
-void pybind_redwood_office_pointcloud(py::module& m) {
+void pybind_redwood_office_pointclouds(py::module& m) {
     // open3d.data.RedwoodOfficePointClouds
     py::class_<RedwoodOfficePointClouds,
                PySimpleDataset<RedwoodOfficePointClouds>,
                std::shared_ptr<RedwoodOfficePointClouds>, SimpleDataset>
-            redwood_office_pointcloud(
+            redwood_office_pointclouds(
                     m, "RedwoodOfficePointClouds",
                     "Dataset class for `RedwoodOfficePointClouds` contains 53 "
                     "`pointclouds` of `ply binary` format.");
-    redwood_office_pointcloud
+    redwood_office_pointclouds
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "RedwoodOfficePointClouds", "data_root"_a = "")
             .def_property_readonly(
                     "paths",
                     [](const RedwoodOfficePointClouds&
-                               redwood_office_pointcloud) {
-                        return redwood_office_pointcloud.GetPaths();
+                               redwood_office_pointclouds) {
+                        return redwood_office_pointclouds.GetPaths();
                     },
                     "List of paths to ply point-cloud fragments of size 53. "
                     "Use `paths[0]`, `paths[1]` ... `paths[52]` to access the "
@@ -548,8 +551,8 @@ void pybind_data(py::module& m) {
     pybind_bunny(m_submodule);
     pybind_knot(m_submodule);
     pybind_juneau(m_submodule);
-    pybind_redwood_living_room_pointcloud(m_submodule);
-    pybind_redwood_office_pointcloud(m_submodule);
+    pybind_redwood_living_room_pointclouds(m_submodule);
+    pybind_redwood_office_pointclouds(m_submodule);
 }
 
 }  // namespace data

@@ -52,7 +52,7 @@ def test_simple_dataset_base():
     extract_dir = os.path.join(data_root, "extract", prefix)
     url_mirrors = [
         "https://github.com/isl-org/open3d_downloads/releases/download/"
-        "20220130-sample-meshs/BunnyMesh.ply"
+        "20220201-data/BunnyMesh.ply"
     ]
     md5 = "568f871d1a221ba6627569f1e6f9a3f2"
 
@@ -143,10 +143,10 @@ def test_demo_crop_pointcloud():
     demo_crop_pcd = o3d.data.DemoCropPointCloud(prefix)
     assert os.path.isdir(download_dir) == True
 
-    assert demo_crop_pcd.path_pointcloud == extract_dir + "/fragment.ply"
-    assert os.path.isfile(demo_crop_pcd.path_pointcloud) == True
-    assert demo_crop_pcd.path_cropped_json == extract_dir + "/cropped.json"
-    assert os.path.isfile(demo_crop_pcd.path_pointcloud) == True
+    assert demo_crop_pcd.pointcloud_path == extract_dir + "/fragment.ply"
+    assert os.path.isfile(demo_crop_pcd.pointcloud_path) == True
+    assert demo_crop_pcd.cropped_json_path == extract_dir + "/cropped.json"
+    assert os.path.isfile(demo_crop_pcd.pointcloud_path) == True
 
     assert demo_crop_pcd.prefix == prefix
     assert demo_crop_pcd.data_root == data_root
@@ -169,28 +169,28 @@ def test_demo_pointcloud_feature_matching():
     demo_feature_matching = o3d.data.DemoPointCloudFeatureMatching(prefix)
     assert os.path.isdir(download_dir) == True
 
-    paths_pointcloud = [
+    pointcloud_paths = [
         extract_dir + "/cloud_bin_0.pcd", extract_dir + "/cloud_bin_1.pcd"
     ]
-    assert demo_feature_matching.paths_pointcloud == paths_pointcloud
-    assert os.path.isfile(demo_feature_matching.paths_pointcloud[0]) == True
-    assert os.path.isfile(demo_feature_matching.paths_pointcloud[1]) == True
+    assert demo_feature_matching.pointcloud_paths == pointcloud_paths
+    assert os.path.isfile(demo_feature_matching.pointcloud_paths[0]) == True
+    assert os.path.isfile(demo_feature_matching.pointcloud_paths[1]) == True
 
-    paths_fpfh_feature = [
+    fpfh_feature_paths = [
         extract_dir + "/cloud_bin_0.fpfh.bin",
         extract_dir + "/cloud_bin_1.fpfh.bin"
     ]
-    assert demo_feature_matching.paths_fpfh_feature == paths_fpfh_feature
-    assert os.path.isfile(demo_feature_matching.paths_fpfh_feature[0]) == True
-    assert os.path.isfile(demo_feature_matching.paths_fpfh_feature[1]) == True
+    assert demo_feature_matching.fpfh_feature_paths == fpfh_feature_paths
+    assert os.path.isfile(demo_feature_matching.fpfh_feature_paths[0]) == True
+    assert os.path.isfile(demo_feature_matching.fpfh_feature_paths[1]) == True
 
-    paths_l32d_feature = [
+    l32d_feature_paths = [
         extract_dir + "/cloud_bin_0.d32.bin",
         extract_dir + "/cloud_bin_1.d32.bin"
     ]
-    assert demo_feature_matching.paths_l32d_feature == paths_l32d_feature
-    assert os.path.isfile(demo_feature_matching.paths_l32d_feature[0]) == True
-    assert os.path.isfile(demo_feature_matching.paths_l32d_feature[1]) == True
+    assert demo_feature_matching.l32d_feature_paths == l32d_feature_paths
+    assert os.path.isfile(demo_feature_matching.l32d_feature_paths[0]) == True
+    assert os.path.isfile(demo_feature_matching.l32d_feature_paths[1]) == True
 
     assert demo_feature_matching.prefix == prefix
     assert demo_feature_matching.data_root == data_root
@@ -213,13 +213,13 @@ def test_demo_pose_graph_optimization():
     demo_pose_optimization = o3d.data.DemoPoseGraphOptimization(prefix)
     assert os.path.isdir(download_dir) == True
 
-    assert demo_pose_optimization.path_pose_graph_fragment == extract_dir + \
+    assert demo_pose_optimization.pose_graph_fragment_path == extract_dir + \
         "/pose_graph_example_fragment.json"
     assert os.path.isfile(
-        demo_pose_optimization.path_pose_graph_fragment) == True
-    assert demo_pose_optimization.path_pose_graph_global == extract_dir + \
+        demo_pose_optimization.pose_graph_fragment_path) == True
+    assert demo_pose_optimization.pose_graph_global_path == extract_dir + \
         "/pose_graph_example_global.json"
-    assert os.path.isfile(demo_pose_optimization.path_pose_graph_global) == True
+    assert os.path.isfile(demo_pose_optimization.pose_graph_global_path) == True
 
     assert demo_pose_optimization.prefix == prefix
     assert demo_pose_optimization.data_root == data_root
@@ -371,29 +371,29 @@ def test_sample_rgbd_dataset_icl():
     rgbd_dataset_icl = o3d.data.SampleRGBDDatasetICL(prefix)
     assert os.path.isdir(download_dir) == True
 
-    paths_color = [
+    color_paths = [
         extract_dir + "/color/00000.jpg", extract_dir + "/color/00001.jpg",
         extract_dir + "/color/00002.jpg", extract_dir + "/color/00003.jpg",
         extract_dir + "/color/00004.jpg"
     ]
 
-    assert rgbd_dataset_icl.paths_color == paths_color
-    for path in rgbd_dataset_icl.paths_color:
+    assert rgbd_dataset_icl.color_paths == color_paths
+    for path in rgbd_dataset_icl.color_paths:
         assert os.path.isfile(path) == True
 
-    paths_depth = [
+    depth_paths = [
         extract_dir + "/depth/00000.png", extract_dir + "/depth/00001.png",
         extract_dir + "/depth/00002.png", extract_dir + "/depth/00003.png",
         extract_dir + "/depth/00004.png"
     ]
-    assert rgbd_dataset_icl.paths_depth == paths_depth
-    for path in rgbd_dataset_icl.paths_depth:
+    assert rgbd_dataset_icl.depth_paths == depth_paths
+    for path in rgbd_dataset_icl.depth_paths:
         assert os.path.isfile(path) == True
 
-    assert rgbd_dataset_icl.path_trajectory_log == extract_dir + "/trajectory.log"
-    assert rgbd_dataset_icl.path_odometry_log == extract_dir + "/odometry.log"
-    assert rgbd_dataset_icl.path_rgbd_match == extract_dir + "/rgbd.match"
-    assert rgbd_dataset_icl.path_reconstruction == extract_dir + "/example_tsdf_pcd.ply"
+    assert rgbd_dataset_icl.trajectory_log_path == extract_dir + "/trajectory.log"
+    assert rgbd_dataset_icl.odometry_log_path == extract_dir + "/odometry.log"
+    assert rgbd_dataset_icl.rgbd_match_path == extract_dir + "/rgbd.match"
+    assert rgbd_dataset_icl.reconstruction_path == extract_dir + "/example_tsdf_pcd.ply"
 
     assert rgbd_dataset_icl.prefix == prefix
     assert rgbd_dataset_icl.data_root == data_root
@@ -416,7 +416,7 @@ def test_sample_fountain_rgbd_dataset():
     fountain_dataset = o3d.data.SampleFountainRGBDDataset(prefix)
     assert os.path.isdir(download_dir) == True
 
-    paths_color = [
+    color_paths = [
         extract_dir + "/image/0000010-000001228920.jpg",
         extract_dir + "/image/0000031-000004096400.jpg",
         extract_dir + "/image/0000044-000005871507.jpg",
@@ -451,11 +451,11 @@ def test_sample_fountain_rgbd_dataset():
         extract_dir + "/image/0001028-000140233427.jpg",
         extract_dir + "/image/0001061-000144739467.jpg"
     ]
-    assert fountain_dataset.paths_color == paths_color
-    for path in fountain_dataset.paths_color:
+    assert fountain_dataset.color_paths == color_paths
+    for path in fountain_dataset.color_paths:
         assert os.path.isfile(path) == True
 
-    paths_depth = [
+    depth_paths = [
         extract_dir + "/depth/0000038-000001234662.png",
         extract_dir + "/depth/0000124-000004104418.png",
         extract_dir + "/depth/0000177-000005872988.png",
@@ -490,12 +490,12 @@ def test_sample_fountain_rgbd_dataset():
         extract_dir + "/depth/0004203-000140217589.png",
         extract_dir + "/depth/0004339-000144755807.png"
     ]
-    assert fountain_dataset.paths_depth == paths_depth
-    for path in fountain_dataset.paths_depth:
+    assert fountain_dataset.depth_paths == depth_paths
+    for path in fountain_dataset.depth_paths:
         assert os.path.isfile(path) == True
 
-    assert fountain_dataset.path_keyframe_poses_log == extract_dir + "/scene/key.log"
-    assert fountain_dataset.path_reconstruction == extract_dir + "/scene/integrated.ply"
+    assert fountain_dataset.keyframe_poses_log_path == extract_dir + "/scene/key.log"
+    assert fountain_dataset.reconstruction_path == extract_dir + "/scene/integrated.ply"
 
     assert fountain_dataset.prefix == prefix
     assert fountain_dataset.data_root == data_root
@@ -515,7 +515,7 @@ def test_eagle():
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)
 
-    eagle = o3d.data.Eagle(prefix)
+    eagle = o3d.data.EaglePointCloud(prefix)
     assert os.path.isdir(download_dir) == True
 
     assert eagle.path == extract_dir + "/EaglePointCloud.ply"
@@ -539,7 +539,7 @@ def test_armadillo():
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)
 
-    armadillo = o3d.data.Armadillo(prefix)
+    armadillo = o3d.data.ArmadilloMesh(prefix)
     assert os.path.isdir(download_dir) == True
 
     assert armadillo.path == extract_dir + "/ArmadilloMesh.ply"
@@ -563,7 +563,7 @@ def test_bunny():
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)
 
-    bunny = o3d.data.Bunny(prefix)
+    bunny = o3d.data.BunnyMesh(prefix)
     assert os.path.isdir(download_dir) == True
 
     assert bunny.path == extract_dir + "/BunnyMesh.ply"
@@ -587,7 +587,7 @@ def test_knot():
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)
 
-    knot = o3d.data.Knot(prefix)
+    knot = o3d.data.KnotMesh(prefix)
     assert os.path.isdir(download_dir) == True
 
     assert knot.path == extract_dir + "/KnotMesh.ply"
@@ -611,7 +611,7 @@ def test_juneau():
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)
 
-    juneau = o3d.data.Juneau(prefix)
+    juneau = o3d.data.JuneauImage(prefix)
     assert os.path.isdir(download_dir) == True
 
     assert juneau.path == extract_dir + "/JuneauImage.jpg"

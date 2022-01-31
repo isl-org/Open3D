@@ -100,7 +100,7 @@ void Actions() {
     const char *RESULT_NAME = "Result (Poisson reconstruction)";
     const char *TRUTH_NAME = "Ground truth";
 
-    data::Bunny bunny_data;
+    data::BunnyMesh bunny_data;
     auto bunny = std::make_shared<geometry::TriangleMesh>();
     io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
 

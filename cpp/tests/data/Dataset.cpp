@@ -62,8 +62,8 @@ TEST(Dataset, SimpleDataset) {
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
     const std::vector<std::string> url_mirrors = {
-            "https://github.com/isl-org/open3d_downloads/releases/"
-            "download/20220130-sample-meshs/BunnyMesh.ply"};
+            "https://github.com/isl-org/open3d_downloads/releases/download/"
+            "20220201-data/BunnyMesh.ply"};
     const std::string md5 = "568f871d1a221ba6627569f1e6f9a3f2";
 
     data::SimpleDataset simple_dataset(prefix, url_mirrors, md5,
@@ -175,13 +175,13 @@ TEST(Dataset, DemoCropPointCloud) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Methods to get path.
-    EXPECT_EQ(demo_crop_pcd.GetPathPointCloud(), extract_dir + "/fragment.ply");
+    EXPECT_EQ(demo_crop_pcd.GetPointCloudPath(), extract_dir + "/fragment.ply");
     EXPECT_TRUE(
-            utility::filesystem::FileExists(demo_crop_pcd.GetPathPointCloud()));
-    EXPECT_EQ(demo_crop_pcd.GetPathCroppedJSON(),
+            utility::filesystem::FileExists(demo_crop_pcd.GetPointCloudPath()));
+    EXPECT_EQ(demo_crop_pcd.GetCroppedJSONPath(),
               extract_dir + "/cropped.json");
     EXPECT_TRUE(utility::filesystem::FileExists(
-            demo_crop_pcd.GetPathCroppedJSON()));
+            demo_crop_pcd.GetCroppedJSONPath()));
 
     // Basic methods.
     EXPECT_EQ(demo_crop_pcd.GetPrefix(), prefix);
@@ -210,19 +210,19 @@ TEST(Dataset, DemoPointCloudFeatureMatching) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Methods to get path.
-    const std::vector<std::string> paths_pointcloud = {
+    const std::vector<std::string> pointcloud_paths = {
             extract_dir + "/cloud_bin_0.pcd", extract_dir + "/cloud_bin_1.pcd"};
-    EXPECT_EQ(demo_feature_matching.GetPathsPointCloud(), paths_pointcloud);
+    EXPECT_EQ(demo_feature_matching.GetPointCloudPaths(), pointcloud_paths);
 
-    const std::vector<std::string> paths_fpfh_feature = {
+    const std::vector<std::string> fpfh_feature_paths = {
             extract_dir + "/cloud_bin_0.fpfh.bin",
             extract_dir + "/cloud_bin_1.fpfh.bin"};
-    EXPECT_EQ(demo_feature_matching.GetPathsFPFHFeature(), paths_fpfh_feature);
+    EXPECT_EQ(demo_feature_matching.GetFPFHFeaturePaths(), fpfh_feature_paths);
 
-    const std::vector<std::string> paths_l32d_feature = {
+    const std::vector<std::string> l32d_feature_paths = {
             extract_dir + "/cloud_bin_0.d32.bin",
             extract_dir + "/cloud_bin_1.d32.bin"};
-    EXPECT_EQ(demo_feature_matching.GetPathsL32DFeature(), paths_l32d_feature);
+    EXPECT_EQ(demo_feature_matching.GetL32DFeaturePaths(), l32d_feature_paths);
 
     // Basic methods.
     EXPECT_EQ(demo_feature_matching.GetPrefix(), prefix);
@@ -251,9 +251,9 @@ TEST(Dataset, DemoPoseGraphOptimization) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Methods to get path.
-    EXPECT_EQ(demo_pose_optimization.GetPathPoseGraphFragment(),
+    EXPECT_EQ(demo_pose_optimization.GetPoseGraphFragmentPath(),
               extract_dir + "/pose_graph_example_fragment.json");
-    EXPECT_EQ(demo_pose_optimization.GetPathPoseGraphGlobal(),
+    EXPECT_EQ(demo_pose_optimization.GetPoseGraphGlobalPath(),
               extract_dir + "/pose_graph_example_global.json");
 
     // Basic methods.
@@ -345,10 +345,10 @@ TEST(Dataset, SampleRGBDImageNYU) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Method to get path.
-    EXPECT_EQ(rgbd_nyu.GetPathColor(), extract_dir + "/NYU_color.ppm");
-    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_nyu.GetPathColor()));
-    EXPECT_EQ(rgbd_nyu.GetPathDepth(), extract_dir + "/NYU_depth.pgm");
-    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_nyu.GetPathDepth()));
+    EXPECT_EQ(rgbd_nyu.GetColorPath(), extract_dir + "/NYU_color.ppm");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_nyu.GetColorPath()));
+    EXPECT_EQ(rgbd_nyu.GetDepthPath(), extract_dir + "/NYU_depth.pgm");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_nyu.GetDepthPath()));
 
     // Basic method.
     EXPECT_EQ(rgbd_nyu.GetPrefix(), prefix);
@@ -377,10 +377,10 @@ TEST(Dataset, SampleRGBDImageSUN) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Method to get path.
-    EXPECT_EQ(rgbd_sun.GetPathColor(), extract_dir + "/SUN_color.jpg");
-    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_sun.GetPathColor()));
-    EXPECT_EQ(rgbd_sun.GetPathDepth(), extract_dir + "/SUN_depth.png");
-    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_sun.GetPathDepth()));
+    EXPECT_EQ(rgbd_sun.GetColorPath(), extract_dir + "/SUN_color.jpg");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_sun.GetColorPath()));
+    EXPECT_EQ(rgbd_sun.GetDepthPath(), extract_dir + "/SUN_depth.png");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_sun.GetDepthPath()));
 
     // Basic method.
     EXPECT_EQ(rgbd_sun.GetPrefix(), prefix);
@@ -409,10 +409,10 @@ TEST(Dataset, SampleRGBDImageTUM) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Method to get path.
-    EXPECT_EQ(rgbd_tum.GetPathColor(), extract_dir + "/TUM_color.png");
-    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_tum.GetPathColor()));
-    EXPECT_EQ(rgbd_tum.GetPathDepth(), extract_dir + "/TUM_depth.png");
-    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_tum.GetPathDepth()));
+    EXPECT_EQ(rgbd_tum.GetColorPath(), extract_dir + "/TUM_color.png");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_tum.GetColorPath()));
+    EXPECT_EQ(rgbd_tum.GetDepthPath(), extract_dir + "/TUM_depth.png");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_tum.GetDepthPath()));
 
     // Basic method.
     EXPECT_EQ(rgbd_tum.GetPrefix(), prefix);
@@ -441,38 +441,38 @@ TEST(Dataset, SampleRGBDDatasetICL) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Method to get path.
-    const std::vector<std::string> paths_color = {
+    const std::vector<std::string> color_paths = {
             extract_dir + "/color/00000.jpg", extract_dir + "/color/00001.jpg",
             extract_dir + "/color/00002.jpg", extract_dir + "/color/00003.jpg",
             extract_dir + "/color/00004.jpg"};
-    EXPECT_EQ(rgbd_icl.GetPathsColor(), paths_color);
+    EXPECT_EQ(rgbd_icl.GetColorPaths(), color_paths);
 
-    const std::vector<std::string> paths_depth = {
+    const std::vector<std::string> depth_paths = {
             extract_dir + "/depth/00000.png", extract_dir + "/depth/00001.png",
             extract_dir + "/depth/00002.png", extract_dir + "/depth/00003.png",
             extract_dir + "/depth/00004.png"};
-    EXPECT_EQ(rgbd_icl.GetPathsDepth(), paths_depth);
-    for (size_t i = 0; i < paths_color.size(); ++i) {
+    EXPECT_EQ(rgbd_icl.GetDepthPaths(), depth_paths);
+    for (size_t i = 0; i < color_paths.size(); ++i) {
         EXPECT_TRUE(
-                utility::filesystem::FileExists(rgbd_icl.GetPathsColor()[i]));
+                utility::filesystem::FileExists(rgbd_icl.GetColorPaths()[i]));
         EXPECT_TRUE(
-                utility::filesystem::FileExists(rgbd_icl.GetPathsDepth()[i]));
+                utility::filesystem::FileExists(rgbd_icl.GetDepthPaths()[i]));
     }
 
-    EXPECT_EQ(rgbd_icl.GetPathTrajectoryLog(), extract_dir + "/trajectory.log");
+    EXPECT_EQ(rgbd_icl.GetTrajectoryLogPath(), extract_dir + "/trajectory.log");
     EXPECT_TRUE(
-            utility::filesystem::FileExists(rgbd_icl.GetPathTrajectoryLog()));
+            utility::filesystem::FileExists(rgbd_icl.GetTrajectoryLogPath()));
 
-    EXPECT_EQ(rgbd_icl.GetPathOdometryLog(), extract_dir + "/odometry.log");
-    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_icl.GetPathOdometryLog()));
+    EXPECT_EQ(rgbd_icl.GetOdometryLogPath(), extract_dir + "/odometry.log");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_icl.GetOdometryLogPath()));
 
-    EXPECT_EQ(rgbd_icl.GetPathRGBDMatch(), extract_dir + "/rgbd.match");
-    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_icl.GetPathRGBDMatch()));
+    EXPECT_EQ(rgbd_icl.GetRGBDMatchPath(), extract_dir + "/rgbd.match");
+    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_icl.GetRGBDMatchPath()));
 
-    EXPECT_EQ(rgbd_icl.GetPathReconstruction(),
+    EXPECT_EQ(rgbd_icl.GetReconstructionPath(),
               extract_dir + "/example_tsdf_pcd.ply");
     EXPECT_TRUE(
-            utility::filesystem::FileExists(rgbd_icl.GetPathReconstruction()));
+            utility::filesystem::FileExists(rgbd_icl.GetReconstructionPath()));
 
     // Basic method.
     EXPECT_EQ(rgbd_icl.GetPrefix(), prefix);
@@ -501,7 +501,7 @@ TEST(Dataset, SampleFountainRGBDDataset) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     // Method to get path.
-    const std::vector<std::string> paths_color = {
+    const std::vector<std::string> color_paths = {
             extract_dir + "/image/0000010-000001228920.jpg",
             extract_dir + "/image/0000031-000004096400.jpg",
             extract_dir + "/image/0000044-000005871507.jpg",
@@ -535,9 +535,9 @@ TEST(Dataset, SampleFountainRGBDDataset) {
             extract_dir + "/image/0000985-000134361920.jpg",
             extract_dir + "/image/0001028-000140233427.jpg",
             extract_dir + "/image/0001061-000144739467.jpg"};
-    EXPECT_EQ(rgbd_fountain.GetPathsColor(), paths_color);
+    EXPECT_EQ(rgbd_fountain.GetColorPaths(), color_paths);
 
-    const std::vector<std::string> paths_depth = {
+    const std::vector<std::string> depth_paths = {
             extract_dir + "/depth/0000038-000001234662.png",
             extract_dir + "/depth/0000124-000004104418.png",
             extract_dir + "/depth/0000177-000005872988.png",
@@ -571,24 +571,24 @@ TEST(Dataset, SampleFountainRGBDDataset) {
             extract_dir + "/depth/0004028-000134377970.png",
             extract_dir + "/depth/0004203-000140217589.png",
             extract_dir + "/depth/0004339-000144755807.png"};
-    EXPECT_EQ(rgbd_fountain.GetPathsDepth(), paths_depth);
+    EXPECT_EQ(rgbd_fountain.GetDepthPaths(), depth_paths);
 
-    for (auto& path_color : rgbd_fountain.GetPathsColor()) {
+    for (auto& path_color : rgbd_fountain.GetColorPaths()) {
         EXPECT_TRUE(utility::filesystem::FileExists(path_color));
     }
-    for (auto& path_depth : rgbd_fountain.GetPathsDepth()) {
+    for (auto& path_depth : rgbd_fountain.GetDepthPaths()) {
         EXPECT_TRUE(utility::filesystem::FileExists(path_depth));
     }
 
-    EXPECT_EQ(rgbd_fountain.GetPathKeyframePosesLog(),
+    EXPECT_EQ(rgbd_fountain.GetKeyframePosesLogPath(),
               extract_dir + "/scene/key.log");
     EXPECT_TRUE(utility::filesystem::FileExists(
-            rgbd_fountain.GetPathKeyframePosesLog()));
+            rgbd_fountain.GetKeyframePosesLogPath()));
 
-    EXPECT_EQ(rgbd_fountain.GetPathReconstruction(),
+    EXPECT_EQ(rgbd_fountain.GetReconstructionPath(),
               extract_dir + "/scene/integrated.ply");
     EXPECT_TRUE(utility::filesystem::FileExists(
-            rgbd_fountain.GetPathReconstruction()));
+            rgbd_fountain.GetReconstructionPath()));
 
     // Basic method.
     EXPECT_EQ(rgbd_fountain.GetPrefix(), prefix);
@@ -601,7 +601,7 @@ TEST(Dataset, SampleFountainRGBDDataset) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
-TEST(Dataset, Eagle) {
+TEST(Dataset, EaglePointCloud) {
     const std::string prefix = "O3DTestEagle";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -612,7 +612,7 @@ TEST(Dataset, Eagle) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::Eagle eagle(prefix);
+    data::EaglePointCloud eagle(prefix);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -632,7 +632,7 @@ TEST(Dataset, Eagle) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
-TEST(Dataset, Armadillo) {
+TEST(Dataset, ArmadilloMesh) {
     const std::string prefix = "O3DTestArmadillo";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -643,7 +643,7 @@ TEST(Dataset, Armadillo) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::Armadillo armadillo(prefix);
+    data::ArmadilloMesh armadillo(prefix);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -663,7 +663,7 @@ TEST(Dataset, Armadillo) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
-TEST(Dataset, Bunny) {
+TEST(Dataset, BunnyMesh) {
     const std::string prefix = "O3DTestBunny";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -674,7 +674,7 @@ TEST(Dataset, Bunny) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::Bunny bunny(prefix);
+    data::BunnyMesh bunny(prefix);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -694,7 +694,7 @@ TEST(Dataset, Bunny) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
-TEST(Dataset, Knot) {
+TEST(Dataset, KnotMesh) {
     const std::string prefix = "O3DTestKnot";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -705,7 +705,7 @@ TEST(Dataset, Knot) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::Knot knot(prefix);
+    data::KnotMesh knot(prefix);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -725,7 +725,7 @@ TEST(Dataset, Knot) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
-TEST(Dataset, Juneau) {
+TEST(Dataset, JuneauImage) {
     const std::string prefix = "O3DTestJuneau";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -736,7 +736,7 @@ TEST(Dataset, Juneau) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::Juneau juneau(prefix);
+    data::JuneauImage juneau(prefix);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 

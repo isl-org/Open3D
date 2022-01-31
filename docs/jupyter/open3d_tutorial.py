@@ -115,26 +115,6 @@ def edges_to_lineset(mesh, edges, color):
     return ls
 
 
-def _relative_path(path):
-    script_path = os.path.realpath(__file__)
-    script_dir = os.path.dirname(script_path)
-    return os.path.join(script_dir, path)
-
-
-def download_fountain_dataset():
-    fountain_path = _relative_path("../test_data/fountain_small")
-    fountain_zip_path = _relative_path("../test_data/fountain.zip")
-    if not os.path.exists(fountain_path):
-        print("downloading fountain dataset")
-        url = "https://github.com/isl-org/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"
-        urllib.request.urlretrieve(url, fountain_zip_path)
-        print("extract fountain dataset")
-        with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:
-            zip_ref.extractall(os.path.dirname(fountain_path))
-        os.remove(fountain_zip_path)
-    return fountain_path
-
-
 def get_non_manifold_edge_mesh():
     verts = np.array(
         [[-1, 0, 0], [0, 1, 0], [1, 0, 0], [0, -1, 0], [0, 0, 1]],
@@ -210,35 +190,3 @@ def get_intersecting_boxes_mesh():
         center=mesh.get_center(),
     )
     return mesh
-
-
-def get_armadillo_mesh():
-    armadillo_path = _relative_path("../test_data/Armadillo.ply")
-    if not os.path.exists(armadillo_path):
-        print("downloading armadillo mesh")
-        url = "http://graphics.stanford.edu/pub/3Dscanrep/armadillo/Armadillo.ply.gz"
-        urllib.request.urlretrieve(url, armadillo_path + ".gz")
-        print("extract armadillo mesh")
-        with gzip.open(armadillo_path + ".gz", "rb") as fin:
-            with open(armadillo_path, "wb") as fout:
-                shutil.copyfileobj(fin, fout)
-        os.remove(armadillo_path + ".gz")
-    mesh = o3d.io.read_triangle_mesh(armadillo_path)
-    mesh.compute_vertex_normals()
-    return mesh
-
-
-def get_knot_mesh():
-    mesh = o3d.io.read_triangle_mesh(_relative_path("../test_data/knot.ply"))
-    mesh.compute_vertex_normals()
-    return mesh
-
-
-def get_eagle_pcd():
-    path = _relative_path("../test_data/eagle.ply")
-    if not os.path.exists(path):
-        print("downloading eagle pcl")
-        url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"
-        urllib.request.urlretrieve(url, path)
-    pcd = o3d.io.read_point_cloud(path)
-    return pcd

@@ -35,7 +35,7 @@ sys.path.append(pyexample_path)
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-    bunny = o3d.data.Bunny()
+    bunny = o3d.data.BunnyMesh()
     gt_mesh = o3d.io.read_triangle_mesh(bunny.path)
     gt_mesh.compute_vertex_normals()
 
