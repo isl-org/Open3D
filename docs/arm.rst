@@ -4,21 +4,55 @@ ARM support
 ===========
 
 Open3D provides experimental support for 64-bit ARM architecture (``arm64``
-or ``aarch64``) on Linux.
-
-* 64-bit ARM processor and 64-bit Linux operating system. Check the output of
-  ``uname -p`` and it should show ``aarch64``.
-* Full OpenGL (not OpenGL ES) is needed for Open3D GUI. If OpenGL is not
-  available, the Open3D GUI will compile but it won't run. In this case, we
-  recommend setting ``-DBUILD_GUI=OFF`` during the ``cmake`` configuration step.
-
-Starting from Open3D 0.14, we provide pre-compiled ARM64 wheels for Linux.
-Install by:
+or ``aarch64``) on Linux and macOS (Apple Silicon). Starting from Open3D 0.14,
+we provide pre-compiled ARM64 wheels for Linux and macOS. Install the wheel by:
 
 .. code-block:: bash
 
     pip install open3d
     python -c "import open3d; print(open3d.__version__)"
+
+    # Legacy visualizer
+    python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw_geometries([c])"
+
+    # New GUI visualizer
+    python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw(c)"
+
++------------------------+----------------+---------------------+------------+----------------+
+|                        | Linux (OpenGL) | Linux (OpenGL ES)   | macOS      | Windows on ARM |
++========================+================+=====================+============+================+
+| ``pip install open3d`` | Yes            | Yes                 | Yes        | No             |
++------------------------+----------------+---------------------+------------+----------------+
+| Compile from source    | Yes            | Yes                 | Yes        | No             |
++------------------------+----------------+---------------------+------------+----------------+
+| Compile from source    | Yes            | Yes                 | Yes        | No             |
++------------------------+----------------+---------------------+------------+----------------+
+| Visualizer and GUI     | Yes            | No                  | Yes        | No             |
++------------------------+----------------+---------------------+------------+----------------+
+| Non-GUI features       | Yes            | Yes                 | Yes        | No             |
++------------------------+----------------+---------------------+------------+----------------+
+| Special build flags    | Not needed     | ``-DBUILD_GUI=OFF`` | Not needed | N/A            |
++------------------------+----------------+---------------------+------------+----------------+
+| Example device         | Nvidia Jetson  | Raspberry Pi 4      | M1 MacBook | Surface Pro X  |
++------------------------+----------------+---------------------+------------+----------------+
+
+Additional notes:
+
+* On Linux, check the output of ``uname -p`` and it should show ``aarch64``. On
+  macOS, check the output of ``uname -m`` and it should show ``arm64``.
+* Full OpenGL (not OpenGL ES) is needed for Open3D GUI. Open3D GUI is supported
+  on Nvidia Jetson platforms and on Apple ARM64 devices.
+* If the full OpenGL is not available (e.g. on Raspberry Pi devices), the Open3D
+  GUI code  will compile but it won't run. In this case, we recommend setting
+  ``-DBUILD_GUI=OFF`` during the ``cmake`` configuration step.
+* For Windows on ARM devices, Open3D might work with the x86 emulation layer,
+  but it is not official supported.
+* Open3D installed via ``pip install open3d`` will not contain CUDA support on
+  ARM64 platforms. To use CUDA, you need to compile Open3D with CUDA manually
+  for Nvidia Jetson boards.
+
+Compiling Open3D on ARM64 Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Building Open3D Python Wheel with Docker
 ----------------------------------------
@@ -58,6 +92,7 @@ current directly on the host. Then simply install the ``.whl`` file by:
     # (Activate the virtual environment first)
     pip install open3d-*.whl
 
+The ``./docker_build.sh`` script works on both Linux and macOS ARM64 hosts.
 You can even cross-compile an ARM64 wheel on an x86-64 host. Install Docker and
 Qemu:
 
@@ -139,17 +174,24 @@ Build
     python -c "import open3d; print(open3d)"
 
 
-Nvidia Jetson
--------------
+Compiling Open3D on ARM64 macOS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Nvidia Jetson computers with 64-bit processor and OS are supported. You can
-compile Open3D with ``-DBUILD_CUDA_MODULE=ON`` and ``-DBUILD_GUI=ON`` and
-the Open3D GUI app should be functional. We support CUDA v10.x, but other
-versions should work as well.
+.. code-block:: bash
 
+    # Dependencies
+    brew install gfortran
 
-Raspberry Pi 4
---------------
+    # Optional: activate your virtualenv
+    conda activate your-virtual-env
 
-Raspberry Pi 4 has 64-bit processor and supports OpenGL ES (not OpenGL).
-To build Open3D on Raspberry Pi 4, compile with ``-DBUILD_GUI=OFF``.
+    # Build
+    cd Open3D && mkdir build && cd build
+    cmake ..
+    make -j8
+    make install-pip-package -j8
+
+    # Test
+    python -c "import open3d; print(open3d.__version__)"
+    python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw_geometries([c])"
+    python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw(c)"
