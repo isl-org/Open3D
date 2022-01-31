@@ -52,13 +52,5 @@ TEST(Dataset, DatasetBase) {
               "/my/custom/data_root/extract/some_prefix");
 }
 
-TEST(Dataset, DownloadDatasets) {
-    data::dataset::SampleICPPointClouds sample_icp_pointclouds;
-    utility::LogInfo("SampleICPPointClouds dataset information: \n{}\n",
-                     sample_icp_pointclouds.GetHelpString());
-    t::geometry::PointCloud pcd;
-    EXPECT_TRUE(t::io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), pcd));
-}
-
 }  // namespace tests
 }  // namespace open3d
