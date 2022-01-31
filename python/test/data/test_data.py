@@ -52,7 +52,7 @@ def test_simple_dataset_base():
     extract_dir = os.path.join(data_root, "extract", prefix)
     url_mirrors = [
         "https://github.com/isl-org/open3d_downloads/releases/download/"
-        "290122-sample-meshs/BunnyMesh.ply"
+        "20220130-sample-meshs/BunnyMesh.ply"
     ]
     md5 = "568f871d1a221ba6627569f1e6f9a3f2"
 
