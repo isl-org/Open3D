@@ -25,11 +25,14 @@
 # ----------------------------------------------------------------------------
 
 import argparse
+from logging import root
 import os
 import runpy
 import sys
 from pathlib import Path
+from tkinter import E
 import open3d
+from sphinx import path
 
 
 class _Open3DArgumentParser(argparse.ArgumentParser):
@@ -141,12 +144,27 @@ def _get_examples_dict():
     return examples_dict
 
 
+def _get_all_examples():
+    all_examples = []
+    examples_dict = _get_examples_dict()
+    for category in examples_dict:
+        for example in examples_dict[category]:
+            all_examples.append(f"{category}/{example}")
+    return all_examples
+
+
 def _get_examples_dir():
     """Get the path to the examples directory."""
     tools_path = os.path.dirname(os.path.abspath(__file__))
     examples_path = os.path.join(os.path.dirname(tools_path), "examples")
-    examples_dir = Path(examples_path)
-    return examples_dir
+    if os.path.exists(examples_path):
+        examples_dir = Path(examples_path)
+        return examples_dir
+    else:
+        examples_path = os.path.join(
+            os.path.dirname(os.path.dirname(tools_path)), "examples", "python")
+        examples_dir = Path(examples_path)
+        return examples_dir
 
 
 def _get_example_categories():
@@ -177,8 +195,9 @@ def _example_help_categories():
     msg = f"\ncategories:\n"
     for category in sorted(_get_example_categories()):
         msg += f"  {category}\n"
-    msg += ("\nTo view the example in each category run:\n"
-            "  open3d example --list category\n ")
+    msg += "\nTo view the example in each category, run one of the following commands:\n"
+    for category in sorted(_get_example_categories()):
+        msg += f"  open3d example --list {category}\n"
     return msg
 
 
@@ -186,7 +205,12 @@ def _example(parser, args):
 
     if args.category_example == None:
         if args.list:
-            print(_example_help_categories())
+            for category in _get_example_categories():
+                print("examples in " + category + ": ")
+                for examples_in_category in sorted(
+                        _get_examples_in_category(category)):
+                    print(f"  {category}/{examples_in_category}")
+                print("")
         else:
             parser.print_help()
         return 0
@@ -203,13 +227,24 @@ def _example(parser, args):
         parser.print_help()
         parser.exit(2)
 
-    if args.list or example == "":
-        print("examples in " + category + ": ")
-        for examples_in_category in sorted(_get_examples_in_category(category)):
-            print("  " + str(examples_in_category))
-        print("\nTo view all categories run:")
-        print("  open3d example --list\n")
-        return 0
+    if args.list:
+        if example == "":
+            print("examples in " + category + ": ")
+            for examples_in_category in sorted(
+                    _get_examples_in_category(category)):
+                print(f"  {category}/{examples_in_category}")
+            print("\nTo view all examples, run:")
+            print("  open3d example --list\n")
+            return 0
+        else:
+            print("error: invalid category provided: " + category)
+            parser.print_help()
+            parser.exit(2)
+
+    if args.category_example not in _get_all_examples():
+        print("error: invalid example name provided: " + args.category_example)
+        parser.print_help()
+        parser.exit(2)
 
     examples_dir = _get_examples_dir()
     examples_in_category = _get_examples_in_category(category)
@@ -277,13 +312,12 @@ def main():
         help="Select one of these commands\n ")
 
     example_help = (
-        "Run an Open3D example. Example usage: \n"
-        "```bash\n"
-        "open3d example --list                                  # List examples\n"
-        "open3d example --list geometry                         # List examples in geometry\n"
-        "open3d example geometry/point_cloud_convex_hull        # Run an example\n"
-        "open3d example --show geometry/point_cloud_convex_hull # Show source code of an example\n"
-        "```\n")
+        "View or run an Open3D example. Example usage: \n"
+        "  open3d example --list                                  # List examples\n"
+        "  open3d example --list geometry                         # List examples in geometry\n"
+        "  open3d example geometry/point_cloud_convex_hull        # Run an example\n"
+        "  open3d example --show geometry/point_cloud_convex_hull # Show source code of an example\n\n"
+    )
     parser_example = subparsers.add_parser(
         "example",
         add_help=False,
@@ -306,9 +340,11 @@ def main():
         dest="list",
         action="store_true",
         help="List all categories or examples available\n"
-        "usage       :  open3d example --list \n"
-        "               open3d example --list category\n"
-        "for example :  open3d example --list geometry\n ")
+        "usage:\n"
+        "  open3d example --list \n"
+        "  open3d example --list [category]\n"
+        "e.g.:\n"
+        "  open3d example --list geometry\n ")
     parser_example.add_argument(
         "-s",
         "--show",
@@ -316,17 +352,18 @@ def main():
         dest="show",
         action="store_true",
         help="Show example source code instead of running it\n"
-        "usage       :  open3d example --show category/example_name\n"
-        "for example :  open3d example --show geometry/triangle_mesh_deformation\n "
-    )
+        "usage:\n"
+        "  open3d example --show [category]/[example_name]\n"
+        "e.g.:\n"
+        "  open3d example --show geometry/triangle_mesh_deformation\n ")
     parser_example.add_argument("-h",
                                 "--help",
                                 action="help",
                                 help="Show this help message and exit.")
     parser_example.set_defaults(func=_example)
 
-    draw_help = ("Visualize a mesh or pointcloud from a file\n"
-                 "for example :  open3d draw")
+    draw_help = ("Visualize a mesh or pointcloud from a file. Example usage:\n"
+                 "  open3d draw")
     parser_draw = subparsers.add_parser(
         "draw",
         description=draw_help,
