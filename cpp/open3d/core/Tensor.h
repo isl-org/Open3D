@@ -121,8 +121,26 @@ public:
           dtype_(dtype),
           blob_(blob) {}
 
-    /// Constructor from raw host buffer. This creates a Tensor wrapper for
-    /// externally managed memory.
+    /// \brief Tensor wrapper constructor from raw host buffer.
+    ///
+    /// This creates a Tensor wrapper for externally managed memory. It is the
+    /// user's responsibility to keep the buffer valid during the lifetime of
+    /// this Tensor and deallocate it afterwards.
+    ///
+    /// \param data_ptr Pointer to externally managed buffer.
+    /// \param dtype Tensor element data type. e.g. `Float32` for single
+    /// precision float.
+    /// \param shape List of dimensions of data in buffer. e.g. `{640, 480, 3}`
+    /// for a 640x480 RGB image.
+    /// \param strides Number of elements to advance to reach the next element,
+    /// for every dimension. This will be calculated from the shape assuming a
+    /// contiguous buffer if not specified. For the above `Float32` image, the
+    /// value of an element will be read as:
+    ///
+    ///     image[row, col, ch] = *(float *) (data_ptr + sizeof(float) *
+    ///     (row * stride[0] + col * stride[1] + ch * stride[2]));
+    ///
+    /// \param device Device containing the data buffer.
     Tensor(void* data_ptr,
            Dtype dtype,
            const SizeVector& shape,
@@ -132,7 +150,7 @@ public:
         if (strides_.empty()) {
             strides_ = shape_util::DefaultStrides(shape);
         }
-        // blob with no-op deleter
+        // Blob with no-op deleter.
         blob_ = std::make_shared<Blob>(device, (void*)data_ptr_, [](void*) {});
     }
 

@@ -113,13 +113,12 @@ TEST_P(TensorPermuteDevices, WithInitValue) {
                              t.GetDevice());
         EXPECT_EQ(t.GetStrides(), wrapper.GetStrides());
         EXPECT_EQ(wrapper.ToFlatVector<float>(), vals);
-        // Updating original data updates wrapper
-        t.SetItem({core::TensorKey::Index(1), core::TensorKey::Index(1)},
-                  core::Tensor::Init(0.f));
+        // Updating original data updates wrapper.
+        t[1][1] = 0;
         vals[4] = 0;
         EXPECT_EQ(wrapper.ToFlatVector<float>(), vals);
     }
-    // original data is present after wrapper is destructed.
+    // Original data is present after wrapper is destructed.
     EXPECT_EQ(t.ToFlatVector<float>(), vals);
 }
 
