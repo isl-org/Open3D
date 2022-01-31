@@ -264,13 +264,11 @@ def main():
                              "--version",
                              action="version",
                              version="Open3D " + open3d.__version__,
-                             help="Show program's version number and exit\n"
-                             "usage :  open3d --verison\n ")
+                             help="Show program's version number and exit.")
     main_parser.add_argument("-h",
                              "--help",
                              action="help",
-                             help="Show this help message and exit\n"
-                             "usage :  open3d --help\n ")
+                             help="Show this help message and exit.")
 
     subparsers = main_parser.add_subparsers(
         title="command",
@@ -279,8 +277,13 @@ def main():
         help="Select one of these commands\n ")
 
     example_help = (
-        "Run an example by category/example_name (or category/example_name.py)\n"
-        "for example :  open3d example geometry/triangle_mesh_deformation\n ")
+        "Run an Open3D example. Example usage: \n"
+        "```bash\n"
+        "open3d example --list                                  # List examples\n"
+        "open3d example --list geometry                         # List examples in geometry\n"
+        "open3d example geometry/point_cloud_convex_hull        # Run an example\n"
+        "open3d example --show geometry/point_cloud_convex_hull # Show source code of an example\n"
+        "```\n")
     parser_example = subparsers.add_parser(
         "example",
         add_help=False,
@@ -319,8 +322,7 @@ def main():
     parser_example.add_argument("-h",
                                 "--help",
                                 action="help",
-                                help="Show this help message and exit\n"
-                                "usage       :  open3d example --help\n ")
+                                help="Show this help message and exit.")
     parser_example.set_defaults(func=_example)
 
     draw_help = ("Visualize a mesh or pointcloud from a file\n"
@@ -334,12 +336,11 @@ def main():
 
     parser_draw.add_argument("filename",
                              nargs="?",
-                             help="Name of the mesh or point cloud file")
+                             help="Name of the mesh or point cloud file.")
     parser_draw.add_argument("-h",
                              "--help",
                              action="help",
-                             help="Show this help message and exit\n"
-                             "usage :  open3d draw --help\n ")
+                             help="Show this help message and exit.")
     parser_draw.set_defaults(func=_draw)
 
     args = main_parser.parse_args()
