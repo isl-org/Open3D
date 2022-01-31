@@ -201,18 +201,22 @@ public:
             const std::string& prefix = "DemoPointCloudFeatureMatching",
             const std::string& data_root = "");
 
-    /// \brief Returns list of paths to point clouds, of size 2.
-    std::vector<std::string> GetPathsPointClouds() const {
+    /// \brief Returns list of paths to point clouds, of size 2. Use
+    /// `GetPathsPointCloud()[0]`, and `GetPathsPointCloud()[1]` to access the
+    /// paths.
+    std::vector<std::string> GetPathsPointCloud() const {
         return paths_pointcloud_;
     }
     /// \brief Returns list of paths to saved FPFH features binary for point
-    /// clouds, respectively, of size 2.
-    std::vector<std::string> GetPathsFPFHFeatures() const {
+    /// clouds, respectively, of size 2. Use `GetPathsFPFHFeature()[0]`, and
+    /// `GetPathsFPFHFeature()[1]` to access the paths.
+    std::vector<std::string> GetPathsFPFHFeature() const {
         return paths_fpfh_feature_;
     }
     /// \brief Returns list of paths to saved L32D features binary for point
-    /// clouds, respectively, of size 2.
-    std::vector<std::string> GetPathsL32DFeatures() const {
+    /// clouds, respectively, of size 2. Use `GetPathsL32DFeature()[0]`, and
+    /// `GetPathsL32DFeature()[1]` to access the paths.
+    std::vector<std::string> GetPathsL32DFeature() const {
         return paths_l32d_feature_;
     }
 
@@ -358,9 +362,13 @@ public:
     SampleRGBDDatasetICL(const std::string& prefix = "SampleRGBDDatasetICL",
                          const std::string& data_root = "");
 
-    /// \brief Returns List of paths to color image samples of size 5.
+    /// \brief Returns List of paths to color image samples of size 5. Use
+    /// `GetPathsColor()[0]`, `GetPathsColor()[1]` ... `GetPathsColor()[4]` to
+    /// access the paths.
     std::vector<std::string> GetPathsColor() const { return paths_color_; };
-    /// \brief Returns List of paths to depth image samples of size 5.
+    /// \brief Returns List of paths to depth image samples of size 5. Use
+    /// `GetPathsDepth()[0]`, `GetPathsDepth()[1]` ... `GetPathsDepth()[4]` to
+    /// access the paths.
     std::vector<std::string> GetPathsDepth() const { return paths_depth_; };
 
     /// \brief Returns path to camera trajectory log file `trajectory.log`.
@@ -399,11 +407,19 @@ public:
             const std::string& prefix = "SampleFountainRGBDDataset",
             const std::string& data_root = "");
 
+    /// \brief Returns List of paths to color image samples of size 33. Use
+    /// `GetPathsColor()[0]`, `GetPathsColor()[1]` ... `GetPathsColor()[32]` to
+    /// access the paths.
     std::vector<std::string> GetPathsColor() const { return paths_color_; };
+    /// \brief Returns List of paths to depth image samples of size 5. Use
+    /// `GetPathsDepth()[0]`, `GetPathsDepth()[1]` ... `GetPathsDepth()[4]` to
+    /// access the paths.
     std::vector<std::string> GetPathsDepth() const { return paths_depth_; };
+    /// \brief Returns path to camera poses at keyfragmes log file `key.log`.
     std::string GetPathKeyframePosesLog() const {
         return path_keyframe_poses_log_;
     };
+    /// \brief Returns path to mesh reconstruction.
     std::string GetPathReconstruction() const { return path_reconstruction_; };
 
 private:
@@ -420,7 +436,7 @@ public:
     Eagle(const std::string& prefix = "Eagle",
           const std::string& data_root = "");
 
-    /// \brief Returns path to the `EaglePointCloud.ply`.
+    /// \brief Returns path to the `EaglePointCloud.ply` file.
     std::string GetPath() const { return path_; };
 
 private:
@@ -436,7 +452,7 @@ public:
     Armadillo(const std::string& prefix = "Armadillo",
               const std::string& data_root = "");
 
-    /// \brief Returns path to the `ArmadilloMesh.ply`.
+    /// \brief Returns path to the `ArmadilloMesh.ply` file.
     std::string GetPath() const { return path_; };
 
 private:
@@ -452,7 +468,7 @@ public:
     Bunny(const std::string& prefix = "Bunny",
           const std::string& data_root = "");
 
-    /// \brief Returns path to the `BunnyMesh.ply`.
+    /// \brief Returns path to the `BunnyMesh.ply` file.
     std::string GetPath() const { return path_; };
 
 private:
@@ -466,7 +482,7 @@ class Knot : public SimpleDataset {
 public:
     Knot(const std::string& prefix = "Knot", const std::string& data_root = "");
 
-    /// \brief Returns path to the `KnotMesh.ply`.
+    /// \brief Returns path to the `KnotMesh.ply` file.
     std::string GetPath() const { return path_; };
 
 private:
@@ -481,7 +497,7 @@ public:
     Juneau(const std::string& prefix = "Juneau",
            const std::string& data_root = "");
 
-    /// \brief Returns path to the `JuneauImage.jgp`.
+    /// \brief Returns path to the `JuneauImage.jgp` file.
     std::string GetPath() const { return path_; };
 
 private:
@@ -500,9 +516,12 @@ public:
             const std::string& data_root = "");
 
     /// \brief Returns list of paths to ply point-cloud fragments of size 57.
+    /// Use `GetPaths()[0]`, `GetPaths()[1]` ... `GetPaths()[56]` to access the
+    /// paths.
     std::vector<std::string> GetPaths() const { return paths_; }
     /// \brief Returns path to the ply point-cloud fragment at index (from 0 to
-    /// 57).
+    /// 57). Use `GetPaths(0)`, `GetPaths(1)` ... `GetPaths(56)` to access the
+    /// paths.
     std::string GetPaths(size_t index) const;
 
 private:
@@ -521,9 +540,12 @@ public:
             const std::string& data_root = "");
 
     /// \brief Returns list of paths to ply point-cloud fragments of size 53.
+    /// Use `GetPaths()[0]`, `GetPaths()[1]` ... `GetPaths()[52]` to access the
+    /// paths.
     std::vector<std::string> GetPaths() const { return paths_; }
     /// \brief Returns path to the ply point-cloud fragment at index (from 0 to
-    /// 53).
+    /// 53). Use `GetPaths(0)`, `GetPaths(1)` ... `GetPaths(52)` to access the
+    /// paths.
     std::string GetPaths(size_t index) const;
 
 private:
