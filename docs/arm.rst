@@ -12,10 +12,10 @@ we provide pre-compiled ARM64 wheels for Linux and macOS. Install the wheel by:
     pip install open3d
     python -c "import open3d; print(open3d.__version__)"
 
-    # Legacy visualizer
+    # Test the legacy visualizer
     python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw_geometries([c])"
 
-    # New GUI visualizer
+    # Test the new GUI visualizer
     python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw(c)"
 
 +------------------------+----------------+---------------------+------------+----------------+
