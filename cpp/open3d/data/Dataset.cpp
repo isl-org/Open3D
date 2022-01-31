@@ -94,7 +94,7 @@ DemoICPPointClouds::DemoICPPointClouds(const std::string& prefix,
     : SimpleDataset(
               prefix,
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "290122-demo-icp-pointclouds/DemoICPPointClouds.zip"},
+               "20220130-demo-icp-pointclouds/DemoICPPointClouds.zip"},
               "76cf67ab1af942e3c4d5e97b9c2ae58f") {
     for (int i = 0; i < 3; ++i) {
         paths_.push_back(Dataset::GetExtractDir() + "/cloud_bin_" +
@@ -116,7 +116,7 @@ DemoColoredICPPointClouds::DemoColoredICPPointClouds(
     : SimpleDataset(
               prefix,
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "290122-demo-icp-pointclouds/DemoColoredICPPointClouds.zip"},
+               "20220130-demo-icp-pointclouds/DemoColoredICPPointClouds.zip"},
               "bf8d469e892d76f2e69e1213207c0e30") {
     paths_.push_back(Dataset::GetExtractDir() + "/frag_115.ply");
     paths_.push_back(Dataset::GetExtractDir() + "/frag_116.ply");
@@ -136,7 +136,7 @@ DemoCropPointCloud::DemoCropPointCloud(const std::string& prefix,
     : SimpleDataset(
               prefix,
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "290122-demo-crop-pointcloud/DemoCropPointCloud.zip"},
+               "20220130-demo-crop-pointcloud/DemoCropPointCloud.zip"},
               "12dbcdddd3f0865d8312929506135e23") {
     const std::string extract_dir = Dataset::GetExtractDir();
     path_pointcloud_ = extract_dir + "/fragment.ply";
@@ -147,7 +147,7 @@ DemoPointCloudFeatureMatching::DemoPointCloudFeatureMatching(
         const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/290122-demo-pointcloud-feature-matching/"
+                     "download/20220130-demo-pointcloud-feature-matching/"
                      "DemoPointCloudFeatureMatching.zip"},
                     "02f0703ce0cbf4df78ce2602ae33fc79") {
     const std::string extract_dir = Dataset::GetExtractDir();
@@ -163,7 +163,7 @@ DemoPoseGraphOptimization::DemoPoseGraphOptimization(
         const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/290122-demo-pose-graph-optimization/"
+                     "download/20220130-demo-pose-graph-optimization/"
                      "DemoPoseGraphOptimization.zip"},
                     "af085b28d79dea7f0a50aef50c96b62c") {
     const std::string extract_dir = Dataset::GetExtractDir();
@@ -176,7 +176,7 @@ SamplePointCloudPCD::SamplePointCloudPCD(const std::string& prefix,
                                          const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/290122-sample-pointclouds/fragment.pcd"},
+                     "download/20220130-sample-pointclouds/fragment.pcd"},
                     "f3a613fd2bdecd699aabdd858fb29606",
                     /*no_extract =*/true) {
     path_ = Dataset::GetExtractDir() + "/fragment.pcd";
@@ -186,7 +186,7 @@ SamplePointCloudPLY::SamplePointCloudPLY(const std::string& prefix,
                                          const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/290122-sample-pointclouds/fragment.ply"},
+                     "download/20220130-sample-pointclouds/fragment.ply"},
                     "831ecffd4d7cbbbe02494c5c351aa6e5",
                     /*no_extract =*/true) {
     path_ = Dataset::GetExtractDir() + "/fragment.ply";
@@ -197,7 +197,7 @@ SampleRGBDImageNYU::SampleRGBDImageNYU(const std::string& prefix,
     : SimpleDataset(
               prefix,
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "290122-sample-rgbd-image/SampleRGBDImageNYU.zip"},
+               "20220130-sample-rgbd-image/SampleRGBDImageNYU.zip"},
               "b0baaf892c7ff9b202eb5fb40c5f7b58") {
     path_color_ = Dataset::GetExtractDir() + "/NYU_color.ppm";
     path_depth_ = Dataset::GetExtractDir() + "/NYU_depth.pgm";
@@ -208,7 +208,7 @@ SampleRGBDImageSUN::SampleRGBDImageSUN(const std::string& prefix,
     : SimpleDataset(
               prefix,
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "290122-sample-rgbd-image/SampleRGBDImageSUN.zip"},
+               "20220130-sample-rgbd-image/SampleRGBDImageSUN.zip"},
               "b1a430586547c8986bdf8b36179a8e67") {
     path_color_ = Dataset::GetExtractDir() + "/SUN_color.jpg";
     path_depth_ = Dataset::GetExtractDir() + "/SUN_depth.png";
@@ -219,7 +219,7 @@ SampleRGBDImageTUM::SampleRGBDImageTUM(const std::string& prefix,
     : SimpleDataset(
               prefix,
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "290122-sample-rgbd-image/SampleRGBDImageTUM.zip"},
+               "20220130-sample-rgbd-image/SampleRGBDImageTUM.zip"},
               "91758d42b142dbad7b0d90e857ad47a8") {
     path_color_ = Dataset::GetExtractDir() + "/TUM_color.png";
     path_depth_ = Dataset::GetExtractDir() + "/TUM_depth.png";
@@ -230,7 +230,7 @@ SampleRGBDDatasetICL::SampleRGBDDatasetICL(const std::string& prefix,
     : SimpleDataset(
               prefix,
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "290122-sample-rgbd-image/SampleRGBDDatasetICL.zip"},
+               "20220130-sample-rgbd-image/SampleRGBDDatasetICL.zip"},
               "3af3b6ee53e4d64396537553995d9556") {
     const std::string extract_dir = Dataset::GetExtractDir();
 
@@ -250,19 +250,101 @@ SampleRGBDDatasetICL::SampleRGBDDatasetICL(const std::string& prefix,
     path_reconstruction_ = extract_dir + "/example_tsdf_pcd.ply";
 }
 
+SampleFountainRGBDDataset::SampleFountainRGBDDataset(
+        const std::string& prefix, const std::string& data_root)
+    : SimpleDataset(
+              prefix,
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220130-sample-rgbd-image/SampleFountainRGBDDataset.zip"},
+              "c6c1b2171099f571e2a78d78675df350") {
+    const std::string extract_dir = Dataset::GetExtractDir();
+
+    paths_color_ = {extract_dir + "/image/0000010-000001228920.jpg",
+                    extract_dir + "/image/0000368-000050112627.jpg",
+                    extract_dir + "/image/0000722-000098450147.jpg",
+                    extract_dir + "/image/0000031-000004096400.jpg",
+                    extract_dir + "/image/0000412-000056120680.jpg",
+                    extract_dir + "/image/0000771-000105140933.jpg",
+                    extract_dir + "/image/0000044-000005871507.jpg",
+                    extract_dir + "/image/0000429-000058441973.jpg",
+                    extract_dir + "/image/0000792-000108008413.jpg",
+                    extract_dir + "/image/0000064-000008602440.jpg",
+                    extract_dir + "/image/0000474-000064586573.jpg",
+                    extract_dir + "/image/0000818-000111558627.jpg",
+                    extract_dir + "/image/0000110-000014883587.jpg",
+                    extract_dir + "/image/0000487-000066361680.jpg",
+                    extract_dir + "/image/0000849-000115791573.jpg",
+                    extract_dir + "/image/0000156-000021164733.jpg",
+                    extract_dir + "/image/0000526-000071687000.jpg",
+                    extract_dir + "/image/0000883-000120434160.jpg",
+                    extract_dir + "/image/0000200-000027172787.jpg",
+                    extract_dir + "/image/0000549-000074827573.jpg",
+                    extract_dir + "/image/0000896-000122209267.jpg",
+                    extract_dir + "/image/0000215-000029220987.jpg",
+                    extract_dir + "/image/0000582-000079333613.jpg",
+                    extract_dir + "/image/0000935-000127534587.jpg",
+                    extract_dir + "/image/0000255-000034682853.jpg",
+                    extract_dir + "/image/0000630-000085887853.jpg",
+                    extract_dir + "/image/0000985-000134361920.jpg",
+                    extract_dir + "/image/0000299-000040690907.jpg",
+                    extract_dir + "/image/0000655-000089301520.jpg",
+                    extract_dir + "/image/0001028-000140233427.jpg",
+                    extract_dir + "/image/0000331-000045060400.jpg",
+                    extract_dir + "/image/0000703-000095855760.jpg",
+                    extract_dir + "/image/0001061-000144739467.jpg"};
+
+    paths_depth_ = {extract_dir + "/depth/0000038-000001234662.png",
+                    extract_dir + "/depth/0001503-000050120614.png",
+                    extract_dir + "/depth/0002951-000098439288.png",
+                    extract_dir + "/depth/0000124-000004104418.png",
+                    extract_dir + "/depth/0001683-000056127079.png",
+                    extract_dir + "/depth/0003152-000105146507.png",
+                    extract_dir + "/depth/0000177-000005872988.png",
+                    extract_dir + "/depth/0001752-000058429557.png",
+                    extract_dir + "/depth/0003238-000108016262.png",
+                    extract_dir + "/depth/0000259-000008609267.png",
+                    extract_dir + "/depth/0001937-000064602868.png",
+                    extract_dir + "/depth/0003344-000111553403.png",
+                    extract_dir + "/depth/0000447-000014882686.png",
+                    extract_dir + "/depth/0001990-000066371438.png",
+                    extract_dir + "/depth/0003471-000115791298.png",
+                    extract_dir + "/depth/0000635-000021156105.png",
+                    extract_dir + "/depth/0002149-000071677149.png",
+                    extract_dir + "/depth/0003610-000120429623.png",
+                    extract_dir + "/depth/0000815-000027162570.png",
+                    extract_dir + "/depth/0002243-000074813859.png",
+                    extract_dir + "/depth/0003663-000122198194.png",
+                    extract_dir + "/depth/0000877-000029231463.png",
+                    extract_dir + "/depth/0002378-000079318707.png",
+                    extract_dir + "/depth/0003823-000127537274.png",
+                    extract_dir + "/depth/0001040-000034670651.png",
+                    extract_dir + "/depth/0002575-000085892450.png",
+                    extract_dir + "/depth/0004028-000134377970.png",
+                    extract_dir + "/depth/0001220-000040677116.png",
+                    extract_dir + "/depth/0002677-000089296113.png",
+                    extract_dir + "/depth/0004203-000140217589.png",
+                    extract_dir + "/depth/0001351-000045048488.png",
+                    extract_dir + "/depth/0002874-000095869855.png",
+                    extract_dir + "/depth/0004339-000144755807.png"};
+
+    path_keyframe_poses_log_ = extract_dir + "/scene/key.log";
+    path_reconstruction_ = extract_dir + "/scene/integrated.ply";
+}
+
 Eagle::Eagle(const std::string& prefix, const std::string& data_root)
-    : SimpleDataset(prefix,
-                    {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/290122-sample-pointclouds/EaglePointCloud.ply"},
-                    "e4e6c77bc548e7eb7548542a0220ad78",
-                    /*no_extract =*/true) {
+    : SimpleDataset(
+              prefix,
+              {"https://github.com/isl-org/open3d_downloads/releases/"
+               "download/20220130-sample-pointclouds/EaglePointCloud.ply"},
+              "e4e6c77bc548e7eb7548542a0220ad78",
+              /*no_extract =*/true) {
     path_ = Dataset::GetExtractDir() + "/EaglePointCloud.ply";
 }
 
 Armadillo::Armadillo(const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/290122-sample-meshs/ArmadilloMesh.ply"},
+                     "download/20220130-sample-meshs/ArmadilloMesh.ply"},
                     "9e68ff1b1cc914ed88cd84f6a8235021",
                     /*no_extract =*/true) {
     path_ = Dataset::GetExtractDir() + "/ArmadilloMesh.ply";
@@ -271,7 +353,7 @@ Armadillo::Armadillo(const std::string& prefix, const std::string& data_root)
 Bunny::Bunny(const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/290122-sample-meshs/BunnyMesh.ply"},
+                     "download/20220130-sample-meshs/BunnyMesh.ply"},
                     "568f871d1a221ba6627569f1e6f9a3f2",
                     /*no_extract =*/true) {
     path_ = Dataset::GetExtractDir() + "/BunnyMesh.ply";
@@ -280,7 +362,7 @@ Bunny::Bunny(const std::string& prefix, const std::string& data_root)
 Knot::Knot(const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/290122-sample-meshs/KnotMesh.ply"},
+                     "download/20220130-sample-meshs/KnotMesh.ply"},
                     "bfc9f132ecdfb7f9fdc42abf620170fc",
                     /*no_extract =*/true) {
     path_ = Dataset::GetExtractDir() + "/KnotMesh.ply";
@@ -289,7 +371,7 @@ Knot::Knot(const std::string& prefix, const std::string& data_root)
 Juneau::Juneau(const std::string& prefix, const std::string& data_root)
     : SimpleDataset(prefix,
                     {"https://github.com/isl-org/open3d_downloads/releases/"
-                     "download/290122-sample-images/JuneauImage.jpg"},
+                     "download/20220130-sample-images/JuneauImage.jpg"},
                     "a090f6342893bdf0caefd83c6debbecd",
                     /*no_extract =*/true) {
     path_ = Dataset::GetExtractDir() + "/JuneauImage.jpg";

@@ -349,6 +349,45 @@ void pybind_sample_rgbd_dataset_icl(py::module& m) {
                                     "path_reconstruction");
 }
 
+void pybind_sample_fountain_rgbd_dataset(py::module& m) {
+    // open3d.data.SampleFountainRGBDDataset
+    py::class_<SampleFountainRGBDDataset,
+               PySimpleDataset<SampleFountainRGBDDataset>,
+               std::shared_ptr<SampleFountainRGBDDataset>, SimpleDataset>
+            fountain_rgbd_dataset(
+                    m, "SampleFountainRGBDDataset",
+                    "Data class for `SampleFountainRGBDDataset` contains a "
+                    "sample set of 33 color and depth images from the "
+                    "`Fountain RGBD dataset`. It also contains `camera poses "
+                    "at keyframes log` and `mesh reconstruction`. It is used "
+                    "in demo of `Color Map Optimization`.");
+    fountain_rgbd_dataset
+            .def(py::init<const std::string&, const std::string&>(),
+                 "prefix"_a = "SampleFountainRGBDDataset", "data_root"_a = "")
+            .def_property_readonly(
+                    "paths_color", &SampleFountainRGBDDataset::GetPathsColor,
+                    "List of path to color image sample, of size 33.")
+            .def_property_readonly(
+                    "paths_depth", &SampleFountainRGBDDataset::GetPathsDepth,
+                    "List of path to depth image sample, of size 33.")
+            .def_property_readonly(
+                    "path_keyframe_poses_log",
+                    &SampleFountainRGBDDataset::GetPathKeyframePosesLog,
+                    "Path to camera poses at keyframes log file `key.log`.")
+            .def_property_readonly(
+                    "path_reconstruction",
+                    &SampleFountainRGBDDataset::GetPathReconstruction,
+                    "Path to mesh reconstruction.");
+    docstring::ClassMethodDocInject(m, "SampleFountainRGBDDataset",
+                                    "paths_color");
+    docstring::ClassMethodDocInject(m, "SampleFountainRGBDDataset",
+                                    "paths_depth");
+    docstring::ClassMethodDocInject(m, "SampleFountainRGBDDataset",
+                                    "path_keyframe_poses_log");
+    docstring::ClassMethodDocInject(m, "SampleFountainRGBDDataset",
+                                    "path_reconstruction");
+}
+
 void pybind_eagle(py::module& m) {
     // open3d.data.Eagle
     py::class_<Eagle, PySimpleDataset<Eagle>, std::shared_ptr<Eagle>,
@@ -480,6 +519,7 @@ void pybind_data(py::module& m) {
     pybind_sample_rgbd_image_sun(m_submodule);
     pybind_sample_rgbd_image_tum(m_submodule);
     pybind_sample_rgbd_dataset_icl(m_submodule);
+    pybind_sample_fountain_rgbd_dataset(m_submodule);
     pybind_eagle(m_submodule);
     pybind_armadillo(m_submodule);
     pybind_bunny(m_submodule);

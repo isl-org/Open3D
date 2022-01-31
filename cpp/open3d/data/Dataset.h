@@ -253,8 +253,6 @@ private:
     std::string path_pose_graph_global_;
 };
 
-// class DemoVisualizationSceneAssets
-
 /// \class SamplePointCloudPCD
 /// \brief Data class for `SamplePointCloudPCD` contains the `fragment.pcd`
 /// point cloud mesh from the `Redwood Living Room` dataset.
@@ -286,24 +284,6 @@ private:
     /// Path to the `ply` format point cloud.
     std::string path_;
 };
-
-/// \class SampleFountainRGBDDataset
-// class SampleFountainRGBDDataset : public SimpleDataset {
-// public:
-//     SampleFountainRGBDDataset(
-//             const std::string& prefix = "SampleFountainRGBDDataset",
-//             const std::string& data_root = "");
-
-//     std::vector<std::string> GetPathsImage() const { return paths_color_; };
-//     std::vector<std::string> GetPathsDepth() const { return paths_depth_; };
-//     std::vector<std::string> GetPathsKeyLog() const { return paths_key_log_;
-//     };
-
-// private:
-//     std::vector<std::string> paths_color_;
-//     std::vector<std::string> paths_depth_;
-//     std::vector<std::string> paths_key_log_;
-// };
 
 /// \class SampleRGBDImageNYU
 /// \brief Data class for `SampleRGBDImageNYU` contains a color image
@@ -405,6 +385,31 @@ private:
     /// Path to color and depth image match file `rgbd.match`.
     std::string path_rgbd_match_;
     /// Path to pointcloud reconstruction from TSDF.
+    std::string path_reconstruction_;
+};
+
+/// \class SampleFountainRGBDDataset
+/// \brief Data class for `SampleFountainRGBDDataset` contains a sample set of
+/// 33 color and depth images from the `Fountain RGBD dataset`. It also
+/// contains `camera poses at keyframes log` and `mesh reconstruction`. It is
+/// used in demo of `Color Map Optimization`.
+class SampleFountainRGBDDataset : public SimpleDataset {
+public:
+    SampleFountainRGBDDataset(
+            const std::string& prefix = "SampleFountainRGBDDataset",
+            const std::string& data_root = "");
+
+    std::vector<std::string> GetPathsColor() const { return paths_color_; };
+    std::vector<std::string> GetPathsDepth() const { return paths_depth_; };
+    std::string GetPathKeyframePosesLog() const {
+        return path_keyframe_poses_log_;
+    };
+    std::string GetPathReconstruction() const { return path_reconstruction_; };
+
+private:
+    std::vector<std::string> paths_color_;
+    std::vector<std::string> paths_depth_;
+    std::string path_keyframe_poses_log_;
     std::string path_reconstruction_;
 };
 

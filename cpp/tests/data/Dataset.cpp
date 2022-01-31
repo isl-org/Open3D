@@ -63,7 +63,7 @@ TEST(Dataset, SimpleDataset) {
 
     const std::vector<std::string> url_mirrors = {
             "https://github.com/isl-org/open3d_downloads/releases/"
-            "download/290122-sample-meshs/BunnyMesh.ply"};
+            "download/20220130-sample-meshs/BunnyMesh.ply"};
     const std::string md5 = "568f871d1a221ba6627569f1e6f9a3f2";
 
     data::SimpleDataset simple_dataset(prefix, url_mirrors, md5,
@@ -428,7 +428,7 @@ TEST(Dataset, SampleRGBDImageTUM) {
 }
 
 TEST(Dataset, SampleRGBDDatasetICL) {
-    const std::string prefix = "SampleRGBDDatasetICL";
+    const std::string prefix = "O3DTestSampleRGBDDatasetICL";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
     const std::string download_dir = data_root + "/download/" + prefix;
@@ -481,6 +481,122 @@ TEST(Dataset, SampleRGBDDatasetICL) {
     EXPECT_EQ(rgbd_icl.GetDataRoot(), data_root);
     EXPECT_EQ(rgbd_icl.GetDownloadDir(), download_dir);
     EXPECT_EQ(rgbd_icl.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, SampleFountainRGBDDataset) {
+    const std::string prefix = "O3DTestSampleFountainRGBDDataset";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::SampleFountainRGBDDataset rgbd_fountain(prefix);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    const std::vector<std::string> paths_color = {
+            extract_dir + "/image/0000010-000001228920.jpg",
+            extract_dir + "/image/0000368-000050112627.jpg",
+            extract_dir + "/image/0000722-000098450147.jpg",
+            extract_dir + "/image/0000031-000004096400.jpg",
+            extract_dir + "/image/0000412-000056120680.jpg",
+            extract_dir + "/image/0000771-000105140933.jpg",
+            extract_dir + "/image/0000044-000005871507.jpg",
+            extract_dir + "/image/0000429-000058441973.jpg",
+            extract_dir + "/image/0000792-000108008413.jpg",
+            extract_dir + "/image/0000064-000008602440.jpg",
+            extract_dir + "/image/0000474-000064586573.jpg",
+            extract_dir + "/image/0000818-000111558627.jpg",
+            extract_dir + "/image/0000110-000014883587.jpg",
+            extract_dir + "/image/0000487-000066361680.jpg",
+            extract_dir + "/image/0000849-000115791573.jpg",
+            extract_dir + "/image/0000156-000021164733.jpg",
+            extract_dir + "/image/0000526-000071687000.jpg",
+            extract_dir + "/image/0000883-000120434160.jpg",
+            extract_dir + "/image/0000200-000027172787.jpg",
+            extract_dir + "/image/0000549-000074827573.jpg",
+            extract_dir + "/image/0000896-000122209267.jpg",
+            extract_dir + "/image/0000215-000029220987.jpg",
+            extract_dir + "/image/0000582-000079333613.jpg",
+            extract_dir + "/image/0000935-000127534587.jpg",
+            extract_dir + "/image/0000255-000034682853.jpg",
+            extract_dir + "/image/0000630-000085887853.jpg",
+            extract_dir + "/image/0000985-000134361920.jpg",
+            extract_dir + "/image/0000299-000040690907.jpg",
+            extract_dir + "/image/0000655-000089301520.jpg",
+            extract_dir + "/image/0001028-000140233427.jpg",
+            extract_dir + "/image/0000331-000045060400.jpg",
+            extract_dir + "/image/0000703-000095855760.jpg",
+            extract_dir + "/image/0001061-000144739467.jpg"};
+    EXPECT_EQ(rgbd_fountain.GetPathsColor(), paths_color);
+
+    const std::vector<std::string> paths_depth = {
+            extract_dir + "/depth/0000038-000001234662.png",
+            extract_dir + "/depth/0001503-000050120614.png",
+            extract_dir + "/depth/0002951-000098439288.png",
+            extract_dir + "/depth/0000124-000004104418.png",
+            extract_dir + "/depth/0001683-000056127079.png",
+            extract_dir + "/depth/0003152-000105146507.png",
+            extract_dir + "/depth/0000177-000005872988.png",
+            extract_dir + "/depth/0001752-000058429557.png",
+            extract_dir + "/depth/0003238-000108016262.png",
+            extract_dir + "/depth/0000259-000008609267.png",
+            extract_dir + "/depth/0001937-000064602868.png",
+            extract_dir + "/depth/0003344-000111553403.png",
+            extract_dir + "/depth/0000447-000014882686.png",
+            extract_dir + "/depth/0001990-000066371438.png",
+            extract_dir + "/depth/0003471-000115791298.png",
+            extract_dir + "/depth/0000635-000021156105.png",
+            extract_dir + "/depth/0002149-000071677149.png",
+            extract_dir + "/depth/0003610-000120429623.png",
+            extract_dir + "/depth/0000815-000027162570.png",
+            extract_dir + "/depth/0002243-000074813859.png",
+            extract_dir + "/depth/0003663-000122198194.png",
+            extract_dir + "/depth/0000877-000029231463.png",
+            extract_dir + "/depth/0002378-000079318707.png",
+            extract_dir + "/depth/0003823-000127537274.png",
+            extract_dir + "/depth/0001040-000034670651.png",
+            extract_dir + "/depth/0002575-000085892450.png",
+            extract_dir + "/depth/0004028-000134377970.png",
+            extract_dir + "/depth/0001220-000040677116.png",
+            extract_dir + "/depth/0002677-000089296113.png",
+            extract_dir + "/depth/0004203-000140217589.png",
+            extract_dir + "/depth/0001351-000045048488.png",
+            extract_dir + "/depth/0002874-000095869855.png",
+            extract_dir + "/depth/0004339-000144755807.png"};
+    EXPECT_EQ(rgbd_fountain.GetPathsDepth(), paths_depth);
+
+    for (auto& path_color : rgbd_fountain.GetPathsColor()) {
+        EXPECT_TRUE(utility::filesystem::FileExists(path_color));
+    }
+    for (auto& path_depth : rgbd_fountain.GetPathsDepth()) {
+        EXPECT_TRUE(utility::filesystem::FileExists(path_depth));
+    }
+
+    EXPECT_EQ(rgbd_fountain.GetPathKeyframePosesLog(),
+              extract_dir + "/scene/key.log");
+    EXPECT_TRUE(utility::filesystem::FileExists(
+            rgbd_fountain.GetPathKeyframePosesLog()));
+
+    EXPECT_EQ(rgbd_fountain.GetPathReconstruction(),
+              extract_dir + "/scene/integrated.ply");
+    EXPECT_TRUE(utility::filesystem::FileExists(
+            rgbd_fountain.GetPathReconstruction()));
+
+    // Basic method.
+    EXPECT_EQ(rgbd_fountain.GetPrefix(), prefix);
+    EXPECT_EQ(rgbd_fountain.GetDataRoot(), data_root);
+    EXPECT_EQ(rgbd_fountain.GetDownloadDir(), download_dir);
+    EXPECT_EQ(rgbd_fountain.GetExtractDir(), extract_dir);
 
     // Delete dataset.
     utility::filesystem::DeleteDirectory(download_dir);
