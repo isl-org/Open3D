@@ -32,10 +32,11 @@ import os
 import random
 import sys
 
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
-import open3d_example as o3dex
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+sys.path.append(pyexample_path)
 
-SCRIPTDIR = os.path.dirname(os.path.realpath(__file__))
+import open3d_example as o3dex
 
 
 def normalize(v):
@@ -151,10 +152,10 @@ def get_icp_transform(source, target, source_indices, target_indices):
 
 
 def selections():
-    source = o3d.io.read_point_cloud(SCRIPTDIR +
-                                     "/../../test_data/ICP/cloud_bin_0.pcd")
-    target = o3d.io.read_point_cloud(SCRIPTDIR +
-                                     "/../../test_data/ICP/cloud_bin_2.pcd")
+    source = o3d.io.read_point_cloud(
+        os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
+    target = o3d.io.read_point_cloud(
+        os.path.join(test_data_path, 'ICP', 'cloud_bin_2.pcd'))
     source.paint_uniform_color([1, 0.706, 0])
     target.paint_uniform_color([0, 0.651, 0.929])
 

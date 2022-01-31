@@ -24,54 +24,46 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/visualization/gui/WidgetStack.h"
 
-#include <functional>
-#include <string>
-
-#include "open3d/visualization/gui/Widget.h"
+#include <stack>
 
 namespace open3d {
 namespace visualization {
 namespace gui {
-
-class ListView : public Widget {
-    using Super = Widget;
-
-public:
-    ListView();
-    virtual ~ListView();
-
-    void SetItems(const std::vector<std::string>& items);
-
-    /// Returns the currently selected item in the list.
-    int GetSelectedIndex() const;
-    /// Returns the value of the currently selected item in the list.
-    const char* GetSelectedValue() const;
-    /// Selects the indicated row of the list. Does not call onValueChanged.
-    void SetSelectedIndex(int index);
-    /// Limit the max visible items shown to user.
-    /// Set to negative number will make list extends vertically as much
-    /// as possible, otherwise the list will at least show 3 items and
-    /// at most show \ref num items.
-    void SetMaxVisibleItems(int num);
-
-    Size CalcPreferredSize(const LayoutContext& context,
-                           const Constraints& constraints) const override;
-
-    Size CalcMinimumSize(const LayoutContext& context) const override;
-
-    DrawResult Draw(const DrawContext& context) override;
-
-    /// Calls onValueChanged(const char *selectedText, bool isDoubleClick)
-    /// when the list selection changes because of user action.
-    void SetOnValueChanged(
-            std::function<void(const char*, bool)> on_value_changed);
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+struct WidgetStack::Impl {
+    std::stack<std::shared_ptr<Widget>> widgets_;
+    std::function<void(std::shared_ptr<Widget>)> on_top_callback_;
 };
+
+WidgetStack::WidgetStack() : impl_(new WidgetStack::Impl()) {}
+WidgetStack::~WidgetStack() = default;
+
+void WidgetStack::PushWidget(std::shared_ptr<Widget> widget) {
+    impl_->widgets_.push(widget);
+    SetWidget(widget);
+}
+
+std::shared_ptr<Widget> WidgetStack::PopWidget() {
+    std::shared_ptr<Widget> ret;
+    if (!impl_->widgets_.empty()) {
+        ret = impl_->widgets_.top();
+        impl_->widgets_.pop();
+        if (!impl_->widgets_.empty()) {
+            SetWidget(impl_->widgets_.top());
+            if (impl_->on_top_callback_) {
+                impl_->on_top_callback_(impl_->widgets_.top());
+            }
+        } else {
+            SetWidget(nullptr);
+        }
+    }
+    return ret;
+}
+void WidgetStack::SetOnTop(
+        std::function<void(std::shared_ptr<Widget>)> onTopCallback) {
+    impl_->on_top_callback_ = onTopCallback;
+}
 
 }  // namespace gui
 }  // namespace visualization

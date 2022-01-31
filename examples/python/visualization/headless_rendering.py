@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/visualization/headless_rendering.py
-
 import os
 import open3d as o3d
 import numpy as np
