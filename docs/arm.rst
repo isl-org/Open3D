@@ -77,10 +77,10 @@ the following commands:
 
     cd Docker
 
-    ./docker_build.sh openblas-arm64-py36 # Python 3.6 wheel, release mode
-    ./docker_build.sh openblas-arm64-py37 # Python 3.7 wheel, release mode
-    ./docker_build.sh openblas-arm64-py38 # Python 3.8 wheel, release mode
-    ./docker_build.sh openblas-arm64-py39 # Python 3.9 wheel, release mode
+    ./docker_build.sh openblas-arm64-py36  # Python 3.6
+    ./docker_build.sh openblas-arm64-py37  # Python 3.7
+    ./docker_build.sh openblas-arm64-py38  # Python 3.8
+    ./docker_build.sh openblas-arm64-py39  # Python 3.9
 
 After running ``docker_build.sh``, you shall see a ``.whl`` file generated the
 current directly on the host. Then simply install the ``.whl`` file by:
