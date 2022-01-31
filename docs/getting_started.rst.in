@@ -36,8 +36,10 @@ Pip (PyPI)
     pip install open3d
 
 .. note::
-   We recommend using ``pip`` version >=20.3 for better platform compatibility
-   checking in Linux.
+   Please upgrade your ``pip`` to a version >=20.3 to install Open3D in Linux,
+   e.g. with
+
+        ``pip install -U pip>=20.3``
 
 .. note::
     In general, we recommend using a
@@ -150,7 +152,7 @@ Python applications looks like this:
 
 .. code-block:: dockerfile
 
-    # This could also be another Ubuntu or Debian based distributions
+    # This could also be another Ubuntu or Debian based distribution
     FROM ubuntu:latest
 
     # Install Open3D system dependencies and pip
@@ -167,7 +169,7 @@ The following ``Dockerfile`` runs the Open3D viewer as its main application:
 
 .. code-block:: dockerfile
 
-    # This could also be another Ubuntu or Debian based distributions
+    # This could also be another Ubuntu or Debian based distribution
     FROM ubuntu:latest
 
     # Copy and install Open3D viewer from docker context
@@ -195,17 +197,28 @@ To run GUI applications from the docker container, add these options to the
 2. X server:
     :bash:`-v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY`
 
-For example, the following commands will run the docker container with the Open3D application, and provide access to the current directory as ``/root``:
+For example, the following commands will run the docker container with the Open3D application, and provide access to the current directory as ``/root``. Once the docker image is built, you can run the container from any folder that contains data you wish to visualize.
 
 .. code-block:: bash
 
+    mkdir open3d-viewer-docker && cd open3d-viewer-docker
+    # Download Open3D viewer deb package.
+    wget https://github.com/isl-org/Open3D/releases/download/v@@OPEN3D_VERSION@@/open3d-app-@@OPEN3D_VERSION@@-Ubuntu.deb
     # Build docker image in folder containing Open3D deb package.
-    docker build -t open3d-test -f Dockerfile .
+    docker build -t open3d-viewer -f- . <<EOF
+    FROM ubuntu:latest
+    COPY open3d*.deb /root/
+    RUN apt-get update \
+        && apt-get install --yes /root/open3d*.deb \
+        && rm -rf /var/lib/apt/lists/*
+    ENTRYPOINT ["Open3D"]
+    EOF
+
     # Allow local X11 connections
     xhost local:root
     # Run docker image with the Open3D app on Intel GPU
-    docker run --device=/dev/dri:/dev/dri -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY -v "$PWD":/root open3d-test:latest
+    docker run --device=/dev/dri:/dev/dri -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY -v "$PWD":/root open3d-viewer:latest
     # Run docker image with the Open3D app on NVIDIA GPU
-    docker run  --gpus 'all,"capabilities=compute,utility,graphics"' -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY -v "$PWD":/root open3d-test:latest
+    docker run  --gpus 'all,"capabilities=compute,utility,graphics"' -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY -v "$PWD":/root open3d-viewer:latest
 
 Also see the `docker tutorial for ROS <http://wiki.ros.org/docker/Tutorials/Hardware%20Acceleration>`__ for more information.
