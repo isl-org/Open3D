@@ -46,7 +46,6 @@ if (WIN32)
 endif()
 
 target_link_libraries(pybind PRIVATE Open3D::Open3D)
-target_link_libraries(pybind PRIVATE Open3D::3rdparty_opengl)
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
