@@ -82,12 +82,14 @@ def load_rgbd_file_names(config):
     return [], []
 
 
-def load_intrinsic(config):
-    if config.path_intrinsic is None or config.path_intrinsic == '':
+def load_intrinsic(config, key='depth'):
+    path_intrinsic = config.path_color_intrinsic if key == 'color' else config.path_intrinsic
+
+    if path_intrinsic is None or path_intrinsic == '':
         intrinsic = o3d.camera.PinholeCameraIntrinsic(
             o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     else:
-        intrinsic = o3d.io.read_pinhole_camera_intrinsic(config.path_intrinsic)
+        intrinsic = o3d.io.read_pinhole_camera_intrinsic(path_intrinsic)
 
     if config.engine == 'legacy':
         return intrinsic
