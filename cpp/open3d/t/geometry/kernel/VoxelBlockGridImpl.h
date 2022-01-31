@@ -170,7 +170,8 @@ void IntegrateCPU
          const core::Tensor& indices,
          const core::Tensor& block_keys,
          TensorMap& block_value_map,
-         const core::Tensor& intrinsics,
+         const core::Tensor& depth_intrinsic,
+         const core::Tensor& color_intrinsic,
          const core::Tensor& extrinsics,
          index_t resolution,
          float voxel_size,
@@ -181,7 +182,10 @@ void IntegrateCPU
     index_t resolution2 = resolution * resolution;
     index_t resolution3 = resolution2 * resolution;
 
-    TransformIndexer transform_indexer(intrinsics, extrinsics, voxel_size);
+    TransformIndexer transform_indexer(depth_intrinsic, extrinsics, voxel_size);
+    TransformIndexer colormap_indexer(
+            color_intrinsic,
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
 
     ArrayIndexer voxel_indexer({resolution, resolution, resolution});
 
@@ -278,13 +282,26 @@ void IntegrateCPU
 
         if (integrate_color) {
             color_t* color_ptr = color_base_ptr + 3 * linear_idx;
-            input_color_t* input_color_ptr =
-                    color_indexer.GetDataPtr<input_color_t>(ui, vi);
 
-            for (index_t i = 0; i < 3; ++i) {
-                color_ptr[i] = (weight * color_ptr[i] +
-                                input_color_ptr[i] * color_multiplier) *
-                               inv_wsum;
+            // Unproject ui, vi with depth_intrinsic, then project back with
+            // color_intrinsic
+            float x, y, z;
+            transform_indexer.Unproject(ui, vi, 1.0, &x, &y, &z);
+
+            float uf, vf;
+            colormap_indexer.Project(x, y, z, &uf, &vf);
+            if (color_indexer.InBoundary(uf, vf)) {
+                ui = round(uf);
+                vi = round(vf);
+
+                input_color_t* input_color_ptr =
+                        color_indexer.GetDataPtr<input_color_t>(ui, vi);
+
+                for (index_t i = 0; i < 3; ++i) {
+                    color_ptr[i] = (weight * color_ptr[i] +
+                                    input_color_ptr[i] * color_multiplier) *
+                                   inv_wsum;
+                }
             }
         }
         *weight_ptr = weight + 1;
@@ -326,7 +343,7 @@ void RayCastCPU
          const TensorMap& block_value_map,
          const core::Tensor& range,
          TensorMap& renderings_map,
-         const core::Tensor& intrinsics,
+         const core::Tensor& intrinsic,
          const core::Tensor& extrinsics,
          index_t h,
          index_t w,
@@ -447,8 +464,8 @@ void RayCastCPU
                            interp_ratio_dz_indexer.GetDataPtr();
 
     TransformIndexer c2w_transform_indexer(
-            intrinsics, t::geometry::InverseTransformation(extrinsics));
-    TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
+            intrinsic, t::geometry::InverseTransformation(extrinsics));
+    TransformIndexer w2c_transform_indexer(intrinsic, extrinsics);
 
     index_t rows = h;
     index_t cols = w;
@@ -793,9 +810,11 @@ void RayCastCPU
                 }
 
                 if (normal_ptr) {
+                    constexpr float EPSILON = 1e-5f;
                     float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
                                       normal_ptr[1] * normal_ptr[1] +
                                       normal_ptr[2] * normal_ptr[2]);
+                    norm = std::max(norm, EPSILON);
                     w2c_transform_indexer.Rotate(
                             -normal_ptr[0] / norm, -normal_ptr[1] / norm,
                             -normal_ptr[2] / norm, normal_ptr + 0,

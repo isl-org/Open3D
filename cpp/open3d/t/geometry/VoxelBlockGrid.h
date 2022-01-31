@@ -155,6 +155,18 @@ public:
     void Integrate(const core::Tensor &block_coords,
                    const Image &depth,
                    const Image &color,
+                   const core::Tensor &depth_intrinsic,
+                   const core::Tensor &color_intrinsic,
+                   const core::Tensor &extrinsic,
+                   float depth_scale = 1000.0f,
+                   float depth_max = 3.0f);
+
+    /// Specific operation for TSDF volumes.
+    /// Similar to RGB-D integration, but uses the same intrinsics for depth and
+    /// color.
+    void Integrate(const core::Tensor &block_coords,
+                   const Image &depth,
+                   const Image &color,
                    const core::Tensor &intrinsic,
                    const core::Tensor &extrinsic,
                    float depth_scale = 1000.0f,

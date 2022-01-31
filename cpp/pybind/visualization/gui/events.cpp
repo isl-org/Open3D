@@ -265,6 +265,18 @@ void pybind_gui_events(py::module& m) {
             .value("END", KeyName::KEY_END)
             .value("PAGE_UP", KeyName::KEY_PAGEUP)
             .value("PAGE_DOWN", KeyName::KEY_PAGEDOWN)
+            .value("F1", KeyName::KEY_F1)
+            .value("F2", KeyName::KEY_F2)
+            .value("F3", KeyName::KEY_F3)
+            .value("F4", KeyName::KEY_F4)
+            .value("F5", KeyName::KEY_F5)
+            .value("F6", KeyName::KEY_F6)
+            .value("F7", KeyName::KEY_F7)
+            .value("F8", KeyName::KEY_F8)
+            .value("F9", KeyName::KEY_F9)
+            .value("F10", KeyName::KEY_F10)
+            .value("F11", KeyName::KEY_F11)
+            .value("F12", KeyName::KEY_F12)
             .value("UNKNOWN", KeyName::KEY_UNKNOWN)
             .export_values();
 
