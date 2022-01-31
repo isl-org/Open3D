@@ -237,7 +237,7 @@ def _example(parser, args):
             print("  open3d example --list\n")
             return 0
         else:
-            print("error: invalid category provided: " + category)
+            print("error: invalid category provided: " + args.category_example)
             parser.print_help()
             parser.exit(2)
 
