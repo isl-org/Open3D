@@ -35,7 +35,7 @@ import argparse
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from open3d_example import *
+from open3d_example import get_rgbd_file_lists
 # original code is written by Andrew. W. Chen
 # input: openni style unsynchronized color and depth images
 # output: synchronized color and depth images
@@ -96,7 +96,7 @@ def run_synchronization(args):
         if args.debug_mode:
             print(temp_name)
             print(new_name)
-        if not exists(temp_name):
+        if not os.path.exists(temp_name):
             assert (i + 1 == len(color_files))
             os.remove(color_files[-1])
         else:

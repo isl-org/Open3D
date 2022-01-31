@@ -29,11 +29,12 @@
 import numpy as np
 import open3d as o3d
 import os, sys
+from os.path import join
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from open3d_example import join, get_rgbd_file_lists
+from open3d_example import get_rgbd_file_lists
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 

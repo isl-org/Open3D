@@ -26,19 +26,20 @@
 
 # examples/python/reconstruction_system/debug/visualize_pointcloud.py
 
+import numpy as np
 import argparse
 import json
 import math
-import sys
+import os, sys
 import open3d as o3d
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
-from open3d_example import *
+from open3d_example import join, get_file_list, draw_geometries_flip, get_rgbd_file_lists
 
-sys.path.append(".")
-from initialize_config import *
-from make_fragments import *
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from initialize_config import initialize_config
+from make_fragments import read_rgbd_image
 
 # test wide baseline matching
 if __name__ == "__main__":

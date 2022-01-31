@@ -29,14 +29,15 @@
 import argparse
 import json
 import sys
+import os
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
-from open3d_example import *
+from open3d_example import join, get_file_list
 
-sys.path.append(".")
-from initialize_config import *
-from register_fragments import *
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from initialize_config import initialize_config
+from register_fragments import register_point_cloud_pair
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="mathching two point clouds")

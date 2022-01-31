@@ -29,11 +29,12 @@
 import numpy as np
 import open3d as o3d
 import os, sys
+from os.path import join
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from open3d_example import join, get_file_list, write_poses_to_log, draw_registration_result_original_color
+from open3d_example import get_file_list, write_poses_to_log, draw_registration_result_original_color
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_refined_scene

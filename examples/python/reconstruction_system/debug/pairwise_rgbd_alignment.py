@@ -28,16 +28,16 @@
 
 import argparse
 import json
-import sys
 import open3d as o3d
+import os, sys
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
-from open3d_example import *
+from open3d_example import draw_geometries_flip, initialize_opencv, get_rgbd_file_lists
 
-sys.path.append(".")
-from initialize_config import *
-from make_fragments import *
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from initialize_config import initialize_config
+from make_fragments import register_one_rgbd_pair, read_rgbd_image
 
 
 def test_single_pair(s, t, color_files, depth_files, intrinsic, with_opencv,

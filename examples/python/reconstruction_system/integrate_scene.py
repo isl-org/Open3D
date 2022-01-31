@@ -30,11 +30,12 @@ import numpy as np
 import math
 import os, sys
 import open3d as o3d
+from os.path import join
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from open3d_example import *
+from open3d_example import get_rgbd_file_lists, write_poses_to_log
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from make_fragments import read_rgbd_image

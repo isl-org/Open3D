@@ -32,8 +32,10 @@ import open3d as o3d
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
-from open3d_example import *
+from open3d_example import get_rgbd_file_lists
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from initialize_config import initialize_config
 
 def parse_keys(filename):
     with open(filename, 'r') as f:
