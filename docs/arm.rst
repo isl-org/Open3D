@@ -29,7 +29,7 @@ has many variants and it could be difficult to configure all dependencies
 manually.
 
 First, install Docker following the `official guide <https://docs.docker.com/get-docker/>`_.
-Also, complete the `post-installation steps for Linux https://docs.docker.com/engine/install/linux-postinstall/>`_.
+Also, complete the `post-installation steps for Linux <https://docs.docker.com/engine/install/linux-postinstall/>`_.
 Make sure that ``docker`` can be executed without root privileges. To verify
 Docker is installed correctly, run:
 
@@ -45,10 +45,10 @@ the following commands:
 
     cd Docker
 
-    ./docker_build.sh openblas-arm64-py36      # Python 3.6 wheel, release mode
-    ./docker_build.sh openblas-arm64-py37      # Python 3.7 wheel, release mode
-    ./docker_build.sh openblas-arm64-py38      # Python 3.8 wheel, release mode
-    ./docker_build.sh openblas-arm64-py39      # Python 3.9 wheel, release mode
+    ./docker_build.sh openblas-arm64-py36 # Python 3.6 wheel, release mode
+    ./docker_build.sh openblas-arm64-py37 # Python 3.7 wheel, release mode
+    ./docker_build.sh openblas-arm64-py38 # Python 3.8 wheel, release mode
+    ./docker_build.sh openblas-arm64-py39 # Python 3.9 wheel, release mode
 
 After running ``docker_build.sh``, you shall see a ``.whl`` file generated the
 current directly on the host. Then simply install the ``.whl`` file by:
