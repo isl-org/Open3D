@@ -573,11 +573,11 @@ TEST(Dataset, SampleFountainRGBDDataset) {
             extract_dir + "/depth/0004339-000144755807.png"};
     EXPECT_EQ(rgbd_fountain.GetDepthPaths(), depth_paths);
 
-    for (auto& path_color : rgbd_fountain.GetColorPaths()) {
-        EXPECT_TRUE(utility::filesystem::FileExists(path_color));
+    for (auto& color_path : rgbd_fountain.GetColorPaths()) {
+        EXPECT_TRUE(utility::filesystem::FileExists(color_path));
     }
-    for (auto& path_depth : rgbd_fountain.GetDepthPaths()) {
-        EXPECT_TRUE(utility::filesystem::FileExists(path_depth));
+    for (auto& depth_path : rgbd_fountain.GetDepthPaths()) {
+        EXPECT_TRUE(utility::filesystem::FileExists(depth_path));
     }
 
     EXPECT_EQ(rgbd_fountain.GetKeyframePosesLogPath(),
