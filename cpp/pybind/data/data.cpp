@@ -264,14 +264,14 @@ void pybind_sample_rgbd_image_nyu(py::module& m) {
     rgbd_image_nyu
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SampleRGBDImageNYU", "data_root"_a = "")
-            .def_property_readonly("path_color",
+            .def_property_readonly("color_path",
                                    &SampleRGBDImageNYU::GetColorPath,
                                    "Path to color image sample.")
-            .def_property_readonly("path_depth",
+            .def_property_readonly("depth_path",
                                    &SampleRGBDImageNYU::GetDepthPath,
                                    "Path to depth image sample.");
-    docstring::ClassMethodDocInject(m, "SampleRGBDImageNYU", "path_color");
-    docstring::ClassMethodDocInject(m, "SampleRGBDImageNYU", "path_depth");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageNYU", "color_path");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageNYU", "depth_path");
 }
 
 void pybind_sample_rgbd_image_sun(py::module& m) {
@@ -285,14 +285,14 @@ void pybind_sample_rgbd_image_sun(py::module& m) {
     rgbd_image_sun
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SampleRGBDImageSUN", "data_root"_a = "")
-            .def_property_readonly("path_color",
+            .def_property_readonly("color_path",
                                    &SampleRGBDImageSUN::GetColorPath,
                                    "Path to color image sample.")
-            .def_property_readonly("path_depth",
+            .def_property_readonly("depth_path",
                                    &SampleRGBDImageSUN::GetDepthPath,
                                    "Path to depth image sample.");
-    docstring::ClassMethodDocInject(m, "SampleRGBDImageSUN", "path_color");
-    docstring::ClassMethodDocInject(m, "SampleRGBDImageSUN", "path_depth");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageSUN", "color_path");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageSUN", "depth_path");
 }
 
 void pybind_sample_rgbd_image_tum(py::module& m) {
@@ -306,14 +306,14 @@ void pybind_sample_rgbd_image_tum(py::module& m) {
     rgbd_image_tum
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SampleRGBDImageTUM", "data_root"_a = "")
-            .def_property_readonly("path_color",
+            .def_property_readonly("color_path",
                                    &SampleRGBDImageTUM::GetColorPath,
                                    "Path to color image sample.")
-            .def_property_readonly("path_depth",
+            .def_property_readonly("depth_path",
                                    &SampleRGBDImageTUM::GetDepthPath,
                                    "Path to depth image sample.");
-    docstring::ClassMethodDocInject(m, "SampleRGBDImageTUM", "path_color");
-    docstring::ClassMethodDocInject(m, "SampleRGBDImageTUM", "path_depth");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageTUM", "color_path");
+    docstring::ClassMethodDocInject(m, "SampleRGBDImageTUM", "depth_path");
 }
 
 void pybind_sample_rgbd_dataset_icl(py::module& m) {

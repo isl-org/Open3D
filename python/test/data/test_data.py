@@ -290,11 +290,11 @@ def test_sample_rgbd_image_nyu():
     rgbd_image_nyu = o3d.data.SampleRGBDImageNYU(prefix)
     assert os.path.isdir(download_dir) == True
 
-    assert rgbd_image_nyu.path_color == extract_dir + "/NYU_color.ppm"
-    assert os.path.isfile(rgbd_image_nyu.path_color) == True
+    assert rgbd_image_nyu.color_path == extract_dir + "/NYU_color.ppm"
+    assert os.path.isfile(rgbd_image_nyu.color_path) == True
 
-    assert rgbd_image_nyu.path_depth == extract_dir + "/NYU_depth.pgm"
-    assert os.path.isfile(rgbd_image_nyu.path_depth) == True
+    assert rgbd_image_nyu.depth_path == extract_dir + "/NYU_depth.pgm"
+    assert os.path.isfile(rgbd_image_nyu.depth_path) == True
 
     assert rgbd_image_nyu.prefix == prefix
     assert rgbd_image_nyu.data_root == data_root
@@ -317,11 +317,11 @@ def test_sample_rgbd_image_sun():
     rgbd_image_sun = o3d.data.SampleRGBDImageSUN(prefix)
     assert os.path.isdir(download_dir) == True
 
-    assert rgbd_image_sun.path_color == extract_dir + "/SUN_color.jpg"
-    assert os.path.isfile(rgbd_image_sun.path_color) == True
+    assert rgbd_image_sun.color_path == extract_dir + "/SUN_color.jpg"
+    assert os.path.isfile(rgbd_image_sun.color_path) == True
 
-    assert rgbd_image_sun.path_depth == extract_dir + "/SUN_depth.png"
-    assert os.path.isfile(rgbd_image_sun.path_depth) == True
+    assert rgbd_image_sun.depth_path == extract_dir + "/SUN_depth.png"
+    assert os.path.isfile(rgbd_image_sun.depth_path) == True
 
     assert rgbd_image_sun.prefix == prefix
     assert rgbd_image_sun.data_root == data_root
@@ -344,11 +344,11 @@ def test_sample_rgbd_image_tum():
     rgbd_image_tum = o3d.data.SampleRGBDImageTUM(prefix)
     assert os.path.isdir(download_dir) == True
 
-    assert rgbd_image_tum.path_color == extract_dir + "/TUM_color.png"
-    assert os.path.isfile(rgbd_image_tum.path_color) == True
+    assert rgbd_image_tum.color_path == extract_dir + "/TUM_color.png"
+    assert os.path.isfile(rgbd_image_tum.color_path) == True
 
-    assert rgbd_image_tum.path_depth == extract_dir + "/TUM_depth.png"
-    assert os.path.isfile(rgbd_image_tum.path_depth) == True
+    assert rgbd_image_tum.depth_path == extract_dir + "/TUM_depth.png"
+    assert os.path.isfile(rgbd_image_tum.depth_path) == True
 
     assert rgbd_image_tum.prefix == prefix
     assert rgbd_image_tum.data_root == data_root
