@@ -30,13 +30,14 @@ import runpy
 import sys
 from pathlib import Path
 
-import open3d
+import open3d as o3d
+import open3d.app as app
 
 
 class _Open3DArgumentParser(argparse.ArgumentParser):
 
     def error(self, message):
-        sys.stderr.write("error: %s\n" % message)
+        sys.stderr.write("Error: %s\n" % message)
         self.print_help()
         self.exit(2)
 
@@ -221,7 +222,7 @@ def _example(parser, args):
         example = ""
 
     if category not in _get_example_categories():
-        print("error: invalid category provided: " + category)
+        print("Error: invalid category provided: " + category)
         parser.print_help()
         parser.exit(2)
 
@@ -235,12 +236,12 @@ def _example(parser, args):
             print("  open3d example --list\n")
             return 0
         else:
-            print("error: invalid category provided: " + args.category_example)
+            print("Error: invalid category provided: " + args.category_example)
             parser.print_help()
             parser.exit(2)
 
     if args.category_example not in _get_all_examples():
-        print("error: invalid example name provided: " + args.category_example)
+        print("Error: invalid example name provided: " + args.category_example)
         parser.print_help()
         parser.exit(2)
 
@@ -273,7 +274,6 @@ def _draw(parser, args):
 
     removed_arg = sys.argv[1]
     sys.argv.pop(1)
-    import open3d.app as app
     app.main()
     sys.argv.insert(1, removed_arg)
 
@@ -281,13 +281,13 @@ def _draw(parser, args):
 
 
 def main():
-    print(f"*******************************************************\n"
-          f"** Open3D: A Modern Library for 3D Data Processing   **\n"
-          f"**                                                   **\n"
-          f"** Version {open3d.__version__: <25}                 **\n"
-          f"** Docs    http://www.open3d.org/docs                **\n"
-          f"** Code    https://github.com/isl-org/Open3D         **\n"
-          f"*******************************************************")
+    print(f"***************************************************\n"
+          f"* Open3D: A Modern Library for 3D Data Processing *\n"
+          f"*                                                 *\n"
+          f"* Version {o3d.__version__: <22}                  *\n"
+          f"* Docs    http://www.open3d.org/docs              *\n"
+          f"* Code    https://github.com/isl-org/Open3D       *\n"
+          f"***************************************************")
 
     main_parser = _Open3DArgumentParser(
         description="Open3D commad-line tools",
@@ -296,7 +296,7 @@ def main():
     main_parser.add_argument("-V",
                              "--version",
                              action="version",
-                             version="Open3D " + open3d.__version__,
+                             version="Open3D " + o3d.__version__,
                              help="Show program's version number and exit.")
     main_parser.add_argument("-h",
                              "--help",
@@ -306,8 +306,7 @@ def main():
     subparsers = main_parser.add_subparsers(
         title="command",
         dest="command",
-        description='Functionalities supported by Open3D CLI',
-        help="Select one of these commands\n ")
+        help="Select one of these commands.\n ")
 
     example_help = (
         "View or run an Open3D example. Example usage: \n"
@@ -360,8 +359,11 @@ def main():
                                 help="Show this help message and exit.")
     parser_example.set_defaults(func=_example)
 
-    draw_help = ("Visualize a mesh or pointcloud from a file. Example usage:\n"
-                 "  open3d draw")
+    draw_help = (
+        "Load and visualize a 3D model. Example usage:\n"
+        "  open3d draw                                            # Start a blank Open3D viewer\n"
+        "  open3d draw path/to/model_file                         # Visualize a 3D model file\n"
+    )
     parser_draw = subparsers.add_parser(
         "draw",
         description=draw_help,
