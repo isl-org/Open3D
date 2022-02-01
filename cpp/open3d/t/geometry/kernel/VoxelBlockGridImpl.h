@@ -539,11 +539,12 @@ void RayCastCPU
          index_t w,
          index_t block_resolution,
          float voxel_size,
-         float sdf_trunc,
          float depth_scale,
          float depth_min,
          float depth_max,
-         float weight_threshold) {
+         float weight_threshold,
+         float trunc_voxel_multiplier,
+         int range_map_down_factor) {
     using Key = utility::MiniVec<index_t, 3>;
     using Hash = utility::MiniVecHash<index_t, 3>;
     using Eq = utility::MiniVecEq<index_t, 3>;
@@ -737,7 +738,8 @@ void RayCastCPU
         index_t y = workload_idx / cols;
         index_t x = workload_idx % cols;
 
-        const float* range = range_indexer.GetDataPtr<float>(x / 8, y / 8);
+        const float* range = range_indexer.GetDataPtr<float>(
+                x / range_map_down_factor, y / range_map_down_factor);
 
         float* depth_ptr = nullptr;
         float* vertex_ptr = nullptr;
@@ -847,6 +849,7 @@ void RayCastCPU
 
         float tsdf_prev = -1.0f;
         float tsdf = 1.0;
+        float sdf_trunc = voxel_size * trunc_voxel_multiplier;
         float w = 0.0;
 
         // Camera origin

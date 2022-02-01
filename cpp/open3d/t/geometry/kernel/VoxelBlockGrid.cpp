@@ -260,11 +260,12 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              index_t w,
              index_t block_resolution,
              float voxel_size,
-             float sdf_trunc,
              float depth_scale,
              float depth_min,
              float depth_max,
-             float weight_threshold) {
+             float weight_threshold,
+             float trunc_voxel_multiplier,
+             int range_map_down_factor) {
     using tsdf_t = float;
     core::Dtype block_weight_dtype = core::Dtype::Float32;
     core::Dtype block_color_dtype = core::Dtype::Float32;
@@ -282,8 +283,9 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
                     RayCastCPU<tsdf_t, weight_t, color_t>(
                             hashmap, block_value_map, range_map, renderings_map,
                             intrinsic, extrinsic, h, w, block_resolution,
-                            voxel_size, sdf_trunc, depth_scale, depth_min,
-                            depth_max, weight_threshold);
+                            voxel_size, depth_scale, depth_min, depth_max,
+                            weight_threshold, trunc_voxel_multiplier,
+                            range_map_down_factor);
                 });
 
     } else if (device_type == core::Device::DeviceType::CUDA) {
@@ -293,8 +295,9 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
                     RayCastCUDA<tsdf_t, weight_t, color_t>(
                             hashmap, block_value_map, range_map, renderings_map,
                             intrinsic, extrinsic, h, w, block_resolution,
-                            voxel_size, sdf_trunc, depth_scale, depth_min,
-                            depth_max, weight_threshold);
+                            voxel_size, depth_scale, depth_min, depth_max,
+                            weight_threshold, trunc_voxel_multiplier,
+                            range_map_down_factor);
                 });
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");

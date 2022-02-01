@@ -102,11 +102,12 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              index_t w,
              index_t block_resolution,
              float voxel_size,
-             float sdf_trunc,
              float depth_scale,
              float depth_min,
              float depth_max,
-             float weight_threshold);
+             float weight_threshold,
+             float trunc_voxel_multiplier,
+             int range_map_down_factor);
 
 void ExtractPointCloud(const core::Tensor& block_indices,
                        const core::Tensor& nb_block_indices,
@@ -205,11 +206,12 @@ void RayCastCPU(std::shared_ptr<core::HashMap>& hashmap,
                 index_t w,
                 index_t block_resolution,
                 float voxel_size,
-                float sdf_trunc,
                 float depth_scale,
                 float depth_min,
                 float depth_max,
-                float weight_threshold);
+                float weight_threshold,
+                float trunc_voxel_multiplier,
+                int range_map_down_factor);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
 void ExtractPointCloudCPU(const core::Tensor& block_indices,
@@ -310,11 +312,12 @@ void RayCastCUDA(std::shared_ptr<core::HashMap>& hashmap,
                  index_t w,
                  index_t block_resolution,
                  float voxel_size,
-                 float sdf_trunc,
                  float depth_scale,
                  float depth_min,
                  float depth_max,
-                 float weight_threshold);
+                 float weight_threshold,
+                 float trunc_voxel_multiplier,
+                 int range_map_down_factor);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
 void ExtractPointCloudCUDA(const core::Tensor& block_indices,

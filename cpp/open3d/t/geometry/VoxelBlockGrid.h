@@ -204,7 +204,8 @@ public:
                       float depth_min = 0.1f,
                       float depth_max = 3.0f,
                       float weight_threshold = 3.0f,
-                      float trunc_voxel_multiplier = 8.0f);
+                      float trunc_voxel_multiplier = 8.0f,
+                      int range_map_down_factor = 8);
 
     /// Specific operation for TSDF volumes.
     /// Extract point cloud at isosurface points.

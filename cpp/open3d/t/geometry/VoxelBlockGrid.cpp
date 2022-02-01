@@ -354,7 +354,8 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
                                   float depth_min,
                                   float depth_max,
                                   float weight_threshold,
-                                  float trunc_voxel_multiplier) {
+                                  float trunc_voxel_multiplier,
+                                  int range_map_down_factor) {
     AssertInitialized();
     CheckBlockCoorinates(block_coords);
     CheckIntrinsicTensor(intrinsic);
@@ -363,11 +364,11 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
     // Extrinsic: world to camera -> pose: camera to world
     core::Device device = block_hashmap_->GetDevice();
 
-    const int down_factor = 8;
     core::Tensor range_minmax_map;
-    kernel::voxel_grid::EstimateRange(
-            block_coords, range_minmax_map, intrinsic, extrinsic, height, width,
-            down_factor, block_resolution_, voxel_size_, depth_min, depth_max);
+    kernel::voxel_grid::EstimateRange(block_coords, range_minmax_map, intrinsic,
+                                      extrinsic, height, width,
+                                      range_map_down_factor, block_resolution_,
+                                      voxel_size_, depth_min, depth_max);
 
     static const std::unordered_map<std::string, int> kAttrChannelMap = {
             // Conventional rendering
@@ -413,8 +414,8 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
     kernel::voxel_grid::RayCast(
             block_hashmap_, block_value_map, range_minmax_map, renderings_map,
             intrinsic, extrinsic, height, width, block_resolution_, voxel_size_,
-            voxel_size_ * trunc_voxel_multiplier, depth_scale, depth_min,
-            depth_max, weight_threshold);
+            depth_scale, depth_min, depth_max, weight_threshold,
+            trunc_voxel_multiplier, range_map_down_factor);
 
     return renderings_map;
 }

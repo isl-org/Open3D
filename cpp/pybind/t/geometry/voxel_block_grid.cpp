@@ -191,7 +191,7 @@ void pybind_voxel_block_grid(py::module& m) {
             "render_attributes"_a = std::vector<std::string>{"depth", "color"},
             "depth_scale"_a = 1000.0f, "depth_min"_a = 0.1f,
             "depth_max"_a = 3.0f, "weight_threshold"_a = 3.0f,
-            "trunc_voxel_multiplier"_a = 8.0f);
+            "trunc_voxel_multiplier"_a = 8.0f, "range_map_down_factor"_a = 8);
 
     vbg.def("extract_point_cloud", &VoxelBlockGrid::ExtractPointCloud,
             "Specific operation for TSDF volumes."
