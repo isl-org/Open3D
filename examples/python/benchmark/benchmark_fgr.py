@@ -24,18 +24,14 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/benchmark/benchmark_fgr.py
-
 import os
 import sys
-sys.path.append("../pipelines")
-sys.path.append("../geometry")
-sys.path.append("../utility")
 import numpy as np
-from file import *
-from visualization import *
-from downloader import *
-from trajectory_io import *
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import *
 
 do_visualization = False
 
@@ -77,7 +73,8 @@ def preprocess_point_cloud(pcd, voxel_size):
     return pcd_down, pcd_fpfh
 
 
-dataset_path = 'testdata'
+dataset_path = os.path.join(os.path.dirname(pyexample_path), 'test_data',
+                            'benchmark_data')
 dataset_names = ['livingroom1', 'livingroom2', 'office1', 'office2']
 
 if __name__ == "__main__":

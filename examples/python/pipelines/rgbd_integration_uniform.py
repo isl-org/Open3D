@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/pipelines/rgbd_integration_uniform.py
-
 import open3d as o3d
 import numpy as np
 
@@ -35,7 +33,7 @@ pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 sys.path.append(pyexample_path)
 
-from geometry.trajectory_io import read_trajectory
+from open3d_example import read_trajectory
 
 if __name__ == "__main__":
     camera_poses = read_trajectory(

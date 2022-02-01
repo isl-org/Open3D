@@ -143,7 +143,7 @@ setup_args = dict(
     cmdclass=cmdclass,
     author='Open3D Team',
     author_email='@PROJECT_EMAIL@',
-    url="@PROJECT_HOME@",
+    url="@PROJECT_HOMEPAGE_URL@",
     project_urls={
         'Documentation': '@PROJECT_DOCS@',
         'Source code': '@PROJECT_CODE@',
@@ -186,7 +186,7 @@ setup_args = dict(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Utilities",
     ],
-    description='Open3D: A Modern Library for 3D Data Processing.',
+    description='@PROJECT_DESCRIPTION@',
     long_description=open('README.rst').read(),
     long_description_content_type='text/x-rst',
 )
