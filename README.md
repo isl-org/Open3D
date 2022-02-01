@@ -65,6 +65,7 @@ To compile Open3D from source, refer to
 
 Checkout the following links to get started with Open3D C++ API
 
+* Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](http://www.open3d.org/docs/latest/getting_started.html#c)
 * [Compiling Open3D from source](http://www.open3d.org/docs/release/compilation.html)
 * [Open3D C++ API](http://www.open3d.org/docs/release/cpp_api.html)
 
