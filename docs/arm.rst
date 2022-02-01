@@ -60,22 +60,12 @@ install is the Docker engine itself. This is especially useful since ARM64 Linux
 has many variants and it could be difficult to configure all dependencies
 manually.
 
-First, install Docker following the `official guide <https://docs.docker.com/get-docker/>`_.
-Also, complete the `post-installation steps for Linux <https://docs.docker.com/engine/install/linux-postinstall/>`_.
-Make sure that ``docker`` can be executed without root privileges. To verify
-Docker is installed correctly, run:
+To build Open3D Python wheel with Docker, you can run one of the following
+commands:
 
 .. code-block:: bash
 
-    # You should be able to run this without sudo.
-    docker run hello-world
-
-The next step is to build Open3D Python wheel with Docker. You can run one of
-the following commands:
-
-.. code-block:: bash
-
-    cd Docker
+    cd docker
 
     ./docker_build.sh openblas-arm64-py36  # Python 3.6
     ./docker_build.sh openblas-arm64-py37  # Python 3.7
@@ -96,8 +86,8 @@ current directly on the host. Then simply install the ``.whl`` file by:
     python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw_geometries([c])"
     python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw(c)"
 
-The ``./docker_build.sh`` script works on both Linux and macOS ARM64 hosts.
-You can even cross-compile an ARM64 wheel on an x86-64 host. Install Docker and
+The ``./docker_build.sh`` script works on both Linux and macOS ARM64 hosts.  You
+can even cross-compile an ARM64 wheel on an x86-64 host. Install Docker and
 Qemu:
 
 .. code-block:: bash
