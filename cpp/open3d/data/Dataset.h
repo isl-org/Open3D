@@ -110,25 +110,25 @@ protected:
     std::string prefix_;
 };
 
-/// \class SimpleDataset
+/// \class SingleDownloadDataset
 /// \brief This class allows user to create simple dataset which includes single
 /// file downloading and extracting / copying.
-class SimpleDataset : public Dataset {
+class SingleDownloadDataset : public Dataset {
 public:
-    SimpleDataset(const std::string& prefix,
-                  const std::vector<std::string>& urls,
-                  const std::string& md5,
-                  const bool no_extract = false,
-                  const std::string& data_root = "");
+    SingleDownloadDataset(const std::string& prefix,
+                          const std::vector<std::string>& urls,
+                          const std::string& md5,
+                          const bool no_extract = false,
+                          const std::string& data_root = "");
 
-    virtual ~SimpleDataset() {}
+    virtual ~SingleDownloadDataset() {}
 };
 
 /// \class DemoICPPointClouds
 /// \brief Data class for `DemoICPPointClouds` contains 3 `pointclouds` of
 /// `pcd binary` format. This data is used in Open3D for ICP demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class DemoICPPointClouds : public SimpleDataset {
+class DemoICPPointClouds : public SingleDownloadDataset {
 public:
     DemoICPPointClouds(const std::string& prefix = "DemoICPPointClouds",
                        const std::string& data_root = "");
@@ -150,7 +150,7 @@ private:
 /// `pointclouds` of `ply` format. This data is used in Open3D for
 /// Colored-ICP demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class DemoColoredICPPointClouds : public SimpleDataset {
+class DemoColoredICPPointClouds : public SingleDownloadDataset {
 public:
     DemoColoredICPPointClouds(
             const std::string& prefix = "DemoColoredICPPointClouds",
@@ -173,7 +173,7 @@ private:
 /// `cropped.json` (a saved selected polygon volume file). This data is used
 /// in Open3D for point cloud crop demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class DemoCropPointCloud : public SimpleDataset {
+class DemoCropPointCloud : public SingleDownloadDataset {
 public:
     DemoCropPointCloud(const std::string& prefix = "DemoCropPointCloud",
                        const std::string& data_root = "");
@@ -195,7 +195,7 @@ private:
 /// pointcloud fragments and their respective FPFH features and L32D features.
 /// This data is used in Open3D for point cloud feature matching demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class DemoPointCloudFeatureMatching : public SimpleDataset {
+class DemoPointCloudFeatureMatching : public SingleDownloadDataset {
 public:
     DemoPointCloudFeatureMatching(
             const std::string& prefix = "DemoPointCloudFeatureMatching",
@@ -235,7 +235,7 @@ private:
 /// \brief Data class for `DemoPoseGraphOptimization` contains an example
 /// fragment pose graph, and global pose graph. This data is used in Open3D
 /// for pose graph optimization demo.
-class DemoPoseGraphOptimization : public SimpleDataset {
+class DemoPoseGraphOptimization : public SingleDownloadDataset {
 public:
     DemoPoseGraphOptimization(
             const std::string& prefix = "DemoPoseGraphOptimization",
@@ -260,7 +260,7 @@ private:
 /// \class SamplePointCloudPCD
 /// \brief Data class for `SamplePointCloudPCD` contains the `fragment.pcd`
 /// point cloud mesh from the `Redwood Living Room` dataset.
-class SamplePointCloudPCD : public SimpleDataset {
+class SamplePointCloudPCD : public SingleDownloadDataset {
 public:
     SamplePointCloudPCD(const std::string& prefix = "SamplePointCloudPCD",
                         const std::string& data_root = "");
@@ -276,7 +276,7 @@ private:
 /// \class SamplePointCloudPLY
 /// \brief Data class for `SamplePointCloudPLY` contains the `fragment.ply`
 /// point cloud mesh from the `Redwood Living Room` dataset.
-class SamplePointCloudPLY : public SimpleDataset {
+class SamplePointCloudPLY : public SingleDownloadDataset {
 public:
     SamplePointCloudPLY(const std::string& prefix = "SamplePointCloudPLY",
                         const std::string& data_root = "");
@@ -293,7 +293,7 @@ private:
 /// \brief Data class for `SampleRGBDImageNYU` contains a color image
 /// `NYU_color.ppm` and a depth image `NYU_depth.pgm` sample from NYU RGBD
 /// dataset.
-class SampleRGBDImageNYU : public SimpleDataset {
+class SampleRGBDImageNYU : public SingleDownloadDataset {
 public:
     SampleRGBDImageNYU(const std::string& prefix = "SampleRGBDImageNYU",
                        const std::string& data_root = "");
@@ -314,7 +314,7 @@ private:
 /// \brief Data class for `SampleRGBDImageSUN` contains a color image
 /// `SUN_color.jpg` and a depth image `SUN_depth.png` sample from SUN RGBD
 /// dataset.
-class SampleRGBDImageSUN : public SimpleDataset {
+class SampleRGBDImageSUN : public SingleDownloadDataset {
 public:
     SampleRGBDImageSUN(const std::string& prefix = "SampleRGBDImageSUN",
                        const std::string& data_root = "");
@@ -335,7 +335,7 @@ private:
 /// \brief Data class for `SampleRGBDImageTUM` contains a color image
 /// `TUM_color.png` and a depth image `TUM_depth.png` sample from TUM RGBD
 /// dataset.
-class SampleRGBDImageTUM : public SimpleDataset {
+class SampleRGBDImageTUM : public SingleDownloadDataset {
 public:
     SampleRGBDImageTUM(const std::string& prefix = "SampleRGBDImageTUM",
                        const std::string& data_root = "");
@@ -357,7 +357,7 @@ private:
 /// color and depth images from ICL-NUIM RGBD dataset living-room1. It also
 /// contains example `camera trajectory log`, `odometry log`, `rgbd match`, and
 /// `point cloud reconstruction using TSDF`.
-class SampleRGBDDatasetICL : public SimpleDataset {
+class SampleRGBDDatasetICL : public SingleDownloadDataset {
 public:
     SampleRGBDDatasetICL(const std::string& prefix = "SampleRGBDDatasetICL",
                          const std::string& data_root = "");
@@ -401,7 +401,7 @@ private:
 /// 33 color and depth images from the `Fountain RGBD dataset`. It also
 /// contains `camera poses at keyframes log` and `mesh reconstruction`. It is
 /// used in demo of `Color Map Optimization`.
-class SampleFountainRGBDDataset : public SimpleDataset {
+class SampleFountainRGBDDataset : public SingleDownloadDataset {
 public:
     SampleFountainRGBDDataset(
             const std::string& prefix = "SampleFountainRGBDDataset",
@@ -432,7 +432,7 @@ private:
 /// \class EaglePointCloud
 /// \brief Data class for `EaglePointCloud` contains the `EaglePointCloud.ply`
 /// file.
-class EaglePointCloud : public SimpleDataset {
+class EaglePointCloud : public SingleDownloadDataset {
 public:
     EaglePointCloud(const std::string& prefix = "EaglePointCloud",
                     const std::string& data_root = "");
@@ -448,7 +448,7 @@ private:
 /// \class ArmadilloMesh
 /// \brief Data class for `ArmadilloMesh` contains the `ArmadilloMesh.ply` from
 /// the `Stanford 3D Scanning Repository`.
-class ArmadilloMesh : public SimpleDataset {
+class ArmadilloMesh : public SingleDownloadDataset {
 public:
     ArmadilloMesh(const std::string& prefix = "ArmadilloMesh",
                   const std::string& data_root = "");
@@ -464,7 +464,7 @@ private:
 /// \class BunnyMesh
 /// \brief Data class for `BunnyMesh` contains the `BunnyMesh.ply` from the
 /// `Stanford 3D Scanning Repository`.
-class BunnyMesh : public SimpleDataset {
+class BunnyMesh : public SingleDownloadDataset {
 public:
     BunnyMesh(const std::string& prefix = "BunnyMesh",
               const std::string& data_root = "");
@@ -479,7 +479,7 @@ private:
 
 /// \class KnotMesh
 /// \brief Data class for `KnotMesh` contains the `KnotMesh.ply` file.
-class KnotMesh : public SimpleDataset {
+class KnotMesh : public SingleDownloadDataset {
 public:
     KnotMesh(const std::string& prefix = "KnotMesh",
              const std::string& data_root = "");
@@ -494,7 +494,7 @@ private:
 
 /// \class JuneauImage
 /// \brief Data class for `JuneauImage` contains the `JuneauImage.jpg` file.
-class JuneauImage : public SimpleDataset {
+class JuneauImage : public SingleDownloadDataset {
 public:
     JuneauImage(const std::string& prefix = "JuneauImage",
                 const std::string& data_root = "");
@@ -511,7 +511,7 @@ private:
 /// \brief Dataset class for `RedwoodLivingRoomPointClouds` contains 57
 /// `pointclouds` of `ply binary` format.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class RedwoodLivingRoomPointClouds : public SimpleDataset {
+class RedwoodLivingRoomPointClouds : public SingleDownloadDataset {
 public:
     RedwoodLivingRoomPointClouds(
             const std::string& prefix = "RedwoodLivingRoomPointClouds",
@@ -535,7 +535,7 @@ private:
 /// \brief Dataset class for `RedwoodOfficePointClouds` contains 53
 /// `pointclouds` of `ply binary` format.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class RedwoodOfficePointClouds : public SimpleDataset {
+class RedwoodOfficePointClouds : public SingleDownloadDataset {
 public:
     RedwoodOfficePointClouds(
             const std::string& prefix = "RedwoodOfficePointClouds",

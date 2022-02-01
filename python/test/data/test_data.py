@@ -59,18 +59,18 @@ def test_simple_dataset_base():
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)
 
-    simple_dataset = o3d.data.SimpleDataset(prefix,
-                                            url_mirrors,
-                                            md5,
-                                            no_extract=True)
+    single_download_dataset = o3d.data.SingleDownloadDataset(prefix,
+                                                             url_mirrors,
+                                                             md5,
+                                                             no_extract=True)
 
     assert os.path.isfile(extract_dir + "/BunnyMesh.ply") == True
     assert os.path.isfile(download_dir + "/BunnyMesh.ply") == True
 
-    assert simple_dataset.prefix == prefix
-    assert simple_dataset.data_root == data_root
-    assert simple_dataset.download_dir == download_dir
-    assert simple_dataset.extract_dir == extract_dir
+    assert single_download_dataset.prefix == prefix
+    assert single_download_dataset.data_root == data_root
+    assert single_download_dataset.download_dir == download_dir
+    assert single_download_dataset.extract_dir == extract_dir
 
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)

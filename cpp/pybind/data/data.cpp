@@ -39,7 +39,7 @@ public:
     using DatasetBase::DatasetBase;
 };
 
-template <class SimpleDatasetBase = SimpleDataset>
+template <class SimpleDatasetBase = SingleDownloadDataset>
 class PySimpleDataset : public PyDataset<SimpleDatasetBase> {
 public:
     using PyDataset<SimpleDatasetBase>::PyDataset;
@@ -70,11 +70,12 @@ void pybind_data_classes(py::module& m) {
     docstring::ClassMethodDocInject(m, "Dataset", "download_dir");
     docstring::ClassMethodDocInject(m, "Dataset", "extract_dir");
 
-    // open3d.data.SimpleDataset
-    py::class_<SimpleDataset, PySimpleDataset<SimpleDataset>,
-               std::shared_ptr<SimpleDataset>, Dataset>
-            simple_dataset(m, "SimpleDataset", "Simple dataset class.");
-    simple_dataset.def(
+    // open3d.data.SingleDownloadDataset
+    py::class_<SingleDownloadDataset, PySimpleDataset<SingleDownloadDataset>,
+               std::shared_ptr<SingleDownloadDataset>, Dataset>
+            single_download_dataset(m, "SingleDownloadDataset",
+                                    "Simple dataset class.");
+    single_download_dataset.def(
             py::init<const std::string&, const std::vector<std::string>&,
                      const std::string&, const bool, const std::string&>(),
             "prefix"_a, "urls"_a, "md5"_a, "no_extract"_a = false,
@@ -86,7 +87,7 @@ void pybind_data_classes(py::module& m) {
 void pybind_demo_icp_pointclouds(py::module& m) {
     // open3d.data.DemoICPPointClouds
     py::class_<DemoICPPointClouds, PySimpleDataset<DemoICPPointClouds>,
-               std::shared_ptr<DemoICPPointClouds>, SimpleDataset>
+               std::shared_ptr<DemoICPPointClouds>, SingleDownloadDataset>
             demo_icp_pointclouds(m, "DemoICPPointClouds",
                                  "Data class for `DemoICPPointClouds` contains "
                                  "3 `pointclouds` of `pcd binary` format. This "
@@ -108,7 +109,8 @@ void pybind_demo_colored_icp_pointclouds(py::module& m) {
     // open3d.data.DemoColoredICPPointClouds
     py::class_<DemoColoredICPPointClouds,
                PySimpleDataset<DemoColoredICPPointClouds>,
-               std::shared_ptr<DemoColoredICPPointClouds>, SimpleDataset>
+               std::shared_ptr<DemoColoredICPPointClouds>,
+               SingleDownloadDataset>
             demo_colored_icp_pointclouds(
                     m, "DemoColoredICPPointClouds",
                     "Data class for `DemoColoredICPPointClouds` contains "
@@ -131,7 +133,7 @@ void pybind_demo_colored_icp_pointclouds(py::module& m) {
 void pybind_demo_crop_pointcloud(py::module& m) {
     // open3d.data.DemoCropPointCloud
     py::class_<DemoCropPointCloud, PySimpleDataset<DemoCropPointCloud>,
-               std::shared_ptr<DemoCropPointCloud>, SimpleDataset>
+               std::shared_ptr<DemoCropPointCloud>, SingleDownloadDataset>
             demo_crop_pointcloud(
                     m, "DemoCropPointCloud",
                     "Data class for `DemoCropPointCloud` contains a point "
@@ -157,7 +159,8 @@ void pybind_demo_pointcloud_feature_matching(py::module& m) {
     // open3d.data.DemoPointCloudFeatureMatching
     py::class_<DemoPointCloudFeatureMatching,
                PySimpleDataset<DemoPointCloudFeatureMatching>,
-               std::shared_ptr<DemoPointCloudFeatureMatching>, SimpleDataset>
+               std::shared_ptr<DemoPointCloudFeatureMatching>,
+               SingleDownloadDataset>
             demo_feature_matching(
                     m, "DemoPointCloudFeatureMatching",
                     "Data class for `DemoPointCloudFeatureMatching` contains 2 "
@@ -197,7 +200,8 @@ void pybind_demo_pose_graph_optimization(py::module& m) {
     // open3d.data.DemoPoseGraphOptimization
     py::class_<DemoPoseGraphOptimization,
                PySimpleDataset<DemoPoseGraphOptimization>,
-               std::shared_ptr<DemoPoseGraphOptimization>, SimpleDataset>
+               std::shared_ptr<DemoPoseGraphOptimization>,
+               SingleDownloadDataset>
             demo_pose_graph_optimization(
                     m, "DemoPoseGraphOptimization",
                     "Data class for `DemoPoseGraphOptimization` contains an "
@@ -224,7 +228,7 @@ void pybind_demo_pose_graph_optimization(py::module& m) {
 void pybind_sample_pointcloud_pcd(py::module& m) {
     // open3d.data.SamplePointCloudPCD
     py::class_<SamplePointCloudPCD, PySimpleDataset<SamplePointCloudPCD>,
-               std::shared_ptr<SamplePointCloudPCD>, SimpleDataset>
+               std::shared_ptr<SamplePointCloudPCD>, SingleDownloadDataset>
             pcd_pointcloud(m, "SamplePointCloudPCD",
                            "Data class for `SamplePointCloudPCD` contains the "
                            "`fragment.pcd` point cloud mesh from the `Redwood "
@@ -240,7 +244,7 @@ void pybind_sample_pointcloud_pcd(py::module& m) {
 void pybind_sample_pointcloud_ply(py::module& m) {
     // open3d.data.SamplePointCloudPLY
     py::class_<SamplePointCloudPLY, PySimpleDataset<SamplePointCloudPLY>,
-               std::shared_ptr<SamplePointCloudPLY>, SimpleDataset>
+               std::shared_ptr<SamplePointCloudPLY>, SingleDownloadDataset>
             ply_pointcloud(m, "SamplePointCloudPLY",
                            "Data class for `SamplePointCloudPLY` contains the "
                            "`fragment.pcd` point cloud mesh from the `Redwood "
@@ -256,7 +260,7 @@ void pybind_sample_pointcloud_ply(py::module& m) {
 void pybind_sample_rgbd_image_nyu(py::module& m) {
     // open3d.data.SampleRGBDImageNYU
     py::class_<SampleRGBDImageNYU, PySimpleDataset<SampleRGBDImageNYU>,
-               std::shared_ptr<SampleRGBDImageNYU>, SimpleDataset>
+               std::shared_ptr<SampleRGBDImageNYU>, SingleDownloadDataset>
             rgbd_image_nyu(m, "SampleRGBDImageNYU",
                            "Data class for `SampleRGBDImageNYU` contains a "
                            "color image `NYU_color.ppm` and a depth image "
@@ -277,7 +281,7 @@ void pybind_sample_rgbd_image_nyu(py::module& m) {
 void pybind_sample_rgbd_image_sun(py::module& m) {
     // open3d.data.SampleRGBDImageSUN
     py::class_<SampleRGBDImageSUN, PySimpleDataset<SampleRGBDImageSUN>,
-               std::shared_ptr<SampleRGBDImageSUN>, SimpleDataset>
+               std::shared_ptr<SampleRGBDImageSUN>, SingleDownloadDataset>
             rgbd_image_sun(m, "SampleRGBDImageSUN",
                            "Data class for `SampleRGBDImageSUN` contains a "
                            "color image `SUN_color.jpg` and a depth image "
@@ -298,7 +302,7 @@ void pybind_sample_rgbd_image_sun(py::module& m) {
 void pybind_sample_rgbd_image_tum(py::module& m) {
     // open3d.data.SampleRGBDImageTUM
     py::class_<SampleRGBDImageTUM, PySimpleDataset<SampleRGBDImageTUM>,
-               std::shared_ptr<SampleRGBDImageTUM>, SimpleDataset>
+               std::shared_ptr<SampleRGBDImageTUM>, SingleDownloadDataset>
             rgbd_image_tum(m, "SampleRGBDImageTUM",
                            "Data class for `SampleRGBDImageTUM` contains a "
                            "color image `TUM_color.png` and a depth image "
@@ -319,7 +323,7 @@ void pybind_sample_rgbd_image_tum(py::module& m) {
 void pybind_sample_rgbd_dataset_icl(py::module& m) {
     // open3d.data.SampleRGBDDatasetICL
     py::class_<SampleRGBDDatasetICL, PySimpleDataset<SampleRGBDDatasetICL>,
-               std::shared_ptr<SampleRGBDDatasetICL>, SimpleDataset>
+               std::shared_ptr<SampleRGBDDatasetICL>, SingleDownloadDataset>
             rgbd_dataset_icl(m, "SampleRGBDDatasetICL",
                              "Data class for `SampleRGBDDatasetICL` contains a "
                              "color image `TUM_color.png` and a depth image "
@@ -368,7 +372,8 @@ void pybind_sample_fountain_rgbd_dataset(py::module& m) {
     // open3d.data.SampleFountainRGBDDataset
     py::class_<SampleFountainRGBDDataset,
                PySimpleDataset<SampleFountainRGBDDataset>,
-               std::shared_ptr<SampleFountainRGBDDataset>, SimpleDataset>
+               std::shared_ptr<SampleFountainRGBDDataset>,
+               SingleDownloadDataset>
             fountain_rgbd_dataset(
                     m, "SampleFountainRGBDDataset",
                     "Data class for `SampleFountainRGBDDataset` contains a "
@@ -410,7 +415,7 @@ void pybind_sample_fountain_rgbd_dataset(py::module& m) {
 void pybind_eagle(py::module& m) {
     // open3d.data.EaglePointCloud
     py::class_<EaglePointCloud, PySimpleDataset<EaglePointCloud>,
-               std::shared_ptr<EaglePointCloud>, SimpleDataset>
+               std::shared_ptr<EaglePointCloud>, SingleDownloadDataset>
             eagle(m, "EaglePointCloud",
                   "Data class for `EaglePointCloud` contains the "
                   "`EaglePointCloud.ply` "
@@ -425,7 +430,7 @@ void pybind_eagle(py::module& m) {
 void pybind_armadillo(py::module& m) {
     // open3d.data.ArmadilloMesh
     py::class_<ArmadilloMesh, PySimpleDataset<ArmadilloMesh>,
-               std::shared_ptr<ArmadilloMesh>, SimpleDataset>
+               std::shared_ptr<ArmadilloMesh>, SingleDownloadDataset>
             armadillo(m, "ArmadilloMesh",
                       "Data class for `ArmadilloMesh` contains the "
                       "`ArmadilloMesh.ply` from the `Stanford 3D Scanning "
@@ -441,7 +446,7 @@ void pybind_armadillo(py::module& m) {
 void pybind_bunny(py::module& m) {
     // open3d.data.BunnyMesh
     py::class_<BunnyMesh, PySimpleDataset<BunnyMesh>,
-               std::shared_ptr<BunnyMesh>, SimpleDataset>
+               std::shared_ptr<BunnyMesh>, SingleDownloadDataset>
             bunny(m, "BunnyMesh",
                   "Data class for `BunnyMesh` contains the `BunnyMesh.ply` "
                   "from "
@@ -456,7 +461,7 @@ void pybind_bunny(py::module& m) {
 void pybind_knot(py::module& m) {
     // open3d.data.KnotMesh
     py::class_<KnotMesh, PySimpleDataset<KnotMesh>, std::shared_ptr<KnotMesh>,
-               SimpleDataset>
+               SingleDownloadDataset>
             knot(m, "KnotMesh",
                  "Data class for `KnotMesh` contains the `KnotMesh.ply`.");
     knot.def(py::init<const std::string&, const std::string&>(),
@@ -469,7 +474,7 @@ void pybind_knot(py::module& m) {
 void pybind_juneau(py::module& m) {
     // open3d.data.JuneauImage
     py::class_<JuneauImage, PySimpleDataset<JuneauImage>,
-               std::shared_ptr<JuneauImage>, SimpleDataset>
+               std::shared_ptr<JuneauImage>, SingleDownloadDataset>
             juneau(m, "JuneauImage",
                    "Data class for `JuneauImage` contains the "
                    "`JuneauImage.jpg` "
@@ -485,7 +490,8 @@ void pybind_redwood_living_room_pointclouds(py::module& m) {
     // open3d.data.RedwoodLivingRoomPointClouds
     py::class_<RedwoodLivingRoomPointClouds,
                PySimpleDataset<RedwoodLivingRoomPointClouds>,
-               std::shared_ptr<RedwoodLivingRoomPointClouds>, SimpleDataset>
+               std::shared_ptr<RedwoodLivingRoomPointClouds>,
+               SingleDownloadDataset>
             redwood_living_room_pointclouds(
                     m, "RedwoodLivingRoomPointClouds",
                     "Dataset class for `RedwoodLivingRoomPointClouds` contains "
@@ -510,7 +516,7 @@ void pybind_redwood_office_pointclouds(py::module& m) {
     // open3d.data.RedwoodOfficePointClouds
     py::class_<RedwoodOfficePointClouds,
                PySimpleDataset<RedwoodOfficePointClouds>,
-               std::shared_ptr<RedwoodOfficePointClouds>, SimpleDataset>
+               std::shared_ptr<RedwoodOfficePointClouds>, SingleDownloadDataset>
             redwood_office_pointclouds(
                     m, "RedwoodOfficePointClouds",
                     "Dataset class for `RedwoodOfficePointClouds` contains 53 "

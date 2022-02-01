@@ -50,7 +50,7 @@ TEST(Dataset, DatasetBase) {
               "/my/custom/data_root/extract/some_prefix");
 }
 
-TEST(Dataset, SimpleDataset) {
+TEST(Dataset, SingleDownloadDataset) {
     const std::string prefix = "O3DTestSimpleDataset";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -66,8 +66,9 @@ TEST(Dataset, SimpleDataset) {
             "20220201-data/BunnyMesh.ply"};
     const std::string md5 = "568f871d1a221ba6627569f1e6f9a3f2";
 
-    data::SimpleDataset simple_dataset(prefix, url_mirrors, md5,
-                                       /*no_extact*/ true);
+    data::SingleDownloadDataset single_download_dataset(prefix, url_mirrors,
+                                                        md5,
+                                                        /*no_extact*/ true);
 
     // Check if file is downloaded and extracted / copied.
     EXPECT_TRUE(
@@ -76,10 +77,10 @@ TEST(Dataset, SimpleDataset) {
             utility::filesystem::FileExists(extract_dir + "/BunnyMesh.ply"));
 
     // Basic methods.
-    EXPECT_EQ(simple_dataset.GetPrefix(), prefix);
-    EXPECT_EQ(simple_dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(simple_dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(simple_dataset.GetExtractDir(), extract_dir);
+    EXPECT_EQ(single_download_dataset.GetPrefix(), prefix);
+    EXPECT_EQ(single_download_dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(single_download_dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(single_download_dataset.GetExtractDir(), extract_dir);
 
     // Delete dataset.
     utility::filesystem::DeleteDirectory(download_dir);
