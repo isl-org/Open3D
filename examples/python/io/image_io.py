@@ -32,9 +32,9 @@ test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 if __name__ == "__main__":
 
-    print("Reading image from file: lena_color.jpg")
-    path_to_image = os.path.join(test_data_path, 'lena_color.jpg')
+    print("Reading image from file: Juneau.jpg")
+    path_to_image = os.path.join(test_data_path, 'Juneau.jpg')
     img = o3d.io.read_image(path_to_image)
     print(img)
-    print("Saving image to file: copy_of_lena_color.jpg")
-    o3d.io.write_image("copy_of_lena_color.jpg", img)
+    print("Saving image to file: copy_of_Juneau.jpg")
+    o3d.io.write_image("copy_of_Juneau.jpg", img)

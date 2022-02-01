@@ -137,6 +137,9 @@ public:
     int GetPointSize() const;
     void SetPointSize(int size);
 
+    bool GetBasicMode() const;
+    void SetBasicMode(bool enable);
+
     bool GetUserWantsEstimateNormals();
     void EstimateNormalsClicked();
 
@@ -166,6 +169,7 @@ private:
     bool user_has_customized_lighting_ = false;
     bool displaying_point_clouds_ = false;
     bool user_wants_estimate_normals_ = false;
+    bool basic_mode_enabled_ = false;
 
     std::function<void(bool)> on_changed_;
 

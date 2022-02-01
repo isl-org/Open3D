@@ -228,6 +228,12 @@ void GuiSettingsModel::SetSunFollowsCamera(bool follow) {
     NotifyChanged();
 }
 
+bool GuiSettingsModel::GetBasicMode() const { return basic_mode_enabled_; }
+void GuiSettingsModel::SetBasicMode(bool enable) {
+    basic_mode_enabled_ = enable;
+    NotifyChanged();
+}
+
 const Eigen::Vector3f& GuiSettingsModel::GetBackgroundColor() const {
     return bg_color_;
 }
