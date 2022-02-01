@@ -275,7 +275,7 @@ def _draw(parser, args):
         print(f"Error: could not find file: {args.filename}")
         parser.print_help()
         parser.exit(2)
-    
+
     removed_arg = sys.argv[1]
     sys.argv.pop(1)
     app.main()
