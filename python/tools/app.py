@@ -24,9 +24,10 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-import open3d as o3d
 import os
 import sys
+
+import open3d as o3d
 
 
 def main():

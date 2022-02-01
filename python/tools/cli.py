@@ -25,14 +25,12 @@
 # ----------------------------------------------------------------------------
 
 import argparse
-from logging import root
 import os
 import runpy
 import sys
 from pathlib import Path
-from tkinter import E
+
 import open3d
-from sphinx import path
 
 
 class _Open3DArgumentParser(argparse.ArgumentParser):
