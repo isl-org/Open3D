@@ -123,7 +123,9 @@ if '@BUNDLE_OPEN3D_ML@' == 'ON':
     with open('@OPEN3D_ML_ROOT@/requirements.txt', 'r') as f:
         install_requires += [line.strip() for line in f.readlines() if line]
 
-entry_points = {}
+entry_points = {
+    'console_scripts': ['open3d = @PYPI_PACKAGE_NAME@.tools.cli:main',]
+}
 if sys.platform != 'darwin':  # Remove check when off main thread GUI works
     entry_points.update({
         "tensorboard_plugins": [
@@ -143,7 +145,7 @@ setup_args = dict(
     cmdclass=cmdclass,
     author='Open3D Team',
     author_email='@PROJECT_EMAIL@',
-    url="@PROJECT_HOME@",
+    url="@PROJECT_HOMEPAGE_URL@",
     project_urls={
         'Documentation': '@PROJECT_DOCS@',
         'Source code': '@PROJECT_CODE@',
@@ -186,7 +188,7 @@ setup_args = dict(
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Utilities",
     ],
-    description='Open3D: A Modern Library for 3D Data Processing.',
+    description='@PROJECT_DESCRIPTION@',
     long_description=open('README.rst').read(),
     long_description_content_type='text/x-rst',
 )

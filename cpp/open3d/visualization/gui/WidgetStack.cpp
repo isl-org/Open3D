@@ -24,23 +24,47 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// clang-format off
-// Open3D version
-#define OPEN3D_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
-#define OPEN3D_VERSION_MINOR @PROJECT_VERSION_MINOR@
-#define OPEN3D_VERSION_PATCH @PROJECT_VERSION_PATCH@
-#define OPEN3D_VERSION_TWEAK @PROJECT_VERSION_TWEAK@
-#define OPEN3D_VERSION       "@PROJECT_VERSION@"
+#include "open3d/visualization/gui/WidgetStack.h"
 
-// Open3D info
-#define OPEN3D_HOME          "@PROJECT_HOMEPAGE_URL@"
-#define OPEN3D_DOCS          "@PROJECT_DOCS@"
-#define OPEN3D_CODE          "@PROJECT_CODE@"
-#define OPEN3D_ISSUES        "@PROJECT_ISSUES@"
+#include <stack>
 
 namespace open3d {
+namespace visualization {
+namespace gui {
+struct WidgetStack::Impl {
+    std::stack<std::shared_ptr<Widget>> widgets_;
+    std::function<void(std::shared_ptr<Widget>)> on_top_callback_;
+};
 
-    void PrintOpen3DVersion();
+WidgetStack::WidgetStack() : impl_(new WidgetStack::Impl()) {}
+WidgetStack::~WidgetStack() = default;
 
+void WidgetStack::PushWidget(std::shared_ptr<Widget> widget) {
+    impl_->widgets_.push(widget);
+    SetWidget(widget);
 }
-// clang-format on
+
+std::shared_ptr<Widget> WidgetStack::PopWidget() {
+    std::shared_ptr<Widget> ret;
+    if (!impl_->widgets_.empty()) {
+        ret = impl_->widgets_.top();
+        impl_->widgets_.pop();
+        if (!impl_->widgets_.empty()) {
+            SetWidget(impl_->widgets_.top());
+            if (impl_->on_top_callback_) {
+                impl_->on_top_callback_(impl_->widgets_.top());
+            }
+        } else {
+            SetWidget(nullptr);
+        }
+    }
+    return ret;
+}
+void WidgetStack::SetOnTop(
+        std::function<void(std::shared_ptr<Widget>)> onTopCallback) {
+    impl_->on_top_callback_ = onTopCallback;
+}
+
+}  // namespace gui
+}  // namespace visualization
+}  // namespace open3d

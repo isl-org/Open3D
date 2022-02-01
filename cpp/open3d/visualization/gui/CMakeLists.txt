@@ -40,6 +40,7 @@ target_sources(GUI PRIVATE
     VectorEdit.cpp
     Widget.cpp
     WidgetProxy.cpp
+    WidgetStack.cpp
     Window.cpp
 )
 
