@@ -111,7 +111,7 @@ def draw(geometry=None,
         w.set_on_close(stop_rpc)
 
     if basic_mode:
-        w.enable_inspection_mode(True)
+        w.enable_basic_mode(True)
 
     if on_init is not None:
         on_init(w)
