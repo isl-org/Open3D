@@ -29,6 +29,7 @@ import numpy as np
 import matplotlib.image as mpimg
 import re
 
+
 def visualize_rgbd(rgbd_image):
     print(rgbd_image)
 

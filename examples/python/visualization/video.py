@@ -31,6 +31,7 @@ import open3d.visualization.rendering as rendering
 import time
 import threading
 
+
 def rescale_greyscale(img):
     data = np.asarray(img)
     assert (len(data.shape) == 2)  # requires 1 channel image

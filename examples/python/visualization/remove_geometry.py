@@ -29,11 +29,13 @@ import numpy as np
 import time
 import copy
 
+
 def visualize_non_blocking(vis, pcds):
     for pcd in pcds:
         vis.update_geometry(pcd)
     vis.poll_events()
     vis.update_renderer()
+
 
 pcd_data = o3d.data.SamplePointCloudPCD()
 pcd_orig = o3d.io.read_point_cloud(pcd_data.path)

@@ -26,6 +26,7 @@
 
 import open3d as o3d
 
+
 def save_view_point(pcd, filename):
     vis = o3d.visualization.Visualizer()
     vis.create_window()

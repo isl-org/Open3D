@@ -50,7 +50,8 @@ if __name__ == "__main__":
     )
 
     pose_graph_data = o3d.data.DemoPoseGraphOptimization()
-    pose_graph_fragment = o3d.io.read_pose_graph(pose_graph_data.pose_graph_fragment_path)
+    pose_graph_fragment = o3d.io.read_pose_graph(
+        pose_graph_data.pose_graph_fragment_path)
     print(pose_graph_fragment)
     o3d.pipelines.registration.global_optimization(pose_graph_fragment, method,
                                                    criteria, option)
@@ -62,7 +63,8 @@ if __name__ == "__main__":
     print(
         "Optimizing Global o3d.pipelines.registration.PoseGraph using open3d ..."
     )
-    pose_graph_global = o3d.io.read_pose_graph(pose_graph_data.pose_graph_global_path)
+    pose_graph_global = o3d.io.read_pose_graph(
+        pose_graph_data.pose_graph_global_path)
     print(pose_graph_global)
     o3d.pipelines.registration.global_optimization(pose_graph_global, method,
                                                    criteria, option)

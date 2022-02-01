@@ -28,6 +28,7 @@
 import open3d as o3d
 import numpy as np
 
+
 def load_point_clouds(voxel_size=0.0):
     pcd_data = o3d.data.DemoICPPointClouds()
     pcds = []

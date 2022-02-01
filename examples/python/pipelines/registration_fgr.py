@@ -28,6 +28,7 @@ import open3d as o3d
 
 import argparse
 
+
 def preprocess_point_cloud(pcd, voxel_size):
     pcd_down = pcd.voxel_down_sample(voxel_size)
     pcd_down.estimate_normals(

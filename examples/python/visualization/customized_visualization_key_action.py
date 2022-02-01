@@ -26,6 +26,7 @@
 
 import open3d as o3d
 
+
 def custom_key_action_without_kb_repeat_delay(pcd):
     rotating = False
 
