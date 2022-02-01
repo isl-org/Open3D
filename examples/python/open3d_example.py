@@ -27,9 +27,6 @@
 import open3d as o3d
 import numpy as np
 import os
-import urllib.request
-import tarfile
-import gzip
 import shutil
 import sys
 import zipfile
@@ -48,16 +45,6 @@ else:
     pyver = 2
     from urllib2 import Request, urlopen
 
-# Whenever you import open3d_example, the test data will be downloaded
-# automatically to Open3D/examples/test_data/open3d_downloads. Therefore, make
-# sure to import open3d_example before running the examples.
-# See https://github.com/isl-org/open3d_downloads for details on how to
-# manage the test data files.
-_pwd = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(_pwd, os.pardir, "test_data"))
-from download_utils import download_all_files as _download_all_files
-_download_all_files()
-
 
 def edges_to_lineset(mesh, edges, color):
     ls = o3d.geometry.LineSet()
@@ -65,12 +52,6 @@ def edges_to_lineset(mesh, edges, color):
     ls.lines = edges
     ls.paint_uniform_color(color)
     return ls
-
-
-def _relative_path(path):
-    script_path = os.path.realpath(__file__)
-    script_dir = os.path.dirname(script_path)
-    return os.path.join(script_dir, path)
 
 
 def get_plane_mesh(height=0.2, width=1):
@@ -161,19 +142,6 @@ def get_intersecting_boxes_mesh():
         center=mesh.get_center(),
     )
     return mesh
-
-
-def get_knot_mesh():
-    knot_mesh = o3d.data.KnotMesh()
-    mesh = o3d.io.read_triangle_mesh(knot_mesh.path)
-    mesh.compute_vertex_normals()
-    return mesh
-
-
-def get_eagle_pcd():
-    eagle = o3d.data.EaglePointCloud()
-    pcd = o3d.io.read_point_cloud(eagle.path)
-    return pcd
 
 
 def file_downloader(url, out_dir="."):
