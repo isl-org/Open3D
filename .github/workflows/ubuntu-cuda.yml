@@ -147,7 +147,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' && env.CI_CONFIG == 'true' }}
+        if: ${{ github.ref == 'refs/heads/master' && env.BUILD_PACKAGE == 'true' }}
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
