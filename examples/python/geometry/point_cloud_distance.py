@@ -26,16 +26,11 @@
 
 import open3d as o3d
 import numpy as np
-import os, sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
-sys.path.append(pyexample_path)
 
 if __name__ == "__main__":
-    pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, 'fragment.ply'))
-    vol = o3d.visualization.read_selection_polygon_volume(
-        os.path.join(test_data_path, 'Crop', 'cropped.json'))
+    sample_ply_data = o3d.data.DemoCropPointCloud()
+    pcd = o3d.io.read_point_cloud(sample_ply_data.pointcloud_path)
+    vol = o3d.visualization.read_selection_polygon_volume(sample_ply_data.cropped_json_path)
     chair = vol.crop_point_cloud(pcd)
 
     chair.paint_uniform_color([0, 0, 1])

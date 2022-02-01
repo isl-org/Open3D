@@ -25,17 +25,11 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import os
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 if __name__ == "__main__":
-
-    print("Reading pointcloud from file: fragment.pcd")
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    path_to_pcd = os.path.join(test_data_path, 'fragment.pcd')
-    pcd = o3d.io.read_point_cloud(path_to_pcd)
+    pcd_data = o3d.data.SamplePointCloudPCD()
+    print(f"Reading pointcloud from file: fragment.pcd stored at {pcd_data.path}")
+    pcd = o3d.io.read_point_cloud(pcd_data.path)
     print(pcd)
     print("Saving pointcloud to file: copy_of_fragment.pcd")
     o3d.io.write_point_cloud("copy_of_fragment.pcd", pcd)

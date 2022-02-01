@@ -25,16 +25,11 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import os
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 if __name__ == "__main__":
-
-    print("Reading mesh from file: knot.ply")
-    path_to_mesh = os.path.join(test_data_path, 'knot.ply')
-    mesh = o3d.io.read_triangle_mesh(path_to_mesh)
+    knot_data = o3d.data.KnotMesh()
+    print(f"Reading mesh from file: knot.ply stored at {knot_data.path}")
+    mesh = o3d.io.read_triangle_mesh(knot_data.path)
     print(mesh)
     print("Saving mesh to file: copy_of_knot.ply")
     o3d.io.write_triangle_mesh("copy_of_knot.ply", mesh)

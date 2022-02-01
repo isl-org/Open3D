@@ -28,11 +28,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-import os, sys
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
-sys.path.append(pyexample_path)
-
 import open3d as o3d
 #conda install pillow matplotlib
 
@@ -40,13 +35,12 @@ if __name__ == "__main__":
 
     print("Testing image in open3d ...")
     print("Convert an image to numpy")
-    x = o3d.io.read_image(os.path.join(test_data_path, 'image.PNG'))
+    sample_image = o3d.data.JuneauImage()
+    x = o3d.io.read_image(sample_image.path)
     print(np.asarray(x))
-
     print(
         "Convet a numpy image to o3d.geometry.Image and show it with DrawGeomtries()."
     )
-    sample_image = o3d.data.JuneauImage()
     y = mpimg.imread(sample_image.path)
     print(y.shape)
     yy = o3d.geometry.Image(y)

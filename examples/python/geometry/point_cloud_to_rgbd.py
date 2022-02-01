@@ -27,20 +27,12 @@
 import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
-import os, sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
-sys.path.append(pyexample_path)
 
 if __name__ == '__main__':
     device = o3d.core.Device('CPU:0')
-    depth = o3d.t.io.read_image(
-        os.path.join(test_data_path, 'RGBD', 'other_formats',
-                     'TUM_depth.png')).to(device)
-    color = o3d.t.io.read_image(
-        os.path.join(test_data_path, 'RGBD', 'other_formats',
-                     'TUM_color.png')).to(device)
+    tum_data = o3d.data.SampleRGBDImageTUM()
+    depth = o3d.t.io.read_image(tum_data.path_depth).to(device)
+    color = o3d.t.io.read_image(tum_data.path_depth).to(device)
 
     intrinsic = o3d.core.Tensor([[535.4, 0, 320.1], [0, 539.2, 247.6],
                                  [0, 0, 1]])
