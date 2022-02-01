@@ -28,13 +28,6 @@
 import open3d as o3d
 import numpy as np
 import copy
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
-sys.path.append(pyexample_path)
-
 
 def draw_registration_result(source, target, transformation):
     source_temp = copy.deepcopy(source)
@@ -54,10 +47,9 @@ def apply_noise(pcd, mu, sigma):
 
 
 if __name__ == "__main__":
-    source = o3d.io.read_point_cloud(
-        os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
-    target = o3d.io.read_point_cloud(
-        os.path.join(test_data_path, 'ICP', 'cloud_bin_1.pcd'))
+    pcd_data = o3d.data.DemoICPPointClouds()
+    source = o3d.io.read_point_cloud(pcd_data.paths[0])
+    target = o3d.io.read_point_cloud(pcd_data.paths[1])
     trans_init = np.asarray([[0.862, 0.011, -0.507, 0.5],
                              [-0.139, 0.967, -0.215, 0.7],
                              [0.487, 0.255, 0.835, -1.4], [0.0, 0.0, 0.0, 1.0]])

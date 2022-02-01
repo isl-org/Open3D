@@ -38,10 +38,10 @@ def display_inlier_outlier(cloud, ind):
 
 
 if __name__ == "__main__":
-    ptcloud_data = o3d.data.DemoICPPointClouds()
+    ptcloud_data = o3d.data.SamplePointCloudPLY()
 
     print("Load a ply point cloud, print it, and render it")
-    pcd = o3d.io.read_point_cloud(ptcloud_data.paths[2])
+    pcd = o3d.io.read_point_cloud(ptcloud_data.path)
     R = pcd.get_rotation_matrix_from_xyz((np.pi, 0, 0))
     pcd.rotate(R, center=(0, 0, 0))
     o3d.visualization.draw([pcd])

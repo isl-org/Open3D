@@ -28,8 +28,8 @@ import open3d as o3d
 
 if __name__ == "__main__":
     print("Load a ply point cloud, print it, and render it")
-    sample_ply_data = o3d.data.DemoCropPointCloud()
-    pcd = o3d.io.read_point_cloud(sample_ply_data.pointcloud_path)
+    sample_ply_data = o3d.data.SamplePointCloudPLY()
+    pcd = o3d.io.read_point_cloud(sample_ply_data.path)
     # Flip it, otherwise the pointcloud will be upside down.
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
     print(pcd)

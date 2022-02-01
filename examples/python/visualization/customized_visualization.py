@@ -162,7 +162,8 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 
 
 if __name__ == "__main__":
-    pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, 'fragment.pcd'))
+    pcd_data = o3d.data.SamplePointCloudPCD()
+    pcd = o3d.io.read_point_cloud(pcd_data.path)
 
     print("1. Customized visualization to mimic DrawGeometry")
     custom_draw_geometry(pcd)
