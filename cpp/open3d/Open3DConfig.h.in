@@ -33,7 +33,7 @@
 #define OPEN3D_VERSION       "@PROJECT_VERSION@"
 
 // Open3D info
-#define OPEN3D_HOME          "@PROJECT_HOME@"
+#define OPEN3D_HOME          "@PROJECT_HOMEPAGE_URL@"
 #define OPEN3D_DOCS          "@PROJECT_DOCS@"
 #define OPEN3D_CODE          "@PROJECT_CODE@"
 #define OPEN3D_ISSUES        "@PROJECT_ISSUES@"
