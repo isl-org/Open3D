@@ -271,12 +271,15 @@ def _example(parser, args):
 def _draw(parser, args):
     if args.filename == None:
         parser.print_help()
-
+    elif not os.path.isfile(args.filename):
+        print(f"Error: could not find file: {args.filename}")
+        parser.print_help()
+        parser.exit(2)
+    
     removed_arg = sys.argv[1]
     sys.argv.pop(1)
     app.main()
     sys.argv.insert(1, removed_arg)
-
     return 0
 
 
