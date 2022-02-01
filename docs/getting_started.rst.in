@@ -206,29 +206,30 @@ Try it
 Extract the archive and move the contents to a local folder (such as
 ``$HOME/Documents/Open3D_install``):
 
-.. code-block:: bash
+.. code-block::
 
-    Open3D_install
-    ├── include
-    │   └── open3d
-    │       ├── core
-    │       ├── ...
-    │       ├── Open3DConfig.h
-    │       ├── Open3D.h
-    │       ├── ...
-    └── lib
-        ├── cmake
-        │   └── Open3D
-        ├── libOpen3D.so
-        ├── open3d_tf_ops.so
-        └── open3d_torch_ops.so
+    Linux / MacOSX:                       Windows:
+    Open3D_install                        Open3D_install
+    ├── include                           ├── bin
+    │   └── open3d                        │   └── Open3D.dll
+    │       ├── core                      ├── CMake
+    │       ├── ...                       │   ├── Open3DConfig.cmake
+    │       ├── Open3DConfig.h            │   ├── ...
+    │       ├── Open3D.h                  ├── include
+    │       ├── ...                       │   └── open3d
+    └── lib                               │       ├── core
+        ├── cmake                         │       ├── ...
+        │   └── Open3D                    │       ├── Open3DConfig.h
+        │        ├── ...                  │       ├── Open3D.h
+        ├── libOpen3D.so                  │       ├── ...
+        ├── open3d_tf_ops.so              └── lib
+        └── open3d_torch_ops.so               └── Open3D.lib
 
 
-In Windows, you will have an additional ``bin`` folder with ``Open3D.dll``. Some
-files may be absent in the case of unsupported functionality. To use Open3D with
-your programs through `cmake`, add ``-D Open3D_ROOT=$HOME/Documents/Open3D_install``
-to your CMake configure command line. See the following example CMake projects for
-reference:
+Some files may be absent in the case of unsupported functionality. To use Open3D
+with your programs through `cmake`, add ``-D
+Open3D_ROOT=$HOME/Documents/Open3D_install`` to your CMake configure command
+line. See the following example CMake projects for reference:
 
 * `Find Pre-Installed Open3D Package in CMake <https://github.com/isl-org/open3d-cmake-find-package>`__
 * `Use Open3D as a CMake External Project <https://github.com/isl-org/open3d-cmake-external-project>`__
