@@ -111,7 +111,8 @@ void Model::Integrate(const Frame& input_frame,
             depth, intrinsic, extrinsic, depth_scale, depth_max,
             trunc_voxel_multiplier);
     voxel_grid_.Integrate(frustum_block_coords_, depth, color, intrinsic,
-                          extrinsic);
+                          extrinsic, depth_scale, depth_max,
+                          trunc_voxel_multiplier);
 }
 
 t::geometry::PointCloud Model::ExtractPointCloud(float weight_threshold,
