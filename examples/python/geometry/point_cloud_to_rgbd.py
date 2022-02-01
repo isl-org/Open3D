@@ -31,8 +31,8 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
     device = o3d.core.Device('CPU:0')
     tum_data = o3d.data.SampleRGBDImageTUM()
-    depth = o3d.t.io.read_image(tum_data.path_depth).to(device)
-    color = o3d.t.io.read_image(tum_data.path_depth).to(device)
+    depth = o3d.t.io.read_image(tum_data.depth_path).to(device)
+    color = o3d.t.io.read_image(tum_data.color_path).to(device)
 
     intrinsic = o3d.core.Tensor([[535.4, 0, 320.1], [0, 539.2, 247.6],
                                  [0, 0, 1]])
