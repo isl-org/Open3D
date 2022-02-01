@@ -164,18 +164,15 @@ def get_intersecting_boxes_mesh():
 
 
 def get_knot_mesh():
-    mesh = o3d.io.read_triangle_mesh(_relative_path("../test_data/knot.ply"))
+    knot_mesh = o3d.data.KnotMesh()
+    mesh = o3d.io.read_triangle_mesh(knot_mesh.path)
     mesh.compute_vertex_normals()
     return mesh
 
 
 def get_eagle_pcd():
-    path = _relative_path("../test_data/eagle.ply")
-    if not os.path.exists(path):
-        print("downloading eagle pcl")
-        url = "http://www.cs.jhu.edu/~misha/Code/PoissonRecon/eagle.points.ply"
-        urllib.request.urlretrieve(url, path)
-    pcd = o3d.io.read_point_cloud(path)
+    eagle = o3d.data.EaglePointCloud()
+    pcd = o3d.io.read_point_cloud(eagle.path)
     return pcd
 
 

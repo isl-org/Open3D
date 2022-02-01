@@ -36,7 +36,8 @@ import open3d_example as o3dex
 
 if __name__ == "__main__":
     # Read a mesh and get its data as numpy arrays.
-    mesh = o3dex.get_knot_mesh()
+    knot_mesh = o3d.data.KnotMesh()
+    mesh = o3d.io.read_triangle_mesh(knot_mesh.path)
     mesh.paint_uniform_color([0.5, 0.1, 0.3])
     print('Vertices:')
     print(np.asarray(mesh.vertices))

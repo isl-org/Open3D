@@ -36,7 +36,8 @@ sys.path.append(pyexample_path)
 import open3d_example as o3dex
 
 if __name__ == "__main__":
-    mesh = o3dex.get_knot_mesh()
+    knot_mesh = o3d.data.KnotMesh()
+    mesh = o3d.io.read_triangle_mesh(knot_mesh.path)
     print("Displaying original mesh ...")
     o3d.visualization.draw([mesh])
 
