@@ -1376,7 +1376,6 @@ struct O3DVisualizer::Impl {
             low_scene->ShowSkybox(false);
             low_scene->EnableIndirectLight(false);
             low_scene->EnableSunLight(true);
-            low_scene->EnableSunLightShadows(false);
             low_scene->SetSunLightIntensity(160000.f);
             view->SetShadowing(false, View::ShadowType::kPCF);
             view->SetPostProcessing(false);
