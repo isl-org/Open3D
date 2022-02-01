@@ -124,23 +124,23 @@ cpp_python_linking_uninstall_test() {
         python -m pytest python/test ${pytest_args} \
     "
     restart_docker_daemon_if_on_gcloud
-    
+
     # Command-line tools test
     echo "testing Open3D command-line tools"
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-            open3d \
-         && open3d -h \
-         && open3d --help \
-         && open3d -V \
-         && open3d --version \
-         && open3d example -h \
-         && open3d example --help \
-         && open3d example -l \
-         && open3d example --list \
-         && open3d example -l io \
-         && open3d example --list io \
-         && open3d example -s io/image_io \
-         && open3d example --show io/image_io \
+        open3d \
+     && open3d -h \
+     && open3d --help \
+     && open3d -V \
+     && open3d --version \
+     && open3d example -h \
+     && open3d example --help \
+     && open3d example -l \
+     && open3d example --list \
+     && open3d example -l io \
+     && open3d example --list io \
+     && open3d example -s io/image_io \
+     && open3d example --show io/image_io \
     "
 
     # C++ linking
