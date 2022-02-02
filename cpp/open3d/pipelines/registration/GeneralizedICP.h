@@ -52,8 +52,9 @@ public:
             const override {
         return type_;
     };
-    /// \brief Constructor that takes as input a RobustKernel \params kernel Any
-    /// of the implemented statistical robust kernel for outlier rejection.
+    /// \brief Constructor that takes as input a RobustKernel.
+    /// \param kernel Any of the implemented statistical robust kernel for
+    /// outlier rejection.
     explicit TransformationEstimationForGeneralizedICP(
             double epsilon = 1e-3,
             std::shared_ptr<RobustKernel> kernel = std::make_shared<L2Loss>())
@@ -70,7 +71,7 @@ public:
             const CorrespondenceSet &corres) const override;
 
 public:
-    // Small constant representing covariance along the normal.
+    /// Small constant representing covariance along the normal.
     double epsilon_ = 1e-3;
 
     /// shared_ptr to an Abstract RobustKernel that could mutate at runtime.

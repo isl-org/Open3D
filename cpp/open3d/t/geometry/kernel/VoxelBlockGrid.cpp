@@ -145,7 +145,8 @@ void Integrate(const core::Tensor& depth,
                const core::Tensor& block_indices,
                const core::Tensor& block_keys,
                TensorMap& block_value_map,
-               const core::Tensor& intrinsic,
+               const core::Tensor& depth_intrinsic,
+               const core::Tensor& color_intrinsic,
                const core::Tensor& extrinsic,
                index_t resolution,
                float voxel_size,
@@ -179,9 +180,10 @@ void Integrate(const core::Tensor& depth,
                                 IntegrateCPU<input_depth_t, input_color_t,
                                              tsdf_t, weight_t, color_t>(
                                         depth, color, block_indices, block_keys,
-                                        block_value_map, intrinsic, extrinsic,
-                                        resolution, voxel_size, sdf_trunc,
-                                        depth_scale, depth_max);
+                                        block_value_map, depth_intrinsic,
+                                        color_intrinsic, extrinsic, resolution,
+                                        voxel_size, sdf_trunc, depth_scale,
+                                        depth_max);
                             });
                 });
     } else if (device_type == core::Device::DeviceType::CUDA) {
@@ -193,9 +195,10 @@ void Integrate(const core::Tensor& depth,
                                 IntegrateCUDA<input_depth_t, input_color_t,
                                               tsdf_t, weight_t, color_t>(
                                         depth, color, block_indices, block_keys,
-                                        block_value_map, intrinsic, extrinsic,
-                                        resolution, voxel_size, sdf_trunc,
-                                        depth_scale, depth_max);
+                                        block_value_map, depth_intrinsic,
+                                        color_intrinsic, extrinsic, resolution,
+                                        voxel_size, sdf_trunc, depth_scale,
+                                        depth_max);
                             });
                 });
 #else

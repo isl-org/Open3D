@@ -781,24 +781,43 @@ void pybind_gui_classes(py::module &m) {
                  "return instance of current delegated widget set by "
                  "set_widget. An empty pointer will be returned "
                  "if there is none.");
+
     // ---- WidgetStack ----
-    py::class_<WidgetStack, UnownedPointer<WidgetStack>, WidgetProxy> widgetStack(
-            m, "WidgetStack", "WidgetStack");
-    widgetStack.def(py::init<>(),
-                    "Creates a widget proxy")
+    py::class_<WidgetStack, UnownedPointer<WidgetStack>, WidgetProxy>
+            widgetStack(m, "WidgetStack",
+                        "A widget stack saves all widgets pushed into by "
+                        "push_widget and always shows the top one. The "
+                        "WidgetStack is a subclass of WidgetProxy, in other"
+                        "words, the topmost widget will delegate itself to "
+                        "WidgetStack. pop_widget will remove the topmost "
+                        "widget and callback set by set_on_top taking the "
+                        "new topmost widget will be called. The WidgetStack "
+                        "disappears in GUI if there is no widget in stack.");
+    widgetStack
+            .def(py::init<>(),
+                 "Creates a widget stack. The widget stack without any"
+                 "widget will not be shown in GUI until set_widget is"
+                 "called to push a widget.")
             .def("__repr__",
                  [](const WidgetStack &c) {
-                   std::stringstream s;
-                   s << "Stack (" << c.GetFrame().x << ", "
-                     << c.GetFrame().y << "), " << c.GetFrame().width << " x "
-                     << c.GetFrame().height;
-                   return s.str();
+                     std::stringstream s;
+                     s << "Stack (" << c.GetFrame().x << ", " << c.GetFrame().y
+                       << "), " << c.GetFrame().width << " x "
+                       << c.GetFrame().height;
+                     return s.str();
                  })
-            .def(
-                    "pop_widget", &WidgetStack::PopWidget,
-                    "pop the latest widget set to stack by set_widget")
-            .def( "set_on_top", &WidgetStack::SetOnTop,
-                  "Callback(widget) called while a widget becomes the top one of stack");
+            .def("push_widget", &WidgetStack::PushWidget,
+                 "push a new widget onto the WidgetStack's stack, hiding "
+                 "whatever widget was there before and making the new widget "
+                 "visible.")
+            .def("pop_widget", &WidgetStack::PopWidget,
+                 "pop the topmost widget in the stack. The new topmost widget"
+                 "of stack will be the widget on the show in GUI.")
+            .def("set_on_top", &WidgetStack::SetOnTop,
+                 "Callable[[widget] -> None], called while a widget "
+                 "becomes the topmost of stack after some widget is popped"
+                 "out. It won't be called if a widget is pushed into stack"
+                 "by set_widget.");
     // ---- Button ----
     py::class_<Button, UnownedPointer<Button>, Widget> button(m, "Button",
                                                               "Button");
@@ -1081,6 +1100,11 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def("set_items", &ListView::SetItems,
                  "Sets the list to display the list of items provided")
+            .def("set_max_visible_items", &ListView::SetMaxVisibleItems,
+                 "Limit the max visible items shown to user. "
+                 "Set to negative number will make list extends vertically "
+                 "as much as possible, otherwise the list will at least show "
+                 "3 items and at most show num items.")
             .def_property("selected_index", &ListView::GetSelectedIndex,
                           &ListView::SetSelectedIndex,
                           "The index of the currently selected item")

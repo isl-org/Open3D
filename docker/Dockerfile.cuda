@@ -14,6 +14,7 @@ ARG PYTHON_VERSION
 ARG SHARED
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
+ARG PACKAGE
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
@@ -22,7 +23,8 @@ RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD  
  && if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
  && if [ -z "${SHARED}"               ]; then echo "Error: ARG SHARED               not specified."; exit 1; fi \
  && if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
- && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi
+ && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
+ && if [ -z "${PACKAGE}"              ]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
@@ -130,6 +132,7 @@ RUN mkdir build \
  && cd build \
  && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
           -DCMAKE_BUILD_TYPE=Release \
+          -DDEVELOPER_BUILD="${DEVELOPER_BUILD}" \
           -DBUILD_LIBREALSENSE=ON \
           -DBUILD_CUDA_MODULE=ON \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
@@ -144,7 +147,8 @@ RUN mkdir build \
           .. \
  && make VERBOSE=1 -j$(nproc) \
  && make install-pip-package -j$(nproc) \
- && make install -j$(nproc)
+ && make install -j$(nproc) \
+ && { if [ "$PACKAGE" == "ON" ] ; then make package ; fi ; }
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
@@ -153,6 +157,7 @@ RUN ccache -s \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
  && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
+ && { if [ "$PACKAGE" == "ON" ] ; then mv /root/Open3D/build/package/open3d-devel*.tar.xz / ; fi ; } \
  && ls -alh /
 
 RUN echo "Docker build done."

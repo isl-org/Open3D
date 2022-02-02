@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2021 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "WidgetStack.h"
+#include "open3d/visualization/gui/WidgetStack.h"
 
 #include <stack>
 
@@ -37,12 +37,17 @@ struct WidgetStack::Impl {
 };
 
 WidgetStack::WidgetStack() : impl_(new WidgetStack::Impl()) {}
-WidgetStack::~WidgetStack() {}
 
 void WidgetStack::SetWidget(std::shared_ptr<Widget> widget) {
+    PushWidget(widget);
+}
+WidgetStack::~WidgetStack() = default;
+
+void WidgetStack::PushWidget(std::shared_ptr<Widget> widget) {
     impl_->widgets_.push(widget);
     WidgetProxy::SetWidget(widget);
 }
+
 std::shared_ptr<Widget> WidgetStack::PopWidget() {
     std::shared_ptr<Widget> ret;
     if (!impl_->widgets_.empty()) {
@@ -50,13 +55,17 @@ std::shared_ptr<Widget> WidgetStack::PopWidget() {
         impl_->widgets_.pop();
         if (!impl_->widgets_.empty()) {
             WidgetProxy::SetWidget(impl_->widgets_.top());
+            if (impl_->on_top_callback_) {
+                impl_->on_top_callback_(impl_->widgets_.top());
+            }
         } else {
             WidgetProxy::SetWidget(nullptr);
         }
     }
     return ret;
 }
-void WidgetStack::SetOnTop(std::function<void(std::shared_ptr<Widget>)> onTopCallback) {
+void WidgetStack::SetOnTop(
+        std::function<void(std::shared_ptr<Widget>)> onTopCallback) {
     impl_->on_top_callback_ = onTopCallback;
 }
 

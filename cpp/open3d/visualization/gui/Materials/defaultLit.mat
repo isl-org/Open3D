@@ -42,7 +42,9 @@ fragment {
         // Modifications to normal must be done before prepareMaterial call
         material.normal = texture(materialParams_normalMap, getUV0()).xyz * 2.0 - 1.0;
         material.normal.y *= -1.0; // NOTE: including this line because Filament samples do
-
+        // Flip normals for point clouds in case of inspection mode
+        if (dot(getWorldGeometricNormalVector(), getWorldViewVector()) < 0.0)
+            material.normal = -material.normal;
         prepareMaterial(material);
 
         material.baseColor.rgb = getColor().rgb * materialParams.baseColor * texture(materialParams_albedo, getUV0()).rgb;

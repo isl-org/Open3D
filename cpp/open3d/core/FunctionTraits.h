@@ -36,18 +36,19 @@ struct FunctionTraits : public FunctionTraits<decltype(&T::operator())> {};
 
 /// Pointers to class members that are themselves functors.
 /// For example, in the following code:
-/// template <typename func_t>
-/// struct S {
-///     func_t f;
-/// };
-/// template <typename func_t>
-/// S<func_t> make_s(func_t f) {
-///     return S<func_t> { .f = f };
-/// }
 ///
-/// auto s = make_s([] (int, float) -> double { /* ... */ });
+///     template <typename func_t>
+///     struct S {
+///         func_t f;
+///     };
+///     template <typename func_t>
+///     S<func_t> make_s(func_t f) {
+///         return S<func_t> { .f = f };
+///     }
 ///
-/// FunctionTraits<decltype(&s::f)> traits;
+///     auto s = make_s([] (int, float) -> double { /* ... */ });
+///
+///     FunctionTraits<decltype(&s::f)> traits;
 template <typename ClassType, typename T>
 struct FunctionTraits<T ClassType::*> : public FunctionTraits<T> {};
 

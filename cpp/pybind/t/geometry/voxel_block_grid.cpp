@@ -144,13 +144,27 @@ void pybind_voxel_block_grid(py::module& m) {
 
     vbg.def("integrate",
             py::overload_cast<const core::Tensor&, const Image&, const Image&,
+                              const core::Tensor&, const core::Tensor&,
+                              const core::Tensor&, float, float>(
+                    &VoxelBlockGrid::Integrate),
+            "Specific operation for TSDF volumes."
+            "Integrate an RGB-D frame in the selected block coordinates using "
+            "pinhole camera model.",
+            "block_coords"_a, "depth"_a, "color"_a, "depth_intrinsic"_a,
+            "color_intrinsic"_a, "extrinsic"_a,
+            "depth_scale"_a.noconvert() = 1000.0f,
+            "depth_max"_a.noconvert() = 3.0f);
+
+    vbg.def("integrate",
+            py::overload_cast<const core::Tensor&, const Image&, const Image&,
                               const core::Tensor&, const core::Tensor&, float,
                               float>(&VoxelBlockGrid::Integrate),
             "Specific operation for TSDF volumes."
             "Integrate an RGB-D frame in the selected block coordinates using "
             "pinhole camera model.",
             "block_coords"_a, "depth"_a, "color"_a, "intrinsic"_a,
-            "extrinsic"_a, "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f);
+            "extrinsic"_a, "depth_scale"_a.noconvert() = 1000.0f,
+            "depth_max"_a.noconvert() = 3.0f);
 
     vbg.def("integrate",
             py::overload_cast<const core::Tensor&, const Image&,
@@ -159,7 +173,8 @@ void pybind_voxel_block_grid(py::module& m) {
             "Specific operation for TSDF volumes."
             "Similar to RGB-D integration, but only applied to depth images.",
             "block_coords"_a, "depth"_a, "intrinsic"_a, "extrinsic"_a,
-            "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f);
+            "depth_scale"_a.noconvert() = 1000.0f,
+            "depth_max"_a.noconvert() = 3.0f);
 
     vbg.def("ray_cast", &VoxelBlockGrid::RayCast,
             "Specific operation for TSDF volumes."
