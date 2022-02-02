@@ -320,6 +320,13 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
             [this]() { model_.EstimateNormalsClicked(); });
     generate_normals_->SetEnabled(false);
     mat_grid->AddChild(generate_normals_);
+    mat_grid->AddChild(std::make_shared<gui::Label>("Basic Mode"));
+    basic_mode_ = std::make_shared<gui::Checkbox>("");
+    basic_mode_->SetOnChecked([this](bool checked) {
+        UpdateUIForBasicMode(checked);
+        model_.SetBasicMode(checked);
+    });
+    mat_grid->AddChild(basic_mode_);
 
     materials->AddChild(mat_grid);
 
@@ -352,6 +359,11 @@ void GuiSettingsView::EnableEstimateNormals(bool enable) {
 }
 
 void GuiSettingsView::Update() {
+    // If in basic mode, don't allow any UI manipulations so exit early
+    if (basic_mode_->IsChecked()) {
+        return;
+    }
+
     show_skybox_->SetChecked(model_.GetShowSkybox());
     show_axes_->SetChecked(model_.GetShowAxes());
     bg_color_->SetValue({model_.GetBackgroundColor().x(),
@@ -433,6 +445,40 @@ void GuiSettingsView::Update() {
              model_.GetMaterialType() ==
                      GuiSettingsModel::MaterialType::UNLIT));
     point_size_->SetEnabled(model_.GetDisplayingPointClouds());
+}
+
+void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
+    // Enable/disable UI elements
+    show_skybox_->SetEnabled(!enable);
+    lighting_profile_->SetEnabled(!enable);
+    ibls_->SetEnabled(!enable);
+    ibl_enabled_->SetEnabled(!enable);
+    ibl_intensity_->SetEnabled(!enable);
+    sun_enabled_->SetEnabled(!enable);
+    sun_intensity_->SetEnabled(!enable);
+    sun_dir_->SetEnabled(!enable);
+    sun_color_->SetEnabled(!enable);
+    sun_follows_camera_->SetEnabled(!enable);
+    material_type_->SetEnabled(!enable);
+    material_color_->SetEnabled(!enable);
+    prefab_material_->SetEnabled(!enable);
+    sun_follows_camera_->SetChecked(enable);
+
+    // Set lighting environment for basic/non-basic mode
+    auto lighting = model_.GetLighting();  // copy
+    if (enable) {
+        lighting.ibl_enabled = !enable;
+        lighting.sun_enabled = enable;
+        lighting.sun_intensity = 160000.f;
+        sun_enabled_->SetChecked(true);
+        ibl_enabled_->SetChecked(false);
+        sun_intensity_->SetValue(160000.0);
+        model_.SetCustomLighting(lighting);
+        model_.SetSunFollowsCamera(true);
+    } else {
+        model_.SetLightingProfile(GuiSettingsModel::lighting_profiles_[0]);
+        model_.SetSunFollowsCamera(false);
+    }
 }
 
 }  // namespace visualization
