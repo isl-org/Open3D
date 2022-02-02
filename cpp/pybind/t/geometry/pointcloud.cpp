@@ -110,7 +110,7 @@ The attributes of the point cloud have different levels::
     # same device as the point cloud. The are no restrictions on the shape and
     # dtype, e.g.,
     pcd.point["intensities"] = o3d.core.Tensor([0.3, 0.1, 0.4], dtype, device)
-    pcd.point["lables"] = o3d.core.Tensor([3, 1, 4], o3d.core.int32, device)
+    pcd.point["labels"] = o3d.core.Tensor([3, 1, 4], o3d.core.int32, device)
 )");
 
     // Constructors.
