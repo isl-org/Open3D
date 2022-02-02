@@ -101,7 +101,7 @@ The attributes of the point cloud have different levels::
     pcd.point["normals"] = o3d.core.Tensor([[0, 0, 1],
                                             [0, 1, 0],
                                             [1, 0, 0]], dtype, device)
-    pcd.point["normals"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
+    pcd.point["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                             [0.1, 0.1, 0.1],
                                             [0.2, 0.2, 0.2]], dtype, device)
 
