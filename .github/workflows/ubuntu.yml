@@ -22,7 +22,6 @@ env:
   NPROC: 2
   GCE_CLI_GHA_VERSION: "302.0.0"
 
-
 jobs:
   ubuntu:
     runs-on: ubuntu-18.04
