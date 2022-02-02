@@ -35,7 +35,7 @@
 #include "open3d/visualization/visualizer/ViewTrajectory.h"
 #include "open3d/visualization/visualizer/Visualizer.h"
 
-#if defined(__APPLE__) && defined(BUILD_GUI)
+#if defined(BUILD_GUI)
 namespace bluegl {
 int bind();
 void unbind();
@@ -46,10 +46,12 @@ namespace open3d {
 namespace visualization {
 
 bool Visualizer::InitOpenGL() {
-#if defined(__APPLE__) && defined(BUILD_GUI)
-    // On macOS, the Open3D shared library redirects OpenGL calls to BlueGL's
-    // forwarding functions. bluegl::bind() needs to be called before calling
-    // any OpenGL functions, otherwise the function addresses will be invalid.
+#if defined(BUILD_GUI)
+    // With the current link strategy the OpenGL functions are bound to
+    // Filament's BlueGL internal stubs which are initially null. BlueGL loads
+    // the 'real' OpenGL functions dynamically. In new visualizer, Filament
+    // automatically initializes BlueGL for us, but here we have to do manually
+    // otherwise the OpenGL functions will point to null functions and crash.
     if (bluegl::bind()) {
         utility::LogWarning("Visualizer::InitOpenGL: bluegl::bind() error.");
     }

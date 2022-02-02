@@ -1026,22 +1026,6 @@ if (BUILD_BENCHMARKS)
     # benchmark and benchmark_main will automatically become available.
 endif()
 
-# Headless rendering
-if (ENABLE_HEADLESS_RENDERING)
-    open3d_find_package_3rdparty_library(3rdparty_opengl
-        REQUIRED
-        PACKAGE OSMesa
-        INCLUDE_DIRS OSMESA_INCLUDE_DIR
-        LIBRARIES OSMESA_LIBRARY
-    )
-else()
-    open3d_find_package_3rdparty_library(3rdparty_opengl
-        PACKAGE OpenGL
-        TARGETS OpenGL::GL
-    )
-endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_opengl)
-
 # imgui
 if(BUILD_GUI)
     if(USE_SYSTEM_IMGUI)
@@ -1180,6 +1164,22 @@ if(BUILD_GUI)
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_filament)
 endif()
 
+# Headless rendering
+if (ENABLE_HEADLESS_RENDERING)
+    open3d_find_package_3rdparty_library(3rdparty_opengl
+        REQUIRED
+        PACKAGE OSMesa
+        INCLUDE_DIRS OSMESA_INCLUDE_DIR
+        LIBRARIES OSMESA_LIBRARY
+    )
+else()
+    open3d_find_package_3rdparty_library(3rdparty_opengl
+        PACKAGE OpenGL
+        TARGETS OpenGL::GL
+    )
+endif()
+list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_opengl)
+
 # RPC interface
 # zeromq
 include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
@@ -1226,20 +1226,24 @@ list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
 
 # MKL/BLAS
 if(USE_BLAS)
-    find_package(BLAS)
-    find_package(LAPACK)
-    find_package(LAPACKE)
-    if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
-        message(STATUS "Using system BLAS/LAPACK")
-        # OpenBLAS/LAPACK/LAPACKE are shared libraries. This is uncommon for
-        # Open3D. When building with this option, the Python wheel is less
-        # portable as it depends on the external shared libraries.
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
-            ${BLAS_LIBRARIES}
-            ${LAPACK_LIBRARIES}
-            ${LAPACKE_LIBRARIES}
-        )
-    else()
+    if (USE_SYSTEM_BLAS)
+        find_package(BLAS)
+        find_package(LAPACK)
+        find_package(LAPACKE)
+        if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
+            message(STATUS "System BLAS/LAPACK/LAPACKE found.")
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
+                ${BLAS_LIBRARIES}
+                ${LAPACK_LIBRARIES}
+                ${LAPACKE_LIBRARIES}
+            )
+        else()
+            message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting USE_SYSTEM_BLAS=OFF.")
+            set(USE_SYSTEM_BLAS OFF)
+        endif()
+    endif()
+
+    if (NOT USE_SYSTEM_BLAS)
         # Install gfortran first for compiling OpenBLAS/Lapack from source.
         message(STATUS "Building OpenBLAS with LAPACK from source")
 
@@ -1260,40 +1264,59 @@ if(USE_BLAS)
             LIBRARIES    ${OPENBLAS_LIBRARIES}
             DEPENDS      ext_openblas
         )
-        if(APPLE_AARCH64)
-            # Get gfortran library search directories.
-            execute_process(COMMAND ${gfortran_bin} -print-search-dirs
-                OUTPUT_VARIABLE gfortran_search_dirs
-                RESULT_VARIABLE RET
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-            if(RET AND NOT RET EQUAL 0)
-                message(FATAL_ERROR "Failed to run `${gfortran_bin} -print-search-dirs`")
-            endif()
+        # Get gfortran library search directories.
+        execute_process(COMMAND ${gfortran_bin} -print-search-dirs
+            OUTPUT_VARIABLE gfortran_search_dirs
+            RESULT_VARIABLE RET
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if(RET AND NOT RET EQUAL 0)
+            message(FATAL_ERROR "Failed to run `${gfortran_bin} -print-search-dirs`")
+        endif()
 
-            # Parse gfortran library search directories into CMake list.
-            string(REGEX MATCH "libraries: =(.*)" match_result ${gfortran_search_dirs})
-            if (match_result)
-                string(REPLACE ":" ";" gfortran_lib_dirs ${CMAKE_MATCH_1})
-            else()
-                message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
-            endif()
+        # Parse gfortran library search directories into CMake list.
+        string(REGEX MATCH "libraries: =(.*)" match_result ${gfortran_search_dirs})
+        if (match_result)
+            string(REPLACE ":" ";" gfortran_lib_dirs ${CMAKE_MATCH_1})
+        else()
+            message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
+        endif()
 
+        if(LINUX_AARCH64 OR APPLE_AARCH64)
             # Find libgfortran.a and libgcc.a inside the gfortran library search
             # directories. This ensures that the library matches the compiler.
+            # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
             find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
-            find_library(gcc_lib NAMES libgcc.a PATHS ${gfortran_lib_dirs} REQUIRED)
-
-            # -no_compact_unwind is needed to suppress compiler warnings.
-            target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
-
+            find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
             target_link_libraries(3rdparty_blas INTERFACE
                 ${gfortran_lib}
                 ${gcc_lib}
             )
-        endif()
-        if(LINUX_AARCH64)
-            target_link_libraries(3rdparty_blas INTERFACE Threads::Threads gfortran)
+            if(APPLE_AARCH64)
+                # Suppress Apple compiler warnigns.
+                target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
+            endif()
+        elseif(UNIX AND NOT APPLE)
+            # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
+            # The temporary solution is to link the shared library libgfortran.so.
+            # If we distribute a Python wheel, the user's system will also need
+            # to have libgfortran.so preinstalled.
+            #
+            # If you have to link libgfortran.a statically
+            # - Read https://gcc.gnu.org/wiki/InstallingGCC
+            # - Run `gfortran --version`, e.g. you get 9.3.0
+            # - Checkout gcc source code to the corresponding version
+            # - Configure with
+            #   ${PWD}/../gcc/configure --prefix=${HOME}/gcc-9.3.0 \
+            #                           --enable-languages=c,c++,fortran \
+            #                           --with-pic --disable-multilib
+            # - make install -j$(nproc) # This will take a while
+            # - Change this cmake file to libgfortran.a statically.
+            # - Link
+            #   - libgfortran.a
+            #   - libgcc.a
+            #   - libquadmath.a
+            target_link_libraries(3rdparty_blas INTERFACE gfortran)
         endif()
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()

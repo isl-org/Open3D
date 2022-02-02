@@ -40,8 +40,9 @@ void PrintHelp() {
     utility::LogInfo("    --voxel_size [=0.0058 (m)]");
     utility::LogInfo("    --depth_scale [=1000.0]");
     utility::LogInfo("    --max_depth [=3.0]");
+    utility::LogInfo("    --trunc_voxel_multiplier [=8.0]");
     utility::LogInfo("    --block_count [=10000]");
-    utility::LogInfo("    --device [CPU:0]");
+    utility::LogInfo("    --device [CUDA:0]");
     utility::LogInfo("    --pointcloud");
     // clang-format on
     utility::LogInfo("");
@@ -62,7 +63,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Device
-    std::string device_code = "CPU:0";
+    std::string device_code = "CUDA:0";
     if (utility::ProgramOptionExists(argc, argv, "--device")) {
         device_code = utility::GetProgramOptionAsString(argc, argv, "--device");
     }
@@ -108,6 +109,10 @@ int main(int argc, char* argv[]) {
     // VoxelBlock configurations
     float voxel_size = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--voxel_size", 3.f / 512.f));
+    float trunc_voxel_multiplier =
+            static_cast<float>(utility::GetProgramOptionAsDouble(
+                    argc, argv, "--trunc_voxel_multiplier", 8.0f));
+
     int block_resolution = utility::GetProgramOptionAsInt(
             argc, argv, "--block_resolution", 16);
     int block_count =
@@ -174,17 +179,18 @@ int main(int argc, char* argv[]) {
         // Integrate
         model.UpdateFramePose(i, T_frame_to_model);
         if (tracking_success) {
-            model.Integrate(input_frame, depth_scale, depth_max);
+            model.Integrate(input_frame, depth_scale, depth_max,
+                            trunc_voxel_multiplier);
         }
         model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max,
-                                   false);
+                                   trunc_voxel_multiplier, false);
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--pointcloud",
                 "pcd_" + device.ToString() + ".ply");
-        auto pcd = model.ExtractPointCloud(-1);
+        auto pcd = model.ExtractPointCloud();
         auto pcd_legacy =
                 std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
         open3d::io::WritePointCloud(filename, *pcd_legacy);
@@ -193,7 +199,7 @@ int main(int argc, char* argv[]) {
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--mesh", "mesh_" + device.ToString() + ".ply");
-        auto mesh = model.ExtractTriangleMesh(-1);
+        auto mesh = model.ExtractTriangleMesh();
         auto mesh_legacy = std::make_shared<open3d::geometry::TriangleMesh>(
                 mesh.ToLegacy());
         open3d::io::WriteTriangleMesh(filename, *mesh_legacy);

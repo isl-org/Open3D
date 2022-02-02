@@ -30,7 +30,7 @@ requirements:
         - tqdm
 
 about:
-    home: @PROJECT_HOME@
+    home: @PROJECT_HOMEPAGE_URL@
     license: MIT
     license_file: LICENSE.txt
     summary: Open3D is an open-source library that supports rapid development of software that deals with 3D data.

@@ -139,7 +139,7 @@ function(open3d_set_global_properties target)
     # (from pybind11)
     # macOS: -x: strip local symbols
     # Linux: defaults
-    if(UNIX AND CMAKE_STRIP)
+    if(NOT DEVELOPER_BUILD AND UNIX AND CMAKE_STRIP)
         get_target_property(target_type ${target} TYPE)
         if(target_type MATCHES
                 MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)

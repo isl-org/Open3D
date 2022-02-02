@@ -27,7 +27,6 @@
 import open3d as o3d
 import numpy as np
 import matplotlib.image as mpimg
-import os
 import re
 
 
@@ -70,11 +69,9 @@ def nyu_dataset():
     print("Read NYU dataset")
     # Open3D does not support ppm/pgm file yet. Not using o3d.io.read_image here.
     # MathplotImage having some ISSUE with NYU pgm file. Not using imread for pgm.
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    color_raw = mpimg.imread(
-        dir_path + "/../../test_data/RGBD/other_formats/NYU_color.ppm")
-    depth_raw = read_nyu_pgm(
-        dir_path + "/../../test_data/RGBD/other_formats/NYU_depth.pgm")
+    nyu_data = o3d.data.SampleRGBDImageNYU()
+    color_raw = mpimg.imread(nyu_data.color_path)
+    depth_raw = read_nyu_pgm(nyu_data.depth_path)
     color = o3d.geometry.Image(color_raw)
     depth = o3d.geometry.Image(depth_raw)
     rgbd_image = o3d.geometry.RGBDImage.create_from_nyu_format(
@@ -85,12 +82,10 @@ def nyu_dataset():
 
 
 def redwood_dataset():
-    print("Read Redwood dataset")
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    color_raw = o3d.io.read_image(dir_path +
-                                  "/../../test_data/RGBD/color/00000.jpg")
-    depth_raw = o3d.io.read_image(dir_path +
-                                  "/../../test_data/RGBD/depth/00000.png")
+    print("Read ICL dataset")
+    icl_data = o3d.data.SampleRGBDDatasetICL()
+    color_raw = o3d.io.read_image(icl_data.color_paths[0])
+    depth_raw = o3d.io.read_image(icl_data.depth_paths[0])
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
 
@@ -100,11 +95,9 @@ def redwood_dataset():
 
 def sun_dataset():
     print("Read SUN dataset")
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    color_raw = o3d.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/SUN_color.jpg")
-    depth_raw = o3d.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/SUN_depth.png")
+    sun_data = o3d.data.SampleRGBDImageSUN()
+    color_raw = o3d.io.read_image(sun_data.color_path)
+    depth_raw = o3d.io.read_image(sun_data.depth_path)
     rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
 
@@ -114,11 +107,9 @@ def sun_dataset():
 
 def tum_dataset():
     print("Read TUM dataset")
-    dir_path = os.path.dirname(os.path.abspath(__file__))
-    color_raw = o3d.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/TUM_color.png")
-    depth_raw = o3d.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/TUM_depth.png")
+    tum_data = o3d.data.SampleRGBDImageTUM()
+    color_raw = o3d.io.read_image(tum_data.color_path)
+    depth_raw = o3d.io.read_image(tum_data.depth_path)
     rgbd_image = o3d.geometry.RGBDImage.create_from_tum_format(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
 

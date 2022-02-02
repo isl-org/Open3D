@@ -23,20 +23,16 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
+"""Build a KDTree and use it for neighbour search"""
 
 import open3d as o3d
 import numpy as np
-import os
-import sys
-
-dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(dir_path + "/..")
 
 
 def radius_search():
     print("Loading pointcloud ...")
-    path_to_pcd = dir_path + "/../../test_data/fragment.pcd"
-    pcd = o3d.io.read_point_cloud(path_to_pcd)
+    sample_pcd_data = o3d.data.SamplePointCloudPCD()
+    pcd = o3d.io.read_point_cloud(sample_pcd_data.path)
     pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 
     print(
@@ -51,8 +47,8 @@ def radius_search():
 
 def knn_search():
     print("Loading pointcloud ...")
-    path_to_pcd = dir_path + "/../../test_data/fragment.pcd"
-    pcd = o3d.io.read_point_cloud(path_to_pcd)
+    sample_pcd = o3d.data.SamplePointCloudPCD()
+    pcd = o3d.io.read_point_cloud(sample_pcd.path)
     pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 
     print(

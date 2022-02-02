@@ -31,8 +31,11 @@ import os
 import sys
 import shutil
 import argparse
-sys.path.append("../../utility")
-from file import *
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import *
 # original code is written by Andrew. W. Chen
 # input: openni style unsynchronized color and depth images
 # output: synchronized color and depth images

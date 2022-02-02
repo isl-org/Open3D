@@ -24,21 +24,21 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/benchmark/benchmark_tsdf.py
-
 import open3d as o3d
 import numpy as np
 import time
 import os
 import sys
 
-pwd = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(pwd, '..', 'pipelines'))
-from trajectory_io import read_trajectory
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+sys.path.append(pyexample_path)
+
+from open3d_example import read_trajectory
 
 
 def run_benchmark():
-    dataset_path = os.path.join(pwd, "..", "..", "test_data", "RGBD")
+    dataset_path = os.path.join(test_data_path, "RGBD")
     camera_poses = read_trajectory(os.path.join(dataset_path, "odometry.log"))
     camera_intrinsics = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)

@@ -130,7 +130,7 @@ void BuildSpatialHashTableCPU(const Tensor& points,
 ///        indices in each batch item. The size of the tensor is
 ///        num_query_points + 1
 ///
-/// \param neighbors_distances   The output tensor that saves the resulting
+/// \param neighbors_distance   The output tensor that saves the resulting
 ///        neighbor distances.
 ///
 template <class T>
@@ -198,7 +198,7 @@ void FixedRadiusSearchCPU(const Tensor& points,
 /// \param neighbors_count     The output tensor that saves the number of
 ///        neighbors for each query points
 ///
-/// \param neighbors_distances   The output tensor that saves the resulting
+/// \param neighbors_distance   The output tensor that saves the resulting
 ///        neighbor distances.
 ///
 template <class T>
@@ -308,7 +308,7 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
 /// \param neighbors_row_splits  Tensor defining the start and end the neighbor
 /// indices in each batch item. The size of the tensor is num_query_points + 1
 ///
-/// \param neighbors_distances   The output tensor that saves the resulting
+/// \param neighbors_distance   The output tensor that saves the resulting
 /// neighbor distances.
 ///
 template <class T>
@@ -376,7 +376,7 @@ void FixedRadiusSearchCUDA(const Tensor& points,
 /// \param neighbors_count     The output tensor that saves the number of
 ///        neighbors for each query points
 ///
-/// \param neighbors_distances   The output tensor that saves the resulting
+/// \param neighbors_distance   The output tensor that saves the resulting
 ///        neighbor distances.
 ///
 template <class T>
