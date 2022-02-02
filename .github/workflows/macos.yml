@@ -14,6 +14,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NPROC: 3
