@@ -7,7 +7,6 @@ on:
         description: 'Set to OFF for Release documentation'
         required: false
         default: 'ON'
-
   push:
     branches:
       - master

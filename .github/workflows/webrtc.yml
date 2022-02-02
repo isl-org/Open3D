@@ -72,7 +72,6 @@ jobs:
                  checksum_*.txt
           if-no-files-found: error
 
-
   Windows:
     # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
     runs-on: windows-latest
