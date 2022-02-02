@@ -123,7 +123,7 @@ Size ListView::CalcMinimumSize(const LayoutContext &context) const {
 Widget::DrawResult ListView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
     ImGui::SetCursorScreenPos(
-            ImVec2(float(frame.x), float(frame.y) + ImGui::GetScrollY()));
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
     ImGui::PushItemWidth(float(frame.width));
 
     ImGui::PushStyleColor(ImGuiCol_FrameBg,
