@@ -2,6 +2,7 @@
 
 * Python 3.9 support. Tensorflow bump 2.4.1 -> 2.5.0. PyTorch bump 1.7.1 -> 1.8.1 (LTS)
 * Fix undefined names: docstr and VisibleDeprecationWarning (PR #3844)
+* Corrected documentation for Tensor based PointClound, LineSet, TriangleMesh (PR #4685)
 
 ## 0.13
 
