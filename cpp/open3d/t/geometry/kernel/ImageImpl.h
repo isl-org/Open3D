@@ -246,9 +246,11 @@ void CreateNormalMapCPU
                     normal[1] = dz0 * dx1 - dx0 * dz1;
                     normal[2] = dx0 * dy1 - dy0 * dx1;
 
+                    constexpr float EPSILON = 1e-5f;
                     float normal_norm =
                             sqrt(normal[0] * normal[0] + normal[1] * normal[1] +
                                  normal[2] * normal[2]);
+                    normal_norm = std::max(normal_norm, EPSILON);
                     normal[0] /= normal_norm;
                     normal[1] /= normal_norm;
                     normal[2] /= normal_norm;

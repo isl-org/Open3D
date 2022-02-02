@@ -32,7 +32,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
-#ifdef WINDOWS
+#ifdef WIN32
 #include <direct.h>
 #include <dirent/dirent.h>
 #include <io.h>
@@ -46,6 +46,16 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
+
+#ifdef WIN32
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#endif
+#ifdef __APPLE__
+// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
+#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
+#endif
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
 
 #include "open3d/utility/Logging.h"
 
@@ -228,9 +238,7 @@ bool ChangeWorkingDirectory(const std::string &directory) {
 }
 
 bool DirectoryExists(const std::string &directory) {
-    struct stat info;
-    if (stat(directory.c_str(), &info) == -1) return false;
-    return S_ISDIR(info.st_mode);
+    return fs::is_directory(directory);
 }
 
 bool MakeDirectory(const std::string &directory) {
@@ -257,23 +265,30 @@ bool MakeDirectoryHierarchy(const std::string &directory) {
 }
 
 bool DeleteDirectory(const std::string &directory) {
-#ifdef WINDOWS
-    return (_rmdir(directory.c_str()) == 0);
-#else
-    return (rmdir(directory.c_str()) == 0);
-#endif
+    std::error_code error;
+    if (fs::remove_all(directory, error) == static_cast<std::uintmax_t>(-1)) {
+        utility::LogWarning("Failed to remove directory {}: {}.", directory,
+                            error.message());
+        return false;
+    }
+    return true;
 }
 
 bool FileExists(const std::string &filename) {
-#ifdef WINDOWS
-    struct _stat64 info;
-    if (_stat64(filename.c_str(), &info) == -1) return false;
-    return S_ISREG(info.st_mode);
-#else
-    struct stat info;
-    if (stat(filename.c_str(), &info) == -1) return false;
-    return S_ISREG(info.st_mode);
-#endif
+    return fs::exists(filename) && fs::is_regular_file(filename);
+}
+
+bool CopyFile(const std::string &src_path, const std::string &dst_path) {
+    try {
+        fs::copy(src_path, dst_path,
+                 fs::copy_options::recursive |
+                         fs::copy_options::overwrite_existing);
+    } catch (std::exception &e) {
+        utility::LogWarning("Failed to copy {} to {}. Exception: {}.", src_path,
+                            dst_path, e.what());
+        return false;
+    }
+    return true;
 }
 
 bool RemoveFile(const std::string &filename) {

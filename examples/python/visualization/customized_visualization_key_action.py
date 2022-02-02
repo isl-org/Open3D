@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/visualization/customized_visualization_key_action.py
-
 import open3d as o3d
 
 
@@ -63,7 +61,8 @@ def custom_key_action_without_kb_repeat_delay(pcd):
 
 
 if __name__ == "__main__":
-    pcd = o3d.io.read_point_cloud("../../test_data/fragment.ply")
+    ply_data = o3d.data.SamplePointCloudPLY()
+    pcd = o3d.io.read_point_cloud(ply_data.path)
 
     print(
         "Customized visualization with smooth key action (without keyboard repeat delay)"

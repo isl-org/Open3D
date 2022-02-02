@@ -458,8 +458,42 @@ void pybind_rendering_classes(py::module &m) {
     // ---- View ----
     py::class_<View, UnownedPointer<View>> view(m, "View",
                                                 "Low-level view class");
+    // ---- Shadow Types ----
+    py::enum_<View::ShadowType> shadow_type(
+            view, "ShadowType", "Available shadow mapping algorithm options");
+    shadow_type.value("PCF", View::ShadowType::kPCF)
+            .value("VSM", View::ShadowType::kVSM);
+
     view.def("set_color_grading", &View::SetColorGrading,
-             "Sets the parameters to be used for the color grading algorithms");
+             "Sets the parameters to be used for the color grading algorithms")
+            .def("set_post_processing", &View::SetPostProcessing,
+                 "True to enable, False to disable post processing. Post "
+                 "processing effects include: color grading, ambient occlusion "
+                 "(and other screen space effects), and anti-aliasing.")
+            .def("set_ambient_occlusion", &View::SetAmbientOcclusion,
+                 "enabled"_a, "ssct_enabled"_a = false,
+                 "True to enable, False to disable ambient occlusion. "
+                 "Optionally, screen-space cone tracing may be enabled with "
+                 "ssct_enabled=True.")
+            .def("set_antialiasing", &View::SetAntiAliasing, "enabled"_a,
+                 "temporal"_a = false,
+                 "True to enable, False to disable anti-aliasing. Note that "
+                 "this only impacts anti-aliasing post-processing. MSAA is "
+                 "controlled separately by `set_sample_count`. Temporal "
+                 "anti-aliasing may be optionally enabled with temporal=True.")
+            .def("set_sample_count", &View::SetSampleCount,
+                 "Sets the sample count for MSAA. Set to 1 to disable MSAA. "
+                 "Typical values are 2, 4 or 8. The maximum possible value "
+                 "depends on the underlying GPU and OpenGL driver.")
+            .def("set_shadowing", &View::SetShadowing, "enabled"_a,
+                 "type"_a = View::ShadowType::kPCF,
+                 "True to enable, false to enable all shadow mapping when "
+                 "rendering this View. When enabling shadow mapping you may "
+                 "also specify one of two shadow mapping algorithms: PCF "
+                 "(default) or VSM. Note: shadowing is enabled by default with "
+                 "PCF shadow mapping.")
+            .def("get_camera", &View::GetCamera,
+                 "Returns the Camera associated with this View.");
 
     // ---- Scene ----
     py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",

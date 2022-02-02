@@ -1379,6 +1379,12 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
         const Eigen::Vector3d &p0 = vertices_[tria_p(0)];
         const Eigen::Vector3d &p1 = vertices_[tria_p(1)];
         const Eigen::Vector3d &p2 = vertices_[tria_p(2)];
+
+        const Eigen::Vector3d bb_min1 =
+                p0.array().min(p1.array().min(p2.array()));
+        const Eigen::Vector3d bb_max1 =
+                p0.array().max(p1.array().max(p2.array()));
+
         for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
             const Eigen::Vector3i &tria_q = triangles_[tidx1];
             // check if neighbour triangle
@@ -1394,7 +1400,14 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
             const Eigen::Vector3d &q0 = vertices_[tria_q(0)];
             const Eigen::Vector3d &q1 = vertices_[tria_q(1)];
             const Eigen::Vector3d &q2 = vertices_[tria_q(2)];
-            if (IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
+
+            const Eigen::Vector3d bb_min2 =
+                    q0.array().min(q1.array().min(q2.array()));
+            const Eigen::Vector3d bb_max2 =
+                    q0.array().max(q1.array().max(q2.array()));
+            if (IntersectionTest::AABBAABB(bb_min1, bb_max1, bb_min2,
+                                           bb_max2) &&
+                IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
                 self_intersecting_triangles.push_back(
                         Eigen::Vector2i(tidx0, tidx1));
             }
@@ -1525,6 +1538,7 @@ void TriangleMesh::RemoveTrianglesByMask(
     }
 
     bool has_tri_normal = HasTriangleNormals();
+    bool has_tri_uvs = HasTriangleUvs();
     int to_tidx = 0;
     for (size_t from_tidx = 0; from_tidx < triangles_.size(); ++from_tidx) {
         if (!triangle_mask[from_tidx]) {
@@ -1532,12 +1546,22 @@ void TriangleMesh::RemoveTrianglesByMask(
             if (has_tri_normal) {
                 triangle_normals_[to_tidx] = triangle_normals_[from_tidx];
             }
+            if (has_tri_uvs) {
+                triangle_uvs_[to_tidx * 3] = triangle_uvs_[from_tidx * 3];
+                triangle_uvs_[to_tidx * 3 + 1] =
+                        triangle_uvs_[from_tidx * 3 + 1];
+                triangle_uvs_[to_tidx * 3 + 2] =
+                        triangle_uvs_[from_tidx * 3 + 2];
+            }
             to_tidx++;
         }
     }
     triangles_.resize(to_tidx);
     if (has_tri_normal) {
         triangle_normals_.resize(to_tidx);
+    }
+    if (has_tri_uvs) {
+        triangle_uvs_.resize(to_tidx * 3);
     }
 }
 

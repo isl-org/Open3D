@@ -80,6 +80,8 @@ FilamentCamera::FilamentCamera(filament::Engine& engine) : engine_(engine) {
 
 FilamentCamera::~FilamentCamera() {
     engine_.destroyCameraComponent(camera_entity_);
+    engine_.destroy(camera_entity_);
+    camera_entity_.clear();
 }
 
 void FilamentCamera::CopyFrom(const Camera* camera) {
@@ -338,7 +340,8 @@ void FilamentCamera::SetModelMatrix(const Transform& view) {
 Eigen::Vector3f FilamentCamera::Unproject(
         float x, float y, float z, float view_width, float view_height) const {
     Eigen::Vector4f gl_pt(2.0f * x / view_width - 1.0f,
-                          2.0f * y / view_height - 1.0f, 2.0f * z - 1.0f, 1.0f);
+                          2.0f * (view_height - y) / view_height - 1.0f,
+                          2.0f * z - 1.0f, 1.0f);
 
     auto proj = GetProjectionMatrix();
     Eigen::Vector4f obj_pt = (proj * GetViewMatrix()).inverse() * gl_pt;

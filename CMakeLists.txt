@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.19.2)
 # - use first-class language support for ISPC (3.19.2 patch release required)
 
 if (APPLE)
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
     "Minimum OS X deployment version" FORCE)
 endif()
 
@@ -73,6 +73,11 @@ if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           ON )
 else()
     option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           OFF)
+endif()
+if(USE_BLAS)
+    option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        OFF)
+else()
+    option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        ON )
 endif()
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
 option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
@@ -220,8 +225,19 @@ string(CONCAT OPEN3D_VERSION
     ".${OPEN3D_VERSION_PATCH}"
 )
 set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
+# Set additional info
+set(PROJECT_EMAIL       "info@open3d.org")
+set(PROJECT_DOCS        "http://www.open3d.org/docs")
+set(PROJECT_CODE        "https://github.com/isl-org/Open3D")
+set(PROJECT_ISSUES      "https://github.com/isl-org/Open3D/issues")
 
-project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
+project(Open3D
+    VERSION ${OPEN3D_VERSION}
+    # Set PROJECT_DESCRIPTION
+    DESCRIPTION "Open3D: A Modern Library for 3D Data Processing."
+    # Set PROJECT_HOMEPAGE_URL
+    HOMEPAGE_URL "http://www.open3d.org"
+    LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
@@ -246,9 +262,9 @@ if(NOT DEFINED Python3_FIND_REGISTRY)
     # Only consider PATH variable on Windows by default
     set(Python3_FIND_REGISTRY NEVER)
 endif()
-find_package(Python3 3.6...<3.10
-             COMPONENTS Interpreter Development
-)
+# Requires Python 3.6+
+find_package(Python3 3.6
+             COMPONENTS Interpreter Development)
 if (Python3_FOUND)
     # Setup PYTHON_EXECUTABLE for 3rdparty modules
     # which still use the deprecated find_package(PythonInterp)
@@ -256,7 +272,7 @@ if (Python3_FOUND)
         "Deprecated path to the Python executable (for 3rdparty only)" FORCE)
 else()
     if (BUILD_PYTHON_MODULE)
-        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.9. Please ensure it is in PATH.")
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python >= 3.6. Please ensure it is in PATH.")
     endif()
 endif()
 
@@ -276,13 +292,6 @@ string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
 if(NOT DEFINED PYPI_PACKAGE_NAME)
     set(PYPI_PACKAGE_NAME "open3d")
 endif()
-
-# Set additional info
-set(PROJECT_EMAIL   "info@open3d.org")
-set(PROJECT_HOME    "http://www.open3d.org")
-set(PROJECT_DOCS    "http://www.open3d.org/docs")
-set(PROJECT_CODE    "https://github.com/isl-org/Open3D")
-set(PROJECT_ISSUES  "https://github.com/isl-org/Open3D/issues")
 
 # Set installation paths
 if(UNIX OR CYGWIN)
@@ -473,6 +482,8 @@ if (Python3_EXECUTABLE)
         COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
     )
 endif()
+
+include(Open3DPackaging)
 
 # `make check-cpp-style` checks style for c++/cuda files.
 # This works outside of python virtualenv.

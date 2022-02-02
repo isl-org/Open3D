@@ -39,6 +39,8 @@ target_sources(GUI PRIVATE
     Util.cpp
     VectorEdit.cpp
     Widget.cpp
+    WidgetProxy.cpp
+    WidgetStack.cpp
     Window.cpp
 )
 

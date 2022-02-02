@@ -5,6 +5,28 @@ function(open3d_set_global_properties target)
     # Tell CMake we want a compiler that supports C++14 features
     target_compile_features(${target} PUBLIC cxx_std_14)
 
+    # std::filesystem (C++17) or std::experimental::filesystem (C++14)
+    #
+    # Ref: https://en.cppreference.com/w/cpp/filesystem:
+    #      Using this library may require additional compiler/linker options.
+    #      GNU implementation prior to 9.1 requires linking with -lstdc++fs and
+    #      LLVM implementation prior to LLVM 9.0 requires linking with -lc++fs.
+    # Ref: https://gitlab.kitware.com/cmake/cmake/-/issues/17834
+    #      It's non-trivial to determine the link flags for CMake.
+    #
+    # The linkage can be "-lstdc++fs" or "-lc++fs" or ""(empty). In our
+    # experiments, the behaviour doesn't quite match the specifications.
+    #
+    # - On Ubuntu 20.04:
+    #   - "-lstdc++fs" works with with GCC 7/10 and Clang 7/12
+    #   - "" does not work with GCC 7/10 and Clang 7/12
+    #
+    # - On latest macOS/Windows with the default compiler:
+    #   - "" works.
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(${target} PRIVATE stdc++fs)
+    endif()
+
     # Colorize GCC/Clang terminal outputs
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fdiagnostics-color=always>)
@@ -120,7 +142,7 @@ function(open3d_set_global_properties target)
     # (from pybind11)
     # macOS: -x: strip local symbols
     # Linux: defaults
-    if(UNIX AND CMAKE_STRIP)
+    if(NOT DEVELOPER_BUILD AND UNIX AND CMAKE_STRIP)
         get_target_property(target_type ${target} TYPE)
         if(target_type MATCHES
                 MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)

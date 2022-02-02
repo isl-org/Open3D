@@ -42,7 +42,6 @@ void PrintHelp() {
     utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
     utility::LogInfo("    --depth_scale [=1000.0]");
     utility::LogInfo("    --depth_max [=3.0]");
-    utility::LogInfo("    --sdf_trunc [=0.04]");
     utility::LogInfo("    --device [CPU:0]");
     utility::LogInfo("    --raycast");
     utility::LogInfo("    --mesh");
@@ -59,8 +58,6 @@ int main(int argc, char* argv[]) {
         PrintHelp();
         return 1;
     }
-
-    using MaskCode = t::geometry::TSDFVoxelGrid::SurfaceMaskCode;
 
     // Color and depth
     std::string color_folder = std::string(argv[1]);
@@ -112,8 +109,6 @@ int main(int argc, char* argv[]) {
             argc, argv, "--depth_scale", 1000.f));
     float depth_max = static_cast<float>(
             utility::GetProgramOptionAsDouble(argc, argv, "--depth_max", 3.f));
-    float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
-            argc, argv, "--sdf_trunc", 0.04f));
 
     bool enable_raycast = utility::ProgramOptionExists(argc, argv, "--raycast");
     bool debug = utility::ProgramOptionExists(argc, argv, "--debug");
@@ -125,11 +120,10 @@ int main(int argc, char* argv[]) {
     }
     core::Device device(device_code);
     utility::LogInfo("Using device: {}", device.ToString());
-    t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
-                                           {"weight", core::Dtype::UInt16},
-                                           {"color", core::Dtype::UInt16}},
-                                          voxel_size, sdf_trunc, 16,
-                                          block_count, device);
+    t::geometry::VoxelBlockGrid voxel_grid(
+            {"tsdf", "weight", "color"},
+            {core::Dtype::Float32, core::Dtype::Float32, core::Dtype::Float32},
+            {{1}, {1}, {3}}, voxel_size, 16, block_count, device);
 
     double time_total = 0;
     double time_int = 0;
@@ -160,8 +154,12 @@ int main(int argc, char* argv[]) {
 
         utility::Timer int_timer;
         int_timer.Start();
-        voxel_grid.Integrate(depth, color, intrinsic_t, extrinsic_t,
-                             depth_scale, depth_max);
+        core::Tensor frustum_block_coords =
+                voxel_grid.GetUniqueBlockCoordinates(depth, intrinsic_t,
+                                                     extrinsic_t, depth_scale,
+                                                     depth_max);
+        voxel_grid.Integrate(frustum_block_coords, depth, color, intrinsic_t,
+                             extrinsic_t);
         int_timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i,
                          int_timer.GetDuration());
@@ -172,9 +170,9 @@ int main(int argc, char* argv[]) {
 
             ray_timer.Start();
             auto result = voxel_grid.RayCast(
-                    intrinsic_t, extrinsic_t, depth.GetCols(), depth.GetRows(),
-                    depth_scale, 0.1, depth_max, std::min(i * 1.0f, 3.0f),
-                    MaskCode::DepthMap | MaskCode::ColorMap);
+                    frustum_block_coords, intrinsic_t, extrinsic_t,
+                    depth.GetCols(), depth.GetRows(), {"depth", "color"},
+                    depth_scale, 0.1, depth_max, std::min(i * 1.0f, 3.0f));
             ray_timer.Stop();
 
             utility::LogInfo("{}: Raycast takes {}", i,
@@ -182,25 +180,14 @@ int main(int argc, char* argv[]) {
             time_raycasting += ray_timer.GetDuration();
 
             if (debug) {
-                core::Tensor range_map = result[MaskCode::RangeMap];
-                t::geometry::Image im_near(
-                        range_map.Slice(2, 0, 1).Contiguous() / depth_max);
-                visualization::DrawGeometries(
-                        {std::make_shared<open3d::geometry::Image>(
-                                im_near.ToLegacy())});
-                t::geometry::Image im_far(
-                        range_map.Slice(2, 1, 2).Contiguous() / depth_max);
-                visualization::DrawGeometries(
-                        {std::make_shared<open3d::geometry::Image>(
-                                im_far.ToLegacy())});
-                t::geometry::Image depth_raycast(result[MaskCode::DepthMap]);
+                t::geometry::Image depth_raycast(result["depth"]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 depth_raycast
                                         .ColorizeDepth(depth_scale, 0.1,
                                                        depth_max)
                                         .ToLegacy())});
-                t::geometry::Image color_raycast(result[MaskCode::ColorMap]);
+                t::geometry::Image color_raycast(result["color"]);
                 visualization::DrawGeometries(
                         {std::make_shared<open3d::geometry::Image>(
                                 color_raycast.ToLegacy())});
@@ -213,11 +200,11 @@ int main(int argc, char* argv[]) {
     }
 
     size_t n = trajectory->parameters_.size();
-    utility::LogInfo("per frame: {}, ray cating: {}, integration: {}",
+    utility::LogInfo("per frame: {}, ray casting: {}, integration: {}",
                      time_total / n, time_raycasting / n, time_int / n);
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
-        auto mesh = voxel_grid.ExtractSurfaceMesh();
+        auto mesh = voxel_grid.ExtractTriangleMesh(3.0f);
         auto mesh_legacy =
                 std::make_shared<geometry::TriangleMesh>(mesh.ToLegacy());
         open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
@@ -225,9 +212,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
-        auto pcd = voxel_grid.ExtractSurfacePoints(
-                -1, 3.0f,
-                MaskCode::VertexMap | MaskCode::ColorMap | MaskCode::NormalMap);
+        auto pcd = voxel_grid.ExtractPointCloud(3.0f);
         auto pcd_legacy =
                 std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
         open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",
@@ -235,7 +220,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--tsdf")) {
-        open3d::t::io::WriteTSDFVoxelGrid("tsdf.json", voxel_grid);
+        voxel_grid.Save("tsdf.npz");
     }
 
     return 0;

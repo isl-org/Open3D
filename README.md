@@ -44,7 +44,7 @@ For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 
 ## Python quick start
 
-Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.14+ and
+Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.15+ and
 Windows 10 (64-bit) with Python 3.6-3.9.
 
 ```bash
@@ -65,6 +65,7 @@ To compile Open3D from source, refer to
 
 Checkout the following links to get started with Open3D C++ API
 
+* Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](http://www.open3d.org/docs/latest/getting_started.html#c)
 * [Compiling Open3D from source](http://www.open3d.org/docs/release/compilation.html)
 * [Open3D C++ API](http://www.open3d.org/docs/release/cpp_api.html)
 

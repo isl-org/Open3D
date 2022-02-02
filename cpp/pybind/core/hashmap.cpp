@@ -26,9 +26,6 @@
 
 #include "open3d/core/hashmap/HashMap.h"
 
-#include <pybind11/cast.h>
-#include <pybind11/pytypes.h>
-
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"

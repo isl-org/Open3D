@@ -98,10 +98,10 @@ The attributes of the point cloud have different levels::
     # "normals", some internal operations that expects "normals" will not work.
     # "normals" and "colors" must have shape (N, 3) and must be on the same
     # device as the point cloud.
-    pcd.point["normals"] = o3c.core.Tensor([[0, 0, 1],
+    pcd.point["normals"] = o3d.core.Tensor([[0, 0, 1],
                                             [0, 1, 0],
                                             [1, 0, 0]], dtype, device)
-    pcd.point["normals"] = o3c.core.Tensor([[0.0, 0.0, 0.0],
+    pcd.point["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                             [0.1, 0.1, 0.1],
                                             [0.2, 0.2, 0.2]], dtype, device)
 
@@ -109,8 +109,8 @@ The attributes of the point cloud have different levels::
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the point cloud. The are no restrictions on the shape and
     # dtype, e.g.,
-    pcd.point["intensities"] = o3c.core.Tensor([0.3, 0.1, 0.4], dtype, device)
-    pcd.point["lables"] = o3c.core.Tensor([3, 1, 4], o3d.core.int32, device)
+    pcd.point["intensities"] = o3d.core.Tensor([0.3, 0.1, 0.4], dtype, device)
+    pcd.point["labels"] = o3d.core.Tensor([3, 1, 4], o3d.core.int32, device)
 )");
 
     // Constructors.

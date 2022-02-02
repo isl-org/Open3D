@@ -24,8 +24,6 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/visualization/remove_geometry.py
-
 import open3d as o3d
 import numpy as np
 import time
@@ -39,7 +37,8 @@ def visualize_non_blocking(vis, pcds):
     vis.update_renderer()
 
 
-pcd_orig = o3d.io.read_point_cloud("../../test_data/fragment.pcd")
+pcd_data = o3d.data.SamplePointCloudPCD()
+pcd_orig = o3d.io.read_point_cloud(pcd_data.path)
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 pcd_orig.transform(flip_transform)
 n_pcd = 5
