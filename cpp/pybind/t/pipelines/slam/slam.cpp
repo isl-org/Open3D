@@ -75,7 +75,7 @@ void pybind_slam_model(py::module &m) {
 
     model.def(py::init<>());
     model.def(py::init<float, int, int, core::Tensor, core::Device>(),
-              "Constructor of a TSDFVoxelGrid", "voxel_size"_a,
+              "Constructor of a VoxelBlockGrid", "voxel_size"_a,
               "block_resolution"_a = 16, " block_count"_a = 10000,
               "transformation"_a = core::Tensor::Eye(4, core::Float64,
                                                      core::Device("CPU:0")),
@@ -90,7 +90,8 @@ void pybind_slam_model(py::module &m) {
               py::call_guard<py::gil_scoped_release>(),
               "Synthesize frame from the volumetric model using ray casting.",
               "model_frame"_a, "depth_scale"_a = 1000.0, "depth_min"_a = 0.1,
-              "depth_max"_a = 3.0, "enable_color"_a = false);
+              "depth_max"_a = 3.0, "trunc_voxel_multiplier"_a = 8.0,
+              "enable_color"_a = false);
     docstring::ClassMethodDocInject(m, "Model", "synthesize_model_frame",
                                     map_shared_argument_docstrings);
 
@@ -105,21 +106,22 @@ void pybind_slam_model(py::module &m) {
     model.def("integrate", &Model::Integrate,
               py::call_guard<py::gil_scoped_release>(),
               "Integrate an input frame to a volume.", "input_frame"_a,
-              "depth_scale"_a = 1000.0, "depth_max"_a = 3.0);
+              "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
+              "trunc_voxel_multiplier"_a = 8.0);
     docstring::ClassMethodDocInject(m, "Model", "integrate",
                                     map_shared_argument_docstrings);
 
     model.def("extract_pointcloud", &Model::ExtractPointCloud,
               py::call_guard<py::gil_scoped_release>(),
               "Extract point cloud from the volumetric model.",
-              "estimated_number"_a = -1, "weight_threshold"_a = 3.0);
+              "weight_threshold"_a = 3.0, "estimated_number"_a = -1);
     docstring::ClassMethodDocInject(m, "Model", "extract_pointcloud",
                                     map_shared_argument_docstrings);
 
     model.def("extract_trianglemesh", &Model::ExtractTriangleMesh,
               py::call_guard<py::gil_scoped_release>(),
               "Extract triangle mesh from the volumetric model.",
-              "estimated_number"_a = -1, "weight_threshold"_a = 3.0);
+              "weight_threshold"_a = 3.0, "estimated_number"_a = -1);
     docstring::ClassMethodDocInject(m, "Model", "extract_trianglemesh",
                                     map_shared_argument_docstrings);
 
@@ -127,7 +129,7 @@ void pybind_slam_model(py::module &m) {
             "get_hashmap", &Model::GetHashMap,
             "Get the underlying hash map from 3D coordinates to voxel blocks.");
     model.def_readwrite("voxel_grid", &Model::voxel_grid_,
-                        "Get the maintained TSDFVoxelGrid.");
+                        "Get the maintained VoxelBlockGrid.");
     model.def_readwrite("transformation_frame_to_world",
                         &Model::T_frame_to_world_,
                         "Get the 4x4 transformation matrix from the current "

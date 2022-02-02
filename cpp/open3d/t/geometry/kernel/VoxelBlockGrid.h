@@ -80,6 +80,18 @@ void Integrate(const core::Tensor& depth,
                float depth_scale,
                float depth_max);
 
+void EstimateRange(const core::Tensor& block_keys,
+                   core::Tensor& range_minmax_map,
+                   const core::Tensor& intrinsics,
+                   const core::Tensor& extrinsics,
+                   int h,
+                   int w,
+                   int down_factor,
+                   int64_t block_resolution,
+                   float voxel_size,
+                   float depth_min,
+                   float depth_max);
+
 void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              const TensorMap& block_value_map,
              const core::Tensor& range_map,
@@ -90,11 +102,12 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              index_t w,
              index_t block_resolution,
              float voxel_size,
-             float sdf_trunc,
              float depth_scale,
              float depth_min,
              float depth_max,
-             float weight_threshold);
+             float weight_threshold,
+             float trunc_voxel_multiplier,
+             int range_map_down_factor);
 
 void ExtractPointCloud(const core::Tensor& block_indices,
                        const core::Tensor& nb_block_indices,
@@ -170,6 +183,18 @@ void IntegrateCPU(const core::Tensor& depth,
                   float depth_scale,
                   float depth_max);
 
+void EstimateRangeCPU(const core::Tensor& block_keys,
+                      core::Tensor& range_minmax_map,
+                      const core::Tensor& intrinsics,
+                      const core::Tensor& extrinsics,
+                      int h,
+                      int w,
+                      int down_factor,
+                      int64_t block_resolution,
+                      float voxel_size,
+                      float depth_min,
+                      float depth_max);
+
 template <typename tsdf_t, typename weight_t, typename color_t>
 void RayCastCPU(std::shared_ptr<core::HashMap>& hashmap,
                 const TensorMap& block_value_map,
@@ -181,11 +206,12 @@ void RayCastCPU(std::shared_ptr<core::HashMap>& hashmap,
                 index_t w,
                 index_t block_resolution,
                 float voxel_size,
-                float sdf_trunc,
                 float depth_scale,
                 float depth_min,
                 float depth_max,
-                float weight_threshold);
+                float weight_threshold,
+                float trunc_voxel_multiplier,
+                int range_map_down_factor);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
 void ExtractPointCloudCPU(const core::Tensor& block_indices,
@@ -263,6 +289,18 @@ void IntegrateCUDA(const core::Tensor& depth,
                    float depth_scale,
                    float depth_max);
 
+void EstimateRangeCUDA(const core::Tensor& block_keys,
+                       core::Tensor& range_minmax_map,
+                       const core::Tensor& intrinsics,
+                       const core::Tensor& extrinsics,
+                       int h,
+                       int w,
+                       int down_factor,
+                       int64_t block_resolution,
+                       float voxel_size,
+                       float depth_min,
+                       float depth_max);
+
 template <typename tsdf_t, typename weight_t, typename color_t>
 void RayCastCUDA(std::shared_ptr<core::HashMap>& hashmap,
                  const TensorMap& block_value_map,
@@ -274,11 +312,12 @@ void RayCastCUDA(std::shared_ptr<core::HashMap>& hashmap,
                  index_t w,
                  index_t block_resolution,
                  float voxel_size,
-                 float sdf_trunc,
                  float depth_scale,
                  float depth_min,
                  float depth_max,
-                 float weight_threshold);
+                 float weight_threshold,
+                 float trunc_voxel_multiplier,
+                 int range_map_down_factor);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
 void ExtractPointCloudCUDA(const core::Tensor& block_indices,

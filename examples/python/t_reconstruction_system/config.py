@@ -132,8 +132,11 @@ class ConfigParser(configargparse.ArgParser):
             '--voxel_size', type=float,
             help='Voxel size in meter for volumetric integration.')
         integration_parser.add(
-            '--sdf_trunc', type=float,
-            help='Truncation distance for signed distance.')
+            '--trunc_voxel_multiplier', type=float,
+            help='Truncation distance multiplier in voxel size for signed distance. For instance, --trunc_voxel_multiplier=8 with --voxel_size=0.006(m) creates a truncation distance of 0.048(m).')
+        integration_parser.add(
+            '--est_point_count', type=int,
+            help='Estimated point cloud size for surface extraction.')
         integration_parser.add(
             '--block_count', type=int,
             help='Pre-allocated voxel block count for volumetric integration.')

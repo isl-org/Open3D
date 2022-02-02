@@ -567,7 +567,7 @@ geometry::RGBDImage PointCloud::ProjectToRGBDImage(
     core::Tensor depth =
             core::Tensor::Zeros({height, width, 1}, core::Float32, device_);
     core::Tensor color =
-            core::Tensor::Zeros({height, width, 3}, core::UInt8, device_);
+            core::Tensor::Zeros({height, width, 3}, core::Float32, device_);
 
     // Assume point colors are Float32 for kernel dispatch
     core::Tensor point_colors = GetPointColors();

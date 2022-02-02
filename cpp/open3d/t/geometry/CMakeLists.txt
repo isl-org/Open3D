@@ -10,7 +10,6 @@ target_sources(tgeometry PRIVATE
     RGBDImage.cpp
     TensorMap.cpp
     TriangleMesh.cpp
-    TSDFVoxelGrid.cpp
     VoxelBlockGrid.cpp
 )
 
