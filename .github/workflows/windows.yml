@@ -53,11 +53,6 @@ jobs:
       BUILD_WEBRTC: ${{ ( matrix.SHARED == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
 
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
-
       - name: Disk space used
         run: Get-PSDrive
 

@@ -29,11 +29,6 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
-
       - name: Checkout Open3D source code
         uses: actions/checkout@v2
 

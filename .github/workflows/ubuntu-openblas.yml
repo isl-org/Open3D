@@ -21,10 +21,6 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
       - name: Checkout source code
         uses: actions/checkout@v2
       - name: Maximize build space
@@ -64,10 +60,6 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
       - name: Checkout source code
         uses: actions/checkout@v2
       - name: Maximize build space

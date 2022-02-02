@@ -36,11 +36,6 @@ jobs:
       BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
       LOW_MEM_USAGE: ON
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
-
       - name: Checkout source code
         uses: actions/checkout@v2
       - name: Setup cache
