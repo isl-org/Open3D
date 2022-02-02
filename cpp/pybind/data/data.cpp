@@ -90,7 +90,7 @@ void pybind_demo_icp_pointclouds(py::module& m) {
                std::shared_ptr<DemoICPPointClouds>, SingleDownloadDataset>
             demo_icp_pointclouds(m, "DemoICPPointClouds",
                                  "Data class for `DemoICPPointClouds` contains "
-                                 "3 `pointclouds` of `pcd binary` format. This "
+                                 "3 point clouds of binary PCD format. This "
                                  "dataset is used in Open3D for ICP demo.");
     demo_icp_pointclouds
             .def(py::init<const std::string&, const std::string&>(),
@@ -114,7 +114,7 @@ void pybind_demo_colored_icp_pointclouds(py::module& m) {
             demo_colored_icp_pointclouds(
                     m, "DemoColoredICPPointClouds",
                     "Data class for `DemoColoredICPPointClouds` contains "
-                    "2 `pointclouds` of `ply` format. This dataset is used in "
+                    "2 point clouds of `ply` format. This dataset is used in "
                     "Open3D for colored ICP demo.");
     demo_colored_icp_pointclouds
             .def(py::init<const std::string&, const std::string&>(),
@@ -495,7 +495,7 @@ void pybind_redwood_living_room_pointclouds(py::module& m) {
             redwood_living_room_pointclouds(
                     m, "RedwoodLivingRoomPointClouds",
                     "Dataset class for `RedwoodLivingRoomPointClouds` contains "
-                    "57 `pointclouds` of `ply binary` format.");
+                    "57 point clouds of binary PLY format.");
     redwood_living_room_pointclouds
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "RedwoodLivingRoomPointClouds",
@@ -520,7 +520,7 @@ void pybind_redwood_office_pointclouds(py::module& m) {
             redwood_office_pointclouds(
                     m, "RedwoodOfficePointClouds",
                     "Dataset class for `RedwoodOfficePointClouds` contains 53 "
-                    "`pointclouds` of `ply binary` format.");
+                    "point clouds of binary PLY format.");
     redwood_office_pointclouds
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "RedwoodOfficePointClouds", "data_root"_a = "")

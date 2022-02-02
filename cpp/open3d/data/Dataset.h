@@ -30,8 +30,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "open3d/utility/Logging.h"
-
 namespace open3d {
 namespace data {
 
@@ -125,16 +123,15 @@ public:
 };
 
 /// \class DemoICPPointClouds
-/// \brief Data class for `DemoICPPointClouds` contains 3 `pointclouds` of
-/// `pcd binary` format. This data is used in Open3D for ICP demo.
+/// \brief Data class for `DemoICPPointClouds` contains 3 point clouds of binary
+/// PCD format. This data is used in Open3D for ICP demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoICPPointClouds : public SingleDownloadDataset {
 public:
     DemoICPPointClouds(const std::string& prefix = "DemoICPPointClouds",
                        const std::string& data_root = "");
 
-    /// \brief Returns list of 3 point cloud paths. Use `GetPaths()[0]`,
-    /// `GetPaths()[1]`, and `GetPaths()[2]` to access the paths.
+    /// \brief Returns list of 3 point cloud paths.
     std::vector<std::string> GetPaths() const { return paths_; }
     /// \brief Returns path to the point cloud at index. Use `GetPaths(0)`,
     /// `GetPaths(1)`, and `GetPaths(2)` to access the paths.
@@ -147,7 +144,7 @@ private:
 
 /// \class DemoColoredICPPointClouds
 /// \brief Data class for `DemoColoredICPPointClouds` contains 2
-/// `pointclouds` of `ply` format. This data is used in Open3D for
+/// point clouds of PLY format. This data is used in Open3D for
 /// Colored-ICP demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoColoredICPPointClouds : public SingleDownloadDataset {
@@ -156,8 +153,7 @@ public:
             const std::string& prefix = "DemoColoredICPPointClouds",
             const std::string& data_root = "");
 
-    /// \brief Returns list of list of 2 point cloud paths. Use `GetPaths()[0]`,
-    /// and `GetPaths()[1]` to access the paths.
+    /// \brief Returns list of list of 2 point cloud paths.
     std::vector<std::string> GetPaths() const { return paths_; }
     /// \brief Returns path to the point cloud at index. Use `GetPaths(0)`, and
     /// `GetPaths(1)` to access the paths.
@@ -201,21 +197,17 @@ public:
             const std::string& prefix = "DemoPointCloudFeatureMatching",
             const std::string& data_root = "");
 
-    /// \brief Returns list of paths to point clouds, of size 2. Use
-    /// `GetPointCloudPaths()[0]`, and `GetPointCloudPaths()[1]` to access the
-    /// paths.
+    /// \brief Returns list of paths to point clouds, of size 2.
     std::vector<std::string> GetPointCloudPaths() const {
         return pointcloud_paths_;
     }
     /// \brief Returns list of paths to saved FPFH features binary for point
-    /// clouds, respectively, of size 2. Use `GetFPFHFeaturePaths()[0]`, and
-    /// `GetFPFHFeaturePaths()[1]` to access the paths.
+    /// clouds, respectively, of size 2.
     std::vector<std::string> GetFPFHFeaturePaths() const {
         return fpfh_feature_paths_;
     }
     /// \brief Returns list of paths to saved L32D features binary for point
-    /// clouds, respectively, of size 2. Use `GetL32DFeaturePaths()[0]`, and
-    /// `GetL32DFeaturePaths()[1]` to access the paths.
+    /// clouds, respectively, of size 2.
     std::vector<std::string> GetL32DFeaturePaths() const {
         return l32d_feature_paths_;
     }
@@ -281,11 +273,11 @@ public:
     SamplePointCloudPLY(const std::string& prefix = "SamplePointCloudPLY",
                         const std::string& data_root = "");
 
-    /// \brief Returns path to the `ply` format point cloud.
+    /// \brief Returns path to the PLY format point cloud.
     std::string GetPath() const { return path_; };
 
 private:
-    /// Path to the `ply` format point cloud.
+    /// Path to the PLY format point cloud.
     std::string path_;
 };
 
@@ -354,21 +346,15 @@ private:
 
 /// \class SampleRGBDDatasetICL
 /// \brief Data class for `SampleRGBDDatasetICL` contains a sample set of 5
-/// color and depth images from ICL-NUIM RGBD dataset living-room1. It also
-/// contains example `camera trajectory log`, `odometry log`, `rgbd match`, and
-/// `point cloud reconstruction using TSDF`.
+/// color and depth images from ICL-NUIM RGBD dataset living-room1.
 class SampleRGBDDatasetICL : public SingleDownloadDataset {
 public:
     SampleRGBDDatasetICL(const std::string& prefix = "SampleRGBDDatasetICL",
                          const std::string& data_root = "");
 
-    /// \brief Returns List of paths to color image samples of size 5. Use
-    /// `GetColorPaths()[0]`, `GetColorPaths()[1]` ... `GetColorPaths()[4]` to
-    /// access the paths.
+    /// \brief Returns List of paths to color image samples of size 5.
     std::vector<std::string> GetColorPaths() const { return color_paths_; };
-    /// \brief Returns List of paths to depth image samples of size 5. Use
-    /// `GetDepthPaths()[0]`, `GetDepthPaths()[1]` ... `GetDepthPaths()[4]` to
-    /// access the paths.
+    /// \brief Returns List of paths to depth image samples of size 5.
     std::vector<std::string> GetDepthPaths() const { return depth_paths_; };
 
     /// \brief Returns path to camera trajectory log file `trajectory.log`.
@@ -398,22 +384,16 @@ private:
 
 /// \class SampleFountainRGBDDataset
 /// \brief Data class for `SampleFountainRGBDDataset` contains a sample set of
-/// 33 color and depth images from the `Fountain RGBD dataset`. It also
-/// contains `camera poses at keyframes log` and `mesh reconstruction`. It is
-/// used in demo of `Color Map Optimization`.
+/// 33 color and depth images from the `Fountain RGBD dataset`.
 class SampleFountainRGBDDataset : public SingleDownloadDataset {
 public:
     SampleFountainRGBDDataset(
             const std::string& prefix = "SampleFountainRGBDDataset",
             const std::string& data_root = "");
 
-    /// \brief Returns List of paths to color image samples of size 33. Use
-    /// `GetColorPaths()[0]`, `GetColorPaths()[1]` ... `GetColorPaths()[32]` to
-    /// access the paths.
+    /// \brief Returns List of paths to color image samples of size 33.
     std::vector<std::string> GetColorPaths() const { return color_paths_; };
-    /// \brief Returns List of paths to depth image samples of size 5. Use
-    /// `GetDepthPaths()[0]`, `GetDepthPaths()[1]` ... `GetDepthPaths()[4]` to
-    /// access the paths.
+    /// \brief Returns List of paths to depth image samples of size 5.
     std::vector<std::string> GetDepthPaths() const { return depth_paths_; };
     /// \brief Returns path to camera poses at keyfragmes log file `key.log`.
     std::string GetKeyframePosesLogPath() const {
@@ -508,8 +488,8 @@ private:
 };
 
 /// \class RedwoodLivingRoomPointClouds
-/// \brief Dataset class for `RedwoodLivingRoomPointClouds` contains 57
-/// `pointclouds` of `ply binary` format.
+/// \brief Dataset class for `RedwoodLivingRoomPointClouds` contains 57 point
+/// clouds of binary PLY format.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class RedwoodLivingRoomPointClouds : public SingleDownloadDataset {
 public:
@@ -518,11 +498,9 @@ public:
             const std::string& data_root = "");
 
     /// \brief Returns list of paths to ply point-cloud fragments of size 57.
-    /// Use `GetPaths()[0]`, `GetPaths()[1]` ... `GetPaths()[56]` to access the
-    /// paths.
     std::vector<std::string> GetPaths() const { return paths_; }
     /// \brief Returns path to the ply point-cloud fragment at index (from 0 to
-    /// 57). Use `GetPaths(0)`, `GetPaths(1)` ... `GetPaths(56)` to access the
+    /// 56). Use `GetPaths(0)`, `GetPaths(1)` ... `GetPaths(56)` to access the
     /// paths.
     std::string GetPaths(size_t index) const;
 
@@ -532,8 +510,8 @@ private:
 };
 
 /// \class RedwoodOfficePointClouds
-/// \brief Dataset class for `RedwoodOfficePointClouds` contains 53
-/// `pointclouds` of `ply binary` format.
+/// \brief Dataset class for `RedwoodOfficePointClouds` contains 53 point clouds
+/// of binary PLY format.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class RedwoodOfficePointClouds : public SingleDownloadDataset {
 public:
@@ -541,12 +519,10 @@ public:
             const std::string& prefix = "RedwoodOfficePointClouds",
             const std::string& data_root = "");
 
-    /// \brief Returns list of paths to ply point-cloud fragments of size 53.
-    /// Use `GetPaths()[0]`, `GetPaths()[1]` ... `GetPaths()[52]` to access the
-    /// paths.
+    /// \brief Returns list of paths to ply point-cloud fragments of size 52.
     std::vector<std::string> GetPaths() const { return paths_; }
     /// \brief Returns path to the ply point-cloud fragment at index (from 0 to
-    /// 53). Use `GetPaths(0)`, `GetPaths(1)` ... `GetPaths(52)` to access the
+    /// 52). Use `GetPaths(0)`, `GetPaths(1)` ... `GetPaths(52)` to access the
     /// paths.
     std::string GetPaths(size_t index) const;
 
