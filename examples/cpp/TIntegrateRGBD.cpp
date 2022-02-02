@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
                      time_total / n, time_raycasting / n, time_int / n);
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
-        auto mesh = voxel_grid.ExtractTriangleMesh(-1, 0);
+        auto mesh = voxel_grid.ExtractTriangleMesh(3.0f);
         auto mesh_legacy =
                 std::make_shared<geometry::TriangleMesh>(mesh.ToLegacy());
         open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
@@ -212,7 +212,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
-        auto pcd = voxel_grid.ExtractPointCloud(-1, 3.0f);
+        auto pcd = voxel_grid.ExtractPointCloud(3.0f);
         auto pcd_legacy =
                 std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
         open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",

@@ -39,8 +39,10 @@ Pip (PyPI)
     pip install open3d
 
 .. note::
-   We recommend using ``pip`` version >=20.3 for better platform compatibility
-   checking in Linux.
+   Please upgrade your ``pip`` to a version >=20.3 to install Open3D in Linux,
+   e.g. with
+
+        ``pip install -U pip>=20.3``
 
 .. note::
     In general, we recommend using a
@@ -85,11 +87,14 @@ version (``HEAD`` of ``master`` branch):
       - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
       - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-win_amd64.whl>`__
 
-Please use these links from the `latest version of this page <http://www.open3d.org/docs/latest/getting_started.html>`__ only. For example, to install the latest development version on Linux for Python 3.9:
+Please use these links from the `latest version of this page
+<http://www.open3d.org/docs/latest/getting_started.html>`__ only. For example,
+to install the latest development version on Linux for Python 3.9:
 
 .. code-block:: bash
 
-    pip install --user --pre https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-linux_x86_64.whl
+    pip install --user --pre \
+        https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-linux_x86_64.whl
 
 .. note::
    The development wheels for Linux are named according to PEP600. Please
@@ -111,32 +116,6 @@ Conda
     setup Conda, please see
     `the official documentation <https://conda.io/projects/conda/en/latest/user-guide/install/index.html>`_.
 
-
-Docker
-------
-
-If you want to install the Open3D Python packages in a docker container you will
-need to install a minimum set of dependencies. For more details please see `this issue <https://github.com/isl-org/Open3D/issues/3388>`__.
-
-A minimal ``Dockerfile`` looks like this:
-
-.. code-block:: dockerfile
-
-    # This could also be another ubuntu or debian based distributions
-    FROM ubuntu:20.04
-
-    # Install Open3D system dependencies and pip
-    RUN apt-get update && apt-get install --no-install-recommends -y \
-        libgl1 \
-        libgomp1 \
-        python3-pip \
-        && rm -rf /var/lib/apt/lists/*
-
-    # Install Open3D from the pypi repositories
-    RUN python3 -m pip install --no-cache-dir --upgrade open3d
-
-.. note:: If you need ``CUDA`` support, follow these `directions.
-    <https://docs.docker.com/config/containers/resource_constraints/#gpu>`__
 
 Try it
 ------
@@ -170,7 +149,7 @@ all Python examples.
 
 .. note:: Open3D's Python tutorial utilizes some external packages: ``numpy``,
     ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction
-    system. Please read util/install-deps-python.sh for installing these
+    system. Please read ``util/install-deps-python.sh`` for installing these
     packages.
 
 
@@ -191,7 +170,7 @@ provided here [#]_:
     .. hlist::
         :columns: 2
 
-        * `x86_64 (CXX11 ABI [#]_) <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-cxx11-abi-@OPEN3D_VERSION_FULL@.tar.xz>`__
+        * `x86_64 (CXX11 ABI) <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-cxx11-abi-@OPEN3D_VERSION_FULL@.tar.xz>`__
         * `x86_64 (CXX11 ABI) with CUDA 11.x <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-cxx11-abi-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
         * `x86_64 (pre CXX11 ABI) <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-pre-cxx11-abi-@OPEN3D_VERSION_FULL@.tar.xz>`__
         * `x86_64 (pre CXX11 ABI) with CUDA 11.x <https://storage.googleapis.com/open3d-releases-master/devel/open3d-devel-linux-x86_64-pre-cxx11-abi-cuda-@OPEN3D_VERSION_FULL@.tar.xz>`__
@@ -211,8 +190,9 @@ provided here [#]_:
 
 .. [#] Please use these links from the `latest version of this page <http://www.open3d.org/docs/latest/getting_started.html>`__
     only.
-.. [#] To check the `glibc` version on your system, run :code:`ldd --version`
-.. [#] In Linux, do not link code with different CXX11 ABIs, since this will
+.. [#] To check the `glibc` version on your system, run :code:`ldd --version`.
+
+.. note:: In Linux, do not link code with different CXX11 ABIs, since this will
     most likely cause linker errors or crashes. Most system libraries in recent
     Linux versions (e.g. if the OS came with GCC versions 5+) use the CXX11 ABI,
     while PyTorch and Tensorflow libraries typically use the pre CXX11 ABI.
@@ -224,31 +204,32 @@ Try it
 ------
 
 Extract the archive and move the contents to a local folder (such as
-``~/Documents/Open3D_install``):
+``$HOME/Documents/Open3D_install``):
 
-.. code-block:: bash
+.. code-block::
 
-    Open3D_install
-    ├── include
-    │   └── open3d
-    │       ├── core
-    │       ├── ...
-    │       ├── Open3DConfig.h
-    │       ├── Open3D.h
-    │       ├── ...
-    └── lib
-        ├── cmake
-        │   └── Open3D
-        ├── libOpen3D.so
-        ├── open3d_tf_ops.so
-        └── open3d_torch_ops.so
+    Linux / MacOSX:                       Windows:
+    Open3D_install                        Open3D_install
+    ├── include                           ├── bin
+    │   └── open3d                        │   └── Open3D.dll
+    │       ├── core                      ├── CMake
+    │       ├── ...                       │   ├── Open3DConfig.cmake
+    │       ├── Open3DConfig.h            │   ├── ...
+    │       ├── Open3D.h                  ├── include
+    │       ├── ...                       │   └── open3d
+    └── lib                               │       ├── core
+        ├── cmake                         │       ├── ...
+        │   └── Open3D                    │       ├── Open3DConfig.h
+        │        ├── ...                  │       ├── Open3D.h
+        ├── libOpen3D.so                  │       ├── ...
+        ├── open3d_tf_ops.so              └── lib
+        └── open3d_torch_ops.so               └── Open3D.lib
 
 
-In Windows, you will have an additional ``bin`` folder with ``Open3D.dll``. Some
-files may be absent in the case of unsupported functionality. To use Open3D with
-your programs through `cmake`, add ``-D Open3D_ROOT=~/Documents/Open3D_install``
-to your CMake configure command line. See the following example CMake projects for
-reference:
+Some files may be absent in the case of unsupported functionality. To use Open3D
+with your programs through `cmake`, add ``-D
+Open3D_ROOT=$HOME/Documents/Open3D_install`` to your CMake configure command
+line. See the following example CMake projects for reference:
 
 * `Find Pre-Installed Open3D Package in CMake <https://github.com/isl-org/open3d-cmake-find-package>`__
 * `Use Open3D as a CMake External Project <https://github.com/isl-org/open3d-cmake-external-project>`__

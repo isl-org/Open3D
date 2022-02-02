@@ -14,10 +14,13 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   NPROC: 2
   GCE_CLI_GHA_VERSION: "302.0.0"
-
 
 jobs:
   ubuntu:
@@ -37,11 +40,6 @@ jobs:
       BUILD_PYTORCH_OPS: ${{ matrix.MLOPS }}
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
-
       - name: Checkout source code
         uses: actions/checkout@v2
 

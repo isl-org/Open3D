@@ -12,6 +12,10 @@ on:
         required: false
         default: 'e1a98941d3ab10549be6d82d0686bb0fb91ec903' # Date: Wed Apr 7 21:35:29 2021 +0000
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   WEBRTC_COMMIT: ${{ github.event.inputs.webrtc_commit }}
   DEPOT_TOOLS_COMMIT: ${{ github.event.inputs.depot_tools_commit }}
@@ -67,7 +71,6 @@ jobs:
                  webrtc_*.tar.gz
                  checksum_*.txt
           if-no-files-found: error
-
 
   Windows:
     # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md

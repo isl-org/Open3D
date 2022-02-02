@@ -312,6 +312,196 @@ void IntegrateCPU
 #endif
 }
 
+#if defined(__CUDACC__)
+void EstimateRangeCUDA
+#else
+void EstimateRangeCPU
+#endif
+        (const core::Tensor& block_keys,
+         core::Tensor& range_minmax_map,
+         const core::Tensor& intrinsics,
+         const core::Tensor& extrinsics,
+         int h,
+         int w,
+         int down_factor,
+         int64_t block_resolution,
+         float voxel_size,
+         float depth_min,
+         float depth_max) {
+
+    // TODO(wei): reserve it in a reusable buffer
+
+    // Every 2 channels: (min, max)
+    int h_down = h / down_factor;
+    int w_down = w / down_factor;
+    range_minmax_map = core::Tensor({h_down, w_down, 2}, core::Float32,
+                                    block_keys.GetDevice());
+    NDArrayIndexer range_map_indexer(range_minmax_map, 2);
+
+    // Every 6 channels: (v_min, u_min, v_max, u_max, z_min, z_max)
+    const int fragment_size = 16;
+    const int frag_buffer_size = 65535;
+
+    // TODO(wei): explicit buffer
+    core::Tensor fragment_buffer = core::Tensor(
+            {frag_buffer_size, 6}, core::Float32, block_keys.GetDevice());
+
+    NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
+    NDArrayIndexer block_keys_indexer(block_keys, 1);
+    TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
+#if defined(__CUDACC__)
+    core::Tensor count(std::vector<int>{0}, {1}, core::Int32,
+                       block_keys.GetDevice());
+    int* count_ptr = count.GetDataPtr<int>();
+#else
+    std::atomic<int> count_atomic(0);
+    std::atomic<int>* count_ptr = &count_atomic;
+#endif
+
+#ifndef __CUDACC__
+    using std::max;
+    using std::min;
+#endif
+
+    // Pass 0: iterate over blocks, fill-in an rendering fragment array
+    core::ParallelFor(
+            block_keys.GetDevice(), block_keys.GetLength(),
+            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int* key = block_keys_indexer.GetDataPtr<int>(workload_idx);
+
+                int u_min = w_down - 1, v_min = h_down - 1, u_max = 0,
+                    v_max = 0;
+                float z_min = depth_max, z_max = depth_min;
+
+                float xc, yc, zc, u, v;
+
+                // Project 8 corners to low-res image and form a rectangle
+                for (int i = 0; i < 8; ++i) {
+                    float xw = (key[0] + ((i & 1) > 0)) * block_resolution *
+                               voxel_size;
+                    float yw = (key[1] + ((i & 2) > 0)) * block_resolution *
+                               voxel_size;
+                    float zw = (key[2] + ((i & 4) > 0)) * block_resolution *
+                               voxel_size;
+
+                    w2c_transform_indexer.RigidTransform(xw, yw, zw, &xc, &yc,
+                                                         &zc);
+                    if (zc <= 0) continue;
+
+                    // Project to the down sampled image buffer
+                    w2c_transform_indexer.Project(xc, yc, zc, &u, &v);
+                    u /= down_factor;
+                    v /= down_factor;
+
+                    v_min = min(static_cast<int>(floorf(v)), v_min);
+                    v_max = max(static_cast<int>(ceilf(v)), v_max);
+
+                    u_min = min(static_cast<int>(floorf(u)), u_min);
+                    u_max = max(static_cast<int>(ceilf(u)), u_max);
+
+                    z_min = min(z_min, zc);
+                    z_max = max(z_max, zc);
+                }
+
+                v_min = max(0, v_min);
+                v_max = min(h_down - 1, v_max);
+
+                u_min = max(0, u_min);
+                u_max = min(w_down - 1, u_max);
+
+                if (v_min >= v_max || u_min >= u_max || z_min >= z_max) return;
+
+                // Divide the rectangle into small 16x16 fragments
+                int frag_v_count =
+                        ceilf(float(v_max - v_min + 1) / float(fragment_size));
+                int frag_u_count =
+                        ceilf(float(u_max - u_min + 1) / float(fragment_size));
+
+                int frag_count = frag_v_count * frag_u_count;
+                int frag_count_start = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                int frag_count_end = frag_count_start + frag_count;
+                if (frag_count_end >= frag_buffer_size) {
+                    printf("Fragment count exceeding buffer size, abort!\n");
+                }
+
+                int offset = 0;
+                for (int frag_v = 0; frag_v < frag_v_count; ++frag_v) {
+                    for (int frag_u = 0; frag_u < frag_u_count;
+                         ++frag_u, ++offset) {
+                        float* frag_ptr = frag_buffer_indexer.GetDataPtr<float>(
+                                frag_count_start + offset);
+                        // zmin, zmax
+                        frag_ptr[0] = z_min;
+                        frag_ptr[1] = z_max;
+
+                        // vmin, umin
+                        frag_ptr[2] = v_min + frag_v * fragment_size;
+                        frag_ptr[3] = u_min + frag_u * fragment_size;
+
+                        // vmax, umax
+                        frag_ptr[4] = min(frag_ptr[2] + fragment_size - 1,
+                                          static_cast<float>(v_max));
+                        frag_ptr[5] = min(frag_ptr[3] + fragment_size - 1,
+                                          static_cast<float>(u_max));
+                    }
+                }
+            });
+#if defined(__CUDACC__)
+    int frag_count = count[0].Item<int>();
+#else
+    int frag_count = (*count_ptr).load();
+#endif
+
+    // Pass 0.5: Fill in range map to prepare for atomic min/max
+    core::ParallelFor(block_keys.GetDevice(), h_down * w_down,
+                      [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                          int v = workload_idx / w_down;
+                          int u = workload_idx % w_down;
+                          float* range_ptr =
+                                  range_map_indexer.GetDataPtr<float>(u, v);
+                          range_ptr[0] = depth_max;
+                          range_ptr[1] = depth_min;
+                      });
+
+    // Pass 1: iterate over rendering fragment array, fill-in range
+    core::ParallelFor(
+            block_keys.GetDevice(), frag_count * fragment_size * fragment_size,
+            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int frag_idx = workload_idx / (fragment_size * fragment_size);
+                int local_idx = workload_idx % (fragment_size * fragment_size);
+                int dv = local_idx / fragment_size;
+                int du = local_idx % fragment_size;
+
+                float* frag_ptr =
+                        frag_buffer_indexer.GetDataPtr<float>(frag_idx);
+                int v_min = static_cast<int>(frag_ptr[2]);
+                int u_min = static_cast<int>(frag_ptr[3]);
+                int v_max = static_cast<int>(frag_ptr[4]);
+                int u_max = static_cast<int>(frag_ptr[5]);
+
+                int v = v_min + dv;
+                int u = u_min + du;
+                if (v > v_max || u > u_max) return;
+
+                float z_min = frag_ptr[0];
+                float z_max = frag_ptr[1];
+                float* range_ptr = range_map_indexer.GetDataPtr<float>(u, v);
+#ifdef __CUDACC__
+                atomicMinf(&(range_ptr[0]), z_min);
+                atomicMaxf(&(range_ptr[1]), z_max);
+#else
+#pragma omp critical(EstimateRangeCPU)
+                {
+                    range_ptr[0] = min(z_min, range_ptr[0]);
+                    range_ptr[1] = max(z_max, range_ptr[1]);
+                }
+#endif
+            });
+#if defined(__CUDACC__)
+    core::cuda::Synchronize();
+#endif
+}
+
 struct MiniVecCache {
     index_t x;
     index_t y;
@@ -349,11 +539,12 @@ void RayCastCPU
          index_t w,
          index_t block_resolution,
          float voxel_size,
-         float sdf_trunc,
          float depth_scale,
          float depth_min,
          float depth_max,
-         float weight_threshold) {
+         float weight_threshold,
+         float trunc_voxel_multiplier,
+         int range_map_down_factor) {
     using Key = utility::MiniVec<index_t, 3>;
     using Hash = utility::MiniVecHash<index_t, 3>;
     using Eq = utility::MiniVecEq<index_t, 3>;
@@ -547,7 +738,8 @@ void RayCastCPU
         index_t y = workload_idx / cols;
         index_t x = workload_idx % cols;
 
-        const float* range = range_indexer.GetDataPtr<float>(x / 8, y / 8);
+        const float* range = range_indexer.GetDataPtr<float>(
+                x / range_map_down_factor, y / range_map_down_factor);
 
         float* depth_ptr = nullptr;
         float* vertex_ptr = nullptr;
@@ -657,6 +849,7 @@ void RayCastCPU
 
         float tsdf_prev = -1.0f;
         float tsdf = 1.0;
+        float sdf_trunc = voxel_size * trunc_voxel_multiplier;
         float w = 0.0;
 
         // Camera origin
