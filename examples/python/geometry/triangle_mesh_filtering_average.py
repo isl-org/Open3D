@@ -27,13 +27,6 @@
 from numpy.random.mtrand import laplace
 import open3d as o3d
 import numpy as np
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 
 def average_filtering():

@@ -84,8 +84,8 @@ def nyu_dataset():
 def redwood_dataset():
     print("Read ICL dataset")
     icl_data = o3d.data.SampleRGBDDatasetICL()
-    color_raw = o3d.io.read_image(icl_data.depth_paths[0])
-    depth_raw = o3d.io.read_image(icl_data.color_paths[0])
+    color_raw = o3d.io.read_image(icl_data.color_paths[0])
+    depth_raw = o3d.io.read_image(icl_data.depth_paths[0])
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
 
@@ -96,8 +96,8 @@ def redwood_dataset():
 def sun_dataset():
     print("Read SUN dataset")
     sun_data = o3d.data.SampleRGBDImageSUN()
-    color_raw = o3d.io.read_image(sun_data.depth_path)
-    depth_raw = o3d.io.read_image(sun_data.color_path)
+    color_raw = o3d.io.read_image(sun_data.color_path)
+    depth_raw = o3d.io.read_image(sun_data.depth_path)
     rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
 
@@ -108,8 +108,8 @@ def sun_dataset():
 def tum_dataset():
     print("Read TUM dataset")
     tum_data = o3d.data.SampleRGBDImageTUM()
-    color_raw = o3d.io.read_image(tum_data.depth_path)
-    depth_raw = o3d.io.read_image(tum_data.color_path)
+    color_raw = o3d.io.read_image(tum_data.color_path)
+    depth_raw = o3d.io.read_image(tum_data.depth_path)
     rgbd_image = o3d.geometry.RGBDImage.create_from_tum_format(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
 
@@ -118,7 +118,7 @@ def tum_dataset():
 
 
 if __name__ == "__main__":
-    # nyu_dataset()
+    nyu_dataset()
     redwood_dataset()
     sun_dataset()
     tum_dataset()

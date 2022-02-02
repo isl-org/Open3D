@@ -65,3 +65,4 @@ if __name__ == "__main__":
         if save_image:
             vis.capture_screen_image("temp_%04d.jpg" % i)
     vis.destroy_window()
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)

@@ -70,7 +70,7 @@ def preprocess(model):
 def voxel_carving(mesh, cubic_size, voxel_resolution, w=300, h=300):
     mesh.compute_vertex_normals()
     camera_sphere = o3d.geometry.TriangleMesh.create_sphere(radius=1.0,
-                                                            resolution=20)
+                                                            resolution=10)
 
     # Setup dense voxel grid.
     voxel_carving = o3d.geometry.VoxelGrid.create_dense(

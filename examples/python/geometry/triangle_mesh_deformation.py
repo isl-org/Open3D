@@ -71,7 +71,8 @@ def problem1():
 
 
 def problem2():
-    mesh = o3dex.get_armadillo_mesh()
+    armadillo_data = o3d.data.ArmadilloMesh()
+    mesh = o3d.io.read_triangle_mesh(armadillo_data.path)
     vertices = np.asarray(mesh.vertices)
     static_ids = [idx for idx in np.where(vertices[:, 1] < -30)[0]]
     static_positions = []
@@ -102,3 +103,5 @@ if __name__ == "__main__":
         handles.points = constraint_pos
         handles.paint_uniform_color((0, 1, 0))
         o3d.visualization.draw_geometries([mesh, mesh_prime, handles])
+
+    o3d.utility.set_verbosity_level(o3d.utility.Info)
