@@ -27,16 +27,13 @@
 import open3d as o3d
 import numpy as np
 import copy
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
-    mesh = o3dex.get_bunny_mesh().subdivide_midpoint(number_of_iterations=2)
+    bunny = o3d.data.BunnyMesh()
+    mesh = o3d.io.read_triangle_mesh(bunny.path)
+    mesh.compute_vertex_normals()
+
+    mesh = mesh.subdivide_midpoint(number_of_iterations=2)
     vert = np.asarray(mesh.vertices)
     min_vert, max_vert = vert.min(axis=0), vert.max(axis=0)
     for _ in range(30):

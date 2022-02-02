@@ -29,10 +29,6 @@
 import numpy as np
 import copy
 import open3d as o3d
-import os
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 
 def demo_crop_geometry():
@@ -45,8 +41,8 @@ def demo_crop_geometry():
     print("   or use ctrl + left click for polygon selection")
     print("4) Press 'C' to get a selected geometry and to save it")
     print("5) Press 'F' to switch to freeview mode")
-    pcd = o3d.io.read_point_cloud(
-        os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
+    pcd_data = o3d.data.DemoICPPointClouds()
+    pcd = o3d.io.read_point_cloud(pcd_data.paths[0])
     o3d.visualization.draw_geometries_with_editing([pcd])
 
 
@@ -77,10 +73,9 @@ def pick_points(pcd):
 
 def demo_manual_registration():
     print("Demo for manual ICP")
-    source = o3d.io.read_point_cloud(
-        os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
-    target = o3d.io.read_point_cloud(
-        os.path.join(test_data_path, 'ICP', 'cloud_bin_2.pcd'))
+    pcd_data = o3d.data.DemoICPPointClouds()
+    source = o3d.io.read_point_cloud(pcd_data.paths[0])
+    target = o3d.io.read_point_cloud(pcd_data.paths[2])
     print("Visualization of two point clouds before manual alignment")
     draw_registration_result(source, target, np.identity(4))
 

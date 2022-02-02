@@ -25,20 +25,15 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import numpy as np
-import sys
-import os
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
 
     print("Displaying pointcloud with convex hull ...")
-    pcl = o3dex.get_bunny_mesh().sample_points_poisson_disk(
-        number_of_points=10000)
+    bunny = o3d.data.BunnyMesh()
+    mesh = o3d.io.read_triangle_mesh(bunny.path)
+    mesh.compute_vertex_normals()
+
+    pcl = mesh.sample_points_poisson_disk(number_of_points=10000)
     hull, _ = pcl.compute_convex_hull()
     hull_ls = o3d.geometry.LineSet.create_from_triangle_mesh(hull)
     hull_ls.paint_uniform_color((1, 0, 0))

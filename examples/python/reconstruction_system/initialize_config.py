@@ -32,7 +32,7 @@ import sys
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from open3d_example import check_folder_structure, extract_rgbd_frames
+from open3d_example import extract_rgbd_frames
 
 
 def set_default_value(config, key, value):

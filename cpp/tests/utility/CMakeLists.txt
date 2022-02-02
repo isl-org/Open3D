@@ -1,4 +1,6 @@
 target_sources(tests PRIVATE
+    Download.cpp
+    Extract.cpp
     Eigen.cpp
     FileSystem.cpp
     Helper.cpp

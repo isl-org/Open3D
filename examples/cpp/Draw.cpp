@@ -100,16 +100,9 @@ void Actions() {
     const char *RESULT_NAME = "Result (Poisson reconstruction)";
     const char *TRUTH_NAME = "Ground truth";
 
+    data::BunnyMesh bunny_data;
     auto bunny = std::make_shared<geometry::TriangleMesh>();
-    io::ReadTriangleMesh(TEST_DIR + "/Bunny.ply", *bunny);
-    if (bunny->vertices_.empty()) {
-        utility::LogError(
-                "Please download the Standford Bunny dataset using:\n"
-                "   cd <open3d_dir>/examples/python\n"
-                "   python -c 'from open3d_example import *; "
-                "get_bunny_mesh()'");
-        return;
-    }
+    io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
 
     bunny->PaintUniformColor({1, 0.75, 0});
     bunny->ComputeVertexNormals();
@@ -183,19 +176,19 @@ void Selections() {
               << std::endl;
     std::cout << "            three points from the target." << std::endl;
 
-    data::dataset::SampleICPPointClouds sample_icp_pointclouds;
+    data::DemoICPPointClouds demo_icp_pointclouds;
     auto source = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud(sample_icp_pointclouds.GetPaths(0), *source);
+    io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *source);
     if (source->points_.empty()) {
         utility::LogError("Could not open {}",
-                          sample_icp_pointclouds.GetPaths(0));
+                          demo_icp_pointclouds.GetPaths(0));
         return;
     }
     auto target = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud(sample_icp_pointclouds.GetPaths(1), *target);
+    io::ReadPointCloud(demo_icp_pointclouds.GetPaths(1), *target);
     if (target->points_.empty()) {
         utility::LogError("Could not open {}",
-                          sample_icp_pointclouds.GetPaths(1));
+                          demo_icp_pointclouds.GetPaths(1));
         return;
     }
     source->PaintUniformColor({1.000, 0.706, 0.000});

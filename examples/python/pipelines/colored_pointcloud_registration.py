@@ -28,12 +28,6 @@
 import open3d as o3d
 import numpy as np
 import copy
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
-sys.path.append(pyexample_path)
 
 
 def draw_registration_result(source, target, transformation):
@@ -43,10 +37,9 @@ def draw_registration_result(source, target, transformation):
 
 
 print("Load two point clouds and show initial pose ...")
-source = o3d.io.read_point_cloud(
-    os.path.join(test_data_path, 'ColoredICP', 'frag_115.ply'))
-target = o3d.io.read_point_cloud(
-    os.path.join(test_data_path, 'ColoredICP', 'frag_116.ply'))
+ply_data = o3d.data.DemoColoredICPPointClouds()
+source = o3d.io.read_point_cloud(ply_data.paths[0])
+target = o3d.io.read_point_cloud(ply_data.paths[1])
 
 if __name__ == "__main__":
     # Draw initial alignment.

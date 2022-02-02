@@ -27,19 +27,13 @@
 
 import open3d as o3d
 import numpy as np
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
-sys.path.append(pyexample_path)
 
 
 def load_point_clouds(voxel_size=0.0):
+    pcd_data = o3d.data.DemoICPPointClouds()
     pcds = []
     for i in range(3):
-        pcd = o3d.io.read_point_cloud(
-            os.path.join(test_data_path, 'ICP', 'cloud_bin_%d.pcd' % i))
+        pcd = o3d.io.read_point_cloud(pcd_data.paths[i])
         pcd_down = pcd.voxel_down_sample(voxel_size=voxel_size)
         pcds.append(pcd_down)
     return pcds

@@ -2,9 +2,6 @@ open3d_ispc_add_library(data OBJECT)
 
 target_sources(data PRIVATE
     Dataset.cpp
-    Download.cpp
-    Extract.cpp
-    ExtractZIP.cpp
 )
 
 open3d_show_and_abort_on_warning(data)

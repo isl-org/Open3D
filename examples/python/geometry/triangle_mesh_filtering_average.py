@@ -27,18 +27,12 @@
 from numpy.random.mtrand import laplace
 import open3d as o3d
 import numpy as np
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 
 def average_filtering():
     # Create noisy mesh.
-    mesh_in = o3dex.get_knot_mesh()
+    knot_mesh = o3d.data.KnotMesh()
+    mesh_in = o3d.io.read_triangle_mesh(knot_mesh.path)
     vertices = np.asarray(mesh_in.vertices)
     noise = 5
     vertices += np.random.uniform(0, noise, size=vertices.shape)
@@ -60,7 +54,8 @@ def average_filtering():
 
 def laplace_filtering():
     # Create noisy mesh.
-    mesh_in = o3dex.get_knot_mesh()
+    knot_mesh = o3d.data.KnotMesh()
+    mesh_in = o3d.io.read_triangle_mesh(knot_mesh.path)
     vertices = np.asarray(mesh_in.vertices)
     noise = 5
     vertices += np.random.uniform(0, noise, size=vertices.shape)
@@ -82,7 +77,8 @@ def laplace_filtering():
 
 def taubin_filtering():
     # Create noisy mesh.
-    mesh_in = o3dex.get_knot_mesh()
+    knot_mesh = o3d.data.KnotMesh()
+    mesh_in = o3d.io.read_triangle_mesh(knot_mesh.path)
     vertices = np.asarray(mesh_in.vertices)
     noise = 5
     vertices += np.random.uniform(0, noise, size=vertices.shape)
