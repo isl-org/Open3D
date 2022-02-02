@@ -111,19 +111,19 @@ Size ListView::CalcPreferredSize(const LayoutContext &context,
         // at most max_visible_item_ items.
         h = std::max((int)impl_->items_.size(), g_min_visible_items);
         h = std::min(h, impl_->max_visible_item_);
-        h = int(std::ceil((float)h * fh + 2.0f * padding.y));
+        h = int(std::ceil((float)h * fh));
     }
     return Size{int(std::ceil(size.x + 2.0f * padding.x)), h};
 }
 
 Size ListView::CalcMinimumSize(const LayoutContext &context) const {
-    return Size(0, impl_->max_visible_item_ * context.theme.font_size);
+    return Size(0, g_min_visible_items * context.theme.font_size);
 }
 
 Widget::DrawResult ListView::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
     ImGui::SetCursorScreenPos(
-            ImVec2(float(frame.x), float(frame.y) + ImGui::GetScrollY()));
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
     ImGui::PushItemWidth(float(frame.width));
 
     ImGui::PushStyleColor(ImGuiCol_FrameBg,
