@@ -73,13 +73,13 @@ def main():
     render.scene.show_axes(True)
 
     img = render.render_to_image()
-    print("Saving image at /tmp/test.png")
-    o3d.io.write_image("/tmp/test.png", img, 9)
+    print("Saving image at test.png")
+    o3d.io.write_image("test.png", img, 9)
 
     render.setup_camera(60.0, [0, 0, 0], [-10, 0, 0], [0, 0, 1])
     img = render.render_to_image()
-    print("Saving image at /tmp/test2.png")
-    o3d.io.write_image("/tmp/test2.png", img, 9)
+    print("Saving image at test2.png")
+    o3d.io.write_image("test2.png", img, 9)
 
 
 if __name__ == "__main__":

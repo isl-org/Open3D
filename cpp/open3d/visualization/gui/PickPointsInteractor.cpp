@@ -326,8 +326,8 @@ void PickPointsInteractor::DoPick() {
                 [this](std::shared_ptr<geometry::Image> img) {
 #if WANT_DEBUG_IMAGE
                     std::cout << "[debug] Writing pick image to "
-                              << "/tmp/debug.png" << std::endl;
-                    io::WriteImage("/tmp/debug.png", *img);
+                              << "debug.png" << std::endl;
+                    io::WriteImage("debug.png", *img);
 #endif  // WANT_DEBUG_IMAGE
                     this->OnPickImageDone(img);
                 });
