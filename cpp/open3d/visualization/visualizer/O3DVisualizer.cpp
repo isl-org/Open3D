@@ -312,6 +312,7 @@ struct O3DVisualizer::Impl {
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
+    bool was_using_sun_follows_cam_ = false;
 
     double min_time_ = 0.0;
     double max_time_ = 0.0;
@@ -1371,6 +1372,7 @@ struct O3DVisualizer::Impl {
         settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]->SetEnabled(
                 enable);
         settings.point_size->SetEnabled(enable);
+        settings.sun_follows_camera->SetEnabled(enable);
     }
 
     void EnableBasicMode(bool enable) {
@@ -1386,7 +1388,11 @@ struct O3DVisualizer::Impl {
             low_scene->SetSunLightIntensity(160000.f);
             view->SetShadowing(false, View::ShadowType::kPCF);
             view->SetPostProcessing(false);
-            EnableSunFollowsCamera(true);
+            was_using_sun_follows_cam_ = ui_state_.sun_follows_camera;
+            if (!ui_state_.sun_follows_camera) {
+                EnableSunFollowsCamera(true);
+                settings.sun_follows_camera->SetChecked(true);
+            }
             // Update geometry for inspection
             UpdateGeometryForInspectionMode(true);
             EnableInspectionRelatedUI(false);
@@ -1395,9 +1401,12 @@ struct O3DVisualizer::Impl {
         } else {
             view->SetPostProcessing(true);
             view->SetShadowing(true, View::ShadowType::kPCF);
-            EnableSunFollowsCamera(false);
             UpdateGeometryForInspectionMode(false);
             EnableInspectionRelatedUI(true);
+            if (!was_using_sun_follows_cam_) {
+                settings.sun_follows_camera->SetChecked(false);
+                EnableSunFollowsCamera(false);
+            }
             SetUIState(ui_state_);
         }
     }
@@ -1695,7 +1704,6 @@ struct O3DVisualizer::Impl {
             settings.sun_dir->SetEnabled(true);
             settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]
                     ->SetEnabled(true);
-            EnableSunFollowsCamera(false);
         }
 
         if (is_new_lighting) {
@@ -1706,8 +1714,11 @@ struct O3DVisualizer::Impl {
         raw_scene->EnableIndirectLight(ui_state_.use_ibl);
         raw_scene->SetIndirectLightIntensity(float(ui_state_.ibl_intensity));
         raw_scene->EnableSunLight(ui_state_.use_sun);
-        raw_scene->SetSunLight(ui_state_.sun_dir, ui_state_.sun_color,
-                               float(ui_state_.sun_intensity));
+        raw_scene->SetSunLightColor(ui_state_.sun_color);
+        raw_scene->SetSunLightIntensity(ui_state_.sun_intensity);
+        if (!ui_state_.sun_follows_camera) {
+            raw_scene->SetSunLightDirection(ui_state_.sun_dir);
+        }
 
         if (old_enabled_groups != ui_state_.enabled_groups) {
             for (auto &group : added_groups_) {
