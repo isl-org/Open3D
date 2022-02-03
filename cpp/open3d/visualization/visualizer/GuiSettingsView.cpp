@@ -320,7 +320,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
             [this]() { model_.EstimateNormalsClicked(); });
     generate_normals_->SetEnabled(false);
     mat_grid->AddChild(generate_normals_);
-    mat_grid->AddChild(std::make_shared<gui::Label>("Basic Mode"));
+    mat_grid->AddChild(std::make_shared<gui::Label>("Raw Mode"));
     basic_mode_ = std::make_shared<gui::Checkbox>("");
     basic_mode_->SetOnChecked([this](bool checked) {
         UpdateUIForBasicMode(checked);
