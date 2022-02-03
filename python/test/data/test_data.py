@@ -25,7 +25,6 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import pytest
 
 from pathlib import Path
 import os
@@ -77,32 +76,34 @@ def test_simple_dataset_base():
 
 
 def test_demo_icp_pointclouds():
-    prefix = "O3DTestDemoICPPointClouds"
-    data_root = os.path.join(Path.home(), "open3d_data")
-    download_dir = os.path.join(data_root, "download", prefix)
-    extract_dir = os.path.join(data_root, "extract", prefix)
+    gt_prefix = "O3DTestDemoICPPointClouds"
+    gt_data_root = os.path.join(Path.home(), "open3d_data")
+    gt_download_dir = os.path.join(gt_data_root, "download", gt_prefix)
+    gt_extract_dir = os.path.join(gt_data_root, "extract", gt_prefix)
 
-    shutil.rmtree(download_dir, ignore_errors=True)
-    shutil.rmtree(extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=True)
+    shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    demo_icp = o3d.data.DemoICPPointClouds(prefix)
-    assert os.path.isdir(download_dir) == True
+    demo_icp = o3d.data.DemoICPPointClouds(gt_prefix)
+    assert os.path.isdir(gt_download_dir) == True
 
-    paths = [
-        extract_dir + "/cloud_bin_0.pcd", extract_dir + "/cloud_bin_1.pcd",
-        extract_dir + "/cloud_bin_2.pcd"
+    gt_paths = [
+        gt_extract_dir + "/cloud_bin_0.pcd",
+        gt_extract_dir + "/cloud_bin_1.pcd",
+        gt_extract_dir + "/cloud_bin_2.pcd",
     ]
-    assert demo_icp.paths == paths
-    for path in demo_icp.paths:
-        assert os.path.isfile(path) == True
+    assert len(demo_icp.paths) == len(gt_paths)
+    for gt_path, demo_icp_path in zip(gt_paths, demo_icp.paths):
+        assert Path(gt_path) == Path(demo_icp_path)
+        assert os.path.isfile(gt_path) == True
 
-    assert demo_icp.prefix == prefix
-    assert demo_icp.data_root == data_root
-    assert demo_icp.download_dir == download_dir
-    assert demo_icp.extract_dir == extract_dir
+    assert demo_icp.prefix == gt_prefix
+    assert Path(demo_icp.data_root) == Path(gt_data_root)
+    assert Path(demo_icp.download_dir) == Path(gt_download_dir)
+    assert Path(demo_icp.extract_dir) == Path(gt_extract_dir)
 
-    shutil.rmtree(download_dir, ignore_errors=True)
-    shutil.rmtree(extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=True)
+    shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
 
 def test_demo_colored_icp_pointclouds():
