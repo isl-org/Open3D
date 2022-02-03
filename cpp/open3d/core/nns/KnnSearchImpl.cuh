@@ -26,7 +26,8 @@
 
 #pragma once
 
-#include "cub/cub.cuh"
+#include <cub/cub.cuh>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/utility/Helper.h"
