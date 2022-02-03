@@ -96,5 +96,5 @@ if __name__ == "__main__":
     pcd = o3d.io.read_point_cloud(sample_ply_data.path)
 
     print("Customized visualization playing a camera trajectory. "
-          "Ctrl+z to terminate")
+          "Press ctrl+z to terminate.")
     custom_draw_geometry_with_camera_trajectory(pcd)
