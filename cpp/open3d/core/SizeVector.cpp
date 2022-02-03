@@ -26,6 +26,7 @@
 
 #include "open3d/core/SizeVector.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <numeric>
 #include <sstream>

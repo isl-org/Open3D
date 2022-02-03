@@ -954,7 +954,7 @@ if(USE_SYSTEM_FMT)
     open3d_find_package_3rdparty_library(3rdparty_fmt
         PUBLIC
         PACKAGE fmt
-        TARGETS fmt::fmt-header-only fmt::fmt
+        TARGETS fmt::fmt
     )
     if(NOT 3rdparty_fmt_FOUND)
         set(USE_SYSTEM_FMT OFF)
@@ -966,9 +966,14 @@ if(NOT USE_SYSTEM_FMT)
     open3d_import_3rdparty_library(3rdparty_fmt
         PUBLIC
         INCLUDE_DIRS ${FMT_INCLUDE_DIRS}
+        LIB_DIR      ${FMT_LIB_DIR}
+        LIBRARIES    ${FMT_LIBRARIES}
         DEPENDS      ext_fmt
     )
-    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=1)
+    # FMT 6.0, newer versions may require different flags
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=0)
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
 endif()
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_fmt)
 
