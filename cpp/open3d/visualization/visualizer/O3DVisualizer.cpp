@@ -417,6 +417,7 @@ struct O3DVisualizer::Impl {
         SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
         SetLightingProfile(gLightingProfiles[2]);  // soft shadows
         SetPointSize(ui_state_.point_size);  // sync selections_' point size
+        EnableSunFollowsCamera(true);
     }
 
     void MakeSettingsUI() {
@@ -746,6 +747,12 @@ struct O3DVisualizer::Impl {
         grid->AddChild(GiveOwnership(settings.sun_dir));
 
         settings.sun_follows_camera = new gui::Checkbox(" ");
+        settings.sun_follows_camera->SetChecked(true);
+        settings.sun_follows_camera->SetOnChecked([this](bool checked) {
+            ui_state_.sun_follows_camera = checked;
+            this->SetUIState(ui_state_);
+            EnableSunFollowsCamera(checked);
+        });
         grid->AddChild(GiveOwnership(settings.sun_follows_camera));
         grid->AddChild(std::make_shared<gui::Label>("Sun Follows Camera"));
 
@@ -1345,8 +1352,8 @@ struct O3DVisualizer::Impl {
         } else {
             scene_->SetOnCameraChanged(
                     std::function<void(rendering::Camera *)>());
-            scene_->SetSunInteractorEnabled(true);
             low_scene->SetSunLightDirection(ui_state_.sun_dir);
+            scene_->SetSunInteractorEnabled(true);
         }
     }
 
@@ -1679,6 +1686,17 @@ struct O3DVisualizer::Impl {
         // Re-assign intensity in case it was out of range.
         ui_state_.ibl_intensity = settings.ibl_intensity->GetIntValue();
         ui_state_.sun_intensity = settings.sun_intensity->GetIntValue();
+
+        if (ui_state_.sun_follows_camera) {
+            settings.sun_dir->SetEnabled(false);
+            settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]
+                    ->SetEnabled(false);
+        } else {
+            settings.sun_dir->SetEnabled(true);
+            settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]
+                    ->SetEnabled(true);
+            EnableSunFollowsCamera(false);
+        }
 
         if (is_new_lighting) {
             settings.lighting->SetSelectedValue(kCustomName);

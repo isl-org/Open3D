@@ -818,9 +818,6 @@ void GuiVisualizer::Init() {
     // Create materials
     impl_->InitializeMaterials(GetRenderer(), resource_path);
 
-    // Apply model settings (which should be defaults) to the rendering entities
-    impl_->UpdateFromModel(GetRenderer(), false);
-
     // Setup UI
     const auto em = theme.font_size;
     const int lm = int(std::ceil(0.5 * em));
@@ -917,6 +914,9 @@ void GuiVisualizer::Init() {
     settings.wgt_base->AddChild(settings.view_);
 
     AddChild(settings.wgt_base);
+
+    // Apply model settings (which should be defaults) to the rendering entities
+    impl_->UpdateFromModel(GetRenderer(), false);
 
     // Other items
     impl_->help_keys_ = CreateHelpDisplay(this);

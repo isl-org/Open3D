@@ -218,6 +218,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     });
 
     sun_follows_camera_ = std::make_shared<gui::Checkbox>(" ");
+    sun_follows_camera_->SetChecked(true);
     sun_follows_camera_->SetOnChecked([this](bool checked) {
         sun_dir_->SetEnabled(!checked);
         model_.SetSunFollowsCamera(checked);
@@ -466,6 +467,7 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
     // Set lighting environment for basic/non-basic mode
     auto lighting = model_.GetLighting();  // copy
     if (enable) {
+        sun_follows_cam_was_on_ = sun_follows_camera_->IsChecked();
         lighting.ibl_enabled = !enable;
         lighting.sun_enabled = enable;
         lighting.sun_intensity = 160000.f;
@@ -476,7 +478,9 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
         model_.SetSunFollowsCamera(true);
     } else {
         model_.SetLightingProfile(GuiSettingsModel::lighting_profiles_[0]);
-        model_.SetSunFollowsCamera(false);
+        if (!sun_follows_cam_was_on_) {
+            model_.SetSunFollowsCamera(false);
+        }
     }
 }
 
