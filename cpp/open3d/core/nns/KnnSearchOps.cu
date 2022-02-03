@@ -35,7 +35,6 @@
 #include "open3d/core/nns/kernel/DistancesUtils.cuh"
 #include "open3d/core/nns/kernel/L2Select.cuh"
 #include "open3d/utility/Helper.h"
-#include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
 namespace core {
@@ -52,15 +51,14 @@ void KnnSearchCUDABruteForce(const Tensor& points,
                              const Tensor& queries,
                              int knn,
                              OUTPUT_ALLOCATOR& output_allocator,
-                             int64_t* query_neighbors_row_splits) {
+                             Tensor& query_neighbors_row_splits) {
     const cudaStream_t stream = cuda::GetStream();
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
 
     // Return if input points are empty.
     if (num_points == 0 || num_queries == 0) {
-        std::fill(query_neighbors_row_splits,
-                  query_neighbors_row_splits + num_queries + 1, 0);
+        query_neighbors_row_splits.Fill(0);
         TIndex* indices_ptr;
         T* distances_ptr;
 
@@ -71,11 +69,8 @@ void KnnSearchCUDABruteForce(const Tensor& points,
     knn = num_points > knn ? knn : num_points;
 
     // Allocate output tensors.
-    query_neighbors_row_splits[0] = 0;
-    std::vector<uint32_t> neighbors_count(num_queries, knn);
-    utility::InclusivePrefixSum(neighbors_count.data(),
-                                neighbors_count.data() + neighbors_count.size(),
-                                query_neighbors_row_splits + 1);
+    query_neighbors_row_splits.AsRvalue() =
+            Tensor::Arange(0, num_queries * knn, knn);
     TIndex* indices_ptr;
     T* distances_ptr;
     const size_t num_indices = knn * num_queries;
@@ -121,7 +116,7 @@ void KnnSearchCUDAOptimized(const Tensor& points,
                             const Tensor& queries,
                             int knn,
                             OUTPUT_ALLOCATOR& output_allocator,
-                            int64_t* query_neighbors_row_splits) {
+                            Tensor& query_neighbors_row_splits) {
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     int dim = points.GetShape(1);
@@ -130,8 +125,7 @@ void KnnSearchCUDAOptimized(const Tensor& points,
 
     // Return if input points are empty.
     if (num_points == 0 || num_queries == 0) {
-        std::fill(query_neighbors_row_splits,
-                  query_neighbors_row_splits + num_queries + 1, 0);
+        query_neighbors_row_splits.Fill(0);
         TIndex* indices_ptr;
         T* distances_ptr;
 
@@ -142,11 +136,8 @@ void KnnSearchCUDAOptimized(const Tensor& points,
     knn = num_points > knn ? knn : num_points;
 
     // Allocate output tensors.
-    query_neighbors_row_splits[0] = 0;
-    std::vector<uint32_t> neighbors_count(num_queries, knn);
-    utility::InclusivePrefixSum(neighbors_count.data(),
-                                neighbors_count.data() + neighbors_count.size(),
-                                query_neighbors_row_splits + 1);
+    query_neighbors_row_splits.AsRvalue() =
+            Tensor::Arange(0, num_queries * knn, knn);
     TIndex* indices_ptr;
     T* distances_ptr;
     const size_t num_indices = knn * num_queries;
@@ -269,9 +260,14 @@ void KnnSearchCUDA(const Tensor& points,
                 queries.Slice(0, queries_row_splits[i].Item<int64_t>(),
                               queries_row_splits[i + 1].Item<int64_t>());
         int64_t num_queries_i = queries_i.GetShape(0);
-        int64_t* neighbors_row_splits_i =
-                neighbors_row_splits.GetDataPtr<int64_t>() +
-                queries_row_splits[i].Item<int64_t>();
+        // int64_t* neighbors_row_splits_i =
+        //         neighbors_row_splits.GetDataPtr<int64_t>() +
+        //         queries_row_splits[i].Item<int64_t>();
+        Tensor neighbors_row_splits_i = neighbors_row_splits.Slice(
+                0, queries_row_splits[i].Item<int64_t>(),
+                queries_row_splits[i + 1].Item<int64_t>());
+        int64_t* neighbors_row_splits_i_ptr =
+                neighbors_row_splits_i.GetDataPtr<int64_t>();
 
         if (brute_force) {
             KnnSearchCUDABruteForce<T, TIndex>(points_i, queries_i, knn,
@@ -285,10 +281,10 @@ void KnnSearchCUDA(const Tensor& points,
 
         if (i > 0) {
             for (int j = 0; j <= num_queries_i; ++j) {
-                neighbors_row_splits_i[j] += last_neighbors_count;
+                neighbors_row_splits_i_ptr[j] += last_neighbors_count;
             }
         }
-        last_neighbors_count = neighbors_row_splits_i[num_queries_i];
+        last_neighbors_count = neighbors_row_splits_i_ptr[num_queries_i];
     }
 
     if (batch_size == 1) {
