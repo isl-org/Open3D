@@ -29,6 +29,7 @@
 #include <memory>
 
 #include "open3d/visualization/gui/Color.h"
+
 namespace open3d {
 namespace visualization {
 namespace gui {

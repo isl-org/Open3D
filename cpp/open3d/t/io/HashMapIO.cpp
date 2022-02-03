@@ -28,6 +28,7 @@
 
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/FileSystem.h"
+
 namespace open3d {
 namespace t {
 namespace io {

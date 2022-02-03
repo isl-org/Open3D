@@ -26,6 +26,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
+
 namespace open3d {
 namespace t {
 namespace pipelines {

@@ -27,6 +27,7 @@
 #include "open3d/t/geometry/kernel/Image.h"
 
 #include "open3d/core/CUDAUtils.h"
+
 namespace open3d {
 namespace t {
 namespace geometry {

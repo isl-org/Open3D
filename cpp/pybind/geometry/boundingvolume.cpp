@@ -81,7 +81,7 @@ The returned bounding box is an approximation to the minimal bounding box.
 
 Args:
      points (open3d.utility.Vector3dVector): Input points.
-     robust (bool): If set to true uses a more robust method which works in 
+     robust (bool): If set to true uses a more robust method which works in
           degenerate cases but introduces noise to the points coordinates.
 
 Returns:

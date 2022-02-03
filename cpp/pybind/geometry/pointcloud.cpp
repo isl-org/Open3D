@@ -177,7 +177,7 @@ Computes the convex hull of the point cloud.
 
 Args:
      joggle_inputs (bool): If True allows the algorithm to add random noise to
-          the points to work around degenerate inputs. This adds the 'QJ' 
+          the points to work around degenerate inputs. This adds the 'QJ'
           option to the qhull command.
 
 Returns:

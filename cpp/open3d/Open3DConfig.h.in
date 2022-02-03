@@ -38,6 +38,7 @@
 #define OPEN3D_CODE          "@PROJECT_CODE@"
 #define OPEN3D_ISSUES        "@PROJECT_ISSUES@"
 
+
 namespace open3d {
 
     void PrintOpen3DVersion();

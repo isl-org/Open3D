@@ -292,6 +292,7 @@ int GetCUDACurrentWarpSize() {
 }  // namespace open3d
 
 #ifdef BUILD_CUDA_MODULE
+
 namespace open3d {
 namespace core {
 
