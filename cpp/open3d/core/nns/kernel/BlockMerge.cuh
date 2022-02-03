@@ -49,6 +49,7 @@
 
 #include "open3d/core/nns/kernel/DeviceDefs.cuh"
 #include "open3d/core/nns/kernel/StaticUtils.cuh"
+
 namespace open3d {
 namespace core {
 

@@ -55,6 +55,7 @@
 #include "open3d/core/nns/kernel/ReductionOps.cuh"
 #include "open3d/core/nns/kernel/Select.cuh"
 #include "open3d/utility/Helper.h"
+
 namespace open3d {
 namespace core {
 namespace nns {
