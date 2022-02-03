@@ -278,7 +278,7 @@ bool FileExists(const std::string &filename) {
     return fs::exists(filename) && fs::is_regular_file(filename);
 }
 
-bool CopyFile(const std::string &src_path, const std::string &dst_path) {
+bool Copy(const std::string &src_path, const std::string &dst_path) {
     try {
         fs::copy(src_path, dst_path,
                  fs::copy_options::recursive |
