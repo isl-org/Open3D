@@ -40,7 +40,11 @@
 #endif
 #endif
 
-#include <fmt/format.h>
+// clang-format off
+#include <fmt/core.h>
+// clang-format on
+
+// #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
