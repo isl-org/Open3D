@@ -84,8 +84,8 @@ SingleDownloadDataset::SingleDownloadDataset(
         } else {
             utility::filesystem::MakeDirectoryHierarchy(
                     Dataset::GetExtractDir());
-            utility::filesystem::Copy(download_file_path,
-                                      Dataset::GetExtractDir());
+            utility::filesystem::CopyFile(download_file_path,
+                                          Dataset::GetExtractDir());
         }
     }
 }
