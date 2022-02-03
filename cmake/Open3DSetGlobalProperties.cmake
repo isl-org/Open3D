@@ -3,7 +3,7 @@
 # Sets important project-related properties to <target>.
 function(open3d_set_global_properties target)
     # Tell CMake we want a compiler that supports C++14 features
-    target_compile_features(${target} PUBLIC cxx_std_14)
+    target_compile_features(${target} PUBLIC cxx_std_17)
 
     # std::filesystem (C++17) or std::experimental::filesystem (C++14)
     #

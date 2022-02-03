@@ -246,7 +246,7 @@ if (BUILD_CUDA_MODULE
     AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
 )
     # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
-    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CXX_STANDARD 17)
     set(CMAKE_CUDA_STANDARD 17)
     # Suppress warnings for deprecated C++17 functions.
     add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
