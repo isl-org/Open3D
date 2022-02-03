@@ -24,17 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-// #include "open3d/core/CUDAUtils.h"
-// #include "open3d/core/MemoryManager.h"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/MemoryManager.h"
 #include "open3d/core/Tensor.h"
-// #include "open3d/core/linalg/AddMM.h"
-// #include "open3d/core/nns/KnnIndex.h"
+#include "open3d/core/linalg/AddMM.h"
+#include "open3d/core/nns/KnnIndex.h"
 // #include "open3d/core/nns/KnnSearchImpl.cuh"
-// #include "open3d/core/nns/NeighborSearchAllocator.h"
-// #include "open3d/core/nns/kernel/BlockSelect.cuh"
-// #include "open3d/core/nns/kernel/DistancesUtils.cuh"
-// #include "open3d/core/nns/kernel/L2Select.cuh"
-// #include "open3d/utility/Helper.h"
+#include "open3d/core/nns/NeighborSearchAllocator.h"
+#include "open3d/core/nns/kernel/BlockSelect.cuh"
+#include "open3d/core/nns/kernel/DistancesUtils.cuh"
+#include "open3d/core/nns/kernel/L2Select.cuh"
+#include "open3d/utility/Helper.h"
 // #include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
