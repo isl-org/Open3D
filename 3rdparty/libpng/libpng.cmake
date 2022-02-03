@@ -1,9 +1,9 @@
 include(ExternalProject)
 
 if(MSVC)
-    set(lib_name libpng16_static)
+    set(LIBPNG_LIB_NAME libpng16_static)
 else()
-    set(lib_name png16)
+    set(LIBPNG_LIB_NAME png16)
 endif()
 
 ExternalProject_Add(
@@ -23,11 +23,11 @@ ExternalProject_Add(
         -DPNG_ARM_NEON=off # Must be lower case.
         ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
-        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
-        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}d${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${LIBPNG_LIB_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${LIBPNG_LIB_NAME}d${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 ExternalProject_Get_Property(ext_libpng INSTALL_DIR)
 set(LIBPNG_INCLUDE_DIRS ${INSTALL_DIR}/include/) # "/" is critical.
 set(LIBPNG_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(LIBPNG_LIBRARIES ${lib_name}$<$<PLATFORM_ID:Windows>:$<$<CONFIG:Debug>:d>>)
+set(LIBPNG_LIBRARIES ${LIBPNG_LIB_NAME}$<$<PLATFORM_ID:Windows>:$<$<CONFIG:Debug>:d>>)

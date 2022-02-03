@@ -26,6 +26,11 @@
 
 #include "open3d/utility/Logging.h"
 
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <fmt/printf.h>
+#include <fmt/ranges.h>
+
 #include <functional>
 #include <iostream>
 #include <sstream>
