@@ -115,7 +115,6 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     lighting_profile_->AddItem(CUSTOM_LIGHTING);
     lighting_profile_->SetOnValueChanged([this](const char *, int index) {
         if (index < int(GuiSettingsModel::lighting_profiles_.size())) {
-            sun_follows_camera_->SetChecked(false);
             sun_dir_->SetEnabled(true);
             model_.SetSunFollowsCamera(false);
             model_.SetLightingProfile(
@@ -462,7 +461,6 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
     material_type_->SetEnabled(!enable);
     material_color_->SetEnabled(!enable);
     prefab_material_->SetEnabled(!enable);
-    sun_follows_camera_->SetChecked(enable);
 
     // Set lighting environment for basic/non-basic mode
     auto lighting = model_.GetLighting();  // copy
@@ -476,9 +474,11 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
         sun_intensity_->SetValue(160000.0);
         model_.SetCustomLighting(lighting);
         model_.SetSunFollowsCamera(true);
+        sun_follows_camera_->SetChecked(true);
     } else {
         model_.SetLightingProfile(GuiSettingsModel::lighting_profiles_[0]);
         if (!sun_follows_cam_was_on_) {
+            sun_follows_camera_->SetChecked(false);
             model_.SetSunFollowsCamera(false);
         }
     }
