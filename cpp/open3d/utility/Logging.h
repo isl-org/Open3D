@@ -27,11 +27,9 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <string>
 
-#ifndef FMT_HEADER_ONLY
-#define FMT_HEADER_ONLY 1
-#endif
 #ifndef FMT_STRING_ALIAS
 #define FMT_STRING_ALIAS 1
 #endif
@@ -41,8 +39,8 @@
 #define FMT_DEPRECATED
 #endif
 #endif
-#include <fmt/format.h>
-#include <fmt/ostream.h>
+
+#include <fmt/core.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
 
