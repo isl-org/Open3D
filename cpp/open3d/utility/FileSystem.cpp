@@ -279,8 +279,8 @@ bool FileExists(const std::string &filename) {
 }
 
 // TODO: this is not a good name. Currently FileSystem.cpp includes windows.h
-// and "CopyFile" will expanded to "CopyFileA" on Windows. When we switch to
-// C++17, we'll use std::filesystem and thus the windows.h header will be gone.
+// and "CopyFile" will be expanded to "CopyFileA" on Windows. This will be
+// resolved when we switch to C++17's std::filesystem.
 bool Copy(const std::string &src_path, const std::string &dst_path) {
     try {
         fs::copy(src_path, dst_path,
