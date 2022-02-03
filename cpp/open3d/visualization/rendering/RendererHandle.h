@@ -26,12 +26,6 @@
 
 #pragma once
 
-#ifndef FMT_USE_WINDOWS_H
-#define FMT_USE_WINDOWS_H 0
-#endif
-#ifndef FMT_STRING_ALIAS
-#define FMT_STRING_ALIAS 1
-#endif
 #include <fmt/format.h>
 
 #include <array>

@@ -82,6 +82,11 @@ function(open3d_set_global_properties target)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
     endif()
 
+    # FMT 6.0, newer versions may require different flags
+    target_compile_definitions(${target} PRIVATE FMT_HEADER_ONLY=0)
+    target_compile_definitions(${target} PRIVATE FMT_USE_WINDOWS_H=0)
+    target_compile_definitions(${target} PRIVATE FMT_STRING_ALIAS=1)
+
     if(NOT WITH_OPENMP)
         target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
     endif()
