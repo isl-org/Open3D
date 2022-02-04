@@ -27,22 +27,17 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <string>
 
-#ifndef FMT_HEADER_ONLY
-#define FMT_HEADER_ONLY 1
-#endif
-#ifndef FMT_STRING_ALIAS
-#define FMT_STRING_ALIAS 1
-#endif
 // NVCC does not support deprecated attribute on Windows prior to v11.
 #if defined(__CUDACC__) && defined(_MSC_VER) && __CUDACC_VER_MAJOR__ < 11
 #ifndef FMT_DEPRECATED
 #define FMT_DEPRECATED
 #endif
 #endif
-#include <fmt/format.h>
-#include <fmt/ostream.h>
+
+#include <fmt/core.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
 

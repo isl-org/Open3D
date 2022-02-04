@@ -98,7 +98,6 @@ else()
 endif()
 
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
-option(WITH_FAISS                 "Enable Faiss"                             ON )
 
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)

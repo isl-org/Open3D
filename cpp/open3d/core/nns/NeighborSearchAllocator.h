@@ -82,7 +82,9 @@ public:
     const TIndex* CountsPtr() const { return counts_.GetDataPtr<TIndex>(); }
 
     const Tensor& NeighborsIndex() const { return indices_; }
+    Tensor& NeighborsIndex_() { return indices_; }
     const Tensor& NeighborsDistance() const { return distances_; }
+    Tensor& NeighborsDistance_() { return distances_; }
     const Tensor& NeighborsCount() const { return counts_; }
 
 private:
