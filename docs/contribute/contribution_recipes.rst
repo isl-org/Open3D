@@ -191,7 +191,7 @@ Case 1: When documenting C++ code
 
 * In header files, use `Doxygen syntax <http://www.doxygen.nl/manual/docblocks.html>`_. In C++ header files we use the in-line style with `///` for docstring blocks. Make sure to use `Doxygen commands <http://www.doxygen.nl/manual/commands.html>`_ whenever possible. For instance, use `\brief` to denote the brief summary, `\param` to define a parameter, `\return` to define the return value,  `\p` to reference a parameter, `\ref` to reference another function, etc.
 * Use `Markdown <https://www.doxygen.nl/manual/markdown.html>`__ for formatting longer descriptions, such as lists and example code. Use LaTeX syntax for Math equations.
-* See the example this `Calculator` class:
+* See for example this `Calculator` class:
 
 .. _calculator_class:
 
