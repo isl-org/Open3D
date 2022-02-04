@@ -52,6 +52,7 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points) {
 bool KnnIndex::SetTensorData(const Tensor& dataset_points,
                              const Tensor& points_row_splits) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
+    AssertTensorDevice(points_row_splits, Device("CPU:0"));
     AssertTensorDtype(points_row_splits, Int64);
 
     if (dataset_points.NumDims() != 2) {
@@ -104,6 +105,7 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     AssertTensorDevice(query_points, device);
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
     AssertTensorDtype(queries_row_splits, Int64);
+    AssertTensorDevice(queries_row_splits, Device("CPU:0"));
 
     if (query_points.GetShape(0) != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
