@@ -31,7 +31,7 @@
 namespace open3d {
 namespace utility {
 
-/// \brief CPU information.
+/// \brief Compiler information.
 class CompilerInfo {
 public:
     static CompilerInfo& GetInstance();
