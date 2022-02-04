@@ -1154,7 +1154,10 @@ struct O3DVisualizer::Impl {
 
     void CreateInspectionModeMaterial(MaterialRecord &inspect_mat,
                                       bool pcd = false) {
-        if (inspect_mat.shader == "defaultLit") {
+        if (inspect_mat.shader == "defaultLit" ||
+            inspect_mat.shader == "defaultLitTransparency" ||
+            inspect_mat.shader == "defaultListSSR") {
+            inspect_mat.shader = "defaultLit";
             // Set parameters for 'simple' rendering
             inspect_mat.base_color = {1.f, 1.f, 1.f, 1.f};
             inspect_mat.base_metallic = 0.f;
@@ -1178,6 +1181,20 @@ struct O3DVisualizer::Impl {
         }
     }
 
+    std::shared_ptr<geometry::TriangleMesh> DuplicateGeometryForInspection(
+            std::shared_ptr<geometry::TriangleMesh> tmesh) {
+        auto new_mesh = std::make_shared<geometry::TriangleMesh>(
+                tmesh->vertices_, tmesh->triangles_);
+        if (!tmesh->HasTriangleNormals()) {
+            new_mesh->ComputeTriangleNormals();
+        } else {
+            new_mesh->triangle_normals_ = tmesh->triangle_normals_;
+        }
+        new_mesh->vertex_colors_ = tmesh->vertex_colors_;
+
+        return new_mesh;
+    }
+
     void UpdateGeometryForInspectionMode(bool enable) {
         if (enable) {
             // Copy the objects...
@@ -1188,34 +1205,36 @@ struct O3DVisualizer::Impl {
             }
             // Add inspection objects to scene
             for (auto &o : inspection_objects_) {
-                CreateInspectionModeMaterial(
-                        o.material,
-                        o.geometry->GetGeometryType() ==
-                                geometry::Geometry::GeometryType::PointCloud);
                 if (o.geometry) {
+                    CreateInspectionModeMaterial(
+                            o.material,
+                            o.geometry->GetGeometryType() ==
+                                    geometry::Geometry::GeometryType::
+                                            PointCloud);
                     // Need to compute triangle normals for triangle meshes
                     if (auto tmesh = std::dynamic_pointer_cast<
                                 geometry::TriangleMesh>(o.geometry)) {
-                        if (tmesh->HasVertexNormals()) {
-                            auto new_mesh =
-                                    std::make_shared<geometry::TriangleMesh>(
-                                            tmesh->vertices_,
-                                            tmesh->triangles_);
-                            if (!tmesh->HasTriangleNormals()) {
-                                new_mesh->ComputeTriangleNormals();
-                            } else {
-                                new_mesh->triangle_normals_ =
-                                        tmesh->triangle_normals_;
-                            }
-                            new_mesh->vertex_colors_ = tmesh->vertex_colors_;
-                            o.geometry = new_mesh;
-                        }
+                        o.geometry = DuplicateGeometryForInspection(tmesh);
                     }
                     scene_->GetScene()->AddGeometry(o.name, o.geometry.get(),
                                                     o.material);
                 } else if (o.tgeometry) {
+                    CreateInspectionModeMaterial(
+                            o.material,
+                            o.tgeometry->GetGeometryType() ==
+                                    t::geometry::Geometry::GeometryType::
+                                            PointCloud);
                     scene_->GetScene()->AddGeometry(o.name, o.tgeometry.get(),
                                                     o.material);
+                } else if (o.model) {
+                    for (auto &mat : o.model->materials_) {
+                        CreateInspectionModeMaterial(mat, false);
+                    }
+                    for (auto &mi : o.model->meshes_) {
+                        auto new_mesh = DuplicateGeometryForInspection(mi.mesh);
+                        mi.mesh = new_mesh;
+                    }
+                    scene_->GetScene()->AddModel(o.name, *o.model);
                 }
             }
         } else {
