@@ -44,6 +44,11 @@ import ssl
 import certifi
 import urllib.request
 
+root_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(root_dir_path, "python", "tools"))
+print(os.path.join(root_dir_path, "python", "tools"))
+from cli import _get_all_examples_dict as get_all_examples_dict
+
 
 def _create_or_clear_dir(dir_path):
     if os.path.exists(dir_path):
@@ -275,10 +280,99 @@ class PyAPIDocsBuilder:
         )
 
 
+class PyExampleDocsBuilder:
+    """
+    Generate Python examples *.rst files.
+    """
+
+    def __init__(self, input_dir, output_dir="python_example"):
+        self.output_dir = Path(str(output_dir))
+        self.input_dir = Path(str(input_dir))
+        self.prefixes = [
+            ("image", "Image"),
+            ("kd_tree", "KD Tree"),
+            ("octree", "Octree"),
+            ("point_cloud", "Point Cloud"),
+            ("ray_casting", "Ray Casting"),
+            ("rgbd", "RGBD Image"),
+            ("triangle_mesh", "Triangle Mesh"),
+            ("voxel_grid", "Voxel Grid"),
+        ]
+        print("Generating *.rst Python example docs in directory: %s" %
+              self.output_dir)
+
+    def _get_examples_dict(self):
+        examples_dict = get_all_examples_dict()
+        categories_to_remove = [
+            "benchmark", "reconstruction_system", "t_reconstruction_system"
+        ]
+        for cat in categories_to_remove:
+            examples_dict.pop(cat)
+        return examples_dict
+
+    def _get_prefix(self, example_name):
+        for prefix, sub_category in self.prefixes:
+            if example_name.startswith(prefix):
+                return prefix
+        raise Exception("No prefix found for geometry examples")
+
+    def _generate_index(self, title, output_path):
+        os.makedirs(output_path)
+        out_string = (f"{title}\n" f"{'-' * len(title)}\n\n")
+        with open(output_path / "index.rst", "w") as f:
+            f.write(out_string)
+
+    def _add_example_to_docs(self, example, output_path):
+        shutil.copy(example, output_path)
+        out_string = (f"{example.stem}.py"
+                      f"\n```````````````````````````````````````\n"
+                      f"\n.. literalinclude:: {example.stem}.py"
+                      f"\n   :language: python"
+                      f"\n   :linenos:"
+                      f"\n\n\n")
+
+        with open(output_path / "index.rst", "a") as f:
+            f.write(out_string)
+
+    def generate_rst(self):
+        _create_or_clear_dir(self.output_dir)
+        examples_dict = self._get_examples_dict()
+
+        categories = [cat for cat in self.input_dir.iterdir() if cat.is_dir()]
+
+        for cat in categories:
+            if cat.stem in examples_dict.keys():
+                in_dir = self.input_dir / cat.stem
+                out_dir = self.output_dir / cat.stem
+                if (cat.stem == "geometry"):
+                    self._generate_index(cat.stem.capitalize(), out_dir)
+                    with open(out_dir / "index.rst", "a") as f:
+                        f.write(f".. toctree::\n" f"    :maxdepth: 2\n\n")
+                        for prefix, sub_cat in self.prefixes:
+                            f.write(f"    {prefix}/index\n")
+
+                    for prefix, sub_category in self.prefixes:
+                        self._generate_index(sub_category, out_dir / prefix)
+                    examples = sorted(Path(cat).glob("*.py"))
+                    for ex in examples:
+                        if ex.stem in examples_dict[cat.stem]:
+                            prefix = self._get_prefix(ex.stem)
+                            sub_category_path = out_dir / prefix
+                            self._add_example_to_docs(ex, sub_category_path)
+                else:
+                    self._generate_index(cat.stem.capitalize(), out_dir)
+                    examples = sorted(Path(cat).glob("*.py"))
+                    for ex in examples:
+                        if ex.stem in examples_dict[cat.stem]:
+                            shutil.copy(ex, out_dir)
+                            self._add_example_to_docs(ex, out_dir)
+        pass
+
+
 class SphinxDocsBuilder:
     """
-    SphinxDocsBuilder calls Python api docs generation and then calls
-    sphinx-build:
+    SphinxDocsBuilder calls Python api and examples docs generation and then 
+    calls sphinx-build:
 
     (1) The user call `make *` (e.g. `make html`) gets forwarded to make.py
     (2) Calls PyAPIDocsBuilder to generate Python api docs rst files
@@ -491,6 +585,10 @@ if __name__ == "__main__":
     # Build docs for release (version number will be used instead of git hash).
     $ python make_docs.py --is_release --sphinx --doxygen
     """
+    # import pprint
+    # pp = pprint.PrettyPrinter(depth=6)
+    # pp.pprint (PyExampleDocsBuilder._get_examples_dict())
+    # sys.exit()
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
@@ -507,10 +605,16 @@ if __name__ == "__main__":
         help="Jupyter notebook execution mode.",
     )
     parser.add_argument(
-        "--pyapi_rst",
+        "--py_api_rst",
         default="always",
         choices=("always", "never"),
         help="Build Python API documentation in reST format.",
+    )
+    parser.add_argument(
+        "--py_example_rst",
+        default="always",
+        choices=("always", "never"),
+        help="Build Python example documentation in reST format.",
     )
     parser.add_argument(
         "--sphinx",
@@ -545,11 +649,19 @@ if __name__ == "__main__":
         print("Removed directory %s" % cpp_build_dir)
 
     # Python API reST docs
-    if not args.pyapi_rst == "never":
+    if not args.py_api_rst == "never":
         print("Building Python API reST")
         pd = PyAPIDocsBuilder()
         pd.generate_rst()
 
+    # Python example reST docs
+    py_example_input_dir = os.path.join(pwd, "..", "examples", "python")
+    if not args.py_example_rst == "never":
+        print("Building Python example reST")
+        pe = PyExampleDocsBuilder(py_example_input_dir)
+        pe.generate_rst()
+
+    # Jupyter docs (needs execution)
     if not args.execute_notebooks == "never":
         print("Building Jupyter docs")
         jdb = JupyterDocsBuilder(pwd, args.clean_notebooks,

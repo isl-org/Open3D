@@ -47,6 +47,18 @@ Open3D: A Modern Library for 3D Data Processing
 
 
 .. toctree::
+    :maxdepth: 3
+    :caption: Python Examples
+
+    python_example/camera/index
+    python_example/geometry/index
+    python_example/io/index
+    python_example/pipelines/index
+    python_example/utility/index
+    python_example/visualization/index
+
+
+.. toctree::
     :maxdepth: 1
     :caption: Contribute
 
