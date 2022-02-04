@@ -371,7 +371,7 @@ class PyExampleDocsBuilder:
 
 class SphinxDocsBuilder:
     """
-    SphinxDocsBuilder calls Python api and examples docs generation and then 
+    SphinxDocsBuilder calls Python api and examples docs generation and then
     calls sphinx-build:
 
     (1) The user call `make *` (e.g. `make html`) gets forwarded to make.py
@@ -585,10 +585,6 @@ if __name__ == "__main__":
     # Build docs for release (version number will be used instead of git hash).
     $ python make_docs.py --is_release --sphinx --doxygen
     """
-    # import pprint
-    # pp = pprint.PrettyPrinter(depth=6)
-    # pp.pprint (PyExampleDocsBuilder._get_examples_dict())
-    # sys.exit()
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
