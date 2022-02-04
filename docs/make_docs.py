@@ -391,12 +391,15 @@ class SphinxDocsBuilder:
         Call Sphinx command with hard-coded "html" target
         """
         # Copy docs files from Open3D-ML repo
-        OPEN3D_ML_ROOT = os.environ.get(
+        open3d_ml_root = os.environ.get(
             "OPEN3D_ML_ROOT",
             os.path.join(self.current_file_dir, "../../Open3D-ML"))
-        if os.path.isdir(OPEN3D_ML_ROOT):
-            shutil.copy(os.path.join(OPEN3D_ML_ROOT, "docs", "tensorboard.md"),
-                        self.current_file_dir)
+        open3d_ml_docs = [
+            os.path.join(open3d_ml_root, "docs", "tensorboard.md")
+        ]
+        for open3d_ml_doc in open3d_ml_docs:
+            if os.path.isfile(open3d_ml_doc):
+                shutil.copy(open3d_ml_doc, self.current_file_dir)
 
         build_dir = os.path.join(self.html_output_dir, "html")
 

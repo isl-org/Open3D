@@ -59,6 +59,12 @@ Python package with:
     cd docs
 
     # Run `python make_docs.py --help` to usage of the flags.
+    # Example usage: execute notebooks when it has not been executed.
     python make_docs.py --clean_notebooks --execute_notebooks=auto --sphinx --doxygen
 
-The docs html will be saved in ``docs/_out`` folder.
+    # Example usage: skip notebook execution.
+    python make_docs.py --clean_notebooks --execute_notebooks=never --sphinx --doxygen
+
+
+The docs html will be saved in ``docs/_out`` folder. Open the ``index.html``
+file in the browser to preview the documentation.
