@@ -3,8 +3,8 @@ include(ExternalProject)
 ExternalProject_Add(
     ext_eigen
     PREFIX eigen
-    URL https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2
-    URL_HASH SHA256=b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626
+    URL https://gitlab.com/libeigen/eigen/-/archive/18b50458b6199c93fcc11252e03d91130af077ce/eigen-18b50458b6199c93fcc11252e03d91130af077ce.tar.gz
+    URL_HASH SHA256=17E29F5C874D79CE2872A48B16098C7ED22120FF10F1D626477AE59CBD9FF6C3
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/eigen"
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
