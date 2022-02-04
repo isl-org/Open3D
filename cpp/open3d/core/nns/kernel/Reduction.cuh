@@ -45,6 +45,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 // ----------------------------------------------------------------------------
+// original path: faiss/faiss/gpu/utils/Reductions.cuh
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 #include <cuda.h>

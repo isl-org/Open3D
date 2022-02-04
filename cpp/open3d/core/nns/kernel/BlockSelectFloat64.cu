@@ -45,6 +45,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 // ----------------------------------------------------------------------------
+// original path: faiss/faiss/gpu/utils/blockselect/BlockSelectFloat64.cu
+// ----------------------------------------------------------------------------
 
 #include "open3d/core/nns/kernel/BlockSelectImpl.cuh"
 

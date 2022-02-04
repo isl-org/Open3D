@@ -45,6 +45,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 // ----------------------------------------------------------------------------
+// original path: faiss/faiss/gpu/utils/MergeNetworkWarp.cuh
+// ----------------------------------------------------------------------------
+
 #pragma once
 
 #include "open3d/core/nns/kernel/PtxUtils.cuh"
