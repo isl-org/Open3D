@@ -56,7 +56,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      const Tensor &points_row_splits,
                                      double radius) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
-    // AssertTensorDevice(points_row_splits, dataset_points.GetDevice());
+    AssertTensorDevice(points_row_splits, Device("CPU:0"));
     AssertTensorDtype(points_row_splits, Int64);
 
     if (radius <= 0) {
@@ -139,7 +139,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     // Check device and dtype.
     AssertTensorDevice(query_points, device);
     AssertTensorDtype(query_points, dtype);
-    // AssertTensorDevice(queries_row_splits, device);
+    AssertTensorDevice(queries_row_splits, Device("CPU:0"));
     AssertTensorDtype(queries_row_splits, Int64);
 
     // Check shape.
@@ -211,7 +211,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
     // Check device and dtype.
     AssertTensorDevice(query_points, device);
     AssertTensorDtype(query_points, dtype);
-    // AssertTensorDevice(queries_row_splits, device);
+    AssertTensorDevice(queries_row_splits, Device("CPU:0"));
     AssertTensorDtype(queries_row_splits, Int64);
 
     // Check shape.

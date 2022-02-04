@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/core/nns/FaissIndex.h"
 #include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/KnnIndex.h"
 #include "open3d/core/nns/NanoFlannIndex.h"
@@ -139,7 +138,6 @@ private:
 
 protected:
     std::unique_ptr<NanoFlannIndex> nanoflann_index_;
-    std::unique_ptr<FaissIndex> faiss_index_;
     std::unique_ptr<nns::FixedRadiusIndex> fixed_radius_index_;
     std::unique_ptr<nns::KnnIndex> knn_index_;
     const Tensor dataset_points_;
