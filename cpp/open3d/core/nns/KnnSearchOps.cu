@@ -223,9 +223,8 @@ void KnnSearchCUDAOptimized(const Tensor& points,
                 runBlockSelectPair(
                         cur_stream, buf_distances_row_view.GetDataPtr<T>(),
                         buf_indices_row_view.GetDataPtr<TIndex>(),
-                        output_allocator.DistancesPtr_() + knn * i,
-                        output_allocator.IndicesPtr_() + knn * i, false, knn,
-                        buf_distances_row_view.GetShape(1),
+                        distances_ptr + knn * i, indices_ptr + knn * i, false,
+                        knn, buf_distances_row_view.GetShape(1),
                         buf_distances_row_view.GetShape(0));
             }
         }
@@ -260,9 +259,6 @@ void KnnSearchCUDA(const Tensor& points,
                 queries.Slice(0, queries_row_splits[i].Item<int64_t>(),
                               queries_row_splits[i + 1].Item<int64_t>());
         int64_t num_queries_i = queries_i.GetShape(0);
-        // int64_t* neighbors_row_splits_i =
-        //         neighbors_row_splits.GetDataPtr<int64_t>() +
-        //         queries_row_splits[i].Item<int64_t>();
         Tensor neighbors_row_splits_i = neighbors_row_splits.Slice(
                 0, queries_row_splits[i].Item<int64_t>(),
                 queries_row_splits[i + 1].Item<int64_t>());
