@@ -95,7 +95,7 @@ void CheckScopedStreamMultiThreaded(const std::function<void()>& func) {
     const int kIterations = 100000;
     const int kThreads = 8;
     for (int i = 0; i < kThreads; ++i) {
-        threads.emplace_back([&kIterations, &func]() {
+        threads.emplace_back([&func]() {
             utility::LogDebug("Starting thread with ID {}",
                               std::this_thread::get_id());
 
