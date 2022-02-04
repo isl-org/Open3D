@@ -458,7 +458,6 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
     sun_dir_->SetEnabled(!enable);
     sun_color_->SetEnabled(!enable);
     sun_follows_camera_->SetEnabled(!enable);
-    material_type_->SetEnabled(!enable);
     material_color_->SetEnabled(!enable);
     prefab_material_->SetEnabled(!enable);
 
