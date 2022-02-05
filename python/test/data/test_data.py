@@ -33,7 +33,7 @@ import shutil
 
 
 def test_dataset_base():
-    default_data_root = os.path.join(Path.home(), "open3d_data")
+    default_data_root = str(Path.home()) + "/open3d_data"
 
     ds = o3d.data.Dataset("some_prefix")
     assert ds.data_root == default_data_root
@@ -46,7 +46,7 @@ def test_dataset_base():
 
 
 def get_default_gt_dirs(prefix):
-    gt_data_root = os.path.join(Path.home(), "open3d_data")
+    gt_data_root = str(Path.home()) + "/open3d_data"
     gt_download_dir = gt_data_root + "/download/" + prefix
     gt_extract_dir = gt_data_root + "/extract/" + prefix
     return gt_data_root, gt_download_dir, gt_extract_dir

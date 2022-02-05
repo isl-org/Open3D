@@ -345,8 +345,10 @@ private:
 };
 
 /// \class SampleRGBDDatasetRedwood
-/// \brief Data class for `SampleRGBDDatasetRedwood` contains a sample set of 5
-/// color and depth images from ICL-NUIM RGBD dataset living-room1.
+/// \brief Data class for `SampleRGBDDatasetICL` contains a sample set of 5
+/// color and depth images from Redwood RGBD dataset living-room1.
+/// Additionally it also contains camera trajectory log, camera odometry log,
+/// RGBD match, and point cloud reconstruction from TSDF.
 class SampleRGBDDatasetRedwood : public SingleDownloadDataset {
 public:
     SampleRGBDDatasetRedwood(
