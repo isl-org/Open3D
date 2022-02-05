@@ -44,11 +44,6 @@ import ssl
 import certifi
 import urllib.request
 
-root_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(os.path.join(root_dir_path, "python", "tools"))
-print(os.path.join(root_dir_path, "python", "tools"))
-from cli import _get_all_examples_dict as get_all_examples_dict
-
 
 def _create_or_clear_dir(dir_path):
     if os.path.exists(dir_path):
@@ -285,7 +280,7 @@ class PyExampleDocsBuilder:
     Generate Python examples *.rst files.
     """
 
-    def __init__(self, input_dir, output_dir="python_example"):
+    def __init__(self, input_dir, pwd, output_dir="python_example"):
         self.output_dir = Path(str(output_dir))
         self.input_dir = Path(str(input_dir))
         self.prefixes = [
@@ -298,11 +293,15 @@ class PyExampleDocsBuilder:
             ("triangle_mesh", "Triangle Mesh"),
             ("voxel_grid", "Voxel Grid"),
         ]
+
+        sys.path.append(os.path.join(pwd, "..", "python", "tools"))
+        from cli import _get_all_examples_dict
+        self.get_all_examples_dict = _get_all_examples_dict
         print("Generating *.rst Python example docs in directory: %s" %
               self.output_dir)
 
     def _get_examples_dict(self):
-        examples_dict = get_all_examples_dict()
+        examples_dict = self.get_all_examples_dict()
         categories_to_remove = [
             "benchmark", "reconstruction_system", "t_reconstruction_system"
         ]
@@ -342,7 +341,6 @@ class PyExampleDocsBuilder:
 
         for cat in categories:
             if cat.stem in examples_dict.keys():
-                in_dir = self.input_dir / cat.stem
                 out_dir = self.output_dir / cat.stem
                 if (cat.stem == "geometry"):
                     self._generate_index(cat.stem.capitalize(), out_dir)
@@ -657,7 +655,7 @@ if __name__ == "__main__":
     py_example_input_dir = os.path.join(pwd, "..", "examples", "python")
     if not args.py_example_rst == "never":
         print("Building Python example reST")
-        pe = PyExampleDocsBuilder(py_example_input_dir)
+        pe = PyExampleDocsBuilder(input_dir=py_example_input_dir, pwd=pwd)
         pe.generate_rst()
 
     # Jupyter docs (needs execution)
