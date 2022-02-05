@@ -64,7 +64,6 @@ function(open3d_print_configuration_summary)
     set(3RDPARTY_DEPENDENCIES
         BLAS
         Eigen3
-        faiss
         filament
         fmt
         GLEW

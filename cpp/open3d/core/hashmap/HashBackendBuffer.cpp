@@ -27,6 +27,7 @@
 #include "open3d/core/hashmap/HashBackendBuffer.h"
 
 #include "open3d/core/CUDAUtils.h"
+
 namespace open3d {
 namespace core {
 
