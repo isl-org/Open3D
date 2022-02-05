@@ -64,7 +64,27 @@ std::string CompilerInfo::CxxCompilerVersion() const {
     return fmt::format("{}.{}.{}", __GNUC__, __GNUC_MINOR__,
                        __GNUC_PATCHLEVEL__);
 #elif defined(_MSC_VER)
-    return fmt::format("{}", MSVC_VERSION);
+    // Support for VS 2010 or later.
+    // https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
+    std::string vs_version;
+    if (_MSC_VER >= 1930) {
+        vs_version = "2022+";
+    } else if (_MSC_VER >= 1920) {
+        vs_version = "2019";
+    } else if (_MSC_VER >= 1910) {
+        vs_version = "2017";
+    } else if (_MSC_VER == 1900) {
+        vs_version = "2015";
+    } else if (_MSC_VER == 1800) {
+        vs_version = "2013";
+    } else if (_MSC_VER == 1700) {
+        vs_version = "2012";
+    } else if (_MSC_VER == 1600) {
+        vs_version = "2010";
+    } else {
+        vs_version = "unknown";
+    }
+    return fmt::format("{} (vs{})", _MSC_VER, vs_version);
 #else
     return "unknown";
 #endif
