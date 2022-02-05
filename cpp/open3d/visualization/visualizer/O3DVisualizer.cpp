@@ -1176,8 +1176,8 @@ struct O3DVisualizer::Impl {
             inspect_mat.metallic_img.reset();
             inspect_mat.roughness_img.reset();
             inspect_mat.reflectance_img.reset();
-            inspect_mat.sRGB_color = false;
-            inspect_mat.sRGB_vertex_color = true;
+            // inspect_mat.sRGB_color = false;
+            // inspect_mat.sRGB_vertex_color = true;
         }
     }
 

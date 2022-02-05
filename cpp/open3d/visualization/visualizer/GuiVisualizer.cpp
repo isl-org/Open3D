@@ -415,6 +415,7 @@ struct GuiVisualizer::Impl {
 
     void ModifyMaterialForBasicMode(rendering::MaterialRecord &basic_mat) {
         // Set parameters for 'simple' rendering
+        basic_mat.shader = "defaultUnlit";
         basic_mat.base_color = {1.f, 1.f, 1.f, 1.f};
         basic_mat.base_metallic = 0.f;
         basic_mat.base_roughness = 0.5f;
@@ -428,13 +429,13 @@ struct GuiVisualizer::Impl {
         basic_mat.roughness_img.reset();
         basic_mat.reflectance_img.reset();
         basic_mat.sRGB_color = false;
-        basic_mat.sRGB_vertex_color = true;
+        basic_mat.sRGB_vertex_color = false;
     }
 
     void SetBasicModeGeometry(bool enable) {
         auto o3dscene = scene_wgt_->GetScene();
 
-        // Only need to deal with triangle models...
+        // Have triangle model...
         if (loaded_model_.meshes_.size() > 0) {
             if (enable) {
                 if (basic_model_.meshes_.size() == 0) {
@@ -464,6 +465,20 @@ struct GuiVisualizer::Impl {
                 o3dscene->ShowGeometry(MODEL_NAME, false);
             } else {
                 o3dscene->ShowGeometry(INSPECT_MODEL_NAME, false);
+                o3dscene->ShowGeometry(MODEL_NAME, true);
+            }
+        }
+
+        // Have point cloud
+        if (loaded_pcd_) {
+            if (enable) {
+                rendering::MaterialRecord mat;
+                ModifyMaterialForBasicMode(mat);
+                o3dscene->AddGeometry(INSPECT_MODEL_NAME, loaded_pcd_.get(),
+                                      mat);
+                o3dscene->ShowGeometry(MODEL_NAME, false);
+            } else {
+                o3dscene->RemoveGeometry(INSPECT_MODEL_NAME);
                 o3dscene->ShowGeometry(MODEL_NAME, true);
             }
         }
