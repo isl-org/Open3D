@@ -246,7 +246,7 @@ SampleRGBDImageTUM::SampleRGBDImageTUM(const std::string& prefix,
     depth_path_ = Dataset::GetExtractDir() + "/TUM_depth.png";
 }
 
-SampleRGBDDatasetICL::SampleRGBDDatasetICL(const std::string& prefix,
+SampleRGBDDatasetRedwood::SampleRGBDDatasetRedwood(const std::string& prefix,
                                            const std::string& data_root)
     : SingleDownloadDataset(
               prefix,

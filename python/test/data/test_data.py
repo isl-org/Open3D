@@ -375,8 +375,8 @@ def test_sample_rgbd_image_tum():
     shutil.rmtree(extract_dir, ignore_errors=True)
 
 
-def test_sample_rgbd_dataset_icl():
-    prefix = "O3DTestSampleRGBDDatasetICL"
+def test_sample_rgbd_dataset_redwood():
+    prefix = "O3DTestSampleRGBDDatasetRedwood"
     data_root = Path(os.path.join(Path.home(), "open3d_data"))
     download_dir = Path(os.path.join(data_root, "download", prefix))
     extract_dir = Path(os.path.join(data_root, "extract", prefix))
@@ -384,7 +384,7 @@ def test_sample_rgbd_dataset_icl():
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)
 
-    rgbd_dataset_icl = o3d.data.SampleRGBDDatasetICL(prefix)
+    rgbd_dataset_redwood = o3d.data.SampleRGBDDatasetRedwood(prefix)
     assert os.path.isdir(download_dir) == True
 
     color_paths = [
@@ -395,8 +395,8 @@ def test_sample_rgbd_dataset_icl():
         os.path.join(extract_dir, "color", "00004.jpg")
     ]
 
-    assert rgbd_dataset_icl.color_paths == color_paths
-    for path in rgbd_dataset_icl.color_paths:
+    assert rgbd_dataset_redwood.color_paths == color_paths
+    for path in rgbd_dataset_redwood.color_paths:
         assert os.path.isfile(path) == True
 
     depth_paths = [
@@ -406,23 +406,23 @@ def test_sample_rgbd_dataset_icl():
         os.path.join(extract_dir, "depth", "00003.png"),
         os.path.join(extract_dir, "depth", "00004.png")
     ]
-    assert rgbd_dataset_icl.depth_paths == depth_paths
-    for path in rgbd_dataset_icl.depth_paths:
+    assert rgbd_dataset_redwood.depth_paths == depth_paths
+    for path in rgbd_dataset_redwood.depth_paths:
         assert os.path.isfile(path) == True
 
-    assert Path(rgbd_dataset_icl.trajectory_log_path) == Path(
+    assert Path(rgbd_dataset_redwood.trajectory_log_path) == Path(
         os.path.join(extract_dir, "trajectory.log"))
-    assert Path(rgbd_dataset_icl.odometry_log_path) == Path(
+    assert Path(rgbd_dataset_redwood.odometry_log_path) == Path(
         os.path.join(extract_dir, "odometry.log"))
-    assert Path(rgbd_dataset_icl.rgbd_match_path) == Path(
+    assert Path(rgbd_dataset_redwood.rgbd_match_path) == Path(
         os.path.join(extract_dir, "rgbd.match"))
-    assert Path(rgbd_dataset_icl.reconstruction_path) == Path(
+    assert Path(rgbd_dataset_redwood.reconstruction_path) == Path(
         os.path.join(extract_dir, "example_tsdf_pcd.ply"))
 
-    assert rgbd_dataset_icl.prefix == prefix
-    assert Path(rgbd_dataset_icl.data_root) == Path(data_root)
-    assert Path(rgbd_dataset_icl.download_dir) == Path(download_dir)
-    assert Path(rgbd_dataset_icl.extract_dir) == Path(extract_dir)
+    assert rgbd_dataset_redwood.prefix == prefix
+    assert Path(rgbd_dataset_redwood.data_root) == Path(data_root)
+    assert Path(rgbd_dataset_redwood.download_dir) == Path(download_dir)
+    assert Path(rgbd_dataset_redwood.extract_dir) == Path(extract_dir)
 
     shutil.rmtree(download_dir, ignore_errors=True)
     shutil.rmtree(extract_dir, ignore_errors=True)

@@ -320,51 +320,58 @@ void pybind_sample_rgbd_image_tum(py::module& m) {
     docstring::ClassMethodDocInject(m, "SampleRGBDImageTUM", "depth_path");
 }
 
-void pybind_sample_rgbd_dataset_icl(py::module& m) {
-    // open3d.data.SampleRGBDDatasetICL
-    py::class_<SampleRGBDDatasetICL, PySimpleDataset<SampleRGBDDatasetICL>,
-               std::shared_ptr<SampleRGBDDatasetICL>, SingleDownloadDataset>
-            rgbd_dataset_icl(m, "SampleRGBDDatasetICL",
-                             "Data class for `SampleRGBDDatasetICL` contains a "
-                             "color image `TUM_color.png` and a depth image "
-                             "`TUM_depth.png` sample from TUM RGBD dataset.");
-    rgbd_dataset_icl
+void pybind_sample_rgbd_dataset_redwood(py::module& m) {
+    // open3d.data.SampleRGBDDatasetRedwood
+    py::class_<SampleRGBDDatasetRedwood,
+               PySimpleDataset<SampleRGBDDatasetRedwood>,
+               std::shared_ptr<SampleRGBDDatasetRedwood>, SingleDownloadDataset>
+            rgbd_dataset_redwood(
+                    m, "SampleRGBDDatasetRedwood",
+                    "Data class for `SampleRGBDDatasetRedwood` contains a "
+                    "sample set of 5 color and depth images from Redwood RGBD "
+                    "dataset living-room1. Additionally it also contains "
+                    "camera trajectory log, camera odometry log, rgbd match, "
+                    "and point cloud reconstruction obtained using TSDF.");
+    rgbd_dataset_redwood
             .def(py::init<const std::string&, const std::string&>(),
-                 "prefix"_a = "SampleRGBDDatasetICL", "data_root"_a = "")
+                 "prefix"_a = "SampleRGBDDatasetRedwood", "data_root"_a = "")
             .def_property_readonly(
-                    "color_paths", &SampleRGBDDatasetICL::GetColorPaths,
+                    "color_paths", &SampleRGBDDatasetRedwood::GetColorPaths,
                     "List of paths to color image samples of size 5. Use "
                     "`color_paths[0]`, `color_paths[1]` ... `color_paths[4]` "
                     "to access the paths.")
             .def_property_readonly(
-                    "depth_paths", &SampleRGBDDatasetICL::GetDepthPaths,
+                    "depth_paths", &SampleRGBDDatasetRedwood::GetDepthPaths,
                     "List of paths to depth image samples of size 5. Use "
                     "`depth_paths[0]`, `depth_paths[1]` ... `depth_paths[4]` "
                     "to access the paths.")
             .def_property_readonly(
                     "trajectory_log_path",
-                    &SampleRGBDDatasetICL::GetTrajectoryLogPath,
+                    &SampleRGBDDatasetRedwood::GetTrajectoryLogPath,
                     "Path to camera trajectory log file `trajectory.log`.")
             .def_property_readonly(
                     "odometry_log_path",
-                    &SampleRGBDDatasetICL::GetOdometryLogPath,
+                    &SampleRGBDDatasetRedwood::GetOdometryLogPath,
                     "Path to camera odometry log file `odometry.log`.")
             .def_property_readonly(
-                    "rgbd_match_path", &SampleRGBDDatasetICL::GetRGBDMatchPath,
+                    "rgbd_match_path",
+                    &SampleRGBDDatasetRedwood::GetRGBDMatchPath,
                     "Path to color and depth image match file `rgbd.match`.")
             .def_property_readonly(
                     "reconstruction_path",
-                    &SampleRGBDDatasetICL::GetReconstructionPath,
+                    &SampleRGBDDatasetRedwood::GetReconstructionPath,
                     "Path to pointcloud reconstruction from TSDF.");
-    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL", "color_paths");
-    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL", "depth_paths");
-    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetRedwood",
+                                    "color_paths");
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetRedwood",
+                                    "depth_paths");
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetRedwood",
                                     "trajectory_log_path");
-    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetRedwood",
                                     "odometry_log_path");
-    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetRedwood",
                                     "rgbd_match_path");
-    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetICL",
+    docstring::ClassMethodDocInject(m, "SampleRGBDDatasetRedwood",
                                     "reconstruction_path");
 }
 
@@ -550,7 +557,7 @@ void pybind_data(py::module& m) {
     pybind_sample_rgbd_image_nyu(m_submodule);
     pybind_sample_rgbd_image_sun(m_submodule);
     pybind_sample_rgbd_image_tum(m_submodule);
-    pybind_sample_rgbd_dataset_icl(m_submodule);
+    pybind_sample_rgbd_dataset_redwood(m_submodule);
     pybind_sample_fountain_rgbd_dataset(m_submodule);
     pybind_eagle(m_submodule);
     pybind_armadillo(m_submodule);
