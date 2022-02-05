@@ -62,3 +62,12 @@ Python package with:
     python make_docs.py --clean_notebooks --execute_notebooks=auto --sphinx --doxygen
 
 The docs html will be saved in ``docs/_out`` folder.
+
+Preview
+-------
+
+Open ``docs/_out/html/index.html`` in a web browser to preview the docs.
+
+.. code-block:: bash
+
+    google-chrome docs/_out/html/index.html
