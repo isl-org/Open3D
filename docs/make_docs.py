@@ -315,13 +315,15 @@ class PyExampleDocsBuilder:
                 return prefix
         raise Exception("No prefix found for geometry examples")
 
-    def _generate_index(self, title, output_path):
+    @staticmethod
+    def _generate_index(title, output_path):
         os.makedirs(output_path)
         out_string = (f"{title}\n" f"{'-' * len(title)}\n\n")
         with open(output_path / "index.rst", "w") as f:
             f.write(out_string)
 
-    def _add_example_to_docs(self, example, output_path):
+    @staticmethod
+    def _add_example_to_docs(example, output_path):
         shutil.copy(example, output_path)
         out_string = (f"{example.stem}.py"
                       f"\n```````````````````````````````````````\n"
@@ -358,13 +360,16 @@ class PyExampleDocsBuilder:
                             sub_category_path = out_dir / prefix
                             self._add_example_to_docs(ex, sub_category_path)
                 else:
-                    self._generate_index(cat.stem.capitalize(), out_dir)
+                    if (cat.stem == "io"):
+                        self._generate_index("IO", out_dir)
+                    else:
+                        self._generate_index(cat.stem.capitalize(), out_dir)
+
                     examples = sorted(Path(cat).glob("*.py"))
                     for ex in examples:
                         if ex.stem in examples_dict[cat.stem]:
                             shutil.copy(ex, out_dir)
                             self._add_example_to_docs(ex, out_dir)
-        pass
 
 
 class SphinxDocsBuilder:
