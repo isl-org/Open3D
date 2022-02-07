@@ -33,7 +33,7 @@ import shutil
 
 
 def test_dataset_base():
-    default_data_root = str(Path.home()) + "/open3d_data"
+    default_data_root = os.path.join(Path.home(), "open3d_data")
 
     ds = o3d.data.Dataset("some_prefix")
     assert ds.data_root == default_data_root
@@ -46,9 +46,9 @@ def test_dataset_base():
 
 
 def get_default_gt_dirs(prefix):
-    gt_data_root = str(Path.home()) + "/open3d_data"
-    gt_download_dir = gt_data_root + "/download/" + prefix
-    gt_extract_dir = gt_data_root + "/extract/" + prefix
+    gt_data_root = os.path.join(Path.home(), "open3d_data")
+    gt_download_dir = os.path.join(gt_data_root, "download", prefix)
+    gt_extract_dir = os.path.join(gt_data_root, "extract", prefix)
     return gt_data_root, gt_download_dir, gt_extract_dir
 
 
@@ -92,19 +92,20 @@ def test_demo_icp_pointclouds():
     demo_icp = o3d.data.DemoICPPointClouds(prefix)
     assert os.path.isdir(gt_download_dir) == True
 
-    paths = [
+    gt_paths = [
         gt_extract_dir + "/cloud_bin_0.pcd",
         gt_extract_dir + "/cloud_bin_1.pcd", gt_extract_dir + "/cloud_bin_2.pcd"
     ]
 
-    assert demo_icp.paths == paths
-    for path in demo_icp.paths:
-        assert os.path.isfile(path) == True
+    assert len(demo_icp.paths) == len(gt_paths)
+    for gt_path, demo_icp_path in zip(gt_paths, demo_icp.paths):
+        assert Path(gt_path) == Path(demo_icp_path)
+        assert os.path.isfile(gt_path) == True
 
     assert demo_icp.prefix == prefix
-    assert demo_icp.data_root == gt_data_root
-    assert demo_icp.download_dir == gt_download_dir
-    assert demo_icp.extract_dir == gt_extract_dir
+    assert Path(demo_icp.data_root) == Path(gt_data_root)
+    assert Path(demo_icp.download_dir) == Path(gt_download_dir)
+    assert Path(demo_icp.extract_dir) == Path(gt_extract_dir)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
@@ -120,15 +121,19 @@ def test_demo_colored_icp_pointclouds():
     demo_colored_icp = o3d.data.DemoColoredICPPointClouds(prefix)
     assert os.path.isdir(gt_download_dir) == True
 
-    paths = [gt_extract_dir + "/frag_115.ply", gt_extract_dir + "/frag_116.ply"]
-    assert demo_colored_icp.paths == paths
-    for path in demo_colored_icp.paths:
-        assert os.path.isfile(path) == True
+    gt_paths = [
+        gt_extract_dir + "/frag_115.ply", gt_extract_dir + "/frag_116.ply"
+    ]
+
+    assert len(demo_colored_icp.paths) == len(gt_paths)
+    for gt_path, demo_colored_icp_path in zip(gt_paths, demo_colored_icp.paths):
+        assert Path(gt_path) == Path(demo_colored_icp_path)
+        assert os.path.isfile(gt_path) == True
 
     assert demo_colored_icp.prefix == prefix
-    assert demo_colored_icp.data_root == gt_data_root
-    assert demo_colored_icp.download_dir == gt_download_dir
-    assert demo_colored_icp.extract_dir == gt_extract_dir
+    assert Path(demo_colored_icp.data_root) == Path(gt_data_root)
+    assert Path(demo_colored_icp.download_dir) == Path(gt_download_dir)
+    assert Path(demo_colored_icp.extract_dir) == Path(gt_extract_dir)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
@@ -144,15 +149,17 @@ def test_demo_crop_pointcloud():
     demo_crop_pcd = o3d.data.DemoCropPointCloud(prefix)
     assert os.path.isdir(gt_download_dir) == True
 
-    assert demo_crop_pcd.pointcloud_path == gt_extract_dir + "/fragment.ply"
+    assert Path(demo_crop_pcd.pointcloud_path) == Path(gt_extract_dir +
+                                                       "/fragment.ply")
     assert os.path.isfile(demo_crop_pcd.pointcloud_path) == True
-    assert demo_crop_pcd.cropped_json_path == gt_extract_dir + "/cropped.json"
+    assert Path(demo_crop_pcd.cropped_json_path) == Path(gt_extract_dir +
+                                                         "/cropped.json")
     assert os.path.isfile(demo_crop_pcd.pointcloud_path) == True
 
     assert demo_crop_pcd.prefix == prefix
-    assert demo_crop_pcd.data_root == gt_data_root
-    assert demo_crop_pcd.download_dir == gt_download_dir
-    assert demo_crop_pcd.extract_dir == gt_extract_dir
+    assert Path(demo_crop_pcd.data_root) == Path(gt_data_root)
+    assert Path(demo_crop_pcd.download_dir) == Path(gt_download_dir)
+    assert Path(demo_crop_pcd.extract_dir) == Path(gt_extract_dir)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
@@ -168,33 +175,34 @@ def test_demo_pointcloud_feature_matching():
     demo_feature_matching = o3d.data.DemoPointCloudFeatureMatching(prefix)
     assert os.path.isdir(gt_download_dir) == True
 
-    pointcloud_paths = [
+    gt_pointcloud_paths = [
         gt_extract_dir + "/cloud_bin_0.pcd", gt_extract_dir + "/cloud_bin_1.pcd"
     ]
-    assert demo_feature_matching.pointcloud_paths == pointcloud_paths
+
+    assert demo_feature_matching.pointcloud_paths == gt_pointcloud_paths
     assert os.path.isfile(demo_feature_matching.pointcloud_paths[0]) == True
     assert os.path.isfile(demo_feature_matching.pointcloud_paths[1]) == True
 
-    fpfh_feature_paths = [
+    gt_fpfh_feature_paths = [
         gt_extract_dir + "/cloud_bin_0.fpfh.bin",
         gt_extract_dir + "/cloud_bin_1.fpfh.bin"
     ]
-    assert demo_feature_matching.fpfh_feature_paths == fpfh_feature_paths
+    assert demo_feature_matching.fpfh_feature_paths == gt_fpfh_feature_paths
     assert os.path.isfile(demo_feature_matching.fpfh_feature_paths[0]) == True
     assert os.path.isfile(demo_feature_matching.fpfh_feature_paths[1]) == True
 
-    l32d_feature_paths = [
+    gt_l32d_feature_paths = [
         gt_extract_dir + "/cloud_bin_0.d32.bin",
         gt_extract_dir + "/cloud_bin_1.d32.bin"
     ]
-    assert demo_feature_matching.l32d_feature_paths == l32d_feature_paths
+    assert demo_feature_matching.l32d_feature_paths == gt_l32d_feature_paths
     assert os.path.isfile(demo_feature_matching.l32d_feature_paths[0]) == True
     assert os.path.isfile(demo_feature_matching.l32d_feature_paths[1]) == True
 
     assert demo_feature_matching.prefix == prefix
-    assert demo_feature_matching.data_root == gt_data_root
-    assert demo_feature_matching.download_dir == gt_download_dir
-    assert demo_feature_matching.extract_dir == gt_extract_dir
+    assert Path(demo_feature_matching.data_root) == Path(gt_data_root)
+    assert Path(demo_feature_matching.download_dir) == Path(gt_download_dir)
+    assert Path(demo_feature_matching.extract_dir) == Path(gt_extract_dir)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
