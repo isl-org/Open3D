@@ -24,7 +24,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/reconstruction_system/refine_registration.py
+# examples/python/reconstruction_system/colored_icp.py
 
 import numpy as np
 import open3d as o3d

@@ -251,7 +251,7 @@ SampleRGBDDatasetRedwood::SampleRGBDDatasetRedwood(const std::string& prefix,
     : SingleDownloadDataset(
               prefix,
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220201-data/SampleRGBDDatasetICL.zip"},
+               "20220201-data/SampleRGBDDatasetRedwood.zip"},
               "3af3b6ee53e4d64396537553995d9556",
               /*no_extract =*/false,
               data_root) {
