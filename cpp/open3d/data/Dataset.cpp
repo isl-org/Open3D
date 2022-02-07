@@ -247,7 +247,7 @@ SampleRGBDImageTUM::SampleRGBDImageTUM(const std::string& prefix,
 }
 
 SampleRGBDDatasetRedwood::SampleRGBDDatasetRedwood(const std::string& prefix,
-                                           const std::string& data_root)
+                                                   const std::string& data_root)
     : SingleDownloadDataset(
               prefix,
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
