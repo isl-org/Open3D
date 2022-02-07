@@ -147,7 +147,8 @@ if __name__ == "__main__":
     # collects runtimes for all examples
     results = OrderedDict()
 
-    datasets = prepare_benchmark_data()
+    # datasets = prepare_benchmark_data()
+    datasets = OrderedDict()
 
     if args.search_type == "knn":
         # random data

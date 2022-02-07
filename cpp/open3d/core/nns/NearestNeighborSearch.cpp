@@ -42,19 +42,8 @@ bool NearestNeighborSearch::SetIndex() {
 bool NearestNeighborSearch::KnnIndex() {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        if (dataset_points_.GetShape()[1] <= 16) {
-            knn_index_.reset(new nns::KnnIndex());
-            return knn_index_->SetTensorData(dataset_points_);
-        } else {
-#ifdef WITH_FAISS
-            faiss_index_.reset(new nns::FaissIndex());
-            return faiss_index_->SetTensorData(dataset_points_);
-#else
-            utility::LogError(
-                    "Currently, Faiss is disabled. Please recompile Open3D "
-                    "with -DWITH_FAISS=ON.");
-#endif
-        }
+        knn_index_.reset(new nns::KnnIndex());
+        return knn_index_->SetTensorData(dataset_points_);
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
@@ -111,10 +100,8 @@ std::pair<Tensor, Tensor> NearestNeighborSearch::KnnSearch(
     AssertTensorDevice(query_points, dataset_points_.GetDevice());
 
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
-        if (query_points.GetShape()[1] <= 16 && knn_index_) {
+        if (knn_index_) {
             return knn_index_->SearchKnn(query_points, knn);
-        } else if (faiss_index_) {
-            return faiss_index_->SearchKnn(query_points, knn);
         } else {
             utility::LogError("Index is not set.");
         }
