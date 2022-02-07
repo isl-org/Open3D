@@ -415,7 +415,6 @@ struct GuiVisualizer::Impl {
 
     void ModifyMaterialForBasicMode(rendering::MaterialRecord &basic_mat) {
         // Set parameters for 'simple' rendering
-        basic_mat.shader = "defaultUnlit";
         basic_mat.base_color = {1.f, 1.f, 1.f, 1.f};
         basic_mat.base_metallic = 0.f;
         basic_mat.base_roughness = 0.5f;
@@ -435,7 +434,8 @@ struct GuiVisualizer::Impl {
     void SetBasicModeGeometry(bool enable) {
         auto o3dscene = scene_wgt_->GetScene();
 
-        // Have triangle model...
+        // Only need to modify TriangleMesh - basic mode for point clouds
+        // requires only change to their materials which are handled elsewhere
         if (loaded_model_.meshes_.size() > 0) {
             if (enable) {
                 if (basic_model_.meshes_.size() == 0) {
@@ -465,20 +465,6 @@ struct GuiVisualizer::Impl {
                 o3dscene->ShowGeometry(MODEL_NAME, false);
             } else {
                 o3dscene->ShowGeometry(INSPECT_MODEL_NAME, false);
-                o3dscene->ShowGeometry(MODEL_NAME, true);
-            }
-        }
-
-        // Have point cloud
-        if (loaded_pcd_) {
-            if (enable) {
-                rendering::MaterialRecord mat;
-                ModifyMaterialForBasicMode(mat);
-                o3dscene->AddGeometry(INSPECT_MODEL_NAME, loaded_pcd_.get(),
-                                      mat);
-                o3dscene->ShowGeometry(MODEL_NAME, false);
-            } else {
-                o3dscene->RemoveGeometry(INSPECT_MODEL_NAME);
                 o3dscene->ShowGeometry(MODEL_NAME, true);
             }
         }
@@ -543,7 +529,8 @@ struct GuiVisualizer::Impl {
         if (settings_.model_.GetMaterialType() ==
                     GuiSettingsModel::MaterialType::LIT &&
             current_materials.lit_name ==
-                    GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+                    GuiSettingsModel::MATERIAL_FROM_FILE_NAME &&
+            !basic_mode_enabled_) {
             scene_wgt_->GetScene()->UpdateModelMaterial(MODEL_NAME,
                                                         loaded_model_);
         } else {
@@ -650,11 +637,26 @@ private:
     void UpdateSceneMaterial() {
         switch (settings_.model_.GetMaterialType()) {
             case GuiSettingsModel::MaterialType::LIT:
-                scene_wgt_->GetScene()->UpdateMaterial(settings_.lit_material_);
+                if (basic_mode_enabled_) {
+                    rendering::MaterialRecord basic_mat(
+                            settings_.lit_material_);
+                    ModifyMaterialForBasicMode(basic_mat);
+                    scene_wgt_->GetScene()->UpdateMaterial(basic_mat);
+                } else {
+                    scene_wgt_->GetScene()->UpdateMaterial(
+                            settings_.lit_material_);
+                }
                 break;
             case GuiSettingsModel::MaterialType::UNLIT:
-                scene_wgt_->GetScene()->UpdateMaterial(
-                        settings_.unlit_material_);
+                if (basic_mode_enabled_) {
+                    rendering::MaterialRecord basic_mat(
+                            settings_.unlit_material_);
+                    ModifyMaterialForBasicMode(basic_mat);
+                    scene_wgt_->GetScene()->UpdateMaterial(basic_mat);
+                } else {
+                    scene_wgt_->GetScene()->UpdateMaterial(
+                            settings_.unlit_material_);
+                }
                 break;
             case GuiSettingsModel::MaterialType::NORMAL_MAP: {
                 settings_.normal_depth_material_.shader = "normals";

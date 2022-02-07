@@ -454,7 +454,6 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
     ibl_enabled_->SetEnabled(!enable);
     ibl_intensity_->SetEnabled(!enable);
     sun_enabled_->SetEnabled(!enable);
-    sun_intensity_->SetEnabled(!enable);
     sun_dir_->SetEnabled(!enable);
     sun_color_->SetEnabled(!enable);
     sun_follows_camera_->SetEnabled(!enable);
