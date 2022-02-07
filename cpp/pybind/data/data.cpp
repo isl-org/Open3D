@@ -327,9 +327,11 @@ void pybind_sample_rgbd_dataset_redwood(py::module& m) {
                std::shared_ptr<SampleRGBDDatasetRedwood>, SingleDownloadDataset>
             rgbd_dataset_icl(
                     m, "SampleRGBDDatasetRedwood",
-                    "Data class for `SampleRGBDDatasetRedwood` contains a "
-                    "color image `TUM_color.png` and a depth image "
-                    "`TUM_depth.png` sample from TUM RGBD dataset.");
+                    "Data class for `SampleRGBDDatasetICL` contains a sample "
+                    "set of 5 color and depth images from Redwood RGBD "
+                    "dataset living-room1. Additionally it also contains "
+                    "camera trajectory log, camera odometry log, RGBD match, "
+                    "and point cloud reconstruction from TSDF.");
     rgbd_dataset_icl
             .def(py::init<const std::string&, const std::string&>(),
                  "prefix"_a = "SampleRGBDDatasetRedwood", "data_root"_a = "")
