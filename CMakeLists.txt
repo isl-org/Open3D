@@ -97,6 +97,7 @@ option(USE_SYSTEM_QHULLCPP        "Use system pre-installed qhullcpp"        OFF
 option(USE_SYSTEM_TBB             "Use system pre-installed TBB"             OFF)
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
+option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
 else()

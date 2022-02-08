@@ -1244,14 +1244,22 @@ list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_opengl)
 
 # RPC interface
 # zeromq
-include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
-open3d_import_3rdparty_library(3rdparty_zeromq
-    HIDDEN
-    INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS}
-    LIB_DIR      ${ZEROMQ_LIB_DIR}
-    LIBRARIES    ${ZEROMQ_LIBRARIES}
-    DEPENDS      ext_zeromq ext_cppzmq
-)
+if(USE_SYSTEM_ZEROMQ)
+    open3d_pkg_config_3rdparty_library(3rdparty_zeromq SEARCH_ARGS libzmq)
+    if(NOT 3rdparty_zeromq_FOUND)
+        set(USE_USE_SYSTEM_ZEROMQ OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_ZEROMQ)
+    include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
+    open3d_import_3rdparty_library(3rdparty_zeromq
+        HIDDEN
+        INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS}
+        LIB_DIR      ${ZEROMQ_LIB_DIR}
+        LIBRARIES    ${ZEROMQ_LIBRARIES}
+        DEPENDS      ext_zeromq ext_cppzmq
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_zeromq)
 if(DEFINED ZEROMQ_ADDITIONAL_LIBS)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${ZEROMQ_ADDITIONAL_LIBS})
