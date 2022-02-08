@@ -28,6 +28,7 @@ import os
 import sys
 import urllib.request
 import zipfile
+
 import numpy as np
 import pytest
 
@@ -43,6 +44,7 @@ test_data_dir = os.path.join(_pwd, os.pardir, os.pardir, "examples",
 # how to manage the test data files.
 sys.path.append(test_data_dir)
 from download_utils import download_all_files as _download_all_files
+
 _download_all_files()
 
 

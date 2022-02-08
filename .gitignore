@@ -95,4 +95,5 @@ docs/python_api/
 docs/conf.py
 docs/Doxyfile
 docs/getting_started.rst
+docs/docker.rst
 docs/tensorboard.md

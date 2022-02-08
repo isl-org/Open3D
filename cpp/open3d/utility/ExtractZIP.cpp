@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/ExtractZIP.h"
+#include "open3d/utility/ExtractZIP.h"
 
 // Reference:
 // https://github.com/madler/zlib/blob/master/contrib/minizip/miniunz.c
@@ -51,7 +51,7 @@
 #define WRITEBUFFERSIZE (8192)
 
 namespace open3d {
-namespace data {
+namespace utility {
 
 static int ExtractCurrentFile(unzFile uf,
                               const std::string &extract_dir,
@@ -228,5 +228,5 @@ void ExtractFromZIP(const std::string &file_path,
     unzClose(uf);
 }
 
-}  // namespace data
+}  // namespace utility
 }  // namespace open3d

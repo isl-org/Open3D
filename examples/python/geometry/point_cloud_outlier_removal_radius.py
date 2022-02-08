@@ -26,14 +26,6 @@
 
 import open3d as o3d
 import numpy as np
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 
 def display_inlier_outlier(cloud, ind):
@@ -47,10 +39,10 @@ def display_inlier_outlier(cloud, ind):
 
 
 if __name__ == "__main__":
+    ptcloud_data = o3d.data.SamplePointCloudPLY()
 
     print("Load a ply point cloud, print it, and render it")
-    pcd_path = os.path.join(test_data_path, 'ICP', 'cloud_bin_2.pcd')
-    pcd = o3d.io.read_point_cloud(pcd_path)
+    pcd = o3d.io.read_point_cloud(ptcloud_data.path)
     R = pcd.get_rotation_matrix_from_xyz((np.pi, 0, 0))
     pcd.rotate(R, center=(0, 0, 0))
     o3d.visualization.draw([pcd])

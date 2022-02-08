@@ -26,12 +26,8 @@
 
 import numpy as np
 import open3d as o3d
-import os
 import threading
 import time
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 CLOUD_NAME = "points"
 
@@ -95,9 +91,8 @@ class MultiWinApp:
     def update_thread(self):
         # This is NOT the UI thread, need to call post_to_main_thread() to update
         # the scene or any part of the UI.
-
-        self.cloud = o3d.io.read_point_cloud(
-            os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
+        pcd_data = o3d.data.DemoICPPointClouds()
+        self.cloud = o3d.io.read_point_cloud(pcd_data.paths[0])
         bounds = self.cloud.get_axis_aligned_bounding_box()
         extent = bounds.get_extent()
 

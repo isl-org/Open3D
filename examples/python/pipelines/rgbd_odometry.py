@@ -27,25 +27,15 @@
 
 import open3d as o3d
 import numpy as np
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
-sys.path.append(pyexample_path)
 
 if __name__ == "__main__":
     pinhole_camera_intrinsic = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-
-    source_color = o3d.io.read_image(
-        os.path.join(test_data_path, 'RGBD', 'color', '00000.jpg'))
-    source_depth = o3d.io.read_image(
-        os.path.join(test_data_path, 'RGBD', 'depth', '00000.png'))
-    target_color = o3d.io.read_image(
-        os.path.join(test_data_path, 'RGBD', 'color', '00001.jpg'))
-    target_depth = o3d.io.read_image(
-        os.path.join(test_data_path, 'RGBD', 'depth', '00001.png'))
+    rgbd_data = o3d.data.SampleRGBDDatasetICL()
+    source_color = o3d.io.read_image(rgbd_data.color_paths[0])
+    source_depth = o3d.io.read_image(rgbd_data.depth_paths[0])
+    target_color = o3d.io.read_image(rgbd_data.color_paths[1])
+    target_depth = o3d.io.read_image(rgbd_data.depth_paths[1])
 
     source_rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
         source_color, source_depth)

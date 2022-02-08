@@ -28,13 +28,7 @@ import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
-import os
 import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
@@ -65,9 +59,12 @@ if __name__ == "__main__":
 
     # We can visualize the slices of the distance field and closest geometry directly with matplotlib.
     fig, axes = plt.subplots(1, 2)
+    print(
+        "Visualizing sdf and closest geometry at each point for a cube and sphere ..."
+    )
 
     def show_slices(i=int):
-        print(i)
+        print(f"Displaying slice no.: {i}")
         if i >= 64:
             sys.exit()
         axes[0].imshow(signed_distance[:, :, i])

@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/data/Extract.h"
+#include "open3d/utility/Extract.h"
 
 #include "open3d/data/Dataset.h"
-#include "open3d/data/Download.h"
+#include "open3d/utility/Download.h"
 #include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
 
@@ -48,18 +48,18 @@ TEST(Extract, ExtractFromZIP) {
     std::string md5 = "bc47a5e33d33e717259e3a37fa5eebef";
     std::string file_path = extract_dir + "/test_data_v2_00.zip";
     // This download shall work.
-    EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
+    EXPECT_EQ(utility::DownloadFromURL(url, md5, prefix), file_path);
 
     // Extract the test zip file.
-    EXPECT_NO_THROW(data::Extract(file_path, extract_dir));
+    EXPECT_NO_THROW(utility::Extract(file_path, extract_dir));
     url = "https://github.com/isl-org/open3d_downloads/releases/download/"
           "data-manager/test_data_v2_00.tar.xz";
     md5 = "7c682c7af4ef9bda1fc854b008ae2bef";
     file_path = extract_dir + "/test_data_v2_00.tar.xz";
-    EXPECT_EQ(data::DownloadFromURL(url, md5, prefix), file_path);
+    EXPECT_EQ(utility::DownloadFromURL(url, md5, prefix), file_path);
 
     // Currently only `.zip` files are supported.
-    EXPECT_ANY_THROW(data::Extract(file_path, extract_dir));
+    EXPECT_ANY_THROW(utility::Extract(file_path, extract_dir));
 
     // Clean up.
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(extract_dir));

@@ -25,16 +25,11 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import os
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 if __name__ == "__main__":
-
-    print("Reading image from file: Juneau.jpg")
-    path_to_image = os.path.join(test_data_path, 'Juneau.jpg')
-    img = o3d.io.read_image(path_to_image)
+    img_data = o3d.data.JuneauImage()
+    print(f"Reading image from file: Juneau.jpg stored at {img_data.path}")
+    img = o3d.io.read_image(img_data.path)
     print(img)
     print("Saving image to file: copy_of_Juneau.jpg")
     o3d.io.write_image("copy_of_Juneau.jpg", img)

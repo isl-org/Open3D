@@ -27,17 +27,12 @@
 import open3d as o3d
 import numpy as np
 import copy
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 
 def translate():
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(5000)
+    armadillo_data = o3d.data.ArmadilloMesh()
+    pcd = o3d.io.read_triangle_mesh(
+        armadillo_data.path).sample_points_poisson_disk(5000)
     pcd_tx = copy.deepcopy(pcd).translate((150, 0, 0))
     pcd_ty = copy.deepcopy(pcd).translate((0, 200, 0))
     print('Displaying original and translated geometries ...')
@@ -55,7 +50,9 @@ def translate():
 
 
 def rotate():
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(5000)
+    armadillo_data = o3d.data.ArmadilloMesh()
+    pcd = o3d.io.read_triangle_mesh(
+        armadillo_data.path).sample_points_poisson_disk(5000)
     pcd_r = copy.deepcopy(pcd).translate((200, 0, 0))
     R = pcd.get_rotation_matrix_from_xyz((np.pi / 2, 0, np.pi / 4))
     pcd_r.rotate(R)
@@ -71,7 +68,9 @@ def rotate():
 
 
 def scale():
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(5000)
+    armadillo_data = o3d.data.ArmadilloMesh()
+    pcd = o3d.io.read_triangle_mesh(
+        armadillo_data.path).sample_points_poisson_disk(5000)
     pcd_s = copy.deepcopy(pcd).translate((200, 0, 0))
     pcd_s.scale(0.5, center=pcd_s.get_center())
     print('Displaying original and scaled geometries ...')
@@ -86,7 +85,9 @@ def scale():
 
 
 def transform():
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(5000)
+    armadillo_data = o3d.data.ArmadilloMesh()
+    pcd = o3d.io.read_triangle_mesh(
+        armadillo_data.path).sample_points_poisson_disk(5000)
     T = np.eye(4)
     T[:3, :3] = pcd.get_rotation_matrix_from_xyz((0, np.pi / 3, np.pi / 2))
     T[0, 3] = 150

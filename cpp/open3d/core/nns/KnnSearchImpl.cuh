@@ -134,6 +134,7 @@ __global__ void KnnQueryKernel(TIndex *__restrict__ indices_ptr,
         distances_ptr[i + knn * query_idx] = best_dist[i];
     }
 }
+}  // namespace
 
 template <class T, class TIndex, int NDIM>
 void KnnQuery(const cudaStream_t &stream,
@@ -154,46 +155,6 @@ void KnnQuery(const cudaStream_t &stream,
         KnnQueryKernel<T, TIndex, L2, NDIM><<<grid, block, 0, stream>>>(
                 indices_ptr, distances_ptr, num_points, points, num_queries,
                 queries, knn);
-    }
-}
-
-}  // namespace
-
-template <class T, class OUTPUT_ALLOCATOR, int NDIM>
-void KnnSearchCUDA(const cudaStream_t stream,
-                   size_t num_points,
-                   const T *const points,
-                   size_t num_queries,
-                   const T *const queries,
-                   size_t points_row_splits_size,
-                   const int64_t *const points_row_splits,
-                   size_t queries_row_splits_size,
-                   const int64_t *const queries_row_splits,
-                   int knn,
-                   OUTPUT_ALLOCATOR &output_allocator) {
-    const int batch_size = points_row_splits_size - 1;
-
-    const size_t num_indices = num_queries * knn;
-
-    int32_t *indices_ptr;
-    T *distances_ptr;
-
-    output_allocator.AllocIndices(&indices_ptr, num_indices);
-    output_allocator.AllocDistances(&distances_ptr, num_indices);
-
-    for (int i = 0; i < batch_size; ++i) {
-        const size_t num_queries_i =
-                queries_row_splits[i + 1] - queries_row_splits[i];
-        const size_t num_points_i =
-                points_row_splits[i + 1] - points_row_splits[i];
-
-        const T *const points_i = points + 3 * points_row_splits[i];
-        const T *const queries_i = queries + 3 * queries_row_splits[i];
-        int32_t *indices_ptr_i = indices_ptr + queries_row_splits[i] * knn;
-        T *distances_ptr_i = distances_ptr + queries_row_splits[i] * knn;
-        KnnQuery<T, int32_t, NDIM>(stream, indices_ptr_i, distances_ptr_i,
-                                   num_points_i, points_i, num_queries_i,
-                                   queries_i, knn);
     }
 }
 

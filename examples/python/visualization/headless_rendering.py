@@ -87,9 +87,14 @@ def custom_draw_geometry_with_camera_trajectory(pcd):
 
 
 if __name__ == "__main__":
-    pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, 'fragment.ply'))
+    if not o3d._build_config['ENABLE_HEADLESS_RENDERING']:
+        print("Headless rendering is not enabled. "
+              "Please rebuild Open3D with ENABLE_HEADLESS_RENDERING=ON")
+        exit(1)
 
-    print(
-        "Customized visualization playing a camera trajectory. Ctrl+z to terminate"
-    )
+    sample_ply_data = o3d.data.SamplePointCloudPLY()
+    pcd = o3d.io.read_point_cloud(sample_ply_data.path)
+
+    print("Customized visualization playing a camera trajectory. "
+          "Press ctrl+z to terminate.")
     custom_draw_geometry_with_camera_trajectory(pcd)

@@ -143,3 +143,4 @@ int main(int argc, char* argv[]) {
     io::WriteTriangleMesh(out_mesh_file, *mesh);
     return 0;
 }
+

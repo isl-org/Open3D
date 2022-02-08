@@ -25,18 +25,12 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import os
 import time
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
     # Compute ISS Keypoints on armadillo pointcloud.
-    mesh = o3dex.get_armadillo_mesh()
+    armadillo_data = o3d.data.ArmadilloMesh()
+    mesh = o3d.io.read_triangle_mesh(armadillo_data.path)
     pcd = o3d.geometry.PointCloud()
     pcd.points = mesh.vertices
 

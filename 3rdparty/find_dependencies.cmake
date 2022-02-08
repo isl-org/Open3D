@@ -954,7 +954,7 @@ if(USE_SYSTEM_FMT)
     open3d_find_package_3rdparty_library(3rdparty_fmt
         PUBLIC
         PACKAGE fmt
-        TARGETS fmt::fmt-header-only fmt::fmt
+        TARGETS fmt::fmt
     )
     if(NOT 3rdparty_fmt_FOUND)
         set(USE_SYSTEM_FMT OFF)
@@ -966,9 +966,14 @@ if(NOT USE_SYSTEM_FMT)
     open3d_import_3rdparty_library(3rdparty_fmt
         PUBLIC
         INCLUDE_DIRS ${FMT_INCLUDE_DIRS}
+        LIB_DIR      ${FMT_LIB_DIR}
+        LIBRARIES    ${FMT_LIBRARIES}
         DEPENDS      ext_fmt
     )
-    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=1)
+    # FMT 6.0, newer versions may require different flags
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_HEADER_ONLY=0)
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
+    target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
 endif()
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_fmt)
 
@@ -1223,26 +1228,6 @@ open3d_import_3rdparty_library(3rdparty_parallelstl
 )
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
 
-# Faiss
-# Open3D should link Faiss before cuBLAS to avoid missing symbols error since
-# Faiss uses cuBLAS symbols. For the same reason, Open3D should link Faiss
-# before BLAS/Lapack if BLAS/Lapack are static libraries.
-if (WITH_FAISS AND WIN32)
-    message(STATUS "Faiss is not supported on Windows")
-    set(WITH_FAISS OFF)
-endif()
-if (WITH_FAISS)
-    message(STATUS "Building third-party library faiss from source")
-    include(${Open3D_3RDPARTY_DIR}/faiss/faiss_build.cmake)
-    open3d_import_3rdparty_library(3rdparty_faiss
-        INCLUDE_DIRS ${FAISS_INCLUDE_DIR}
-        LIBRARIES    ${FAISS_LIBRARIES}
-        LIB_DIR      ${FAISS_LIB_DIR}
-        DEPENDS      ext_faiss
-    )
-    target_link_libraries(3rdparty_faiss INTERFACE ${CMAKE_DL_LIBS})
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_faiss)
-endif()
 
 # MKL/BLAS
 if(USE_BLAS)

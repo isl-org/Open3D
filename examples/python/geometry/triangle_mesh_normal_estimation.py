@@ -26,23 +26,17 @@
 
 import open3d as o3d
 import numpy as np
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
-    mesh = o3dex.get_knot_mesh()
+    knot_mesh = o3d.data.KnotMesh()
+    mesh = o3d.io.read_triangle_mesh(knot_mesh.path)
     print("Displaying mesh without normals ...")
     # Invalidate existing normals.
     mesh.triangle_normals = o3d.utility.Vector3dVector(np.zeros((1, 3)))
     print("normals: \n", np.asarray(mesh.triangle_normals))
-    o3d.visualization.draw_geometries([mesh])
+    o3d.visualization.draw([mesh])
 
     print("Computing normals and rendering it ...")
     mesh.compute_vertex_normals()
     print("normals: \n", np.asarray(mesh.triangle_normals))
-    o3d.visualization.draw_geometries([mesh])
+    o3d.visualization.draw([mesh])

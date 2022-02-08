@@ -26,10 +26,7 @@
 
 import open3d as o3d
 import numpy as np
-
-import os, sys
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+import os
 
 if __name__ == "__main__":
 
@@ -52,15 +49,14 @@ if __name__ == "__main__":
         "Optimizing Fragment o3d.pipelines.registration.PoseGraph using open3d ..."
     )
 
+    pose_graph_data = o3d.data.DemoPoseGraphOptimization()
     pose_graph_fragment = o3d.io.read_pose_graph(
-        os.path.join(test_data_path, 'GraphOptimization',
-                     'pose_graph_example_fragment.json'))
+        pose_graph_data.pose_graph_fragment_path)
     print(pose_graph_fragment)
     o3d.pipelines.registration.global_optimization(pose_graph_fragment, method,
                                                    criteria, option)
     o3d.io.write_pose_graph(
-        os.path.join(test_data_path, 'GraphOptimization',
-                     'pose_graph_example_fragment_optimized.json'),
+        os.path.join('pose_graph_example_fragment_optimized.json'),
         pose_graph_fragment)
     print("")
 
@@ -68,12 +64,10 @@ if __name__ == "__main__":
         "Optimizing Global o3d.pipelines.registration.PoseGraph using open3d ..."
     )
     pose_graph_global = o3d.io.read_pose_graph(
-        os.path.join(test_data_path, 'GraphOptimization',
-                     'pose_graph_example_global.json'))
+        pose_graph_data.pose_graph_global_path)
     print(pose_graph_global)
     o3d.pipelines.registration.global_optimization(pose_graph_global, method,
                                                    criteria, option)
     o3d.io.write_pose_graph(
-        os.path.join(test_data_path, 'GraphOptimization',
-                     'pose_graph_example_global_optimized.json'),
+        os.path.join('pose_graph_example_global_optimized.json'),
         pose_graph_global)
