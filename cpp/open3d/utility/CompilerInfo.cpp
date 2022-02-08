@@ -26,13 +26,9 @@
 
 #include "open3d/utility/CompilerInfo.h"
 
-#include <fmt/format.h>
-
 #include <memory>
 #include <string>
 
-#include "open3d/Macro.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
