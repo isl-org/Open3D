@@ -62,7 +62,6 @@ Open3D: A Modern Library for 3D Data Processing
 
     cpp_api
 
-
 ..
     Note: when adding new modules, please also update documented_modules.txt.
 
@@ -80,3 +79,14 @@ Open3D: A Modern Library for 3D Data Processing
     python_api/open3d.pipelines
     python_api/open3d.utility
     python_api/open3d.visualization
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Python Examples
+
+    python_example/camera/index
+    python_example/geometry/index
+    python_example/io/index
+    python_example/pipelines/index
+    python_example/utility/index
+    python_example/visualization/index

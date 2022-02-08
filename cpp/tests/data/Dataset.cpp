@@ -51,9 +51,9 @@ TEST(Dataset, DatasetBase) {
 }
 
 TEST(Dataset, SingleDownloadDataset) {
-    const std::string prefix = "O3DTestSimpleDataset";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "SingleDownloadDataset";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -66,9 +66,9 @@ TEST(Dataset, SingleDownloadDataset) {
             "20220201-data/BunnyMesh.ply"};
     const std::string md5 = "568f871d1a221ba6627569f1e6f9a3f2";
 
-    data::SingleDownloadDataset single_download_dataset(prefix, url_mirrors,
-                                                        md5,
-                                                        /*no_extact*/ true);
+    data::SingleDownloadDataset single_download_dataset(
+            prefix, url_mirrors, md5,
+            /*no_extact*/ true, data_root);
 
     // Check if file is downloaded and extracted / copied.
     EXPECT_TRUE(
@@ -88,9 +88,9 @@ TEST(Dataset, SingleDownloadDataset) {
 }
 
 TEST(Dataset, DemoICPPointClouds) {
-    const std::string prefix = "O3DTestDemoICPPointClouds";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "DemoICPPointClouds";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -98,7 +98,7 @@ TEST(Dataset, DemoICPPointClouds) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::DemoICPPointClouds demo_icp(prefix);
+    data::DemoICPPointClouds demo_icp(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -125,9 +125,9 @@ TEST(Dataset, DemoICPPointClouds) {
 }
 
 TEST(Dataset, DemoColoredICPPointClouds) {
-    const std::string prefix = "O3DTestDemoColoredICPPointClouds";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "DemoColoredICPPointClouds";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -135,7 +135,7 @@ TEST(Dataset, DemoColoredICPPointClouds) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::DemoColoredICPPointClouds demo_cicp(prefix);
+    data::DemoColoredICPPointClouds demo_cicp(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -161,9 +161,9 @@ TEST(Dataset, DemoColoredICPPointClouds) {
 }
 
 TEST(Dataset, DemoCropPointCloud) {
-    const std::string prefix = "O3DTestDemoCropPointCloud";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "DemoCropPointCloud";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -171,7 +171,7 @@ TEST(Dataset, DemoCropPointCloud) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::DemoCropPointCloud demo_crop_pcd(prefix);
+    data::DemoCropPointCloud demo_crop_pcd(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -196,9 +196,9 @@ TEST(Dataset, DemoCropPointCloud) {
 }
 
 TEST(Dataset, DemoPointCloudFeatureMatching) {
-    const std::string prefix = "O3DTestDemoPointCloudFeatureMatching";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "DemoPointCloudFeatureMatching";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -206,7 +206,7 @@ TEST(Dataset, DemoPointCloudFeatureMatching) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::DemoPointCloudFeatureMatching demo_feature_matching(prefix);
+    data::DemoPointCloudFeatureMatching demo_feature_matching(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -237,9 +237,9 @@ TEST(Dataset, DemoPointCloudFeatureMatching) {
 }
 
 TEST(Dataset, DemoPoseGraphOptimization) {
-    const std::string prefix = "O3DTestDemoPoseGraphOptimization";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "DemoPoseGraphOptimization";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -247,7 +247,7 @@ TEST(Dataset, DemoPoseGraphOptimization) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::DemoPoseGraphOptimization demo_pose_optimization(prefix);
+    data::DemoPoseGraphOptimization demo_pose_optimization(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -269,9 +269,9 @@ TEST(Dataset, DemoPoseGraphOptimization) {
 }
 
 TEST(Dataset, SamplePointCloudPCD) {
-    const std::string prefix = "O3DTestSamplePointCloudPCD";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "SamplePointCloudPCD";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -279,7 +279,7 @@ TEST(Dataset, SamplePointCloudPCD) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::SamplePointCloudPCD pointcloud_pcd(prefix);
+    data::SamplePointCloudPCD pointcloud_pcd(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -300,9 +300,9 @@ TEST(Dataset, SamplePointCloudPCD) {
 }
 
 TEST(Dataset, SamplePointCloudPLY) {
-    const std::string prefix = "O3DTestSamplePointCloudPLY";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "SamplePointCloudPLY";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -310,7 +310,7 @@ TEST(Dataset, SamplePointCloudPLY) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::SamplePointCloudPLY pointcloud_ply(prefix);
+    data::SamplePointCloudPLY pointcloud_ply(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -331,9 +331,9 @@ TEST(Dataset, SamplePointCloudPLY) {
 }
 
 TEST(Dataset, SampleRGBDImageNYU) {
-    const std::string prefix = "O3DTestSampleRGBDImageNYU";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "SampleRGBDImageNYU";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -341,7 +341,7 @@ TEST(Dataset, SampleRGBDImageNYU) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::SampleRGBDImageNYU rgbd_nyu(prefix);
+    data::SampleRGBDImageNYU rgbd_nyu(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -363,9 +363,9 @@ TEST(Dataset, SampleRGBDImageNYU) {
 }
 
 TEST(Dataset, SampleRGBDImageSUN) {
-    const std::string prefix = "O3DTestSampleRGBDImageSUN";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "SampleRGBDImageSUN";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -373,7 +373,7 @@ TEST(Dataset, SampleRGBDImageSUN) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::SampleRGBDImageSUN rgbd_sun(prefix);
+    data::SampleRGBDImageSUN rgbd_sun(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -395,9 +395,9 @@ TEST(Dataset, SampleRGBDImageSUN) {
 }
 
 TEST(Dataset, SampleRGBDImageTUM) {
-    const std::string prefix = "O3DTestSampleRGBDImageTUM";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "SampleRGBDImageTUM";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -405,7 +405,7 @@ TEST(Dataset, SampleRGBDImageTUM) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::SampleRGBDImageTUM rgbd_tum(prefix);
+    data::SampleRGBDImageTUM rgbd_tum(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -427,9 +427,9 @@ TEST(Dataset, SampleRGBDImageTUM) {
 }
 
 TEST(Dataset, SampleRGBDDatasetRedwood) {
-    const std::string prefix = "O3DTestSampleRGBDDatasetRedwood";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "SampleRGBDDatasetRedwood";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -437,7 +437,7 @@ TEST(Dataset, SampleRGBDDatasetRedwood) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::SampleRGBDDatasetRedwood rgbd_icl(prefix);
+    data::SampleRGBDDatasetRedwood rgbd_icl(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -487,9 +487,9 @@ TEST(Dataset, SampleRGBDDatasetRedwood) {
 }
 
 TEST(Dataset, SampleFountainRGBDDataset) {
-    const std::string prefix = "O3DTestSampleFountainRGBDDataset";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "SampleFountainRGBDDataset";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -497,7 +497,7 @@ TEST(Dataset, SampleFountainRGBDDataset) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::SampleFountainRGBDDataset rgbd_fountain(prefix);
+    data::SampleFountainRGBDDataset rgbd_fountain(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -603,9 +603,9 @@ TEST(Dataset, SampleFountainRGBDDataset) {
 }
 
 TEST(Dataset, EaglePointCloud) {
-    const std::string prefix = "O3DTestEagle";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "EaglePointCloud";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -613,7 +613,7 @@ TEST(Dataset, EaglePointCloud) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::EaglePointCloud eagle(prefix);
+    data::EaglePointCloud eagle(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -634,9 +634,9 @@ TEST(Dataset, EaglePointCloud) {
 }
 
 TEST(Dataset, ArmadilloMesh) {
-    const std::string prefix = "O3DTestArmadillo";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "ArmadilloMesh";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -644,7 +644,7 @@ TEST(Dataset, ArmadilloMesh) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::ArmadilloMesh armadillo(prefix);
+    data::ArmadilloMesh armadillo(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -665,9 +665,9 @@ TEST(Dataset, ArmadilloMesh) {
 }
 
 TEST(Dataset, BunnyMesh) {
-    const std::string prefix = "O3DTestBunny";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "BunnyMesh";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -675,7 +675,7 @@ TEST(Dataset, BunnyMesh) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::BunnyMesh bunny(prefix);
+    data::BunnyMesh bunny(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -696,9 +696,9 @@ TEST(Dataset, BunnyMesh) {
 }
 
 TEST(Dataset, KnotMesh) {
-    const std::string prefix = "O3DTestKnot";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "KnotMesh";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -706,7 +706,7 @@ TEST(Dataset, KnotMesh) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::KnotMesh knot(prefix);
+    data::KnotMesh knot(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -727,9 +727,9 @@ TEST(Dataset, KnotMesh) {
 }
 
 TEST(Dataset, JuneauImage) {
-    const std::string prefix = "O3DTestJuneau";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "JuneauImage";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -737,7 +737,7 @@ TEST(Dataset, JuneauImage) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::JuneauImage juneau(prefix);
+    data::JuneauImage juneau(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -758,9 +758,9 @@ TEST(Dataset, JuneauImage) {
 }
 
 TEST(Dataset, DISABLED_RedwoodLivingRoomPointClouds) {
-    const std::string prefix = "O3DTestRedwoodLivingRoomPointClouds";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "RedwoodLivingRoomPointClouds";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -768,7 +768,7 @@ TEST(Dataset, DISABLED_RedwoodLivingRoomPointClouds) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::RedwoodLivingRoomPointClouds living_room(prefix);
+    data::RedwoodLivingRoomPointClouds living_room(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -798,9 +798,9 @@ TEST(Dataset, DISABLED_RedwoodLivingRoomPointClouds) {
 }
 
 TEST(Dataset, DISABLED_RedwoodOfficePointClouds) {
-    const std::string prefix = "O3DTestRedwoodOfficePointClouds";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string prefix = "RedwoodOfficePointClouds";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
@@ -808,7 +808,7 @@ TEST(Dataset, DISABLED_RedwoodOfficePointClouds) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::RedwoodOfficePointClouds office(prefix);
+    data::RedwoodOfficePointClouds office(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
