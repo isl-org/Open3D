@@ -67,12 +67,6 @@ bool DrawGeometries(const std::vector<std::shared_ptr<const geometry::Geometry>>
     visualizer.GetRenderOption().mesh_show_wireframe_ = mesh_show_wireframe;
     visualizer.GetRenderOption().mesh_show_back_face_ = mesh_show_back_face;
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (!geometry_ptr.get()) {
-            utility::LogWarning(
-                    "[DrawGeometries] Invalid geometry pointer passed. "
-                    "Possibly a null pointer or None was passed in.");
-            return false;
-        }
         if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning("[DrawGeometries] Failed adding geometry.");
             utility::LogWarning(
@@ -119,12 +113,6 @@ bool DrawGeometriesWithCustomAnimation(
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (!geometry_ptr.get()) {
-            utility::LogWarning(
-                    "[DrawGeometries] Invalid geometry pointer passed. "
-                    "Possibly a null pointer or None was passed in.");
-            return false;
-        }
         if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithCustomAnimation] Failed adding "
@@ -172,12 +160,6 @@ bool DrawGeometriesWithAnimationCallback(
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (!geometry_ptr.get()) {
-            utility::LogWarning(
-                    "[DrawGeometries] Invalid geometry pointer passed. "
-                    "Possibly a null pointer or None was passed in.");
-            return false;
-        }
         if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithAnimationCallback] Failed adding "
@@ -212,12 +194,6 @@ bool DrawGeometriesWithKeyCallbacks(
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (!geometry_ptr.get()) {
-            utility::LogWarning(
-                    "[DrawGeometries] Invalid geometry pointer passed. "
-                    "Possibly a null pointer or None was passed in.");
-            return false;
-        }
         if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithKeyCallbacks] Failed adding "
@@ -253,12 +229,6 @@ bool DrawGeometriesWithEditing(
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (!geometry_ptr.get()) {
-            utility::LogWarning(
-                    "[DrawGeometries] Invalid geometry pointer passed. "
-                    "Possibly a null pointer or None was passed in.");
-            return false;
-        }
         if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithEditing] Failed adding geometry.");
@@ -290,12 +260,6 @@ bool DrawGeometriesWithVertexSelection(
         return false;
     }
     for (const auto &geometry_ptr : geometry_ptrs) {
-        if (!geometry_ptr.get()) {
-            utility::LogWarning(
-                    "[DrawGeometries] Invalid geometry pointer passed. "
-                    "Possibly a null pointer or None was passed in.");
-            return false;
-        }
         if (!visualizer.AddGeometry(geometry_ptr)) {
             utility::LogWarning(
                     "[DrawGeometriesWithVertexSelection] Failed adding "
