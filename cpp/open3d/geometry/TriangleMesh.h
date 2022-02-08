@@ -576,7 +576,7 @@ public:
     static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
     CreateFromPointCloudPoisson(const PointCloud &pcd,
                                 size_t depth = 8,
-                                size_t width = 0,
+                                float width = 0.0f,
                                 float scale = 1.1f,
                                 bool linear_fit = false,
                                 int n_threads = -1);
