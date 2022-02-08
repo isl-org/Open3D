@@ -694,14 +694,25 @@ if(NOT USE_SYSTEM_JPEG)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_jpeg)
 
-# jsoncpp: always compile from source to avoid ABI issues.
-include(${Open3D_3RDPARTY_DIR}/jsoncpp/jsoncpp.cmake)
-open3d_import_3rdparty_library(3rdparty_jsoncpp
-    INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS}
-    LIB_DIR      ${JSONCPP_LIB_DIR}
-    LIBRARIES    ${JSONCPP_LIBRARIES}
-    DEPENDS      ext_jsoncpp
-)
+# jsoncpp
+if(USE_SYSTEM_JSONCPP)
+    open3d_find_package_3rdparty_library(3rdparty_jsoncpp
+        PACKAGE jsoncpp
+        TARGETS jsoncpp_lib
+    )
+    if(NOT 3rdparty_jsoncpp_FOUND)
+        set(USE_SYSTEM_JSONCPP OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_JSONCPP)
+    include(${Open3D_3RDPARTY_DIR}/jsoncpp/jsoncpp.cmake)
+    open3d_import_3rdparty_library(3rdparty_jsoncpp
+        INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS}
+        LIB_DIR      ${JSONCPP_LIB_DIR}
+        LIBRARIES    ${JSONCPP_LIBRARIES}
+        DEPENDS      ext_jsoncpp
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_jsoncpp)
 
 # liblzf
