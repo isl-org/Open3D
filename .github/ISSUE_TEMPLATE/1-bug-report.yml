@@ -122,7 +122,7 @@ body:
 
       - Open3D version: output from python: `print(open3d.__version__)`
 
-      - System architecture: x84 / arm64 / apple-silicon / jetson / rpi
+      - System architecture: x86 / arm64 / apple-silicon / jetson / rpi
 
       - Is this a remote workstation?: yes or no
 
