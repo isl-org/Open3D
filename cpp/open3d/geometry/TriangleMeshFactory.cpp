@@ -803,7 +803,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateCoordinateFrame(
     return mesh_frame;
 }
 
-std::shared_ptr<TriangleMesh> TriangleMesh::CreateMoebius(
+std::shared_ptr<TriangleMesh> TriangleMesh::CreateMobius(
         int length_split /* = 70 */,
         int width_split /* = 15 */,
         int twists /* = 1 */,
@@ -813,25 +813,25 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateMoebius(
         double scale /* = 1 */) {
     auto mesh = std::make_shared<TriangleMesh>();
     if (length_split <= 0) {
-        utility::LogError("[CreateMoebius] length_split <= 0");
+        utility::LogError("[CreateMobius] length_split <= 0");
     }
     if (width_split <= 0) {
-        utility::LogError("[CreateMoebius] width_split <= 0");
+        utility::LogError("[CreateMobius] width_split <= 0");
     }
     if (twists < 0) {
-        utility::LogError("[CreateMoebius] twists < 0");
+        utility::LogError("[CreateMobius] twists < 0");
     }
     if (radius <= 0) {
-        utility::LogError("[CreateMoebius] radius <= 0");
+        utility::LogError("[CreateMobius] radius <= 0");
     }
     if (flatness == 0) {
-        utility::LogError("[CreateMoebius] flatness == 0");
+        utility::LogError("[CreateMobius] flatness == 0");
     }
     if (width <= 0) {
-        utility::LogError("[CreateMoebius] width <= 0");
+        utility::LogError("[CreateMobius] width <= 0");
     }
     if (scale <= 0) {
-        utility::LogError("[CreateMoebius] scale <= 0");
+        utility::LogError("[CreateMobius] scale <= 0");
     }
 
     mesh->vertices_.resize(length_split * width_split);
