@@ -728,23 +728,23 @@ public:
             double size = 1.0,
             const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
 
-    /// Factory function to create a Moebius strip.
-    /// \param length_split defines the number of segments along the Moebius
+    /// Factory function to create a Mobius strip.
+    /// \param length_split defines the number of segments along the Mobius
     /// strip.
     /// \param width_split defines the number of segments along the width
-    /// of the Moebius strip.\param twists defines the number of twists of the
+    /// of the Mobius strip.\param twists defines the number of twists of the
     /// strip.
-    /// \param radius defines the radius of the Moebius strip.
+    /// \param radius defines the radius of the Mobius strip.
     /// \param flatness controls the height of the strip.
-    /// \param width controls the width of the Moebius strip.
-    /// \param scale is used to scale the entire Moebius strip.
-    static std::shared_ptr<TriangleMesh> CreateMoebius(int length_split = 70,
-                                                       int width_split = 15,
-                                                       int twists = 1,
-                                                       double radius = 1,
-                                                       double flatness = 1,
-                                                       double width = 1,
-                                                       double scale = 1);
+    /// \param width controls the width of the Mobius strip.
+    /// \param scale is used to scale the entire Mobius strip.
+    static std::shared_ptr<TriangleMesh> CreateMobius(int length_split = 70,
+                                                      int width_split = 15,
+                                                      int twists = 1,
+                                                      double radius = 1,
+                                                      double flatness = 1,
+                                                      double width = 1,
+                                                      double scale = 1);
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base
