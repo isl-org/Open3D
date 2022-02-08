@@ -596,6 +596,9 @@ private:
         render_scene->SetSunLightIntensity(float(lighting.sun_intensity));
         if (!sun_follows_camera_) {
             render_scene->SetSunLightDirection(lighting.sun_dir);
+        } else {
+            render_scene->SetSunLightDirection(
+                    scene->GetCamera()->GetForwardVector());
         }
         render_scene->EnableSunLight(lighting.sun_enabled);
     }
@@ -1014,11 +1017,6 @@ void GuiVisualizer::SetGeometry(
         }
     }
 
-    // Setup for raw mode if enabled...
-    if (impl_->basic_mode_enabled_) {
-        impl_->SetBasicModeGeometry(true);
-    }
-
     auto type = impl_->settings_.model_.GetMaterialType();
     if (type == GuiSettingsModel::MaterialType::LIT ||
         type == GuiSettingsModel::MaterialType::UNLIT) {
@@ -1045,6 +1043,13 @@ void GuiVisualizer::SetGeometry(
     auto &bounds = scene3d->GetBoundingBox();
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
                                    bounds.GetCenter().cast<float>());
+
+    // Setup for raw mode if enabled...
+    if (impl_->basic_mode_enabled_) {
+        impl_->SetBasicModeGeometry(true);
+        scene3d->GetScene()->SetSunLightDirection(
+                scene3d->GetCamera()->GetForwardVector());
+    }
 
     // Make sure scene is redrawn
     impl_->scene_wgt_->ForceRedraw();
