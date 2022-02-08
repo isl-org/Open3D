@@ -18,12 +18,6 @@ target_sources(utility PRIVATE
     Timer.cpp
 )
 
-if (BUILD_CUDA_MODULE)
-    target_sources(utility PRIVATE
-        CompilerInfo.cu
-    )
-endif()
-
 if (BUILD_ISPC_MODULE)
     target_sources(utility PRIVATE
         ISAInfo.ispc

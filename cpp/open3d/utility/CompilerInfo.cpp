@@ -31,6 +31,7 @@
 #include <memory>
 #include <string>
 
+#include "open3d/Macro.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
@@ -44,78 +45,35 @@ CompilerInfo& CompilerInfo::GetInstance() {
     return instance;
 }
 
-std::string CompilerInfo::CxxCompilerName() const {
-#if defined(__clang__)
-    return "clang";
-#elif defined(__GNUC__)
-    return "gcc";
-#elif defined(_MSC_VER)
-    return "msvc";
-#else
-    return "unknown";
-#endif
+std::string CompilerInfo::CXXStandard() const {
+    return std::string(OPEN3D_CXX_STANDARD);
 }
 
-std::string CompilerInfo::CxxCompilerVersion() const {
-#if defined(__clang__)
-    return fmt::format("{}.{}.{}", __clang_major__, __clang_minor__,
-                       __clang_patchlevel__);
-#elif defined(__GNUC__)
-    return fmt::format("{}.{}.{}", __GNUC__, __GNUC_MINOR__,
-                       __GNUC_PATCHLEVEL__);
-#elif defined(_MSC_VER)
-    // Support for VS 2010 or later.
-    // https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
-    std::string vs_version;
-    if (_MSC_VER >= 1930) {
-        vs_version = "2022+";
-    } else if (_MSC_VER >= 1920) {
-        vs_version = "2019";
-    } else if (_MSC_VER >= 1910) {
-        vs_version = "2017";
-    } else if (_MSC_VER == 1900) {
-        vs_version = "2015";
-    } else if (_MSC_VER == 1800) {
-        vs_version = "2013";
-    } else if (_MSC_VER == 1700) {
-        vs_version = "2012";
-    } else if (_MSC_VER == 1600) {
-        vs_version = "2010";
-    } else {
-        vs_version = "unknown";
-    }
-    return fmt::format("{} (vs{})", _MSC_VER, vs_version);
-#else
-    return "unknown";
-#endif
+std::string CompilerInfo::CXXCompilerId() const {
+    return std::string(OPEN3D_CXX_COMPILER_ID);
 }
 
-#ifdef BUILD_CUDA_MODULE
-// See CompilerInfo.cu
-#else
-std::string CompilerInfo::CUDACompilerVersion() const { return "disabled"; }
-#endif
+std::string CompilerInfo::CXXCompilerVersion() const {
+    return std::string(OPEN3D_CXX_COMPILER_VERSION);
+}
 
-std::string CompilerInfo::CxxStandard() const {
-    if (__cplusplus == 202002L) {
-        return "20";
-    } else if (__cplusplus == 201703L) {
-        return "17";
-    } else if (__cplusplus == 201402L) {
-        return "14";
-    } else if (__cplusplus == 201103L) {
-        return "11";
-    } else if (__cplusplus == 199711L) {
-        return "98";
-    } else {
-        return "unknown";
-    }
+std::string CompilerInfo::CUDACompilerId() const {
+    return std::string(OPEN3D_CUDA_COMPILER_ID);
+}
+
+std::string CompilerInfo::CUDACompilerVersion() const {
+    return std::string(OPEN3D_CUDA_COMPILER_VERSION);
 }
 
 void CompilerInfo::Print() const {
-    utility::LogInfo("CompilerInfo: C++{}, {} {}, nvcc {}.", CxxStandard(),
-                     CxxCompilerName(), CxxCompilerVersion(),
+#ifdef BUILD_CUDA_MODULE
+    utility::LogInfo("CompilerInfo: C++ {}, {} {}, {} {}.", CXXStandard(),
+                     CXXCompilerId(), CXXCompilerVersion(), CUDACompilerId(),
                      CUDACompilerVersion());
+#else
+    utility::LogInfo("CompilerInfo: C++ {}, {} {}, CUDA disabled.",
+                     CXXStandard(), CXXCompilerId(), CXXCompilerVersion());
+#endif
 }
 
 }  // namespace utility

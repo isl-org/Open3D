@@ -40,10 +40,14 @@ public:
     CompilerInfo(const CompilerInfo&) = delete;
     void operator=(const CompilerInfo&) = delete;
 
-    std::string CxxCompilerName() const;
-    std::string CxxCompilerVersion() const;
+    std::string CXXStandard() const;
+
+    std::string CXXCompilerId() const;
+    std::string CXXCompilerVersion() const;
+
+    std::string CUDACompilerId() const;
     std::string CUDACompilerVersion() const;
-    std::string CxxStandard() const;
+
     void Print() const;
 
 private:
