@@ -25,10 +25,12 @@
 # ----------------------------------------------------------------------------
 
 import argparse
+from nis import cat
 import os
 import runpy
 import sys
 from pathlib import Path
+from unicodedata import category
 
 import open3d as o3d
 import open3d.app as app
@@ -40,116 +42,6 @@ class _Open3DArgumentParser(argparse.ArgumentParser):
         sys.stderr.write("Error: %s\n" % message)
         self.print_help()
         self.exit(2)
-
-
-def _get_examples_dict():
-    examples_dict = {
-        "camera": ["camera_trajectory",],
-        "geometry": [
-            "image_processing",
-            "kd_tree_feature_matching",
-            "kd_tree_search",
-            "octree_find_leaf",
-            "octree_from_voxel_grid",
-            "octree_point_cloud",
-            "octree_traversal",
-            "point_cloud_bounding_box",
-            "point_cloud_convex_hull",
-            "point_cloud_crop",
-            "point_cloud_dbscan_clustering",
-            "point_cloud_distance",
-            "point_cloud_hidden_point_removal",
-            "point_cloud_iss_keypoint_detector",
-            "point_cloud_normal_estimation",
-            "point_cloud_outlier_removal_radius",
-            "point_cloud_outlier_removal_statistical",
-            "point_cloud_paint",
-            "point_cloud_plane_segmentation",
-            "point_cloud_to_depth",
-            "point_cloud_to_rgbd",
-            "point_cloud_transformation",
-            "point_cloud_voxel_downsampling",
-            "point_cloud_with_numpy",
-            "ray_casting_closest_geometry",
-            "ray_casting_sdf",
-            "ray_casting_to_image",
-            "rgbd_datasets",
-            "triangle_mesh_connected_components",
-            "triangle_mesh_cropping",
-            "triangle_mesh_deformation",
-            "triangle_mesh_filtering_average",
-            "triangle_mesh_from_point_cloud_alpha_shapes",
-            "triangle_mesh_from_point_cloud_ball_pivoting",
-            "triangle_mesh_from_point_cloud_poisson",
-            "triangle_mesh_normal_estimation",
-            "triangle_mesh_properties",
-            "triangle_mesh_sampling",
-            "triangle_mesh_simplification_decimation",
-            "triangle_mesh_simplification_vertex_clustering",
-            "triangle_mesh_subdivision",
-            "triangle_mesh_transformation",
-            "triangle_mesh_with_numpy",
-            "voxel_grid_carving",
-            "voxel_grid_from_point_cloud",
-            "voxel_grid_from_triangle_mesh",
-        ],
-        "io": [
-            "image_io",
-            "point_cloud_io",
-            "realsense_io",
-            "triangle_mesh_io",
-        ],
-        "pipelines": [
-            "colored_pointcloud_registration",
-            "icp_registration",
-            "multiway_registration",
-            "pose_graph_optimization",
-            "registration_fgr",
-            "registration_ransac",
-            "rgbd_integration_uniform",
-            "rgbd_odometry",
-            "robust_icp",
-        ],
-        "utility": ["vector",],
-        "visualization": [
-            "add_geometry",
-            "all_widgets",
-            "customized_visualization_key_action",
-            "customized_visualization",
-            "demo_scene",
-            "draw_webrtc",
-            "draw",
-            "headless_rendering",
-            "interactive_visualization",
-            "line_width",
-            "load_save_viewpoint",
-            "mouse_and_point_coord",
-            "multiple_windows",
-            "non_blocking_visualization",
-            "non_english",
-            "online_processing",
-            "remove_geometry",
-            "render_to_image",
-            "tensorboard_pytorch",
-            "tensorboard_tensorflow",
-            "text3d",
-            "textured_mesh",
-            "textured_model",
-            "video",
-            "vis_gui",
-        ]
-    }
-
-    return examples_dict
-
-
-def _get_all_examples():
-    all_examples = []
-    examples_dict = _get_examples_dict()
-    for category in examples_dict:
-        for example in examples_dict[category]:
-            all_examples.append(f"{category}/{example}")
-    return all_examples
 
 
 def _get_examples_dir():
@@ -166,16 +58,59 @@ def _get_examples_dir():
         return examples_dir
 
 
+def _get_all_examples_dict():
+    ex_dir = _get_examples_dir()
+    categories = [cat for cat in ex_dir.iterdir() if cat.is_dir()]
+    examples_dict = {}
+    for cat_path in categories:
+        examples = sorted(Path(cat_path).glob("*.py"))
+        if len(examples) > 0:
+            examples_dict[cat_path.stem] = [
+                ex.stem for ex in examples if ex.stem != "__init__"
+            ]
+    return examples_dict
+
+
+def _get_runnable_examples_dict():
+    examples_dict = _get_all_examples_dict()
+    categories_to_remove = [
+        "benchmark", "reconstruction_system", "t_reconstruction_system"
+    ]
+    examples_to_remove = {
+        "io": ["realsense_io",],
+        "visualization": [
+            "online_processing",
+            "tensorboard_pytorch",
+            "tensorboard_tensorflow",
+        ]
+    }
+    for cat in categories_to_remove:
+        examples_dict.pop(cat)
+    for cat in examples_to_remove.keys():
+        for ex in examples_to_remove[cat]:
+            examples_dict[cat].remove(ex)
+    return examples_dict
+
+
+def _get_all_examples():
+    all_examples = []
+    examples_dict = _get_runnable_examples_dict()
+    for category in examples_dict:
+        for example in examples_dict[category]:
+            all_examples.append(f"{category}/{example}")
+    return all_examples
+
+
 def _get_example_categories():
     """Get a set of all available category names."""
-    examples_dict = _get_examples_dict()
+    examples_dict = _get_runnable_examples_dict()
     all_categories = [category for category in examples_dict]
     return all_categories
 
 
 def _get_examples_in_category(category):
     """Get a set of example names in given cateogry."""
-    examples_dict = _get_examples_dict()
+    examples_dict = _get_runnable_examples_dict()
     examples_dir = _get_examples_dir()
     category_path = os.path.join(examples_dir, category)
     example_names = {
