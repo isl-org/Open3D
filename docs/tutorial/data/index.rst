@@ -1,5 +1,8 @@
 .. _data:
 
+Data
+=========
+
 Open3D provides `open3d.data` module for convenient access to built-in
 example and test data. You'll need internet access to use the data module.
 The downloaded data will be stored in the Open3D's data root directory.
@@ -78,9 +81,10 @@ Point Cloud Data
 SamplePointCloudPCD
 -----------------------
 
-`SamplePointCloudPCD` contains the `fragment.pcd` colored point cloud mesh from the `Redwood Living Room` dataset.
+`SamplePointCloudPCD` contains the `fragment.pcd` colored point cloud mesh from 
+the `Redwood Living Room` dataset.
 
-(See :ref:`/tutorial/geometry/pointcloud.html#Plane-segmentation` for reference)
+See :ref:`reference </tutorial/geometry/pointcloud.html#Plane-segmentation>`.
 
 .. tabs::
 
@@ -99,20 +103,21 @@ SamplePointCloudPCD
 SamplePointCloudPLY
 ----------------------------------------
 
-`SamplePointCloudPLY` contains the `fragment.ply` colored point cloud mesh from the `Redwood Living Room` dataset.
+`SamplePointCloudPLY` contains the `fragment.ply` colored point cloud mesh from 
+the `Redwood Living Room` dataset.
 
-(See :ref:`/tutorial/geometry/pointcloud.html#Visualize-point-cloud` for reference)
+See :ref:`reference </tutorial/geometry/pointcloud.html#Visualize-point-cloud>`.
 
 .. tabs::
 
     .. code-tab:: python
 
-        sample_data = o3d.data.SamplePointCloudPCD()
+        sample_data = o3d.data.SamplePointCloudPLY()
         pcd = o3d.io.read_point_cloud(sample_data.path)
 
     .. code-tab:: cpp
 
-        data::SamplePointCloudPCD sample_data();
+        data::SamplePointCloudPLY sample_data();
         geometry::PointCloud pcd;
         io::ReadPointCloud(sample_data.path, pcd);
 
@@ -139,7 +144,8 @@ EaglePointCloud
 RedwoodLivingRoomPointClouds
 ----------------------------------------
 
-`RedwoodLivingRoomPointClouds` contains 57 point clouds of binary PLY format, from Redwood RGB-D Dataset.
+`RedwoodLivingRoomPointClouds` contains 57 point clouds of binary PLY format, 
+from Redwood RGB-D Dataset.
 
 Content:
 
@@ -174,7 +180,8 @@ Example: Use `paths[0]` to access `cloud_bin_0.ply`.
 RedwoodOfficePointClouds
 ----------------------------------------
 
-`RedwoodOfficePointClouds` contains 53 point clouds of binary PLY format, from Redwood RGB-D Dataset.
+`RedwoodOfficePointClouds` contains 53 point clouds of binary PLY format, 
+from Redwood RGB-D Dataset.
 
 Content:
 
@@ -198,8 +205,7 @@ Example: Use paths[0] to access `cloud_bin_0.ply`.
                 pcd = open3d.io.read_point_cloud(pcd_fragments_data.path)
                 o3d.visualization.draw([pcd])
 
-
-    .. code-block:: cpp
+    .. code-tab:: cpp
 
             data::RedwoodOfficePointClouds pcd_fragments_data();
             for(const std::string& path : pcd_fragments_data.path) {
@@ -217,16 +223,20 @@ BunnyMesh
 
 `BunnyMesh` contains the `BunnyMesh.ply` triangle mesh from Stanford University Computer Graphics Laboratory.
 
-.. code-block:: python
+See :ref:`reference </tutorial/geometry/mesh.html#Connected-components>`.
 
-        mesh_data = o3d.data.BunnyMesh()
-        mesh = o3d.io.read_triangle_mesh(mesh_data.path)
+.. tabs::
 
-.. code-block:: cpp
+    .. code-tab:: python
 
-        data::BunnyMesh bunny_data();
-        geometry::TriangleMesh mesh; 
-        io::ReadTriangleMesh(bunny_data.path);
+            mesh_data = o3d.data.BunnyMesh()
+            mesh = o3d.io.read_triangle_mesh(mesh_data.path)
+
+    .. code-tab:: cpp
+
+            data::BunnyMesh bunny_data();
+            geometry::TriangleMesh mesh; 
+            io::ReadTriangleMesh(bunny_data.path);
 
 
 ArmadilloMesh
@@ -234,18 +244,22 @@ ArmadilloMesh
 
 `ArmadilloMesh` contains the `ArmadilloMesh.ply` triangle mesh from Stanford University Computer Graphics Laboratory.
 
-.. code-block:: python
+See :ref:`reference </tutorial/geometry/pointcloud.html#Visualize-point-cloud>`.
 
-        mesh_data = open3d.data.ArmadilloMesh()
-        mesh = open3d.io.read_triangle_mesh(mesh_data.path)
-        o3d.visualization.draw([mesh])
+.. tabs::
+
+    .. code-tab:: python
+
+            mesh_data = open3d.data.ArmadilloMesh()
+            mesh = open3d.io.read_triangle_mesh(mesh_data.path)
+            o3d.visualization.draw([mesh])
 
 
-.. code-block:: cpp
+    .. code-tab:: cpp
 
-        data::ArmadilloMesh armadillo_data();
-        geometry::TriangleMesh mesh; 
-        io::ReadTriangleMesh(armadillo_data.path);
+            data::ArmadilloMesh armadillo_data();
+            geometry::TriangleMesh mesh; 
+            io::ReadTriangleMesh(armadillo_data.path);
 
 
 KnotMesh
@@ -253,14 +267,18 @@ KnotMesh
 
 `KnotMesh` contains the `KnotMesh.ply` triangle mesh.
 
-.. code-block:: python
+See :ref:`reference </tutorial/geometry/mesh.html#Mesh>`.
+
+.. tabs::
+
+    .. code-tab:: python
 
         mesh_data = open3d.data.KnotMesh()
         mesh = open3d.io.read_triangle_mesh(mesh_data.path)
         o3d.visualization.draw([mesh])
 
 
-.. code-block:: cpp
+    .. code-tab:: cpp
 
         data::KnotMesh knot_data();
         geometry::TriangleMesh mesh; 
@@ -270,95 +288,182 @@ KnotMesh
 RGB-D Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Sample NYU RGB-D Dataset Image
+
+SampleRGBDDatasetRedwood
 ----------------------------------------
 
-Loading data:
+`SampleRGBDDatasetRedwood` contains a sample set of 5 color and depth images from Redwood RGBD dataset living-room1. Additionally it also contains camera trajectory log, camera odometry log, rgbd match, and point cloud reconstruction obtained using TSDF.
 
-.. code-block:: python
-
-        rgbd_data = open3d.data.SampleRGBDImageNYU()
-        color_raw = open3d.io.read_image(rgbd_data.color_path)
-        depth_raw = open3d.io.read_image(rgbd_data.depth_path)
+See :ref:`reference </tutorial/geometry/rgbd_image.html#Redwood-dataset>`.
 
 
-.. code-block:: cpp
-
-        rgbd_data = open3d::data::SampleRGBDImageNYU()
-        color_raw = open3d::io::read_image(rgbd_data.color_path)
-        depth_raw = open3d::io::read_image(rgbd_data.depth_path)
-
-Mirror(s):
-    - `Mirror 1 <https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/fragment.ply>`_
-Contents:
-    fragment.ply
-Source:
-    Living Room point cloud fragment from Redwood RGB-D livingroom1 sequence.
-Licence:
-    Creative Commons 3.0 (CC BY 3.0).
-
-
-Sample SUN RGB-D Dataset Image
+SampleFountainRGBDDataset
 ----------------------------------------
 
-Loading data:
+`SampleFountainRGBDDataset` contains a sample set of 33 color and depth images from the `Fountain RGBD dataset`. It also contains `camera poses at keyframes log` and `mesh reconstruction`. It is used in demo of `Color Map Optimization`.
 
-.. code-block:: python
-
-        rgbd_data = open3d.data.SampleRGBDImageSUN()
-        color_raw = open3d.io.read_image(rgbd_data.color_path)
-        depth_raw = open3d.io.read_image(rgbd_data.depth_path)
+See :ref:`reference </tutorial/pipelines/color_map_optimization.html#Input>`.
 
 
-.. code-block:: cpp
-
-        rgbd_data = open3d::data::SampleRGBDImageSUN()
-        color_raw = open3d::io::read_image(rgbd_data.color_path)
-        depth_raw = open3d::io::read_image(rgbd_data.depth_path)
-
-Mirror(s):
-    - `Mirror 1 <https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/fragment.ply>`_
-Contents:
-    fragment.ply
-Source:
-    Living Room point cloud fragment from Redwood RGB-D livingroom1 sequence.
-Licence:
-    Creative Commons 3.0 (CC BY 3.0).
-
-
-Sample TUM RGB-D Dataset Image
+SampleRGBDImageNYU
 ----------------------------------------
 
-Loading data:
+`SampleRGBDImageNYU` contains a color image `NYU_color.ppm` and a depth image `NYU_depth.pgm` sample from NYU RGBD  dataset.
 
-.. code-block:: python
+See :ref:`reference </tutorial/geometry/rgbd_image.html#NYU-dataset>`.
 
-        rgbd_data = open3d.data.SampleRGBDImageTUM()
-        color_raw = open3d.io.read_image(rgbd_data.color_path)
-        depth_raw = open3d.io.read_image(rgbd_data.depth_path)
+.. tabs::
+
+    .. code-tab:: python
+
+            rgbd_data = o3d.data.SampleRGBDImageNYU()
+            color_raw = o3d.io.read_image(rgbd_data.color_path)
+            depth_raw = o3d.io.read_image(rgbd_data.depth_path)
 
 
-.. code-block:: cpp
+    .. code-tab:: cpp
 
-        rgbd_data = open3d::data::SampleRGBDImageTUM()
-        color_raw = open3d::io::read_image(rgbd_data.color_path)
-        depth_raw = open3d::io::read_image(rgbd_data.depth_path)
+            data::SampleRGBDImageNYU rgbd_data();
 
-Mirror(s):
-    - `Mirror 1 <https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/fragment.ply>`_
-Contents:
-    fragment.ply
-Source:
-    Living Room point cloud fragment from Redwood RGB-D livingroom1 sequence.
-Licence:
-    Creative Commons 3.0 (CC BY 3.0).
+            geometry::Image im_color;
+            io::ReadImage(rgbd_data.color_path, im_color);
+
+            geometry::Image im_depth;
+            io::ReadImage(rgbd_data.depth_path, im_depth);
+
+            std::shared_ptr<geometry::RGBDImage> im_rgbd = 
+                    geometry::RGBDImage::CreateFromColorAndDepth(im_color, im_depth);
+
+
+SampleRGBDImageSUN
+----------------------------------------
+
+`SampleRGBDImageSUN` contains a color image `SUN_color.jpg` and a depth image 
+`SUN_depth.png` sample from SUN RGBD dataset.
+
+See :ref:`reference </tutorial/geometry/rgbd_image.html#SUN-dataset>`.
+
+.. tabs::
+
+    .. code-tab:: python
+
+            rgbd_data = open3d.data.SampleRGBDImageSUN()
+            color_raw = open3d.io.read_image(rgbd_data.color_path)
+            depth_raw = open3d.io.read_image(rgbd_data.depth_path)
+
+
+    .. code-tab:: cpp
+
+            data::SampleRGBDImageSUN rgbd_data();
+
+            geometry::Image im_color;
+            io::ReadImage(rgbd_data.color_path, im_color);
+
+            geometry::Image im_depth;
+            io::ReadImage(rgbd_data.depth_path, im_depth);
+
+            std::shared_ptr<geometry::RGBDImage> im_rgbd = 
+                    geometry::RGBDImage::CreateFromColorAndDepth(im_color, im_depth);
+
+
+SampleRGBDImageTUM
+----------------------------------------
+
+`SampleRGBDImageTUM` contains a color image `TUM_color.png` and a depth image 
+`TUM_depth.png` sample from TUM RGBD dataset.
+
+See :ref:`reference </tutorial/geometry/rgbd_image.html#TUM-dataset>`.
+
+.. tabs::
+
+    .. code-tab:: python
+
+            rgbd_data = open3d.data.SampleRGBDImageTUM()
+            color_raw = open3d.io.read_image(rgbd_data.color_path)
+            depth_raw = open3d.io.read_image(rgbd_data.depth_path)
+
+    .. code-tab:: cpp
+
+            data::SampleRGBDImageSUN rgbd_data();
+
+            geometry::Image im_color;
+            io::ReadImage(rgbd_data.color_path, im_color);
+
+            geometry::Image im_depth;
+            io::ReadImage(rgbd_data.depth_path, im_depth);
+
+            std::shared_ptr<geometry::RGBDImage> im_rgbd = 
+                    geometry::RGBDImage::CreateFromColorAndDepth(im_color, im_depth);
 
 
 Image Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+JuneauImage
+----------------------------------------
+
+`JuneauImage` contains the `JuneauImage.jpg` file.
+
+See :ref:`reference </tutorial/geometry/file_io.html#Image>`.
+
+.. tabs::
+
+    .. code-tab:: python
+
+            img_data = o3d.data.JuneauImage()
+            img = o3d.io.read_image(img_data.path)
+
+    .. code-tab:: python
+
+            data::JuneauImage img_data();
+            geometry::Image img;
+            io::ReadImage(img_data.path, img);
+
 
 Demo Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+DemoICPPointClouds
+----------------------------------------
+
+`DemoICPPointClouds` contains 3 point clouds of binary PCD format. This data is 
+used in Open3D for ICP demo.
+
+See :ref:`reference </tutorial/pipelines/icp_registration.html#Input>`.
+
+
+DemoColoredICPPointClouds
+----------------------------------------
+
+`DemoColoredICPPointClouds` contains 2 point clouds of PLY format. This data is 
+used in Open3D for Colored-ICP demo.
+
+See :ref:`reference </tutorial/pipelines/colored_pointcloud_registration.html#Input>`.
+
+
+DemoCropPointCloud
+----------------------------------------
+
+`DemoCropPointCloud` contains a point cloud, and `cropped.json` (a saved 
+selected polygon volume file). This data is used in Open3D for point cloud crop 
+demo.
+
+See :ref:`reference </tutorial/geometry/pointcloud.html#Crop-point-cloud>`.
+
+
+DemoPointCloudFeatureMatching
+----------------------------------------
+
+`DemoPointCloudFeatureMatching` contains 2 point cloud fragments and their 
+respective FPFH features and L32D features. This data is used in Open3D for 
+point cloud feature matching demo.
+
+
+DemoPoseGraphOptimization
+----------------------------------------
+
+`DemoPoseGraphOptimization` contains an example fragment pose graph, and 
+global pose graph. This data is used in Open3D for pose graph optimization demo.
 
