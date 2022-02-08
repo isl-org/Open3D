@@ -1059,6 +1059,18 @@ endif()
 
 # Filament
 if(BUILD_GUI)
+    if(USE_SYSTEM_FILAMENT)
+        open3d_find_package_3rdparty_library(3rdparty_filament
+            PACKAGE filament
+            TARGETS filament::filament filament::geometry filament::image
+        )
+        if(3rdparty_filament_FOUND)
+            set(FILAMENT_MATC "/usr/bin/matc")
+        else()
+            set(USE_SYSTEM_FILAMENT OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_FILAMENT)
     set(FILAMENT_RUNTIME_VER "")
     if(BUILD_FILAMENT_FROM_SOURCE)
         message(STATUS "Building third-party library Filament from source")
@@ -1165,6 +1177,7 @@ if(BUILD_GUI)
         find_library(APPKIT_LIBRARY AppKit)
         target_link_libraries(3rdparty_filament INTERFACE ${CORE_VIDEO} ${QUARTZ_CORE} ${OPENGL_LIBRARY} ${METAL_LIBRARY} ${APPKIT_LIBRARY})
         target_link_options(3rdparty_filament INTERFACE "-fobjc-link-runtime")
+    endif()
     endif()
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_filament)
 endif()
