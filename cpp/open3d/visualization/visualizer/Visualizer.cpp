@@ -318,6 +318,13 @@ bool Visualizer::AddGeometry(
     if (!is_initialized_) {
         return false;
     }
+    if (!geometry_ptr.get()) {
+        utility::LogWarning(
+                "[AddGeometry] Invalid pointer. Possibly a null pointer or "
+                "None was passed in.");
+        return false;
+    }
+
     glfwMakeContextCurrent(window_);
     std::shared_ptr<glsl::GeometryRenderer> renderer_ptr;
     if (geometry_ptr->GetGeometryType() ==
