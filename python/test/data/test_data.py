@@ -45,16 +45,17 @@ def test_dataset_base():
         "/my/custom/data_root/extract/some_prefix")
 
 
-def get_default_gt_dirs(prefix):
-    gt_data_root = Path.home() / "open3d_data"
+def get_test_data_dirs(prefix):
+    gt_data_root = Path.home() / "open3d_data" / "open3d_test"
     gt_download_dir = gt_data_root / "download" / prefix
     gt_extract_dir = gt_data_root / "extract" / prefix
-    return gt_data_root, gt_download_dir, gt_extract_dir
+    return str(gt_data_root), gt_download_dir, gt_extract_dir
 
 
 def test_simple_dataset_base():
-    prefix = "O3DTestSimpleDataset"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "BunnyMesh"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     url_mirrors = [
         "https://github.com/isl-org/open3d_downloads/releases/download/"
@@ -65,46 +66,31 @@ def test_simple_dataset_base():
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    single_download_dataset = o3d.data.SingleDownloadDataset(prefix,
-                                                             url_mirrors,
-                                                             md5,
-                                                             no_extract=True)
+    single_download_dataset = o3d.data.SingleDownloadDataset(
+        gt_prefix, url_mirrors, md5, True, gt_data_root)
 
-<<<<<<< HEAD
-    assert os.path.isfile(gt_extract_dir / "BunnyMesh.ply") == True
-    assert os.path.isfile(gt_download_dir / "BunnyMesh.ply") == True
-=======
     assert Path(gt_extract_dir / "BunnyMesh.ply").exists()
     assert Path(gt_download_dir / "BunnyMesh.ply").exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert single_download_dataset.prefix == prefix
-    assert Path(single_download_dataset.data_root) == gt_data_root
+    assert single_download_dataset.prefix == gt_prefix
+    assert Path(single_download_dataset.data_root) == Path(gt_data_root)
     assert Path(single_download_dataset.download_dir) == gt_download_dir
     assert Path(single_download_dataset.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_demo_icp_pointclouds():
-    prefix = "O3DTestDemoICPPointClouds"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "DemoICPPointClouds"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    demo_icp = o3d.data.DemoICPPointClouds(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-=======
+    demo_icp = o3d.data.DemoICPPointClouds(gt_data_root)
     assert Path(gt_download_dir).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     gt_paths = [
         gt_extract_dir / "cloud_bin_0.pcd", gt_extract_dir / "cloud_bin_1.pcd",
@@ -114,39 +100,27 @@ def test_demo_icp_pointclouds():
     assert len(demo_icp.paths) == len(gt_paths)
     for gt_path, demo_icp_path in zip(gt_paths, demo_icp.paths):
         assert Path(gt_path) == Path(demo_icp_path)
-<<<<<<< HEAD
-        assert os.path.isfile(gt_path) == True
-=======
         assert Path(gt_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert demo_icp.prefix == prefix
+    assert demo_icp.prefix == gt_prefix
     assert Path(demo_icp.data_root) == Path(gt_data_root)
-    assert Path(demo_icp.download_dir) == Path(gt_download_dir)
-    assert Path(demo_icp.extract_dir) == Path(gt_extract_dir)
+    assert Path(demo_icp.download_dir) == gt_download_dir
+    assert Path(demo_icp.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_demo_colored_icp_pointclouds():
-    prefix = "O3DTestDemoColoredICPPointClouds"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "DemoColoredICPPointClouds"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    demo_colored_icp = o3d.data.DemoColoredICPPointClouds(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-=======
+    demo_colored_icp = o3d.data.DemoColoredICPPointClouds(gt_data_root)
     assert Path(gt_download_dir).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     gt_paths = [
         gt_extract_dir / "frag_115.ply", gt_extract_dir / "frag_116.ply"
@@ -155,44 +129,26 @@ def test_demo_colored_icp_pointclouds():
     assert len(demo_colored_icp.paths) == len(gt_paths)
     for gt_path, demo_colored_icp_path in zip(gt_paths, demo_colored_icp.paths):
         assert Path(gt_path) == Path(demo_colored_icp_path)
-<<<<<<< HEAD
-        assert os.path.isfile(gt_path) == True
-=======
         assert Path(gt_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert demo_colored_icp.prefix == prefix
-    assert Path(demo_colored_icp.data_root) == gt_data_root
+    assert demo_colored_icp.prefix == gt_prefix
+    assert Path(demo_colored_icp.data_root) == Path(gt_data_root)
     assert Path(demo_colored_icp.download_dir) == gt_download_dir
     assert Path(demo_colored_icp.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_demo_crop_pointcloud():
-    prefix = "O3DTestDemoCropPointCloud"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "DemoCropPointCloud"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    demo_crop_pcd = o3d.data.DemoCropPointCloud(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(demo_crop_pcd.pointcloud_path) == gt_extract_dir / \
-        "fragment.ply"
-    assert os.path.isfile(demo_crop_pcd.pointcloud_path) == True
-    assert Path(demo_crop_pcd.cropped_json_path) == gt_extract_dir / \
-        "cropped.json"
-    assert os.path.isfile(demo_crop_pcd.pointcloud_path) == True
-=======
+    demo_crop_pcd = o3d.data.DemoCropPointCloud(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(demo_crop_pcd.pointcloud_path) == gt_extract_dir / \
@@ -201,35 +157,26 @@ def test_demo_crop_pointcloud():
     assert Path(demo_crop_pcd.cropped_json_path) == gt_extract_dir / \
         "cropped.json"
     assert Path(demo_crop_pcd.pointcloud_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert demo_crop_pcd.prefix == prefix
-    assert Path(demo_crop_pcd.data_root) == gt_data_root
+    assert demo_crop_pcd.prefix == gt_prefix
+    assert Path(demo_crop_pcd.data_root) == Path(gt_data_root)
     assert Path(demo_crop_pcd.download_dir) == gt_download_dir
     assert Path(demo_crop_pcd.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_demo_pointcloud_feature_matching():
-    prefix = "O3DTestDemoPointCloudFeatureMatching"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "DemoPointCloudFeatureMatching"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    demo_feature_matching = o3d.data.DemoPointCloudFeatureMatching(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-=======
+    demo_feature_matching = o3d.data.DemoPointCloudFeatureMatching(gt_data_root)
     assert Path(gt_download_dir).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     gt_pointcloud_paths = [
         gt_extract_dir / "cloud_bin_0.pcd", gt_extract_dir / "cloud_bin_1.pcd"
@@ -239,11 +186,7 @@ def test_demo_pointcloud_feature_matching():
     for gt_path, demo_feature_matching_pointcloud_path in zip(
             gt_pointcloud_paths, demo_feature_matching.pointcloud_paths):
         assert Path(demo_feature_matching_pointcloud_path) == gt_path
-<<<<<<< HEAD
-        assert os.path.isfile(gt_path) == True
-=======
         assert Path(gt_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     gt_fpfh_feature_paths = [
         gt_extract_dir / "cloud_bin_0.fpfh.bin",
@@ -254,11 +197,7 @@ def test_demo_pointcloud_feature_matching():
     for gt_path, demo_feature_matching_fpfh_feature_path in zip(
             gt_fpfh_feature_paths, demo_feature_matching.fpfh_feature_paths):
         assert Path(demo_feature_matching_fpfh_feature_path) == gt_path
-<<<<<<< HEAD
-        assert os.path.isfile(gt_path) == True
-=======
         assert Path(gt_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     gt_l32d_feature_paths = [
         gt_extract_dir / "cloud_bin_0.d32.bin",
@@ -269,45 +208,26 @@ def test_demo_pointcloud_feature_matching():
     for gt_path, demo_feature_matching_l32d_feature_path in zip(
             gt_l32d_feature_paths, demo_feature_matching.l32d_feature_paths):
         assert Path(demo_feature_matching_l32d_feature_path) == gt_path
-<<<<<<< HEAD
-        assert os.path.isfile(gt_path) == True
-=======
         assert Path(gt_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert demo_feature_matching.prefix == prefix
-    assert Path(demo_feature_matching.data_root) == gt_data_root
+    assert demo_feature_matching.prefix == gt_prefix
+    assert Path(demo_feature_matching.data_root) == Path(gt_data_root)
     assert Path(demo_feature_matching.download_dir) == gt_download_dir
     assert Path(demo_feature_matching.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_demo_pose_graph_optimization():
-    prefix = "O3DTestDemoPoseGraphOptimization"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "DemoPoseGraphOptimization"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    demo_pose_optimization = o3d.data.DemoPoseGraphOptimization(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(demo_pose_optimization.pose_graph_fragment_path) == gt_extract_dir / \
-        "pose_graph_example_fragment.json"
-    assert os.path.isfile(
-        demo_pose_optimization.pose_graph_fragment_path) == True
-    assert Path(demo_pose_optimization.pose_graph_global_path) == gt_extract_dir / \
-        "pose_graph_example_global.json"
-    assert os.path.isfile(demo_pose_optimization.pose_graph_global_path) == True
-=======
+    demo_pose_optimization = o3d.data.DemoPoseGraphOptimization(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(demo_pose_optimization.pose_graph_fragment_path) == gt_extract_dir / \
@@ -316,107 +236,71 @@ def test_demo_pose_graph_optimization():
     assert Path(demo_pose_optimization.pose_graph_global_path) == gt_extract_dir / \
         "pose_graph_example_global.json"
     assert Path(demo_pose_optimization.pose_graph_global_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert demo_pose_optimization.prefix == prefix
-    assert Path(demo_pose_optimization.data_root) == gt_data_root
+    assert demo_pose_optimization.prefix == gt_prefix
+    assert Path(demo_pose_optimization.data_root) == Path(gt_data_root)
     assert Path(demo_pose_optimization.download_dir) == gt_download_dir
     assert Path(demo_pose_optimization.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_sample_pointcloud_pcd():
-    prefix = "O3DTestSamplePointCloudPCD"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "SamplePointCloudPCD"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    pcd_pointcloud = o3d.data.SamplePointCloudPCD(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(pcd_pointcloud.path) == gt_extract_dir / "fragment.pcd"
-    assert os.path.isfile(pcd_pointcloud.path) == True
-=======
+    pcd_pointcloud = o3d.data.SamplePointCloudPCD(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(pcd_pointcloud.path) == gt_extract_dir / "fragment.pcd"
     assert Path(pcd_pointcloud.path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert pcd_pointcloud.prefix == prefix
-    assert Path(pcd_pointcloud.data_root) == gt_data_root
+    assert pcd_pointcloud.prefix == gt_prefix
+    assert Path(pcd_pointcloud.data_root) == Path(gt_data_root)
     assert Path(pcd_pointcloud.download_dir) == gt_download_dir
     assert Path(pcd_pointcloud.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_sample_pointcloud_ply():
-    prefix = "O3DTestSamplePointCloudPLY"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "SamplePointCloudPLY"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    ply_pointcloud = o3d.data.SamplePointCloudPLY(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(ply_pointcloud.path) == gt_extract_dir / "fragment.ply"
-    assert os.path.isfile(ply_pointcloud.path) == True
-=======
+    ply_pointcloud = o3d.data.SamplePointCloudPLY(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(ply_pointcloud.path) == gt_extract_dir / "fragment.ply"
     assert Path(ply_pointcloud.path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert ply_pointcloud.prefix == prefix
-    assert Path(ply_pointcloud.data_root) == gt_data_root
+    assert ply_pointcloud.prefix == gt_prefix
+    assert Path(ply_pointcloud.data_root) == Path(gt_data_root)
     assert Path(ply_pointcloud.download_dir) == gt_download_dir
     assert Path(ply_pointcloud.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_sample_rgbd_image_nyu():
-    prefix = "O3DTestSampleRGBDImageNYU"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "SampleRGBDImageNYU"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    rgbd_image_nyu = o3d.data.SampleRGBDImageNYU(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(rgbd_image_nyu.color_path) == gt_extract_dir / "NYU_color.ppm"
-    assert os.path.isfile(rgbd_image_nyu.color_path) == True
-
-    assert Path(rgbd_image_nyu.depth_path) == gt_extract_dir / "NYU_depth.pgm"
-    assert os.path.isfile(rgbd_image_nyu.depth_path) == True
-=======
+    rgbd_image_nyu = o3d.data.SampleRGBDImageNYU(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(rgbd_image_nyu.color_path) == gt_extract_dir / "NYU_color.ppm"
@@ -424,39 +308,25 @@ def test_sample_rgbd_image_nyu():
 
     assert Path(rgbd_image_nyu.depth_path) == gt_extract_dir / "NYU_depth.pgm"
     assert Path(rgbd_image_nyu.depth_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert rgbd_image_nyu.prefix == prefix
-    assert Path(rgbd_image_nyu.data_root) == gt_data_root
+    assert rgbd_image_nyu.prefix == gt_prefix
+    assert Path(rgbd_image_nyu.data_root) == Path(gt_data_root)
     assert Path(rgbd_image_nyu.download_dir) == gt_download_dir
     assert Path(rgbd_image_nyu.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_sample_rgbd_image_sun():
-    prefix = "O3DTestSampleRGBDImageSUN"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "SampleRGBDImageSUN"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    rgbd_image_sun = o3d.data.SampleRGBDImageSUN(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(rgbd_image_sun.color_path) == gt_extract_dir / "SUN_color.jpg"
-    assert os.path.isfile(rgbd_image_sun.color_path) == True
-
-    assert Path(rgbd_image_sun.depth_path) == gt_extract_dir / "SUN_depth.png"
-    assert os.path.isfile(rgbd_image_sun.depth_path) == True
-=======
+    rgbd_image_sun = o3d.data.SampleRGBDImageSUN(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(rgbd_image_sun.color_path) == gt_extract_dir / "SUN_color.jpg"
@@ -464,39 +334,25 @@ def test_sample_rgbd_image_sun():
 
     assert Path(rgbd_image_sun.depth_path) == gt_extract_dir / "SUN_depth.png"
     assert Path(rgbd_image_sun.depth_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert rgbd_image_sun.prefix == prefix
-    assert Path(rgbd_image_sun.data_root) == gt_data_root
+    assert rgbd_image_sun.prefix == gt_prefix
+    assert Path(rgbd_image_sun.data_root) == Path(gt_data_root)
     assert Path(rgbd_image_sun.download_dir) == gt_download_dir
     assert Path(rgbd_image_sun.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_sample_rgbd_image_tum():
-    prefix = "O3DTestSampleRGBDImageTUM"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "SampleRGBDImageTUM"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    rgbd_image_tum = o3d.data.SampleRGBDImageTUM(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(rgbd_image_tum.color_path) == gt_extract_dir / "TUM_color.png"
-    assert os.path.isfile(rgbd_image_tum.color_path) == True
-
-    assert Path(rgbd_image_tum.depth_path) == gt_extract_dir / "TUM_depth.png"
-    assert os.path.isfile(rgbd_image_tum.depth_path) == True
-=======
+    rgbd_image_tum = o3d.data.SampleRGBDImageTUM(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(rgbd_image_tum.color_path) == gt_extract_dir / "TUM_color.png"
@@ -504,35 +360,26 @@ def test_sample_rgbd_image_tum():
 
     assert Path(rgbd_image_tum.depth_path) == gt_extract_dir / "TUM_depth.png"
     assert Path(rgbd_image_tum.depth_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert rgbd_image_tum.prefix == prefix
-    assert Path(rgbd_image_tum.data_root) == gt_data_root
+    assert rgbd_image_tum.prefix == gt_prefix
+    assert Path(rgbd_image_tum.data_root) == Path(gt_data_root)
     assert Path(rgbd_image_tum.download_dir) == gt_download_dir
     assert Path(rgbd_image_tum.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_sample_rgbd_dataset_redwood():
-    prefix = "O3DTestSampleRGBDDatasetRedwood"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "SampleRGBDDatasetRedwood"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    rgbd_dataset_redwood = o3d.data.SampleRGBDDatasetRedwood(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-=======
+    rgbd_dataset_redwood = o3d.data.SampleRGBDDatasetRedwood(gt_data_root)
     assert Path(gt_download_dir).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     gt_color_paths = [
         gt_extract_dir / "color" / "00000.jpg",
@@ -545,11 +392,7 @@ def test_sample_rgbd_dataset_redwood():
     for gt_path, rgbd_dataset_redwood_color_path in zip(
             gt_color_paths, rgbd_dataset_redwood.color_paths):
         assert Path(rgbd_dataset_redwood_color_path) == gt_path
-<<<<<<< HEAD
-        assert os.path.isfile(gt_path) == True
-=======
         assert Path(gt_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     gt_depth_paths = [
         gt_extract_dir / "depth" / "00000.png",
@@ -562,11 +405,7 @@ def test_sample_rgbd_dataset_redwood():
     for gt_path, rgbd_dataset_redwood_depth_path in zip(
             gt_depth_paths, rgbd_dataset_redwood.depth_paths):
         assert Path(rgbd_dataset_redwood_depth_path) == gt_path
-<<<<<<< HEAD
-        assert os.path.isfile(gt_path) == True
-=======
         assert Path(gt_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     assert Path(rgbd_dataset_redwood.trajectory_log_path
                ) == gt_extract_dir / "trajectory.log"
@@ -577,33 +416,25 @@ def test_sample_rgbd_dataset_redwood():
     assert Path(rgbd_dataset_redwood.reconstruction_path
                ) == gt_extract_dir / "example_tsdf_pcd.ply"
 
-    assert rgbd_dataset_redwood.prefix == prefix
-    assert Path(rgbd_dataset_redwood.data_root) == gt_data_root
+    assert rgbd_dataset_redwood.prefix == gt_prefix
+    assert Path(rgbd_dataset_redwood.data_root) == Path(gt_data_root)
     assert Path(rgbd_dataset_redwood.download_dir) == gt_download_dir
     assert Path(rgbd_dataset_redwood.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_sample_fountain_rgbd_dataset():
-    prefix = "O3DTestSampleFountainRGBDDataset"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "SampleFountainRGBDDataset"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    fountain_dataset = o3d.data.SampleFountainRGBDDataset(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-=======
+    fountain_dataset = o3d.data.SampleFountainRGBDDataset(gt_data_root)
     assert Path(gt_download_dir).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     gt_color_paths = [
         gt_extract_dir / "image" / "0000010-000001228920.jpg",
@@ -644,11 +475,7 @@ def test_sample_fountain_rgbd_dataset():
     for gt_path, fountain_dataset_color_path in zip(
             gt_color_paths, fountain_dataset.color_paths):
         assert Path(fountain_dataset_color_path) == gt_path
-<<<<<<< HEAD
-        assert os.path.isfile(gt_path) == True
-=======
         assert Path(gt_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     gt_depth_paths = [
         gt_extract_dir / "depth" / "0000038-000001234662.png",
@@ -689,196 +516,132 @@ def test_sample_fountain_rgbd_dataset():
     for gt_path, fountain_dataset_depth_path in zip(
             gt_depth_paths, fountain_dataset.depth_paths):
         assert Path(fountain_dataset_depth_path) == gt_path
-<<<<<<< HEAD
-        assert os.path.isfile(gt_path) == True
-=======
         assert Path(gt_path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
     assert Path(fountain_dataset.keyframe_poses_log_path
                ) == gt_extract_dir / "scene" / "key.log"
     assert Path(fountain_dataset.reconstruction_path
                ) == gt_extract_dir / "scene" / "integrated.ply"
 
-    assert fountain_dataset.prefix == prefix
-    assert Path(fountain_dataset.data_root) == gt_data_root
+    assert fountain_dataset.prefix == gt_prefix
+    assert Path(fountain_dataset.data_root) == Path(gt_data_root)
     assert Path(fountain_dataset.download_dir) == gt_download_dir
     assert Path(fountain_dataset.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_eagle():
-    prefix = "O3DTestEagle"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "EaglePointCloud"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    eagle = o3d.data.EaglePointCloud(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(eagle.path) == gt_extract_dir / "EaglePointCloud.ply"
-    assert os.path.isfile(eagle.path) == True
-=======
+    eagle = o3d.data.EaglePointCloud(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(eagle.path) == gt_extract_dir / "EaglePointCloud.ply"
     assert Path(eagle.path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert eagle.prefix == prefix
-    assert Path(eagle.data_root) == gt_data_root
+    assert eagle.prefix == gt_prefix
+    assert Path(eagle.data_root) == Path(gt_data_root)
     assert Path(eagle.download_dir) == gt_download_dir
     assert Path(eagle.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_armadillo():
-    prefix = "O3DTestArmadillo"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "ArmadilloMesh"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    armadillo = o3d.data.ArmadilloMesh(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(armadillo.path) == gt_extract_dir / "ArmadilloMesh.ply"
-    assert os.path.isfile(armadillo.path) == True
-=======
+    armadillo = o3d.data.ArmadilloMesh(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(armadillo.path) == gt_extract_dir / "ArmadilloMesh.ply"
     assert Path(armadillo.path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert armadillo.prefix == prefix
-    assert Path(armadillo.data_root) == gt_data_root
+    assert armadillo.prefix == gt_prefix
+    assert Path(armadillo.data_root) == Path(gt_data_root)
     assert Path(armadillo.download_dir) == gt_download_dir
     assert Path(armadillo.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_bunny():
-    prefix = "O3DTestBunny"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "BunnyMesh"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    bunny = o3d.data.BunnyMesh(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(bunny.path) == gt_extract_dir / "BunnyMesh.ply"
-    assert os.path.isfile(bunny.path) == True
-=======
+    bunny = o3d.data.BunnyMesh(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(bunny.path) == gt_extract_dir / "BunnyMesh.ply"
     assert Path(bunny.path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert bunny.prefix == prefix
-    assert Path(bunny.data_root) == gt_data_root
+    assert bunny.prefix == gt_prefix
+    assert Path(bunny.data_root) == Path(gt_data_root)
     assert Path(bunny.download_dir) == gt_download_dir
     assert Path(bunny.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_knot():
-    prefix = "O3DTestKnot"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "KnotMesh"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    knot = o3d.data.KnotMesh(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(knot.path) == gt_extract_dir / "KnotMesh.ply"
-    assert os.path.isfile(knot.path) == True
-=======
+    knot = o3d.data.KnotMesh(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(knot.path) == gt_extract_dir / "KnotMesh.ply"
     assert Path(knot.path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert knot.prefix == prefix
-    assert Path(knot.data_root) == gt_data_root
+    assert knot.prefix == gt_prefix
+    assert Path(knot.data_root) == Path(gt_data_root)
     assert Path(knot.download_dir) == gt_download_dir
     assert Path(knot.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
 
 def test_juneau():
-    prefix = "O3DTestJuneau"
-    gt_data_root, gt_download_dir, gt_extract_dir = get_default_gt_dirs(prefix)
+    gt_prefix = "JuneauImage"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
 
     shutil.rmtree(gt_download_dir, ignore_errors=True)
     shutil.rmtree(gt_extract_dir, ignore_errors=True)
 
-    juneau = o3d.data.JuneauImage(prefix)
-<<<<<<< HEAD
-    assert os.path.isdir(gt_download_dir) == True
-
-    assert Path(juneau.path) == gt_extract_dir / "JuneauImage.jpg"
-    assert os.path.isfile(juneau.path) == True
-=======
+    juneau = o3d.data.JuneauImage(gt_data_root)
     assert Path(gt_download_dir).exists()
 
     assert Path(juneau.path) == gt_extract_dir / "JuneauImage.jpg"
     assert Path(juneau.path).exists()
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107
 
-    assert juneau.prefix == prefix
-    assert Path(juneau.data_root) == gt_data_root
+    assert juneau.prefix == gt_prefix
+    assert Path(juneau.data_root) == Path(gt_data_root)
     assert Path(juneau.download_dir) == gt_download_dir
     assert Path(juneau.extract_dir) == gt_extract_dir
 
-<<<<<<< HEAD
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
-=======
     shutil.rmtree(gt_download_dir, ignore_errors=False)
     shutil.rmtree(gt_extract_dir, ignore_errors=False)
->>>>>>> 10a36f2676d2d521c631d5f7194fea1fb9c52107

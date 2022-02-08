@@ -128,8 +128,7 @@ public:
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoICPPointClouds : public SingleDownloadDataset {
 public:
-    DemoICPPointClouds(const std::string& prefix = "DemoICPPointClouds",
-                       const std::string& data_root = "");
+    DemoICPPointClouds(const std::string& data_root = "");
 
     /// \brief Returns list of 3 point cloud paths.
     std::vector<std::string> GetPaths() const { return paths_; }
@@ -149,9 +148,7 @@ private:
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoColoredICPPointClouds : public SingleDownloadDataset {
 public:
-    DemoColoredICPPointClouds(
-            const std::string& prefix = "DemoColoredICPPointClouds",
-            const std::string& data_root = "");
+    DemoColoredICPPointClouds(const std::string& data_root = "");
 
     /// \brief Returns list of list of 2 point cloud paths.
     std::vector<std::string> GetPaths() const { return paths_; }
@@ -171,8 +168,7 @@ private:
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoCropPointCloud : public SingleDownloadDataset {
 public:
-    DemoCropPointCloud(const std::string& prefix = "DemoCropPointCloud",
-                       const std::string& data_root = "");
+    DemoCropPointCloud(const std::string& data_root = "");
 
     /// \brief Returns path to example point cloud.
     std::string GetPointCloudPath() const { return pointcloud_path_; }
@@ -193,9 +189,7 @@ private:
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class DemoPointCloudFeatureMatching : public SingleDownloadDataset {
 public:
-    DemoPointCloudFeatureMatching(
-            const std::string& prefix = "DemoPointCloudFeatureMatching",
-            const std::string& data_root = "");
+    DemoPointCloudFeatureMatching(const std::string& data_root = "");
 
     /// \brief Returns list of paths to point clouds, of size 2.
     std::vector<std::string> GetPointCloudPaths() const {
@@ -229,9 +223,7 @@ private:
 /// for pose graph optimization demo.
 class DemoPoseGraphOptimization : public SingleDownloadDataset {
 public:
-    DemoPoseGraphOptimization(
-            const std::string& prefix = "DemoPoseGraphOptimization",
-            const std::string& data_root = "");
+    DemoPoseGraphOptimization(const std::string& data_root = "");
 
     /// \brief Returns path to example global pose graph (json).
     std::string GetPoseGraphFragmentPath() const {
@@ -254,8 +246,7 @@ private:
 /// point cloud mesh from the `Redwood Living Room` dataset.
 class SamplePointCloudPCD : public SingleDownloadDataset {
 public:
-    SamplePointCloudPCD(const std::string& prefix = "SamplePointCloudPCD",
-                        const std::string& data_root = "");
+    SamplePointCloudPCD(const std::string& data_root = "");
 
     /// \brief Returns path to the `pcd` format point cloud.
     std::string GetPath() const { return path_; };
@@ -270,8 +261,7 @@ private:
 /// point cloud mesh from the `Redwood Living Room` dataset.
 class SamplePointCloudPLY : public SingleDownloadDataset {
 public:
-    SamplePointCloudPLY(const std::string& prefix = "SamplePointCloudPLY",
-                        const std::string& data_root = "");
+    SamplePointCloudPLY(const std::string& data_root = "");
 
     /// \brief Returns path to the PLY format point cloud.
     std::string GetPath() const { return path_; };
@@ -287,8 +277,7 @@ private:
 /// dataset.
 class SampleRGBDImageNYU : public SingleDownloadDataset {
 public:
-    SampleRGBDImageNYU(const std::string& prefix = "SampleRGBDImageNYU",
-                       const std::string& data_root = "");
+    SampleRGBDImageNYU(const std::string& data_root = "");
 
     /// \brief Returns path to color image sample.
     std::string GetColorPath() const { return color_path_; };
@@ -308,8 +297,7 @@ private:
 /// dataset.
 class SampleRGBDImageSUN : public SingleDownloadDataset {
 public:
-    SampleRGBDImageSUN(const std::string& prefix = "SampleRGBDImageSUN",
-                       const std::string& data_root = "");
+    SampleRGBDImageSUN(const std::string& data_root = "");
 
     /// \brief Returns path to color image sample.
     std::string GetColorPath() const { return color_path_; };
@@ -329,8 +317,7 @@ private:
 /// dataset.
 class SampleRGBDImageTUM : public SingleDownloadDataset {
 public:
-    SampleRGBDImageTUM(const std::string& prefix = "SampleRGBDImageTUM",
-                       const std::string& data_root = "");
+    SampleRGBDImageTUM(const std::string& data_root = "");
 
     /// \brief Returns path to color image sample.
     std::string GetColorPath() const { return color_path_; };
@@ -351,9 +338,7 @@ private:
 // rgbd match, and point cloud reconstruction obtained using TSDF.
 class SampleRGBDDatasetRedwood : public SingleDownloadDataset {
 public:
-    SampleRGBDDatasetRedwood(
-            const std::string& prefix = "SampleRGBDDatasetRedwood",
-            const std::string& data_root = "");
+    SampleRGBDDatasetRedwood(const std::string& data_root = "");
 
     /// \brief Returns List of paths to color image samples of size 5.
     std::vector<std::string> GetColorPaths() const { return color_paths_; };
@@ -390,9 +375,7 @@ private:
 /// 33 color and depth images from the `Fountain RGBD dataset`.
 class SampleFountainRGBDDataset : public SingleDownloadDataset {
 public:
-    SampleFountainRGBDDataset(
-            const std::string& prefix = "SampleFountainRGBDDataset",
-            const std::string& data_root = "");
+    SampleFountainRGBDDataset(const std::string& data_root = "");
 
     /// \brief Returns List of paths to color image samples of size 33.
     std::vector<std::string> GetColorPaths() const { return color_paths_; };
@@ -417,8 +400,7 @@ private:
 /// file.
 class EaglePointCloud : public SingleDownloadDataset {
 public:
-    EaglePointCloud(const std::string& prefix = "EaglePointCloud",
-                    const std::string& data_root = "");
+    EaglePointCloud(const std::string& data_root = "");
 
     /// \brief Returns path to the `EaglePointCloud.ply` file.
     std::string GetPath() const { return path_; };
@@ -433,8 +415,7 @@ private:
 /// the `Stanford 3D Scanning Repository`.
 class ArmadilloMesh : public SingleDownloadDataset {
 public:
-    ArmadilloMesh(const std::string& prefix = "ArmadilloMesh",
-                  const std::string& data_root = "");
+    ArmadilloMesh(const std::string& data_root = "");
 
     /// \brief Returns path to the `ArmadilloMesh.ply` file.
     std::string GetPath() const { return path_; };
@@ -449,8 +430,7 @@ private:
 /// `Stanford 3D Scanning Repository`.
 class BunnyMesh : public SingleDownloadDataset {
 public:
-    BunnyMesh(const std::string& prefix = "BunnyMesh",
-              const std::string& data_root = "");
+    BunnyMesh(const std::string& data_root = "");
 
     /// \brief Returns path to the `BunnyMesh.ply` file.
     std::string GetPath() const { return path_; };
@@ -464,8 +444,7 @@ private:
 /// \brief Data class for `KnotMesh` contains the `KnotMesh.ply` file.
 class KnotMesh : public SingleDownloadDataset {
 public:
-    KnotMesh(const std::string& prefix = "KnotMesh",
-             const std::string& data_root = "");
+    KnotMesh(const std::string& data_root = "");
 
     /// \brief Returns path to the `KnotMesh.ply` file.
     std::string GetPath() const { return path_; };
@@ -479,8 +458,7 @@ private:
 /// \brief Data class for `JuneauImage` contains the `JuneauImage.jpg` file.
 class JuneauImage : public SingleDownloadDataset {
 public:
-    JuneauImage(const std::string& prefix = "JuneauImage",
-                const std::string& data_root = "");
+    JuneauImage(const std::string& data_root = "");
 
     /// \brief Returns path to the `JuneauImage.jgp` file.
     std::string GetPath() const { return path_; };
@@ -496,9 +474,7 @@ private:
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class RedwoodLivingRoomPointClouds : public SingleDownloadDataset {
 public:
-    RedwoodLivingRoomPointClouds(
-            const std::string& prefix = "RedwoodLivingRoomPointClouds",
-            const std::string& data_root = "");
+    RedwoodLivingRoomPointClouds(const std::string& data_root = "");
 
     /// \brief Returns list of paths to ply point-cloud fragments of size 57.
     std::vector<std::string> GetPaths() const { return paths_; }
@@ -518,9 +494,7 @@ private:
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
 class RedwoodOfficePointClouds : public SingleDownloadDataset {
 public:
-    RedwoodOfficePointClouds(
-            const std::string& prefix = "RedwoodOfficePointClouds",
-            const std::string& data_root = "");
+    RedwoodOfficePointClouds(const std::string& data_root = "");
 
     /// \brief Returns list of paths to ply point-cloud fragments of size 52.
     std::vector<std::string> GetPaths() const { return paths_; }
