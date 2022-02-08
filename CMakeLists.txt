@@ -85,6 +85,7 @@ option(USE_SYSTEM_FILAMENT        "Use system pre-installed filament"        OFF
 option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
 option(USE_SYSTEM_GLEW            "Use system pre-installed glew"            OFF)
 option(USE_SYSTEM_GLFW            "Use system pre-installed glfw"            OFF)
+option(USE_SYSTEM_GOOGLETEST      "Use system pre-installed Googletest"      OFF)
 option(USE_SYSTEM_IMGUI           "Use system pre-installed imgui"           OFF)
 option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF)
 option(USE_SYSTEM_JSONCPP         "Use system pre-installed jsoncpp"         OFF)

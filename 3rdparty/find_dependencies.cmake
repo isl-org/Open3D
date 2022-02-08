@@ -1043,19 +1043,30 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_poisson)
 
 # Googletest
 if (BUILD_UNIT_TESTS)
-    include(${Open3D_3RDPARTY_DIR}/googletest/googletest.cmake)
-    open3d_build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
-        SOURCES
-            googletest/src/gtest-all.cc
-            googlemock/src/gmock-all.cc
-        INCLUDE_DIRS
-            googletest/include/
-            googletest/
-            googlemock/include/
-            googlemock/
-        DEPENDS
-            ext_googletest
-    )
+    if(USE_SYSTEM_GOOGLETEST)
+        open3d_find_package_3rdparty_library(3rdparty_googletest
+            PACKAGE GTest
+            TARGETS GTest::gmock
+        )
+        if(NOT 3rdparty_googletest_FOUND)
+            set(USE_SYSTEM_GOOGLETEST OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_GOOGLETEST)
+        include(${Open3D_3RDPARTY_DIR}/googletest/googletest.cmake)
+        open3d_build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
+            SOURCES
+                googletest/src/gtest-all.cc
+                googlemock/src/gmock-all.cc
+            INCLUDE_DIRS
+                googletest/include/
+                googletest/
+                googlemock/include/
+                googlemock/
+            DEPENDS
+                ext_googletest
+        )
+    endif()
 endif()
 
 # Google benchmark
