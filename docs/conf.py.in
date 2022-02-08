@@ -89,7 +89,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx_tabs.tabs",
-    # "sphinx_code_tabs",
     "nbsphinx",
     'm2r2',
 ]

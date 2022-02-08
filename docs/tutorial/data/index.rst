@@ -1,8 +1,5 @@
 .. _data:
 
-Data Module
-===========
-
 Open3D provides `open3d.data` module for convenient access to built-in
 example and test data. You'll need internet access to use the data module.
 The downloaded data will be stored in the Open3D's data root directory.
@@ -20,7 +17,7 @@ By default, (3) will be used, and it is also the recommended way.
 
         import open3d as o3d
 
-        # The default prefix for the following example is `EaglePointCloud`.
+        # The default data_root for the following example is `$HOME/open3d_data`.
         eagle_data = o3d.data.EaglePointCloud()
         print("Prefix: ", eagle_data.prefix)
 
@@ -37,7 +34,7 @@ By default, (3) will be used, and it is also the recommended way.
         #include <iostream>
         using namespace open3d;
 
-        // The default prefix for the following example is `EaglePointCloud`.
+        // The default data_root for the following example is `$HOME/open3d_data`.
         data::EaglePointCloud eagle_data();
         std::cout << "Prefix: " << eagle_data.GetPrefix() << std::endl;
 
@@ -81,10 +78,9 @@ Point Cloud Data
 SamplePointCloudPCD
 -----------------------
 
-Data class for `SamplePointCloudPCD` contains the `fragment.pcd` colored point 
-cloud mesh from the `Redwood Living Room` dataset.
+`SamplePointCloudPCD` contains the `fragment.pcd` colored point cloud mesh from the `Redwood Living Room` dataset.
 
-[Reference to use this data](../geometry/pointcloud.html#Plane-segmentation)
+(See :ref:`/tutorial/geometry/pointcloud.html#Plane-segmentation` for reference)
 
 .. tabs::
 
@@ -103,10 +99,9 @@ cloud mesh from the `Redwood Living Room` dataset.
 SamplePointCloudPLY
 ----------------------------------------
 
-Data class for `SamplePointCloudPLY` contains the `fragment.ply` colored point 
-cloud mesh from the `Redwood Living Room` dataset.
+`SamplePointCloudPLY` contains the `fragment.ply` colored point cloud mesh from the `Redwood Living Room` dataset.
 
-[Reference to use this data](../geometry/pointcloud.html#Visualize-point-cloud)
+(See :ref:`/tutorial/geometry/pointcloud.html#Visualize-point-cloud` for reference)
 
 .. tabs::
 
@@ -125,8 +120,7 @@ cloud mesh from the `Redwood Living Room` dataset.
 EaglePointCloud
 ----------------------------------------
 
-Data class for `SamplePoinEaglePointCloudtCloudPLY` contains the `EaglePointCloud.ply` 
-colored point cloud mesh.
+`EaglePointCloud` contains the `EaglePointCloud.ply` colored point cloud mesh.
 
 .. tabs::
 
@@ -138,14 +132,14 @@ colored point cloud mesh.
     .. code-tab:: cpp
 
             data::EaglePointCloud eagle_data();
-            pcd = io::ReadPointCloud(eagle_data.path);
+            geometry::PointCloud pcd;
+            io::ReadPointCloud(eagle_data.path, pcd);
 
 
 RedwoodLivingRoomPointClouds
 ----------------------------------------
 
-Dataset class for `RedwoodLivingRoomPointClouds` contains 57 point clouds of 
-binary PLY format.
+`RedwoodLivingRoomPointClouds` contains 57 point clouds of binary PLY format, from Redwood RGB-D Dataset.
 
 Content:
 
@@ -164,7 +158,7 @@ Example: Use `paths[0]` to access `cloud_bin_0.ply`.
 
     .. code-tab:: python
 
-            pcd_fragments_data = open3d.data.RedwoodLivingRoomPointCloud()
+            pcd_fragments_data = o3d.data.RedwoodLivingRoomPointCloud()
             for path in pcd_fragments_data.paths:
                 pcd = open3d.io.read_point_cloud(pcd_fragments_data.path)
 
@@ -172,14 +166,15 @@ Example: Use `paths[0]` to access `cloud_bin_0.ply`.
 
             data::RedwoodLivingRoomPointCloud pcd_fragments_data();
             for(const std::string& path : pcd_fragments_data.path) {
-                pcd = io::ReadPointCloud(path);
+                geometry::PointCloud pcd;
+                io::ReadPointCloud(path, pcd);
             }
 
 
 RedwoodOfficePointClouds
 ----------------------------------------
 
-Dataset class for `RedwoodOfficePointClouds` contains 53 point clouds of binary PLY format.
+`RedwoodOfficePointClouds` contains 53 point clouds of binary PLY format, from Redwood RGB-D Dataset.
 
 Content:
 
@@ -198,7 +193,7 @@ Example: Use paths[0] to access `cloud_bin_0.ply`.
 
     .. code-tab:: python
 
-            pcd_fragments_data = open3d.data.RedwoodOfficePointCloud()
+            pcd_fragments_data = o3d.data.RedwoodOfficePointCloud()
             for path in pcd_fragments_data.paths:
                 pcd = open3d.io.read_point_cloud(pcd_fragments_data.path)
                 o3d.visualization.draw([pcd])
@@ -208,7 +203,8 @@ Example: Use paths[0] to access `cloud_bin_0.ply`.
 
             data::RedwoodOfficePointClouds pcd_fragments_data();
             for(const std::string& path : pcd_fragments_data.path) {
-                pcd = io::ReadPointCloud(path);
+                geometry::PointCloud pcd;
+                io::ReadPointCloud(path, pcd);
             }
 
 
@@ -216,38 +212,27 @@ Triangle Mesh Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-Bunny
+BunnyMesh
 ----------------------------------------
 
-Loading and visualizing example:
+`BunnyMesh` contains the `BunnyMesh.ply` triangle mesh from Stanford University Computer Graphics Laboratory.
 
 .. code-block:: python
 
-        mesh_data = open3d.data.BunnyMesh()
-        mesh = open3d.io.read_triangle_mesh(mesh_data.path)
-        o3d.visualization.draw([mesh])
-
+        mesh_data = o3d.data.BunnyMesh()
+        mesh = o3d.io.read_triangle_mesh(mesh_data.path)
 
 .. code-block:: cpp
 
-        mesh_data = open3d::data::BunnyMesh();
-        mesh = open3d::io::ReadTriangleMesh(mesh_data.path);
-        open3d::visualization::Draw({mesh});
-
-Mirror(s):
-    - `Mirror 1 <https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/BunnyMesh.ply>`_
-Contents:
-    BunnyMesh.ply
-Source:
-    Stanford University Computer Graphics Laboratory.
-Licence:
-    Creative Commons 3.0 (CC BY 3.0).
+        data::BunnyMesh bunny_data();
+        geometry::TriangleMesh mesh; 
+        io::ReadTriangleMesh(bunny_data.path);
 
 
-Armadillo
+ArmadilloMesh
 ----------------------------------------
 
-Loading and visualizing example:
+`ArmadilloMesh` contains the `ArmadilloMesh.ply` triangle mesh from Stanford University Computer Graphics Laboratory.
 
 .. code-block:: python
 
@@ -258,24 +243,15 @@ Loading and visualizing example:
 
 .. code-block:: cpp
 
-        mesh_data = open3d::data::ArmadilloMesh();
-        mesh = open3d::io::ReadTriangleMesh(mesh_data.path);
-        open3d::visualization::Draw({mesh});
-
-Mirror(s):
-    - `Mirror 1 <https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/ArmadilloMesh.ply>`_
-Contents:
-    Stanford University Computer Graphics Laboratory.
-Source:
-    Living Room point cloud fragment from Redwood RGB-D livingroom1 sequence.
-Licence:
-    Creative Commons 3.0 (CC BY 3.0).
+        data::ArmadilloMesh armadillo_data();
+        geometry::TriangleMesh mesh; 
+        io::ReadTriangleMesh(armadillo_data.path);
 
 
-Knot
+KnotMesh
 ----------------------------------------
 
-Loading and visualizing example:
+`KnotMesh` contains the `KnotMesh.ply` triangle mesh.
 
 .. code-block:: python
 
@@ -286,18 +262,9 @@ Loading and visualizing example:
 
 .. code-block:: cpp
 
-        mesh_data = open3d::data::KnotMesh();
-        mesh = open3d::io::ReadTriangleMesh(mesh_data.path);
-        open3d::visualization::Draw({mesh});
-
-Mirror(s):
-    - `Mirror 1 <https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/fragment.ply>`_
-Contents:
-    fragment.ply
-Source:
-    Living Room point cloud fragment from Redwood RGB-D livingroom1 sequence.
-Licence:
-    Creative Commons 3.0 (CC BY 3.0).
+        data::KnotMesh knot_data();
+        geometry::TriangleMesh mesh; 
+        io::ReadTriangleMesh(knot_data.path);
 
 
 RGB-D Data
