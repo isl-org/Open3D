@@ -361,28 +361,33 @@ public:
             bool use_triangle_normal,
             int seed);
 
-    /// Function to sample \param number_of_points points uniformly from the
-    /// mesh. \param use_triangle_normal Set to true to assign the triangle
-    /// normals to the returned points instead of the interpolated vertex
-    /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary. \param seed Sets the seed value used in the random
-    /// generator, set to -1 to use a random seed value with each function call.
+    /// Function to sample points uniformly from the mesh.
+    ///
+    /// \param number_of_points points uniformly from the mesh.
+    /// \param use_triangle_normal Set to true to assign the triangle normals to
+    /// the returned points instead of the interpolated vertex normals. The
+    /// triangle normals will be computed and added to the mesh if necessary.
+    /// \param seed Sets the seed value used in the random generator, set to -1
+    /// to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
             size_t number_of_points,
             bool use_triangle_normal = false,
             int seed = -1);
 
-    /// Function to sample \p number_of_points points (blue noise).
-    /// Based on the method presented in Yuksel, "Sample Elimination for
-    /// Generating Poisson Disk Sample Sets", EUROGRAPHICS, 2015 The PointCloud
-    /// \p pcl_init is used for sample elimination if given, otherwise a
-    /// PointCloud is first uniformly sampled with \p init_number_of_points
-    /// x \p number_of_points number of points.
-    /// \p use_triangle_normal Set to true to assign the triangle
-    /// normals to the returned points instead of the interpolated vertex
-    /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary. \p seed Sets the seed value used in the random
-    /// generator, set to -1 to use a random seed value with each function call.
+    /// Function to sample points from the mesh with Possion disk, based on the
+    /// method presented in Yuksel, "Sample Elimination for Generating Poisson
+    /// Disk Sample Sets", EUROGRAPHICS.
+    ///
+    /// \param number_of_points Number of points that should be sampled.
+    /// \param init_factor Factor for the initial uniformly sampled PointCloud.
+    /// This init PointCloud is used for sample elimination.
+    /// \param pcl_init Initial PointCloud that is used for sample elimination.
+    /// If this parameter is provided the init_factor is ignored.
+    /// \param use_triangle_normal If True assigns the triangle normals instead
+    /// of the interpolated vertex normals to the returned points. The triangle
+    /// normals will be computed and added to the mesh if necessary.
+    /// \param seed Sets the seed value used in the random generator, set to -1
+    /// to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
