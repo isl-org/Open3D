@@ -89,6 +89,7 @@ option(USE_SYSTEM_IMGUI           "Use system pre-installed imgui"           OFF
 option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF)
 option(USE_SYSTEM_JSONCPP         "Use system pre-installed jsoncpp"         OFF)
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
+option(USE_SYSTEM_NANOFLANN       "Use system pre-installed nanoflann"       OFF)
 option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
 option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
 option(USE_SYSTEM_QHULLCPP        "Use system pre-installed qhullcpp"        OFF)

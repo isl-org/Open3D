@@ -555,11 +555,22 @@ endif()
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_eigen3)
 
 # Nanoflann
-include(${Open3D_3RDPARTY_DIR}/nanoflann/nanoflann.cmake)
-open3d_import_3rdparty_library(3rdparty_nanoflann
-    INCLUDE_DIRS ${NANOFLANN_INCLUDE_DIRS}
-    DEPENDS      ext_nanoflann
-)
+if(USE_SYSTEM_NANOFLANN)
+    open3d_find_package_3rdparty_library(3rdparty_nanoflann
+        PACKAGE nanoflann
+        TARGETS nanoflann::nanoflann
+    )
+    if(NOT 3rdparty_nanoflann_FOUND)
+        set(USE_SYSTEM_NANOFLANN OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_NANOFLANN)
+    include(${Open3D_3RDPARTY_DIR}/nanoflann/nanoflann.cmake)
+    open3d_import_3rdparty_library(3rdparty_nanoflann
+        INCLUDE_DIRS ${NANOFLANN_INCLUDE_DIRS}
+        DEPENDS      ext_nanoflann
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_nanoflann)
 
 # GLEW
