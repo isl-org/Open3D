@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
     print("Extract voxel-aligned debugging voxel grid")
     voxel_grid = volume.extract_voxel_grid()
-    o3d.visualization.draw_geometries([voxel_grid])
+    # o3d.visualization.draw_geometries([voxel_grid])
 
-    print("Extract point cloud")
-    pcd = volume.extract_point_cloud()
-    o3d.visualization.draw_geometries([pcd])
+    # print("Extract point cloud")
+    # pcd = volume.extract_point_cloud()
+    # o3d.visualization.draw_geometries([pcd])
