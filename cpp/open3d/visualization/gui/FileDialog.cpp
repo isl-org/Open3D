@@ -147,7 +147,7 @@ struct FileDialog::Impl {
         }
     }
 
-    void UpdateDirectoryListing() {
+    std::string UpdateDirectoryListing() {
         auto path = CalcCurrentDirectory();
 
         std::vector<std::string> raw_subdirs, raw_files;
@@ -208,6 +208,7 @@ struct FileDialog::Impl {
             UpdateOk();
         }
         filelist_->SetItems(display);
+        return path;
     }
 
     std::string CalcCurrentDirectory() const {
@@ -285,7 +286,8 @@ FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
     impl_->filename_->SetOnTextChanged(
             [this](const char *) { this->impl_->UpdateOk(); });
     impl_->dirtree_->SetOnValueChanged([this](const char *, int) {
-        this->impl_->UpdateDirectoryListing();
+        auto newpath = this->impl_->UpdateDirectoryListing();
+        SetPath(newpath.c_str());
     });
     impl_->filelist_->SetOnValueChanged([this](const char *value,
                                                bool is_double_click) {
