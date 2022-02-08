@@ -59,8 +59,9 @@ By default, (3) will be used, and it is also the recommended way.
 
 
 When a dataset object is instantiated, the corresponding data will be downloaded 
-in ${data_root}/download/prefix/ and extracted or copied to ${data_root}/extract/prefix/. 
-The default ${data_root} location is $HOME/open3d_data. If the extracted data 
+in ``${data_root}/download/prefix/`` and extracted or copied to 
+``${data_root}/extract/prefix/``. The default ``${data_root}`` location is 
+``$HOME/open3d_data``. If the extracted data 
 directory exists, the files will be used without validation. If it does not 
 exist, and the valid downloaded file exists, the data will be extracted from 
 the downloaded file. If the downloaded file does not exist or validates against 
@@ -81,7 +82,7 @@ Point Cloud Data
 SamplePointCloudPCD
 -----------------------
 
-`SamplePointCloudPCD` contains the `fragment.pcd` colored point cloud mesh from 
+`SamplePointCloudPCD` contains the ``fragment.pcd`` colored point cloud mesh from 
 the `Redwood Living Room` dataset.
 
 See :ref:`reference </tutorial/geometry/pointcloud.html#Plane-segmentation>`.
@@ -103,7 +104,7 @@ See :ref:`reference </tutorial/geometry/pointcloud.html#Plane-segmentation>`.
 SamplePointCloudPLY
 ----------------------------------------
 
-`SamplePointCloudPLY` contains the `fragment.ply` colored point cloud mesh from 
+`SamplePointCloudPLY` contains the ``fragment.ply`` colored point cloud mesh from 
 the `Redwood Living Room` dataset.
 
 See :ref:`reference </tutorial/geometry/pointcloud.html#Visualize-point-cloud>`.
@@ -125,7 +126,7 @@ See :ref:`reference </tutorial/geometry/pointcloud.html#Visualize-point-cloud>`.
 EaglePointCloud
 ----------------------------------------
 
-`EaglePointCloud` contains the `EaglePointCloud.ply` colored point cloud mesh.
+`EaglePointCloud` contains the ``EaglePointCloud.ply`` colored point cloud mesh.
 
 .. tabs::
 
@@ -221,7 +222,8 @@ Triangle Mesh Data
 BunnyMesh
 ----------------------------------------
 
-`BunnyMesh` contains the `BunnyMesh.ply` triangle mesh from Stanford University Computer Graphics Laboratory.
+`BunnyMesh` contains the ``BunnyMesh.ply`` triangle mesh from Stanford 
+University Computer Graphics Laboratory.
 
 See :ref:`reference </tutorial/geometry/mesh.html#Connected-components>`.
 
@@ -242,7 +244,8 @@ See :ref:`reference </tutorial/geometry/mesh.html#Connected-components>`.
 ArmadilloMesh
 ----------------------------------------
 
-`ArmadilloMesh` contains the `ArmadilloMesh.ply` triangle mesh from Stanford University Computer Graphics Laboratory.
+`ArmadilloMesh` contains the ``ArmadilloMesh.ply`` triangle mesh from Stanford
+University Computer Graphics Laboratory.
 
 See :ref:`reference </tutorial/geometry/pointcloud.html#Visualize-point-cloud>`.
 
@@ -265,7 +268,7 @@ See :ref:`reference </tutorial/geometry/pointcloud.html#Visualize-point-cloud>`.
 KnotMesh
 ----------------------------------------
 
-`KnotMesh` contains the `KnotMesh.ply` triangle mesh.
+`KnotMesh` contains the ``KnotMesh.ply`` triangle mesh.
 
 See :ref:`reference </tutorial/geometry/mesh.html#Mesh>`.
 
@@ -292,7 +295,10 @@ RGB-D Data
 SampleRGBDDatasetRedwood
 ----------------------------------------
 
-`SampleRGBDDatasetRedwood` contains a sample set of 5 color and depth images from Redwood RGBD dataset living-room1. Additionally it also contains camera trajectory log, camera odometry log, rgbd match, and point cloud reconstruction obtained using TSDF.
+`SampleRGBDDatasetRedwood` contains a sample set of 5 ``color and depth 
+images`` from Redwood RGBD dataset living-room1. Additionally it also contains 
+``camera trajectory log``, ``camera odometry log``, ``rgbd match``, and 
+``point cloud reconstruction`` obtained using TSDF.
 
 See :ref:`reference </tutorial/geometry/rgbd_image.html#Redwood-dataset>`.
 
@@ -300,7 +306,9 @@ See :ref:`reference </tutorial/geometry/rgbd_image.html#Redwood-dataset>`.
 SampleFountainRGBDDataset
 ----------------------------------------
 
-`SampleFountainRGBDDataset` contains a sample set of 33 color and depth images from the `Fountain RGBD dataset`. It also contains `camera poses at keyframes log` and `mesh reconstruction`. It is used in demo of `Color Map Optimization`.
+`SampleFountainRGBDDataset` contains a sample set of 33 color and depth images
+from the ``Fountain RGBD dataset``. It also contains ``camera poses at keyframes
+log`` and ``mesh reconstruction``. It is used in demo of ``Color Map Optimization``.
 
 See :ref:`reference </tutorial/pipelines/color_map_optimization.html#Input>`.
 
@@ -308,7 +316,8 @@ See :ref:`reference </tutorial/pipelines/color_map_optimization.html#Input>`.
 SampleRGBDImageNYU
 ----------------------------------------
 
-`SampleRGBDImageNYU` contains a color image `NYU_color.ppm` and a depth image `NYU_depth.pgm` sample from NYU RGBD  dataset.
+`SampleRGBDImageNYU` contains a color image ``NYU_color.ppm`` and a depth image 
+``NYU_depth.pgm`` sample from NYU RGBD  dataset.
 
 See :ref:`reference </tutorial/geometry/rgbd_image.html#NYU-dataset>`.
 
@@ -338,8 +347,8 @@ See :ref:`reference </tutorial/geometry/rgbd_image.html#NYU-dataset>`.
 SampleRGBDImageSUN
 ----------------------------------------
 
-`SampleRGBDImageSUN` contains a color image `SUN_color.jpg` and a depth image 
-`SUN_depth.png` sample from SUN RGBD dataset.
+`SampleRGBDImageSUN` contains a color image ``SUN_color.jpg`` and a depth image 
+``SUN_depth.png`` sample from SUN RGBD dataset.
 
 See :ref:`reference </tutorial/geometry/rgbd_image.html#SUN-dataset>`.
 
@@ -369,10 +378,10 @@ See :ref:`reference </tutorial/geometry/rgbd_image.html#SUN-dataset>`.
 SampleRGBDImageTUM
 ----------------------------------------
 
-`SampleRGBDImageTUM` contains a color image `TUM_color.png` and a depth image 
-`TUM_depth.png` sample from TUM RGBD dataset.
+`SampleRGBDImageTUM` contains a color image ``TUM_color.png`` and a depth image 
+``TUM_depth.png`` sample from TUM RGBD dataset.
 
-See :ref:`reference </tutorial/geometry/rgbd_image.html#TUM-dataset>`.
+See :ref:`tutorial/geometry/rgbd_image.html#TUM-dataset`.
 
 .. tabs::
 
@@ -403,7 +412,7 @@ Image Data
 JuneauImage
 ----------------------------------------
 
-`JuneauImage` contains the `JuneauImage.jpg` file.
+`JuneauImage` contains the ``JuneauImage.jpg`` file.
 
 See :ref:`reference </tutorial/geometry/file_io.html#Image>`.
 
@@ -446,7 +455,7 @@ See :ref:`reference </tutorial/pipelines/colored_pointcloud_registration.html#In
 DemoCropPointCloud
 ----------------------------------------
 
-`DemoCropPointCloud` contains a point cloud, and `cropped.json` (a saved 
+`DemoCropPointCloud` contains a point cloud, and ``cropped.json`` (a saved 
 selected polygon volume file). This data is used in Open3D for point cloud crop 
 demo.
 
