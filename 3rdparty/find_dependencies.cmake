@@ -1239,6 +1239,7 @@ else()
         PACKAGE OpenGL
         TARGETS OpenGL::GL
     )
+    set(USE_SYSTEM_OPENGL ON)
 endif()
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_opengl)
 
