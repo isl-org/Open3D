@@ -1,5 +1,6 @@
 sphinx==3.3.1
 sphinx-rtd-theme==0.5.2
+sphinx-tabs==3.2.0
 nbsphinx==0.8.3
 matplotlib==3.3.3
 jinja2==2.11.3

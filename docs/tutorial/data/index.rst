@@ -1,5 +1,7 @@
 .. _data:
 
+
+
 Data
 =========
 
@@ -85,8 +87,6 @@ SamplePointCloudPCD
 `SamplePointCloudPCD` contains the ``fragment.pcd`` colored point cloud mesh from 
 the `Redwood Living Room` dataset.
 
-See :ref:`reference </tutorial/geometry/pointcloud.html#Plane-segmentation>`.
-
 .. tabs::
 
     .. code-tab:: python
@@ -106,8 +106,6 @@ SamplePointCloudPLY
 
 `SamplePointCloudPLY` contains the ``fragment.ply`` colored point cloud mesh from 
 the `Redwood Living Room` dataset.
-
-See :ref:`reference </tutorial/geometry/pointcloud.html#Visualize-point-cloud>`.
 
 .. tabs::
 
@@ -225,8 +223,6 @@ BunnyMesh
 `BunnyMesh` contains the ``BunnyMesh.ply`` triangle mesh from Stanford 
 University Computer Graphics Laboratory.
 
-See :ref:`reference </tutorial/geometry/mesh.html#Connected-components>`.
-
 .. tabs::
 
     .. code-tab:: python
@@ -246,8 +242,6 @@ ArmadilloMesh
 
 `ArmadilloMesh` contains the ``ArmadilloMesh.ply`` triangle mesh from Stanford
 University Computer Graphics Laboratory.
-
-See :ref:`reference </tutorial/geometry/pointcloud.html#Visualize-point-cloud>`.
 
 .. tabs::
 
@@ -269,8 +263,6 @@ KnotMesh
 ----------------------------------------
 
 `KnotMesh` contains the ``KnotMesh.ply`` triangle mesh.
-
-See :ref:`reference </tutorial/geometry/mesh.html#Mesh>`.
 
 .. tabs::
 
@@ -300,8 +292,6 @@ images`` from Redwood RGBD dataset living-room1. Additionally it also contains
 ``camera trajectory log``, ``camera odometry log``, ``rgbd match``, and 
 ``point cloud reconstruction`` obtained using TSDF.
 
-See :ref:`reference </tutorial/geometry/rgbd_image.html#Redwood-dataset>`.
-
 
 SampleFountainRGBDDataset
 ----------------------------------------
@@ -310,16 +300,12 @@ SampleFountainRGBDDataset
 from the ``Fountain RGBD dataset``. It also contains ``camera poses at keyframes
 log`` and ``mesh reconstruction``. It is used in demo of ``Color Map Optimization``.
 
-See :ref:`reference </tutorial/pipelines/color_map_optimization.html#Input>`.
-
 
 SampleRGBDImageNYU
 ----------------------------------------
 
 `SampleRGBDImageNYU` contains a color image ``NYU_color.ppm`` and a depth image 
 ``NYU_depth.pgm`` sample from NYU RGBD  dataset.
-
-See :ref:`reference </tutorial/geometry/rgbd_image.html#NYU-dataset>`.
 
 .. tabs::
 
@@ -350,15 +336,13 @@ SampleRGBDImageSUN
 `SampleRGBDImageSUN` contains a color image ``SUN_color.jpg`` and a depth image 
 ``SUN_depth.png`` sample from SUN RGBD dataset.
 
-See :ref:`reference </tutorial/geometry/rgbd_image.html#SUN-dataset>`.
-
 .. tabs::
 
     .. code-tab:: python
 
-            rgbd_data = open3d.data.SampleRGBDImageSUN()
-            color_raw = open3d.io.read_image(rgbd_data.color_path)
-            depth_raw = open3d.io.read_image(rgbd_data.depth_path)
+            rgbd_data = o3d.data.SampleRGBDImageSUN()
+            color_raw = o3d.io.read_image(rgbd_data.color_path)
+            depth_raw = o3d.io.read_image(rgbd_data.depth_path)
 
 
     .. code-tab:: cpp
@@ -380,8 +364,6 @@ SampleRGBDImageTUM
 
 `SampleRGBDImageTUM` contains a color image ``TUM_color.png`` and a depth image 
 ``TUM_depth.png`` sample from TUM RGBD dataset.
-
-See :ref:`tutorial/geometry/rgbd_image.html#TUM-dataset`.
 
 .. tabs::
 
@@ -414,8 +396,6 @@ JuneauImage
 
 `JuneauImage` contains the ``JuneauImage.jpg`` file.
 
-See :ref:`reference </tutorial/geometry/file_io.html#Image>`.
-
 .. tabs::
 
     .. code-tab:: python
@@ -423,7 +403,7 @@ See :ref:`reference </tutorial/geometry/file_io.html#Image>`.
             img_data = o3d.data.JuneauImage()
             img = o3d.io.read_image(img_data.path)
 
-    .. code-tab:: python
+    .. code-tab:: cpp
 
             data::JuneauImage img_data();
             geometry::Image img;
@@ -440,16 +420,12 @@ DemoICPPointClouds
 `DemoICPPointClouds` contains 3 point clouds of binary PCD format. This data is 
 used in Open3D for ICP demo.
 
-See :ref:`reference </tutorial/pipelines/icp_registration.html#Input>`.
-
 
 DemoColoredICPPointClouds
 ----------------------------------------
 
 `DemoColoredICPPointClouds` contains 2 point clouds of PLY format. This data is 
 used in Open3D for Colored-ICP demo.
-
-See :ref:`reference </tutorial/pipelines/colored_pointcloud_registration.html#Input>`.
 
 
 DemoCropPointCloud
@@ -458,8 +434,6 @@ DemoCropPointCloud
 `DemoCropPointCloud` contains a point cloud, and ``cropped.json`` (a saved 
 selected polygon volume file). This data is used in Open3D for point cloud crop 
 demo.
-
-See :ref:`reference </tutorial/geometry/pointcloud.html#Crop-point-cloud>`.
 
 
 DemoPointCloudFeatureMatching
