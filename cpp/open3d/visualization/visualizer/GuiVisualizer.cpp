@@ -555,6 +555,9 @@ struct GuiVisualizer::Impl {
                 view->SetMode(rendering::View::Mode::Depth);
                 break;
         }
+
+        // Make sure scene redraws once material changes have been applied
+        scene_wgt_->ForceRedraw();
     }
 
 private:
@@ -1011,6 +1014,11 @@ void GuiVisualizer::SetGeometry(
         }
     }
 
+    // Setup for raw mode if enabled...
+    if (impl_->basic_mode_enabled_) {
+        impl_->SetBasicModeGeometry(true);
+    }
+
     auto type = impl_->settings_.model_.GetMaterialType();
     if (type == GuiSettingsModel::MaterialType::LIT ||
         type == GuiSettingsModel::MaterialType::UNLIT) {
@@ -1037,11 +1045,6 @@ void GuiVisualizer::SetGeometry(
     auto &bounds = scene3d->GetBoundingBox();
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
                                    bounds.GetCenter().cast<float>());
-
-    // Setup for raw mode if enabled...
-    if (impl_->basic_mode_enabled_) {
-        impl_->SetBasicModeGeometry(true);
-    }
 
     // Make sure scene is redrawn
     impl_->scene_wgt_->ForceRedraw();

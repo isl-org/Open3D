@@ -358,11 +358,6 @@ void GuiSettingsView::EnableEstimateNormals(bool enable) {
 }
 
 void GuiSettingsView::Update() {
-    // If in basic mode, don't allow any UI manipulations so exit early
-    if (basic_mode_->IsChecked()) {
-        return;
-    }
-
     show_skybox_->SetChecked(model_.GetShowSkybox());
     show_axes_->SetChecked(model_.GetShowAxes());
     bg_color_->SetValue({model_.GetBackgroundColor().x(),
