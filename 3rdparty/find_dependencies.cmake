@@ -1266,11 +1266,22 @@ if(DEFINED ZEROMQ_ADDITIONAL_LIBS)
 endif()
 
 # msgpack
-include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
-open3d_import_3rdparty_library(3rdparty_msgpack
-    INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
-    DEPENDS      ext_msgpack-c
-)
+if(USE_SYSTEM_MSGPACK)
+    open3d_find_package_3rdparty_library(3rdparty_msgpack
+        PACKAGE msgpack
+        TARGETS msgpackc
+    )
+    if(NOT 3rdparty_msgpack_FOUND)
+        set(USE_SYSTEM_MSGPACK OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_MSGPACK)
+    include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
+    open3d_import_3rdparty_library(3rdparty_msgpack
+        INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
+        DEPENDS      ext_msgpack-c
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
 # TBB
