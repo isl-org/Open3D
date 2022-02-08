@@ -146,19 +146,6 @@ RedwoodLivingRoomPointClouds
 `RedwoodLivingRoomPointClouds` contains 57 point clouds of binary PLY format, 
 from Redwood RGB-D Dataset.
 
-Content:
-
-.. code-block:: bash
-
-        livingroom1-fragments-ply.zip
-                ├── cloud_bin_0.ply
-                ├── cloud_bin_1.ply
-                ├── ...
-                └── cloud_bin_56.ply
-
-`paths` returns the list of paths to these poin cloud fragments. 
-Example: Use `paths[0]` to access `cloud_bin_0.ply`.
-
 .. tabs::
 
     .. code-tab:: python
@@ -181,19 +168,6 @@ RedwoodOfficePointClouds
 
 `RedwoodOfficePointClouds` contains 53 point clouds of binary PLY format, 
 from Redwood RGB-D Dataset.
-
-Content:
-
-.. code-block:: bash
-
-        office1-fragments-ply.zip
-                ├── cloud_bin_0.ply
-                ├── cloud_bin_1.ply
-                ├── ...
-                └── cloud_bin_52.ply
-
-`paths` returns the list of paths to these poin cloud fragments. 
-Example: Use paths[0] to access `cloud_bin_0.ply`.
 
 .. tabs::
 
@@ -449,4 +423,3 @@ DemoPoseGraphOptimization
 
 `DemoPoseGraphOptimization` contains an example fragment pose graph, and 
 global pose graph. This data is used in Open3D for pose graph optimization demo.
-
