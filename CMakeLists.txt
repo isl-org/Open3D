@@ -93,6 +93,7 @@ option(USE_SYSTEM_NANOFLANN       "Use system pre-installed nanoflann"       OFF
 option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
 option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
 option(USE_SYSTEM_QHULLCPP        "Use system pre-installed qhullcpp"        OFF)
+option(USE_SYSTEM_TBB             "Use system pre-installed TBB"             OFF)
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
