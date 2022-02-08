@@ -25,7 +25,6 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import pytest
 
 from pathlib import Path
 import shutil
@@ -79,8 +78,8 @@ def test_simple_dataset_base():
     assert Path(single_download_dataset.download_dir) == gt_download_dir
     assert Path(single_download_dataset.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_demo_icp_pointclouds():
@@ -108,8 +107,8 @@ def test_demo_icp_pointclouds():
     assert Path(demo_icp.download_dir) == Path(gt_download_dir)
     assert Path(demo_icp.extract_dir) == Path(gt_extract_dir)
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_demo_colored_icp_pointclouds():
@@ -136,8 +135,8 @@ def test_demo_colored_icp_pointclouds():
     assert Path(demo_colored_icp.download_dir) == gt_download_dir
     assert Path(demo_colored_icp.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_demo_crop_pointcloud():
@@ -162,8 +161,8 @@ def test_demo_crop_pointcloud():
     assert Path(demo_crop_pcd.download_dir) == gt_download_dir
     assert Path(demo_crop_pcd.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_demo_pointcloud_feature_matching():
@@ -213,8 +212,8 @@ def test_demo_pointcloud_feature_matching():
     assert Path(demo_feature_matching.download_dir) == gt_download_dir
     assert Path(demo_feature_matching.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_demo_pose_graph_optimization():
@@ -239,8 +238,8 @@ def test_demo_pose_graph_optimization():
     assert Path(demo_pose_optimization.download_dir) == gt_download_dir
     assert Path(demo_pose_optimization.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_sample_pointcloud_pcd():
@@ -261,8 +260,8 @@ def test_sample_pointcloud_pcd():
     assert Path(pcd_pointcloud.download_dir) == gt_download_dir
     assert Path(pcd_pointcloud.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_sample_pointcloud_ply():
@@ -283,8 +282,8 @@ def test_sample_pointcloud_ply():
     assert Path(ply_pointcloud.download_dir) == gt_download_dir
     assert Path(ply_pointcloud.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_sample_rgbd_image_nyu():
@@ -308,8 +307,8 @@ def test_sample_rgbd_image_nyu():
     assert Path(rgbd_image_nyu.download_dir) == gt_download_dir
     assert Path(rgbd_image_nyu.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_sample_rgbd_image_sun():
@@ -333,8 +332,8 @@ def test_sample_rgbd_image_sun():
     assert Path(rgbd_image_sun.download_dir) == gt_download_dir
     assert Path(rgbd_image_sun.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_sample_rgbd_image_tum():
@@ -358,8 +357,8 @@ def test_sample_rgbd_image_tum():
     assert Path(rgbd_image_tum.download_dir) == gt_download_dir
     assert Path(rgbd_image_tum.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_sample_rgbd_dataset_redwood():
@@ -412,8 +411,8 @@ def test_sample_rgbd_dataset_redwood():
     assert Path(rgbd_dataset_redwood.download_dir) == gt_download_dir
     assert Path(rgbd_dataset_redwood.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_sample_fountain_rgbd_dataset():
@@ -518,8 +517,8 @@ def test_sample_fountain_rgbd_dataset():
     assert Path(fountain_dataset.download_dir) == gt_download_dir
     assert Path(fountain_dataset.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_eagle():
@@ -540,8 +539,8 @@ def test_eagle():
     assert Path(eagle.download_dir) == gt_download_dir
     assert Path(eagle.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_armadillo():
@@ -562,8 +561,8 @@ def test_armadillo():
     assert Path(armadillo.download_dir) == gt_download_dir
     assert Path(armadillo.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_bunny():
@@ -584,8 +583,8 @@ def test_bunny():
     assert Path(bunny.download_dir) == gt_download_dir
     assert Path(bunny.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_knot():
@@ -606,8 +605,8 @@ def test_knot():
     assert Path(knot.download_dir) == gt_download_dir
     assert Path(knot.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
 
 
 def test_juneau():
@@ -628,5 +627,5 @@ def test_juneau():
     assert Path(juneau.download_dir) == gt_download_dir
     assert Path(juneau.extract_dir) == gt_extract_dir
 
-    shutil.rmtree(gt_download_dir, ignore_errors=True)
-    shutil.rmtree(gt_extract_dir, ignore_errors=True)
+    shutil.rmtree(gt_download_dir, ignore_errors=False)
+    shutil.rmtree(gt_extract_dir, ignore_errors=False)
