@@ -28,17 +28,12 @@ import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as anim
-import os
 import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
     # Load mesh and convert to open3d.t.geometry.TriangleMesh .
-    mesh = o3dex.get_armadillo_mesh()
+    armadillo_data = o3d.data.ArmadilloMesh()
+    mesh = o3d.io.read_triangle_mesh(armadillo_data.path)
     mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
 
     # Create a scene and add the triangle mesh.
@@ -59,9 +54,10 @@ if __name__ == "__main__":
 
     # We can visualize the slices of the distance field directly with matplotlib.
     fig = plt.figure()
+    print("Visualizing sdf at each point for the armadillo mesh ...")
 
     def show_slices(i=int):
-        print(i)
+        print(f"Displaying slice no.: {i}")
         if i >= 64:
             sys.exit()
         plt.imshow(signed_distance.numpy()[:, :, i % 64])

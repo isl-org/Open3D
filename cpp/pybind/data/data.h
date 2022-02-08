@@ -26,34 +26,12 @@
 
 #pragma once
 
-#include <string>
-
-#include "open3d/t/geometry/TSDFVoxelGrid.h"
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace t {
-namespace io {
+namespace data {
 
-/// Factory function to create a TSDFVoxelGrid from a file.
-/// \return An empty TSDFVoxelGrid if fail to read the file.
-std::shared_ptr<geometry::TSDFVoxelGrid> CreateTSDFVoxelGridFromFile(
-        const std::string &filename);
+void pybind_data(py::module& m);
 
-/// The general entrance for reading a TSDFVoxelGrid from a file.
-/// The entry is a json file, storing metadata and the path to npz for the
-/// underlying volumetric hashmap.
-/// \return True if reading is successful, false
-/// otherwise.
-bool ReadTSDFVoxelGrid(const std::string &filename,
-                       geometry::TSDFVoxelGrid &tsdf_voxelgrid);
-
-/// The general entrance for writing a TSDFVoxelGrid to a file.
-/// The entry is a json file, storing metadata and the path to npz for the
-/// underlying volumetric hashmap.
-/// \return True if writing is successful, false otherwise.
-bool WriteTSDFVoxelGrid(const std::string &filename,
-                        const geometry::TSDFVoxelGrid &tsdf_voxelgrid);
-
-}  // namespace io
-}  // namespace t
+}  // namespace data
 }  // namespace open3d

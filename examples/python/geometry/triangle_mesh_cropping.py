@@ -27,16 +27,11 @@
 import open3d as o3d
 import numpy as np
 import copy
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
-    mesh = o3dex.get_knot_mesh()
+    knot_mesh = o3d.data.KnotMesh()
+    mesh = o3d.io.read_triangle_mesh(knot_mesh.path)
+    mesh.compute_vertex_normals()
     print("Displaying original mesh ...")
     o3d.visualization.draw([mesh])
 

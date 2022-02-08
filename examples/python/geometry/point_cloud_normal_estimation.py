@@ -26,17 +26,12 @@
 
 import open3d as o3d
 import numpy as np
-import sys
-import os
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
+    bunny = o3d.data.BunnyMesh()
+    gt_mesh = o3d.io.read_triangle_mesh(bunny.path)
+    gt_mesh.compute_vertex_normals()
 
-    gt_mesh = o3dex.get_bunny_mesh()
     pcd = gt_mesh.sample_points_poisson_disk(5000)
     # Invalidate existing normals.
     pcd.normals = o3d.utility.Vector3dVector(np.zeros((1, 3)))

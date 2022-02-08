@@ -30,7 +30,7 @@
 #include <vector>
 
 namespace open3d {
-namespace data {
+namespace utility {
 
 /// \brief Computes MD5 Hash for the given file.
 /// \param file_path Path to the file.
@@ -73,5 +73,5 @@ std::string DownloadFromURL(const std::vector<std::string>& urls,
                             const std::string& prefix,
                             const std::string& data_root = "");
 
-}  // namespace data
+}  // namespace utility
 }  // namespace open3d

@@ -26,17 +26,10 @@
 
 import open3d as o3d
 import numpy as np
-import sys
-import os
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
-
-    pcd = o3dex.get_eagle_pcd()
+    eagle = o3d.data.EaglePointCloud()
+    pcd = o3d.io.read_point_cloud(eagle.path)
     R = pcd.get_rotation_matrix_from_xyz((np.pi, -np.pi / 4, 0))
     pcd.rotate(R, center=(0, 0, 0))
     print('Displaying input pointcloud ...')

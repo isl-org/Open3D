@@ -25,18 +25,13 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import sys
-import os
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
-sys.path.append(pyexample_path)
 
 if __name__ == "__main__":
     print("Load a ply point cloud, crop it, and render it")
-    pcd = o3d.io.read_point_cloud(os.path.join(test_data_path, 'fragment.ply'))
+    sample_ply_data = o3d.data.DemoCropPointCloud()
+    pcd = o3d.io.read_point_cloud(sample_ply_data.pointcloud_path)
     vol = o3d.visualization.read_selection_polygon_volume(
-        os.path.join(test_data_path, 'Crop', 'cropped.json'))
+        sample_ply_data.cropped_json_path)
     chair = vol.crop_point_cloud(pcd)
     # Flip the pointclouds, otherwise they will be upside down.
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])

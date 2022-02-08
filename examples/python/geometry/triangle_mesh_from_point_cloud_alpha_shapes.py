@@ -25,17 +25,12 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import sys
-import os
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
+    bunny = o3d.data.BunnyMesh()
+    mesh = o3d.io.read_triangle_mesh(bunny.path)
+    mesh.compute_vertex_normals()
 
-    mesh = o3dex.get_bunny_mesh()
     pcd = mesh.sample_points_poisson_disk(750)
     print("Displaying input pointcloud ...")
     o3d.visualization.draw_geometries([pcd])

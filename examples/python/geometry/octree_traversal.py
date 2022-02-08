@@ -26,13 +26,6 @@
 
 import open3d as o3d
 import numpy as np
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 
 def f_traverse(node, node_info):
@@ -66,7 +59,9 @@ def f_traverse(node, node_info):
 
 if __name__ == "__main__":
     N = 2000
-    pcd = o3dex.get_armadillo_mesh().sample_points_poisson_disk(N)
+    armadillo_data = o3d.data.ArmadilloMesh()
+    pcd = o3d.io.read_triangle_mesh(
+        armadillo_data.path).sample_points_poisson_disk(N)
     # Fit to unit cube.
     pcd.scale(1 / np.max(pcd.get_max_bound() - pcd.get_min_bound()),
               center=pcd.get_center())

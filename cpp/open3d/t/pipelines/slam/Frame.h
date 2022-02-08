@@ -29,7 +29,6 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
-#include "open3d/t/geometry/TSDFVoxelGrid.h"
 
 namespace open3d {
 namespace t {

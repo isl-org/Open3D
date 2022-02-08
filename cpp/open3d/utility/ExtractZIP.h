@@ -31,7 +31,7 @@
 #include <string>
 
 namespace open3d {
-namespace data {
+namespace utility {
 
 /// \brief Function to extract files compressed in `.zip` format.
 /// \param file_path Path to file. Example: "/path/to/file/file.zip"
@@ -39,5 +39,5 @@ namespace data {
 void ExtractFromZIP(const std::string& file_path,
                     const std::string& extract_dir);
 
-}  // namespace data
+}  // namespace utility
 }  // namespace open3d

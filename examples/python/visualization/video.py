@@ -28,14 +28,8 @@ import numpy as np
 import open3d as o3d
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
-import os
 import time
 import threading
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
-RGB_DIR = os.path.join(test_data_path, 'RGBD', 'color')
-DEPTH_DIR = os.path.join(test_data_path, 'RGBD', 'depth')
 
 
 def rescale_greyscale(img):
@@ -53,18 +47,17 @@ class VideoWindow:
 
     def __init__(self):
         self.rgb_images = []
-        for f in os.listdir(RGB_DIR):
-            if f.endswith(".jpg") or f.endswith(".png"):
-                img = o3d.io.read_image(os.path.join(RGB_DIR, f))
-                self.rgb_images.append(img)
+        rgbd_data = o3d.data.SampleRGBDDatasetICL()
+        for path in rgbd_data.color_paths:
+            img = o3d.io.read_image(path)
+            self.rgb_images.append(img)
         self.depth_images = []
-        for f in os.listdir(DEPTH_DIR):
-            if f.endswith(".jpg") or f.endswith(".png"):
-                img = o3d.io.read_image(os.path.join(DEPTH_DIR, f))
-                # The images are pretty dark, so rescale them so that it is
-                # obvious that this is a depth image, for the sake of the example
-                img = rescale_greyscale(img)
-                self.depth_images.append(img)
+        for path in rgbd_data.depth_paths:
+            img = o3d.io.read_image(path)
+            # The images are pretty dark, so rescale them so that it is
+            # obvious that this is a depth image, for the sake of the example
+            img = rescale_greyscale(img)
+            self.depth_images.append(img)
         assert (len(self.rgb_images) == len(self.depth_images))
 
         self.window = gui.Application.instance.create_window(

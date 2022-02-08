@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "open3d/data/Dataset.h"
 #include "open3d/io/PointCloudIO.h"
 
 namespace open3d {
@@ -36,12 +37,10 @@ namespace registration {
 
 // This pcd does not contains non-finite points.
 // TODO: Change this to pcd with non-finite poins.
-static const std::string input_pcd =
-        std::string(TEST_DATA_DIR) + "/ICP/cloud_bin_0.pcd";
-
 static void BenchmarkCreateFromPointCloudBallPivoting(
         benchmark::State& state, const bool remove_non_finite_points) {
-    auto pcd = io::CreatePointCloudFromFile(input_pcd);
+    data::SamplePointCloudPCD sample_pcd;
+    auto pcd = io::CreatePointCloudFromFile(sample_pcd.GetPath());
 
     if (remove_non_finite_points) {
         pcd->RemoveNonFinitePoints();

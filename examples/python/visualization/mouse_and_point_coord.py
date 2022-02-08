@@ -28,10 +28,6 @@ import numpy as np
 import open3d as o3d
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
-import os
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 
 # This example displays a point cloud and if you Ctrl-click on a point
@@ -134,8 +130,8 @@ def main():
     # This example will also work with a triangle mesh, or any 3D object.
     # If you use a triangle mesh you will probably want to set the material
     # shader to "defaultLit" instead of "defaultUnlit".
-    cloud = o3d.io.read_point_cloud(
-        os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
+    pcd_data = o3d.data.DemoICPPointClouds()
+    cloud = o3d.io.read_point_cloud(pcd_data.paths[0])
     ex = ExampleApp(cloud)
 
     app.run()

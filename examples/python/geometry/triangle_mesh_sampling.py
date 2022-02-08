@@ -25,18 +25,12 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
-import numpy as np
-import os
-import sys
-
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pyexample_path)
-
-import open3d_example as o3dex
 
 if __name__ == "__main__":
-    mesh = o3dex.get_bunny_mesh()
+    bunny = o3d.data.BunnyMesh()
+    mesh = o3d.io.read_triangle_mesh(bunny.path)
     mesh.compute_vertex_normals()
+
     print("Displaying input mesh ...")
     o3d.visualization.draw([mesh])
 

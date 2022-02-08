@@ -13,6 +13,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-wheel:
     name: Build wheel
@@ -35,10 +39,6 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python_version }}
       CCACHE_TAR_NAME: open3d-ubuntu-1804-cuda-ci-ccache
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
       - name: Checkout source code
         uses: actions/checkout@v2
       - name: Maximize build space

@@ -30,6 +30,7 @@
 
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
 #include "tests/Tests.h"
@@ -672,11 +673,11 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
 TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     core::Device device = GetParam();
 
+    data::SamplePointCloudPCD sample_pcd;
     // Sanity test to visualize
     t::geometry::PointCloud pcd =
             t::geometry::PointCloud::FromLegacy(
-                    *io::CreatePointCloudFromFile(
-                            utility::GetDataPathCommon("ICP/cloud_bin_2.pcd")))
+                    *io::CreatePointCloudFromFile(sample_pcd.GetPath()))
                     .To(device);
     auto pcd_down = pcd.VoxelDownSample(0.1);
     io::WritePointCloud(fmt::format("down_{}.pcd", device.ToString()),
