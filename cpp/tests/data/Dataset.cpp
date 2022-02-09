@@ -426,8 +426,8 @@ TEST(Dataset, SampleRGBDImageTUM) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
-TEST(Dataset, SampleRGBDDatasetICL) {
-    const std::string prefix = "O3DTestSampleRGBDDatasetICL";
+TEST(Dataset, SampleRGBDDatasetRedwood) {
+    const std::string prefix = "O3DTestSampleRGBDDatasetRedwood";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
     const std::string download_dir = data_root + "/download/" + prefix;
@@ -437,7 +437,7 @@ TEST(Dataset, SampleRGBDDatasetICL) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::SampleRGBDDatasetICL rgbd_icl(prefix);
+    data::SampleRGBDDatasetRedwood rgbd_icl(prefix);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
