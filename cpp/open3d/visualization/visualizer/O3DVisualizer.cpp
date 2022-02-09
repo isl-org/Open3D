@@ -312,6 +312,7 @@ struct O3DVisualizer::Impl {
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
+    bool was_using_sun_follows_cam_ = false;
 
     double min_time_ = 0.0;
     double max_time_ = 0.0;
@@ -417,6 +418,7 @@ struct O3DVisualizer::Impl {
         SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
         SetLightingProfile(gLightingProfiles[2]);  // soft shadows
         SetPointSize(ui_state_.point_size);  // sync selections_' point size
+        EnableSunFollowsCamera(true);
     }
 
     void MakeSettingsUI() {
@@ -648,7 +650,7 @@ struct O3DVisualizer::Impl {
         grid->AddChild(GiveOwnership(settings.shader));
         grid->AddChild(std::make_shared<Label>("Lighting"));
         grid->AddChild(GiveOwnership(settings.lighting));
-        grid->AddChild(std::make_shared<Label>("Basic Mode"));
+        grid->AddChild(std::make_shared<Label>("Raw Mode"));
         grid->AddChild(GiveOwnership(settings.basic_mode));
 
         // Light list
@@ -717,7 +719,7 @@ struct O3DVisualizer::Impl {
         grid = new VGrid(2, v_spacing);
 
         settings.sun_intensity = new Slider(Slider::INT);
-        settings.sun_intensity->SetLimits(0.0, 150000.0);
+        settings.sun_intensity->SetLimits(0.0, 250000.0);
         settings.sun_intensity->SetValue(ui_state_.sun_intensity);
         settings.sun_intensity->SetOnValueChanged([this](double new_value) {
             this->ui_state_.sun_intensity = int(new_value);
@@ -746,6 +748,12 @@ struct O3DVisualizer::Impl {
         grid->AddChild(GiveOwnership(settings.sun_dir));
 
         settings.sun_follows_camera = new gui::Checkbox(" ");
+        settings.sun_follows_camera->SetChecked(true);
+        settings.sun_follows_camera->SetOnChecked([this](bool checked) {
+            ui_state_.sun_follows_camera = checked;
+            this->SetUIState(ui_state_);
+            EnableSunFollowsCamera(checked);
+        });
         grid->AddChild(GiveOwnership(settings.sun_follows_camera));
         grid->AddChild(std::make_shared<gui::Label>("Sun Follows Camera"));
 
@@ -1146,7 +1154,10 @@ struct O3DVisualizer::Impl {
 
     void CreateInspectionModeMaterial(MaterialRecord &inspect_mat,
                                       bool pcd = false) {
-        if (inspect_mat.shader == "defaultLit") {
+        if (inspect_mat.shader == "defaultLit" ||
+            inspect_mat.shader == "defaultLitTransparency" ||
+            inspect_mat.shader == "defaultListSSR") {
+            inspect_mat.shader = "defaultLit";
             // Set parameters for 'simple' rendering
             inspect_mat.base_color = {1.f, 1.f, 1.f, 1.f};
             inspect_mat.base_metallic = 0.f;
@@ -1165,9 +1176,23 @@ struct O3DVisualizer::Impl {
             inspect_mat.metallic_img.reset();
             inspect_mat.roughness_img.reset();
             inspect_mat.reflectance_img.reset();
-            inspect_mat.sRGB_color = false;
-            inspect_mat.sRGB_vertex_color = true;
+            // inspect_mat.sRGB_color = false;
+            // inspect_mat.sRGB_vertex_color = true;
         }
+    }
+
+    std::shared_ptr<geometry::TriangleMesh> DuplicateGeometryForInspection(
+            std::shared_ptr<geometry::TriangleMesh> tmesh) {
+        auto new_mesh = std::make_shared<geometry::TriangleMesh>(
+                tmesh->vertices_, tmesh->triangles_);
+        if (!tmesh->HasTriangleNormals()) {
+            new_mesh->ComputeTriangleNormals();
+        } else {
+            new_mesh->triangle_normals_ = tmesh->triangle_normals_;
+        }
+        new_mesh->vertex_colors_ = tmesh->vertex_colors_;
+
+        return new_mesh;
     }
 
     void UpdateGeometryForInspectionMode(bool enable) {
@@ -1180,34 +1205,36 @@ struct O3DVisualizer::Impl {
             }
             // Add inspection objects to scene
             for (auto &o : inspection_objects_) {
-                CreateInspectionModeMaterial(
-                        o.material,
-                        o.geometry->GetGeometryType() ==
-                                geometry::Geometry::GeometryType::PointCloud);
                 if (o.geometry) {
+                    CreateInspectionModeMaterial(
+                            o.material,
+                            o.geometry->GetGeometryType() ==
+                                    geometry::Geometry::GeometryType::
+                                            PointCloud);
                     // Need to compute triangle normals for triangle meshes
                     if (auto tmesh = std::dynamic_pointer_cast<
                                 geometry::TriangleMesh>(o.geometry)) {
-                        if (tmesh->HasVertexNormals()) {
-                            auto new_mesh =
-                                    std::make_shared<geometry::TriangleMesh>(
-                                            tmesh->vertices_,
-                                            tmesh->triangles_);
-                            if (!tmesh->HasTriangleNormals()) {
-                                new_mesh->ComputeTriangleNormals();
-                            } else {
-                                new_mesh->triangle_normals_ =
-                                        tmesh->triangle_normals_;
-                            }
-                            new_mesh->vertex_colors_ = tmesh->vertex_colors_;
-                            o.geometry = new_mesh;
-                        }
+                        o.geometry = DuplicateGeometryForInspection(tmesh);
                     }
                     scene_->GetScene()->AddGeometry(o.name, o.geometry.get(),
                                                     o.material);
                 } else if (o.tgeometry) {
+                    CreateInspectionModeMaterial(
+                            o.material,
+                            o.tgeometry->GetGeometryType() ==
+                                    t::geometry::Geometry::GeometryType::
+                                            PointCloud);
                     scene_->GetScene()->AddGeometry(o.name, o.tgeometry.get(),
                                                     o.material);
+                } else if (o.model) {
+                    for (auto &mat : o.model->materials_) {
+                        CreateInspectionModeMaterial(mat, false);
+                    }
+                    for (auto &mi : o.model->meshes_) {
+                        auto new_mesh = DuplicateGeometryForInspection(mi.mesh);
+                        mi.mesh = new_mesh;
+                    }
+                    scene_->GetScene()->AddModel(o.name, *o.model);
                 }
             }
         } else {
@@ -1345,25 +1372,23 @@ struct O3DVisualizer::Impl {
         } else {
             scene_->SetOnCameraChanged(
                     std::function<void(rendering::Camera *)>());
-            scene_->SetSunInteractorEnabled(true);
             low_scene->SetSunLightDirection(ui_state_.sun_dir);
+            scene_->SetSunInteractorEnabled(true);
         }
     }
 
     void EnableInspectionRelatedUI(bool enable) {
         settings.show_skybox->SetEnabled(enable);
-        settings.shader->SetEnabled(enable);
         settings.lighting->SetEnabled(enable);
         settings.use_ibl->SetEnabled(enable);
         settings.ibl_intensity->SetEnabled(enable);
         settings.ibl_names->SetEnabled(enable);
         settings.use_sun->SetEnabled(enable);
-        settings.sun_intensity->SetEnabled(enable);
         settings.sun_dir->SetEnabled(enable);
         settings.sun_color->SetEnabled(enable);
         settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]->SetEnabled(
                 enable);
-        settings.point_size->SetEnabled(enable);
+        settings.sun_follows_camera->SetEnabled(enable);
     }
 
     void EnableBasicMode(bool enable) {
@@ -1379,7 +1404,13 @@ struct O3DVisualizer::Impl {
             low_scene->SetSunLightIntensity(160000.f);
             view->SetShadowing(false, View::ShadowType::kPCF);
             view->SetPostProcessing(false);
-            EnableSunFollowsCamera(true);
+            if (!ui_state_.sun_follows_camera) {
+                EnableSunFollowsCamera(true);
+                settings.sun_follows_camera->SetChecked(true);
+                was_using_sun_follows_cam_ = false;
+            } else {
+                was_using_sun_follows_cam_ = true;
+            }
             // Update geometry for inspection
             UpdateGeometryForInspectionMode(true);
             EnableInspectionRelatedUI(false);
@@ -1388,9 +1419,12 @@ struct O3DVisualizer::Impl {
         } else {
             view->SetPostProcessing(true);
             view->SetShadowing(true, View::ShadowType::kPCF);
-            EnableSunFollowsCamera(false);
             UpdateGeometryForInspectionMode(false);
             EnableInspectionRelatedUI(true);
+            if (!was_using_sun_follows_cam_) {
+                settings.sun_follows_camera->SetChecked(false);
+                EnableSunFollowsCamera(false);
+            }
             SetUIState(ui_state_);
         }
     }
@@ -1404,6 +1438,11 @@ struct O3DVisualizer::Impl {
             o.material.point_size = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
+        for (auto &o : inspection_objects_) {
+            o.material.point_size = float(px);
+            OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
+        }
+
         auto bbox = scene_->GetScene()->GetBoundingBox();
         auto xdim = bbox.max_bound_.x() - bbox.min_bound_.x();
         auto ydim = bbox.max_bound_.y() - bbox.min_bound_.z();
@@ -1424,6 +1463,10 @@ struct O3DVisualizer::Impl {
             o.material.line_width = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
+        for (auto &o : inspection_objects_) {
+            o.material.line_width = float(px);
+            OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
+        }
         scene_->ForceRedraw();
     }
 
@@ -1433,6 +1476,9 @@ struct O3DVisualizer::Impl {
 
         ui_state_.scene_shader = shader;
         for (auto &o : objects_) {
+            OverrideMaterial(o.name, o.material, shader);
+        }
+        for (auto &o : inspection_objects_) {
             OverrideMaterial(o.name, o.material, shader);
         }
         scene_->ForceRedraw();
@@ -1647,6 +1693,7 @@ struct O3DVisualizer::Impl {
                  new_state.sun_intensity != ui_state_.sun_intensity ||
                  new_state.sun_dir != ui_state_.sun_dir ||
                  new_state.sun_color != ui_state_.sun_color);
+        bool in_basic_mode = settings.basic_mode->IsChecked();
 
         if (&new_state != &ui_state_) {
             ui_state_ = new_state;
@@ -1659,7 +1706,7 @@ struct O3DVisualizer::Impl {
         ShowSettings(ui_state_.show_settings, false);
         SetShader(ui_state_.scene_shader);
         SetBackground(ui_state_.bg_color, nullptr);
-        ShowSkybox(ui_state_.show_skybox);
+        if (!in_basic_mode) ShowSkybox(ui_state_.show_skybox);
         ShowAxes(ui_state_.show_axes);
         ShowGround(ui_state_.show_ground);
 
@@ -1680,16 +1727,32 @@ struct O3DVisualizer::Impl {
         ui_state_.ibl_intensity = settings.ibl_intensity->GetIntValue();
         ui_state_.sun_intensity = settings.sun_intensity->GetIntValue();
 
+        if (ui_state_.sun_follows_camera) {
+            settings.sun_dir->SetEnabled(false);
+            settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]
+                    ->SetEnabled(false);
+        } else {
+            settings.sun_dir->SetEnabled(true);
+            settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]
+                    ->SetEnabled(true);
+        }
+
         if (is_new_lighting) {
             settings.lighting->SetSelectedValue(kCustomName);
         }
 
         auto *raw_scene = scene_->GetScene()->GetScene();
-        raw_scene->EnableIndirectLight(ui_state_.use_ibl);
-        raw_scene->SetIndirectLightIntensity(float(ui_state_.ibl_intensity));
+        if (!in_basic_mode) {
+            raw_scene->EnableIndirectLight(ui_state_.use_ibl);
+            raw_scene->SetIndirectLightIntensity(
+                    float(ui_state_.ibl_intensity));
+            raw_scene->SetSunLightColor(ui_state_.sun_color);
+            if (!ui_state_.sun_follows_camera) {
+                raw_scene->SetSunLightDirection(ui_state_.sun_dir);
+            }
+        }
         raw_scene->EnableSunLight(ui_state_.use_sun);
-        raw_scene->SetSunLight(ui_state_.sun_dir, ui_state_.sun_color,
-                               float(ui_state_.sun_intensity));
+        raw_scene->SetSunLightIntensity(ui_state_.sun_intensity);
 
         if (old_enabled_groups != ui_state_.enabled_groups) {
             for (auto &group : added_groups_) {
