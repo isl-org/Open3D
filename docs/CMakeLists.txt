@@ -21,5 +21,5 @@ if(NOT ext_open3d_sphinx_theme_POPULATED)
   set(OPEN3D_SPHINX_THEME_SOURCE_DIR ${ext_open3d_sphinx_theme_SOURCE_DIR})
 endif()
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/conf.in.py
     ${CMAKE_CURRENT_SOURCE_DIR}/conf.py @ONLY)
