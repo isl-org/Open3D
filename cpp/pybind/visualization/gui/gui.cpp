@@ -111,7 +111,7 @@ public:
     std::function<void(const LayoutContext &)> on_layout_;
 
 protected:
-    void Layout(const LayoutContext &context) {
+    void Layout(const LayoutContext &context) override {
         if (on_layout_) {
             // the Python callback sizes the children
             on_layout_(context);
@@ -445,6 +445,11 @@ void pybind_gui_classes(py::module &m) {
                     "and device pixels (read-only)")
             .def_property_readonly("is_visible", &PyWindow::IsVisible,
                                    "True if window is visible (read-only)")
+            .def("set_on_key", &PyWindow::SetOnKeyEvent,
+                 "Sets a callback for key events. This callback is passed "
+                 "a KeyEvent object. The callback must return "
+                 "True to stop more dispatching or False to dispatch"
+                 "to focused widget")
             .def("show", &PyWindow::Show, "Shows or hides the window")
             .def("close", &PyWindow::Close,
                  "Closes the window and destroys it, unless an on_close "
