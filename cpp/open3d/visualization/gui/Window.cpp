@@ -217,6 +217,7 @@ struct Window::Impl {
     bool draw_menu_ = true;
     std::unordered_map<Menu::ItemId, std::function<void()>> menu_callbacks_;
     std::function<bool(void)> on_tick_event_;
+    std::function<bool(const KeyEvent&)> on_key_event_;
     std::function<bool(void)> on_close_;
     // We need these for mouse moves and wheel events.
     // The only source of ground truth is button events, so the rest of
@@ -451,9 +452,6 @@ const std::vector<std::shared_ptr<Widget>>& Window::GetChildren() const {
     return impl_->children_;
 }
 
-bool Window::CallKeyInterceptor(const KeyEvent &e) {
-    return false;
-}
 void* Window::MakeDrawContextCurrent() const {
     auto old_context = ImGui::GetCurrentContext();
     ImGui::SetCurrentContext(impl_->imgui_.context);
@@ -634,6 +632,9 @@ void Window::SetOnClose(std::function<bool()> callback) {
     impl_->on_close_ = callback;
 }
 
+void Window::SetOnKeyEvent(std::function<bool(const KeyEvent&)> callback) {
+    impl_->on_key_event_ = callback;
+}
 void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     if (impl_->active_dialog_) {
         CloseDialog();
@@ -1209,7 +1210,8 @@ void Window::OnKeyEvent(const KeyEvent& e) {
     // If an ImGUI widget is not getting keystrokes, we can send them to
     // non-ImGUI widgets
     if (ImGui::GetCurrentContext()->ActiveId == 0) {
-        if (!CallKeyInterceptor(e)) {
+        // dispatch key event to focused widget if not intercepted
+        if (!impl_->on_key_event_ || !impl_->on_key_event_(e)) {
             if (impl_->focus_widget_) {
                 impl_->focus_widget_->Key(e);
             }

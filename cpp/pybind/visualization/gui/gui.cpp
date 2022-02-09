@@ -111,7 +111,6 @@ public:
         : Super(title, x, y, width, height, flags) {}
 
     std::function<void(const LayoutContext &)> on_layout_;
-    void SetOnKey(std::function<bool(const KeyEvent &)> f) { on_key_ = f; }
 
 protected:
     void Layout(const LayoutContext &context) override {
@@ -126,17 +125,6 @@ protected:
             Super::Layout(context);
         }
     }
-
-    bool CallKeyInterceptor(const KeyEvent &e) override {
-        if (on_key_) {
-            return on_key_(e);
-        } else {
-            return false;
-        }
-    }
-
-private:
-    std::function<bool(const KeyEvent &)> on_key_;
 };
 
 // atexit: Filament crashes if the engine was not destroyed before exit().
@@ -459,7 +447,7 @@ void pybind_gui_classes(py::module &m) {
                     "and device pixels (read-only)")
             .def_property_readonly("is_visible", &PyWindow::IsVisible,
                                    "True if window is visible (read-only)")
-            .def("set_on_key", &PyWindow::SetOnKey,
+            .def("set_on_key", &PyWindow::SetOnKeyEvent,
                  "Sets a callback for key events. This callback is passed "
                  "a KeyEvent object. The callback must return "
                  "True to stop more dispatching or False to dispatch"
