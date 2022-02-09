@@ -437,7 +437,7 @@ TEST(Dataset, SampleRGBDDatasetRedwood) {
     utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
     utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
 
-    data::SampleRGBDDatasetRedwood rgbd_icl(data_root);
+    data::SampleRGBDDatasetRedwood rgbd_redwood(data_root);
     // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
@@ -446,40 +446,43 @@ TEST(Dataset, SampleRGBDDatasetRedwood) {
             extract_dir + "/color/00000.jpg", extract_dir + "/color/00001.jpg",
             extract_dir + "/color/00002.jpg", extract_dir + "/color/00003.jpg",
             extract_dir + "/color/00004.jpg"};
-    EXPECT_EQ(rgbd_icl.GetColorPaths(), color_paths);
+    EXPECT_EQ(rgbd_redwood.GetColorPaths(), color_paths);
 
     const std::vector<std::string> depth_paths = {
             extract_dir + "/depth/00000.png", extract_dir + "/depth/00001.png",
             extract_dir + "/depth/00002.png", extract_dir + "/depth/00003.png",
             extract_dir + "/depth/00004.png"};
-    EXPECT_EQ(rgbd_icl.GetDepthPaths(), depth_paths);
+    EXPECT_EQ(rgbd_redwood.GetDepthPaths(), depth_paths);
     for (size_t i = 0; i < color_paths.size(); ++i) {
-        EXPECT_TRUE(
-                utility::filesystem::FileExists(rgbd_icl.GetColorPaths()[i]));
-        EXPECT_TRUE(
-                utility::filesystem::FileExists(rgbd_icl.GetDepthPaths()[i]));
+        EXPECT_TRUE(utility::filesystem::FileExists(
+                rgbd_redwood.GetColorPaths()[i]));
+        EXPECT_TRUE(utility::filesystem::FileExists(
+                rgbd_redwood.GetDepthPaths()[i]));
     }
 
-    EXPECT_EQ(rgbd_icl.GetTrajectoryLogPath(), extract_dir + "/trajectory.log");
+    EXPECT_EQ(rgbd_redwood.GetTrajectoryLogPath(),
+              extract_dir + "/trajectory.log");
+    EXPECT_TRUE(utility::filesystem::FileExists(
+            rgbd_redwood.GetTrajectoryLogPath()));
+
+    EXPECT_EQ(rgbd_redwood.GetOdometryLogPath(), extract_dir + "/odometry.log");
     EXPECT_TRUE(
-            utility::filesystem::FileExists(rgbd_icl.GetTrajectoryLogPath()));
+            utility::filesystem::FileExists(rgbd_redwood.GetOdometryLogPath()));
 
-    EXPECT_EQ(rgbd_icl.GetOdometryLogPath(), extract_dir + "/odometry.log");
-    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_icl.GetOdometryLogPath()));
+    EXPECT_EQ(rgbd_redwood.GetRGBDMatchPath(), extract_dir + "/rgbd.match");
+    EXPECT_TRUE(
+            utility::filesystem::FileExists(rgbd_redwood.GetRGBDMatchPath()));
 
-    EXPECT_EQ(rgbd_icl.GetRGBDMatchPath(), extract_dir + "/rgbd.match");
-    EXPECT_TRUE(utility::filesystem::FileExists(rgbd_icl.GetRGBDMatchPath()));
-
-    EXPECT_EQ(rgbd_icl.GetReconstructionPath(),
+    EXPECT_EQ(rgbd_redwood.GetReconstructionPath(),
               extract_dir + "/example_tsdf_pcd.ply");
-    EXPECT_TRUE(
-            utility::filesystem::FileExists(rgbd_icl.GetReconstructionPath()));
+    EXPECT_TRUE(utility::filesystem::FileExists(
+            rgbd_redwood.GetReconstructionPath()));
 
     // Basic method.
-    EXPECT_EQ(rgbd_icl.GetPrefix(), prefix);
-    EXPECT_EQ(rgbd_icl.GetDataRoot(), data_root);
-    EXPECT_EQ(rgbd_icl.GetDownloadDir(), download_dir);
-    EXPECT_EQ(rgbd_icl.GetExtractDir(), extract_dir);
+    EXPECT_EQ(rgbd_redwood.GetPrefix(), prefix);
+    EXPECT_EQ(rgbd_redwood.GetDataRoot(), data_root);
+    EXPECT_EQ(rgbd_redwood.GetDownloadDir(), download_dir);
+    EXPECT_EQ(rgbd_redwood.GetExtractDir(), extract_dir);
 
     // Delete dataset.
     utility::filesystem::DeleteDirectory(download_dir);

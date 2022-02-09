@@ -347,7 +347,7 @@ public:
 
     /// \brief Returns path to camera trajectory log file `trajectory.log`.
     std::string GetTrajectoryLogPath() const { return trajectory_log_path_; };
-    /// \brief Returns path to camera trajectory log file `trajectory.log`.
+    /// \brief Returns path to camera trajectory log file `odometry.log`.
     std::string GetOdometryLogPath() const { return odometry_log_path_; };
     /// \brief Returns path to color and depth image match file `rgbd.match`.
     std::string GetRGBDMatchPath() const { return rgbd_match_path_; };
