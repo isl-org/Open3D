@@ -35,7 +35,7 @@ sys.path.append(pyexample_path)
 from open3d_example import read_trajectory
 
 if __name__ == "__main__":
-    rgbd_data = o3d.data.SampleRGBDDatasetICL()
+    rgbd_data = o3d.data.SampleRGBDDatasetRedwood()
     camera_poses = read_trajectory(rgbd_data.odometry_log_path)
     camera_intrinsics = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
     print("Extract voxel-aligned debugging voxel grid")
     voxel_grid = volume.extract_voxel_grid()
-    o3d.visualization.draw_geometries([voxel_grid])
+    # o3d.visualization.draw_geometries([voxel_grid])
 
-    print("Extract point cloud")
-    pcd = volume.extract_point_cloud()
-    o3d.visualization.draw_geometries([pcd])
+    # print("Extract point cloud")
+    # pcd = volume.extract_point_cloud()
+    # o3d.visualization.draw_geometries([pcd])

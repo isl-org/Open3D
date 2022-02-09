@@ -119,11 +119,11 @@ def large_scale(n_steps=16,
         for step in range(n_steps):
             resolution = base_resolution * (step + 1)
             cylinder_list = []
-            moebius_list = []
+            mobius_list = []
             cylinder = o3d.geometry.TriangleMesh.create_cylinder(
                 radius=1.0, height=2.0, resolution=resolution, split=4)
             cylinder.compute_vertex_normals()
-            moebius = o3d.geometry.TriangleMesh.create_moebius(
+            mobius = o3d.geometry.TriangleMesh.create_mobius(
                 length_split=int(3.5 * resolution),
                 width_split=int(0.75 * resolution),
                 twists=1,
@@ -131,19 +131,19 @@ def large_scale(n_steps=16,
                 flatness=1,
                 width=1,
                 scale=1)
-            moebius.compute_vertex_normals()
+            mobius.compute_vertex_normals()
             for b in range(batch_size):
                 cylinder_list.append(copy.deepcopy(cylinder))
                 cylinder_list[b].paint_uniform_color(colors[b])
-                moebius_list.append(copy.deepcopy(moebius))
-                moebius_list[b].paint_uniform_color(colors[b])
+                mobius_list.append(copy.deepcopy(mobius))
+                mobius_list[b].paint_uniform_color(colors[b])
             summary.add_3d('cylinder',
                            to_dict_batch(cylinder_list),
                            step=step,
                            logdir=logdir,
                            max_outputs=batch_size)
-            summary.add_3d('moebius',
-                           to_dict_batch(moebius_list),
+            summary.add_3d('mobius',
+                           to_dict_batch(mobius_list),
                            step=step,
                            logdir=logdir,
                            max_outputs=batch_size)
