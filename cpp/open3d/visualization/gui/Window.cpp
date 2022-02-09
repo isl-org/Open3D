@@ -217,6 +217,7 @@ struct Window::Impl {
     bool draw_menu_ = true;
     std::unordered_map<Menu::ItemId, std::function<void()>> menu_callbacks_;
     std::function<bool(void)> on_tick_event_;
+    std::function<bool(const KeyEvent&)> on_key_event_;
     std::function<bool(void)> on_close_;
     std::function<bool(const KeyEvent&)> on_key_event_;
     // We need these for mouse moves and wheel events.
@@ -245,6 +246,7 @@ struct Window::Impl {
     Widget* mouse_grabber_widget_ = nullptr;  // only if not ImGUI widget
     Widget* focus_widget_ =
             nullptr;  // only used if ImGUI isn't taking keystrokes
+    bool is_focusing_ = false;
     bool wants_auto_size_ = false;
     bool wants_auto_center_ = false;
     bool needs_layout_ = true;
@@ -635,6 +637,7 @@ void Window::SetOnKeyEvent(std::function<bool(const KeyEvent&)> callback) {
     impl_->on_key_event_ = callback;
 }
 
+
 void Window::ShowDialog(std::shared_ptr<Dialog> dlg) {
     if (impl_->active_dialog_) {
         CloseDialog();
@@ -675,6 +678,9 @@ void Window::CloseDialog() {
     // If it is from within a draw call, then any redraw request from that will
     // get merged in with this one by the OS.
     PostRedraw();
+}
+std::shared_ptr<Dialog> Window::GetDialog() {
+    return impl_->active_dialog_;
 }
 
 void Window::ShowMessageBox(const char* title, const char* message) {
@@ -1050,6 +1056,17 @@ void Window::OnResize() {
     PostRedraw();
 }
 
+#ifdef USE_SPNAV
+void Window::OnSpaceMouseEvent(const open3d::visualization::SpaceMouseEvent& e) {
+    if (impl_->focus_widget_ == nullptr || !impl_->is_focusing_) {
+        return;
+    }
+    impl_->focus_widget_->SpaceMouse(e);
+}
+#endif
+void Window::OnFocus(bool focused) {
+    impl_->is_focusing_ = focused;
+}
 void Window::OnMouseEvent(const MouseEvent& e) {
     MakeDrawContextCurrent();
 
@@ -1179,8 +1196,6 @@ void Window::OnKeyEvent(const KeyEvent& e) {
         this_mod = int(KeyModifier::ALT);
     } else if (e.key == KEY_META) {
         this_mod = int(KeyModifier::META);
-    } else if (e.key == KEY_ESCAPE) {
-        Close();
     }
 
     if (e.type == KeyEvent::UP) {

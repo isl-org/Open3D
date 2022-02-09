@@ -58,6 +58,8 @@ public:
     /// size as a text row, which means the button is the same size as the
     /// the other text-based widgets, so it will look nice with them.
     void SetPaddingEm(float horiz_ems, float vert_ems);
+    void SetMinWidth(int width);
+    int GetMinWidth();
 
     bool GetIsToggleable() const;
     void SetToggleable(bool toggles);

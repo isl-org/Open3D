@@ -28,6 +28,7 @@
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/Image.h"
+#include "open3d/geometry/PointCloud.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/gui/Application.h"
@@ -44,6 +45,7 @@
 #include "open3d/visualization/gui/Label3D.h"
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/ListView.h"
+#include "open3d/visualization/gui/MultiSelectListView.h"
 #include "open3d/visualization/gui/NumberEdit.h"
 #include "open3d/visualization/gui/ProgressBar.h"
 #include "open3d/visualization/gui/SceneWidget.h"
@@ -494,6 +496,7 @@ void pybind_gui_classes(py::module &m) {
                         w.ShowDialog(TakeOwnership<Dialog>(dlg));
                     },
                     "Displays the dialog")
+            .def("get_dialog", &PyWindow::GetDialog, "Get current dialog")
             .def("close_dialog", &PyWindow::CloseDialog,
                  "Closes the current dialog")
             .def("show_message_box", &PyWindow::ShowMessageBox,
@@ -627,6 +630,21 @@ void pybind_gui_classes(py::module &m) {
             .def_readwrite("width", &Size::width)
             .def_readwrite("height", &Size::height);
 
+    class WidgetContainer {
+    public:
+        WidgetContainer() = default;
+        WidgetContainer(std::shared_ptr<Widget> widget) {widget_ = widget; }
+        ~WidgetContainer() = default;
+        void Set(std::shared_ptr<Widget> widget) { widget_ = widget;}
+        void Clear() { widget_.reset(); }
+    private:
+        std::shared_ptr<Widget> widget_;
+    };
+
+    py::class_<WidgetContainer, std::shared_ptr<WidgetContainer>> container(m, "WidgetContainer", "Stores shared ptr of widget");
+    container.def(py::init<>())
+            .def("clear", &WidgetContainer::Clear, "Clear widget");
+
     // ---- Widget ----
     // The holder for Widget and all derived classes is UnownedPointer because
     // a Widget may own Filament resources, so we cannot have Python holding
@@ -676,7 +694,9 @@ void pybind_gui_classes(py::module &m) {
             .def(
                     "add_child",
                     [](Widget &w, UnownedPointer<Widget> child) {
-                        w.AddChild(TakeOwnership<Widget>(child));
+                        auto sp_child = TakeOwnership<Widget>(child);
+                        w.AddChild(sp_child);
+                        return std::make_shared<WidgetContainer>(sp_child);
                     },
                     "Adds a child widget")
             .def("get_children", &Widget::GetChildren,
@@ -732,8 +752,10 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def(
                     "set_widget",
-                    [](WidgetProxy &w, UnownedPointer<Widget> proxy) {
-                        w.SetWidget(TakeOwnership<Widget>(proxy));
+                    [](WidgetProxy &w, UnownedPointer<Widget> proxy) -> std::shared_ptr<WidgetContainer> {
+                        auto sp_child = TakeOwnership<Widget>(proxy);
+                        w.SetWidget(sp_child);
+                        return std::make_shared<WidgetContainer>(sp_child);
                     },
                     "set a new widget to be delegated by this one."
                     " After set_widget, the previously delegated widget ,"
@@ -805,6 +827,11 @@ void pybind_gui_classes(py::module &m) {
             .def_property(
                     "is_on", &Button::GetIsOn, &Button::SetOn,
                     "True if the button is toggleable and in the on state")
+            .def_property(
+                    "min_width", &Button::GetMinWidth, &Button::SetMinWidth,
+                    "Minimum width of button, -1 if never set, width >= 10000"
+                    "indicates as width as possible."
+                    )
             // It is not possible to overload properties. But we want users
             // to be able to say "o.padding = 1.4" or "o.padding = 1",
             // and float and int are different types. Fortunately, we want
@@ -1069,11 +1096,39 @@ void pybind_gui_classes(py::module &m) {
             .def_property("selected_index", &ListView::GetSelectedIndex,
                           &ListView::SetSelectedIndex,
                           "The index of the currently selected item")
+            .def("set_max_visible_items", &ListView::SetMaxVisibleItems,
+                 "Set max showed items number, it controls the height of list")
             .def_property_readonly("selected_value",
                                    &ListView::GetSelectedValue,
                                    "The text of the currently selected item")
             .def("set_on_selection_changed", &ListView::SetOnValueChanged,
                  "Calls f(new_val, is_double_click) when user changes "
+                 "selection");
+
+    // ---- MultiSelectListView ----
+    py::class_<MultiSelectListView, UnownedPointer<MultiSelectListView>, Widget> mslistview(
+            m, "MultiSelectListView", "Displays a multiple selected list of text");
+    mslistview.def(py::init<>(), "Creates an empty list")
+            .def("__repr__",
+                 [](const MultiSelectListView &lv) {
+                     std::stringstream s;
+                     s << "Label (" << lv.GetFrame().x << ", "
+                       << lv.GetFrame().y << "), " << lv.GetFrame().width
+                       << " x " << lv.GetFrame().height;
+                     return s.str();
+                 })
+            .def("set_items", &MultiSelectListView::SetItems,
+                 "Sets the list to display the list of items provided")
+            .def("set_max_visible_items", &MultiSelectListView::SetMaxVisibleItems,
+                 "Set max showed items number, it controls the height of list")
+            .def("get_selected_indices", &MultiSelectListView::GetSelectedIndices,
+                 "Get indices of all selected items")
+            .def("set_selected_index", &MultiSelectListView::SetSelectedIndex,
+                 "Set selected status of an item")
+            .def("get_value", &MultiSelectListView::GetValue,
+                 "Get text of an item")
+            .def("set_on_selection_changed", &MultiSelectListView::SetOnValueChanged,
+                 "Calls f(index, new_val, is_double_click) when user changes "
                  "selection");
 
     // ---- NumberEdit ----
@@ -1158,6 +1213,9 @@ void pybind_gui_classes(py::module &m) {
         using Super = SceneWidget;
 
     public:
+        using PickMap = std::map<
+                std::string, std::shared_ptr<geometry::PointCloud>>;
+        using PickNotify = std::function<void(std::string, size_t)>;
         void SetOnMouse(std::function<int(const MouseEvent &)> f) {
             on_mouse_ = f;
         }
@@ -1205,7 +1263,39 @@ void pybind_gui_classes(py::module &m) {
             }
         }
 
+        void StartPickPoint(PickMap &geometries, int point_size, PickNotify on_picked) {
+            picking_ = geometries;
+            on_picked_ = on_picked;
+            SetViewControls(Controls::PICK_POINTS);
+            std::vector<PickableGeometry> geos;
+            for (auto & g: geometries) {
+                geos.emplace_back(g.first, g.second.get());
+            }
+            SetPickableGeometry(geos);
+            SetPickablePointSize(point_size);
+            SetOnPointsPicked([this](const std::map<std::string,
+                    std::vector<std::pair<size_t, Eigen::Vector3d>>>& pts,
+                                 int) {
+                for(auto &p : pts) {
+                    auto &name = p.first;
+                    for(auto &e : p.second) {
+                        if (on_picked_) {
+                            on_picked_(name, e.first);
+                        }
+                    }
+                }
+            });
+        }
+        void StopPickPoint(Controls mode) {
+            picking_.clear();
+            on_picked_ = nullptr;
+            SetViewControls(mode);
+            SetPickableGeometry({});
+        }
+
     private:
+        PickMap picking_;
+        PickNotify on_picked_;
         std::function<int(const MouseEvent &)> on_mouse_;
         std::function<int(const KeyEvent &)> on_key_;
     };
@@ -1294,7 +1384,21 @@ void pybind_gui_classes(py::module &m) {
                  "Add a 3D text label to the scene. The label will be anchored "
                  "at the specified 3D point.")
             .def("remove_3d_label", &PySceneWidget::RemoveLabel,
-                 "Removes the 3D text label from the scene");
+                 "Removes the 3D text label from the scene")
+            .def("start_edit",
+                 &PySceneWidget::StartEdit,
+                 "Start editing")
+            .def("stop_edit", &PySceneWidget::StopEdit,
+                 "Stop editing")
+            .def("crop_selected", &PySceneWidget::CropSelected,
+                 "Crop selected and return selected + left point cloud")
+            .def("collect_selected_indices", &PySceneWidget::CollectSelectedIndices,
+                 "collect selected indices")
+            .def("pick_point", &PySceneWidget::StartPickPoint,
+                 "Start picking point")
+            .def("stop_pick", &PySceneWidget::StopPickPoint,
+                 "Stop picking point")
+            ;
 
     // ---- Slider ----
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(
@@ -1361,7 +1465,9 @@ void pybind_gui_classes(py::module &m) {
                     "add_tab",
                     [](TabControl &tabs, const char *name,
                        UnownedPointer<Widget> panel) {
-                        tabs.AddTab(name, TakeOwnership<Widget>(panel));
+                        auto tab = TakeOwnership<Widget>(panel);
+                        tabs.AddTab(name, tab);
+                        return std::make_shared<WidgetContainer>(tab);
                     },
                     "Adds a tab. The first parameter is the title of the tab, "
                     "and the second parameter is a widget--normally this is a "
@@ -1600,6 +1706,8 @@ void pybind_gui_classes(py::module &m) {
             // TODO: write the proper constructor
             //        .def(py::init([]() { return new Layout1D(Layout1D::VERT,
             //        0, Margins(), {}); }))
+            .def_property("spacing", &Layout1D::GetSpacing,
+                          &Layout1D::SetSpacing, "spacing between items")
             .def("add_fixed", &Layout1D::AddFixed,
                  "Adds a fixed amount of empty space to the layout")
             .def(

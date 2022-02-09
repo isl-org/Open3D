@@ -60,6 +60,7 @@ public:
     /// of Window might need be called.
     /// \param widget Widget to push into stack to be topmost showing wiget.
     void PushWidget(std::shared_ptr<Widget> widget);
+    void SetWidget(std::shared_ptr<Widget> widget) override;
 
     /// \brief Pop the top most widget.
     ///

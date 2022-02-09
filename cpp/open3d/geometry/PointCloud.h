@@ -136,6 +136,8 @@ public:
     /// \param invert Set to `True` to invert the selection of indices.
     std::shared_ptr<PointCloud> SelectByIndex(
             const std::vector<size_t> &indices, bool invert = false) const;
+    std::tuple<std::shared_ptr<PointCloud>, std::shared_ptr<PointCloud>>
+    Split(const std::vector<size_t> &indices) const;
 
     /// \brief Function to downsample input pointcloud into output pointcloud
     /// with a voxel.

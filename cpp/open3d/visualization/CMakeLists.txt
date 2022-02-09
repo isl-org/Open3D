@@ -23,6 +23,7 @@ target_sources(visualization PRIVATE
     utility/PointCloudPicker.cpp
     utility/SelectionPolygon.cpp
     utility/SelectionPolygonVolume.cpp
+    utility/SpaceMouse.cpp
 )
 
 target_sources(visualization PRIVATE

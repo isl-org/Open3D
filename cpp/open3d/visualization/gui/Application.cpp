@@ -58,6 +58,7 @@
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "open3d/visualization/utility/GLHelper.h"
+#include "open3d/visualization/utility/SpaceMouse.h"
 
 namespace {
 
@@ -605,6 +606,15 @@ Application::RunStatus Application::ProcessQueuedEvents(EnvUnlocker &unlocker) {
         }
         impl_->last_time_ = now;
     }
+
+#ifdef USE_SPNAV
+    open3d::visualization::SpaceMouseEvent e{};
+    if (open3d::visualization::SpaceMouse::GetInstance()->Poll(e)) {
+        for (auto& w : impl_->windows_) {
+            w->OnSpaceMouseEvent(e);
+        }
+    }
+#endif
 
     // Run any posted functions
     // To avoid deadlock while PostToMainThread is called in Posted, the

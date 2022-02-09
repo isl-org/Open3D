@@ -273,6 +273,7 @@ void PickPointsInteractor::SetOnStartedPolygonPicking(
 
 void PickPointsInteractor::Mouse(const MouseEvent &e) {
     if (e.type == MouseEvent::BUTTON_UP) {
+#if 0 // jgq: disable polygon selection
         if (e.modifiers & int(KeyModifier::ALT)) {
             if (pending_.empty() || pending_.back().keymods == 0) {
                 pending_.push({{gui::Point(e.x, e.y)}, int(KeyModifier::ALT)});
@@ -298,7 +299,9 @@ void PickPointsInteractor::Mouse(const MouseEvent &e) {
                     on_ui_changed_(lines);
                 }
             }
-        } else {
+        } else
+#endif
+        {
             pending_.push({{gui::Point(e.x, e.y)}, 0});
             DoPick();
         }

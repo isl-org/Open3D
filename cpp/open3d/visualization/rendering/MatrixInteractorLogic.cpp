@@ -229,6 +229,9 @@ float MatrixInteractorLogic::CalcDollyDist(float dy,
         case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
             dist = float(-dy) * 0.05f * float(length);
             break;
+        case DragType::SPACE_MOUSE:  // actual mouse wheel, same as two-fingers
+            dist = float(-dy) * 0.008f * float(length);
+            break;
     }
     return dist;
 }

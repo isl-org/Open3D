@@ -107,6 +107,9 @@ void CameraInteractorLogic::Zoom(int dy, DragType drag_type) {
         case DragType::WHEEL:  // actual mouse wheel, same as two-fingers
             d_fov = float(dy) * 2.0f;  // deg
             break;
+        case DragType::SPACE_MOUSE:
+            d_fov = float(dy) * 0.5f;  // deg
+            break;
     }
     float old_fov = 0.0f;
     if (drag_type == DragType::MOUSE) {

@@ -47,11 +47,8 @@ public:
 
 public:
     VisualizerWithEditing(double voxel_size = -1.0,
-                          bool use_dialog = true,
-                          const std::string &directory = "")
-        : voxel_size_(voxel_size),
-          use_dialog_(use_dialog),
-          default_directory_(directory) {}
+                          const std::string &file_path = "")
+        : voxel_size_(voxel_size), save_file_path_(file_path) {}
     ~VisualizerWithEditing() override {}
     VisualizerWithEditing(const VisualizerWithEditing &) = delete;
     VisualizerWithEditing &operator=(const VisualizerWithEditing &) = delete;
@@ -67,6 +64,10 @@ public:
     void BuildUtilities() override;
     int PickPoint(double x, double y);
     std::vector<size_t> &GetPickedPoints();
+    /// Function to retrieve current editing geometry
+    std::shared_ptr<geometry::Geometry> GetEditingGeometry();
+    /// Function to retrieve discarded geometry
+    std::shared_ptr<geometry::Geometry> GetDiscardedGeometry();
 
 protected:
     bool InitViewControl() override;
@@ -86,7 +87,22 @@ protected:
     void InvalidateSelectionPolygon();
     void InvalidatePicking();
     void SaveCroppingResult(const std::string &filename = "");
+    void Crop(bool del);
+    std::shared_ptr<geometry::Geometry> Crop(std::vector<size_t> &indexes,
+              bool del /* del = true indicates indexes should be deleted */
+    );
+    void Backup();
+    void FitPlane();
+    void FindNeighborWithSimilarNormals();
+    void PointSelectionHint();
+    void ExitSelectEdit();
+    void CropSelected(bool del);
+    void Save();
+    void Undo();
+    void UpdateBackground();
 
+    void WindowCloseCallback(GLFWwindow *window) override;
+    void OnExit() override;
 protected:
     std::shared_ptr<SelectionPolygon> selection_polygon_ptr_;
     std::shared_ptr<glsl::SelectionPolygonRenderer>
@@ -99,12 +115,18 @@ protected:
 
     std::shared_ptr<const geometry::Geometry> original_geometry_ptr_;
     std::shared_ptr<geometry::Geometry> editing_geometry_ptr_;
+
+    // in selection editing,
+    bool select_editing_ = false;
+    std::vector<std::shared_ptr<geometry::Geometry>> selected_original_geometries_; // with original color
+    std::vector<std::shared_ptr<geometry::Geometry>> selected_geometries_; // painted, used for rendering
+
+    // history of editing, for undo
+    std::vector<std::shared_ptr<geometry::Geometry>> discarded_geometries_;
     std::shared_ptr<glsl::GeometryRenderer> editing_geometry_renderer_ptr_;
 
     double voxel_size_ = -1.0;
-    bool use_dialog_ = true;
-    std::string default_directory_;
-    unsigned int crop_action_count_ = 0;
+    std::string save_file_path_;
 };
 
 }  // namespace visualization

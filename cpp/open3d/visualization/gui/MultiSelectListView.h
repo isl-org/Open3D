@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018-2021 www.open3d.org
+// Copyright (c) 2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,50 +24,50 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/visualization/gui/WidgetStack.h"
+#pragma once
 
-#include <stack>
+#include <functional>
+#include <string>
+
+#include "open3d/visualization/gui/Widget.h"
 
 namespace open3d {
 namespace visualization {
 namespace gui {
-struct WidgetStack::Impl {
-    std::stack<std::shared_ptr<Widget>> widgets_;
-    std::function<void(std::shared_ptr<Widget>)> on_top_callback_;
+
+class MultiSelectListView : public Widget {
+    using Super = Widget;
+
+public:
+    MultiSelectListView();
+    virtual ~MultiSelectListView();
+
+    void SetItems(const std::vector<std::string>& items);
+    void SetMaxVisibleItems(int items);
+
+    /// Returns the currently selected item in the list.
+    std::vector<int> GetSelectedIndices() const;
+    /// Returns the value of the currently selected item in the list.
+    const char * GetValue(int index) const;
+    /// Selects the indicated row of the list. Does not call onValueChanged.
+    void SetSelectedIndex(int index, bool selected);
+
+    Size CalcPreferredSize(const LayoutContext& context,
+                           const Constraints& constraints) const override;
+
+    Size CalcMinimumSize(const LayoutContext& context) const override;
+
+    DrawResult Draw(const DrawContext& context) override;
+
+    /// Calls onValueChanged(const char *selectedText, bool isDoubleClick)
+    /// when the list selection changes because of user action.
+    void SetOnValueChanged(
+            std::function<void(int, const char*, bool)> on_value_changed);
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
-
-WidgetStack::WidgetStack() : impl_(new WidgetStack::Impl()) {}
-
-void WidgetStack::SetWidget(std::shared_ptr<Widget> widget) {
-    PushWidget(widget);
-}
-WidgetStack::~WidgetStack() = default;
-
-void WidgetStack::PushWidget(std::shared_ptr<Widget> widget) {
-    impl_->widgets_.push(widget);
-    WidgetProxy::SetWidget(widget);
-}
-
-std::shared_ptr<Widget> WidgetStack::PopWidget() {
-    std::shared_ptr<Widget> ret;
-    if (!impl_->widgets_.empty()) {
-        ret = impl_->widgets_.top();
-        impl_->widgets_.pop();
-        if (!impl_->widgets_.empty()) {
-            WidgetProxy::SetWidget(impl_->widgets_.top());
-            if (impl_->on_top_callback_) {
-                impl_->on_top_callback_(impl_->widgets_.top());
-            }
-        } else {
-            WidgetProxy::SetWidget(nullptr);
-        }
-    }
-    return ret;
-}
-void WidgetStack::SetOnTop(
-        std::function<void(std::shared_ptr<Widget>)> onTopCallback) {
-    impl_->on_top_callback_ = onTopCallback;
-}
 
 }  // namespace gui
 }  // namespace visualization

@@ -124,6 +124,44 @@ void SelectionPolygon::FillPolygon(int width, int height) {
     }
 }
 
+std::vector<size_t> SelectionPolygon::CropPointCloudIndex(
+        const geometry::PointCloud &input, const ViewControl &view) {
+    if (IsEmpty()) {
+        return std::vector<size_t>{};
+    }
+    switch (polygon_type_) {
+        case SectionPolygonType::Rectangle:
+            return CropInRectangle(input.points_, view);
+        case SectionPolygonType::Polygon:
+            return CropInPolygon(input.points_, view);
+        case SectionPolygonType::Unfilled:
+        default:
+            return std::vector<size_t>{};
+    }
+}
+
+std::vector<size_t> SelectionPolygon::CropTriangleMeshIndex(
+        const geometry::TriangleMesh &input, const ViewControl &view) {
+    if (IsEmpty()) {
+        return std::vector<size_t>{};
+    }
+    if (input.HasVertices() && !input.HasTriangles()) {
+        utility::LogWarning(
+                "geometry::TriangleMesh contains vertices, but no triangles; "
+                "cropping will always yield an empty "
+                "geometry::TriangleMesh.");
+        return std::vector<size_t>{};
+    }
+    switch (polygon_type_) {
+        case SectionPolygonType::Rectangle:
+            return CropInRectangle(input.vertices_, view);
+        case SectionPolygonType::Polygon:
+            return CropInPolygon(input.vertices_, view);
+        case SectionPolygonType::Unfilled:
+        default:
+            return std::vector<size_t>{};
+    }
+}
 std::shared_ptr<geometry::PointCloud> SelectionPolygon::CropPointCloud(
         const geometry::PointCloud &input, const ViewControl &view) {
     if (IsEmpty()) {

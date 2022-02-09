@@ -37,6 +37,9 @@ namespace visualization {
 namespace rendering {
 class Renderer;
 }
+#ifdef USE_SPNAV
+struct SpaceMouseEvent;
+#endif
 }  // namespace visualization
 
 namespace visualization {
@@ -125,6 +128,9 @@ public:
     /// as Dear ImGUI will take care of all the mouse handling during
     /// the Draw().
     virtual EventResult Mouse(const MouseEvent& e);
+#ifdef USE_SPNAV
+    virtual EventResult SpaceMouse(const SpaceMouseEvent& e);
+#endif
 
     /// Widgets that use Dear ImGUI should not need to override this,
     /// as Dear ImGUI will take care of all the key handling during

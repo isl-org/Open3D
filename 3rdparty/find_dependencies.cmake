@@ -1501,6 +1501,18 @@ else()
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
 
+# spnav
+open3d_find_package_3rdparty_library(3rdparty_spnav
+        QUIET
+        PACKAGE spnav
+        INCLUDE_DIRS SPNAV_INCLUDE_DIR
+        LIBRARIES SPNAV_LIBRARY
+        )
+if(3rdparty_spnav_FOUND)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_spnav)
+    add_definitions(-DUSE_SPNAV)
+endif()
+
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
 list(REMOVE_DUPLICATES Open3D_3RDPARTY_EXTERNAL_MODULES)
