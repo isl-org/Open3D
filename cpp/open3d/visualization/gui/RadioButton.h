@@ -27,6 +27,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 
 #include "open3d/visualization/gui/Widget.h"
 
