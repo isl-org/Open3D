@@ -46,6 +46,7 @@
 #include "open3d/visualization/gui/ListView.h"
 #include "open3d/visualization/gui/NumberEdit.h"
 #include "open3d/visualization/gui/ProgressBar.h"
+#include "open3d/visualization/gui/RadioButton.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Slider.h"
 #include "open3d/visualization/gui/StackedWidget.h"
@@ -914,6 +915,34 @@ void pybind_gui_classes(py::module &m) {
                  "Calls f(str, int) when user selects item from combobox. "
                  "Arguments are the selected text and selected index, "
                  "respectively");
+
+    // ---- RadioButton ----
+    py::class_<RadioButton, UnownedPointer<RadioButton>, Widget> radiobtn(
+            m, "RadioButton", "Exclusive selection from radio button list");
+    py::enum_<RadioButton::Type> radiobtn_type(radiobtn, "Type",
+                                               py::arithmetic());
+    // Trick to write docs without listing the members in the enum class again.
+    radiobtn_type.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Enum class for RadioButton types.";
+            }),
+            py::none(), py::none(), "");
+    radiobtn_type.value("VERT", RadioButton::Type::VERT)
+            .value("HORIZ", RadioButton::Type::HORIZ)
+            .export_values();
+    radiobtn.def(py::init<RadioButton::Type>(),
+                 "Creates an empty radio buttons. Use set_items() to add items")
+            .def("set_items", &RadioButton::SetItems,
+                 "Set radio items, each item is a radio button.")
+            .def_property("selected_index", &RadioButton::GetSelectedIndex,
+                          &RadioButton::SetSelectedIndex,
+                          "The index of the currently selected item")
+            .def_property_readonly("selected_value",
+                                   &RadioButton::GetSelectedValue,
+                                   "The text of the currently selected item")
+            .def("set_on_selection_changed",
+                 &RadioButton::SetOnSelectionChanged,
+                 "Calls f(new_idx) when user changes selection");
 
     // ---- ImageWidget ----
     py::class_<UIImage, UnownedPointer<UIImage>> uiimage(

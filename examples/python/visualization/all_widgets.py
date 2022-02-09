@@ -299,6 +299,30 @@ class ExampleWindow:
         tab2.add_child(gui.Label("No plugins detected"))
         tab2.add_stretch()
         tabs.add_tab("Plugins", tab2)
+        tab3 = gui.Vert()
+        vtlab = gui.Label("")
+        vtrb = gui.RadioButton(gui.RadioButton.VERT)
+        vtrb.set_items(["Apple", "Orange"])
+
+        def vt_changed(idx):
+            vtlab.text = f"current cargo: {vtrb.selected_value}"
+
+        vtrb.set_on_selection_changed(vt_changed)
+        tab3.add_child(vtlab)
+        tab3.add_child(vtrb)
+        tabs.add_tab("Cargo", tab3)
+        tab4 = gui.Vert()
+        hzlab = gui.Label("")
+        hzrb = gui.RadioButton(gui.RadioButton.HORIZ)
+        hzrb.set_items(["Air plane", "Train", "Bus"])
+
+        def hz_changed(idx):
+            hzlab.text = f"current traffic plan: {hzrb.selected_value}"
+
+        hzrb.set_on_selection_changed(hz_changed)
+        tab4.add_child(hzlab)
+        tab4.add_child(hzrb)
+        tabs.add_tab("Traffic", tab4)
         collapse.add_child(tabs)
 
         # Quit button. (Typically this is a menu item)
