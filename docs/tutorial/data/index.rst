@@ -3,253 +3,215 @@
 Dataset
 =======
 
-Open3D provides `open3d.data` module for convenient access to built-in
-example and test data. You'll need internet access to use the data module.
-The downloaded data will be stored in the Open3D's data root directory.
-
-A dataset class locates the data root directory in the following order:
-
-1. User-specified by ``data_root`` when instantiating a dataset object.
-2. OPEN3D_DATA_ROOT environment variable.
-3. $HOME/open3d_data.
-
-By default, (3) will be used, and it is also the recommended way.
+Open3D comes with a built-in dataset module for convenient access to commonly
+used example datasets. These datasets will downloaded automatically from the
+internet.
 
 .. code-block:: python
 
     import open3d as o3d
 
-    # The default data_root for the following example is `$HOME/open3d_data`.
-    eagle_data = o3d.data.EaglePointCloud()
-    print("Prefix: ", eagle_data.prefix)
-
-    # So, this will download the `EaglePointCloud.ply` data in
-    # `$HOME/open3d_data/download/EaglePointCloud/`, and copy the same to
-    # `$HOME/open3d_data/extract/EaglePointCloud/`.
-    print("Data root: ", eagle_data.data_root)
-    print("Download dir: ", eagle_data.download_dir)
-    print("Extract dir: ", eagle_data.extract_dir)
+    if __name__ == "__main__":
+        dataset = o3d.data.EaglePointCloud()
+        pcd_path = dataset.path
+        pcd = o3d.io.read_point_cloud(pcd_path)
+        o3d.visualization.draw(pcd)
 
 .. code-block:: cpp
 
+    #include <string>
     #include "open3d/Open3D.h"
-    #include <iostream>
-    using namespace open3d;
 
-    // The default data_root for the following example is `$HOME/open3d_data`.
-    data::EaglePointCloud eagle_data();
-    std::cout << "Prefix: " << eagle_data.GetPrefix() << std::endl;
+    int main() {
+        using namespace open3d;
 
-    // So, this will download the `EaglePointCloud.ply` data in
-    // `$HOME/open3d_data/download/EaglePointCloud/`, and copy the same to
-    // `$HOME/open3d_data/extract/EaglePointCloud/`.
-    std::cout << "Data root: " << eagle_data.GetDataRoot() << std::endl;
-    std::cout << "Download dir: " << eagle_data.GetDownloadDir() << std::endl;
-    std::cout << "Extract dir: " << eagle_data.GetExtractDir() << std::endl;
+        data::EaglePointCloud dataset;
+        std::string pcd_path = dataset.GetPath();
+        auto pcd = io::CreatePointCloudFromFile(pcd_path);
+        visualization::Draw({pcd});
 
-.. code-block:: bash
+        return 0;
+    }
 
-    [Open3D INFO] Downloading https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/EaglePointCloud.ply
-    [Open3D INFO] Downloaded to /home/rey/open3d_data/download/EaglePointCloud/EaglePointCloud.ply
-    Prefix:  EaglePointCloud
-    Data root:  /home/rey/open3d_data
-    Download dir:  /home/rey/open3d_data/download/EaglePointCloud
-    Extract dir:  /home/rey/open3d_data/extract/EaglePointCloud
+Technical details:
+
+- Dataset will be downloaded can cached automatically. The default data root is
+  ``~/open3d_data``. The data will be downloaded to ``~/open3d_data/download``
+  and extracted to ``~/open3d_data/extract``.
+- Optionally you can change the default data root, either by setting the
+  environment variable ``OPEN3D_DATA_ROOT`` or by setting the ``data_root``
+  argument when constructing a dataset object.
 
 
-When a dataset object is instantiated, the corresponding data will be downloaded
-in ``${data_root}/download/prefix/`` and extracted or copied to
-``${data_root}/extract/prefix/``. The default ``${data_root}`` location is
-``$HOME/open3d_data``. If the extracted data
-directory exists, the files will be used without validation. If it does not
-exist, and the valid downloaded file exists, the data will be extracted from
-the downloaded file. If the downloaded file does not exist or validates against
-the provided MD5, it will be re-downloaded.
-
-After the data is downloaded and extracted, the dataset object will NOT load the
-data for you. Instead, you will get the paths to the data files and use Open3D’s
-I/O functions to load the data. This design exposes where the data is stored and
-how the data is loaded, allowing users to modify the code and load their own data
-in a similar way. Please check the documentation of the specific dataset to know
-more about the specific functionalities provided for it.
-
-
-Point Cloud Data
-~~~~~~~~~~~~~~~~
+Point Cloud
+~~~~~~~~~~~
 
 
 SamplePointCloudPCD
 -------------------
 
-`SamplePointCloudPCD` contains the ``fragment.pcd`` colored point cloud mesh from
-the `Redwood Living Room` dataset.
+Colored point cloud of a living room from the Redwood dataset in PCD format.
 
 .. code-block:: python
 
-    sample_data = o3d.data.SamplePointCloudPCD()
-    pcd = o3d.io.read_point_cloud(sample_data.path)
+    dataset = o3d.data.SamplePointCloudPCD()
+    pcd_path = dataset.path
+    pcd = o3d.io.read_point_cloud(pcd_path)
 
 .. code-block:: cpp
 
-    data::SamplePointCloudPCD sample_data();
-    geometry::PointCloud pcd;
-    io::ReadPointCloud(sample_data.path, pcd);
+    data::SamplePointCloudPCD dataset;
+    std::string pcd_path = dataset.GetPath();
+    auto pcd = io::CreatePointCloudFromFile(pcd_path);
 
 
 SamplePointCloudPLY
 -------------------
 
-`SamplePointCloudPLY` contains the ``fragment.ply`` colored point cloud mesh from
-the `Redwood Living Room` dataset.
+Colored point cloud of a living room from the Redwood dataset in PLY format.
 
 .. code-block:: python
 
-    sample_data = o3d.data.SamplePointCloudPLY()
-    pcd = o3d.io.read_point_cloud(sample_data.path)
+    dataset = o3d.data.SamplePointCloudPLY()
+    pcd_path = dataset.path
+    pcd = o3d.io.read_point_cloud(pcd_path)
 
 .. code-block:: cpp
 
-    data::SamplePointCloudPLY sample_data();
-    geometry::PointCloud pcd;
-    io::ReadPointCloud(sample_data.path, pcd);
+    data::SamplePointCloudPLY dataset;
+    std::string pcd_path = dataset.GetPath();
+    auto pcd = io::CreatePointCloudFromFile(pcd_path);
 
 
 EaglePointCloud
 ---------------
 
-`EaglePointCloud` contains the ``EaglePointCloud.ply`` colored point cloud mesh.
-
+Eagle colored point cloud.
 
 .. code-block:: python
 
-    eagle_data = o3d.data.EaglePointCloud()
-    pcd = o3d.io.read_point_cloud(eagle_data.path)
+    dataset = o3d.data.EaglePointCloud()
+    pcd_path = dataset.path
+    pcd = o3d.io.read_point_cloud(pcd_path)
 
 .. code-block:: cpp
 
-    data::EaglePointCloud eagle_data();
-    geometry::PointCloud pcd;
-    io::ReadPointCloud(eagle_data.path, pcd);
-
+    data::EaglePointCloud dataset;
+    std::string pcd_path = dataset.GetPath();
+    auto pcd = io::CreatePointCloudFromFile(pcd_path);
 
 RedwoodLivingRoomPointClouds
 ----------------------------
 
-`RedwoodLivingRoomPointClouds` contains 57 point clouds of binary PLY format,
-from Redwood RGB-D Dataset.
-
+57 point clouds of binary PLY format from the Redwood RGB-D Dataset.
 
 .. code-block:: python
 
-    pcd_fragments_data = o3d.data.RedwoodLivingRoomPointCloud()
-    for path in pcd_fragments_data.paths:
-        pcd = open3d.io.read_point_cloud(pcd_fragments_data.path)
+    dataset = o3d.data.RedwoodLivingRoomPointCloud()
+    pcd_paths = dataset.paths
+    pcds = []
+    for pcd_path in pcd_paths:
+        pcds.append(o3d.io.read_point_cloud(pcd_path))
 
 .. code-block:: cpp
 
-    data::RedwoodLivingRoomPointCloud pcd_fragments_data();
-    for(const std::string& path : pcd_fragments_data.path) {
-        geometry::PointCloud pcd;
-        io::ReadPointCloud(path, pcd);
+    data::RedwoodLivingRoomPointCloud dataset;
+    std::vector<std::string> pcd_paths = dataset.GetPaths();
+    std::vector<std::shared_ptr<geometry::PointCloud>> pcds;
+    for (const std::string& pcd_path: pcd_paths) {
+        pcds.push_back(io::CreatePointCloudFromFile(pcd_path));
     }
 
 
 RedwoodOfficePointClouds
 ------------------------
 
-`RedwoodOfficePointClouds` contains 53 point clouds of binary PLY format,
-from Redwood RGB-D Dataset.
+53 point clouds of binary PLY format from Redwood RGB-D Dataset.
 
 .. code-block:: python
 
-    pcd_fragments_data = o3d.data.RedwoodOfficePointCloud()
-    for path in pcd_fragments_data.paths:
-        pcd = open3d.io.read_point_cloud(pcd_fragments_data.path)
-        o3d.visualization.draw([pcd])
+    dataset = o3d.data.RedwoodOfficePointCloud()
+    pcd_paths = dataset.paths
+    pcds = []
+    for pcd_path in pcd_paths:
+        pcds.append(o3d.io.read_point_cloud(pcd_path))
 
 .. code-block:: cpp
 
-    data::RedwoodOfficePointClouds pcd_fragments_data();
-    for(const std::string& path : pcd_fragments_data.path) {
-        geometry::PointCloud pcd;
-        io::ReadPointCloud(path, pcd);
+    data::RedwoodOfficePointClouds dataset;
+    std::vector<std::string> pcd_paths = dataset.GetPaths();
+    std::vector<std::shared_ptr<geometry::PointCloud>> pcds;
+    for (const std::string& pcd_path: pcd_paths) {
+        pcds.push_back(io::CreatePointCloudFromFile(pcd_path));
     }
 
 
-Triangle Mesh Data
-~~~~~~~~~~~~~~~~~~
-
+Triangle Mesh
+~~~~~~~~~~~~~
 
 BunnyMesh
 ---------
 
-`BunnyMesh` contains the ``BunnyMesh.ply`` triangle mesh from Stanford
-University Computer Graphics Laboratory.
+The bunny triangle mesh from Stanford in PLY format.
 
 .. code-block:: python
 
-    mesh_data = o3d.data.BunnyMesh()
-    mesh = o3d.io.read_triangle_mesh(mesh_data.path)
+    dataset = o3d.data.BunnyMesh()
+    mesh_path = dataset.path
 
 .. code-block:: cpp
 
-    data::BunnyMesh bunny_data();
-    geometry::TriangleMesh mesh;
-    io::ReadTriangleMesh(bunny_data.path);
+    data::BunnyMesh dataset;
+    std::string mesh_path = dataset.GetPath();
+    auto pcd = io::CreatePointCloudFromFile(pcd_path);
 
 
 ArmadilloMesh
 -------------
 
-`ArmadilloMesh` contains the ``ArmadilloMesh.ply`` triangle mesh from Stanford
-University Computer Graphics Laboratory.
+The armadillo mesh from Stanford in PLY format.
 
 .. code-block:: python
 
-    mesh_data = open3d.data.ArmadilloMesh()
-    mesh = open3d.io.read_triangle_mesh(mesh_data.path)
-    o3d.visualization.draw([mesh])
-
+    dataset = o3d.data.ArmadilloMesh()
+    mesh_path = dataset.path
 
 .. code-block:: cpp
 
-    data::ArmadilloMesh armadillo_data();
-    geometry::TriangleMesh mesh;
-    io::ReadTriangleMesh(armadillo_data.path);
-
+    data::ArmadilloMesh dataset;
+    std::string mesh_path = dataset.GetPath();
+    auto pcd = io::CreatePointCloudFromFile(pcd_path);
 
 KnotMesh
 --------
 
-`KnotMesh` contains the ``KnotMesh.ply`` triangle mesh.
-
-.. tabs::
+A 3D Mobius knot mesh in PLY format.
 
 .. code-block:: python
 
-        mesh_data = open3d.data.KnotMesh()
-        mesh = open3d.io.read_triangle_mesh(mesh_data.path)
-        o3d.visualization.draw([mesh])
-
+    dataset = o3d.data.KnotMesh()
+    mesh_path = dataset.path
 
 .. code-block:: cpp
 
-        data::KnotMesh knot_data();
-        geometry::TriangleMesh mesh;
-        io::ReadTriangleMesh(knot_data.path);
+    data::KnotMesh dataset;
+    std::string mesh_path = dataset.GetPath();
+    auto pcd = io::CreatePointCloudFromFile(pcd_path);
 
+TODO: @Rishabh, update the documentation below.
 
 RGB-D Data
 ~~~~~~~~~~
 
-
 SampleRGBDDatasetRedwood
 ------------------------
 
-`SampleRGBDDatasetRedwood` contains a sample set of 5 ``color and depth
-images`` from Redwood RGBD dataset living-room1. Additionally it also contains
-``camera trajectory log``, ``camera odometry log``, ``rgbd match``, and
-``point cloud reconstruction`` obtained using TSDF.
+Data from Redwood RGBD living-room1. It contains 5 color images, 5 depth images,
+a camera trajectory log, a camera odometry log, a rgbd match file, and a
+point cloud reconstruction obtained from TSDF.
+
+
+TODO: Add code to show the path and how to load.
 
 
 SampleFountainRGBDDataset
@@ -266,18 +228,15 @@ SampleRGBDImageNYU
 `SampleRGBDImageNYU` contains a color image ``NYU_color.ppm`` and a depth image
 ``NYU_depth.pgm`` sample from NYU RGBD  dataset.
 
-.. tabs::
-
 .. code-block:: python
 
     rgbd_data = o3d.data.SampleRGBDImageNYU()
     color_raw = o3d.io.read_image(rgbd_data.color_path)
     depth_raw = o3d.io.read_image(rgbd_data.depth_path)
 
-
 .. code-block:: cpp
 
-    data::SampleRGBDImageNYU rgbd_data();
+    data::SampleRGBDImageNYU rgbd_data;
 
     geometry::Image im_color;
     io::ReadImage(rgbd_data.color_path, im_color);
@@ -295,18 +254,15 @@ SampleRGBDImageSUN
 `SampleRGBDImageSUN` contains a color image ``SUN_color.jpg`` and a depth image
 ``SUN_depth.png`` sample from SUN RGBD dataset.
 
-.. tabs::
-
 .. code-block:: python
 
     rgbd_data = o3d.data.SampleRGBDImageSUN()
     color_raw = o3d.io.read_image(rgbd_data.color_path)
     depth_raw = o3d.io.read_image(rgbd_data.depth_path)
 
-
 .. code-block:: cpp
 
-    data::SampleRGBDImageSUN rgbd_data();
+    data::SampleRGBDImageSUN rgbd_data;
 
     geometry::Image im_color;
     io::ReadImage(rgbd_data.color_path, im_color);
@@ -324,17 +280,15 @@ SampleRGBDImageTUM
 `SampleRGBDImageTUM` contains a color image ``TUM_color.png`` and a depth image
 ``TUM_depth.png`` sample from TUM RGBD dataset.
 
-.. tabs::
-
 .. code-block:: python
 
-    rgbd_data = open3d.data.SampleRGBDImageTUM()
-    color_raw = open3d.io.read_image(rgbd_data.color_path)
-    depth_raw = open3d.io.read_image(rgbd_data.depth_path)
+    rgbd_data = o3d.data.SampleRGBDImageTUM()
+    color_raw = o3d.io.read_image(rgbd_data.color_path)
+    depth_raw = o3d.io.read_image(rgbd_data.depth_path)
 
 .. code-block:: cpp
 
-    data::SampleRGBDImageSUN rgbd_data();
+    data::SampleRGBDImageSUN rgbd_data;
 
     geometry::Image im_color;
     io::ReadImage(rgbd_data.color_path, im_color);
@@ -355,8 +309,6 @@ JuneauImage
 
 `JuneauImage` contains the ``JuneauImage.jpg`` file.
 
-.. tabs::
-
 .. code-block:: python
 
     img_data = o3d.data.JuneauImage()
@@ -364,7 +316,7 @@ JuneauImage
 
 .. code-block:: cpp
 
-    data::JuneauImage img_data();
+    data::JuneauImage img_data;
     geometry::Image img;
     io::ReadImage(img_data.path, img);
 

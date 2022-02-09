@@ -23,40 +23,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
-
-#include <cstdio>
+#include <iostream>
 
 #include "open3d/Open3D.h"
 
-int main(int argc, char **argv) {
-    using namespace open3d;
+using namespace open3d;
 
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-
-    utility::LogDebug("This Debug message should be visible, {} {:.2f}",
-                      "format:", 0.42001);
-    utility::LogInfo("This Info message should be visible, {} {:.2f}",
-                     "format:", 0.42001);
-    utility::LogWarning("This Warning message should be visible, {} {:.2f}",
-                        "format:", 0.42001);
-
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
-
-    utility::LogDebug("This Debug message should NOT be visible, {} {:.2f}",
-                      "format:", 0.42001);
-    utility::LogInfo("This Info message should be visible, {} {:.2f}",
-                     "format:", 0.42001);
-    utility::LogWarning("This Warning message should be visible, {} {:.2f}",
-                        "format:", 0.42001);
-
-    try {
-        utility::LogError("This Error exception is catched");
-    } catch (const std::exception &e) {
-        utility::LogInfo("Catched exception msg: {}", e.what());
-    }
-    utility::LogInfo("This Info message shall print in regular color");
-    utility::LogError("This Error message terminates the program");
-    utility::LogError("This Error message should NOT be visible");
-
+int main() {
+    data::EaglePointCloud eagle_data;
+    std::shared_ptr<geometry::PointCloud> eagle_pcd =
+            io::CreatePointCloudFromFile(eagle_data.GetPath());
+    visualization::Draw({eagle_pcd});
     return 0;
 }
