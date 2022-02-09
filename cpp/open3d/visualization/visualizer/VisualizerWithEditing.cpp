@@ -52,6 +52,12 @@ bool VisualizerWithEditing::AddGeometry(
     if (!is_initialized_ || !geometry_ptrs_.empty()) {
         return false;
     }
+    if (!geometry_ptr.get()) {
+        utility::LogWarning(
+                "[AddGeometry] Invalid pointer. Possibly a null pointer or "
+                "None was passed in.");
+        return false;
+    }
     glfwMakeContextCurrent(window_);
     original_geometry_ptr_ = geometry_ptr;
     if (geometry_ptr->GetGeometryType() ==
