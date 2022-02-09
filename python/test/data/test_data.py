@@ -34,20 +34,13 @@ def test_dataset_base():
     default_data_root = Path.home() / "open3d_data"
 
     ds = o3d.data.Dataset("some_prefix")
-    assert ds.data_root == default_data_root
+    assert Path(ds.data_root) == default_data_root
 
     ds_custom = o3d.data.Dataset("some_prefix", "/my/custom/data_root")
     assert Path(ds_custom.data_root) == Path("/my/custom/data_root")
     assert ds_custom.prefix == "some_prefix"
     assert ds_custom.download_dir == "/my/custom/data_root/download/some_prefix"
     assert ds_custom.extract_dir == "/my/custom/data_root/extract/some_prefix"
-
-
-def get_default_gt_dirs(prefix):
-    gt_data_root = os.path.join(Path.home(), "open3d_data")
-    gt_download_dir = gt_data_root + "/download/" + prefix
-    gt_extract_dir = gt_data_root + "/extract/" + prefix
-    return gt_data_root, gt_download_dir, gt_extract_dir
 
 
 def get_test_data_dirs(prefix):
