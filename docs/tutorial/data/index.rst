@@ -33,19 +33,15 @@ internet.
         return 0;
     }
 
-Technical details:
-
 - Dataset will be downloaded can cached automatically. The default data root is
   ``~/open3d_data``. The data will be downloaded to ``~/open3d_data/download``
   and extracted to ``~/open3d_data/extract``.
-- Optionally you can change the default data root, either by setting the
-  environment variable ``OPEN3D_DATA_ROOT`` or by setting the ``data_root``
+- Optionally, you can change the default data root. This can be done by setting
+  the environment variable ``OPEN3D_DATA_ROOT`` or passing the ``data_root``
   argument when constructing a dataset object.
-
 
 Point Cloud
 ~~~~~~~~~~~
-
 
 SamplePointCloudPCD
 -------------------
@@ -64,7 +60,6 @@ Colored point cloud of a living room from the Redwood dataset in PCD format.
     std::string pcd_path = dataset.GetPath();
     auto pcd = io::CreatePointCloudFromFile(pcd_path);
 
-
 SamplePointCloudPLY
 -------------------
 
@@ -81,7 +76,6 @@ Colored point cloud of a living room from the Redwood dataset in PLY format.
     data::SamplePointCloudPLY dataset;
     std::string pcd_path = dataset.GetPath();
     auto pcd = io::CreatePointCloudFromFile(pcd_path);
-
 
 EaglePointCloud
 ---------------
@@ -122,7 +116,6 @@ RedwoodLivingRoomPointClouds
         pcds.push_back(io::CreatePointCloudFromFile(pcd_path));
     }
 
-
 RedwoodOfficePointClouds
 ------------------------
 
@@ -145,7 +138,6 @@ RedwoodOfficePointClouds
         pcds.push_back(io::CreatePointCloudFromFile(pcd_path));
     }
 
-
 Triangle Mesh
 ~~~~~~~~~~~~~
 
@@ -164,7 +156,6 @@ The bunny triangle mesh from Stanford in PLY format.
     data::BunnyMesh dataset;
     std::string mesh_path = dataset.GetPath();
     auto pcd = io::CreatePointCloudFromFile(pcd_path);
-
 
 ArmadilloMesh
 -------------
@@ -210,9 +201,7 @@ Data from Redwood RGBD living-room1. It contains 5 color images, 5 depth images,
 a camera trajectory log, a camera odometry log, a rgbd match file, and a
 point cloud reconstruction obtained from TSDF.
 
-
 TODO: Add code to show the path and how to load.
-
 
 SampleFountainRGBDDataset
 -------------------------
@@ -220,7 +209,6 @@ SampleFountainRGBDDataset
 `SampleFountainRGBDDataset` contains a sample set of 33 color and depth images
 from the ``Fountain RGBD dataset``. It also contains ``camera poses at keyframes
 log`` and ``mesh reconstruction``. It is used in demo of ``Color Map Optimization``.
-
 
 SampleRGBDImageNYU
 ------------------
@@ -247,7 +235,6 @@ SampleRGBDImageNYU
     std::shared_ptr<geometry::RGBDImage> im_rgbd =
             geometry::RGBDImage::CreateFromColorAndDepth(im_color, im_depth);
 
-
 SampleRGBDImageSUN
 ------------------
 
@@ -272,7 +259,6 @@ SampleRGBDImageSUN
 
     std::shared_ptr<geometry::RGBDImage> im_rgbd =
             geometry::RGBDImage::CreateFromColorAndDepth(im_color, im_depth);
-
 
 SampleRGBDImageTUM
 ------------------
@@ -299,10 +285,8 @@ SampleRGBDImageTUM
     std::shared_ptr<geometry::RGBDImage> im_rgbd =
             geometry::RGBDImage::CreateFromColorAndDepth(im_color, im_depth);
 
-
 Image Data
 ~~~~~~~~~~
-
 
 JuneauImage
 -----------
@@ -320,10 +304,8 @@ JuneauImage
     geometry::Image img;
     io::ReadImage(img_data.path, img);
 
-
 Demo Data
 ~~~~~~~~~
-
 
 DemoICPPointClouds
 ------------------
@@ -331,13 +313,11 @@ DemoICPPointClouds
 `DemoICPPointClouds` contains 3 point clouds of binary PCD format. This data is
 used in Open3D for ICP demo.
 
-
 DemoColoredICPPointClouds
 -------------------------
 
 `DemoColoredICPPointClouds` contains 2 point clouds of PLY format. This data is
 used in Open3D for Colored-ICP demo.
-
 
 DemoCropPointCloud
 ------------------
@@ -346,14 +326,12 @@ DemoCropPointCloud
 selected polygon volume file). This data is used in Open3D for point cloud crop
 demo.
 
-
 DemoPointCloudFeatureMatching
 -----------------------------
 
 `DemoPointCloudFeatureMatching` contains 2 point cloud fragments and their
 respective FPFH features and L32D features. This data is used in Open3D for
 point cloud feature matching demo.
-
 
 DemoPoseGraphOptimization
 -------------------------
