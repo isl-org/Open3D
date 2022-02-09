@@ -92,14 +92,12 @@ std::pair<float, float> FloatImageMinMax(const geometry::Image& im) {
 TEST(RGBDImage, CreateFromColorAndDepth) {
     geometry::Image im_color;
     data::SampleRGBDDatasetRedwood redwood_data;
-    EXPECT_TRUE(io::ReadImage(
-            redwood_data.GetColorPaths()[0], im_color));
+    EXPECT_TRUE(io::ReadImage(redwood_data.GetColorPaths()[0], im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
 
     geometry::Image im_depth;
-    EXPECT_TRUE(io::ReadImage(
-            redwood_data.GetDepthPaths()[0], im_depth));
+    EXPECT_TRUE(io::ReadImage(redwood_data.GetDepthPaths()[0], im_depth));
     EXPECT_EQ(im_depth.num_of_channels_, 1);
     EXPECT_EQ(im_depth.bytes_per_channel_, 2);
 
@@ -128,14 +126,12 @@ TEST(RGBDImage, CreateFromColorAndDepth) {
 TEST(RGBDImage, CreateFromRedwoodFormat) {
     geometry::Image im_color;
     data::SampleRGBDDatasetRedwood redwood_data;
-    EXPECT_TRUE(io::ReadImage(
-            redwood_data.GetColorPaths()[0], im_color));
+    EXPECT_TRUE(io::ReadImage(redwood_data.GetColorPaths()[0], im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
 
     geometry::Image im_depth;
-    EXPECT_TRUE(io::ReadImage(
-            redwood_data.GetDepthPaths()[0], im_depth));
+    EXPECT_TRUE(io::ReadImage(redwood_data.GetDepthPaths()[0], im_depth));
     EXPECT_EQ(im_depth.num_of_channels_, 1);
     EXPECT_EQ(im_depth.bytes_per_channel_, 2);
 
@@ -164,14 +160,12 @@ TEST(RGBDImage, CreateFromRedwoodFormat) {
 TEST(RGBDImage, CreateFromTUMFormat) {
     geometry::Image im_color;
     data::SampleRGBDImageTUM tum_data;
-    EXPECT_TRUE(io::ReadImage(
-            tum_data.GetColorPath(), im_color));
+    EXPECT_TRUE(io::ReadImage(tum_data.GetColorPath(), im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
 
     geometry::Image im_depth;
-    EXPECT_TRUE(io::ReadImage(
-            tum_data.GetDepthPath(), im_depth));
+    EXPECT_TRUE(io::ReadImage(tum_data.GetDepthPath(), im_depth));
     EXPECT_EQ(im_depth.num_of_channels_, 1);
     EXPECT_EQ(im_depth.bytes_per_channel_, 2);
 
@@ -200,14 +194,12 @@ TEST(RGBDImage, CreateFromTUMFormat) {
 TEST(RGBDImage, CreateFromSUNFormat) {
     geometry::Image im_color;
     data::SampleRGBDImageSUN sun_data;
-    EXPECT_TRUE(io::ReadImage(
-            sun_data.GetColorPath(), im_color));
+    EXPECT_TRUE(io::ReadImage(sun_data.GetColorPath(), im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
 
     geometry::Image im_depth;
-    EXPECT_TRUE(io::ReadImage(
-            sun_data.GetDepthPath(), im_depth));
+    EXPECT_TRUE(io::ReadImage(sun_data.GetDepthPath(), im_depth));
     EXPECT_EQ(im_depth.num_of_channels_, 1);
     EXPECT_EQ(im_depth.bytes_per_channel_, 2);
 
