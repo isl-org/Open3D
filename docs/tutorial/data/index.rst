@@ -13,21 +13,20 @@ internet.
 
     if __name__ == "__main__":
         dataset = o3d.data.EaglePointCloud()
-        pcd_path = dataset.path
-        pcd = o3d.io.read_point_cloud(pcd_path)
+        pcd = o3d.io.read_point_cloud(dataset.path)
         o3d.visualization.draw(pcd)
 
 .. code-block:: cpp
 
     #include <string>
+    #include <memory>
     #include "open3d/Open3D.h"
 
     int main() {
         using namespace open3d;
 
         data::EaglePointCloud dataset;
-        std::string pcd_path = dataset.GetPath();
-        auto pcd = io::CreatePointCloudFromFile(pcd_path);
+        auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
         visualization::Draw({pcd});
 
         return 0;
@@ -51,14 +50,12 @@ Colored point cloud of a living room from the Redwood dataset in PCD format.
 .. code-block:: python
 
     dataset = o3d.data.SamplePointCloudPCD()
-    pcd_path = dataset.path
-    pcd = o3d.io.read_point_cloud(pcd_path)
+    pcd = o3d.io.read_point_cloud(dataset.path)
 
 .. code-block:: cpp
 
     data::SamplePointCloudPCD dataset;
-    std::string pcd_path = dataset.GetPath();
-    auto pcd = io::CreatePointCloudFromFile(pcd_path);
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
 SamplePointCloudPLY
 -------------------
@@ -68,14 +65,12 @@ Colored point cloud of a living room from the Redwood dataset in PLY format.
 .. code-block:: python
 
     dataset = o3d.data.SamplePointCloudPLY()
-    pcd_path = dataset.path
-    pcd = o3d.io.read_point_cloud(pcd_path)
+    pcd = o3d.io.read_point_cloud(dataset.path)
 
 .. code-block:: cpp
 
     data::SamplePointCloudPLY dataset;
-    std::string pcd_path = dataset.GetPath();
-    auto pcd = io::CreatePointCloudFromFile(pcd_path);
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
 EaglePointCloud
 ---------------
@@ -85,14 +80,12 @@ Eagle colored point cloud.
 .. code-block:: python
 
     dataset = o3d.data.EaglePointCloud()
-    pcd_path = dataset.path
-    pcd = o3d.io.read_point_cloud(pcd_path)
+    pcd = o3d.io.read_point_cloud(dataset.path)
 
 .. code-block:: cpp
 
     data::EaglePointCloud dataset;
-    std::string pcd_path = dataset.GetPath();
-    auto pcd = io::CreatePointCloudFromFile(pcd_path);
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
 RedwoodLivingRoomPointClouds
 ----------------------------
@@ -102,17 +95,15 @@ RedwoodLivingRoomPointClouds
 .. code-block:: python
 
     dataset = o3d.data.RedwoodLivingRoomPointCloud()
-    pcd_paths = dataset.paths
     pcds = []
-    for pcd_path in pcd_paths:
+    for pcd_path in dataset.paths:
         pcds.append(o3d.io.read_point_cloud(pcd_path))
 
 .. code-block:: cpp
 
     data::RedwoodLivingRoomPointCloud dataset;
-    std::vector<std::string> pcd_paths = dataset.GetPaths();
     std::vector<std::shared_ptr<geometry::PointCloud>> pcds;
-    for (const std::string& pcd_path: pcd_paths) {
+    for (const std::string& pcd_path: dataset.GetPaths()) {
         pcds.push_back(io::CreatePointCloudFromFile(pcd_path));
     }
 
@@ -124,17 +115,15 @@ RedwoodOfficePointClouds
 .. code-block:: python
 
     dataset = o3d.data.RedwoodOfficePointCloud()
-    pcd_paths = dataset.paths
     pcds = []
-    for pcd_path in pcd_paths:
+    for pcd_path in dataset.paths:
         pcds.append(o3d.io.read_point_cloud(pcd_path))
 
 .. code-block:: cpp
 
     data::RedwoodOfficePointClouds dataset;
-    std::vector<std::string> pcd_paths = dataset.GetPaths();
     std::vector<std::shared_ptr<geometry::PointCloud>> pcds;
-    for (const std::string& pcd_path: pcd_paths) {
+    for (const std::string& pcd_path: dataset.GetPaths()) {
         pcds.push_back(io::CreatePointCloudFromFile(pcd_path));
     }
 
@@ -149,13 +138,12 @@ The bunny triangle mesh from Stanford in PLY format.
 .. code-block:: python
 
     dataset = o3d.data.BunnyMesh()
-    mesh_path = dataset.path
+    mesh = o3d.io.read_triangle_mesh(dataset.path)
 
 .. code-block:: cpp
 
     data::BunnyMesh dataset;
-    std::string mesh_path = dataset.GetPath();
-    auto pcd = io::CreatePointCloudFromFile(pcd_path);
+    auto mesh = io::CreatePointCloudFromFile(dataset.GetPath());
 
 ArmadilloMesh
 -------------
@@ -165,13 +153,12 @@ The armadillo mesh from Stanford in PLY format.
 .. code-block:: python
 
     dataset = o3d.data.ArmadilloMesh()
-    mesh_path = dataset.path
+    mesh = o3d.io.read_triangle_mesh(dataset.path)
 
 .. code-block:: cpp
 
     data::ArmadilloMesh dataset;
-    std::string mesh_path = dataset.GetPath();
-    auto pcd = io::CreatePointCloudFromFile(pcd_path);
+    auto mesh = io::CreatePointCloudFromFile(dataset.GetPath());
 
 KnotMesh
 --------
@@ -181,17 +168,16 @@ A 3D Mobius knot mesh in PLY format.
 .. code-block:: python
 
     dataset = o3d.data.KnotMesh()
-    mesh_path = dataset.path
+    mesh = o3d.io.read_triangle_mesh(dataset.path)
 
 .. code-block:: cpp
 
     data::KnotMesh dataset;
-    std::string mesh_path = dataset.GetPath();
-    auto pcd = io::CreatePointCloudFromFile(pcd_path);
+    auto mesh = io::CreatePointCloudFromFile(dataset.GetPath());
 
 TODO: @Rishabh, update the documentation below.
 
-RGB-D Data
+RGBD Image
 ~~~~~~~~~~
 
 SampleRGBDDatasetRedwood
@@ -285,8 +271,8 @@ SampleRGBDImageTUM
     std::shared_ptr<geometry::RGBDImage> im_rgbd =
             geometry::RGBDImage::CreateFromColorAndDepth(im_color, im_depth);
 
-Image Data
-~~~~~~~~~~
+Image
+~~~~~
 
 JuneauImage
 -----------
@@ -304,8 +290,8 @@ JuneauImage
     geometry::Image img;
     io::ReadImage(img_data.path, img);
 
-Demo Data
-~~~~~~~~~
+Demo
+~~~~
 
 DemoICPPointClouds
 ------------------
