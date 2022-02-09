@@ -47,7 +47,7 @@ class VideoWindow:
 
     def __init__(self):
         self.rgb_images = []
-        rgbd_data = o3d.data.SampleRGBDDatasetICL()
+        rgbd_data = o3d.data.SampleRGBDDatasetRedwood()
         for path in rgbd_data.color_paths:
             img = o3d.io.read_image(path)
             self.rgb_images.append(img)

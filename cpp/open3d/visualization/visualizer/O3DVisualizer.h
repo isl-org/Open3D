@@ -93,6 +93,7 @@ public:
 
         bool use_ibl = false;
         bool use_sun = true;
+        bool sun_follows_camera = true;
         std::string ibl_path = "";  // "" is default path
         int ibl_intensity = 0;
         int sun_intensity = 100000;

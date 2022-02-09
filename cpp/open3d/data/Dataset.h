@@ -344,13 +344,16 @@ private:
     std::string depth_path_;
 };
 
-/// \class SampleRGBDDatasetICL
+/// \class SampleRGBDDatasetRedwood
 /// \brief Data class for `SampleRGBDDatasetICL` contains a sample set of 5
-/// color and depth images from ICL-NUIM RGBD dataset living-room1.
-class SampleRGBDDatasetICL : public SingleDownloadDataset {
+/// color and depth images from Redwood RGBD dataset living-room1.
+/// Additionally it also contains camera trajectory log, camera odometry log,
+/// RGBD match, and point cloud reconstruction from TSDF.
+class SampleRGBDDatasetRedwood : public SingleDownloadDataset {
 public:
-    SampleRGBDDatasetICL(const std::string& prefix = "SampleRGBDDatasetICL",
-                         const std::string& data_root = "");
+    SampleRGBDDatasetRedwood(
+            const std::string& prefix = "SampleRGBDDatasetRedwood",
+            const std::string& data_root = "");
 
     /// \brief Returns List of paths to color image samples of size 5.
     std::vector<std::string> GetColorPaths() const { return color_paths_; };

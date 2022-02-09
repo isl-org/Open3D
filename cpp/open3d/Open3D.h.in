@@ -103,6 +103,7 @@
 #include "open3d/t/pipelines/slam/Frame.h"
 #include "open3d/t/pipelines/slam/Model.h"
 #include "open3d/utility/CPUInfo.h"
+#include "open3d/utility/CompilerInfo.h"
 #include "open3d/utility/Console.h"
 #include "open3d/utility/DataManager.h"
 #include "open3d/utility/Eigen.h"

@@ -159,7 +159,7 @@ private:
     bool show_skybox_ = false;
     bool show_axes_ = false;
     bool show_ground_ = false;
-    bool sun_follows_cam_ = false;
+    bool sun_follows_cam_ = true;
     LightingProfile lighting_;
     MaterialType current_type_ = LIT;
     Materials current_materials_;

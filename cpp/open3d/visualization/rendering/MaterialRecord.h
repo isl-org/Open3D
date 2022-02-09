@@ -87,7 +87,7 @@ struct MaterialRecord {
     // If tone-mapping is disabled, then colors would be in linear RGB space,
     // in which case this should be set to false. If necessary, colors will be
     // linearized on the CPU.
-    bool sRGB_color = true;
+    bool sRGB_color = false;
 
     // Unlike the material property sRGB_color which is used to indicate that
     // source colors are in sRGB colorspace, sRGB_vertex_color indicates that

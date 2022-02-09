@@ -87,6 +87,7 @@ private:
     std::shared_ptr<gui::Button> generate_normals_;
     std::shared_ptr<gui::Checkbox> basic_mode_;
 
+    bool sun_follows_cam_was_on_ = true;
     void UpdateUIForBasicMode(bool enable);
 };
 
