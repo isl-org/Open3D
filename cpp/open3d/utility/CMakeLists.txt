@@ -1,12 +1,13 @@
 open3d_ispc_add_library(utility OBJECT)
 
 target_sources(utility PRIVATE
+    CompilerInfo.cpp
     Console.cpp
     CPUInfo.cpp
     Download.cpp
+    Eigen.cpp
     Extract.cpp
     ExtractZIP.cpp
-    Eigen.cpp
     FileSystem.cpp
     Helper.cpp
     IJsonConvertible.cpp
@@ -15,7 +16,6 @@ target_sources(utility PRIVATE
     Parallel.cpp
     ProgressBar.cpp
     Timer.cpp
-
 )
 
 if (BUILD_ISPC_MODULE)
