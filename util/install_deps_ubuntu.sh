@@ -7,13 +7,10 @@
 set -ev
 
 SUDO=${SUDO:=sudo} # SUDO=command in docker (running as root, sudo not available)
-if [ -z ${APT_CONFIRM+x} ];
-then
-if [ "$1" == "assume-yes" ]; then
+if [ -z ${APT_CONFIRM+x} ] || [ "$1" == "assume-yes" ]; then
     APT_CONFIRM="--assume-yes"
 else
     APT_CONFIRM=""
-fi
 fi
 
 dependencies=(
