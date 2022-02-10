@@ -38,13 +38,13 @@ class SamplePointsFixture : public benchmark::Fixture {
 public:
     void SetUp(const benchmark::State& state) {
         data::KnotMesh knot_data;
-        trimesh = open3d::io::CreateMeshFromFile(knot_data.GetPath());
+        trimesh = io::CreateMeshFromFile(knot_data.GetPath());
     }
 
     void TearDown(const benchmark::State& state) {
         // empty
     }
-    std::shared_ptr<open3d::geometry::TriangleMesh> trimesh;
+    std::shared_ptr<geometry::TriangleMesh> trimesh;
 };
 
 BENCHMARK_DEFINE_F(SamplePointsFixture, Poisson)(benchmark::State& state) {
