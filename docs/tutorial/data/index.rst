@@ -32,15 +32,15 @@ internet.
         return 0;
     }
 
-- Dataset will be downloaded can cached automatically. The default data root is
-  ``~/open3d_data``. The data will be downloaded to ``~/open3d_data/download``
+- Datasets are downloaded can cached automatically. The default data root is
+  ``~/open3d_data``. Data will be downloaded to ``~/open3d_data/download``
   and extracted to ``~/open3d_data/extract``.
 - Optionally, you can change the default data root. This can be done by setting
   the environment variable ``OPEN3D_DATA_ROOT`` or passing the ``data_root``
   argument when constructing a dataset object.
 
-Point Cloud
-~~~~~~~~~~~
+PointCloud
+~~~~~~~~~~
 
 SamplePointCloudPCD
 -------------------
@@ -127,8 +127,8 @@ RedwoodOfficePointClouds
         pcds.push_back(io::CreatePointCloudFromFile(pcd_path));
     }
 
-Triangle Mesh
-~~~~~~~~~~~~~
+TriangleMesh
+~~~~~~~~~~~~
 
 BunnyMesh
 ---------
@@ -178,15 +178,16 @@ A 3D Mobius knot mesh in PLY format.
     geometry::TriangleMesh mesh;
     ReadTriangleMesh(dataset.GetPath(), mesh);
 
-RGBD Image
-~~~~~~~~~~
+RGBDImage
+~~~~~~~~~
 
 SampleRGBDDatasetRedwood
 ------------------------
 
-Sample set of 5 color images, 5 depth images from the ``Redwood RGBD living-room1`` dataset.
-It also contains a ``camera trajectory log``, ``a camera odometry log``, a ``rgbd match`` file,
-and a ``point cloud reconstruction`` obtained from TSDF.
+Sample set of 5 color images, 5 depth images from the Redwood RGBD
+living-room1 dataset. It also contains a camera trajectory log, a camera
+odometry log, an rgbd match file, and a point cloud reconstruction obtained from
+TSDF.
 
 .. code-block:: python
 
@@ -226,9 +227,8 @@ and a ``point cloud reconstruction`` obtained from TSDF.
 SampleFountainRGBDDataset
 -------------------------
 
-Sample set of 33 color and depth images from the ``Fountain RGBD dataset``.
-It also contains ``camera poses at key frames log`` and ``mesh reconstruction``.
-It is used in demo of ``Color Map Optimization``.
+Sample set of 33 color and depth images from the Fountain RGBD dataset.
+It also contains camera poses at key frames log and mesh reconstruction.
 
 .. code-block:: python
 
@@ -244,8 +244,7 @@ It is used in demo of ``Color Map Optimization``.
 
     camera_trajectory = o3d.io.read_pinhole_camera_trajectory(
                               dataset.keyframe_poses_log_path)
-    mesh = o3d.io.read_triangle_mesh(
-         dataset.reconstruction_path)
+    mesh = o3d.io.read_triangle_mesh(dataset.reconstruction_path)
 
 .. code-block:: cpp
 
@@ -267,23 +266,50 @@ It is used in demo of ``Color Map Optimization``.
     camera::PinholeCameraTrajectory camera_trajectory;
     io::ReadPinholeCameraTrajectory(dataset.GetKeyframePosesLogPath(),
                                     camera_trajectory);
-
     geometry::TriangleMesh mesh;
     io::ReadTriangleMesh(dataset.GetReconstructionPath(), mesh);
 
 SampleRGBDImageNYU
 ------------------
 
-Color image ``NYU_color.ppm`` and depth image ``NYU_depth.pgm`` sample from NYU RGBD dataset.
+Color image ``NYU_color.ppm`` and depth image ``NYU_depth.pgm`` sample from NYU
+RGBD dataset.
 
-Open3D does not support ppm/pgm file yet.
+.. code-block:: python
 
-Refer to ``Geometry/RGBD Images/NYU Dataset Tutorial``.
+    import matplotlib.image as mpimg
+
+    def read_nyu_pgm(filename, byteorder='>'):
+        with open(filename, 'rb') as f:
+            buffer = f.read()
+        try:
+            header, width, height, maxval = re.search(
+                b"(^P5\s(?:\s*#.*[\r\n])*"
+                b"(\d+)\s(?:\s*#.*[\r\n])*"
+                b"(\d+)\s(?:\s*#.*[\r\n])*"
+                b"(\d+)\s(?:\s*#.*[\r\n]\s)*)", buffer).groups()
+        except AttributeError:
+            raise ValueError("Not a raw PGM file: '%s'" % filename)
+        img = np.frombuffer(buffer,
+                            dtype=byteorder + 'u2',
+                            count=int(width) * int(height),
+                            offset=len(header)).reshape((int(height), int(width)))
+        img_out = img.astype('u2')
+        return img_out
+
+    dataset = o3d.data.SampleRGBDImageNYU()
+    color_raw = mpimg.imread(dataset.color_path)
+    depth_raw = read_nyu_pgm(dataset.depth_path)
+    color = o3d.geometry.Image(color_raw)
+    depth = o3d.geometry.Image(depth_raw)
+    rgbd_image = o3d.geometry.RGBDImage.create_from_nyu_format(
+        color, depth, convert_rgb_to_intensity=False)
 
 SampleRGBDImageSUN
 ------------------
 
-Color image ``SUN_color.jpg`` and depth image ``SUN_depth.png`` sample from SUN RGBD dataset.
+Color image ``SUN_color.jpg`` and depth image ``SUN_depth.png`` sample from SUN
+RGBD dataset.
 
 .. code-block:: python
 
@@ -301,13 +327,13 @@ Color image ``SUN_color.jpg`` and depth image ``SUN_depth.png`` sample from SUN 
     io::ReadImage(dataset.GetColorPath, color_raw);
     io::ReadImage(dataset.GetDepthPath, depth_raw);
     auto rgbd_image = geometry::RGBDImage::CreateFromSUNFormat(
-                                color_raw, depth_raw,
-                                /*convert_rgb_to_intensity =*/ False);
+        color_raw, depth_raw, /*convert_rgb_to_intensity =*/ False);
 
 SampleRGBDImageTUM
 ------------------
 
-Color image ``TUM_color.png`` and depth image ``TUM_depth.png`` sample from TUM RGBD dataset.
+Color image ``TUM_color.png`` and depth image ``TUM_depth.png`` sample from TUM
+RGBD dataset.
 
 .. code-block:: python
 
@@ -325,8 +351,7 @@ Color image ``TUM_color.png`` and depth image ``TUM_depth.png`` sample from TUM 
     io::ReadImage(dataset.GetColorPath, color_raw);
     io::ReadImage(dataset.GetDepthPath, depth_raw);
     auto rgbd_image = geometry::RGBDImage::CreateFromTUMFormat(
-                                color_raw, depth_raw,
-                                /*convert_rgb_to_intensity =*/ False);
+        color_raw, depth_raw, /*convert_rgb_to_intensity =*/ False);
 
 Image
 ~~~~~
@@ -334,7 +359,7 @@ Image
 JuneauImage
 -----------
 
-`JuneauImage` contains the ``JuneauImage.jpg`` file.
+The RGB image ``JuneauImage.jpg`` file.
 
 .. code-block:: python
 
@@ -353,8 +378,8 @@ Demo
 DemoICPPointClouds
 ------------------
 
-3 point cloud fragments of binary PCD format, from living-room1 scene of Redwood RGB-D dataset.
-This data is used for ICP demo.
+3 point cloud fragments of binary PCD format, from living-room1 scene of Redwood
+RGB-D dataset. This data is used for ICP demo.
 
 .. code-block:: python
 
@@ -374,8 +399,8 @@ This data is used for ICP demo.
 DemoColoredICPPointClouds
 -------------------------
 
-2 point cloud fragments of binary PCD format, from apartment scene of Redwood RGB-D dataset.
-This data is used for Colored-ICP demo.
+2 point cloud fragments of binary PCD format, from apartment scene of Redwood
+RGB-D dataset. This data is used for Colored-ICP demo.
 
 .. code-block:: python
 
@@ -393,15 +418,14 @@ This data is used for Colored-ICP demo.
 DemoCropPointCloud
 ------------------
 
-Point cloud, and ``cropped.json`` (a saved selected polygon volume file).
+Point cloud and ``cropped.json`` (a saved selected polygon volume file).
 This data is used for point cloud crop demo.
 
 .. code-block:: python
 
     dataset = o3d.data.DemoCropPointCloud()
     pcd = o3d.io.read_point_cloud(dataset.pointcloud_path)
-    vol = o3d.visualization.read_selection_polygon_volume(
-                                dataset.cropped_json_path)
+    vol = o3d.visualization.read_selection_polygon_volume(dataset.cropped_json_path)
     chair = vol.crop_point_cloud(pcd)
 
 .. code-block:: cpp
@@ -416,8 +440,8 @@ This data is used for point cloud crop demo.
 DemoPointCloudFeatureMatching
 -----------------------------
 
-Sample set of 2 point cloud fragments and their respective FPFH features and L32D features.
-This data is used for point cloud feature matching demo.
+Sample set of 2 point cloud fragments and their respective FPFH features and
+L32D features. This data is used for point cloud feature matching demo.
 
 .. code-block:: python
 
@@ -450,15 +474,14 @@ This data is used for point cloud feature matching demo.
 DemoPoseGraphOptimization
 -------------------------
 
-Sample fragment pose graph, and global pose graph. This data is used for pose graph optimization demo.
+Sample fragment pose graph, and global pose graph. This data is used for pose
+graph optimization demo.
 
 .. code-block:: python
 
     dataset = o3d.data.DemoPoseGraphOptimization()
-    pose_graph_fragment = o3d.io.read_pose_graph(
-                dataset.pose_graph_fragment_path)
-    pose_graph_global = o3d.io.read_pose_graph(
-                dataset.pose_graph_global_path)
+    pose_graph_fragment = o3d.io.read_pose_graph(dataset.pose_graph_fragment_path)
+    pose_graph_global = o3d.io.read_pose_graph(dataset.pose_graph_global_path)
 
 .. code-block:: cpp
 
