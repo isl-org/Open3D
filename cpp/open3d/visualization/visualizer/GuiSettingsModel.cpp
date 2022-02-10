@@ -174,15 +174,8 @@ GuiSettingsModel::GetDefaultLightingProfile() {
 
 const GuiSettingsModel::LightingProfile&
 GuiSettingsModel::GetDefaultPointCloudLightingProfile() {
-    for (auto& lp : GuiSettingsModel::lighting_profiles_) {
-        if (lp.name == POINT_CLOUD_PROFILE_NAME) {
-            return lp;
-        }
-    }
-    utility::LogWarning(
-            "Internal Error: could not find default point cloud lighting "
-            "profile");
-    return GuiSettingsModel::GetDefaultLightingProfile();
+    // Lighting profile 0 will always be default even for Point Clouds
+    return GuiSettingsModel::lighting_profiles_[0];
 }
 
 const GuiSettingsModel::LitMaterial& GuiSettingsModel::GetDefaultLitMaterial() {
@@ -231,7 +224,7 @@ void GuiSettingsModel::SetSunFollowsCamera(bool follow) {
 bool GuiSettingsModel::GetBasicMode() const { return basic_mode_enabled_; }
 void GuiSettingsModel::SetBasicMode(bool enable) {
     basic_mode_enabled_ = enable;
-    NotifyChanged();
+    NotifyChanged(true);
 }
 
 const Eigen::Vector3f& GuiSettingsModel::GetBackgroundColor() const {

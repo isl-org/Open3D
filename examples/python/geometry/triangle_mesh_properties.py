@@ -87,8 +87,8 @@ if __name__ == "__main__":
     knot_mesh = o3d.data.KnotMesh()
     mesh = o3d.io.read_triangle_mesh(knot_mesh.path)
     check_properties('KnotMesh', mesh)
-    check_properties('Moebius',
-                     o3d.geometry.TriangleMesh.create_moebius(twists=1))
+    check_properties('Mobius',
+                     o3d.geometry.TriangleMesh.create_mobius(twists=1))
     check_properties("non-manifold edge", o3dex.get_non_manifold_edge_mesh())
     check_properties("non-manifold vertex",
                      o3dex.get_non_manifold_vertex_mesh())

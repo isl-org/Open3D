@@ -79,18 +79,26 @@ if(USE_BLAS)
 else()
     option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        ON )
 endif()
+option(USE_SYSTEM_ASSIMP          "Use system pre-installed assimp"          OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
+option(USE_SYSTEM_FILAMENT        "Use system pre-installed filament"        OFF)
 option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
 option(USE_SYSTEM_GLEW            "Use system pre-installed glew"            OFF)
 option(USE_SYSTEM_GLFW            "Use system pre-installed glfw"            OFF)
+option(USE_SYSTEM_GOOGLETEST      "Use system pre-installed Googletest"      OFF)
 option(USE_SYSTEM_IMGUI           "Use system pre-installed imgui"           OFF)
 option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF)
+option(USE_SYSTEM_JSONCPP         "Use system pre-installed jsoncpp"         OFF)
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
+option(USE_SYSTEM_MSGPACK         "Use system pre-installed msgpack"         OFF)
+option(USE_SYSTEM_NANOFLANN       "Use system pre-installed nanoflann"       OFF)
 option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
 option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
 option(USE_SYSTEM_QHULLCPP        "Use system pre-installed qhullcpp"        OFF)
+option(USE_SYSTEM_TBB             "Use system pre-installed TBB"             OFF)
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
+option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
 else()
@@ -239,13 +247,16 @@ project(Open3D
     LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
+# Global flag to set CXX standard.
+# This does not affect 3rd party libraries.
+set(CMAKE_CXX_STANDARD 14)
+
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
     AND CMAKE_CXX_COMPILER MATCHES "MSVC"
     AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
 )
     # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
-    set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CUDA_STANDARD 17)
     # Suppress warnings for deprecated C++17 functions.
     add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
