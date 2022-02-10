@@ -30,10 +30,7 @@ import subprocess
 
 import numpy as np
 import tabulate
-<<<<<<< HEAD
 import nvidia_smi
-=======
->>>>>>> master
 
 
 def get_processor_name():
