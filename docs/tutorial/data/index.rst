@@ -94,14 +94,14 @@ LivingRoomPointClouds
 
 .. code-block:: python
 
-    dataset = o3d.data.RedwoodLivingRoomPointCloud()
+    dataset = o3d.data.LivingRoomPointClouds()
     pcds = []
     for pcd_path in dataset.paths:
         pcds.append(o3d.io.read_point_cloud(pcd_path))
 
 .. code-block:: cpp
 
-    data::RedwoodLivingRoomPointCloud dataset;
+    data::LivingRoomPointClouds dataset;
     std::vector<std::shared_ptr<geometry::PointCloud>> pcds;
     for (const std::string& pcd_path: dataset.GetPaths()) {
         pcds.push_back(io::CreatePointCloudFromFile(pcd_path));
@@ -114,7 +114,7 @@ OfficePointClouds
 
 .. code-block:: python
 
-    dataset = o3d.data.RedwoodOfficePointCloud()
+    dataset = o3d.data.OfficePointClouds()
     pcds = []
     for pcd_path in dataset.paths:
         pcds.append(o3d.io.read_point_cloud(pcd_path))
@@ -143,8 +143,7 @@ The bunny triangle mesh from Stanford in PLY format.
 .. code-block:: cpp
 
     data::BunnyMesh dataset;
-    geometry::TriangleMesh mesh;
-    ReadTriangleMesh(dataset.GetPath(), mesh);
+    auto mesh = io::CreateMeshFromFile(dataset.GetPath());
 
 ArmadilloMesh
 -------------
@@ -159,8 +158,7 @@ The armadillo mesh from Stanford in PLY format.
 .. code-block:: cpp
 
     data::ArmadilloMesh dataset;
-    geometry::TriangleMesh mesh;
-    ReadTriangleMesh(dataset.GetPath(), mesh);
+    auto mesh = io::CreateMeshFromFile(dataset.GetPath());
 
 KnotMesh
 --------
@@ -175,8 +173,7 @@ A 3D Mobius knot mesh in PLY format.
 .. code-block:: cpp
 
     data::KnotMesh dataset;
-    geometry::TriangleMesh mesh;
-    ReadTriangleMesh(dataset.GetPath(), mesh);
+    auto mesh = io::CreateMeshFromFile(dataset.GetPath());
 
 Image
 ~~~~~
@@ -227,15 +224,14 @@ TSDF.
 
     std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
     for(size_t i = 0; i < dataset.GetDepthPaths().size(); ++i) {
-        geometry::Image color_raw, depth_raw;
         auto color_raw = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
         auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
 
         auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
-                                    *color_raw, *depth_raw,
-                                    /*depth_scale =*/ 1000.0,
-                                    /*depth_trunc =*/ 3.0,
-                                    /*convert_rgb_to_intensity =*/ False);
+                *color_raw, *depth_raw,
+                /*depth_scale =*/1000.0,
+                /*depth_trunc =*/3.0,
+                /*convert_rgb_to_intensity =*/false);
         rgbd_images.push_back(rgbd_image);
     }
 
@@ -273,10 +269,11 @@ It also contains camera poses at key frames log and mesh reconstruction.
         auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
 
         auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
-                                    *color_raw, *depth_raw,
-                                    /*depth_scale =*/ 1000.0,
-                                    /*depth_trunc =*/ 3.0,
-                                    /*convert_rgb_to_intensity =*/ False);
+                *color_raw, *depth_raw,
+                /*depth_scale =*/1000.0,
+                /*depth_trunc =*/3.0,
+                /*convert_rgb_to_intensity =*/false);
+        rgbd_images.push_back(rgbd_image);
     }
 
     camera::PinholeCameraTrajectory camera_trajectory;
@@ -342,7 +339,7 @@ RGBD dataset.
     auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPath());
     
     auto rgbd_image = geometry::RGBDImage::CreateFromSUNFormat(
-        *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ False);
+        *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ false);
 
 SampleTUMRGBDImage
 ------------------
@@ -365,7 +362,7 @@ RGBD dataset.
     auto color_raw = io::CreateImageFromFile(dataset.GetColorPath());
     auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPath());
     auto rgbd_image = geometry::RGBDImage::CreateFromTUMFormat(
-        *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ False);
+        *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ false);
 
 Demo
 ~~~~
@@ -425,7 +422,7 @@ This data is used for point cloud crop demo.
 
     data::DemoCropPointCloud dataset;
     auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
-    SelectionPolygonVolume vol;
+    visualization::SelectionPolygonVolume vol;
     io::ReadIJsonConvertible(dataset.GetCroppedJSONPath(), vol);
     auto chair = vol.CropPointCloud(*pcd);
 
