@@ -240,14 +240,6 @@ void KnnSearchCUDA(const Tensor& points,
                    Tensor& neighbors_index,
                    Tensor& neighbors_row_splits,
                    Tensor& neighbors_distance) {
-<<<<<<< HEAD
-    const cudaStream_t stream = cuda::GetStream();
-
-    Device device = points.GetDevice();
-    NeighborSearchAllocator<T, TIndex> output_allocator(device);
-
-=======
->>>>>>> master
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     Device device = points.GetDevice();
@@ -273,20 +265,6 @@ void KnnSearchCUDA(const Tensor& points,
         int64_t* neighbors_row_splits_i_ptr =
                 neighbors_row_splits_i.GetDataPtr<int64_t>();
 
-<<<<<<< HEAD
-    impl::KnnSearchCUDA<T, TIndex, NeighborSearchAllocator<T, TIndex>>(
-            stream, points.GetShape(0), points.GetDataPtr<T>(),
-            queries.GetShape(0), queries.GetDataPtr<T>(),
-            points_row_splits.GetShape(0),
-            points_row_splits.GetDataPtr<int64_t>(),
-            queries_row_splits.GetShape(0),
-            queries_row_splits.GetDataPtr<int64_t>(), knn, output_allocator);
-
-    neighbors_index =
-            output_allocator.NeighborsIndex().View({num_queries, knn});
-    neighbors_distance =
-            output_allocator.NeighborsDistance().View({num_queries, knn});
-=======
         if (brute_force) {
             KnnSearchCUDABruteForce<T, TIndex>(points_i, queries_i, knn,
                                                batch_output_allocators[i],
@@ -343,7 +321,6 @@ void KnnSearchCUDA(const Tensor& points,
     }
     neighbors_index = output_allocator.NeighborsIndex();
     neighbors_distance = output_allocator.NeighborsDistance();
->>>>>>> master
 }
 
 #define INSTANTIATE(T, TIndex)                                                \
@@ -358,13 +335,6 @@ INSTANTIATE(float, int64_t)
 INSTANTIATE(double, int32_t)
 INSTANTIATE(double, int64_t)
 
-<<<<<<< HEAD
-INSTANTIATE(float, int32_t)
-INSTANTIATE(double, int32_t)
-INSTANTIATE(float, int64_t)
-INSTANTIATE(double, int64_t)
-=======
->>>>>>> master
 }  // namespace nns
 }  // namespace core
 }  // namespace open3d
