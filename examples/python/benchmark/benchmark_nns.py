@@ -55,7 +55,8 @@ class NNS:
     def setup(self, points, queries, radius):
         points_dev = points.to(self.device)
         queries_dev = queries.to(self.device)
-        index = o3d.core.nns.NearestNeighborSearch(points_dev)
+        index = o3d.core.nns.NearestNeighborSearch(points_dev,
+                                                   o3d.core.Dtype.Int32)
         if self.search_type == "knn":
             index.knn_index()
         elif self.search_type == "radius":
@@ -165,7 +166,7 @@ if __name__ == "__main__":
     # prepare methods
     methods = [
         NNS(o3d_cuda_dev, args.search_type),
-        NNS(o3d_cpu_dev, args.search_type),
+        # NNS(o3d_cpu_dev, args.search_type),
     ]
     neighbors = (1, 37, 64)
 

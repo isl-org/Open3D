@@ -119,8 +119,7 @@ def print_table(methods, results):
     for x in results[0]:
         r = [x] + list(
             map(np.median, [r[x]['setup'] for r in results] +
-                [r[x]['search']
-                 for r in results] + [r[x]['memory'] for r in results]))
+                [r[x]['search'] for r in results]))
         rows.append(r)
 
     print(tabulate.tabulate(rows, headers=headers))
