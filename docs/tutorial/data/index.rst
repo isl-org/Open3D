@@ -178,6 +178,24 @@ A 3D Mobius knot mesh in PLY format.
     geometry::TriangleMesh mesh;
     ReadTriangleMesh(dataset.GetPath(), mesh);
 
+Image
+~~~~~
+
+JuneauImage
+-----------
+
+The RGB image ``JuneauImage.jpg`` file.
+
+.. code-block:: python
+
+    img_data = o3d.data.JuneauImage()
+    img = o3d.io.read_image(img_data.path)
+
+.. code-block:: cpp
+
+    data::JuneauImage img_data;
+    auto img = io::CreateImageFromFile(img_data.path);
+
 RGBDImage
 ~~~~~~~~~
 
@@ -210,19 +228,18 @@ TSDF.
     std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
     for(size_t i = 0; i < dataset.GetDepthPaths().size(); ++i) {
         geometry::Image color_raw, depth_raw;
-        io::ReadImage(dataset.GetColorPaths[i], color_raw);
-        io::ReadImage(dataset.GetDepthPaths[i], depth_raw);
+        auto color_raw = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
 
         auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
-                                    color_raw, depth_raw,
+                                    *color_raw, *depth_raw,
                                     /*depth_scale =*/ 1000.0,
                                     /*depth_trunc =*/ 3.0,
                                     /*convert_rgb_to_intensity =*/ False);
         rgbd_images.push_back(rgbd_image);
     }
 
-    geometry::PointCloud pcd;
-    io::ReadPointCloud(dataset.GetReconstructionPath(), pcd);
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetReconstructionPath());
 
 SampleFountainRGBDImages
 -------------------------
@@ -252,12 +269,11 @@ It also contains camera poses at key frames log and mesh reconstruction.
 
     std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
     for(size_t i = 0; i < dataset.GetDepthPaths().size(); ++i) {
-        geometry::Image color_raw, depth_raw;
-        io::ReadImage(dataset.GetColorPaths[i], color_raw);
-        io::ReadImage(dataset.GetDepthPaths[i], depth_raw);
+        auto color_raw = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
 
         auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
-                                    color_raw, depth_raw,
+                                    *color_raw, *depth_raw,
                                     /*depth_scale =*/ 1000.0,
                                     /*depth_trunc =*/ 3.0,
                                     /*convert_rgb_to_intensity =*/ False);
@@ -266,8 +282,7 @@ It also contains camera poses at key frames log and mesh reconstruction.
     camera::PinholeCameraTrajectory camera_trajectory;
     io::ReadPinholeCameraTrajectory(dataset.GetKeyframePosesLogPath(),
                                     camera_trajectory);
-    geometry::TriangleMesh mesh;
-    io::ReadTriangleMesh(dataset.GetReconstructionPath(), mesh);
+    auto mesh = io::CreateMeshFromFile(dataset.GetReconstructionPath());
 
 SampleNYURGBDImage
 ------------------
@@ -323,11 +338,11 @@ RGBD dataset.
 
     data::SampleSUNRGBDImage dataset;
 
-    geometry::Image color_raw, depth_raw;
-    io::ReadImage(dataset.GetColorPath, color_raw);
-    io::ReadImage(dataset.GetDepthPath, depth_raw);
+    auto color_raw = io::CreateImageFromFile(dataset.GetColorPath());
+    auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPath());
+    
     auto rgbd_image = geometry::RGBDImage::CreateFromSUNFormat(
-        color_raw, depth_raw, /*convert_rgb_to_intensity =*/ False);
+        *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ False);
 
 SampleTUMRGBDImage
 ------------------
@@ -347,30 +362,10 @@ RGBD dataset.
 
     data::SampleTUMRGBDImage dataset;
 
-    geometry::Image color_raw, depth_raw;
-    io::ReadImage(dataset.GetColorPath, color_raw);
-    io::ReadImage(dataset.GetDepthPath, depth_raw);
+    auto color_raw = io::CreateImageFromFile(dataset.GetColorPath());
+    auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPath());
     auto rgbd_image = geometry::RGBDImage::CreateFromTUMFormat(
-        color_raw, depth_raw, /*convert_rgb_to_intensity =*/ False);
-
-Image
-~~~~~
-
-JuneauImage
------------
-
-The RGB image ``JuneauImage.jpg`` file.
-
-.. code-block:: python
-
-    img_data = o3d.data.JuneauImage()
-    img = o3d.io.read_image(img_data.path)
-
-.. code-block:: cpp
-
-    data::JuneauImage img_data;
-    geometry::Image img;
-    io::ReadImage(img_data.path, img);
+        *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ False);
 
 Demo
 ~~~~
@@ -391,10 +386,9 @@ RGB-D dataset. This data is used for ICP demo.
 .. code-block:: cpp
 
     data::DemoICPPointClouds dataset;
-    geometry::PointCloud pcd0, pcd1, pcd2;
-    io::ReadPointCloud(dataset.GetPaths()[0], pcd0);
-    io::ReadPointCloud(dataset.GetPaths()[1], pcd1);
-    io::ReadPointCloud(dataset.GetPaths()[2], pcd2);
+    auto pcd0 = io::CreatePointCloudFromFile(dataset.GetPaths()[0]);
+    auto pcd1 = io::CreatePointCloudFromFile(dataset.GetPaths()[1]);
+    auto pcd2 = io::CreatePointCloudFromFile(dataset.GetPaths()[2]);
 
 DemoColoredICPPointClouds
 -------------------------
@@ -411,9 +405,8 @@ RGB-D dataset. This data is used for Colored-ICP demo.
 .. code-block:: cpp
 
     data::DemoColoredICPPointClouds dataset;
-    geometry::PointCloud pcd0, pcd1;
-    io::ReadPointCloud(dataset.GetPaths()[0], pcd0);
-    io::ReadPointCloud(dataset.GetPaths()[1], pcd1);
+    auto pcd0 = io::CreatePointCloudFromFile(dataset.GetPaths()[0]);
+    auto pcd1 = io::CreatePointCloudFromFile(dataset.GetPaths()[1]);
 
 DemoCropPointCloud
 ------------------
@@ -431,11 +424,10 @@ This data is used for point cloud crop demo.
 .. code-block:: cpp
 
     data::DemoCropPointCloud dataset;
-    geometry::PointCloud pcd;
-    io::ReadPointCloud(dataset.GetPointCloudPath(), pcd);
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
     SelectionPolygonVolume vol;
     io::ReadIJsonConvertible(dataset.GetCroppedJSONPath(), vol);
-    auto chair = vol.CropPointCloud(pcd);
+    auto chair = vol.CropPointCloud(*pcd);
 
 DemoFeatureMatchingPointClouds
 -----------------------------
@@ -486,10 +478,7 @@ graph optimization demo.
 .. code-block:: cpp
 
     data::DemoPoseGraphOptimization dataset;
-    pipelines::registration::PoseGraph pose_graph_fragment;
-    io::ReadPoseGraph(dataset.GetPoseGraphFragmentPath(),
-                      pose_graph_fragment);
-
-    pipelines::registration::PoseGraph pose_graph_global;
-    io::ReadPoseGraph(dataset.GetPoseGraphGlobalPath(),
-                      pose_graph_global);
+    auto pose_graph_fragment = io::CreatePoseGraphFromFile(
+                        dataset.GetPoseGraphFragmentPath());
+    auto pose_graph_global = io::CreatePoseGraphFromFile(
+                        dataset.GetPoseGraphGlobalPath());
