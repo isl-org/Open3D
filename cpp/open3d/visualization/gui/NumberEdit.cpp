@@ -87,7 +87,7 @@ void NumberEdit::SetLimits(double min_value, double max_value) {
         impl_->max_value_ = std::round(max_value);
     } else {
         impl_->min_value_ = min_value;
-        impl_->max_value_ = min_value;
+        impl_->max_value_ = max_value;
     }
     impl_->value_ = std::min(max_value, std::max(min_value, impl_->value_));
 }

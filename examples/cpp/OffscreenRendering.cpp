@@ -54,7 +54,7 @@ int main(int argc, const char *argv[]) {
                                  EngineInstance::GetResourceManager());
     auto *scene = new Open3DScene(*renderer);
 
-    Material mat;
+    MaterialRecord mat;
     mat.shader = "defaultLit";
     auto torus = open3d::geometry::TriangleMesh::CreateTorus();
     torus->ComputeVertexNormals();

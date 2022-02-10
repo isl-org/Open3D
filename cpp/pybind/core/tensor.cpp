@@ -435,7 +435,7 @@ void pybind_core_tensor(py::module& m) {
             },
             R"(Appends the `values` tensor, along the given axis and returns
 a copy of the original tensor. Both the tensors must have same data-type 
-device, and number of dimentions. All dimensions must be the same, except the
+device, and number of dimensions. All dimensions must be the same, except the
 dimension along the axis the tensors are to be appended. 
 
 This is the similar to NumPy's semantics:
@@ -481,7 +481,7 @@ Example:
     tensor.def("numpy", &core::TensorToPyArray);
 
     tensor.def_static("from_numpy", [](py::array np_array) {
-        return core::PyArrayToTensor(np_array, true);
+        return core::PyArrayToTensor(np_array, /*inplace=*/true);
     });
 
     tensor.def("to_dlpack", [](const Tensor& tensor) {
@@ -686,6 +686,31 @@ Ref:
                "underlying memory will be used.");
     tensor.def("is_contiguous", &Tensor::IsContiguous,
                "Returns True if the underlying memory buffer is contiguous.");
+    tensor.def(
+            "flatten", &Tensor::Flatten,
+            R"(Flattens input by reshaping it into a one-dimensional tensor. If
+start_dim or end_dim are passed, only dimensions starting with start_dim
+and ending with end_dim are flattened. The order of elements in input is
+unchanged.
+
+Unlike NumPy’s flatten, which always copies input’s data, this function
+may return the original object, a view, or copy. If no dimensions are
+flattened, then the original object input is returned. Otherwise, if
+input can be viewed as the flattened shape, then that view is returned.
+Finally, only if the input cannot be viewed as the flattened shape is
+input’s data copied.
+
+Ref:
+- https://pytorch.org/docs/stable/tensors.html
+- aten/src/ATen/native/TensorShape.cpp
+- aten/src/ATen/TensorUtils.cpp)",
+            "start_dim"_a = 0, "end_dim"_a = -1);
+    docstring::ClassMethodDocInject(
+            m, "Tensor", "flatten",
+            {{"start_dim", "The first dimension to flatten (inclusive)."},
+             {"end_dim",
+              "The last dimension to flatten, starting from start_dim "
+              "(inclusive)."}});
 
     // See "emulating numeric types" section for Python built-in numeric ops.
     // https://docs.python.org/3/reference/datamodel.html#emulating-numeric-types

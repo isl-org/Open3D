@@ -30,6 +30,7 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
@@ -237,7 +238,8 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPoint) {
                 initial_transform_t,
                 t_reg::TransformationEstimationPointToPoint(),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                              max_iterations));
+                                              max_iterations),
+                -1.0);
 
         // PointToPoint - Legacy.
         l_reg::RegistrationResult reg_p2p_l = l_reg::RegistrationICP(
@@ -291,7 +293,8 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPlane) {
                                             /*scale parameter =*/1.0,
                                             /*shape parameter =*/1.0)),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                              max_iterations));
+                                              max_iterations),
+                -1.0);
 
         // PointToPlane - Legacy.
         l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationICP(
@@ -312,12 +315,9 @@ TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
     core::Device device = GetParam();
 
     t::geometry::PointCloud source_tpcd, target_tpcd;
-    t::io::ReadPointCloud(
-            std::string(TEST_DATA_DIR) + "/ColoredICP/frag_115.ply",
-            source_tpcd);
-    t::io::ReadPointCloud(
-            std::string(TEST_DATA_DIR) + "/ColoredICP/frag_116.ply",
-            target_tpcd);
+    data::DemoColoredICPPointClouds colored_frag;
+    t::io::ReadPointCloud(colored_frag.GetPaths()[0], source_tpcd);
+    t::io::ReadPointCloud(colored_frag.GetPaths()[1], target_tpcd);
     source_tpcd = source_tpcd.To(device);
     target_tpcd = target_tpcd.To(device);
 
@@ -355,15 +355,16 @@ TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
         double relative_rmse = 1e-6;
         int max_iterations = 2;
 
-        // PointToPlane - Tensor.
+        // ColoredICP - Tensor.
         t_reg::RegistrationResult reg_p2plane_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
                 initial_transform_t,
                 t_reg::TransformationEstimationForColoredICP(),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
-                                              max_iterations));
+                                              max_iterations),
+                -1.0);
 
-        // PointToPlane - Legacy.
+        // ColoredICP - Legacy.
         l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationColoredICP(
                 source_lpcd, target_lpcd, max_correspondence_dist,
                 initial_transform_l,

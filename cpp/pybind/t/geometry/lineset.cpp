@@ -37,7 +37,8 @@ namespace t {
 namespace geometry {
 
 void pybind_lineset(py::module& m) {
-    py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>, Geometry>
+    py::class_<LineSet, PyGeometry<LineSet>, std::shared_ptr<LineSet>, Geometry,
+               DrawableGeometry>
             line_set(m, "LineSet", R"(
 A LineSet contains points and lines joining them and optionally attributes on
 the points and lines.  The ``LineSet`` class stores the attribute data in
@@ -76,7 +77,7 @@ The attributes of the line set have different levels::
     # "color", some internal operations that expects "colors" will not work.
     # "colors" must have shape (N, 3) and must be on the same device as the
     # line set.
-    lineset.line["colors"] = o3c.core.Tensor([[0.0, 0.0, 0.0],
+    lineset.line["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                               [0.1, 0.1, 0.1],
                                               [0.2, 0.2, 0.2],
                                               [0.3, 0.3, 0.3]], dtype_f, device)
@@ -85,8 +86,8 @@ The attributes of the line set have different levels::
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the line set. The are no restrictions on the shape or
     # dtype, e.g.,
-    pcd.point["labels"] = o3c.core.Tensor(...)
-    pcd.line["features"] = o3c.core.Tensor(...)
+    pcd.point["labels"] = o3d.core.Tensor(...)
+    pcd.line["features"] = o3d.core.Tensor(...)
 )");
 
     // Constructors.

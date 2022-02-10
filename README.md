@@ -15,7 +15,7 @@
     <a href="https://github.com/isl-org/Open3D/releases">Viewer</a> |
     <a href="http://www.open3d.org/docs/release/contribute/contribute.html">Contribute</a> |
     <a href="https://www.youtube.com/channel/UCRJBlASPfPBtPXJSPffJV-w">Demo</a> |
-    <a href="https://forum.open3d.org">Forum</a>
+    <a href="https://github.com/isl-org/Open3D/discussions">Forum</a>
 </h4>
 
 Open3D is an open-source library that supports rapid development of software
@@ -44,7 +44,7 @@ For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 
 ## Python quick start
 
-Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.14+ and
+Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.15+ and
 Windows 10 (64-bit) with Python 3.6-3.9.
 
 ```bash
@@ -65,6 +65,7 @@ To compile Open3D from source, refer to
 
 Checkout the following links to get started with Open3D C++ API
 
+* Download Open3D binary package: [Release](https://github.com/isl-org/Open3D/releases) or [latest development version](http://www.open3d.org/docs/latest/getting_started.html#c)
 * [Compiling Open3D from source](http://www.open3d.org/docs/release/compilation.html)
 * [Open3D C++ API](http://www.open3d.org/docs/release/cpp_api.html)
 
@@ -94,7 +95,7 @@ top of the Open3D core library and extends it with machine learning tools for
 
 * [GitHub Issue](https://github.com/isl-org/Open3D/issues): bug reports,
   feature requests, etc.
-* [Forum](https://forum.open3d.org): discussion on the usage of Open3D.
+* [Forum](https://github.com/isl-org/Open3D/discussions): discussion on the usage of Open3D.
 * [Discord Chat](https://discord.gg/D35BGvn): online chats, discussions,
   and collaboration with other users and developers.
 

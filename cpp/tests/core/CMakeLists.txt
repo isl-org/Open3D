@@ -34,9 +34,3 @@ if (BUILD_ISPC_MODULE)
         ParallelFor.ispc
     )
 endif()
-
-if (WITH_FAISS)
-    target_sources(tests PRIVATE
-        FaissIndex.cpp
-    )
-endif()

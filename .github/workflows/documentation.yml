@@ -1,4 +1,4 @@
-name: Documentation build
+name: Documentation
 
 on:
   workflow_dispatch:
@@ -7,12 +7,15 @@ on:
         description: 'Set to OFF for Release documentation'
         required: false
         default: 'ON'
-
   push:
     branches:
       - master
   pull_request:
     types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
@@ -25,15 +28,8 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
-
       - name: Checkout Open3D source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Maximize build space
         run: |
@@ -64,7 +60,7 @@ jobs:
         with:
           python-version: 3.6
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.2.1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}

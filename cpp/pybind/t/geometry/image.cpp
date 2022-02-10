@@ -103,10 +103,20 @@ void pybind_image(py::module &m) {
                                     map_shared_argument_docstrings);
     // Buffer protocol.
     image.def_buffer([](Image &I) -> py::buffer_info {
-        return py::buffer_info(I.GetDataPtr(), I.GetDtype().ByteSize(),
+        if (I.GetDevice().GetType() != core::Device::DeviceType::CPU) {
+            utility::LogError(
+                    "Cannot convert image buffer since it's not on CPU. "
+                    "Convert to CPU image by calling .cpu() first.");
+        }
+        core::SizeVector strides_in_bytes = I.AsTensor().GetStrides();
+        const int64_t element_byte_size = I.GetDtype().ByteSize();
+        for (size_t i = 0; i < strides_in_bytes.size(); i++) {
+            strides_in_bytes[i] *= element_byte_size;
+        }
+        return py::buffer_info(I.GetDataPtr(), element_byte_size,
                                pybind_utils::DtypeToArrayFormat(I.GetDtype()),
                                I.AsTensor().NumDims(), I.AsTensor().GetShape(),
-                               I.AsTensor().GetStrides());
+                               strides_in_bytes);
     });
     // Info.
     image.def_property_readonly("dtype", &Image::GetDtype,

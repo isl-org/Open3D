@@ -224,6 +224,14 @@ Layout1D::~Layout1D() {}
 int Layout1D::GetSpacing() const { return impl_->spacing_; }
 const Margins& Layout1D::GetMargins() const { return impl_->margins_; }
 Margins& Layout1D::GetMutableMargins() { return impl_->margins_; }
+std::vector<std::shared_ptr<Widget>> Layout1D::GetVisibleChildren() const {
+    std::vector<std::shared_ptr<Widget>> visChildren;
+    auto& children = GetChildren();
+    std::copy_if(
+            children.cbegin(), children.cend(), std::back_inserter(visChildren),
+            [](const std::shared_ptr<Widget>& w) { return w->IsVisible(); });
+    return visChildren;
+}
 
 void Layout1D::SetSpacing(int spacing) { impl_->spacing_ = spacing; }
 void Layout1D::SetMargins(const Margins& margins) { impl_->margins_ = margins; }
@@ -245,8 +253,8 @@ void Layout1D::AddStretch() { AddChild(std::make_shared<Stretch>()); }
 Size Layout1D::CalcPreferredSize(const LayoutContext& context,
                                  const Constraints& constraints) const {
     int minor;
-    std::vector<int> major =
-            CalcMajor(context, constraints, impl_->dir_, GetChildren(), &minor);
+    std::vector<int> major = CalcMajor(context, constraints, impl_->dir_,
+                                       GetVisibleChildren(), &minor);
     if (impl_->minor_axis_size_ < Widget::DIM_GROW) {
         minor = impl_->minor_axis_size_;
     }
@@ -276,7 +284,7 @@ void Layout1D::Layout(const LayoutContext& context) {
         constraints.height =
                 frame.height - impl_->margins_.top - impl_->margins_.bottom;
     }
-    auto& children = GetChildren();
+    auto children = GetVisibleChildren();
     std::vector<int> major =
             CalcMajor(context, constraints, impl_->dir_, children, nullptr);
     int total = 0, num_stretch = 0, num_grow = 0;
@@ -312,7 +320,7 @@ void Layout1D::Layout(const LayoutContext& context) {
     } else if (frame_size < total) {
         int n_shrinkable = num_grow;
         if (impl_->dir_ == VERT) {
-            for (auto child : GetChildren()) {
+            for (auto& child : children) {
                 if (std::dynamic_pointer_cast<ScrollableVert>(child)) {
                     n_shrinkable++;
                 }
@@ -325,8 +333,8 @@ void Layout1D::Layout(const LayoutContext& context) {
             for (size_t i = 0; i < major.size(); ++i) {
                 if (major[i] >= Widget::DIM_GROW ||
                     (impl_->dir_ == VERT &&
-                     std::dynamic_pointer_cast<ScrollableVert>(
-                             GetChildren()[i]) != nullptr)) {
+                     std::dynamic_pointer_cast<ScrollableVert>(children[i]) !=
+                             nullptr)) {
                     major[i] -= excess;
                     if (leftover > 0) {
                         major[i] -= 1;

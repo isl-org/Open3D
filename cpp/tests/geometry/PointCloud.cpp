@@ -29,6 +29,7 @@
 #include <algorithm>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/RGBDImage.h"
@@ -160,16 +161,19 @@ TEST(PointCloud, GetOrientedBoundingBox) {
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
     pcd = geometry::PointCloud({{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}});
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
+    EXPECT_NO_THROW(pcd.GetOrientedBoundingBox(true));
 
     // Line
     pcd = geometry::PointCloud({{0, 0, 0}, {1, 1, 1}});
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
     pcd = geometry::PointCloud({{0, 0, 0}, {1, 1, 1}, {2, 2, 2}, {3, 3, 3}});
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
+    EXPECT_NO_THROW(pcd.GetOrientedBoundingBox(true));
 
     // Plane
     pcd = geometry::PointCloud({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 1}});
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
+    EXPECT_NO_THROW(pcd.GetOrientedBoundingBox(true));
 
     // Valid 4 points
     pcd = geometry::PointCloud({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 1, 1}});
@@ -198,6 +202,12 @@ TEST(PointCloud, GetOrientedBoundingBox) {
                                                 {3, 0, 1},
                                                 {3, 2, 0},
                                                 {3, 2, 1}})));
+
+    // Check for a bug where the OBB rotation contained a reflection for this
+    // example.
+    pcd = geometry::PointCloud({{0, 2, 4}, {7, 9, 1}, {5, 2, 0}, {3, 8, 7}});
+    obb = pcd.GetOrientedBoundingBox();
+    EXPECT_GT(obb.R_.determinant(), 0.999);
 }
 
 TEST(PointCloud, Transform) {
@@ -1144,6 +1154,12 @@ TEST(PointCloud, ComputeConvexHull) {
     pcd.points_ = {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}};
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
 
+    // Degenerate input
+    pcd.points_ = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    // Allow adding random noise to fix the degenerate input
+    EXPECT_NO_THROW(pcd.ComputeConvexHull(true));
+
     // Hard-coded test
     pcd.points_ = {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}};
     std::tie(mesh, pt_map) = pcd.ComputeConvexHull();
@@ -1156,23 +1172,24 @@ TEST(PointCloud, ComputeConvexHull) {
     std::tie(mesh, pt_map) = pcd.ComputeConvexHull();
     EXPECT_EQ(pt_map, std::vector<size_t>({7, 3, 1, 5, 6, 2, 8, 4}));
     ExpectEQ(mesh->vertices_, ApplyIndices(pcd.points_, pt_map));
-    ExpectEQ(mesh->triangles_, std::vector<Eigen::Vector3i>({{0, 1, 2},
+    ExpectEQ(mesh->triangles_, std::vector<Eigen::Vector3i>({{1, 0, 2},
                                                              {0, 3, 2},
-                                                             {4, 3, 2},
+                                                             {3, 4, 2},
                                                              {4, 5, 2},
-                                                             {4, 0, 3},
+                                                             {0, 4, 3},
                                                              {4, 0, 6},
                                                              {7, 1, 2},
-                                                             {7, 5, 2},
+                                                             {5, 7, 2},
                                                              {7, 0, 1},
-                                                             {7, 0, 6},
-                                                             {7, 4, 5},
+                                                             {0, 7, 6},
+                                                             {4, 7, 5},
                                                              {7, 4, 6}}));
 }
 
 TEST(PointCloud, HiddenPointRemoval) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     EXPECT_EQ(pcd.points_.size(), 196133);
     ExpectEQ(pcd.GetMaxBound(), Eigen::Vector3d(3.96609, 2.427476, 2.55859));
     ExpectEQ(pcd.GetMinBound(), Eigen::Vector3d(0.558594, 0.832031, 0.566637));
@@ -1188,7 +1205,8 @@ TEST(PointCloud, HiddenPointRemoval) {
 
 TEST(PointCloud, ClusterDBSCAN) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     EXPECT_EQ(pcd.points_.size(), 196133);
 
     // Hard-coded test
@@ -1202,7 +1220,8 @@ TEST(PointCloud, ClusterDBSCAN) {
 
 TEST(PointCloud, SegmentPlane) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(utility::GetDataPathCommon("fragment.pcd"), pcd);
+    data::PCDPointCloud pointcloud_pcd;
+    io::ReadPointCloud(pointcloud_pcd.GetPath(), pcd);
     EXPECT_EQ(pcd.points_.size(), 113662);
 
     // Hard-coded test
@@ -1211,6 +1230,9 @@ TEST(PointCloud, SegmentPlane) {
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 1000);
 
     // TODO: seed the ransac
+    ExpectEQ(plane_model, Eigen::Vector4d(-0.06, -0.10, 0.99, -1.06), 0.1);
+
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 10, 1000);
     ExpectEQ(plane_model, Eigen::Vector4d(-0.06, -0.10, 0.99, -1.06), 0.1);
 }
 
@@ -1227,13 +1249,15 @@ TEST(PointCloud, SegmentPlaneKnownPlane) {
     std::vector<size_t> inliers;
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 10);
     ExpectEQ(pcd.SelectByIndex(inliers)->points_, ref);
+
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 4, 10);
+    ExpectEQ(pcd.SelectByIndex(inliers)->points_, ref);
 }
 
 TEST(PointCloud, CreateFromDepthImage) {
-    const std::string trajectory_path =
-            utility::GetDataPathCommon("RGBD/trajectory.log");
-    const std::string im_depth_path =
-            utility::GetDataPathCommon("RGBD/depth/00000.png");
+    data::SampleRedwoodRGBDImages redwood_data;
+    const std::string trajectory_path = redwood_data.GetTrajectoryLogPath();
+    const std::string im_depth_path = redwood_data.GetDepthPaths()[0];
 
     camera::PinholeCameraTrajectory trajectory;
     io::ReadPinholeCameraTrajectory(trajectory_path, trajectory);
@@ -1258,12 +1282,10 @@ TEST(PointCloud, CreateFromDepthImage) {
 }
 
 TEST(PointCloud, CreateFromRGBDImage) {
-    const std::string trajectory_path =
-            utility::GetDataPathCommon("RGBD/trajectory.log");
-    const std::string im_depth_path =
-            utility::GetDataPathCommon("RGBD/depth/00000.png");
-    const std::string im_rgb_path =
-            utility::GetDataPathCommon("RGBD/color/00000.jpg");
+    data::SampleRedwoodRGBDImages redwood_data;
+    const std::string trajectory_path = redwood_data.GetTrajectoryLogPath();
+    const std::string im_depth_path = redwood_data.GetDepthPaths()[0];
+    const std::string im_rgb_path = redwood_data.GetColorPaths()[0];
 
     camera::PinholeCameraTrajectory trajectory;
     io::ReadPinholeCameraTrajectory(trajectory_path, trajectory);

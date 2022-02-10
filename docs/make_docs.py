@@ -29,7 +29,6 @@
 # (2) make.py generate Python api docs, one ".rst" file per class / function
 # (3) make.py calls the actual `sphinx-build`
 
-from __future__ import print_function
 import argparse
 import subprocess
 import sys
@@ -37,13 +36,13 @@ import importlib
 import os
 import inspect
 import shutil
-import warnings
-import weakref
-from tempfile import mkdtemp
 import re
 from pathlib import Path
 import nbformat
 import nbconvert
+import ssl
+import certifi
+import urllib.request
 
 
 def _create_or_clear_dir(dir_path):
@@ -138,7 +137,6 @@ class PyAPIDocsBuilder:
 
     def _generate_function_doc(self, full_module_name, function_name,
                                output_path):
-        # print("Generating docs: %s" % (output_path,))
         out_string = ""
         out_string += "%s.%s" % (full_module_name, function_name)
         out_string += "\n" + "-" * len(out_string)
@@ -150,7 +148,6 @@ class PyAPIDocsBuilder:
             f.write(out_string)
 
     def _generate_class_doc(self, full_module_name, class_name, output_path):
-        # print("Generating docs: %s" % (output_path,))
         out_string = ""
         out_string += "%s.%s" % (full_module_name, class_name)
         out_string += "\n" + "-" * len(out_string)
@@ -169,7 +166,6 @@ class PyAPIDocsBuilder:
     def _generate_module_doc(self, full_module_name, class_names,
                              function_names, sub_module_names,
                              sub_module_doc_path):
-        # print("Generating docs: %s" % (sub_module_doc_path,))
         class_names = sorted(class_names)
         function_names = sorted(function_names)
         out_string = ""
@@ -239,7 +235,7 @@ class PyAPIDocsBuilder:
         function_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.isroutine(obj[1]) and not obj[0][0] == '_'
+            if inspect.isroutine(obj[1]) and not obj[0].startswith('_')
         ]
         for function_name in function_names:
             file_name = "%s.%s.rst" % (full_module_name, function_name)
@@ -256,7 +252,7 @@ class PyAPIDocsBuilder:
         sub_module_names = [
             obj[0]
             for obj in inspect.getmembers(module)
-            if inspect.ismodule(obj[1]) and not obj[0][0] == '_'
+            if inspect.ismodule(obj[1]) and not obj[0].startswith('_')
         ]
         documented_sub_module_names = [
             sub_module_name for sub_module_name in sub_module_names if "%s.%s" %
@@ -279,17 +275,116 @@ class PyAPIDocsBuilder:
         )
 
 
+class PyExampleDocsBuilder:
+    """
+    Generate Python examples *.rst files.
+    """
+
+    def __init__(self, input_dir, pwd, output_dir="python_example"):
+        self.output_dir = Path(str(output_dir))
+        self.input_dir = Path(str(input_dir))
+        self.prefixes = [
+            ("image", "Image"),
+            ("kd_tree", "KD Tree"),
+            ("octree", "Octree"),
+            ("point_cloud", "Point Cloud"),
+            ("ray_casting", "Ray Casting"),
+            ("rgbd", "RGBD Image"),
+            ("triangle_mesh", "Triangle Mesh"),
+            ("voxel_grid", "Voxel Grid"),
+        ]
+
+        sys.path.append(os.path.join(pwd, "..", "python", "tools"))
+        from cli import _get_all_examples_dict
+        self.get_all_examples_dict = _get_all_examples_dict
+        print("Generating *.rst Python example docs in directory: %s" %
+              self.output_dir)
+
+    def _get_examples_dict(self):
+        examples_dict = self.get_all_examples_dict()
+        categories_to_remove = [
+            "benchmark", "reconstruction_system", "t_reconstruction_system"
+        ]
+        for cat in categories_to_remove:
+            examples_dict.pop(cat)
+        return examples_dict
+
+    def _get_prefix(self, example_name):
+        for prefix, sub_category in self.prefixes:
+            if example_name.startswith(prefix):
+                return prefix
+        raise Exception("No prefix found for geometry examples")
+
+    @staticmethod
+    def _generate_index(title, output_path):
+        os.makedirs(output_path)
+        out_string = (f"{title}\n" f"{'-' * len(title)}\n\n")
+        with open(output_path / "index.rst", "w") as f:
+            f.write(out_string)
+
+    @staticmethod
+    def _add_example_to_docs(example, output_path):
+        shutil.copy(example, output_path)
+        out_string = (f"{example.stem}.py"
+                      f"\n```````````````````````````````````````\n"
+                      f"\n.. literalinclude:: {example.stem}.py"
+                      f"\n   :language: python"
+                      f"\n   :linenos:"
+                      f"\n\n\n")
+
+        with open(output_path / "index.rst", "a") as f:
+            f.write(out_string)
+
+    def generate_rst(self):
+        _create_or_clear_dir(self.output_dir)
+        examples_dict = self._get_examples_dict()
+
+        categories = [cat for cat in self.input_dir.iterdir() if cat.is_dir()]
+
+        for cat in categories:
+            if cat.stem in examples_dict.keys():
+                out_dir = self.output_dir / cat.stem
+                if (cat.stem == "geometry"):
+                    self._generate_index(cat.stem.capitalize(), out_dir)
+                    with open(out_dir / "index.rst", "a") as f:
+                        f.write(f".. toctree::\n" f"    :maxdepth: 2\n\n")
+                        for prefix, sub_cat in self.prefixes:
+                            f.write(f"    {prefix}/index\n")
+
+                    for prefix, sub_category in self.prefixes:
+                        self._generate_index(sub_category, out_dir / prefix)
+                    examples = sorted(Path(cat).glob("*.py"))
+                    for ex in examples:
+                        if ex.stem in examples_dict[cat.stem]:
+                            prefix = self._get_prefix(ex.stem)
+                            sub_category_path = out_dir / prefix
+                            self._add_example_to_docs(ex, sub_category_path)
+                else:
+                    if (cat.stem == "io"):
+                        self._generate_index("IO", out_dir)
+                    else:
+                        self._generate_index(cat.stem.capitalize(), out_dir)
+
+                    examples = sorted(Path(cat).glob("*.py"))
+                    for ex in examples:
+                        if ex.stem in examples_dict[cat.stem]:
+                            shutil.copy(ex, out_dir)
+                            self._add_example_to_docs(ex, out_dir)
+
+
 class SphinxDocsBuilder:
     """
-    SphinxDocsBuilder calls Python api docs generation and then calls
-    sphinx-build:
+    SphinxDocsBuilder calls Python api and examples docs generation and then
+    calls sphinx-build:
 
     (1) The user call `make *` (e.g. `make html`) gets forwarded to make.py
     (2) Calls PyAPIDocsBuilder to generate Python api docs rst files
     (3) Calls `sphinx-build` with the user argument
     """
 
-    def __init__(self, html_output_dir, is_release, skip_notebooks):
+    def __init__(self, current_file_dir, html_output_dir, is_release,
+                 skip_notebooks):
+        self.current_file_dir = current_file_dir
         self.html_output_dir = html_output_dir
         self.is_release = is_release
         self.skip_notebooks = skip_notebooks
@@ -298,6 +393,17 @@ class SphinxDocsBuilder:
         """
         Call Sphinx command with hard-coded "html" target
         """
+        # Copy docs files from Open3D-ML repo
+        open3d_ml_root = os.environ.get(
+            "OPEN3D_ML_ROOT",
+            os.path.join(self.current_file_dir, "../../Open3D-ML"))
+        open3d_ml_docs = [
+            os.path.join(open3d_ml_root, "docs", "tensorboard.md")
+        ]
+        for open3d_ml_doc in open3d_ml_docs:
+            if os.path.isfile(open3d_ml_doc):
+                shutil.copy(open3d_ml_doc, self.current_file_dir)
+
         build_dir = os.path.join(self.html_output_dir, "html")
 
         if self.is_release:
@@ -369,6 +475,15 @@ class JupyterDocsBuilder:
         self.current_file_dir = current_file_dir
         print("Notebook execution mode: {}".format(self.execute_notebooks))
 
+    def overwrite_tutorial_file(self, url, output_file, output_file_path):
+        with urllib.request.urlopen(
+                url,
+                context=ssl.create_default_context(cafile=certifi.where()),
+        ) as response:
+            with open(output_file, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+        shutil.move(output_file, output_file_path)
+
     def run(self):
         if self.execute_notebooks == "never":
             return
@@ -387,16 +502,16 @@ class JupyterDocsBuilder:
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
-        nb_direct_copy = ['tensor.ipynb']
+        nb_direct_copy = [
+            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration.ipynb',
+            'jupyter_visualization.ipynb'
+        ]
         example_dirs = [
-            "geometry",
-            "core",
-            "pipelines",
-            "visualization",
+            "geometry", "core", "data", "pipelines", "visualization",
+            "t_pipelines"
         ]
         for example_dir in example_dirs:
-            in_dir = (Path(self.current_file_dir).parent / "examples" /
-                      "python" / example_dir)
+            in_dir = (Path(self.current_file_dir) / "jupyter" / example_dir)
             out_dir = Path(self.current_file_dir) / "tutorial" / example_dir
             out_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy(
@@ -449,14 +564,20 @@ class JupyterDocsBuilder:
                 try:
                     ep.preprocess(nb, {"metadata": {"path": nb_path.parent}})
                 except nbconvert.preprocessors.execute.CellExecutionError:
-                    print(
-                        "Execution of {} failed, this will cause Travis to fail."
-                        .format(nb_path.name))
-                    if "TRAVIS" in os.environ:
+                    print("Execution of {} failed, this will cause CI to fail.".
+                          format(nb_path.name))
+                    if "GITHUB_ACTIONS" in os.environ:
                         raise
 
                 with open(nb_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
+
+        url = "https://github.com/isl-org/Open3D/files/7592880/t_icp_registration.zip"
+        output_file = "t_icp_registration.ipynb"
+        output_file_path = os.path.join(
+            self.current_file_dir,
+            "tutorial/t_pipelines/t_icp_registration.ipynb")
+        self.overwrite_tutorial_file(url, output_file, output_file_path)
 
 
 if __name__ == "__main__":
@@ -487,10 +608,16 @@ if __name__ == "__main__":
         help="Jupyter notebook execution mode.",
     )
     parser.add_argument(
-        "--pyapi_rst",
+        "--py_api_rst",
         default="always",
         choices=("always", "never"),
         help="Build Python API documentation in reST format.",
+    )
+    parser.add_argument(
+        "--py_example_rst",
+        default="always",
+        choices=("always", "never"),
+        help="Build Python example documentation in reST format.",
     )
     parser.add_argument(
         "--sphinx",
@@ -525,11 +652,19 @@ if __name__ == "__main__":
         print("Removed directory %s" % cpp_build_dir)
 
     # Python API reST docs
-    if not args.pyapi_rst == "never":
+    if not args.py_api_rst == "never":
         print("Building Python API reST")
         pd = PyAPIDocsBuilder()
         pd.generate_rst()
 
+    # Python example reST docs
+    py_example_input_dir = os.path.join(pwd, "..", "examples", "python")
+    if not args.py_example_rst == "never":
+        print("Building Python example reST")
+        pe = PyExampleDocsBuilder(input_dir=py_example_input_dir, pwd=pwd)
+        pe.generate_rst()
+
+    # Jupyter docs (needs execution)
     if not args.execute_notebooks == "never":
         print("Building Jupyter docs")
         jdb = JupyterDocsBuilder(pwd, args.clean_notebooks,
@@ -542,7 +677,7 @@ if __name__ == "__main__":
         print("Building Sphinx docs")
         skip_notebooks = (args.execute_notebooks == "never" and
                           args.clean_notebooks)
-        sdb = SphinxDocsBuilder(html_output_dir, args.is_release,
+        sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release,
                                 skip_notebooks)
         sdb.run()
     else:

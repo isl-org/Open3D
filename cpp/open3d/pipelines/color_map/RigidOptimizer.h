@@ -86,11 +86,11 @@ struct RigidOptimizerOption {
     std::string debug_output_dir_ = "";
 };
 
-geometry::TriangleMesh RunRigidOptimizer(
-        const geometry::TriangleMesh& mesh,
-        const std::vector<geometry::RGBDImage>& images_rgbd,
-        const camera::PinholeCameraTrajectory& camera_trajectory,
-        const RigidOptimizerOption& option);
+std::pair<geometry::TriangleMesh, camera::PinholeCameraTrajectory>
+RunRigidOptimizer(const geometry::TriangleMesh& mesh,
+                  const std::vector<geometry::RGBDImage>& images_rgbd,
+                  const camera::PinholeCameraTrajectory& camera_trajectory,
+                  const RigidOptimizerOption& option);
 
 }  // namespace color_map
 }  // namespace pipelines

@@ -38,6 +38,7 @@
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/rpc/ZMQReceiver.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/FileSystem.h"
@@ -289,7 +290,6 @@ struct LightingProfile {
 
 static const char *kCustomName = "Custom";
 static const std::vector<LightingProfile> gLightingProfiles = {
-        {"Hard shadows", Open3DScene::LightingProfile::HARD_SHADOWS},
         {"Dark shadows", Open3DScene::LightingProfile::DARK_SHADOWS},
         {"Medium shadows", Open3DScene::LightingProfile::MED_SHADOWS},
         {"Soft shadows", Open3DScene::LightingProfile::SOFT_SHADOWS},
@@ -301,6 +301,7 @@ struct O3DVisualizer::Impl {
     std::set<std::string> added_names_;
     std::set<std::string> added_groups_;
     std::vector<DrawObject> objects_;
+    std::vector<DrawObject> inspection_objects_;
     std::shared_ptr<O3DVisualizerSelections> selections_;
     bool polygon_selection_unselects_ = false;
     bool selections_need_update_ = true;
@@ -311,6 +312,7 @@ struct O3DVisualizer::Impl {
 
     UIState ui_state_;
     bool can_auto_show_settings_ = true;
+    bool was_using_sun_follows_cam_ = false;
 
     double min_time_ = 0.0;
     double max_time_ = 0.0;
@@ -345,6 +347,7 @@ struct O3DVisualizer::Impl {
         Checkbox *show_skybox;
         Checkbox *show_axes;
         Checkbox *show_ground;
+        Checkbox *basic_mode;
         Combobox *ground_plane;
         ColorEdit *bg_color;
         Slider *point_size;
@@ -357,6 +360,7 @@ struct O3DVisualizer::Impl {
         Combobox *ibl_names;
         Slider *ibl_intensity;
         Slider *sun_intensity;
+        Checkbox *sun_follows_camera;
         VectorEdit *sun_dir;
         ColorEdit *sun_color;
 
@@ -412,8 +416,9 @@ struct O3DVisualizer::Impl {
 
         MakeSettingsUI();
         SetMouseMode(SceneWidget::Controls::ROTATE_CAMERA);
-        SetLightingProfile(gLightingProfiles[2]);  // med shadows
+        SetLightingProfile(gLightingProfiles[2]);  // soft shadows
         SetPointSize(ui_state_.point_size);  // sync selections_' point size
+        EnableSunFollowsCamera(true);
     }
 
     void MakeSettingsUI() {
@@ -630,6 +635,10 @@ struct O3DVisualizer::Impl {
             }
         });
 
+        settings.basic_mode = new Checkbox("");
+        settings.basic_mode->SetOnChecked(
+                [this](bool enable) { this->EnableBasicMode(enable); });
+
         auto *grid = new VGrid(2, v_spacing);
         settings.scene_panel->AddChild(GiveOwnership(grid));
 
@@ -641,6 +650,8 @@ struct O3DVisualizer::Impl {
         grid->AddChild(GiveOwnership(settings.shader));
         grid->AddChild(std::make_shared<Label>("Lighting"));
         grid->AddChild(GiveOwnership(settings.lighting));
+        grid->AddChild(std::make_shared<Label>("Raw Mode"));
+        grid->AddChild(GiveOwnership(settings.basic_mode));
 
         // Light list
         settings.light_panel = new CollapsableVert("Lighting", 0, margins);
@@ -708,8 +719,8 @@ struct O3DVisualizer::Impl {
         grid = new VGrid(2, v_spacing);
 
         settings.sun_intensity = new Slider(Slider::INT);
-        settings.sun_intensity->SetLimits(0.0, 150000.0);
-        settings.sun_intensity->SetValue(ui_state_.ibl_intensity);
+        settings.sun_intensity->SetLimits(0.0, 250000.0);
+        settings.sun_intensity->SetValue(ui_state_.sun_intensity);
         settings.sun_intensity->SetOnValueChanged([this](double new_value) {
             this->ui_state_.sun_intensity = int(new_value);
             this->SetUIState(ui_state_);
@@ -735,6 +746,16 @@ struct O3DVisualizer::Impl {
                 });
         grid->AddChild(std::make_shared<Label>("Direction"));
         grid->AddChild(GiveOwnership(settings.sun_dir));
+
+        settings.sun_follows_camera = new gui::Checkbox(" ");
+        settings.sun_follows_camera->SetChecked(true);
+        settings.sun_follows_camera->SetOnChecked([this](bool checked) {
+            ui_state_.sun_follows_camera = checked;
+            this->SetUIState(ui_state_);
+            EnableSunFollowsCamera(checked);
+        });
+        grid->AddChild(GiveOwnership(settings.sun_follows_camera));
+        grid->AddChild(std::make_shared<gui::Label>("Sun Follows Camera"));
 
         settings.sun_color = new ColorEdit();
         settings.sun_color->SetValue(ui_state_.sun_color);
@@ -822,7 +843,7 @@ struct O3DVisualizer::Impl {
                      std::shared_ptr<geometry::Geometry3D> geom,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
                      std::shared_ptr<rendering::TriangleMeshModel> model,
-                     const rendering::Material *material,
+                     const rendering::MaterialRecord *material,
                      const std::string &group,
                      double time,
                      bool is_visible) {
@@ -832,15 +853,14 @@ struct O3DVisualizer::Impl {
         }
         bool is_default_color = false;
         bool no_shadows = false;
-        Material mat;
-        t::geometry::PointCloud *valid_tpcd = nullptr;
+        MaterialRecord mat;
 
         if (material) {
             mat = *material;
             is_default_color = false;
             auto t_cloud =
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
-            valid_tpcd = t_cloud.get();
+            ui_state_.point_size = static_cast<int>(mat.point_size);
         } else if (model) {
             // Adding a triangle mesh model. Shader needs to be set to
             // defaultLit for O3D shader handling logic to work.
@@ -865,6 +885,8 @@ struct O3DVisualizer::Impl {
                     std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
             auto t_mesh =
                     std::dynamic_pointer_cast<t::geometry::TriangleMesh>(tgeom);
+            auto t_lines =
+                    std::dynamic_pointer_cast<t::geometry::LineSet>(tgeom);
 
             if (cloud) {
                 has_colors = !cloud->colors_.empty();
@@ -872,9 +894,11 @@ struct O3DVisualizer::Impl {
             } else if (t_cloud) {
                 has_colors = t_cloud->HasPointColors();
                 has_normals = t_cloud->HasPointNormals();
-                valid_tpcd = t_cloud.get();
             } else if (lines) {
                 has_colors = !lines->colors_.empty();
+                no_shadows = true;
+            } else if (t_lines) {
+                has_colors = t_lines->HasLineColors();
                 no_shadows = true;
             } else if (obb) {
                 has_colors = (obb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
@@ -886,7 +910,7 @@ struct O3DVisualizer::Impl {
                 has_normals = !mesh->vertex_normals_.empty();
                 has_colors = true;  // always want base_color as white
             } else if (t_mesh) {
-                has_normals = !t_mesh->HasVertexNormals();
+                has_normals = t_mesh->HasVertexNormals();
                 has_colors = true;  // always want base_color as white
             } else if (voxel_grid) {
                 has_normals = false;
@@ -898,7 +922,7 @@ struct O3DVisualizer::Impl {
 
             mat.base_color = CalcDefaultUnlitColor();
             mat.shader = kShaderUnlit;
-            if (lines || obb || aabb) {
+            if (lines || obb || aabb || t_lines) {
                 mat.shader = kShaderUnlitLines;
                 mat.line_width = ui_state_.line_width * window_->GetScaling();
             }
@@ -913,6 +937,15 @@ struct O3DVisualizer::Impl {
                 is_default_color = false;
             }
             mat.point_size = ConvertToScaledPixels(ui_state_.point_size);
+
+            // If T Geometry has a valid material convert it to MaterialRecord
+            if (t_mesh && t_mesh->HasMaterial()) {
+                t_mesh->GetMaterial().ToMaterialRecord(mat);
+            } else if (t_cloud && t_cloud->HasMaterial()) {
+                t_cloud->GetMaterial().ToMaterialRecord(mat);
+            } else if (t_lines && t_lines->HasMaterial()) {
+                t_lines->GetMaterial().ToMaterialRecord(mat);
+            }
 
             // Finally assign material properties if geometry is a triangle mesh
             auto tmesh =
@@ -978,15 +1011,15 @@ struct O3DVisualizer::Impl {
         // Do we have a geometry, tgeometry or model?
         if (geom) {
             scene->AddGeometry(name, geom.get(), mat);
-        } else if (tgeom && valid_tpcd) {
-            scene->AddGeometry(name, valid_tpcd, mat);
+        } else if (tgeom) {
+            scene->AddGeometry(name, tgeom.get(), mat);
         } else if (model) {
             scene->AddModel(name, *model);
         } else {
             utility::LogWarning(
                     "No valid geometry specified to O3DVisualizer. Only "
-                    "supported "
-                    "geometries are Geometry3D and TGeometry PointClouds.");
+                    "supported geometries are Geometry3D and TGeometry "
+                    "PointClouds and TriangleMeshes.");
         }
 
         if (no_shadows) {
@@ -998,6 +1031,23 @@ struct O3DVisualizer::Impl {
         // depend on the bounds.
         SetPointSize(ui_state_.point_size);
 
+        scene_->ForceRedraw();
+    }
+
+    void UpdateGeometry(const std::string &name,
+                        std::shared_ptr<t::geometry::Geometry> tgeom,
+                        uint32_t update_flags) {
+        auto t_cloud =
+                std::dynamic_pointer_cast<t::geometry::PointCloud>(tgeom);
+        if (!t_cloud) {
+            utility::LogWarning(
+                    "Only TGeometry PointClouds can currently be updated using "
+                    "UpdateGeometry. Try removing the geometry that needs to "
+                    "be updated then adding the update geometry.");
+            return;
+        }
+        scene_->GetScene()->GetScene()->UpdateGeometry(name, *t_cloud,
+                                                       update_flags);
         scene_->ForceRedraw();
     }
 
@@ -1082,6 +1132,124 @@ struct O3DVisualizer::Impl {
         return DrawObject();
     }
 
+    MaterialRecord GetGeometryMaterial(const std::string &name) {
+        for (auto &o : objects_) {
+            if (o.name == name) {
+                return o.material;
+            }
+        }
+        return MaterialRecord();
+    }
+
+    void ModifyGeometryMaterial(const std::string &name,
+                                const MaterialRecord *material) {
+        for (auto &o : objects_) {
+            if (o.name == name) {
+                o.material = *material;
+                scene_->GetScene()->ModifyGeometryMaterial(name, *material);
+                break;
+            }
+        }
+    }
+
+    void CreateInspectionModeMaterial(MaterialRecord &inspect_mat,
+                                      bool pcd = false) {
+        if (inspect_mat.shader == "defaultLit" ||
+            inspect_mat.shader == "defaultLitTransparency" ||
+            inspect_mat.shader == "defaultListSSR") {
+            inspect_mat.shader = "defaultLit";
+            // Set parameters for 'simple' rendering
+            inspect_mat.base_color = {1.f, 1.f, 1.f, 1.f};
+            inspect_mat.base_metallic = 0.f;
+            if (pcd) {
+                inspect_mat.base_roughness = 0.1f;
+                inspect_mat.base_reflectance = 0.6f;
+            } else {
+                inspect_mat.base_roughness = 0.5f;
+                inspect_mat.base_reflectance = 0.8f;
+            }
+            inspect_mat.base_clearcoat = 0.f;
+            inspect_mat.base_anisotropy = 0.f;
+            inspect_mat.albedo_img.reset();
+            inspect_mat.normal_img.reset();
+            inspect_mat.ao_img.reset();
+            inspect_mat.metallic_img.reset();
+            inspect_mat.roughness_img.reset();
+            inspect_mat.reflectance_img.reset();
+            // inspect_mat.sRGB_color = false;
+            // inspect_mat.sRGB_vertex_color = true;
+        }
+    }
+
+    std::shared_ptr<geometry::TriangleMesh> DuplicateGeometryForInspection(
+            std::shared_ptr<geometry::TriangleMesh> tmesh) {
+        auto new_mesh = std::make_shared<geometry::TriangleMesh>(
+                tmesh->vertices_, tmesh->triangles_);
+        if (!tmesh->HasTriangleNormals()) {
+            new_mesh->ComputeTriangleNormals();
+        } else {
+            new_mesh->triangle_normals_ = tmesh->triangle_normals_;
+        }
+        new_mesh->vertex_colors_ = tmesh->vertex_colors_;
+
+        return new_mesh;
+    }
+
+    void UpdateGeometryForInspectionMode(bool enable) {
+        if (enable) {
+            // Copy the objects...
+            for (auto &o : objects_) {
+                scene_->GetScene()->ShowGeometry(o.name, false);
+                inspection_objects_.push_back(o);
+                inspection_objects_.back().name = o.name + "_inspect";
+            }
+            // Add inspection objects to scene
+            for (auto &o : inspection_objects_) {
+                if (o.geometry) {
+                    CreateInspectionModeMaterial(
+                            o.material,
+                            o.geometry->GetGeometryType() ==
+                                    geometry::Geometry::GeometryType::
+                                            PointCloud);
+                    // Need to compute triangle normals for triangle meshes
+                    if (auto tmesh = std::dynamic_pointer_cast<
+                                geometry::TriangleMesh>(o.geometry)) {
+                        o.geometry = DuplicateGeometryForInspection(tmesh);
+                    }
+                    scene_->GetScene()->AddGeometry(o.name, o.geometry.get(),
+                                                    o.material);
+                } else if (o.tgeometry) {
+                    CreateInspectionModeMaterial(
+                            o.material,
+                            o.tgeometry->GetGeometryType() ==
+                                    t::geometry::Geometry::GeometryType::
+                                            PointCloud);
+                    scene_->GetScene()->AddGeometry(o.name, o.tgeometry.get(),
+                                                    o.material);
+                } else if (o.model) {
+                    for (auto &mat : o.model->materials_) {
+                        CreateInspectionModeMaterial(mat, false);
+                    }
+                    for (auto &mi : o.model->meshes_) {
+                        auto new_mesh = DuplicateGeometryForInspection(mi.mesh);
+                        mi.mesh = new_mesh;
+                    }
+                    scene_->GetScene()->AddModel(o.name, *o.model);
+                }
+            }
+        } else {
+            // Remove inspection geometries
+            for (auto &o : inspection_objects_) {
+                scene_->GetScene()->RemoveGeometry(o.name);
+            }
+            inspection_objects_.clear();
+            // Show original geometries
+            for (auto &o : objects_) {
+                scene_->GetScene()->ShowGeometry(o.name, true);
+            }
+        }
+    }
+
     void Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
         scene_->AddLabel(pos, text);
     }
@@ -1123,6 +1291,7 @@ struct O3DVisualizer::Impl {
                        std::shared_ptr<geometry::Image> bg_image) {
         auto old_default_color = CalcDefaultUnlitColor();
         ui_state_.bg_color = bg_color;
+        settings.bg_color->SetValue(bg_color.x(), bg_color.y(), bg_color.z());
         auto scene = scene_->GetScene();
         scene->SetBackground(ui_state_.bg_color, bg_image);
 
@@ -1190,6 +1359,76 @@ struct O3DVisualizer::Impl {
         }
     }
 
+    void EnableSunFollowsCamera(bool enable) {
+        auto low_scene = scene_->GetScene()->GetScene();
+        if (enable) {
+            scene_->SetOnCameraChanged([this](rendering::Camera *cam) {
+                auto low_scene = scene_->GetScene()->GetScene();
+                low_scene->SetSunLightDirection(cam->GetForwardVector());
+            });
+            low_scene->SetSunLightDirection(
+                    scene_->GetScene()->GetCamera()->GetForwardVector());
+            scene_->SetSunInteractorEnabled(false);
+        } else {
+            scene_->SetOnCameraChanged(
+                    std::function<void(rendering::Camera *)>());
+            low_scene->SetSunLightDirection(ui_state_.sun_dir);
+            scene_->SetSunInteractorEnabled(true);
+        }
+    }
+
+    void EnableInspectionRelatedUI(bool enable) {
+        settings.show_skybox->SetEnabled(enable);
+        settings.lighting->SetEnabled(enable);
+        settings.use_ibl->SetEnabled(enable);
+        settings.ibl_intensity->SetEnabled(enable);
+        settings.ibl_names->SetEnabled(enable);
+        settings.use_sun->SetEnabled(enable);
+        settings.sun_dir->SetEnabled(enable);
+        settings.sun_color->SetEnabled(enable);
+        settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]->SetEnabled(
+                enable);
+        settings.sun_follows_camera->SetEnabled(enable);
+    }
+
+    void EnableBasicMode(bool enable) {
+        auto o3dscene = scene_->GetScene();
+        auto view = o3dscene->GetView();
+        auto low_scene = o3dscene->GetScene();
+        if (enable) {
+            // Set lighting environment for inspection
+            o3dscene->SetBackground({1.f, 1.f, 1.f, 1.f});
+            low_scene->ShowSkybox(false);
+            low_scene->EnableIndirectLight(false);
+            low_scene->EnableSunLight(true);
+            low_scene->SetSunLightIntensity(160000.f);
+            view->SetShadowing(false, View::ShadowType::kPCF);
+            view->SetPostProcessing(false);
+            if (!ui_state_.sun_follows_camera) {
+                EnableSunFollowsCamera(true);
+                settings.sun_follows_camera->SetChecked(true);
+                was_using_sun_follows_cam_ = false;
+            } else {
+                was_using_sun_follows_cam_ = true;
+            }
+            // Update geometry for inspection
+            UpdateGeometryForInspectionMode(true);
+            EnableInspectionRelatedUI(false);
+            // Force screen redraw
+            scene_->ForceRedraw();
+        } else {
+            view->SetPostProcessing(true);
+            view->SetShadowing(true, View::ShadowType::kPCF);
+            UpdateGeometryForInspectionMode(false);
+            EnableInspectionRelatedUI(true);
+            if (!was_using_sun_follows_cam_) {
+                settings.sun_follows_camera->SetChecked(false);
+                EnableSunFollowsCamera(false);
+            }
+            SetUIState(ui_state_);
+        }
+    }
+
     void SetPointSize(int px) {
         ui_state_.point_size = px;
         settings.point_size->SetValue(double(px));
@@ -1199,6 +1438,11 @@ struct O3DVisualizer::Impl {
             o.material.point_size = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
+        for (auto &o : inspection_objects_) {
+            o.material.point_size = float(px);
+            OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
+        }
+
         auto bbox = scene_->GetScene()->GetBoundingBox();
         auto xdim = bbox.max_bound_.x() - bbox.min_bound_.x();
         auto ydim = bbox.max_bound_.y() - bbox.min_bound_.z();
@@ -1219,6 +1463,10 @@ struct O3DVisualizer::Impl {
             o.material.line_width = float(px);
             OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
         }
+        for (auto &o : inspection_objects_) {
+            o.material.line_width = float(px);
+            OverrideMaterial(o.name, o.material, ui_state_.scene_shader);
+        }
         scene_->ForceRedraw();
     }
 
@@ -1230,21 +1478,25 @@ struct O3DVisualizer::Impl {
         for (auto &o : objects_) {
             OverrideMaterial(o.name, o.material, shader);
         }
+        for (auto &o : inspection_objects_) {
+            OverrideMaterial(o.name, o.material, shader);
+        }
         scene_->ForceRedraw();
     }
 
     void OverrideMaterial(const std::string &name,
-                          const Material &original_material,
+                          const MaterialRecord &original_material,
                           O3DVisualizer::Shader shader) {
         bool is_lines = (original_material.shader == "unlitLine");
+        bool is_gradient = (original_material.shader == "unlitGradient");
         auto scene = scene_->GetScene();
         // Lines are already unlit, so keep using the original shader when in
         // unlit mode so that we can keep the wide lines.
-        if (shader == Shader::STANDARD ||
+        if (shader == Shader::STANDARD || is_gradient ||
             (shader == Shader::UNLIT && is_lines)) {
             scene->ModifyGeometryMaterial(name, original_material);
         } else {
-            Material m = original_material;
+            MaterialRecord m = original_material;
             m.shader = GetShaderString(shader);
             scene->ModifyGeometryMaterial(name, m);
         }
@@ -1273,26 +1525,42 @@ struct O3DVisualizer::Impl {
     }
 
     void SetIBL(std::string path) {
+        std::string ibl_path;
         if (path == "") {
-            path = std::string(Application::GetInstance().GetResourcePath()) +
-                   std::string("/") + std::string(kDefaultIBL);
-        }
-        if (utility::filesystem::FileExists(path + "_ibl.ktx")) {
-            scene_->GetScene()->GetScene()->SetIndirectLight(path);
-            scene_->ForceRedraw();
-            ui_state_.ibl_path = path;
+            // Set IBL back to default
+            ibl_path =
+                    std::string(Application::GetInstance().GetResourcePath()) +
+                    std::string("/") + std::string(kDefaultIBL);
+        } else if (utility::filesystem::FileExists(path + "_ibl.ktx")) {
+            // Set IBL to named IBL - probably came from selecting in UI
+            ibl_path = path;
         } else if (utility::filesystem::FileExists(path)) {
+            // User specified full path to IBL file
             if (path.find("_ibl.ktx") == path.size() - 8) {
-                ui_state_.ibl_path = path.substr(0, path.size() - 8);
-                scene_->GetScene()->GetScene()->SetIndirectLight(
-                        ui_state_.ibl_path);
-                scene_->ForceRedraw();
+                ibl_path = path.substr(0, path.size() - 8);
             } else {
                 utility::LogWarning(
                         "Could not load IBL path. Filename must be of the form "
                         "'name_ibl.ktx' and be paired with 'name_skybox.ktx'");
+                return;
+            }
+        } else {
+            // User specified the IBL 'stem' without the full path
+            ibl_path =
+                    std::string(Application::GetInstance().GetResourcePath()) +
+                    "/" + path;
+            if (!utility::filesystem::FileExists(ibl_path + "_ibl.ktx")) {
+                return;
             }
         }
+        ui_state_.ibl_path = ibl_path;
+        scene_->GetScene()->GetScene()->SetIndirectLight(ibl_path);
+        scene_->ForceRedraw();
+    }
+
+    void SetIBLIntensity(float intensity) {
+        ui_state_.ibl_intensity = intensity;
+        SetUIState(ui_state_);
     }
 
     void SetLightingProfile(const LightingProfile &profile) {
@@ -1425,6 +1693,7 @@ struct O3DVisualizer::Impl {
                  new_state.sun_intensity != ui_state_.sun_intensity ||
                  new_state.sun_dir != ui_state_.sun_dir ||
                  new_state.sun_color != ui_state_.sun_color);
+        bool in_basic_mode = settings.basic_mode->IsChecked();
 
         if (&new_state != &ui_state_) {
             ui_state_ = new_state;
@@ -1437,7 +1706,7 @@ struct O3DVisualizer::Impl {
         ShowSettings(ui_state_.show_settings, false);
         SetShader(ui_state_.scene_shader);
         SetBackground(ui_state_.bg_color, nullptr);
-        ShowSkybox(ui_state_.show_skybox);
+        if (!in_basic_mode) ShowSkybox(ui_state_.show_skybox);
         ShowAxes(ui_state_.show_axes);
         ShowGround(ui_state_.show_ground);
 
@@ -1458,16 +1727,32 @@ struct O3DVisualizer::Impl {
         ui_state_.ibl_intensity = settings.ibl_intensity->GetIntValue();
         ui_state_.sun_intensity = settings.sun_intensity->GetIntValue();
 
+        if (ui_state_.sun_follows_camera) {
+            settings.sun_dir->SetEnabled(false);
+            settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]
+                    ->SetEnabled(false);
+        } else {
+            settings.sun_dir->SetEnabled(true);
+            settings.mouse_buttons[SceneWidget::Controls::ROTATE_SUN]
+                    ->SetEnabled(true);
+        }
+
         if (is_new_lighting) {
             settings.lighting->SetSelectedValue(kCustomName);
         }
 
         auto *raw_scene = scene_->GetScene()->GetScene();
-        raw_scene->EnableIndirectLight(ui_state_.use_ibl);
-        raw_scene->SetIndirectLightIntensity(float(ui_state_.ibl_intensity));
+        if (!in_basic_mode) {
+            raw_scene->EnableIndirectLight(ui_state_.use_ibl);
+            raw_scene->SetIndirectLightIntensity(
+                    float(ui_state_.ibl_intensity));
+            raw_scene->SetSunLightColor(ui_state_.sun_color);
+            if (!ui_state_.sun_follows_camera) {
+                raw_scene->SetSunLightDirection(ui_state_.sun_dir);
+            }
+        }
         raw_scene->EnableSunLight(ui_state_.use_sun);
-        raw_scene->SetSunLight(ui_state_.sun_dir, ui_state_.sun_color,
-                               float(ui_state_.sun_intensity));
+        raw_scene->SetSunLightIntensity(ui_state_.sun_intensity);
 
         if (old_enabled_groups != ui_state_.enabled_groups) {
             for (auto &group : added_groups_) {
@@ -1931,7 +2216,7 @@ void O3DVisualizer::SetShader(Shader shader) { impl_->SetShader(shader); }
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<geometry::Geometry3D> geom,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
@@ -1942,7 +2227,7 @@ void O3DVisualizer::AddGeometry(
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<t::geometry::Geometry> tgeom,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
@@ -1953,7 +2238,7 @@ void O3DVisualizer::AddGeometry(
 void O3DVisualizer::AddGeometry(
         const std::string &name,
         std::shared_ptr<rendering::TriangleMeshModel> model,
-        const rendering::Material *material /*=nullptr*/,
+        const rendering::MaterialRecord *material /*=nullptr*/,
         const std::string &group /*= ""*/,
         double time /*= 0.0*/,
         bool is_visible /*= true*/) {
@@ -1966,6 +2251,12 @@ void O3DVisualizer::Add3DLabel(const Eigen::Vector3f &pos, const char *text) {
 }
 
 void O3DVisualizer::Clear3DLabels() { impl_->Clear3DLabels(); }
+
+void O3DVisualizer::UpdateGeometry(const std::string &name,
+                                   std::shared_ptr<t::geometry::Geometry> tgeom,
+                                   uint32_t update_flags) {
+    impl_->UpdateGeometry(name, tgeom, update_flags);
+}
 
 void O3DVisualizer::RemoveGeometry(const std::string &name) {
     return impl_->RemoveGeometry(name);
@@ -1980,9 +2271,25 @@ O3DVisualizer::DrawObject O3DVisualizer::GetGeometry(
     return impl_->GetGeometry(name);
 }
 
+MaterialRecord O3DVisualizer::GetGeometryMaterial(
+        const std::string &name) const {
+    return impl_->GetGeometryMaterial(name);
+}
+
+void O3DVisualizer::ModifyGeometryMaterial(
+        const std::string &name, const rendering::MaterialRecord *material) {
+    impl_->ModifyGeometryMaterial(name, material);
+}
+
 void O3DVisualizer::ShowSettings(bool show) { impl_->ShowSettings(show); }
 
 void O3DVisualizer::ShowSkybox(bool show) { impl_->ShowSkybox(show); }
+
+void O3DVisualizer::SetIBL(const std::string &path) { impl_->SetIBL(path); }
+
+void O3DVisualizer::SetIBLIntensity(float intensity) {
+    impl_->SetIBLIntensity(intensity);
+}
 
 void O3DVisualizer::ShowAxes(bool show) { impl_->ShowAxes(show); }
 
@@ -1990,6 +2297,10 @@ void O3DVisualizer::ShowGround(bool show) { impl_->ShowGround(show); }
 
 void O3DVisualizer::SetGroundPlane(rendering::Scene::GroundPlane plane) {
     impl_->SetGroundPlane(plane);
+}
+
+void O3DVisualizer::EnableBasicMode(bool enable) {
+    impl_->EnableBasicMode(enable);
 }
 
 void O3DVisualizer::SetPointSize(int point_size) {

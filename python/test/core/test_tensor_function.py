@@ -69,6 +69,157 @@ def list_non_bool_dtypes():
 
 @pytest.mark.parametrize("dtype", list_non_bool_dtypes())
 @pytest.mark.parametrize("device", list_devices())
+def test_concatenate(dtype, device):
+
+    # 0-D cannot be concatenated.
+    a = o3c.Tensor(0, dtype=dtype, device=device)
+    b = o3c.Tensor(0, dtype=dtype, device=device)
+    c = o3c.Tensor(0, dtype=dtype, device=device)
+
+    with pytest.raises(
+            RuntimeError,
+            match=r"Zero-dimensional tensor can only be concatenated along "
+            "axis = null, but got 0."):
+        o3c.concatenate((a, b, c))
+
+    # Concatenating 1-D tensors.
+    # 1-D can be concatenated along axis = 0, -1.
+    a = o3c.Tensor([0, 1, 2], dtype=dtype, device=device)
+    b = o3c.Tensor([3, 4], dtype=dtype, device=device)
+    c = o3c.Tensor([5, 6, 7], dtype=dtype, device=device)
+
+    # Default axis is 0.
+    output_t = o3c.concatenate((a, b, c))
+    output_np = np.concatenate(
+        (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()))
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = o3c.concatenate((a, b, c), axis=-1)
+    output_np = np.concatenate(
+        (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=-1)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    # So, 1-D tensors cannot be concatenated along axis 1 or -2.
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"Index out-of-range: dim == 1, but it must satisfy -1 <= dim <= 0"
+    ):
+        o3c.concatenate((a, b, c), axis=1)
+
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"Index out-of-range: dim == -2, but it must satisfy -1 <= dim <= 0"
+    ):
+        o3c.concatenate((a, b, c), axis=-2)
+
+    # Concatenating 2-D tensors.
+    a = o3c.Tensor([[0, 1], [2, 3]], dtype=dtype, device=device)
+    b = o3c.Tensor([[4, 5]], dtype=dtype, device=device)
+    c = o3c.Tensor([[6, 7]], dtype=dtype, device=device)
+
+    # Above 2-D tensors can be concatenated along axis = 0, -2.
+    # Default axis is 0.
+    output_t = o3c.concatenate((a, b, c))
+    output_np = np.concatenate(
+        (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()))
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = o3c.concatenate((a, b, c), axis=-2)
+    output_np = np.concatenate(
+        (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=-2)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    # Above 2-D tensors cannot be appended to 2-D along axis = 1, -1.
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"All the input tensor dimensions, other than dimension size along "
+            "concatenation axis must be same, but along dimension 0, the "
+            "tensor at index 0 has size 2 and the tensor at index 1 has size 1."
+    ):
+        o3c.concatenate((a, b, c), axis=1)
+
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"All the input tensor dimensions, other than dimension size along "
+            "concatenation axis must be same, but along dimension 0, the "
+            "tensor at index 0 has size 2 and the tensor at index 1 has size 1."
+    ):
+        o3c.concatenate((a, b, c), axis=-1)
+
+    # Concatenating 2-D tensors of shape {3, 1}.
+    a = o3c.Tensor([[0], [1], [2]], dtype=dtype, device=device)
+    b = o3c.Tensor([[3], [4], [5]], dtype=dtype, device=device)
+    c = o3c.Tensor([[6], [7], [8]], dtype=dtype, device=device)
+
+    # Above 2-D tensors can be concatenated along axis = 0, 1, -1, -2.
+    output_t = o3c.concatenate((a, b, c), axis=0)
+    output_np = np.concatenate(
+        (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=0)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = o3c.concatenate((a, b, c), axis=1)
+    output_np = np.concatenate(
+        (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=1)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = o3c.concatenate((a, b, c), axis=-1)
+    output_np = np.concatenate(
+        (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=-1)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    output_t = o3c.concatenate((a, b, c), axis=-2)
+    output_np = np.concatenate(
+        (a.cpu().numpy(), b.cpu().numpy(), c.cpu().numpy()), axis=-2)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    # Above 2-D tensors cannot be appended to 2-D along axis = 2, -3.
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"Index out-of-range: dim == 2, but it must satisfy -2 <= dim <= 1"
+    ):
+        o3c.concatenate((a, b, c), axis=2)
+
+    with pytest.raises(
+            RuntimeError,
+            match=
+            r"Index out-of-range: dim == -3, but it must satisfy -2 <= dim <= 1"
+    ):
+        o3c.concatenate((a, b, c), axis=-3)
+
+    # Using concatenate for a single tensor. The tensor is split along its
+    # first dimension, and concatenated along the axis.
+    a = o3c.Tensor([[[0, 1], [2, 3]], [[4, 5], [6, 7]], [[8, 9], [10, 11]]],
+                   dtype=o3c.Dtype.Float32,
+                   device=device)
+    output_t = o3c.concatenate((a), axis=1)
+    output_np = np.concatenate((a.cpu().numpy()), axis=1)
+
+    np.testing.assert_equal(output_np, output_t.cpu().numpy())
+
+    # dtype and device must be same for all the input tensors.
+    a = o3c.Tensor([[0, 1], [2, 3]], dtype=o3c.Dtype.Float32, device=device)
+    b = o3c.Tensor([[4, 5]], dtype=o3c.Dtype.Float64, device=device)
+    with pytest.raises(
+            RuntimeError,
+            match=r"Tensor has dtype Float64, but is expected to have Float32"):
+        o3c.concatenate((a, b))
+
+
+@pytest.mark.parametrize("dtype", list_non_bool_dtypes())
+@pytest.mark.parametrize("device", list_devices())
 def test_append(dtype, device):
     # Appending 0-D.
     # 0-D can only be appended along axis = null.
@@ -81,9 +232,8 @@ def test_append(dtype, device):
 
     with pytest.raises(
             RuntimeError,
-            match=
-            r"Zero-dimensional tensor can only be appended along axis = null, "
-            "but got 0."):
+            match=r"Zero-dimensional tensor can only be concatenated along "
+            "axis = null, but got 0."):
         o3c.append(self=self, values=values, axis=0)
 
     # Appending 1-D.

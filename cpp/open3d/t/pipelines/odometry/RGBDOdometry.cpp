@@ -91,8 +91,9 @@ OdometryResult RGBDOdometryMultiScale(
 
     // 4x4 transformations are always float64 and stay on CPU.
     const core::Device host("CPU:0");
-    const Tensor intrinsics_d = intrinsics.To(host, core::Float64);
-    const Tensor trans_d = init_source_to_target.To(host, core::Float64);
+    const Tensor intrinsics_d = intrinsics.To(host, core::Float64).Clone();
+    const Tensor trans_d =
+            init_source_to_target.To(host, core::Float64).Clone();
 
     Image source_depth = source.depth_;
     Image target_depth = target.depth_;

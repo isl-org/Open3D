@@ -63,6 +63,8 @@ target_sources(core PRIVATE
     linalg/SVDCPU.cpp
     linalg/Tri.cpp
     linalg/TriCPU.cpp
+    linalg/AddMM.cpp
+    linalg/AddMMCPU.cpp
 )
 
 target_sources(core PRIVATE
@@ -103,11 +105,14 @@ if (BUILD_CUDA_MODULE)
         linalg/SolveCUDA.cpp
         linalg/SVDCUDA.cpp
         linalg/TriCUDA.cu
+        linalg/AddMMCUDA.cpp
     )
 
     target_sources(core PRIVATE
         nns/KnnSearchOps.cu
         nns/FixedRadiusSearchOps.cu
+        nns/kernel/BlockSelectFloat32.cu
+        nns/kernel/BlockSelectFloat64.cu
     )
 endif()
 
@@ -122,11 +127,6 @@ if (BUILD_ISPC_MODULE)
     )
 endif()
 
-if (WITH_FAISS)
-    target_sources(core PRIVATE
-        nns/FaissIndex.cpp
-    )
-endif()
 
 open3d_show_and_abort_on_warning(core)
 open3d_set_global_properties(core)

@@ -134,32 +134,50 @@ void pybind_voxel_block_grid(py::module& m) {
             "Note: these coordinates are not activated in the internal sparse "
             "voxel block. They need to be inserted in the hash map.",
             "depth"_a, "intrinsic"_a, "extrinsic"_a, "depth_scale"_a = 1000.0f,
-            "depth_max"_a = 3.0f, "trunc_voxel_multiplier"_a = 4.0);
+            "depth_max"_a = 3.0f, "trunc_voxel_multiplier"_a = 8.0);
 
     vbg.def("compute_unique_block_coordinates",
             py::overload_cast<const PointCloud&, float>(
                     &VoxelBlockGrid::GetUniqueBlockCoordinates),
             "Obtain active block coordinates from a point cloud.", "pcd"_a,
-            "trunc_voxel_multiplier"_a = 4.0);
+            "trunc_voxel_multiplier"_a = 8.0);
+
+    vbg.def("integrate",
+            py::overload_cast<const core::Tensor&, const Image&, const Image&,
+                              const core::Tensor&, const core::Tensor&,
+                              const core::Tensor&, float, float, float>(
+                    &VoxelBlockGrid::Integrate),
+            "Specific operation for TSDF volumes."
+            "Integrate an RGB-D frame in the selected block coordinates using "
+            "pinhole camera model.",
+            "block_coords"_a, "depth"_a, "color"_a, "depth_intrinsic"_a,
+            "color_intrinsic"_a, "extrinsic"_a,
+            "depth_scale"_a.noconvert() = 1000.0f,
+            "depth_max"_a.noconvert() = 3.0f,
+            "trunc_voxel_multiplier"_a.noconvert() = 8.0f);
 
     vbg.def("integrate",
             py::overload_cast<const core::Tensor&, const Image&, const Image&,
                               const core::Tensor&, const core::Tensor&, float,
-                              float>(&VoxelBlockGrid::Integrate),
+                              float, float>(&VoxelBlockGrid::Integrate),
             "Specific operation for TSDF volumes."
             "Integrate an RGB-D frame in the selected block coordinates using "
             "pinhole camera model.",
             "block_coords"_a, "depth"_a, "color"_a, "intrinsic"_a,
-            "extrinsic"_a, "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f);
+            "extrinsic"_a, "depth_scale"_a.noconvert() = 1000.0f,
+            "depth_max"_a.noconvert() = 3.0f,
+            "trunc_voxel_multiplier"_a.noconvert() = 8.0f);
 
     vbg.def("integrate",
             py::overload_cast<const core::Tensor&, const Image&,
                               const core::Tensor&, const core::Tensor&, float,
-                              float>(&VoxelBlockGrid::Integrate),
+                              float, float>(&VoxelBlockGrid::Integrate),
             "Specific operation for TSDF volumes."
             "Similar to RGB-D integration, but only applied to depth images.",
             "block_coords"_a, "depth"_a, "intrinsic"_a, "extrinsic"_a,
-            "depth_scale"_a = 1000.0f, "depth_max"_a = 3.0f);
+            "depth_scale"_a.noconvert() = 1000.0f,
+            "depth_max"_a.noconvert() = 3.0f,
+            "trunc_voxel_multiplier"_a.noconvert() = 8.0f);
 
     vbg.def("ray_cast", &VoxelBlockGrid::RayCast,
             "Specific operation for TSDF volumes."
@@ -172,17 +190,18 @@ void pybind_voxel_block_grid(py::module& m) {
             "height"_a,
             "render_attributes"_a = std::vector<std::string>{"depth", "color"},
             "depth_scale"_a = 1000.0f, "depth_min"_a = 0.1f,
-            "depth_max"_a = 3.0f, "weight_threshold"_a = 3.0f);
+            "depth_max"_a = 3.0f, "weight_threshold"_a = 3.0f,
+            "trunc_voxel_multiplier"_a = 8.0f, "range_map_down_factor"_a = 8);
 
     vbg.def("extract_point_cloud", &VoxelBlockGrid::ExtractPointCloud,
             "Specific operation for TSDF volumes."
             "Extract point cloud at isosurface points.",
-            "point_cloud_size_estimate"_a = -1, "weight_threshold"_a = 3.0f);
+            "weight_threshold"_a = 3.0f, "estimated_point_number"_a = -1);
 
     vbg.def("extract_triangle_mesh", &VoxelBlockGrid::ExtractTriangleMesh,
             "Specific operation for TSDF volumes."
             "Extract triangle mesh at isosurface points.",
-            "vertex_size_estimate"_a = -1, "weight_threshold"_a = 3.0f);
+            "weight_threshold"_a = 3.0f, "estimated_vertex_number"_a = -1);
 
     vbg.def("save", &VoxelBlockGrid::Save,
             "Save the voxel block grid to a npz file."

@@ -26,6 +26,7 @@
 
 #include "open3d/t/io/TriangleMeshIO.h"
 
+#include "open3d/data/Dataset.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "tests/Tests.h"
@@ -34,16 +35,16 @@ namespace open3d {
 namespace tests {
 
 TEST(TriangleMeshIO, CreateMeshFromFile) {
-    auto mesh =
-            t::io::CreateMeshFromFile(utility::GetDataPathCommon("knot.ply"));
+    data::KnotMesh knot_data;
+    auto mesh = t::io::CreateMeshFromFile(knot_data.GetPath());
     EXPECT_EQ(mesh->GetTriangleIndices().GetLength(), 2880);
     EXPECT_EQ(mesh->GetVertexPositions().GetLength(), 1440);
 }
 
 TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
+    data::KnotMesh knot_data;
     t::geometry::TriangleMesh mesh, mesh_read;
-    EXPECT_TRUE(t::io::ReadTriangleMesh(utility::GetDataPathCommon("knot.ply"),
-                                        mesh));
+    EXPECT_TRUE(t::io::ReadTriangleMesh(knot_data.GetPath(), mesh));
     std::string file_name = utility::GetDataPathCommon("test_mesh.ply");
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));

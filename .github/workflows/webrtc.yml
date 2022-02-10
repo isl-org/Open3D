@@ -1,4 +1,4 @@
-name: WebRTC build
+name: WebRTC
 
 on:
   workflow_dispatch:
@@ -11,6 +11,10 @@ on:
         description: 'Specify Depot Tools commit to to use for the build.'
         required: false
         default: 'e1a98941d3ab10549be6d82d0686bb0fb91ec903' # Date: Wed Apr 7 21:35:29 2021 +0000
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   WEBRTC_COMMIT: ${{ github.event.inputs.webrtc_commit }}
@@ -37,8 +41,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: false
 
       - name: Set up Python version
         uses: actions/setup-python@v2
@@ -70,7 +72,6 @@ jobs:
                  checksum_*.txt
           if-no-files-found: error
 
-
   Windows:
     # https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md
     runs-on: windows-latest
@@ -84,8 +85,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: false
 
       - name: Set up Python version
         uses: actions/setup-python@v2

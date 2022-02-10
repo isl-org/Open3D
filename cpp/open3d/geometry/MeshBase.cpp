@@ -66,8 +66,8 @@ AxisAlignedBoundingBox MeshBase::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(vertices_);
 }
 
-OrientedBoundingBox MeshBase::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromPoints(vertices_);
+OrientedBoundingBox MeshBase::GetOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(vertices_, robust);
 }
 
 MeshBase &MeshBase::Transform(const Eigen::Matrix4d &transformation) {

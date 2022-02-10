@@ -34,9 +34,45 @@ namespace core {
 
 void pybind_core_tensor_function(py::module& m) {
     m.def(
+            "concatenate",
+            [](const std::vector<Tensor>& tensors,
+               const utility::optional<int64_t>& axis) {
+                if (axis.has_value()) {
+                    return core::Concatenate(tensors, axis);
+                }
+                return core::Concatenate(tensors);
+            },
+            R"(Concatenates the list of tensors in their order, along the given
+axis into a new tensor. All the tensors must have same data-type, device, and
+number of dimensions. All dimensions must be the same, except the dimension
+along the axis the tensors are to be concatinated.
+Using Concatenate for a single tensor, the tensor is split along its first 
+dimension (length), and concatenated along the axis.
+
+This is the same as NumPy's semantics:
+- https://numpy.org/doc/stable/reference/generated/numpy.concatenate.html
+
+Returns:
+     A new tensor with the values of list of tensors concatenated in order,
+     along the given axis.
+
+Example:
+    >>> a = o3d.core.Tensor([[0, 1], [2, 3]])
+    >>> b = o3d.core.Tensor([[4, 5]])
+    >>> c = o3d.core.Tensor([[6, 7])
+    >>> o3d.core.concatenate((a, b, c), 0)
+    [[0 1],
+     [2 3],
+     [4 5],
+     [6 7],
+     [8 9]]
+    Tensor[shape={5, 2}, stride={2, 1}, Int64, CPU:0, 0x55b454b09390])",
+            "tensors"_a, "axis"_a = 0);
+
+    m.def(
             "append",
             [](const Tensor& self, const Tensor& values,
-               const utility::optional<int64_t> axis) {
+               const utility::optional<int64_t>& axis) {
                 if (axis.has_value()) {
                     return core::Append(self, values, axis);
                 }
@@ -44,7 +80,7 @@ void pybind_core_tensor_function(py::module& m) {
             },
             R"(Appends the `values` tensor to the `self` tensor, along the 
 given axis and returns a new tensor. Both the tensors must have same data-type
-device, and number of dimentions. All dimensions must be the same, except the
+device, and number of dimensions. All dimensions must be the same, except the
 dimension along the axis the tensors are to be appended. 
 
 This is the same as NumPy's semantics:

@@ -12,7 +12,7 @@ macro(open3d_add_tool TOOL_NAME)
 endmacro()
 
 open3d_add_tool(ConvertPointCloud)
-open3d_add_tool(GLInfo                  Open3D::3rdparty_glfw Open3D::3rdparty_opengl)
+open3d_add_tool(GLInfo                  Open3D::3rdparty_opengl Open3D::3rdparty_glfw)
 open3d_add_tool(ManuallyCropGeometry)
 open3d_add_tool(MergeMesh)
 open3d_add_tool(ViewGeometry)

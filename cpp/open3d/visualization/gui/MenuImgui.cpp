@@ -266,7 +266,7 @@ MenuBase::ItemId MenuImgui::Draw(const DrawContext &context,
     int width = padding + name_width + 2 * em + shortcut_width + 2 * em +
                 int(std::ceil(1.5 * em)) + padding;  // checkbox
 
-    ImGui::SetNextWindowContentWidth(float(width));
+    ImGui::SetNextWindowContentSize(ImVec2(float(width), 0));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,
                         ImVec2(0, float(context.theme.default_margin)));
     ImGui::PushStyleVar(ImGuiStyleVar_PopupRounding,

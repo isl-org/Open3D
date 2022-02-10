@@ -38,7 +38,7 @@ namespace geometry {
 
 void pybind_trianglemesh(py::module& m) {
     py::class_<TriangleMesh, PyGeometry<TriangleMesh>,
-               std::shared_ptr<TriangleMesh>, Geometry>
+               std::shared_ptr<TriangleMesh>, Geometry, DrawableGeometry>
             triangle_mesh(m, "TriangleMesh",
                           R"(
 A triangle mesh contains vertices and triangles. The triangle mesh class stores
@@ -76,23 +76,23 @@ The attributes of the triangle mesh have different levels::
     # "normals", some internal operations that expects "normals" will not work.
     # "normals" and "colors" must have shape (N, 3) and must be on the same
     # device as the triangle mesh.
-    mesh.vertex["normals"] = o3c.core.Tensor([[0, 0, 1],
+    mesh.vertex["normals"] = o3d.core.Tensor([[0, 0, 1],
                                               [0, 1, 0],
                                               [1, 0, 0],
                                               [1, 1, 1]], dtype_f, device)
-    mesh.vertex["colors"] = o3c.core.Tensor([[0.0, 0.0, 0.0],
+    mesh.vertex["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                              [0.1, 0.1, 0.1],
                                              [0.2, 0.2, 0.2],
                                              [0.3, 0.3, 0.3]], dtype_f, device)
-    mesh.triangle["normals"] = o3c.core.Tensor(...)
-    mesh.triangle["colors"] = o3c.core.Tensor(...)
+    mesh.triangle["normals"] = o3d.core.Tensor(...)
+    mesh.triangle["colors"] = o3d.core.Tensor(...)
 
     # User-defined attributes
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the triangle mesh. The are no restrictions on the shape and
     # dtype, e.g.,
-    pcd.vertex["labels"] = o3c.core.Tensor(...)
-    pcd.triangle["features"] = o3c.core.Tensor(...)
+    pcd.vertex["labels"] = o3d.core.Tensor(...)
+    pcd.triangle["features"] = o3d.core.Tensor(...)
 )");
 
     // Constructors.
@@ -155,6 +155,7 @@ The attributes of the triangle mesh have different levels::
                       "Scale points.");
     triangle_mesh.def("rotate", &TriangleMesh::Rotate, "R"_a, "center"_a,
                       "Rotate points and normals (if exist).");
+
     triangle_mesh.def_static(
             "from_legacy", &TriangleMesh::FromLegacy, "mesh_legacy"_a,
             "vertex_dtype"_a = core::Float32, "triangle_dtype"_a = core::Int64,

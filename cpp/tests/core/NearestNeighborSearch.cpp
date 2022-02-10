@@ -46,13 +46,7 @@ INSTANTIATE_TEST_SUITE_P(NearestNeighborSearch,
                          NNSPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class NNSPermuteDevicesWithFaiss : public PermuteDevicesWithFaiss {};
-INSTANTIATE_TEST_SUITE_P(
-        NearestNeighborSearch,
-        NNSPermuteDevicesWithFaiss,
-        testing::ValuesIn(PermuteDevicesWithFaiss::TestCases()));
-
-TEST_P(NNSPermuteDevicesWithFaiss, KnnSearch) {
+TEST_P(NNSPermuteDevices, KnnSearch) {
     // Define test data.
     core::Device device = GetParam();
     core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},

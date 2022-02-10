@@ -1,10 +1,10 @@
-name: Ubuntu CUDA CI
+name: Ubuntu CUDA
 
 on:
   workflow_dispatch:
     inputs:
       developer_build:
-        description: 'Set to OFF for Release wheels'
+        description: 'Set to OFF for Release packages.'
         required: false
         default: 'ON'
   push:
@@ -13,179 +13,169 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
+  GCE_CLI_GHA_VERSION: "302.0.0"
+  DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+
 jobs:
-  build-wheel:
-    name: Build wheel
+  skip-check:
     runs-on: ubuntu-18.04
+    name: Skip job for forks
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Skip check
+        id: check
+        run: |
+          if [ "${GITHUB_REPOSITORY}" == "isl-org/Open3D" ] && [ -n "${GCE_GPU_CI_SA}" ] ; then
+            echo "Secrets available: performing GCE test"
+            echo "::set-output name=skip::no"
+          else
+            echo "Secrets not available: skipping GCE test"
+            echo "::set-output name=skip::yes"
+          fi
+
+  build-and-run-docker:
+    name: Build and run
+    runs-on: ubuntu-18.04
+    needs: [skip-check]
+    if: needs.skip-check.outputs.skip == 'no'
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
-        exclude:
-          - is_master: false
-            python_version: 3.7
-          - is_master: false
-            python_version: 3.8
-          - is_master: false
-            python_version: 3.9
+        include:
+          - CI_CONFIG: 2-bionic
+          - CI_CONFIG: 3-ml-shared-bionic
+          - CI_CONFIG: 4-shared-bionic
+          - CI_CONFIG: 5-ml-focal
     env:
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
-      PYTHON_VERSION: ${{ matrix.python_version }}
-      CCACHE_TAR_NAME: open3d-ubuntu-1804-cuda-ci-ccache
+      # Export everything from matrix to be easily used.
+      # Docker tag and ccache names must be consistent with docker_build.sh
+      CI_CONFIG          : ${{ matrix.CI_CONFIG }}
+      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-bionic", "4-shared-bionic"]'), matrix.CI_CONFIG) }}
+      GCE_INSTANCE_PREFIX: open3d-ci-${{ matrix.CI_CONFIG }}
+      DOCKER_TAG         : open3d-ci:${{ matrix.CI_CONFIG }}
+      CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
-      - name: Checkout source code
+      - name: Checkout code
         uses: actions/checkout@v2
         with:
-          submodules: true
-      - name: Maximize build space
+          submodules: 'false'
+      - name: Package code
         run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
-      # Be verbose and explicit here such that a developer can directly copy the
-      # `.github/workflows/docker_build.sh xxx` command to execute locally.
-      - name: Docker build
+          # GITHUB_WORKSPACE: /home/runner/work/Open3D/Open3D
+          cd "${GITHUB_WORKSPACE}/.."
+          tar -czvf Open3D.tar.gz Open3D
+          ls -alh
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@v0.2.1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+      - name: VM create
         run: |
-          if   [ "${{ env.PYTHON_VERSION }}" = "3.6" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py36_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py37_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py38_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py39_dev
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.6" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py36
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py37
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py38
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py39
+          INSTANCE_NAME="${GCE_INSTANCE_PREFIX}-${GITHUB_SHA::8}"
+          INSTANCE_ZONES=(us-west1-a
+                          us-west1-b
+                          us-central1-a
+                          us-central1-b
+                          us-central1-f
+                          us-east1-c
+                          us-east1-d
+                          us-east4-b
+                          southamerica-east1-c
+                          europe-west2-b
+                          europe-west3-b
+                          europe-west4-b
+                          europe-west4-c
+                          europe-west2-a
+                          asia-southeast1-b
+                          asia-southeast1-c
+                          australia-southeast1-a)
+          # GCE only supports GPU on n1-standard (2020/07)
+          ZONE_ID=0
+          until ((ZONE_ID >= ${#INSTANCE_ZONES[@]})) ||
+            gcloud compute instances create "$INSTANCE_NAME" \
+              --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
+              --accelerator="count=2,type=nvidia-tesla-t4" \
+              --maintenance-policy="TERMINATE" \
+              --machine-type=n1-standard-8 \
+              --boot-disk-size="128GB" \
+              --boot-disk-type="pd-ssd" \
+              --image-family="ubuntu-os-docker-gpu-2004-lts" \
+              --scopes "https://www.googleapis.com/auth/devstorage.full_control" \
+              --service-account="$GCE_GPU_CI_SA"; do
+              ((ZONE_ID = ZONE_ID + 1))
+          done
+          sleep 30
+          echo "GCE_ZONE=${INSTANCE_ZONES[$ZONE_ID]}" >> "${GITHUB_ENV}"
+          echo "INSTANCE_NAME=${INSTANCE_NAME}" >> "${GITHUB_ENV}"
+          exit $((ZONE_ID >= ${#INSTANCE_ZONES[@]})) # 0 => success
+      - name: VM copy code
+        run: |
+          gcloud compute scp \
+            "${GITHUB_WORKSPACE}/../Open3D.tar.gz" "${INSTANCE_NAME}":~ \
+            --zone "${GCE_ZONE}"
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone "${GCE_ZONE}" \
+            --command "ls -alh \
+                    && tar -xvzf Open3D.tar.gz \
+                    && ls -alh \
+                    && ls -alh Open3D \
+                    && nvidia-smi"
+      - name: VM build docker
+        run: |
+          if [ "${BUILD_PACKAGE}" == "true" ] && [ "$DEVELOPER_BUILD" == "OFF" ]; then
+            export RELEASE_TAG="-release"
           fi
-          PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.whl)"
-          CONDA_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.tar.bz2)"
-          echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
-          echo "CONDA_PKG_NAME=$CONDA_PKG_NAME" >> $GITHUB_ENV
-      - name: Upload wheel to GitHub artifacts
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="sudo Open3D/docker/docker_build.sh ${CI_CONFIG}${RELEASE_TAG:-}"
+          if [ "${BUILD_PACKAGE}" == 'true' ]; then
+            gcloud compute scp --zone="${GCE_ZONE}" \
+              "${INSTANCE_NAME}":open3d-devel-linux*.tar.xz "$PWD"
+          fi
+
+      - name: Upload package
+        if: ${{ env.BUILD_PACKAGE == 'true' }}
         uses: actions/upload-artifact@v2
         with:
-          name: open3d_linux_x86_64_wheels
-          path: |
-            ${{ env.PIP_PKG_NAME }}
-            ${{ env.CONDA_PKG_NAME }}
+          name: open3d-devel-linux-x86_64-cuda
+          path: open3d-devel-linux*.tar.xz
           if-no-files-found: error
-      - name: GCloud CLI setup (GCE_SA_KEY_DOCS_CI)
-        if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@master
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
-      - name: Upload ccache to GCS
-        if: ${{ github.ref == 'refs/heads/master' }}
-        run: |
-          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
-      - name: GCloud CLI setup (GCE_SA_KEY_GPU_CI)
-        if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@master
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
-      - name: Upload wheel to GCS
-        if: ${{ github.ref == 'refs/heads/master' }}
-        run: |
-          gsutil cp ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
-          echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
-          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CONDA_PKG_NAME }} gs://open3d-releases-master/conda_package/linux-64/
-          echo "Download conda package at: https://storage.googleapis.com/open3d-releases-master/conda_package/linux-64/${{ env.CONDA_PKG_NAME }}"
 
-  test-wheel-cpu:
-    name: Test wheel CPU
-    runs-on: ubuntu-18.04
-    needs: [build-wheel]
-    strategy:
-      fail-fast: false
-      matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
-        exclude:
-          - is_master: false
-            python_version: 3.7
-          - is_master: false
-            python_version: 3.8
-          - is_master: false
-            python_version: 3.9
-    env:
-      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v2
-        with:
-          submodules: false
-      - name: Maximize build space
+      - name: Upload package to GCS bucket
+        if: ${{ github.ref == 'refs/heads/master' && env.BUILD_PACKAGE == 'true' }}
         run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
-      - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v2
-        with:
-          repository: isl-org/Open3D-ML
-          path: ${{ env.OPEN3D_ML_ROOT }}
-      - name: Download wheels
-        uses: actions/download-artifact@v2
-        with:
-          name: open3d_linux_x86_64_wheels
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python_version }}
-      - name: Test Python package
-        run: |
-          python -V
-          source util/ci_utils.sh
-          pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel open3d*-"$pi_tag"-*.whl
-      - name: Run Python unit tests
-        run: |
-          source util/ci_utils.sh
-          echo "Running Open3D python tests..."
-          run_python_tests
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="ls -alh \
+                       && gsutil cp open3d-devel-linux-*.tar.xz \
+                       gs://open3d-releases-master/devel/"
 
-  ready-docs:
-    name: Ready docs archive
-    runs-on: ubuntu-18.04
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [build-wheel]
-    steps:
-      - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@master
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
-      - name: Check wheels and ready documentation archive
+      - name: VM run docker
         run: |
-            touch marker_file
-            gsutil cp marker_file gs://open3d-docs/${{ github.sha }}_ready_ubuntu
-            if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
-                -eq 4 ]; then
-                echo "All wheels and docs available. Making docs ready."
-                # Remove all marker files: Note _ at end of pattern.
-                gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
-                # Rename docs archive:
-                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
-                    gs://open3d-docs/${{ github.sha }}.tar.gz
-            else
-                echo "All wheels / docs not available yet."
-            fi
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="sudo Open3D/docker/docker_test.sh ${CI_CONFIG}"
+
+      - name: VM ccache upload
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="ls -alh \
+                    && gsutil cp ${CCACHE_TAR_NAME}.tar.gz gs://open3d-ci-cache/"
+
+      - name: VM delete
+        if: always()
+        run: |
+          gcloud compute instances delete "${INSTANCE_NAME}" --zone "${GCE_ZONE}"
+          ls -alh "${HOME}/.ssh"
+          gcloud compute os-login ssh-keys remove --key-file "${HOME}/.ssh/google_compute_engine.pub"

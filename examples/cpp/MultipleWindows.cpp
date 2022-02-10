@@ -37,7 +37,6 @@ using namespace open3d::visualization;
 
 const int WIDTH = 1024;
 const int HEIGHT = 768;
-const std::string DATA_PATH = "../../../examples/test_data/ICP/cloud_bin_0.pcd";
 const Eigen::Vector3f CENTER_OFFSET(0.0f, 0.0f, -3.0f);
 const std::string CLOUD_NAME = "points";
 
@@ -78,7 +77,7 @@ private:
         geometry::AxisAlignedBoundingBox bounds;
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
-            auto mat = rendering::Material();
+            auto mat = rendering::MaterialRecord();
             mat.shader = "defaultUnlit";
             new_vis->AddGeometry(
                     CLOUD_NAME + " #" + std::to_string(n_snapshots_), cloud_,
@@ -108,17 +107,18 @@ private:
         // This is NOT the UI thread, need to call PostToMainThread() to
         // update the scene or any part of the UI.
 
+        data::DemoICPPointClouds demo_icp_pointclouds;
         geometry::AxisAlignedBoundingBox bounds;
         Eigen::Vector3d extent;
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
             cloud_ = std::make_shared<geometry::PointCloud>();
-            io::ReadPointCloud(DATA_PATH, *cloud_);
+            io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *cloud_);
             bounds = cloud_->GetAxisAlignedBoundingBox();
             extent = bounds.GetExtent();
         }
 
-        auto mat = rendering::Material();
+        auto mat = rendering::MaterialRecord();
         mat.shader = "defaultUnlit";
 
         gui::Application::GetInstance().PostToMainThread(

@@ -34,6 +34,24 @@ namespace open3d {
 namespace utility {
 namespace filesystem {
 
+/// \brief Get the HOME directory for the user.
+///
+/// The home directory is determined in the following order:
+/// - On Unix:
+///   - $HOME
+///   - /
+/// - On Windows:
+///   - %USERPROFILE%
+///   - %HOMEDRIVE%
+///   - %HOMEPATH%
+///   - %HOME%
+///   - C:/
+///
+/// This is the same logics as used in Qt.
+/// - src/corelib/io/qfilesystemengine_win.cpp
+/// - src/corelib/io/qfilesystemengine_unix.cpp
+std::string GetHomeDirectory();
+
 std::string GetFileExtensionInLowerCase(const std::string &filename);
 
 std::string GetFileNameWithoutExtension(const std::string &filename);
@@ -59,6 +77,8 @@ bool MakeDirectoryHierarchy(const std::string &directory);
 bool DeleteDirectory(const std::string &directory);
 
 bool FileExists(const std::string &filename);
+
+bool Copy(const std::string &src_path, const std::string &dst_path);
 
 bool RemoveFile(const std::string &filename);
 

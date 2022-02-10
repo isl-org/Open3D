@@ -66,7 +66,7 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
-               Geometry>
+               Geometry, DrawableGeometry>
             pointcloud(m, "PointCloud",
                        R"(
 A point cloud contains a list of 3D points. The point cloud class stores the
@@ -98,10 +98,10 @@ The attributes of the point cloud have different levels::
     # "normals", some internal operations that expects "normals" will not work.
     # "normals" and "colors" must have shape (N, 3) and must be on the same
     # device as the point cloud.
-    pcd.point["normals"] = o3c.core.Tensor([[0, 0, 1],
+    pcd.point["normals"] = o3d.core.Tensor([[0, 0, 1],
                                             [0, 1, 0],
                                             [1, 0, 0]], dtype, device)
-    pcd.point["normals"] = o3c.core.Tensor([[0.0, 0.0, 0.0],
+    pcd.point["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                             [0.1, 0.1, 0.1],
                                             [0.2, 0.2, 0.2]], dtype, device)
 
@@ -109,8 +109,8 @@ The attributes of the point cloud have different levels::
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the point cloud. The are no restrictions on the shape and
     # dtype, e.g.,
-    pcd.point["intensities"] = o3c.core.Tensor([0.3, 0.1, 0.4], dtype, device)
-    pcd.point["lables"] = o3c.core.Tensor([3, 1, 4], o3d.core.int32, device)
+    pcd.point["intensities"] = o3d.core.Tensor([0.3, 0.1, 0.4], dtype, device)
+    pcd.point["labels"] = o3d.core.Tensor([3, 1, 4], o3d.core.int32, device)
 )");
 
     // Constructors.
@@ -235,6 +235,18 @@ The attributes of the point cloud have different levels::
             "from_legacy", &PointCloud::FromLegacy, "pcd_legacy"_a,
             "dtype"_a = core::Float32, "device"_a = core::Device("CPU:0"),
             "Create a PointCloud from a legacy Open3D PointCloud.");
+    pointcloud.def("project_to_depth_image", &PointCloud::ProjectToDepthImage,
+                   "width"_a, "height"_a, "intrinsics"_a,
+                   "extrinsics"_a = core::Tensor::Eye(4, core::Float32,
+                                                      core::Device("CPU:0")),
+                   "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
+                   "Project a point cloud to a depth image.");
+    pointcloud.def("project_to_rgbd_image", &PointCloud::ProjectToRGBDImage,
+                   "width"_a, "height"_a, "intrinsics"_a,
+                   "extrinsics"_a = core::Tensor::Eye(4, core::Float32,
+                                                      core::Device("CPU:0")),
+                   "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
+                   "Project a colored point cloud to a RGBD image.");
     pointcloud.def("to_legacy", &PointCloud::ToLegacy,
                    "Convert to a legacy Open3D PointCloud.");
 

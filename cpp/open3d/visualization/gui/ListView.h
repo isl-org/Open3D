@@ -50,6 +50,11 @@ public:
     const char* GetSelectedValue() const;
     /// Selects the indicated row of the list. Does not call onValueChanged.
     void SetSelectedIndex(int index);
+    /// Limit the max visible items shown to user.
+    /// Set to negative number will make list extends vertically as much
+    /// as possible, otherwise the list will at least show 3 items and
+    /// at most show \ref num items.
+    void SetMaxVisibleItems(int num);
 
     Size CalcPreferredSize(const LayoutContext& context,
                            const Constraints& constraints) const override;

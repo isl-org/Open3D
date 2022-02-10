@@ -1,9 +1,5 @@
 include(ExternalProject)
 
-set(ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileData.h")
-list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileMtlImporter.cpp")
-list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileImporter.cpp")
-
 if(MSVC)
     set(lib_name assimp-vc142-mt)
 else()
@@ -13,11 +9,10 @@ endif()
 ExternalProject_Add(
     ext_assimp
     PREFIX assimp
-    URL https://github.com/assimp/assimp/archive/refs/tags/v5.0.1.tar.gz # Jan 2020
-    URL_HASH SHA256=11310ec1f2ad2cd46b95ba88faca8f7aaa1efe9aa12605c55e3de2b977b3dbfc
+    URL https://github.com/assimp/assimp/archive/refs/tags/v5.1.6.tar.gz # Jan 2022
+    URL_HASH SHA256=52ad3a3776ce320c8add531dbcb2d3b93f2e1f10fcff5ac30178b09ba934d084
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
     UPDATE_COMMAND ""
-    PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${ASSIMP_PATCH_FILES} <SOURCE_DIR>/code/Obj
     CMAKE_ARGS
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -36,5 +31,5 @@ ExternalProject_Add(
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
 set(ASSIMP_INCLUDE_DIR ${INSTALL_DIR}/include/)
-set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
-set(ASSIMP_LIBRARIES ${lib_name} IrrXML)
+set(ASSIMP_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
+set(ASSIMP_LIBRARIES ${lib_name})

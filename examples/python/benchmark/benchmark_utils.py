@@ -30,7 +30,10 @@ import subprocess
 
 import numpy as np
 import tabulate
+<<<<<<< HEAD
 import nvidia_smi
+=======
+>>>>>>> master
 
 
 def get_processor_name():
@@ -112,9 +115,8 @@ def measure_memory(fn, handle):
 
 
 def print_table(methods, results):
-    headers = [''] + [f'{n}_setup' for n in methods] + [
-        f'{n}_search' for n in methods
-    ] + [f'{n}_memory' for n in methods]
+    headers = [''] + [f'{n}_setup' for n in methods
+                     ] + [f'{n}_search' for n in methods]
     rows = []
 
     for x in results[0]:

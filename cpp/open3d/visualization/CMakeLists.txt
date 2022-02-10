@@ -42,6 +42,10 @@ target_sources(visualization PRIVATE
     visualizer/VisualizerWithVertexSelection.cpp
 )
 
+target_sources(visualization PRIVATE
+    rendering/Material.cpp  # For RPC serialization
+)
+
 if (BUILD_GUI)
     target_sources(visualization PRIVATE
         rendering/Camera.cpp
@@ -87,6 +91,10 @@ if (BUILD_GUI)
         visualizer/GuiWidgets.cpp
         visualizer/O3DVisualizer.cpp
         visualizer/O3DVisualizerSelections.cpp
+    )
+
+    target_sources(visualization PRIVATE
+        app/Viewer.cpp
     )
 endif()
 

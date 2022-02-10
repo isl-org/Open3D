@@ -135,7 +135,8 @@ Eigen::Vector4d GetPlaneFromPoints(const std::vector<Eigen::Vector3d> &points,
 std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const double distance_threshold /* = 0.01 */,
         const int ransac_n /* = 3 */,
-        const int num_iterations /* = 100 */) const {
+        const int num_iterations /* = 100 */,
+        utility::optional<int> seed /* = utility::nullopt */) const {
     RANSACResult result;
     double error = 0;
 
@@ -151,8 +152,11 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
     std::vector<size_t> indices(num_points);
     std::iota(std::begin(indices), std::end(indices), 0);
 
-    std::random_device rd;
-    std::mt19937 rng(rd());
+    if (!seed.has_value()) {
+        std::random_device rd;
+        seed = rd();
+    }
+    std::mt19937 rng(seed.value());
 
     // Return if ransac_n is less than the required plane model parameters.
     if (ransac_n < 3) {
@@ -176,8 +180,14 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
 
         // Fit model to num_model_parameters randomly selected points among the
         // inliers.
-        plane_model = TriangleMesh::ComputeTrianglePlane(
-                points_[inliers[0]], points_[inliers[1]], points_[inliers[2]]);
+        if (ransac_n == 3) {
+            plane_model = TriangleMesh::ComputeTrianglePlane(
+                    points_[inliers[0]], points_[inliers[1]],
+                    points_[inliers[2]]);
+        } else {
+            plane_model = GetPlaneFromPoints(points_, inliers);
+        }
+
         if (plane_model.isZero(0)) {
             continue;
         }

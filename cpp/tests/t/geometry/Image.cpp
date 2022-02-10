@@ -29,6 +29,7 @@
 #include <gmock/gmock.h>
 
 #include "core/CoreTest.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/t/io/ImageIO.h"
@@ -855,9 +856,9 @@ TEST_P(ImagePermuteDevices, DepthToVertexNormalMaps) {
 TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap_Visual) {
     core::Device device = GetParam();
 
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image depth =
-            t::io::CreateImageFromFile(utility::GetDataPathCommon(fmt::format(
-                                               "RGBD/depth/{:05d}.png", 1)))
+            t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0])
                     ->To(device);
 
     float invalid_fill = 0.0f;
@@ -872,9 +873,9 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap_Visual) {
 TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
     core::Device device = GetParam();
 
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image depth =
-            t::io::CreateImageFromFile(utility::GetDataPathCommon(fmt::format(
-                                               "RGBD/depth/{:05d}.png", 1)))
+            t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0])
                     ->To(device);
 
     float invalid_fill = 0.0f;
@@ -904,9 +905,9 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
 TEST_P(ImagePermuteDevices, DISABLED_ColorizeDepth) {
     core::Device device = GetParam();
 
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image depth =
-            t::io::CreateImageFromFile(utility::GetDataPathCommon(fmt::format(
-                                               "RGBD/depth/{:05d}.png", 1)))
+            t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0])
                     ->To(device);
 
     auto color_depth = depth.ColorizeDepth(1000.0, 0.0, 3.0);

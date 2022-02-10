@@ -24,19 +24,14 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/benchmark/benchmark_ransac.py
-
 import os
 import sys
-sys.path.append("../pipelines")
-sys.path.append("../geometry")
-sys.path.append("../utility")
 import numpy as np
-from file import *
-from visualization import *
-from downloader import *
-from fast_global_registration import *
-from trajectory_io import *
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import *
 
 do_visualization = False
 
@@ -48,6 +43,37 @@ def get_ply_path(dataset_name, id):
 def get_log_path(dataset_name):
     return "%s/ransac_%s.log" % (dataset_path, dataset_name)
 
+
+def preprocess_point_cloud(pcd, voxel_size):
+    pcd_down = pcd.voxel_down_sample(voxel_size)
+    pcd_down.estimate_normals(
+        o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0,
+                                             max_nn=30))
+    pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
+        pcd_down,
+        o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 5.0,
+                                             max_nn=100))
+    return (pcd_down, pcd_fpfh)
+
+
+def execute_global_registration(source, target, source_fpfh, target_fpfh,
+                                voxel_size):
+    distance_threshold = voxel_size * 1.4
+    result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
+        source, target, source_fpfh, target_fpfh, True, distance_threshold,
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
+        3, [
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(
+                0.9),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
+                distance_threshold)
+        ], o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.999))
+    return result
+
+
+dataset_path = os.path.join(os.path.dirname(pyexample_path), 'test_data',
+                            'benchmark_data')
+dataset_names = ['livingroom1', 'livingroom2', 'office1', 'office2']
 
 if __name__ == "__main__":
     # data preparation
@@ -85,14 +111,12 @@ if __name__ == "__main__":
                 if not success:
                     print("No reasonable solution.")
                 else:
-                    alignment.append(
-                        CameraPose([s, t, n_ply_files],
-                                   np.linalg.inv(result.transformation)))
+                    alignment.append((s, t, n_ply_files,
+                                      np.linalg.inv(result.transformation)))
                     print(np.linalg.inv(result.transformation))
 
                 if do_visualization:
                     draw_registration_result(source_down, target_down,
                                              result.transformation)
-        write_trajectory(alignment, get_log_path(dataset_name))
 
     # do evaluation

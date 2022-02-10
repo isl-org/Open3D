@@ -488,8 +488,7 @@ private:
         if (win_z < far_z) {
             auto vp = scene_->GetView()->GetViewport();
             auto point = scene_->GetCamera()->Unproject(
-                    float(x), float(vp[3] - y), win_z, float(vp[2]),
-                    float(vp[3]));
+                    float(x), float(y), win_z, float(vp[2]), float(vp[3]));
             SetCenterOfRotation(point);
             interactor_->Rotate(0, 0);  // update now
         }
@@ -1157,6 +1156,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
             ndc *= 0.5f;
             ndc.x() *= f.width;
             ndc.y() *= f.height;
+            ImGui::SetWindowFontScale(l->GetTextScale());
             ImGui::SetCursorScreenPos(
                     ImVec2(ndc.x() - f.x, f.height - ndc.y() - f.y));
             auto color = l->GetTextColor();
@@ -1164,6 +1164,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
                                 color.GetBlue(), color.GetAlpha()},
                                "%s", l->GetText());
         }
+        ImGui::SetWindowFontScale(1.0);
     }
 
     // Draw any interactor UI
@@ -1173,8 +1174,9 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         for (size_t i = 0; i < impl_->ui_lines_.size() - 1; i += 2) {
             auto& p0 = impl_->ui_lines_[i];
             auto& p1 = impl_->ui_lines_[i + 1];
-            draw_list->AddLine({float(p0.x()), float(p0.y())},
-                               {float(p1.x()), float(p1.y())}, ui_color, 2);
+            draw_list->AddLine({float(p0.x() + f.x), float(p0.y() + f.y)},
+                               {float(p1.x() + f.x), float(p1.y() + f.y)},
+                               ui_color, 2);
         }
     }
 

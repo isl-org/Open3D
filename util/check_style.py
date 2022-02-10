@@ -36,7 +36,7 @@ import time
 import sys
 
 # Yapf requires python 3.6+
-if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
+if sys.version_info < (3, 6):
     raise RuntimeError(
         "Requires Python 3.6+, currently using Python {}.{}.".format(
             sys.version_info.major, sys.version_info.minor))
@@ -46,7 +46,7 @@ if not (sys.version_info.major == 3 and sys.version_info.minor >= 6):
 # > version mismatch: throw exception
 try:
     import yapf
-except:
+except ImportError:
     raise ImportError(
         "yapf not found. Install with `pip install yapf==0.30.0`.")
 if yapf.__version__ != "0.30.0":
@@ -58,7 +58,7 @@ print("Using yapf version {}".format(yapf.__version__))
 # > not found: throw exception
 try:
     import nbformat
-except:
+except ImportError:
     raise ImportError(
         "nbformat not found. Install with `pip install nbformat`.")
 print("Using nbformat version {}".format(nbformat.__version__))

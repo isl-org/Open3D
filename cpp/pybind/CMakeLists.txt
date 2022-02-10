@@ -10,6 +10,7 @@ pybind11_add_module(pybind)
 
 add_subdirectory(camera)
 add_subdirectory(core)
+add_subdirectory(data)
 add_subdirectory(geometry)
 add_subdirectory(io)
 add_subdirectory(ml)
@@ -160,7 +161,7 @@ add_custom_target(python-package
             -DBUILD_GUI=${BUILD_GUI}
             -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
-            -DPROJECT_HOME=${PROJECT_HOME}
+            -DPROJECT_HOMEPAGE_URL=${PROJECT_HOMEPAGE_URL}
             -DPROJECT_DOCS=${PROJECT_DOCS}
             -DPROJECT_CODE=${PROJECT_CODE}
             -DPROJECT_ISSUES=${PROJECT_ISSUES}

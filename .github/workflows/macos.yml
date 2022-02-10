@@ -1,10 +1,10 @@
-name: macOS CI
+name: MacOS
 
 on:
   workflow_dispatch:
     inputs:
       developer_build:
-        description: 'Set to OFF for Release wheels'
+        description: 'Set to OFF for Release wheels.'
         required: false
         default: 'ON'
 
@@ -13,6 +13,10 @@ on:
       - master
   pull_request:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
@@ -24,23 +28,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BUILD_ML_OPS: [ON, OFF]
+        CONFIG: [ON, OFF]
     env:
-      SHARED: OFF
+      SHARED: ${{ matrix.CONFIG }}
       BUILD_CUDA_MODULE: OFF
-      BUILD_TENSORFLOW_OPS: ${{ matrix.BUILD_ML_OPS }}
-      BUILD_PYTORCH_OPS: ${{ matrix.BUILD_ML_OPS }}
+      BUILD_TENSORFLOW_OPS: ${{ matrix.CONFIG }}
+      BUILD_PYTORCH_OPS: ${{ matrix.CONFIG }}
       LOW_MEM_USAGE: ON
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
-
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
       - name: Setup cache
         uses: actions/cache@v2
         with:
@@ -67,7 +64,49 @@ jobs:
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           ./util/run_ci.sh
+          DEVEL_PKG_NAME="$(basename package/open3d-devel-*.tar.xz)"
+          echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
+      - name: Build Open3D viewer app
+        if: ${{ matrix.CONFIG == 'OFF' }}
+        run: |
+          PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
+          pushd build
+          make -j${NPROC} Open3DViewer
+          pushd bin
+          zip -rv open3d-app-macosx-10_15.zip Open3D.app
           ccache -s
+
+      - name: Upload package
+        if: ${{ env.SHARED == 'ON' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d-devel-macosx
+          path: build/package/${{ env.DEVEL_PKG_NAME }}
+          if-no-files-found: error
+
+      - name: GCloud CLI setup
+        if: ${{ github.ref == 'refs/heads/master' && env.SHARED == 'ON' }}
+        # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
+        uses: google-github-actions/setup-gcloud@v0.2.1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+
+      - name: Upload package to GCS bucket
+        if: ${{ github.ref == 'refs/heads/master' && env.SHARED == 'ON' }}
+        run: |
+          gsutil cp build/package/${{ env.DEVEL_PKG_NAME }} gs://open3d-releases-master/devel/
+          echo "Download devel package at: https://storage.googleapis.com/open3d-releases-master/devel/${{ env.DEVEL_PKG_NAME }}"
+
+      - name: Upload Open3D viewer app
+        uses: actions/upload-artifact@v2
+        if: ${{ matrix.CONFIG == 'OFF' }}
+        with:
+          name: open3d-app-macosx-10_15
+          path: build/bin/open3d-app-macosx-10_15.zip
+          if-no-files-found: error
 
   build-wheel:
     name: Build wheel
@@ -94,8 +133,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
@@ -163,7 +200,7 @@ jobs:
 
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.2.1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
@@ -204,8 +241,6 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-        with:
-          submodules: false
 
       - name: Checkout Open3D-ML source code
         uses: actions/checkout@v2
@@ -243,10 +278,10 @@ jobs:
     # no need to run on macOS
     runs-on: ubuntu-18.04
     if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [build-wheel]
+    needs: [build-wheel, MacOS]
     steps:
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v0.2.1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}

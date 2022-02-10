@@ -1,0 +1,89 @@
+name: Ubuntu OpenBLAS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
+
+jobs:
+  openblas-amd64:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      - name: Docker build
+        run: |
+          docker/docker_build.sh openblas-amd64-py36-dev
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@v0.2.1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+      - name: Upload ccache to GCS
+        run: |
+          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-amd64.tar.gz gs://open3d-ci-cache/ || true
+      - name: Docker test
+        run: |
+          docker/docker_test.sh openblas-amd64-py36-dev
+
+  # How to resolve GitHub Actions ARM64 build timeout.
+  #
+  # When there are large amount of code change (e.g. changed some headers that
+  # causes re-compilation of many files), the GitHub Actions build could timeout
+  # due to excessive ccache misses. The solution is to build the branch manually
+  # and update the ccache artifacts on the Google Cloud bucket. Run:
+  #
+  # ```bash
+  # docker/docker_build.sh openblas-arm64-py36-dev
+  # gsutil cp open3d-ci-openblas-arm64.tar.gz gs://open3d-ci-cache/
+  # ```
+  openblas-arm64:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      # https://www.stereolabs.com/docs/docker/building-arm-container-on-x86/
+      - name: Install QEMU dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get --yes install qemu binfmt-support qemu-user-static
+      - name: Docker build
+        run: |
+          docker/docker_build.sh openblas-arm64-py36-dev
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@v0.2.1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+      - name: Upload ccache to GCS
+        run: |
+          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-arm64.tar.gz gs://open3d-ci-cache/ || true
+      - name: Docker test
+        run: |
+          docker/docker_test.sh openblas-arm64-py36-dev
