@@ -464,13 +464,24 @@ open3d_find_package_3rdparty_library(3rdparty_threads
 )
 
 # Assimp
-include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
-open3d_import_3rdparty_library(3rdparty_assimp
-    INCLUDE_DIRS ${ASSIMP_INCLUDE_DIR}
-    LIB_DIR      ${ASSIMP_LIB_DIR}
-    LIBRARIES    ${ASSIMP_LIBRARIES}
-    DEPENDS      ext_assimp
-)
+if(USE_SYSTEM_ASSIMP)
+    open3d_find_package_3rdparty_library(3rdparty_assimp
+        PACKAGE assimp
+        TARGETS assimp::assimp
+    )
+    if(NOT 3rdparty_assimp_FOUND)
+        set(USE_SYSTEM_ASSIMP OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_ASSIMP)
+    include(${Open3D_3RDPARTY_DIR}/assimp/assimp.cmake)
+    open3d_import_3rdparty_library(3rdparty_assimp
+        INCLUDE_DIRS ${ASSIMP_INCLUDE_DIR}
+        LIB_DIR      ${ASSIMP_LIB_DIR}
+        LIBRARIES    ${ASSIMP_LIBRARIES}
+        DEPENDS      ext_assimp
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_assimp)
 
 # OpenMP
@@ -544,11 +555,22 @@ endif()
 list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_eigen3)
 
 # Nanoflann
-include(${Open3D_3RDPARTY_DIR}/nanoflann/nanoflann.cmake)
-open3d_import_3rdparty_library(3rdparty_nanoflann
-    INCLUDE_DIRS ${NANOFLANN_INCLUDE_DIRS}
-    DEPENDS      ext_nanoflann
-)
+if(USE_SYSTEM_NANOFLANN)
+    open3d_find_package_3rdparty_library(3rdparty_nanoflann
+        PACKAGE nanoflann
+        TARGETS nanoflann::nanoflann
+    )
+    if(NOT 3rdparty_nanoflann_FOUND)
+        set(USE_SYSTEM_NANOFLANN OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_NANOFLANN)
+    include(${Open3D_3RDPARTY_DIR}/nanoflann/nanoflann.cmake)
+    open3d_import_3rdparty_library(3rdparty_nanoflann
+        INCLUDE_DIRS ${NANOFLANN_INCLUDE_DIRS}
+        DEPENDS      ext_nanoflann
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_nanoflann)
 
 # GLEW
@@ -683,14 +705,25 @@ if(NOT USE_SYSTEM_JPEG)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_jpeg)
 
-# jsoncpp: always compile from source to avoid ABI issues.
-include(${Open3D_3RDPARTY_DIR}/jsoncpp/jsoncpp.cmake)
-open3d_import_3rdparty_library(3rdparty_jsoncpp
-    INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS}
-    LIB_DIR      ${JSONCPP_LIB_DIR}
-    LIBRARIES    ${JSONCPP_LIBRARIES}
-    DEPENDS      ext_jsoncpp
-)
+# jsoncpp
+if(USE_SYSTEM_JSONCPP)
+    open3d_find_package_3rdparty_library(3rdparty_jsoncpp
+        PACKAGE jsoncpp
+        TARGETS jsoncpp_lib
+    )
+    if(NOT 3rdparty_jsoncpp_FOUND)
+        set(USE_SYSTEM_JSONCPP OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_JSONCPP)
+    include(${Open3D_3RDPARTY_DIR}/jsoncpp/jsoncpp.cmake)
+    open3d_import_3rdparty_library(3rdparty_jsoncpp
+        INCLUDE_DIRS ${JSONCPP_INCLUDE_DIRS}
+        LIB_DIR      ${JSONCPP_LIB_DIR}
+        LIBRARIES    ${JSONCPP_LIBRARIES}
+        DEPENDS      ext_jsoncpp
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_jsoncpp)
 
 # liblzf
@@ -1010,19 +1043,30 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_poisson)
 
 # Googletest
 if (BUILD_UNIT_TESTS)
-    include(${Open3D_3RDPARTY_DIR}/googletest/googletest.cmake)
-    open3d_build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
-        SOURCES
-            googletest/src/gtest-all.cc
-            googlemock/src/gmock-all.cc
-        INCLUDE_DIRS
-            googletest/include/
-            googletest/
-            googlemock/include/
-            googlemock/
-        DEPENDS
-            ext_googletest
-    )
+    if(USE_SYSTEM_GOOGLETEST)
+        open3d_find_package_3rdparty_library(3rdparty_googletest
+            PACKAGE GTest
+            TARGETS GTest::gmock
+        )
+        if(NOT 3rdparty_googletest_FOUND)
+            set(USE_SYSTEM_GOOGLETEST OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_GOOGLETEST)
+        include(${Open3D_3RDPARTY_DIR}/googletest/googletest.cmake)
+        open3d_build_3rdparty_library(3rdparty_googletest DIRECTORY ${GOOGLETEST_SOURCE_DIR}
+            SOURCES
+                googletest/src/gtest-all.cc
+                googlemock/src/gmock-all.cc
+            INCLUDE_DIRS
+                googletest/include/
+                googletest/
+                googlemock/include/
+                googlemock/
+            DEPENDS
+                ext_googletest
+        )
+    endif()
 endif()
 
 # Google benchmark
@@ -1059,6 +1103,18 @@ endif()
 
 # Filament
 if(BUILD_GUI)
+    if(USE_SYSTEM_FILAMENT)
+        open3d_find_package_3rdparty_library(3rdparty_filament
+            PACKAGE filament
+            TARGETS filament::filament filament::geometry filament::image
+        )
+        if(3rdparty_filament_FOUND)
+            set(FILAMENT_MATC "/usr/bin/matc")
+        else()
+            set(USE_SYSTEM_FILAMENT OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_FILAMENT)
     set(FILAMENT_RUNTIME_VER "")
     if(BUILD_FILAMENT_FROM_SOURCE)
         message(STATUS "Building third-party library Filament from source")
@@ -1166,6 +1222,7 @@ if(BUILD_GUI)
         target_link_libraries(3rdparty_filament INTERFACE ${CORE_VIDEO} ${QUARTZ_CORE} ${OPENGL_LIBRARY} ${METAL_LIBRARY} ${APPKIT_LIBRARY})
         target_link_options(3rdparty_filament INTERFACE "-fobjc-link-runtime")
     endif()
+    endif()
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_filament)
 endif()
 
@@ -1182,40 +1239,71 @@ else()
         PACKAGE OpenGL
         TARGETS OpenGL::GL
     )
+    set(USE_SYSTEM_OPENGL ON)
 endif()
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_opengl)
 
 # RPC interface
 # zeromq
-include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
-open3d_import_3rdparty_library(3rdparty_zeromq
-    HIDDEN
-    INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS}
-    LIB_DIR      ${ZEROMQ_LIB_DIR}
-    LIBRARIES    ${ZEROMQ_LIBRARIES}
-    DEPENDS      ext_zeromq ext_cppzmq
-)
+if(USE_SYSTEM_ZEROMQ)
+    open3d_pkg_config_3rdparty_library(3rdparty_zeromq SEARCH_ARGS libzmq)
+    if(NOT 3rdparty_zeromq_FOUND)
+        set(USE_USE_SYSTEM_ZEROMQ OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_ZEROMQ)
+    include(${Open3D_3RDPARTY_DIR}/zeromq/zeromq_build.cmake)
+    open3d_import_3rdparty_library(3rdparty_zeromq
+        HIDDEN
+        INCLUDE_DIRS ${ZEROMQ_INCLUDE_DIRS}
+        LIB_DIR      ${ZEROMQ_LIB_DIR}
+        LIBRARIES    ${ZEROMQ_LIBRARIES}
+        DEPENDS      ext_zeromq ext_cppzmq
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_zeromq)
 if(DEFINED ZEROMQ_ADDITIONAL_LIBS)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS ${ZEROMQ_ADDITIONAL_LIBS})
 endif()
 
 # msgpack
-include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
-open3d_import_3rdparty_library(3rdparty_msgpack
-    INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
-    DEPENDS      ext_msgpack-c
-)
+if(USE_SYSTEM_MSGPACK)
+    open3d_find_package_3rdparty_library(3rdparty_msgpack
+        PACKAGE msgpack
+        TARGETS msgpackc
+    )
+    if(NOT 3rdparty_msgpack_FOUND)
+        set(USE_SYSTEM_MSGPACK OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_MSGPACK)
+    include(${Open3D_3RDPARTY_DIR}/msgpack/msgpack_build.cmake)
+    open3d_import_3rdparty_library(3rdparty_msgpack
+        INCLUDE_DIRS ${MSGPACK_INCLUDE_DIRS}
+        DEPENDS      ext_msgpack-c
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
 # TBB
-include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-open3d_import_3rdparty_library(3rdparty_tbb
-    INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
-    LIB_DIR      ${STATIC_TBB_LIB_DIR}
-    LIBRARIES    ${STATIC_TBB_LIBRARIES}
-    DEPENDS      ext_tbb
-)
+if(USE_SYSTEM_TBB)
+    open3d_find_package_3rdparty_library(3rdparty_tbb
+        PACKAGE TBB
+        TARGETS TBB::tbb
+    )
+    if(NOT 3rdparty_tbb_FOUND)
+        set(USE_SYSTEM_TBB OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_TBB)
+    include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
+    open3d_import_3rdparty_library(3rdparty_tbb
+        INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
+        LIB_DIR      ${STATIC_TBB_LIB_DIR}
+        LIBRARIES    ${STATIC_TBB_LIBRARIES}
+        DEPENDS      ext_tbb
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
 
 # parallelstl
