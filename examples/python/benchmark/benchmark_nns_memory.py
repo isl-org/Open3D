@@ -214,10 +214,10 @@ if __name__ == "__main__":
     print_table_memory(methods, results)
 
     fig = plt.figure(figsize=(10, 10))
-    ax1 = fig.add_subplot(4, 1, 1)
-    ax2 = fig.add_subplot(4, 1, 2)
-    ax3 = fig.add_subplot(4, 1, 3)
-    ax4 = fig.add_subplot(4, 1, 4)
+    ax1 = fig.add_subplot(2, 2, 1)
+    ax2 = fig.add_subplot(2, 2, 2)
+    ax3 = fig.add_subplot(2, 2, 3)
+    ax4 = fig.add_subplot(2, 2, 4)
     dtypes = ["int32", "int64"]
     colors = ["b", "r"]
     lines = ["^", "o"]

@@ -62,6 +62,7 @@ examples/test_data/voxelized.ply
 examples/python/geometry/voxel_grid_test.ply
 examples/python/benchmark/testdata/
 examples/python/benchmark/*.pkl
+examples/python/benchmark/*.png
 examples/python/misc/test.jpg
 examples/test_data/GraphOptimization/pose_graph_example_fragment_optimized.json
 examples/test_data/GraphOptimization/pose_graph_example_global_optimized.json
