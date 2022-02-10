@@ -133,19 +133,19 @@ Widget::DrawResult RadioButton::Draw(const DrawContext& context) {
         if (is_selected) {
             ImGui::PushStyleColor(
                     ImGuiCol_FrameBg,
-                    colorToImgui(context.theme.checkbox_background_on_color));
+                    colorToImgui(context.theme.radiobtn_background_on_color));
             ImGui::PushStyleColor(
                     ImGuiCol_FrameBgHovered,
                     colorToImgui(
-                            context.theme.checkbox_background_hover_on_color));
+                            context.theme.radiobtn_background_hover_on_color));
         } else {
             ImGui::PushStyleColor(
                     ImGuiCol_FrameBg,
-                    colorToImgui(context.theme.checkbox_background_off_color));
+                    colorToImgui(context.theme.radiobtn_background_off_color));
             ImGui::PushStyleColor(
                     ImGuiCol_FrameBgHovered,
                     colorToImgui(
-                            context.theme.checkbox_background_hover_off_color));
+                            context.theme.radiobtn_background_hover_off_color));
         }
         ImGui::RadioButton(impl_->items_[i].c_str(), &selected_idx, i);
         ImGui::PopStyleColor(2);
