@@ -101,7 +101,7 @@ TEST(UniformTSDFVolume, Constructor) {
 
 TEST(UniformTSDFVolume, RealData) {
     // Poses
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     std::string trajectory_path = redwood_data.GetOdometryLogPath();
     std::vector<Eigen::Matrix4d> poses;
     if (!ReadPoses(trajectory_path, poses)) {

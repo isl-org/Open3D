@@ -91,7 +91,7 @@ std::pair<float, float> FloatImageMinMax(const geometry::Image& im) {
 
 TEST(RGBDImage, CreateFromColorAndDepth) {
     geometry::Image im_color;
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     EXPECT_TRUE(io::ReadImage(redwood_data.GetColorPaths()[0], im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
@@ -125,7 +125,7 @@ TEST(RGBDImage, CreateFromColorAndDepth) {
 
 TEST(RGBDImage, CreateFromRedwoodFormat) {
     geometry::Image im_color;
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     EXPECT_TRUE(io::ReadImage(redwood_data.GetColorPaths()[0], im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
@@ -159,7 +159,7 @@ TEST(RGBDImage, CreateFromRedwoodFormat) {
 
 TEST(RGBDImage, CreateFromTUMFormat) {
     geometry::Image im_color;
-    data::SampleRGBDImageTUM tum_data;
+    data::SampleTUMRGBDImage tum_data;
     EXPECT_TRUE(io::ReadImage(tum_data.GetColorPath(), im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);
@@ -193,7 +193,7 @@ TEST(RGBDImage, CreateFromTUMFormat) {
 
 TEST(RGBDImage, CreateFromSUNFormat) {
     geometry::Image im_color;
-    data::SampleRGBDImageSUN sun_data;
+    data::SampleSUNRGBDImage sun_data;
     EXPECT_TRUE(io::ReadImage(sun_data.GetColorPath(), im_color));
     EXPECT_EQ(im_color.num_of_channels_, 3);
     EXPECT_EQ(im_color.bytes_per_channel_, 1);

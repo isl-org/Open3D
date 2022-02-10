@@ -45,7 +45,7 @@ namespace geometry {
 
 // This file is just used to load the `point cloud` data. So, format of this
 // file is not important.
-data::SamplePointCloudPLY pointcloud_ply_data;
+data::PLYPointCloud pointcloud_ply_data;
 static const std::string input_path_pcd = pointcloud_ply_data.GetPath();
 
 void IOWriteLegacyPointCloud(benchmark::State& state,

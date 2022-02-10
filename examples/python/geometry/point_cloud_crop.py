@@ -29,7 +29,7 @@ import open3d as o3d
 if __name__ == "__main__":
     print("Load a ply point cloud, crop it, and render it")
     sample_ply_data = o3d.data.DemoCropPointCloud()
-    pcd = o3d.io.read_point_cloud(sample_ply_data.pointcloud_path)
+    pcd = o3d.io.read_point_cloud(sample_ply_data.point_cloud_path)
     vol = o3d.visualization.read_selection_polygon_volume(
         sample_ply_data.cropped_json_path)
     chair = vol.crop_point_cloud(pcd)

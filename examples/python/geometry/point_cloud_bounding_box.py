@@ -27,7 +27,7 @@
 import open3d as o3d
 
 if __name__ == "__main__":
-    sample_ply_data = o3d.data.SamplePointCloudPLY()
+    sample_ply_data = o3d.data.PLYPointCloud()
     pcd = o3d.io.read_point_cloud(sample_ply_data.path)
     # Flip it, otherwise the pointcloud will be upside down.
     pcd.transform([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])

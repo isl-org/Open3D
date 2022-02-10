@@ -76,7 +76,7 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     }
 }
 
-data::SamplePointCloudPLY pointcloud_ply;
+data::PLYPointCloud pointcloud_ply;
 static const std::string path = pointcloud_ply.GetPath();
 
 void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {

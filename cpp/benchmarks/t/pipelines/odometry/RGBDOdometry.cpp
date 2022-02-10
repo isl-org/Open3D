@@ -65,7 +65,7 @@ static void ComputeOdometryResultPointToPlane(benchmark::State& state,
     const float depth_diff = 0.07;
     const float depth_max = 3.0;
 
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image src_depth =
             *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
     t::geometry::Image dst_depth =
@@ -127,7 +127,7 @@ static void RGBDOdometryMultiScale(
     const float depth_max = 3.0;
     const float depth_diff = 0.07;
 
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image src_depth =
             *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
     t::geometry::Image src_color =

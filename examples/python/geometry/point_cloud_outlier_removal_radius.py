@@ -39,7 +39,7 @@ def display_inlier_outlier(cloud, ind):
 
 
 if __name__ == "__main__":
-    ptcloud_data = o3d.data.SamplePointCloudPLY()
+    ptcloud_data = o3d.data.PLYPointCloud()
 
     print("Load a ply point cloud, print it, and render it")
     pcd = o3d.io.read_point_cloud(ptcloud_data.path)

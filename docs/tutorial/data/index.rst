@@ -42,34 +42,34 @@ internet.
 PointCloud
 ~~~~~~~~~~
 
-SamplePointCloudPCD
+PCDPointCloud
 -------------------
 
 Colored point cloud of a living room from the Redwood dataset in PCD format.
 
 .. code-block:: python
 
-    dataset = o3d.data.SamplePointCloudPCD()
+    dataset = o3d.data.PCDPointCloud()
     pcd = o3d.io.read_point_cloud(dataset.path)
 
 .. code-block:: cpp
 
-    data::SamplePointCloudPCD dataset;
+    data::PCDPointCloud dataset;
     auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
-SamplePointCloudPLY
+PLYPointCloud
 -------------------
 
 Colored point cloud of a living room from the Redwood dataset in PLY format.
 
 .. code-block:: python
 
-    dataset = o3d.data.SamplePointCloudPLY()
+    dataset = o3d.data.PLYPointCloud()
     pcd = o3d.io.read_point_cloud(dataset.path)
 
 .. code-block:: cpp
 
-    data::SamplePointCloudPLY dataset;
+    data::PLYPointCloud dataset;
     auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
 EaglePointCloud
@@ -87,7 +87,7 @@ Eagle colored point cloud.
     data::EaglePointCloud dataset;
     auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
-RedwoodLivingRoomPointClouds
+LivingRoomPointClouds
 ----------------------------
 
 57 point clouds of binary PLY format from the Redwood RGB-D Dataset.
@@ -107,7 +107,7 @@ RedwoodLivingRoomPointClouds
         pcds.push_back(io::CreatePointCloudFromFile(pcd_path));
     }
 
-RedwoodOfficePointClouds
+OfficePointClouds
 ------------------------
 
 53 point clouds of binary PLY format from Redwood RGB-D Dataset.
@@ -121,7 +121,7 @@ RedwoodOfficePointClouds
 
 .. code-block:: cpp
 
-    data::RedwoodOfficePointClouds dataset;
+    data::OfficePointClouds dataset;
     std::vector<std::shared_ptr<geometry::PointCloud>> pcds;
     for (const std::string& pcd_path: dataset.GetPaths()) {
         pcds.push_back(io::CreatePointCloudFromFile(pcd_path));
@@ -181,7 +181,7 @@ A 3D Mobius knot mesh in PLY format.
 RGBDImage
 ~~~~~~~~~
 
-SampleRGBDDatasetRedwood
+SampleRedwoodRGBDImages
 ------------------------
 
 Sample set of 5 color images, 5 depth images from the Redwood RGBD
@@ -191,7 +191,7 @@ TSDF.
 
 .. code-block:: python
 
-    dataset = o3d.data.SampleRGBDDatasetRedwood()
+    dataset = o3d.data.SampleRedwoodRGBDImages()
 
     rgbd_images = []
     for i in range(len(dataset.depth_paths)):
@@ -205,7 +205,7 @@ TSDF.
 
 .. code-block:: cpp
 
-    data::SampleRGBDDatasetRedwood dataset;
+    data::SampleRedwoodRGBDImages dataset;
 
     std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
     for(size_t i = 0; i < dataset.GetDepthPaths().size(); ++i) {
@@ -224,7 +224,7 @@ TSDF.
     geometry::PointCloud pcd;
     io::ReadPointCloud(dataset.GetReconstructionPath(), pcd);
 
-SampleFountainRGBDDataset
+SampleFountainRGBDImages
 -------------------------
 
 Sample set of 33 color and depth images from the Fountain RGBD dataset.
@@ -232,7 +232,7 @@ It also contains camera poses at key frames log and mesh reconstruction.
 
 .. code-block:: python
 
-    dataset = o3d.data.SampleFountainRGBDDataset()
+    dataset = o3d.data.SampleFountainRGBDImages()
 
     rgbd_images = []
     for i in range(len(dataset.depth_paths)):
@@ -248,7 +248,7 @@ It also contains camera poses at key frames log and mesh reconstruction.
 
 .. code-block:: cpp
 
-    data::SampleFountainRGBDDataset dataset;
+    data::SampleFountainRGBDImages dataset;
 
     std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
     for(size_t i = 0; i < dataset.GetDepthPaths().size(); ++i) {
@@ -269,7 +269,7 @@ It also contains camera poses at key frames log and mesh reconstruction.
     geometry::TriangleMesh mesh;
     io::ReadTriangleMesh(dataset.GetReconstructionPath(), mesh);
 
-SampleRGBDImageNYU
+SampleNYURGBDImage
 ------------------
 
 Color image ``NYU_color.ppm`` and depth image ``NYU_depth.pgm`` sample from NYU
@@ -297,7 +297,7 @@ RGBD dataset.
         img_out = img.astype('u2')
         return img_out
 
-    dataset = o3d.data.SampleRGBDImageNYU()
+    dataset = o3d.data.SampleNYURGBDImage()
     color_raw = mpimg.imread(dataset.color_path)
     depth_raw = read_nyu_pgm(dataset.depth_path)
     color = o3d.geometry.Image(color_raw)
@@ -305,7 +305,7 @@ RGBD dataset.
     rgbd_image = o3d.geometry.RGBDImage.create_from_nyu_format(
         color, depth, convert_rgb_to_intensity=False)
 
-SampleRGBDImageSUN
+SampleSUNRGBDImage
 ------------------
 
 Color image ``SUN_color.jpg`` and depth image ``SUN_depth.png`` sample from SUN
@@ -313,7 +313,7 @@ RGBD dataset.
 
 .. code-block:: python
 
-    dataset = o3d.data.SampleRGBDImageSUN()
+    dataset = o3d.data.SampleSUNRGBDImage()
     color_raw = o3d.io.read_image(dataset.color_path)
     depth_raw = o3d.io.read_image(dataset.depth_path)
     rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(
@@ -321,7 +321,7 @@ RGBD dataset.
 
 .. code-block:: cpp
 
-    data::SampleRGBDImageSUN dataset;
+    data::SampleSUNRGBDImage dataset;
 
     geometry::Image color_raw, depth_raw;
     io::ReadImage(dataset.GetColorPath, color_raw);
@@ -329,7 +329,7 @@ RGBD dataset.
     auto rgbd_image = geometry::RGBDImage::CreateFromSUNFormat(
         color_raw, depth_raw, /*convert_rgb_to_intensity =*/ False);
 
-SampleRGBDImageTUM
+SampleTUMRGBDImage
 ------------------
 
 Color image ``TUM_color.png`` and depth image ``TUM_depth.png`` sample from TUM
@@ -337,7 +337,7 @@ RGBD dataset.
 
 .. code-block:: python
 
-    dataset = o3d.data.SampleRGBDImageTUM()
+    dataset = o3d.data.SampleTUMRGBDImage()
     color_raw = o3d.io.read_image(dataset.color_path)
     depth_raw = o3d.io.read_image(dataset.depth_path)
     rgbd_image = o3d.geometry.RGBDImage.create_from_tum_format(
@@ -345,7 +345,7 @@ RGBD dataset.
 
 .. code-block:: cpp
 
-    data::SampleRGBDImageTUM dataset;
+    data::SampleTUMRGBDImage dataset;
 
     geometry::Image color_raw, depth_raw;
     io::ReadImage(dataset.GetColorPath, color_raw);
@@ -424,7 +424,7 @@ This data is used for point cloud crop demo.
 .. code-block:: python
 
     dataset = o3d.data.DemoCropPointCloud()
-    pcd = o3d.io.read_point_cloud(dataset.pointcloud_path)
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
     vol = o3d.visualization.read_selection_polygon_volume(dataset.cropped_json_path)
     chair = vol.crop_point_cloud(pcd)
 
@@ -437,7 +437,7 @@ This data is used for point cloud crop demo.
     io::ReadIJsonConvertible(dataset.GetCroppedJSONPath(), vol);
     auto chair = vol.CropPointCloud(pcd);
 
-DemoPointCloudFeatureMatching
+DemoFeatureMatchingPointClouds
 -----------------------------
 
 Sample set of 2 point cloud fragments and their respective FPFH features and
@@ -445,10 +445,10 @@ L32D features. This data is used for point cloud feature matching demo.
 
 .. code-block:: python
 
-    dataset = o3d.data.DemoPointCloudFeatureMatching()
+    dataset = o3d.data.DemoFeatureMatchingPointClouds()
 
-    pcd0 = o3d.io.read_point_cloud(dataset.pointcloud_paths[0])
-    pcd1 = o3d.io.read_point_cloud(dataset.pointcloud_paths[1])
+    pcd0 = o3d.io.read_point_cloud(dataset.point_cloud_paths[0])
+    pcd1 = o3d.io.read_point_cloud(dataset.point_cloud_paths[1])
 
     fpfh_feature0 = o3d.io.read_feature(dataset.fpfh_feature_paths[0])
     fpfh_feature1 = o3d.io.read_feature(dataset.fpfh_feature_paths[1])
@@ -458,7 +458,7 @@ L32D features. This data is used for point cloud feature matching demo.
 
 .. code-block:: cpp
 
-    data::DemoPointCloudFeatureMatching dataset;
+    data::DemoFeatureMatchingPointClouds dataset;
 
     auto pcd0 = io::CreatePointCloudFromFile(dataset.GetPointCloudPaths()[0]);
     auto pcd1 = io::CreatePointCloudFromFile(dataset.GetPointCloudPaths()[1]);

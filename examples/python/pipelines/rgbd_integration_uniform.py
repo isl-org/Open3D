@@ -35,7 +35,7 @@ sys.path.append(pyexample_path)
 from open3d_example import read_trajectory
 
 if __name__ == "__main__":
-    rgbd_data = o3d.data.SampleRGBDDatasetRedwood()
+    rgbd_data = o3d.data.SampleRedwoodRGBDImages()
     camera_poses = read_trajectory(rgbd_data.odometry_log_path)
     camera_intrinsics = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)

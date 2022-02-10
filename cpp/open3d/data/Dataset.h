@@ -171,29 +171,29 @@ public:
     DemoCropPointCloud(const std::string& data_root = "");
 
     /// \brief Returns path to example point cloud.
-    std::string GetPointCloudPath() const { return pointcloud_path_; }
+    std::string GetPointCloudPath() const { return point_cloud_path_; }
     /// \brief Returns path to saved selected polygon volume file.
     std::string GetCroppedJSONPath() const { return cropped_json_path_; }
 
 private:
     // Path to example point cloud.
-    std::string pointcloud_path_;
+    std::string point_cloud_path_;
     // Path to saved selected polygon volume file.
     std::string cropped_json_path_;
 };
 
-/// \class DemoPointCloudFeatureMatching
-/// \brief Data class for `DemoPointCloudFeatureMatching` contains 2
+/// \class DemoFeatureMatchingPointClouds
+/// \brief Data class for `DemoFeatureMatchingPointClouds` contains 2
 /// pointcloud fragments and their respective FPFH features and L32D features.
 /// This data is used in Open3D for point cloud feature matching demo.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class DemoPointCloudFeatureMatching : public SingleDownloadDataset {
+class DemoFeatureMatchingPointClouds : public SingleDownloadDataset {
 public:
-    DemoPointCloudFeatureMatching(const std::string& data_root = "");
+    DemoFeatureMatchingPointClouds(const std::string& data_root = "");
 
     /// \brief Returns list of paths to point clouds, of size 2.
     std::vector<std::string> GetPointCloudPaths() const {
-        return pointcloud_paths_;
+        return point_cloud_paths_;
     }
     /// \brief Returns list of paths to saved FPFH features binary for point
     /// clouds, respectively, of size 2.
@@ -208,7 +208,7 @@ public:
 
 private:
     /// List of paths to point clouds, of size 2.
-    std::vector<std::string> pointcloud_paths_;
+    std::vector<std::string> point_cloud_paths_;
     /// List of saved FPFH features binary for point clouds,
     /// respectively, of size 2.
     std::vector<std::string> fpfh_feature_paths_;
@@ -241,12 +241,12 @@ private:
     std::string pose_graph_global_path_;
 };
 
-/// \class SamplePointCloudPCD
-/// \brief Data class for `SamplePointCloudPCD` contains the `fragment.pcd`
+/// \class PCDPointCloud
+/// \brief Data class for `PCDPointCloud` contains the `fragment.pcd`
 /// point cloud mesh from the `Redwood Living Room` dataset.
-class SamplePointCloudPCD : public SingleDownloadDataset {
+class PCDPointCloud : public SingleDownloadDataset {
 public:
-    SamplePointCloudPCD(const std::string& data_root = "");
+    PCDPointCloud(const std::string& data_root = "");
 
     /// \brief Returns path to the `pcd` format point cloud.
     std::string GetPath() const { return path_; };
@@ -256,12 +256,12 @@ private:
     std::string path_;
 };
 
-/// \class SamplePointCloudPLY
-/// \brief Data class for `SamplePointCloudPLY` contains the `fragment.ply`
+/// \class PLYPointCloud
+/// \brief Data class for `PLYPointCloud` contains the `fragment.ply`
 /// point cloud mesh from the `Redwood Living Room` dataset.
-class SamplePointCloudPLY : public SingleDownloadDataset {
+class PLYPointCloud : public SingleDownloadDataset {
 public:
-    SamplePointCloudPLY(const std::string& data_root = "");
+    PLYPointCloud(const std::string& data_root = "");
 
     /// \brief Returns path to the PLY format point cloud.
     std::string GetPath() const { return path_; };
@@ -271,13 +271,13 @@ private:
     std::string path_;
 };
 
-/// \class SampleRGBDImageNYU
-/// \brief Data class for `SampleRGBDImageNYU` contains a color image
+/// \class SampleNYURGBDImage
+/// \brief Data class for `SampleNYURGBDImage` contains a color image
 /// `NYU_color.ppm` and a depth image `NYU_depth.pgm` sample from NYU RGBD
 /// dataset.
-class SampleRGBDImageNYU : public SingleDownloadDataset {
+class SampleNYURGBDImage : public SingleDownloadDataset {
 public:
-    SampleRGBDImageNYU(const std::string& data_root = "");
+    SampleNYURGBDImage(const std::string& data_root = "");
 
     /// \brief Returns path to color image sample.
     std::string GetColorPath() const { return color_path_; };
@@ -291,13 +291,13 @@ private:
     std::string depth_path_;
 };
 
-/// \class SampleRGBDImageSUN
-/// \brief Data class for `SampleRGBDImageSUN` contains a color image
+/// \class SampleSUNRGBDImage
+/// \brief Data class for `SampleSUNRGBDImage` contains a color image
 /// `SUN_color.jpg` and a depth image `SUN_depth.png` sample from SUN RGBD
 /// dataset.
-class SampleRGBDImageSUN : public SingleDownloadDataset {
+class SampleSUNRGBDImage : public SingleDownloadDataset {
 public:
-    SampleRGBDImageSUN(const std::string& data_root = "");
+    SampleSUNRGBDImage(const std::string& data_root = "");
 
     /// \brief Returns path to color image sample.
     std::string GetColorPath() const { return color_path_; };
@@ -311,13 +311,13 @@ private:
     std::string depth_path_;
 };
 
-/// \class SampleRGBDImageTUM
-/// \brief Data class for `SampleRGBDImageTUM` contains a color image
+/// \class SampleTUMRGBDImage
+/// \brief Data class for `SampleTUMRGBDImage` contains a color image
 /// `TUM_color.png` and a depth image `TUM_depth.png` sample from TUM RGBD
 /// dataset.
-class SampleRGBDImageTUM : public SingleDownloadDataset {
+class SampleTUMRGBDImage : public SingleDownloadDataset {
 public:
-    SampleRGBDImageTUM(const std::string& data_root = "");
+    SampleTUMRGBDImage(const std::string& data_root = "");
 
     /// \brief Returns path to color image sample.
     std::string GetColorPath() const { return color_path_; };
@@ -331,14 +331,14 @@ private:
     std::string depth_path_;
 };
 
-/// \class SampleRGBDDatasetRedwood
-/// \brief Data class for `SampleRGBDDatasetRedwood` contains a sample set of 5
+/// \class SampleRedwoodRGBDImages
+/// \brief Data class for `SampleRedwoodRGBDImages` contains a sample set of 5
 /// color and depth images from Redwood RGBD dataset living-room1.
 // Additionally it also contains camera trajectory log, camera odometry log,
 // rgbd match, and point cloud reconstruction obtained using TSDF.
-class SampleRGBDDatasetRedwood : public SingleDownloadDataset {
+class SampleRedwoodRGBDImages : public SingleDownloadDataset {
 public:
-    SampleRGBDDatasetRedwood(const std::string& data_root = "");
+    SampleRedwoodRGBDImages(const std::string& data_root = "");
 
     /// \brief Returns List of paths to color image samples of size 5.
     std::vector<std::string> GetColorPaths() const { return color_paths_; };
@@ -370,12 +370,12 @@ private:
     std::string reconstruction_path_;
 };
 
-/// \class SampleFountainRGBDDataset
-/// \brief Data class for `SampleFountainRGBDDataset` contains a sample set of
+/// \class SampleFountainRGBDImages
+/// \brief Data class for `SampleFountainRGBDImages` contains a sample set of
 /// 33 color and depth images from the `Fountain RGBD dataset`.
-class SampleFountainRGBDDataset : public SingleDownloadDataset {
+class SampleFountainRGBDImages : public SingleDownloadDataset {
 public:
-    SampleFountainRGBDDataset(const std::string& data_root = "");
+    SampleFountainRGBDImages(const std::string& data_root = "");
 
     /// \brief Returns List of paths to color image samples of size 33.
     std::vector<std::string> GetColorPaths() const { return color_paths_; };
@@ -468,13 +468,13 @@ private:
     std::string path_;
 };
 
-/// \class RedwoodLivingRoomPointClouds
-/// \brief Dataset class for `RedwoodLivingRoomPointClouds` contains 57 point
+/// \class LivingRoomPointClouds
+/// \brief Dataset class for `LivingRoomPointClouds` contains 57 point
 /// clouds of binary PLY format.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class RedwoodLivingRoomPointClouds : public SingleDownloadDataset {
+class LivingRoomPointClouds : public SingleDownloadDataset {
 public:
-    RedwoodLivingRoomPointClouds(const std::string& data_root = "");
+    LivingRoomPointClouds(const std::string& data_root = "");
 
     /// \brief Returns list of paths to ply point-cloud fragments of size 57.
     std::vector<std::string> GetPaths() const { return paths_; }
@@ -488,13 +488,13 @@ private:
     std::vector<std::string> paths_;
 };
 
-/// \class RedwoodOfficePointClouds
-/// \brief Dataset class for `RedwoodOfficePointClouds` contains 53 point clouds
+/// \class OfficePointClouds
+/// \brief Dataset class for `OfficePointClouds` contains 53 point clouds
 /// of binary PLY format.
 /// \copyright Creative Commons 3.0 (CC BY 3.0).
-class RedwoodOfficePointClouds : public SingleDownloadDataset {
+class OfficePointClouds : public SingleDownloadDataset {
 public:
-    RedwoodOfficePointClouds(const std::string& data_root = "");
+    OfficePointClouds(const std::string& data_root = "");
 
     /// \brief Returns list of paths to ply point-cloud fragments of size 52.
     std::vector<std::string> GetPaths() const { return paths_; }

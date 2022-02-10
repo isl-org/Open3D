@@ -61,7 +61,7 @@ def custom_key_action_without_kb_repeat_delay(pcd):
 
 
 if __name__ == "__main__":
-    ply_data = o3d.data.SamplePointCloudPLY()
+    ply_data = o3d.data.PLYPointCloud()
     pcd = o3d.io.read_point_cloud(ply_data.path)
 
     print(

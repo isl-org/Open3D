@@ -31,7 +31,7 @@ import numpy as np
 if __name__ == "__main__":
     pinhole_camera_intrinsic = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    rgbd_data = o3d.data.SampleRGBDDatasetRedwood()
+    rgbd_data = o3d.data.SampleRedwoodRGBDImages()
     source_color = o3d.io.read_image(rgbd_data.color_paths[0])
     source_depth = o3d.io.read_image(rgbd_data.depth_paths[0])
     target_color = o3d.io.read_image(rgbd_data.color_paths[1])

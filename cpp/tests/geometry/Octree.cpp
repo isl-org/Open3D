@@ -336,7 +336,7 @@ TEST(Octree, EightCubesTraverse) {
 TEST(Octree, FragmentPLYCheckClone) {
     // Build src_octree
     geometry::PointCloud pcd;
-    data::SamplePointCloudPLY pointcloud_ply;
+    data::PLYPointCloud pointcloud_ply;
     io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     geometry::Octree src_octree(5);
     src_octree.ConvertFromPointCloud(pcd, 0.01);
@@ -357,7 +357,7 @@ TEST(Octree, EqualOperatorSpecialCase) {
 TEST(Octree, FragmentPLYLocate) {
     // Build src_octree
     geometry::PointCloud pcd;
-    data::SamplePointCloudPLY pointcloud_ply;
+    data::PLYPointCloud pointcloud_ply;
     io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 5;
     geometry::Octree octree(max_depth);
@@ -400,7 +400,7 @@ TEST(Octree, ConvertFromPointCloudBoundTwoPoints) {
 
 TEST(Octree, Visualization) {
     geometry::PointCloud pcd;
-    data::SamplePointCloudPLY pointcloud_ply;
+    data::PLYPointCloud pointcloud_ply;
     io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     auto octree = std::make_shared<geometry::Octree>(6);
     octree->ConvertFromPointCloud(pcd, 0.01);
@@ -410,7 +410,7 @@ TEST(Octree, Visualization) {
 
 TEST(Octree, ConvertToJsonValue) {
     geometry::PointCloud pcd;
-    data::SamplePointCloudPLY pointcloud_ply;
+    data::PLYPointCloud pointcloud_ply;
     io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 5;
     geometry::Octree src_octree(max_depth);
