@@ -239,10 +239,6 @@ project(Open3D
     LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
-# Global flag to set CXX standard.
-# This does not affect 3rd party libraries.
-set(CMAKE_CXX_STANDARD 17)
-
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
     AND CMAKE_CXX_COMPILER MATCHES "MSVC"

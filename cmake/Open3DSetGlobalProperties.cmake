@@ -2,8 +2,11 @@
 #
 # Sets important project-related properties to <target>.
 function(open3d_set_global_properties target)
-    # Tell CMake we want a compiler that supports C++14 features
+    # Tell CMake we want a compiler that supports C++17 features
     target_compile_features(${target} PUBLIC cxx_std_17)
+
+    # Set the target to compile with C++17
+    set_target_properties(${target} PROPERTIES CXX_STANDARD 17)
 
     # Detect compiler id and version for utility::CompilerInfo
     # - OPEN3D_CXX_STANDARD
@@ -11,10 +14,11 @@ function(open3d_set_global_properties target)
     # - OPEN3D_CXX_COMPILER_VERSION
     # - OPEN3D_CUDA_COMPILER_ID       # Emtpy if not BUILD_CUDA_MODULE
     # - OPEN3D_CUDA_COMPILER_VERSION  # Emtpy if not BUILD_CUDA_MODULE
-    if (NOT CMAKE_CXX_STANDARD)
-        message(FATAL_ERROR "CMAKE_CXX_STANDARD must be defined globally.")
+    get_target_property(OPEN3D_CXX_STANDARD ${target} CXX_STANDARD)
+    if (NOT OPEN3D_CXX_STANDARD)
+        message(FATAL_ERROR "CXX_STANDARD must be defined for the target.")
     endif()
-    target_compile_definitions(${target} PRIVATE OPEN3D_CXX_STANDARD="${CMAKE_CXX_STANDARD}")
+    target_compile_definitions(${target} PRIVATE OPEN3D_CXX_STANDARD="${OPEN3D_CXX_STANDARD}")
     target_compile_definitions(${target} PRIVATE OPEN3D_CXX_COMPILER_ID="${CMAKE_CXX_COMPILER_ID}")
     target_compile_definitions(${target} PRIVATE OPEN3D_CXX_COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}")
     target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_ID="${CMAKE_CUDA_COMPILER_ID}")
