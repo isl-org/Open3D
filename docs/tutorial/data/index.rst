@@ -184,8 +184,8 @@ RGBD Image
 SampleRGBDDatasetRedwood
 ------------------------
 
-Sample set of 5 color images, 5 depth images from the ``Redwood RGBD living-room1`` dataset. 
-It also contains a ``camera trajectory log``, ``a camera odometry log``, a ``rgbd match`` file, 
+Sample set of 5 color images, 5 depth images from the ``Redwood RGBD living-room1`` dataset.
+It also contains a ``camera trajectory log``, ``a camera odometry log``, a ``rgbd match`` file,
 and a ``point cloud reconstruction`` obtained from TSDF.
 
 .. code-block:: python
@@ -211,11 +211,11 @@ and a ``point cloud reconstruction`` obtained from TSDF.
         geometry::Image color_raw, depth_raw;
         io::ReadImage(dataset.GetColorPaths[i], color_raw);
         io::ReadImage(dataset.GetDepthPaths[i], depth_raw);
-        
+
         auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
-                                    color_raw, depth_raw, 
-                                    /*depth_scale =*/ 1000.0, 
-                                    /*depth_trunc =*/ 3.0, 
+                                    color_raw, depth_raw,
+                                    /*depth_scale =*/ 1000.0,
+                                    /*depth_trunc =*/ 3.0,
                                     /*convert_rgb_to_intensity =*/ False);
         rgbd_images.push_back(rgbd_image);
     }
@@ -223,12 +223,11 @@ and a ``point cloud reconstruction`` obtained from TSDF.
     geometry::PointCloud pcd;
     io::ReadPointCloud(dataset.GetReconstructionPath(), pcd);
 
-
 SampleFountainRGBDDataset
 -------------------------
 
-Sample set of 33 color and depth images from the ``Fountain RGBD dataset``. 
-It also contains ``camera poses at keyframes log`` and ``mesh reconstruction``. 
+Sample set of 33 color and depth images from the ``Fountain RGBD dataset``.
+It also contains ``camera poses at key frames log`` and ``mesh reconstruction``.
 It is used in demo of ``Color Map Optimization``.
 
 .. code-block:: python
@@ -257,11 +256,11 @@ It is used in demo of ``Color Map Optimization``.
         geometry::Image color_raw, depth_raw;
         io::ReadImage(dataset.GetColorPaths[i], color_raw);
         io::ReadImage(dataset.GetDepthPaths[i], depth_raw);
-        
+
         auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
-                                    color_raw, depth_raw, 
-                                    /*depth_scale =*/ 1000.0, 
-                                    /*depth_trunc =*/ 3.0, 
+                                    color_raw, depth_raw,
+                                    /*depth_scale =*/ 1000.0,
+                                    /*depth_trunc =*/ 3.0,
                                     /*convert_rgb_to_intensity =*/ False);
     }
 
@@ -272,13 +271,12 @@ It is used in demo of ``Color Map Optimization``.
     geometry::TriangleMesh mesh;
     io::ReadTriangleMesh(dataset.GetReconstructionPath(), mesh);
 
-
 SampleRGBDImageNYU
 ------------------
 
 Color image ``NYU_color.ppm`` and depth image ``NYU_depth.pgm`` sample from NYU RGBD dataset.
 
-Open3D does not support ppm/pgm file yet. 
+Open3D does not support ppm/pgm file yet.
 
 Refer to ``Geometry/RGBD Images/NYU Dataset Tutorial``.
 
@@ -303,7 +301,7 @@ Color image ``SUN_color.jpg`` and depth image ``SUN_depth.png`` sample from SUN 
     io::ReadImage(dataset.GetColorPath, color_raw);
     io::ReadImage(dataset.GetDepthPath, depth_raw);
     auto rgbd_image = geometry::RGBDImage::CreateFromSUNFormat(
-                                color_raw, depth_raw, 
+                                color_raw, depth_raw,
                                 /*convert_rgb_to_intensity =*/ False);
 
 SampleRGBDImageTUM
@@ -327,7 +325,7 @@ Color image ``TUM_color.png`` and depth image ``TUM_depth.png`` sample from TUM 
     io::ReadImage(dataset.GetColorPath, color_raw);
     io::ReadImage(dataset.GetDepthPath, depth_raw);
     auto rgbd_image = geometry::RGBDImage::CreateFromTUMFormat(
-                                color_raw, depth_raw, 
+                                color_raw, depth_raw,
                                 /*convert_rgb_to_intensity =*/ False);
 
 Image
@@ -355,7 +353,7 @@ Demo
 DemoICPPointClouds
 ------------------
 
-3 point cloud fragments of binary PCD format, from living-room1 scene of Redwood RGB-D dataset. 
+3 point cloud fragments of binary PCD format, from living-room1 scene of Redwood RGB-D dataset.
 This data is used for ICP demo.
 
 .. code-block:: python
@@ -376,7 +374,7 @@ This data is used for ICP demo.
 DemoColoredICPPointClouds
 -------------------------
 
-2 point cloud fragments of binary PCD format, from apartment scene of Redwood RGB-D dataset. 
+2 point cloud fragments of binary PCD format, from apartment scene of Redwood RGB-D dataset.
 This data is used for Colored-ICP demo.
 
 .. code-block:: python
@@ -395,7 +393,7 @@ This data is used for Colored-ICP demo.
 DemoCropPointCloud
 ------------------
 
-Point cloud, and ``cropped.json`` (a saved selected polygon volume file). 
+Point cloud, and ``cropped.json`` (a saved selected polygon volume file).
 This data is used for point cloud crop demo.
 
 .. code-block:: python
@@ -415,11 +413,10 @@ This data is used for point cloud crop demo.
     io::ReadIJsonConvertible(dataset.GetCroppedJSONPath(), vol);
     auto chair = vol.CropPointCloud(pcd);
 
-
 DemoPointCloudFeatureMatching
 -----------------------------
 
-Sample set of 2 point cloud fragments and their respective FPFH features and L32D features. 
+Sample set of 2 point cloud fragments and their respective FPFH features and L32D features.
 This data is used for point cloud feature matching demo.
 
 .. code-block:: python
@@ -450,7 +447,6 @@ This data is used for point cloud feature matching demo.
     io::ReadFeature(dataset.GetL32DFeaturePaths()[0], l32d_feature0);
     io::ReadFeature(dataset.GetL32DFeaturePaths()[1], l32d_feature1);
 
-
 DemoPoseGraphOptimization
 -------------------------
 
@@ -468,9 +464,9 @@ Sample fragment pose graph, and global pose graph. This data is used for pose gr
 
     data::DemoPoseGraphOptimization dataset;
     pipelines::registration::PoseGraph pose_graph_fragment;
-    io::ReadPoseGraph(dataset.GetPoseGraphFragmentPath(), 
+    io::ReadPoseGraph(dataset.GetPoseGraphFragmentPath(),
                       pose_graph_fragment);
 
     pipelines::registration::PoseGraph pose_graph_global;
-    io::ReadPoseGraph(dataset.GetPoseGraphGlobalPath(), 
+    io::ReadPoseGraph(dataset.GetPoseGraphGlobalPath(),
                       pose_graph_global);
