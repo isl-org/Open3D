@@ -30,8 +30,6 @@
 
 using namespace open3d;
 
-const std::string TEST_DIR = "../../../examples/test_data";
-
 double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
 std::shared_ptr<geometry::PointCloud> MakePointCloud(
@@ -269,12 +267,6 @@ void Selections() {
 }
 
 int main(int argc, char **argv) {
-    if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
-        utility::LogError(
-                "This example needs to be run from the <build>/bin/examples "
-                "directory");
-    }
-
     SingleObject();
     MultiObjects();
     Actions();

@@ -90,10 +90,9 @@ SingleDownloadDataset::SingleDownloadDataset(
     }
 }
 
-DemoICPPointClouds::DemoICPPointClouds(const std::string& prefix,
-                                       const std::string& data_root)
+DemoICPPointClouds::DemoICPPointClouds(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "DemoICPPointClouds",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
                "20220201-data/DemoICPPointClouds.zip"},
               "76cf67ab1af942e3c4d5e97b9c2ae58f",
@@ -115,9 +114,9 @@ std::string DemoICPPointClouds::GetPaths(size_t index) const {
 }
 
 DemoColoredICPPointClouds::DemoColoredICPPointClouds(
-        const std::string& prefix, const std::string& data_root)
+        const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "DemoColoredICPPointClouds",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
                "20220201-data/DemoColoredICPPointClouds.zip"},
               "bf8d469e892d76f2e69e1213207c0e30",
@@ -136,32 +135,31 @@ std::string DemoColoredICPPointClouds::GetPaths(size_t index) const {
     return paths_[index];
 }
 
-DemoCropPointCloud::DemoCropPointCloud(const std::string& prefix,
-                                       const std::string& data_root)
+DemoCropPointCloud::DemoCropPointCloud(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "DemoCropPointCloud",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
                "20220201-data/DemoCropPointCloud.zip"},
               "12dbcdddd3f0865d8312929506135e23",
               /*no_extract =*/false,
               data_root) {
     const std::string extract_dir = Dataset::GetExtractDir();
-    pointcloud_path_ = extract_dir + "/fragment.ply";
+    point_cloud_path_ = extract_dir + "/fragment.ply";
     cropped_json_path_ = extract_dir + "/cropped.json";
 }
 
-DemoPointCloudFeatureMatching::DemoPointCloudFeatureMatching(
-        const std::string& prefix, const std::string& data_root)
+DemoFeatureMatchingPointClouds::DemoFeatureMatchingPointClouds(
+        const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "DemoFeatureMatchingPointClouds",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220201-data/DemoPointCloudFeatureMatching.zip"},
+               "20220201-data/DemoFeatureMatchingPointClouds.zip"},
               "02f0703ce0cbf4df78ce2602ae33fc79",
               /*no_extract =*/false,
               data_root) {
     const std::string extract_dir = Dataset::GetExtractDir();
-    pointcloud_paths_ = {extract_dir + "/cloud_bin_0.pcd",
-                         extract_dir + "/cloud_bin_1.pcd"};
+    point_cloud_paths_ = {extract_dir + "/cloud_bin_0.pcd",
+                          extract_dir + "/cloud_bin_1.pcd"};
     fpfh_feature_paths_ = {extract_dir + "/cloud_bin_0.fpfh.bin",
                            extract_dir + "/cloud_bin_1.fpfh.bin"};
     l32d_feature_paths_ = {extract_dir + "/cloud_bin_0.d32.bin",
@@ -169,9 +167,9 @@ DemoPointCloudFeatureMatching::DemoPointCloudFeatureMatching(
 }
 
 DemoPoseGraphOptimization::DemoPoseGraphOptimization(
-        const std::string& prefix, const std::string& data_root)
+        const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "DemoPoseGraphOptimization",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
                "20220201-data/DemoPoseGraphOptimization.zip"},
               "af085b28d79dea7f0a50aef50c96b62c",
@@ -183,10 +181,9 @@ DemoPoseGraphOptimization::DemoPoseGraphOptimization(
     pose_graph_global_path_ = extract_dir + "/pose_graph_example_global.json";
 }
 
-SamplePointCloudPCD::SamplePointCloudPCD(const std::string& prefix,
-                                         const std::string& data_root)
+PCDPointCloud::PCDPointCloud(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "PCDPointCloud",
               {"https://github.com/isl-org/open3d_downloads/releases/"
                "download/20220201-data/fragment.pcd"},
               "f3a613fd2bdecd699aabdd858fb29606",
@@ -195,10 +192,9 @@ SamplePointCloudPCD::SamplePointCloudPCD(const std::string& prefix,
     path_ = Dataset::GetExtractDir() + "/fragment.pcd";
 }
 
-SamplePointCloudPLY::SamplePointCloudPLY(const std::string& prefix,
-                                         const std::string& data_root)
+PLYPointCloud::PLYPointCloud(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "PLYPointCloud",
               {"https://github.com/isl-org/open3d_downloads/releases/"
                "download/20220201-data/fragment.ply"},
               "831ecffd4d7cbbbe02494c5c351aa6e5",
@@ -207,12 +203,11 @@ SamplePointCloudPLY::SamplePointCloudPLY(const std::string& prefix,
     path_ = Dataset::GetExtractDir() + "/fragment.ply";
 }
 
-SampleRGBDImageNYU::SampleRGBDImageNYU(const std::string& prefix,
-                                       const std::string& data_root)
+SampleNYURGBDImage::SampleNYURGBDImage(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "SampleNYURGBDImage",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220201-data/SampleRGBDImageNYU.zip"},
+               "20220201-data/SampleNYURGBDImage.zip"},
               "b0baaf892c7ff9b202eb5fb40c5f7b58",
               /*no_extract =*/false,
               data_root) {
@@ -220,12 +215,11 @@ SampleRGBDImageNYU::SampleRGBDImageNYU(const std::string& prefix,
     depth_path_ = Dataset::GetExtractDir() + "/NYU_depth.pgm";
 }
 
-SampleRGBDImageSUN::SampleRGBDImageSUN(const std::string& prefix,
-                                       const std::string& data_root)
+SampleSUNRGBDImage::SampleSUNRGBDImage(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "SampleSUNRGBDImage",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220201-data/SampleRGBDImageSUN.zip"},
+               "20220201-data/SampleSUNRGBDImage.zip"},
               "b1a430586547c8986bdf8b36179a8e67",
               /*no_extract =*/false,
               data_root) {
@@ -233,12 +227,11 @@ SampleRGBDImageSUN::SampleRGBDImageSUN(const std::string& prefix,
     depth_path_ = Dataset::GetExtractDir() + "/SUN_depth.png";
 }
 
-SampleRGBDImageTUM::SampleRGBDImageTUM(const std::string& prefix,
-                                       const std::string& data_root)
+SampleTUMRGBDImage::SampleTUMRGBDImage(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "SampleTUMRGBDImage",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220201-data/SampleRGBDImageTUM.zip"},
+               "20220201-data/SampleTUMRGBDImage.zip"},
               "91758d42b142dbad7b0d90e857ad47a8",
               /*no_extract =*/false,
               data_root) {
@@ -246,12 +239,11 @@ SampleRGBDImageTUM::SampleRGBDImageTUM(const std::string& prefix,
     depth_path_ = Dataset::GetExtractDir() + "/TUM_depth.png";
 }
 
-SampleRGBDDatasetRedwood::SampleRGBDDatasetRedwood(const std::string& prefix,
-                                                   const std::string& data_root)
+SampleRedwoodRGBDImages::SampleRedwoodRGBDImages(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "SampleRedwoodRGBDImages",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220201-data/SampleRGBDDatasetRedwood.zip"},
+               "20220201-data/SampleRedwoodRGBDImages.zip"},
               "3af3b6ee53e4d64396537553995d9556",
               /*no_extract =*/false,
               data_root) {
@@ -273,12 +265,11 @@ SampleRGBDDatasetRedwood::SampleRGBDDatasetRedwood(const std::string& prefix,
     reconstruction_path_ = extract_dir + "/example_tsdf_pcd.ply";
 }
 
-SampleFountainRGBDDataset::SampleFountainRGBDDataset(
-        const std::string& prefix, const std::string& data_root)
+SampleFountainRGBDImages::SampleFountainRGBDImages(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "SampleFountainRGBDImages",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220201-data/SampleFountainRGBDDataset.zip"},
+               "20220201-data/SampleFountainRGBDImages.zip"},
               "c6c1b2171099f571e2a78d78675df350",
               /*no_extract =*/false,
               data_root) {
@@ -355,10 +346,9 @@ SampleFountainRGBDDataset::SampleFountainRGBDDataset(
     reconstruction_path_ = extract_dir + "/scene/integrated.ply";
 }
 
-EaglePointCloud::EaglePointCloud(const std::string& prefix,
-                                 const std::string& data_root)
+EaglePointCloud::EaglePointCloud(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "EaglePointCloud",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
                "20220201-data/EaglePointCloud.ply"},
               "e4e6c77bc548e7eb7548542a0220ad78",
@@ -367,10 +357,9 @@ EaglePointCloud::EaglePointCloud(const std::string& prefix,
     path_ = Dataset::GetExtractDir() + "/EaglePointCloud.ply";
 }
 
-ArmadilloMesh::ArmadilloMesh(const std::string& prefix,
-                             const std::string& data_root)
+ArmadilloMesh::ArmadilloMesh(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "ArmadilloMesh",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
                "20220201-data/ArmadilloMesh.ply"},
               "9e68ff1b1cc914ed88cd84f6a8235021",
@@ -379,9 +368,9 @@ ArmadilloMesh::ArmadilloMesh(const std::string& prefix,
     path_ = Dataset::GetExtractDir() + "/ArmadilloMesh.ply";
 }
 
-BunnyMesh::BunnyMesh(const std::string& prefix, const std::string& data_root)
+BunnyMesh::BunnyMesh(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "BunnyMesh",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
                "20220201-data/BunnyMesh.ply"},
               "568f871d1a221ba6627569f1e6f9a3f2",
@@ -390,9 +379,9 @@ BunnyMesh::BunnyMesh(const std::string& prefix, const std::string& data_root)
     path_ = Dataset::GetExtractDir() + "/BunnyMesh.ply";
 }
 
-KnotMesh::KnotMesh(const std::string& prefix, const std::string& data_root)
+KnotMesh::KnotMesh(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "KnotMesh",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
                "20220201-data/KnotMesh.ply"},
               "bfc9f132ecdfb7f9fdc42abf620170fc",
@@ -401,10 +390,9 @@ KnotMesh::KnotMesh(const std::string& prefix, const std::string& data_root)
     path_ = Dataset::GetExtractDir() + "/KnotMesh.ply";
 }
 
-JuneauImage::JuneauImage(const std::string& prefix,
-                         const std::string& data_root)
+JuneauImage::JuneauImage(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "JuneauImage",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
                "20220201-data/JuneauImage.jpg"},
               "a090f6342893bdf0caefd83c6debbecd",
@@ -413,10 +401,9 @@ JuneauImage::JuneauImage(const std::string& prefix,
     path_ = Dataset::GetExtractDir() + "/JuneauImage.jpg";
 }
 
-RedwoodLivingRoomPointClouds::RedwoodLivingRoomPointClouds(
-        const std::string& prefix, const std::string& data_root)
+LivingRoomPointClouds::LivingRoomPointClouds(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "LivingRoomPointClouds",
               {"http://redwood-data.org/indoor/data/"
                "livingroom1-fragments-ply.zip",
                "https://github.com/isl-org/open3d_downloads/releases/"
@@ -431,7 +418,7 @@ RedwoodLivingRoomPointClouds::RedwoodLivingRoomPointClouds(
     }
 }
 
-std::string RedwoodLivingRoomPointClouds::GetPaths(size_t index) const {
+std::string LivingRoomPointClouds::GetPaths(size_t index) const {
     if (index > 56) {
         utility::LogError(
                 "Invalid index. Expected index between 0 to 56 but got {}.",
@@ -440,10 +427,9 @@ std::string RedwoodLivingRoomPointClouds::GetPaths(size_t index) const {
     return paths_[index];
 }
 
-RedwoodOfficePointClouds::RedwoodOfficePointClouds(const std::string& prefix,
-                                                   const std::string& data_root)
+OfficePointClouds::OfficePointClouds(const std::string& data_root)
     : SingleDownloadDataset(
-              prefix,
+              "OfficePointClouds",
               {"http://redwood-data.org/indoor/data/"
                "office1-fragments-ply.zip",
                "https://github.com/isl-org/open3d_downloads/releases/"
@@ -458,7 +444,7 @@ RedwoodOfficePointClouds::RedwoodOfficePointClouds(const std::string& prefix,
     }
 }
 
-std::string RedwoodOfficePointClouds::GetPaths(size_t index) const {
+std::string OfficePointClouds::GetPaths(size_t index) const {
     if (index > 52) {
         utility::LogError(
                 "Invalid index. Expected index between 0 to 52 but got {}.",

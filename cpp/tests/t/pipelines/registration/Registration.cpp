@@ -30,6 +30,7 @@
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/pipelines/registration/ColoredICP.h"
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
@@ -314,12 +315,9 @@ TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
     core::Device device = GetParam();
 
     t::geometry::PointCloud source_tpcd, target_tpcd;
-    t::io::ReadPointCloud(
-            std::string(TEST_DATA_DIR) + "/ColoredICP/frag_115.ply",
-            source_tpcd);
-    t::io::ReadPointCloud(
-            std::string(TEST_DATA_DIR) + "/ColoredICP/frag_116.ply",
-            target_tpcd);
+    data::DemoColoredICPPointClouds colored_frag;
+    t::io::ReadPointCloud(colored_frag.GetPaths()[0], source_tpcd);
+    t::io::ReadPointCloud(colored_frag.GetPaths()[1], target_tpcd);
     source_tpcd = source_tpcd.To(device);
     target_tpcd = target_tpcd.To(device);
 

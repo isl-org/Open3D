@@ -155,7 +155,7 @@ TEST_P(ReadWriteTPC, WriteBadData) {
 TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
     t::geometry::PointCloud pcd;
 
-    data::SamplePointCloudPLY pointcloud_ply;
+    data::PLYPointCloud pointcloud_ply;
     t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd,
                           {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
@@ -316,7 +316,7 @@ TEST(TPointCloudIO, WritePTSColorConversion2) {
 TEST(TPointCloudIO, ReadWritePointCloudAsNPZ) {
     // Read PointCloud from PLY file.
     t::geometry::PointCloud pcd_ply;
-    data::SamplePointCloudPLY pointcloud_ply;
+    data::PLYPointCloud pointcloud_ply;
     t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd_ply,
                           {"auto", false, false, true});
 
@@ -352,7 +352,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
     // Read PointCloud from PLY file.
     t::geometry::PointCloud input_pcd;
     // Using PLY Read to load the data.
-    data::SamplePointCloudPLY pointcloud_ply;
+    data::PLYPointCloud pointcloud_ply;
     t::io::ReadPointCloud(pointcloud_ply.GetPath(), input_pcd,
                           {"auto", false, false, false});
 

@@ -29,7 +29,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-    tum_data = o3d.data.SampleRGBDImageTUM()
+    tum_data = o3d.data.SampleTUMRGBDImage()
     depth = o3d.t.io.read_image(tum_data.depth_path)
     intrinsic = o3d.core.Tensor([[535.4, 0, 320.1], [0, 539.2, 247.6],
                                  [0, 0, 1]])

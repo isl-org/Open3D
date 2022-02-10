@@ -30,7 +30,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     device = o3d.core.Device('CPU:0')
-    tum_data = o3d.data.SampleRGBDImageTUM()
+    tum_data = o3d.data.SampleTUMRGBDImage()
     depth = o3d.t.io.read_image(tum_data.depth_path).to(device)
     color = o3d.t.io.read_image(tum_data.color_path).to(device)
 

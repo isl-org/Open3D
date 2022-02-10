@@ -507,7 +507,8 @@ class JupyterDocsBuilder:
             'jupyter_visualization.ipynb'
         ]
         example_dirs = [
-            "geometry", "core", "pipelines", "visualization", "t_pipelines"
+            "geometry", "core", "data", "pipelines", "visualization",
+            "t_pipelines"
         ]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir) / "jupyter" / example_dir)

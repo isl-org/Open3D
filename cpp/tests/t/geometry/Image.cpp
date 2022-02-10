@@ -856,7 +856,7 @@ TEST_P(ImagePermuteDevices, DepthToVertexNormalMaps) {
 TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap_Visual) {
     core::Device device = GetParam();
 
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image depth =
             t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0])
                     ->To(device);
@@ -873,7 +873,7 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateVertexMap_Visual) {
 TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
     core::Device device = GetParam();
 
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image depth =
             t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0])
                     ->To(device);
@@ -905,7 +905,7 @@ TEST_P(ImagePermuteDevices, DISABLED_CreateNormalMap_Visual) {
 TEST_P(ImagePermuteDevices, DISABLED_ColorizeDepth) {
     core::Device device = GetParam();
 
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image depth =
             t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0])
                     ->To(device);

@@ -673,7 +673,7 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
 TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     core::Device device = GetParam();
 
-    data::SamplePointCloudPCD sample_pcd;
+    data::PCDPointCloud sample_pcd;
     // Sanity test to visualize
     t::geometry::PointCloud pcd =
             t::geometry::PointCloud::FromLegacy(

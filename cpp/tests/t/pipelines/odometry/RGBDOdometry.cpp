@@ -66,7 +66,7 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
     const float depth_scale = 1000.0;
     const float depth_diff = 0.07;
 
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image src_depth =
             *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
     t::geometry::Image dst_depth =
@@ -135,7 +135,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
     const float depth_max = 3.0;
     const float depth_diff = 0.07;
 
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image src_depth =
             *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
     t::geometry::Image dst_depth =
@@ -203,7 +203,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
     const float depth_max = 3.0;
     const float depth_diff = 0.07;
 
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image src_depth =
             *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
     t::geometry::Image dst_depth =
@@ -271,7 +271,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     const float depth_max = 3.0;
     const float depth_diff = 0.07;
 
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     t::geometry::Image src_depth =
             *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
     t::geometry::Image dst_depth =

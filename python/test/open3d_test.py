@@ -91,17 +91,3 @@ def list_devices_with_torch():
             return [o3d.core.Device("CPU:0")]
     else:
         return []
-
-
-def download_fountain_dataset():
-    fountain_path = os.path.join(test_data_dir, "fountain_small")
-    fountain_zip_path = os.path.join(test_data_dir, "fountain.zip")
-    if not os.path.exists(fountain_path):
-        print("Downloading fountain dataset")
-        url = "https://github.com/isl-org/open3d_downloads/releases/download/open3d_tutorial/fountain.zip"
-        urllib.request.urlretrieve(url, fountain_zip_path)
-        print("Extracting fountain dataset")
-        with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:
-            zip_ref.extractall(os.path.dirname(fountain_path))
-        os.remove(fountain_zip_path)
-    return fountain_path

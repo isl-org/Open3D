@@ -28,12 +28,11 @@ import open3d as o3d
 import numpy as np
 import re
 import os
-from open3d_test import download_fountain_dataset
 
 
 def load_fountain_dataset():
     rgbd_images = []
-    fountain_rgbd_dataset = o3d.data.SampleFountainRGBDDataset()
+    fountain_rgbd_dataset = o3d.data.SampleFountainRGBDImages()
     for i in range(len(fountain_rgbd_dataset.depth_paths)):
         depth = o3d.io.read_image(fountain_rgbd_dataset.depth_paths[i])
         color = o3d.io.read_image(fountain_rgbd_dataset.color_paths[i])

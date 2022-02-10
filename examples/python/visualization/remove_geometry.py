@@ -37,7 +37,7 @@ def visualize_non_blocking(vis, pcds):
     vis.update_renderer()
 
 
-pcd_data = o3d.data.SamplePointCloudPCD()
+pcd_data = o3d.data.PCDPointCloud()
 pcd_orig = o3d.io.read_point_cloud(pcd_data.path)
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]
 pcd_orig.transform(flip_transform)

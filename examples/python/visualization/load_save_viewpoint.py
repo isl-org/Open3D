@@ -49,7 +49,7 @@ def load_view_point(pcd, filename):
 
 
 if __name__ == "__main__":
-    pcd_data = o3d.data.SamplePointCloudPCD()
+    pcd_data = o3d.data.PCDPointCloud()
     pcd = o3d.io.read_point_cloud(pcd_data.path)
     save_view_point(pcd, "viewpoint.json")
     load_view_point(pcd, "viewpoint.json")

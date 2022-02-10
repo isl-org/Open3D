@@ -31,7 +31,7 @@ import numpy as np
 
 def radius_search():
     print("Loading pointcloud ...")
-    sample_pcd_data = o3d.data.SamplePointCloudPCD()
+    sample_pcd_data = o3d.data.PCDPointCloud()
     pcd = o3d.io.read_point_cloud(sample_pcd_data.path)
     pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 
@@ -47,7 +47,7 @@ def radius_search():
 
 def knn_search():
     print("Loading pointcloud ...")
-    sample_pcd = o3d.data.SamplePointCloudPCD()
+    sample_pcd = o3d.data.PCDPointCloud()
     pcd = o3d.io.read_point_cloud(sample_pcd.path)
     pcd_tree = o3d.geometry.KDTreeFlann(pcd)
 

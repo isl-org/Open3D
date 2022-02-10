@@ -69,7 +69,7 @@ def nyu_dataset():
     print("Read NYU dataset")
     # Open3D does not support ppm/pgm file yet. Not using o3d.io.read_image here.
     # MathplotImage having some ISSUE with NYU pgm file. Not using imread for pgm.
-    nyu_data = o3d.data.SampleRGBDImageNYU()
+    nyu_data = o3d.data.SampleNYURGBDImage()
     color_raw = mpimg.imread(nyu_data.color_path)
     depth_raw = read_nyu_pgm(nyu_data.depth_path)
     color = o3d.geometry.Image(color_raw)
@@ -82,10 +82,10 @@ def nyu_dataset():
 
 
 def redwood_dataset():
-    print("Read ICL dataset")
-    icl_data = o3d.data.SampleRGBDDatasetRedwood()
-    color_raw = o3d.io.read_image(icl_data.color_paths[0])
-    depth_raw = o3d.io.read_image(icl_data.depth_paths[0])
+    print("Read Redwood dataset")
+    redwood_data = o3d.data.SampleRedwoodRGBDImages()
+    color_raw = o3d.io.read_image(redwood_data.color_paths[0])
+    depth_raw = o3d.io.read_image(redwood_data.depth_paths[0])
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
 
@@ -95,7 +95,7 @@ def redwood_dataset():
 
 def sun_dataset():
     print("Read SUN dataset")
-    sun_data = o3d.data.SampleRGBDImageSUN()
+    sun_data = o3d.data.SampleSUNRGBDImage()
     color_raw = o3d.io.read_image(sun_data.color_path)
     depth_raw = o3d.io.read_image(sun_data.depth_path)
     rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(
@@ -107,7 +107,7 @@ def sun_dataset():
 
 def tum_dataset():
     print("Read TUM dataset")
-    tum_data = o3d.data.SampleRGBDImageTUM()
+    tum_data = o3d.data.SampleTUMRGBDImage()
     color_raw = o3d.io.read_image(tum_data.color_path)
     depth_raw = o3d.io.read_image(tum_data.depth_path)
     rgbd_image = o3d.geometry.RGBDImage.create_from_tum_format(

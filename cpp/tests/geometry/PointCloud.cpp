@@ -1188,7 +1188,7 @@ TEST(PointCloud, ComputeConvexHull) {
 
 TEST(PointCloud, HiddenPointRemoval) {
     geometry::PointCloud pcd;
-    data::SamplePointCloudPLY pointcloud_ply;
+    data::PLYPointCloud pointcloud_ply;
     io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     EXPECT_EQ(pcd.points_.size(), 196133);
     ExpectEQ(pcd.GetMaxBound(), Eigen::Vector3d(3.96609, 2.427476, 2.55859));
@@ -1205,7 +1205,7 @@ TEST(PointCloud, HiddenPointRemoval) {
 
 TEST(PointCloud, ClusterDBSCAN) {
     geometry::PointCloud pcd;
-    data::SamplePointCloudPLY pointcloud_ply;
+    data::PLYPointCloud pointcloud_ply;
     io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     EXPECT_EQ(pcd.points_.size(), 196133);
 
@@ -1220,7 +1220,7 @@ TEST(PointCloud, ClusterDBSCAN) {
 
 TEST(PointCloud, SegmentPlane) {
     geometry::PointCloud pcd;
-    data::SamplePointCloudPCD pointcloud_pcd;
+    data::PCDPointCloud pointcloud_pcd;
     io::ReadPointCloud(pointcloud_pcd.GetPath(), pcd);
     EXPECT_EQ(pcd.points_.size(), 113662);
 
@@ -1255,7 +1255,7 @@ TEST(PointCloud, SegmentPlaneKnownPlane) {
 }
 
 TEST(PointCloud, CreateFromDepthImage) {
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     const std::string trajectory_path = redwood_data.GetTrajectoryLogPath();
     const std::string im_depth_path = redwood_data.GetDepthPaths()[0];
 
@@ -1282,7 +1282,7 @@ TEST(PointCloud, CreateFromDepthImage) {
 }
 
 TEST(PointCloud, CreateFromRGBDImage) {
-    data::SampleRGBDDatasetRedwood redwood_data;
+    data::SampleRedwoodRGBDImages redwood_data;
     const std::string trajectory_path = redwood_data.GetTrajectoryLogPath();
     const std::string im_depth_path = redwood_data.GetDepthPaths()[0];
     const std::string im_rgb_path = redwood_data.GetColorPaths()[0];

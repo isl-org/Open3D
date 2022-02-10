@@ -76,7 +76,7 @@ TEST(OctreeIO, ZeroDepth) {
 TEST(OctreeIO, JsonFileIOFragment) {
     // Create octree
     geometry::PointCloud pcd;
-    data::SamplePointCloudPLY pointcloud_ply;
+    data::PLYPointCloud pointcloud_ply;
     io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 6;
     geometry::Octree octree(max_depth);

@@ -30,9 +30,9 @@ import open3d as o3d
 if __name__ == "__main__":
 
     print("Load two aligned point clouds.")
-    demo_data = o3d.data.DemoPointCloudFeatureMatching()
-    pcd0 = o3d.io.read_point_cloud(demo_data.pointcloud_paths[0])
-    pcd1 = o3d.io.read_point_cloud(demo_data.pointcloud_paths[1])
+    demo_data = o3d.data.DemoFeatureMatchingPointClouds()
+    pcd0 = o3d.io.read_point_cloud(demo_data.point_cloud_paths[0])
+    pcd1 = o3d.io.read_point_cloud(demo_data.point_cloud_paths[1])
 
     pcd0.paint_uniform_color([1, 0.706, 0])
     pcd1.paint_uniform_color([0, 0.651, 0.929])

@@ -53,7 +53,7 @@ TEST_P(ControlGridPermuteDevices, Touch) {
     core::Device device = GetParam();
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
-    data::SamplePointCloudPCD sample_pcd;
+    data::PCDPointCloud sample_pcd;
     t::geometry::PointCloud pcd =
             CreateTPCDFromFile(sample_pcd.GetPath(), device);
     cgrid.Touch(pcd);
@@ -65,7 +65,7 @@ TEST_P(ControlGridPermuteDevices, Deform) {
     core::Device device = GetParam();
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
-    data::SamplePointCloudPCD sample_pcd;
+    data::PCDPointCloud sample_pcd;
     t::geometry::PointCloud pcd =
             CreateTPCDFromFile(sample_pcd.GetPath(), device);
     cgrid.Touch(pcd);
@@ -84,7 +84,7 @@ TEST_P(ControlGridPermuteDevices, Regularizer) {
     core::Device device = GetParam();
     t::pipelines::slac::ControlGrid cgrid(0.5, 1000, device);
 
-    data::SamplePointCloudPCD sample_pcd;
+    data::PCDPointCloud sample_pcd;
     t::geometry::PointCloud pcd =
             CreateTPCDFromFile(sample_pcd.GetPath(), device);
     cgrid.Touch(pcd);

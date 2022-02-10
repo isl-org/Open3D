@@ -39,7 +39,7 @@ namespace registration {
 // TODO: Change this to pcd with non-finite poins.
 static void BenchmarkCreateFromPointCloudBallPivoting(
         benchmark::State& state, const bool remove_non_finite_points) {
-    data::SamplePointCloudPCD sample_pcd;
+    data::PCDPointCloud sample_pcd;
     auto pcd = io::CreatePointCloudFromFile(sample_pcd.GetPath());
 
     if (remove_non_finite_points) {

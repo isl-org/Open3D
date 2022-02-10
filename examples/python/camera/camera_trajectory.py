@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     print("Read a trajectory and combine all the RGB-D images.")
     pcds = []
-    redwood_rgbd = o3d.data.SampleRGBDDatasetRedwood()
+    redwood_rgbd = o3d.data.SampleRedwoodRGBDImages()
     trajectory = o3d.io.read_pinhole_camera_trajectory(
         redwood_rgbd.trajectory_log_path)
     o3d.io.write_pinhole_camera_trajectory("test.json", trajectory)

@@ -92,7 +92,7 @@ if __name__ == "__main__":
               "Please rebuild Open3D with ENABLE_HEADLESS_RENDERING=ON")
         exit(1)
 
-    sample_ply_data = o3d.data.SamplePointCloudPLY()
+    sample_ply_data = o3d.data.PLYPointCloud()
     pcd = o3d.io.read_point_cloud(sample_ply_data.path)
 
     print("Customized visualization playing a camera trajectory. "
