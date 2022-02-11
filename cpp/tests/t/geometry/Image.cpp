@@ -173,21 +173,22 @@ TEST_P(ImagePermuteDevices, Copy) {
     EXPECT_TRUE(im_copy.AsTensor().AllClose(im.AsTensor()));
 }
 
-// Test automatic scale determination for conversion from UInt8 / UInt16 ->
-// Float32/64 and LinearTransform().
-// Currently needs IPP.
-TEST_P(ImagePermuteDevices,
-       OPEN3D_CONCAT(IPP_CONDITIONAL_TEST_STR, To_LinearTransform)) {
+// 1. Automatic scale determination for conversion from UInt8 / UInt16 ->
+// Float32/64
+// 2. LinearTransform() with value saturation.
+TEST_P(ImagePermuteDevices, To_LinearTransform) {
     using ::testing::ElementsAreArray;
     using ::testing::FloatEq;
+    using ::testing::FloatNear;
     core::Device device = GetParam();
 
     // reference data
     const std::vector<uint8_t> input_data = {10, 25, 0, 13};
-    auto output_ref = {FloatEq(10. / 255), FloatEq(25. / 255), FloatEq(0.),
-                       FloatEq(13. / 255)};
+    auto output_ref = {FloatEq(10. / 255), FloatEq(25. / 255),
+                       FloatNear(0., 1e-8), FloatEq(13. / 255)};
     auto negative_image_ref = {FloatEq(1. - 10. / 255), FloatEq(1. - 25. / 255),
                                FloatEq(1.), FloatEq(1. - 13. / 255)};
+    auto saturate_ref = {180, 255, 0, 240};
 
     t::geometry::Image input(
             core::Tensor{input_data, {2, 2, 1}, core::UInt8, device});
@@ -207,6 +208,11 @@ TEST_P(ImagePermuteDevices,
     EXPECT_EQ(output.GetDtype(), core::UInt16);
     EXPECT_THAT(output.AsTensor().ToFlatVector<uint16_t>(),
                 ElementsAreArray(input_data));
+
+    // Saturation to [0, 255]
+    output = input.LinearTransform(/* scale= */ 20, /* offset= */ -20);
+    EXPECT_THAT(output.AsTensor().ToFlatVector<uint8_t>(),
+                ElementsAreArray(saturate_ref));
 }
 
 TEST_P(ImagePermuteDevices, FilterBilateral) {

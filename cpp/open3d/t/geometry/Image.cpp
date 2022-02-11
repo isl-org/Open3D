@@ -117,50 +117,20 @@ Image Image::To(core::Dtype dtype,
     }
 
     Image dst_im;
-    if (HAVE_IPPICV &&
+    if (!copy && dtype == GetDtype()) {
+        dst_im.data_ = data_;
+    } else {
+        dst_im.data_ = core::Tensor::Empty(
+                {GetRows(), GetCols(), GetChannels()}, dtype, GetDevice());
+    }
+    if (HAVE_IPPICV &&  // Check for IPP fast implementation.
+        data_.GetDevice().GetType() == core::Device::DeviceType::CPU &&
         std::count(ipp_supported.begin(), ipp_supported.end(), GetDtype()) >
                 0 &&
         std::count(ipp_supported.begin(), ipp_supported.end(), dtype) > 0) {
-        // TODO(Sameer): Tensor based Op for saturate_cast / LinearTransform
-        // NPP does not expose a useful API, so as a workaround, move data to
-        // CPU and use IPP.
-        auto device = data_.GetDevice();
-        if (device.GetType() != core::Device::DeviceType::CPU) {
-            core::Tensor data_CPU = data_.To(core::Device("CPU:0"));
-            core::Tensor dst_data_CPU =
-                    (dtype == GetDtype()
-                             ? data_CPU
-                             : core::Tensor::Empty(
-                                       std::vector<int64_t>{GetRows(),
-                                                            GetCols(),
-                                                            GetChannels()},
-                                       dtype, core::Device("CPU:0")));
-            IPP_CALL(ipp::To, data_CPU, dst_data_CPU, scale, offset);
-            if (!copy && dtype == GetDtype()) {
-                const_cast<core::Tensor &>(data_).CopyFrom(dst_data_CPU);
-                dst_im.data_ = data_;
-            } else {
-                dst_im.data_ = dst_data_CPU.To(device);
-            }
-        } else {
-            if (!copy && dtype == GetDtype()) {
-                dst_im.data_ = data_;
-            } else {
-                dst_im.data_ = core::Tensor::Empty(
-                        std::vector<int64_t>{GetRows(), GetCols(),
-                                             GetChannels()},
-                        dtype, GetDevice());
-            }
-            IPP_CALL(ipp::To, data_, dst_im.data_, scale, offset);
-        }
-    } else {
-        // Suppress unused-but-set-variable warning if IPPICV is not available
-        (void)scale;
-
-        utility::LogError(
-                "Conversion from {} to {} on device {} is not implemented!",
-                GetDtype().ToString(), dtype.ToString(),
-                GetDevice().ToString());
+        IPP_CALL(ipp::To, data_, dst_im.data_, scale, offset);
+    } else {  // NPP does not provide a useful API, so use native kernels
+        kernel::image::To(data_, dst_im.data_, scale, offset);
     }
     return dst_im;
 }

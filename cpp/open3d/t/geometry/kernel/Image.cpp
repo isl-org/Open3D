@@ -33,6 +33,20 @@ namespace geometry {
 namespace kernel {
 namespace image {
 
+void To(const core::Tensor &src,
+        core::Tensor &dst,
+        double scale,
+        double offset) {
+    core::Device device = src.GetDevice();
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        ToCPU(src, dst, scale, offset);
+    } else if (device.GetType() == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(ToCUDA, src, dst, scale, offset);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 void ClipTransform(const core::Tensor &src,
                    core::Tensor &dst,
                    float scale,
