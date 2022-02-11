@@ -106,7 +106,7 @@ def measure_memory(fn, handle):
         print(e)
         return np.nan
     info = nvidia_smi.nvmlDeviceGetMemoryInfo(handle)
-    memory = info.used / 1024. / 1024.
+    memory = info.used / 1000. / 1000. / 1000.
     print('.', end='')
     return memory
 

@@ -261,22 +261,22 @@ if __name__ == "__main__":
                  label=dtypes[idx])
     ax1.set_title(f"{args.search_type}: N={int(np.power(10, 4))}")
     ax1.set_xlabel("K")
-    ax1.set_ylabel("Memory (MB)")
+    ax1.set_ylabel("Memory (GB)")
     ax1.legend()
 
     ax2.set_title(f"{args.search_type}: N={int(np.power(10, 5))}")
     ax2.set_xlabel("K")
-    ax2.set_ylabel("Memory (MB)")
+    ax2.set_ylabel("Memory (GB)")
     ax2.legend()
 
     ax3.set_title(f"{args.search_type}: N={int(np.power(10, 6))}")
     ax3.set_xlabel("K")
-    ax3.set_ylabel("Memory (MB)")
+    ax3.set_ylabel("Memory (GB)")
     ax3.legend()
 
     ax4.set_title(f"{args.search_type}: N={int(np.power(10, 7))}")
     ax4.set_xlabel("K")
-    ax4.set_ylabel("Memory (MB)")
+    ax4.set_ylabel("Memory (GB)")
     ax4.legend()
 
     plt.show()
