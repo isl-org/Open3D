@@ -159,7 +159,7 @@ if __name__ == "__main__":
             NNS(o3d_cuda_dev, args.search_type, "int"),
             NNS(o3d_cuda_dev, args.search_type, "long"),
         ]
-    neighbors = [int(2**p) for p in range(9)]
+    neighbors = [int(2**p) for p in range(12)]
 
     # run benchmark
     for method in methods:

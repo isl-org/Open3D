@@ -130,8 +130,7 @@ def print_table_simple(methods, results):
     rows = []
 
     for x in results[0]:
-        r = [x] + list(
-            map(np.median, [r[x]['search'] for r in results]))
+        r = [x] + list(map(np.median, [r[x]['search'] for r in results]))
         rows.append(r)
 
     print(tabulate.tabulate(rows, headers=headers))

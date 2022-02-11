@@ -153,14 +153,14 @@ if __name__ == "__main__":
     # datasets = prepare_benchmark_data()
     datasets = OrderedDict()
     for dim in (3, 4, 8, 16, 32):
-            points = o3d.core.Tensor.from_numpy(
-                np.random.rand(100000, dim).astype(np.float32))
-            queries = o3d.core.Tensor.from_numpy(
-                np.random.rand(100000, dim).astype(np.float32))
-            datasets['random{}'.format(dim)] = {
-                'points': points,
-                'queries': queries
-            }
+        points = o3d.core.Tensor.from_numpy(
+            np.random.rand(100000, dim).astype(np.float32))
+        queries = o3d.core.Tensor.from_numpy(
+            np.random.rand(100000, dim).astype(np.float32))
+        datasets['random{}'.format(dim)] = {
+            'points': points,
+            'queries': queries
+        }
 
     # if args.search_type == "knn":
     #     # random data
