@@ -42,21 +42,22 @@ import numpy as np
 import open3d as o3d
 from scipy.spatial import cKDTree
 
-from benchmark_utils import measure_time, print_system_info, print_table
+from benchmark_utils import measure_time, print_system_info, print_table_simple
 
 
 # Define NNS methods
 class NNS:
 
-    def __init__(self, device, search_type):
+    def __init__(self, device, search_type, index_dtype):
+        assert index_dtype in ["int32", "int64"]
         self.device = device
         self.search_type = search_type
+        self.index_dtype = o3d.core.Dtype.Int32 if index_dtype == "int32" else o3d.core.Dtype.Int64
 
     def setup(self, points, queries, radius):
         points_dev = points.to(self.device)
         queries_dev = queries.to(self.device)
-        index = o3d.core.nns.NearestNeighborSearch(points_dev,
-                                                   o3d.core.Dtype.Int32)
+        index = o3d.core.nns.NearestNeighborSearch(points_dev, self.index_dtype)
         if self.search_type == "knn":
             index.knn_index()
         elif self.search_type == "radius":
@@ -80,7 +81,7 @@ class NNS:
         return ans
 
     def __str__(self):
-        return f"{self.search_type.capitalize()}({self.device})"
+        return f"{self.search_type.capitalize()}({self.device}, {self.index_dtype})"
 
 
 def compute_avg_radii(points, queries, neighbors):
@@ -139,6 +140,7 @@ if __name__ == "__main__":
                         default="knn",
                         choices=["knn", "radius", "hybrid"])
     parser.add_argument("--overwrite", action="store_true")
+    # parser.add_argument("--index_dtype", type=str, default="int32", choices=["int32", "int64"])
     args = parser.parse_args()
 
     # devices
@@ -150,10 +152,7 @@ if __name__ == "__main__":
 
     # datasets = prepare_benchmark_data()
     datasets = OrderedDict()
-
-    if args.search_type == "knn":
-        # random data
-        for dim in (3, 4, 8, 16, 32):
+    for dim in (3, 4, 8, 16, 32):
             points = o3d.core.Tensor.from_numpy(
                 np.random.rand(100000, dim).astype(np.float32))
             queries = o3d.core.Tensor.from_numpy(
@@ -163,10 +162,35 @@ if __name__ == "__main__":
                 'queries': queries
             }
 
+    # if args.search_type == "knn":
+    #     # random data
+    #     for dim in (3, 4, 8, 16, 32):
+    #         points = o3d.core.Tensor.from_numpy(
+    #             np.random.rand(100000, dim).astype(np.float32))
+    #         queries = o3d.core.Tensor.from_numpy(
+    #             np.random.rand(100000, dim).astype(np.float32))
+    #         datasets['random{}'.format(dim)] = {
+    #             'points': points,
+    #             'queries': queries
+    #         }
+    # else:
+    #     # random data
+    #     for dim in (3, 4):
+    #         points = o3d.core.Tensor.from_numpy(
+    #             np.random.rand(100000, dim).astype(np.float32))
+    #         queries = o3d.core.Tensor.from_numpy(
+    #             np.random.rand(100000, dim).astype(np.float32))
+    #         datasets['random{}'.format(dim)] = {
+    #             'points': points,
+    #             'queries': queries
+    #         }
+
     # prepare methods
     methods = [
-        NNS(o3d_cuda_dev, args.search_type),
-        # NNS(o3d_cpu_dev, args.search_type),
+        NNS(o3d_cuda_dev, args.search_type, "int32"),
+        NNS(o3d_cuda_dev, args.search_type, "int64"),
+        NNS(o3d_cpu_dev, args.search_type, "int32"),
+        NNS(o3d_cpu_dev, args.search_type, "int64"),
     ]
     neighbors = (1, 37, 64)
 
@@ -224,4 +248,4 @@ if __name__ == "__main__":
             results.append(data)
 
     print_system_info()
-    print_table(methods, results)
+    print_table_simple(methods, results)

@@ -125,6 +125,18 @@ def print_table(methods, results):
     print(tabulate.tabulate(rows, headers=headers))
 
 
+def print_table_simple(methods, results):
+    headers = [''] + [f'{n}_search' for n in methods]
+    rows = []
+
+    for x in results[0]:
+        r = [x] + list(
+            map(np.median, [r[x]['search'] for r in results]))
+        rows.append(r)
+
+    print(tabulate.tabulate(rows, headers=headers))
+
+
 def print_table_memory(methods, results):
     headers = [''] + [f'{n}' for n in methods]
     rows = []
