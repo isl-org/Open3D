@@ -60,6 +60,8 @@ void ToCPU
 #define LINEAR_SATURATE(elem_t)                                                \
     elem_t limits[2] = {std::numeric_limits<elem_t>::min(),                    \
                         std::numeric_limits<elem_t>::max()};                   \
+    calc_t c_scale = static_cast<calc_t>(scale);                               \
+    calc_t c_offset = static_cast<calc_t>(offset);                             \
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {                         \
         core::ParallelFor(                                                     \
                 src.GetDevice(), rows* cols,                                   \
@@ -68,10 +70,10 @@ void ToCPU
                     int64_t row = workload_idx / cols;                         \
                     auto src_ptr = src_indexer.GetDataPtr<scalar_t>(row, col); \
                     auto dst_ptr = dst_indexer.GetDataPtr<elem_t>(row, col);   \
-                    for (int64_t ch = 0; ch < channels;                        \
+                    for (int ch = 0; ch < channels;                            \
                          ++ch, ++src_ptr, ++dst_ptr) {                         \
-                        double out = static_cast<double>(*src_ptr) * scale +   \
-                                     offset;                                   \
+                        calc_t out = static_cast<calc_t>(*src_ptr) * c_scale + \
+                                     c_offset;                                 \
                         out = out < limits[0] ? limits[0] : out;               \
                         out = out > limits[1] ? limits[1] : out;               \
                         *dst_ptr = static_cast<elem_t>(out);                   \
@@ -79,24 +81,34 @@ void ToCPU
                 });                                                            \
     });
     if (dst_dtype == core::Float32) {
+        using calc_t = float;
         LINEAR_SATURATE(float)
     } else if (dst_dtype == core::Float64) {
+        using calc_t = double;
         LINEAR_SATURATE(double)
     } else if (dst_dtype == core::Int8) {
+        using calc_t = float;
         LINEAR_SATURATE(int8_t)
     } else if (dst_dtype == core::UInt8) {
+        using calc_t = float;
         LINEAR_SATURATE(uint8_t)
     } else if (dst_dtype == core::Int16) {
+        using calc_t = float;
         LINEAR_SATURATE(int16_t)
     } else if (dst_dtype == core::UInt16) {
+        using calc_t = float;
         LINEAR_SATURATE(uint16_t)
     } else if (dst_dtype == core::Int32) {
+        using calc_t = double;
         LINEAR_SATURATE(int32_t)
     } else if (dst_dtype == core::UInt32) {
+        using calc_t = double;
         LINEAR_SATURATE(uint32_t)
     } else if (dst_dtype == core::Int64) {
+        using calc_t = double;
         LINEAR_SATURATE(int64_t)
     } else if (dst_dtype == core::UInt64) {
+        using calc_t = double;
         LINEAR_SATURATE(uint64_t)
     }
 #undef LINEAR_SATURATE
