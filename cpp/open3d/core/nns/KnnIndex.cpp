@@ -58,6 +58,7 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points,
                              const Tensor& points_row_splits,
                              const Dtype index_dtype) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
+    assert(index_dtype == Int32 || index_dtype == Int64);
     AssertTensorDevice(points_row_splits, Device("CPU:0"));
     AssertTensorDtype(points_row_splits, Int64);
 
@@ -106,7 +107,6 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
                                               int knn) const {
     const Dtype dtype = GetDtype();
     const Device device = GetDevice();
-    const Dtype index_dtype = GetIndexDtype();
 
     // Only Float32, Float64 type dataset_points are supported.
     AssertTensorDtype(query_points, dtype);
@@ -137,14 +137,19 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        if (dtype == Float32 && index_dtype == Int32) {
-            KnnSearchCUDA<float, int32_t>(FN_PARAMETERS);
-        } else if (dtype == Float64 && index_dtype == Int32) {
-            KnnSearchCUDA<double, int32_t>(FN_PARAMETERS);
-        } else if (dtype == Float32 && index_dtype == Int64) {
-            KnnSearchCUDA<float, int64_t>(FN_PARAMETERS);
+        const Dtype index_dtype = GetIndexDtype();
+        if (dtype == Float32) {
+            if (index_dtype == Int32) {
+                KnnSearchCUDA<float, int32_t>(FN_PARAMETERS);
+            } else {
+                KnnSearchCUDA<float, int64_t>(FN_PARAMETERS);
+            }
         } else {
-            KnnSearchCUDA<double, int64_t>(FN_PARAMETERS);
+            if (index_dtype == Int32) {
+                KnnSearchCUDA<double, int32_t>(FN_PARAMETERS);
+            } else {
+                KnnSearchCUDA<double, int64_t>(FN_PARAMETERS);
+            }
         }
 #else
         utility::LogError(
