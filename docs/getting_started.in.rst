@@ -9,8 +9,7 @@ Python
 ======
 
 Open3D Python packages are distributed via
-`PyPI <https://pypi.org/project/open3d/>`_ and
-`Conda <https://anaconda.org/open3d-admin/open3d>`_.
+`PyPI <https://pypi.org/project/open3d/>`_.
 
 Supported Python versions:
 
@@ -46,10 +45,11 @@ Pip (PyPI)
 
 .. note::
     In general, we recommend using a
-    `virtual environment <https://docs.python-guide.org/dev/virtualenvs/>`_ for
-    containerization. Otherwise, depending on the configurations, ``pip3`` may
-    be needed for Python 3, or the ``--user`` option may need to be used to
-    avoid permission issues. For example:
+    `virtual environment <https://docs.python-guide.org/dev/virtualenvs/>`_
+    or `conda environment <https://docs.conda.io/en/latest/miniconda.html>`_.
+    Otherwise, depending on the configurations, ``pip3`` may be needed for
+    Python 3, or the ``--user`` option may need to be used to avoid permission
+    issues. For example:
 
     .. code-block:: bash
 
@@ -100,22 +100,6 @@ to install the latest development version on Linux for Python 3.9:
    The development wheels for Linux are named according to PEP600. Please
    use ``pip`` version >=20.3 to install them. The wheels are not yet fully
    PEP600 compliant.
-
-Conda
------
-
-.. code-block:: bash
-
-    conda install -c open3d-admin -c conda-forge open3d
-
-.. note::
-
-    Open3D prebuilt binaries for Conda (Anaconda/Miniconda) can be found at
-    `open3d <https://anaconda.org/open3d-admin/open3d>`_. Currently, the
-    ``open3d`` package is distributed under the ``open3d-admin`` channel. To
-    setup Conda, please see
-    `the official documentation <https://conda.io/projects/conda/en/latest/user-guide/install/index.html>`_.
-
 
 Try it
 ------
@@ -211,9 +195,9 @@ Extract the archive and move the contents to a local folder (such as
     Linux / MacOSX:                       Windows:
     Open3D_install                        Open3D_install
     ├── include                           ├── bin
-    │   └── open3d                        │   └── Open3D.dll
-    │       ├── core                      ├── CMake
-    │       ├── ...                       │   ├── Open3DConfig.cmake
+    │   └── open3d                        │   └── Open3D.dll
+    │       ├── core                      ├── CMake
+    │       ├── ...                       │   ├── Open3DConfig.cmake
     │       ├── Open3DConfig.h            │   ├── ...
     │       ├── Open3D.h                  ├── include
     │       ├── ...                       │   └── open3d
