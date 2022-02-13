@@ -135,19 +135,17 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     dataset_points_, points_row_splits_, query_points_, queries_row_splits_, \
             knn, neighbors_index, neighbors_row_splits, neighbors_distance
 
-#define CALL(ftype, itype, fn)                                      \
-    if (Dtype::FromType<ftype>() == dtype &&                        \
-        Dtype::FromType<itype>() == index_dtype) {                  \
-        fn<ftype, itype>(FN_PARAMETERS);                            \
-        return std::make_pair(neighbors_index, neighbors_distance); \
-    }
-
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        CALL(float, int32_t, KnnSearchCUDA)
-        CALL(double, int32_t, KnnSearchCUDA)
-        CALL(float, int64_t, KnnSearchCUDA)
-        CALL(double, int64_t, KnnSearchCUDA)
+        if (dtype == Float32 && index_dtype == Int32) {
+            KnnSearchCUDA<float, int32_t>(FN_PARAMETERS);
+        } else if (dtype == Float64 && index_dtype == Int32) {
+            KnnSearchCUDA<double, int32_t>(FN_PARAMETERS);
+        } else if (dtype == Float32 && index_dtype == Int64) {
+            KnnSearchCUDA<float, int64_t>(FN_PARAMETERS);
+        } else {
+            KnnSearchCUDA<double, int64_t>(FN_PARAMETERS);
+        }
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
