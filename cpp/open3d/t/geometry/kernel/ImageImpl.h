@@ -68,8 +68,8 @@ void ToCPU
                 [=] OPEN3D_DEVICE(int64_t workload_idx) {                      \
                     int64_t col = workload_idx % cols;                         \
                     int64_t row = workload_idx / cols;                         \
-                    auto src_ptr = src_indexer.GetDataPtr<scalar_t>(row, col); \
-                    auto dst_ptr = dst_indexer.GetDataPtr<elem_t>(row, col);   \
+                    auto src_ptr = src_indexer.GetDataPtr<scalar_t>(col, row); \
+                    auto dst_ptr = dst_indexer.GetDataPtr<elem_t>(col, row);   \
                     for (int ch = 0; ch < channels;                            \
                          ++ch, ++src_ptr, ++dst_ptr) {                         \
                         calc_t out = static_cast<calc_t>(*src_ptr) * c_scale + \
