@@ -184,14 +184,21 @@ TEST_P(ImagePermuteDevices, To_LinearTransform) {
     core::Device device = GetParam();
 
     // reference data
-    const std::vector<uint8_t> input_data = {10, 25, 0, 13};
-    auto output_ref = {FloatEq(10. / 255), FloatEq(25. / 255),
-                       FloatNear(0., 1e-8), FloatEq(13. / 255)};
-    auto negative_image_ref = {FloatEq(1. - 10. / 255), FloatEq(1. - 25. / 255),
-                               FloatEq(1.), FloatEq(1. - 13. / 255)};
-    auto saturate_ref = {180, 255, 0, 240};
-    core::Tensor t_input{input_data, {2, 2, 1}, core::UInt8, device};
-    core::Tensor t_input3 = t_input.Broadcast({2, 2, 3}).Clone();
+    const std::vector<uint8_t> input_data = {10, 25, 0, 13, 5, 40};
+    auto output_ref = {FloatEq(10. / 255),  FloatEq(25. / 255),
+                       FloatNear(0., 1e-8), FloatEq(13. / 255),
+                       FloatEq(5. / 255),   FloatEq(40. / 255)};
+    auto negative_image_ref = {FloatEq(1. - 10. / 255),
+                               FloatEq(1. - 25. / 255),
+                               FloatEq(1.),
+                               FloatEq(1. - 13. / 255),
+                               FloatEq(1. - 5. / 255),
+                               FloatEq(1. - 40. / 255)
+
+    };
+    auto saturate_ref = {180, 255, 0, 240, 80, 255};
+    core::Tensor t_input{input_data, {2, 3, 1}, core::UInt8, device};
+    core::Tensor t_input3 = t_input.Broadcast({2, 3, 3}).Clone();
 
     t::geometry::Image input(t_input);
     // UInt8 -> Float32: auto scale = 1./255
