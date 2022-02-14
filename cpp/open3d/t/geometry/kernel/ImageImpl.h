@@ -24,8 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <limits>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/Indexer.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -50,66 +53,50 @@ void ToCPU
          core::Tensor& dst,
          double scale,
          double offset) {
-    NDArrayIndexer src_indexer(src, 2);
-    NDArrayIndexer dst_indexer(dst, 2);
-    core::Dtype dst_dtype = dst.GetDtype();
-    const int64_t rows = src.GetShape(0);
-    const int64_t cols = src.GetShape(1);
-    const int64_t channels = src.GetShape(2);
-
-#define LINEAR_SATURATE(elem_t)                                                \
+    core::Indexer indexer({src}, dst, core::DtypePolicy::NONE);
+    // elem_t: corresponds to dst_dtype.
+    // scalar_t: corresponds to src_dtype.
+    // calc_t: calculation type for intermediate results.
+#define LINEAR_SATURATE(elem_t, calc_t)                                        \
     elem_t limits[2] = {std::numeric_limits<elem_t>::min(),                    \
                         std::numeric_limits<elem_t>::max()};                   \
     calc_t c_scale = static_cast<calc_t>(scale);                               \
     calc_t c_offset = static_cast<calc_t>(offset);                             \
     DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {                         \
         core::ParallelFor(                                                     \
-                src.GetDevice(), rows* cols,                                   \
+                src.GetDevice(), indexer.NumWorkloads(),                       \
                 [=] OPEN3D_DEVICE(int64_t workload_idx) {                      \
-                    int64_t col = workload_idx % cols;                         \
-                    int64_t row = workload_idx / cols;                         \
-                    auto src_ptr = src_indexer.GetDataPtr<scalar_t>(col, row); \
-                    auto dst_ptr = dst_indexer.GetDataPtr<elem_t>(col, row);   \
-                    for (int ch = 0; ch < channels;                            \
-                         ++ch, ++src_ptr, ++dst_ptr) {                         \
-                        calc_t out = static_cast<calc_t>(*src_ptr) * c_scale + \
-                                     c_offset;                                 \
-                        out = out < limits[0] ? limits[0] : out;               \
-                        out = out > limits[1] ? limits[1] : out;               \
-                        *dst_ptr = static_cast<elem_t>(out);                   \
-                    }                                                          \
+                    auto src_ptr =                                             \
+                            indexer.GetInputPtr<scalar_t>(0, workload_idx);    \
+                    auto dst_ptr = indexer.GetOutputPtr<elem_t>(workload_idx); \
+                    calc_t out = static_cast<calc_t>(*src_ptr) * c_scale +     \
+                                 c_offset;                                     \
+                    out = out < limits[0] ? limits[0] : out;                   \
+                    out = out > limits[1] ? limits[1] : out;                   \
+                    *dst_ptr = static_cast<elem_t>(out);                       \
                 });                                                            \
     });
+    core::Dtype dst_dtype = dst.GetDtype();
     if (dst_dtype == core::Float32) {
-        using calc_t = float;
-        LINEAR_SATURATE(float)
+        LINEAR_SATURATE(float, float)
     } else if (dst_dtype == core::Float64) {
-        using calc_t = double;
-        LINEAR_SATURATE(double)
+        LINEAR_SATURATE(double, double)
     } else if (dst_dtype == core::Int8) {
-        using calc_t = float;
-        LINEAR_SATURATE(int8_t)
+        LINEAR_SATURATE(int8_t, float)
     } else if (dst_dtype == core::UInt8) {
-        using calc_t = float;
-        LINEAR_SATURATE(uint8_t)
+        LINEAR_SATURATE(uint8_t, float)
     } else if (dst_dtype == core::Int16) {
-        using calc_t = float;
-        LINEAR_SATURATE(int16_t)
+        LINEAR_SATURATE(int16_t, float)
     } else if (dst_dtype == core::UInt16) {
-        using calc_t = float;
-        LINEAR_SATURATE(uint16_t)
+        LINEAR_SATURATE(uint16_t, float)
     } else if (dst_dtype == core::Int32) {
-        using calc_t = double;
-        LINEAR_SATURATE(int32_t)
+        LINEAR_SATURATE(int32_t, double)
     } else if (dst_dtype == core::UInt32) {
-        using calc_t = double;
-        LINEAR_SATURATE(uint32_t)
+        LINEAR_SATURATE(uint32_t, double)
     } else if (dst_dtype == core::Int64) {
-        using calc_t = double;
-        LINEAR_SATURATE(int64_t)
+        LINEAR_SATURATE(int64_t, double)
     } else if (dst_dtype == core::UInt64) {
-        using calc_t = double;
-        LINEAR_SATURATE(uint64_t)
+        LINEAR_SATURATE(uint64_t, double)
     }
 #undef LINEAR_SATURATE
 }
