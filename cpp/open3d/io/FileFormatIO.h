@@ -53,6 +53,7 @@ FileGeometry ReadFileGeometryTypePTS(const std::string& path);
 FileGeometry ReadFileGeometryTypeSTL(const std::string& path);
 FileGeometry ReadFileGeometryTypeXYZ(const std::string& path);
 FileGeometry ReadFileGeometryTypeXYZN(const std::string& path);
+FileGeometry ReadFileGeometryTypeXYZND(const std::string& path);
 FileGeometry ReadFileGeometryTypeXYZRGB(const std::string& path);
 
 }  // namespace io

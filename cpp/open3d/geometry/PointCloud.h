@@ -61,6 +61,15 @@ public:
     /// \param points Points coordinates.
     PointCloud(const std::vector<Eigen::Vector3d> &points)
         : Geometry3D(Geometry::GeometryType::PointCloud), points_(points) {}
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param points Points coordinates.
+    /// \param dopplers Doppler velocitues.
+    PointCloud(const std::vector<Eigen::Vector3d> &points,
+               const std::vector<double> &dopplers)
+        : Geometry3D(Geometry::GeometryType::PointCloud),
+          points_(points),
+          dopplers_(dopplers) {}
     ~PointCloud() override {}
 
 public:
@@ -94,6 +103,11 @@ public:
     /// Returns `true` if the point cloud contains point colors.
     bool HasColors() const {
         return points_.size() > 0 && colors_.size() == points_.size();
+    }
+
+    /// Returns 'true' if the point cloud contains Doppler velocities.
+    bool HasDopplers() const {
+        return points_.size() > 0 && dopplers_.size() == points_.size();
     }
 
     /// Returns 'true' if the point cloud contains per-point covariance matrix.
@@ -420,6 +434,8 @@ public:
     std::vector<Eigen::Vector3d> normals_;
     /// RGB colors of points.
     std::vector<Eigen::Vector3d> colors_;
+    /// Doppler velocity of points.
+    std::vector<double> dopplers_;
     /// Covariance Matrix for each point
     std::vector<Eigen::Matrix3d> covariances_;
 };

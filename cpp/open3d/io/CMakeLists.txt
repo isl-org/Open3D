@@ -33,6 +33,7 @@ target_sources(io PRIVATE
     file_format/FileTUM.cpp
     file_format/FileXYZ.cpp
     file_format/FileXYZN.cpp
+    file_format/FileXYZND.cpp
     file_format/FileXYZRGB.cpp
 )
 

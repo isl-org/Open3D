@@ -30,6 +30,7 @@
 #include <tuple>
 #include <vector>
 
+#include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Eigen.h"
@@ -123,7 +124,11 @@ public:
     /// \param transformation The estimated transformation matrix.
     RegistrationResult(
             const Eigen::Matrix4d &transformation = Eigen::Matrix4d::Identity())
-        : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
+        : transformation_(transformation),
+          inlier_rmse_(0.0),
+          fitness_(0.0),
+          converged_(false),
+          num_iterations_(0) {}
     ~RegistrationResult() {}
     bool IsBetterRANSACThan(const RegistrationResult &other) const {
         return fitness_ > other.fitness_ || (fitness_ == other.fitness_ &&
@@ -142,7 +147,29 @@ public:
     /// For RANSAC: inlier ratio (# of inlier correspondences / # of
     /// all correspondences)
     double fitness_;
+    /// Specifies whether the algorithm converged or not.
+    bool converged_;
+    /// Number of iterations the algorithm took to converge.
+    size_t num_iterations_;
+    std::vector<double> errors_;
 };
+
+/// \brief Helper function for evaluating registration between point clouds.
+///
+/// \param source The source point cloud.
+/// \param target The target point cloud.
+/// \param target_kdtree The k-d tree generated from target point cloud.
+/// \param max_correspondence_distance Maximum correspondence points-pair
+/// distance.
+/// \param transformation The 4x4 transformation matrix to transform
+/// source to target. Default value: array([[1., 0., 0., 0.], [0., 1., 0., 0.],
+/// [0., 0., 1., 0.], [0., 0., 0., 1.]]).
+RegistrationResult GetRegistrationResultAndCorrespondences(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const geometry::KDTreeFlann &target_kdtree,
+        double max_correspondence_distance,
+        const Eigen::Matrix4d &transformation);
 
 /// \brief Function for evaluating registration between point clouds.
 ///

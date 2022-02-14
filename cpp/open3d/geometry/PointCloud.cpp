@@ -47,6 +47,7 @@ PointCloud &PointCloud::Clear() {
     points_.clear();
     normals_.clear();
     colors_.clear();
+    dopplers_.clear();
     covariances_.clear();
     return *this;
 }
@@ -119,6 +120,13 @@ PointCloud &PointCloud::operator+=(const PointCloud &cloud) {
     } else {
         colors_.clear();
     }
+    if ((!HasPoints() || HasDopplers()) && cloud.HasDopplers()) {
+        dopplers_.resize(new_vert_num);
+        for (size_t i = 0; i < add_vert_num; i++)
+            dopplers_[old_vert_num + i] = cloud.dopplers_[i];
+    } else {
+        dopplers_.clear();
+    }
     if ((!HasPoints() || HasCovariances()) && cloud.HasCovariances()) {
         covariances_.resize(new_vert_num);
         for (size_t i = 0; i < add_vert_num; i++)
@@ -162,6 +170,7 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
                                               bool remove_infinite) {
     bool has_normal = HasNormals();
     bool has_color = HasColors();
+    bool has_doppler = HasDopplers();
     bool has_covariance = HasCovariances();
     size_t old_point_num = points_.size();
     size_t k = 0;                                 // new index
@@ -176,6 +185,7 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
             points_[k] = points_[i];
             if (has_normal) normals_[k] = normals_[i];
             if (has_color) colors_[k] = colors_[i];
+            if (has_doppler) dopplers_[k] = dopplers_[i];
             if (has_covariance) covariances_[k] = covariances_[i];
             k++;
         }
@@ -183,6 +193,7 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
     points_.resize(k);
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
+    if (has_doppler) dopplers_.resize(k);
     if (has_covariance) covariances_.resize(k);
     utility::LogDebug(
             "[RemoveNonFinitePoints] {:d} nan points have been removed.",
@@ -195,6 +206,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
     auto output = std::make_shared<PointCloud>();
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
+    bool has_doppler = HasDopplers();
     bool has_covariance = HasCovariances();
 
     std::vector<bool> mask = std::vector<bool>(points_.size(), invert);
@@ -207,6 +219,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
             output->points_.push_back(points_[i]);
             if (has_normals) output->normals_.push_back(normals_[i]);
             if (has_colors) output->colors_.push_back(colors_[i]);
+            if (has_doppler) output->dopplers_.push_back(dopplers_[i]);
             if (has_covariance) output->covariances_.push_back(covariances_[i]);
         }
     }
@@ -232,6 +245,9 @@ public:
         if (cloud.HasColors()) {
             color_ += cloud.colors_[index];
         }
+        if (cloud.HasDopplers()) {
+            doppler_ += cloud.dopplers_[index];
+        }
         if (cloud.HasCovariances()) {
             covariance_ += cloud.covariances_[index];
         }
@@ -251,6 +267,10 @@ public:
         return color_ / double(num_of_points_);
     }
 
+    double GetAverageDoppler() const {
+        return doppler_ / double(num_of_points_);
+    }
+
     Eigen::Matrix3d GetAverageCovariance() const {
         return covariance_ / double(num_of_points_);
     }
@@ -261,6 +281,7 @@ public:
     Eigen::Vector3d normal_ = Eigen::Vector3d::Zero();
     Eigen::Vector3d color_ = Eigen::Vector3d::Zero();
     Eigen::Matrix3d covariance_ = Eigen::Matrix3d::Zero();
+    double doppler_ = 0;
 };
 
 class point_cubic_id {
@@ -293,6 +314,9 @@ public:
             } else {
                 color_ += cloud.colors_[index];
             }
+        }
+        if (cloud.HasDopplers()) {
+            doppler_ += cloud.dopplers_[index];
         }
         if (cloud.HasCovariances()) {
             covariance_ += cloud.covariances_[index];
@@ -353,6 +377,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     }
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
+    bool has_doppler = HasDopplers();
     bool has_covariances = HasCovariances();
     for (auto accpoint : voxelindex_to_accpoint) {
         output->points_.push_back(accpoint.second.GetAveragePoint());
@@ -361,6 +386,9 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         }
         if (has_colors) {
             output->colors_.push_back(accpoint.second.GetAverageColor());
+        }
+        if (has_doppler) {
+            output->dopplers_.push_back(accpoint.second.GetAverageDoppler());
         }
         if (has_covariances) {
             output->covariances_.emplace_back(
@@ -413,6 +441,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     }
     bool has_normals = HasNormals();
     bool has_colors = HasColors();
+    bool has_doppler = HasDopplers();
     bool has_covariances = HasCovariances();
     int cnt = 0;
     cubic_id.resize(voxelindex_to_accpoint.size(), 8);
@@ -430,6 +459,9 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
             } else {
                 output->colors_.push_back(accpoint.second.GetAverageColor());
             }
+        }
+        if (has_doppler) {
+            output->dopplers_.emplace_back(accpoint.second.GetAverageDoppler());
         }
         if (has_covariances) {
             output->covariances_.emplace_back(

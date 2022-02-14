@@ -26,7 +26,6 @@
 
 #include "open3d/pipelines/registration/Registration.h"
 
-#include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/utility/Helper.h"
@@ -37,7 +36,7 @@ namespace open3d {
 namespace pipelines {
 namespace registration {
 
-static RegistrationResult GetRegistrationResultAndCorrespondences(
+RegistrationResult GetRegistrationResultAndCorrespondences(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const geometry::KDTreeFlann &target_kdtree,
@@ -154,6 +153,12 @@ RegistrationResult RegistrationICP(
                 "TransformationEstimationColoredICP "
                 "require pre-computed normal vectors for target PointCloud.");
     }
+    if (estimation.GetTransformationEstimationType() ==
+        TransformationEstimationType::DopplerICP) {
+        utility::LogError(
+                "Use RegistrationDopplerICP along with "
+                "TransformationEstimationDopplerICP.");
+    }
     if ((estimation.GetTransformationEstimationType() ==
          TransformationEstimationType::GeneralizedICP) &&
         (!target.HasCovariances() || !source.HasCovariances())) {
@@ -173,7 +178,9 @@ RegistrationResult RegistrationICP(
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
             pcd, target, kdtree, max_correspondence_distance, transformation);
-    for (int i = 0; i < criteria.max_iteration_; i++) {
+    int i;
+    bool converged{false};
+    for (i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
         Eigen::Matrix4d update = estimation.ComputeTransformation(
@@ -189,9 +196,13 @@ RegistrationResult RegistrationICP(
                     criteria.relative_fitness_ &&
             std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
                     criteria.relative_rmse_) {
+            converged = true;
             break;
         }
     }
+
+    result.num_iterations_ = i;
+    result.converged_ = converged;
     return result;
 }
 

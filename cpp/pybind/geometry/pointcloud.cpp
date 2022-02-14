@@ -63,6 +63,8 @@ void pybind_pointcloud(py::module &m) {
                  "Returns ``True`` if the point cloud contains point normals.")
             .def("has_colors", &PointCloud::HasColors,
                  "Returns ``True`` if the point cloud contains point colors.")
+            .def("has_dopplers", &PointCloud::HasDopplers,
+                 "Returns ``True`` if the point cloud contains Doppler velocities.")
             .def("has_covariances", &PointCloud::HasCovariances,
                  "Returns ``True`` if the point cloud contains covariances.")
             .def("normalize_normals", &PointCloud::NormalizeNormals,
@@ -240,11 +242,16 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
                     "``float64`` array of shape ``(num_points, 3)``, "
                     "range ``[0, 1]`` , use ``numpy.asarray()`` to access "
                     "data: RGB colors of points.")
+            .def_readwrite("dopplers", &PointCloud::dopplers_,
+                           "``float64`` array of shape ``(num_points, 1)``, "
+                           "use ``numpy.asarray()`` to access data: Points "
+                           "Doppler velocities.")
             .def_readwrite("covariances", &PointCloud::covariances_,
                            "``float64`` array of shape ``(num_points, 3, 3)``, "
                            "use ``numpy.asarray()`` to access data: Points "
                            "covariances.");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_colors");
+    docstring::ClassMethodDocInject(m, "PointCloud", "has_dopplers");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_normals");
     docstring::ClassMethodDocInject(m, "PointCloud", "has_points");
     docstring::ClassMethodDocInject(m, "PointCloud", "normalize_normals");
