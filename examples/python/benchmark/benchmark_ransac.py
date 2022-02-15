@@ -32,7 +32,6 @@ import numpy as np
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-
 do_visualization = False
 
 
@@ -63,8 +62,10 @@ def execute_global_registration(source, target, source_fpfh, target_fpfh,
     return result
 
 
-dataset_list = {"LivingRoomPointClouds": o3d.data.LivingRoomPointClouds,
-                "OfficePointClouds": o3d.data.OfficePointClouds}
+dataset_list = {
+    "LivingRoomPointClouds": o3d.data.LivingRoomPointClouds,
+    "OfficePointClouds": o3d.data.OfficePointClouds
+}
 
 if __name__ == "__main__":
     # data preparation
