@@ -27,13 +27,14 @@
 
 #include <vector>
 
+#include "open3d/core/Dtype.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
 using namespace open3d::core::nns;
 
-template <class T>
+template <class T, class TIndex>
 void FixedRadiusSearchCPU(const torch::Tensor& points,
                           const torch::Tensor& queries,
                           double radius,
@@ -49,7 +50,7 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
                           torch::Tensor& neighbors_row_splits,
                           torch::Tensor& neighbors_distance);
 #ifdef BUILD_CUDA_MODULE
-template <class T>
+template <class T, class TIndex>
 void FixedRadiusSearchCUDA(const torch::Tensor& points,
                            const torch::Tensor& queries,
                            double radius,
@@ -77,7 +78,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
         torch::Tensor hash_table_cell_splits,
         const std::string& metric_str,
         const bool ignore_query_point,
-        const bool return_distances) {
+        const bool return_distances,
+        const TorchDtype_t index_dtype) {
     Metric metric = L2;
     if (metric_str == "L1") {
         metric = L1;
@@ -96,6 +98,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
     CHECK_TYPE(hash_table_cell_splits, kInt32);
     CHECK_SAME_DTYPE(points, queries);
     CHECK_SAME_DEVICE_TYPE(points, queries);
+    assert(index_dtype == kInt32 || index_dtype == kInt64);
     // ensure that these are on the cpu
     points_row_splits = points_row_splits.to(torch::kCPU);
     queries_row_splits = queries_row_splits.to(torch::kCPU);
@@ -139,24 +142,44 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
             metric, ignore_query_point, return_distances, neighbors_index, \
             neighbors_row_splits, neighbors_distance
 
-#define CALL(type, fn)                                                \
-    if (CompareTorchDtype<type>(point_type)) {                        \
-        fn<type>(FN_PARAMETERS);                                      \
-        return std::make_tuple(neighbors_index, neighbors_row_splits, \
-                               neighbors_distance);                   \
-    }
-
     if (points.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
         // pass to cuda function
-        CALL(float, FixedRadiusSearchCUDA)
+        if (CompareTorchDtype<float>(point_type)){
+            if (index_dtype == ToTorchDtype<int32_t>()){
+                FixedRadiusSearchCUDA<float, int32_t>(FN_PARAMETERS);
+            } else {
+                FixedRadiusSearchCUDA<float, int64_t>(FN_PARAMETERS);
+            }
+        } else {
+            if (index_dtype == ToTorchDtype<int32_t>()){
+                FixedRadiusSearchCUDA<double, int32_t>(FN_PARAMETERS);
+            } else {
+                FixedRadiusSearchCUDA<double, int64_t>(FN_PARAMETERS);
+            }
+        }
+        return std::make_tuple(neighbors_index, neighbors_row_splits, \
+                               neighbors_distance);
 #else
         TORCH_CHECK(false,
                     "FixedRadiusSearch was not compiled with CUDA support")
 #endif
     } else {
-        CALL(float, FixedRadiusSearchCPU)
-        CALL(double, FixedRadiusSearchCPU)
+        if (CompareTorchDtype<float>(point_type)){
+            if (index_dtype == ToTorchDtype<int32_t>()){
+                FixedRadiusSearchCPU<float, int32_t>(FN_PARAMETERS);
+            } else {
+                FixedRadiusSearchCPU<float, int64_t>(FN_PARAMETERS);
+            }
+        } else {
+            if (index_dtype == ToTorchDtype<int32_t>()){
+                FixedRadiusSearchCPU<double, int32_t>(FN_PARAMETERS);
+            } else {
+                FixedRadiusSearchCPU<double, int64_t>(FN_PARAMETERS);
+            }
+        }
+        return std::make_tuple(neighbors_index, neighbors_row_splits, \
+                               neighbors_distance);
     }
     TORCH_CHECK(false, "FixedRadiusSearch does not support " +
                                points.toString() + " as input for points")
@@ -168,6 +191,6 @@ static auto registry = torch::RegisterOperators(
         "radius, Tensor points_row_splits, Tensor queries_row_splits, Tensor "
         "hash_table_splits, Tensor hash_table_index, Tensor "
         "hash_table_cell_splits, str metric=\"L2\", bool ignore_query_point="
-        "False, bool return_distances=False) -> (Tensor neighbors_index, "
+        "False, bool return_distances=False, TorchDtype_t index_dtype=torch::kInt32) -> (Tensor neighbors_index, "
         "Tensor neighbors_row_splits, Tensor neighbors_distance)",
         &FixedRadiusSearch);
