@@ -49,8 +49,8 @@ void KnnSearchCPU(const torch::Tensor& points,
 
     // run radius search for each batch item
     std::vector<NeighborSearchAllocator<T, TIndex>> batch_output_allocators(
-            batch_size, NeighborSearchAllocator<T, TIndex>(points.device().type(),
-                                                   points.device().index())
+            batch_size, NeighborSearchAllocator<T, TIndex>(
+                                points.device().type(), points.device().index())
 
     );
     int64_t last_neighbors_count = 0;
@@ -91,8 +91,8 @@ void KnnSearchCPU(const torch::Tensor& points,
         return;
     }
 
-    NeighborSearchAllocator<T, TIndex> output_allocator(points.device().type(),
-                                                points.device().index());
+    NeighborSearchAllocator<T, TIndex> output_allocator(
+            points.device().type(), points.device().index());
 
     // combine results
     int64_t neighbors_index_size = 0;
@@ -128,8 +128,8 @@ void KnnSearchCPU(const torch::Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-#define INSTANTIATE(T, TIndex)                                                    \
-    template void KnnSearchCPU<T, TIndex>(                                        \
+#define INSTANTIATE(T, TIndex)                                            \
+    template void KnnSearchCPU<T, TIndex>(                                \
             const torch::Tensor& points, const torch::Tensor& queries,    \
             const int64_t k, const torch::Tensor& points_row_splits,      \
             const torch::Tensor& queries_row_splits, const Metric metric, \

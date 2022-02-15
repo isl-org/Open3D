@@ -110,20 +110,21 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
     if (points.is_cuda()) {
         TORCH_CHECK(false, "KnnSearch does not support CUDA")
     } else {
-        if (CompareTorchDtype<float>(point_type)){
-            if (index_dtype == ToTorchDtype<int32_t>()){
+        if (CompareTorchDtype<float>(point_type)) {
+            if (index_dtype == ToTorchDtype<int32_t>()) {
                 KnnSearchCPU<float, int32_t>(FN_PARAMETERS);
             } else {
                 KnnSearchCPU<float, int64_t>(FN_PARAMETERS);
             }
         } else {
-            if (index_dtype == ToTorchDtype<int32_t>()){
+            if (index_dtype == ToTorchDtype<int32_t>()) {
                 KnnSearchCPU<double, int32_t>(FN_PARAMETERS);
             } else {
                 KnnSearchCPU<double, int64_t>(FN_PARAMETERS);
             }
         }
-        return std::make_tuple(neighbors_index, neighbors_row_splits, neighbors_distance);  
+        return std::make_tuple(neighbors_index, neighbors_row_splits,
+                               neighbors_distance);
     }
     TORCH_CHECK(false, "KnnSearch does not support " + points.toString() +
                                " as input for points")
@@ -134,6 +135,7 @@ static auto registry = torch::RegisterOperators(
         "open3d::knn_search(Tensor points, Tensor queries, int "
         "k, Tensor points_row_splits, Tensor queries_row_splits,"
         "str metric=\"L2\", bool ignore_query_point=False, bool "
-        "return_distances=False, TorchDtype_t index_dtype=torch::kInt32) -> (Tensor neighbors_index, Tensor "
+        "return_distances=False, TorchDtype_t index_dtype=torch::kInt32) -> "
+        "(Tensor neighbors_index, Tensor "
         "neighbors_row_splits, Tensor neighbors_distance)",
         &KnnSearch);

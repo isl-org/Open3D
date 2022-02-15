@@ -113,20 +113,21 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> MultiRadiusSearch(
     if (points.is_cuda()) {
         TORCH_CHECK(false, "MultiRadiusSearch does not support CUDA")
     } else {
-        if (CompareTorchDtype<float>(point_type)){
-            if (index_dtype == ToTorchDtype<int32_t>()){
+        if (CompareTorchDtype<float>(point_type)) {
+            if (index_dtype == ToTorchDtype<int32_t>()) {
                 RadiusSearchCPU<float, int32_t>(FN_PARAMETERS);
             } else {
                 RadiusSearchCPU<float, int64_t>(FN_PARAMETERS);
             }
         } else {
-            if (index_dtype == ToTorchDtype<int32_t>()){
+            if (index_dtype == ToTorchDtype<int32_t>()) {
                 RadiusSearchCPU<double, int32_t>(FN_PARAMETERS);
             } else {
                 RadiusSearchCPU<double, int64_t>(FN_PARAMETERS);
             }
         }
-        return std::make_tuple(neighbors_index, neighbors_row_splits, neighbors_distance); 
+        return std::make_tuple(neighbors_index, neighbors_row_splits,
+                               neighbors_distance);
     }
     TORCH_CHECK(false, "MultiRadiusSearch does not support " +
                                points.toString() + " as input for points")
@@ -137,7 +138,8 @@ static auto registry = torch::RegisterOperators(
         "open3d::radius_search(Tensor points, Tensor queries, Tensor radii, "
         "Tensor points_row_splits, Tensor queries_row_splits,"
         "str metric=\"L2\", bool ignore_query_point=False, bool "
-        "return_distances=False, bool normalize_distances=False, TorchDtype_t index_dtype=torch::kInt32) -> (Tensor "
+        "return_distances=False, bool normalize_distances=False, TorchDtype_t "
+        "index_dtype=torch::kInt32) -> (Tensor "
         "neighbors_index, Tensor "
         "neighbors_row_splits, Tensor neighbors_distance)",
         &MultiRadiusSearch);

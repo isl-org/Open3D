@@ -94,8 +94,8 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-#define INSTANTIATE(T, TIndex)                                                        \
-    template void FixedRadiusSearchCUDA<T, TIndex>(                                   \
+#define INSTANTIATE(T, TIndex)                                                \
+    template void FixedRadiusSearchCUDA<T, TIndex>(                           \
             const torch::Tensor& points, const torch::Tensor& queries,        \
             double radius, const torch::Tensor& points_row_splits,            \
             const torch::Tensor& queries_row_splits,                          \

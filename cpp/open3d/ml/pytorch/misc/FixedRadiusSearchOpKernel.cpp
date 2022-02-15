@@ -48,8 +48,8 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
                           torch::Tensor& neighbors_index,
                           torch::Tensor& neighbors_row_splits,
                           torch::Tensor& neighbors_distance) {
-    NeighborSearchAllocator<T, TIndex> output_allocator(points.device().type(),
-                                                points.device().index());
+    NeighborSearchAllocator<T, TIndex> output_allocator(
+            points.device().type(), points.device().index());
 
     open3d::core::nns::impl::FixedRadiusSearchCPU<T, TIndex>(
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
@@ -67,8 +67,8 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-#define INSTANTIATE(T, TIndex)                                                        \
-    template void FixedRadiusSearchCPU<T, TIndex>(                                    \
+#define INSTANTIATE(T, TIndex)                                                \
+    template void FixedRadiusSearchCPU<T, TIndex>(                            \
             const torch::Tensor& points, const torch::Tensor& queries,        \
             double radius, const torch::Tensor& points_row_splits,            \
             const torch::Tensor& queries_row_splits,                          \
