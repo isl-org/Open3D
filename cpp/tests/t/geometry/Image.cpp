@@ -173,40 +173,85 @@ TEST_P(ImagePermuteDevices, Copy) {
     EXPECT_TRUE(im_copy.AsTensor().AllClose(im.AsTensor()));
 }
 
-// Test automatic scale determination for conversion from UInt8 / UInt16 ->
-// Float32/64 and LinearTransform().
-// Currently needs IPP.
-TEST_P(ImagePermuteDevices,
-       OPEN3D_CONCAT(IPP_CONDITIONAL_TEST_STR, To_LinearTransform)) {
+// a. Automatic scale determination for conversion from UInt8 / UInt16 ->
+// Float32/64
+// b. LinearTransform() with value saturation.
+// c. 1 channel and 3 channels for all cases.
+TEST_P(ImagePermuteDevices, To_LinearTransform) {
     using ::testing::ElementsAreArray;
     using ::testing::FloatEq;
+    using ::testing::FloatNear;
     core::Device device = GetParam();
 
     // reference data
-    const std::vector<uint8_t> input_data = {10, 25, 0, 13};
-    auto output_ref = {FloatEq(10. / 255), FloatEq(25. / 255), FloatEq(0.),
-                       FloatEq(13. / 255)};
-    auto negative_image_ref = {FloatEq(1. - 10. / 255), FloatEq(1. - 25. / 255),
-                               FloatEq(1.), FloatEq(1. - 13. / 255)};
+    const std::vector<uint8_t> input_data = {10, 25, 0, 13, 5, 40};
+    auto output_ref = {FloatEq(10. / 255),  FloatEq(25. / 255),
+                       FloatNear(0., 1e-8), FloatEq(13. / 255),
+                       FloatEq(5. / 255),   FloatEq(40. / 255)};
+    auto negative_image_ref = {FloatEq(1. - 10. / 255),
+                               FloatEq(1. - 25. / 255),
+                               FloatEq(1.),
+                               FloatEq(1. - 13. / 255),
+                               FloatEq(1. - 5. / 255),
+                               FloatEq(1. - 40. / 255)
 
-    t::geometry::Image input(
-            core::Tensor{input_data, {2, 2, 1}, core::UInt8, device});
+    };
+    auto saturate_ref = {180, 255, 0, 240, 80, 255};
+    core::Tensor t_input{input_data, {2, 3, 1}, core::UInt8, device};
+    core::Tensor t_input3 = t_input.Broadcast({2, 3, 3}).Clone();
+
+    t::geometry::Image input(t_input);
     // UInt8 -> Float32: auto scale = 1./255
     t::geometry::Image output = input.To(core::Float32);
     EXPECT_EQ(output.GetDtype(), core::Float32);
     EXPECT_THAT(output.AsTensor().ToFlatVector<float>(),
                 ElementsAreArray(output_ref));
+    // 3 channels
+    t::geometry::Image input3(t_input3);
+    t::geometry::Image output3 = input3.To(core::Float32);
+    for (int64_t ch = 0; ch < 3; ++ch) {
+        EXPECT_THAT(
+                output3.AsTensor().Slice(2, ch, ch + 1).ToFlatVector<float>(),
+                ElementsAreArray(output_ref));
+    }
 
     // LinearTransform to negative image
     output.LinearTransform(/* scale= */ -1, /* offset= */ 1);
     EXPECT_THAT(output.AsTensor().ToFlatVector<float>(),
                 ElementsAreArray(negative_image_ref));
+    // 3 channels
+    output3.LinearTransform(/* scale= */ -1, /* offset= */ 1);
+    for (int64_t ch = 0; ch < 3; ++ch) {
+        EXPECT_THAT(
+                output3.AsTensor().Slice(2, ch, ch + 1).ToFlatVector<float>(),
+                ElementsAreArray(negative_image_ref));
+    }
 
     // UInt8 -> UInt16: auto scale = 1
     output = input.To(core::UInt16);
     EXPECT_EQ(output.GetDtype(), core::UInt16);
     EXPECT_THAT(output.AsTensor().ToFlatVector<uint16_t>(),
                 ElementsAreArray(input_data));
+    // 3 channels
+    output3 = input3.To(core::UInt16);
+    for (int64_t ch = 0; ch < 3; ++ch) {
+        EXPECT_THAT(output3.AsTensor()
+                            .Slice(2, ch, ch + 1)
+                            .ToFlatVector<uint16_t>(),
+                    ElementsAreArray(input_data));
+    }
+
+    // Saturation to [0, 255]
+    output = input.LinearTransform(/* scale= */ 20, /* offset= */ -20);
+    EXPECT_THAT(output.AsTensor().ToFlatVector<uint8_t>(),
+                ElementsAreArray(saturate_ref));
+    // 3 channels
+    output3 = input3.LinearTransform(/* scale= */ 20, /* offset= */ -20);
+    for (int64_t ch = 0; ch < 3; ++ch) {
+        EXPECT_THAT(
+                output3.AsTensor().Slice(2, ch, ch + 1).ToFlatVector<uint8_t>(),
+                ElementsAreArray(saturate_ref));
+    }
 }
 
 TEST_P(ImagePermuteDevices, FilterBilateral) {

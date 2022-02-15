@@ -293,7 +293,7 @@ MenuBase::ItemId MenuImgui::Draw(const DrawContext &context,
                 // Save y position, then draw empty item for the highlight.
                 // Set the enabled flag, in case the real item isn't.
                 auto y = ImGui::GetCursorPosY();
-                if (ImGui::MenuItem("", "", false, item.is_enabled_)) {
+                if (ImGui::MenuItem(" ", "", false, item.is_enabled_)) {
                     activate_id = item.id_;
                 }
                 // Restore the y position, and draw the menu item with the

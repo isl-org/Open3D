@@ -9,8 +9,7 @@ Python
 ======
 
 Open3D Python packages are distributed via
-`PyPI <https://pypi.org/project/open3d/>`_ and
-`Conda <https://anaconda.org/open3d-admin/open3d>`_.
+`PyPI <https://pypi.org/project/open3d/>`_.
 
 Supported Python versions:
 
@@ -46,10 +45,11 @@ Pip (PyPI)
 
 .. note::
     In general, we recommend using a
-    `virtual environment <https://docs.python-guide.org/dev/virtualenvs/>`_ for
-    containerization. Otherwise, depending on the configurations, ``pip3`` may
-    be needed for Python 3, or the ``--user`` option may need to be used to
-    avoid permission issues. For example:
+    `virtual environment <https://docs.python-guide.org/dev/virtualenvs/>`_
+    or `conda environment <https://docs.conda.io/en/latest/miniconda.html>`_.
+    Otherwise, depending on the configurations, ``pip3`` may be needed for
+    Python 3, or the ``--user`` option may need to be used to avoid permission
+    issues. For example:
 
     .. code-block:: bash
 
@@ -101,32 +101,24 @@ to install the latest development version on Linux for Python 3.9:
    use ``pip`` version >=20.3 to install them. The wheels are not yet fully
    PEP600 compliant.
 
-Conda
------
-
-.. code-block:: bash
-
-    conda install -c open3d-admin -c conda-forge open3d
-
-.. note::
-
-    Open3D prebuilt binaries for Conda (Anaconda/Miniconda) can be found at
-    `open3d <https://anaconda.org/open3d-admin/open3d>`_. Currently, the
-    ``open3d`` package is distributed under the ``open3d-admin`` channel. To
-    setup Conda, please see
-    `the official documentation <https://conda.io/projects/conda/en/latest/user-guide/install/index.html>`_.
-
-
 Try it
 ------
 
-Now, try importing Open3D.
-
 .. code-block:: bash
 
-    python -c "import open3d as o3d"
+    # Verify installation
+    python -c "import open3d as o3d; print(o3d.__version__)"
 
-If this works, congratulations, now Open3D has been successfully installed!
+    # Python API
+    python -c "import open3d as o3d; \
+               mesh = o3d.geometry.TriangleMesh.create_sphere(); \
+               mesh.compute_vertex_normals(); \
+               o3d.visualization.draw(mesh, raw_mode=True)"
+
+    # Open3D CLI
+    open3d example visualization/draw
+
+If everything works, congratulations, now Open3D has been successfully installed!
 
 
 Troubleshooting:
@@ -211,9 +203,9 @@ Extract the archive and move the contents to a local folder (such as
     Linux / MacOSX:                       Windows:
     Open3D_install                        Open3D_install
     ├── include                           ├── bin
-    │   └── open3d                        │   └── Open3D.dll
-    │       ├── core                      ├── CMake
-    │       ├── ...                       │   ├── Open3DConfig.cmake
+    │   └── open3d                        │   └── Open3D.dll
+    │       ├── core                      ├── CMake
+    │       ├── ...                       │   ├── Open3DConfig.cmake
     │       ├── Open3DConfig.h            │   ├── ...
     │       ├── Open3D.h                  ├── include
     │       ├── ...                       │   └── open3d

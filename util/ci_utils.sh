@@ -421,6 +421,7 @@ build_docs() {
         "-DBUILD_TENSORFLOW_OPS=ON"
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUNDLE_OPEN3D_ML=ON"
+        "-DBUILD_EXAMPLES=OFF"
     )
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \

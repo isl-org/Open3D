@@ -24,8 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <limits>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
+#include "open3d/core/Indexer.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
@@ -40,6 +43,63 @@ namespace image {
 using std::isinf;
 using std::isnan;
 #endif
+
+#ifdef __CUDACC__
+void ToCUDA
+#else
+void ToCPU
+#endif
+        (const core::Tensor& src,
+         core::Tensor& dst,
+         double scale,
+         double offset) {
+    core::Indexer indexer({src}, dst, core::DtypePolicy::NONE);
+    // elem_t: corresponds to dst_dtype.
+    // scalar_t: corresponds to src_dtype.
+    // calc_t: calculation type for intermediate results.
+#define LINEAR_SATURATE(elem_t, calc_t)                                        \
+    elem_t limits[2] = {std::numeric_limits<elem_t>::min(),                    \
+                        std::numeric_limits<elem_t>::max()};                   \
+    calc_t c_scale = static_cast<calc_t>(scale);                               \
+    calc_t c_offset = static_cast<calc_t>(offset);                             \
+    DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {                         \
+        core::ParallelFor(                                                     \
+                src.GetDevice(), indexer.NumWorkloads(),                       \
+                [=] OPEN3D_DEVICE(int64_t workload_idx) {                      \
+                    auto src_ptr =                                             \
+                            indexer.GetInputPtr<scalar_t>(0, workload_idx);    \
+                    auto dst_ptr = indexer.GetOutputPtr<elem_t>(workload_idx); \
+                    calc_t out = static_cast<calc_t>(*src_ptr) * c_scale +     \
+                                 c_offset;                                     \
+                    out = out < limits[0] ? limits[0] : out;                   \
+                    out = out > limits[1] ? limits[1] : out;                   \
+                    *dst_ptr = static_cast<elem_t>(out);                       \
+                });                                                            \
+    });
+    core::Dtype dst_dtype = dst.GetDtype();
+    if (dst_dtype == core::Float32) {
+        LINEAR_SATURATE(float, float)
+    } else if (dst_dtype == core::Float64) {
+        LINEAR_SATURATE(double, double)
+    } else if (dst_dtype == core::Int8) {
+        LINEAR_SATURATE(int8_t, float)
+    } else if (dst_dtype == core::UInt8) {
+        LINEAR_SATURATE(uint8_t, float)
+    } else if (dst_dtype == core::Int16) {
+        LINEAR_SATURATE(int16_t, float)
+    } else if (dst_dtype == core::UInt16) {
+        LINEAR_SATURATE(uint16_t, float)
+    } else if (dst_dtype == core::Int32) {
+        LINEAR_SATURATE(int32_t, double)
+    } else if (dst_dtype == core::UInt32) {
+        LINEAR_SATURATE(uint32_t, double)
+    } else if (dst_dtype == core::Int64) {
+        LINEAR_SATURATE(int64_t, double)
+    } else if (dst_dtype == core::UInt64) {
+        LINEAR_SATURATE(uint64_t, double)
+    }
+#undef LINEAR_SATURATE
+}
 
 #ifdef __CUDACC__
 void ClipTransformCUDA
