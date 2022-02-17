@@ -66,6 +66,10 @@ public:
                    const core::HashBackendType &backend =
                            core::HashBackendType::Default);
 
+    /// Clear the hashmap and reset the underlying buffers to 0.
+    /// Performance unoptimized as it is only occasionally called.
+    void Reset();
+
     /// Get the underlying hash map that stores values in structure of arrays
     /// (SoA).
     core::HashMap GetHashMap() { return *block_hashmap_; }

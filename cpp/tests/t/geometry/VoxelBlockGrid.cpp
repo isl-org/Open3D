@@ -90,18 +90,24 @@ static std::vector<core::HashBackendType> EnumerateBackends(
     return backends;
 }
 
-static VoxelBlockGrid Integrate(const core::HashBackendType &backend,
-                                const core::Dtype &dtype,
-                                const core::Device &device,
-                                const int resolution) {
+static std::shared_ptr<VoxelBlockGrid> Integrate(
+        const core::HashBackendType &backend,
+        const core::Dtype &dtype,
+        const core::Device &device,
+        const int resolution,
+        std::shared_ptr<VoxelBlockGrid> vbg_ptr = nullptr) {
     core::Tensor intrinsic = GetIntrinsicTensor();
     std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
     const float depth_scale = 1000.0;
     const float depth_max = 3.0;
 
-    auto vbg = VoxelBlockGrid({"tsdf", "weight", "color"},
-                              {core::Float32, dtype, dtype}, {{1}, {1}, {3}},
-                              3.0 / 512, resolution, 10000, device, backend);
+    if (!vbg_ptr) {
+        vbg_ptr = std::make_shared<VoxelBlockGrid>(
+                std::vector<std::string>{"tsdf", "weight", "color"},
+                std::vector<core::Dtype>{core::Float32, dtype, dtype},
+                std::vector<core::SizeVector>{{1}, {1}, {3}}, 3.0 / 512,
+                resolution, 10000, device, backend);
+    }
 
     data::SampleRedwoodRGBDImages redwood_data;
     for (size_t i = 0; i < extrinsics.size(); ++i) {
@@ -112,15 +118,15 @@ static VoxelBlockGrid Integrate(const core::HashBackendType &backend,
                 t::io::CreateImageFromFile(redwood_data.GetColorPaths()[i])
                         ->To(device);
 
-        core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
+        core::Tensor frustum_block_coords = vbg_ptr->GetUniqueBlockCoordinates(
                 depth, intrinsic, extrinsics[i], depth_scale, depth_max,
                 /*trunc_multiplier=*/4.0);
-        vbg.Integrate(frustum_block_coords, depth, color, intrinsic,
-                      extrinsics[i], depth_scale, depth_max,
-                      /*trunc multiplier*/ resolution * 0.5);
+        vbg_ptr->Integrate(frustum_block_coords, depth, color, intrinsic,
+                           extrinsics[i], depth_scale, depth_max,
+                           /*trunc multiplier*/ resolution * 0.5);
     }
 
-    return vbg;
+    return vbg_ptr;
 }
 
 TEST_P(VoxelBlockGridPermuteDevices, Construct) {
@@ -265,14 +271,56 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
         for (int block_resolution : std::vector<int>{8, 16}) {
             for (auto &dtype :
                  std::vector<core::Dtype>{core::Float32, core::UInt16}) {
-                auto vbg = Integrate(backend, dtype, device, block_resolution);
+                auto vbg_ptr =
+                        Integrate(backend, dtype, device, block_resolution);
 
                 // Allow numerical precision differences
-                auto pcd = vbg.ExtractPointCloud();
+                auto pcd = vbg_ptr->ExtractPointCloud();
                 EXPECT_NEAR(pcd.GetPointPositions().GetLength(),
                             kResolutionPoints[block_resolution], 3);
 
-                auto mesh = vbg.ExtractTriangleMesh();
+                auto mesh = vbg_ptr->ExtractTriangleMesh();
+                EXPECT_NEAR(mesh.GetVertexPositions().GetLength(),
+                            kResolutionVertices[block_resolution], 3);
+                EXPECT_NEAR(mesh.GetTriangleIndices().GetLength(),
+                            kResolutionTriangles[block_resolution], 6);
+            }
+        }
+    }
+}
+
+TEST_P(VoxelBlockGridPermuteDevices, Reset) {
+    core::Device device = GetParam();
+    std::vector<core::HashBackendType> backends = EnumerateBackends(device);
+
+    // Again, hard-coded result
+    std::unordered_map<int, int> kResolutionPoints = {{8, 225628},
+                                                      {16, 254787}};
+    std::unordered_map<int, int> kResolutionVertices = {{8, 223075},
+                                                        {16, 254339}};
+    std::unordered_map<int, int> kResolutionTriangles = {{8, 409271},
+                                                         {16, 490301}};
+
+    for (auto backend : backends) {
+        for (int block_resolution : std::vector<int>{8, 16}) {
+            for (auto &dtype :
+                 std::vector<core::Dtype>{core::Float32, core::UInt16}) {
+                auto vbg_ptr =
+                        Integrate(backend, dtype, device, block_resolution);
+                vbg_ptr->Reset();
+                auto hashmap = vbg_ptr->GetHashMap();
+                EXPECT_EQ(hashmap.Size(), 0);
+
+                // After reset, redoing integration should give the same result
+                vbg_ptr = Integrate(backend, dtype, device, block_resolution,
+                                    vbg_ptr);
+
+                // Allow numerical precision differences
+                auto pcd = vbg_ptr->ExtractPointCloud();
+                EXPECT_NEAR(pcd.GetPointPositions().GetLength(),
+                            kResolutionPoints[block_resolution], 3);
+
+                auto mesh = vbg_ptr->ExtractTriangleMesh();
                 EXPECT_NEAR(mesh.GetVertexPositions().GetLength(),
                             kResolutionVertices[block_resolution], 3);
                 EXPECT_NEAR(mesh.GetTriangleIndices().GetLength(),
@@ -288,11 +336,11 @@ TEST_P(VoxelBlockGridPermuteDevices, IO) {
 
     std::string file_name = "tmp.npz";
     for (auto backend : backends) {
-        auto vbg = Integrate(backend, core::UInt16, device, 16);
-        vbg.Save(file_name);
+        auto vbg_ptr = Integrate(backend, core::UInt16, device, 16);
+        vbg_ptr->Save(file_name);
 
         EXPECT_TRUE(utility::filesystem::FileExists(file_name));
-        auto pcd = vbg.ExtractPointCloud();
+        auto pcd = vbg_ptr->ExtractPointCloud();
 
         auto vbg_loaded = VoxelBlockGrid::Load(file_name);
         auto pcd_loaded = vbg_loaded.ExtractPointCloud();
@@ -317,8 +365,8 @@ TEST_P(VoxelBlockGridPermuteDevices, RayCasting) {
     for (auto backend : backends) {
         for (auto &dtype :
              std::vector<core::Dtype>{core::Float32, core::UInt16}) {
-            auto vbg = Integrate(backend, dtype, device,
-                                 /* block_resolution = */ 8);
+            auto vbg_ptr = Integrate(backend, dtype, device,
+                                     /* block_resolution = */ 8);
 
             int i = extrinsics.size() - 1;
 
@@ -326,27 +374,29 @@ TEST_P(VoxelBlockGridPermuteDevices, RayCasting) {
             Image depth =
                     t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[i])
                             ->To(device);
-            core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
-                    depth, intrinsic, extrinsics[i], depth_scale, depth_max);
+            core::Tensor frustum_block_coords =
+                    vbg_ptr->GetUniqueBlockCoordinates(depth, intrinsic,
+                                                       extrinsics[i],
+                                                       depth_scale, depth_max);
 
             // Select sets
-            auto result_odometry =
-                    vbg.RayCast(frustum_block_coords, intrinsic, extrinsics[i],
-                                depth.GetCols(), depth.GetRows(),
-                                {"vertex", "normal", "depth"}, depth_scale,
-                                depth_min, depth_max, 1.0);
+            auto result_odometry = vbg_ptr->RayCast(
+                    frustum_block_coords, intrinsic, extrinsics[i],
+                    depth.GetCols(), depth.GetRows(),
+                    {"vertex", "normal", "depth"}, depth_scale, depth_min,
+                    depth_max, 1.0);
             EXPECT_TRUE(result_odometry.Contains("vertex"));
             EXPECT_TRUE(result_odometry.Contains("normal"));
             EXPECT_TRUE(result_odometry.Contains("depth"));
 
-            auto result_rendering = vbg.RayCast(
+            auto result_rendering = vbg_ptr->RayCast(
                     frustum_block_coords, intrinsic, extrinsics[i],
                     depth.GetCols(), depth.GetRows(), {"depth", "color"},
                     depth_scale, depth_min, depth_max, 1.0);
             EXPECT_TRUE(result_rendering.Contains("depth"));
             EXPECT_TRUE(result_rendering.Contains("color"));
 
-            auto result_diff_rendering = vbg.RayCast(
+            auto result_diff_rendering = vbg_ptr->RayCast(
                     frustum_block_coords, intrinsic, extrinsics[i],
                     depth.GetCols(), depth.GetRows(),
                     {"index", "mask", "interp_ratio", "interp_ratio_dx",
@@ -376,28 +426,30 @@ TEST_P(VoxelBlockGridPermuteDevices, DISABLED_RayCastingVisualize) {
 
     for (auto backend : backends) {
         for (auto &dtype : std::vector<core::Dtype>{core::Float32}) {
-            auto vbg = Integrate(backend, dtype, device,
-                                 /* block_resolution = */ 8);
+            auto vbg_ptr = Integrate(backend, dtype, device,
+                                     /* block_resolution = */ 8);
 
             int i = extrinsics.size() - 1;
             data::SampleRedwoodRGBDImages redwood_data;
             Image depth =
                     t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[i])
                             ->To(device);
-            core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
-                    depth, intrinsic, extrinsics[i], depth_scale, depth_max);
+            core::Tensor frustum_block_coords =
+                    vbg_ptr->GetUniqueBlockCoordinates(depth, intrinsic,
+                                                       extrinsics[i],
+                                                       depth_scale, depth_max);
 
             int width = depth.GetCols();
             int height = depth.GetRows();
 
             // Select sets
-            auto result =
-                    vbg.RayCast(frustum_block_coords, intrinsic, extrinsics[i],
-                                width, height,
-                                {"vertex", "normal", "depth", "color", "index",
-                                 "mask", "interp_ratio", "interp_ratio_dx",
-                                 "interp_ratio_dy", "interp_ratio_dz"},
-                                depth_scale, depth_min, depth_max, 1.0);
+            auto result = vbg_ptr->RayCast(
+                    frustum_block_coords, intrinsic, extrinsics[i], width,
+                    height,
+                    {"vertex", "normal", "depth", "color", "index", "mask",
+                     "interp_ratio", "interp_ratio_dx", "interp_ratio_dy",
+                     "interp_ratio_dz"},
+                    depth_scale, depth_min, depth_max, 1.0);
 
             auto to_legacy_ptr = [=](const Image &im_t) {
                 return std::make_shared<open3d::geometry::Image>(
@@ -417,7 +469,7 @@ TEST_P(VoxelBlockGridPermuteDevices, DISABLED_RayCastingVisualize) {
             // Differentiable rendering
 
             // Render color
-            auto color_tensor = vbg.GetAttribute("color").Reshape({-1, 3});
+            auto color_tensor = vbg_ptr->GetAttribute("color").Reshape({-1, 3});
 
             // (H * W * 8)
             core::Tensor nb_indices =
@@ -440,7 +492,7 @@ TEST_P(VoxelBlockGridPermuteDevices, DISABLED_RayCastingVisualize) {
                     {to_legacy_ptr(Image(nb_sum_color / 255.0))});
 
             // Render normal
-            auto tsdf_tensor = vbg.GetAttribute("tsdf").Reshape({-1, 1});
+            auto tsdf_tensor = vbg_ptr->GetAttribute("tsdf").Reshape({-1, 1});
 
             // (H * W * 8, 1)
             core::Tensor nb_tsdfs = tsdf_tensor.IndexGet({nb_indices});

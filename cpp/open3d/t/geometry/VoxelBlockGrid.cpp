@@ -135,6 +135,24 @@ VoxelBlockGrid::VoxelBlockGrid(
             attr_element_shapes, device, backend);
 }
 
+void VoxelBlockGrid::Reset() {
+    // Get active entries and reset values to 0
+    core::Tensor active_buf_indices_i32 = block_hashmap_->GetActiveIndices();
+    core::Tensor active_indices = active_buf_indices_i32.To(core::Int64);
+
+    std::vector<core::Tensor> values = block_hashmap_->GetValueTensors();
+    for (auto &it : name_attr_map_) {
+        int value_id = it.second;
+        values[value_id].IndexSet(
+                {active_indices},
+                core::Tensor::Zeros({1}, values[value_id].GetDtype(),
+                                    block_hashmap_->GetDevice()));
+    }
+
+    // Reset the hash map
+    block_hashmap_->Clear();
+}
+
 core::Tensor VoxelBlockGrid::GetAttribute(const std::string &attr_name) const {
     AssertInitialized();
     if (name_attr_map_.count(attr_name) == 0) {
