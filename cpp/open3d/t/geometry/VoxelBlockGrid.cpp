@@ -156,6 +156,11 @@ void VoxelBlockGrid::Reset() {
 void VoxelBlockGrid::Prune(const std::string &attr_name,
                            float threshold,
                            float percentage) {
+    if (percentage > 1.0f || percentage < 0.0f) {
+        utility::LogError("Percentage must be between [0, 1], but got {}",
+                          percentage);
+    }
+
     // Get active entries
     core::Tensor active_buf_indices_i32 = block_hashmap_->GetActiveIndices();
     core::Tensor active_indices = active_buf_indices_i32.To(core::Int64);
@@ -181,6 +186,11 @@ void VoxelBlockGrid::Prune(const std::string &attr_name,
     auto prune_indices = active_indices.IndexGet({mask});
     utility::LogDebug("Pruning blocks with at least {:.3f}% of {} <= {}",
                       percentage * 100.0, attr_name, threshold);
+    if (prune_indices.GetLength() == 0) {
+        utility::LogDebug("No block gets pruned.");
+        return;
+    }
+
     utility::LogDebug("Active blocks: {}, pruned blocks: {} ({:.3f}%)",
                       active_indices.GetLength(), prune_indices.GetLength(),
                       100.0 * float(prune_indices.GetLength()) /
@@ -664,7 +674,7 @@ VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {
     int block_resolution = tensor_map.at("block_resolution")[0].Item<int64_t>();
 
     VoxelBlockGrid vbg(attr_names, attr_dtypes, attr_channels, voxel_size,
-                       block_resolution, keys.GetLength(), device);
+                       block_resolution, 1.5 * keys.GetLength(), device);
     auto block_hashmap = vbg.GetHashMap();
     block_hashmap.Insert(keys, soa_value_tensor);
     return vbg;

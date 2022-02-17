@@ -70,12 +70,12 @@ public:
     /// Performance unoptimized as it is only occasionally called.
     void Reset();
 
-    /// Prune the entries from the hash map whose values are below the threshold
+    /// Prune voxel blocks whose values are below the threshold
     /// with a certain percentage.
     /// Example: prune voxel blocks where more than
     /// percentage=0.9 voxels have "weight" < threshold=3. Useful for pruning
-    /// non-surface blocks in large systems.
-    void Prune(const std::string &attr = "weight",
+    /// non-surface blocks in large scenes.
+    void Prune(const std::string &attr_name = "weight",
                float threshold = 3,
                float percentage = 0.9);
 

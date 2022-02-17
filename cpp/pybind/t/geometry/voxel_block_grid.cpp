@@ -52,6 +52,17 @@ void pybind_voxel_block_grid(py::module& m) {
             "voxel_size"_a = 0.0058, "block_resolution"_a = 16,
             "block_count"_a = 10000, "device"_a = core::Device("CPU:0"));
 
+    vbg.def("reset", &VoxelBlockGrid::Reset,
+            "Reset the voxel block grid for reusing without re-allocating "
+            "memory.");
+    vbg.def("prune", &VoxelBlockGrid::Prune,
+            "Prune voxel blocks whose values are below the threshold"
+            "with a certain percentage."
+            "Example: prune voxel blocks where more than"
+            "percentage=0.9 voxels have \"weight\" < threshold=3. Useful for "
+            "pruning non-surface blocks in large scenes.",
+            "attr_name"_a = "weight", "threshold"_a = 3.0,
+            "percentage"_a = 0.9);
     vbg.def("hashmap", &VoxelBlockGrid::GetHashMap,
             "Get the underlying hash map from 3d block coordinates to block "
             "voxel grids.");
