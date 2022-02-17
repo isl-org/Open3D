@@ -456,7 +456,7 @@ core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
     source_transformed.Transform(transformation);
 
     open3d::core::nns::NearestNeighborSearch target_nns(
-            target.GetPointPositions());
+            target.GetPointPositions(), open3d::core::Dtype::Int32);
 
     target_nns.HybridIndex(max_correspondence_distance);
 

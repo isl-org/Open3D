@@ -272,12 +272,6 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
             hash_table_cell_splits_, Metric::L2, neighbors_index,        \
             neighbors_count, neighbors_distance
 
-#define CALL_HYBRID(type, index_type, fn)               \
-    if (Dtype::FromType<type>() == dtype &&             \
-        Dtype::FromType<index_type>() == index_dtype) { \
-        fn<type, index_type>(HYBRID_PARAMETERS);        \
-    }
-
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         if (dtype == Float32) {
