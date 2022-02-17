@@ -289,6 +289,38 @@ TEST_P(VoxelBlockGridPermuteDevices, Integrate) {
     }
 }
 
+TEST_P(VoxelBlockGridPermuteDevices, Prune) {
+    core::Device device = GetParam();
+    std::vector<core::HashBackendType> backends = EnumerateBackends(device);
+
+    std::unordered_map<int, int> kResolutionPoints = {{8, 224294},
+                                                      {16, 253411}};
+
+    std::unordered_map<int, int> kResolutionPrunedBlocks = {{8, 1835},
+                                                            {16, 252}};
+
+    for (auto backend : backends) {
+        for (int block_resolution : std::vector<int>{8, 16}) {
+            for (auto &dtype :
+                 std::vector<core::Dtype>{core::Float32, core::UInt16}) {
+                auto vbg_ptr =
+                        Integrate(backend, dtype, device, block_resolution);
+
+                int64_t size_before = vbg_ptr->GetHashMap().Size();
+                vbg_ptr->Prune("weight", /* <=  */ 3.0, /* >= */ 0.9);
+                int64_t size_after = vbg_ptr->GetHashMap().Size();
+
+                EXPECT_EQ(size_before - size_after,
+                          kResolutionPrunedBlocks[block_resolution]);
+
+                auto pcd = vbg_ptr->ExtractPointCloud();
+                EXPECT_NEAR(pcd.GetPointPositions().GetLength(),
+                            kResolutionPoints[block_resolution], 3);
+            }
+        }
+    }
+}
+
 TEST_P(VoxelBlockGridPermuteDevices, Reset) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends = EnumerateBackends(device);

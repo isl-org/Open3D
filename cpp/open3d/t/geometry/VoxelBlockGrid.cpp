@@ -153,6 +153,49 @@ void VoxelBlockGrid::Reset() {
     block_hashmap_->Clear();
 }
 
+void VoxelBlockGrid::Prune(const std::string &attr_name,
+                           float threshold,
+                           float percentage) {
+    // Get active entries
+    core::Tensor active_buf_indices_i32 = block_hashmap_->GetActiveIndices();
+    core::Tensor active_indices = active_buf_indices_i32.To(core::Int64);
+
+    if (name_attr_map_.count(attr_name) == 0) {
+        utility::LogError("Attribute {} not found, abort pruning.", attr_name);
+    }
+
+    auto target = GetAttribute(attr_name);
+    auto shape = target.GetShape();
+
+    auto sum_dims = core::SizeVector(shape.size() - 1);
+    std::iota(sum_dims.begin(), sum_dims.end(), 1);
+    int64_t num_elems = target.NumElements() / target.GetLength();
+
+    auto mask = target.IndexGet({active_indices})
+                        .Le(threshold)
+                        .To(core::Float32)
+                        .Sum(sum_dims)
+                        .Div(float(num_elems))
+                        .Ge(percentage);
+
+    auto prune_indices = active_indices.IndexGet({mask});
+    utility::LogDebug("Pruning blocks with at least {:.3f}% of {} <= {}",
+                      percentage * 100.0, attr_name, threshold);
+    utility::LogDebug("Active blocks: {}, pruned blocks: {} ({:.3f}%)",
+                      active_indices.GetLength(), prune_indices.GetLength(),
+                      100.0 * float(prune_indices.GetLength()) /
+                              float(active_indices.GetLength()));
+
+    auto prune_keys = block_hashmap_->GetKeyTensor().IndexGet({prune_indices});
+
+    // Clean keys and heap
+    block_hashmap_->Erase(prune_keys);
+
+    // Clean value buffer
+    target.IndexSet({prune_indices}, core::Tensor::Zeros({1}, target.GetDtype(),
+                                                         target.GetDevice()));
+}
+
 core::Tensor VoxelBlockGrid::GetAttribute(const std::string &attr_name) const {
     AssertInitialized();
     if (name_attr_map_.count(attr_name) == 0) {
