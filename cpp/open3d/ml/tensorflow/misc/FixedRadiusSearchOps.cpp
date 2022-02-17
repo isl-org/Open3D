@@ -34,6 +34,7 @@ using namespace tensorflow;
 
 REGISTER_OP("Open3DFixedRadiusSearch")
         .Attr("T: {float, double}")
+        .Attr("TIndex: {int, long}")
         .Attr("metric: {'L1', 'L2', 'Linf'} = 'L2'")
         .Attr("ignore_query_point: bool = false")
         .Attr("return_distances: bool = false")
@@ -45,7 +46,7 @@ REGISTER_OP("Open3DFixedRadiusSearch")
         .Input("hash_table_splits: uint32")
         .Input("hash_table_index: uint32")
         .Input("hash_table_cell_splits: uint32")
-        .Output("neighbors_index: int32")
+        .Output("neighbors_index: TIndex")
         .Output("neighbors_row_splits: int64")
         .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
