@@ -57,7 +57,7 @@ void pybind_core_nns(py::module &m_nns) {
 
     // Constructors.
     nns.def(py::init<const Tensor &, const Dtype>(), "dataset_points"_a,
-            "index_dtype"_a);
+            "index_dtype"_a = core::Int64);
 
     // Index functions.
     nns.def("knn_index", &NearestNeighborSearch::KnnIndex,
