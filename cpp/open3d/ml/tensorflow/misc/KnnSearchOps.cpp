@@ -34,7 +34,7 @@ using namespace tensorflow;
 
 REGISTER_OP("Open3DKnnSearch")
         .Attr("T: {float, double}")
-        .Attr("TIndex: {int, long}")
+        .Attr("TIndex: {int32, int64}")
         .Attr("metric: {'L1', 'L2'} = 'L2'")
         .Attr("ignore_query_point: bool = false")
         .Attr("return_distances: bool = false")
