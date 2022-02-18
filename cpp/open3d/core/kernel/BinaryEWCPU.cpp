@@ -310,6 +310,8 @@ void BinaryEWCPU(const Tensor& lhs,
                                         &ispc_indexer));
                         break;
                     case BinaryEWOpCode::Le:
+                        utility::LogInfo(
+                                "To call CPULogicalLeqElementKernel_bool()");
                         LaunchBinaryEWKernel<scalar_t, bool>(
                                 indexer, CPULeqElementKernel<scalar_t, bool>,
                                 OPEN3D_TEMPLATE_VECTORIZED(

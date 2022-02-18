@@ -328,7 +328,7 @@ OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
                 OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(indexer, 1, idx);  \
         bool* dst =                                                           \
                 OPEN3D_SPECIALIZED(bool, Indexer_GetOutputPtr)(indexer, idx); \
-        *dst = (bool)(*lhs <= *rhs);                                          \
+        *dst = *lhs <= *rhs ? true : false;                                   \
     }
 #pragma ignore warning(perf)
 OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
