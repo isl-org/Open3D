@@ -196,14 +196,18 @@ void VoxelBlockGrid::Prune(const std::string &attr_name,
                       100.0 * float(prune_indices.GetLength()) /
                               float(active_indices.GetLength()));
 
-    auto prune_keys = block_hashmap_->GetKeyTensor().IndexGet({prune_indices});
+    auto values = block_hashmap_->GetValueTensors();
+    for (auto &it : name_attr_map_) {
+        int value_id = it.second;
+        values[value_id].IndexSet(
+                {prune_indices},
+                core::Tensor::Zeros({1}, values[value_id].GetDtype(),
+                                    block_hashmap_->GetDevice()));
+    }
 
     // Clean keys and heap
+    auto prune_keys = block_hashmap_->GetKeyTensor().IndexGet({prune_indices});
     block_hashmap_->Erase(prune_keys);
-
-    // Clean value buffer
-    target.IndexSet({prune_indices}, core::Tensor::Zeros({1}, target.GetDtype(),
-                                                         target.GetDevice()));
 }
 
 core::Tensor VoxelBlockGrid::GetAttribute(const std::string &attr_name) const {
