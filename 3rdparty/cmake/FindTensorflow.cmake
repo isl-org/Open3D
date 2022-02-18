@@ -61,14 +61,14 @@ endif()
 # Check if the c++11 ABI is compatible
 if(UNIX AND NOT APPLE AND ((Tensorflow_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
    (NOT Tensorflow_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI)))
-   if(TensorFlow_CXX11_ABI)
-       set(NEEDED_ABI_FLAG "ON")
-   else()
-       set(NEEDED_ABI_FLAG "OFF")
-   endif()
-    message(FATAL_ERROR "TensorFlow and Open3D ABI mismatch: ${Tensorflow_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}"
-        "\nPlease use -D GLIBCXX_USE_CXX11_ABI=" ${NEEDED_ABI_FLAG}
-        " in the cmake config command to change the Open3D ABI.")
+    if(TensorFlow_CXX11_ABI)
+        set(NEEDED_ABI_FLAG "ON")
+    else()
+        set(NEEDED_ABI_FLAG "OFF")
+    endif()
+    message(FATAL_ERROR "TensorFlow and Open3D ABI mismatch: ${Tensorflow_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
+                        "Please use -D GLIBCXX_USE_CXX11_ABI=${NEEDED_ABI_FLAG} "
+                        "in the cmake config command to change the Open3D ABI.")
 else()
     message(STATUS "TensorFlow matches Open3D ABI: ${Tensorflow_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
 endif()
