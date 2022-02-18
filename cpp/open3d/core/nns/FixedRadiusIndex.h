@@ -410,7 +410,7 @@ public:
     FixedRadiusIndex(const Tensor& dataset_points, double radius);
     FixedRadiusIndex(const Tensor& dataset_points,
                      double radius,
-                     const Dtype index_dtype = core::Int64);
+                     const Dtype index_dtype);
     ~FixedRadiusIndex();
     FixedRadiusIndex(const FixedRadiusIndex&) = delete;
     FixedRadiusIndex& operator=(const FixedRadiusIndex&) = delete;

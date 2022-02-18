@@ -57,8 +57,7 @@ public:
     /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     KnnIndex(const Tensor& dataset_points);
-    KnnIndex(const Tensor& dataset_points,
-             const Dtype index_dtype = core::Int64);
+    KnnIndex(const Tensor& dataset_points, const Dtype index_dtype);
     ~KnnIndex();
     KnnIndex(const KnnIndex&) = delete;
     KnnIndex& operator=(const KnnIndex&) = delete;
