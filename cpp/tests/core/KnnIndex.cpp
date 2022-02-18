@@ -222,8 +222,8 @@ TEST(KnnIndex, KnnSearchHighdim) {
     dataset_points = dataset_points.Reshape({-1, 6});
     query_points = core::Tensor::Init<float>(
             {{0.064705, 0.043921, 0.087843, 0.0, 0.0, 0.0}}, device);
-    knn_index32.SetTensorData(dataset_points);
-    knn_index64.SetTensorData(dataset_points);
+    knn_index32.SetTensorData(dataset_points, core::Int32);
+    knn_index64.SetTensorData(dataset_points, core::Int64);
 
     // If k <= 0.
     EXPECT_THROW(knn_index32.SearchKnn(query_points, -1), std::runtime_error);
