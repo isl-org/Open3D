@@ -83,8 +83,11 @@ static void LaunchUnaryEWKernel(const Indexer& indexer,
 
 template <typename src_t, typename dst_t>
 static void CPUCopyElementKernel(const void* src, void* dst) {
-    *static_cast<dst_t*>(dst) =
-            static_cast<dst_t>(*static_cast<const src_t*>(src));
+    *static_cast<dst_t*>(dst) = static_cast<dst_t>(
+            static_cast<src_t>(*static_cast<const src_t*>(src)));
+    utility::LogInfo("CPUCopyElementKernel(): {:d} <- {:d}",
+                     *static_cast<dst_t*>(dst),
+                     *static_cast<const src_t*>(src));
 }
 
 static void CPUCopyObjectElementKernel(const void* src,
@@ -214,6 +217,9 @@ void CopyCPU(const Tensor& src, Tensor& dst) {
                 using src_t = scalar_t;
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dst_dtype, [&]() {
                     using dst_t = scalar_t;
+                    utility::LogInfo("src_dtype: {}, dst_dtype: {}",
+                                     src_dtype.ToString(),
+                                     dst_dtype.ToString());
                     LaunchUnaryEWKernel<src_t, dst_t>(
                             indexer, CPUCopyElementKernel<src_t, dst_t>);
                 });

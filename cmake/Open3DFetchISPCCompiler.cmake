@@ -29,16 +29,16 @@ function(open3d_fetch_ispc_compiler)
 
         include(FetchContent)
 
-        set(ISPC_VER 1.16.1)
+        set(ISPC_VER 1.17.0)
         if (APPLE)
-            set(ISPC_URL https://github.com/ispc/ispc/releases/download/v${ISPC_VER}/ispc-v${ISPC_VER}-macOS.tar.gz)
-            set(ISPC_SHA256 7dbce602d97227a9603aabfae6dc3b3aa24d1cd44f0ccfb5ae47ecd4d68e988e)
+            set(ISPC_URL https://github.com/ispc/ispc/releases/download/v1.17.0/ispc-v1.17.0-macOS.tar.gz)
+            set(ISPC_SHA256 e7fdcdbd5c272955249148c452ccd7295d7cf77b35ca1dec377e72b49c847bff)
         elseif (WIN32)
-            set(ISPC_URL https://github.com/ispc/ispc/releases/download/v${ISPC_VER}/ispc-v${ISPC_VER}-windows.zip)
-            set(ISPC_SHA256 b34de2c36aff2afaa56b669ea41f9e614a045564ca74fc0b138e17ccea4880b7)
+            set(ISPC_URL https://github.com/ispc/ispc/releases/download/v1.17.0/ispc-v1.17.0-windows.zip)
+            set(ISPC_SHA256 e9a7cc98f69357482985bcbf69fa006632cee7b3606069b4d5e16dc62092d660)
         else()  # Linux
-            set(ISPC_URL https://github.com/ispc/ispc/releases/download/v${ISPC_VER}/ispc-v${ISPC_VER}-linux.tar.gz)
-            set(ISPC_SHA256 88db3d0461147c10ed81053a561ec87d3e14265227c03318f4fcaaadc831037f)
+            set(ISPC_URL https://github.com/ispc/ispc/releases/download/v1.17.0/ispc-v1.17.0-linux.tar.gz)
+            set(ISPC_SHA256 6acc5df75efdce437f79b1b6489be8567c6d009e19dcc4851b9b37012afce1f7)
         endif()
 
         FetchContent_Declare(

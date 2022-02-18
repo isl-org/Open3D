@@ -80,6 +80,7 @@ void Copy(const Tensor& src, Tensor& dst) {
     }
     if (src_device_type == Device::DeviceType::CPU &&
         dst_device_type == Device::DeviceType::CPU) {
+        utility::LogInfo("To call CopyCPU()");
         CopyCPU(src, dst);
     } else {
 #ifdef BUILD_CUDA_MODULE

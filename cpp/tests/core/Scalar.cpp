@@ -122,16 +122,14 @@ TEST(Scalar, Constructor) {
 }
 
 TEST(Tensor, BoolConversion) {
+    utility::LogInfo("To init src");
     core::Tensor src = core::Tensor::Init<int>({0, 0, 2});
+    utility::LogInfo("To compute mid");
     core::Tensor mid = src.Le(1);
+    utility::LogInfo("To compute mid.To");
     core::Tensor dst = mid.To(core::Int32);
     utility::LogInfo("mid: {}", mid.ToString());
     utility::LogInfo("dst: {}", dst.ToString());
-
-    core::Tensor mid_direct = core::Tensor::Init<bool>({true, true, false});
-    core::Tensor dst_direct = mid.To(core::Int32);
-    utility::LogInfo("mid_direct: {}", mid_direct.ToString());
-    utility::LogInfo("dst_direct: {}", dst_direct.ToString());
 }
 
 }  // namespace tests
