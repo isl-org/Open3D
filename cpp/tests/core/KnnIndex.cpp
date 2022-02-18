@@ -183,53 +183,71 @@ TEST(KnnIndex, KnnSearchHighdim) {
                                                              {0.1, 0.0, 0.0}},
                                                             device);
     core::Tensor query_points;
-    core::Tensor gt_indices, gt_distances;
+    core::Tensor gt_indices32, gt_indices64, gt_distances;
 
     // Dimension = 5.
     dataset_points = dataset_points.Reshape({-1, 5});
     query_points = core::Tensor::Init<float>(
             {{0.064705, 0.043921, 0.087843, 0.0, 0.0}}, device);
-    core::nns::KnnIndex knn_index(dataset_points);
+    core::nns::KnnIndex knn_index32(dataset_points, core::Int32);
+    core::nns::KnnIndex knn_index64(dataset_points, core::Int64);
 
     // If k <= 0.
-    EXPECT_THROW(knn_index.SearchKnn(query_points, -1), std::runtime_error);
-    EXPECT_THROW(knn_index.SearchKnn(query_points, 0), std::runtime_error);
+    EXPECT_THROW(knn_index32.SearchKnn(query_points, -1), std::runtime_error);
+    EXPECT_THROW(knn_index32.SearchKnn(query_points, 0), std::runtime_error);
+    EXPECT_THROW(knn_index64.SearchKnn(query_points, -1), std::runtime_error);
+    EXPECT_THROW(knn_index64.SearchKnn(query_points, 0), std::runtime_error);
 
     // If k == 3.
-    core::Tensor indices, distances;
+    core::Tensor indices32, indices64, distances32, distances64;
     core::SizeVector shape{1, 3};
-    gt_indices = core::Tensor::Init<int32_t>({{0, 4, 2}}, device);
+    gt_indices32 = core::Tensor::Init<int32_t>({{0, 4, 2}}, device);
+    gt_indices64 = core::Tensor::Init<int64_t>({{0, 4, 2}}, device);
     gt_distances = core::Tensor::Init<float>(
             {{0.01383218, 0.02869498, 0.03089118}}, device);
 
-    std::tie(indices, distances) = knn_index.SearchKnn(query_points, 3);
+    std::tie(indices32, distances32) = knn_index32.SearchKnn(query_points, 3);
+    std::tie(indices64, distances64) = knn_index64.SearchKnn(query_points, 3);
 
-    EXPECT_EQ(indices.GetShape(), shape);
-    EXPECT_EQ(distances.GetShape(), shape);
-    EXPECT_TRUE(indices.AllClose(gt_indices));
-    EXPECT_TRUE(distances.AllClose(gt_distances));
+    EXPECT_EQ(indices32.GetShape(), shape);
+    EXPECT_EQ(indices64.GetShape(), shape);
+    EXPECT_EQ(distances32.GetShape(), shape);
+    EXPECT_EQ(distances64.GetShape(), shape);
+    EXPECT_TRUE(indices32.AllClose(gt_indices32));
+    EXPECT_TRUE(indices64.AllClose(gt_indices64));
+    EXPECT_TRUE(distances32.AllClose(gt_distances));
+    EXPECT_TRUE(distances64.AllClose(gt_distances));
 
     // Dimension = 6.
     dataset_points = dataset_points.Reshape({-1, 6});
     query_points = core::Tensor::Init<float>(
             {{0.064705, 0.043921, 0.087843, 0.0, 0.0, 0.0}}, device);
-    knn_index.SetTensorData(dataset_points);
+    knn_index32.SetTensorData(dataset_points);
+    knn_index64.SetTensorData(dataset_points);
 
     // If k <= 0.
-    EXPECT_THROW(knn_index.SearchKnn(query_points, -1), std::runtime_error);
-    EXPECT_THROW(knn_index.SearchKnn(query_points, 0), std::runtime_error);
+    EXPECT_THROW(knn_index32.SearchKnn(query_points, -1), std::runtime_error);
+    EXPECT_THROW(knn_index32.SearchKnn(query_points, 0), std::runtime_error);
+    EXPECT_THROW(knn_index64.SearchKnn(query_points, -1), std::runtime_error);
+    EXPECT_THROW(knn_index64.SearchKnn(query_points, 0), std::runtime_error);
 
     // If k == 3.
-    gt_indices = core::Tensor::Init<int32_t>({{0, 1, 4}}, device);
+    gt_indices32 = core::Tensor::Init<int32_t>({{0, 1, 4}}, device);
+    gt_indices64 = core::Tensor::Init<int64_t>({{0, 1, 4}}, device);
     gt_distances = core::Tensor::Init<float>(
             {{0.02383218, 0.02869498, 0.05112658}}, device);
 
-    std::tie(indices, distances) = knn_index.SearchKnn(query_points, 3);
+    std::tie(indices32, distances32) = knn_index32.SearchKnn(query_points, 3);
+    std::tie(indices64, distances64) = knn_index64.SearchKnn(query_points, 3);
 
-    EXPECT_EQ(indices.GetShape(), shape);
-    EXPECT_EQ(distances.GetShape(), shape);
-    EXPECT_TRUE(indices.AllClose(gt_indices));
-    EXPECT_TRUE(distances.AllClose(gt_distances));
+    EXPECT_EQ(indices32.GetShape(), shape);
+    EXPECT_EQ(indices64.GetShape(), shape);
+    EXPECT_EQ(distances32.GetShape(), shape);
+    EXPECT_EQ(distances64.GetShape(), shape);
+    EXPECT_TRUE(indices32.AllClose(gt_indices32));
+    EXPECT_TRUE(indices64.AllClose(gt_indices64));
+    EXPECT_TRUE(distances32.AllClose(gt_distances));
+    EXPECT_TRUE(distances64.AllClose(gt_distances));
 }
 
 TEST(KnnIndex, KnnSearchBatch) {
