@@ -79,7 +79,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
         const std::string& metric_str,
         const bool ignore_query_point,
         const bool return_distances,
-        const TorchDtype_t index_dtype) {
+        torch::Dtype index_dtype) {
     Metric metric = L2;
     if (metric_str == "L1") {
         metric = L1;
@@ -151,15 +151,9 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
             } else {
                 FixedRadiusSearchCUDA<float, int64_t>(FN_PARAMETERS);
             }
-        } else {
-            if (index_dtype == ToTorchDtype<int32_t>()) {
-                FixedRadiusSearchCUDA<double, int32_t>(FN_PARAMETERS);
-            } else {
-                FixedRadiusSearchCUDA<double, int64_t>(FN_PARAMETERS);
-            }
-        }
-        return std::make_tuple(neighbors_index, neighbors_row_splits,
+            return std::make_tuple(neighbors_index, neighbors_row_splits,
                                neighbors_distance);
+        }
 #else
         TORCH_CHECK(false,
                     "FixedRadiusSearch was not compiled with CUDA support")
@@ -191,7 +185,7 @@ static auto registry = torch::RegisterOperators(
         "radius, Tensor points_row_splits, Tensor queries_row_splits, Tensor "
         "hash_table_splits, Tensor hash_table_index, Tensor "
         "hash_table_cell_splits, str metric=\"L2\", bool ignore_query_point="
-        "False, bool return_distances=False, TorchDtype_t "
-        "index_dtype=torch::kInt32) -> (Tensor neighbors_index, "
+        "False, bool return_distances=False, Dtype "
+        "index_dtype=kInt32) -> (Tensor neighbors_index, "
         "Tensor neighbors_row_splits, Tensor neighbors_distance)",
         &FixedRadiusSearch);

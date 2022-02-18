@@ -56,7 +56,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
         const std::string& metric_str,
         const bool ignore_query_point,
         const bool return_distances,
-        const TorchDtype_t index_dtype) {
+        torch::Dtype index_dtype) {
     Metric metric = L2;
     if (metric_str == "L1") {
         metric = L1;
@@ -135,7 +135,7 @@ static auto registry = torch::RegisterOperators(
         "open3d::knn_search(Tensor points, Tensor queries, int "
         "k, Tensor points_row_splits, Tensor queries_row_splits,"
         "str metric=\"L2\", bool ignore_query_point=False, bool "
-        "return_distances=False, TorchDtype_t index_dtype=torch::kInt32) -> "
+        "return_distances=False, Dtype index_dtype=kInt32) -> "
         "(Tensor neighbors_index, Tensor "
         "neighbors_row_splits, Tensor neighbors_distance)",
         &KnnSearch);

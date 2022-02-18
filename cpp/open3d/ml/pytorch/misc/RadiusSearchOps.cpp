@@ -58,7 +58,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> MultiRadiusSearch(
         const bool ignore_query_point,
         const bool return_distances,
         const bool normalize_distances,
-        const TorchDtype_t index_dtype) {
+        torch::Dtype index_dtype) {
     Metric metric = L2;
     if (metric_str == "L1") {
         metric = L1;
@@ -138,8 +138,8 @@ static auto registry = torch::RegisterOperators(
         "open3d::radius_search(Tensor points, Tensor queries, Tensor radii, "
         "Tensor points_row_splits, Tensor queries_row_splits,"
         "str metric=\"L2\", bool ignore_query_point=False, bool "
-        "return_distances=False, bool normalize_distances=False, TorchDtype_t "
-        "index_dtype=torch::kInt32) -> (Tensor "
+        "return_distances=False, bool normalize_distances=False, Dtype "
+        "index_dtype=kInt32) -> (Tensor "
         "neighbors_index, Tensor "
         "neighbors_row_splits, Tensor neighbors_distance)",
         &MultiRadiusSearch);
