@@ -56,7 +56,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
         const std::string& metric_str,
         const bool ignore_query_point,
         const bool return_distances,
-        torch::Dtype index_dtype) {
+        const std::string& index_dtype) {
     Metric metric = L2;
     if (metric_str == "L1") {
         metric = L1;
@@ -71,7 +71,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
     CHECK_TYPE(queries_row_splits, kInt64);
     CHECK_SAME_DTYPE(points, queries);
     CHECK_SAME_DEVICE_TYPE(points, queries);
-    assert(index_dtype == kInt32 || index_dtype == kInt64);
+    assert(index_dtype == "int32" || index_dtype == "int64");
     // ensure that these are on the cpu
     points_row_splits = points_row_splits.to(torch::kCPU);
     queries_row_splits = queries_row_splits.to(torch::kCPU);
@@ -111,13 +111,13 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
         TORCH_CHECK(false, "KnnSearch does not support CUDA")
     } else {
         if (CompareTorchDtype<float>(point_type)) {
-            if (index_dtype == ToTorchDtype<int32_t>()) {
+            if (index_dtype == "int32") {
                 KnnSearchCPU<float, int32_t>(FN_PARAMETERS);
             } else {
                 KnnSearchCPU<float, int64_t>(FN_PARAMETERS);
             }
         } else {
-            if (index_dtype == ToTorchDtype<int32_t>()) {
+            if (index_dtype == "int32") {
                 KnnSearchCPU<double, int32_t>(FN_PARAMETERS);
             } else {
                 KnnSearchCPU<double, int64_t>(FN_PARAMETERS);
@@ -135,7 +135,7 @@ static auto registry = torch::RegisterOperators(
         "open3d::knn_search(Tensor points, Tensor queries, int "
         "k, Tensor points_row_splits, Tensor queries_row_splits,"
         "str metric=\"L2\", bool ignore_query_point=False, bool "
-        "return_distances=False, Dtype index_dtype=kInt32) -> "
+        "return_distances=False, str index_dtype=\"int32\") -> "
         "(Tensor neighbors_index, Tensor "
         "neighbors_row_splits, Tensor neighbors_distance)",
         &KnnSearch);
