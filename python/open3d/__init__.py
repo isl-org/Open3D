@@ -40,6 +40,9 @@ from ctypes.util import find_library as _find_library
 from pathlib import Path as _Path
 import warnings
 
+print("[Warning] Since Open3D 0.15, installing Open3D via conda is deprecated. "
+      "Please re-install Open3D via: `pip install open3d -U`.")
+
 from open3d._build_config import _build_config
 if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
                                        _find_library('c++')):
