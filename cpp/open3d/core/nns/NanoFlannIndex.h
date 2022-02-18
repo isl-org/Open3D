@@ -50,7 +50,8 @@ public:
     /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     NanoFlannIndex(const Tensor &dataset_points);
-    NanoFlannIndex(const Tensor &dataset_points, const Dtype index_dtype = core::Int64);
+    NanoFlannIndex(const Tensor &dataset_points,
+                   const Dtype index_dtype = core::Int64);
     ~NanoFlannIndex();
     NanoFlannIndex(const NanoFlannIndex &) = delete;
     NanoFlannIndex &operator=(const NanoFlannIndex &) = delete;
