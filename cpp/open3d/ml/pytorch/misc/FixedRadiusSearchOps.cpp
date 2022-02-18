@@ -152,7 +152,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
                 FixedRadiusSearchCUDA<float, int64_t>(FN_PARAMETERS);
             }
             return std::make_tuple(neighbors_index, neighbors_row_splits,
-                               neighbors_distance);
+                                   neighbors_distance);
         }
 #else
         TORCH_CHECK(false,
