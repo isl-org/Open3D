@@ -95,7 +95,6 @@ Starting from this release, we adopt a "tick-tock" model for balancing resolving
         o3d.visualization.draw(mesh)
         ```
     ![open3d_015_cpu_render](https://user-images.githubusercontent.com/1501945/154748967-cb46a1e7-2a97-4684-8dbb-42428cbffc3d.gif)
-
 * **[New]** WidgetProxy and WidgetStack widgets allow the creation of user interfaces on the fly (contributed by @forrestjgq).
 * **[New]** Background color option for button widgets (contributed by @forrestjgq).
 * **[New]** Set maximum visible items in a list widget to prevent lists from growing too large (contributed by @forrestjgq).
