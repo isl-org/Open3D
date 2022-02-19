@@ -994,7 +994,6 @@ if(USE_SYSTEM_FMT)
     endif()
 endif()
 if(NOT USE_SYSTEM_FMT)
-    # We set the FMT_HEADER_ONLY macro, so no need to actually compile the source
     include(${Open3D_3RDPARTY_DIR}/fmt/fmt.cmake)
     open3d_import_3rdparty_library(3rdparty_fmt
         HEADER
