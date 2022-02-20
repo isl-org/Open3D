@@ -21,6 +21,7 @@ concurrency:
 env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NPROC: 3
+  DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
   MacOS:
@@ -129,7 +130,6 @@ jobs:
     env:
       BUILD_CUDA_MODULE: OFF
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
