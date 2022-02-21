@@ -152,10 +152,9 @@ def get_icp_transform(source, target, source_indices, target_indices):
 
 
 def selections():
-    source = o3d.io.read_point_cloud(
-        os.path.join(test_data_path, 'ICP', 'cloud_bin_0.pcd'))
-    target = o3d.io.read_point_cloud(
-        os.path.join(test_data_path, 'ICP', 'cloud_bin_2.pcd'))
+    pcd_fragments_data = o3d.data.DemoICPPointClouds()
+    source = o3d.io.read_point_cloud(pcd_fragments_data.paths[0])
+    target = o3d.io.read_point_cloud(pcd_fragments_data.paths[1])
     source.paint_uniform_color([1, 0.706, 0])
     target.paint_uniform_color([0, 0.651, 0.929])
 
