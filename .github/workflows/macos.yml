@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       developer_build:
-        description: 'Set to OFF for Release wheels.'
+        description: 'Set to OFF for Release builds.'
         required: false
         default: 'ON'
 
@@ -21,6 +21,7 @@ concurrency:
 env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NPROC: 3
+  DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
   MacOS:
@@ -67,7 +68,7 @@ jobs:
           DEVEL_PKG_NAME="$(basename package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
       - name: Build Open3D viewer app
-        if: ${{ matrix.CONFIG == 'OFF' }}
+        if: ${{ env.SHARED == 'OFF' }}
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           pushd build
@@ -102,7 +103,7 @@ jobs:
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v2
-        if: ${{ matrix.CONFIG == 'OFF' }}
+        if: ${{ env.SHARED == 'OFF' }}
         with:
           name: open3d-app-macosx-10_15
           path: build/bin/open3d-app-macosx-10_15.zip
@@ -129,7 +130,6 @@ jobs:
     env:
       BUILD_CUDA_MODULE: OFF
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
