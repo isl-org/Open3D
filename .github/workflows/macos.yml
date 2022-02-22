@@ -68,7 +68,7 @@ jobs:
           DEVEL_PKG_NAME="$(basename package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
       - name: Build Open3D viewer app
-        if: ${{ matrix.SHARED == 'OFF' }}
+        if: ${{ env.SHARED == 'OFF' }}
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           pushd build
@@ -103,7 +103,7 @@ jobs:
 
       - name: Upload Open3D viewer app
         uses: actions/upload-artifact@v2
-        if: ${{ matrix.SHARED == 'OFF' }}
+        if: ${{ env.SHARED == 'OFF' }}
         with:
           name: open3d-app-macosx-10_15
           path: build/bin/open3d-app-macosx-10_15.zip
