@@ -118,17 +118,56 @@ class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
 
 public:
-    ReconstructionWindow(const std::string& path_config,
-                         const core::Device& device)
+    ReconstructionWindow(const core::Device& device)
         : gui::Window("Open3D - Reconstruction", 1280, 800),
           device_(device),
           host_(core::Device("CPU:0")),
           dtype_(core::Dtype::Float32) {
-        ReadConfigFile(path_config);
-        std::tie(source_, target_) = LoadTensorPointClouds();
+        data::DemoColoredICPPointClouds demo_icp_data;
 
-        transformation_ = core::Tensor(initial_transform_flat, {4, 4},
-                                       core::Dtype::Float64, host_);
+        // Read Point-Clouds.
+        // t::io::ReadPointCloud copies the pointcloud to CPU.
+        t::io::ReadPointCloud(demo_icp_data.GetPaths()[0], source_,
+                              {"auto", false, false, true});
+        t::io::ReadPointCloud(demo_icp_data.GetPaths()[1], target_,
+                              {"auto", false, false, true});
+        // Device transfer.
+        source_ = source_.To(device_, false);
+        target_ = target_.To(device_, false);
+        // For Colored-ICP `colors` attribute must be of the same dtype as
+        // `positions` and `normals` attribute.
+        source_.SetPointColors(
+                source_.GetPointColors()
+                        .To(core::Float32)
+                        .Div(static_cast<double>(
+                                std::numeric_limits<uint8_t>::max())));
+        target_.SetPointColors(
+                target_.GetPointColors()
+                        .To(core::Float32)
+                        .Div(static_cast<double>(
+                                std::numeric_limits<uint8_t>::max())));
+
+        // Load other parameters.
+        estimation_ = std::make_shared<TransformationEstimationForColoredICP>();
+        utility::LogInfo(" Registrtion method: ColoredICP");
+
+        voxel_sizes_ = {0.05, 0.025, 0.0125};
+        utility::LogInfo(" Voxel Sizes: ");
+        for (auto voxel_size : voxel_sizes_) std::cout << voxel_size << " ";
+
+        max_correspondence_distances_ = {0.07, 0.07, 0.07};
+        utility::LogInfo(" Search Radius Sizes: ");
+        for (auto search_radii : max_correspondence_distances_)
+            std::cout << search_radii << " ";
+
+        transformation_ = core::Tensor::Eye(4, core::Float64, host_);
+        utility::LogInfo(" Initial Transformation Guess: \n {} \n",
+                         transformation_.ToString());
+
+        verbosity_ = utility::VerbosityLevel::Debug;
+        criterias_.emplace_back(0.0000001, 0.0000001, 50);
+        criterias_.emplace_back(0.0000001, 0.0000001, 30);
+        criterias_.emplace_back(0.0000001, 0.0000001, 14);
 
         is_done_ = false;
 
@@ -531,219 +570,6 @@ protected:
     }
 
 private:
-    // To read parameters from config file.
-    void ReadConfigFile(const std::string& path_config) {
-        std::ifstream cFile(path_config);
-        std::vector<double> relative_fitness;
-        std::vector<double> relative_rmse;
-        std::vector<int> max_iterations;
-        std::string verb;
-
-        if (cFile.is_open()) {
-            std::string line;
-            while (getline(cFile, line)) {
-                line.erase(std::remove_if(line.begin(), line.end(), isspace),
-                           line.end());
-                if (line[0] == '#' || line.empty()) continue;
-
-                auto delimiterPos = line.find("=");
-                auto name = line.substr(0, delimiterPos);
-                auto value = line.substr(delimiterPos + 1);
-
-                if (name == "source_path") {
-                    path_source_ = value;
-                } else if (name == "target_path") {
-                    path_target_ = value;
-                } else if (name == "registration_method") {
-                    registration_method_ = value;
-                } else if (name == "criteria.relative_fitness") {
-                    std::istringstream is(value);
-                    relative_fitness.push_back(std::stod(value));
-                } else if (name == "criteria.relative_rmse") {
-                    std::istringstream is(value);
-                    relative_rmse.push_back(std::stod(value));
-                } else if (name == "criteria.max_iterations") {
-                    std::istringstream is(value);
-                    max_iterations.push_back(std::stoi(value));
-                } else if (name == "voxel_size") {
-                    std::istringstream is(value);
-                    voxel_sizes_.push_back(std::stod(value));
-                } else if (name == "search_radii") {
-                    std::istringstream is(value);
-                    max_correspondence_distances_.push_back(std::stod(value));
-                } else if (name == "verbosity") {
-                    std::istringstream is(value);
-                    verb = value;
-                }
-            }
-        } else {
-            std::cerr << "Couldn't open config file for reading.\n";
-        }
-
-        utility::LogInfo(" Source path: {}", path_source_);
-        utility::LogInfo(" Target path: {}", path_target_);
-        utility::LogInfo(" Registrtion method: {}", registration_method_);
-        std::cout << std::endl;
-
-        std::cout << " Initial Transformation Guess: " << std::endl;
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                std::cout << " " << initial_transform_flat[i * 4 + j];
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-
-        std::cout << " Voxel Sizes: ";
-        for (auto voxel_size : voxel_sizes_) std::cout << voxel_size << " ";
-        std::cout << std::endl;
-
-        std::cout << " Search Radius Sizes: ";
-        for (auto search_radii : max_correspondence_distances_)
-            std::cout << search_radii << " ";
-        std::cout << std::endl;
-
-        std::cout << " ICPCriteria: " << std::endl;
-        std::cout << "   Max Iterations: ";
-        for (auto iteration : max_iterations) std::cout << iteration << " ";
-        std::cout << std::endl;
-        std::cout << "   Relative Fitness: ";
-        for (auto fitness : relative_fitness) std::cout << fitness << " ";
-        std::cout << std::endl;
-        std::cout << "   Relative RMSE: ";
-        for (auto rmse : relative_rmse) std::cout << rmse << " ";
-        std::cout << std::endl;
-
-        size_t length = voxel_sizes_.size();
-        if (max_correspondence_distances_.size() != length ||
-            max_iterations.size() != length ||
-            relative_fitness.size() != length ||
-            relative_rmse.size() != length) {
-            utility::LogError(
-                    " Length of vector: voxel_sizes, search_sizes, "
-                    "max_iterations, "
-                    "relative_fitness, relative_rmse must be same.");
-        }
-
-        for (int i = 0; i < (int)length; i++) {
-            auto criteria = ICPConvergenceCriteria(
-                    relative_fitness[i], relative_rmse[i], max_iterations[i]);
-            criterias_.push_back(criteria);
-        }
-
-        if (registration_method_ == "PointToPoint") {
-            estimation_ =
-                    std::make_shared<TransformationEstimationPointToPoint>();
-        } else if (registration_method_ == "PointToPlane") {
-            estimation_ =
-                    std::make_shared<TransformationEstimationPointToPlane>();
-        } else if (registration_method_ == "ColoredICP") {
-            estimation_ =
-                    std::make_shared<TransformationEstimationForColoredICP>();
-        } else {
-            utility::LogError("Registration method {}, not implemented.",
-                              registration_method_);
-        }
-
-        if (verb == "Debug") {
-            verbosity_ = utility::VerbosityLevel::Debug;
-        } else {
-            verbosity_ = utility::VerbosityLevel::Info;
-        }
-
-        std::cout << " Config file read complete. " << std::endl;
-    }
-
-    // To perform required dtype conversion, normal estimation and device
-    // transfer.
-    std::tuple<t::geometry::PointCloud, t::geometry::PointCloud>
-    LoadTensorPointClouds() {
-        t::geometry::PointCloud source(host_), target(host_);
-
-        // t::io::ReadPointCloud copies the pointcloud to CPU.
-        t::io::ReadPointCloud(path_source_, source,
-                              {"auto", false, false, true});
-        t::io::ReadPointCloud(path_target_, target,
-                              {"auto", false, false, true});
-
-        // First perform device transfer, as all attributes must be on same
-        // device.
-        source = source.To(device_, false);
-        target = target.To(device_, false);
-
-        // Converting point and normals attributes to Floar32 and currently only
-        // Float32 pointcloud is supported by the tensor registration module.
-        source.SetPointPositions(source.GetPointPositions().To(dtype_));
-        if (source.HasPointNormals()) {
-            source.SetPointNormals(source.GetPointNormals().To(dtype_));
-        }
-        // Converting attributes to Floar32 and currently only
-        // Float32 pointcloud is supported by the tensor registration module.
-        target.SetPointPositions(target.GetPointPositions().To(dtype_));
-        if (target.HasPointNormals()) {
-            target.SetPointNormals(target.GetPointNormals().To(dtype_));
-        }
-
-        // Color may be of Float32, Float64, UInt8, UInt16.
-        if (source.HasPointColors()) {
-            // UInt8 scale is [0, 255], while Float scale is [0.0, 1.0].
-            if (source.GetPointColors().GetDtype() == core::Dtype::UInt8) {
-                source.SetPointColors(source.GetPointColors().To(dtype_).Div(
-                        static_cast<double>(
-                                std::numeric_limits<uint8_t>::max())));
-            } else if (source.GetPointColors().GetDtype() ==
-                       core::Dtype::UInt16) {
-                source.SetPointColors(source.GetPointColors().To(dtype_).Div(
-                        static_cast<double>(
-                                std::numeric_limits<uint16_t>::max())));
-            } else if (source.GetPointColors().GetDtype() ==
-                       core::Dtype::Float64) {
-                source.SetPointColors(source.GetPointColors().To(dtype_));
-            } else if (source.GetPointColors().GetDtype() !=
-                       core::Dtype::Float32) {
-                utility::LogError(
-                        " Unsupported dtype for color attribute. Supported "
-                        "dtypes include Float32, Float64, UInt8 and UInt16.");
-            }
-        }
-        if (target.HasPointColors()) {
-            if (target.GetPointColors().GetDtype() == core::Dtype::UInt8) {
-                target.SetPointColors(target.GetPointColors().To(dtype_).Div(
-                        static_cast<double>(
-                                std::numeric_limits<uint8_t>::max())));
-            } else if (target.GetPointColors().GetDtype() ==
-                       core::Dtype::UInt16) {
-                target.SetPointColors(target.GetPointColors().To(dtype_).Div(
-                        static_cast<double>(
-                                std::numeric_limits<uint16_t>::max())));
-            } else if (target.GetPointColors().GetDtype() ==
-                       core::Dtype::Float64) {
-                target.SetPointColors(target.GetPointColors().To(dtype_));
-            } else if (target.GetPointColors().GetDtype() !=
-                       core::Dtype::Float32) {
-                utility::LogError(
-                        " Unsupported dtype for color attribute. Supported "
-                        "dtypes include Float32, Float64, UInt8 and UInt16.");
-            }
-        }
-
-        // Normals are required for `PointToPlane` type registration method.
-        // Currenly Normal Estimation is not supported by Tensor Pointcloud.
-        if (registration_method_ == "PointToPlane" &&
-            !target.HasPointNormals()) {
-            auto target_legacy = target.ToLegacy();
-            target_legacy.EstimateNormals(geometry::KDTreeSearchParamKNN(),
-                                          false);
-            core::Tensor target_normals =
-                    t::geometry::PointCloud::FromLegacy(target_legacy)
-                            .GetPointNormals()
-                            .To(device_, dtype_);
-            target.SetPointNormals(target_normals);
-        }
-
-        return std::make_tuple(source, target);
-    }
-
     void AssertInputMultiScaleICP(
             const t::geometry::PointCloud& source,
             const t::geometry::PointCloud& target,
@@ -905,7 +731,6 @@ private:
 private:
     std::string path_source_;
     std::string path_target_;
-    std::string registration_method_;
     utility::VerbosityLevel verbosity_;
 
 private:
@@ -925,7 +750,7 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > TICPReconstruction [device] [config_file_path]");
+    utility::LogInfo("    > TICPReconstruction [device]");
     // clang-format on
     utility::LogInfo("");
 }
@@ -935,22 +760,19 @@ int main(int argc, char* argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc != 3 ||
+    if (argc != 2 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
-
-    const std::string path_config = std::string(argv[2]);
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
     auto& app = gui::Application::GetInstance();
 
     app.Initialize(argc, (const char**)argv);
-    app.AddWindow(std::make_shared<ReconstructionWindow>(
-            path_config, core::Device(argv[1])));
-
+    app.AddWindow(
+            std::make_shared<ReconstructionWindow>(core::Device(argv[1])));
     app.Run();
     return 0;
 }
