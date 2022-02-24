@@ -80,7 +80,7 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
             torch::Tensor& neighbors_row_splits,                              \
             torch::Tensor& neighbors_distance);
 
-INSTANTIATE(float, int)
-INSTANTIATE(float, long)
-INSTANTIATE(double, int)
-INSTANTIATE(double, long)
+INSTANTIATE(float, int32_t)
+INSTANTIATE(float, int64_t)
+INSTANTIATE(double, int32_t)
+INSTANTIATE(double, int64_t)

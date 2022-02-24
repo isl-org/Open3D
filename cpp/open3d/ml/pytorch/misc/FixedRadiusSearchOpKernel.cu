@@ -107,5 +107,5 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
             torch::Tensor& neighbors_row_splits,                              \
             torch::Tensor& neighbors_distance);
 
-INSTANTIATE(float, int)
-INSTANTIATE(float, long)
+INSTANTIATE(float, int32_t)
+INSTANTIATE(float, int64_t)
