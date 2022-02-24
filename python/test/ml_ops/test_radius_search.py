@@ -29,6 +29,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 import pytest
 import mltest
+import tensorflow as tf
 
 # skip all tests if the tf ops were not built and disable warnings caused by
 # tensorflow
@@ -39,7 +40,7 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
 
 @dtypes
-@mltest.parametrize.ml_cpu_torch_only
+@mltest.parametrize.ml_cpu_only
 @pytest.mark.parametrize('num_points_queries', [(10, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('metric', ['L1', 'L2'])
@@ -68,6 +69,9 @@ def test_radius_search(dtype, ml, num_points_queries, metric,
     gt_neighbors_index = [
         tree.query_ball_point(q, r, p=p_norm) for q, r in zip(queries, radii)
     ]
+
+    if ml.module.__name__ == 'tensorflow':
+        index_dtype = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
 
     layer = ml.layers.RadiusSearch(metric=metric,
                                    ignore_query_point=ignore_query_point,

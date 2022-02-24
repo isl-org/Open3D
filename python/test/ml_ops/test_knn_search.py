@@ -29,6 +29,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 import pytest
 import mltest
+import tensorflow as tf
 
 # skip all tests if the ml ops were not built
 pytestmark = mltest.default_marks
@@ -38,7 +39,7 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
 
 @dtypes
-@mltest.parametrize.ml_cpu_torch_only
+@mltest.parametrize.ml_cpu_only
 @pytest.mark.parametrize('num_points_queries', [(2, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('metric', ['L1', 'L2'])
@@ -69,6 +70,9 @@ def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
         ]
     else:
         gt_neighbors_index = [tree.query(q, k, p=p_norm)[1] for q in queries]
+
+    if ml.module.__name__ == 'tensorflow':
+        index_dtype = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
 
     layer = ml.layers.KNNSearch(metric=metric,
                                 ignore_query_point=ignore_query_point,

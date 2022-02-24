@@ -42,7 +42,7 @@ gpu_dtypes = [np.float32]
 
 
 @dtypes
-@mltest.parametrize.ml_torch_only
+@mltest.parametrize.ml
 @pytest.mark.parametrize('num_points_queries', [(10, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('radius', [0.1, 0.3])
@@ -73,6 +73,9 @@ def test_fixed_radius_search(dtype, ml, num_points_queries, radius,
     tree = cKDTree(points, copy_data=True)
     p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
     gt_neighbors_index = tree.query_ball_point(queries, radius, p=p_norm)
+
+    if ml.module.__name__ == 'tensorflow':
+        index_dtype = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
 
     layer = ml.layers.FixedRadiusSearch(metric=metric,
                                         ignore_query_point=ignore_query_point,

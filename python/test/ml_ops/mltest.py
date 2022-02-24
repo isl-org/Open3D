@@ -291,10 +291,6 @@ parametrize = SimpleNamespace(
     ml_tf_only=pytest.mark.parametrize('ml', [
         v for k, v in _ml_modules.items() if v.module.__name__ == 'tensorflow'
     ]),
-    ml_cpu_torch_only=pytest.mark.parametrize('ml', [
-        v for k, v in _ml_modules.items()
-        if v.module.__name__ == 'torch' and not v.device_is_gpu
-    ]),
 )
 
 
