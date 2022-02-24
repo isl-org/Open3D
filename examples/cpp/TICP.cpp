@@ -110,12 +110,12 @@ private:
 };
 
 //------------------------------------------------------------------------------
-class ReconstructionWindow : public gui::Window {
+class RegistrationWindow : public gui::Window {
     using Super = gui::Window;
 
 public:
-    ReconstructionWindow(const core::Device& device)
-        : gui::Window("Open3D - Reconstruction", 1280, 800),
+    RegistrationWindow(const core::Device& device)
+        : gui::Window("Open3D - Registration", 1280, 800),
           device_(device),
           host_(core::Device("CPU:0")),
           dtype_(core::Dtype::Float32) {
@@ -304,7 +304,7 @@ public:
                 std::make_shared<rendering::Open3DScene>(GetRenderer()));
     }
 
-    ~ReconstructionWindow() { update_thread_.join(); }
+    ~RegistrationWindow() { update_thread_.join(); }
 
     void Layout(const gui::LayoutContext& context) override {
         int em = context.theme.font_size;
@@ -552,8 +552,8 @@ protected:
 
                 // Delays each iteration to allow clear visualization of
                 // each iteration.
-                std::this_thread::sleep_for(std::chrono::milliseconds(
-                        ReconstructionWindow::delay_));
+                std::this_thread::sleep_for(
+                        std::chrono::milliseconds(RegistrationWindow::delay_));
             }
         }
         // ------------------ VISUALIZER ----------------------------
@@ -771,8 +771,7 @@ int main(int argc, char* argv[]) {
     auto& app = gui::Application::GetInstance();
 
     app.Initialize(argc, (const char**)argv);
-    app.AddWindow(
-            std::make_shared<ReconstructionWindow>(core::Device(argv[1])));
+    app.AddWindow(std::make_shared<RegistrationWindow>(core::Device(argv[1])));
     app.Run();
     return 0;
 }

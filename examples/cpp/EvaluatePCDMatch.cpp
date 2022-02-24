@@ -122,11 +122,7 @@ int main(int argc, char *argv[]) {
             utility::GetProgramOptionAsDouble(argc, argv, "--threshold");
     double threshold_rmse = utility::GetProgramOptionAsDouble(
             argc, argv, "--threshold_rmse", threshold * 2.0);
-    if (pcd_dirname.empty()) {
-        pcd_dirname =
-                utility::filesystem::GetFileParentDirectory(log_filename) +
-                "pcds/";
-    }
+
     double threshold2 = threshold * threshold;
 
     data::DemoICPPointClouds sample_data;
