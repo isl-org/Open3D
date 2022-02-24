@@ -5,6 +5,11 @@ rm -rf build
 mkdir build
 cd build
 
+eval "$(conda shell.bash hook)"
+conda activate open3d
+which python
+python --version
+
 echo "=========================="
 echo "Configure"
 echo "=========================="
