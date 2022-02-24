@@ -29,6 +29,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 import pytest
 import mltest
+import torch
 import tensorflow as tf
 
 # skip all tests if the ml ops were not built
@@ -72,12 +73,16 @@ def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
         gt_neighbors_index = [tree.query(q, k, p=p_norm)[1] for q in queries]
 
     if ml.module.__name__ == 'tensorflow':
-        index_dtype = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
+        index_dtype_ = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
+    elif ml.module.__name__ == 'torch':
+        index_dtype_ = {'int32': torch.int32, 'int64': torch.int64}[index_dtype]
+    else:
+        raise Exception('Unsupported ml framework')
 
     layer = ml.layers.KNNSearch(metric=metric,
                                 ignore_query_point=ignore_query_point,
                                 return_distances=return_distances,
-                                index_dtype=index_dtype)
+                                index_dtype=index_dtype_)
     ans = mltest.run_op(
         ml,
         ml.device,
@@ -87,6 +92,9 @@ def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
         queries=queries,
         k=k,
     )
+
+    index_dtype_np = {'int32': np.int32, 'int64': np.int64}[index_dtype]
+    assert ans.neighbors_index.dtype == index_dtype_np
 
     for i, q in enumerate(queries):
         # check neighbors

@@ -68,14 +68,15 @@ class FixedRadiusSearch(torch.nn.Module):
                  ignore_query_point=False,
                  return_distances=False,
                  max_hash_table_size=32 * 2**20,
-                 index_dtype='int64',
+                 index_dtype=torch.int32,
                  **kwargs):
         super().__init__()
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         self.max_hash_table_size = max_hash_table_size
-        self.index_dtype = index_dtype
+        assert index_dtype in [torch.int32, torch.int64]
+        self.index_dtype = 'int32' if index_dtype == torch.int32 else 'int64'
 
     def forward(self,
                 points,
@@ -207,13 +208,14 @@ class RadiusSearch(torch.nn.Module):
                  ignore_query_point=False,
                  return_distances=False,
                  normalize_distances=False,
-                 index_dtype='int64',
+                 index_dtype=torch.int32,
                  **kwargs):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         self.normalize_distances = normalize_distances
-        self.index_dtype = index_dtype
+        assert index_dtype in [torch.int32, torch.int64]
+        self.index_dtype = 'int32' if index_dtype == torch.int32 else 'int64'
         super().__init__()
 
     def forward(self,
@@ -315,12 +317,13 @@ class KNNSearch(torch.nn.Module):
                  metric='L2',
                  ignore_query_point=False,
                  return_distances=False,
-                 index_dtype='int64',
+                 index_dtype=torch.int32,
                  **kwargs):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
-        self.index_dtype = index_dtype
+        assert index_dtype in [torch.int32, torch.int64]
+        self.index_dtype = 'int32' if index_dtype == torch.int32 else 'int64'
         super().__init__()
 
     def forward(self,
