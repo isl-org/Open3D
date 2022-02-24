@@ -38,14 +38,15 @@ dtypes = pytest.mark.parametrize('dtype', [np.float32, np.float64])
 
 
 @dtypes
-@mltest.parametrize.ml_cpu_only
+@mltest.parametrize.ml_cpu_torch_only
 @pytest.mark.parametrize('num_points_queries', [(2, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('metric', ['L1', 'L2'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
+@pytest.mark.parametrize('index_dtype', ['int32', 'int64'])
 def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
-                    return_distances):
+                    return_distances, index_dtype):
     rng = np.random.RandomState(123)
 
     num_points, num_queries = num_points_queries
@@ -71,7 +72,8 @@ def test_knn_search(dtype, ml, num_points_queries, metric, ignore_query_point,
 
     layer = ml.layers.KNNSearch(metric=metric,
                                 ignore_query_point=ignore_query_point,
-                                return_distances=return_distances)
+                                return_distances=return_distances,
+                                index_dtype=index_dtype)
     ans = mltest.run_op(
         ml,
         ml.device,

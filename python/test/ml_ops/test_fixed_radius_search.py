@@ -42,7 +42,7 @@ gpu_dtypes = [np.float32]
 
 
 @dtypes
-@mltest.parametrize.ml
+@mltest.parametrize.ml_torch_only
 @pytest.mark.parametrize('num_points_queries', [(10, 5), (31, 33), (33, 31),
                                                 (123, 345)])
 @pytest.mark.parametrize('radius', [0.1, 0.3])
@@ -50,9 +50,10 @@ gpu_dtypes = [np.float32]
 @pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
+@pytest.mark.parametrize('index_dtype', ['int32', 'int64'])
 def test_fixed_radius_search(dtype, ml, num_points_queries, radius,
                              hash_table_size_factor, metric, ignore_query_point,
-                             return_distances):
+                             return_distances, index_dtype):
 
     # skip dtype not supported on GPU
     if mltest.is_gpu_device_name(ml.device) and not dtype in gpu_dtypes:
@@ -75,7 +76,8 @@ def test_fixed_radius_search(dtype, ml, num_points_queries, radius,
 
     layer = ml.layers.FixedRadiusSearch(metric=metric,
                                         ignore_query_point=ignore_query_point,
-                                        return_distances=return_distances)
+                                        return_distances=return_distances,
+                                        index_dtype=index_dtype)
     ans = mltest.run_op(
         ml,
         ml.device,
@@ -109,7 +111,7 @@ def test_fixed_radius_search(dtype, ml, num_points_queries, radius,
                 np.testing.assert_allclose(dist, gt_dist, rtol=1e-7, atol=1e-8)
 
 
-@mltest.parametrize.ml
+@mltest.parametrize.ml_torch_only
 def test_fixed_radius_search_empty_point_sets(ml):
     rng = np.random.RandomState(123)
 
@@ -160,16 +162,18 @@ def test_fixed_radius_search_empty_point_sets(ml):
 
 
 @dtypes
-@mltest.parametrize.ml
+@mltest.parametrize.ml_torch_only
 @pytest.mark.parametrize('batch_size', [2, 3, 8])
 @pytest.mark.parametrize('radius', [0.1, 0.3])
 @pytest.mark.parametrize('hash_table_size_factor', [1 / 8, 1 / 64])
 @pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
+@pytest.mark.parametrize('index_dtype', ['int32', 'int64'])
 def test_fixed_radius_search_batches(dtype, ml, batch_size, radius,
                                      hash_table_size_factor, metric,
-                                     ignore_query_point, return_distances):
+                                     ignore_query_point, return_distances,
+                                     index_dtype):
     # skip dtype not supported on GPU
     if mltest.is_gpu_device_name(ml.device) and not dtype in gpu_dtypes:
         return
@@ -209,7 +213,8 @@ def test_fixed_radius_search_batches(dtype, ml, batch_size, radius,
 
     layer = ml.layers.FixedRadiusSearch(metric=metric,
                                         ignore_query_point=ignore_query_point,
-                                        return_distances=return_distances)
+                                        return_distances=return_distances,
+                                        index_dtype=index_dtype)
     ans = mltest.run_op(
         ml,
         ml.device,
@@ -246,16 +251,18 @@ def test_fixed_radius_search_batches(dtype, ml, batch_size, radius,
 
 
 @dtypes
-@mltest.parametrize.ml
+@mltest.parametrize.ml_torch_only
 @pytest.mark.parametrize('batch_size', [2, 3, 8])
 @pytest.mark.parametrize('radius', [0.1, 0.3])
 @pytest.mark.parametrize('hash_table_size_factor', [1 / 8, 1 / 64])
 @pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
+@pytest.mark.parametrize('index_dtype', ['int32', 'int64'])
 def test_fixed_radius_search_raggedtensor(dtype, ml, batch_size, radius,
                                           hash_table_size_factor, metric,
-                                          ignore_query_point, return_distances):
+                                          ignore_query_point, return_distances,
+                                          index_dtype):
     # the problem is specific to tensorflow
     if ml.module.__name__ != 'tensorflow':
         return
@@ -303,7 +310,8 @@ def test_fixed_radius_search_raggedtensor(dtype, ml, batch_size, radius,
 
     layer = ml.layers.FixedRadiusSearch(metric=metric,
                                         ignore_query_point=ignore_query_point,
-                                        return_distances=return_distances)
+                                        return_distances=return_distances,
+                                        index_dtype=index_dtype)
     ans = mltest.run_op(
         ml,
         ml.device,
