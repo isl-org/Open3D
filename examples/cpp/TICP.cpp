@@ -52,10 +52,6 @@ const std::string LINE_SET = "correspondences_lines";
 const std::string SRC_CORRES = "source_correspondences_idx";
 const std::string TAR_CORRES = "target_correspondences_idx";
 
-std::vector<double> initial_transform_flat = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-                                              0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-                                              0.0, 0.0, 0.0, 1.0};
-
 //------------------------------------------------------------------------------
 class PropertyPanel : public gui::VGrid {
     using Super = gui::VGrid;
@@ -123,7 +119,7 @@ public:
           device_(device),
           host_(core::Device("CPU:0")),
           dtype_(core::Dtype::Float32) {
-        data::DemoColoredICPPointClouds demo_icp_data;
+        data::DemoICPPointClouds demo_icp_data;
 
         // Read Point-Clouds.
         // t::io::ReadPointCloud copies the pointcloud to CPU.
@@ -148,8 +144,8 @@ public:
                                 std::numeric_limits<uint8_t>::max())));
 
         // Load other parameters.
-        estimation_ = std::make_shared<TransformationEstimationForColoredICP>();
-        utility::LogInfo(" Registrtion method: ColoredICP");
+        estimation_ = std::make_shared<TransformationEstimationPointToPlane>();
+        utility::LogInfo(" Registrtion method: PointToPlane");
 
         voxel_sizes_ = {0.05, 0.025, 0.0125};
         utility::LogInfo(" Voxel Sizes: ");
@@ -160,7 +156,12 @@ public:
         for (auto search_radii : max_correspondence_distances_)
             std::cout << search_radii << " ";
 
-        transformation_ = core::Tensor::Eye(4, core::Float64, host_);
+        transformation_ =
+                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
+                                            {-0.139, 0.967, -0.215, 0.7},
+                                            {0.487, 0.255, 0.835, -1.4},
+                                            {0.0, 0.0, 0.0, 1.0}},
+                                           host_);
         utility::LogInfo(" Initial Transformation Guess: \n {} \n",
                          transformation_.ToString());
 
@@ -653,8 +654,7 @@ private:
             if (max_correspondence_distances[i] <= 0.0) {
                 utility::LogError(
                         " Max correspondence distance must be greater than 0, "
-                        "but"
-                        " got {} in scale: {}.",
+                        "but got {} in scale: {}.",
                         max_correspondence_distances[i], i);
             }
         }
@@ -750,7 +750,7 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > TICPReconstruction [device]");
+    utility::LogInfo("    > TICP [device]");
     // clang-format on
     utility::LogInfo("");
 }

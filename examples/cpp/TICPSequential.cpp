@@ -712,10 +712,8 @@ void PrintHelp() {
     using namespace open3d;
 
     PrintOpen3DVersion();
-    // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > TICPOdometry [device] [config_file_path]");
-    // clang-format on
+    utility::LogInfo("    > TICPSequential [device]");
     utility::LogInfo("");
 }
 
