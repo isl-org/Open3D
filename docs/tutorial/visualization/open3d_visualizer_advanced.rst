@@ -1,6 +1,6 @@
 .. _open3d_visualizer_advanced:
 
-Advanced Open3D Visualizer
+Advanced Open3D Visualizer 
 ==========================
 
 Introduction
