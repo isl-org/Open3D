@@ -48,12 +48,20 @@ Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.15+ and
 Windows 10 (64-bit) with Python 3.6-3.9.
 
 ```bash
-# Install Open3D stable release with pip (including in conda virtual environments)
-$ pip install open3d
+# Install
+pip install open3d
 
-# Test the installation
-$ python -c "import open3d as o3d; print(o3d)"
+# Verify installation
+python -c "import open3d as o3d; print(o3d.__version__)"
 
+# Python API
+python -c "import open3d as o3d; \
+           mesh = o3d.geometry.TriangleMesh.create_sphere(); \
+           mesh.compute_vertex_normals(); \
+           o3d.visualization.draw(mesh, raw_mode=True)"
+
+# Open3D CLI
+open3d example visualization/draw
 ```
 
 To get the latest features in Open3D, install the

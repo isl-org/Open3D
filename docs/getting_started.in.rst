@@ -104,13 +104,21 @@ to install the latest development version on Linux for Python 3.9:
 Try it
 ------
 
-Now, try importing Open3D.
-
 .. code-block:: bash
 
-    python -c "import open3d as o3d"
+    # Verify installation
+    python -c "import open3d as o3d; print(o3d.__version__)"
 
-If this works, congratulations, now Open3D has been successfully installed!
+    # Python API
+    python -c "import open3d as o3d; \
+               mesh = o3d.geometry.TriangleMesh.create_sphere(); \
+               mesh.compute_vertex_normals(); \
+               o3d.visualization.draw(mesh, raw_mode=True)"
+
+    # Open3D CLI
+    open3d example visualization/draw
+
+If everything works, congratulations, now Open3D has been successfully installed!
 
 
 Troubleshooting:

@@ -1158,7 +1158,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
             ndc.y() *= f.height;
             ImGui::SetWindowFontScale(l->GetTextScale());
             ImGui::SetCursorScreenPos(
-                    ImVec2(ndc.x() - f.x, f.height - ndc.y() - f.y));
+                    ImVec2(ndc.x() + f.x, f.height - ndc.y() - f.y));
             auto color = l->GetTextColor();
             ImGui::TextColored({color.GetRed(), color.GetGreen(),
                                 color.GetBlue(), color.GetAlpha()},

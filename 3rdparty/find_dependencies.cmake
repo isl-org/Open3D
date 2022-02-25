@@ -994,10 +994,9 @@ if(USE_SYSTEM_FMT)
     endif()
 endif()
 if(NOT USE_SYSTEM_FMT)
-    # We set the FMT_HEADER_ONLY macro, so no need to actually compile the source
     include(${Open3D_3RDPARTY_DIR}/fmt/fmt.cmake)
     open3d_import_3rdparty_library(3rdparty_fmt
-        PUBLIC
+        HEADER
         INCLUDE_DIRS ${FMT_INCLUDE_DIRS}
         LIB_DIR      ${FMT_LIB_DIR}
         LIBRARIES    ${FMT_LIBRARIES}
@@ -1008,7 +1007,7 @@ if(NOT USE_SYSTEM_FMT)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_USE_WINDOWS_H=0)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
 endif()
-list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_fmt)
+list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_fmt)
 
 # Pybind11
 if (BUILD_PYTHON_MODULE)

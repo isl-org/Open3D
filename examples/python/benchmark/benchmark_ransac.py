@@ -24,6 +24,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+from open3d_example import *
 import os
 import sys
 import numpy as np
@@ -31,17 +32,7 @@ import numpy as np
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(pyexample_path)
 
-from open3d_example import *
-
 do_visualization = False
-
-
-def get_ply_path(dataset_name, id):
-    return "%s/%s/cloud_bin_%d.ply" % (dataset_path, dataset_name, id)
-
-
-def get_log_path(dataset_name):
-    return "%s/ransac_%s.log" % (dataset_path, dataset_name)
 
 
 def preprocess_point_cloud(pcd, voxel_size):
@@ -71,28 +62,26 @@ def execute_global_registration(source, target, source_fpfh, target_fpfh,
     return result
 
 
-dataset_path = os.path.join(os.path.dirname(pyexample_path), 'test_data',
-                            'benchmark_data')
-dataset_names = ['livingroom1', 'livingroom2', 'office1', 'office2']
+dataset_list = {
+    "LivingRoomPointClouds": o3d.data.LivingRoomPointClouds,
+    "OfficePointClouds": o3d.data.OfficePointClouds
+}
 
 if __name__ == "__main__":
     # data preparation
-    get_redwood_dataset()
     voxel_size = 0.05
 
     # do RANSAC based alignment
-    for dataset_name in dataset_names:
-        ply_file_names = get_file_list("%s/%s/" % (dataset_path, dataset_name),
-                                       ".ply")
-        n_ply_files = len(ply_file_names)
+    for dataset_name, dataset in dataset_list.items():
+        n_ply_files = len(dataset.paths)
 
         alignment = []
         for s in range(n_ply_files):
             for t in range(s + 1, n_ply_files):
 
                 print("%s:: matching %d-%d" % (dataset_name, s, t))
-                source = o3d.io.read_point_cloud(get_ply_path(dataset_name, s))
-                target = o3d.io.read_point_cloud(get_ply_path(dataset_name, t))
+                source = o3d.io.read_point_cloud(dataset.paths[s])
+                target = o3d.io.read_point_cloud(dataset.paths[t])
                 source_down, source_fpfh = preprocess_point_cloud(
                     source, voxel_size)
                 target_down, target_fpfh = preprocess_point_cloud(
@@ -118,5 +107,3 @@ if __name__ == "__main__":
                 if do_visualization:
                     draw_registration_result(source_down, target_down,
                                              result.transformation)
-
-    # do evaluation
