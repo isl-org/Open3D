@@ -21,9 +21,9 @@ function(open3d_make_cuda_architectures cuda_archs)
         # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
         # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA/select_compute_arch.cmake
         if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
-            set(${cuda_archs} 50-real 60-real 70-real 72-real 75-real 80-real 86)
+            set(${cuda_archs} 60-real 70-real 72-real 75-real 80-real 86)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-            set(${cuda_archs} 50-real 60-real 70-real 72-real 75-real 80)
+            set(${cuda_archs} 60-real 70-real 72-real 75-real 80)
         else()
             set(${cuda_archs} 30-real 50-real 60-real 70-real 72-real 75)
         endif()
