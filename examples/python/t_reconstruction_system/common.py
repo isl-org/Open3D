@@ -36,7 +36,8 @@ def get_default_testdata():
     example_path = os.path.abspath(
         os.path.join(__file__, os.path.pardir, os.path.pardir, os.path.pardir))
 
-    path_dataset = os.path.join(example_path, 'test_data', 'RGBD')
+    redwood_rgbd = o3d.data.SampleRedwoodRGBDImages()
+    path_dataset = redwood_rgbd.extract_dir
     print('Dataset not found, falling back to test examples {}'.format(
         path_dataset))
 
