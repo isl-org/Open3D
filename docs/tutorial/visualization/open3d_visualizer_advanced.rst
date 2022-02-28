@@ -1,6 +1,6 @@
 .. _open3d_visualizer_advanced:
 
-Advanced Open3D Visualizer 
+Advanced Open3D Visualizer
 ==========================
 
 Introduction
@@ -381,87 +381,4 @@ We can write a loop which displays all mesh names used in a complex model like s
 
 
 
-
-Running ``draw.py``
-:::::::::::::::::::
-
-
-``draw()`` Input Parameters
-----------------------------
-
-.. code-block:: python
-
-    def draw(geometry=None,
-             title="Open3D",
-             width=1024,
-             height=768,
-             actions=None,
-             lookat=None,
-             eye=None,
-             up=None,
-             field_of_view=60.0,
-             bg_color=(1.0, 1.0, 1.0, 1.0),
-             bg_image=None,
-             ibl=None,
-             ibl_intensity=None,
-             show_skybox=None,
-             show_ui=None,
-             point_size=None,
-             animation_time_step=1.0,
-             animation_duration=None,
-             rpc_interface=False,
-             on_init=None,
-             on_animation_frame=None,
-             on_animation_tick=None,
-             non_blocking_and_return_uid=False):
-             
-Parameter Description
-::::::::::::::::::::::::::::
-             
-             
-	``geometry`` Rene - description
-
-	``title`` Rene - description
-
-	``width`` Rene - description
-
-	``height``  Rene - description
-
-	``actions`` Rene - description
-
-	``lookat`` Rene - description
-
-	``eye`` Rene - description
-
-	``up`` Rene - description
-
-	``field_of_view`` Rene - description
-
-	``bg_color`` Rene - description
-
-	``bg_image`` Rene - description
-
-	``ibl`` Rene - description
-
-	``ibl_intensity`` Rene - description
-
-	``show_skybox`` Rene - description
-
-	``show_ui`` Rene - description
-
-	``point_size`` Rene - description
-
-	``animation_time_step`` Rene - description
-
-	``animation_duration`` Rene - description
-
-	``rpc_interface`` Rene - description
-
-	``on_init`` Rene - description
-
-	``on_animation_frame`` Rene - description
-
-	``on_animation_tick`` Rene - description
-
-	``non_blocking_and_return_uid`` Rene - description
 

@@ -100,36 +100,6 @@ Open3D returns:
 		TriangleMesh with 762 points and 1520 triangles.
 
 
-
-Drawing a Tensor-based Sphere
-:::::::::::::::::::::::::::::
-
-In examples above we rendered ``TriangleMesh`` versions of objects. Now, we will do the same using a Tensor-based object. Continuing from the previous example, at the Python prompt in your terminal, enter:
-
-.. code-block:: python
-
-		>>> sphere_t = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
-		>>> vis.draw(sphere_t)
-		
-		
-A sphere similar to that shown in the previous example is rendered, but this time using a Tensor data type. Now, enter ``sphere_t`` at the Python prompt:
-
-.. code-block:: python
-
-		>>> sphere_t
-
-Open3D returns:
-
-.. code-block:: sh
-
-	TriangleMesh on CPU:0 [762 vertices (Float32) and 1520 triangles (Int64)]. 
-	Vertices Attributes: None. 
-	Triangles Attributes: None.
-
-**This is how Tensor objects are denoted - by vertices and triangles.**
-
-
-
 Rendering Point Cloud Data (pcd) files
 :::::::::::::::::::::::::::::::::::::::::
 
