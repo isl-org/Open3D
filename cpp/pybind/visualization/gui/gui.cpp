@@ -1690,7 +1690,7 @@ void pybind_gui_classes(py::module &m) {
                     return new Horiz(spacing, margins);
                 }),
                 "spacing"_a = 0, "margins"_a = Margins(),
-                "Creates a layout that arranges widgets vertically, left to "
+                "Creates a layout that arranges widgets horizontally, left to "
                 "right, making their height equal to the layout's height "
                 "(which will generally be the largest height of the items). "
                 "First argument is the spacing between widgets, the second "
@@ -1699,7 +1699,7 @@ void pybind_gui_classes(py::module &m) {
                      return new Horiz(int(std::round(spacing)), margins);
                  }),
                  "spacing"_a = 0.0f, "margins"_a = Margins(),
-                 "Creates a layout that arranges widgets vertically, left to "
+                 "Creates a layout that arranges widgets horizontally, left to "
                  "right, making their height equal to the layout's height "
                  "(which will generally be the largest height of the items). "
                  "First argument is the spacing between widgets, the second "
