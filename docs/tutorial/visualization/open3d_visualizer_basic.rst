@@ -22,7 +22,7 @@ For all examples in this tutorial, we will be running a Python session. Please f
 
 	$ cd <... Path to Open3D on your computer...>
 	
-.. image:: https://user-images.githubusercontent.com/93158890/148607427-9391c499-9fc5-4a38-89a4-fb088019ca0b.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/149406147-ff07bf6e-10b3-44c8-a25d-4f46a9538c47.jpg
     :width: 700px	
     
 2. **Optionally**, if you have a ``conda`` virtual environment, activate it from the command line like so:
@@ -226,7 +226,7 @@ Aside from displaying UI / control panel, it is also possible to add a Visualize
 
 	>>> vis.draw([sphere, pcd], show_ui=True, title="Sphere and PCD", width=700, height=700)
 	
-.. image:: https://user-images.githubusercontent.com/93158890/148609189-e52bb398-e84e-4f83-9a54-53102ea0e80b.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/149412802-c262b81f-d504-4fa2-b3f9-3fb25e3b9e14.jpg
     :width: 600px
 
 
@@ -298,7 +298,7 @@ Earlier, we explicitly declared the name for our object in the ``geoms`` collect
 
 And here is the named object:
 
-.. image:: https://user-images.githubusercontent.com/93158890/148609614-dcea315f-b937-445f-ac1e-f461f94eb55d.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/149417800-5b852a2d-3bea-48d9-b702-f0865e1eec0c.jpg
     :width: 600px
     
 So far, our ``geoms`` collection defined only a single object: *sphere*. But we can turn it into a list and define multiple objects there. Let's see how it's done:
@@ -308,7 +308,7 @@ So far, our ``geoms`` collection defined only a single object: *sphere*. But we 
 	>>> geoms = [{'name': 'sphere', 'geometry': sphere, 'material': mat}, {'name': 'pointcloud', 'geometry': pcd}]
 	>>> vis.draw(geoms, show_ui=True)
 
-.. image:: https://user-images.githubusercontent.com/93158890/148609730-69d90faa-7083-42c5-9c5f-6f12d2e3efc4.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/149419900-02c42c51-bede-4a6b-b3d4-716a01dd0fab.jpg
     :width: 600px
 
 
@@ -331,7 +331,7 @@ First, we'll demonstrate how to turn off the *skybox*. At your Python prompt, en
 	
 And the Visualizer window opens without the default *skybox* blue background:
 
-.. image:: https://user-images.githubusercontent.com/93158890/148610012-98d2fbef-1a81-43b5-a076-0335f5f4ee1e.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/149421692-0a8a1f3c-2ea9-4da3-a480-4fdcaa99e49e.jpg
     :width: 600px
 
 Next, we will explore the *background color* (``bg_color``) parameter. At the Python prompt, enter:
@@ -342,7 +342,7 @@ Next, we will explore the *background color* (``bg_color``) parameter. At the Py
 
 Here, we have displayed the UI, renamed the title bar to *"Green Background"*, turned off the default *skybox* background, and explicitly specified RGB-Alfa values for the ``bg_color``:
 
-.. image:: https://user-images.githubusercontent.com/93158890/148610167-6a61f94b-8b1f-4f5a-ae36-038fdab25acd.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/149423231-55bb4604-b993-4893-b170-08637d0f243f.jpg
     :width: 600px
 
 Specifying ``point_size``
@@ -356,5 +356,5 @@ In this section, we will learn how to control 3D model rendering by passing in `
 
 Here we have programmatically specified a custom ``point_size`` for rendering. It is recommended to set ``show_ui=True`` to make sure Open3D Visualizer interprets ``draw()`` function input parameters correctly. You can experiment with different point sizes by moving a slider in the UI:
 
-.. image:: https://user-images.githubusercontent.com/93158890/148610297-0243c452-074f-4d44-a169-cd01a4f9e62a.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/149423983-f89ab2b7-fa49-4723-9329-1c375fb0a965.jpg
     :width: 600px

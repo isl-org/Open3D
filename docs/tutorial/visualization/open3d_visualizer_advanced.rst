@@ -23,8 +23,7 @@ For all examples in this tutorial, we will be running a Python session. Please f
 
 	$ cd <... Path to Open3D on your computer...>
 	
-.. image:: https://user-images.githubusercontent.com/93158890/148607427-9391c499-9fc5-4a38-89a4-fb088019ca0b.jpg
-    :width: 700px	
+
     
 2. **Optionally**, if you have a ``conda`` virtual environment, activate it from the command line like so:
 
@@ -214,7 +213,7 @@ We have just scaled the wireframe ``LineSet`` to be 2% larger. Now, let's render
 
     >>> vis.draw([monkey, monkey_ls])
 
-.. image:: https://user-images.githubusercontent.com/93158890/148611540-7f4ea545-18bc-4562-b5c8-fb9e7cf60452.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/150007965-4959165f-688d-43c0-a839-c1b8efea7073.jpg
     :width: 600px
 
 The above image shows a zoomed-in fragment of our model where we can clearly see some space between the wireframe and the object. Experiment with scale values further to see different visual results.
@@ -231,7 +230,7 @@ For this example, we will need to download / ``clone`` *glTF-Sample-Models*  fro
 
 First, **minimize your current Python terminal session and open a new one. In a new terminal session:**
 
-.. image:: https://user-images.githubusercontent.com/93158890/148611673-8af22794-75b0-49a6-babe-d0b50578c570.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/150047410-de591582-67c5-42bd-b644-764c36b8c4b8.jpg
     :width: 800px
 
 1. Change Directory (``cd``) to where you would like the *glTF-Sample-Models* repository to be copied;
