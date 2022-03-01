@@ -460,6 +460,31 @@ private:
     std::string path_;
 };
 
+/// \class MonkeyModel
+/// \brief Data class for `MonkeyModel` contains the `monkey.obj` model file,
+/// along with various other texture files. The model file can be accessed using
+/// `GetPath()`, however in order to access the paths to the texture files one
+/// may use `GetFilenamePath(filename)` method.
+class MonkeyModel : public SingleDownloadDataset {
+public:
+    MonkeyModel(const std::string& data_root = "");
+
+    /// \brief Returns path to the `monkey.obj` file.
+    std::string GetPath() const { return path_; };
+
+    /// \brief Returns path to the `filename`. Refer documentation page for
+    /// available options.
+    std::string GetFilenamePath(const std::string filename) const {
+        return filename_paths_.at(filename);
+    }
+
+private:
+    /// Path to `mokey.obj` file.
+    std::string path_;
+    /// Map to path for the avialble filenames.
+    std::unordered_map<std::string, std::string> filename_paths_;
+};
+
 /// \class JuneauImage
 /// \brief Data class for `JuneauImage` contains the `JuneauImage.jpg` file.
 class JuneauImage : public SingleDownloadDataset {

@@ -391,6 +391,29 @@ KnotMesh::KnotMesh(const std::string& data_root)
     path_ = Dataset::GetExtractDir() + "/KnotMesh.ply";
 }
 
+MonkeyModel::MonkeyModel(const std::string& data_root)
+    : SingleDownloadDataset(
+              "MonkeyModel",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/MonkeyModel.zip"},
+              "fc330bf4fd8e022c1e5ded76139785d4",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    path_ = extract_dir + "/monkey.obj";
+    filename_paths_ = {
+            {"albedo.png", extract_dir + "/albedo.png"},
+            {"ao.png", extract_dir + "/ao.png"},
+            {"metallic.png", extract_dir + "/metallic.png"},
+            {"monkey.mtl", extract_dir + "/monkey.mtl"},
+            {"monkey.obj", extract_dir + "/monkey.obj"},
+            {"monkey_solid.mtl", extract_dir + "/monkey_solid.mtl"},
+            {"monkey_solid.obj", extract_dir + "/monkey_solid.obj"},
+            {"normal.png", extract_dir + "/normal.png"},
+            {"roughness.png", extract_dir + "/roughness.png"},
+    };
+}
+
 JuneauImage::JuneauImage(const std::string& data_root)
     : SingleDownloadDataset(
               "JuneauImage",
