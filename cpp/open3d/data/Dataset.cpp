@@ -94,14 +94,15 @@ DemoICPPointClouds::DemoICPPointClouds(const std::string& data_root)
     : SingleDownloadDataset(
               "DemoICPPointClouds",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220201-data/DemoICPPointClouds.zip"},
-              "76cf67ab1af942e3c4d5e97b9c2ae58f",
+               "20220301-data/DemoICPPointClouds.zip"},
+              "596cffe5f9c587045e7397ad70754de9",
               /*no_extract =*/false,
               data_root) {
     for (int i = 0; i < 3; ++i) {
         paths_.push_back(Dataset::GetExtractDir() + "/cloud_bin_" +
                          std::to_string(i) + ".pcd");
     }
+    transfomation_log_path_ = Dataset::GetExtractDir() + "/init.log";
 }
 
 std::string DemoICPPointClouds::GetPaths(size_t index) const {

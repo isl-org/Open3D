@@ -100,6 +100,10 @@ def test_demo_icp_pointclouds():
         assert Path(gt_path) == Path(demo_icp_path)
         assert Path(gt_path).exists()
 
+    assert Path(demo_icp.transformation_log_path) == Path(gt_extract_dir /
+                                                          "init.log")
+    assert Path(demo_icp.transformation_log_path).exists()
+
     assert demo_icp.prefix == gt_prefix
     assert Path(demo_icp.data_root) == gt_data_root
     assert Path(demo_icp.download_dir) == gt_download_dir

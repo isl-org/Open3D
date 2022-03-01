@@ -99,8 +99,15 @@ void pybind_demo_icp_pointclouds(py::module& m) {
                         return demo_icp_pointclouds.GetPaths();
                     },
                     "List of 3 point cloud paths. Use `paths[0]`, `paths[1]`, "
-                    "and `paths[2]` to access the paths.");
+                    "and `paths[2]` to access the paths.")
+            .def_property_readonly(
+                    "transfomation_log_path",
+                    &DemoICPPointClouds::GetTransformationLogPath,
+                    "Path to the transformation metadata log file, containing "
+                    "transformation between frame 0 and 1, and frame 1 and 2.");
     docstring::ClassMethodDocInject(m, "DemoICPPointClouds", "paths");
+    docstring::ClassMethodDocInject(m, "DemoICPPointClouds",
+                                    "transfomation_log_path");
 }
 
 void pybind_demo_colored_icp_pointclouds(py::module& m) {
@@ -160,8 +167,7 @@ void pybind_demo_feature_matching_point_clouds(py::module& m) {
             demo_feature_matching(
                     m, "DemoFeatureMatchingPointClouds",
                     "Data class for `DemoFeatureMatchingPointClouds` contains "
-                    "2 "
-                    "pointcloud fragments and their respective FPFH features "
+                    "2 pointcloud fragments and their respective FPFH features "
                     "and L32D features. This dataset is used in Open3D for "
                     "point cloud feature matching demo.");
     demo_feature_matching

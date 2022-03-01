@@ -135,10 +135,16 @@ public:
     /// \brief Returns path to the point cloud at index. Use `GetPaths(0)`,
     /// `GetPaths(1)`, and `GetPaths(2)` to access the paths.
     std::string GetPaths(size_t index) const;
+    /// \brief Returns path to the transformation metadata log file, containing
+    /// transformation between frame 0 and 1, and frame 1 and 2.
+    std::string GetTransformationLogPath() const {
+        return transfomation_log_path_;
+    }
 
 private:
     // List of path to PCD point-cloud fragments.
     std::vector<std::string> paths_;
+    std::string transfomation_log_path_;
 };
 
 /// \class DemoColoredICPPointClouds

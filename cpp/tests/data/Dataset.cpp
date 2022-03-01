@@ -113,6 +113,11 @@ TEST(Dataset, DemoICPPointClouds) {
         EXPECT_TRUE(utility::filesystem::FileExists(demo_icp.GetPaths(i)));
     }
 
+    // Path to transformation log file.
+    EXPECT_EQ(demo_icp.GetTransformationLogPath(), extract_dir + "/init.log");
+    EXPECT_TRUE(utility::filesystem::FileExists(
+            demo_icp.GetTransformationLogPath()));
+
     // Basic methods.
     EXPECT_EQ(demo_icp.GetPrefix(), prefix);
     EXPECT_EQ(demo_icp.GetDataRoot(), data_root);
