@@ -281,7 +281,7 @@ void pybind_gui_events(py::module& m) {
             .export_values();
 
     py::class_<KeyEvent> key_event(m, "KeyEvent",
-                                   "Object that stores mouse events");
+                                   "Object that stores key events");
     py::enum_<KeyEvent::Type> key_event_type(key_event, "Type",
                                              py::arithmetic());
     key_event_type.value("DOWN", KeyEvent::Type::DOWN)
