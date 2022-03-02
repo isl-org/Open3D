@@ -261,8 +261,7 @@ void pybind_registration_classes(py::module &m) {
                            "Robust Kernel used in the Optimization");
 }
 
-// Registration functions have similar arguments, sharing arg
-// docstrings.
+// Registration functions have similar arguments, sharing arg docstrings.
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"correspondences",
@@ -317,26 +316,26 @@ void pybind_registration_methods(py::module &m) {
     docstring::FunctionDocInject(m, "evaluate_registration",
                                  map_shared_argument_docstrings);
 
-    m.def("icp", &ICP, py::call_guard<py::gil_scoped_release>(),
-          "Function for ICP registration", "source"_a, "target"_a,
-          "max_correspondence_distance"_a,
-          "init_source_to_target"_a =
-                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-          "estimation_method"_a = TransformationEstimationPointToPoint(),
-          "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0,
-          "save_loss_log"_a = false);
-    docstring::FunctionDocInject(m, "icp", map_shared_argument_docstrings);
+//     m.def("icp", &ICP, py::call_guard<py::gil_scoped_release>(),
+//           "Function for ICP registration", "source"_a, "target"_a,
+//           "max_correspondence_distance"_a,
+//           "init_source_to_target"_a =
+//                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+//           "estimation_method"_a = TransformationEstimationPointToPoint(),
+//           "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0,
+//           "save_loss_log"_a = false);
+//     docstring::FunctionDocInject(m, "icp", map_shared_argument_docstrings);
 
-    m.def("multi_scale_icp", &MultiScaleICP,
-          py::call_guard<py::gil_scoped_release>(),
-          "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
-          "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
-          "init_source_to_target"_a =
-                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-          "estimation_method"_a = TransformationEstimationPointToPoint(),
-          "save_loss_log"_a = false);
-    docstring::FunctionDocInject(m, "multi_scale_icp",
-                                 map_shared_argument_docstrings);
+//     m.def("multi_scale_icp", &MultiScaleICP,
+//           py::call_guard<py::gil_scoped_release>(),
+//           "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
+//           "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
+//           "init_source_to_target"_a =
+//                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+//           "estimation_method"_a = TransformationEstimationPointToPoint(),
+//           "save_loss_log"_a = false);
+//     docstring::FunctionDocInject(m, "multi_scale_icp",
+//                                  map_shared_argument_docstrings);
 
     m.def("get_information_matrix", &GetInformationMatrix,
           py::call_guard<py::gil_scoped_release>(),

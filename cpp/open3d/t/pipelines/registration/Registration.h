@@ -101,7 +101,7 @@ public:
 
     ~RegistrationResult() {}
 
-    bool IsBetterRANSACThan(const RegistrationResult &other) const {
+    bool IsBetterThan(const RegistrationResult &other) const {
         return fitness_ > other.fitness_ || (fitness_ == other.fitness_ &&
                                              inlier_rmse_ < other.inlier_rmse_);
     }
@@ -168,7 +168,8 @@ RegistrationResult ICP(
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
         const double voxel_size = -1.0,
-        const bool save_loss_log = false);
+        const bool save_loss_log = false,
+        std::function<void(t::geometry::TensorMap&)> update_loss_log = {});
 
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
@@ -204,7 +205,8 @@ RegistrationResult MultiScaleICP(
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
-        const bool save_loss_log = false);
+        const bool save_loss_log = false,
+        std::function<void(t::geometry::TensorMap&)> update_loss_log = {});
 
 /// \brief Computes `Information Matrix`, from the transfromation between source
 /// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},

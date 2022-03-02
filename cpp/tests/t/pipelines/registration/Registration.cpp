@@ -311,7 +311,7 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPlane) {
     }
 }
 
-TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
+TEST_P(RegistrationPermuteDevices, ICPColored) {
     core::Device device = GetParam();
 
     t::geometry::PointCloud source_tpcd, target_tpcd;
@@ -355,6 +355,10 @@ TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
         double relative_rmse = 1e-6;
         int max_iterations = 2;
 
+        auto update_loss_log = [](t::geometry::TensorMap& loss_log) {
+            std::cout << "Update";
+        };
+
         // ColoredICP - Tensor.
         t_reg::RegistrationResult reg_p2plane_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
@@ -362,7 +366,7 @@ TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
                 t_reg::TransformationEstimationForColoredICP(),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
                                               max_iterations),
-                -1.0);
+                -1.0, true, update_loss_log);
 
         // ColoredICP - Legacy.
         l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationColoredICP(
