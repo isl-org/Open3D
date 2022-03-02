@@ -7,8 +7,6 @@ target_sources(tgeometry_kernel PRIVATE
     PointCloudCPU.cpp
     Transform.cpp
     TransformCPU.cpp
-    TSDFVoxelGrid.cpp
-    TSDFVoxelGridCPU.cpp
     VoxelBlockGrid.cpp
     VoxelBlockGridCPU.cpp
 )
@@ -19,7 +17,6 @@ if (BUILD_CUDA_MODULE)
         NPPImage.cpp
         PointCloudCUDA.cu
         TransformCUDA.cu
-        TSDFVoxelGridCUDA.cu
         VoxelBlockGridCUDA.cu
     )
 endif()

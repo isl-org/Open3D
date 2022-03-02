@@ -26,6 +26,10 @@
 
 #include "open3d/utility/Logging.h"
 
+#include <fmt/core.h>
+#include <fmt/printf.h>
+#include <fmt/ranges.h>
+
 #include <functional>
 #include <iostream>
 #include <sstream>
@@ -102,36 +106,34 @@ void Logger::VWarning(const char *file,
                       int line,
                       const char *function,
                       const std::string &message) const {
-    if (impl_->verbosity_level_ >= VerbosityLevel::Warning) {
-        std::string err_msg = fmt::format("[Open3D WARNING] {}", message);
-        err_msg = impl_->ColorString(err_msg, TextColor::Yellow, 1);
-        impl_->print_fcn_(err_msg);
-    }
+    std::string err_msg = fmt::format("[Open3D WARNING] {}", message);
+    err_msg = impl_->ColorString(err_msg, TextColor::Yellow, 1);
+    impl_->print_fcn_(err_msg);
 }
 
 void Logger::VInfo(const char *file,
                    int line,
                    const char *function,
                    const std::string &message) const {
-    if (impl_->verbosity_level_ >= VerbosityLevel::Info) {
-        std::string err_msg = fmt::format("[Open3D INFO] {}", message);
-        impl_->print_fcn_(err_msg);
-    }
+    std::string err_msg = fmt::format("[Open3D INFO] {}", message);
+    impl_->print_fcn_(err_msg);
 }
 
 void Logger::VDebug(const char *file,
                     int line,
                     const char *function,
                     const std::string &message) const {
-    if (impl_->verbosity_level_ >= VerbosityLevel::Debug) {
-        std::string err_msg = fmt::format("[Open3D DEBUG] {}", message);
-        impl_->print_fcn_(err_msg);
-    }
+    std::string err_msg = fmt::format("[Open3D DEBUG] {}", message);
+    impl_->print_fcn_(err_msg);
 }
 
 void Logger::SetPrintFunction(
         std::function<void(const std::string &)> print_fcn) {
     impl_->print_fcn_ = print_fcn;
+}
+
+const std::function<void(const std::string &)> Logger::GetPrintFunction() {
+    return impl_->print_fcn_;
 }
 
 void Logger::ResetPrintFunction() {

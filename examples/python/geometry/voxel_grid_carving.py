@@ -26,12 +26,6 @@
 
 import open3d as o3d
 import numpy as np
-import sys
-import os
-
-dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(dir_path + "/..")
-import open3d_example as o3dex
 
 
 def xyz_spherical(xyz):
@@ -73,15 +67,10 @@ def preprocess(model):
     return model
 
 
-def voxel_carving(mesh,
-                  output_filename,
-                  camera_path,
-                  cubic_size,
-                  voxel_resolution,
-                  w=300,
-                  h=300):
+def voxel_carving(mesh, cubic_size, voxel_resolution, w=300, h=300):
     mesh.compute_vertex_normals()
-    camera_sphere = o3d.io.read_triangle_mesh(camera_path)
+    camera_sphere = o3d.geometry.TriangleMesh.create_sphere(radius=1.0,
+                                                            resolution=10)
 
     # Setup dense voxel grid.
     voxel_carving = o3d.geometry.VoxelGrid.create_dense(
@@ -129,15 +118,12 @@ def voxel_carving(mesh,
 
 if __name__ == "__main__":
 
-    mesh = o3dex.get_armadillo_mesh()
-
-    output_filename = dir_path + "/../../test_data/voxelized.ply"
-    camera_path = dir_path + "/../../test_data/sphere.ply"
+    armadillo_data = o3d.data.ArmadilloMesh()
+    mesh = o3d.io.read_triangle_mesh(armadillo_data.path)
     cubic_size = 2.0
     voxel_resolution = 128.0
 
-    carved_voxels = voxel_carving(mesh, output_filename, camera_path,
-                                  cubic_size, voxel_resolution)
+    carved_voxels = voxel_carving(mesh, cubic_size, voxel_resolution)
     print("Carved voxels ...")
     print(carved_voxels)
     o3d.visualization.draw([carved_voxels])

@@ -5,6 +5,10 @@ set -euo pipefail
 SUDO=${SUDO:=sudo}
 UBUNTU_VERSION=${UBUNTU_VERSION:="$(lsb_release -cs 2>/dev/null || true)"} # Empty in macOS
 
+DEVELOPER_BUILD="${DEVELOPER_BUILD:-ON}"
+if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
+    DEVELOPER_BUILD="ON"
+fi
 SHARED=${SHARED:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
@@ -16,9 +20,6 @@ if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
 fi
 BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS:-ON}
 BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS:-ON}
-if [[ "$OSTYPE" == "linux-gnu"* ]] && [ "$BUILD_CUDA_MODULE" == OFF ]; then
-    BUILD_PYTORCH_OPS=OFF # PyTorch Ops requires CUDA + CUDNN to build
-fi
 LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
@@ -41,12 +42,12 @@ fi
 # ML
 TENSORFLOW_VER="2.5.2"
 TENSORBOARD_VER="2.5"
-# TORCH_CUDA_GLNX_VER="1.8.2+cu110"
-# TORCH_CPU_GLNX_VER="1.8.2+cpu"
+TORCH_CPU_GLNX_VER="1.8.2+cpu"
+# TORCH_CUDA_GLNX_VER="1.8.2+cu111"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.2/torch-1.8.2-${PYTHON_VER}-linux_x86_64.whl"
 TORCH_MACOS_VER="1.8.2"
-TORCH_MACOS_URL="https://download.pytorch.org/whl/lts/1.8/torch_lts.html"
+TORCH_REPO_URL="https://download.pytorch.org/whl/lts/1.8/torch_lts.html"
 # Python
 CONDA_BUILD_VER="3.21.4"
 PIP_VER="21.1.1"
@@ -76,11 +77,11 @@ install_python_dependencies() {
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow-gpu
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
-        # TORCH_ARCH_GLNX_VER="$TORCH_CUDA_GLNX_VER"
+        TORCH_GLNX="$TORCH_CUDA_GLNX_URL"
     else
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow-gpu
-        # TORCH_ARCH_GLNX_VER="$TORCH_CPU_GLNX_VER"
+        TORCH_GLNX="torch==$TORCH_CPU_GLNX_VER"
     fi
 
     # TODO: modify other locations to use requirements.txt
@@ -97,9 +98,10 @@ install_python_dependencies() {
     fi
     if [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-            python -m pip install -U "${TORCH_CUDA_GLNX_URL}"
+            python -m pip install -U "${TORCH_GLNX}" -f "$TORCH_REPO_URL"
+
         elif [[ "$OSTYPE" == "darwin"* ]]; then
-            python -m pip install -U torch=="$TORCH_MACOS_VER" -f "$TORCH_MACOS_URL"
+            python -m pip install -U torch=="$TORCH_MACOS_VER" -f "$TORCH_REPO_URL"
         else
             echo "unknown OS $OSTYPE"
             exit 1
@@ -127,6 +129,7 @@ build_all() {
     fi
 
     cmakeOptions=(
+        -DDEVELOPER_BUILD=$DEVELOPER_BUILD
         -DBUILD_SHARED_LIBS="$SHARED"
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_LIBREALSENSE=ON
@@ -148,7 +151,10 @@ build_all() {
     echo
     echo "Build & install Open3D..."
     make VERBOSE=1 -j"$NPROC"
-    make install -j"$NPROC"
+    make VERBOSE=1 install -j"$NPROC"
+    if [[ "$SHARED" == "ON" ]]; then
+        make package
+    fi
     make VERBOSE=1 install-pip-package -j"$NPROC"
     echo
 }
@@ -173,9 +179,7 @@ build_pip_conda_package() {
         echo "Open3D-ML not available."
         BUNDLE_OPEN3D_ML=OFF
     fi
-    if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
-        DEVELOPER_BUILD="ON"
-    else
+    if [[ "$DEVELOPER_BUILD" == "OFF" ]]; then
         echo "Building for a new Open3D release"
     fi
     if [[ "build_azure_kinect" =~ ^($options)$ ]]; then
@@ -417,6 +421,7 @@ build_docs() {
         "-DBUILD_TENSORFLOW_OPS=ON"
         "-DBUILD_PYTORCH_OPS=ON"
         "-DBUNDLE_OPEN3D_ML=ON"
+        "-DBUILD_EXAMPLES=OFF"
     )
     set -x # Echo commands on
     cmake "${cmakeOptions[@]}" \
@@ -430,7 +435,7 @@ build_docs() {
     bin/GLInfo
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --pyapi_rst=never
+    python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never
     python -m pip uninstall --yes open3d
     cd ../build
     set +x # Echo commands off
@@ -449,7 +454,7 @@ build_docs() {
     bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
     python -c "from open3d import *; import open3d; print(open3d)"
     cd ../docs # To Open3D/docs
-    python make_docs.py $DOC_ARGS --pyapi_rst=always --execute_notebooks=never --sphinx --doxygen
+    python make_docs.py $DOC_ARGS --py_api_rst=always --execute_notebooks=never --sphinx --doxygen
     set +x # Echo commands off
 }
 

@@ -27,13 +27,16 @@
 # examples/python/reconstruction_system/make_fragments.py
 
 import math
-import sys
+import os, sys
 import numpy as np
 import open3d as o3d
-sys.path.append("../utility")
-from file import join, make_clean_folder, get_rgbd_file_lists
-from opencv import initialize_opencv
-sys.path.append(".")
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import join, make_clean_folder, get_rgbd_file_lists, initialize_opencv
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_fragment
 
 # check opencv python package

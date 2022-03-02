@@ -238,9 +238,7 @@ bool ChangeWorkingDirectory(const std::string &directory) {
 }
 
 bool DirectoryExists(const std::string &directory) {
-    struct stat info;
-    if (stat(directory.c_str(), &info) == -1) return false;
-    return S_ISDIR(info.st_mode);
+    return fs::is_directory(directory);
 }
 
 bool MakeDirectory(const std::string &directory) {
@@ -277,15 +275,23 @@ bool DeleteDirectory(const std::string &directory) {
 }
 
 bool FileExists(const std::string &filename) {
-#ifdef WINDOWS
-    struct _stat64 info;
-    if (_stat64(filename.c_str(), &info) == -1) return false;
-    return S_ISREG(info.st_mode);
-#else
-    struct stat info;
-    if (stat(filename.c_str(), &info) == -1) return false;
-    return S_ISREG(info.st_mode);
-#endif
+    return fs::exists(filename) && fs::is_regular_file(filename);
+}
+
+// TODO: this is not a good name. Currently FileSystem.cpp includes windows.h
+// and "CopyFile" will be expanded to "CopyFileA" on Windows. This will be
+// resolved when we switch to C++17's std::filesystem.
+bool Copy(const std::string &src_path, const std::string &dst_path) {
+    try {
+        fs::copy(src_path, dst_path,
+                 fs::copy_options::recursive |
+                         fs::copy_options::overwrite_existing);
+    } catch (std::exception &e) {
+        utility::LogWarning("Failed to copy {} to {}. Exception: {}.", src_path,
+                            dst_path, e.what());
+        return false;
+    }
+    return true;
 }
 
 bool RemoveFile(const std::string &filename) {

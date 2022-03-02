@@ -315,6 +315,7 @@ private:
 }  // namespace
 
 const std::string MODEL_NAME = "__model__";
+const std::string INSPECT_MODEL_NAME = "__inspect_model__";
 
 enum MenuId {
     FILE_OPEN,
@@ -353,11 +354,13 @@ struct GuiVisualizer::Impl {
     } settings_;
 
     rendering::TriangleMeshModel loaded_model_;
+    rendering::TriangleMeshModel basic_model_;
     std::shared_ptr<geometry::PointCloud> loaded_pcd_;
     int app_menu_custom_items_index_ = -1;
     std::shared_ptr<gui::Menu> app_menu_;
 
     bool sun_follows_camera_ = false;
+    bool basic_mode_enabled_ = false;
 
     void InitializeMaterials(rendering::Renderer &renderer,
                              const std::string &resource_path) {
@@ -410,6 +413,84 @@ struct GuiVisualizer::Impl {
         settings_.wgt_mouse_ibl->SetOn(mode == Controls::ROTATE_IBL);
     }
 
+    void ModifyMaterialForBasicMode(rendering::MaterialRecord &basic_mat) {
+        // Set parameters for 'simple' rendering
+        basic_mat.base_color = {1.f, 1.f, 1.f, 1.f};
+        basic_mat.base_metallic = 0.f;
+        basic_mat.base_roughness = 0.5f;
+        basic_mat.base_reflectance = 0.8f;
+        basic_mat.base_clearcoat = 0.f;
+        basic_mat.base_anisotropy = 0.f;
+        basic_mat.albedo_img.reset();
+        basic_mat.normal_img.reset();
+        basic_mat.ao_img.reset();
+        basic_mat.metallic_img.reset();
+        basic_mat.roughness_img.reset();
+        basic_mat.reflectance_img.reset();
+        basic_mat.sRGB_color = false;
+        basic_mat.sRGB_vertex_color = false;
+    }
+
+    void SetBasicModeGeometry(bool enable) {
+        auto o3dscene = scene_wgt_->GetScene();
+
+        // Only need to modify TriangleMesh - basic mode for point clouds
+        // requires only change to their materials which are handled elsewhere
+        if (loaded_model_.meshes_.size() > 0) {
+            if (enable) {
+                if (basic_model_.meshes_.size() == 0) {
+                    for (auto &mat : loaded_model_.materials_) {
+                        rendering::MaterialRecord m(mat);
+                        ModifyMaterialForBasicMode(m);
+                        basic_model_.materials_.emplace_back(m);
+                    }
+                    for (auto &mi : loaded_model_.meshes_) {
+                        auto new_mesh =
+                                std::make_shared<geometry::TriangleMesh>(
+                                        mi.mesh->vertices_,
+                                        mi.mesh->triangles_);
+                        new_mesh->vertex_colors_ = mi.mesh->vertex_colors_;
+                        if (mi.mesh->HasTriangleNormals()) {
+                            new_mesh->triangle_normals_ =
+                                    mi.mesh->triangle_normals_;
+                        } else {
+                            new_mesh->ComputeTriangleNormals();
+                        }
+                        basic_model_.meshes_.push_back(
+                                {new_mesh, mi.mesh_name, mi.material_idx});
+                    }
+                    o3dscene->AddModel(INSPECT_MODEL_NAME, basic_model_);
+                }
+                o3dscene->ShowGeometry(INSPECT_MODEL_NAME, true);
+                o3dscene->ShowGeometry(MODEL_NAME, false);
+            } else {
+                o3dscene->ShowGeometry(INSPECT_MODEL_NAME, false);
+                o3dscene->ShowGeometry(MODEL_NAME, true);
+            }
+        }
+    }
+
+    void SetBasicMode(bool enable) {
+        auto o3dscene = scene_wgt_->GetScene();
+        auto view = o3dscene->GetView();
+        auto low_scene = o3dscene->GetScene();
+
+        // Set lighting environment for inspection
+        if (enable) {
+            // Set lighting environment for inspection
+            o3dscene->SetBackground({1.f, 1.f, 1.f, 1.f});
+            low_scene->ShowSkybox(false);
+            view->SetShadowing(false, rendering::View::ShadowType::kPCF);
+            view->SetPostProcessing(false);
+        } else {
+            view->SetPostProcessing(true);
+            view->SetShadowing(true, rendering::View::ShadowType::kPCF);
+        }
+
+        // Update geometry for basic mode
+        SetBasicModeGeometry(enable);
+    }
+
     void UpdateFromModel(rendering::Renderer &renderer, bool material_changed) {
         auto bcolor = settings_.model_.GetBackgroundColor();
         scene_wgt_->GetScene()->SetBackground(
@@ -426,12 +507,17 @@ struct GuiVisualizer::Impl {
                 settings_.model_.GetShowGround(),
                 rendering::Scene::GroundPlane::XZ);
 
-        UpdateLighting(renderer, settings_.model_.GetLighting());
-
         // Does user want Point Cloud normals estimated?
         if (settings_.model_.GetUserWantsEstimateNormals()) {
             RunNormalEstimation();
         }
+
+        if (settings_.model_.GetBasicMode() != basic_mode_enabled_) {
+            basic_mode_enabled_ = settings_.model_.GetBasicMode();
+            SetBasicMode(basic_mode_enabled_);
+        }
+
+        UpdateLighting(renderer, settings_.model_.GetLighting());
 
         // Make sure scene redraws once changes have been applied
         scene_wgt_->ForceRedraw();
@@ -443,7 +529,8 @@ struct GuiVisualizer::Impl {
         if (settings_.model_.GetMaterialType() ==
                     GuiSettingsModel::MaterialType::LIT &&
             current_materials.lit_name ==
-                    GuiSettingsModel::MATERIAL_FROM_FILE_NAME) {
+                    GuiSettingsModel::MATERIAL_FROM_FILE_NAME &&
+            !basic_mode_enabled_) {
             scene_wgt_->GetScene()->UpdateModelMaterial(MODEL_NAME,
                                                         loaded_model_);
         } else {
@@ -468,6 +555,9 @@ struct GuiVisualizer::Impl {
                 view->SetMode(rendering::View::Mode::Depth);
                 break;
         }
+
+        // Make sure scene redraws once material changes have been applied
+        scene_wgt_->ForceRedraw();
     }
 
 private:
@@ -506,6 +596,9 @@ private:
         render_scene->SetSunLightIntensity(float(lighting.sun_intensity));
         if (!sun_follows_camera_) {
             render_scene->SetSunLightDirection(lighting.sun_dir);
+        } else {
+            render_scene->SetSunLightDirection(
+                    scene->GetCamera()->GetForwardVector());
         }
         render_scene->EnableSunLight(lighting.sun_enabled);
     }
@@ -550,11 +643,26 @@ private:
     void UpdateSceneMaterial() {
         switch (settings_.model_.GetMaterialType()) {
             case GuiSettingsModel::MaterialType::LIT:
-                scene_wgt_->GetScene()->UpdateMaterial(settings_.lit_material_);
+                if (basic_mode_enabled_) {
+                    rendering::MaterialRecord basic_mat(
+                            settings_.lit_material_);
+                    ModifyMaterialForBasicMode(basic_mat);
+                    scene_wgt_->GetScene()->UpdateMaterial(basic_mat);
+                } else {
+                    scene_wgt_->GetScene()->UpdateMaterial(
+                            settings_.lit_material_);
+                }
                 break;
             case GuiSettingsModel::MaterialType::UNLIT:
-                scene_wgt_->GetScene()->UpdateMaterial(
-                        settings_.unlit_material_);
+                if (basic_mode_enabled_) {
+                    rendering::MaterialRecord basic_mat(
+                            settings_.unlit_material_);
+                    ModifyMaterialForBasicMode(basic_mat);
+                    scene_wgt_->GetScene()->UpdateMaterial(basic_mat);
+                } else {
+                    scene_wgt_->GetScene()->UpdateMaterial(
+                            settings_.unlit_material_);
+                }
                 break;
             case GuiSettingsModel::MaterialType::NORMAL_MAP: {
                 settings_.normal_depth_material_.shader = "normals";
@@ -733,9 +841,6 @@ void GuiVisualizer::Init() {
     // Create materials
     impl_->InitializeMaterials(GetRenderer(), resource_path);
 
-    // Apply model settings (which should be defaults) to the rendering entities
-    impl_->UpdateFromModel(GetRenderer(), false);
-
     // Setup UI
     const auto em = theme.font_size;
     const int lm = int(std::ceil(0.5 * em));
@@ -833,6 +938,9 @@ void GuiVisualizer::Init() {
 
     AddChild(settings.wgt_base);
 
+    // Apply model settings (which should be defaults) to the rendering entities
+    impl_->UpdateFromModel(GetRenderer(), false);
+
     // Other items
     impl_->help_keys_ = CreateHelpDisplay(this);
     impl_->help_keys_->SetVisible(false);
@@ -889,7 +997,9 @@ void GuiVisualizer::SetGeometry(
             geometry::Geometry::GeometryType::PointCloud) {
             auto pcd = std::static_pointer_cast<const geometry::PointCloud>(g);
 
-            if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
+            if (pcd->HasNormals()) {
+                loaded_material.shader = "defaultLit";
+            } else if (pcd->HasColors() && !PointCloudHasUniformColor(*pcd)) {
                 loaded_material.shader = "defaultUnlit";
             } else {
                 loaded_material.shader = "defaultLit";
@@ -933,6 +1043,13 @@ void GuiVisualizer::SetGeometry(
     auto &bounds = scene3d->GetBoundingBox();
     impl_->scene_wgt_->SetupCamera(60.0, bounds,
                                    bounds.GetCenter().cast<float>());
+
+    // Setup for raw mode if enabled...
+    if (impl_->basic_mode_enabled_) {
+        impl_->SetBasicModeGeometry(true);
+        scene3d->GetScene()->SetSunLightDirection(
+                scene3d->GetCamera()->GetForwardVector());
+    }
 
     // Make sure scene is redrawn
     impl_->scene_wgt_->ForceRedraw();
@@ -1013,6 +1130,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
         // clear current model
         impl_->loaded_model_.meshes_.clear();
         impl_->loaded_model_.materials_.clear();
+        impl_->basic_model_.meshes_.clear();
+        impl_->basic_model_.materials_.clear();
         impl_->loaded_pcd_.reset();
 
         auto geometry_type = io::ReadFileGeometryType(path);

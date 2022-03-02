@@ -13,8 +13,8 @@ Mimic draw_geometries() with Visualizer class
 
 .. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
-   :lineno-start: 35
-   :lines: 35-42
+   :lineno-start: 37
+   :lines: 37-44
    :linenos:
 
 This function produces exactly the same functionality as the convenience function ``draw_geometries``.
@@ -26,8 +26,8 @@ Class ``Visualizer`` has a couple of variables such as a ``ViewControl`` and a `
 
 .. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
-   :lineno-start: 68
-   :lines: 68-74
+   :lineno-start: 70
+   :lines: 70-76
    :linenos:
 
 Outputs:
@@ -42,8 +42,8 @@ To change field of view of the camera, it is first necessary to get an instance 
 
 .. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
-   :lineno-start: 45
-   :lines: 45-54
+   :lineno-start: 47
+   :lines: 47-56
    :linenos:
 
 The field of view (FoV) can be set to a degree in the range [5,90]. Note that ``change_field_of_view`` adds the specified FoV to the current FoV. By default, the visualizer has an FoV of 60 degrees. Calling the following code
@@ -74,8 +74,8 @@ Callback functions
 
 .. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
-   :lineno-start: 57
-   :lines: 57-65
+   :lineno-start: 59
+   :lines: 59-67
    :linenos:
 
 Function ``draw_geometries_with_animation_callback`` registers a Python callback function ``rotate_view`` as the idle function of the main loop. It rotates the view along the x-axis whenever the visualizer is idle. This defines an animation behavior.
@@ -85,8 +85,8 @@ Function ``draw_geometries_with_animation_callback`` registers a Python callback
 
 .. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
-   :lineno-start: 77
-   :lines: 77-106
+   :lineno-start: 79
+   :lines: 79-108
    :linenos:
 
 Callback functions can also be registered upon key press event. This script registered four keys. For example, pressing :kbd:`k` changes the background color to black.
@@ -100,7 +100,7 @@ Capture images in a customized animation
 .. literalinclude:: ../../../examples/python/visualization/customized_visualization.py
    :language: python
    :lineno-start: 109
-   :lines: 109-156
+   :lines: 111-162
    :linenos:
 
 This function reads a camera trajectory, then defines an animation function ``move_forward`` to travel through the camera trajectory. In this animation function, both color image and depth image are captured using ``Visualizer.capture_depth_float_buffer`` and ``Visualizer.capture_screen_float_buffer`` respectively. The images are saved as png files.

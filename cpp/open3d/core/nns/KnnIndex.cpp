@@ -52,7 +52,7 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points) {
 bool KnnIndex::SetTensorData(const Tensor& dataset_points,
                              const Tensor& points_row_splits) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
-    // AssertTensorDevice(points_row_splits, GetDevice());
+    AssertTensorDevice(points_row_splits, Device("CPU:0"));
     AssertTensorDtype(points_row_splits, Int64);
 
     if (dataset_points.NumDims() != 2) {
@@ -105,7 +105,7 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     AssertTensorDevice(query_points, device);
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
     AssertTensorDtype(queries_row_splits, Int64);
-    // AssertTensorDevice(queries_row_splits, device);
+    AssertTensorDevice(queries_row_splits, Device("CPU:0"));
 
     if (query_points.GetShape(0) != queries_row_splits[-1].Item<int64_t>()) {
         utility::LogError(
@@ -120,14 +120,16 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     Tensor queries_row_splits_ = queries_row_splits.Contiguous();
 
     Tensor neighbors_index, neighbors_distance;
+    Tensor neighbors_row_splits =
+            Tensor::Empty({query_points.GetShape(0) + 1}, Int64);
 
 #define FN_PARAMETERS                                                        \
     dataset_points_, points_row_splits_, query_points_, queries_row_splits_, \
-            knn, neighbors_index, neighbors_distance
+            knn, neighbors_index, neighbors_row_splits, neighbors_distance
 
 #define CALL(type, fn)                                              \
     if (Dtype::FromType<type>() == dtype) {                         \
-        fn<type>(FN_PARAMETERS);                                    \
+        fn<type, int32_t>(FN_PARAMETERS);                           \
         return std::make_pair(neighbors_index, neighbors_distance); \
     }
 

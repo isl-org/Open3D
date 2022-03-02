@@ -76,23 +76,23 @@ The attributes of the triangle mesh have different levels::
     # "normals", some internal operations that expects "normals" will not work.
     # "normals" and "colors" must have shape (N, 3) and must be on the same
     # device as the triangle mesh.
-    mesh.vertex["normals"] = o3c.core.Tensor([[0, 0, 1],
+    mesh.vertex["normals"] = o3d.core.Tensor([[0, 0, 1],
                                               [0, 1, 0],
                                               [1, 0, 0],
                                               [1, 1, 1]], dtype_f, device)
-    mesh.vertex["colors"] = o3c.core.Tensor([[0.0, 0.0, 0.0],
+    mesh.vertex["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                              [0.1, 0.1, 0.1],
                                              [0.2, 0.2, 0.2],
                                              [0.3, 0.3, 0.3]], dtype_f, device)
-    mesh.triangle["normals"] = o3c.core.Tensor(...)
-    mesh.triangle["colors"] = o3c.core.Tensor(...)
+    mesh.triangle["normals"] = o3d.core.Tensor(...)
+    mesh.triangle["colors"] = o3d.core.Tensor(...)
 
     # User-defined attributes
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the triangle mesh. The are no restrictions on the shape and
     # dtype, e.g.,
-    pcd.vertex["labels"] = o3c.core.Tensor(...)
-    pcd.triangle["features"] = o3c.core.Tensor(...)
+    pcd.vertex["labels"] = o3d.core.Tensor(...)
+    pcd.triangle["features"] = o3d.core.Tensor(...)
 )");
 
     // Constructors.

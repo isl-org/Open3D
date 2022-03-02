@@ -43,6 +43,7 @@ def draw(geometry=None,
          ibl_intensity=None,
          show_skybox=None,
          show_ui=None,
+         raw_mode=False,
          point_size=None,
          line_width=None,
          animation_time_step=1.0,
@@ -108,6 +109,9 @@ def draw(geometry=None,
             return True
 
         w.set_on_close(stop_rpc)
+
+    if raw_mode:
+        w.enable_raw_mode(True)
 
     if on_init is not None:
         on_init(w)

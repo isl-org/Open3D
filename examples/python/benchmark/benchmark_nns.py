@@ -27,8 +27,10 @@
 import os
 import sys
 
-sys.path.append("../utility")
-from downloader import file_downloader, unzip_data
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import file_downloader, unzip_data
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = '1'  # does not affect results
 
@@ -103,8 +105,8 @@ def prepare_benchmark_data():
         "kitti_2.ply",
         "small_tower.ply",
     )
-    out_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                           "testdata")
+    out_dir = os.path.join(os.path.dirname(pyexample_path), 'test_data',
+                           'benchmark_data')
 
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
@@ -145,7 +147,8 @@ if __name__ == "__main__":
     # collects runtimes for all examples
     results = OrderedDict()
 
-    datasets = prepare_benchmark_data()
+    # datasets = prepare_benchmark_data()
+    datasets = OrderedDict()
 
     if args.search_type == "knn":
         # random data

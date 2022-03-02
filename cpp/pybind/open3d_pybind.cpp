@@ -30,6 +30,7 @@
 #include "open3d/utility/Logging.h"
 #include "pybind/camera/camera.h"
 #include "pybind/core/core.h"
+#include "pybind/data/data.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/io/io.h"
 #include "pybind/ml/ml.h"
@@ -60,6 +61,7 @@ PYBIND11_MODULE(pybind, m) {
 
     camera::pybind_camera(m);
     core::pybind_core(m);
+    data::pybind_data(m);
     geometry::pybind_geometry(m);
     t::pybind_t(m);
     ml::pybind_ml(m);

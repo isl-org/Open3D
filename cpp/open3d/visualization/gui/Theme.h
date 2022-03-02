@@ -69,6 +69,11 @@ struct Theme {
     Color checkbox_background_hover_on_color;
     Color checkbox_check_color;
 
+    Color radiobtn_background_off_color;
+    Color radiobtn_background_on_color;
+    Color radiobtn_background_hover_off_color;
+    Color radiobtn_background_hover_on_color;
+
     Color toggle_background_off_color;
     Color toggle_background_on_color;
     Color toggle_background_hover_off_color;

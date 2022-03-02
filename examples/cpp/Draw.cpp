@@ -30,8 +30,6 @@
 
 using namespace open3d;
 
-const std::string TEST_DIR = "../../../examples/test_data";
-
 double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
 std::shared_ptr<geometry::PointCloud> MakePointCloud(
@@ -100,16 +98,9 @@ void Actions() {
     const char *RESULT_NAME = "Result (Poisson reconstruction)";
     const char *TRUTH_NAME = "Ground truth";
 
+    data::BunnyMesh bunny_data;
     auto bunny = std::make_shared<geometry::TriangleMesh>();
-    io::ReadTriangleMesh(TEST_DIR + "/Bunny.ply", *bunny);
-    if (bunny->vertices_.empty()) {
-        utility::LogError(
-                "Please download the Standford Bunny dataset using:\n"
-                "   cd <open3d_dir>/examples/python\n"
-                "   python -c 'from open3d_example import *; "
-                "get_bunny_mesh()'");
-        return;
-    }
+    io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
 
     bunny->PaintUniformColor({1, 0.75, 0});
     bunny->ComputeVertexNormals();
@@ -183,18 +174,19 @@ void Selections() {
               << std::endl;
     std::cout << "            three points from the target." << std::endl;
 
-    const auto cloud0_path = TEST_DIR + "/ICP/cloud_bin_0.pcd";
-    const auto cloud1_path = TEST_DIR + "/ICP/cloud_bin_2.pcd";
+    data::DemoICPPointClouds demo_icp_pointclouds;
     auto source = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud(cloud0_path, *source);
+    io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *source);
     if (source->points_.empty()) {
-        utility::LogError("Could not open {}", cloud0_path);
+        utility::LogError("Could not open {}",
+                          demo_icp_pointclouds.GetPaths(0));
         return;
     }
     auto target = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud(cloud1_path, *target);
+    io::ReadPointCloud(demo_icp_pointclouds.GetPaths(1), *target);
     if (target->points_.empty()) {
-        utility::LogError("Could not open {}", cloud1_path);
+        utility::LogError("Could not open {}",
+                          demo_icp_pointclouds.GetPaths(1));
         return;
     }
     source->PaintUniformColor({1.000, 0.706, 0.000});
@@ -275,12 +267,6 @@ void Selections() {
 }
 
 int main(int argc, char **argv) {
-    if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
-        utility::LogError(
-                "This example needs to be run from the <build>/bin/examples "
-                "directory");
-    }
-
     SingleObject();
     MultiObjects();
     Actions();

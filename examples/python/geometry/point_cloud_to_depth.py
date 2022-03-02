@@ -27,13 +27,10 @@
 import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-
-dir_path = os.path.dirname(os.path.abspath(__file__))
 
 if __name__ == '__main__':
-    depth = o3d.t.io.read_image(
-        dir_path + "/../../test_data/RGBD/other_formats/TUM_depth.png")
+    tum_data = o3d.data.SampleTUMRGBDImage()
+    depth = o3d.t.io.read_image(tum_data.depth_path)
     intrinsic = o3d.core.Tensor([[535.4, 0, 320.1], [0, 539.2, 247.6],
                                  [0, 0, 1]])
 

@@ -29,6 +29,7 @@
 #include <algorithm>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/geometry/RGBDImage.h"
@@ -1187,7 +1188,8 @@ TEST(PointCloud, ComputeConvexHull) {
 
 TEST(PointCloud, HiddenPointRemoval) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     EXPECT_EQ(pcd.points_.size(), 196133);
     ExpectEQ(pcd.GetMaxBound(), Eigen::Vector3d(3.96609, 2.427476, 2.55859));
     ExpectEQ(pcd.GetMinBound(), Eigen::Vector3d(0.558594, 0.832031, 0.566637));
@@ -1203,7 +1205,8 @@ TEST(PointCloud, HiddenPointRemoval) {
 
 TEST(PointCloud, ClusterDBSCAN) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     EXPECT_EQ(pcd.points_.size(), 196133);
 
     // Hard-coded test
@@ -1217,7 +1220,8 @@ TEST(PointCloud, ClusterDBSCAN) {
 
 TEST(PointCloud, SegmentPlane) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(utility::GetDataPathCommon("fragment.pcd"), pcd);
+    data::PCDPointCloud pointcloud_pcd;
+    io::ReadPointCloud(pointcloud_pcd.GetPath(), pcd);
     EXPECT_EQ(pcd.points_.size(), 113662);
 
     // Hard-coded test
@@ -1251,10 +1255,9 @@ TEST(PointCloud, SegmentPlaneKnownPlane) {
 }
 
 TEST(PointCloud, CreateFromDepthImage) {
-    const std::string trajectory_path =
-            utility::GetDataPathCommon("RGBD/trajectory.log");
-    const std::string im_depth_path =
-            utility::GetDataPathCommon("RGBD/depth/00000.png");
+    data::SampleRedwoodRGBDImages redwood_data;
+    const std::string trajectory_path = redwood_data.GetTrajectoryLogPath();
+    const std::string im_depth_path = redwood_data.GetDepthPaths()[0];
 
     camera::PinholeCameraTrajectory trajectory;
     io::ReadPinholeCameraTrajectory(trajectory_path, trajectory);
@@ -1279,12 +1282,10 @@ TEST(PointCloud, CreateFromDepthImage) {
 }
 
 TEST(PointCloud, CreateFromRGBDImage) {
-    const std::string trajectory_path =
-            utility::GetDataPathCommon("RGBD/trajectory.log");
-    const std::string im_depth_path =
-            utility::GetDataPathCommon("RGBD/depth/00000.png");
-    const std::string im_rgb_path =
-            utility::GetDataPathCommon("RGBD/color/00000.jpg");
+    data::SampleRedwoodRGBDImages redwood_data;
+    const std::string trajectory_path = redwood_data.GetTrajectoryLogPath();
+    const std::string im_depth_path = redwood_data.GetDepthPaths()[0];
+    const std::string im_rgb_path = redwood_data.GetColorPaths()[0];
 
     camera::PinholeCameraTrajectory trajectory;
     io::ReadPinholeCameraTrajectory(trajectory_path, trajectory);

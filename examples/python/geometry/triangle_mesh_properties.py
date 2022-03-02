@@ -29,8 +29,9 @@ import numpy as np
 import os
 import sys
 
-dir_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(dir_path + "/..")
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
 import open3d_example as o3dex
 
 
@@ -83,9 +84,11 @@ def check_properties(name, mesh):
 
 
 if __name__ == "__main__":
-    check_properties('Knot', o3dex.get_knot_mesh())
-    check_properties('Moebius',
-                     o3d.geometry.TriangleMesh.create_moebius(twists=1))
+    knot_mesh = o3d.data.KnotMesh()
+    mesh = o3d.io.read_triangle_mesh(knot_mesh.path)
+    check_properties('KnotMesh', mesh)
+    check_properties('Mobius',
+                     o3d.geometry.TriangleMesh.create_mobius(twists=1))
     check_properties("non-manifold edge", o3dex.get_non_manifold_edge_mesh())
     check_properties("non-manifold vertex",
                      o3dex.get_non_manifold_vertex_mesh())

@@ -13,6 +13,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-wheel:
     name: Build wheel
@@ -35,10 +39,6 @@ jobs:
       PYTHON_VERSION: ${{ matrix.python_version }}
       CCACHE_TAR_NAME: open3d-ubuntu-1804-cuda-ci-ccache
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
       - name: Checkout source code
         uses: actions/checkout@v2
       - name: Maximize build space
@@ -46,25 +46,25 @@ jobs:
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
       # Be verbose and explicit here such that a developer can directly copy the
-      # `.github/workflows/docker_build.sh xxx` command to execute locally.
+      # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
         run: |
           if   [ "${{ env.PYTHON_VERSION }}" = "3.6" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py36_dev
+            docker/docker_build.sh cuda_wheel_py36_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py37_dev
+            docker/docker_build.sh cuda_wheel_py37_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py38_dev
+            docker/docker_build.sh cuda_wheel_py38_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py39_dev
+            docker/docker_build.sh cuda_wheel_py39_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.6" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py36
+            docker/docker_build.sh cuda_wheel_py36
           elif [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py37
+            docker/docker_build.sh cuda_wheel_py37
           elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py38
+            docker/docker_build.sh cuda_wheel_py38
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            .github/workflows/docker_build.sh cuda_wheel_py39
+            docker/docker_build.sh cuda_wheel_py39
           fi
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.whl)"
           CONDA_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.tar.bz2)"

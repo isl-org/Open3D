@@ -92,6 +92,10 @@ if (BUILD_GUI)
         visualizer/O3DVisualizer.cpp
         visualizer/O3DVisualizerSelections.cpp
     )
+
+    target_sources(visualization PRIVATE
+        app/Viewer.cpp
+    )
 endif()
 
 

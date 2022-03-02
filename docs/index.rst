@@ -28,6 +28,7 @@ Open3D: A Modern Library for 3D Data Processing
     builddocs
     open3d_ml
     arm
+    docker
 
 
 .. toctree::
@@ -39,6 +40,7 @@ Open3D: A Modern Library for 3D Data Processing
     tutorial/t_pipelines/index
     tutorial/visualization/index
     tutorial/core/index
+    tutorial/data/index
     tutorial/reconstruction_system/index
     tutorial/t_reconstruction_system/index
     tutorial/sensor/index
@@ -60,7 +62,6 @@ Open3D: A Modern Library for 3D Data Processing
 
     cpp_api
 
-
 ..
     Note: when adding new modules, please also update documented_modules.txt.
 
@@ -70,6 +71,7 @@ Open3D: A Modern Library for 3D Data Processing
 
     python_api/open3d.camera
     python_api/open3d.core
+    python_api/open3d.data
     python_api/open3d.geometry
     python_api/open3d.io
     python_api/open3d.t
@@ -77,3 +79,14 @@ Open3D: A Modern Library for 3D Data Processing
     python_api/open3d.pipelines
     python_api/open3d.utility
     python_api/open3d.visualization
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Python Examples
+
+    python_example/camera/index
+    python_example/geometry/index
+    python_example/io/index
+    python_example/pipelines/index
+    python_example/utility/index
+    python_example/visualization/index

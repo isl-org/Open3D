@@ -24,6 +24,7 @@ target_sources(GUI PRIVATE
     Menu.cpp
     MenuImgui.cpp
     NumberEdit.cpp
+    RadioButton.cpp
     PickPointsInteractor.cpp
     ProgressBar.cpp
     SceneWidget.cpp
@@ -40,6 +41,7 @@ target_sources(GUI PRIVATE
     VectorEdit.cpp
     Widget.cpp
     WidgetProxy.cpp
+    WidgetStack.cpp
     Window.cpp
 )
 

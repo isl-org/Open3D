@@ -86,7 +86,8 @@ if __name__ == '__main__':
                               depth_scale=config.depth_scale,
                               depth_min=config.depth_min,
                               depth_max=config.depth_max,
-                              weight_threshold=1)
+                              weight_threshold=1,
+                              range_map_down_factor=8)
 
         fig, axs = plt.subplots(2, 2)
 

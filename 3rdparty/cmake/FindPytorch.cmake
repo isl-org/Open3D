@@ -86,7 +86,9 @@ endif()
 message(STATUS "PyTorch         version: ${Pytorch_VERSION}")
 message(STATUS "               root dir: ${Pytorch_ROOT}")
 message(STATUS "          compile flags: ${TORCH_CXX_FLAGS}")
-message(STATUS "          use cxx11 abi: ${Pytorch_CXX11_ABI}")
+if (UNIX AND NOT APPLE)
+    message(STATUS "          use cxx11 abi: ${Pytorch_CXX11_ABI}")
+endif()
 foreach(idir ${TORCH_INCLUDE_DIRS})
     message(STATUS "           include dirs: ${idir}")
 endforeach(idir)
@@ -94,10 +96,17 @@ foreach(lib ${TORCH_LIBRARIES})
     message(STATUS "              libraries: ${lib}")
 endforeach(lib)
 
-# Check if the c++11 ABI is compatible
-if((Pytorch_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
-   (NOT Pytorch_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI))
-    message(FATAL_ERROR "PyTorch and Open3D ABI mismatch: ${Pytorch_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}")
+# Check if the c++11 ABI is compatible on Linux
+if(UNIX AND NOT APPLE AND ((Pytorch_CXX11_ABI AND (NOT GLIBCXX_USE_CXX11_ABI)) OR
+   (NOT Pytorch_CXX11_ABI AND GLIBCXX_USE_CXX11_ABI)))
+    if(Pytorch_CXX11_ABI)
+        set(NEEDED_ABI_FLAG "ON")
+    else()
+        set(NEEDED_ABI_FLAG "OFF")
+    endif()
+    message(FATAL_ERROR "PyTorch and Open3D ABI mismatch: ${Pytorch_CXX11_ABI} != ${GLIBCXX_USE_CXX11_ABI}.\n"
+                        "Please use -DGLIBCXX_USE_CXX11_ABI=${NEEDED_ABI_FLAG} "
+                        "in the cmake config command to change the Open3D ABI.")
 else()
     message(STATUS "PyTorch matches Open3D ABI: ${Pytorch_CXX11_ABI} == ${GLIBCXX_USE_CXX11_ABI}")
 endif()

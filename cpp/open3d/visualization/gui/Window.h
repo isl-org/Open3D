@@ -146,6 +146,11 @@ public:
     /// closing or false to cancel the close.
     void SetOnClose(std::function<bool()> callback);
 
+    /// Sets a callback that will intercept key event dispatching to focused
+    /// widget. Callback should return true to stop more dispatching or false
+    /// to dispatch to focused widget.
+    void SetOnKeyEvent(std::function<bool(const KeyEvent&)> callback);
+
     /// Shows the dialog. If a dialog is currently being shown it will be
     /// closed.
     void ShowDialog(std::shared_ptr<Dialog> dlg);

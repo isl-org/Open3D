@@ -36,7 +36,8 @@ def get_default_testdata():
     example_path = os.path.abspath(
         os.path.join(__file__, os.path.pardir, os.path.pardir, os.path.pardir))
 
-    path_dataset = os.path.join(example_path, 'test_data', 'RGBD')
+    redwood_rgbd = o3d.data.SampleRedwoodRGBDImages()
+    path_dataset = redwood_rgbd.extract_dir
     print('Dataset not found, falling back to test examples {}'.format(
         path_dataset))
 
@@ -82,12 +83,14 @@ def load_rgbd_file_names(config):
     return [], []
 
 
-def load_intrinsic(config):
-    if config.path_intrinsic is None or config.path_intrinsic == '':
+def load_intrinsic(config, key='depth'):
+    path_intrinsic = config.path_color_intrinsic if key == 'color' else config.path_intrinsic
+
+    if path_intrinsic is None or path_intrinsic == '':
         intrinsic = o3d.camera.PinholeCameraIntrinsic(
             o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     else:
-        intrinsic = o3d.io.read_pinhole_camera_intrinsic(config.path_intrinsic)
+        intrinsic = o3d.io.read_pinhole_camera_intrinsic(path_intrinsic)
 
     if config.engine == 'legacy':
         return intrinsic
@@ -146,33 +149,6 @@ def save_poses(
             node.pose = pose
             pose_graph.nodes.append(node)
         o3d.io.write_pose_graph(path_trajectory, pose_graph)
-
-
-def init_volume(mode, config):
-    if config.engine == 'legacy':
-        return o3d.pipelines.integration.ScalableTSDFVolume(
-            voxel_length=config.voxel_size,
-            sdf_trunc=config.sdf_trunc,
-            color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
-
-    elif config.engine == 'tensor':
-        if mode == 'scene':
-            block_count = config.block_count
-        else:
-            block_count = config.block_count
-        return o3d.t.geometry.TSDFVoxelGrid(
-            {
-                'tsdf': o3d.core.Dtype.Float32,
-                'weight': o3d.core.Dtype.UInt16,
-                'color': o3d.core.Dtype.UInt16
-            },
-            voxel_size=config.voxel_size,
-            sdf_trunc=config.sdf_trunc,
-            block_resolution=16,
-            block_count=block_count,
-            device=o3d.core.Device(config.device))
-    else:
-        print('Unsupported engine {}'.format(config.engine))
 
 
 def extract_pointcloud(volume, config, file_name=None):
