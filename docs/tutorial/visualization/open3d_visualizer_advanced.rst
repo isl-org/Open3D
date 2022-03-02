@@ -357,14 +357,96 @@ We can write a loop which displays all mesh names used in a complex model like s
    MetalParts_low
    LeatherParts_low
    Lenses_low
+   
+
+We can also render meshes individually like:
+
+.. code-block:: python
+
+    >>> vis.draw(helmet.meshes[0].mesh)
+    
+.. image:: https://user-images.githubusercontent.com/93158890/149238095-5385d761-3bae-4172-ab45-1d47b6084d5c.jpg
+    :width: 600px
 
 
+Just like in the previous loop example which displays all ``mesh_name`` properties, we can write a loop which renders each mesh separately:
+
+.. code-block:: python
+
+    >>> for m in helmet.meshes:
+    ...     vis.draw(m.mesh)
+    
+As you close each visualizer window, a new one will appear with a different mesh:
+
+1) A hose:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149238208-961a0a8d-ebb2-4621-aff1-8bfcdeced734.jpg
+    :width: 600px
+    
+2) All wooden parts:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149238298-98a894cd-72a2-4c76-8e30-da89e26f2fa4.jpg
+    :width: 600px
+
+3) The goggles and earphones parts:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149238367-e32d7d12-5472-4f83-90ff-e365c77ef30a.jpg
+    :width: 600px
+    
+4) All metallic parts:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149238437-b225282b-afae-40a2-a485-7f13e0f3122d.jpg
+    :width: 600px
+
+5) Leather parts:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149238516-3f6a95f4-6c48-43b6-82e2-8363d0c30197.jpg
+    :width: 600px
+
+6) Lenses - they are transparent and thus, are different material as well:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149238634-7919b93d-1307-4ce4-9eb0-646237eceb6e.jpg
+    :width: 600px
 
 
+Cool, isn't it? Now, we can modify the same loop to display all materials and associated properties:
 
+.. code-block:: python
 
+    >>> for m in helmet.meshes:
+    ...     vis.draw({'name' : m.mesh_name, 'geometry' : m.mesh, 'material' : helmet.materials[m.material_idx]})
 
+This will give us a full display of each part:
 
+1) A hose:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149238906-065fad20-ed3f-4585-b90b-7d30b5c06912.jpg
+    :width: 600px
+    
+2) All wooden and rubber parts (breathing mask):
+
+.. image:: https://user-images.githubusercontent.com/93158890/149239024-e361bb4a-5fe5-44e7-b41d-8b6d777a1b9b.jpg
+    :width: 600px
+
+3) The goggles and earphones parts:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149239132-cea7ad0d-3f42-4a69-a45b-9161c6e43deb.jpg
+    :width: 600px
+    
+4) All metallic parts:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149239248-b884fa06-c121-4c06-a8fd-ef06bc992638.jpg
+    :width: 600px
+
+5) Leather parts:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149239346-13e07cd5-1d47-49b6-b43c-7840b01348e9.jpg
+    :width: 600px
+
+6) Lenses:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149239403-e6fa3954-8cce-47be-b5b5-b388e7250fe4.jpg
+    :width: 600px
 
 
 
