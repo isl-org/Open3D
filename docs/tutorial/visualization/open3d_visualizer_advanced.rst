@@ -343,20 +343,28 @@ And what is its mesh name?
     'Hose_low'
 
 
-We can write a loop which displays all mesh names used in a complex model like so:
+We can write a loop which displays all mesh names and material indices used in a complex model like so:
 
 
 .. code-block:: python
 
    >>> for m in helmet.meshes:
    ...     print(m.mesh_name)
+   ...     print(m.material_idx)
    ... 
    Hose_low
+   0
    RubberWood_low
+   1
    GlassPlastic_low
+   2
    MetalParts_low
+   3
    LeatherParts_low
+   4
    Lenses_low
+   5
+
    
 
 We can also render meshes individually like:
@@ -369,6 +377,10 @@ We can also render meshes individually like:
     :width: 600px
 
 
+Rendering Sub-Models
+::::::::::::::::::::
+
+
 Just like in the previous loop example which displays all ``mesh_name`` properties, we can write a loop which renders each mesh separately:
 
 .. code-block:: python
@@ -376,14 +388,14 @@ Just like in the previous loop example which displays all ``mesh_name`` properti
     >>> for m in helmet.meshes:
     ...     vis.draw(m.mesh)
     
-As you close each visualizer window, a new one will appear with a different mesh:
+A series of Open3D visualizer windows should appear. As you close each of them, a new one will appear with a different mesh:
 
 1) A hose:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238208-961a0a8d-ebb2-4621-aff1-8bfcdeced734.jpg
     :width: 600px
     
-2) All wooden parts:
+2) All wooden and rubber parts:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238298-98a894cd-72a2-4c76-8e30-da89e26f2fa4.jpg
     :width: 600px

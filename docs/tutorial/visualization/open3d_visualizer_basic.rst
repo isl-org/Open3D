@@ -53,8 +53,8 @@ Basic Examples
 
 In the Overview section, we activated a ``conda`` environment, started a Python session, and declared an Open3D object to be used throughout this tutorial. Let’s now test various Open3D ``draw()`` function capabilities with various geometries.
 
-Drawing a TriangleMesh Box 
-::::::::::::::::::::::::::
+Drawing a Box 
+:::::::::::::
 
 This example shows how to create and visualize a simple 3D box.
 
@@ -72,8 +72,8 @@ At the end of the process, the Open3D Visualizer window should appear:
     :width: 600px
     
 
-Drawing a TriangleMesh-based Sphere
-:::::::::::::::::::::::::::::::::::
+Drawing a Sphere
+::::::::::::::::
 
 At the Python prompt in your terminal, enter the following lines of code:
 
@@ -100,8 +100,79 @@ Open3D returns:
 		TriangleMesh with 762 points and 1520 triangles.
 
 
-Rendering Point Cloud Data (pcd) files
-:::::::::::::::::::::::::::::::::::::::::
+
+Drawing a Lit Sphere
+::::::::::::::::::::
+
+In the image above, the sphere looks like a two-dimensional (2D) circle without any shading. To change its appearance to 3D, we need to call the ``compute_vertex_normals()`` method on our sphere object:
+
+.. code-block:: python
+
+  >>> sphere.compute_vertex_normals()
+  TriangleMesh with 762 points and 1520 triangles.
+  >>> vis.draw(sphere)
+  
+The result of calling ``compute_vertex_normals()`` speaks for itself, - the rendered object looks like a real sphere:
+
+.. image:: https://user-images.githubusercontent.com/93158890/150879488-bc887a9b-cb7a-4476-ab8e-3f72c185c604.jpg
+    :width: 600px
+
+
+
+Drawing a Colored Lit Sphere
+::::::::::::::::::::::::::::
+
+When we rendered a lit sphere in the previous section, we did not specify which color we would like the sphere to be. In this example, we will assign a magenta color to the sphere with the ``paint_uniform_color()`` method:
+
+.. code-block:: python
+
+  >>> sphere.paint_uniform_color([1, 0, 1])
+  TriangleMesh with 762 points and 1520 triangles.
+  >>> vis.draw(sphere)
+   
+.. image:: https://user-images.githubusercontent.com/93158890/150881545-56de6d95-50d0-4965-b2a0-b6bd27340df7.jpg
+    :width: 600px
+
+
+
+
+Drawing a Sphere With Materials
+:::::::::::::::::::::::::::::::
+
+With the ``draw()`` function you can create customized materials and geometries. First, we will create a custom material:
+
+
+.. code-block:: python
+
+	>>> mat = o3d.visualization.rendering.MaterialRecord()
+	>>> mat.shader = "defaultLit"
+	>>> mat.base_color = np.asarray([1.0, 0.0, 1.0, 1.0])
+
+We declare ``mat`` as a material rendering object and initialize it with a default lighting scheme. The ``numpy`` object we declared in the very beginning of this tutorial will help us pass the RGB-Alpha values as an array to the ``mat.base_color`` property.
+
+To find out what the mat object is, we type in ``mat`` at the Python prompt:
+	
+.. code-block:: python
+
+	>>> mat
+	<open3d.cpu.pybind.visualization.rendering.MaterialRecord object at 0x7f2be5e34430>
+
+Now, let's create some geometries and use the above custom material we just created:
+
+.. code-block:: python
+
+  >>> geoms = {'name': 'sphere', 'geometry': sphere, 'material': mat}
+  >>> vis.draw(geoms)
+  
+.. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
+    :width: 600px
+
+The sphere looks almost identical to the one in the previous example (*Drawing a Colored Lit Sphere*), but this time it is based on the custom material ``mat`` which we created.
+
+
+
+Drawing Point Clouds
+::::::::::::::::::::
 
 Enter the following code at the Python prompt:
 
@@ -160,14 +231,7 @@ As you can see from the rendered sphere, its wireframe lines appear much thicker
 .. image:: https://user-images.githubusercontent.com/93158890/148608552-9c77846a-1cca-4a2e-8f05-5b062eea89be.jpg
     :width: 600px
     
-Below is a more complex example of ``line_width``. This is where we superimpose a *LineSet* wireframe object upon a *sphere*:
 
-.. code-block:: python
-
-	>>> vis.draw([sphere, ls], line_width=1)
-
-.. image:: https://user-images.githubusercontent.com/93158890/148608657-0780bc13-1b32-4875-89ba-d8f8320a7469.jpg
-    :width: 600px
 	
 	
    
@@ -231,59 +295,6 @@ Aside from displaying UI / control panel, it is also possible to add a Visualize
 
 
  
-
-Working with Geometries and Materials
-:::::::::::::::::::::::::::::::::::::
-
-With the ``draw()`` function you can create customized materials and geometries. First, we will create a custom material:
-
-
-.. code-block:: python
-
-	>>> mat = o3d.visualization.rendering.MaterialRecord()
-	>>> mat.shader = "defaultLit"
-	>>> mat.base_color = np.asarray([1.0, 0.0, 1.0, 1.0])
-
-We declare ``mat`` as a material rendering object and initialize it with a default lighting scheme. The ``numpy`` object we declared in the very beginning of this tutorial will help us pass the RGB-Alpha values as an array to the ``mat.base_color`` property.
-
-To find out what the mat object is, we type in ``mat`` at the Python prompt:
-	
-.. code-block:: python
-
-	>>> mat
-	<open3d.cpu.pybind.visualization.rendering.MaterialRecord object at 0x7f2be5e34430>
-
-Now, let's create some geometries and use the above custom material we just created:
-
-.. code-block:: python
-
-  >>> geoms = {'name': 'sphere', 'geometry': sphere, 'material': mat}
-  >>> vis.draw(geoms)
-  
-.. image:: https://user-images.githubusercontent.com/93158890/148609355-929ebd00-0adb-4634-9da7-0a82c4965cc9.jpg
-    :width: 600px
-    
-``compute_vertex_normals()``  Method
-""""""""""""""""""""""""""""""""""""
-    
-Note that after the ``draw()`` call of ``o3d.visualization.draw(geoms)`` Open3D displays a warning related to the absence of ``normals``:
-
-.. code-block:: python
-
-  [Open3D WARNING] Using a shader with lighting but geometry has no normals.
-  
-In the image above, the sphere shading looks somewhat jagged. To improve that, we need to call the ``compute_vertex_normals()`` method on our sphere object:
-
-.. code-block:: python
-
-  >>> sphere.compute_vertex_normals()
-  TriangleMesh with 762 points and 1520 triangles.
-  >>> vis.draw(geoms)
-  
-The result of calling ``compute_vertex_normals()`` speaks for itself, - the rendered sphere looks way better:
-
-.. image:: https://user-images.githubusercontent.com/93158890/148609453-fecf75bc-4cb9-4961-9197-26a250c9cacc.jpg
-    :width: 600px
     
 
 Assigning Names to Objects in the UI
