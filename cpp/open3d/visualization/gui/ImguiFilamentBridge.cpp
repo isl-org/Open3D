@@ -73,6 +73,7 @@
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Gui.h"
+#include "open3d/visualization/gui/Resource.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
@@ -90,17 +91,38 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
-    std::vector<char> bytes;
+static Material* LoadMaterialTemplate(const std::string& resource_name, Engine& engine) {
+    namespace fs = std::experimental::filesystem;
+    std::string bytes_path = std::string(fs::path(resource_name).filename());
+    std::vector<char> bytes = GetResource(bytes_path);
+    std::cout << "exited" << std::endl;
+    return nullptr;
     std::string error_str;
-    if (!utility::filesystem::FReadToBuffer(path, bytes, &error_str)) {
-        std::cout << "[ERROR] Could not read " << path << ": " << error_str
+    std::vector<char> old_bytes;
+    // utility::filesystem::FReadToBuffer(resource_name, old_bytes, &error_str);
+    // if (bytes.size() == old_bytes.size())
+    //     if (bytes == old_bytes)
+    //         std::cout << "PEACE" << std::endl;
+    //     else
+    //         for (size_t it=0; it<bytes.size(); it++) {
+    //             std::cout << "(" << bytes[it] << "," << old_bytes[it] << ")" << std::endl;
+    //         }
+    // else
+    //     std::cout << "gt size = " << old_bytes.size() << "\nmy size = " << bytes.size();
+    // bytes.clear();
+    // if (bytes.size()==0) {
+    //     std::cout << "[ERROR] Could not read resource: " << error_str
+// static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
+//     std::vector<char> bytes;
+//     std::string error_str;
+    if (!utility::filesystem::FReadToBuffer(resource_name, old_bytes, &error_str)) {
+        std::cout << "[ERROR] Could not read " << resource_name << ": " << error_str
                   << std::endl;
         return nullptr;
     }
 
     return Material::Builder()
-            .package(bytes.data(), bytes.size())
+            .package(old_bytes.data(), old_bytes.size())
             .build(engine);
 }
 

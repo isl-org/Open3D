@@ -26,6 +26,7 @@ target_sources(GUI PRIVATE
     NumberEdit.cpp
     PickPointsInteractor.cpp
     ProgressBar.cpp
+    Resource.cpp
     SceneWidget.cpp
     Slider.cpp
     StackedWidget.cpp
