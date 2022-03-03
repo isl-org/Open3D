@@ -57,7 +57,7 @@ jobs:
         run: |
           ./util/run_ci.sh
 
-      - name: Upload package
+      - name: Upload package to GitHub artifacts
         if: ${{ env.SHARED == 'ON' }}
         uses: actions/upload-artifact@v2
         with:
