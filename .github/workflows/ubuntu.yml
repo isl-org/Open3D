@@ -11,7 +11,7 @@ on:
     branches:
       - master
   pull_request:
-    types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
+    types: [opened, reopened, synchronize]
 
 env:
   NPROC: 2
