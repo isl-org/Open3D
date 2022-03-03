@@ -20,43 +20,43 @@ __usage_docker_build="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    # OpenBLAS AMD64
-    openblas-amd64-py36-dev: OpenBLAS AMD64 3.6 wheel, developer mode
-    openblas-amd64-py37-dev: OpenBLAS AMD64 3.7 wheel, developer mode
-    openblas-amd64-py38-dev: OpenBLAS AMD64 3.8 wheel, developer mode
-    openblas-amd64-py39-dev: OpenBLAS AMD64 3.9 wheel, developer mode
-    openblas-amd64-py36    : OpenBLAS AMD64 3.6 wheel, release mode
-    openblas-amd64-py37    : OpenBLAS AMD64 3.7 wheel, release mode
-    openblas-amd64-py38    : OpenBLAS AMD64 3.8 wheel, release mode
-    openblas-amd64-py39    : OpenBLAS AMD64 3.9 wheel, release mode
+    # OpenBLAS AMD64 (Dockerfile.openblas)
+    openblas-amd64-py36-dev    : OpenBLAS AMD64 3.6 wheel, developer mode
+    openblas-amd64-py37-dev    : OpenBLAS AMD64 3.7 wheel, developer mode
+    openblas-amd64-py38-dev    : OpenBLAS AMD64 3.8 wheel, developer mode
+    openblas-amd64-py39-dev    : OpenBLAS AMD64 3.9 wheel, developer mode
+    openblas-amd64-py36        : OpenBLAS AMD64 3.6 wheel, release mode
+    openblas-amd64-py37        : OpenBLAS AMD64 3.7 wheel, release mode
+    openblas-amd64-py38        : OpenBLAS AMD64 3.8 wheel, release mode
+    openblas-amd64-py39        : OpenBLAS AMD64 3.9 wheel, release mode
 
-    # OpenBLAS ARM64
-    openblas-arm64-py36-dev: OpenBLAS ARM64 3.6 wheel, developer mode
-    openblas-arm64-py37-dev: OpenBLAS ARM64 3.7 wheel, developer mode
-    openblas-arm64-py38-dev: OpenBLAS ARM64 3.8 wheel, developer mode
-    openblas-arm64-py39-dev: OpenBLAS ARM64 3.9 wheel, developer mode
-    openblas-arm64-py36    : OpenBLAS ARM64 3.6 wheel, release mode
-    openblas-arm64-py37    : OpenBLAS ARM64 3.7 wheel, release mode
-    openblas-arm64-py38    : OpenBLAS ARM64 3.8 wheel, release mode
-    openblas-arm64-py39    : OpenBLAS ARM64 3.9 wheel, release mode
+    # OpenBLAS ARM64 (Dockerfile.openblas)
+    openblas-arm64-py36-dev    : OpenBLAS ARM64 3.6 wheel, developer mode
+    openblas-arm64-py37-dev    : OpenBLAS ARM64 3.7 wheel, developer mode
+    openblas-arm64-py38-dev    : OpenBLAS ARM64 3.8 wheel, developer mode
+    openblas-arm64-py39-dev    : OpenBLAS ARM64 3.9 wheel, developer mode
+    openblas-arm64-py36        : OpenBLAS ARM64 3.6 wheel, release mode
+    openblas-arm64-py37        : OpenBLAS ARM64 3.7 wheel, release mode
+    openblas-arm64-py38        : OpenBLAS ARM64 3.8 wheel, release mode
+    openblas-arm64-py39        : OpenBLAS ARM64 3.9 wheel, release mode
 
-    # CUDA wheels
-    cuda_wheel_py36_dev    : CUDA Python 3.6 wheel, developer mode
-    cuda_wheel_py37_dev    : CUDA Python 3.7 wheel, developer mode
-    cuda_wheel_py38_dev    : CUDA Python 3.8 wheel, developer mode
-    cuda_wheel_py39_dev    : CUDA Python 3.9 wheel, developer mode
-    cuda_wheel_py36        : CUDA Python 3.6 wheel, release mode
-    cuda_wheel_py37        : CUDA Python 3.7 wheel, release mode
-    cuda_wheel_py38        : CUDA Python 3.8 wheel, release mode
-    cuda_wheel_py39        : CUDA Python 3.9 wheel, release mode
+    # CUDA wheels (Dockerfile.wheel)
+    cuda_wheel_py36_dev        : CUDA Python 3.6 wheel, developer mode
+    cuda_wheel_py37_dev        : CUDA Python 3.7 wheel, developer mode
+    cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
+    cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
+    cuda_wheel_py36            : CUDA Python 3.6 wheel, release mode
+    cuda_wheel_py37            : CUDA Python 3.7 wheel, release mode
+    cuda_wheel_py38            : CUDA Python 3.8 wheel, release mode
+    cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
 
-    # ML CIs
-    2-bionic                    : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-bionic-release  : CUDA CI, 3-ml-shared-bionic, release mode
-    3-ml-shared-bionic          : CUDA CI, 3-ml-shared-bionic, developer mode
-    4-shared-bionic             : CUDA CI, 4-shared-bionic, developer mode
-    4-shared-bionic-release     : CUDA CI, 4-shared-bionic, release mode
-    5-ml-focal                  : CUDA CI, 5-ml-focal, developer mode
+    # ML CIs (Dockerfile.cuda)
+    2-bionic                   : CUDA CI, 2-bionic, developer mode
+    3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic, release mode
+    3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic, developer mode
+    4-shared-bionic            : CUDA CI, 4-shared-bionic, developer mode
+    4-shared-bionic-release    : CUDA CI, 4-shared-bionic, release mode
+    5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
