@@ -16,3 +16,4 @@ open3d_add_tool(GLInfo                  Open3D::3rdparty_opengl Open3D::3rdparty
 open3d_add_tool(ManuallyCropGeometry)
 open3d_add_tool(MergeMesh)
 open3d_add_tool(ViewGeometry)
+open3d_add_tool(EmbedResources)
