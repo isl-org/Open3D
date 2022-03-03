@@ -7,16 +7,11 @@ on:
         description: 'Set to OFF for Release wheels'
         required: false
         default: 'ON'
-
   push:
     branches:
       - master
   pull_request:
     types: [opened, reopened, synchronize]  # Rebuild on new pushes to PR
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
 
 env:
   NPROC: 2
@@ -48,20 +43,6 @@ jobs:
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
 
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
-          path: ~/.ccache
-          # We include the commit sha in the cache key, as new cache entries are
-          # only created if there is no existing entry for the key yet.
-          key: ${{ runner.os }}-ccache-${{ github.sha }}
-          # Restore any ccache cache entry, if none for
-          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
-          # Common prefix will be used so that ccache can be used across commits.
-          restore-keys: |
-            ${{ runner.os }}-ccache
-
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
@@ -71,17 +52,10 @@ jobs:
       - name: Install dependencies
         run: |
           ./util/install_deps_ubuntu.sh assume-yes
-          wget https://github.com/isl-org/open3d_downloads/releases/download/ccache/ccache
-          chmod +x ccache
-          sudo mv ccache /usr/local/bin
-          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build
         run: |
-          PATH=/usr/lib/ccache:$PATH
-          ccache -s
           ./util/run_ci.sh
-          ccache -s
           DEVEL_PKG_NAME="$(basename package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
 
