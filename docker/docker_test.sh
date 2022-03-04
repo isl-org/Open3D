@@ -257,6 +257,23 @@ case "$1" in
         cpp_python_linking_uninstall_test
         ;;
 
+    # CPU CI
+    cpu-static)
+        cpu-static_export_env
+        cuda_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    cpu-shared)
+        cpu-shared_export_env
+        cuda_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    cpu-shared-ml)
+        cpu-shared-ml_export_env
+        cuda_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+
     # ML CIs
     2-bionic)
         2-bionic_export_env
