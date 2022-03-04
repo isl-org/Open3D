@@ -119,7 +119,11 @@ RUN ./util/install_deps_ubuntu.sh assume-yes \
 
 # Open3D Python dependencies
 RUN source util/ci_utils.sh \
- && install_python_dependencies with-conda with-cuda with-jupyter \
+ && if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
+        install_python_dependencies with-conda with-cuda with-jupyter; \
+    else \
+        install_python_dependencies with-conda with-jupyter; \
+    fi \
  && pip install -r python/requirements_test.txt
 
 # Open3D Jupyter dependencies
@@ -131,10 +135,10 @@ RUN npm install -g yarn \
  && yarn --version
 
 # Build all
-RUN if [ "${BUILD_PYTORCH_OPS}" = ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; then \
-        export GLIBCXX_USE_CXX11_ABI=OFF \
+RUN if [ "${BUILD_PYTORCH_OPS}" = "ON" ] || [ "${BUILD_TENSORFLOW_OPS}" = "ON" ]; then \
+        export GLIBCXX_USE_CXX11_ABI=OFF; \
     else \
-        export GLIBCXX_USE_CXX11_ABI=ON \
+        export GLIBCXX_USE_CXX11_ABI=ON; \
     fi \
  && mkdir build \
  && cd build \
@@ -156,7 +160,7 @@ RUN if [ "${BUILD_PYTORCH_OPS}" = ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; the
  && make VERBOSE=1 -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
- && if [ "$PACKAGE" == "ON" ]; then make package; fi
+ && if [ "${PACKAGE}" = "ON" ]; then make package; fi
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
@@ -165,7 +169,7 @@ RUN ccache -s \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
  && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
- && if [ "$PACKAGE" == "ON" ]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
+ && if [ "${PACKAGE}" = "ON" ]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
  && ls -alh /
 
 RUN echo "Docker build done."
