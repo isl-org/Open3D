@@ -74,10 +74,12 @@ float Camera::CalcFarPlane(
     // See also RotationInteractorLogic::UpdateCameraFarPlane().
     auto far1 = scene_bounds.GetMinBound().norm();
     auto far2 = scene_bounds.GetMaxBound().norm();
-    auto far3 = camera.GetModelMatrix().translation().cast<double>().norm();
+    auto cam_xlate = camera.GetModelMatrix().translation().cast<double>();
+    auto far3 = cam_xlate.norm();
+    auto far4 = (scene_bounds.GetCenter() - cam_xlate).norm();
     auto model_size = 2.0 * scene_bounds.GetExtent().norm();
     auto far = std::max(MIN_FAR_PLANE,
-                        std::max(std::max(far1, far2), far3) + model_size);
+                        std::max({far1, far2, far3, far4}) + model_size);
     return far;
 }
 
