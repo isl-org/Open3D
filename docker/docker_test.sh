@@ -60,8 +60,10 @@ cuda_print_env() {
     echo "[cuda_print_env()] CCACHE_VERSION=${CCACHE_VERSION}"
     echo "[cuda_print_env()] PYTHON_VERSION=${PYTHON_VERSION}"
     echo "[cuda_print_env()] SHARED=${SHARED}"
+    echo "[cuda_print_env()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[cuda_print_env()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[cuda_print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+    echo "[cuda_print_env()] PACKAGE=${PACKAGE}"
 }
 
 restart_docker_daemon_if_on_gcloud() {
