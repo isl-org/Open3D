@@ -12,6 +12,7 @@ ARG CMAKE_VERSION
 ARG CCACHE_VERSION
 ARG PYTHON_VERSION
 ARG SHARED
+ARG BUILD_CUDA_MODULE
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
@@ -22,6 +23,7 @@ RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD  
  && if [ -z "${CCACHE_VERSION}"       ]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi \
  && if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
  && if [ -z "${SHARED}"               ]; then echo "Error: ARG SHARED               not specified."; exit 1; fi \
+ && if [ -z "${BUILD_CUDA_MODULE}"    ]; then echo "Error: ARG BUILD_CUDA_MODULE    not specified."; exit 1; fi \
  && if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
  && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
  && if [ -z "${PACKAGE}"              ]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi
@@ -47,6 +49,7 @@ RUN apt-get update && apt-get install -y \
     git  \
     wget \
     curl \
+    build-essential \
  && rm -rf /var/lib/apt/lists/*
 
 # Dependencies: cmake
@@ -134,7 +137,7 @@ RUN mkdir build \
           -DCMAKE_BUILD_TYPE=Release \
           -DDEVELOPER_BUILD="${DEVELOPER_BUILD}" \
           -DBUILD_LIBREALSENSE=ON \
-          -DBUILD_CUDA_MODULE=ON \
+          -DBUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
           -DBUILD_COMMON_ISPC_ISAS=ON \
           -DGLIBCXX_USE_CXX11_ABI=$( { [ "$BUILD_PYTORCH_OPS" == ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; } && echo OFF || echo ON) \

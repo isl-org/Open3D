@@ -222,6 +222,7 @@ cuda_build() {
     echo "[cuda_build()] CCACHE_VERSION=${CCACHE_VERSION}"
     echo "[cuda_build()] PYTHON_VERSION=${PYTHON_VERSION}"
     echo "[cuda_build()] SHARED=${SHARED}"
+    echo "[cuda_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[cuda_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[cuda_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[cuda_build()] PACKAGE=${PACKAGE}"
@@ -235,6 +236,7 @@ cuda_build() {
         --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg SHARED="${SHARED}" \
+        --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
@@ -255,6 +257,7 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-2-bionic
     export PYTHON_VERSION=3.6
     export SHARED=OFF
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=OFF
@@ -268,6 +271,7 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
@@ -281,6 +285,7 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
@@ -294,6 +299,7 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
@@ -307,6 +313,7 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
@@ -320,9 +327,52 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-5-ml-focal
     export PYTHON_VERSION=3.6
     export SHARED=OFF
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=OFF
+}
+
+cpu-static_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-static
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=OFF
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=OFF
+}
+
+cpu-shared_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=ON
+}
+
+cpu-shared-ml_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared-ml
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
 }
 
 function main () {
@@ -398,6 +448,20 @@ function main () {
         openblas-arm64-py39)
             openblas_export_env arm64 py39
             openblas_build
+            ;;
+
+        # CPU CI
+        cpu-static)
+            cpu-static_export_env
+            cuda_build
+            ;;
+        cpu-shared)
+            cpu-shared_export_env
+            cuda_build
+            ;;
+        cpu-shared-ml)
+            cpu-shared-ml_export_env
+            cuda_build
             ;;
 
         # CUDA wheels
