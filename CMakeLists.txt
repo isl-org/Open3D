@@ -226,6 +226,12 @@ endif()
 if(OPEN3D_USE_ONEAPI AND NOT GLIBCXX_USE_CXX11_ABI)
     message(FATAL_ERROR "OPEN3D_USE_ONEAPI=ON requires GLIBCXX_USE_CXX11_ABI=ON")
 endif()
+if(OPEN3D_USE_ONEAPI AND BUILD_TENSORFLOW_OPS)
+    message(FATAL_ERROR "OPEN3D_USE_ONEAPI=ON does not support BUILD_TENSORFLOW_OPS=ON")
+endif()
+if(OPEN3D_USE_ONEAPI AND BUILD_PYTORCH_OPS)
+    message(FATAL_ERROR "OPEN3D_USE_ONEAPI=ON does not support BUILD_PYTORCH_OPS=ON")
+endif()
 
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
@@ -265,7 +271,11 @@ message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
-set(CMAKE_CXX_STANDARD 14)
+if (OPEN3D_USE_ONEAPI)
+    set(CMAKE_CXX_STANDARD 17)
+else()
+    set(CMAKE_CXX_STANDARD 14)
+endif()
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
