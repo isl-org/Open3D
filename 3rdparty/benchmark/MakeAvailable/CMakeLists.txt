@@ -8,7 +8,10 @@ if(GLIBCXX_USE_CXX11_ABI)
 else()
     add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
 endif()
-add_compile_options($<$<CXX_COMPILER_ID:IntelLLVM>:-fno-fast-math>)
+
+if(OPEN3D_USE_ONEAPI)
+    add_compile_options($<$<CXX_COMPILER_ID:IntelLLVM>:-fno-fast-math>)
+endif()
 
 FetchContent_MakeAvailable(ext_benchmark)
 

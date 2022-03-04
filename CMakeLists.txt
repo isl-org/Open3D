@@ -9,13 +9,6 @@ cmake_minimum_required(VERSION 3.19.2)
 # - use first-class language support for ISPC (3.19.2 patch release required)
 
 option(OPEN3D_USE_ONEAPI "Use Intel OneAPI BaseKit and DPC++" ON)
-if (OPEN3D_USE_ONEAPI)
-    if (NOT UNIX OR APPLE)
-        message(FATAL_ERROR "Open3D OneAPI support is only available on Linux")
-    endif()
-    set(CMAKE_C_COMPILER icx)
-    set(CMAKE_CXX_COMPILER icpx)
-endif()
 
 if (APPLE)
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
@@ -223,15 +216,6 @@ endif()
 if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
-if(OPEN3D_USE_ONEAPI AND NOT GLIBCXX_USE_CXX11_ABI)
-    message(FATAL_ERROR "OPEN3D_USE_ONEAPI=ON requires GLIBCXX_USE_CXX11_ABI=ON")
-endif()
-if(OPEN3D_USE_ONEAPI AND BUILD_TENSORFLOW_OPS)
-    message(FATAL_ERROR "OPEN3D_USE_ONEAPI=ON does not support BUILD_TENSORFLOW_OPS=ON")
-endif()
-if(OPEN3D_USE_ONEAPI AND BUILD_PYTORCH_OPS)
-    message(FATAL_ERROR "OPEN3D_USE_ONEAPI=ON does not support BUILD_PYTORCH_OPS=ON")
-endif()
 
 # Parse Open3D version number
 file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
@@ -268,6 +252,24 @@ project(Open3D
     HOMEPAGE_URL "http://www.open3d.org"
     LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
+
+# Check OneAPI compatiblility
+if (OPEN3D_USE_ONEAPI AND NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "OPEN3D_USE_ONEAPI requires IntelLLVM (DPC++) compiler, "
+                        "but got ${CMAKE_CXX_COMPILER_ID}")
+endif()
+if (OPEN3D_USE_ONEAPI AND (NOT UNIX OR APPLE))
+    message(FATAL_ERROR "Open3D OneAPI support is only available on Linux")
+endif()
+if(OPEN3D_USE_ONEAPI AND NOT GLIBCXX_USE_CXX11_ABI)
+    message(FATAL_ERROR "OPEN3D_USE_ONEAPI=ON requires GLIBCXX_USE_CXX11_ABI=ON")
+endif()
+if(OPEN3D_USE_ONEAPI AND BUILD_TENSORFLOW_OPS)
+    message(FATAL_ERROR "OPEN3D_USE_ONEAPI=ON requires BUILD_TENSORFLOW_OPS=OFF")
+endif()
+if(OPEN3D_USE_ONEAPI AND BUILD_PYTORCH_OPS)
+    message(FATAL_ERROR "OPEN3D_USE_ONEAPI=ON requires BUILD_PYTORCH_OPS=OFF")
+endif()
 
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
