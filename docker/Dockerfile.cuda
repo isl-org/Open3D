@@ -131,7 +131,12 @@ RUN npm install -g yarn \
  && yarn --version
 
 # Build all
-RUN mkdir build \
+RUN if [ "${BUILD_PYTORCH_OPS}" = ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; then \
+        export GLIBCXX_USE_CXX11_ABI=OFF \
+    else \
+        export GLIBCXX_USE_CXX11_ABI=ON \
+    fi \
+ && mkdir build \
  && cd build \
  && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
           -DCMAKE_BUILD_TYPE=Release \
@@ -140,7 +145,7 @@ RUN mkdir build \
           -DBUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
           -DBUILD_COMMON_ISPC_ISAS=ON \
-          -DGLIBCXX_USE_CXX11_ABI=$( { [ "$BUILD_PYTORCH_OPS" == ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; } && echo OFF || echo ON) \
+          -DGLIBCXX_USE_CXX11_ABI="${GLIBCXX_USE_CXX11_ABI}" \
           -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
           -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
           -DBUILD_UNIT_TESTS=ON \
