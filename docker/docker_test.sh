@@ -261,37 +261,31 @@ case "$1" in
     2-bionic)
         2-bionic_export_env
         cuda_print_env
-        export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
     3-ml-shared-bionic)
         3-ml-shared-bionic_export_env
         cuda_print_env
-        export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
     3-ml-shared-bionic-release)
         3-ml-shared-bionic-release_export_env
         cuda_print_env
-        export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
     4-shared-bionic)
         4-shared-bionic_export_env
         cuda_print_env
-        export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
     4-shared-bionic-release)
         4-shared-bionic-release_export_env
         cuda_print_env
-        export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
     5-ml-focal)
         5-ml-focal_export_env
         cuda_print_env
-        export BUILD_CUDA_MODULE=ON
         cpp_python_linking_uninstall_test
         ;;
 
