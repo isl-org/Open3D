@@ -43,7 +43,9 @@ OPTION:
     # Ubuntu CPU CI (Dockerfile.cuda)
     cpu-static             : Ubuntu CPU static
     cpu-shared             : Ubuntu CPU shared
+    cpu-shared-release     : Ubuntu CPU shared, release mode
     cpu-shared-ml          : Ubuntu CPU shared with ML
+    cpu-shared-ml-release  : Ubuntu CPU shared with ML, release mode
 
     # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py36_dev    : CUDA Python 3.6 wheel, developer mode
@@ -337,7 +339,7 @@ cpu-static_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-static
 
     export BASE_IMAGE=ubuntu:18.04
-    export DEVELOPER_BUILD=OFF
+    export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.6
     export SHARED=OFF
@@ -351,7 +353,7 @@ cpu-shared_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-shared
 
     export BASE_IMAGE=ubuntu:18.04
-    export DEVELOPER_BUILD=OFF
+    export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.6
     export SHARED=ON
@@ -362,6 +364,34 @@ cpu-shared_export_env() {
 }
 
 cpu-shared-ml_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared-ml
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
+}
+
+cpu-shared-release_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=ON
+}
+
+cpu-shared-ml-release_export_env() {
     export DOCKER_TAG=open3d-ci:cpu-shared-ml
 
     export BASE_IMAGE=ubuntu:18.04
@@ -459,8 +489,16 @@ function main () {
             cpu-shared_export_env
             cuda_build
             ;;
+        cpu-shared-release)
+            cpu-shared-release_export_env
+            cuda_build
+            ;;
         cpu-shared-ml)
             cpu-shared-ml_export_env
+            cuda_build
+            ;;
+        cpu-shared-ml-release)
+            cpu-shared-ml-release_export_env
             cuda_build
             ;;
 

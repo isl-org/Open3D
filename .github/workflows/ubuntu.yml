@@ -45,19 +45,27 @@ jobs:
         run: |
           if   [ "${{ matrix.SHARED }}" = "OFF" ] && [ "${{ matrix.MLOPS }}" = "OFF" ]; then
             docker/docker_build.sh cpu-static
-          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "OFF" ]; then
+          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cpu-shared
-          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "ON"  ]; then
+          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cpu-shared-release
+          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cpu-shared-ml
+          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cpu-shared-ml-release
           fi
       - name: Docker test
         run: |
           if   [ "${{ matrix.SHARED }}" = "OFF" ] && [ "${{ matrix.MLOPS }}" = "OFF" ]; then
             docker/docker_test.sh cpu-static
-          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "OFF" ]; then
+          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_test.sh cpu-shared
-          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "ON"  ]; then
+          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "OFF" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_test.sh cpu-shared-release
+          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_test.sh cpu-shared-ml
+          elif [ "${{ matrix.SHARED }}" = "ON"  ] && [ "${{ matrix.MLOPS }}" = "ON"  ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_test.sh cpu-shared-ml-release
           fi
       - name: Upload package to GitHub artifacts
         if: ${{ env.SHARED == 'ON' }}

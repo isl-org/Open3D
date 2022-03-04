@@ -268,8 +268,18 @@ case "$1" in
         cuda_print_env
         cpp_python_linking_uninstall_test
         ;;
+    cpu-shared-release)
+        cpu-shared-release_export_env
+        cuda_print_env
+        cpp_python_linking_uninstall_test
+        ;;
     cpu-shared-ml)
         cpu-shared-ml_export_env
+        cuda_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    cpu-shared-ml-release)
+        cpu-shared-ml-release_export_env
         cuda_print_env
         cpp_python_linking_uninstall_test
         ;;
