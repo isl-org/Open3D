@@ -104,7 +104,7 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                 "NearestNeighborSearch::HybridSearch: Index is not set.");
     }
 
-    RegistrationResult result(transformation, false);
+    RegistrationResult result(transformation);
     GetRegistrationResultAndCorrespondences(source_transformed, target_nns,
                                             max_correspondence_distance,
                                             transformation, result);
@@ -119,11 +119,11 @@ RegistrationResult ICP(
         const TransformationEstimation &estimation,
         const ICPConvergenceCriteria &criteria,
         const double voxel_size,
-        const bool save_loss_log,
-        std::function<void(t::geometry::TensorMap &)> update_loss_log) {
+        utility::optional<std::function<void(t::geometry::TensorMap &)>>
+                update_loss_log) {
     return MultiScaleICP(source, target, {voxel_size}, {criteria},
                          {max_correspondence_distance}, init_source_to_target,
-                         estimation, save_loss_log, update_loss_log);
+                         estimation, update_loss_log);
 }
 
 static void AssertInputMultiScaleICP(
@@ -270,8 +270,9 @@ static void DoSingleScaleIterationsICP(
         const core::Device &device,
         const core::Dtype &dtype,
         RegistrationResult &result,
-        const bool save_loss_log,
-        std::function<void(t::geometry::TensorMap &)> update_loss_log) {
+        utility::optional<std::function<void(t::geometry::TensorMap &)>>
+                update_loss_log,
+        t::geometry::TensorMap &loss_log) {
     for (int j = 0; j < criteria.max_iteration_; j++) {
         GetRegistrationResultAndCorrespondences(
                 source.GetPointPositions(), target_nns,
@@ -301,55 +302,26 @@ static void DoSingleScaleIterationsICP(
                 "{:.4f}",
                 iteration_idx, j, result.fitness_, result.inlier_rmse_);
 
-        if (save_loss_log) {
+        if (update_loss_log.has_value()) {
             const core::Device host("CPU:0");
 
             if (iteration_idx == 0 && j == 0) {
-                // Initialize attributes for first iteration.
-                result.loss_log_["index"] =
-                        core::Tensor::Init<int64_t>({{0}}, host);
-                result.loss_log_["scale"] =
-                        core::Tensor::Init<int64_t>({{0}}, host);
-                result.loss_log_["iteration"] =
-                        core::Tensor::Init<int64_t>({{0}}, host);
-                result.loss_log_["inlier_rmse"] = core::Tensor::Init<double>(
-                        {{result.inlier_rmse_}}, host);
-                result.loss_log_["fitness"] =
-                        core::Tensor::Init<double>({{result.fitness_}}, host);
-                result.loss_log_["transformation"] =
-                        transformation.Reshape({1, 4, 4}).To(host);
-            } else {
-                // Get iteration debug tensors for this iteration.
-                core::Tensor local_index = core::Tensor::Init<int64_t>(
-                        {{result.loss_log_["index"].GetLength() + 1}}, host);
-                core::Tensor local_scale =
-                        core::Tensor::Init<int64_t>({{iteration_idx}}, host);
-                core::Tensor local_iteration =
-                        core::Tensor::Init<int64_t>({{j}}, host);
-                core::Tensor local_rmse = core::Tensor::Init<double>(
-                        {{result.inlier_rmse_}}, core::Device("CPU:0"));
-                core::Tensor local_fitness =
-                        core::Tensor::Init<double>({{result.fitness_}}, host);
-
-                // Concatenate the result of this iteration to the existing
-                // TensorMap.
-                result.loss_log_["index"] = core::Concatenate(
-                        {result.loss_log_["index"], local_index}, 0);
-                result.loss_log_["scale"] = core::Concatenate(
-                        {result.loss_log_["scale"], local_scale}, 0);
-                result.loss_log_["iteration"] = core::Concatenate(
-                        {result.loss_log_["iteration"], local_iteration}, 0);
-                result.loss_log_["inlier_rmse"] = core::Concatenate(
-                        {result.loss_log_["inlier_rmse"], local_rmse}, 0);
-                result.loss_log_["fitness"] = core::Concatenate(
-                        {result.loss_log_["fitness"], local_fitness}, 0);
-                result.loss_log_["transformation"] = core::Concatenate(
-                        {result.loss_log_["transformation"],
-                         transformation.Reshape({1, 4, 4}).To(host)},
-                        0);
+                loss_log["index"] = core::Tensor::Init<int64_t>({0}, host);
             }
 
-            update_loss_log(result.loss_log_);
+            // Update the result of this iteration to the existing TensorMap.
+            loss_log["index"] = core::Tensor::Init<int64_t>(
+                    {loss_log["index"].Item<int64_t>() + 1}, host);
+            loss_log["scale"] =
+                    core::Tensor::Init<int64_t>({iteration_idx}, host);
+            loss_log["iteration"] = core::Tensor::Init<int64_t>({j}, host);
+            loss_log["inlier_rmse"] =
+                    core::Tensor::Init<double>({result.inlier_rmse_}, host);
+            loss_log["fitness"] =
+                    core::Tensor::Init<double>({result.fitness_}, host);
+            loss_log["transformation"] = transformation.To(host);
+
+            update_loss_log.value()(loss_log);
         }
 
         // ICPConvergenceCriteria, to terminate iteration.
@@ -374,8 +346,8 @@ RegistrationResult MultiScaleICP(
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation,
-        const bool save_loss_log,
-        std::function<void(t::geometry::TensorMap &)> update_loss_log) {
+        utility::optional<std::function<void(t::geometry::TensorMap &)>>
+                update_loss_log) {
     core::AssertTensorDtypes(source.GetPointPositions(),
                              {core::Float64, core::Float32});
 
@@ -402,10 +374,11 @@ RegistrationResult MultiScaleICP(
     // Transformation tensor is always of shape {4,4}, type Float64 on CPU:0.
     core::Tensor transformation =
             init_source_to_target.To(core::Device("CPU:0"), core::Float64);
-    RegistrationResult result(transformation, save_loss_log);
+    RegistrationResult result(transformation);
 
     double prev_fitness = 0;
     double prev_inlier_rmse = 0;
+    t::geometry::TensorMap loss_log("index");
 
     // ---- Iterating over different resolution scale START -------------------
     for (int64_t i = 0; i < num_iterations; ++i) {
@@ -425,7 +398,7 @@ RegistrationResult MultiScaleICP(
                 source_down_pyramid[i], target_down_pyramid[i], target_nns,
                 criterias[i], max_correspondence_distances[i], transformation,
                 estimation, i, prev_fitness, prev_inlier_rmse, device, dtype,
-                result, save_loss_log, update_loss_log);
+                result, update_loss_log, loss_log);
 
         // To calculate final `fitness` and `inlier_rmse` for the current
         // `transformation` stored in `result`.

@@ -190,21 +190,17 @@ public:
 
 protected:
     void UpdateMain() {
-        int count = 0;
         auto update_loss_log = [&](t::geometry::TensorMap& loss_log) {
-            // -------------------- VISUALIZER ----------------------
             core::Tensor transformation;
 
             // Delays each iteration to allow clear visualization of
             // each iteration.
             std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
-            transformation =
-                    loss_log["transformation"][count++].Reshape({4, 4});
             {
                 std::lock_guard<std::mutex> lock(pcd_.lock_);
-                pcd_.source_ = source_.To(core::Device("CPU:0"), true)
-                                       .Transform(transformation);
+                pcd_.source_ = source_.To(host_, true)
+                                       .Transform(loss_log["transformation"]);
             }
 
             // To update visualizer, we go to the `main thread`,
@@ -220,13 +216,12 @@ protected:
                         rendering::Scene::kUpdatePointsFlag |
                                 rendering::Scene::kUpdateColorsFlag);
             });
-            // -------------------------------------------------------
         };
 
         result_ = t::pipelines::registration::MultiScaleICP(
                 source_.To(device_), target_.To(device_), voxel_sizes_,
                 criterias_, max_correspondence_distances_, transformation_,
-                *estimation_, true, update_loss_log);
+                *estimation_, update_loss_log);
     }
 
 private:
