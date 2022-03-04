@@ -37,5 +37,3 @@ class GuiVisualizer;
 
 #define WIDTH 1280
 #define HEIGHT 960
-
-int Run(int argc, const char *argv[]);

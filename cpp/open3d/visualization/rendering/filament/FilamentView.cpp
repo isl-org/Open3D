@@ -351,6 +351,17 @@ void FilamentView::CopySettingsFrom(const FilamentView& other) {
     if (other.configured_for_picking_) {
         ConfigureForColorPicking();
     }
+    if (other.color_grading_) {
+        view_->setColorGrading(other.color_grading_);
+    }
+    auto ao_options = other.view_->getAmbientOcclusionOptions();
+    view_->setAmbientOcclusionOptions(ao_options);
+    auto aa_mode = other.view_->getAntiAliasing();
+    auto temporal_options = other.view_->getTemporalAntiAliasingOptions();
+    view_->setAntiAliasing(aa_mode);
+    view_->setTemporalAntiAliasingOptions(temporal_options);
+    view_->setShadowingEnabled(other.view_->isShadowingEnabled());
+    view_->setPostProcessingEnabled(other.view_->isPostProcessingEnabled());
 }
 
 void FilamentView::SetScene(FilamentScene& scene) {

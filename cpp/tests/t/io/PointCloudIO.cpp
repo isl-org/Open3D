@@ -33,6 +33,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "tests/Tests.h"
 
@@ -154,7 +155,8 @@ TEST_P(ReadWriteTPC, WriteBadData) {
 TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
     t::geometry::PointCloud pcd;
 
-    t::io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd,
+    data::PLYPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd,
                           {"auto", false, false, true});
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
     EXPECT_EQ(pcd.GetPointNormals().GetLength(), 196133);
@@ -314,7 +316,8 @@ TEST(TPointCloudIO, WritePTSColorConversion2) {
 TEST(TPointCloudIO, ReadWritePointCloudAsNPZ) {
     // Read PointCloud from PLY file.
     t::geometry::PointCloud pcd_ply;
-    t::io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd_ply,
+    data::PLYPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd_ply,
                           {"auto", false, false, true});
 
     core::Tensor custom_attr = core::Tensor::Ones(
@@ -349,7 +352,8 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
     // Read PointCloud from PLY file.
     t::geometry::PointCloud input_pcd;
     // Using PLY Read to load the data.
-    t::io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), input_pcd,
+    data::PLYPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), input_pcd,
                           {"auto", false, false, false});
 
     // Adding custom attributes of different dtypes.

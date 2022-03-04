@@ -1,3 +1,5 @@
+*.whl
+
 # Windows build temp cmake file
 CMakeSettings.json
 
@@ -74,7 +76,7 @@ examples/python/geometry/test.json
 examples/python/visualization/viewpoint.json
 examples/python/geometry/copy_of_fragment.pcd
 examples/python/geometry/copy_of_knot.ply
-examples/python/geometry/copy_of_lena_color.jpg
+examples/python/geometry/copy_of_Juneau.jpg
 examples/python/geometry/copy_of_crate.mtl
 examples/python/geometry/copy_of_crate.png
 examples/python/geometry/copy_of_crate.obj
@@ -90,6 +92,9 @@ docs/tutorial/**/*.pcd
 docs/tutorial/**/*.json
 docs/_out/
 docs/python_api/
+docs/python_example/
 docs/conf.py
 docs/Doxyfile
 docs/getting_started.rst
+docs/docker.rst
+docs/tensorboard.md

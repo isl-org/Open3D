@@ -1,0 +1,163 @@
+# FROM must be called before other ARGS except for ARG BASE_IMAGE
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# For miniconda and the rest of this Dockerfile
+SHELL ["/bin/bash", "-c"]
+
+# Required build args, should be specified in docker_build.sh
+ARG DEVELOPER_BUILD
+ARG CCACHE_TAR_NAME
+ARG CMAKE_VERSION
+ARG CCACHE_VERSION
+ARG PYTHON_VERSION
+ARG SHARED
+ARG BUILD_TENSORFLOW_OPS
+ARG BUILD_PYTORCH_OPS
+ARG PACKAGE
+
+RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
+ && if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
+ && if [ -z "${CMAKE_VERSION}"        ]; then echo "Error: ARG CMAKE_VERSION        not specified."; exit 1; fi \
+ && if [ -z "${CCACHE_VERSION}"       ]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi \
+ && if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
+ && if [ -z "${SHARED}"               ]; then echo "Error: ARG SHARED               not specified."; exit 1; fi \
+ && if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
+ && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
+ && if [ -z "${PACKAGE}"              ]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi
+
+# Forward all ARG to ENV
+# ci_utils.sh requires these environment variables
+ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
+ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
+ENV CMAKE_VERSION=${CMAKE_VERSION}
+ENV CCACHE_VERSION=${CCACHE_VERSION}
+ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV SHARED=${SHARED}
+ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
+ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+
+# Prevent interactive inputs when installing packages
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV SUDO=command
+
+# Dependencies: basic
+RUN apt-get update && apt-get install -y \
+    git  \
+    wget \
+    curl \
+ && rm -rf /var/lib/apt/lists/*
+
+# Dependencies: cmake
+RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -xf ${CMAKE_VERSION}.tar.gz \
+ && cp -ar ${CMAKE_VERSION} ${HOME}
+ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
+
+# Dependencies: ccache
+WORKDIR /root
+RUN git clone https://github.com/ccache/ccache.git \
+ && cd ccache \
+ && git checkout v${CCACHE_VERSION} -b ${CCACHE_VERSION} \
+ && mkdir build \
+ && cd build \
+ && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON .. \
+ && make install -j$(nproc) \
+ && which ccache \
+ && ccache --version \
+ && ccache -s
+
+# Download ccache from GCS bucket
+# If it doesn't exist on the cloud, an empty ${CCACHE_DIR} will be created.
+# Example directory structure:
+# - CCACHE_DIR        = ~/.cache/ccache
+# - CCACHE_DIR_NAME   = ccache
+# - CCACHE_DIR_PARENT = ~/.cache
+RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && mkdir -p ${CCACHE_DIR_PARENT} \
+ && cd ${CCACHE_DIR_PARENT} \
+ && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
+ && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi \
+ && mkdir -p ${CCACHE_DIR}
+# We need to set ccache size explicitly with -M, otherwise the defualt size is
+# *not* determined by ccache's default, but the downloaded ccache file's config.
+RUN ccache -M 5G \
+ && ccache -s
+
+# Miniconda
+ENV PATH="/root/miniconda3/bin:${PATH}"
+RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+ && bash Miniconda3-latest-Linux-x86_64.sh -b \
+ && rm Miniconda3-latest-Linux-x86_64.sh \
+ && conda --version
+ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
+RUN conda create -y -n open3d python=${PYTHON_VERSION} \
+ && source activate open3d
+RUN which python \
+ && python --version
+
+# Checkout Open3D-ML master branch
+# TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
+ENV OPEN3D_ML_ROOT=/root/Open3D-ML
+RUN git clone --depth 1 https://github.com/isl-org/Open3D-ML.git ${OPEN3D_ML_ROOT}
+
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
+COPY . /root/Open3D
+WORKDIR /root/Open3D
+
+# Open3D C++ dependencies
+RUN ./util/install_deps_ubuntu.sh assume-yes \
+ && rm -rf /var/lib/apt/lists/*
+
+# Open3D Python dependencies
+RUN source util/ci_utils.sh \
+ && install_python_dependencies with-conda with-cuda with-jupyter \
+ && pip install -r python/requirements_test.txt
+
+# Open3D Jupyter dependencies
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+ && apt-get install -y nodejs \
+ && rm -rf /var/lib/apt/lists/* \
+ && node --version
+RUN npm install -g yarn \
+ && yarn --version
+
+# Build all
+RUN mkdir build \
+ && cd build \
+ && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DDEVELOPER_BUILD="${DEVELOPER_BUILD}" \
+          -DBUILD_LIBREALSENSE=ON \
+          -DBUILD_CUDA_MODULE=ON \
+          -DBUILD_COMMON_CUDA_ARCHS=ON \
+          -DBUILD_COMMON_ISPC_ISAS=ON \
+          -DGLIBCXX_USE_CXX11_ABI=$( { [ "$BUILD_PYTORCH_OPS" == ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; } && echo OFF || echo ON) \
+          -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
+          -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+          -DBUILD_UNIT_TESTS=ON \
+          -DBUILD_BENCHMARKS=ON \
+          -DBUILD_EXAMPLES=ON \
+          -DCMAKE_INSTALL_PREFIX=~/open3d_install \
+          .. \
+ && make VERBOSE=1 -j$(nproc) \
+ && make install-pip-package -j$(nproc) \
+ && make install -j$(nproc) \
+ && { if [ "$PACKAGE" == "ON" ] ; then make package ; fi ; }
+
+# Compress ccache folder, move to / directory
+RUN ccache -s \
+ && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
+ && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
+ && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
+ && cd ${CCACHE_DIR_PARENT} \
+ && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
+ && { if [ "$PACKAGE" == "ON" ] ; then mv /root/Open3D/build/package/open3d-devel*.tar.xz / ; fi ; } \
+ && ls -alh /
+
+RUN echo "Docker build done."

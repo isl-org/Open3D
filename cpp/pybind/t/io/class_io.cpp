@@ -30,7 +30,6 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
-#include "open3d/t/io/TSDFVoxelGridIO.h"
 #include "pybind/docstring.h"
 #include "pybind/t/io/io.h"
 
@@ -143,30 +142,6 @@ void pybind_class_io(py::module &m_io) {
             "Function to write Image to file.", "filename"_a, "image"_a,
             "quality"_a = kOpen3DImageIODefaultQuality);
     docstring::FunctionDocInject(m_io, "write_image",
-                                 map_shared_argument_docstrings);
-
-    m_io.def(
-            "read_tsdf_voxelgrid",
-            [](const std::string &filename) {
-                py::gil_scoped_release release;
-                geometry::TSDFVoxelGrid voxelgrid;
-                ReadTSDFVoxelGrid(filename, voxelgrid);
-                return voxelgrid;
-            },
-            "Function to read a TSDF voxel grid from file.", "filename"_a);
-    docstring::FunctionDocInject(m_io, "read_tsdf_voxelgrid",
-                                 map_shared_argument_docstrings);
-
-    m_io.def(
-            "write_tsdf_voxelgrid",
-            [](const std::string &filename,
-               const geometry::TSDFVoxelGrid &voxelgrid) {
-                py::gil_scoped_release release;
-                return WriteTSDFVoxelGrid(filename, voxelgrid);
-            },
-            "Function to write a TSDF voxel grid to file.", "filename"_a,
-            "voxelgrid"_a);
-    docstring::FunctionDocInject(m_io, "write_tsdf_voxelgrid",
                                  map_shared_argument_docstrings);
 }
 

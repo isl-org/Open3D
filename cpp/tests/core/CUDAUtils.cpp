@@ -92,13 +92,13 @@ void CheckScopedStreamAutomatically() {
 void CheckScopedStreamMultiThreaded(const std::function<void()>& func) {
     std::vector<std::thread> threads;
 
-    const int kIterations = 100000;
-    const int kThreads = 8;
+    // NVCC does not like capturing const int by reference on Windows, use int.
+    int kIterations = 100000;
+    int kThreads = 8;
     for (int i = 0; i < kThreads; ++i) {
         threads.emplace_back([&kIterations, &func]() {
             utility::LogDebug("Starting thread with ID {}",
                               std::this_thread::get_id());
-
             for (int i = 0; i < kIterations; ++i) {
                 func();
             }

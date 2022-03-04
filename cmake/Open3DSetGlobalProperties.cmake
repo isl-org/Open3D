@@ -1,9 +1,65 @@
+# open3d_enable_strip(target)
+#
+# Enable binary strip. Only effective on Linux or macOS.
+function(open3d_enable_strip target)
+    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
+    # (from pybind11)
+    # macOS: -x: strip local symbols
+    # Linux: defaults
+    if(NOT DEVELOPER_BUILD AND UNIX AND CMAKE_STRIP)
+        get_target_property(target_type ${target} TYPE)
+        if(target_type MATCHES MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
+                        $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
+                        COMMAND_EXPAND_LISTS)
+        endif()
+    endif()
+endfunction()
+
 # open3d_set_global_properties(target)
 #
 # Sets important project-related properties to <target>.
 function(open3d_set_global_properties target)
     # Tell CMake we want a compiler that supports C++14 features
     target_compile_features(${target} PUBLIC cxx_std_14)
+
+    # Detect compiler id and version for utility::CompilerInfo
+    # - OPEN3D_CXX_STANDARD
+    # - OPEN3D_CXX_COMPILER_ID
+    # - OPEN3D_CXX_COMPILER_VERSION
+    # - OPEN3D_CUDA_COMPILER_ID       # Emtpy if not BUILD_CUDA_MODULE
+    # - OPEN3D_CUDA_COMPILER_VERSION  # Emtpy if not BUILD_CUDA_MODULE
+    if (NOT CMAKE_CXX_STANDARD)
+        message(FATAL_ERROR "CMAKE_CXX_STANDARD must be defined globally.")
+    endif()
+    target_compile_definitions(${target} PRIVATE OPEN3D_CXX_STANDARD="${CMAKE_CXX_STANDARD}")
+    target_compile_definitions(${target} PRIVATE OPEN3D_CXX_COMPILER_ID="${CMAKE_CXX_COMPILER_ID}")
+    target_compile_definitions(${target} PRIVATE OPEN3D_CXX_COMPILER_VERSION="${CMAKE_CXX_COMPILER_VERSION}")
+    target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_ID="${CMAKE_CUDA_COMPILER_ID}")
+    target_compile_definitions(${target} PRIVATE OPEN3D_CUDA_COMPILER_VERSION="${CMAKE_CUDA_COMPILER_VERSION}")
+
+    # std::filesystem (C++17) or std::experimental::filesystem (C++14)
+    #
+    # Ref: https://en.cppreference.com/w/cpp/filesystem:
+    #      Using this library may require additional compiler/linker options.
+    #      GNU implementation prior to 9.1 requires linking with -lstdc++fs and
+    #      LLVM implementation prior to LLVM 9.0 requires linking with -lc++fs.
+    # Ref: https://gitlab.kitware.com/cmake/cmake/-/issues/17834
+    #      It's non-trivial to determine the link flags for CMake.
+    #
+    # The linkage can be "-lstdc++fs" or "-lc++fs" or ""(empty). In our
+    # experiments, the behaviour doesn't quite match the specifications.
+    #
+    # - On Ubuntu 20.04:
+    #   - "-lstdc++fs" works with with GCC 7/10 and Clang 7/12
+    #   - "" does not work with GCC 7/10 and Clang 7/12
+    #
+    # - On latest macOS/Windows with the default compiler:
+    #   - "" works.
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(${target} PRIVATE stdc++fs)
+    endif()
 
     # Colorize GCC/Clang terminal outputs
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -53,9 +109,6 @@ function(open3d_set_global_properties target)
     endif()
     if (WITH_IPPICV)
         target_compile_definitions(${target} PRIVATE WITH_IPPICV)
-    endif()
-    if (WITH_FAISS)
-        target_compile_definitions(${target} PRIVATE WITH_FAISS)
     endif()
     if (GLIBCXX_USE_CXX11_ABI)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=1)
@@ -122,23 +175,9 @@ function(open3d_set_global_properties target)
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
 
-    # Download test data files from open3d_downloads repo.
+    # Download test data files from open3d_downloads repo
     add_dependencies(${target} open3d_downloads)
 
-    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
-    # (from pybind11)
-    # macOS: -x: strip local symbols
-    # Linux: defaults
-    if(UNIX AND CMAKE_STRIP)
-        get_target_property(target_type ${target} TYPE)
-        if(target_type MATCHES
-                MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
-            add_custom_command(TARGET ${target} POST_BUILD
-                COMMAND
-                $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
-                $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
-                COMMAND_EXPAND_LISTS)
-        endif()
-    endif()
-
+    # Enable strip
+    open3d_enable_strip(${target})
 endfunction()

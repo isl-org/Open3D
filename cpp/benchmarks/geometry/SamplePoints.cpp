@@ -26,6 +26,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/utility/DataManager.h"
@@ -36,14 +37,14 @@ namespace benchmarks {
 class SamplePointsFixture : public benchmark::Fixture {
 public:
     void SetUp(const benchmark::State& state) {
-        trimesh = open3d::io::CreateMeshFromFile(
-                utility::GetDataPathCommon("knot.ply"));
+        data::KnotMesh knot_data;
+        trimesh = io::CreateMeshFromFile(knot_data.GetPath());
     }
 
     void TearDown(const benchmark::State& state) {
         // empty
     }
-    std::shared_ptr<open3d::geometry::TriangleMesh> trimesh;
+    std::shared_ptr<geometry::TriangleMesh> trimesh;
 };
 
 BENCHMARK_DEFINE_F(SamplePointsFixture, Poisson)(benchmark::State& state) {

@@ -24,6 +24,8 @@ dependencies=(
     libc++abi-7-dev
     ninja-build
     libxi-dev
+    # OpenBLAS build-from-source deps
+    gfortran
     # ML deps
     libtbb-dev
     # Headless rendering deps

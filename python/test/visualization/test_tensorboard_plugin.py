@@ -31,13 +31,12 @@ import webbrowser
 import shutil
 import numpy as np
 import pytest
-pytest.skip(
-    "Disabled pending merging of 3DML TB plugin branch into 3DML master. "
-    "Local test with OPEN3D_ML_ROOT set to TB plugin branch succeeds.",
-    allow_module_level=True)
 pytest.importorskip("tensorboard")
 vis = pytest.importorskip("open3d.ml.vis")
-BoundingBox3D = vis.BoundingBox3D
+try:
+    BoundingBox3D = vis.BoundingBox3D
+except AttributeError:
+    pytestmark = pytest.mark.skip(reason="BoundingBox3D not available.")
 
 import open3d as o3d
 from open3d.visualization.tensorboard_plugin import summary
@@ -64,16 +63,17 @@ def geometry_data():
             n_dims, dtype=np.float32).reshape((len(cube), n_vertices, n_dims))
         for step in range(3))
     label_to_names = {
+        -1: 'unknown',  # negative label
         0: 'ground',
         1: 'sky',
-        2: 'water',
-        3: 'fire',
-        4: 'space',
-        5: 'unknown'
+        3: 'water',  # non-consecutive
+        5: 'fire',
+        7: 'space'
     }
+    labels = tuple(label_to_names.keys())
     cube_labels = tuple(
         tuple(
-            np.full((n_vertices, 1), step * batch_idx, dtype=int)
+            np.full((n_vertices, 1), labels[step * 2 + batch_idx], dtype=int)
             for batch_idx in range(2))
         for step in range(3))
 
@@ -106,10 +106,10 @@ def geometry_data():
     for step in range(3):
         bboxes.append([])
         for batch_idx in range(2):
-            nbb = 1 + step * batch_idx
+            nbb = step * 2 + batch_idx + 1
             center = np.linspace(-nbb, nbb, num=3 * nbb).reshape((nbb, 3))
             size = np.linspace(nbb, 4 * nbb, num=3 * nbb).reshape((nbb, 3))
-            label_class = list(range(nbb))
+            label_class = list(labels[k] for k in range(nbb))
             confidence = np.linspace(0., 1., num=nbb)
             bboxes[-1].append(
                 tuple(
@@ -140,9 +140,7 @@ def geometry_data():
 
 
 def test_tensorflow_summary(geometry_data, tmp_path):
-    """Test writing summary from TensorFlow
-    """
-
+    """Test writing summary from TensorFlow"""
     tf = pytest.importorskip("tensorflow")
     logdir = str(tmp_path)
     writer = tf.summary.create_file_writer(logdir)
@@ -248,7 +246,6 @@ def test_tensorflow_summary(geometry_data, tmp_path):
 
 def test_pytorch_summary(geometry_data, tmp_path):
     """Test writing summary from PyTorch"""
-
     torch = pytest.importorskip("torch")
     torch_tb = pytest.importorskip("torch.utils.tensorboard")
     SummaryWriter = torch_tb.SummaryWriter
@@ -471,7 +468,7 @@ def test_plugin_data_reader(geometry_data, logdir):
                                    for bb in bboxes_ref[step][batch_idx])
             label_conf_out = tuple((bb.label, bb.confidence)
                                    for bb in data_bbox_proto.inference_result)
-            assert label_conf_ref == label_conf_out
+            np.testing.assert_allclose(label_conf_ref, label_conf_out)
 
 
 @pytest.mark.skip(reason="This will only run on a machine with GPU and GUI.")

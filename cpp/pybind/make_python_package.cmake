@@ -46,8 +46,14 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"
                "${PYTHON_PACKAGE_DST_DIR}/setup.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/__init__.py")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/tools/cli.py"
+               "${PYTHON_PACKAGE_DST_DIR}/open3d/tools/cli.py")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/tools/app.py"
+               "${PYTHON_PACKAGE_DST_DIR}/open3d/app.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/__init__.py")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/app/__init__.py"
+               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/app/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/gui/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/gui/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/rendering/__init__.py"
@@ -129,3 +135,21 @@ if (BUILD_GUI)
     file(COPY ${GUI_RESOURCE_DIR}
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
 endif()
+
+# Add all examples to installation directory.
+# TODO: after downloader is implemented, refactor test data dir
+file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/examples/")
+file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/")
+file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
+     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
+file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
+     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
+file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/test_data/"
+     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data")
+
+# Remove a few unneeded files to save space.
+# TODO: after downloader is fully migrated remove this
+file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/open3d_downloads")
+file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/crate")
+file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/sword")
+file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/monkey")

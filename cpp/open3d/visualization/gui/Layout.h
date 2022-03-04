@@ -119,6 +119,7 @@ protected:
     void SetMinorAxisPreferredSize(int size);
 
     Margins& GetMutableMargins();
+    std::vector<std::shared_ptr<Widget>> GetVisibleChildren() const;
 
 private:
     struct Impl;

@@ -115,7 +115,6 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     lighting_profile_->AddItem(CUSTOM_LIGHTING);
     lighting_profile_->SetOnValueChanged([this](const char *, int index) {
         if (index < int(GuiSettingsModel::lighting_profiles_.size())) {
-            sun_follows_camera_->SetChecked(false);
             sun_dir_->SetEnabled(true);
             model_.SetSunFollowsCamera(false);
             model_.SetLightingProfile(
@@ -218,6 +217,7 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
     });
 
     sun_follows_camera_ = std::make_shared<gui::Checkbox>(" ");
+    sun_follows_camera_->SetChecked(true);
     sun_follows_camera_->SetOnChecked([this](bool checked) {
         sun_dir_->SetEnabled(!checked);
         model_.SetSunFollowsCamera(checked);
@@ -319,6 +319,13 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
             [this]() { model_.EstimateNormalsClicked(); });
     generate_normals_->SetEnabled(false);
     mat_grid->AddChild(generate_normals_);
+    mat_grid->AddChild(std::make_shared<gui::Label>("Raw Mode"));
+    basic_mode_ = std::make_shared<gui::Checkbox>("");
+    basic_mode_->SetOnChecked([this](bool checked) {
+        UpdateUIForBasicMode(checked);
+        model_.SetBasicMode(checked);
+    });
+    mat_grid->AddChild(basic_mode_);
 
     materials->AddChild(mat_grid);
 
@@ -432,6 +439,42 @@ void GuiSettingsView::Update() {
              model_.GetMaterialType() ==
                      GuiSettingsModel::MaterialType::UNLIT));
     point_size_->SetEnabled(model_.GetDisplayingPointClouds());
+}
+
+void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
+    // Enable/disable UI elements
+    show_skybox_->SetEnabled(!enable);
+    lighting_profile_->SetEnabled(!enable);
+    ibls_->SetEnabled(!enable);
+    ibl_enabled_->SetEnabled(!enable);
+    ibl_intensity_->SetEnabled(!enable);
+    sun_enabled_->SetEnabled(!enable);
+    sun_dir_->SetEnabled(!enable);
+    sun_color_->SetEnabled(!enable);
+    sun_follows_camera_->SetEnabled(!enable);
+    material_color_->SetEnabled(!enable);
+    prefab_material_->SetEnabled(!enable);
+
+    // Set lighting environment for basic/non-basic mode
+    auto lighting = model_.GetLighting();  // copy
+    if (enable) {
+        sun_follows_cam_was_on_ = sun_follows_camera_->IsChecked();
+        lighting.ibl_enabled = !enable;
+        lighting.sun_enabled = enable;
+        lighting.sun_intensity = 160000.f;
+        sun_enabled_->SetChecked(true);
+        ibl_enabled_->SetChecked(false);
+        sun_intensity_->SetValue(160000.0);
+        model_.SetCustomLighting(lighting);
+        model_.SetSunFollowsCamera(true);
+        sun_follows_camera_->SetChecked(true);
+    } else {
+        model_.SetLightingProfile(GuiSettingsModel::lighting_profiles_[0]);
+        if (!sun_follows_cam_was_on_) {
+            sun_follows_camera_->SetChecked(false);
+            model_.SetSunFollowsCamera(false);
+        }
+    }
 }
 
 }  // namespace visualization

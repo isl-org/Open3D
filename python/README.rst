@@ -10,6 +10,7 @@ optimized and is set up for parallelization. We welcome contributions from the
 open-source community.
 
 If you use Open3D in an academic project, please cite our paper:
+
 ::
 
     @article{Zhou2018,
@@ -42,14 +43,16 @@ The package has been tested on:
 * macOS High Sierra and above
 
 With Python versions:
+
 * 3.6
 * 3.7
 * 3.8
+* 3.9
 
 Resources
 ======================
 
 * Website: `www.open3d.org <http://www.open3d.org>`_
 * Code: `github.com/isl-org/Open3D <https://github.com/isl-org/Open3D>`_
-* Document: `www.open3d.org/docs <http://www.open3d.org/docs>`_
+* Documentation: `www.open3d.org/docs <http://www.open3d.org/docs>`_
 * License: `The MIT license <https://opensource.org/licenses/MIT>`_

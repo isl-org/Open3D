@@ -28,9 +28,9 @@
 #include <numeric>
 #include <vector>
 
+#include "assimp/GltfMaterial.h"
 #include "assimp/Importer.hpp"
 #include "assimp/ProgressHandler.hpp"
-#include "assimp/pbrmaterial.h"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 #include "open3d/io/FileFormatIO.h"
@@ -240,10 +240,8 @@ bool ReadTriangleMeshUsingASSIMP(
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
         mesh_material.baseColor =
                 MaterialParameter::CreateRGB(color.r, color.g, color.b);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
-                 mesh_material.baseMetallic);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
-                 mesh_material.baseRoughness);
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, mesh_material.baseMetallic);
+        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, mesh_material.baseRoughness);
         // NOTE: We prefer sheen to reflectivity so the following code works
         // since if sheen is not present it won't modify baseReflectance
         mat->Get(AI_MATKEY_REFLECTIVITY, mesh_material.baseReflectance);
@@ -397,10 +395,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
         o3d_mat.base_color = Eigen::Vector4f(color.r, color.g, color.b, 1.f);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
-                 o3d_mat.base_metallic);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
-                 o3d_mat.base_roughness);
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, o3d_mat.base_metallic);
+        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, o3d_mat.base_roughness);
         mat->Get(AI_MATKEY_REFLECTIVITY, o3d_mat.base_reflectance);
         mat->Get(AI_MATKEY_SHEEN, o3d_mat.base_reflectance);
 

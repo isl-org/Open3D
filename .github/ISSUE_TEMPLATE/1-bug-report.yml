@@ -1,0 +1,142 @@
+name: Report a Bug
+description: I found a possible bug while using Open3D.
+title: "Summarize the bug (e.g., \"Segmentation Fault for Colored Point Cloud Registration\")"
+labels: [bug]
+
+body:
+
+- type: checkboxes
+  attributes:
+    label: "Checklist"
+    options:
+      - label: "I have searched for [similar issues](https://github.com/isl-org/Open3D/issues)."
+        required: true
+      - label: "For Python issues, I have tested with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip)."
+        required: true
+      - label: "I have checked the [release documentation](http://www.open3d.org/docs/release/) and the [latest documentation](http://www.open3d.org/docs/latest/) (for `master` branch)."
+        required: true
+
+- type: textarea
+  attributes:
+    label: "Describe the issue"
+    description: >
+      Provide the *detailed* description of the issue you are facing. Include
+      references to any documentation or issues you referred.
+    placeholder: |
+      I have been trying to run the colored point cloud registration for 2
+      point clouds of raw sizes of approximately 7 million points by following
+      the colored point cloud registration. However, every time I run the code,
+      it results in a segmentation fault.
+
+      I tried downsampling the two by varying voxel sizes ranging from
+      0.01 to 0.1 for increasing speed. However, this does not rectify the situation.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "Steps to reproduce the bug"
+    description: >
+      Please provide step-by-step instructions and full source code to reproduce
+      the bug. The instructions shall be self-contained.
+    placeholder: |
+      << your code here >>
+
+      import open3d as o3d
+      import numpy as np
+
+      source = o3d.t.io.read_point_cloud("../../test_data/ICP/cloud_bin_0.pcd")
+      target = o3d.t.io.read_point_cloud("../../test_data/ICP/cloud_bin_1.pcd")
+
+      # For Colored-ICP `colors` attribute must be of the same dtype as
+      # `positions` and `normals` attribute.
+      source.point["colors"] = source.point["colors"].to(
+          o3d.core.Dtype.Float32) / 255.0
+      target.point["colors"] = target.point["colors"].to(
+          o3d.core.Dtype.Float32) / 255.0
+
+      # Initial guess transform between the two point-cloud.
+      # ICP algortihm requires a good initial allignment to converge efficiently.
+      current_transformation = np.identity(4)
+
+      draw([source.transform(current_transformation), target])
+
+      estimation = treg.TransformationEstimationForColoredICP()
+      current_transformation = np.identity(4)
+
+      criteria_list = [
+          treg.ICPConvergenceCriteria(relative_fitness=0.0001,
+                                      relative_rmse=0.0001,
+                                      max_iteration=50),
+          treg.ICPConvergenceCriteria(0.00001, 0.00001, 30),
+          treg.ICPConvergenceCriteria(0.000001, 0.000001, 14)
+      ]
+
+      max_correspondence_distances = o3d.utility.DoubleVector([0.08, 0.04, 0.02])
+
+      voxel_sizes = o3d.utility.DoubleVector([0.04, 0.02, 0.01])
+      print("Colored point cloud registration")
+      s = time.time()
+
+      reg_multiscale_icp = treg.multi_scale_icp(source, target, voxel_sizes,
+                                                criteria_list,
+                                                max_correspondence_distances,
+                                                init_source_to_target, estimation)
+
+      icp_time = time.time() - s
+      print("Time taken by Colored ICP: ", icp_time)
+      print("Fitness: ", reg_point_to_plane.fitness)
+      print("Inlier RMSE: ", reg_point_to_plane.inlier_rmse)
+
+      draw([source.transform(reg_multiscale_icp.transformation), target])
+
+    render: python
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "Error message"
+    description: >
+      Please include the *full* error message, if any. You may submit/attach
+      the entire terminal output with the error message. If you are reporting a
+      segfault please include a debugger backtrace.
+    placeholder: |
+      << Full error message >>
+  validations:
+    required: false
+
+- type: textarea
+  attributes:
+    label: "Expected behavior"
+    description: >
+      A clear and concise description of what you expected to happen.
+
+- type: textarea
+  attributes:
+    label: "Open3D, Python and System information"
+    value: >
+      - Operating system: Ubuntu 20.04 / macOS 10.15 / Windows 10 64-bit
+
+      - Python version: Python 3.8 / output from `import sys; print(sys.version)`
+
+      - Open3D version: output from python: `print(open3d.__version__)`
+
+      - System architecture: x86 / arm64 / apple-silicon / jetson / rpi
+
+      - Is this a remote workstation?: yes or no
+
+      - How did you install Open3D?: pip / conda / build from source
+
+      - Compiler version (if built from source): gcc 7.5 / clang 7.0
+    render: markdown
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "Additional information"
+    description: >
+      Please add any additional information that could help us diagnose the
+      problem better. Provide screenshots if applicable. You may attach
+      log files, generated wheel, or any other files, that could be helpful.

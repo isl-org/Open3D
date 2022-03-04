@@ -6,7 +6,6 @@ target_sources(tio PRIVATE
     HashMapIO.cpp
     PointCloudIO.cpp
     TriangleMeshIO.cpp
-    TSDFVoxelGridIO.cpp
 )
 
 target_sources(tio PRIVATE

@@ -11,7 +11,7 @@ System requirements
 * C++14 compiler:
 
   * Ubuntu 18.04+: GCC 5+, Clang 7+
-  * macOS 10.14+: XCode 8.0+
+  * macOS 10.15+: XCode 8.0+
   * Windows 10 (64-bit): Visual Studio 2019+
 
 * CMake: 3.19+
@@ -274,7 +274,7 @@ Open3D-ML from GitHub during the build with
     We recommend to compile Pytorch from source
     with compile flags ``-Xcompiler -fno-gnu-unique`` or use the `PyTorch
     wheels from Open3D.
-    <https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1>`_
+    <https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2>`_
     To reproduce the Open3D PyTorch wheels see the builder repository `here.
     <https://github.com/isl-org/pytorch_builder>`_
 
@@ -286,6 +286,7 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
 
     # In the build directory
     cmake -DBUILD_CUDA_MODULE=ON \
+          -DGLIBCXX_USE_CXX11_ABI=OFF \
           -DBUILD_PYTORCH_OPS=ON \
           -DBUILD_TENSORFLOW_OPS=ON \
           -DBUNDLE_OPEN3D_ML=ON \
@@ -295,10 +296,10 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
     make -j install-pip-package
 
 .. note::
-    Importing Python libraries compiled with different CXX ABI may cause segfaults
-    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
-    and TensorFlow Python releases use the older CXX ABI; while when they are
-    compiled from source, newer ABI is enabled by default.
+    On Linux, importing Python libraries compiled with different CXX ABI may
+    cause segfaults in regex. https://stackoverflow.com/q/51382355/1255535. By
+    default, PyTorch and TensorFlow Python releases use the older CXX ABI; while
+    when compiled from source, the newer CXX11 ABI is enabled by default.
 
     When releasing Open3D as a Python package, we set
     ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,

@@ -23,7 +23,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-# ----------------------------------------------------------------------------
 import copy
 import os
 import sys
@@ -34,8 +33,9 @@ from open3d.visualization.tensorboard_plugin.util import to_dict_batch
 import tensorflow as tf
 
 BASE_LOGDIR = "demo_logs/tf/"
-MODEL_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
-                         '..', "test_data", "monkey")
+MODEL_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.realpath(__file__)))), "test_data", "monkey")
 
 
 def small_scale(run_name="small_scale"):
@@ -119,11 +119,11 @@ def large_scale(n_steps=16,
         for step in range(n_steps):
             resolution = base_resolution * (step + 1)
             cylinder_list = []
-            moebius_list = []
+            mobius_list = []
             cylinder = o3d.geometry.TriangleMesh.create_cylinder(
                 radius=1.0, height=2.0, resolution=resolution, split=4)
             cylinder.compute_vertex_normals()
-            moebius = o3d.geometry.TriangleMesh.create_moebius(
+            mobius = o3d.geometry.TriangleMesh.create_mobius(
                 length_split=int(3.5 * resolution),
                 width_split=int(0.75 * resolution),
                 twists=1,
@@ -131,19 +131,19 @@ def large_scale(n_steps=16,
                 flatness=1,
                 width=1,
                 scale=1)
-            moebius.compute_vertex_normals()
+            mobius.compute_vertex_normals()
             for b in range(batch_size):
                 cylinder_list.append(copy.deepcopy(cylinder))
                 cylinder_list[b].paint_uniform_color(colors[b])
-                moebius_list.append(copy.deepcopy(moebius))
-                moebius_list[b].paint_uniform_color(colors[b])
+                mobius_list.append(copy.deepcopy(mobius))
+                mobius_list[b].paint_uniform_color(colors[b])
             summary.add_3d('cylinder',
                            to_dict_batch(cylinder_list),
                            step=step,
                            logdir=logdir,
                            max_outputs=batch_size)
-            summary.add_3d('moebius',
-                           to_dict_batch(moebius_list),
+            summary.add_3d('mobius',
+                           to_dict_batch(mobius_list),
                            step=step,
                            logdir=logdir,
                            max_outputs=batch_size)
@@ -182,10 +182,37 @@ def with_material(model_dir=MODEL_DIR):
         summary.add_3d(model_name, summary_3d, step=0, logdir=logdir)
 
 
+def demo_scene():
+    """Write the demo_scene.py example showing rich PBR materials as a summary.
+    """
+    import demo_scene
+    demo_scene.check_for_required_assets()
+    geoms = demo_scene.create_scene()
+    logdir = os.path.join(BASE_LOGDIR, 'demo_scene')
+    writer = tf.summary.create_file_writer(logdir)
+    for geom_data in geoms:
+        geom = geom_data["geometry"]
+        summary_3d = {}
+        for key, tensor in geom.vertex.items():
+            summary_3d["vertex_" + key] = tensor
+        for key, tensor in geom.triangle.items():
+            summary_3d["triangle_" + key] = tensor
+        if geom.has_valid_material():
+            summary_3d["material_name"] = geom.material.material_name
+            for key, value in geom.material.scalar_properties.items():
+                summary_3d["material_scalar_" + key] = value
+            for key, value in geom.material.vector_properties.items():
+                summary_3d["material_vector_" + key] = value
+            for key, value in geom.material.texture_maps.items():
+                summary_3d["material_texture_map_" + key] = value
+        with writer.as_default():
+            summary.add_3d(geom_data["name"], summary_3d, step=0, logdir=logdir)
+
+
 if __name__ == "__main__":
 
     examples = ('small_scale', 'large_scale', 'property_reference',
-                'with_material')
+                'with_material', 'demo_scene')
     selected = tuple(eg for eg in sys.argv[1:] if eg in examples)
     if len(selected) == 0:
         print(f'Usage: python {__file__} EXAMPLE...')

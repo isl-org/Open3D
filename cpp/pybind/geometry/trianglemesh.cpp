@@ -89,8 +89,8 @@ void pybind_trianglemesh(py::module &m) {
             .def("remove_duplicated_triangles",
                  &TriangleMesh::RemoveDuplicatedTriangles,
                  "Function that removes duplicated triangles, i.e., removes "
-                 "triangles that reference the same three vertices, "
-                 "independent of their order.")
+                 "triangles that reference the same three vertices and have "
+                 "the same orientation.")
             .def("remove_unreferenced_vertices",
                  &TriangleMesh::RemoveUnreferencedVertices,
                  "This function removes vertices from the triangle mesh that "
@@ -140,18 +140,19 @@ void pybind_trianglemesh(py::module &m) {
                  "value, :math:`N` is the  set of adjacent neighbours, "
                  ":math:`w_n` is the weighting of the neighbour based on the "
                  "inverse distance (closer neighbours have higher weight), and "
-                 "lambda is the smoothing parameter.",
-                 "number_of_iterations"_a = 1, "lambda"_a = 0.5,
+                 "lambda_filter is the smoothing parameter.",
+                 "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
                  "filter_scope"_a = MeshBase::FilterScope::All)
             .def("filter_smooth_taubin", &TriangleMesh::FilterSmoothTaubin,
                  "Function to smooth triangle mesh using method of Taubin, "
                  "\"Curve and Surface Smoothing Without Shrinkage\", 1995. "
                  "Applies in each iteration two times filter_smooth_laplacian, "
-                 "first with filter parameter lambda and second with filter "
+                 "first with filter parameter lambda_filter and second with "
+                 "filter "
                  "parameter mu as smoothing parameter. This method avoids "
                  "shrinkage of the triangle mesh.",
-                 "number_of_iterations"_a = 1, "lambda"_a = 0.5, "mu"_a = -0.53,
-                 "filter_scope"_a = MeshBase::FilterScope::All)
+                 "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
+                 "mu"_a = -0.53, "filter_scope"_a = MeshBase::FilterScope::All)
             .def("has_vertices", &TriangleMesh::HasVertices,
                  "Returns ``True`` if the mesh contains vertices.")
             .def("has_triangles", &TriangleMesh::HasTriangles,
@@ -417,8 +418,8 @@ void pybind_trianglemesh(py::module &m) {
                         "rendered as red, green, and blue arrows respectively.",
                         "size"_a = 1.0,
                         "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0))
-            .def_static("create_moebius", &TriangleMesh::CreateMoebius,
-                        "Factory function to create a Moebius strip.",
+            .def_static("create_mobius", &TriangleMesh::CreateMobius,
+                        "Factory function to create a Mobius strip.",
                         "length_split"_a = 70, "width_split"_a = 15,
                         "twists"_a = 1, "raidus"_a = 1, "flatness"_a = 1,
                         "width"_a = 1, "scale"_a = 1)
@@ -542,13 +543,13 @@ void pybind_trianglemesh(py::module &m) {
             m, "TriangleMesh", "filter_smooth_laplacian",
             {{"number_of_iterations",
               " Number of repetitions of this operation"},
-             {"lambda", "Filter parameter."},
+             {"lambda_filter", "Filter parameter."},
              {"scope", "Mesh property that should be filtered."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "filter_smooth_taubin",
             {{"number_of_iterations",
               " Number of repetitions of this operation"},
-             {"lambda", "Filter parameter."},
+             {"lambda_filter", "Filter parameter."},
              {"mu", "Filter parameter."},
              {"scope", "Mesh property that should be filtered."}});
     docstring::ClassMethodDocInject(
@@ -782,16 +783,15 @@ void pybind_trianglemesh(py::module &m) {
             {{"size", "The size of the coordinate frame."},
              {"origin", "The origin of the cooridnate frame."}});
     docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "create_moebius",
-            {{"length_split",
-              "The number of segments along the Moebius strip."},
+            m, "TriangleMesh", "create_mobius",
+            {{"length_split", "The number of segments along the Mobius strip."},
              {"width_split",
-              "The number of segments along the width of the Moebius strip."},
-             {"twists", "Number of twists of the Moebius strip."},
-             {"radius", "The radius of the Moebius strip."},
-             {"flatness", "Controls the flatness/height of the Moebius strip."},
-             {"width", "Width of the Moebius strip."},
-             {"scale", "Scale the complete Moebius strip."}});
+              "The number of segments along the width of the Mobius strip."},
+             {"twists", "Number of twists of the Mobius strip."},
+             {"radius", "The radius of the Mobius strip."},
+             {"flatness", "Controls the flatness/height of the Mobius strip."},
+             {"width", "Width of the Mobius strip."},
+             {"scale", "Scale the complete Mobius strip."}});
 }
 
 void pybind_trianglemesh_methods(py::module &m) {}

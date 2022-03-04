@@ -31,9 +31,6 @@
 
 using namespace open3d;
 
-// TODO: remove hard-coded path.
-const std::string TEST_DIR = "../../../examples/test_data";
-
 // Create and add a window to gui::Application, but do not run it yet.
 void AddDrawWindow(
         const std::vector<std::shared_ptr<geometry::Geometry3D>> &geometries,
@@ -84,7 +81,8 @@ void EmptyBox() {
             [](visualization::visualizer::O3DVisualizer &o3dvis) {
                 utility::LogInfo("new_window_action called");
                 auto mesh = std::make_shared<geometry::TriangleMesh>();
-                io::ReadTriangleMesh(TEST_DIR + "/knot.ply", *mesh);
+                data::KnotMesh knot_data;
+                io::ReadTriangleMesh(knot_data.GetPath(), *mesh);
                 mesh->ComputeVertexNormals();
                 AddDrawWindow({mesh}, "Open3D pcd", 640, 480);
             };
@@ -129,12 +127,6 @@ void BoxWithObjects() {
 }
 
 int main(int argc, char **argv) {
-    if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
-        utility::LogError(
-                "This example needs to be run from the build directory, "
-                "test_dir: {}",
-                TEST_DIR);
-    }
     visualization::webrtc_server::WebRTCWindowSystem::GetInstance()
             ->EnableWebRTC();
 

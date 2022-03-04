@@ -29,6 +29,7 @@
 #include <benchmark/benchmark.h>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/DataManager.h"
@@ -44,8 +45,8 @@ namespace geometry {
 
 // This file is just used to load the `point cloud` data. So, format of this
 // file is not important.
-static const std::string input_path_pcd =
-        utility::GetDataPathCommon("fragment.ply");
+data::PLYPointCloud pointcloud_ply_data;
+static const std::string input_path_pcd = pointcloud_ply_data.GetPath();
 
 void IOWriteLegacyPointCloud(benchmark::State& state,
                              const std::string& input_file_path,

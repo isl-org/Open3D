@@ -25,8 +25,8 @@ Register RGBD image pairs
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 56
-   :lines: 27,57-84
+   :lineno-start: 58
+   :lines: 27,59-88
    :linenos:
 
 The function reads a pair of RGBD images and registers the ``source_rgbd_image``
@@ -46,8 +46,8 @@ Multiway registration
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 86
-   :lines: 27,87-132
+   :lineno-start: 88
+   :lines: 27,89-136
    :linenos:
 
 This script uses the technique demonstrated in
@@ -62,8 +62,8 @@ function ``optimize_posegraph_for_fragment``.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/optimize_posegraph.py
    :language: python
-   :lineno-start: 54
-   :lines: 27,55-64
+   :lineno-start: 51
+   :lines: 27,52-64
    :linenos:
 
 This function calls ``global_optimization`` to estimate poses of the RGBD images.
@@ -75,8 +75,8 @@ Make a fragment
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 134
-   :lines: 27,135-154
+   :lineno-start: 136
+   :lines: 27,137-158
    :linenos:
 
 Once the poses are estimates, :ref:`/tutorial/pipelines/rgbd_integration.ipynb`
@@ -87,8 +87,8 @@ Batch processing
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 191
-   :lines: 27,192-213
+   :lineno-start: 193
+   :lines: 27,194-217
    :linenos:
 
 The main function calls each individual function explained above.

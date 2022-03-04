@@ -104,7 +104,7 @@ AxisAlignedBoundingBox VoxelGrid::GetAxisAlignedBoundingBox() const {
     return box;
 }
 
-OrientedBoundingBox VoxelGrid::GetOrientedBoundingBox() const {
+OrientedBoundingBox VoxelGrid::GetOrientedBoundingBox(bool) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
             GetAxisAlignedBoundingBox());
 }

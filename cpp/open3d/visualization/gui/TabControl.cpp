@@ -50,6 +50,7 @@ struct TabControl::Impl {
     std::vector<std::string> tab_names_;
     std::string imgui_id_;
     int current_index_ = 0;
+    int next_selected_index_ = -1;
     std::function<void(int)> on_changed_;
 };
 
@@ -69,6 +70,12 @@ void TabControl::AddTab(const char* name, std::shared_ptr<Widget> panel) {
 void TabControl::SetOnSelectedTabChanged(std::function<void(int)> on_changed) {
     impl_->on_changed_ = on_changed;
 }
+void TabControl::SetSelectedTabIndex(int index) {
+    if (index >= 0 && (size_t)index < impl_->tab_names_.size()) {
+        impl_->next_selected_index_ = index;
+    }
+}
+int TabControl::GetSelectedTabIndex() { return impl_->current_index_; }
 
 Size TabControl::CalcPreferredSize(const LayoutContext& context,
                                    const Constraints& constraints) const {
@@ -105,9 +112,16 @@ TabControl::DrawResult TabControl::Draw(const DrawContext& context) {
     ImGui::PushItemWidth(float(GetFrame().width));
     if (ImGui::BeginTabBar(impl_->imgui_id_.c_str())) {
         for (int i = 0; i < int(impl_->tab_names_.size()); ++i) {
-            if (ImGui::BeginTabItem(impl_->tab_names_[i].c_str())) {
+            ImGuiTabItemFlags flags = 0;
+            if (impl_->next_selected_index_ == i) {
+                flags |= ImGuiTabItemFlags_SetSelected;
+                impl_->next_selected_index_ = -1;
+                result = DrawResult::REDRAW;
+            }
+            if (ImGui::BeginTabItem(impl_->tab_names_[i].c_str(), NULL,
+                                    flags)) {
                 auto r = GetChildren()[i]->Draw(context);
-                if (r != Widget::DrawResult::NONE) {
+                if (r > result) {
                     result = r;
                 }
                 ImGui::EndTabItem();

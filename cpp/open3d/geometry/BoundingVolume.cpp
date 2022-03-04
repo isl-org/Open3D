@@ -63,7 +63,7 @@ AxisAlignedBoundingBox OrientedBoundingBox::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetBoxPoints());
 }
 
-OrientedBoundingBox OrientedBoundingBox::GetOrientedBoundingBox() const {
+OrientedBoundingBox OrientedBoundingBox::GetOrientedBoundingBox(bool) const {
     return *this;
 }
 
@@ -146,9 +146,15 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
 }
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
-        const std::vector<Eigen::Vector3d>& points) {
+        const std::vector<Eigen::Vector3d>& points, bool robust) {
     PointCloud hull_pcd;
-    hull_pcd.points_ = std::get<0>(Qhull::ComputeConvexHull(points))->vertices_;
+    std::vector<size_t> hull_point_indices;
+    {
+        std::shared_ptr<TriangleMesh> mesh;
+        std::tie(mesh, hull_point_indices) =
+                Qhull::ComputeConvexHull(points, robust);
+        hull_pcd.points_ = mesh->vertices_;
+    }
 
     Eigen::Vector3d mean;
     Eigen::Matrix3d cov;
@@ -157,9 +163,6 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
     Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es(cov);
     Eigen::Vector3d evals = es.eigenvalues();
     Eigen::Matrix3d R = es.eigenvectors();
-    R.col(0) /= R.col(0).norm();
-    R.col(1) /= R.col(1).norm();
-    R.col(2) /= R.col(2).norm();
 
     if (evals(1) > evals(0)) {
         std::swap(evals(1), evals(0));
@@ -179,10 +182,15 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
         R.col(2) = R.col(1);
         R.col(1) = tmp;
     }
+    R.col(0) /= R.col(0).norm();
+    R.col(1) /= R.col(1).norm();
+    R.col(2) = R.col(0).cross(R.col(1));
 
-    for (auto& pt : hull_pcd.points_) {
-        pt = R.transpose() * (pt - mean);
+    for (size_t i = 0; i < hull_point_indices.size(); ++i) {
+        hull_pcd.points_[i] =
+                R.transpose() * (points[hull_point_indices[i]] - mean);
     }
+
     const auto aabox = hull_pcd.GetAxisAlignedBoundingBox();
 
     OrientedBoundingBox obox;
@@ -218,7 +226,8 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::GetAxisAlignedBoundingBox()
     return *this;
 }
 
-OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox() const {
+OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox(
+        bool robust) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
 }
 

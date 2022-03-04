@@ -117,10 +117,10 @@ class TensorboardOpen3DPluginClient {
      */
     COLORMAPS = null;
     /**
-     * @var {Object} Default LabelLUT colormap. Get as response to
+     * @var {Array} Default LabelLUT colormap. Get as response to
      * "get_run_tags" message
      */
-    LabelLUTColors = null;
+    labelLUTColors = null;
     /**
      * @var {Map} Current rendering state for a tag.
      * tag -> Object {"property":__, "index": 0, "shader": __, "colormap": []}}
@@ -157,15 +157,22 @@ class TensorboardOpen3DPluginClient {
                       <h3>Options</h3>
                       <div class="selector">
                         <input type="checkbox" id="ui-options-view">
-                        <label for="ui-options-view"> Sync view </label>
+                        <label for="ui-options-view" title=
+                        "Show all current runs from the same view point"> Sync view </label>
                         <input type="checkbox" id="ui-options-step">
-                        <label for="ui-options-step"> Sync step </label>
+                        <label for="ui-options-step" title=
+                        "Use a common step for all runs"> Sync step </label>
                         <input type="checkbox" id="ui-options-bidx">
-                        <label for="ui-options-bidx"> Sync batch index </label>
+                        <label for="ui-options-bidx" title=
+                        "Use a common batch index for all runs"> Sync batch index </label>
                         <input type="checkbox" id="ui-options-axes">
-                        <label for="ui-options-axes"> Show axes </label>
+                        <label for="ui-options-axes" title=
+                        "Show coordinate axes X (red), Y (green), Z (blue) in all current runs">
+                        Show axes </label>
                         <input type="checkbox" id="ui-options-ground">
-                        <label for="ui-options-ground"> Show ground </label>
+                        <label for="ui-options-ground" title=
+                        "Show  a ground plane grid. Change the plane assigned as
+ground from the Open3D GUI settings for each widget."> Show ground </label>
                       </div>
                     </div>
 
@@ -365,6 +372,19 @@ class TensorboardOpen3DPluginClient {
     };
 
     /**
+     * Show message asking the user to reload the page if network connection is
+     * lost.
+     */
+    onCloseWebRTC = () => {
+        let widgetView = document.getElementById('widget-view');
+        widgetView.insertAdjacentHTML('afterbegin', `
+            <div class="no-webrtc">
+                <h3>Network connection to Open3D server lost.</h3>
+                <p>If TensorBoard is still running, please reload the page.</p>
+            </div>`);
+    };
+
+    /**
      * Create a video element to display geometry and initiate WebRTC connection
      * with server. Attach listeners to process data channel messages.
      *
@@ -435,8 +455,8 @@ class TensorboardOpen3DPluginClient {
         widgetView.insertAdjacentHTML('beforeend', widgetTemplate);
 
         let videoElt = document.getElementById(videoId);
-        let client =
-                new WebRtcStreamer(videoElt, this.URL_ROUTE_PREFIX, null, null);
+        let client = new WebRtcStreamer(
+                videoElt, this.URL_ROUTE_PREFIX, this.onCloseWebRTC, null);
         console.info('[addConnection] videoId: ' + videoId);
 
         client.connect(windowUId, /*audio*/ null, this.webRtcOptions);
@@ -459,15 +479,12 @@ class TensorboardOpen3DPluginClient {
             if (run) {
                 this.runWindow.set(run, windowUId);
                 this.windowState.get(windowUId).run = run;
-                console.debug(
-                        'After addConnection: this.runWindow = ',
-                        this.runWindow,
-                        'this.windowState = ', this.windowState);
             }
             videoElt.addEventListener(
                     'RemoteDataChannelOpen',
                     this.requestGeometryUpdate.bind(this, windowUId));
         }
+        videoElt.settingsOpen = false;
         document.getElementById('zoom-' + windowUId)
                 .addEventListener(
                         'click', this.toggleZoom.bind(this, windowUId));
@@ -482,15 +499,19 @@ class TensorboardOpen3DPluginClient {
      * @param {String} windowUId e.g. "window_2"
      */
     toggleZoom = (windowUId) => {
-        let elem = document.getElementById('video_' + windowUId);
-        if (elem.width <= this.width) {  // zoom
-            elem.width = this.fullWidth;
-            elem.height = this.fullHeight;
+        let videoElt = document.getElementById('video_' + windowUId);
+        if (videoElt.width <= this.width) {  // zoom
+            videoElt.width = this.fullWidth;
+            videoElt.height = this.fullHeight;
         } else {  // original
-            elem.width = this.width;
-            elem.height = this.height;
+            videoElt.width = this.width;
+            videoElt.height = this.height;
+            if (videoElt.settingsOpen) {  // close settings panel
+                this.toggleSettings(windowUId);
+            }
         }
-        console.debug(`New ${windowUId} size: (${elem.width}, ${elem.height})`);
+        console.debug(`New ${windowUId} size: (${videoElt.width}, ${
+                videoElt.height})`);
     };
 
     /**
@@ -499,14 +520,6 @@ class TensorboardOpen3DPluginClient {
      * @param {String} windowUId e.g. "window_2"
      */
     toggleSettings = (windowUId) => {
-        // O3DVisualizer controls work only with full size.
-        let elem = document.getElementById('video_' + windowUId);
-        if (elem.width <= this.width) {  // zoom
-            elem.width = this.fullWidth;
-            elem.height = this.fullHeight;
-        }
-        // Disable view sync on opening options panel
-        document.getElementById('ui-options-view').checked = false;
         this.messageId += 1;
         const toggleSettingsMessage = {
             messageId: this.messageId,
@@ -543,7 +556,8 @@ class TensorboardOpen3DPluginClient {
             const checked = initialCheckedOptions.has(option) ? 'checked' : '';
             if (selTypes.length === 2) {
                 BUTTON_TEMPLATE = `
-              <button id="toggle-property-${option}" type="button" disabled>
+              <button id="toggle-property-${option}" type="button" disabled
+              title="Change display properties, including selecting data and adjusting colors.">
                   <svg> <use href="#settings" /> </svg>
               </button>`
                 PROP_DIV_TEMPLATE = `
@@ -641,7 +655,7 @@ class TensorboardOpen3DPluginClient {
             title="Use colors or another 3 element property of the points as RGB.\nOnly the first 3 dimensions of a custom property are used."
             >RGB</option>
             <option value="defaultLit"
-            title="Visualize geometry with lighting."
+            title="Default geometry visualization."
             >Default</option>
           </select>
       </label>
@@ -763,7 +777,7 @@ class TensorboardOpen3DPluginClient {
             idxListEl.parentElement.style.display = 'none';
         }
         let cmapEl = document.getElementById(`ui-options-${tag}-colormap`);
-        const renderStateTag = this.renderState.get(tag);
+        let renderStateTag = this.renderState.get(tag);
 
         let needRenderUpdate = false;
         if (!this.validShaders.includes(shaderListEl.value)) {
@@ -780,11 +794,13 @@ class TensorboardOpen3DPluginClient {
                 color = renderStateTag.colormap.values().next().value;
             }
             cmapEl.innerHTML = `<label class="property-ui-colormap">
-          <input type="checkbox" id="ui-cmap-${tag}-alpha-0" checked disabled>
-          <input type="text" id="ui-cmap-${tag}-val-0" value="0" disabled>
+          <input type="checkbox" id="ui-cmap-${
+                    tag}-alpha-0" checked disabled style="display:none;">
+          <input type="text" id="ui-cmap-${tag}-val-0" value="" disabled>
           <input type="color" id="ui-cmap-${tag}-col-0"
             value="${rgbToHex(color)}"
-            title="R:${color[0]} G:${color[1]} B:${color[2]}">
+            title="R:${color[0]} G:${color[1]} B:${color[2]}
+Click to change">
         </label>`;
         } else if (shaderListEl.value === 'unlitGradient.LUT') {
             // create LabelLUT
@@ -792,9 +808,9 @@ class TensorboardOpen3DPluginClient {
                 const labelNames = this.tagLabelsNames.get(tag);
                 if (!onCreate) {
                     renderStateTag.colormap = new Map(
-                            Object.entries(this.LabelLUTColors)
-                                    .slice(0,
-                                           Object.entries(labelNames).length));
+                            Object.keys(labelNames)
+                                    .map((lab,
+                                          k) => [lab, this.labelLUTColors[k]]));
                 }
                 for (const [label, name] of Object.entries(labelNames)
                              .sort((l1, l2) => parseInt(l1) > parseInt(l2))) {
@@ -804,12 +820,14 @@ class TensorboardOpen3DPluginClient {
                             'beforeend',
                             `<label class="property-ui-colormap">
               <input type="checkbox" id="ui-cmap-${tag}-alpha-${idx}" ${
-                                    checked}>
+                                    checked} title="Show / hide data for this label">
               <input type="text" id="ui-cmap-${tag}-val-${idx}" value="${
-                                    label}: ${name}" readonly>
+                                    label}: ${
+                                    name}" title="label: class name" readonly>
               <input type="color" id="ui-cmap-${tag}-col-${idx}"
-                title="R:${color[0]}, G:${color[1]}, B:${color[2]}"
-                value="${rgbToHex(color)}">
+                value="${rgbToHex(color)}"
+                title="R:${color[0]}, G:${color[1]}, B:${color[2]}
+Click to change">
             </label>`);
                     idx = idx + 1;
                 }
@@ -833,20 +851,21 @@ class TensorboardOpen3DPluginClient {
                         parseFloat(value) * (currentRange[1] - currentRange[0]);
                 const checked = color[3] > 0 ? 'checked' : '';
                 cmapEl.insertAdjacentHTML(
-                        'beforeend',
-                        `<label class="property-ui-colormap">
+                        'beforeend', `<label class="property-ui-colormap">
             <span>
-              <button type="button" id="ui-cmap-${tag}-add-${
-                                idx}">&#xff0b;</button>
-              <button type="button" id="ui-cmap-${tag}-rem-${
-                                idx}">&#xff0d;</button>
+              <button type="button" id="ui-cmap-${tag}-add-${idx}" title=
+              "Insert a new color point in the color gradient">&#xff0b;</button>
+              <button type="button" id="ui-cmap-${tag}-rem-${idx}" title=
+              "Delete this color point from the color gradient">&#xff0d;</button>
             </span>
-            <input type="number" id="ui-cmap-${tag}-val-${idx}"
+            <input type="number" id="ui-cmap-${tag}-val-${idx}" title=
+            "Associated data value for this color point. Values will be sorted automatically."
             value=${valueFlt.toPrecision(4)} step=${step} min=${currentRange[0]}
             max=${currentRange[1]}>
             <input type="color" id="ui-cmap-${tag}-col-${idx}"
-              title="R:${color[0]}, G:${color[1]}, B:${color[2]}"
-              value="${rgbToHex(color)}">
+              value="${rgbToHex(color)}"
+              title="R:${color[0]}, G:${color[1]}, B:${color[2]}
+Click to change">
           </label>`);
                 idx = idx + 1;
             }
@@ -1015,7 +1034,6 @@ class TensorboardOpen3DPluginClient {
         // Need colormap Object for JSON
         updateRenderingMessage.render_state.colormap =
                 Object.fromEntries(renderStateTag.colormap.entries());
-        console.log('Before update_rendering:', this.renderState);
         console.info('Sending updateRenderingMessage:', updateRenderingMessage);
         this.webRtcClientList.values().next().value.sendJsonData(
                 updateRenderingMessage);
@@ -1099,7 +1117,6 @@ class TensorboardOpen3DPluginClient {
                 rst.colormap = Object.fromEntries(
                         this.renderState.get(tag).colormap.entries());
         }
-        console.log('Before update_geometry:', this.renderState);
         console.info('Sending updateGeometryMessage:', updateGeometryMessage);
         this.webRtcClientList.get(windowUId).sendJsonData(
                 updateGeometryMessage);
@@ -1160,10 +1177,6 @@ class TensorboardOpen3DPluginClient {
      * @listens document#change
      */
     onStepBIdxSelect = (windowUId, evt) => {
-        console.debug(
-                '[onStepBIdxSelect] this.windowState: ', this.windowState,
-                'this.commonStep', this.commonStep, 'this.commonBatchIdx',
-                this.commonBatchIdx);
         if (evt.target.name.startsWith('batch-idx-selector')) {
             if (this.commonBatchIdx != null) {
                 this.commonBatchIdx = evt.target.value;
@@ -1211,10 +1224,28 @@ class TensorboardOpen3DPluginClient {
                 console.error(err.name, err.message, evt.data);
             }
         }
+        // remove busy indicator if reply is for last message
+        if (this.messageId == message.messageId) {
+            document.getElementById('loader_video_' + windowUId)
+                    .classList.remove('loader');
+        }
         if (message.status !== 'OK') {
             console.error(message.status);
         }
-        if (message.class_name.endsWith('get_run_tags')) {
+        if (message.class_name.endsWith('toggle_settings')) {
+            let videoElt = document.getElementById('video_' + windowUId);
+            videoElt.settingsOpen = message.open;
+            if (message.open == true) {
+                // O3DVisualizer controls work only with full size.
+                videoElt.width = this.fullWidth;
+                videoElt.height = this.fullHeight;
+                // Disable view sync on opening options panel
+                let optViewElt = document.getElementById('ui-options-view');
+                optViewElt.checked = false;
+                evt = new Event('change');
+                optViewElt.dispatchEvent(evt);
+            }
+        } else if (message.class_name.endsWith('get_run_tags')) {
             const runToTags = message.run_to_tags;
             this.createSelector(
                     'run-selector-checkboxes', 'run-selector',
@@ -1234,11 +1265,8 @@ class TensorboardOpen3DPluginClient {
             if (this.windowState.size === 0) {  // First load
                 this.runWindow.set(message.current.run, windowUId);
                 this.windowState.set(windowUId, message.current);
-                console.debug(
-                        '[After get_run_tags] this.runWindow: ', this.runWindow,
-                        'this.windowState:', this.windowState);
                 this.COLORMAPS = message.colormaps;  // Object (not Map)
-                this.LabelLUTColors =
+                this.labelLUTColors =
                         message.LabelLUTColors;  // Object (not Map)
             }
             for (const [windowUId, state] of this.windowState) {
@@ -1267,9 +1295,6 @@ class TensorboardOpen3DPluginClient {
                     `windowUId mismatch: received ${message.window_uid} !== ${
                             windowUId}`);
             this.windowState.set(windowUId, message.current);
-            console.debug(
-                    '[After update_geometry] this.runWindow: ', this.runWindow,
-                    'this.windowState:', this.windowState);
             // Update run level selectors
             this.createSlider(
                     windowUId, 'batch-idx-selector', 'Batch index',
@@ -1302,12 +1327,6 @@ class TensorboardOpen3DPluginClient {
                 }
                 this.createPropertyPanel(tag);
             }
-            console.debug(
-                    '[After update_geometry] this.renderState',
-                    this.renderState);
-            // remove busy indicator
-            document.getElementById('loader_video_' + windowUId)
-                    .classList.remove('loader');
         } else if (message.class_name.endsWith('update_rendering')) {
             this.renderState.set(message.tag, message.render_state);
             const cmap = this.renderState.get(message.tag).colormap;  // Object
@@ -1316,12 +1335,12 @@ class TensorboardOpen3DPluginClient {
                         new Map(Object.entries(cmap));  // Map
             }
             this.createPropertyPanel(message.tag);
-            console.log(
-                    '[After update_rendering] this.renderState',
-                    this.renderState);
-            // remove busy indicator
-            document.getElementById('loader_video_' + windowUId)
-                    .classList.remove('loader');
+        }
+        // Send some MouseEvents to force a redraw
+        const mouseEvt = new MouseEvent('mousemove');
+        let videoElt = document.getElementById('video_' + windowUId);
+        for (let i = 0; i < 3; ++i) {
+            videoElt.dispatchEvent(mouseEvt);
         }
     };
 }

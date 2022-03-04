@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -120,6 +121,39 @@ public:
           data_ptr_(data_ptr),
           dtype_(dtype),
           blob_(blob) {}
+
+    /// \brief Tensor wrapper constructor from raw host buffer.
+    ///
+    /// This creates a Tensor wrapper for externally managed memory. It is the
+    /// user's responsibility to keep the buffer valid during the lifetime of
+    /// this Tensor and deallocate it afterwards.
+    ///
+    /// \param data_ptr Pointer to externally managed buffer.
+    /// \param dtype Tensor element data type. e.g. `Float32` for single
+    /// precision float.
+    /// \param shape List of dimensions of data in buffer. e.g. `{640, 480, 3}`
+    /// for a 640x480 RGB image.
+    /// \param strides Number of elements to advance to reach the next element,
+    /// for every dimension. This will be calculated from the shape assuming a
+    /// contiguous buffer if not specified. For the above `Float32` image, the
+    /// value of an element will be read as:
+    ///
+    ///     image[row, col, ch] = *(float *) (data_ptr + sizeof(float) *
+    ///     (row * stride[0] + col * stride[1] + ch * stride[2]));
+    ///
+    /// \param device Device containing the data buffer.
+    Tensor(void* data_ptr,
+           Dtype dtype,
+           const SizeVector& shape,
+           const SizeVector& strides = {},
+           const Device& device = Device("CPU:0"))
+        : shape_(shape), strides_(strides), data_ptr_(data_ptr), dtype_(dtype) {
+        if (strides_.empty()) {
+            strides_ = shape_util::DefaultStrides(shape);
+        }
+        // Blob with no-op deleter.
+        blob_ = std::make_shared<Blob>(device, (void*)data_ptr_, [](void*) {});
+    }
 
     /// Copy constructor performs a "shallow" copy of the Tensor.
     /// This takes a lvalue input, e.g. `Tensor dst(src)`.
@@ -398,6 +432,28 @@ public:
     /// - aten/src/ATen/native/TensorShape.cpp
     /// - aten/src/ATen/TensorUtils.cpp
     Tensor Reshape(const SizeVector& dst_shape) const;
+
+    /// Flattens input by reshaping it into a one-dimensional tensor. If
+    /// start_dim or end_dim are passed, only dimensions starting with start_dim
+    /// and ending with end_dim are flattened. The order of elements in input is
+    /// unchanged.
+    ///
+    /// Unlike NumPy’s flatten, which always copies input’s data, this function
+    /// may return the original object, a view, or copy. If no dimensions are
+    /// flattened, then the original object input is returned. Otherwise, if
+    /// input can be viewed as the flattened shape, then that view is returned.
+    /// Finally, only if the input cannot be viewed as the flattened shape is
+    /// input’s data copied.
+    ///
+    /// Ref:
+    /// - https://pytorch.org/docs/stable/tensors.html
+    /// - aten/src/ATen/native/TensorShape.cpp
+    /// - aten/src/ATen/TensorUtils.cpp
+    ///
+    /// \param start_dim The first dimension to flatten (inclusive).
+    /// \param end_dim The last dimension to flatten, starting from \p start_dim
+    /// (inclusive).
+    Tensor Flatten(int64_t start_dim = 0, int64_t end_dim = -1) const;
 
     /// Returns a new tensor view with the same data but of a different shape.
     ///

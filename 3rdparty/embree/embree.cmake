@@ -7,15 +7,25 @@ include(ExternalProject)
 
 # select ISAs
 if(APPLE)
-    # with AppleClang we can select only 1 ISA
-    set(ISA_ARGS -DEMBREE_ISA_AVX=OFF
-                 -DEMBREE_ISA_AVX2=OFF
-                 -DEMBREE_ISA_AVX512=OFF
-                 -DEMBREE_ISA_SSE2=OFF
-                 -DEMBREE_ISA_SSE42=ON
-    )
-    set(ISA_LIBS embree_sse42)
-    set(ISA_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_sse42${CMAKE_STATIC_LIBRARY_SUFFIX}" )
+    if(APPLE_AARCH64)
+        # Turn off ISA optimizations for Apple ARM64 for now.
+        set(ISA_ARGS -DEMBREE_ISA_AVX=OFF
+                     -DEMBREE_ISA_AVX2=OFF
+                     -DEMBREE_ISA_AVX512=OFF
+                     -DEMBREE_ISA_SSE2=OFF
+                     -DEMBREE_ISA_SSE42=OFF
+        )
+    else()
+        # With AppleClang we can select only 1 ISA.
+        set(ISA_ARGS -DEMBREE_ISA_AVX=OFF
+                     -DEMBREE_ISA_AVX2=OFF
+                     -DEMBREE_ISA_AVX512=OFF
+                     -DEMBREE_ISA_SSE2=OFF
+                     -DEMBREE_ISA_SSE42=ON
+        )
+        set(ISA_LIBS embree_sse42)
+        set(ISA_BUILD_BYPRODUCTS "<INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}embree_sse42${CMAKE_STATIC_LIBRARY_SUFFIX}" )
+    endif()
 elseif(LINUX_AARCH64)
     set(ISA_ARGS -DEMBREE_ISA_AVX=OFF
                  -DEMBREE_ISA_AVX2=OFF

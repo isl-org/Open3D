@@ -108,6 +108,11 @@ public:
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
+    bool GeometryIsVisible(const std::string& name);
+    void SetGeometryTransform(const std::string& name,
+                              const Eigen::Matrix4d& transform);
+    Eigen::Matrix4d GetGeometryTransform(const std::string& name);
+
     void ModifyGeometryMaterial(const std::string& name,
                                 const MaterialRecord& mat);
     void AddModel(const std::string& name, const TriangleMeshModel& model);

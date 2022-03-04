@@ -29,6 +29,7 @@
 #include "core/CoreTest.h"
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/ImageIO.h"
@@ -65,10 +66,11 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
     const float depth_scale = 1000.0;
     const float depth_diff = 0.07;
 
-    t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/depth/00000.png"));
-    t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/depth/00002.png"));
+    data::SampleRedwoodRGBDImages redwood_data;
+    t::geometry::Image src_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
+    t::geometry::Image dst_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[2]);
 
     src_depth = src_depth.To(device);
     dst_depth = dst_depth.To(device);
@@ -133,14 +135,15 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
     const float depth_max = 3.0;
     const float depth_diff = 0.07;
 
-    t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/depth/00000.png"));
-    t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/depth/00002.png"));
-    t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/color/00000.jpg"));
-    t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/color/00002.jpg"));
+    data::SampleRedwoodRGBDImages redwood_data;
+    t::geometry::Image src_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
+    t::geometry::Image dst_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[2]);
+    t::geometry::Image src_color =
+            *t::io::CreateImageFromFile(redwood_data.GetColorPaths()[0]);
+    t::geometry::Image dst_color =
+            *t::io::CreateImageFromFile(redwood_data.GetColorPaths()[2]);
 
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);
@@ -200,14 +203,15 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
     const float depth_max = 3.0;
     const float depth_diff = 0.07;
 
-    t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/depth/00000.png"));
-    t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/depth/00002.png"));
-    t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/color/00000.jpg"));
-    t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/color/00002.jpg"));
+    data::SampleRedwoodRGBDImages redwood_data;
+    t::geometry::Image src_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
+    t::geometry::Image dst_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[2]);
+    t::geometry::Image src_color =
+            *t::io::CreateImageFromFile(redwood_data.GetColorPaths()[0]);
+    t::geometry::Image dst_color =
+            *t::io::CreateImageFromFile(redwood_data.GetColorPaths()[2]);
 
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);
@@ -267,14 +271,15 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     const float depth_max = 3.0;
     const float depth_diff = 0.07;
 
-    t::geometry::Image src_depth = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/depth/00000.png"));
-    t::geometry::Image dst_depth = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/depth/00002.png"));
-    t::geometry::Image src_color = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/color/00000.jpg"));
-    t::geometry::Image dst_color = *t::io::CreateImageFromFile(
-            utility::GetDataPathCommon("RGBD/color/00002.jpg"));
+    data::SampleRedwoodRGBDImages redwood_data;
+    t::geometry::Image src_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
+    t::geometry::Image dst_depth =
+            *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[2]);
+    t::geometry::Image src_color =
+            *t::io::CreateImageFromFile(redwood_data.GetColorPaths()[0]);
+    t::geometry::Image dst_color =
+            *t::io::CreateImageFromFile(redwood_data.GetColorPaths()[2]);
 
     t::geometry::RGBDImage src, dst;
     src.color_ = src_color.To(device);

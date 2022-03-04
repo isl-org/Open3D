@@ -38,6 +38,7 @@ struct Label3D::Impl {
     std::string text_;
     Eigen::Vector3f position_;
     Color color_ = DEFAULT_COLOR;
+    float scale_ = 1.f;
 };
 
 Label3D::Label3D(const Eigen::Vector3f& pos, const char* text /*= nullptr*/)
@@ -63,6 +64,10 @@ void Label3D::SetPosition(const Eigen::Vector3f& pos) {
 Color Label3D::GetTextColor() const { return impl_->color_; }
 
 void Label3D::SetTextColor(const Color& color) { impl_->color_ = color; }
+
+float Label3D::GetTextScale() const { return impl_->scale_; }
+
+void Label3D::SetTextScale(float scale) { impl_->scale_ = scale; }
 
 }  // namespace gui
 }  // namespace visualization

@@ -1,9 +1,9 @@
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
     ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile @ONLY)
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/getting_started.rst.in
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/getting_started.in.rst
     ${CMAKE_CURRENT_SOURCE_DIR}/getting_started.rst @ONLY)
-
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/docker.in.rst
+    ${CMAKE_CURRENT_SOURCE_DIR}/docker.rst @ONLY)
 
 include(FetchContent)
 
@@ -21,5 +21,5 @@ if(NOT ext_open3d_sphinx_theme_POPULATED)
   set(OPEN3D_SPHINX_THEME_SOURCE_DIR ${ext_open3d_sphinx_theme_SOURCE_DIR})
 endif()
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/conf.in.py
     ${CMAKE_CURRENT_SOURCE_DIR}/conf.py @ONLY)

@@ -106,6 +106,20 @@ TEST_P(TensorPermuteDevices, WithInitValue) {
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
     core::Tensor t(vals, {2, 3}, core::Float32, device);
     EXPECT_EQ(t.ToFlatVector<float>(), vals);
+
+    // Wrapper
+    {
+        core::Tensor wrapper(t.GetDataPtr(), t.GetDtype(), t.GetShape(), {},
+                             t.GetDevice());
+        EXPECT_EQ(t.GetStrides(), wrapper.GetStrides());
+        EXPECT_EQ(wrapper.ToFlatVector<float>(), vals);
+        // Updating original data updates wrapper.
+        t[1][1] = 0;
+        vals[4] = 0;
+        EXPECT_EQ(wrapper.ToFlatVector<float>(), vals);
+    }
+    // Original data is present after wrapper is destructed.
+    EXPECT_EQ(t.ToFlatVector<float>(), vals);
 }
 
 TEST_P(TensorPermuteDevices, WithInitList) {
@@ -409,6 +423,127 @@ TEST_P(TensorPermuteDevices, Expand) {
     EXPECT_EQ(dst_t.ToFlatVector<float>(), dst_vals);
     EXPECT_EQ(dst_t.GetBlob(), src_t.GetBlob());
     EXPECT_EQ(dst_t.GetDataPtr(), src_t.GetDataPtr());
+}
+
+TEST_P(TensorPermuteDevices, Flatten) {
+    core::Device device = GetParam();
+
+    // Flatten 0-D Tensor.
+    core::Tensor src_t = core::Tensor::Init<float>(3, device);
+    core::Tensor dst_t = core::Tensor::Init<float>({3}, device);
+
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten()));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1)));
+
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0, 0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0, -1)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1, 0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1, -1)));
+
+    EXPECT_ANY_THROW(src_t.Flatten(-2));
+    EXPECT_ANY_THROW(src_t.Flatten(1));
+    EXPECT_ANY_THROW(src_t.Flatten(0, -2));
+    EXPECT_ANY_THROW(src_t.Flatten(0, 1));
+
+    // Flatten 1-D Tensor.
+    src_t = core::Tensor::Init<float>({1, 2, 3}, device);
+    dst_t = core::Tensor::Init<float>({1, 2, 3}, device);
+
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten()));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1)));
+
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0, 0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(0, -1)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1, 0)));
+    EXPECT_TRUE(dst_t.AllEqual(src_t.Flatten(-1, -1)));
+
+    EXPECT_ANY_THROW(src_t.Flatten(-2));
+    EXPECT_ANY_THROW(src_t.Flatten(1));
+    EXPECT_ANY_THROW(src_t.Flatten(0, -2));
+    EXPECT_ANY_THROW(src_t.Flatten(0, 1));
+
+    // Flatten 2-D Tensor.
+    src_t = core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
+    core::Tensor dst_t_flat =
+            core::Tensor::Init<float>({1, 2, 3, 4, 5, 6}, device);
+    core::Tensor dst_t_unchanged =
+            core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}, device);
+
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten()));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-2)));
+
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0, 1)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-2, 1)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0, -1)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-2, -1)));
+
+    EXPECT_TRUE(dst_t_unchanged.AllEqual(src_t.Flatten(1)));
+    EXPECT_TRUE(dst_t_unchanged.AllEqual(src_t.Flatten(-1)));
+
+    for (int64_t dim : {-2, -1, 0, 1}) {
+        EXPECT_TRUE(dst_t_unchanged.AllEqual(src_t.Flatten(dim, dim)));
+    }
+
+    // Out of bounds dimensions.
+    EXPECT_ANY_THROW(src_t.Flatten(0, 2));
+    EXPECT_ANY_THROW(src_t.Flatten(0, -3));
+    EXPECT_ANY_THROW(src_t.Flatten(-3, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(2, 0));
+
+    // end_dim is greater than start_dim.
+    EXPECT_ANY_THROW(src_t.Flatten(1, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(-1, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(1, -2));
+    EXPECT_ANY_THROW(src_t.Flatten(-1, -2));
+
+    // Flatten 3-D Tensor.
+    src_t = core::Tensor::Init<float>(
+            {{{1, 2, 3}, {4, 5, 6}}, {{7, 8, 9}, {10, 11, 12}}}, device);
+    dst_t_flat = core::Tensor::Init<float>(
+            {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}, device);
+    dst_t_unchanged = core::Tensor::Init<float>(
+            {{{1, 2, 3}, {4, 5, 6}}, {{7, 8, 9}, {10, 11, 12}}}, device);
+    core::Tensor dst_t_first_two_flat = core::Tensor::Init<float>(
+            {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}}, device);
+    core::Tensor dst_t_last_two_flat = core::Tensor::Init<float>(
+            {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}}, device);
+
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten()));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-3)));
+
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0, 2)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-3, 2)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(0, -1)));
+    EXPECT_TRUE(dst_t_flat.AllEqual(src_t.Flatten(-3, -1)));
+
+    EXPECT_TRUE(dst_t_first_two_flat.AllEqual(src_t.Flatten(0, 1)));
+    EXPECT_TRUE(dst_t_first_two_flat.AllEqual(src_t.Flatten(0, -2)));
+    EXPECT_TRUE(dst_t_first_two_flat.AllEqual(src_t.Flatten(-3, 1)));
+    EXPECT_TRUE(dst_t_first_two_flat.AllEqual(src_t.Flatten(-3, -2)));
+
+    EXPECT_TRUE(dst_t_last_two_flat.AllEqual(src_t.Flatten(1, 2)));
+    EXPECT_TRUE(dst_t_last_two_flat.AllEqual(src_t.Flatten(1, -1)));
+    EXPECT_TRUE(dst_t_last_two_flat.AllEqual(src_t.Flatten(-2, 2)));
+    EXPECT_TRUE(dst_t_last_two_flat.AllEqual(src_t.Flatten(-2, -1)));
+
+    for (int64_t dim : {-3, -2, -1, 0, 1, 2}) {
+        EXPECT_TRUE(dst_t_unchanged.AllEqual(src_t.Flatten(dim, dim)));
+    }
+
+    // Out of bounds dimensions.
+    EXPECT_ANY_THROW(src_t.Flatten(0, 3));
+    EXPECT_ANY_THROW(src_t.Flatten(0, -4));
+    EXPECT_ANY_THROW(src_t.Flatten(-4, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(3, 0));
+
+    // end_dim is greater than start_dim.
+    EXPECT_ANY_THROW(src_t.Flatten(1, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(2, 0));
+    EXPECT_ANY_THROW(src_t.Flatten(2, 1));
 }
 
 TEST_P(TensorPermuteDevices, DefaultStrides) {

@@ -25,7 +25,7 @@ In this tutorial, we cover two common use cases:
 .. image:: ../../_static/visualization/webrtc_visualizer.gif
     :width: 960px
 
-As of release ``0.13``, Open3D web visualizer is supported on the following
+As of the current release, Open3D web visualizer is supported on the following
 platforms:
 
 ..

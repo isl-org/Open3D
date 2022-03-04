@@ -30,6 +30,7 @@
 
 #include <cstdio>
 
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
@@ -75,7 +76,8 @@ TEST(OctreeIO, ZeroDepth) {
 TEST(OctreeIO, JsonFileIOFragment) {
     // Create octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(utility::GetDataPathCommon("fragment.ply"), pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 6;
     geometry::Octree octree(max_depth);
     octree.ConvertFromPointCloud(pcd, 0.01);

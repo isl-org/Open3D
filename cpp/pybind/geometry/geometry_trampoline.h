@@ -66,8 +66,9 @@ public:
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override {
         PYBIND11_OVERLOAD_PURE(AxisAlignedBoundingBox, Geometry3DBase, );
     }
-    OrientedBoundingBox GetOrientedBoundingBox() const override {
-        PYBIND11_OVERLOAD_PURE(OrientedBoundingBox, Geometry3DBase, );
+    OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override {
+        PYBIND11_OVERLOAD_PURE(OrientedBoundingBox, Geometry3DBase, robust);
     }
     Geometry3DBase& Transform(const Eigen::Matrix4d& transformation) override {
         PYBIND11_OVERLOAD_PURE(Geometry3DBase&, Geometry3DBase, transformation);

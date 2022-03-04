@@ -133,11 +133,11 @@ public:
                                            const core::Tensor &extrinsic,
                                            float depth_scale = 1000.0f,
                                            float depth_max = 3.0f,
-                                           float trunc_voxel_multiplier = 4.0);
+                                           float trunc_voxel_multiplier = 8.0);
 
     /// Obtain active block coordinates from a point cloud.
     core::Tensor GetUniqueBlockCoordinates(const PointCloud &pcd,
-                                           float trunc_voxel_multiplier = 4.0);
+                                           float trunc_voxel_multiplier = 8.0);
 
     /// Specific operation for TSDF volumes.
     /// Integrate an RGB-D frame in the selected block coordinates using pinhole
@@ -155,10 +155,24 @@ public:
     void Integrate(const core::Tensor &block_coords,
                    const Image &depth,
                    const Image &color,
+                   const core::Tensor &depth_intrinsic,
+                   const core::Tensor &color_intrinsic,
+                   const core::Tensor &extrinsic,
+                   float depth_scale = 1000.0f,
+                   float depth_max = 3.0f,
+                   float trunc_voxel_multiplier = 8.0f);
+
+    /// Specific operation for TSDF volumes.
+    /// Similar to RGB-D integration, but uses the same intrinsics for depth and
+    /// color.
+    void Integrate(const core::Tensor &block_coords,
+                   const Image &depth,
+                   const Image &color,
                    const core::Tensor &intrinsic,
                    const core::Tensor &extrinsic,
                    float depth_scale = 1000.0f,
-                   float depth_max = 3.0f);
+                   float depth_max = 3.0f,
+                   float trunc_voxel_multiplier = 8.0f);
 
     /// Specific operation for TSDF volumes.
     /// Similar to RGB-D integration, but only applied to depth.
@@ -167,7 +181,8 @@ public:
                    const core::Tensor &intrinsic,
                    const core::Tensor &extrinsic,
                    float depth_scale = 1000.0f,
-                   float depth_max = 3.0f);
+                   float depth_max = 3.0f,
+                   float trunc_voxel_multiplier = 8.0f);
 
     /// Specific operation for TSDF volumes.
     /// Perform volumetric ray casting in the selected block coordinates.
@@ -188,7 +203,9 @@ public:
                       float depth_scale = 1000.0f,
                       float depth_min = 0.1f,
                       float depth_max = 3.0f,
-                      float weight_threshold = 3.0f);
+                      float weight_threshold = 3.0f,
+                      float trunc_voxel_multiplier = 8.0f,
+                      int range_map_down_factor = 8);
 
     /// Specific operation for TSDF volumes.
     /// Extract point cloud at isosurface points.
@@ -196,8 +213,11 @@ public:
     /// where we assume a reliable surface point comes from the fusion of at
     /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
     /// observations.
-    PointCloud ExtractPointCloud(int estimate_number = -1,
-                                 float weight_threshold = 3.0f);
+    /// Estimated point numbers optionally speeds up the process by a one-pass
+    /// extraction with pre-allocated buffers. Use -1 when no estimate is
+    /// available.
+    PointCloud ExtractPointCloud(float weight_threshold = 3.0f,
+                                 int estimated_point_number = -1);
 
     /// Specific operation for TSDF volumes.
     /// Extract mesh near iso-surfaces with Marching Cubes.
@@ -205,8 +225,11 @@ public:
     /// where we assume a reliable surface point comes from the fusion of at
     /// least 3 viewpoints. Use as low as 0.0 to accept all the possible
     /// observations.
-    TriangleMesh ExtractTriangleMesh(int estimate_number = -1,
-                                     float weight_threshold = 3.0f);
+    /// Estimated point numbers optionally speeds up the process by a one-pass
+    /// extraction with pre-allocated buffers. Use -1 when no estimate is
+    /// available.
+    TriangleMesh ExtractTriangleMesh(float weight_threshold = 3.0f,
+                                     int estimated_vertex_numer = -1);
 
     /// Save a voxel block grid to a .npz file.
     void Save(const std::string &file_name) const;

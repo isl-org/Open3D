@@ -93,6 +93,7 @@ public:
 
         bool use_ibl = false;
         bool use_sun = true;
+        bool sun_follows_camera = true;
         std::string ibl_path = "";  // "" is default path
         int ibl_intensity = 0;
         int sun_intensity = 100000;
@@ -186,6 +187,8 @@ public:
     void ShowAxes(bool show);
     void ShowGround(bool show);
     void SetGroundPlane(rendering::Scene::GroundPlane plane);
+    void EnableSunFollowsCamera(bool enable);
+    void EnableBasicMode(bool enable);
     void SetPointSize(int point_size);
     void SetLineWidth(int line_width);
     void EnableGroup(const std::string& group, bool enable);

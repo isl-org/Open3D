@@ -24,9 +24,9 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import numpy as np
 import open3d as o3d
 import open3d.core as o3c
-import numpy as np
 
 
 def list_tensor_sizes():
@@ -73,3 +73,10 @@ def to_numpy_dtype(dtype: o3c.Dtype):
         o3c.float64: np.float64,
     }
     return conversions[dtype]
+
+
+def list_devices():
+    devices = [o3c.Device("CPU:0")]
+    if o3c.cuda.is_available():
+        devices.append(o3c.Device("CUDA:0"))
+    return devices

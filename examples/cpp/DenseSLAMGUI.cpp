@@ -191,12 +191,17 @@ public:
         /// Property panels
         fixed_props_ = std::make_shared<PropertyPanel>(spacing, left_margin);
         fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
-                                   1000, 1, 5000,
+                                   1000, 1000, 5000,
                                    "Scale factor applied to the depth values "
                                    "from the depth image.");
         fixed_props_->AddFloatSlider("Voxel size", &prop_values_.voxel_size,
                                      3.0 / 512, 0.004, 0.01,
                                      "Voxel size for the TSDF voxel grid.");
+        fixed_props_->AddFloatSlider(
+                "Trunc multiplier", &prop_values_.trunc_voxel_multiplier, 8.0,
+                1.0, 20.0,
+                "Truncate distance multiplier (in voxel size) to control "
+                "the volumetric surface thickness.");
         fixed_props_->AddIntSlider(
                 "Block count", &prop_values_.bucket_count, 40000, 10000, 100000,
                 "Number of estimated voxel blocks for spatial "
@@ -263,10 +268,6 @@ public:
                                     camera::PinholeCameraTrajectory>();
 
                             float voxel_size = prop_values_.voxel_size;
-                            // The SDF truncation distance is empirically set to
-                            // 6 * voxel_size. Further SDF measurements can be
-                            // regarded as outliers and truncated for a smooth
-                            // result.
                             // The volumetric hash map maps 3D coordinates to
                             // 16^3 voxel blocks, to ensure a globally sparse
                             // locally dense data structure. This captures the
@@ -307,7 +308,6 @@ public:
         auto tab2 = std::make_shared<gui::Vert>(0, tab_margins);
         raycast_color_image_ = std::make_shared<gui::ImageWidget>();
         raycast_depth_image_ = std::make_shared<gui::ImageWidget>();
-
         tab2->AddChild(raycast_color_image_);
         tab2->AddFixed(vspacing);
         tab2->AddChild(raycast_depth_image_);
@@ -332,10 +332,9 @@ public:
             if (is_started_) {
                 utility::LogInfo("Writing reconstruction to scene.ply...");
                 auto pcd = model_->ExtractPointCloud(
-                        prop_values_.pointcloud_size, 3.0);
+                        3.0, prop_values_.pointcloud_size);
                 auto pcd_legacy =
-                        std::make_shared<open3d::geometry::PointCloud>(
-                                pcd.ToLegacy());
+                        std::make_shared<geometry::PointCloud>(pcd.ToLegacy());
                 io::WritePointCloud("scene.ply", *pcd_legacy);
 
                 utility::LogInfo("Writing trajectory to trajectory.log...");
@@ -414,6 +413,7 @@ protected:
         std::atomic<int> depth_scale;
         std::atomic<int> bucket_count;
         std::atomic<double> voxel_size;
+        std::atomic<double> trunc_voxel_multiplier;
         std::atomic<double> depth_max;
         std::atomic<double> depth_diff;
         std::atomic<bool> raycast_color;
@@ -545,8 +545,8 @@ protected:
 
         is_scene_updated_ = false;
 
-        color = std::make_shared<open3d::geometry::Image>(ref_color.ToLegacy());
-        depth_colored = std::make_shared<open3d::geometry::Image>(
+        color = std::make_shared<geometry::Image>(ref_color.ToLegacy());
+        depth_colored = std::make_shared<geometry::Image>(
                 ref_depth
                         .ColorizeDepth(depth_scale, 0.3, prop_values_.depth_max)
                         .ToLegacy());
@@ -576,9 +576,8 @@ protected:
                        raycast_depth_colored]() {
                     this->input_color_image_->UpdateImage(color);
                     this->input_depth_image_->UpdateImage(depth_colored);
-                    this->raycast_color_image_->UpdateImage(raycast_color);
-                    this->raycast_depth_image_->UpdateImage(
-                            raycast_depth_colored);
+                    this->raycast_color_image_->UpdateImage(color);
+                    this->raycast_depth_image_->UpdateImage(depth_colored);
                     this->SetNeedsLayout();  // size of image changed
 
                     geometry::AxisAlignedBoundingBox bbox(
@@ -645,15 +644,17 @@ protected:
             model_->UpdateFramePose(idx, T_frame_to_model);
             if (tracking_success) {
                 model_->Integrate(input_frame, depth_scale,
-                                  prop_values_.depth_max);
+                                  prop_values_.depth_max,
+                                  prop_values_.trunc_voxel_multiplier);
             }
             model_->SynthesizeModelFrame(raycast_frame, depth_scale, 0.1,
                                          prop_values_.depth_max,
+                                         prop_values_.trunc_voxel_multiplier,
                                          prop_values_.raycast_color);
 
-            auto K_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
-                    intrinsic_t);
-            auto T_eigen = open3d::core::eigen_converter::TensorToEigenMatrixXd(
+            auto K_eigen =
+                    core::eigen_converter::TensorToEigenMatrixXd(intrinsic_t);
+            auto T_eigen = core::eigen_converter::TensorToEigenMatrixXd(
                     T_frame_to_model);
             traj_param.extrinsic_ = T_eigen;
             trajectory_->parameters_.push_back(traj_param);
@@ -698,28 +699,28 @@ protected:
                 traj->colors_.push_back(kTangoSkyBlueDark);
             }
 
-            frustum = open3d::geometry::LineSet::CreateCameraVisualization(
+            frustum = geometry::LineSet::CreateCameraVisualization(
                     color->width_, color->height_, K_eigen, T_eigen.inverse(),
                     0.2);
             frustum->PaintUniformColor(kTangoOrange);
 
             // TODO: update support for timages-image conversion
-            color = std::make_shared<open3d::geometry::Image>(
+            color = std::make_shared<geometry::Image>(
                     input_frame.GetDataAsImage("color").ToLegacy());
-            depth_colored = std::make_shared<open3d::geometry::Image>(
+            depth_colored = std::make_shared<geometry::Image>(
                     input_frame.GetDataAsImage("depth")
                             .ColorizeDepth(depth_scale, 0.3,
                                            prop_values_.depth_max)
                             .ToLegacy());
 
             if (prop_values_.raycast_color) {
-                raycast_color = std::make_shared<open3d::geometry::Image>(
+                raycast_color = std::make_shared<geometry::Image>(
                         raycast_frame.GetDataAsImage("color")
                                 .To(core::Dtype::UInt8, false, 255.0f)
                                 .ToLegacy());
             }
 
-            raycast_depth_colored = std::make_shared<open3d::geometry::Image>(
+            raycast_depth_colored = std::make_shared<geometry::Image>(
                     raycast_frame.GetDataAsImage("depth")
                             .ColorizeDepth(depth_scale, 0.3,
                                            prop_values_.depth_max)
@@ -732,8 +733,8 @@ protected:
                 idx == depth_files.size() - 1) {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 surface_.pcd =
-                        model_->ExtractPointCloud(prop_values_.pointcloud_size,
-                                                  std::min<float>(idx, 3.0f))
+                        model_->ExtractPointCloud(std::min<float>(idx, 3.0f),
+                                                  prop_values_.pointcloud_size)
                                 .To(core::Device("CPU:0"));
                 is_scene_updated_ = true;
             }

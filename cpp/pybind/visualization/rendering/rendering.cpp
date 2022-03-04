@@ -75,8 +75,10 @@ public:
         return gui::RenderToImageWithoutWindow(scene_, width_, height_);
     }
 
-    std::shared_ptr<geometry::Image> RenderToDepthImage() {
-        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_);
+    std::shared_ptr<geometry::Image> RenderToDepthImage(
+            bool z_in_view_space = false) {
+        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_,
+                                                    z_in_view_space);
     }
 
     void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
@@ -206,9 +208,12 @@ void pybind_rendering_classes(py::module &m) {
                  "returned")
             .def("render_to_depth_image",
                  &PyOffscreenRenderer::RenderToDepthImage,
+                 "z_in_view_space"_a = false,
                  "Renders scene depth buffer to a float image, blocking until "
                  "the image is returned. Pixels range from 0 (near plane) to "
-                 "1 (far plane)");
+                 "1 (far plane). If z_in_view_space is set to True then pixels "
+                 "are pre-transformed into view space (i.e., distance from "
+                 "camera).");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
@@ -371,6 +376,8 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("clearcoat_roughness_img",
                            &MaterialRecord::clearcoat_roughness_img)
             .def_readwrite("anisotropy_img", &MaterialRecord::anisotropy_img)
+            .def_readwrite("ao_rough_metal_img",
+                           &MaterialRecord::ao_rough_metal_img)
             .def_readwrite("generic_params", &MaterialRecord::generic_params)
             .def_readwrite("generic_imgs", &MaterialRecord::generic_imgs)
             .def_readwrite("gradient", &MaterialRecord::gradient)
@@ -453,8 +460,42 @@ void pybind_rendering_classes(py::module &m) {
     // ---- View ----
     py::class_<View, UnownedPointer<View>> view(m, "View",
                                                 "Low-level view class");
+    // ---- Shadow Types ----
+    py::enum_<View::ShadowType> shadow_type(
+            view, "ShadowType", "Available shadow mapping algorithm options");
+    shadow_type.value("PCF", View::ShadowType::kPCF)
+            .value("VSM", View::ShadowType::kVSM);
+
     view.def("set_color_grading", &View::SetColorGrading,
-             "Sets the parameters to be used for the color grading algorithms");
+             "Sets the parameters to be used for the color grading algorithms")
+            .def("set_post_processing", &View::SetPostProcessing,
+                 "True to enable, False to disable post processing. Post "
+                 "processing effects include: color grading, ambient occlusion "
+                 "(and other screen space effects), and anti-aliasing.")
+            .def("set_ambient_occlusion", &View::SetAmbientOcclusion,
+                 "enabled"_a, "ssct_enabled"_a = false,
+                 "True to enable, False to disable ambient occlusion. "
+                 "Optionally, screen-space cone tracing may be enabled with "
+                 "ssct_enabled=True.")
+            .def("set_antialiasing", &View::SetAntiAliasing, "enabled"_a,
+                 "temporal"_a = false,
+                 "True to enable, False to disable anti-aliasing. Note that "
+                 "this only impacts anti-aliasing post-processing. MSAA is "
+                 "controlled separately by `set_sample_count`. Temporal "
+                 "anti-aliasing may be optionally enabled with temporal=True.")
+            .def("set_sample_count", &View::SetSampleCount,
+                 "Sets the sample count for MSAA. Set to 1 to disable MSAA. "
+                 "Typical values are 2, 4 or 8. The maximum possible value "
+                 "depends on the underlying GPU and OpenGL driver.")
+            .def("set_shadowing", &View::SetShadowing, "enabled"_a,
+                 "type"_a = View::ShadowType::kPCF,
+                 "True to enable, false to enable all shadow mapping when "
+                 "rendering this View. When enabling shadow mapping you may "
+                 "also specify one of two shadow mapping algorithms: PCF "
+                 "(default) or VSM. Note: shadowing is enabled by default with "
+                 "PCF shadow mapping.")
+            .def("get_camera", &View::GetCamera,
+                 "Returns the Camera associated with this View.");
 
     // ---- Scene ----
     py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
@@ -612,6 +653,15 @@ void pybind_rendering_classes(py::module &m) {
                  "added to the scene, False otherwise")
             .def("remove_geometry", &Open3DScene::RemoveGeometry,
                  "Removes the geometry with the given name")
+            .def("geometry_is_visible", &Open3DScene::GeometryIsVisible,
+                 "geometry_is_visible(name): returns True if the geometry name "
+                 "is visible")
+            .def("set_geometry_transform", &Open3DScene::SetGeometryTransform,
+                 "set_geometry_transform(name, transform): sets the pose of the"
+                 " geometry name to transform")
+            .def("get_geometry_transform", &Open3DScene::GetGeometryTransform,
+                 "get_geometry_transform(name): returns the pose of the "
+                 "geometry name in the scene")
             .def("modify_geometry_material",
                  &Open3DScene::ModifyGeometryMaterial,
                  "modify_geometry_material(name, material). Modifies the "

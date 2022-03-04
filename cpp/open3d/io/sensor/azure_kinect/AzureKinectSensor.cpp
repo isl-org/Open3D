@@ -151,6 +151,8 @@ k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
 std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame(
         bool enable_align_depth_to_color) const {
     k4a_capture_t capture = CaptureRawFrame();
+    if (!capture) return nullptr;
+
     auto im_rgbd = DecompressCapture(
             capture,
             enable_align_depth_to_color ? transform_depth_to_color_ : nullptr);
