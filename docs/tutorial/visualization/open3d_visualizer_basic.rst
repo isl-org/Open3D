@@ -101,6 +101,7 @@ Open3D returns:
 
 
 
+
 Drawing a Lit Sphere
 ::::::::::::::::::::
 
@@ -116,6 +117,22 @@ The result of calling ``compute_vertex_normals()`` speaks for itself, - the rend
 
 .. image:: https://user-images.githubusercontent.com/93158890/150879488-bc887a9b-cb7a-4476-ab8e-3f72c185c604.jpg
     :width: 600px
+
+
+``compute_triangle_normals()`` is another method you can use to render 3D objects. Let's give it a try:
+
+.. code-block:: python
+
+  >>> sphere.compute_triangle_normals()
+  TriangleMesh with 762 points and 1520 triangles.
+  >>> vis.draw(sphere)
+  
+
+.. image:: https://user-images.githubusercontent.com/93158890/156677293-716c9834-3a58-4428-aa75-eff755b5a8bb.jpg
+    :width: 600px
+
+As you can see, the sphere rendering with ``compute_triangle_normals()`` looks almost identical to the usage of ``compute_vertex_normals()``, so they can be used interchangeably.
+
 
 
 
@@ -171,6 +188,7 @@ The sphere looks almost identical to the one in the previous example (*Drawing a
 
 
 
+
 Drawing Point Clouds
 ::::::::::::::::::::
 
@@ -185,6 +203,8 @@ Open3D returns:
 	
 .. image:: https://user-images.githubusercontent.com/93158890/148607866-3de802e2-34ea-499e-a6ad-ee2b44ab9994.jpg
     :width: 600px
+    
+    
     
 
 Working with Line Sets
@@ -216,6 +236,7 @@ Object wireframe is displayed:
 .. image:: https://user-images.githubusercontent.com/93158890/148608068-bd244820-a6c9-47e2-8ae8-1cabaeec907d.jpg
     :width: 600px
     
+
 
 Specifying Wireframe ``line_width``
 """""""""""""""""""""""""""""""""""
@@ -265,7 +286,9 @@ As you can see, this time, our objects are separated by a greater distance, and 
 
 .. image:: https://user-images.githubusercontent.com/93158890/148608860-361aa4e8-bf20-4435-bda0-fb27899f0f07.jpg
     :width: 600px
-	
+
+
+
 Displaying UI / Control Panel
 """""""""""""""""""""""""""""
 
@@ -281,6 +304,8 @@ By default, the ``draw()`` function renders 3D models without showing the user i
 At the bottom of the UI / control panel, you can see the section titled "*Geometries*" (outlined in a yellow box). This section contains a list of rendered objects that can be individually turned on or off by clicking a checkbox to the left of their names.
 
 
+
+
 Displaying Window Titles and Specifying Window Dimensions
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -294,8 +319,6 @@ Aside from displaying UI / control panel, it is also possible to add a Visualize
     :width: 600px
 
 
- 
-    
 
 Assigning Names to Objects in the UI
 """"""""""""""""""""""""""""""""""""
@@ -355,6 +378,8 @@ Here, we have displayed the UI, renamed the title bar to *"Green Background"*, t
 
 .. image:: https://user-images.githubusercontent.com/93158890/149423231-55bb4604-b993-4893-b170-08637d0f243f.jpg
     :width: 600px
+
+
 
 Specifying ``point_size``
 """""""""""""""""""""""""

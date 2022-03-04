@@ -15,7 +15,10 @@ Getting Started
 .. note::
 	 This **Getting Started** section applies to all subsequent examples below
 	 
-For all examples in this tutorial, we will be running a Python session. Please follow these preliminary steps :
+For all examples in this tutorial, we will be running a Python session. Please follow these preliminary steps:
+
+.. image:: https://user-images.githubusercontent.com/93158890/149406147-ff07bf6e-10b3-44c8-a25d-4f46a9538c47.jpg
+    :width: 700px
 
 1. First, open a command-line terminal. From there, Change Directory (``cd``) to ``Open3D``:
  
