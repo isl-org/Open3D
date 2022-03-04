@@ -355,19 +355,6 @@ TEST_P(RegistrationPermuteDevices, ICPColored) {
         double relative_rmse = 1e-6;
         int max_iterations = 2;
 
-        t::geometry::TensorMap saved_loss_log("index");
-        auto update_loss_log = [&saved_loss_log](
-                                       t::geometry::TensorMap& loss_log) {
-            utility::LogDebug("Saved loss log tensor-map:");
-            utility::LogDebug(" Index: {}", loss_log["index"].ToString());
-            utility::LogDebug(" Scale: {}", loss_log["scale"].ToString());
-            utility::LogDebug(" Inlier RMSE: {}",
-                              loss_log["inlier_rmse"].ToString());
-            utility::LogDebug(" Fitness: {}", loss_log["fitness"].ToString());
-            utility::LogDebug(" Transformation: \n{}\n",
-                              loss_log["transformation"].ToString());
-        };
-
         // ColoredICP - Tensor.
         t_reg::RegistrationResult reg_p2plane_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
@@ -375,7 +362,7 @@ TEST_P(RegistrationPermuteDevices, ICPColored) {
                 t_reg::TransformationEstimationForColoredICP(),
                 t_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
                                               max_iterations),
-                -1.0, update_loss_log);
+                -1.0);
 
         // ColoredICP - Legacy.
         l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationColoredICP(
