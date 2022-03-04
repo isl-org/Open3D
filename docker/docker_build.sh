@@ -215,19 +215,19 @@ cuda_wheel_build() {
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
 }
 
-cuda_build() {
-    echo "[cuda_build()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[cuda_build()] BASE_IMAGE=${BASE_IMAGE}"
-    echo "[cuda_build()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
-    echo "[cuda_build()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
-    echo "[cuda_build()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[cuda_build()] CCACHE_VERSION=${CCACHE_VERSION}"
-    echo "[cuda_build()] PYTHON_VERSION=${PYTHON_VERSION}"
-    echo "[cuda_build()] SHARED=${SHARED}"
-    echo "[cuda_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
-    echo "[cuda_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
-    echo "[cuda_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-    echo "[cuda_build()] PACKAGE=${PACKAGE}"
+ci_build() {
+    echo "[ci_build()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[ci_build()] BASE_IMAGE=${BASE_IMAGE}"
+    echo "[ci_build()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
+    echo "[ci_build()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
+    echo "[ci_build()] CMAKE_VERSION=${CMAKE_VERSION}"
+    echo "[ci_build()] CCACHE_VERSION=${CCACHE_VERSION}"
+    echo "[ci_build()] PYTHON_VERSION=${PYTHON_VERSION}"
+    echo "[ci_build()] SHARED=${SHARED}"
+    echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
+    echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
+    echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+    echo "[ci_build()] PACKAGE=${PACKAGE}"
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -483,23 +483,23 @@ function main () {
         # CPU CI
         cpu-static)
             cpu-static_export_env
-            cuda_build
+            ci_build
             ;;
         cpu-shared)
             cpu-shared_export_env
-            cuda_build
+            ci_build
             ;;
         cpu-shared-release)
             cpu-shared-release_export_env
-            cuda_build
+            ci_build
             ;;
         cpu-shared-ml)
             cpu-shared-ml_export_env
-            cuda_build
+            ci_build
             ;;
         cpu-shared-ml-release)
             cpu-shared-ml-release_export_env
-            cuda_build
+            ci_build
             ;;
 
         # CUDA wheels
@@ -531,27 +531,27 @@ function main () {
         # ML CIs
         2-bionic)
             2-bionic_export_env
-            cuda_build
+            ci_build
             ;;
         3-ml-shared-bionic-release)
             3-ml-shared-bionic-release_export_env
-            cuda_build
+            ci_build
             ;;
         3-ml-shared-bionic)
             3-ml-shared-bionic_export_env
-            cuda_build
+            ci_build
             ;;
         4-shared-bionic-release)
             4-shared-bionic-release_export_env
-            cuda_build
+            ci_build
             ;;
         4-shared-bionic)
             4-shared-bionic_export_env
-            cuda_build
+            ci_build
             ;;
         5-ml-focal)
             5-ml-focal_export_env
-            cuda_build
+            ci_build
             ;;
         *)
             echo "Error: invalid argument: ${1}." >&2
