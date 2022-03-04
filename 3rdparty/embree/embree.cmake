@@ -73,8 +73,6 @@ ExternalProject_Add(
     URL_HASH SHA256=74ec785afb8f14d28ea5e0773544572c8df2e899caccdfc88509f1bfff58716f
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/embree"
     UPDATE_COMMAND ""
-    # PATCH_COMMAND ${GIT_EXECUTABLE} init
-    # COMMAND ${GIT_EXECUTABLE} apply --ignore-space-change --ignore-whitespace ${CMAKE_CURRENT_LIST_DIR}/0001-patch-intelllvm.patch
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
