@@ -246,7 +246,7 @@ cuda_build() {
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -cx "cp /open3d*.tar* /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.tar*"
+               && chown $(id -u):$(id -g) /opt/mount/open3d*.tar*"
 }
 
 2-bionic_export_env() {
