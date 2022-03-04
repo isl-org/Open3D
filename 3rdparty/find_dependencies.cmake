@@ -1284,37 +1284,6 @@ if(NOT USE_SYSTEM_MSGPACK)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
-# TBB
-if(USE_SYSTEM_TBB)
-    open3d_find_package_3rdparty_library(3rdparty_tbb
-        PACKAGE TBB
-        TARGETS TBB::tbb
-    )
-    if(NOT 3rdparty_tbb_FOUND)
-        set(USE_SYSTEM_TBB OFF)
-    endif()
-endif()
-if(NOT USE_SYSTEM_TBB)
-    include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
-    open3d_import_3rdparty_library(3rdparty_tbb
-        INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
-        LIB_DIR      ${STATIC_TBB_LIB_DIR}
-        LIBRARIES    ${STATIC_TBB_LIBRARIES}
-        DEPENDS      ext_tbb
-    )
-endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
-
-# parallelstl
-include(${Open3D_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
-open3d_import_3rdparty_library(3rdparty_parallelstl
-    PUBLIC
-    INCLUDE_DIRS ${PARALLELSTL_INCLUDE_DIRS}
-    INCLUDE_ALL
-    DEPENDS      ext_parallelstl
-)
-list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
-
 if (OPEN3D_USE_ONEAPI)
     # DPC++ (compile and link flags only)
     add_library(SYCL INTERFACE)
@@ -1357,6 +1326,37 @@ if (OPEN3D_USE_ONEAPI)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
 
 else() # OPEN3D_USE_ONEAPI
+    # TBB
+    if(USE_SYSTEM_TBB)
+    open3d_find_package_3rdparty_library(3rdparty_tbb
+        PACKAGE TBB
+        TARGETS TBB::tbb
+    )
+    if(NOT 3rdparty_tbb_FOUND)
+        set(USE_SYSTEM_TBB OFF)
+    endif()
+    endif()
+    if(NOT USE_SYSTEM_TBB)
+    include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
+    open3d_import_3rdparty_library(3rdparty_tbb
+        INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
+        LIB_DIR      ${STATIC_TBB_LIB_DIR}
+        LIBRARIES    ${STATIC_TBB_LIBRARIES}
+        DEPENDS      ext_tbb
+    )
+    endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
+
+    # parallelstl
+    include(${Open3D_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
+    open3d_import_3rdparty_library(3rdparty_parallelstl
+    PUBLIC
+    INCLUDE_DIRS ${PARALLELSTL_INCLUDE_DIRS}
+    INCLUDE_ALL
+    DEPENDS      ext_parallelstl
+    )
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
+
     # MKL/BLAS
     if(USE_BLAS)
         if (USE_SYSTEM_BLAS)
