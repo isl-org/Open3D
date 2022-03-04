@@ -14,6 +14,8 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        ${ExternalProject_CMAKE_ARGS_hidden}
+        -DCMAKE_CXX_FLAGS="-Wno-tautological-constant-compare"
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DASSIMP_NO_EXPORT=ON
@@ -23,7 +25,6 @@ ExternalProject_Add(
         -DASSIMP_BUILD_ZLIB=ON
         -DHUNTER_ENABLED=OFF # Renamed to "ASSIMP_HUNTER_ENABLED" in newer assimp.
         -DCMAKE_DEBUG_POSTFIX=
-        ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
         <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}IrrXML${CMAKE_STATIC_LIBRARY_SUFFIX}
