@@ -40,7 +40,7 @@ OPTION:
     openblas-arm64-py38    : OpenBLAS ARM64 3.8 wheel, release mode
     openblas-arm64-py39    : OpenBLAS ARM64 3.9 wheel, release mode
 
-    # Ubuntu CPU CI (Dockerfile.cuda)
+    # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static             : Ubuntu CPU static
     cpu-shared             : Ubuntu CPU shared
     cpu-shared-release     : Ubuntu CPU shared, release mode
@@ -57,7 +57,7 @@ OPTION:
     cuda_wheel_py38        : CUDA Python 3.8 wheel, release mode
     cuda_wheel_py39        : CUDA Python 3.9 wheel, release mode
 
-    # ML CIs (Dockerfile.cuda)
+    # ML CIs (Dockerfile.ci)
     2-bionic                   : CUDA CI, 2-bionic, developer mode
     3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic, release mode
     3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic, developer mode
@@ -243,7 +243,7 @@ ci_build() {
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
         -t "${DOCKER_TAG}" \
-        -f docker/Dockerfile.cuda .
+        -f docker/Dockerfile.ci .
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
