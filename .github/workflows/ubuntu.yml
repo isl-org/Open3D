@@ -13,6 +13,10 @@ on:
   pull_request:
     types: [opened, reopened, synchronize]
 
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+#   cancel-in-progress: true
+
 env:
   NPROC: 2
   GCE_CLI_GHA_VERSION: "302.0.0"
