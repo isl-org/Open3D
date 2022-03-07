@@ -225,6 +225,39 @@ void pybind_demo_pose_graph_optimization(py::module& m) {
                                     "pose_graph_global_path");
 }
 
+void pybind_demo_custom_visualization(py::module& m) {
+    // open3d.data.DemoCustomVisualization
+    py::class_<DemoCustomVisualization,
+               PySimpleDataset<DemoCustomVisualization>,
+               std::shared_ptr<DemoCustomVisualization>, SingleDownloadDataset>
+            demo_custom_visualization(
+                    m, "DemoCustomVisualization",
+                    "Data class for `DemoCustomVisualization` contains an "
+                    "example point-cloud, camera trajectory (json file), "
+                    "rendering options (json file). This data is used in "
+                    "Open3D for custom visualization with camera trajectory "
+                    "demo.");
+    demo_custom_visualization
+            .def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("point_cloud_path",
+                                   &DemoCustomVisualization::GetPointCloudPath,
+                                   "Returns path to the point cloud (ply).")
+            .def_property_readonly(
+                    "camera_trajectory_path",
+                    &DemoCustomVisualization::GetCameraTrajectoryPath,
+                    "Returns path to the camera_trajectory.json.")
+            .def_property_readonly(
+                    "render_option_path",
+                    &DemoCustomVisualization::GetRenderOptionPath,
+                    "Returns path to the renderoption.json.");
+    docstring::ClassMethodDocInject(m, "DemoCustomVisualization",
+                                    "point_cloud_path");
+    docstring::ClassMethodDocInject(m, "DemoCustomVisualization",
+                                    "camera_trajectory_path");
+    docstring::ClassMethodDocInject(m, "DemoCustomVisualization",
+                                    "render_option_path");
+}
+
 void pybind_pcd_point_cloud(py::module& m) {
     // open3d.data.PCDPointCloud
     py::class_<PCDPointCloud, PySimpleDataset<PCDPointCloud>,
@@ -348,7 +381,11 @@ void pybind_sample_redwood_rgbd_images(py::module& m) {
             .def_property_readonly(
                     "reconstruction_path",
                     &SampleRedwoodRGBDImages::GetReconstructionPath,
-                    "Path to pointcloud reconstruction from TSDF.");
+                    "Path to pointcloud reconstruction from TSDF.")
+            .def_property_readonly(
+                    "camera_intrinsic_path",
+                    &SampleRedwoodRGBDImages::GetCameraIntrinsicPath,
+                    "Path to pinhole camera intrinsic (json).");
     docstring::ClassMethodDocInject(m, "SampleRedwoodRGBDImages",
                                     "color_paths");
     docstring::ClassMethodDocInject(m, "SampleRedwoodRGBDImages",
@@ -361,6 +398,8 @@ void pybind_sample_redwood_rgbd_images(py::module& m) {
                                     "rgbd_match_path");
     docstring::ClassMethodDocInject(m, "SampleRedwoodRGBDImages",
                                     "reconstruction_path");
+    docstring::ClassMethodDocInject(m, "SampleRedwoodRGBDImages",
+                                    "camera_intrinsic_path");
 }
 
 void pybind_sample_fountain_rgbd_images(py::module& m) {
@@ -523,6 +562,7 @@ void pybind_data(py::module& m) {
     pybind_demo_crop_pointcloud(m_submodule);
     pybind_demo_feature_matching_point_clouds(m_submodule);
     pybind_demo_pose_graph_optimization(m_submodule);
+    pybind_demo_custom_visualization(m_submodule);
     pybind_pcd_point_cloud(m_submodule);
     pybind_ply_point_cloud(m_submodule);
     pybind_sample_nyu_rgbd_image(m_submodule);
