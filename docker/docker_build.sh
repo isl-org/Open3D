@@ -200,10 +200,9 @@ cuda_wheel_build() {
     # Extract pip wheel, ccache
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
-        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl                /opt/mount \
-              && cp /${CCACHE_TAR_NAME}.tar.gz                                   /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl                 \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.tar.bz2  \
+        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
+              && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
+              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
 }
 
@@ -238,7 +237,7 @@ cuda_build() {
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -cx "cp /open3d*.tar* /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.tar*"
+               && chown $(id -u):$(id -g) /opt/mount/open3d*.tar*"
 }
 
 2-bionic_export_env() {
