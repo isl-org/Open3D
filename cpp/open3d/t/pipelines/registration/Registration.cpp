@@ -119,8 +119,7 @@ RegistrationResult ICP(
         const TransformationEstimation &estimation,
         const ICPConvergenceCriteria &criteria,
         const double voxel_size,
-        utility::optional<std::function<void(t::geometry::TensorMap &)>>
-                update_loss_log) {
+        std::function<void(t::geometry::TensorMap &)> update_loss_log) {
     return MultiScaleICP(source, target, {voxel_size}, {criteria},
                          {max_correspondence_distance}, init_source_to_target,
                          estimation, update_loss_log);
@@ -270,8 +269,7 @@ static void DoSingleScaleIterationsICP(
         const core::Device &device,
         const core::Dtype &dtype,
         RegistrationResult &result,
-        utility::optional<std::function<void(t::geometry::TensorMap &)>>
-                update_loss_log,
+        std::function<void(t::geometry::TensorMap &)> update_loss_log,
         t::geometry::TensorMap &loss_log) {
     for (int j = 0; j < criteria.max_iteration_; j++) {
         GetRegistrationResultAndCorrespondences(
@@ -302,7 +300,7 @@ static void DoSingleScaleIterationsICP(
                 "{:.4f}",
                 iteration_idx, j, result.fitness_, result.inlier_rmse_);
 
-        if (update_loss_log.has_value()) {
+        if (update_loss_log) {
             const core::Device host("CPU:0");
 
             if (iteration_idx == 0 && j == 0) {
@@ -321,7 +319,7 @@ static void DoSingleScaleIterationsICP(
                     core::Tensor::Init<double>({result.fitness_}, host);
             loss_log["transformation"] = transformation.To(host);
 
-            update_loss_log.value()(loss_log);
+            update_loss_log(loss_log);
         }
 
         // ICPConvergenceCriteria, to terminate iteration.
@@ -346,8 +344,7 @@ RegistrationResult MultiScaleICP(
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation,
-        utility::optional<std::function<void(t::geometry::TensorMap &)>>
-                update_loss_log) {
+        std::function<void(t::geometry::TensorMap &)> update_loss_log) {
     core::AssertTensorDtypes(source.GetPointPositions(),
                              {core::Float64, core::Float32});
 

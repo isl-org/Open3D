@@ -147,18 +147,17 @@ RegistrationResult EvaluateRegistration(
 /// \param update_loss_log Optional lambda function to access the iteration-wise
 /// values of `fitness`, `inlier_rmse`, `transformation`, `scale`, `iteration`
 /// saved in the `TensorMap` argument. Default: Null.
-RegistrationResult ICP(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const double max_correspondence_distance,
-        const core::Tensor &init_source_to_target =
-                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-        const TransformationEstimation &estimation =
-                TransformationEstimationPointToPoint(),
-        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
-        const double voxel_size = -1.0,
-        utility::optional<std::function<void(t::geometry::TensorMap &)>>
-                update_loss_log = utility::nullopt);
+RegistrationResult
+ICP(const geometry::PointCloud &source,
+    const geometry::PointCloud &target,
+    const double max_correspondence_distance,
+    const core::Tensor &init_source_to_target =
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+    const TransformationEstimation &estimation =
+            TransformationEstimationPointToPoint(),
+    const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
+    const double voxel_size = -1.0,
+    std::function<void(t::geometry::TensorMap &)> update_loss_log = nullptr);
 
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
@@ -194,8 +193,8 @@ RegistrationResult MultiScaleICP(
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
-        utility::optional<std::function<void(t::geometry::TensorMap &)>>
-                update_loss_log = utility::nullopt);
+        std::function<void(t::geometry::TensorMap &)> update_loss_log =
+                nullptr);
 
 /// \brief Computes `Information Matrix`, from the transfromation between source
 /// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},
