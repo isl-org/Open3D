@@ -14,9 +14,9 @@ on:
   pull_request:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+#   cancel-in-progress: true
 
 env:
   PIP_VER: "21.1.1"
