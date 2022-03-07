@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # paint with gray to see the sampling result
     pcd.paint_uniform_color([0.5, 0.5, 0.5])
 
-    # get 1000 samples from point cloud and paint to green 
+    # get 1000 samples from point cloud and paint to green
     samples = pcd.get_farthest_point_sample(1000)
     samples.paint_uniform_color([0, 1, 0])
 
