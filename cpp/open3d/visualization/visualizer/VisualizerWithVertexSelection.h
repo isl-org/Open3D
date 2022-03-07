@@ -69,6 +69,8 @@ public:
     };
     std::vector<PickedPoint> GetPickedPoints() const;
     void ClearPickedPoints();
+    void AddPickedPoints(const std::vector<int> indices);
+    void RemovePickedPoints(const std::vector<int> indices);
 
     void RegisterSelectionChangedCallback(std::function<void()> f);
     /// Do not change the number of vertices in geometry, but can change the
@@ -93,8 +95,6 @@ protected:
                           int mods) override;
     void InvalidateSelectionPolygon();
     void InvalidatePicking();
-    void AddPickedPoints(const std::vector<int> indices);
-    void RemovePickedPoints(const std::vector<int> indices);
     float GetDepth(int winX, int winY);
     Eigen::Vector3d CalcDragDelta(double winX, double winY);
     enum DragType { DRAG_MOVING, DRAG_END };
