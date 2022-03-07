@@ -478,6 +478,38 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
     return SelectByIndex(indices);
 }
 
+std::shared_ptr<PointCloud> PointCloud::GetFarthestPointSample(
+        size_t num_samples) const {
+    if (num_samples <= 0) {
+        utility::LogError(
+                "[GetFarthestPointSample] Illegal number of points, the number "
+                "should larger than 0");
+    }
+    if (num_samples >= points_.size()) {
+        return std::make_shared<PointCloud>(*this);
+    } else {
+        std::vector<size_t> indices;
+        indices.resize(num_samples);
+
+        const size_t num = points_.size();
+        std::vector<double> distance(num, 1e10);
+        size_t farthest_index = 0;
+        for (size_t i = 0; i < num_samples; i++) {
+            indices[i] = farthest_index;
+            auto &selected = points_[farthest_index];
+            for (size_t j = 0; j < num; j++) {
+                double dist = (points_[j] - selected).array().square().sum();
+                distance[j] = std::min(distance[j], dist);
+            }
+            farthest_index = std::distance(
+                    distance.begin(),
+                    std::max_element(distance.begin(), distance.end()));
+        }
+
+        return SelectByIndex(indices);
+    }
+}
+
 std::shared_ptr<PointCloud> PointCloud::Crop(
         const AxisAlignedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
