@@ -166,31 +166,39 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY1) {
     EXPECT_FALSE(pcd.HasPointAttr("x"));
 }
 
-// Reading ascii.
+// Reading ascii and check for custom attributes.
 TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
-    t::geometry::PointCloud pcd;
+    data::PLYPointCloud sample_ply_pointcloud;
+    auto pcd_in =
+            t::io::CreatePointCloudFromFile(sample_ply_pointcloud.GetPath());
+    std::string filename_out =
+            sample_ply_pointcloud.GetExtractDir() + "/SampleASCII.ply";
+    t::io::WritePointCloud(filename_out, *pcd_in,
+                           {/*write_ascii =*/true, false});
 
-    t::io::ReadPointCloud(utility::GetDataPathCommon("test_sample_ascii.ply"),
-                          pcd, {"auto", false, false, true});
-    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 7);
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(filename_out, pcd, {"auto", false, false, true});
+    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
+    EXPECT_EQ(pcd.GetPointAttr("curvature").GetLength(), 196133);
+    std::remove(filename_out.c_str());
 }
 
 // Skip unsupported datatype.
 TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
+    data::PLYPointCloud sample_ply_pointcloud;
+    auto pcd_in =
+            t::io::CreatePointCloudFromFile(sample_ply_pointcloud.GetPath());
+    std::string filename_out =
+            sample_ply_pointcloud.GetExtractDir() + "/SampleASCII.ply";
+    t::io::WritePointCloud(filename_out, *pcd_in,
+                           {/*write_ascii =*/true, false});
+
     t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(
             utility::GetDataPathCommon("test_sample_wrong_format.ply"), pcd,
             {"auto", false, false, true});
     EXPECT_FALSE(pcd.HasPointAttr("intensity"));
-}
-
-// Custom attributes check.
-TEST(TPointCloudIO, ReadPointCloudFromPLY4) {
-    t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(utility::GetDataPathCommon("test_sample_custom.ply"),
-                          pcd, {"auto", false, false, true});
-    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 7);
-    EXPECT_EQ(pcd.GetPointAttr("intensity").GetLength(), 7);
+    std::remove(filename_out.c_str());
 }
 
 // Read write empty point cloud.
@@ -267,19 +275,10 @@ TEST(TPointCloudIO, ReadWritePTS) {
 TEST(TPointCloudIO, ReadPointCloudFromPTS1) {
     t::geometry::PointCloud pcd;
     EXPECT_TRUE(t::io::ReadPointCloud(
-            utility::GetDataPathDownload("tests/point_cloud_sample2.pts"), pcd,
+            utility::GetDataPathDownload("tests/point_cloud_sample1.pts"), pcd,
             {"auto", false, false, true}));
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 10);
     EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
-}
-
-// Reading bunny pts.
-TEST(TPointCloudIO, ReadPointCloudFromPTS2) {
-    t::geometry::PointCloud pcd;
-    EXPECT_TRUE(t::io::ReadPointCloud(
-            utility::GetDataPathDownload("tests/bunnyData.pts"), pcd,
-            {"auto", false, false, true}));
-    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 30571);
 }
 
 // Check PTS color float to uint8 conversion.

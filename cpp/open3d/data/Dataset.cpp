@@ -400,8 +400,7 @@ MonkeyModel::MonkeyModel(const std::string& data_root)
               /*no_extract =*/false,
               data_root) {
     const std::string extract_dir = Dataset::GetExtractDir();
-    path_ = extract_dir + "/monkey.obj";
-    filename_paths_ = {
+    map_filename_to_path_ = {
             {"albedo.png", extract_dir + "/albedo.png"},
             {"ao.png", extract_dir + "/ao.png"},
             {"metallic.png", extract_dir + "/metallic.png"},

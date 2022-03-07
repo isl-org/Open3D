@@ -464,25 +464,28 @@ private:
 /// \brief Data class for `MonkeyModel` contains the `monkey.obj` model file,
 /// along with various other texture files. The model file can be accessed using
 /// `GetPath()`, however in order to access the paths to the texture files one
-/// may use `GetFilenamePath(filename)` method.
+/// may use `GetPath(filename)` method or get the unordered map of filename to
+/// path using `GetPathMap()`.
 class MonkeyModel : public SingleDownloadDataset {
 public:
     MonkeyModel(const std::string& data_root = "");
 
-    /// \brief Returns path to the `monkey.obj` file.
-    std::string GetPath() const { return path_; };
+    /// \brief Returns path to the `filename`. By default it returns the path to
+    /// `mokey.obj` file. Refer documentation page for available options.
+    std::string GetPath(const std::string filename = "monkey.obj") const {
+        return map_filename_to_path_.at(filename);
+    };
 
-    /// \brief Returns path to the `filename`. Refer documentation page for
+    /// \brief Returns the map of filename to path. Refer documentation page for
     /// available options.
-    std::string GetFilenamePath(const std::string filename) const {
-        return filename_paths_.at(filename);
+    std::unordered_map<std::string, std::string> GetPathMap(
+            const std::string filename) const {
+        return map_filename_to_path_;
     }
 
 private:
-    /// Path to `mokey.obj` file.
-    std::string path_;
     /// Map to path for the avialble filenames.
-    std::unordered_map<std::string, std::string> filename_paths_;
+    std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
 /// \class JuneauImage
