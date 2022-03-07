@@ -131,10 +131,6 @@ To install Open3D Python library, build one of the following options:
     # This creates a .whl file that you can install manually.
     make pip-package
 
-    # Create conda package in build/lib
-    # This creates a .tar.bz2 file that you can install manually.
-    make conda-package
-
 Finally, verify the python installation with:
 
 .. code-block:: bash
@@ -203,10 +199,6 @@ targets in terminal or Visual Studio.
     :: Create pip package in build/lib
     :: This creates a .whl file that you can install manually.
     cmake --build . --config Release --target pip-package
-
-    :: Create conda package in build/lib
-    :: This creates a .tar.bz2 file that you can install manually.
-    cmake --build . --config Release --target conda-package
 
 Finally, verify the Python installation with:
 

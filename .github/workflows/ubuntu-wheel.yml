@@ -67,16 +67,12 @@ jobs:
             docker/docker_build.sh cuda_wheel_py39
           fi
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.whl)"
-          CONDA_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.tar.bz2)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
-          echo "CONDA_PKG_NAME=$CONDA_PKG_NAME" >> $GITHUB_ENV
       - name: Upload wheel to GitHub artifacts
         uses: actions/upload-artifact@v2
         with:
           name: open3d_linux_x86_64_wheels
-          path: |
-            ${{ env.PIP_PKG_NAME }}
-            ${{ env.CONDA_PKG_NAME }}
+          path: ${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
       - name: GCloud CLI setup (GCE_SA_KEY_DOCS_CI)
         if: ${{ github.ref == 'refs/heads/master' }}
@@ -103,8 +99,6 @@ jobs:
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
           echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
-          gsutil cp ${GITHUB_WORKSPACE}/${{ env.CONDA_PKG_NAME }} gs://open3d-releases-master/conda_package/linux-64/
-          echo "Download conda package at: https://storage.googleapis.com/open3d-releases-master/conda_package/linux-64/${{ env.CONDA_PKG_NAME }}"
 
   test-wheel-cpu:
     name: Test wheel CPU
