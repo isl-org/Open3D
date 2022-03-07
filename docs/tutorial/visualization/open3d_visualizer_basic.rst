@@ -105,6 +105,9 @@ Open3D returns:
 Drawing a Lit Sphere
 ::::::::::::::::::::
 
+``compute_vertex_normals()``
+""""""""""""""""""""""""""""
+
 In the image above, the sphere looks like a two-dimensional (2D) circle without any shading. To change its appearance to 3D, we need to call the ``compute_vertex_normals()`` method on our sphere object:
 
 .. code-block:: python
@@ -118,6 +121,9 @@ The result of calling ``compute_vertex_normals()`` speaks for itself, - the rend
 .. image:: https://user-images.githubusercontent.com/93158890/150879488-bc887a9b-cb7a-4476-ab8e-3f72c185c604.jpg
     :width: 600px
 
+
+``compute_triangle_normals()``
+""""""""""""""""""""""""""""""
 
 ``compute_triangle_normals()`` is another method you can use to render 3D objects. Let's give it a try:
 
@@ -156,7 +162,9 @@ When we rendered a lit sphere in the previous section, we did not specify which 
 Drawing a Sphere With Materials
 :::::::::::::::::::::::::::::::
 
-With the ``draw()`` function you can create customized materials and geometries. First, we will create a custom material:
+In previous examples we only specified the geometry to visualize, and the ``draw()`` function internally created a default material for it. However, with the ``draw()`` function you can render geometries with customized materials.
+
+To illustrate, - first, we will create a custom material:
 
 
 .. code-block:: python
@@ -191,6 +199,8 @@ The sphere looks almost identical to the one in the previous example (*Drawing a
 
 Drawing Point Clouds
 ::::::::::::::::::::
+
+Aside from rendering primitives, such as circles, spheres, rectangles, cubes, etc., the ``draw()`` function is fully capable of rendering *PointCloud* files, as shown below.
 
 Enter the following code at the Python prompt:
 
@@ -289,21 +299,8 @@ As you can see, this time, our objects are separated by a greater distance, and 
 
 
 
-Displaying UI / Control Panel
-"""""""""""""""""""""""""""""
-
-By default, the ``draw()`` function renders 3D models without showing the user interface (UI) / control panel where users can interactively modify 3D model rendering parameters of the Visualizer. Let's now render our models with the UI shown:
-
-.. code-block:: python
-
-	>>> vis.draw([sphere, pcd], show_ui=True)
-
-.. image:: https://user-images.githubusercontent.com/93158890/148608987-bd0a741d-f516-4a06-8f1b-0463d656c036.jpg
-    :width: 600px
-
-At the bottom of the UI / control panel, you can see the section titled "*Geometries*" (outlined in a yellow box). This section contains a list of rendered objects that can be individually turned on or off by clicking a checkbox to the left of their names.
-
-
+Commonly Used ``draw()`` Options
+::::::::::::::::::::::::::::::::
 
 
 Displaying Window Titles and Specifying Window Dimensions
@@ -317,6 +314,22 @@ Aside from displaying UI / control panel, it is also possible to add a Visualize
 	
 .. image:: https://user-images.githubusercontent.com/93158890/149412802-c262b81f-d504-4fa2-b3f9-3fb25e3b9e14.jpg
     :width: 600px
+
+
+
+Displaying UI / Control Panel
+"""""""""""""""""""""""""""""
+
+By default, the ``draw()`` function renders 3D models without showing the user interface (UI) / control panel where users can interactively modify 3D model rendering parameters of the Visualizer. Let's now render our models with the UI shown:
+
+.. code-block:: python
+
+	>>> vis.draw([sphere, pcd], show_ui=True)
+
+.. image:: https://user-images.githubusercontent.com/93158890/148608987-bd0a741d-f516-4a06-8f1b-0463d656c036.jpg
+    :width: 600px
+
+At the bottom of the UI / control panel, you can see the section titled "*Geometries*" (outlined in a yellow box). This section contains a list of rendered objects that can be individually turned on or off by clicking a checkbox to the left of their names.
 
 
 
