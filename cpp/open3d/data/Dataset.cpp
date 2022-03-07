@@ -102,7 +102,7 @@ DemoICPPointClouds::DemoICPPointClouds(const std::string& data_root)
         paths_.push_back(Dataset::GetExtractDir() + "/cloud_bin_" +
                          std::to_string(i) + ".pcd");
     }
-    transfomation_log_path_ = Dataset::GetExtractDir() + "/init.log";
+    transformation_log_path_ = Dataset::GetExtractDir() + "/init.log";
 }
 
 std::string DemoICPPointClouds::GetPaths(size_t index) const {
@@ -202,6 +202,17 @@ PLYPointCloud::PLYPointCloud(const std::string& data_root)
               /*no_extract =*/true,
               data_root) {
     path_ = Dataset::GetExtractDir() + "/fragment.ply";
+}
+
+PTSPointCloud::PTSPointCloud(const std::string& data_root)
+    : SingleDownloadDataset(
+              "PTSPointCloud",
+              {"https://github.com/isl-org/open3d_downloads/releases/"
+               "download/20220301-data/point_cloud_sample1.pts"},
+              "5c2c618b703d0161e6e333fcbf55a1e9",
+              /*no_extract =*/true,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/point_cloud_sample1.pts";
 }
 
 SampleNYURGBDImage::SampleNYURGBDImage(const std::string& data_root)

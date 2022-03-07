@@ -45,7 +45,7 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
     data::KnotMesh knot_data;
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(knot_data.GetPath(), mesh));
-    std::string file_name = utility::GetDataPathCommon("test_mesh.ply");
+    std::string file_name = Open3DTestDataRoot + "/test_mesh.ply";
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
     EXPECT_TRUE(
@@ -103,10 +103,8 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     EXPECT_EQ(mesh_tensor.GetVertexPositions().GetLength(),
               static_cast<int64_t>(mesh_legacy.vertices_.size()));
 
-    std::string file_name_tensor =
-            utility::GetDataPathCommon("test_mesh_tensor.obj");
-    std::string file_name_legacy =
-            utility::GetDataPathCommon("test_mesh_legacy.obj");
+    std::string file_name_tensor = Open3DTestDataRoot + "/test_mesh_tensor.obj";
+    std::string file_name_legacy = Open3DTestDataRoot + "/test_mesh_legacy.obj";
 
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name_tensor, mesh_tensor));
     EXPECT_TRUE(io::WriteTriangleMesh(file_name_legacy, mesh_legacy));
@@ -121,7 +119,7 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     std::remove(file_name_tensor.c_str());
     std::remove(file_name_legacy.c_str());
     std::string file_name_legacy_mtl =
-            utility::GetDataPathCommon("test_mesh_legacy.mtl");
+            Open3DTestDataRoot + "/test_mesh_legacy.mtl";
     std::remove(file_name_legacy_mtl.c_str());
 }
 

@@ -34,12 +34,14 @@
 #include <vector>
 
 #include "open3d/Macro.h"
-#include "open3d/utility/DataManager.h"
+#include "open3d/data/Dataset.h"
 #include "tests/test_utility/Compare.h"
 #include "tests/test_utility/Print.h"
 #include "tests/test_utility/Rand.h"
 #include "tests/test_utility/Raw.h"
 #include "tests/test_utility/Sort.h"
+
+#define Open3DTestDataRoot data::LocateDataRoot() + "/open3d_test"
 
 namespace open3d {
 namespace tests {

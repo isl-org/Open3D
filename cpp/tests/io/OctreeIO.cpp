@@ -43,7 +43,7 @@ namespace tests {
 void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
                              bool delete_temp = true) {
     // Write to file
-    std::string file_name = utility::GetDataPathCommon("temp_octree.json");
+    std::string file_name = Open3DTestDataRoot + "/temp_octree.json";
     EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
 
     // Read from file

@@ -44,7 +44,8 @@ TEST(VoxelGridIO, PLYWriteRead) {
                                              Eigen::Vector3d(0.4, 0.5, 0.6)));
 
     // Write to file
-    std::string file_name = utility::GetDataPathCommon("temp_voxel_grid.ply");
+    std::string file_name =
+            data::LocateDataRoot() + "/open3d_output/temp_voxel_grid.ply";
     EXPECT_TRUE(io::WriteVoxelGrid(file_name, *src_voxel_grid));
 
     // Read from file

@@ -138,13 +138,13 @@ public:
     /// \brief Returns path to the transformation metadata log file, containing
     /// transformation between frame 0 and 1, and frame 1 and 2.
     std::string GetTransformationLogPath() const {
-        return transfomation_log_path_;
+        return transformation_log_path_;
     }
 
 private:
     // List of path to PCD point-cloud fragments.
     std::vector<std::string> paths_;
-    std::string transfomation_log_path_;
+    std::string transformation_log_path_;
 };
 
 /// \class DemoColoredICPPointClouds
@@ -274,6 +274,20 @@ public:
 
 private:
     /// Path to the PLY format point cloud.
+    std::string path_;
+};
+
+/// \class PTSPointCloud
+/// \brief Data class for `PTSPointCloud`.
+class PTSPointCloud : public SingleDownloadDataset {
+public:
+    PTSPointCloud(const std::string& data_root = "");
+
+    /// \brief Returns path to the PTS format point cloud.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to the PTS format point cloud.
     std::string path_;
 };
 
