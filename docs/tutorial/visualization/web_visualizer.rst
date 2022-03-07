@@ -204,7 +204,7 @@ need to :
 
    .. code-block:: sh
 
-     pip install -r python/requirements_jupyter.txt
+     pip install -r python/requirements_jupyter_build.txt
 
 3. Build Open3D Python package:
 

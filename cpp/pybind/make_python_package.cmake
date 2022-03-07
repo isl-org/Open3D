@@ -121,10 +121,11 @@ if (BUILD_JUPYTER_EXTENSION)
                             "npm install -g yarn.")
     endif()
 
-    # Append requirements_jupyter.txt to requirements.txt
+    # Append requirements_jupyter_install.txt to requirements.txt
+    # These will be installed when `pip install Open3D`
     execute_process(COMMAND ${CMAKE_COMMAND} -E cat
         ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt
-        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter.txt
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter_install.txt
         OUTPUT_VARIABLE ALL_REQUIREMENTS
     )
     file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt ${ALL_REQUIREMENTS})
