@@ -57,20 +57,5 @@ inline std::string GetDataPathCommon(const std::string& relative_path = "") {
     }
 }
 
-/// Computes the full path of a file/directory inside the Open3D download data
-/// root. If \p relative_path is specified, the full path is computed by
-/// appending the \p relative_path to the download data root; otherwise, the
-/// download data root is returned.
-///
-/// \param relative_path Relative path to Open3D download data root.
-inline std::string GetDataPathDownload(const std::string& relative_path = "") {
-    if (relative_path.empty()) {
-        return std::string(TEST_DATA_DIR) + "/open3d_downloads";
-    } else {
-        return std::string(TEST_DATA_DIR) + "/open3d_downloads/" +
-               relative_path;
-    }
-}
-
 }  // namespace utility
 }  // namespace open3d

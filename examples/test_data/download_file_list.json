@@ -1,7 +1,0 @@
-{
-    "tests/point_cloud_sample1.pts": {
-        "url": "https://github.com/isl-org/open3d_downloads/raw/master/tests/point_cloud_sample1.pts",
-        "path": "tests/point_cloud_sample1.pts",
-        "sha256": "8095941de628d6c553569e39151f33467ffb972bea8c7fe9660cba89f7d52bee"
-    }
-}

@@ -84,8 +84,7 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     if (fragment_fnames.size() == 0) {
         utility::LogError(
                 "No fragment found in {}, please make sure the test dataset "
-                "has been downloaded in "
-                "GetDataPathDownload(\"tests/reconstruction_system/\").",
+                "has been downloaded.",
                 fragment_folder);
     }
     std::sort(fragment_fnames.begin(), fragment_fnames.end());

@@ -217,7 +217,7 @@ TEST(TPointCloudIO, ReadWriteEmptyPTS) {
 TEST(TPointCloudIO, ReadWritePTS) {
     t::geometry::PointCloud pcd, pcd_read, pcd_i, pcd_color;
     EXPECT_TRUE(t::io::ReadPointCloud(
-            utility::GetDataPathDownload("tests/point_cloud_sample1.pts"), pcd,
+            utility::GetDataPathCommon("point_cloud_sample1.pts"), pcd,
             {"auto", false, false, true}));
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 10);
     EXPECT_EQ(pcd.GetPointColors().GetLength(), 10);
@@ -275,7 +275,7 @@ TEST(TPointCloudIO, ReadWritePTS) {
 TEST(TPointCloudIO, ReadPointCloudFromPTS1) {
     t::geometry::PointCloud pcd;
     EXPECT_TRUE(t::io::ReadPointCloud(
-            utility::GetDataPathDownload("tests/point_cloud_sample1.pts"), pcd,
+            utility::GetDataPathCommon("point_cloud_sample1.pts"), pcd,
             {"auto", false, false, true}));
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 10);
     EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
