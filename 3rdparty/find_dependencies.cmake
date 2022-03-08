@@ -1288,7 +1288,7 @@ if (OPEN3D_USE_ONEAPI)
     # DPC++ (compile and link flags only)
     add_library(3rdparty_sycl INTERFACE)
     target_compile_options(3rdparty_sycl INTERFACE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda>)
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda -fsycl-targets=spir64_x86_64>)
     # TODO: resolve issue:
     # relocation R_X86_64_32 against `.rodata' can not be used when making a PIE
     # object; recompile with -fPIE
@@ -1305,7 +1305,7 @@ if (OPEN3D_USE_ONEAPI)
     target_link_libraries(3rdparty_sycl INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl>)
     target_link_options(3rdparty_sycl INTERFACE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl>)
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=spir64_x86_64>)
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS 3rdparty_sycl EXPORT Open3DTargets)
     endif()
