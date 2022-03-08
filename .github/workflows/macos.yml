@@ -162,6 +162,9 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run: |
+          echo ${{ matrix.python_version }}
+          which python
+          python --version
           brew install ccache
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           source util/ci_utils.sh
