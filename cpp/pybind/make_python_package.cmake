@@ -128,7 +128,8 @@ if (BUILD_JUPYTER_EXTENSION)
         ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter_install.txt
         OUTPUT_VARIABLE ALL_REQUIREMENTS
     )
-    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt ${ALL_REQUIREMENTS})
+    # The double-quote "" is important as it keeps the semicolons.
+    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt "${ALL_REQUIREMENTS}")
 endif()
 
 if (BUILD_GUI)
