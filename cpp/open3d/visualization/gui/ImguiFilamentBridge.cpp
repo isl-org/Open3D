@@ -73,6 +73,7 @@
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Gui.h"
+#include "open3d/visualization/gui/Resource.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/filament/FilamentCamera.h"
@@ -90,17 +91,11 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-static Material* LoadMaterialTemplate(const std::string& path, Engine& engine) {
-    std::vector<char> bytes;
+static Material* LoadMaterialTemplate(std::vector<char> resource_bytes, Engine& engine) {
     std::string error_str;
-    if (!utility::filesystem::FReadToBuffer(path, bytes, &error_str)) {
-        std::cout << "[ERROR] Could not read " << path << ": " << error_str
-                  << std::endl;
-        return nullptr;
-    }
 
     return Material::Builder()
-            .package(bytes.data(), bytes.size())
+            .package(resource_bytes.data(), resource_bytes.size())
             .build(engine);
 }
 
@@ -173,11 +168,9 @@ ImguiFilamentBridge::ImguiFilamentBridge(
     impl_->renderer_ = renderer;
     // The UI needs a special material (just a pass-through blit)
     std::string resource_path = Application::GetInstance().GetResourcePath();
-    impl_->uiblit_material_ = LoadMaterialTemplate(
-            resource_path + "/ui_blit.filamat",
+    impl_->uiblit_material_ = LoadMaterialTemplate(ui_blit_filamat(),
             visualization::rendering::EngineInstance::GetInstance());
-    impl_->image_material_ = LoadMaterialTemplate(
-            resource_path + "/img_blit.filamat",
+    impl_->image_material_ = LoadMaterialTemplate(img_blit_filamat(),
             visualization::rendering::EngineInstance::GetInstance());
 
     auto& engine = visualization::rendering::EngineInstance::GetInstance();

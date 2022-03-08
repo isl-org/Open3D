@@ -64,6 +64,7 @@
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/Resource.h"
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentEntitiesMods.h"
 
@@ -184,28 +185,12 @@ void FreeRetainedImage(void* buffer, size_t size, void* user_ptr) {
     }
 }
 
-filament::Material* LoadMaterialFromFile(const std::string& path,
+filament::Material* LoadMaterialFromFile(std::vector<char> material_data,
                                          filament::Engine& engine) {
-    std::vector<char> material_data;
-    std::string error_str;
-
-    std::string platform_path = path;
-#ifdef _WIN32
-    std::replace(platform_path.begin(), platform_path.end(), '/', '\\');
-#endif  // _WIN32
-    utility::LogDebug("LoadMaterialFromFile(): {}", platform_path);
-    if (utility::filesystem::FReadToBuffer(platform_path, material_data,
-                                           &error_str)) {
-        using namespace filament;
-        return Material::Builder()
-                .package(material_data.data(), material_data.size())
-                .build(engine);
-    }
-
-    utility::LogDebug("Failed to load default material from {}. Error: {}",
-                      platform_path, error_str);
-
-    return nullptr;
+    using namespace filament;
+    return Material::Builder()
+            .package(material_data.data(), material_data.size())
+            .build(engine);
 }
 
 struct TextureSettings {
@@ -980,8 +965,7 @@ void FilamentResourceManager::LoadDefaults() {
     const auto default_color_alpha =
             filament::math::float4{1.0f, 1.0f, 1.0f, 1.0f};
 
-    const auto lit_path = resource_root + "/defaultLit.filamat";
-    auto lit_mat = LoadMaterialFromFile(lit_path, engine_);
+    auto lit_mat = LoadMaterialFromFile(defaultLit_filamat(), engine_);
     lit_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                  default_color);
     lit_mat->setDefaultParameter("baseRoughness", 0.7f);
@@ -1003,9 +987,7 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
     materials_[kDefaultLit] = BoxResource(lit_mat, engine_);
 
-    const auto lit_trans_path =
-            resource_root + "/defaultLitTransparency.filamat";
-    auto lit_trans_mat = LoadMaterialFromFile(lit_trans_path, engine_);
+    auto lit_trans_mat = LoadMaterialFromFile(defaultLitTransparency_filamat(), engine_);
     lit_trans_mat->setDefaultParameter("baseColor",
                                        filament::RgbaType::PREMULTIPLIED_sRGB,
                                        default_color_alpha);
@@ -1034,8 +1016,7 @@ void FilamentResourceManager::LoadDefaults() {
     materials_[kDefaultLitWithTransparency] =
             BoxResource(lit_trans_mat, engine_);
 
-    const auto lit_ssr_path = resource_root + "/defaultLitSSR.filamat";
-    auto lit_ssr_mat = LoadMaterialFromFile(lit_ssr_path, engine_);
+    auto lit_ssr_mat = LoadMaterialFromFile(defaultLitSSR_filamat(), engine_);
     lit_ssr_mat->setDefaultParameter("baseColor",
                                      filament::RgbaType::PREMULTIPLIED_sRGB,
                                      default_color_alpha);
@@ -1058,8 +1039,7 @@ void FilamentResourceManager::LoadDefaults() {
                                      default_sampler);
     materials_[kDefaultLitSSR] = BoxResource(lit_ssr_mat, engine_);
 
-    const auto unlit_path = resource_root + "/defaultUnlit.filamat";
-    auto unlit_mat = LoadMaterialFromFile(unlit_path, engine_);
+    auto unlit_mat = LoadMaterialFromFile(defaultUnlit_filamat(), engine_);
     unlit_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                    default_color);
     unlit_mat->setDefaultParameter("pointSize", 3.f);
@@ -1067,9 +1047,7 @@ void FilamentResourceManager::LoadDefaults() {
     unlit_mat->setDefaultParameter("srgbColor", 0.f);
     materials_[kDefaultUnlit] = BoxResource(unlit_mat, engine_);
 
-    const auto unlit_trans_path =
-            resource_root + "/defaultUnlitTransparency.filamat";
-    auto unlit_trans_mat = LoadMaterialFromFile(unlit_trans_path, engine_);
+    auto unlit_trans_mat = LoadMaterialFromFile(defaultUnlitTransparency_filamat(), engine_);
     unlit_trans_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                          default_color);
     unlit_trans_mat->setDefaultParameter("pointSize", 3.f);
@@ -1077,54 +1055,48 @@ void FilamentResourceManager::LoadDefaults() {
     materials_[kDefaultUnlitWithTransparency] =
             BoxResource(unlit_trans_mat, engine_);
 
-    const auto depth_path = resource_root + "/depth.filamat";
-    auto depth_mat = LoadMaterialFromFile(depth_path, engine_);
+    auto depth_mat = LoadMaterialFromFile(depth_filamat(), engine_);
     depth_mat->setDefaultParameter("pointSize", 3.f);
     materials_[kDefaultDepthShader] = BoxResource(depth_mat, engine_);
 
-    const auto gradient_path = resource_root + "/unlitGradient.filamat";
-    auto gradient_mat = LoadMaterialFromFile(gradient_path, engine_);
+    auto gradient_mat = LoadMaterialFromFile(unlitGradient_filamat(), engine_);
     gradient_mat->setDefaultParameter("pointSize", 3.f);
     materials_[kDefaultUnlitGradientShader] =
             BoxResource(gradient_mat, engine_);
 
     // NOTE: Legacy. Can be removed soon.
-    const auto hdepth = CreateMaterial(ResourceLoadRequest(depth_path.data()));
+    const auto hdepth = CreateMaterial(ResourceLoadRequest(depth_filamat().data(), depth_filamat().size()));
     auto depth_mat_inst = materials_[hdepth];
     depth_mat_inst->setDefaultParameter("pointSize", 3.f);
     material_instances_[kDepthMaterial] =
             BoxResource(depth_mat_inst->createInstance(), engine_);
 
-    const auto normals_path = resource_root + "/normals.filamat";
-    auto normals_mat = LoadMaterialFromFile(normals_path, engine_);
+    auto normals_mat = LoadMaterialFromFile(normals_filamat(), engine_);
     normals_mat->setDefaultParameter("pointSize", 3.f);
     materials_[kDefaultNormalShader] = BoxResource(normals_mat, engine_);
 
     // NOTE: Legacy. Can be removed soon.
     const auto hnormals =
-            CreateMaterial(ResourceLoadRequest(normals_path.data()));
+            CreateMaterial(ResourceLoadRequest(normals_filamat().data(), normals_filamat().size()));
     auto normals_mat_inst = materials_[hnormals];
     normals_mat_inst->setDefaultParameter("pointSize", 3.f);
     material_instances_[kNormalsMaterial] =
             BoxResource(normals_mat_inst->createInstance(), engine_);
 
-    const auto colormap_map_path = resource_root + "/colorMap.filamat";
     const auto hcolormap_mat =
-            CreateMaterial(ResourceLoadRequest(colormap_map_path.data()));
+            CreateMaterial(ResourceLoadRequest(colorMap_filamat().data(), colorMap_filamat().size()));
     auto colormap_mat = materials_[hcolormap_mat];
     auto colormap_mat_inst = colormap_mat->createInstance();
     colormap_mat_inst->setParameter("colorMap", color_map, default_sampler);
     material_instances_[kColorMapMaterial] =
             BoxResource(colormap_mat_inst, engine_);
 
-    const auto solid_path = resource_root + "/unlitSolidColor.filamat";
-    auto solid_mat = LoadMaterialFromFile(solid_path, engine_);
+    auto solid_mat = LoadMaterialFromFile(unlitSolidColor_filamat(), engine_);
     solid_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                    {0.5f, 0.5f, 0.5f});
     materials_[kDefaultUnlitSolidColorShader] = BoxResource(solid_mat, engine_);
 
-    const auto bg_path = resource_root + "/unlitBackground.filamat";
-    auto bg_mat = LoadMaterialFromFile(bg_path, engine_);
+    auto bg_mat = LoadMaterialFromFile(unlitBackground_filamat(), engine_);
     bg_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                 {1.0f, 1.0f, 1.0f});
     bg_mat->setDefaultParameter("albedo", texture, default_sampler);
@@ -1132,22 +1104,19 @@ void FilamentResourceManager::LoadDefaults() {
     bg_mat->setDefaultParameter("yOrigin", 0.0f);
     materials_[kDefaultUnlitBackgroundShader] = BoxResource(bg_mat, engine_);
 
-    const auto inf_path = resource_root + "/infiniteGroundPlane.filamat";
-    auto inf_mat = LoadMaterialFromFile(inf_path, engine_);
+    auto inf_mat = LoadMaterialFromFile(infiniteGroundPlane_filamat(), engine_);
     inf_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                  {0.4f, 0.4f, 0.4f});
     inf_mat->setDefaultParameter("axis", 0.0f);
     materials_[kInfinitePlaneShader] = BoxResource(inf_mat, engine_);
 
-    const auto line_path = resource_root + "/unlitLine.filamat";
-    auto line_mat = LoadMaterialFromFile(line_path, engine_);
+    auto line_mat = LoadMaterialFromFile(unlitLine_filamat(), engine_);
     line_mat->setDefaultParameter("baseColor", filament::RgbType::LINEAR,
                                   {1.f, 1.f, 1.f});
     line_mat->setDefaultParameter("lineWidth", 1.f);
     materials_[kDefaultLineShader] = BoxResource(line_mat, engine_);
 
-    const auto poffset_path = resource_root + "/unlitPolygonOffset.filamat";
-    auto poffset_mat = LoadMaterialFromFile(poffset_path, engine_);
+    auto poffset_mat = LoadMaterialFromFile(unlitPolygonOffset_filamat(), engine_);
     materials_[kDefaultUnlitPolygonOffsetShader] =
             BoxResource(poffset_mat, engine_);
 }
