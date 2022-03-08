@@ -478,6 +478,41 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
     return SelectByIndex(indices);
 }
 
+std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
+        size_t num_samples) const {
+    if (num_samples == 0) {
+        return std::make_shared<PointCloud>();
+    } else if (num_samples == points_.size()) {
+        return std::make_shared<PointCloud>(*this);
+    } else if (num_samples > points_.size()) {
+        utility::LogError(
+                "Illegal number of samples: {}, must <= point size: {}",
+                num_samples, points_.size());
+    }
+    // We can also keep track of the non-selected indices with unordered_set,
+    // but since typically num_samples << num_points, it may not be worth it.
+    std::vector<size_t> selected_indices;
+    selected_indices.reserve(num_samples);
+    const size_t num_points = points_.size();
+    std::vector<double> distances(num_points,
+                                  std::numeric_limits<double>::infinity());
+    size_t farthest_index = 0;
+    for (size_t i = 0; i < num_samples; i++) {
+        selected_indices.push_back(farthest_index);
+        const Eigen::Vector3d &selected = points_[farthest_index];
+        double max_dist = 0;
+        for (size_t j = 0; j < num_points; j++) {
+            double dist = (points_[j] - selected).squaredNorm();
+            distances[j] = std::min(distances[j], dist);
+            if (distances[j] > max_dist) {
+                max_dist = distances[j];
+                farthest_index = j;
+            }
+        }
+    }
+    return SelectByIndex(selected_indices);
+}
+
 std::shared_ptr<PointCloud> PointCloud::Crop(
         const AxisAlignedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
