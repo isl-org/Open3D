@@ -8,8 +8,6 @@ cmake_minimum_required(VERSION 3.19.2)
 # - parse JSON files for downloading files from the open3d_downloads repository
 # - use first-class language support for ISPC (3.19.2 patch release required)
 
-option(OPEN3D_USE_ONEAPI "Use Intel OneAPI BaseKit and DPC++" ON)
-
 if (APPLE)
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
     "Minimum OS X deployment version" FORCE)
@@ -62,6 +60,7 @@ if(BUILD_SHARED_LIBS)
 else()
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
 endif()
+option(OPEN3D_USE_ONEAPI          "Use Intel OneAPI BaseKit and DPC++"       ON )
 if(OPEN3D_USE_ONEAPI)
     option(GLIBCXX_USE_CXX11_ABI  "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
 else()
@@ -256,7 +255,7 @@ message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 # Check OneAPI compatiblility
 if (OPEN3D_USE_ONEAPI AND NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
     message(FATAL_ERROR "OPEN3D_USE_ONEAPI requires IntelLLVM (DPC++) compiler, "
-                        "but got ${CMAKE_CXX_COMPILER_ID}")
+                        "but got ${CMAKE_CXX_COMPILER_ID}.")
 endif()
 if (OPEN3D_USE_ONEAPI AND (NOT UNIX OR APPLE))
     message(FATAL_ERROR "Open3D OneAPI support is only available on Linux")
