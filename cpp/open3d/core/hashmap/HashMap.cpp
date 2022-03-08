@@ -339,7 +339,7 @@ void HashMap::Init(int64_t init_capacity,
                    const HashBackendType& backend) {
     // Key check
     if (key_dtype_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
-        utility::LogError("[HashMap] Undefined key dtype is not allowed.");
+        utility::LogError("Undefined key dtype is not allowed.");
     }
     if (key_element_shape_.NumElements() == 0) {
         utility::LogError(

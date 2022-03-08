@@ -750,7 +750,7 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
             FEMSigs;
 
     if (!pcd.HasNormals()) {
-        utility::LogError("[CreateFromPointCloudPoisson] pcd has no normals");
+        utility::LogError("pcd has no normals");
     }
 
     if (n_threads <= 0) {

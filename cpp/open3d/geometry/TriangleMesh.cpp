@@ -528,7 +528,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
         bool use_triangle_normal /* = false */,
         int seed /* = -1 */) {
     if (number_of_points <= 0) {
-        utility::LogError("[SamplePointsUniformly] number_of_points <= 0");
+        utility::LogError("number_of_points <= 0");
     }
     if (triangles_.size() == 0) {
         utility::LogError(
@@ -550,7 +550,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         bool use_triangle_normal /* = false */,
         int seed /* = -1 */) {
     if (number_of_points <= 0) {
-        utility::LogError("[SamplePointsPoissonDisk] number_of_points <= 0");
+        utility::LogError("number_of_points <= 0");
     }
     if (triangles_.size() == 0) {
         utility::LogError(

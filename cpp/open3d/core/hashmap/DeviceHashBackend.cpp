@@ -54,7 +54,7 @@ std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
     }
 #endif
     else {
-        utility::LogError("[CreateDeviceHashBackend]: Unimplemented device");
+        utility::LogError("Unimplemented device");
     }
 }
 

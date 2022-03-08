@@ -329,7 +329,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         double voxel_size) const {
     auto output = std::make_shared<PointCloud>();
     if (voxel_size <= 0.0) {
-        utility::LogError("[VoxelDownSample] voxel_size <= 0.");
+        utility::LogError("voxel_size <= 0.");
     }
     Eigen::Vector3d voxel_size3 =
             Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
@@ -337,7 +337,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::LogError("[VoxelDownSample] voxel_size is too small.");
+        utility::LogError("voxel_size is too small.");
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
                        utility::hash_eigen<Eigen::Vector3i>>
@@ -383,7 +383,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     auto output = std::make_shared<PointCloud>();
     Eigen::MatrixXi cubic_id;
     if (voxel_size <= 0.0) {
-        utility::LogError("[VoxelDownSample] voxel_size <= 0.");
+        utility::LogError("voxel_size <= 0.");
     }
     // Note: this is different from VoxelDownSample.
     // It is for fixing coordinate for multiscale voxel space
@@ -391,7 +391,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     auto voxel_max_bound = max_bound;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::LogError("[VoxelDownSample] voxel_size is too small.");
+        utility::LogError("voxel_size is too small.");
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPointForTrace,
                        utility::hash_eigen<Eigen::Vector3i>>
@@ -453,7 +453,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
 std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
         size_t every_k_points) const {
     if (every_k_points == 0) {
-        utility::LogError("[UniformDownSample] Illegal sample rate.");
+        utility::LogError("Illegal sample rate.");
     }
     std::vector<size_t> indices;
     for (size_t i = 0; i < points_.size(); i += every_k_points) {
