@@ -1299,6 +1299,9 @@ if (OPEN3D_USE_ONEAPI)
     # - Link "sycl" only
     #   - No pie issue at all
     #   - Unit test cannot find kernel at run time: "No kernel named xxx was found"
+    #
+    # Ref:
+    # - https://github.com/intel/llvm/issues/1427
     target_link_libraries(3rdparty_sycl INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl>)
     target_link_options(3rdparty_sycl INTERFACE
