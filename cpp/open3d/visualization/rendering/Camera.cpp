@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Logging.h"
 #include "open3d/visualization/rendering/Camera.h"
 
 #include "open3d/geometry/BoundingVolume.h"
