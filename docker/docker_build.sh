@@ -47,6 +47,10 @@ OPTION:
     cpu-shared-ml          : Ubuntu CPU shared with ML
     cpu-shared-ml-release  : Ubuntu CPU shared with ML, release mode
 
+    # OneAPI CPU CI (Dockerfile.ci)
+    oneapi-static          : OneAPI with static lib
+    oneapi-shared          : OneAPI with shared lib
+
     # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py36_dev    : CUDA Python 3.6 wheel, developer mode
     cuda_wheel_py37_dev    : CUDA Python 3.7 wheel, developer mode
