@@ -1289,8 +1289,16 @@ if (OPEN3D_USE_ONEAPI)
     add_library(3rdparty_sycl INTERFACE)
     target_compile_options(3rdparty_sycl INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda>)
-    # Removed -fsycl
-    # Link sycl, as per https://stackoverflow.com/a/69416969/1255535
+    # TODO: resolve issue:
+    # relocation R_X86_64_32 against `.rodata' can not be used when making a PIE
+    # object; recompile with -fPIE
+    #
+    # - Link "sycl -fsycl"
+    #   - Shared lib: viewer has pie issue
+    #   - Static lib: examples, unit test, viewer have pie issue
+    # - Link "sycl" only
+    #   - No pie issue at all
+    #   - Unit test cannot find kernel at run time: "No kernel named xxx was found"
     target_link_libraries(3rdparty_sycl INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl -fsycl>)
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
