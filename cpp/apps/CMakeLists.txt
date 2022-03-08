@@ -67,6 +67,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
             Open3D::3rdparty_png
             Open3D::3rdparty_rply
             Open3D::3rdparty_tinyfiledialogs
+
             Open3D::3rdparty_tinygltf
             Open3D::3rdparty_tinyobjloader
             Open3D::3rdparty_qhullcpp
@@ -74,7 +75,8 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
             Open3D::3rdparty_imgui
             Open3D::3rdparty_zeromq
             Open3D::3rdparty_msgpack
-            Open3D::SYCL
+            # Open3D::SYCL
+
             Open3D::3rdparty_tbb
             Open3D::3rdparty_onedpl
             Open3D::3rdparty_mkl
@@ -83,8 +85,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
             Open3D::3rdparty_webrtc
             Open3D::3rdparty_civetweb
         )
-
-        # target_link_libraries(${target} PUBLIC ${Open3D_3RDPARTY_PUBLIC_TARGETS})
+        target_link_libraries(${target} PUBLIC ${Open3D_3RDPARTY_PUBLIC_TARGETS})
 
         # Propagate interface properties of header dependencies to target.
         foreach(dep IN LISTS Open3D_3RDPARTY_HEADER_TARGETS)
@@ -104,7 +105,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
             endif()
         endforeach()
         # Link header dependencies privately.
-        # target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_HEADER_TARGETS})
+        target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_HEADER_TARGETS})
     endfunction()
 
     open3d_link_3rdparty_libraries_debug(${TARGET_NAME})
