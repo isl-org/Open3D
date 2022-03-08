@@ -32,7 +32,7 @@ def autolabel(rects, color="k"):
                 '%d' % int(height),
                 ha='center',
                 va='bottom',
-                fontsize=24,
+                fontsize=20,
                 color=color)
 
 
@@ -101,8 +101,8 @@ if __name__ == "__main__":
     old_entries = parse_benchmark_log_file(old_log_file)
     new_entries = parse_benchmark_log_file(new_log_file)
 
-    # operands = ["unary", "binary"]
-    operands = ["binary"]
+    operands = ["unary", "binary"]
+    # operands = ["binary"]
     fig, axes = plt.subplots(len(operands), 1, figsize=(22, 10))
 
     for index, operand in enumerate(operands):
@@ -110,6 +110,9 @@ if __name__ == "__main__":
             ax = axes[index]
         else:
             ax = axes
+
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
 
         # Get ops, e.g. "add", '"mul"
         old_ops = [
@@ -158,20 +161,20 @@ if __name__ == "__main__":
         new_rects = ax.bar(ind + width, new_gmean_times, width,
                            color='r')  # #ffeaea
 
-        ax.set_ylabel('Time (ms)', fontsize=30)
+        ax.set_ylabel('Time (ms)', fontsize=20)
         ax.set_title(
             f'Open3D v0.13 vs. v0.14 {operand} op benchmark (lower is better)',
             fontweight="bold",
-            fontsize=30)
+            fontsize=24)
         ax.set_xticks(ind + width / 2)
         ops = [op.replace("logical_", "") for op in ops]
         ax.set_xticklabels(ops)
-        ax.tick_params(axis='both', which='major', labelsize=26)
+        ax.tick_params(axis='both', which='major', labelsize=20)
 
         legend = ax.legend((old_rects[0], new_rects[0]),
                            ("Open3D v0.13", "Open3D v0.14"),
                            loc='upper center',
-                           fontsize=26)
+                           fontsize=20)
         # for text in legend.get_texts():
         #     plt.setp(text, color='#eeeeee')
 
@@ -179,4 +182,5 @@ if __name__ == "__main__":
         autolabel(old_rects, color="k")
         autolabel(new_rects, color="k")
 
+    plt.tight_layout()
     plt.show()
