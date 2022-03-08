@@ -122,7 +122,7 @@ if (BUILD_JUPYTER_EXTENSION)
     endif()
 
     # Append requirements_jupyter_install.txt to requirements.txt
-    # These will be installed when `pip install Open3D`
+    # These will be installed when `pip install open3d`.
     execute_process(COMMAND ${CMAKE_COMMAND} -E cat
         ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt
         ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter_install.txt
