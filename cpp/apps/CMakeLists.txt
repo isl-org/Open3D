@@ -52,8 +52,39 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
 
     function(open3d_link_3rdparty_libraries_debug target)
         # Directly pass public and private dependencies to the target.
-        target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_PRIVATE_TARGETS})
-        target_link_libraries(${target} PUBLIC ${Open3D_3RDPARTY_PUBLIC_TARGETS})
+        # message(STATUS "Open3D_3RDPARTY_PRIVATE_TARGETS: ${Open3D_3RDPARTY_PRIVATE_TARGETS}")
+        # target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_PRIVATE_TARGETS})
+        target_link_libraries(${target} PRIVATE
+            Open3D::3rdparty_assimp
+            Open3D::3rdparty_openmp
+            Open3D::3rdparty_nanoflann
+            Open3D::3rdparty_jpeg
+            Open3D::3rdparty_jsoncpp
+            Open3D::3rdparty_liblzf
+            Open3D::3rdparty_tritriintersect
+            Open3D::3rdparty_curl
+            Open3D::3rdparty_openssl
+            Open3D::3rdparty_png
+            Open3D::3rdparty_rply
+            Open3D::3rdparty_tinyfiledialogs
+            Open3D::3rdparty_tinygltf
+            Open3D::3rdparty_tinyobjloader
+            Open3D::3rdparty_qhullcpp
+            Open3D::3rdparty_poisson
+            Open3D::3rdparty_imgui
+            Open3D::3rdparty_zeromq
+            Open3D::3rdparty_msgpack
+            Open3D::SYCL
+            Open3D::3rdparty_tbb
+            Open3D::3rdparty_onedpl
+            Open3D::3rdparty_mkl
+            Open3D::3rdparty_ippicv
+            Open3D::3rdparty_embree
+            Open3D::3rdparty_webrtc
+            Open3D::3rdparty_civetweb
+        )
+
+        # target_link_libraries(${target} PUBLIC ${Open3D_3RDPARTY_PUBLIC_TARGETS})
 
         # Propagate interface properties of header dependencies to target.
         foreach(dep IN LISTS Open3D_3RDPARTY_HEADER_TARGETS)
@@ -73,7 +104,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
             endif()
         endforeach()
         # Link header dependencies privately.
-        target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_HEADER_TARGETS})
+        # target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_HEADER_TARGETS})
     endfunction()
 
     open3d_link_3rdparty_libraries_debug(${TARGET_NAME})
