@@ -516,7 +516,7 @@ public:
 
     /// \brief Returns path to the `filename`. By default it returns the path to
     /// `mokey.obj` file. Refer documentation page for available options.
-    std::string GetPath(const std::string filename = "monkey_objet") const {
+    std::string GetPath(const std::string filename = "monkey_model") const {
         return map_filename_to_path_.at(filename);
     };
 
@@ -544,7 +544,7 @@ public:
 
     /// \brief Returns path to the `filename`. By default it returns the path to
     /// `mokey.obj` file. Refer documentation page for available options.
-    std::string GetPath(const std::string filename = "sword_object") const {
+    std::string GetPath(const std::string filename = "sword_model") const {
         return map_filename_to_path_.at(filename);
     };
 
@@ -572,7 +572,7 @@ public:
 
     /// \brief Returns path to the `filename`. By default it returns the path to
     /// `mokey.obj` file. Refer documentation page for available options.
-    std::string GetPath(const std::string filename = "crate_object") const {
+    std::string GetPath(const std::string filename = "crate_model") const {
         return map_filename_to_path_.at(filename);
     };
 

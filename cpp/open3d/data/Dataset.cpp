@@ -431,9 +431,9 @@ MonkeyModel::MonkeyModel(const std::string& data_root)
             {"ao", extract_dir + "/ao.png"},
             {"metallic", extract_dir + "/metallic.png"},
             {"monkey_material", extract_dir + "/monkey.mtl"},
-            {"monkey_object", extract_dir + "/monkey.obj"},
+            {"monkey_model", extract_dir + "/monkey.obj"},
             {"monkey_solid_material", extract_dir + "/monkey_solid.mtl"},
-            {"monkey_solid_object", extract_dir + "/monkey_solid.obj"},
+            {"monkey_solid_model", extract_dir + "/monkey_solid.obj"},
             {"normal", extract_dir + "/normal.png"},
             {"roughness", extract_dir + "/roughness.png"}};
 }
@@ -449,7 +449,7 @@ SwordModel::SwordModel(const std::string& data_root)
     const std::string extract_dir = Dataset::GetExtractDir();
     map_filename_to_path_ = {
             {"sword_material", extract_dir + "/UV.mtl"},
-            {"sword_object", extract_dir + "/UV.obj"},
+            {"sword_model", extract_dir + "/UV.obj"},
             {"base_color", extract_dir + "/UV_blinn1SG_BaseColor.png"},
             {"metallic", extract_dir + "/UV_blinn1SG_Metallic.png"},
             {"normal", extract_dir + "/UV_blinn1SG_Normal.png"},
@@ -466,7 +466,7 @@ CrateModel::CrateModel(const std::string& data_root)
               data_root) {
     const std::string extract_dir = Dataset::GetExtractDir();
     map_filename_to_path_ = {{"create_material", extract_dir + "/crate.mtl"},
-                             {"create_object", extract_dir + "/crate.obj"},
+                             {"create_model", extract_dir + "/crate.obj"},
                              {"texture_image", extract_dir + "/crate.png"}};
 }
 
