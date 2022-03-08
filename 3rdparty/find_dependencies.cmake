@@ -1286,16 +1286,16 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
 if (OPEN3D_USE_ONEAPI)
     # DPC++ (compile and link flags only)
-    add_library(SYCL INTERFACE)
-    target_compile_options(SYCL INTERFACE
+    add_library(3rdparty_syclflags INTERFACE)
+    target_compile_options(3rdparty_syclflags INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda>)
-    target_link_libraries(SYCL INTERFACE
+    target_link_libraries(3rdparty_syclflags INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl -fsycl>)
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
-        install(TARGETS SYCL EXPORT Open3DTargets)
+        install(TARGETS 3rdparty_syclflags EXPORT Open3DTargets)
     endif()
-    add_library(Open3D::SYCL ALIAS SYCL)
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::SYCL)
+    add_library(Open3D::3rdparty_syclflags ALIAS 3rdparty_syclflags)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_syclflags)
 
     # oneTBB
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/tbb/latest/lib/cmake/tbb)
