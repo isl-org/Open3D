@@ -1,13 +1,12 @@
-This folder contains a set of external libraries that are used in Open3D.
+# Open3D third-party libraries
 
-We want to make Open3D self-contained and cross-platform consistent. So
-Open3D does not detect system installed libraries and always links to these
-external libraries.
+This folder contains a set of external libraries that are used in Open3D. Open3D
+prefers building third-party dependencies from source to detecting pre-installed
+system dependencies.
 
-Some external libraries rely on basic system level libraries such as OpenGL and
-libusb. Run corresponding script file under "script" directory to automatically
-config them.
+## List of third-party libraries
 
+```txt
 --------------------------------------------------------------------------------
 Eigen                       3.4                              Mainly MPL2 license
 A high-level C++ library of template headers for linear algebra, matrix and
@@ -126,6 +125,7 @@ boringssl:                  edfe413            Dual OpenSSL, SSLeay, ISC license
 BoringSSL is a fork of OpenSSL that is designed to meet Google's needs.
 https://github.com/google/boringssl
 --------------------------------------------------------------------------------
+```
 
 ## Patching a third-party library
 
