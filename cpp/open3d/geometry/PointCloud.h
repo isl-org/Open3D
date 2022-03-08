@@ -189,7 +189,7 @@ public:
     /// selected points iteratively.
     ///
     /// \param num_samples Number of points to be sampled.
-    std::shared_ptr<PointCloud> GetFarthestPointSample(
+    std::shared_ptr<PointCloud> FarthestPointDownSample(
             size_t num_samples) const;
 
     /// \brief Function to crop pointcloud into output pointcloud
