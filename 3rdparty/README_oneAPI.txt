@@ -8,7 +8,7 @@
 - Python: dynamic library loading.
 - ABI=1 currently required.
 
-## Python packages
+## Python packages (not used for now)
 
 https://pypi.org/user/IntelAutomationEngineering/
 - dpcpp-cpp-rt     https://pypi.org/project/dpcpp-cpp-rt/#history     2021.4.0
