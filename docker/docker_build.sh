@@ -51,6 +51,14 @@ OPTION:
     oneapi-static          : OneAPI with static lib
     oneapi-shared          : OneAPI with shared lib
 
+    # ML CIs (Dockerfile.ci)
+    2-bionic                   : CUDA CI, 2-bionic, developer mode
+    3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic, release mode
+    3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic, developer mode
+    4-shared-bionic            : CUDA CI, 4-shared-bionic, developer mode
+    4-shared-bionic-release    : CUDA CI, 4-shared-bionic, release mode
+    5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
+
     # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py36_dev    : CUDA Python 3.6 wheel, developer mode
     cuda_wheel_py37_dev    : CUDA Python 3.7 wheel, developer mode
@@ -60,14 +68,6 @@ OPTION:
     cuda_wheel_py37        : CUDA Python 3.7 wheel, release mode
     cuda_wheel_py38        : CUDA Python 3.8 wheel, release mode
     cuda_wheel_py39        : CUDA Python 3.9 wheel, release mode
-
-    # ML CIs (Dockerfile.ci)
-    2-bionic                   : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic, release mode
-    3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic, developer mode
-    4-shared-bionic            : CUDA CI, 4-shared-bionic, developer mode
-    4-shared-bionic-release    : CUDA CI, 4-shared-bionic, release mode
-    5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -232,6 +232,7 @@ ci_build() {
     echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[ci_build()] PACKAGE=${PACKAGE}"
+    echo "[ci_build()] OPEN3D_USE_ONEAPI=${OPEN3D_USE_ONEAPI}"
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -246,6 +247,7 @@ ci_build() {
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
+        --build-arg OPEN3D_USE_ONEAPI="${OPEN3D_USE_ONEAPI}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.ci .
     popd
@@ -267,6 +269,7 @@ ci_build() {
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=OFF
+    export OPEN3D_USE_ONEAPI=OFF
 }
 
 3-ml-shared-bionic_export_env() {
@@ -281,6 +284,7 @@ ci_build() {
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
+    export OPEN3D_USE_ONEAPI=OFF
 }
 
 3-ml-shared-bionic-release_export_env() {
@@ -295,6 +299,7 @@ ci_build() {
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
+    export OPEN3D_USE_ONEAPI=OFF
 }
 
 4-shared-bionic_export_env() {
@@ -309,6 +314,7 @@ ci_build() {
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
+    export OPEN3D_USE_ONEAPI=OFF
 }
 
 4-shared-bionic-release_export_env() {
@@ -323,6 +329,7 @@ ci_build() {
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
+    export OPEN3D_USE_ONEAPI=OFF
 }
 
 5-ml-focal_export_env() {
@@ -337,6 +344,7 @@ ci_build() {
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=OFF
+    export OPEN3D_USE_ONEAPI=OFF
 }
 
 cpu-static_export_env() {
@@ -351,6 +359,7 @@ cpu-static_export_env() {
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=OFF
+    export OPEN3D_USE_ONEAPI=OFF
 }
 
 cpu-shared_export_env() {
@@ -365,6 +374,7 @@ cpu-shared_export_env() {
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
+    export OPEN3D_USE_ONEAPI=OFF
 }
 
 cpu-shared-ml_export_env() {
@@ -379,6 +389,7 @@ cpu-shared-ml_export_env() {
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
+    export OPEN3D_USE_ONEAPI=OFF
 }
 
 cpu-shared-release_export_env() {
@@ -393,6 +404,7 @@ cpu-shared-release_export_env() {
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
+    export OPEN3D_USE_ONEAPI=OFF
 }
 
 cpu-shared-ml-release_export_env() {
@@ -407,6 +419,37 @@ cpu-shared-ml-release_export_env() {
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
+    export OPEN3D_USE_ONEAPI=OFF
+}
+
+oneapi-static_export_env() {
+    export DOCKER_TAG=open3d-ci:oneapi-static
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-oneapi
+    export PYTHON_VERSION=3.6
+    export SHARED=OFF
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=OFF
+    export OPEN3D_USE_ONEAPI=ON
+}
+
+oneapi-shared_export_env() {
+    export DOCKER_TAG=open3d-ci:oneapi-shared
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-oneapi
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=OFF
+    export OPEN3D_USE_ONEAPI=ON
 }
 
 function main () {
@@ -503,6 +546,16 @@ function main () {
             ;;
         cpu-shared-ml-release)
             cpu-shared-ml-release_export_env
+            ci_build
+            ;;
+
+        # OneAPI CI
+        oneapi-static)
+            oneapi-static_export_env
+            ci_build
+            ;;
+        oneapi-shared)
+            oneapi-shared_export_env
             ci_build
             ;;
 
