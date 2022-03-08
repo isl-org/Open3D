@@ -182,7 +182,7 @@ std::shared_ptr<Image> Image::FilterHorizontal(
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4 ||
         kernel.size() % 2 != 1) {
         utility::LogError(
-                "[FilterHorizontal] Unsupported image format or kernel "
+                "Unsupported image format or kernel "
                 "size.");
     }
     output->Prepare(width_, height_, 1, 4);

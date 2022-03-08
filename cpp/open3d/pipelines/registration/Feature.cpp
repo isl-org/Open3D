@@ -118,7 +118,7 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     feature->Resize(33, (int)input.points_.size());
     if (!input.HasNormals()) {
         utility::LogError(
-                "[ComputeFPFHFeature] Failed because input point cloud has no "
+                "Failed because input point cloud has no "
                 "normal.");
     }
     geometry::KDTreeFlann kdtree(input);

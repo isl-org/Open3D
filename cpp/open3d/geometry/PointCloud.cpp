@@ -466,7 +466,7 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
         double sampling_ratio) const {
     if (sampling_ratio < 0 || sampling_ratio > 1) {
         utility::LogError(
-                "[RandomDownSample] Illegal sampling_ratio {}, sampling_ratio "
+                "Illegal sampling_ratio {}, sampling_ratio "
                 "must be between 0 and 1.");
     }
     std::vector<size_t> indices(points_.size());
@@ -482,7 +482,7 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
         const AxisAlignedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
+                "AxisAlignedBoundingBox either has zeros "
                 "size, or has wrong bounds.");
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
@@ -491,7 +491,7 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
         const OrientedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
+                "AxisAlignedBoundingBox either has zeros "
                 "size, or has wrong bounds.");
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
@@ -503,7 +503,7 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points,
                                  bool print_progress /* = false */) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogError(
-                "[RemoveRadiusOutliers] Illegal input parameters,"
+                "Illegal input parameters,"
                 "number of points and radius must be positive");
     }
     KDTreeFlann kdtree;
@@ -536,7 +536,7 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                                       bool print_progress /* = false */) const {
     if (nb_neighbors < 1 || std_ratio <= 0) {
         utility::LogError(
-                "[RemoveStatisticalOutliers] Illegal input parameters, number "
+                "Illegal input parameters, number "
                 "of neighbors and standard deviation ratio must be positive");
     }
     if (points_.size() == 0) {
@@ -681,8 +681,7 @@ std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
 PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
                                const double radius) const {
     if (radius <= 0) {
-        utility::LogError(
-                "[HiddenPointRemoval] radius must be larger than zero.");
+        utility::LogError("radius must be larger than zero.");
     }
 
     // perform spherical projection

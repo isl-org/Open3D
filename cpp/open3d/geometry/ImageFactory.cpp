@@ -123,8 +123,7 @@ template <typename T>
 std::shared_ptr<Image> Image::CreateImageFromFloatImage() const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::LogError(
-                "[CreateImageFromFloatImage] Unsupported image format.");
+        utility::LogError("Unsupported image format.");
     }
 
     output->Prepare(width_, height_, num_of_channels_, sizeof(T));

@@ -531,8 +531,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
         utility::LogError("number_of_points <= 0");
     }
     if (triangles_.size() == 0) {
-        utility::LogError(
-                "[SamplePointsUniformly] input mesh has no triangles");
+        utility::LogError("input mesh has no triangles");
     }
 
     // Compute area of each triangle and sum surface area
@@ -553,17 +552,16 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         utility::LogError("number_of_points <= 0");
     }
     if (triangles_.size() == 0) {
-        utility::LogError(
-                "[SamplePointsPoissonDisk] input mesh has no triangles");
+        utility::LogError("input mesh has no triangles");
     }
     if (pcl_init == nullptr && init_factor < 1) {
         utility::LogError(
-                "[SamplePointsPoissonDisk] either pass pcl_init with #points "
+                "either pass pcl_init with #points "
                 "> number_of_points or init_factor > 1");
     }
     if (pcl_init != nullptr && pcl_init->points_.size() < number_of_points) {
         utility::LogError(
-                "[SamplePointsPoissonDisk] either pass pcl_init with #points "
+                "either pass pcl_init with #points "
                 "> number_of_points, or init_factor > 1");
     }
 
@@ -1690,7 +1688,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
         const AxisAlignedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "[CropTriangleMesh] AxisAlignedBoundingBox either has zeros "
+                "AxisAlignedBoundingBox either has zeros "
                 "size, or has wrong bounds.");
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(vertices_));
@@ -1700,7 +1698,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
         const OrientedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "[CropTriangleMesh] AxisAlignedBoundingBox either has zeros "
+                "AxisAlignedBoundingBox either has zeros "
                 "size, or has wrong bounds.");
         return std::make_shared<TriangleMesh>();
     }

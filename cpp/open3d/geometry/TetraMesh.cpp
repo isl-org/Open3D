@@ -197,7 +197,7 @@ std::shared_ptr<TriangleMesh> TetraMesh::ExtractTriangleMesh(
 
     if (values.size() != vertices_.size()) {
         utility::LogError(
-                "[ExtractTriangleMesh] number of values does not match the "
+                "number of values does not match the "
                 "number of vertices.");
     }
 

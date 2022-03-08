@@ -51,7 +51,7 @@ void Unproject(const core::Tensor& depth,
                int64_t stride) {
     if (image_colors.has_value() != colors.has_value()) {
         utility::LogError(
-                "[Unproject] Both or none of image_colors and colors must have "
+                "Both or none of image_colors and colors must have "
                 "values.");
     }
 
@@ -91,7 +91,7 @@ void Project(
         float depth_max) {
     if (image_colors.has_value() != colors.has_value()) {
         utility::LogError(
-                "[Project] Both or none of image_colors and colors must have "
+                "Both or none of image_colors and colors must have "
                 "values.");
     }
 

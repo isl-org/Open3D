@@ -110,8 +110,7 @@ void PointCloudTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
 
     index_t total_block_count = count.Item<index_t>();
     if (total_block_count == 0) {
-        utility::LogError(
-                "[CUDATSDFTouchKernel] No block is touched in TSDF volume, "
+        utility::LogError("No block is touched in TSDF volume, "
                 "abort integration. Please check specified parameters, "
                 "especially depth_scale and voxel_size");
     }

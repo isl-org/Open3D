@@ -188,7 +188,7 @@ public:
     TArrayIndexer(const core::Tensor& ndarray, index_t active_dims) {
         if (!ndarray.IsContiguous()) {
             utility::LogError(
-                    "[TArrayIndexer] Only support contiguous tensors for "
+                    "Only support contiguous tensors for "
                     "general operations.");
         }
 
@@ -196,7 +196,7 @@ public:
         index_t n = ndarray.NumDims();
         if (active_dims > MAX_RESOLUTION_DIMS || active_dims > n) {
             utility::LogError(
-                    "[TArrayIndexer] Tensor shape too large, only <= {} and "
+                    "Tensor shape too large, only <= {} and "
                     "<= {} array dim is supported, but received {}.",
                     MAX_RESOLUTION_DIMS, n, active_dims);
         }
@@ -224,7 +224,7 @@ public:
         index_t n = static_cast<index_t>(shape.size());
         if (n > MAX_RESOLUTION_DIMS) {
             utility::LogError(
-                    "[TArrayIndexer] SizeVector too large, only <= {} is "
+                    "SizeVector too large, only <= {} is "
                     "supported, but received {}.",
                     MAX_RESOLUTION_DIMS, n);
         }
