@@ -25,8 +25,8 @@ Currently, Open3D supports the Azure Kinect SDK version ``v1.4.1``, though futur
 versions might also be compatible.
 
 
-Install Using Open3D from Pip
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install Open3D from Pip
+~~~~~~~~~~~~~~~~~~~~~~~
 
 If you're using Open3D installed via Pip, Open3D's Azure Kinect features
 should work out-of-the box if K4A is installed in the system in the recommended

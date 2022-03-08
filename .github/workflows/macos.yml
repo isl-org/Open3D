@@ -153,11 +153,12 @@ jobs:
           # Common prefix will be used so that ccache can be used across commits.
           restore-keys: |
             ${{ runner.os }}-ccache
-      - name: Set up Python version
-        uses: conda-incubator/setup-miniconda@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          auto-update-conda: false
           python-version: ${{ matrix.python_version }}
+
       - name: Install dependencies
         shell: bash -l {0}
         run: |
@@ -165,7 +166,6 @@ jobs:
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
           source util/ci_utils.sh
           install_python_dependencies
-          conda info
           echo "Using python: $(which python)"
           python --version
           echo -n "Using pip: $(which pip)"

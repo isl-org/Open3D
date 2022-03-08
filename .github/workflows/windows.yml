@@ -236,10 +236,9 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
 
-      - name: Set up Python version
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          auto-update-conda: false
           python-version: ${{ matrix.python_version }}
 
       - name: Install Python dependencies
