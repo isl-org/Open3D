@@ -1,3 +1,64 @@
+add_custom_command(
+    OUTPUT
+    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
+    DEPENDS
+        EmbedResources
+    COMMAND
+        rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h &&
+        ./EmbedResources resources/brightday_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/brightday_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/colorMap.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/crossroads_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/crossroads_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/defaultGradient.png ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/default_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/defaultLit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/defaultLitSSR.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/defaultLitTransparency.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/default_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/defaultTexture.png ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/defaultUnlit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/defaultUnlitTransparency.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/depth.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/depth_value.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/hall_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/hall_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/img_blit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/infiniteGroundPlane.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/konzerthaus_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/konzerthaus_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/nightlights_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/nightlights_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/normals.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/park2_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/park2_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/park_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/park_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/pillars_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/pillars_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/pointcloud.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/streetlamp_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/streetlamp_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/ui_blit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/unlitBackground.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/unlitGradient.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/unlitLine.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/unlitPolygonOffset.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/unlitSolidColor.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
+    WORKING_DIRECTORY
+        ${PROJECT_BINARY_DIR}/bin
+    COMMENT
+        "Generating Resource.cpp"
+    VERBATIM
+    )
+
+add_custom_target(resource ALL
+    COMMAND
+        echo "Embedding resources into the binary"
+    DEPENDS ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
+)
+
 open3d_ispc_add_library(GUI OBJECT)
 
 target_sources(GUI PRIVATE
@@ -27,6 +88,7 @@ target_sources(GUI PRIVATE
     RadioButton.cpp
     PickPointsInteractor.cpp
     ProgressBar.cpp
+    Resource.cpp
     SceneWidget.cpp
     Slider.cpp
     StackedWidget.cpp
@@ -103,7 +165,7 @@ open3d_add_compiled_materials(materials
 # Source group for Visual Studio
 add_source_group(Materials)
 
-add_dependencies(GUI materials)
+add_dependencies(GUI materials resource)
 
 get_target_property(GUI_MATERIAL_COMPILED_FILES materials COMPILED_MATERIALS)
 

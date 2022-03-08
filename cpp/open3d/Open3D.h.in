@@ -127,6 +127,7 @@
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/Menu.h"
 #include "open3d/visualization/gui/ProgressBar.h"
+#include "open3d/visualization/gui/Resource.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Slider.h"
 #include "open3d/visualization/gui/TabControl.h"

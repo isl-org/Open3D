@@ -3,92 +3,183 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
-
-#include "open3d/Open3D.h"
-
-#define LINE_NUMBER_START 17
+#include <string>
 
 namespace fs = std::experimental::filesystem;
 
-int main(int argc, char* argv[]) {
-    std::ifstream src_in;
-    std::cout << argc << std::endl;
-    src_in.open(std::string(argv[1]));
-    // std::vector<std::pair<std::string, std::streampos>> cpp_line_positions;
-    std::string src_data;
-    // std::string line;
-    // int line_number = 0;
-    // while (std::getline(src_in, line)) {
-    //     line_number++;
-    //     if (line_number == LINE_NUMBER_START - 1) break;
-    // }
-    // line.clear();
-    // while (src_in >> line) {
-    //     char brace;
-    //     src_in >> brace;
-    //     if (line.find("Resource(") == std::string::npos) {
-    //         break;
-    //     }
-    //     std::cout << line.substr(10, line.length() - 12) << std::endl;
-    //     const std::streampos position = src_in.tellg();
-    //     cpp_line_positions.push_back(
-    //             {line.substr(10, line.length() - 12), position});
-    //     src_in >> line;
-    //     line.clear();
-    // }
-    // src_in.close();
-
-    if(src_in) {
-        std::ostringstream ss;
-        ss << src_in.rdbuf();
-        src_data = ss.str();
-    }
-    std::ofstream cpp_out;
-    cpp_out.open(std::string(argv[1]), std::ios::trunc);
-
-    // std::cout << std::setw(2);
-    // for (auto name_pos =  cpp_line_positions.rbegin(); name_pos != cpp_line_positions.rend(); ++name_pos) {
-    //     fs::path resources_dir_path = std::string(argv[2]);
-    //     fs::path resource_path = resources_dir_path / name_pos->first;
-    //     std::cout << resource_path << std::endl;
-    //     std::vector<char> resource_data;
-    //     std::string error_str;
-    //     if (open3d::utility::filesystem::FReadToBuffer(resource_path, resource_data, &error_str)) {
-    //         cpp_out.seekp(name_pos->second);
-    //         for (auto& byte : resource_data) {
-    //             cpp_out << "0x" << std::hex << (int)(unsigned char) byte << ", ";
-    //         }
-    //         cpp_out << "})," << std::endl;
-    //     }
-    // }
-    size_t found = src_data.find("if (resource_name == \"");
-    fs::path resources_dir_path = std::string(argv[2]);
-    while (found != std::string::npos) {
-        std::stringstream name_stream;
-        name_stream << src_data.substr(found+22);
-        std::string resource_name;
-        name_stream >> resource_name;
-        resource_name = resource_name.substr(0, resource_name.length() - 2);
-        std::cout << resource_name << std::endl;
-        fs::path resource_path = resources_dir_path / resource_name;
-        std::vector<char> resource_data;
-        std::string error_str;
-        std::vector<char> test_chars; 
-        if (open3d::utility::filesystem::FReadToBuffer(resource_path, resource_data, &error_str)) {
-            std::stringstream hex_data;
-            hex_data << "\n        return {";
-            for (auto byte : resource_data) {
-                hex_data << (int)byte << ", ";
-                test_chars.push_back((int)byte);
-            }
-            hex_data << "};";
-            std::cout << (test_chars == resource_data) << std::endl;
-            src_data.insert(found+26+resource_name.length(), hex_data.str());
+std::string GetIOErrorString(const int errnoVal) {
+    switch (errnoVal) {
+        case EPERM:
+            return "Operation not permitted";
+        case EACCES:
+            return "Access denied";
+        // Error below could be EWOULDBLOCK on Linux
+        case EAGAIN:
+            return "Resource unavailable, try again";
+#if !defined(WIN32)
+        case EDQUOT:
+            return "Over quota";
+#endif
+        case EEXIST:
+            return "File already exists";
+        case EFAULT:
+            return "Bad filename pointer";
+        case EINTR:
+            return "open() interrupted by a signal";
+        case EIO:
+            return "I/O error";
+        case ELOOP:
+            return "Too many symlinks, could be a loop";
+        case EMFILE:
+            return "Process is out of file descriptors";
+        case ENAMETOOLONG:
+            return "Filename is too long";
+        case ENFILE:
+            return "File system table is full";
+        case ENOENT:
+            return "No such file or directory";
+        case ENOSPC:
+            return "No space available to create file";
+        case ENOTDIR:
+            return "Bad path";
+        case EOVERFLOW:
+            return "File is too big";
+        case EROFS:
+            return "Can't modify file on read-only filesystem";
+#if EWOULDBLOCK != EAGAIN
+        case EWOULDBLOCK:
+            return "Operation would block calling process";
+#endif
+        default: {
+            std::stringstream s;
+            s << "IO error " << errnoVal << " (see sys/errno.h)";
+            return s.str();
         }
-        found = src_data.find("if (resource_name == \"", found+1);
+    }
+}
+
+FILE *FOpen(const std::string &filename, const std::string &mode) {
+    FILE *fp;
+#ifndef _WIN32
+    fp = fopen(filename.c_str(), mode.c_str());
+#else
+    std::wstring filename_w;
+    filename_w.resize(filename.size());
+    int newSize = MultiByteToWideChar(CP_UTF8, 0, filename.c_str(),
+                                      static_cast<int>(filename.length()),
+                                      const_cast<wchar_t *>(filename_w.c_str()),
+                                      static_cast<int>(filename.length()));
+    filename_w.resize(newSize);
+    std::wstring mode_w(mode.begin(), mode.end());
+    fp = _wfopen(filename_w.c_str(), mode_w.c_str());
+#endif
+    return fp;
+}
+
+bool FReadToBuffer(const std::string &path,
+                   std::vector<char> &bytes,
+                   std::string *errorStr) {
+    bytes.clear();
+    if (errorStr) {
+        errorStr->clear();
     }
 
-    cpp_out << src_data;
-    cpp_out.close();
+    FILE *file = FOpen(path.c_str(), "rb");
+    if (!file) {
+        if (errorStr) {
+            *errorStr = GetIOErrorString(errno);
+        }
+
+        return false;
+    }
+
+    if (fseek(file, 0, SEEK_END) != 0) {
+        // We ignore that fseek will block our process
+        if (errno && errno != EWOULDBLOCK) {
+            if (errorStr) {
+                *errorStr = GetIOErrorString(errno);
+            }
+
+            fclose(file);
+            return false;
+        }
+    }
+
+    const size_t filesize = ftell(file);
+    rewind(file);  // reset file pointer back to beginning
+
+    bytes.resize(filesize);
+    const size_t result = fread(bytes.data(), 1, filesize, file);
+
+    if (result != filesize) {
+        if (errorStr) {
+            *errorStr = GetIOErrorString(errno);
+        }
+
+        fclose(file);
+        return false;
+    }
+
+    fclose(file);
+    return true;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cout << "Usage: " << argv[0] << " <input_file> <output_cpp_file>";
+        return 0;
+    }
+    
+    std::string input_file = argv[1];
+    std::string output_cpp_file = argv[2];
+    std::string output_h_file = argv[2];
+    output_h_file = output_h_file.substr(0, output_cpp_file.length()-4) + ".h";
+
+    std::vector<char> resource_data;
+    std::string error_str;
+    
+    if (FReadToBuffer(input_file, resource_data, &error_str)) {
+        
+        std::ofstream cpp_out;
+        std::ofstream h_out;
+        
+        if (!fs::exists(output_cpp_file)) {
+            cpp_out.open(output_cpp_file, std::ios::trunc);
+            cpp_out << "#include \"open3d/visualization/gui/Resource.h\"\n\n";
+        } else {
+            cpp_out.open(output_cpp_file, std::ios::app);
+        }
+
+        if (!fs::exists(output_h_file)) {
+            h_out.open(output_h_file, std::ios::trunc);
+            h_out << "#include <vector>\n\n";
+        } else {
+            h_out.open(output_h_file, std::ios::app);
+        }
+
+        std::stringstream byte_data;
+        std::string var_name = fs::path(input_file).filename().string();
+        var_name.replace(var_name.find('.'), 1, "_");
+
+        h_out << "std::vector<char> " << var_name << "();" << std::endl;
+
+        cpp_out << "std::vector<char> "<< var_name << "() {\n"
+                << "    static const std::vector<char> " << var_name << "_data = {\n"
+                << "        ";
+
+        for (auto byte : resource_data) {
+            cpp_out << (int)byte << ", ";
+        }
+
+        cpp_out << "    };\n"
+                << "    return " << var_name << "_data;\n"
+                << "}" << std::endl;
+        
+        cpp_out.close();
+        h_out.close();
+    } else {
+        std::cout << "Error loading file: " << error_str << std::endl;
+    }
+
     return 0;
 }
