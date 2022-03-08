@@ -49,7 +49,34 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     open3d_show_and_abort_on_warning(${TARGET_NAME})
     open3d_set_global_properties(${TARGET_NAME})
-    open3d_link_3rdparty_libraries(${TARGET_NAME})
+
+    function(open3d_link_3rdparty_libraries_debug target)
+        # Directly pass public and private dependencies to the target.
+        target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_PRIVATE_TARGETS})
+        target_link_libraries(${target} PUBLIC ${Open3D_3RDPARTY_PUBLIC_TARGETS})
+
+        # Propagate interface properties of header dependencies to target.
+        foreach(dep IN LISTS Open3D_3RDPARTY_HEADER_TARGETS)
+            if(TARGET ${dep})
+                foreach(prop IN ITEMS
+                    INTERFACE_INCLUDE_DIRECTORIES
+                    INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+                    INTERFACE_COMPILE_DEFINITIONS
+                )
+                    get_property(prop_value TARGET ${dep} PROPERTY ${prop})
+                    if(prop_value)
+                        set_property(TARGET ${target} APPEND PROPERTY ${prop} ${prop_value})
+                    endif()
+                endforeach()
+            else()
+                message(WARNING "Skipping non-existent header dependency ${dep}")
+            endif()
+        endforeach()
+        # Link header dependencies privately.
+        target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_HEADER_TARGETS})
+    endfunction()
+
+    open3d_link_3rdparty_libraries_debug(${TARGET_NAME})
 
     # Copy the resource files. This needs to be done as a post-build step
     # because on macOS, we don't know the bundle directory until build time
