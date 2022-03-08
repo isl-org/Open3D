@@ -188,16 +188,15 @@ public:
     TArrayIndexer(const core::Tensor& ndarray, index_t active_dims) {
         if (!ndarray.IsContiguous()) {
             utility::LogError(
-                    "Only support contiguous tensors for "
-                    "general operations.");
+                    "Only support contiguous tensors for general operations.");
         }
 
         core::SizeVector shape = ndarray.GetShape();
         index_t n = ndarray.NumDims();
         if (active_dims > MAX_RESOLUTION_DIMS || active_dims > n) {
             utility::LogError(
-                    "Tensor shape too large, only <= {} and "
-                    "<= {} array dim is supported, but received {}.",
+                    "Tensor shape too large, only <= {} and <= {} array dim is "
+                    "supported, but received {}.",
                     MAX_RESOLUTION_DIMS, n, active_dims);
         }
 

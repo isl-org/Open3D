@@ -531,7 +531,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
         utility::LogError("number_of_points <= 0");
     }
     if (triangles_.size() == 0) {
-        utility::LogError("input mesh has no triangles");
+        utility::LogError("Input mesh has no triangles.");
     }
 
     // Compute area of each triangle and sum surface area
@@ -552,17 +552,17 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         utility::LogError("number_of_points <= 0");
     }
     if (triangles_.size() == 0) {
-        utility::LogError("input mesh has no triangles");
+        utility::LogError("Input mesh has no triangles.");
     }
     if (pcl_init == nullptr && init_factor < 1) {
         utility::LogError(
-                "either pass pcl_init with #points "
-                "> number_of_points or init_factor > 1");
+                "Either pass pcl_init with #points > number_of_points or "
+                "init_factor > 1");
     }
     if (pcl_init != nullptr && pcl_init->points_.size() < number_of_points) {
         utility::LogError(
-                "either pass pcl_init with #points "
-                "> number_of_points, or init_factor > 1");
+                "Either pass pcl_init with #points > number_of_points, or "
+                "init_factor > 1");
     }
 
     // Compute area of each triangle and sum surface area
