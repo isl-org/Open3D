@@ -75,7 +75,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
             # Open3D::3rdparty_imgui
             # Open3D::3rdparty_zeromq
             # Open3D::3rdparty_msgpack
-            Open3D::3rdparty_syclflags
+            Open3D::3rdparty_sycl
 
             # Open3D::3rdparty_tbb
             # Open3D::3rdparty_onedpl
