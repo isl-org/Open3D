@@ -1290,7 +1290,7 @@ if (OPEN3D_USE_ONEAPI)
     target_compile_options(3rdparty_sycl INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda>)
     target_link_libraries(3rdparty_sycl INTERFACE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl -fsycl>)
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl>) # -fsycl
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS 3rdparty_sycl EXPORT Open3DTargets)
     endif()
