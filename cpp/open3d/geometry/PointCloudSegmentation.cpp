@@ -138,15 +138,9 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const int num_iterations /* = 100 */,
         utility::optional<int> seed /* = utility::nullopt */) const {
     RANSACResult result;
-    double error = 0;
 
-    // Initialize the plane model ax + by + cz + d = 0.
-    Eigen::Vector4d plane_model = Eigen::Vector4d(0, 0, 0, 0);
     // Initialize the best plane model.
     Eigen::Vector4d best_plane_model = Eigen::Vector4d(0, 0, 0, 0);
-
-    // Initialize consensus set.
-    std::vector<size_t> inliers;
 
     size_t num_points = points_.size();
     std::vector<size_t> indices(num_points);
@@ -162,24 +156,29 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
     if (ransac_n < 3) {
         utility::LogError(
                 "ransac_n should be set to higher than or equal to 3.");
-        return std::make_tuple(best_plane_model, inliers);
+        return std::make_tuple(Eigen::Vector4d(0, 0, 0, 0),
+                               std::vector<size_t>{});
     }
     if (num_points < size_t(ransac_n)) {
         utility::LogError("There must be at least 'ransac_n' points.");
-        return std::make_tuple(best_plane_model, inliers);
+        return std::make_tuple(Eigen::Vector4d(0, 0, 0, 0),
+                               std::vector<size_t>{});
     }
 
+#pragma omp parallel for schedule(static)
     for (int itr = 0; itr < num_iterations; itr++) {
         for (int i = 0; i < ransac_n; ++i) {
             std::swap(indices[i], indices[rng() % num_points]);
         }
-        inliers.clear();
+
+        std::vector<size_t> inliers;
         for (int idx = 0; idx < ransac_n; ++idx) {
             inliers.emplace_back(indices[idx]);
         }
 
         // Fit model to num_model_parameters randomly selected points among the
         // inliers.
+        Eigen::Vector4d plane_model;
         if (ransac_n == 3) {
             plane_model = TriangleMesh::ComputeTrianglePlane(
                     points_[inliers[0]], points_[inliers[1]],
@@ -192,36 +191,40 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
             continue;
         }
 
-        error = 0;
+        double error = 0;
         inliers.clear();
         auto this_result = EvaluateRANSACBasedOnDistance(
                 points_, plane_model, inliers, distance_threshold, error);
-        if (this_result.fitness_ > result.fitness_ ||
-            (this_result.fitness_ == result.fitness_ &&
-             this_result.inlier_rmse_ < result.inlier_rmse_)) {
-            result = this_result;
-            best_plane_model = plane_model;
+#pragma omp critical
+        {
+            if (this_result.fitness_ > result.fitness_ ||
+                (this_result.fitness_ == result.fitness_ &&
+                 this_result.inlier_rmse_ < result.inlier_rmse_)) {
+                result = this_result;
+                best_plane_model = plane_model;
+            }
         }
     }
 
     // Find the final inliers using best_plane_model.
-    inliers.clear();
+    std::vector<size_t> final_inliers;
     for (size_t idx = 0; idx < points_.size(); ++idx) {
         Eigen::Vector4d point(points_[idx](0), points_[idx](1), points_[idx](2),
                               1);
         double distance = std::abs(best_plane_model.dot(point));
 
         if (distance < distance_threshold) {
-            inliers.emplace_back(idx);
+            final_inliers.emplace_back(idx);
         }
     }
 
     // Improve best_plane_model using the final inliers.
-    best_plane_model = GetPlaneFromPoints(points_, inliers);
+    best_plane_model = GetPlaneFromPoints(points_, final_inliers);
 
     utility::LogDebug("RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}",
-                      inliers.size(), result.fitness_, result.inlier_rmse_);
-    return std::make_tuple(best_plane_model, inliers);
+                      final_inliers.size(), result.fitness_,
+                      result.inlier_rmse_);
+    return std::make_tuple(best_plane_model, final_inliers);
 }
 
 }  // namespace geometry
