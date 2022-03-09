@@ -247,7 +247,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -r python/requirements.txt
-          python -m pip install -r python/requirements_jupyter.txt
+          python -m pip install -r python/requirements_jupyter_build.txt
 
       - name: Config
         shell: pwsh
