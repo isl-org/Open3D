@@ -290,9 +290,7 @@ static void NormalizeIntensity(
         const CorrespondenceSetPixelWise &correspondence) {
     if (image_s.width_ != image_t.width_ ||
         image_s.height_ != image_t.height_) {
-        utility::LogError(
-                "Size of two input images should be "
-                "same");
+        utility::LogError("Size of two input images should be the same");
     }
     double mean_s = 0.0, mean_t = 0.0;
     for (size_t row = 0; row < correspondence.size(); row++) {

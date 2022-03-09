@@ -223,8 +223,8 @@ public:
         index_t n = static_cast<index_t>(shape.size());
         if (n > MAX_RESOLUTION_DIMS) {
             utility::LogError(
-                    "SizeVector too large, only <= {} is "
-                    "supported, but received {}.",
+                    "SizeVector too large, only <= {} is supported, but "
+                    "received {}.",
                     MAX_RESOLUTION_DIMS, n);
         }
         active_dims_ = n;

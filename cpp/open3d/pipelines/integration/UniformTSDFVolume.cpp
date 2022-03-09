@@ -79,8 +79,8 @@ void UniformTSDFVolume::Integrate(
     if ((image.depth_.width_ != intrinsic.width_) ||
         (image.depth_.height_ != intrinsic.height_)) {
         utility::LogError(
-                "depth image size is ({} x {}), "
-                "but got ({} x {}) from intrinsic.",
+                "Depth image size is ({} x {}), but got ({} x {}) from "
+                "intrinsic.",
                 image.depth_.width_, image.depth_.height_, intrinsic.width_,
                 intrinsic.height_);
     }
@@ -88,8 +88,8 @@ void UniformTSDFVolume::Integrate(
         (image.color_.width_ != intrinsic.width_ ||
          image.color_.height_ != intrinsic.height_)) {
         utility::LogError(
-                "color image size is ({} x {}), "
-                "but got ({} x {}) from intrinsic.",
+                "Color image size is ({} x {}), but got ({} x {}) from "
+                "intrinsic.",
                 image.color_.width_, image.color_.height_, intrinsic.width_,
                 intrinsic.height_);
     }

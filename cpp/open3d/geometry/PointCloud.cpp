@@ -466,8 +466,8 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
         double sampling_ratio) const {
     if (sampling_ratio < 0 || sampling_ratio > 1) {
         utility::LogError(
-                "Illegal sampling_ratio {}, sampling_ratio "
-                "must be between 0 and 1.");
+                "Illegal sampling_ratio {}, sampling_ratio must be between 0 "
+                "and 1.");
     }
     std::vector<size_t> indices(points_.size());
     std::iota(std::begin(indices), std::end(indices), (size_t)0);
@@ -482,8 +482,8 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
         const AxisAlignedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "AxisAlignedBoundingBox either has zeros "
-                "size, or has wrong bounds.");
+                "AxisAlignedBoundingBox either has zeros size, or has wrong "
+                "bounds.");
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
@@ -491,8 +491,8 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
         const OrientedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "AxisAlignedBoundingBox either has zeros "
-                "size, or has wrong bounds.");
+                "AxisAlignedBoundingBox either has zeros size, or has wrong "
+                "bounds.");
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
@@ -503,8 +503,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points,
                                  bool print_progress /* = false */) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogError(
-                "Illegal input parameters,"
-                "number of points and radius must be positive");
+                "Illegal input parameters, the number of points and radius "
+                "must be positive.");
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
@@ -536,8 +536,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                                       bool print_progress /* = false */) const {
     if (nb_neighbors < 1 || std_ratio <= 0) {
         utility::LogError(
-                "Illegal input parameters, number "
-                "of neighbors and standard deviation ratio must be positive");
+                "Illegal input parameters, the number of neighbors and "
+                "standard deviation ratio must be positive.");
     }
     if (points_.size() == 0) {
         return std::make_tuple(std::make_shared<PointCloud>(),
