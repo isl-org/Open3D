@@ -165,8 +165,17 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                                std::vector<size_t>{});
     }
 
+    // Use size_t here to avoid large integer which acceed max of int.
+    size_t break_iteration = std::numeric_limits<size_t>::max();
+    int iteration_count = 0;
+    const double probability = 1 - 1e-8;
+
 #pragma omp parallel for schedule(static)
     for (int itr = 0; itr < num_iterations; itr++) {
+        if ((size_t)iteration_count > break_iteration) {
+            continue;
+        }
+
         for (int i = 0; i < ransac_n; ++i) {
             std::swap(indices[i], indices[rng() % num_points]);
         }
@@ -202,7 +211,13 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                  this_result.inlier_rmse_ < result.inlier_rmse_)) {
                 result = this_result;
                 best_plane_model = plane_model;
+
+                break_iteration = log(1 - probability) /
+                                  log(1 - pow(result.fitness_, ransac_n));
+                break_iteration =
+                        std::min(break_iteration, (size_t)num_iterations);
             }
+            iteration_count++;
         }
     }
 
@@ -221,9 +236,11 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
     // Improve best_plane_model using the final inliers.
     best_plane_model = GetPlaneFromPoints(points_, final_inliers);
 
-    utility::LogDebug("RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}",
-                      final_inliers.size(), result.fitness_,
-                      result.inlier_rmse_);
+    utility::LogDebug(
+            "RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}, Iteration: "
+            "{:d}",
+            final_inliers.size(), result.fitness_, result.inlier_rmse_,
+            iteration_count);
     return std::make_tuple(best_plane_model, final_inliers);
 }
 
