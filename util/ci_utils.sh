@@ -138,7 +138,7 @@ build_all() {
         -DCMAKE_INSTALL_PREFIX="$OPEN3D_INSTALL_DIR"
         -DBUILD_UNIT_TESTS=ON
         -DBUILD_BENCHMARKS=ON
-        -DBUILD_EXAMPLES=OFF
+        -DBUILD_EXAMPLES=ON
     )
 
     echo

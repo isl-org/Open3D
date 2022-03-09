@@ -11,10 +11,6 @@ install_python_dependencies with-unit-test purge-cache
 
 build_all
 
-echo "Building examples iteratively..."
-make VERBOSE=1 -j"$NPROC" build-examples-iteratively
-echo
-
 df -h
 
 echo "Running Open3D C++ unit tests..."
