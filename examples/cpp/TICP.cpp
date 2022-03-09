@@ -190,7 +190,9 @@ public:
 
 protected:
     void UpdateMain() {
-        auto update_loss_log = [&](t::geometry::TensorMap& loss_log) {
+        auto callback_after_iteration = [&](std::unordered_map<std::string,
+                                                               core::Tensor>&
+                                                    updated_information) {
             core::Tensor transformation;
 
             // Delays each iteration to allow clear visualization of
@@ -199,8 +201,10 @@ protected:
 
             {
                 std::lock_guard<std::mutex> lock(pcd_.lock_);
-                pcd_.source_ = source_.To(host_, true)
-                                       .Transform(loss_log["transformation"]);
+                pcd_.source_ =
+                        source_.To(host_, true)
+                                .Transform(
+                                        updated_information["transformation"]);
             }
 
             // To update visualizer, we go to the `main thread`,
@@ -221,7 +225,7 @@ protected:
         result_ = t::pipelines::registration::MultiScaleICP(
                 source_.To(device_), target_.To(device_), voxel_sizes_,
                 criterias_, max_correspondence_distances_, transformation_,
-                *estimation_, update_loss_log);
+                *estimation_, callback_after_iteration);
     }
 
 private:
@@ -260,12 +264,14 @@ private:
 };
 
 void PrintHelp() {
+    using namespace open3d;
+
     PrintOpen3DVersion();
     // clang-format off
-    open3d::utility::LogInfo("Usage:");
-    open3d::utility::LogInfo("    > TICP [device]");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > TICP [device]");
     // clang-format on
-    open3d::utility::LogInfo("");
+    utility::LogInfo("");
 }
 
 int main(int argc, char* argv[]) {

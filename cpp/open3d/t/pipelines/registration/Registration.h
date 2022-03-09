@@ -87,9 +87,6 @@ public:
     ///
     /// \param transformation The estimated transformation matrix of dtype
     /// Float64 on CPU device. Default: Identity tensor.
-    /// \param save_loss_log When `True`, it saves the iteration-wise values of
-    /// `fitness`, `inlier_rmse`, `transformation`, `scale`, `iteration` in a
-    /// `TensorMap` `loss_log_` in `RegsitrationResult`. Default: False.
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
                                4, core::Float64, core::Device("CPU:0")))
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
@@ -141,12 +138,13 @@ RegistrationResult EvaluateRegistration(
 /// \param estimation Estimation method.
 /// \param criteria Convergence criteria.
 /// \param voxel_size The input pointclouds will be down-sampled to this
-/// `voxel_size` scale. If `voxel_size` < 0, original scale will be used.
+/// `voxel_size` scale. If voxel_size < 0, original scale will be used.
 /// However it is highly recommended to down-sample the point-cloud for
 /// performance. By default origianl scale of the point-cloud will be used.
-/// \param update_loss_log Optional lambda function to access the iteration-wise
-/// values of `fitness`, `inlier_rmse`, `transformation`, `scale`, `iteration`
-/// saved in the `TensorMap` argument. Default: Null.
+/// \param callback_after_iteration Optional lambda function, saves string to
+/// tensor map of attributes such as "iteration_index", "scale_index",
+/// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on CPU
+/// device, updated after each iteration.
 RegistrationResult ICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -157,8 +155,8 @@ RegistrationResult ICP(
                 TransformationEstimationPointToPoint(),
         const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
         const double voxel_size = -1.0,
-        utility::optional<std::function<void(t::geometry::TensorMap &)>>
-                update_loss_log = utility::nullopt);
+        std::function<void(std::unordered_map<std::string, core::Tensor> &)>
+                callback_after_iteration = nullptr);
 
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
@@ -181,9 +179,10 @@ RegistrationResult ICP(
 /// \param init_source_to_target Initial transformation estimation of type
 /// Float64 on CPU.
 /// \param estimation Estimation method.
-/// \param update_loss_log Optional lambda function to access the iteration-wise
-/// values of `fitness`, `inlier_rmse`, `transformation`, `scale`, `iteration`
-/// saved in the `TensorMap` argument. Default: Null.
+/// \param callback_after_iteration Optional lambda function, saves string to
+/// tensor map of attributes such as "iteration_index", "scale_index",
+/// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on CPU
+/// device, updated after each iteration.
 RegistrationResult MultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -194,8 +193,8 @@ RegistrationResult MultiScaleICP(
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
-        utility::optional<std::function<void(t::geometry::TensorMap &)>>
-                update_loss_log = utility::nullopt);
+        std::function<void(std::unordered_map<std::string, core::Tensor> &)>
+                callback_after_iteration = nullptr);
 
 /// \brief Computes `Information Matrix`, from the transfromation between source
 /// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},

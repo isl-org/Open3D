@@ -292,11 +292,11 @@ static const std::unordered_map<std::string, std::string>
                 {"voxel_sizes",
                  "o3d.utility.DoubleVector of voxel sizes in strictly "
                  "decreasing order, for multi-scale icp."},
-                {"update_loss_log",
-                 "optional update lambda function, saves tensor_map containing "
-                 "information, updated in each iteartion. The tensor_map "
-                 "contains `index` (primary-key), `scale`, `iteration`, "
-                 "`inlier_rmse`, `fitness`, `transformation`, on CPU device."}};
+                {"callback_after_iteration",
+                 "Optional lambda function, saves string to tensor map of "
+                 "attributes such as iteration_index, scale_index, "
+                 "scale_iteration_index, inlier_rmse, fitness, transformation, "
+                 "on CPU device, updated after each iteration."}};
 
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
@@ -307,65 +307,24 @@ void pybind_registration_methods(py::module &m) {
                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")));
     docstring::FunctionDocInject(m, "evaluate_registration",
                                  map_shared_argument_docstrings);
-
-    m.def(
-            "icp",
-            [](const geometry::PointCloud &source,
-               const geometry::PointCloud &target,
-               const double max_correspondence_distance,
-               const core::Tensor &init_source_to_target,
-               const TransformationEstimation &estimation_method,
-               const ICPConvergenceCriteria &criteria, const double voxel_size,
-               utility::optional<std::function<void(t::geometry::TensorMap &)>>
-                       update_loss_log) {
-                if (update_loss_log.has_value()) {
-                    return ICP(source, target, max_correspondence_distance,
-                               init_source_to_target, estimation_method,
-                               criteria, voxel_size, update_loss_log);
-                } else {
-                    return ICP(source, target, max_correspondence_distance,
-                               init_source_to_target, estimation_method,
-                               criteria, voxel_size);
-                }
-            },
-            "source"_a, "target"_a, "max_correspondence_distance"_a,
-            "init_source_to_target"_a =
-                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-            "estimation_method"_a = TransformationEstimationPointToPoint(),
-            "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0,
-            "update_loss_log"_a = py::none());
+    m.def("icp", &ICP, py::call_guard<py::gil_scoped_release>(),
+          "Function for ICP registration", "source"_a, "target"_a,
+          "max_correspondence_distance"_a,
+          "init_source_to_target"_a =
+                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+          "estimation_method"_a = TransformationEstimationPointToPoint(),
+          "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0,
+          "callback_after_iteration"_a = py::none());
     docstring::FunctionDocInject(m, "icp", map_shared_argument_docstrings);
 
-    m.def(
-            "multi_scale_icp",
-            [](const geometry::PointCloud &source,
-               const geometry::PointCloud &target,
-               const std::vector<double> &voxel_sizes,
-               const std::vector<ICPConvergenceCriteria> &criteria_list,
-               const std::vector<double> &max_correspondence_distances,
-               const core::Tensor &init_source_to_target,
-               const TransformationEstimation &estimation_method,
-               utility::optional<std::function<void(t::geometry::TensorMap &)>>
-                       update_loss_log) {
-                if (update_loss_log.has_value()) {
-                    return MultiScaleICP(
-                            source, target, voxel_sizes, criteria_list,
-                            max_correspondence_distances, init_source_to_target,
-                            estimation_method, update_loss_log);
-                } else {
-                    return MultiScaleICP(
-                            source, target, voxel_sizes, criteria_list,
-                            max_correspondence_distances, init_source_to_target,
-                            estimation_method);
-                }
-            },
-            "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
-            "voxel_sizes"_a, "criteria_list"_a,
-            "max_correspondence_distances"_a,
-            "init_source_to_target"_a =
-                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-            "estimation_method"_a = TransformationEstimationPointToPoint(),
-            "update_loss_log"_a = py::none());
+    m.def("multi_scale_icp", &MultiScaleICP,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for Multi-Scale ICP registration", "source"_a, "target"_a,
+          "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
+          "init_source_to_target"_a =
+                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+          "estimation_method"_a = TransformationEstimationPointToPoint(),
+          "callback_after_iteration"_a = py::none());
     docstring::FunctionDocInject(m, "multi_scale_icp",
                                  map_shared_argument_docstrings);
 
