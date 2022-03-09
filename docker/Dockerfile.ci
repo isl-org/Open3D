@@ -12,6 +12,7 @@ ARG CMAKE_VERSION
 ARG CCACHE_VERSION
 ARG PYTHON_VERSION
 ARG SHARED
+ARG BUILD_CUDA_MODULE
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
@@ -22,6 +23,7 @@ RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD  
  && if [ -z "${CCACHE_VERSION}"       ]; then echo "Error: ARG CCACHE_VERSION       not specified."; exit 1; fi \
  && if [ -z "${PYTHON_VERSION}"       ]; then echo "Error: ARG PYTHON_VERSION       not specified."; exit 1; fi \
  && if [ -z "${SHARED}"               ]; then echo "Error: ARG SHARED               not specified."; exit 1; fi \
+ && if [ -z "${BUILD_CUDA_MODULE}"    ]; then echo "Error: ARG BUILD_CUDA_MODULE    not specified."; exit 1; fi \
  && if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
  && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
  && if [ -z "${PACKAGE}"              ]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi
@@ -47,6 +49,7 @@ RUN apt-get update && apt-get install -y \
     git  \
     wget \
     curl \
+    build-essential \
  && rm -rf /var/lib/apt/lists/*
 
 # Dependencies: cmake
@@ -116,7 +119,11 @@ RUN ./util/install_deps_ubuntu.sh assume-yes \
 
 # Open3D Python dependencies
 RUN source util/ci_utils.sh \
- && install_python_dependencies with-conda with-cuda with-jupyter \
+ && if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
+        install_python_dependencies with-cuda with-jupyter; \
+    else \
+        install_python_dependencies with-jupyter; \
+    fi \
  && pip install -r python/requirements_test.txt
 
 # Open3D Jupyter dependencies
@@ -128,16 +135,21 @@ RUN npm install -g yarn \
  && yarn --version
 
 # Build all
-RUN mkdir build \
+RUN if [ "${BUILD_PYTORCH_OPS}" = "ON" ] || [ "${BUILD_TENSORFLOW_OPS}" = "ON" ]; then \
+        export GLIBCXX_USE_CXX11_ABI=OFF; \
+    else \
+        export GLIBCXX_USE_CXX11_ABI=ON; \
+    fi \
+ && mkdir build \
  && cd build \
  && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
           -DCMAKE_BUILD_TYPE=Release \
           -DDEVELOPER_BUILD="${DEVELOPER_BUILD}" \
           -DBUILD_LIBREALSENSE=ON \
-          -DBUILD_CUDA_MODULE=ON \
+          -DBUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
           -DBUILD_COMMON_ISPC_ISAS=ON \
-          -DGLIBCXX_USE_CXX11_ABI=$( { [ "$BUILD_PYTORCH_OPS" == ON ] || [ "$BUILD_TENSORFLOW_OPS" == ON ]; } && echo OFF || echo ON) \
+          -DGLIBCXX_USE_CXX11_ABI="${GLIBCXX_USE_CXX11_ABI}" \
           -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
           -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
           -DBUILD_UNIT_TESTS=ON \
@@ -148,7 +160,7 @@ RUN mkdir build \
  && make VERBOSE=1 -j$(nproc) \
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
- && { if [ "$PACKAGE" == "ON" ] ; then make package ; fi ; }
+ && if [ "${PACKAGE}" = "ON" ]; then make package; fi
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
@@ -157,7 +169,7 @@ RUN ccache -s \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
  && cd ${CCACHE_DIR_PARENT} \
  && tar -czf /${CCACHE_TAR_NAME}.tar.gz ${CCACHE_DIR_NAME} \
- && { if [ "$PACKAGE" == "ON" ] ; then mv /root/Open3D/build/package/open3d-devel*.tar.xz / ; fi ; } \
+ && if [ "${PACKAGE}" = "ON" ]; then mv /root/Open3D/build/package/open3d-devel*.tar.xz /; fi \
  && ls -alh /
 
 RUN echo "Docker build done."

@@ -808,6 +808,23 @@ TEST(PointCloud, UniformDownSample) {
                                     }));
 }
 
+TEST(PointCloud, FarthestPointDownSample) {
+    geometry::PointCloud pcd({{0, 2.0, 0},
+                              {1.0, 1.5, 0},
+                              {0, 1.0, 0},
+                              {1.0, 1.0, 0},
+                              {0, 0, 1.0},
+                              {1.0, 0, 1.0},
+                              {0, 1.0, 1.0},
+                              {1.0, 1.0, 1.5}});
+    std::shared_ptr<geometry::PointCloud> pcd_down =
+            pcd.FarthestPointDownSample(4);
+    ExpectEQ(pcd_down->points_, std::vector<Eigen::Vector3d>({{0, 2.0, 0},
+                                                              {1.0, 1.0, 0},
+                                                              {1.0, 0, 1.0},
+                                                              {0, 1.0, 1.0}}));
+}  // namespace tests
+
 TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
     geometry::AxisAlignedBoundingBox aabb({0, 0, 0}, {2, 2, 2});
     geometry::PointCloud pcd({{0, 0, 0},
