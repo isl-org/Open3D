@@ -204,14 +204,12 @@ cuda_wheel_build() {
         -f docker/Dockerfile.wheel .
     popd
 
-    # Extract pip wheel, conda package, ccache
+    # Extract pip wheel, ccache
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
-        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl                /opt/mount \
-              && cp ${python_package_dir}/conda_package/linux-64/open3d*.tar.bz2 /opt/mount \
-              && cp /${CCACHE_TAR_NAME}.tar.gz                                   /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl                 \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.tar.bz2  \
+        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
+              && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
+              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
 }
 

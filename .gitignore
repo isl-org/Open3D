@@ -25,7 +25,6 @@ build*/
 cmake-build-debug/
 cmake-build-release/
 util/pip_package/dist/
-util/conda_package/dist/
 doxygen/
 node_modules/
 
