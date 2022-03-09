@@ -48,22 +48,22 @@ OPTION:
     cpu-shared-ml-release     : Ubuntu CPU shared with ML, release mode
 
     # CUDA wheels (Dockerfile.wheel)
-    cuda_wheel_py36_dev       : CUDA Python 3.6 wheel, developer mode
-    cuda_wheel_py37_dev       : CUDA Python 3.7 wheel, developer mode
-    cuda_wheel_py38_dev       : CUDA Python 3.8 wheel, developer mode
-    cuda_wheel_py39_dev       : CUDA Python 3.9 wheel, developer mode
-    cuda_wheel_py36           : CUDA Python 3.6 wheel, release mode
-    cuda_wheel_py37           : CUDA Python 3.7 wheel, release mode
-    cuda_wheel_py38           : CUDA Python 3.8 wheel, release mode
-    cuda_wheel_py39           : CUDA Python 3.9 wheel, release mode
+    cuda-wheel-py36-dev       : CUDA Python 3.6 wheel, developer mode
+    cuda-wheel-py37-dev       : CUDA Python 3.7 wheel, developer mode
+    cuda-wheel-py38-dev       : CUDA Python 3.8 wheel, developer mode
+    cuda-wheel-py39-dev       : CUDA Python 3.9 wheel, developer mode
+    cuda-wheel-py36           : CUDA Python 3.6 wheel, release mode
+    cuda-wheel-py37           : CUDA Python 3.7 wheel, release mode
+    cuda-wheel-py38           : CUDA Python 3.8 wheel, release mode
+    cuda-wheel-py39           : CUDA Python 3.9 wheel, release mode
 
-    # ML CIs (Dockerfile.ci)
-    2-bionic                  : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-bionic-release: CUDA CI, 3-ml-shared-bionic, release mode
-    3-ml-shared-bionic        : CUDA CI, 3-ml-shared-bionic, developer mode
-    4-shared-bionic           : CUDA CI, 4-shared-bionic, developer mode
-    4-shared-bionic-release   : CUDA CI, 4-shared-bionic, release mode
-    5-ml-focal                : CUDA CI, 5-ml-focal, developer mode
+    # CUDA CIs (Dockerfile.ci)
+    cuda-ci-bionic                  : CUDA CI, no ML, static, 18.04, developer mode
+    cuda-ci-ml-shared-bionic-release: CUDA CI,    ML, shared, 18.04, release mode
+    cuda-ci-ml-shared-bionic        : CUDA CI,    ML, shared, 18.04, developer mode
+    cuda-ci-shared-bionic           : CUDA CI, no ML, shared, 18.04, developer mode
+    cuda-ci-shared-bionic-release   : CUDA CI, no ML, shared, 18.04, release mode
+    cuda-ci-ml-focal                : CUDA CI,    ML, static, 20.04, developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -163,14 +163,14 @@ openblas_build() {
               && chown $(id -u):$(id -g) /opt/mount/*.whl"
 }
 
-cuda_wheel_build() {
+cuda-wheel_build() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
     CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
     CCACHE_VERSION=4.3
 
     options="$(echo "$@" | tr ' ' '|')"
-    echo "[cuda_wheel_build()] options: ${options}"
+    echo "[cuda-wheel_build()] options: ${options}"
     if [[ "py36" =~ ^($options)$ ]]; then
         PYTHON_VERSION=3.6
     elif [[ "py37" =~ ^($options)$ ]]; then
@@ -188,8 +188,8 @@ cuda_wheel_build() {
     else
         DEVELOPER_BUILD=OFF
     fi
-    echo "[cuda_wheel_build()] PYTHON_VERSION: ${PYTHON_VERSION}"
-    echo "[cuda_wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
+    echo "[cuda-wheel_build()] PYTHON_VERSION: ${PYTHON_VERSION}"
+    echo "[cuda-wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
 
     # Docker build
     pushd "${HOST_OPEN3D_ROOT}"
@@ -249,12 +249,12 @@ ci_build() {
                && chown $(id -u):$(id -g) /opt/mount/open3d*.tar*"
 }
 
-2-bionic_export_env() {
-    export DOCKER_TAG=open3d-ci:2-bionic
+cuda-ci-bionic_export_env() {
+    export DOCKER_TAG=open3d-ci:cuda-ci-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-2-bionic
+    export CCACHE_TAR_NAME=open3d-ci-cuda-ci-bionic
     export PYTHON_VERSION=3.6
     export SHARED=OFF
     export BUILD_CUDA_MODULE=ON
@@ -263,12 +263,12 @@ ci_build() {
     export PACKAGE=OFF
 }
 
-3-ml-shared-bionic_export_env() {
-    export DOCKER_TAG=open3d-ci:3-ml-shared-bionic
+cuda-ci-ml-shared-bionic_export_env() {
+    export DOCKER_TAG=open3d-ci:cuda-ci-ml-shared-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
+    export CCACHE_TAR_NAME=open3d-ci-cuda-ci-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
     export BUILD_CUDA_MODULE=ON
@@ -277,12 +277,12 @@ ci_build() {
     export PACKAGE=ON
 }
 
-3-ml-shared-bionic-release_export_env() {
-    export DOCKER_TAG=open3d-ci:3-ml-shared-bionic
+cuda-ci-ml-shared-bionic-release_export_env() {
+    export DOCKER_TAG=open3d-ci:cuda-ci-ml-shared-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
+    export CCACHE_TAR_NAME=open3d-ci-cuda-ci-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
     export BUILD_CUDA_MODULE=ON
@@ -291,12 +291,12 @@ ci_build() {
     export PACKAGE=ON
 }
 
-4-shared-bionic_export_env() {
-    export DOCKER_TAG=open3d-ci:4-shared-bionic
+cuda-ci-shared-bionic_export_env() {
+    export DOCKER_TAG=open3d-ci:cuda-ci-shared-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
+    export CCACHE_TAR_NAME=open3d-ci-cuda-ci-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
     export BUILD_CUDA_MODULE=ON
@@ -305,12 +305,12 @@ ci_build() {
     export PACKAGE=ON
 }
 
-4-shared-bionic-release_export_env() {
-    export DOCKER_TAG=open3d-ci:4-shared-bionic
+cuda-ci-shared-bionic-release_export_env() {
+    export DOCKER_TAG=open3d-ci:cuda-ci-shared-bionic
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=OFF
-    export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
+    export CCACHE_TAR_NAME=open3d-ci-cuda-ci-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
     export BUILD_CUDA_MODULE=ON
@@ -319,12 +319,12 @@ ci_build() {
     export PACKAGE=ON
 }
 
-5-ml-focal_export_env() {
-    export DOCKER_TAG=open3d-ci:5-ml-focal
+cuda-ci-ml-focal_export_env() {
+    export DOCKER_TAG=open3d-ci:cuda-ci-ml-focal
 
     export BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-5-ml-focal
+    export CCACHE_TAR_NAME=open3d-ci-cuda-ci-focal
     export PYTHON_VERSION=3.6
     export SHARED=OFF
     export BUILD_CUDA_MODULE=ON
@@ -501,54 +501,54 @@ function main () {
             ;;
 
         # CUDA wheels
-        cuda_wheel_py36_dev)
-            cuda_wheel_build py36 dev
+        cuda-wheel-py36-dev)
+            cuda-wheel_build py36 dev
             ;;
-        cuda_wheel_py37_dev)
-            cuda_wheel_build py37 dev
+        cuda-wheel-py37-dev)
+            cuda-wheel_build py37 dev
             ;;
-        cuda_wheel_py38_dev)
-            cuda_wheel_build py38 dev
+        cuda-wheel-py38-dev)
+            cuda-wheel_build py38 dev
             ;;
-        cuda_wheel_py39_dev)
-            cuda_wheel_build py39 dev
+        cuda-wheel-py39-dev)
+            cuda-wheel_build py39 dev
             ;;
-        cuda_wheel_py36)
-            cuda_wheel_build py36
+        cuda-wheel-py36)
+            cuda-wheel_build py36
             ;;
-        cuda_wheel_py37)
-            cuda_wheel_build py37
+        cuda-wheel-py37)
+            cuda-wheel_build py37
             ;;
-        cuda_wheel_py38)
-            cuda_wheel_build py38
+        cuda-wheel-py38)
+            cuda-wheel_build py38
             ;;
-        cuda_wheel_py39)
-            cuda_wheel_build py39
+        cuda-wheel-py39)
+            cuda-wheel_build py39
             ;;
 
         # ML CIs
-        2-bionic)
-            2-bionic_export_env
+        cuda-ci-bionic)
+            cuda-ci-bionic_export_env
             ci_build
             ;;
-        3-ml-shared-bionic-release)
-            3-ml-shared-bionic-release_export_env
+        cuda-ci-ml-shared-bionic-release)
+            cuda-ci-ml-shared-bionic-release_export_env
             ci_build
             ;;
-        3-ml-shared-bionic)
-            3-ml-shared-bionic_export_env
+        cuda-ci-ml-shared-bionic)
+            cuda-ci-ml-shared-bionic_export_env
             ci_build
             ;;
-        4-shared-bionic-release)
-            4-shared-bionic-release_export_env
+        cuda-ci-shared-bionic-release)
+            cuda-ci-shared-bionic-release_export_env
             ci_build
             ;;
-        4-shared-bionic)
-            4-shared-bionic_export_env
+        cuda-ci-shared-bionic)
+            cuda-ci-shared-bionic_export_env
             ci_build
             ;;
-        5-ml-focal)
-            5-ml-focal_export_env
+        cuda-ci-ml-focal)
+            cuda-ci-ml-focal_export_env
             ci_build
             ;;
         *)

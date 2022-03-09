@@ -109,7 +109,7 @@ modes. Some sample configuration options available are shown below.
 
     cd docker
 
-    ./docker_build.sh cuda_wheel_py38_dev  # Python 3.8, AMD64, CUDA with MKL, developer mode
+    ./docker_build.sh cuda-wheel-py38-dev  # Python 3.8, AMD64, CUDA with MKL, developer mode
     ./docker_build.sh openblas-amd64-py36  # Python 3.6, AMD64 with OpenBLAS instead of MKL, release mode
     ./docker_build.sh openblas-arm64-py37  # Python 3.7, ARM64 with OpenBLAS, release mode
 

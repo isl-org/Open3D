@@ -35,13 +35,13 @@ OPTION:
     openblas-arm64-py38    : OpenBLAS ARM64 3.8 wheel, release mode
     openblas-arm64-py39    : OpenBLAS ARM64 3.9 wheel, release mode
 
-    # ML CIs
-    2-bionic                    : CUDA CI, 2-bionic
-    3-ml-shared-bionic          : CUDA CI, 3-ml-shared-bionic
-    3-ml-shared-bionic-release  : CUDA CI, 3-ml-shared-bionic-release (same as above)
-    4-shared-bionic             : CUDA CI, 4-shared-bionic
-    4-shared-bionic-release     : CUDA CI, 4-shared-bionic-release (same as above)
-    5-ml-focal                  : CUDA CI, 5-ml-focal
+    # CUDA CIs
+    cuda-ci-bionic                    : CUDA CI, cuda-ci-bionic
+    cuda-ci-ml-shared-bionic          : CUDA CI, cuda-ci-ml-shared-bionic
+    cuda-ci-ml-shared-bionic-release  : CUDA CI, cuda-ci-ml-shared-bionic-release (same as above)
+    cuda-ci-shared-bionic             : CUDA CI, cuda-ci-shared-bionic
+    cuda-ci-shared-bionic-release     : CUDA CI, cuda-ci-shared-bionic-release (same as above)
+    cuda-ci-ml-focal                  : CUDA CI, cuda-ci-ml-focal
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -285,33 +285,33 @@ case "$1" in
         ;;
 
     # ML CIs
-    2-bionic)
-        2-bionic_export_env
+    cuda-ci-bionic)
+        cuda-ci-bionic_export_env
         ci_print_env
         cpp_python_linking_uninstall_test
         ;;
-    3-ml-shared-bionic)
-        3-ml-shared-bionic_export_env
+    cuda-ci-ml-shared-bionic)
+        cuda-ci-ml-shared-bionic_export_env
         ci_print_env
         cpp_python_linking_uninstall_test
         ;;
-    3-ml-shared-bionic-release)
-        3-ml-shared-bionic-release_export_env
+    cuda-ci-ml-shared-bionic-release)
+        cuda-ci-ml-shared-bionic-release_export_env
         ci_print_env
         cpp_python_linking_uninstall_test
         ;;
-    4-shared-bionic)
-        4-shared-bionic_export_env
+    cuda-ci-shared-bionic)
+        cuda-ci-shared-bionic_export_env
         ci_print_env
         cpp_python_linking_uninstall_test
         ;;
-    4-shared-bionic-release)
-        4-shared-bionic-release_export_env
+    cuda-ci-shared-bionic-release)
+        cuda-ci-shared-bionic-release_export_env
         ci_print_env
         cpp_python_linking_uninstall_test
         ;;
-    5-ml-focal)
-        5-ml-focal_export_env
+    cuda-ci-ml-focal)
+        cuda-ci-ml-focal_export_env
         ci_print_env
         cpp_python_linking_uninstall_test
         ;;
