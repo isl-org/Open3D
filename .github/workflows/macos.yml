@@ -121,7 +121,6 @@ jobs:
             python_version: 3.8
           - is_master: false
             python_version: 3.9
-
     env:
       BUILD_CUDA_MODULE: OFF
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
@@ -146,7 +145,6 @@ jobs:
           # Common prefix will be used so that ccache can be used across commits.
           restore-keys: |
             ${{ runner.os }}-ccache
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -162,7 +160,7 @@ jobs:
           source util/ci_utils.sh
           install_python_dependencies
           brew install ccache
-          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
+          ccache -M 2G
       - name: Config and build wheel
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
@@ -212,7 +210,6 @@ jobs:
             python_version: 3.8
           - is_master: false
             python_version: 3.9
-
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:

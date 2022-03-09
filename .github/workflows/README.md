@@ -136,26 +136,6 @@ used for running CI.
     with name `GCE_SA_KEY_GPU_CI`
 2.  Also add secret `GCE_PROJECT: open3d-dev`
 
-## Ccache strategy
-
-- Typically, a build generates ~500MB cache. A build with Filament compiled from
-  source generates ~600MB cache.
-- Typically, regular X86 Ubuntu and macOS builds take about 40 mins without
-  caching.
-- The bottleneck of the CI is in the ARM build since it runs on a simulator.
-  When building Filament from source, the build time can exceed GitHub's 6-hour
-  limit if caching is not properly activated. With proper caching and good cache
-  hit rate, the ARM build job can run within 1 hour.
-- Both Ubuntu and macOS have a max cache setting of 2GB each out of a total
-  cache limit of 5GB for the whole repository. Windows MSVC does not use
-  caching at present since `ccache` does not officially support MSVC.
-- ARM64 cache (limit 1.5GB) is stored on Google cloud bucket
-  (`open3d-ci-cache` in the `isl-buckets` project). The bucket is world
-  readable, but needs the `open3d-ci-sa` service account for writing. Every
-  ARM64 build downloads the cache contents before build. Only `master` branch
-  builds use `gsutil rsync` to update the cache in GCS. Cache transfer only
-  takes a few minutes, but reduces ARM64 CI time to about 1:15 hours.
-
 ## Development wheels for user testing
 
 `master` branch Python wheels are uploaded to a world readable GCS bucket for
