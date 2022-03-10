@@ -364,10 +364,11 @@ jobs:
           python -m pip install -U pytest-randomly==${{ env.PYTEST_RANDOMLY_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }} `
             tensorboard==${{ env.TENSORFLOW_VER }}
-          $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          echo "$py_tag"
           dir
           dir pip_package
-          $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$pi_tag-*.whl).Name
+          $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
           echo "Installing Open3D wheel pip_package\$PIP_PKG_NAME in virtual environment..."
           python -m pip install "pip_package\$PIP_PKG_NAME"
           python -c "import open3d; print('Imported:', open3d)"
