@@ -14,9 +14,9 @@ on:
   pull_request:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+#   cancel-in-progress: true
 
 env:
   PIP_VER: "21.1.1"
@@ -242,7 +242,6 @@ jobs:
           python-version: ${{ matrix.python_version }}
 
       - name: Install Python dependencies
-        shell: pwsh
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -250,7 +249,6 @@ jobs:
           python -m pip install -r python/requirements_jupyter_build.txt
 
       - name: Config
-        shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
@@ -271,7 +269,6 @@ jobs:
             ${{ env.SRC_DIR }}
 
       - name: Build Python package
-        shell: pwsh
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
