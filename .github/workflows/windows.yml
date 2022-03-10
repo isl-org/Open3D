@@ -365,10 +365,11 @@ jobs:
           python -m pip install -U scipy==${{ env.SCIPY_VER }} `
             tensorboard==${{ env.TENSORFLOW_VER }}
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          echo "$py_tag"
-          dir
-          dir pip_package
-          $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
+          if (Test-Path -Path "pip_package") {
+            $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
+          } else { `
+            $PIP_PKG_NAME=(Get-ChildItem open3d*-$py_tag-*.whl).Name
+          }
           echo "Installing Open3D wheel pip_package\$PIP_PKG_NAME in virtual environment..."
           python -m pip install "pip_package\$PIP_PKG_NAME"
           python -c "import open3d; print('Imported:', open3d)"
