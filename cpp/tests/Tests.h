@@ -41,8 +41,6 @@
 #include "tests/test_utility/Raw.h"
 #include "tests/test_utility/Sort.h"
 
-#define Open3DTestDataRoot data::LocateDataRoot() + "/open3d_test"
-
 namespace open3d {
 namespace tests {
 

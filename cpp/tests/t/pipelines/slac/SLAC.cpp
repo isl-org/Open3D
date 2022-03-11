@@ -72,7 +72,6 @@ TEST_P(SLACPermuteDevices, DISABLED_RunSLACOptimizerForFragments) {
     core::Device device = GetParam();
 
     std::string dataset_folder =
-            Open3DTestDataRoot +
             "/reconstruction_system/livingroom1_clean_micro";
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string scene_folder = dataset_folder + "/test_scene";
@@ -180,7 +179,6 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     core::Device device = GetParam();
 
     std::string dataset_folder =
-            Open3DTestDataRoot +
             "/reconstruction_system/livingroom1_clean_micro";
     std::string fragment_folder = dataset_folder + "/test_fragments";
     std::string color_folder = dataset_folder + "/image";

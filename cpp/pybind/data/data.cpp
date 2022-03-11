@@ -74,7 +74,7 @@ void pybind_data_classes(py::module& m) {
     py::class_<SingleDownloadDataset, PySimpleDataset<SingleDownloadDataset>,
                std::shared_ptr<SingleDownloadDataset>, Dataset>
             single_download_dataset(m, "SingleDownloadDataset",
-                                    "Simple dataset class.");
+                                    "Single file download dataset class.");
     single_download_dataset.def(
             py::init<const std::string&, const std::vector<std::string>&,
                      const std::string&, const bool, const std::string&>(),
