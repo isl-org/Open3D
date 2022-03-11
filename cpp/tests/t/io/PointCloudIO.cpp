@@ -462,7 +462,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
     input_pcd.SetPointColors(color_uint32);
 
     std::string filename_ascii_uint32 =
-            "/test_pcd_pointcloud_binary_uint32_colors.pcd";
+            "test_pcd_pointcloud_binary_uint32_colors.pcd";
 
     EXPECT_TRUE(t::io::WritePointCloud(
             filename_ascii_uint32, input_pcd,
