@@ -70,6 +70,7 @@ open3d_add_example(ViewPCDMatch)
 open3d_add_example(Visualizer)
 open3d_add_example(DenseSLAM)
 open3d_add_example(Voxelization)
+open3d_add_example(SYCLHelloWorld)
 
 if (BUILD_GUI)
     open3d_add_example(Draw)
