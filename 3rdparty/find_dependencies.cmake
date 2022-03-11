@@ -1242,6 +1242,22 @@ else()
 endif()
 list(APPEND Open3D_3RDPARTY_HEADER_TARGETS Open3D::3rdparty_opengl)
 
+# CPU Rendering
+if(BUILD_GUI AND UNIX AND NOT APPLE)
+    include(FetchContent)
+    FetchContent_Declare(
+        download_mesa_libgl
+        PREFIX mesa
+        URL https://github.com/isl-org/open3d_downloads/releases/download/mesa-libgl/mesa_libGL_22.0.tar.xz
+        URL_HASH SHA256=680dd244fff9a74e7c99ce940aaaa52c548e78794fa6d944d6879bb432d46286
+        DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mesa"
+        )
+    FetchContent_MakeAvailable(download_mesa_libgl)
+    set(MESA_CPU_GL_LIBRARY "${download_mesa_libgl_SOURCE_DIR}/libGL.so.1.5"
+        CACHE FILEPATH "Mesa CPU rendering OpenGL library")
+    message("Mesa downloaded to ${MESA_CPU_GL_LIBRARY}")
+endif()
+
 # RPC interface
 # zeromq
 if(USE_SYSTEM_ZEROMQ)
