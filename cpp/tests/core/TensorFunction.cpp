@@ -39,8 +39,6 @@ INSTANTIATE_TEST_SUITE_P(Tensor,
                          TensorFunctionPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST_P(TensorFunctionPermuteDevices, RunSYCLDemo) { core::RunSYCLDemo(); }
-
 TEST_P(TensorFunctionPermuteDevices, Concatenate) {
     core::Device device = GetParam();
 
