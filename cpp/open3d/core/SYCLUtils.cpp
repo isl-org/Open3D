@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/SYCLUtil.h"
+#include "open3d/core/SYCLUtils.h"
 
 #include <CL/sycl.hpp>
 #include <array>

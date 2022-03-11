@@ -13,7 +13,7 @@ target_sources(tests PRIVATE
     Scalar.cpp
     ShapeUtil.cpp
     SizeVector.cpp
-    SYCLUtil.cpp
+    SYCLUtils.cpp
     Tensor.cpp
     TensorCheck.cpp
     TensorFunction.cpp

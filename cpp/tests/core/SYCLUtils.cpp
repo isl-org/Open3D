@@ -24,8 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/SYCLUtil.h"
-
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Timer.h"
 #include "tests/Tests.h"
@@ -34,12 +33,12 @@
 namespace open3d {
 namespace tests {
 
-class SYCLUtilPermuteDevices : public PermuteDevices {};
+class SYCLUtilsPermuteDevices : public PermuteDevices {};
 INSTANTIATE_TEST_SUITE_P(Tensor,
-                         SYCLUtilPermuteDevices,
+                         SYCLUtilsPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST_P(SYCLUtilPermuteDevices, RunSYCLDemo) { core::RunSYCLDemo(); }
+TEST_P(SYCLUtilsPermuteDevices, RunSYCLDemo) { core::RunSYCLDemo(); }
 
 }  // namespace tests
 }  // namespace open3d
