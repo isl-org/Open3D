@@ -1,34 +1,36 @@
 # OneAPI Readme
 
-## Known limitations
-- (fixed) TBB issue: `cpp/open3d/utility/ParallelScan.h` is disabled.
-- Does not work with `-DBUILD_SHARED_LIBS=OFF`: need to refactor installation mechanism.
-- Does not work with `-DBUILD_CUDA_MODULE=ON`: Faiss does not support icpx compiler.
-  - Simlify to two binaries.
-- Python: dynamic library loading.
-- ABI=1 currently required.
+## TODO
 
-## Python packages (not used for now)
+- PR #0
+  - [ ] Docker file
+  - [ ] Decide on namespace name
+  - [ ] Build CUDA together
+- PR #1
+  - [ ] Allow `BUILD_SHARED_LIBS=OFF`
+
+## Setup
+
+Under construction.
+
+## Known limitations/requirement
+
+Limitation == not implemented yet; Requirement == required by DPC++.
+
+- Limitation: only supports `BUILD_SHARED_LIBS=ON`
+- Limitation: only supports `BUILD_CUDA_MODULE=OFF`
+- Requirement: only supports `GLIBCXX_USE_CXX11_ABI=ON`
+- Requirement: only supports `set(CMAKE_CXX_STANDARD 17)`
+
+## List of oneAPI Python packages
 
 https://pypi.org/user/IntelAutomationEngineering/
-- dpcpp-cpp-rt     https://pypi.org/project/dpcpp-cpp-rt/#history     2021.4.0
-- mkl              https://pypi.org/project/mkl/#history              2021.4.0
-- mkl-static       https://pypi.org/project/mkl-static/#history       2021.4.0
-- mkl-include      https://pypi.org/project/mkl-include/#history      2021.4.0
-- mkl-dpcpp        https://pypi.org/project/mkl-dpcpp/#history        2021.4.0
-- mkl-devel-dpcpp  https://pypi.org/project/mkl-devel-dpcpp/#history  2021.4.0
-- ipp              https://pypi.org/project/ipp/#history              2021.4.0
-- ipp-static       https://pypi.org/project/ipp-static/#history       2021.4.0
-- tbb              https://pypi.org/project/tbb/#history              2021.4.0
-
-## Use cases
-- Run example and tests inside the `build/` directory.
-- Imported by another C++ library, after `make install`.
-- Distribute with Python (pip).
-
-## Decisions
-- MKL: use shared version
-- IPP: use static version
-- TBB: for ARM
-  - C++: compile TBB from source, static or dynamic?
-  - Python release: TODO
+- dpcpp-cpp-rt     https://pypi.org/project/dpcpp-cpp-rt/#history
+- mkl              https://pypi.org/project/mkl/#history
+- mkl-static       https://pypi.org/project/mkl-static/#history
+- mkl-include      https://pypi.org/project/mkl-include/#history
+- mkl-dpcpp        https://pypi.org/project/mkl-dpcpp/#history
+- mkl-devel-dpcpp  https://pypi.org/project/mkl-devel-dpcpp/#history
+- ipp              https://pypi.org/project/ipp/#history
+- ipp-static       https://pypi.org/project/ipp-static/#history
+- tbb              https://pypi.org/project/tbb/#history
