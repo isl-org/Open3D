@@ -92,8 +92,8 @@ int main(int argc, char* argv[]) {
                                                   depth_filenames);
         if (color_filenames.size() != depth_filenames.size()) {
             utility::LogError(
-                    "[DenseSLAM] numbers of color and depth files mismatch. "
-                    "Please provide folders with same number of images.");
+                    "Numbers of color and depth files mismatch. Please provide "
+                    "folders with same number of images.");
         }
         std::sort(color_filenames.begin(), color_filenames.end());
         std::sort(depth_filenames.begin(), depth_filenames.end());

@@ -132,9 +132,6 @@ Install YAPF with
    # For Pip
    pip install yapf==0.30.0
 
-   # For conda
-   conda install yapf=0.30.0
-
 You can also download `YAPF <https://github.com/google/yapf.git>`_ and install
 it from source.
 
