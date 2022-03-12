@@ -42,7 +42,7 @@ def test_draw_cpu():
     os.environ['OPEN3D_CPU_RENDERING'] = 'true'
     proc = Process(target=draw_cpu)
     proc.start()
-    proc.join(timeout=1)  # Wait for process to crash, else kill
+    proc.join(timeout=3)  # Wait for process to crash, else kill
     proc.terminate()
     proc.join()
     assert proc.exitcode == -signal.SIGTERM

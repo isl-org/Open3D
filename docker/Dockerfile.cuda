@@ -119,6 +119,9 @@ RUN source util/ci_utils.sh \
  && install_python_dependencies with-conda with-cuda with-jupyter \
  && pip install -r python/requirements_test.txt
 
+# Visualization test dependencies
+RUN apt-get install xvfb
+
 # Open3D Jupyter dependencies
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
  && apt-get install -y nodejs \
