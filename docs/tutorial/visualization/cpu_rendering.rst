@@ -74,7 +74,7 @@ For C++ code, the method for enabling CPU rendering depends on your system:
     the Mesa software rendering library binary for download `here
     <https://github.com/isl-org/open3d_downloads/releases/download/mesa-libgl/mesa_libGL_22.0.tar.xz>`__.
     This is automatically downloaded to
-    `build/_deps/download_mesa_libgl-src/libGL.so.1.5` when you build Open3D
+    `build/_deps/download_mesa_libgl-src/libGL.so.1.5.0` when you build Open3D
     from source. If you want to use CPU rendering all the time, install this
     library to ``/usr/local/lib`` or ``$HOME/.local/lib`` and *prepend* it to your
     ``LD_LIBRARY_PATH``:
@@ -87,4 +87,4 @@ For C++ code, the method for enabling CPU rendering depends on your system:
 
     .. code:: bash
 
-        LD_PRELOAD=$HOME/.local/lib/libGL.so.1.5 Open3D
+        LD_PRELOAD=$HOME/.local/lib/libGL.so.1.5.0 Open3D
