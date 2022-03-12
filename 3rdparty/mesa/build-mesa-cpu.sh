@@ -12,8 +12,8 @@
 # --workdir /root/ ubuntu:bionic
 # sudo chown $(id -u):$(id -g) libGL.so.1.5.0
 #
-# This will build libGL.so.1.5 in the docker container and copy the result back
-# to the current directory.
+# This will build libGL.so.1.5.0 in the docker container and copy the result
+# back to the current directory.
 
 MESA_VER=22.0  # latest tag on 2022-03-10
 [ "$EUID" -ne 0 ] && SUDO="sudo" || SUDO="command"

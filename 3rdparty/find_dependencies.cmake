@@ -1253,9 +1253,11 @@ if(BUILD_GUI AND UNIX AND NOT APPLE)
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mesa"
         )
     FetchContent_MakeAvailable(download_mesa_libgl)
-    set(MESA_CPU_GL_LIBRARY "${download_mesa_libgl_SOURCE_DIR}/libGL.so.1.5"
-        CACHE FILEPATH "Mesa CPU rendering OpenGL library")
-    message("Mesa downloaded to ${MESA_CPU_GL_LIBRARY}")
+    find_library(MESA_CPU_GL_LIBRARY NAMES "libGL.so.1.5.0"
+        PATHS "${download_mesa_libgl_SOURCE_DIR}" NO_DEFAULT_PATH
+        DOC "Mesa CPU rendering OpenGL library" REQUIRED
+        )
+    message(STATUS "MESA_CPU_GL_LIBRARY: ${MESA_CPU_GL_LIBRARY}")
 endif()
 
 # RPC interface
