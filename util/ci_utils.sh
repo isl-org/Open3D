@@ -304,11 +304,12 @@ run_python_tests() {
         echo Testing ML Ops disabled
         pytest_args+=(--ignore "$OPEN3D_SOURCE_ROOT"/python/test/ml_ops/)
     fi
-    GUI_RUNNER=()  # Run directly
+    GUI_RUNNER=(command)  # Run directly
     if [ "$(uname -s)" == "Linux" ] && [ -z ${DISPLAY+x} ]; then
         # No DISPLAY available in Linux
         $SUDO apt-get install --yes xvfb
-        GUI_RUNNER=(xvfb-run -a)  # Run with virtual frame buffer
+        GUI_RUNNER=(xvfb-run -a)  # Run in virtual frame buffer
+        echo "Running Python tests with X11 virtual framebuffer"
     fi
     "${GUI_RUNNER[@]}" python -m pytest "${pytest_args[@]}"
     deactivate open3d_test.venv # argument prevents unbound variable error
