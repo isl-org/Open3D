@@ -164,7 +164,7 @@ or, you may also install JupyterLab instead:
     jupyter-lab
 
 Then, run the example notebook
-`examples/python/visualization/jupyter_visualization.ipynb <https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/jupyter_visualization.ipynb>`_.
+`docs/jupyter/visualization/jupyter_visualization.ipynb <https://github.com/isl-org/Open3D/blob/master/docs/jupyter/visualization/jupyter_visualization.ipynb>`_.
 
 Unlike standalone mode, ``WEBRTC_IP`` and ``WEBRTC_PORT`` are not used in
 Jupyter mode. However, you might want to
@@ -204,7 +204,7 @@ need to :
 
    .. code-block:: sh
 
-     pip install -r python/requirements_jupyter.txt
+     pip install -r python/requirements_jupyter_build.txt
 
 3. Build Open3D Python package:
 

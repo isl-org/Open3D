@@ -129,9 +129,7 @@ Qhull::ComputeDelaunayTetrahedralization(
     std::vector<size_t> pt_map;
 
     if (points.size() < 4) {
-        utility::LogError(
-                "[ComputeDelaunayTriangulation3D] not enough points to create "
-                "a tetrahedral mesh.");
+        utility::LogError("Not enough points to create a tetrahedral mesh.");
     }
 
     // qhull cannot deal with this case
