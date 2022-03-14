@@ -572,7 +572,7 @@ class JupyterDocsBuilder:
                 with open(nb_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
 
-        url = "https://github.com/isl-org/Open3D/files/7592880/t_icp_registration.zip"
+        url = "https://github.com/isl-org/Open3D/files/8243984/t_icp_registration.zip"
         output_file = "t_icp_registration.ipynb"
         output_file_path = os.path.join(
             self.current_file_dir,
