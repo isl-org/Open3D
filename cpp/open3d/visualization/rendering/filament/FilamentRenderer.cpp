@@ -341,12 +341,6 @@ void FilamentRenderer::RemoveTexture(const TextureHandle& id) {
 
 IndirectLightHandle FilamentRenderer::AddIndirectLight(
         const ResourceLoadRequest& request) {
-    if (request.path_.empty()) {
-        request.error_callback_(
-                request, -1, "Indirect lights can be loaded only from files");
-        return {};
-    }
-
     return resource_mgr_.CreateIndirectLight(request);
 }
 
@@ -355,11 +349,11 @@ void FilamentRenderer::RemoveIndirectLight(const IndirectLightHandle& id) {
 }
 
 SkyboxHandle FilamentRenderer::AddSkybox(const ResourceLoadRequest& request) {
-    if (request.path_.empty()) {
-        request.error_callback_(request, -1,
-                                "Skyboxes can be loaded only from files");
-        return {};
-    }
+    // if (request.path_.empty()) {
+    //     request.error_callback_(request, -1,
+    //                             "Skyboxes can be loaded only from files");
+    //     return {};
+    // }
 
     return resource_mgr_.CreateSkybox(request);
 }

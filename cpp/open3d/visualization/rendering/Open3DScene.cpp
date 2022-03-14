@@ -32,6 +32,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/gui/Application.h"
+#include "open3d/visualization/gui/Resource.h"
 #include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
@@ -191,7 +192,7 @@ void Open3DScene::SetLighting(LightingProfile profile,
     if (profile != LightingProfile::HARD_SHADOWS) {
         if (scene->GetIndirectLight().empty()) {
             auto path = gui::Application::GetInstance().GetResourcePath();
-            scene->SetIndirectLight(std::string(path) + "/default");
+            scene->SetIndirectLight(std::string(path) + "/default", std::vector<char>(), default_skybox_ktx());
         }
     }
 

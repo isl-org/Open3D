@@ -1559,14 +1559,22 @@ Eigen::Vector3f FilamentScene::GetSunLightDirection() {
     return {dir[0], dir[1], dir[2]};
 }
 
-bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
+bool FilamentScene::SetIndirectLight(const std::string& ibl_name,
+                                     const std::vector<char> ibl_bytes,
+                                     const std::vector<char> skybox_bytes) {
     auto old_ibl = ibl_handle_;
     auto old_sky = skybox_handle_;
 
     // Load IBL
-    std::string ibl_path = ibl_name + std::string("_ibl.ktx");
-    rendering::IndirectLightHandle new_ibl =
-            renderer_.AddIndirectLight(ResourceLoadRequest(ibl_path.c_str()));
+    rendering::IndirectLightHandle new_ibl;
+    if (ibl_bytes.size() == 0) {
+        std::string ibl_path = ibl_name + std::string("_ibl.ktx");
+        new_ibl = renderer_.AddIndirectLight(
+                ResourceLoadRequest(ibl_path.c_str()));
+    } else {
+        new_ibl = renderer_.AddIndirectLight(ResourceLoadRequest(ibl_bytes.data(), ibl_bytes.size())); 
+    }
+
     if (!new_ibl) {
         return false;
     }
@@ -1583,9 +1591,14 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
     }
 
     // Load matching skybox
-    std::string skybox_path = ibl_name + std::string("_skybox.ktx");
-    SkyboxHandle sky =
-            renderer_.AddSkybox(ResourceLoadRequest(skybox_path.c_str()));
+    SkyboxHandle sky;
+    if (skybox_bytes.size() == 0) {
+        std::string skybox_path = ibl_name + std::string("_skybox.ktx");
+        sky = renderer_.AddSkybox(ResourceLoadRequest(skybox_path.c_str()));
+    } else {
+        sky = renderer_.AddSkybox(
+                ResourceLoadRequest(skybox_bytes.data(), skybox_bytes.size()));
+    }
     auto wskybox = resource_mgr_.GetSkybox(sky);
     if (auto skybox = wskybox.lock()) {
         skybox_ = wskybox;

@@ -591,53 +591,55 @@ RenderTargetHandle FilamentResourceManager::CreateRenderTarget(
 IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
         const ResourceLoadRequest& request) {
     IndirectLightHandle handle;
+    std::vector<char> ibl_data;
 
     if (!request.path_.empty()) {
-        std::vector<char> ibl_data;
         std::string error_str;
-
-        if (utility::filesystem::FReadToBuffer(request.path_, ibl_data,
+        if (!utility::filesystem::FReadToBuffer(request.path_, ibl_data,
                                                &error_str)) {
-            using namespace filament;
-            // will be destroyed later by image::ktx::createTexture
-            auto* ibl_ktx = new image::KtxBundle(
-                    reinterpret_cast<std::uint8_t*>(ibl_data.data()),
-                    std::uint32_t(ibl_data.size()));
-            auto* ibl_texture =
-                    image::ktx::createTexture(&engine_, ibl_ktx, false);
-
-            filament::math::float3 bands[9] = {};
-            if (!ibl_ktx->getSphericalHarmonics(bands)) {
-                engine_.destroy(ibl_texture);
-                request.error_callback_(
-                        request, 2,
-                        "Failed to read spherical harmonics from ktx");
-                return handle;
-            }
-
-            auto indirect_light = IndirectLight::Builder()
-                                          .reflections(ibl_texture)
-                                          .irradiance(3, bands)
-                                          .intensity(30000.f)
-                                          .build(engine_);
-
-            if (indirect_light) {
-                handle = RegisterResource<IndirectLightHandle>(
-                        engine_, indirect_light, ibls_);
-
-                auto htexture = RegisterResource<TextureHandle>(
-                        engine_, ibl_texture, textures_);
-                dependencies_[handle].insert(htexture);
-            } else {
-                request.error_callback_(
-                        request, 3, "Failed to create indirect light from ktx");
-                engine_.destroy(ibl_texture);
-            }
-        } else {
             request.error_callback_(request, errno, error_str);
         }
+    } else if (request.data_size_ > 0) {
+        ibl_data = std::vector<char>((char*)request.data_, (char*)request.data_ + request.data_size_);
     } else {
         request.error_callback_(request, -1, "");
+        return handle;
+    }
+
+    using namespace filament;
+    // will be destroyed later by image::ktx::createTexture
+    auto* ibl_ktx = new image::KtxBundle(
+            reinterpret_cast<std::uint8_t*>(ibl_data.data()),
+            std::uint32_t(ibl_data.size()));
+    auto* ibl_texture =
+            image::ktx::createTexture(&engine_, ibl_ktx, false);
+
+    filament::math::float3 bands[9] = {};
+    if (!ibl_ktx->getSphericalHarmonics(bands)) {
+        engine_.destroy(ibl_texture);
+        request.error_callback_(
+                request, 2,
+                "Failed to read spherical harmonics from ktx");
+        return handle;
+    }
+
+    auto indirect_light = IndirectLight::Builder()
+                                    .reflections(ibl_texture)
+                                    .irradiance(3, bands)
+                                    .intensity(30000.f)
+                                    .build(engine_);
+
+    if (indirect_light) {
+        handle = RegisterResource<IndirectLightHandle>(
+                engine_, indirect_light, ibls_);
+
+        auto htexture = RegisterResource<TextureHandle>(
+                engine_, ibl_texture, textures_);
+        dependencies_[handle].insert(htexture);
+    } else {
+        request.error_callback_(
+                request, 3, "Failed to create indirect light from ktx");
+        engine_.destroy(ibl_texture);
     }
 
     return handle;
@@ -661,44 +663,48 @@ SkyboxHandle FilamentResourceManager::CreateSkybox(
         const ResourceLoadRequest& request) {
     SkyboxHandle handle;
 
+    std::vector<char> sky_data;
     if (!request.path_.empty()) {
-        std::vector<char> sky_data;
         std::string error_str;
 
-        if (utility::filesystem::FReadToBuffer(request.path_, sky_data,
+        if (!utility::filesystem::FReadToBuffer(request.path_, sky_data,
                                                &error_str)) {
-            using namespace filament;
-            // will be destroyed later by image::ktx::createTexture
-            auto* sky_ktx = new image::KtxBundle(
-                    reinterpret_cast<std::uint8_t*>(sky_data.data()),
-                    std::uint32_t(sky_data.size()));
-            auto* sky_texture =
-                    image::ktx::createTexture(&engine_, sky_ktx, false);
-
-            auto skybox = Skybox::Builder()
-                                  .environment(sky_texture)
-                                  .showSun(true)
-                                  .build(engine_);
-
-            if (skybox) {
-                handle = RegisterResource<SkyboxHandle>(engine_, skybox,
-                                                        skyboxes_);
-
-                auto htex = RegisterResource<TextureHandle>(
-                        engine_, sky_texture, textures_);
-                dependencies_[handle].insert(htex);
-            } else {
-                request.error_callback_(
-                        request, 3, "Failed to create indirect light from ktx");
-                engine_.destroy(sky_texture);
-            }
-        } else {
             request.error_callback_(request, errno, error_str);
+            return handle;
         }
+    } else if (request.data_size_ > 0) {
+        sky_data = std::vector<char>((char*)request.data_,
+                                     (char*)request.data_ + request.data_size_);
     } else {
         request.error_callback_(request, -1, "");
+        return handle;
     }
 
+    using namespace filament;
+    // will be destroyed later by image::ktx::createTexture
+    auto* sky_ktx = new image::KtxBundle(
+            reinterpret_cast<std::uint8_t*>(sky_data.data()),
+            std::uint32_t(sky_data.size()));
+    auto* sky_texture =
+            image::ktx::createTexture(&engine_, sky_ktx, false);
+
+    auto skybox = Skybox::Builder()
+                            .environment(sky_texture)
+                            .showSun(true)
+                            .build(engine_);
+
+    if (skybox) {
+        handle = RegisterResource<SkyboxHandle>(engine_, skybox,
+                                                skyboxes_);
+
+        auto htex = RegisterResource<TextureHandle>(
+                engine_, sky_texture, textures_);
+        dependencies_[handle].insert(htex);
+    } else {
+        request.error_callback_(
+                request, 3, "Failed to create indirect light from ktx");
+        engine_.destroy(sky_texture);
+    }
     return handle;
 }
 

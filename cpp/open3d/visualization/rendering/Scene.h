@@ -183,7 +183,9 @@ public:
     virtual void SetSunHaloSize(float size) = 0;
     virtual void SetSunHaloFalloff(float falloff) = 0;
 
-    virtual bool SetIndirectLight(const std::string& ibl_name) = 0;
+    virtual bool SetIndirectLight(const std::string& ibl_name,
+                                  const std::vector<char> ibl_bytes = std::vector<char>(),
+                                  const std::vector<char> skybox_bytes = std::vector<char>()) = 0;
     virtual const std::string& GetIndirectLight() = 0;
     virtual void EnableIndirectLight(bool enable) = 0;
     virtual void SetIndirectLightIntensity(float intensity) = 0;

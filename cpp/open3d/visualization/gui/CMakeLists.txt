@@ -1,11 +1,11 @@
 add_custom_command(
     OUTPUT
-    ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
+        ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
     DEPENDS
         EmbedResources
     COMMAND
-        rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h &&
+        ${CMAKE_COMMAND} -E rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ${CMAKE_COMMAND} -E rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h &&
         ./EmbedResources resources/brightday_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
         ./EmbedResources resources/brightday_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
         ./EmbedResources resources/colorMap.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
@@ -53,7 +53,7 @@ add_custom_command(
     VERBATIM
     )
 
-add_custom_target(resource ALL
+add_custom_target(resource-embed ALL
     COMMAND
         echo "Embedding resources into the binary"
     DEPENDS ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
@@ -165,7 +165,7 @@ open3d_add_compiled_materials(materials
 # Source group for Visual Studio
 add_source_group(Materials)
 
-add_dependencies(GUI materials resource)
+add_dependencies(GUI materials resource-embed)
 
 get_target_property(GUI_MATERIAL_COMPILED_FILES materials COMPILED_MATERIALS)
 
