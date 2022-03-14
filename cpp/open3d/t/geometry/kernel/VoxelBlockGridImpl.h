@@ -1318,12 +1318,10 @@ void ExtractTriangleMeshCPU
                 device);
     } catch (const std::runtime_error&) {
         utility::LogError(
-                "[MeshExtractionKernel] Unable to allocate assistance mesh "
-                "structure for Marching "
+                "Unable to allocate assistance mesh structure for Marching "
                 "Cubes with {} active voxel blocks. Please consider using a "
-                "larger voxel size (currently {}) for TSDF "
-                "integration, or using tsdf_volume.cpu() to perform mesh "
-                "extraction on CPU.",
+                "larger voxel size (currently {}) for TSDF integration, or "
+                "using tsdf_volume.cpu() to perform mesh extraction on CPU.",
                 n_blocks, voxel_size);
     }
 

@@ -83,7 +83,7 @@ install_python_dependencies() {
     # TODO: modify other locations to use requirements.txt
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
     if [[ "with-jupyter" =~ ^($options)$ ]]; then
-        python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
+        python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     fi
 
     echo
@@ -361,7 +361,7 @@ install_docs_dependencies() {
     python -m pip install -U -q "yapf==$YAPF_VER"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     echo
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
