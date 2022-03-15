@@ -455,7 +455,7 @@ The default value for the ``line_width`` parameter is ``2``. The minimum supplie
 .. image:: https://user-images.githubusercontent.com/93158890/157993716-83aab1cd-c558-4e50-b2fd-7bd82d5092e5.jpg
     :width: 600px
 
-
+Experiment with the ``line_width`` parameter values to find an optimal one for your purposes.
 
 
 
@@ -541,6 +541,141 @@ You can pass as may objects to the ``draw()`` as you need.
 
 
 
+
+    
+    
+    
+
+Working with Line Sets - done
+:::::::::::::::::::::::::::::
+
+**Lineset from TriangleMesh goes here** - done
+    
+
+
+Specifying Wireframe ``line_width`` - done
+""""""""""""""""""""""""""""""""""""""""""
+
+**Use the same example from above** - done
+
+
+
+
+
+
+
+
+
+Commonly Used ``draw()`` Options
+--------------------------------
+
+Displaying UI, Window Titles, and Specifying Window Dimensions
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+Aside from rendering 3D objects, you can use the ``draw()`` function calls to control a number of Open3D Visualizer display options that are not shown by default, such as:
+
+* displaying UI / control panel for interactively modifying 3D model rendering parameters of the Visualizer 
+* adding a Visualizer window title;
+* specifying window dimensions (i.e. *Width* and *Height*).
+
+The code below illustrates how to rename a Visualizer title bar and set window ``width`` and ``height`` by customizing the ``draw()`` call, using our prior *Sphere in a Bounding Box LineSet (aabb)* example:
+
+.. code-block:: python
+
+	>>> vis.draw([sphere,line_set], show_ui=True, title="Sphere and AABB LineSet", width=700, height=700)
+	
+.. image:: https://user-images.githubusercontent.com/93158890/158281728-994ff828-53b0-485a-9feb-9b121d7354f7.jpg
+    :width: 600px
+
+
+At the bottom of the UI / control panel, you can see the section titled "*Geometries*" (outlined in a dark grey box). This section contains a list of rendered objects that can be individually turned on or off by clicking a checkbox to the left of their names.
+
+
+
+
+
+Assigning Names to Objects in the UI
+::::::::::::::::::::::::::::::::::::
+
+Object Collections
+""""""""""""""""""
+
+In prior examples, we used the the ``draw()`` function to render 3D objects explicitly. The ``draw()`` function is not limited to 3D Objects only. You can create a collection of objects with their properties, mix them with visualizer-specific options, and render the result. In the previous example, we learned how to control a number of Open3D Visualizer display options that are not shown by default. In this case, our goal is to rename the default-assigned name of *Object 1* in the "Geometries" frame of the Visualizer UI to *sphere* .
+
+We now declare the ``geoms`` collection which will contain a geometry object ``sphere`` (from previous examples), and we will name it *sphere* (``'name': 'sphere'``). This will serve as a signal to the Visualizer UI to replace its default "Geometries" from *Object 1* to *sphere*:
+
+.. code-block:: python
+
+	>>> geoms = {'name': 'sphere', 'geometry': sphere}
+
+We can now display the UI and confirm that our custom object is named appropriately:
+
+.. code-block:: python
+
+	>>> vis.draw(geoms, show_ui=True)
+
+And here is the named object:
+
+.. image:: https://user-images.githubusercontent.com/93158890/158282041-a227b0f5-803e-4618-a9b1-d732c5de1a81.jpg
+    :width: 600px
+    
+So far, our ``geoms`` collection defined only a single object: *sphere*. But we can turn it into a list and define multiple objects there:
+
+1. Re-declare ``geoms`` object to contain a collection list of the ``sphere`` and ``aabb`` bounding box from the *"Drawing a Sphere in a Bounding Box LineSet"* section.
+
+2. Call ``draw(geoms, show_ui=True)``:
+
+.. code-block:: python
+
+	>>> geoms = [{'name': 'sphere', 'geometry': sphere}, {'name': 'Axis Aligned Bounding Box line_set', 'geometry': line_set}]
+  >>> vis.draw(geoms, show_ui=True)
+
+.. image:: https://user-images.githubusercontent.com/93158890/158282171-b69a46c1-c5c6-44fc-a9fc-765e5ecc7473.jpg
+    :width: 600px
+    
+
+
+
+
+
+
+
+
+
+
+
+More ``draw()`` Options
+:::::::::::::::::::::::
+
+``show_skybox`` and ``bg_color``
+""""""""""""""""""""""""""""""""
+
+Aside from naming Open3D Visualizer status bar, geometries, and displaying the UI, you also have options to programmatically turn the light blue *skybox* on or off (``show_skybox=False/True``) as well as change the background color (``bg_color=(x.x, x.x, x.x, x.x)``).
+
+First, we'll demonstrate how to turn off the *skybox* using our *sphere* example. At your Python prompt, enter:
+
+.. code-block:: python
+
+	>>> vis.draw(sphere, show_ui=True, show_skybox=False)
+	
+And the Visualizer window opens without the default *skybox* blue background:
+
+.. image:: https://user-images.githubusercontent.com/93158890/158435806-cf5180a4-3593-42df-a259-a6648a0e7b7e.jpg
+    :width: 600px
+
+Next, we will explore the *background color* (``bg_color``) parameter. At the Python prompt, enter:
+
+.. code-block:: python
+
+	>>> vis.draw(sphere, show_ui=True, title="Green Background", show_skybox=False, bg_color=(0.0, 1.0, 0.0, 1.0))
+
+Here, we have displayed the UI, renamed the title bar to *"Green Background"*, turned off the default *skybox* background, and explicitly specified RGB-Alfa values for the ``bg_color``:
+
+.. image:: https://user-images.githubusercontent.com/93158890/158464565-f36b1906-9337-4a8d-a707-d8a8ea962538.jpg
+    :width: 600px
+
+
+
 Drawing Point Clouds
 ::::::::::::::::::::
 
@@ -557,125 +692,6 @@ Open3D returns:
 	
 .. image:: https://user-images.githubusercontent.com/93158890/148607866-3de802e2-34ea-499e-a6ad-ee2b44ab9994.jpg
     :width: 600px
-    
-    
-    
-
-Working with Line Sets
-::::::::::::::::::::::::
-
-**Lineset from TriangleMesh goes here**
-    
-
-
-Specifying Wireframe ``line_width``
-"""""""""""""""""""""""""""""""""""
-
-**Use the same example from above**
-    
-
-	
-
-
-Commonly Used ``draw()`` Options
-::::::::::::::::::::::::::::::::
-
-**Use the "Lineset from AABB (with a bounding box)" example for both subsections below**
-
-Displaying Window Titles and Specifying Window Dimensions
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-Aside from displaying UI / control panel, it is also possible to add a Visualizer window title along with window dimensions (i.e. *Width* and *Height*). This code example illustrates how to rename a Visualizer title bar and set window ``width`` and ``height``:
-
-.. code-block:: python
-
-	>>> vis.draw([sphere, pcd], show_ui=True, title="Sphere and PCD", width=700, height=700)
-	
-.. image:: https://user-images.githubusercontent.com/93158890/149412802-c262b81f-d504-4fa2-b3f9-3fb25e3b9e14.jpg
-    :width: 600px
-
-
-
-Displaying UI / Control Panel
-"""""""""""""""""""""""""""""
-
-By default, the ``draw()`` function renders 3D models without showing the user interface (UI) / control panel where users can interactively modify 3D model rendering parameters of the Visualizer. Let's now render our models with the UI shown:
-
-.. code-block:: python
-
-	>>> vis.draw([sphere, pcd], show_ui=True)
-
-.. image:: https://user-images.githubusercontent.com/93158890/148608987-bd0a741d-f516-4a06-8f1b-0463d656c036.jpg
-    :width: 600px
-
-At the bottom of the UI / control panel, you can see the section titled "*Geometries*" (outlined in a yellow box). This section contains a list of rendered objects that can be individually turned on or off by clicking a checkbox to the left of their names.
-
-
-
-Assigning Names to Objects in the UI
-""""""""""""""""""""""""""""""""""""
-
-Earlier, we explicitly declared the name for our object in the ``geoms`` collection (``'name': 'sphere'``). We can now display the UI and confirm that our custom object is named appropriately:
-
-.. code-block:: python
-
-	>>> geoms = {'name': 'sphere', 'geometry': sphere, 'material': mat}
-	>>> vis.draw(geoms, show_ui=True)
-
-And here is the named object:
-
-.. image:: https://user-images.githubusercontent.com/93158890/149417800-5b852a2d-3bea-48d9-b702-f0865e1eec0c.jpg
-    :width: 600px
-    
-So far, our ``geoms`` collection defined only a single object: *sphere*. But we can turn it into a list and define multiple objects there. Let's see how it's done:
-
-**replace the below example with the "Lineset from AABB (with a bounding box)"**
-
-.. code-block:: python
-
-	>>> geoms = [{'name': 'sphere', 'geometry': sphere, 'material': mat}, {'name': 'pointcloud', 'geometry': pcd}]
-	>>> vis.draw(geoms, show_ui=True)
-
-.. image:: https://user-images.githubusercontent.com/93158890/149419900-02c42c51-bede-4a6b-b3d4-716a01dd0fab.jpg
-    :width: 600px
-
-
-
-
-
-More ``draw()`` Options
-:::::::::::::::::::::::
-
-``show_skybox`` and ``bg_color``
-""""""""""""""""""""""""""""""""
-
-**use a single Sphere rendering - replace examples below**
-
-Aside from naming Open3D Visualizer status bar, geometries, and displaying the UI, you also have options to programmatically turn the light blue *skybox* on or off (``show_skybox=False/True``) as well as change the background color (``bg_color=(x.x, x.x, x.x, x.x)``).
-
-First, we'll demonstrate how to turn off the *skybox*. At your Python prompt, enter:
-
-.. code-block:: python
-
-	>>> vis.draw(geoms, show_ui=True, show_skybox=False)
-	
-And the Visualizer window opens without the default *skybox* blue background:
-
-.. image:: https://user-images.githubusercontent.com/93158890/149421692-0a8a1f3c-2ea9-4da3-a480-4fdcaa99e49e.jpg
-    :width: 600px
-
-Next, we will explore the *background color* (``bg_color``) parameter. At the Python prompt, enter:
-
-.. code-block:: python
-
-	>>> vis.draw(geoms, show_ui=True, title="Green Background", show_skybox=False, bg_color=(0.0, 1.0, 0.0, 1.0))
-
-Here, we have displayed the UI, renamed the title bar to *"Green Background"*, turned off the default *skybox* background, and explicitly specified RGB-Alfa values for the ``bg_color``:
-
-.. image:: https://user-images.githubusercontent.com/93158890/149423231-55bb4604-b993-4893-b170-08637d0f243f.jpg
-    :width: 600px
-
-
 
 Specifying ``point_size``
 """""""""""""""""""""""""
@@ -690,3 +706,4 @@ Here we have programmatically specified a custom ``point_size`` for rendering. I
 
 .. image:: https://user-images.githubusercontent.com/93158890/149423983-f89ab2b7-fa49-4723-9329-1c375fb0a965.jpg
     :width: 600px
+
