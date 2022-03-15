@@ -1,9 +1,35 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018-2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+
 #include <experimental/filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace fs = std::experimental::filesystem;
 
@@ -124,25 +150,25 @@ bool FReadToBuffer(const std::string &path,
     return true;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     if (argc < 3) {
         std::cout << "Usage: " << argv[0] << " <input_file> <output_cpp_file>";
         return 0;
     }
-    
+
     std::string input_file = argv[1];
     std::string output_cpp_file = argv[2];
     std::string output_h_file = argv[2];
-    output_h_file = output_h_file.substr(0, output_cpp_file.length()-4) + ".h";
+    output_h_file =
+            output_h_file.substr(0, output_cpp_file.length() - 4) + ".h";
 
     std::vector<char> resource_data;
     std::string error_str;
-    
+
     if (FReadToBuffer(input_file, resource_data, &error_str)) {
-        
         std::ofstream cpp_out;
         std::ofstream h_out;
-        
+
         if (!fs::exists(output_cpp_file)) {
             cpp_out.open(output_cpp_file, std::ios::trunc);
             cpp_out << "#include \"open3d/visualization/gui/Resource.h\"\n\n";
@@ -163,8 +189,9 @@ int main(int argc, char* argv[]) {
 
         h_out << "std::vector<char> " << var_name << "();" << std::endl;
 
-        cpp_out << "std::vector<char> "<< var_name << "() {\n"
-                << "    static const std::vector<char> " << var_name << "_data = {\n"
+        cpp_out << "std::vector<char> " << var_name << "() {\n"
+                << "    static const std::vector<char> " << var_name
+                << "_data = {\n"
                 << "        ";
 
         for (auto byte : resource_data) {
@@ -174,7 +201,7 @@ int main(int argc, char* argv[]) {
         cpp_out << "    };\n"
                 << "    return " << var_name << "_data;\n"
                 << "}" << std::endl;
-        
+
         cpp_out.close();
         h_out.close();
     } else {

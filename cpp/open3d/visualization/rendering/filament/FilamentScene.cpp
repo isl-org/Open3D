@@ -1572,7 +1572,8 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name,
         new_ibl = renderer_.AddIndirectLight(
                 ResourceLoadRequest(ibl_path.c_str()));
     } else {
-        new_ibl = renderer_.AddIndirectLight(ResourceLoadRequest(ibl_bytes.data(), ibl_bytes.size())); 
+        new_ibl = renderer_.AddIndirectLight(
+                ResourceLoadRequest(ibl_bytes.data(), ibl_bytes.size()));
     }
 
     if (!new_ibl) {

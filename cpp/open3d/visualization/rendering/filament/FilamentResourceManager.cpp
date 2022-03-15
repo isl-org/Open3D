@@ -596,11 +596,12 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
     if (!request.path_.empty()) {
         std::string error_str;
         if (!utility::filesystem::FReadToBuffer(request.path_, ibl_data,
-                                               &error_str)) {
+                                                &error_str)) {
             request.error_callback_(request, errno, error_str);
         }
     } else if (request.data_size_ > 0) {
-        ibl_data = std::vector<char>((char*)request.data_, (char*)request.data_ + request.data_size_);
+        ibl_data = std::vector<char>((char*)request.data_,
+                                     (char*)request.data_ + request.data_size_);
     } else {
         request.error_callback_(request, -1, "");
         return handle;
@@ -611,34 +612,32 @@ IndirectLightHandle FilamentResourceManager::CreateIndirectLight(
     auto* ibl_ktx = new image::KtxBundle(
             reinterpret_cast<std::uint8_t*>(ibl_data.data()),
             std::uint32_t(ibl_data.size()));
-    auto* ibl_texture =
-            image::ktx::createTexture(&engine_, ibl_ktx, false);
+    auto* ibl_texture = image::ktx::createTexture(&engine_, ibl_ktx, false);
 
     filament::math::float3 bands[9] = {};
     if (!ibl_ktx->getSphericalHarmonics(bands)) {
         engine_.destroy(ibl_texture);
-        request.error_callback_(
-                request, 2,
-                "Failed to read spherical harmonics from ktx");
+        request.error_callback_(request, 2,
+                                "Failed to read spherical harmonics from ktx");
         return handle;
     }
 
     auto indirect_light = IndirectLight::Builder()
-                                    .reflections(ibl_texture)
-                                    .irradiance(3, bands)
-                                    .intensity(30000.f)
-                                    .build(engine_);
+                                  .reflections(ibl_texture)
+                                  .irradiance(3, bands)
+                                  .intensity(30000.f)
+                                  .build(engine_);
 
     if (indirect_light) {
-        handle = RegisterResource<IndirectLightHandle>(
-                engine_, indirect_light, ibls_);
+        handle = RegisterResource<IndirectLightHandle>(engine_, indirect_light,
+                                                       ibls_);
 
-        auto htexture = RegisterResource<TextureHandle>(
-                engine_, ibl_texture, textures_);
+        auto htexture = RegisterResource<TextureHandle>(engine_, ibl_texture,
+                                                        textures_);
         dependencies_[handle].insert(htexture);
     } else {
-        request.error_callback_(
-                request, 3, "Failed to create indirect light from ktx");
+        request.error_callback_(request, 3,
+                                "Failed to create indirect light from ktx");
         engine_.destroy(ibl_texture);
     }
 
@@ -668,7 +667,7 @@ SkyboxHandle FilamentResourceManager::CreateSkybox(
         std::string error_str;
 
         if (!utility::filesystem::FReadToBuffer(request.path_, sky_data,
-                                               &error_str)) {
+                                                &error_str)) {
             request.error_callback_(request, errno, error_str);
             return handle;
         }
@@ -685,24 +684,22 @@ SkyboxHandle FilamentResourceManager::CreateSkybox(
     auto* sky_ktx = new image::KtxBundle(
             reinterpret_cast<std::uint8_t*>(sky_data.data()),
             std::uint32_t(sky_data.size()));
-    auto* sky_texture =
-            image::ktx::createTexture(&engine_, sky_ktx, false);
+    auto* sky_texture = image::ktx::createTexture(&engine_, sky_ktx, false);
 
     auto skybox = Skybox::Builder()
-                            .environment(sky_texture)
-                            .showSun(true)
-                            .build(engine_);
+                          .environment(sky_texture)
+                          .showSun(true)
+                          .build(engine_);
 
     if (skybox) {
-        handle = RegisterResource<SkyboxHandle>(engine_, skybox,
-                                                skyboxes_);
+        handle = RegisterResource<SkyboxHandle>(engine_, skybox, skyboxes_);
 
-        auto htex = RegisterResource<TextureHandle>(
-                engine_, sky_texture, textures_);
+        auto htex = RegisterResource<TextureHandle>(engine_, sky_texture,
+                                                    textures_);
         dependencies_[handle].insert(htex);
     } else {
-        request.error_callback_(
-                request, 3, "Failed to create indirect light from ktx");
+        request.error_callback_(request, 3,
+                                "Failed to create indirect light from ktx");
         engine_.destroy(sky_texture);
     }
     return handle;
@@ -993,7 +990,8 @@ void FilamentResourceManager::LoadDefaults() {
     lit_mat->setDefaultParameter("anisotropyMap", texture, default_sampler);
     materials_[kDefaultLit] = BoxResource(lit_mat, engine_);
 
-    auto lit_trans_mat = LoadMaterialFromFile(defaultLitTransparency_filamat(), engine_);
+    auto lit_trans_mat =
+            LoadMaterialFromFile(defaultLitTransparency_filamat(), engine_);
     lit_trans_mat->setDefaultParameter("baseColor",
                                        filament::RgbaType::PREMULTIPLIED_sRGB,
                                        default_color_alpha);
@@ -1053,7 +1051,8 @@ void FilamentResourceManager::LoadDefaults() {
     unlit_mat->setDefaultParameter("srgbColor", 0.f);
     materials_[kDefaultUnlit] = BoxResource(unlit_mat, engine_);
 
-    auto unlit_trans_mat = LoadMaterialFromFile(defaultUnlitTransparency_filamat(), engine_);
+    auto unlit_trans_mat =
+            LoadMaterialFromFile(defaultUnlitTransparency_filamat(), engine_);
     unlit_trans_mat->setDefaultParameter("baseColor", filament::RgbType::sRGB,
                                          default_color);
     unlit_trans_mat->setDefaultParameter("pointSize", 3.f);
@@ -1071,7 +1070,8 @@ void FilamentResourceManager::LoadDefaults() {
             BoxResource(gradient_mat, engine_);
 
     // NOTE: Legacy. Can be removed soon.
-    const auto hdepth = CreateMaterial(ResourceLoadRequest(depth_filamat().data(), depth_filamat().size()));
+    const auto hdepth = CreateMaterial(ResourceLoadRequest(
+            depth_filamat().data(), depth_filamat().size()));
     auto depth_mat_inst = materials_[hdepth];
     depth_mat_inst->setDefaultParameter("pointSize", 3.f);
     material_instances_[kDepthMaterial] =
@@ -1082,15 +1082,15 @@ void FilamentResourceManager::LoadDefaults() {
     materials_[kDefaultNormalShader] = BoxResource(normals_mat, engine_);
 
     // NOTE: Legacy. Can be removed soon.
-    const auto hnormals =
-            CreateMaterial(ResourceLoadRequest(normals_filamat().data(), normals_filamat().size()));
+    const auto hnormals = CreateMaterial(ResourceLoadRequest(
+            normals_filamat().data(), normals_filamat().size()));
     auto normals_mat_inst = materials_[hnormals];
     normals_mat_inst->setDefaultParameter("pointSize", 3.f);
     material_instances_[kNormalsMaterial] =
             BoxResource(normals_mat_inst->createInstance(), engine_);
 
-    const auto hcolormap_mat =
-            CreateMaterial(ResourceLoadRequest(colorMap_filamat().data(), colorMap_filamat().size()));
+    const auto hcolormap_mat = CreateMaterial(ResourceLoadRequest(
+            colorMap_filamat().data(), colorMap_filamat().size()));
     auto colormap_mat = materials_[hcolormap_mat];
     auto colormap_mat_inst = colormap_mat->createInstance();
     colormap_mat_inst->setParameter("colorMap", color_map, default_sampler);
@@ -1122,7 +1122,8 @@ void FilamentResourceManager::LoadDefaults() {
     line_mat->setDefaultParameter("lineWidth", 1.f);
     materials_[kDefaultLineShader] = BoxResource(line_mat, engine_);
 
-    auto poffset_mat = LoadMaterialFromFile(unlitPolygonOffset_filamat(), engine_);
+    auto poffset_mat =
+            LoadMaterialFromFile(unlitPolygonOffset_filamat(), engine_);
     materials_[kDefaultUnlitPolygonOffsetShader] =
             BoxResource(poffset_mat, engine_);
 }

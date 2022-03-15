@@ -205,9 +205,11 @@ public:
     void SetSunHaloSize(float size) override;
     void SetSunHaloFalloff(float falloff) override;
 
-    bool SetIndirectLight(const std::string& ibl_name,
-                          const std::vector<char> ibl_bytes = std::vector<char>(),
-                          const std::vector<char> skybox_bytes = std::vector<char>()) override;
+    bool SetIndirectLight(
+            const std::string& ibl_name,
+            const std::vector<char> ibl_bytes = std::vector<char>(),
+            const std::vector<char> skybox_bytes =
+                    std::vector<char>()) override;
     const std::string& GetIndirectLight() override;
     void EnableIndirectLight(bool enable) override;
     void SetIndirectLightIntensity(float intensity) override;

@@ -91,7 +91,8 @@ namespace open3d {
 namespace visualization {
 namespace gui {
 
-static Material* LoadMaterialTemplate(std::vector<char> resource_bytes, Engine& engine) {
+static Material* LoadMaterialTemplate(std::vector<char> resource_bytes,
+                                      Engine& engine) {
     std::string error_str;
 
     return Material::Builder()
@@ -168,9 +169,11 @@ ImguiFilamentBridge::ImguiFilamentBridge(
     impl_->renderer_ = renderer;
     // The UI needs a special material (just a pass-through blit)
     std::string resource_path = Application::GetInstance().GetResourcePath();
-    impl_->uiblit_material_ = LoadMaterialTemplate(ui_blit_filamat(),
+    impl_->uiblit_material_ = LoadMaterialTemplate(
+            ui_blit_filamat(),
             visualization::rendering::EngineInstance::GetInstance());
-    impl_->image_material_ = LoadMaterialTemplate(img_blit_filamat(),
+    impl_->image_material_ = LoadMaterialTemplate(
+            img_blit_filamat(),
             visualization::rendering::EngineInstance::GetInstance());
 
     auto& engine = visualization::rendering::EngineInstance::GetInstance();
