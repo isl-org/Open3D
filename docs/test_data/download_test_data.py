@@ -24,55 +24,25 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-import os
+# Download Open3D test data files. The default download path is
+# Open3D/examples/test_data/open3d_downloads
+#
+# See https://github.com/isl-org/open3d_downloads for details on how to
+# manage the test data files.
+#
+# We have to put the version check here and the rest of the Python 3.6+
+# compatible code in a separate file. Otherwise, Python 2 complains about syntax
+# errors before the version check. In addition, please keep this file simple and
+# Python 2&3 compatible. See https://stackoverflow.com/a/3760194/1255535.
 import sys
-import urllib.request
-import zipfile
+if sys.version_info < (3, 6):
+    raise RuntimeError(
+        "Python version must be >= 3.6, however, Python {}.{} is used.".format(
+            sys.version_info[0], sys.version_info[1]))
 
-import numpy as np
-import pytest
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from download_utils import download_all_files
 
-
-def torch_available():
-    try:
-        import torch
-        import torch.utils.dlpack
-    except ImportError:
-        return False
-    return True
-
-
-def list_devices():
-    """
-    If Open3D is built with CUDA support:
-    - If cuda device is available, returns [Device("CPU:0"), Device("CUDA:0")].
-    - If cuda device is not available, returns [Device("CPU:0")].
-
-    If Open3D is built without CUDA support:
-    - returns [Device("CPU:0")].
-    """
-    import open3d as o3d
-    if o3d.core.cuda.device_count() > 0:
-        return [o3d.core.Device("CPU:0"), o3d.core.Device("CUDA:0")]
-    else:
-        return [o3d.core.Device("CPU:0")]
-
-
-def list_devices_with_torch():
-    """
-    Similar to list_devices(), but take PyTorch available devices into account.
-    The returned devices are compatible on both PyTorch and Open3D.
-
-    If PyTorch is not available at all, empty list will be returned, thus the
-    test is effectively skipped.
-    """
-    if torch_available():
-        import open3d as o3d
-        import torch
-        if (o3d.core.cuda.device_count() > 0 and torch.cuda.is_available() and
-                torch.cuda.device_count() > 0):
-            return [o3d.core.Device("CPU:0"), o3d.core.Device("CUDA:0")]
-        else:
-            return [o3d.core.Device("CPU:0")]
-    else:
-        return []
+if __name__ == "__main__":
+    download_all_files()

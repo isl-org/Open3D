@@ -23,10 +23,6 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
-from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
-from open3d.visualization.tensorboard_plugin.util import to_dict_batch
-from open3d.visualization.tensorboard_plugin import summary
-import open3d as o3d
 import os
 import sys
 from time import sleep
@@ -35,7 +31,6 @@ import webbrowser
 import shutil
 import numpy as np
 import pytest
-import tempfile
 pytest.importorskip("tensorboard")
 vis = pytest.importorskip("open3d.ml.vis")
 try:
@@ -43,7 +38,10 @@ try:
 except AttributeError:
     pytestmark = pytest.mark.skip(reason="BoundingBox3D not available.")
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
+import open3d as o3d
+from open3d.visualization.tensorboard_plugin import summary
+from open3d.visualization.tensorboard_plugin.util import to_dict_batch
+from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
 
 
 @pytest.fixture
@@ -368,125 +366,115 @@ def check_material_dict(o3d_geo, material, batch_idx):
                 prop[21:]].as_tensor().numpy() == ref_value).all()
 
 
-def test_plugin_data_reader(geometry_data):
+@pytest.fixture
+def logdir():
+    """Extract logdir zip to provide logdir for tests, cleanup afterwards."""
+    test_data = o3d.data.SingleDownloadDataset(
+        "TestTensorboardPlugin", [
+            "https://github.com/isl-org/open3d_downloads/releases/"
+            "download/20220301-data/test_tensorboard_plugin.zip"
+        ], "746612f1d3b413236091d263bff29dc9", False)
+    yield test_data.extract_dir
+    shutil.rmtree(test_data.extract_dir)
+
+
+def test_plugin_data_reader(geometry_data, logdir):
     """Test reading summary data"""
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        print('Created temporary directory', tmpdirname)
-        test_data = o3d.data.SingleDownloadDataset(
-            "TestTensorboardPlugin", [
-                "https://github.com/isl-org/open3d_downloads/releases/"
-                "download/20220301-data/test_tensorboard_plugin.zip"
-            ], "746612f1d3b413236091d263bff29dc9", False, tmpdirname)
-        logdir = test_data.extract_dir
+    cube, material = geometry_data['cube'], geometry_data['material']
+    cube_custom_prop = geometry_data['cube_custom_prop']
+    cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
+        'material_ls']
+    colors = geometry_data['colors']
+    max_outputs = geometry_data['max_outputs']
+    cube_labels = geometry_data['cube_labels']
+    label_to_names_ref = geometry_data['label_to_names']
+    bboxes_ref = geometry_data['bboxes']
+    tags_ref = geometry_data['tags']
 
-        cube, material = geometry_data['cube'], geometry_data['material']
-        cube_custom_prop = geometry_data['cube_custom_prop']
-        cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
-            'material_ls']
-        colors = geometry_data['colors']
-        max_outputs = geometry_data['max_outputs']
-        cube_labels = geometry_data['cube_labels']
-        label_to_names_ref = geometry_data['label_to_names']
-        bboxes_ref = geometry_data['bboxes']
-        tags_ref = geometry_data['tags']
+    reader = Open3DPluginDataReader(logdir)
+    assert reader.is_active()
+    assert reader.run_to_tags == {'.': tags_ref}
+    assert reader.get_label_to_names('.', 'cube_pcd') == label_to_names_ref
+    assert reader.get_label_to_names('.', 'bboxes') == label_to_names_ref
+    step_to_idx = {i: i for i in range(3)}
+    for step in range(3):
+        for batch_idx in range(max_outputs):
+            cube[batch_idx].paint_uniform_color(colors[step][batch_idx])
+            cube_ref = o3d.t.geometry.TriangleMesh.from_legacy(cube[batch_idx])
+            cube_ref.triangle["indices"] = cube_ref.triangle["indices"].to(
+                o3d.core.int32)
+            cube_ref.vertex['colors'] = (cube_ref.vertex['colors'] * 255).to(
+                o3d.core.uint8)
 
-        reader = Open3DPluginDataReader(logdir)
-        assert reader.is_active()
-        assert reader.run_to_tags == {'.': tags_ref}
-        assert reader.get_label_to_names('.', 'cube_pcd') == label_to_names_ref
-        assert reader.get_label_to_names('.', 'bboxes') == label_to_names_ref
-        step_to_idx = {i: i for i in range(3)}
-        for step in range(3):
-            for batch_idx in range(max_outputs):
-                cube[batch_idx].paint_uniform_color(colors[step][batch_idx])
-                cube_ref = o3d.t.geometry.TriangleMesh.from_legacy(
-                    cube[batch_idx])
-                cube_ref.triangle["indices"] = cube_ref.triangle["indices"].to(
-                    o3d.core.int32)
-                cube_ref.vertex['colors'] = (cube_ref.vertex['colors'] *
-                                             255).to(o3d.core.uint8)
+            cube_out = reader.read_geometry(".", "cube", step, batch_idx,
+                                            step_to_idx)[0]
+            assert (cube_out.vertex['positions'] == cube_ref.vertex['positions']
+                   ).all()
+            assert (
+                cube_out.vertex['normals'] == cube_ref.vertex['normals']).all()
+            assert (
+                cube_out.vertex['colors'] == cube_ref.vertex['colors']).all()
+            assert (cube_out.triangle['indices'] == cube_ref.triangle['indices']
+                   ).all()
+            check_material_dict(cube_out, material, batch_idx)
 
-                cube_out = reader.read_geometry(".", "cube", step, batch_idx,
-                                                step_to_idx)[0]
-                assert (cube_out.vertex['positions'] ==
-                        cube_ref.vertex['positions']).all()
-                assert (cube_out.vertex['normals'] == cube_ref.vertex['normals']
-                       ).all()
-                assert (cube_out.vertex['colors'] == cube_ref.vertex['colors']
-                       ).all()
-                assert (cube_out.triangle['indices'] ==
-                        cube_ref.triangle['indices']).all()
-                check_material_dict(cube_out, material, batch_idx)
+            cube_pcd_out = reader.read_geometry(".", "cube_pcd", step,
+                                                batch_idx, step_to_idx)[0]
+            assert (cube_pcd_out.point['positions'] ==
+                    cube_ref.vertex['positions']).all()
+            assert cube_pcd_out.has_valid_material()
+            assert (cube_pcd_out.point['normals'] == cube_ref.vertex['normals']
+                   ).all()
+            assert (cube_pcd_out.point['colors'] == cube_ref.vertex['colors']
+                   ).all()
+            assert (cube_pcd_out.point['custom'].numpy() ==
+                    cube_custom_prop[step][batch_idx]).all()
+            assert (cube_pcd_out.point['labels'].numpy() == cube_labels[step]
+                    [batch_idx]).all()
+            for key in tuple(material):
+                if key.startswith('material_texture_map_'):
+                    material.pop(key)
+            check_material_dict(cube_pcd_out, material, batch_idx)
 
-                cube_pcd_out = reader.read_geometry(".", "cube_pcd", step,
-                                                    batch_idx, step_to_idx)[0]
-                assert (cube_pcd_out.point['positions'] ==
-                        cube_ref.vertex['positions']).all()
-                assert cube_pcd_out.has_valid_material()
-                assert (cube_pcd_out.point['normals'] ==
-                        cube_ref.vertex['normals']).all()
-                assert (cube_pcd_out.point['colors'] ==
-                        cube_ref.vertex['colors']).all()
-                assert (cube_pcd_out.point['custom'].numpy() ==
-                        cube_custom_prop[step][batch_idx]).all()
-                assert (cube_pcd_out.point['labels'].numpy() ==
-                        cube_labels[step][batch_idx]).all()
-                for key in tuple(material):
-                    if key.startswith('material_texture_map_'):
-                        material.pop(key)
-                check_material_dict(cube_pcd_out, material, batch_idx)
+            cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
+            cube_ls_ref = o3d.t.geometry.LineSet.from_legacy(cube_ls[batch_idx])
+            cube_ls_ref.line["indices"] = cube_ls_ref.line["indices"].to(
+                o3d.core.int32)
+            cube_ls_ref.line['colors'] = (cube_ls_ref.line['colors'] * 255).to(
+                o3d.core.uint8)
 
-                cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
-                cube_ls_ref = o3d.t.geometry.LineSet.from_legacy(
-                    cube_ls[batch_idx])
-                cube_ls_ref.line["indices"] = cube_ls_ref.line["indices"].to(
-                    o3d.core.int32)
-                cube_ls_ref.line['colors'] = (cube_ls_ref.line['colors'] *
-                                              255).to(o3d.core.uint8)
+            cube_ls_out = reader.read_geometry(".", "cube_ls", step, batch_idx,
+                                               step_to_idx)[0]
+            assert (cube_ls_out.point['positions'] ==
+                    cube_ls_ref.point['positions']).all()
+            assert (cube_ls_out.line['indices'] == cube_ls_ref.line['indices']
+                   ).all()
+            assert (
+                cube_ls_out.line['colors'] == cube_ls_ref.line['colors']).all()
+            check_material_dict(cube_ls_out, material_ls, batch_idx)
 
-                cube_ls_out = reader.read_geometry(".", "cube_ls", step,
-                                                   batch_idx, step_to_idx)[0]
-                assert (cube_ls_out.point['positions'] ==
-                        cube_ls_ref.point['positions']).all()
-                assert (cube_ls_out.line['indices'] ==
-                        cube_ls_ref.line['indices']).all()
-                assert (cube_ls_out.line['colors'] == cube_ls_ref.line['colors']
-                       ).all()
-                check_material_dict(cube_ls_out, material_ls, batch_idx)
-
-                bbox_ls_out, data_bbox_proto = reader.read_geometry(
-                    ".", "bboxes", step, batch_idx, step_to_idx)
-                bbox_ls_ref = o3d.t.geometry.LineSet.from_legacy(
-                    BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
-                bbox_ls_ref.line["indices"] = bbox_ls_ref.line["indices"].to(
-                    o3d.core.int32)
-                assert (bbox_ls_out.point["positions"] ==
-                        bbox_ls_ref.point["positions"]).all()
-                assert (bbox_ls_out.line["indices"] ==
-                        bbox_ls_ref.line["indices"]).all()
-                assert "colors" not in bbox_ls_out.line
-                label_conf_ref = tuple((bb.label_class, bb.confidence)
-                                       for bb in bboxes_ref[step][batch_idx])
-                label_conf_out = tuple(
-                    (bb.label, bb.confidence)
-                    for bb in data_bbox_proto.inference_result)
-                np.testing.assert_allclose(label_conf_ref, label_conf_out)
+            bbox_ls_out, data_bbox_proto = reader.read_geometry(
+                ".", "bboxes", step, batch_idx, step_to_idx)
+            bbox_ls_ref = o3d.t.geometry.LineSet.from_legacy(
+                BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
+            bbox_ls_ref.line["indices"] = bbox_ls_ref.line["indices"].to(
+                o3d.core.int32)
+            assert (bbox_ls_out.point["positions"] ==
+                    bbox_ls_ref.point["positions"]).all()
+            assert (bbox_ls_out.line["indices"] == bbox_ls_ref.line["indices"]
+                   ).all()
+            assert "colors" not in bbox_ls_out.line
+            label_conf_ref = tuple((bb.label_class, bb.confidence)
+                                   for bb in bboxes_ref[step][batch_idx])
+            label_conf_out = tuple((bb.label, bb.confidence)
+                                   for bb in data_bbox_proto.inference_result)
+            np.testing.assert_allclose(label_conf_ref, label_conf_out)
 
 
 @pytest.mark.skip(reason="This will only run on a machine with GPU and GUI.")
-def test_tensorboard_app():
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        print('Created temporary directory', tmpdirname)
-        test_data = o3d.data.SingleDownloadDataset(
-            "TestTensorboardPlugin", [
-                "https://github.com/isl-org/open3d_downloads/releases/"
-                "download/20220301-data/test_tensorboard_plugin.zip"
-            ], "746612f1d3b413236091d263bff29dc9", False, tmpdirname)
-        logdir = test_data.extract_dir
-
-        with sp.Popen(['tensorboard', '--logdir', logdir]) as tb_proc:
-            sleep(5)
-            webbrowser.open('http://localhost:6006/')
-            sleep(8)
-            tb_proc.kill()
-        shutil.rmtree(logdir)
+def test_tensorboard_app(logdir):
+    with sp.Popen(['tensorboard', '--logdir', logdir]) as tb_proc:
+        sleep(5)
+        webbrowser.open('http://localhost:6006/')
+        sleep(8)
+        tb_proc.kill()

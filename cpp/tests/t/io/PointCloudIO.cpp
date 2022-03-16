@@ -28,6 +28,9 @@
 
 #include <gtest/gtest.h>
 
+#include <fstream>
+#include <iostream>
+
 #include "core/CoreTest.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
@@ -182,20 +185,33 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
     EXPECT_EQ(pcd.GetPointAttr("curvature").GetLength(), 196133);
     std::remove(filename_out.c_str());
 }
+// #include <iostream>
 
 // Skip unsupported datatype.
 TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
-    data::PLYPointCloud sample_ply_pointcloud;
-    auto pcd_in =
-            t::io::CreatePointCloudFromFile(sample_ply_pointcloud.GetPath());
-    std::string filename_out =
-            sample_ply_pointcloud.GetExtractDir() + "/SampleASCII.ply";
-    t::io::WritePointCloud(filename_out, *pcd_in,
-                           {/*write_ascii =*/true, false});
+    std::string filename_out = "test_sample_wrong_format.ply";
+    std::ofstream outfile;
+    outfile.open(filename_out);
+    char data[1000] =
+            "ply \n"
+            "format ascii 1.0 \n"
+            "comment VCGLIB generated \n"
+            "element vertex 2 \n"
+            "property float x \n"
+            "property float y \n"
+            "property float z \n"
+            "property char intensity \n"
+            "property float nx \n"
+            "property float ny \n"
+            "property float nz \n"
+            "end_header \n"
+            "0 0 -1 100 0.003695 0 -4.16078 \n"
+            "0.7236 -0.52572 -0.447215 127 -2.18747 -1.86078 -1.20846 \n";
+    outfile << data;
+    outfile.close();
 
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud("test_sample_wrong_format.ply", pcd,
-                          {"auto", false, false, true});
+    t::io::ReadPointCloud(filename_out, pcd, {"auto", false, false, true});
     EXPECT_FALSE(pcd.HasPointAttr("intensity"));
     std::remove(filename_out.c_str());
 }
