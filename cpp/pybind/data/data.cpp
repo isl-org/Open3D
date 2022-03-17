@@ -286,6 +286,19 @@ void pybind_ply_point_cloud(py::module& m) {
     docstring::ClassMethodDocInject(m, "PLYPointCloud", "path");
 }
 
+void pybind_pts_point_cloud(py::module& m) {
+    // open3d.data.PTSPointCloud
+    py::class_<PTSPointCloud, PySimpleDataset<PTSPointCloud>,
+               std::shared_ptr<PTSPointCloud>, SingleDownloadDataset>
+            pts_point_cloud(m, "PTSPointCloud",
+                            "Data class for `PTSPointCloud` contains a sample "
+                            "point-cloud of PTS format.");
+    pts_point_cloud.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("path", &PTSPointCloud::GetPath,
+                                   "Path to the PTS format point cloud.");
+    docstring::ClassMethodDocInject(m, "PTSPointCloud", "path");
+}
+
 void pybind_sample_nyu_rgbd_image(py::module& m) {
     // open3d.data.SampleNYURGBDImage
     py::class_<SampleNYURGBDImage, PySimpleDataset<SampleNYURGBDImage>,

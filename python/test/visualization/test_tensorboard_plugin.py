@@ -232,7 +232,8 @@ def test_tensorflow_summary(geometry_data, tmp_path):
 
     assert dirpath == dirpath_ref
     assert filenames[0][0].startswith(filenames_ref[0][0][:20])
-    assert sorted(x.split('.')[0] for x in filenames[2]) == tags_ref
+    assert sorted(
+        x.split('test_tensorboard_plugin')[0] for x in filenames[2]) == tags_ref
     assert all(fn.endswith('.msgpack') for fn in filenames[2])
     # Note: The event file written during this test cannot be reliably verified
     # in the same Python process, since it's usually buffered by GFile / Python
@@ -329,7 +330,8 @@ def test_pytorch_summary(geometry_data, tmp_path):
 
     assert dirpath == dirpath_ref
     assert filenames[0][0].startswith(filenames_ref[0][0][:20])
-    assert sorted(x.split('.')[0] for x in filenames[2]) == tags_ref
+    assert sorted(
+        x.split('test_tensorboard_plugin')[0] for x in filenames[2]) == tags_ref
     assert all(fn.endswith('.msgpack') for fn in filenames[2])
 
     # Note: The event file written during this test cannot be reliably verified
@@ -393,9 +395,11 @@ def test_plugin_data_reader(geometry_data, logdir):
 
     reader = Open3DPluginDataReader(logdir)
     assert reader.is_active()
-    assert reader.run_to_tags == {'.': tags_ref}
-    assert reader.get_label_to_names('.', 'cube_pcd') == label_to_names_ref
-    assert reader.get_label_to_names('.', 'bboxes') == label_to_names_ref
+    assert reader.run_to_tags == {'test_tensorboard_plugin': tags_ref}
+    assert reader.get_label_to_names('test_tensorboard_plugin',
+                                     'cube_pcd') == label_to_names_ref
+    assert reader.get_label_to_names('test_tensorboard_plugin',
+                                     'bboxes') == label_to_names_ref
     step_to_idx = {i: i for i in range(3)}
     for step in range(3):
         for batch_idx in range(max_outputs):
@@ -406,8 +410,8 @@ def test_plugin_data_reader(geometry_data, logdir):
             cube_ref.vertex['colors'] = (cube_ref.vertex['colors'] * 255).to(
                 o3d.core.uint8)
 
-            cube_out = reader.read_geometry(".", "cube", step, batch_idx,
-                                            step_to_idx)[0]
+            cube_out = reader.read_geometry("test_tensorboard_plugin", "cube",
+                                            step, batch_idx, step_to_idx)[0]
             assert (cube_out.vertex['positions'] == cube_ref.vertex['positions']
                    ).all()
             assert (
@@ -418,8 +422,9 @@ def test_plugin_data_reader(geometry_data, logdir):
                    ).all()
             check_material_dict(cube_out, material, batch_idx)
 
-            cube_pcd_out = reader.read_geometry(".", "cube_pcd", step,
-                                                batch_idx, step_to_idx)[0]
+            cube_pcd_out = reader.read_geometry("test_tensorboard_plugin",
+                                                "cube_pcd", step, batch_idx,
+                                                step_to_idx)[0]
             assert (cube_pcd_out.point['positions'] ==
                     cube_ref.vertex['positions']).all()
             assert cube_pcd_out.has_valid_material()

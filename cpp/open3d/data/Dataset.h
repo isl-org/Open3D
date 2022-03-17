@@ -302,7 +302,8 @@ private:
 };
 
 /// \class PTSPointCloud
-/// \brief Data class for `PTSPointCloud`.
+/// \brief Data class for `PTSPointCloud` contains a sample point-cloud of PTS
+/// format.
 class PTSPointCloud : public SingleDownloadDataset {
 public:
     PTSPointCloud(const std::string& data_root = "");
