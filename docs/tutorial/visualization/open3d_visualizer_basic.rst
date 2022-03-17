@@ -6,12 +6,12 @@ Open3D Visualizer
 Introduction
 ---------------
 
-Open3D provides a convenient function for visualizing geometric objects: ``draw``. The ``draw`` function allows you to visualize multiple geometry objects *(PointClouds, LineSets, TriangleMesh)* and images together along with optional, high-quality, physically based (PBR) materials. As will be demonstrated in the subsequent sections, ``draw`` can be used for both - simple, quick visualization or complex use-cases.
+.. epigraph:: Open3D provides a convenient function for visualizing geometric objects: ``draw()``. The ``draw()`` function allows to visualize multiple geometry objects *(PointClouds, LineSets, TriangleMeshes)* and images together along with optional, high-quality, physically based (PBR) materials. As will be demonstrated in the subsequent sections, ``draw()`` can be used for both - simple, quick visualization or complex use-cases.
 
 Getting Started
 ---------------
 
-.. note::
+.. tip::
 	 This **Getting Started** section applies to all subsequent examples below
 	 
 For all examples in this tutorial, we will be running a Python session. Please follow these preliminary steps :
@@ -83,6 +83,9 @@ Let's examine what we did here:
 2) We called the ``open3d.visualization.draw()`` method which rendered our ``cube``.
 
 
+
+.. _compute_triangle_normals_s:
+
 ``compute_triangle_normals()`` method
 """""""""""""""""""""""""""""""""""""
 
@@ -103,6 +106,7 @@ The algorithm behind ``compute_triangle_normals()`` **computes a single normal f
 
 
 
+.. _smoothly_lit_sphere:
 
 Drawing a Smoothly Lit Sphere
 :::::::::::::::::::::::::::::
@@ -148,7 +152,7 @@ Open3D returns:
 Drawing a Flat-shaded Sphere
 :::::::::::::::::::::::::::::
 
-In this example, we are going to use a ``compute_triangle_normals()`` rendering algorithm, - the same method we used for a 3D ``cube`` rendering before. Again, **this algorithm computes a single normal for every triangle** in a *TriangleMesh*:
+In this example, we are going to use a ``compute_triangle_normals()`` rendering algorithm, - the same method we used for a 3D ``cube`` rendering before (see :ref:`compute_triangle_normals_s`). Again, **this algorithm computes a single normal for every triangle** in a *TriangleMesh*:
 
 
 .. code-block:: python
@@ -167,6 +171,7 @@ The rendered sphere in this case has facets akin to what XIX-th century airships
 
 
 
+.. _colored_lit_sphere:
 
 Drawing a Colored Lit Sphere
 ::::::::::::::::::::::::::::
@@ -174,7 +179,7 @@ Drawing a Colored Lit Sphere
 ``paint_uniform_color()``
 """""""""""""""""""""""""
 
-When we rendered a lit sphere in one of the previous sections, we did not specify which color we would like the sphere to be. In this example, we will assign a magenta color to the sphere with the ``paint_uniform_color()`` method:
+When we rendered a lit sphere in one of the previous sections (:ref:`smoothly_lit_sphere`), we did not specify which color we would like the sphere to be. In this example, we will assign a magenta color to the sphere with the ``paint_uniform_color()`` method:
 
 .. code-block:: python
 
@@ -201,7 +206,7 @@ Let's create a sphere based on a custom material:
 
 .. code-block:: python
 
-	>>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
+  >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
   >>> sphere.compute_vertex_normals()
   TriangleMesh with 19802 points and 39600 triangles.
   >>> mat = vis.rendering.MaterialRecord()
@@ -235,14 +240,14 @@ Now, we'll show a ``draw()`` call variant which allows the user to specify a mat
 .. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
     :width: 600px
 
-The sphere looks almost identical to the one in the previous example (*Drawing a Colored Lit Sphere*), but this time it is based on the custom material ``mat`` which we created.
+The sphere looks almost identical to the one in the previous example (:ref:`colored_lit_sphere`), but this time it is based on the custom material ``mat`` which we created.
 
 
 
 Drawing a Metallic Sphere
 :::::::::::::::::::::::::
 
-In earlier examples, we used ``create_sphere()`` to render the sphere with basic RGB/RGBA colors. In the following examples, we will look at other material properties.
+In earlier examples, we used ``create_sphere()`` to render the sphere with basic RGB/RGBA colors. Next, we will look at other material properties.
 
 .. code-block:: python
 
@@ -371,6 +376,8 @@ All three properties are initialized by the ``o3d.io.read_image()`` method which
 
 
 
+.. _trianglemesh_lineset:
+
 Drawing a ``TriangleMesh LineSet`` Sphere
 :::::::::::::::::::::::::::::::::::::::::::::
 
@@ -443,7 +450,7 @@ Let's go over the new code here:
 ``LineSet`` Objects
 """""""""""""""""""
 
-As we have recently shown in the ``TriangleMesh LineSet`` Sphere example, Line Sets are used to render a wireframe of a 3D model. In our case, we are creating a basic cubic frame around our sphere based on the ``AxisAlignedBoundingBox`` object (``aabb``) we created earlier:
+As recently shown in the ``TriangleMesh LineSet`` Sphere example (:ref:`trianglemesh_lineset`), Line Sets are used to render a wireframe of a 3D model. In our case, we are creating a basic cubic frame around our sphere based on the ``AxisAlignedBoundingBox`` object (``aabb``) we created earlier:
 
 ``line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(aabb)``
 
