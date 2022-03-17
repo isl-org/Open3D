@@ -76,7 +76,7 @@ class FixedRadiusSearch(torch.nn.Module):
         self.return_distances = return_distances
         self.max_hash_table_size = max_hash_table_size
         assert index_dtype in [torch.int32, torch.int64]
-        self.index_dtype = 'int32' if index_dtype == torch.int32 else 'int64'
+        self.index_dtype = index_dtype
 
     def forward(self,
                 points,
@@ -215,7 +215,7 @@ class RadiusSearch(torch.nn.Module):
         self.return_distances = return_distances
         self.normalize_distances = normalize_distances
         assert index_dtype in [torch.int32, torch.int64]
-        self.index_dtype = 'int32' if index_dtype == torch.int32 else 'int64'
+        self.index_dtype = index_dtype
         super().__init__()
 
     def forward(self,
@@ -323,7 +323,7 @@ class KNNSearch(torch.nn.Module):
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         assert index_dtype in [torch.int32, torch.int64]
-        self.index_dtype = 'int32' if index_dtype == torch.int32 else 'int64'
+        self.index_dtype = index_dtype
         super().__init__()
 
     def forward(self,
