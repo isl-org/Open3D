@@ -29,7 +29,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/utility/Logging.h"
 
-/// Call a numerical templated function based on Dtype. Warp the function to
+/// Call a numerical templated function based on Dtype. Wrap the function to
 /// a lambda function to use DISPATCH_DTYPE_TO_TEMPLATE.
 ///
 /// Before:
