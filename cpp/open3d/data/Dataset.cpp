@@ -373,6 +373,17 @@ SampleFountainRGBDImages::SampleFountainRGBDImages(const std::string& data_root)
     reconstruction_path_ = extract_dir + "/scene/integrated.ply";
 }
 
+SampleL515Bag::SampleL515Bag(const std::string& data_root)
+    : SingleDownloadDataset(
+              "SampleL515Bag",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/SampleL515Bag.zip"},
+              "9770eeb194c78103037dbdbec78b9c8c",
+              /*no_extract =*/false,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/SampleL515Bag.bag";
+}
+
 EaglePointCloud::EaglePointCloud(const std::string& data_root)
     : SingleDownloadDataset(
               "EaglePointCloud",

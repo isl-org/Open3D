@@ -445,6 +445,20 @@ private:
     std::string reconstruction_path_;
 };
 
+/// \class SampleL515Bag
+/// \brief Data class for `SampleL515Bag` contains the `SampleL515Bag.bag` file.
+class SampleL515Bag : public SingleDownloadDataset {
+public:
+    SampleL515Bag(const std::string& data_root = "");
+
+    /// \brief Returns path to the `SampleL515Bag.bag` file.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to `SampleL515Bag.bag` file.
+    std::string path_;
+};
+
 /// \class EaglePointCloud
 /// \brief Data class for `EaglePointCloud` contains the `EaglePointCloud.ply`
 /// file.

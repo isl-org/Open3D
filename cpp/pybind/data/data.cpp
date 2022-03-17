@@ -444,14 +444,26 @@ void pybind_sample_fountain_rgbd_images(py::module& m) {
                                     "reconstruction_path");
 }
 
+void pybind_sample_l515_bag(py::module& m) {
+    // open3d.data.SampleL515Bag
+    py::class_<SampleL515Bag, PySimpleDataset<SampleL515Bag>,
+               std::shared_ptr<SampleL515Bag>, SingleDownloadDataset>
+            sample_l515_bag(m, "SampleL515Bag",
+                            "Data class for `SampleL515Bag` contains the "
+                            "`SampleL515Bag.bag` file.");
+    sample_l515_bag.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("path", &SampleL515Bag::GetPath,
+                                   "Path to the `SampleL515Bag.bag` file.");
+    docstring::ClassMethodDocInject(m, "SampleL515Bag", "path");
+}
+
 void pybind_eagle(py::module& m) {
     // open3d.data.EaglePointCloud
     py::class_<EaglePointCloud, PySimpleDataset<EaglePointCloud>,
                std::shared_ptr<EaglePointCloud>, SingleDownloadDataset>
             eagle(m, "EaglePointCloud",
                   "Data class for `EaglePointCloud` contains the "
-                  "`EaglePointCloud.ply` "
-                  "file.");
+                  "`EaglePointCloud.ply` file.");
     eagle.def(py::init<const std::string&>(), "data_root"_a = "")
             .def_property_readonly("path", &EaglePointCloud::GetPath,
                                    "Path to the `EaglePointCloud.ply` file.");
@@ -570,6 +582,7 @@ void pybind_data(py::module& m) {
     pybind_sample_tum_rgbd_image(m_submodule);
     pybind_sample_redwood_rgbd_images(m_submodule);
     pybind_sample_fountain_rgbd_images(m_submodule);
+    pybind_sample_l515_bag(m_submodule);
     pybind_eagle(m_submodule);
     pybind_armadillo(m_submodule);
     pybind_bunny(m_submodule);
