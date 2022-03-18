@@ -50,7 +50,6 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
     open3d_show_and_abort_on_warning(${TARGET_NAME})
     open3d_set_global_properties(${TARGET_NAME})
     open3d_link_3rdparty_libraries(${TARGET_NAME})
-    open3d_remove_sycl_double_link(${TARGET_NAME})
 
     # Copy the resource files. This needs to be done as a post-build step
     # because on macOS, we don't know the bundle directory until build time
