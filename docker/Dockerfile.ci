@@ -58,11 +58,11 @@ RUN apt-get update && apt-get install -y \
  && rm -rf /var/lib/apt/lists/*
 
 # Dependencies: cmake
+ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -xf ${CMAKE_VERSION}.tar.gz \
  && cp -ar ${CMAKE_VERSION} ${HOME}
-ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 
 # Dependencies: ccache
 WORKDIR /root
@@ -83,6 +83,8 @@ RUN git clone https://github.com/ccache/ccache.git \
 # - CCACHE_DIR        = ~/.cache/ccache
 # - CCACHE_DIR_NAME   = ccache
 # - CCACHE_DIR_PARENT = ~/.cache
+# We need to set ccache size explicitly with -M, otherwise the defualt size is
+# *not* determined by ccache's default, but the downloaded ccache file's config.
 RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
@@ -90,22 +92,20 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && cd ${CCACHE_DIR_PARENT} \
  && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
  && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi \
- && mkdir -p ${CCACHE_DIR}
-# We need to set ccache size explicitly with -M, otherwise the defualt size is
-# *not* determined by ccache's default, but the downloaded ccache file's config.
-RUN ccache -M 5G \
+ && mkdir -p ${CCACHE_DIR} \
+ && ccache -M 5G \
  && ccache -s
 
 # Miniconda
 ENV PATH="/root/miniconda3/bin:${PATH}"
+ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
 RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
  && bash Miniconda3-latest-Linux-x86_64.sh -b \
  && rm Miniconda3-latest-Linux-x86_64.sh \
- && conda --version
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-RUN conda create -y -n open3d python=${PYTHON_VERSION} \
- && source activate open3d
-RUN which python \
+ && conda --version \
+ && conda create -y -n open3d python=${PYTHON_VERSION} \
+ && source activate open3d \
+ && which python \
  && python --version
 
 # Checkout Open3D-ML master branch
@@ -135,8 +135,8 @@ RUN source util/ci_utils.sh \
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
- && node --version
-RUN npm install -g yarn \
+ && node --version \
+ && npm install -g yarn \
  && yarn --version
 
 # Build all
