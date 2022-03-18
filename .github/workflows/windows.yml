@@ -370,8 +370,8 @@ jobs:
           } else { `
             $PIP_PKG_NAME=(Get-ChildItem open3d*-$py_tag-*.whl).Name
           }
-          echo "Installing Open3D wheel pip_package\$PIP_PKG_NAME in virtual environment..."
-          python -m pip install "pip_package\$PIP_PKG_NAME"
+          echo "Installing Open3D wheel $PIP_PKG_NAME in virtual environment..."
+          python -m pip install "$PIP_PKG_NAME"
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 
