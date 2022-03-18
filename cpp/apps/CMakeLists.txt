@@ -50,7 +50,18 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
     open3d_show_and_abort_on_warning(${TARGET_NAME})
     open3d_set_global_properties(${TARGET_NAME})
     if(APPLE)
-        open3d_link_3rdparty_libraries(${TARGET_NAME})
+        # Link additional Apple frameworks.
+        # See https://github.com/isl-org/Open3D/pull/4445
+        find_library(COCOA_FRAMEWORK Cocoa)
+        find_library(IOKIT_FRAMEWORK IOKit)
+        find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
+        find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
+        target_link_libraries(${TARGET_NAME} PRIVATE
+            ${COCOA_FRAMEWORK}
+            ${IOKIT_FRAMEWORK}
+            ${CORE_FOUNDATION_FRAMEWORK}
+            ${CORE_VIDEO_FRAMEWORK}
+        )
     endif()
 
     # Copy the resource files. This needs to be done as a post-build step
