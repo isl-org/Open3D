@@ -29,8 +29,6 @@ function(open3d_link_3rdparty_libraries target)
     target_link_libraries(${target} PRIVATE ${Open3D_3RDPARTY_HEADER_TARGETS})
 
     # Avoid duplicate linking SYCL when building BUILD_SHARED_LIBS.
-    # If target links Open3D::Open3D, and Open3D links Open3D::3rdparty_sycl
-    # target should not link Open3D::3rdparty_sycl again.
     if (TARGET Open3D::Open3D AND BUILD_SHARED_LIBS AND BUILD_SYCL_MODULE)
         get_target_property(open3d_link_libs Open3D::Open3D LINK_LIBRARIES)
         get_target_property(target_link_libs ${target} LINK_LIBRARIES)
