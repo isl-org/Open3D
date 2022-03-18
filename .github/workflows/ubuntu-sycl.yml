@@ -1,0 +1,35 @@
+name: Ubuntu SYCL
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+#   cancel-in-progress: true
+
+env:
+  NPROC: 2
+  GCE_CLI_GHA_VERSION: "302.0.0"
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-20.04
+    env:
+      SHARED: ${{ matrix.SHARED }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      - name: Docker build
+        run: |
+          docker/docker_build.sh sycl-static
+      - name: Docker test
+        run: |
+          docker/docker_test.sh sycl-static
