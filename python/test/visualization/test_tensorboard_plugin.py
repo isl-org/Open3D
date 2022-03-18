@@ -232,8 +232,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
 
     assert dirpath == dirpath_ref
     assert filenames[0][0].startswith(filenames_ref[0][0][:20])
-    assert sorted(
-        x.split('test_tensorboard_plugin')[0] for x in filenames[2]) == tags_ref
+    assert sorted(x.split('.')[0] for x in filenames[2]) == tags_ref
     assert all(fn.endswith('.msgpack') for fn in filenames[2])
     # Note: The event file written during this test cannot be reliably verified
     # in the same Python process, since it's usually buffered by GFile / Python
@@ -330,8 +329,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
 
     assert dirpath == dirpath_ref
     assert filenames[0][0].startswith(filenames_ref[0][0][:20])
-    assert sorted(
-        x.split('test_tensorboard_plugin')[0] for x in filenames[2]) == tags_ref
+    assert sorted(x.split('.')[0] for x in filenames[2]) == tags_ref
     assert all(fn.endswith('.msgpack') for fn in filenames[2])
 
     # Note: The event file written during this test cannot be reliably verified
