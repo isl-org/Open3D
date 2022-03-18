@@ -21,35 +21,34 @@ __usage_docker_build="USAGE:
 
 OPTION:
     # OpenBLAS AMD64 (Dockerfile.openblas)
-    openblas-amd64-py36-dev: OpenBLAS AMD64 3.6 wheel, developer mode
-    openblas-amd64-py37-dev: OpenBLAS AMD64 3.7 wheel, developer mode
-    openblas-amd64-py38-dev: OpenBLAS AMD64 3.8 wheel, developer mode
-    openblas-amd64-py39-dev: OpenBLAS AMD64 3.9 wheel, developer mode
-    openblas-amd64-py36    : OpenBLAS AMD64 3.6 wheel, release mode
-    openblas-amd64-py37    : OpenBLAS AMD64 3.7 wheel, release mode
-    openblas-amd64-py38    : OpenBLAS AMD64 3.8 wheel, release mode
-    openblas-amd64-py39    : OpenBLAS AMD64 3.9 wheel, release mode
+    openblas-amd64-py36-dev     : OpenBLAS AMD64 3.6 wheel, developer mode
+    openblas-amd64-py37-dev     : OpenBLAS AMD64 3.7 wheel, developer mode
+    openblas-amd64-py38-dev     : OpenBLAS AMD64 3.8 wheel, developer mode
+    openblas-amd64-py39-dev     : OpenBLAS AMD64 3.9 wheel, developer mode
+    openblas-amd64-py36         : OpenBLAS AMD64 3.6 wheel, release mode
+    openblas-amd64-py37         : OpenBLAS AMD64 3.7 wheel, release mode
+    openblas-amd64-py38         : OpenBLAS AMD64 3.8 wheel, release mode
+    openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
-    openblas-arm64-py36-dev: OpenBLAS ARM64 3.6 wheel, developer mode
-    openblas-arm64-py37-dev: OpenBLAS ARM64 3.7 wheel, developer mode
-    openblas-arm64-py38-dev: OpenBLAS ARM64 3.8 wheel, developer mode
-    openblas-arm64-py39-dev: OpenBLAS ARM64 3.9 wheel, developer mode
-    openblas-arm64-py36    : OpenBLAS ARM64 3.6 wheel, release mode
-    openblas-arm64-py37    : OpenBLAS ARM64 3.7 wheel, release mode
-    openblas-arm64-py38    : OpenBLAS ARM64 3.8 wheel, release mode
-    openblas-arm64-py39    : OpenBLAS ARM64 3.9 wheel, release mode
+    openblas-arm64-py36-dev     : OpenBLAS ARM64 3.6 wheel, developer mode
+    openblas-arm64-py37-dev     : OpenBLAS ARM64 3.7 wheel, developer mode
+    openblas-arm64-py38-dev     : OpenBLAS ARM64 3.8 wheel, developer mode
+    openblas-arm64-py39-dev     : OpenBLAS ARM64 3.9 wheel, developer mode
+    openblas-arm64-py36         : OpenBLAS ARM64 3.6 wheel, release mode
+    openblas-arm64-py37         : OpenBLAS ARM64 3.7 wheel, release mode
+    openblas-arm64-py38         : OpenBLAS ARM64 3.8 wheel, release mode
+    openblas-arm64-py39         : OpenBLAS ARM64 3.9 wheel, release mode
 
     # Ubuntu CPU CI (Dockerfile.ci)
-    cpu-static             : Ubuntu CPU static
-    cpu-shared             : Ubuntu CPU shared
-    cpu-shared-release     : Ubuntu CPU shared, release mode
-    cpu-shared-ml          : Ubuntu CPU shared with ML
-    cpu-shared-ml-release  : Ubuntu CPU shared with ML, release mode
+    cpu-static                  : Ubuntu CPU static
+    cpu-shared                  : Ubuntu CPU shared
+    cpu-shared-release          : Ubuntu CPU shared, release mode
+    cpu-shared-ml               : Ubuntu CPU shared with ML
+    cpu-shared-ml-release       : Ubuntu CPU shared with ML, release mode
 
-    # OneAPI CPU CI (Dockerfile.ci)
-    oneapi-static          : OneAPI with static lib
-    oneapi-shared          : OneAPI with shared lib
+    # Sycl CPU CI (Dockerfile.ci)
+    sycl-shared                : SYCL (oneAPI) with shared lib
 
     # ML CIs (Dockerfile.ci)
     2-bionic                   : CUDA CI, 2-bionic, developer mode
@@ -60,14 +59,14 @@ OPTION:
     5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
 
     # CUDA wheels (Dockerfile.wheel)
-    cuda_wheel_py36_dev    : CUDA Python 3.6 wheel, developer mode
-    cuda_wheel_py37_dev    : CUDA Python 3.7 wheel, developer mode
-    cuda_wheel_py38_dev    : CUDA Python 3.8 wheel, developer mode
-    cuda_wheel_py39_dev    : CUDA Python 3.9 wheel, developer mode
-    cuda_wheel_py36        : CUDA Python 3.6 wheel, release mode
-    cuda_wheel_py37        : CUDA Python 3.7 wheel, release mode
-    cuda_wheel_py38        : CUDA Python 3.8 wheel, release mode
-    cuda_wheel_py39        : CUDA Python 3.9 wheel, release mode
+    cuda_wheel_py36_dev        : CUDA Python 3.6 wheel, developer mode
+    cuda_wheel_py37_dev        : CUDA Python 3.7 wheel, developer mode
+    cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
+    cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
+    cuda_wheel_py36            : CUDA Python 3.6 wheel, release mode
+    cuda_wheel_py37            : CUDA Python 3.7 wheel, release mode
+    cuda_wheel_py38            : CUDA Python 3.8 wheel, release mode
+    cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -422,27 +421,12 @@ cpu-shared-ml-release_export_env() {
     export OPEN3D_USE_ONEAPI=OFF
 }
 
-oneapi-static_export_env() {
-    export DOCKER_TAG=open3d-ci:oneapi-static
+sycl-shared_export_env() {
+    export DOCKER_TAG=open3d-ci:sycl-shared
 
     export BASE_IMAGE=ubuntu:18.04
     export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-oneapi
-    export PYTHON_VERSION=3.6
-    export SHARED=OFF
-    export BUILD_CUDA_MODULE=OFF
-    export BUILD_TENSORFLOW_OPS=OFF
-    export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=OFF
-    export OPEN3D_USE_ONEAPI=ON
-}
-
-oneapi-shared_export_env() {
-    export DOCKER_TAG=open3d-ci:oneapi-shared
-
-    export BASE_IMAGE=ubuntu:18.04
-    export DEVELOPER_BUILD=ON
-    export CCACHE_TAR_NAME=open3d-ci-oneapi
+    export CCACHE_TAR_NAME=open3d-ci-sycl
     export PYTHON_VERSION=3.6
     export SHARED=ON
     export BUILD_CUDA_MODULE=OFF
@@ -550,12 +534,8 @@ function main () {
             ;;
 
         # OneAPI CI
-        oneapi-static)
-            oneapi-static_export_env
-            ci_build
-            ;;
-        oneapi-shared)
-            oneapi-shared_export_env
+        sycl-shared)
+            sycl-shared_export_env
             ci_build
             ;;
 
