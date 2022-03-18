@@ -26,7 +26,10 @@
 
 #include "open3d/core/SYCLUtils.h"
 
+#ifdef BUILD_SYCL_MODULE
 #include <CL/sycl.hpp>
+#endif
+
 #include <array>
 
 #include "open3d/utility/Logging.h"
@@ -35,6 +38,7 @@ namespace open3d {
 namespace core {
 
 int SYCLDemo() {
+#ifdef BUILD_SYCL_MODULE
     // Creating buffer of 4 ints to be used inside the kernel code.
     cl::sycl::buffer<cl::sycl::cl_int, 1> buffer(4);
 
@@ -78,6 +82,10 @@ int SYCLDemo() {
         utility::LogInfo("SYCLDemo passed!");
         return 0;
     }
+#else
+    utility::LogInfo("SYCLDemo is not compiled with BUILD_SYCL_MODULE=ON.");
+    return -1;
+#endif
 }
 
 }  // namespace core
