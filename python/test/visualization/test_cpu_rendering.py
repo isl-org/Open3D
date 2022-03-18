@@ -25,32 +25,30 @@
 # ----------------------------------------------------------------------------
 
 import os
-import sys
-import signal
 from multiprocessing import Process
+import subprocess as sp
+from time import sleep
 import pytest
 
-default_marks = [
-    pytest.mark.skipif(
-        not (sys.platform.startswith('linux') and 'DISPLAY' in os.environ),
-        reason="Linux and X server not available.")
-]
+
+def draw_box():
+    import open3d as o3d
+    cube_red = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+    cube_red.compute_vertex_normals()
+    cube_red.paint_uniform_color((1.0, 0.0, 0.0))
+    o3d.visualization.draw(cube_red, non_blocking_and_return_uid=True)
+    # Actual rendering
+    o3d.visualization.gui.Application.instance.run_one_tick()
+    o3d.visualization.gui.Application.instance.quit()
 
 
 def test_draw_cpu():
     """Test CPU rendering in a separate process."""
     os.environ['OPEN3D_CPU_RENDERING'] = 'true'
-    proc = Process(target=draw_cpu)
+    proc = Process(target=draw_box)
     proc.start()
-    proc.join(timeout=3)  # Wait for process to crash, else kill
-    proc.terminate()
-    proc.join()
-    assert proc.exitcode == -signal.SIGTERM
-
-
-def draw_cpu():
-    import open3d as o3d
-    cube_red = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
-    cube_red.compute_vertex_normals()
-    cube_red.paint_uniform_color((1.0, 0.0, 0.0))
-    o3d.visualization.draw(cube_red)
+    proc.join(timeout=3)  # Wait for process to complete
+    if proc.exitcode is None:
+        proc.terminate()  # Kill on failure
+        assert False, __name__ + " did not complete."
+    assert proc.exitcode == 0

@@ -126,7 +126,7 @@ cpp_python_linking_uninstall_test() {
     echo "Running Python tests in virtual X11 framebuffer."
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        xvfb-run -a python -m pytest python/test ${pytest_args} \
+        xvfb-run --auto-servernum python -m pytest python/test ${pytest_args} \
     "
     restart_docker_daemon_if_on_gcloud
 
