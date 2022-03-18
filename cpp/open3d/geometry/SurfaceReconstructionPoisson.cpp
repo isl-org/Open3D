@@ -516,9 +516,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
 
     int kernelDepth = depth - 2;
     if (kernelDepth < 0) {
-        utility::LogError(
-                "[CreateFromPointCloudPoisson] depth (={}) has to be >= 2",
-                depth);
+        utility::LogError("depth (={}) has to be >= 2", depth);
     }
 
     DenseNodeData<Real, Sigs> solution;
@@ -750,7 +748,7 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
             FEMSigs;
 
     if (!pcd.HasNormals()) {
-        utility::LogError("[CreateFromPointCloudPoisson] pcd has no normals");
+        utility::LogError("Point cloud has no normals");
     }
 
     if (n_threads <= 0) {
