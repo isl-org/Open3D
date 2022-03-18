@@ -18,8 +18,6 @@ env:
 jobs:
   ubuntu:
     runs-on: ubuntu-20.04
-    env:
-      SHARED: ${{ matrix.SHARED }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -29,7 +27,7 @@ jobs:
           maximize_ubuntu_github_actions_build_space
       - name: Docker build
         run: |
-          docker/docker_build.sh sycl-static
+          docker/docker_build.sh sycl-shared
       - name: Docker test
         run: |
-          docker/docker_test.sh sycl-static
+          docker/docker_test.sh sycl-shared
