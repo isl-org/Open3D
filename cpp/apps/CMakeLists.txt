@@ -49,20 +49,8 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     open3d_show_and_abort_on_warning(${TARGET_NAME})
     open3d_set_global_properties(${TARGET_NAME})
-    if(APPLE)
-        # Link additional Apple frameworks.
-        # See https://github.com/isl-org/Open3D/pull/4445
-        find_library(COCOA_FRAMEWORK Cocoa)
-        find_library(IOKIT_FRAMEWORK IOKit)
-        find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
-        find_library(CORE_VIDEO_FRAMEWORK CoreVideo)
-        target_link_libraries(${TARGET_NAME} PRIVATE
-            ${COCOA_FRAMEWORK}
-            ${IOKIT_FRAMEWORK}
-            ${CORE_FOUNDATION_FRAMEWORK}
-            ${CORE_VIDEO_FRAMEWORK}
-        )
-    endif()
+    open3d_link_3rdparty_libraries(${TARGET_NAME})
+    open3d_remove_sycl_double_link(${TARGET_NAME})
 
     # Copy the resource files. This needs to be done as a post-build step
     # because on macOS, we don't know the bundle directory until build time

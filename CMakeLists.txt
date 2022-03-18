@@ -485,6 +485,7 @@ endmacro()
 include(Open3DLink3rdpartyLibraries)
 include(Open3DSetGlobalProperties)
 include(Open3DShowAndAbortOnWarning)
+include(Open3DRemoveSyclDoubleLink)
 
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the
