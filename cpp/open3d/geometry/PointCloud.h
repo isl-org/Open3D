@@ -343,6 +343,7 @@ public:
     /// \param ransac_n Number of initial points to be considered inliers in
     /// each iteration.
     /// \param num_iterations Number of iterations.
+    /// \param min_iterations Minimum number of iterations to be executed.
     /// \param seed Sets the seed value used in the random
     /// generator, set to nullopt to use a random seed value with each function
     /// call.
@@ -352,6 +353,7 @@ public:
             const double distance_threshold = 0.01,
             const int ransac_n = 3,
             const int num_iterations = 100,
+            const int min_iterations = 1,
             utility::optional<int> seed = utility::nullopt) const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a

@@ -202,7 +202,7 @@ Returns:
                  "Segments a plane in the point cloud using the RANSAC "
                  "algorithm.",
                  "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a,
-                 "seed"_a = py::none())
+                 "min_iterations"_a = 1, "seed"_a = py::none())
             .def_static(
                     "create_from_depth_image",
                     &PointCloud::CreateFromDepthImage,
@@ -353,6 +353,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
               "Number of initial points to be considered inliers in each "
               "iteration."},
              {"num_iterations", "Number of iterations."},
+             {"min_iterations", "Minimum number of iterations to be executed."},
              {"seed",
               "Seed value used in the random generator, set to None to use a "
               "random seed value with each function call."}});

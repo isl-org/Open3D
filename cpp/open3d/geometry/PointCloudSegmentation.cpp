@@ -38,6 +38,39 @@
 namespace open3d {
 namespace geometry {
 
+template <typename T>
+class RandomSampler {
+public:
+    explicit RandomSampler(const size_t size, utility::optional<int> seed)
+        : size_(size) {
+        if (!seed.has_value()) {
+            std::random_device rd;
+            seed = rd();
+        }
+        rng_ = std::mt19937(seed.value());
+    }
+
+    std::vector<T> operator()(size_t sample_size) {
+        std::vector<T> sample;
+        sample.reserve(sample_size);
+
+        size_t valid_sample = 0;
+        while (valid_sample < sample_size) {
+            size_t idx = rng_() % size_;
+            if (std::find(sample.begin(), sample.end(), idx) == sample.end()) {
+                sample.push_back(idx);
+                valid_sample++;
+            }
+        }
+
+        return sample;
+    }
+
+private:
+    size_t size_;
+    std::mt19937 rng_;
+};
+
 /// \class RANSACResult
 ///
 /// \brief Stores the current best result in the RANSAC algorithm.
@@ -136,21 +169,19 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const double distance_threshold /* = 0.01 */,
         const int ransac_n /* = 3 */,
         const int num_iterations /* = 100 */,
+        const int min_iterations /* = 10 */,
         utility::optional<int> seed /* = utility::nullopt */) const {
+    if (min_iterations > num_iterations) {
+        utility::LogWarning("min_iterations should <= num_iterations.");
+    }
+
     RANSACResult result;
 
     // Initialize the best plane model.
     Eigen::Vector4d best_plane_model = Eigen::Vector4d(0, 0, 0, 0);
 
     size_t num_points = points_.size();
-    std::vector<size_t> indices(num_points);
-    std::iota(std::begin(indices), std::end(indices), 0);
-
-    if (!seed.has_value()) {
-        std::random_device rd;
-        seed = rd();
-    }
-    std::mt19937 rng(seed.value());
+    RandomSampler<size_t> sampler(num_points, seed);
 
     // Return if ransac_n is less than the required plane model parameters.
     if (ransac_n < 3) {
@@ -172,18 +203,13 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
 
 #pragma omp parallel for schedule(static)
     for (int itr = 0; itr < num_iterations; itr++) {
-        if ((size_t)iteration_count > break_iteration) {
+        if ((size_t)iteration_count > break_iteration &&
+            iteration_count > min_iterations) {
             continue;
         }
 
-        for (int i = 0; i < ransac_n; ++i) {
-            std::swap(indices[i], indices[rng() % num_points]);
-        }
-
-        std::vector<size_t> inliers;
-        for (int idx = 0; idx < ransac_n; ++idx) {
-            inliers.emplace_back(indices[idx]);
-        }
+        const std::vector<size_t> sampled_indices = sampler(ransac_n);
+        std::vector<size_t> inliers = sampled_indices;
 
         // Fit model to num_model_parameters randomly selected points among the
         // inliers.
