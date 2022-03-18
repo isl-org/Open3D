@@ -153,49 +153,40 @@ jobs:
           # Common prefix will be used so that ccache can be used across commits.
           restore-keys: |
             ${{ runner.os }}-ccache
-      - name: Set up Python version
-        uses: conda-incubator/setup-miniconda@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          auto-update-conda: false
           python-version: ${{ matrix.python_version }}
+
       - name: Install dependencies
-        shell: bash -l {0}
         run: |
-          brew install ccache
-          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
-          echo
-          source util/ci_utils.sh
-          install_python_dependencies with-conda
-          echo
-          echo -n "Using conda"
-          conda info
           echo "Using python: $(which python)"
           python --version
-          echo -n "Using pip: "
+          echo -n "Using pip: $(which pip)"
           python -m pip --version
           echo "Using cmake: $(which cmake)"
           cmake --version
+          source util/ci_utils.sh
+          install_python_dependencies
+          brew install ccache
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel
-        shell: bash -l {0}
         run: |
           PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           ccache -s
           source util/ci_utils.sh
-          build_pip_conda_package
+          build_pip_package
           ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
-          CONDA_PKG_NAME="$(basename build/lib/python_package/conda_package/osx-64/open3d*.tar.bz2)"
-          echo "CONDA_PKG_NAME=$CONDA_PKG_NAME" >> $GITHUB_ENV
 
       - name: Upload wheel
         uses: actions/upload-artifact@v2
         with:
           name: open3d_macosx_x86_64_wheels
-          path: |
-            build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
-            build/lib/python_package/conda_package/osx-64/${{ env.CONDA_PKG_NAME }}
+          path: build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
       - name: GCloud CLI setup
@@ -215,8 +206,6 @@ jobs:
           PYTAG="-cp$(echo ${{ env.python_version }} | tr -d '.')"
           gsutil cp build/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
           echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
-          gsutil cp build/lib/python_package/conda_package/osx-64/${{ env.CONDA_PKG_NAME }} gs://open3d-releases-master/conda_package/osx-64/
-          echo "Download conda package at: https://storage.googleapis.com/open3d-releases-master/conda_package/osx-64/${{ env.CONDA_PKG_NAME }}"
 
   test-wheel:
     name: Test wheel
@@ -265,7 +254,7 @@ jobs:
           python -V
           source util/ci_utils.sh
           pi_tag=$(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          test_wheel pip_package/open3d*-"$pi_tag"-*.whl
+          test_wheel open3d*-"$pi_tag"-*.whl
 
       - name: Run Python unit tests (benchmarks)
         run: |

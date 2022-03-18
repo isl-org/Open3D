@@ -207,14 +207,12 @@ cuda_wheel_build() {
         -f docker/Dockerfile.wheel .
     popd
 
-    # Extract pip wheel, conda package, ccache
+    # Extract pip wheel, ccache
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
-        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl                /opt/mount \
-              && cp ${python_package_dir}/conda_package/linux-64/open3d*.tar.bz2 /opt/mount \
-              && cp /${CCACHE_TAR_NAME}.tar.gz                                   /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl                 \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.tar.bz2  \
+        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
+              && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
+              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
 }
 
@@ -231,7 +229,10 @@ ci_build() {
     echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[ci_build()] PACKAGE=${PACKAGE}"
+<<<<<<< HEAD
     echo "[ci_build()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
+=======
+>>>>>>> master
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -436,6 +437,76 @@ sycl-shared_export_env() {
     export BUILD_SYCL_MODULE=ON
 }
 
+cpu-static_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-static
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=OFF
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=OFF
+}
+
+cpu-shared_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=ON
+}
+
+cpu-shared-ml_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared-ml
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
+}
+
+cpu-shared-release_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=ON
+}
+
+cpu-shared-ml-release_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared-ml
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
+}
+
 function main () {
     if [[ "$#" -ne 1 ]]; then
         echo "Error: invalid number of arguments: $#." >&2
@@ -533,12 +604,15 @@ function main () {
             ci_build
             ;;
 
+<<<<<<< HEAD
         # OneAPI CI
         sycl-shared)
             sycl-shared_export_env
             ci_build
             ;;
 
+=======
+>>>>>>> master
         # CUDA wheels
         cuda_wheel_py36_dev)
             cuda_wheel_build py36 dev
