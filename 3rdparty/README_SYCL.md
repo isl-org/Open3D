@@ -1,4 +1,7 @@
-# OneAPI Readme
+# SYCL Readme
+
+Open3D's SYCL support runs on Intel oneAPI with DPC++. DPC++ is Intel's
+implementation of the SYCL standard.
 
 ## TODO
 

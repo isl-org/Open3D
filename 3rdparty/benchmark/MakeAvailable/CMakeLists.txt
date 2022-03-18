@@ -9,7 +9,7 @@ else()
     add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
 endif()
 
-if(OPEN3D_USE_ONEAPI)
+if(BUILD_SYCL_MODULE)
     add_compile_options($<$<CXX_COMPILER_ID:IntelLLVM>:-fno-fast-math>)
 endif()
 

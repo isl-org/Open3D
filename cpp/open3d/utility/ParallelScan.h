@@ -31,7 +31,7 @@
 
 // clang-format off
 #if TBB_INTERFACE_VERSION >= 10000
-    #ifdef OPEN3D_USE_ONEAPI
+    #ifdef BUILD_SYCL_MODULE
         #include <oneapi/dpl/execution>
         #include <oneapi/dpl/numeric>
     #else
@@ -90,7 +90,7 @@ template <class Tin, class Tout>
 void InclusivePrefixSum(const Tin* first, const Tin* last, Tout* out) {
 #if TBB_INTERFACE_VERSION >= 10000
     // use parallelstl if we have TBB 2018 or later
-#ifdef OPEN3D_USE_ONEAPI
+#ifdef BUILD_SYCL_MODULE
     std::inclusive_scan(oneapi::dpl::execution::par_unseq, first, last, out);
 
 #else

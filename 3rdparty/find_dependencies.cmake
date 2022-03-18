@@ -1284,7 +1284,7 @@ if(NOT USE_SYSTEM_MSGPACK)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
-if (OPEN3D_USE_ONEAPI)
+if (BUILD_SYCL_MODULE)
     # DPC++ (compile and link flags only)
     add_library(3rdparty_sycl INTERFACE)
     target_compile_options(3rdparty_sycl INTERFACE
@@ -1340,7 +1340,7 @@ if (OPEN3D_USE_ONEAPI)
     )
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
 
-else() # OPEN3D_USE_ONEAPI
+else() # BUILD_SYCL_MODULE
     # TBB
     if(USE_SYSTEM_TBB)
     open3d_find_package_3rdparty_library(3rdparty_tbb
@@ -1488,7 +1488,7 @@ else() # OPEN3D_USE_ONEAPI
         target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
-endif() # OPEN3D_USE_ONEAPI
+endif() # BUILD_SYCL_MODULE
 
 # cuBLAS
 if(BUILD_CUDA_MODULE)
