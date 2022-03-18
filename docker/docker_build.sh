@@ -229,10 +229,7 @@ ci_build() {
     echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[ci_build()] PACKAGE=${PACKAGE}"
-<<<<<<< HEAD
     echo "[ci_build()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
-=======
->>>>>>> master
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -604,15 +601,12 @@ function main () {
             ci_build
             ;;
 
-<<<<<<< HEAD
-        # OneAPI CI
+        # SYCL CI
         sycl-shared)
             sycl-shared_export_env
             ci_build
             ;;
 
-=======
->>>>>>> master
         # CUDA wheels
         cuda_wheel_py36_dev)
             cuda_wheel_build py36 dev
