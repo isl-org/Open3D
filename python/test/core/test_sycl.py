@@ -36,4 +36,4 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
 
 
 def test_run_sycl_demo():
-    o3d.core.run_sycl_demo()
+    o3d.core.sycl_demo()

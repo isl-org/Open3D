@@ -110,7 +110,7 @@ Tensor Append(const Tensor& self,
               const Tensor& other,
               const utility::optional<int64_t>& axis = utility::nullopt);
 
-void RunSYCLDemo();
+void SYCLDemo();
 
 }  // namespace core
 }  // namespace open3d

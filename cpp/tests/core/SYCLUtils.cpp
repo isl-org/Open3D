@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/SYCLUtils.h"
+
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Timer.h"
 #include "tests/Tests.h"
@@ -38,7 +39,7 @@ INSTANTIATE_TEST_SUITE_P(Tensor,
                          SYCLUtilsPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST_P(SYCLUtilsPermuteDevices, RunSYCLDemo) { core::RunSYCLDemo(); }
+TEST_P(SYCLUtilsPermuteDevices, SYCLDemo) { EXPECT_EQ(core::SYCLDemo(), 0); }
 
 }  // namespace tests
 }  // namespace open3d
