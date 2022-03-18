@@ -367,7 +367,7 @@ jobs:
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
             $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
-          } else { `
+          } else {
             $PIP_PKG_NAME=(Get-ChildItem open3d*-$py_tag-*.whl).Name
           }
           echo "Installing Open3D wheel $PIP_PKG_NAME in virtual environment..."
