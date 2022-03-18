@@ -22,7 +22,7 @@ For all examples in this tutorial, we will be running a Python session. Please f
 
 	$ cd <... Path to Open3D on your computer...>
 	
-.. image:: https://user-images.githubusercontent.com/93158890/149406147-ff07bf6e-10b3-44c8-a25d-4f46a9538c47.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/159073961-821e4768-3678-4385-bc37-20c5b212c030.jpg
     :width: 700px	
     
 2. **Optionally**, if you have a ``conda`` virtual environment, activate it from the command line like so:
@@ -74,7 +74,7 @@ At the python prompt, enter the following four lines to open the 3D Visualizer:
 At the end of the process, the Open3D Visualizer window should appear:
 
 .. image:: https://user-images.githubusercontent.com/93158890/148607529-ee0ae0de-05af-423d-932c-2a5a6c8d7bda.jpg
-    :width: 600px
+    :width: 700px
 
 Let's examine what we did here:
 
@@ -100,7 +100,7 @@ In the above example we learned how to create a primitive (``cube``) and render 
 Clearly, that makes a big difference:
 
 .. image:: https://user-images.githubusercontent.com/93158890/157720147-cde9a54b-cba5-480e-ba0e-7784b5bd5677.jpg
-    :width: 600px
+    :width: 700px
 
 The algorithm behind ``compute_triangle_normals()`` **computes a single normal for every triangle** in a *TriangleMesh*.
 
@@ -129,7 +129,7 @@ At the Python prompt in your terminal, enter the following lines of code:
 A rendered sphere appears:
 
 .. image:: https://user-images.githubusercontent.com/93158890/157339234-1a92a944-ac38-4256-8297-0ad78fd24b9c.jpg
-    :width: 600px
+    :width: 700px
 
 
 As you can see, calling ``compute_vertex_normals()`` on the ``sphere`` object gave us a realistic rendering of a ball-like object.
@@ -164,7 +164,7 @@ In this example, we are going to use a ``compute_triangle_normals()`` rendering 
 
 
 .. image:: https://user-images.githubusercontent.com/93158890/157728100-0a495e56-c613-40c4-a292-6e45213d61f6.jpg
-    :width: 600px
+    :width: 700px
 
 
 The rendered sphere in this case has facets akin to what XIX-th century airships or blimps used to look like.
@@ -191,7 +191,7 @@ When we rendered a lit sphere in one of the previous sections (:ref:`smoothly_li
   >>> vis.draw(sphere)
    
 .. image:: https://user-images.githubusercontent.com/93158890/150881545-56de6d95-50d0-4965-b2a0-b6bd27340df7.jpg
-    :width: 600px
+    :width: 700px
 
 The ``paint_uniform_color()`` method accepts a numeric list of RGB values. Its algorithm assigns a single color to all vertices of the triangle mesh. RGB values should be in the 0 - 1 range. In our example, we passed respective values for Red (``1``), Green (``0``), and Blue (``1``).
 
@@ -238,7 +238,7 @@ Now, we'll show a ``draw()`` call variant which allows the user to specify a mat
   >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat})
   
 .. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
-    :width: 600px
+    :width: 700px
 
 The sphere looks almost identical to the one in the previous example (:ref:`colored_lit_sphere`), but this time it is based on the custom material ``mat`` which we created.
 
@@ -266,7 +266,7 @@ In earlier examples, we used ``create_sphere()`` to render the sphere with basic
   
 
 .. image:: https://user-images.githubusercontent.com/93158890/157758092-9efb1ca0-b96a-4e1d-abd7-95243b279d2e.jpg
-    :width: 600px
+    :width: 700px
 
 Let's examine new elements in the code above:
 
@@ -304,7 +304,7 @@ In a previous metallic sphere rendering we covered a number of methods, paramete
   >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material':   mat}, ibl="nightlights")
   
 .. image:: https://user-images.githubusercontent.com/93158890/157770798-2c42e7dc-e063-4f26-90b4-16a45e263f36.jpg
-    :width: 600px
+    :width: 700px
 
 
 This code is similar to that used in rendering a previous metallic sphere. But, there are a couple of elements that make this version of the sphere look different:
@@ -355,7 +355,7 @@ In this example, we will add textures to rendered objects:
 
 
 .. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
-    :width: 600px
+    :width: 700px
 
 
 Let's examine new method calls and properties in this rendering:
@@ -398,7 +398,7 @@ Line Sets are typically used to display a wireframe of a 3D model. Let's do that
 
   
 .. image:: https://user-images.githubusercontent.com/93158890/157949589-8b87fa81-a5cf-4791-a4f7-2d5dc91e546e.jpg
-    :width: 600px
+    :width: 700px
 
 So, what's new in this code?
 
@@ -412,7 +412,7 @@ So, what's new in this code?
 
 
 
-
+.. _bounding_box_sphere:
 
 Drawing a Sphere in a Bounding Box ``LineSet``
 ::::::::::::::::::::::::::::::::::::::::::::::
@@ -438,7 +438,7 @@ In prior examples, we rendered only one 3D object at a time. But the ``draw()`` 
 Both objects appear and can be moved and rotated:
 
 .. image:: https://user-images.githubusercontent.com/93158890/157901535-fbe78fc0-9b85-476e-a0a1-01e0e5d80738.jpg
-    :width: 600px
+    :width: 700px
 
 Let's go over the new code here:
 
@@ -479,7 +479,7 @@ Aside from rendering ``LineSet`` wireframes or grids, we can change their thickn
 Here we rendered a grotesquely thicker Bounding Box by increasing its thickness (``line_width`` property) to 50: 
 
 .. image:: https://user-images.githubusercontent.com/93158890/158695002-f5976bfa-1e81-46dc-bf3b-b926d0c5e0af.jpg
-    :width: 600px
+    :width: 700px
     
 The default value for the ``line_width`` parameter is ``2``. The minimum supplied value is ``1``. The rendering at ``line_width=1`` will be more subtle:
 
@@ -489,7 +489,7 @@ The default value for the ``line_width`` parameter is ``2``. The minimum supplie
 
 
 .. image:: https://user-images.githubusercontent.com/93158890/158695717-042343a4-bbc3-45b8-ab6b-1118ad027cd7.jpg
-    :width: 600px
+    :width: 700px
 
 Experiment with the ``line_width`` parameter values to find an optimal one for your purposes.
 
@@ -510,15 +510,6 @@ Experiment with the ``line_width`` parameter values to find an optimal one for y
 
 
 
-
-
-
-    
-    
-    
-
-
-
 Commonly Used ``draw()`` Options
 --------------------------------
 
@@ -531,14 +522,14 @@ Aside from rendering 3D objects, you can use the ``draw()`` function calls to co
 * adding a Visualizer window title;
 * specifying window dimensions (i.e. *Width* and *Height*).
 
-The code below illustrates how to rename a Visualizer title bar and set window ``width`` and ``height`` by customizing the ``draw()`` call, using our prior *Sphere in a Bounding Box LineSet (aabb)* example:
+The code below illustrates how to rename a Visualizer title bar and set window ``width`` and ``height`` by customizing the ``draw()`` call, using our prior :ref:`bounding_box_sphere` example:
 
 .. code-block:: python
 
 	>>> vis.draw([sphere,line_set], show_ui=True, title="Sphere and AABB LineSet", width=700, height=700)
 	
 .. image:: https://user-images.githubusercontent.com/93158890/158281728-994ff828-53b0-485a-9feb-9b121d7354f7.jpg
-    :width: 600px
+    :width: 700px
 
 
 At the bottom of the UI / control panel, you can see the section titled "*Geometries*" (outlined in a dark grey box). This section contains a list of rendered objects that can be individually turned on or off by clicking a checkbox to the left of their names.
@@ -569,23 +560,25 @@ We can now display the UI and confirm that our custom object is named appropriat
 
 And here is the named object:
 
-.. image:: https://user-images.githubusercontent.com/93158890/158282041-a227b0f5-803e-4618-a9b1-d732c5de1a81.jpg
-    :width: 600px
+.. image:: https://user-images.githubusercontent.com/93158890/159092908-a2462f6d-34fc-4703-9845-9b311a7f1630.jpg
+    :width: 700px
     
 So far, our ``geoms`` collection defined only a single object: *sphere*. But we can turn it into a list and define multiple objects there:
 
-1. Re-declare ``geoms`` object to contain a collection list of the ``sphere`` and ``aabb`` bounding box from the *"Drawing a Sphere in a Bounding Box LineSet"* section.
+1. Re-declare ``geoms`` object to contain a collection list of the ``sphere`` and ``aabb`` bounding box from the :ref:`bounding_box_sphere` section.
 
 2. Call ``draw(geoms, show_ui=True)``:
 
 .. code-block:: python
-
-	>>> geoms = [{'name': 'sphere', 'geometry': sphere}, {'name': 'Axis Aligned Bounding Box line_set', 'geometry': line_set}]
+  
+  >>> geoms = [{'name': 'sphere', 'geometry': sphere}, {'name': 'Axis Aligned Bounding Box line_set', 'geometry': line_set}]
   >>> vis.draw(geoms, show_ui=True)
 
-.. image:: https://user-images.githubusercontent.com/93158890/158282171-b69a46c1-c5c6-44fc-a9fc-765e5ecc7473.jpg
-    :width: 600px
-    
+.. image:: https://user-images.githubusercontent.com/93158890/159094500-83ddd46f-0e71-40e1-9b97-ae46480cd860.jpg
+    :width: 700px
+
+
+
 
 
 
@@ -605,7 +598,7 @@ Enter the following code at the Python prompt:
 Open3D returns:
 	
 .. image:: https://user-images.githubusercontent.com/93158890/148607866-3de802e2-34ea-499e-a6ad-ee2b44ab9994.jpg
-    :width: 600px
+    :width: 700px
 
 Specifying ``point_size``
 """""""""""""""""""""""""
@@ -619,7 +612,7 @@ In this section, we will learn how to control 3D model rendering by passing in `
 Here we have programmatically specified a custom ``point_size`` for rendering. It is recommended to set ``show_ui=True`` to make sure Open3D Visualizer interprets ``draw()`` function input parameters correctly. You can experiment with different point sizes by moving a slider in the UI:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149423983-f89ab2b7-fa49-4723-9329-1c375fb0a965.jpg
-    :width: 600px
+    :width: 700px
 
 
 
@@ -642,8 +635,8 @@ First, we'll demonstrate how to turn off the *skybox* using our *sphere* example
 	
 And the Visualizer window opens without the default *skybox* blue background:
 
-.. image:: https://user-images.githubusercontent.com/93158890/158435806-cf5180a4-3593-42df-a259-a6648a0e7b7e.jpg
-    :width: 600px
+.. image:: https://user-images.githubusercontent.com/93158890/159093215-31dcacf7-306f-4231-9155-0df474ce4828.jpg
+    :width: 700px
 
 Next, we will explore the *background color* (``bg_color``) parameter. At the Python prompt, enter:
 
@@ -653,8 +646,8 @@ Next, we will explore the *background color* (``bg_color``) parameter. At the Py
 
 Here, we have displayed the UI, renamed the title bar to *"Green Background"*, turned off the default *skybox* background, and explicitly specified RGB-Alfa values for the ``bg_color``:
 
-.. image:: https://user-images.githubusercontent.com/93158890/158464565-f36b1906-9337-4a8d-a707-d8a8ea962538.jpg
-    :width: 600px
+.. image:: https://user-images.githubusercontent.com/93158890/159093304-d92d87e9-7429-4bb4-92d8-c93eba3f2704.jpg
+    :width: 700px
 
 
 
