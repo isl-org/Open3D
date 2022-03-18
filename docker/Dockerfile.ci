@@ -145,18 +145,28 @@ RUN if [ "${BUILD_PYTORCH_OPS}" = "ON" ] || [ "${BUILD_TENSORFLOW_OPS}" = "ON" ]
     else \
         export GLIBCXX_USE_CXX11_ABI=ON; \
     fi \
+ && if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
+        export CMAKE_CXX_COMPILER=icpx; \
+        export CMAKE_C_COMPILER=icx; \
+    else \
+        export CMAKE_CXX_COMPILER=g++; \
+        export CMAKE_C_COMPILER=gcc; \
+    fi \
  && mkdir build \
  && cd build \
- && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
+ && cmake -DBUILD_SHARED_LIBS=${SHARED} \
           -DCMAKE_BUILD_TYPE=Release \
-          -DDEVELOPER_BUILD="${DEVELOPER_BUILD}" \
+          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
+          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
+          -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
+          -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
           -DBUILD_LIBREALSENSE=ON \
-          -DBUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
+          -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
           -DBUILD_COMMON_ISPC_ISAS=ON \
-          -DGLIBCXX_USE_CXX11_ABI="${GLIBCXX_USE_CXX11_ABI}" \
-          -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
-          -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+          -DGLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI} \
+          -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
+          -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
           -DBUILD_UNIT_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
           -DBUILD_EXAMPLES=ON \

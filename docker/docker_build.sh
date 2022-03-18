@@ -422,7 +422,7 @@ cpu-shared-ml-release_export_env() {
 sycl-shared_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-shared
 
-    export BASE_IMAGE=ubuntu:18.04
+    export BASE_IMAGE=intel/oneapi-basekit:2022.1.2-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
     export PYTHON_VERSION=3.6
