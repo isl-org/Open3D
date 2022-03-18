@@ -25,10 +25,11 @@
 # ----------------------------------------------------------------------------
 
 import os
+import sys
 from multiprocessing import Process
-import subprocess as sp
-from time import sleep
 import pytest
+
+gui_testable = (sys.platform.startswith('linux') and 'DISPLAY' in os.environ)
 
 
 def draw_box():
@@ -42,6 +43,8 @@ def draw_box():
     o3d.visualization.gui.Application.instance.quit()
 
 
+@pytest.mark.skipif(not gui_testable,
+                    reason="Cannot run GUI tests without Linux and X11.")
 def test_draw_cpu():
     """Test CPU rendering in a separate process."""
     os.environ['OPEN3D_CPU_RENDERING'] = 'true'

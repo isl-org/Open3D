@@ -126,7 +126,7 @@ RUN source util/ci_utils.sh \
  && pip install -r python/requirements_test.txt
 
 # Visualization test dependencies
-RUN apt-get install xvfb \
+RUN apt-get install -y xvfb \
  && rm -rf /var/lib/apt/lists/*
 
 # Open3D Jupyter dependencies

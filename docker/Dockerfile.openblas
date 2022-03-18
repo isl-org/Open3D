@@ -116,7 +116,7 @@ COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
 RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes
 
 # Visualization test dependencies
-RUN apt-get install xvfb \
+RUN apt-get install -y xvfb \
  && rm -rf /var/lib/apt/lists/*
 
 # Open3D repo
