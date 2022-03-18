@@ -29,7 +29,7 @@ import sys
 from multiprocessing import Process
 import pytest
 
-gui_testable = (sys.platform.startswith('linux') and 'DISPLAY' in os.environ)
+gui_testable = sys.platform.startswith('linux') and 'DISPLAY' in os.environ
 
 
 def draw_box():
@@ -38,8 +38,8 @@ def draw_box():
     cube_red.compute_vertex_normals()
     cube_red.paint_uniform_color((1.0, 0.0, 0.0))
     o3d.visualization.draw(cube_red, non_blocking_and_return_uid=True)
-    # Actual rendering
-    o3d.visualization.gui.Application.instance.run_one_tick()
+    for _ in range(5):  # Actual rendering
+        o3d.visualization.gui.Application.instance.run_one_tick()
     o3d.visualization.gui.Application.instance.quit()
 
 
@@ -52,6 +52,6 @@ def test_draw_cpu():
     proc.start()
     proc.join(timeout=3)  # Wait for process to complete
     if proc.exitcode is None:
-        proc.terminate()  # Kill on failure
+        proc.kill()  # Kill on failure
         assert False, __name__ + " did not complete."
     assert proc.exitcode == 0
