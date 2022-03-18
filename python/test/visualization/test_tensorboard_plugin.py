@@ -446,7 +446,8 @@ def test_plugin_data_reader(geometry_data, logdir):
             cube_ls_ref.line['colors'] = (cube_ls_ref.line['colors'] * 255).to(
                 o3d.core.uint8)
 
-            cube_ls_out = reader.read_geometry(".", "cube_ls", step, batch_idx,
+            cube_ls_out = reader.read_geometry("test_tensorboard_plugin",
+                                               "cube_ls", step, batch_idx,
                                                step_to_idx)[0]
             assert (cube_ls_out.point['positions'] ==
                     cube_ls_ref.point['positions']).all()
