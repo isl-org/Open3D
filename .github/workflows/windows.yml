@@ -14,9 +14,9 @@ on:
   pull_request:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
-# concurrency:
-#   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-#   cancel-in-progress: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 env:
   PIP_VER: "21.1.1"
@@ -224,13 +224,13 @@ jobs:
         python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
-        # exclude:
-        #   - is_master: false
-        #     python_version: 3.7
-        #   - is_master: false
-        #     python_version: 3.8
-        #   - is_master: false
-        #     python_version: 3.9
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+          - is_master: false
+            python_version: 3.9
 
     steps:
       - name: Checkout source code
@@ -326,13 +326,13 @@ jobs:
         python_version: [3.6, 3.7, 3.8, 3.9]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
-        # exclude:
-        #   - is_master: false
-        #     python_version: 3.7
-        #   - is_master: false
-        #     python_version: 3.8
-        #   - is_master: false
-        #     python_version: 3.9
+        exclude:
+          - is_master: false
+            python_version: 3.7
+          - is_master: false
+            python_version: 3.8
+          - is_master: false
+            python_version: 3.9
 
     steps:
       - name: Checkout source code
