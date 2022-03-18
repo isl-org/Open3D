@@ -73,7 +73,7 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 
 # Shared variables
 CCACHE_VERSION=4.3
-CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
+CMAKE_VERSION=cmake-3.20.0-linux-x86_64
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -422,6 +422,8 @@ cpu-shared-ml-release_export_env() {
 sycl-shared_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-shared
 
+    # https://hub.docker.com/r/intel/oneapi
+    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-18.04
     export BASE_IMAGE=intel/oneapi-basekit:2022.1.2-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl

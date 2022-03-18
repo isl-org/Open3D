@@ -1,12 +1,17 @@
-cmake_minimum_required(VERSION 3.19.2)
+cmake_minimum_required(VERSION 3.20)
 # If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
-# official repository https://apt.kitware.com/.  CMake 3.19+ is required to:
+# official repository https://apt.kitware.com/.
+#
+# CMake 3.19+ is required to:
 # - allow linking with OBJECT libraries
 # - prevent erroneous -gencode option deduplication with CUDA
 # - simplify generator expressions for selecting compile flags and setting
 #   global hardened link flags
 # - parse JSON files for downloading files from the open3d_downloads repository
 # - use first-class language support for ISPC (3.19.2 patch release required)
+#
+# CMake 3.20+ is required to:
+# - detect IntelLLVM compiler for SYCL
 
 if (APPLE)
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
@@ -255,7 +260,8 @@ message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 # Check SYCL compatiblility
 if (BUILD_SYCL_MODULE AND NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
     message(FATAL_ERROR "BUILD_SYCL_MODULE requires IntelLLVM (DPC++) compiler, "
-                        "but got ${CMAKE_CXX_COMPILER_ID}.")
+                        "but got CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID} "
+                        "and CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}.")
 endif()
 if (BUILD_SYCL_MODULE AND (NOT UNIX OR APPLE))
     message(FATAL_ERROR "Open3D SYCL support is only available on Linux")

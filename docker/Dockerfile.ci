@@ -62,7 +62,8 @@ ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -xf ${CMAKE_VERSION}.tar.gz \
- && cp -ar ${CMAKE_VERSION} ${HOME}
+ && cp -ar ${CMAKE_VERSION} ${HOME} \
+ && cmake --version
 
 # Dependencies: ccache
 WORKDIR /root
