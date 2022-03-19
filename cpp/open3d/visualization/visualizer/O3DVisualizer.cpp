@@ -1525,15 +1525,12 @@ struct O3DVisualizer::Impl {
     }
 
     void SetIBL(std::string path) {
-        std::string ibl_path;
+        std::string ibl_path = path;
         if (path == "") {
             // Set IBL back to default
             ibl_path =
                     std::string(Application::GetInstance().GetResourcePath()) +
                     std::string("/") + std::string(kDefaultIBL);
-        } else if (utility::filesystem::FileExists(path + "_ibl.ktx")) {
-            // Set IBL to named IBL - probably came from selecting in UI
-            ibl_path = path;
         } else if (utility::filesystem::FileExists(path)) {
             // User specified full path to IBL file
             if (path.find("_ibl.ktx") == path.size() - 8) {

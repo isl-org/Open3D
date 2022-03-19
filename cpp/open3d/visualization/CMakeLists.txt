@@ -96,6 +96,11 @@ if (BUILD_GUI)
     target_sources(visualization PRIVATE
         app/Viewer.cpp
     )
+
+    # target_sources(visualization PRIVATE
+    #     app/Resource.cpp
+    # )
+
 endif()
 
 
