@@ -458,7 +458,8 @@ def test_plugin_data_reader(geometry_data, logdir):
             check_material_dict(cube_ls_out, material_ls, batch_idx)
 
             bbox_ls_out, data_bbox_proto = reader.read_geometry(
-                ".", "bboxes", step, batch_idx, step_to_idx)
+                "test_tensorboard_plugin", "bboxes", step, batch_idx,
+                step_to_idx)
             bbox_ls_ref = o3d.t.geometry.LineSet.from_legacy(
                 BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
             bbox_ls_ref.line["indices"] = bbox_ls_ref.line["indices"].to(

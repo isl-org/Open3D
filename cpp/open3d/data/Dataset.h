@@ -537,8 +537,7 @@ public:
 
     /// \brief Returns the map of filename to path. Refer documentation page for
     /// available options.
-    std::unordered_map<std::string, std::string> GetPathMap(
-            const std::string filename) const {
+    std::unordered_map<std::string, std::string> GetPathMap() const {
         return map_filename_to_path_;
     }
 
@@ -565,8 +564,7 @@ public:
 
     /// \brief Returns the map of filename to path. Refer documentation page for
     /// available options.
-    std::unordered_map<std::string, std::string> GetPathMap(
-            const std::string filename) const {
+    std::unordered_map<std::string, std::string> GetPathMap() const {
         return map_filename_to_path_;
     }
 
@@ -593,8 +591,7 @@ public:
 
     /// \brief Returns the map of filename to path. Refer documentation page for
     /// available options.
-    std::unordered_map<std::string, std::string> GetPathMap(
-            const std::string filename) const {
+    std::unordered_map<std::string, std::string> GetPathMap() const {
         return map_filename_to_path_;
     }
 

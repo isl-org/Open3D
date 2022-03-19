@@ -381,7 +381,7 @@ SampleL515Bag::SampleL515Bag(const std::string& data_root)
               "9770eeb194c78103037dbdbec78b9c8c",
               /*no_extract =*/false,
               data_root) {
-    path_ = Dataset::GetExtractDir() + "/SampleL515Bag.bag";
+    path_ = Dataset::GetExtractDir() + "/L515_test_s.bag";
 }
 
 EaglePointCloud::EaglePointCloud(const std::string& data_root)
@@ -478,7 +478,7 @@ CrateModel::CrateModel(const std::string& data_root)
     const std::string extract_dir = Dataset::GetExtractDir();
     map_filename_to_path_ = {{"create_material", extract_dir + "/crate.mtl"},
                              {"create_model", extract_dir + "/crate.obj"},
-                             {"texture_image", extract_dir + "/crate.png"}};
+                             {"texture_image", extract_dir + "/crate.jpg"}};
 }
 
 JuneauImage::JuneauImage(const std::string& data_root)

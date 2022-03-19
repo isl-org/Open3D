@@ -335,6 +335,38 @@ TEST(Dataset, PLYPointCloud) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
+TEST(Dataset, PTSPointCloud) {
+    const std::string prefix = "PTSPointCloud";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::PTSPointCloud pointcloud_pts(data_root);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    EXPECT_EQ(pointcloud_pts.GetPath(),
+              extract_dir + "/point_cloud_sample1.pts");
+    // Check if the file actually exists.
+    EXPECT_TRUE(utility::filesystem::FileExists(pointcloud_pts.GetPath()));
+
+    // Basic method.
+    EXPECT_EQ(pointcloud_pts.GetPrefix(), prefix);
+    EXPECT_EQ(pointcloud_pts.GetDataRoot(), data_root);
+    EXPECT_EQ(pointcloud_pts.GetDownloadDir(), download_dir);
+    EXPECT_EQ(pointcloud_pts.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
 TEST(Dataset, SampleNYURGBDImage) {
     const std::string prefix = "SampleNYURGBDImage";
     const std::string data_root = utility::filesystem::GetHomeDirectory() +
@@ -610,6 +642,37 @@ TEST(Dataset, SampleFountainRGBDImages) {
     utility::filesystem::DeleteDirectory(extract_dir);
 }
 
+TEST(Dataset, SampleL515Bag) {
+    const std::string prefix = "SampleL515Bag";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::SampleL515Bag sample_bag(data_root);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    EXPECT_EQ(sample_bag.GetPath(), extract_dir + "/L515_test_s.bag");
+    // Check if the file actually exists.
+    EXPECT_TRUE(utility::filesystem::FileExists(sample_bag.GetPath()));
+
+    // Basic method.
+    EXPECT_EQ(sample_bag.GetPrefix(), prefix);
+    EXPECT_EQ(sample_bag.GetDataRoot(), data_root);
+    EXPECT_EQ(sample_bag.GetDownloadDir(), download_dir);
+    EXPECT_EQ(sample_bag.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
 TEST(Dataset, EaglePointCloud) {
     const std::string prefix = "EaglePointCloud";
     const std::string data_root = utility::filesystem::GetHomeDirectory() +
@@ -728,6 +791,138 @@ TEST(Dataset, KnotMesh) {
     EXPECT_EQ(knot.GetDataRoot(), data_root);
     EXPECT_EQ(knot.GetDownloadDir(), download_dir);
     EXPECT_EQ(knot.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, MonkeyModel) {
+    const std::string prefix = "MonkeyModel";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::MonkeyModel monkey_model(data_root);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"albedo", extract_dir + "/albedo.png"},
+            {"ao", extract_dir + "/ao.png"},
+            {"metallic", extract_dir + "/metallic.png"},
+            {"monkey_material", extract_dir + "/monkey.mtl"},
+            {"monkey_model", extract_dir + "/monkey.obj"},
+            {"monkey_solid_material", extract_dir + "/monkey_solid.mtl"},
+            {"monkey_solid_model", extract_dir + "/monkey_solid.obj"},
+            {"normal", extract_dir + "/normal.png"},
+            {"roughness", extract_dir + "/roughness.png"}};
+
+    for (auto file_name : monkey_model.GetPathMap()) {
+        // Check the path map.
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        // Check the `GetPath` method.
+        EXPECT_EQ(monkey_model.GetPath(file_name.first), file_name.second);
+        // Check if the file path exists.
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    // Basic method.
+    EXPECT_EQ(monkey_model.GetPrefix(), prefix);
+    EXPECT_EQ(monkey_model.GetDataRoot(), data_root);
+    EXPECT_EQ(monkey_model.GetDownloadDir(), download_dir);
+    EXPECT_EQ(monkey_model.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, SwordModel) {
+    const std::string prefix = "SwordModel";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::SwordModel sword_model(data_root);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"sword_material", extract_dir + "/UV.mtl"},
+            {"sword_model", extract_dir + "/UV.obj"},
+            {"base_color", extract_dir + "/UV_blinn1SG_BaseColor.png"},
+            {"metallic", extract_dir + "/UV_blinn1SG_Metallic.png"},
+            {"normal", extract_dir + "/UV_blinn1SG_Normal.png"},
+            {"roughness", extract_dir + "/UV_blinn1SG_Roughness.png"}};
+
+    for (auto file_name : sword_model.GetPathMap()) {
+        // Check the path map.
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        // Check the `GetPath` method.
+        EXPECT_EQ(sword_model.GetPath(file_name.first), file_name.second);
+        // Check if the file path exists.
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    // Basic method.
+    EXPECT_EQ(sword_model.GetPrefix(), prefix);
+    EXPECT_EQ(sword_model.GetDataRoot(), data_root);
+    EXPECT_EQ(sword_model.GetDownloadDir(), download_dir);
+    EXPECT_EQ(sword_model.GetExtractDir(), extract_dir);
+
+    // Delete dataset.
+    utility::filesystem::DeleteDirectory(download_dir);
+    utility::filesystem::DeleteDirectory(extract_dir);
+}
+
+TEST(Dataset, CrateModel) {
+    const std::string prefix = "CrateModel";
+    const std::string data_root = utility::filesystem::GetHomeDirectory() +
+                                  "/open3d_data/open3d_test";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    // Delete if files already exists.
+    utility::filesystem::DeleteDirectory(data_root + "/download/" + prefix);
+    utility::filesystem::DeleteDirectory(data_root + "/extract/" + prefix);
+
+    data::CrateModel crate_model(data_root);
+    // Check if downloaded.
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    // Method to get path.
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"create_material", extract_dir + "/crate.mtl"},
+            {"create_model", extract_dir + "/crate.obj"},
+            {"texture_image", extract_dir + "/crate.jpg"}};
+
+    for (auto file_name : crate_model.GetPathMap()) {
+        // Check the path map.
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        // Check the `GetPath` method.
+        EXPECT_EQ(crate_model.GetPath(file_name.first), file_name.second);
+        // Check if the file path exists.
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    // Basic method.
+    EXPECT_EQ(crate_model.GetPrefix(), prefix);
+    EXPECT_EQ(crate_model.GetDataRoot(), data_root);
+    EXPECT_EQ(crate_model.GetDownloadDir(), download_dir);
+    EXPECT_EQ(crate_model.GetExtractDir(), extract_dir);
 
     // Delete dataset.
     utility::filesystem::DeleteDirectory(download_dir);
