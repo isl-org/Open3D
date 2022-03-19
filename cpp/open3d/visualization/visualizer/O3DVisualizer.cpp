@@ -1526,6 +1526,7 @@ struct O3DVisualizer::Impl {
 
     void SetIBL(std::string path) {
         std::string ibl_path = path;
+        std::cout << "ibl_path form SetIBL: " << ibl_path << std::endl;
         if (path == "") {
             // Set IBL back to default
             ibl_path =
@@ -1539,14 +1540,6 @@ struct O3DVisualizer::Impl {
                 utility::LogWarning(
                         "Could not load IBL path. Filename must be of the form "
                         "'name_ibl.ktx' and be paired with 'name_skybox.ktx'");
-                return;
-            }
-        } else {
-            // User specified the IBL 'stem' without the full path
-            ibl_path =
-                    std::string(Application::GetInstance().GetResourcePath()) +
-                    "/" + path;
-            if (!utility::filesystem::FileExists(ibl_path + "_ibl.ktx")) {
                 return;
             }
         }

@@ -300,12 +300,12 @@ void Application::Initialize(const char *resource_path) {
     }
 
     rendering::EngineInstance::SetResourcePath(resource_path);
-    std::string uiblit_path = std::string(resource_path) + "/ui_blit.filamat";
-    if (!utility::filesystem::FileExists(uiblit_path)) {
-        utility::LogError(
-                "Resource directory does not have Open3D resources: {}",
-                resource_path);
-    }
+    // std::string uiblit_path = std::string(resource_path) + "/ui_blit.filamat";
+    // if (!utility::filesystem::FileExists(uiblit_path)) {
+    //     utility::LogError(
+    //             "Resource directory does not have Open3D resources: {}",
+    //             resource_path);
+    // }
 
     impl_->theme_.font_path = std::string(resource_path) + std::string("/") +
                               impl_->theme_.font_path;
@@ -551,14 +551,14 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
                     "Internal error: Application::Initialize() was not called");
             return false;
         }
-        auto resource_path = rendering::EngineInstance::GetResourcePath();
-        if (!utility::filesystem::DirectoryExists(resource_path)) {
-            std::stringstream err;
-            err << "Could not find resource directory:\n'" << resource_path
-                << "' does not exist";
-            ShowNativeAlert(err.str().c_str());
-            return false;
-        }
+        // auto resource_path = rendering::EngineInstance::GetResourcePath();
+        // if (!utility::filesystem::DirectoryExists(resource_path)) {
+        //     std::stringstream err;
+        //     err << "Could not find resource directory:\n'" << resource_path
+        //         << "' does not exist";
+        //     ShowNativeAlert(err.str().c_str());
+        //     return false;
+        // }
         if (!utility::filesystem::FileExists(impl_->theme_.font_path)) {
             std::stringstream err;
             err << "Could not load UI font:\n'" << impl_->theme_.font_path

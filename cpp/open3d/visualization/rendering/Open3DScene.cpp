@@ -191,8 +191,8 @@ void Open3DScene::SetLighting(LightingProfile profile,
 
     if (profile != LightingProfile::HARD_SHADOWS) {
         if (scene->GetIndirectLight().empty()) {
-            auto path = gui::Application::GetInstance().GetResourcePath();
-            scene->SetIndirectLight(std::string(path) + "/default");
+            // auto path = gui::Application::GetInstance().GetResourcePath();
+            scene->SetIndirectLight("default");
         }
     }
 

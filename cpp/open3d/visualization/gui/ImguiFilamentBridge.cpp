@@ -168,7 +168,7 @@ ImguiFilamentBridge::ImguiFilamentBridge(
     : impl_(new ImguiFilamentBridge::Impl()) {
     impl_->renderer_ = renderer;
     // The UI needs a special material (just a pass-through blit)
-    std::string resource_path = Application::GetInstance().GetResourcePath();
+    // std::string resource_path = Application::GetInstance().GetResourcePath();
     impl_->uiblit_material_ = LoadMaterialTemplate(
             ui_blit_filamat(),
             visualization::rendering::EngineInstance::GetInstance());
