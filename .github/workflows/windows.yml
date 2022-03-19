@@ -243,7 +243,6 @@ jobs:
           python-version: ${{ matrix.python_version }}
 
       - name: Install Python dependencies
-        shell: pwsh
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -251,7 +250,6 @@ jobs:
           python -m pip install -r python/requirements_jupyter_build.txt
 
       - name: Config
-        shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
@@ -272,7 +270,6 @@ jobs:
             ${{ env.SRC_DIR }}
 
       - name: Build Python package
-        shell: pwsh
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -368,10 +365,14 @@ jobs:
           python -m pip install -U pytest-randomly==${{ env.PYTEST_RANDOMLY_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }} `
             tensorboard==${{ env.TENSORBOARD_VER }}
-          $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$pi_tag-*.whl).Name
-          echo "Installing Open3D wheel pip_package\$PIP_PKG_NAME in virtual environment..."
-          python -m pip install "pip_package\$PIP_PKG_NAME"
+          $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          if (Test-Path -Path "pip_package") {
+            $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
+          } else {
+            $PIP_PKG_NAME=(Get-ChildItem open3d*-$py_tag-*.whl).Name
+          }
+          echo "Installing Open3D wheel $PIP_PKG_NAME in virtual environment..."
+          python -m pip install "$PIP_PKG_NAME"
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 
