@@ -32,8 +32,8 @@
 //       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
-#include <unordered_set>
 #include <experimental/filesystem>
+#include <unordered_set>
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -1564,55 +1564,74 @@ Eigen::Vector3f FilamentScene::GetSunLightDirection() {
 bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
     auto old_ibl = ibl_handle_;
     auto old_sky = skybox_handle_;
-    
+
     std::cout << "ibl_name: " << ibl_name << std::endl;
     std::vector<char> ibl_bytes;
     std::vector<char> skybox_bytes;
 
     bool use_embedded_resources = true;
     namespace fs = std::experimental::filesystem;
-    if (std::string(fs::path(ibl_name).filename()) == "hall_ibl.ktx" || std::string(fs::path(ibl_name).filename()) == "hall") {
+    if (std::string(fs::path(ibl_name).filename()) == "hall_ibl.ktx" ||
+        std::string(fs::path(ibl_name).filename()) == "hall") {
         ibl_bytes = hall_ibl_ktx();
         skybox_bytes = hall_skybox_ktx();
-    } else if (std::string(fs::path(ibl_name).filename()) == "park_ibl.ktx" || std::string(fs::path(ibl_name).filename()) == "park") {
+    } else if (std::string(fs::path(ibl_name).filename()) == "park_ibl.ktx" ||
+               std::string(fs::path(ibl_name).filename()) == "park") {
         ibl_bytes = park_ibl_ktx();
         skybox_bytes = park_skybox_ktx();
-    } else if (std::string(fs::path(ibl_name).filename()) == "park2_ibl.ktx" || std::string(fs::path(ibl_name).filename()) == "park2") {
+    } else if (std::string(fs::path(ibl_name).filename()) == "park2_ibl.ktx" ||
+               std::string(fs::path(ibl_name).filename()) == "park2") {
         ibl_bytes = park2_ibl_ktx();
         skybox_bytes = park2_skybox_ktx();
-    } else if (std::string(fs::path(ibl_name).filename()) == "default_ibl.ktx" || std::string(fs::path(ibl_name).filename()) == "default") {
+    } else if (std::string(fs::path(ibl_name).filename()) ==
+                       "default_ibl.ktx" ||
+               std::string(fs::path(ibl_name).filename()) == "default") {
         ibl_bytes = default_ibl_ktx();
         skybox_bytes = default_skybox_ktx();
-    } else if (std::string(fs::path(ibl_name).filename()) == "pillars_ibl.ktx" || std::string(fs::path(ibl_name).filename()) == "pillars") {
+    } else if (std::string(fs::path(ibl_name).filename()) ==
+                       "pillars_ibl.ktx" ||
+               std::string(fs::path(ibl_name).filename()) == "pillars") {
         ibl_bytes = pillars_ibl_ktx();
         skybox_bytes = pillars_skybox_ktx();
-    } else if (std::string(fs::path(ibl_name).filename()) == "brightday_ibl.ktx" || std::string(fs::path(ibl_name).filename()) == "brightday") {
+    } else if (std::string(fs::path(ibl_name).filename()) ==
+                       "brightday_ibl.ktx" ||
+               std::string(fs::path(ibl_name).filename()) == "brightday") {
         ibl_bytes = brightday_ibl_ktx();
         skybox_bytes = brightday_skybox_ktx();
-    } else if (std::string(fs::path(ibl_name).filename()) == "crossroads_ibl.ktx" || std::string(fs::path(ibl_name).filename()) == "crossroads") {
+    } else if (std::string(fs::path(ibl_name).filename()) ==
+                       "crossroads_ibl.ktx" ||
+               std::string(fs::path(ibl_name).filename()) == "crossroads") {
         ibl_bytes = crossroads_ibl_ktx();
         skybox_bytes = crossroads_skybox_ktx();
-    } else if (std::string(fs::path(ibl_name).filename()) == "streetlamp_ibl.ktx" || std::string(fs::path(ibl_name).filename()) == "streetlamp") {
+    } else if (std::string(fs::path(ibl_name).filename()) ==
+                       "streetlamp_ibl.ktx" ||
+               std::string(fs::path(ibl_name).filename()) == "streetlamp") {
         ibl_bytes = streetlamp_ibl_ktx();
         skybox_bytes = streetlamp_skybox_ktx();
-    } else if (std::string(fs::path(ibl_name).filename()) == "konzerthaus_ibl.ktx" || std::string(fs::path(ibl_name).filename()) == "konzerthaus") {
+    } else if (std::string(fs::path(ibl_name).filename()) ==
+                       "konzerthaus_ibl.ktx" ||
+               std::string(fs::path(ibl_name).filename()) == "konzerthaus") {
         ibl_bytes = konzerthaus_ibl_ktx();
         skybox_bytes = konzerthaus_skybox_ktx();
-    } else if (std::string(fs::path(ibl_name).filename()) == "nightlights_ibl.ktx" || std::string(fs::path(ibl_name).filename()) == "nightlights") {
+    } else if (std::string(fs::path(ibl_name).filename()) ==
+                       "nightlights_ibl.ktx" ||
+               std::string(fs::path(ibl_name).filename()) == "nightlights") {
         ibl_bytes = nightlights_ibl_ktx();
         skybox_bytes = nightlights_skybox_ktx();
     } else {
         use_embedded_resources = false;
     }
 
-    rendering::IndirectLightHandle new_ibl; 
+    rendering::IndirectLightHandle new_ibl;
     if (use_embedded_resources) {
         // Load IBL
-        new_ibl = renderer_.AddIndirectLight(ResourceLoadRequest(ibl_bytes.data(), ibl_bytes.size()));
+        new_ibl = renderer_.AddIndirectLight(
+                ResourceLoadRequest(ibl_bytes.data(), ibl_bytes.size()));
     } else {
         // Load IBL
         std::string ibl_path = ibl_name + std::string("_ibl.ktx");
-        new_ibl = renderer_.AddIndirectLight(ResourceLoadRequest(ibl_path.c_str()));
+        new_ibl = renderer_.AddIndirectLight(
+                ResourceLoadRequest(ibl_path.c_str()));
     }
     if (!new_ibl) {
         return false;
@@ -1633,7 +1652,8 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
 
     SkyboxHandle sky;
     if (use_embedded_resources) {
-        sky = renderer_.AddSkybox(ResourceLoadRequest(skybox_bytes.data(), skybox_bytes.size()));
+        sky = renderer_.AddSkybox(
+                ResourceLoadRequest(skybox_bytes.data(), skybox_bytes.size()));
     } else {
         std::string skybox_path = ibl_name + std::string("_skybox.ktx");
         sky = renderer_.AddSkybox(ResourceLoadRequest(skybox_path.c_str()));

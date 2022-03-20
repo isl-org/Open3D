@@ -300,8 +300,8 @@ void Application::Initialize(const char *resource_path) {
     }
 
     rendering::EngineInstance::SetResourcePath(resource_path);
-    // std::string uiblit_path = std::string(resource_path) + "/ui_blit.filamat";
-    // if (!utility::filesystem::FileExists(uiblit_path)) {
+    // std::string uiblit_path = std::string(resource_path) +
+    // "/ui_blit.filamat"; if (!utility::filesystem::FileExists(uiblit_path)) {
     //     utility::LogError(
     //             "Resource directory does not have Open3D resources: {}",
     //             resource_path);

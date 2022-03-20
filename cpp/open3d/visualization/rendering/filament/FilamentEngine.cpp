@@ -63,7 +63,8 @@ void EngineInstance::SetResourcePath(const std::string& resource_path) {
     resource_path_ = resource_path;
     // if (!utility::filesystem::DirectoryExists(resource_path_)) {
     //     utility::LogError(
-    //             ("Can't find resource directory: " + resource_path_).c_str());
+    //             ("Can't find resource directory: " +
+    //             resource_path_).c_str());
     // }
 }
 
