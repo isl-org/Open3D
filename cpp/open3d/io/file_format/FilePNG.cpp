@@ -88,6 +88,34 @@ bool ReadImageFromPNG(const std::string &filename, geometry::Image &image) {
     return true;
 }
 
+bool ReadImageFromMemoryPNG(const std::vector<char> &image_bytes, geometry::Image &image) {
+    png_image pngimage;
+    memset(&pngimage, 0, sizeof(pngimage));
+    pngimage.version = PNG_IMAGE_VERSION;
+    if (png_image_begin_read_from_memory(&pngimage, image_bytes.data(), image_bytes.size()) == 0) {
+        utility::LogWarning("Read PNG failed: unable to parse header.");
+        return false;
+    }
+
+    // Clear colormap flag if necessary to ensure libpng expands the colo
+    // indexed pixels to full color
+    if (pngimage.format & PNG_FORMAT_FLAG_COLORMAP) {
+        pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
+    }
+
+    image.Prepare(pngimage.width, pngimage.height,
+                  PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
+                  PNG_IMAGE_SAMPLE_COMPONENT_SIZE(pngimage.format));
+
+    if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 0, NULL) ==
+        0) {
+        utility::LogWarning("Read PNG failed: unable to read bytes");
+        utility::LogWarning("PNG error: {}", pngimage.message);
+        return false;
+    }
+    return true;
+}
+
 bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,
                      int quality) {

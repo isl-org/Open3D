@@ -38,6 +38,9 @@ namespace io {
 std::shared_ptr<geometry::Image> CreateImageFromFile(
         const std::string &filename);
 
+std::shared_ptr<geometry::Image> CreateImageFromMemoryPNG(
+        const std::vector<char> &image_bytes);
+
 /// The general entrance for reading an Image from a file
 /// The function calls read functions based on the extension name of filename.
 /// \return return true if the read function is successful, false otherwise.
@@ -60,6 +63,7 @@ bool WriteImage(const std::string &filename,
                 int quality = kOpen3DImageIODefaultQuality);
 
 bool ReadImageFromPNG(const std::string &filename, geometry::Image &image);
+bool ReadImageFromMemoryPNG(const std::vector<char> &image_bytes, geometry::Image &image);
 
 bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,

@@ -946,15 +946,17 @@ filament::Texture* FilamentResourceManager::LoadFilledTexture(
 
 void FilamentResourceManager::LoadDefaults() {
     // FIXME: Move to precompiled resource blobs
-    const std::string& resource_root = EngineInstance::GetResourcePath();
+    // const std::string& resource_root = EngineInstance::GetResourcePath();
 
-    const auto texture_path = resource_root + "/defaultTexture.png";
-    auto texture_img = io::CreateImageFromFile(texture_path);
+    // const auto texture_path = resource_root + "/defaultTexture.png";
+    std::vector<char> defaulttexture = defaultTexture_png();
+    auto texture_img = io::CreateImageFromMemoryPNG(defaulttexture);
     auto texture = LoadTextureFromImage(texture_img, false);
     textures_[kDefaultTexture] = BoxResource(texture, engine_);
 
-    const auto colormap_path = resource_root + "/defaultGradient.png";
-    auto colormap_img = io::CreateImageFromFile(colormap_path);
+    // const auto colormap_path = resource_root + "/defaultGradient.png";
+    std::vector<char> defaultgradient = defaultGradient_png();
+    auto colormap_img = io::CreateImageFromMemoryPNG(defaultgradient);
     auto color_map = LoadTextureFromImage(colormap_img, false);
     textures_[kDefaultColorMap] = BoxResource(color_map, engine_);
 
