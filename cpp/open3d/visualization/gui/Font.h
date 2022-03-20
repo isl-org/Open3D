@@ -83,6 +83,7 @@ public:
 
 public:  // for internal use, use functions above to set
     struct CPRange {
+        std::vector<char> data;
         std::string path;
         std::string lang;
         std::vector<uint32_t> code_points;  // empty if lang is not ""

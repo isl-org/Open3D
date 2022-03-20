@@ -186,6 +186,9 @@ int main(int argc, char *argv[]) {
         std::stringstream byte_data;
         std::string var_name = fs::path(input_file).filename().string();
         var_name.replace(var_name.find('.'), 1, "_");
+        if (var_name.find('-') != std::string::npos) {
+            var_name.replace(var_name.find('-'), 1, "_");
+        }
 
         h_out << "std::vector<char> " << var_name << "();" << std::endl;
 

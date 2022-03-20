@@ -37,19 +37,19 @@ constexpr const char *FontDescription::MONOSPACE;
 FontDescription::FontDescription(const char *typeface,
                                  FontStyle style /*= FontStyle::NORMAL*/,
                                  int point_size /*= 0*/) {
-    ranges_.push_back({typeface, "en", {}});
+    ranges_.push_back({{}, typeface, "en", {}});
     style_ = style;
     point_size_ = point_size;
 }
 
 void FontDescription::AddTypefaceForLanguage(const char *typeface,
                                              const char *lang) {
-    ranges_.push_back({typeface, lang, {}});
+    ranges_.push_back({{}, typeface, lang, {}});
 }
 
 void FontDescription::AddTypefaceForCodePoints(
         const char *typeface, const std::vector<uint32_t> &code_points) {
-    ranges_.push_back({typeface, "", code_points});
+    ranges_.push_back({{}, typeface, "", code_points});
 }
 
 }  // namespace gui

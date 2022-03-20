@@ -123,8 +123,11 @@ struct ImguiWindowContext : public FontContext {
             utility::LogWarning(
                     "Got zero-byte font texture; ignoring custom fonts");
             io.Fonts->Clear();
+            size_t font_data_size = this->theme->font_data.size();
+            void* font_data = ImGui::MemAlloc(font_data_size);
+            std::copy(this->theme->font_data.begin(), this->theme->font_data.end(), (char*)font_data);
             this->fonts[0] =
-                    io.Fonts->AddFontFromFileTTF(this->theme->font_path.c_str(),
+                    io.Fonts->AddFontFromMemoryTTF(font_data, font_data_size,
                                                  float(this->theme->font_size));
             for (unsigned int i = 1; i < font_descs.size(); ++i) {
                 this->fonts[i] = this->fonts[0];
@@ -151,12 +154,15 @@ struct ImguiWindowContext : public FontContext {
         }
         // The first range should be "en" from
         // FontDescription::FontDescription()
+        size_t font_data_size = fd.ranges_[0].data.size();
+        void* font_data = ImGui::MemAlloc(font_data_size);
+        std::copy(fd.ranges_[0].data.begin(), fd.ranges_[0].data.end(), (char*)font_data);
         if (fd.ranges_.size() == 1) {
-            imfont = io.Fonts->AddFontFromFileTTF(fd.ranges_[0].path.c_str(),
+            imfont = io.Fonts->AddFontFromMemoryTTF(font_data, font_data_size,
                                                   point_size);
         } else {
-            imfont = io.Fonts->AddFontFromFileTTF(
-                    fd.ranges_[0].path.c_str(), point_size, NULL,
+            imfont = io.Fonts->AddFontFromMemoryTTF(
+                    font_data, font_data_size, point_size, NULL,
                     io.Fonts->GetGlyphRangesDefault());
         }
 
@@ -183,8 +189,11 @@ struct ImguiWindowContext : public FontContext {
                           // default
                     range = io.Fonts->GetGlyphRangesCyrillic();
                 }
-                imfont = io.Fonts->AddFontFromFileTTF(
-                        r.path.c_str(), point_size, &config, range);
+                size_t font_data_size = r.data.size();
+                void* font_data = ImGui::MemAlloc(font_data_size);
+                std::copy(r.data.begin(), r.data.end(), (char*)font_data);
+                imfont = io.Fonts->AddFontFromMemoryTTF(
+                        font_data, font_data_size, point_size, &config, range);
             } else if (!r.code_points.empty()) {
                 // TODO: the ImGui docs say that this must exist until
                 // CreateAtlastTextureAlpha8().
@@ -194,8 +203,11 @@ struct ImguiWindowContext : public FontContext {
                     builder.AddChar(c);
                 }
                 builder.BuildRanges(&range);
-                imfont = io.Fonts->AddFontFromFileTTF(
-                        r.path.c_str(), point_size, &config, range.Data);
+                size_t font_data_size = r.data.size();
+                void* font_data = ImGui::MemAlloc(font_data_size);
+                std::copy(r.data.begin(), r.data.end(), (char*)font_data);
+                imfont = io.Fonts->AddFontFromMemoryTTF(
+                        font_data, font_data_size, point_size, &config, range.Data);
             }
         }
 

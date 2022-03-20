@@ -48,6 +48,7 @@
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/Native.h"
+#include "open3d/visualization/gui/Resource.h"
 #include "open3d/visualization/gui/Task.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/Util.h"
@@ -212,12 +213,17 @@ Application::Application() : impl_(new Application::Impl()) {
     Color highlight_color(0.5, 0.5, 0.5);
 
     // Note that any values here need to be scaled by the scale factor in Window
-    impl_->theme_.font_path =
-            "Roboto-Medium.ttf";  // full path will be added in Initialize()
-    impl_->theme_.font_bold_path = "Roboto-Bold.ttf";
-    impl_->theme_.font_italic_path = "Roboto-MediumItalic.ttf";
-    impl_->theme_.font_bold_italic_path = "Roboto-BoldItalic.ttf";
-    impl_->theme_.font_mono_path = "RobotoMono-Medium.ttf";
+    // impl_->theme_.font_path =
+    //         "Roboto-Medium.ttf";  // full path will be added in Initialize()
+    // impl_->theme_.font_bold_path = "Roboto-Bold.ttf";
+    // impl_->theme_.font_italic_path = "Roboto-MediumItalic.ttf";
+    // impl_->theme_.font_bold_italic_path = "Roboto-BoldItalic.ttf";
+    // impl_->theme_.font_mono_path = "RobotoMono-Medium.ttf";
+    impl_->theme_.font_data = Roboto_Medium_ttf();
+    impl_->theme_.font_bold_data = Roboto_Bold_ttf();
+    impl_->theme_.font_italic_data = Roboto_MediumItalic_ttf();
+    impl_->theme_.font_bold_italic_data = Roboto_BoldItalic_ttf();
+    impl_->theme_.font_mono_data = RobotoMono_Medium_ttf();
     impl_->theme_.font_size = 16;      // 1 em (font size is em in digital type)
     impl_->theme_.default_margin = 8;  // 0.5 * em
     impl_->theme_.default_layout_spacing = 6;  // 0.333 * em
@@ -307,20 +313,20 @@ void Application::Initialize(const char *resource_path) {
     //             resource_path);
     // }
 
-    impl_->theme_.font_path = std::string(resource_path) + std::string("/") +
-                              impl_->theme_.font_path;
-    impl_->theme_.font_bold_path = std::string(resource_path) +
-                                   std::string("/") +
-                                   impl_->theme_.font_bold_path;
-    impl_->theme_.font_italic_path = std::string(resource_path) +
-                                     std::string("/") +
-                                     impl_->theme_.font_italic_path;
-    impl_->theme_.font_bold_italic_path = std::string(resource_path) +
-                                          std::string("/") +
-                                          impl_->theme_.font_bold_italic_path;
-    impl_->theme_.font_mono_path = std::string(resource_path) +
-                                   std::string("/") +
-                                   impl_->theme_.font_mono_path;
+    // impl_->theme_.font_path = std::string(resource_path) + std::string("/") +
+    //                           impl_->theme_.font_path;
+    // impl_->theme_.font_bold_path = std::string(resource_path) +
+    //                                std::string("/") +
+    //                                impl_->theme_.font_bold_path;
+    // impl_->theme_.font_italic_path = std::string(resource_path) +
+    //                                  std::string("/") +
+    //                                  impl_->theme_.font_italic_path;
+    // impl_->theme_.font_bold_italic_path = std::string(resource_path) +
+    //                                       std::string("/") +
+    //                                       impl_->theme_.font_bold_italic_path;
+    // impl_->theme_.font_mono_path = std::string(resource_path) +
+    //                                std::string("/") +
+    //                                impl_->theme_.font_mono_path;
     if (impl_->fonts_.empty()) {
         AddFont(FontDescription(FontDescription::SANS_SERIF,
                                 FontStyle::NORMAL));
@@ -371,57 +377,57 @@ FontId Application::AddFont(const FontDescription &fd) {
 }
 
 void Application::SetFont(FontId id, const FontDescription &fd) {
-    auto GetSansSerifPath = [this](FontStyle style) {
+    auto GetSansSerifData = [this](FontStyle style) {
         switch (style) {
             case FontStyle::BOLD:
-                return impl_->theme_.font_bold_path;
+                return impl_->theme_.font_bold_data;
             case FontStyle::ITALIC:
-                return impl_->theme_.font_italic_path;
+                return impl_->theme_.font_italic_data;
             case FontStyle::BOLD_ITALIC:
-                return impl_->theme_.font_bold_italic_path;
+                return impl_->theme_.font_bold_italic_data;
             default:
-                return impl_->theme_.font_path;
+                return impl_->theme_.font_data;
         }
     };
 
-    auto GetStyleName = [](FontStyle style) {
-        switch (style) {
-            case FontStyle::BOLD:
-                return "BOLD";
-            case FontStyle::ITALIC:
-                return "ITALIC";
-            case FontStyle::BOLD_ITALIC:
-                return "BOLD_ITALIC";
-            default:
-                return "NORMAL";
-        }
-    };
+    // auto GetStyleName = [](FontStyle style) {
+    //     switch (style) {
+    //         case FontStyle::BOLD:
+    //             return "BOLD";
+    //         case FontStyle::ITALIC:
+    //             return "ITALIC";
+    //         case FontStyle::BOLD_ITALIC:
+    //             return "BOLD_ITALIC";
+    //         default:
+    //             return "NORMAL";
+    //     }
+    // };
 
     impl_->fonts_[id] = fd;
     auto style = impl_->fonts_[id].style_;
     for (auto &range : impl_->fonts_[id].ranges_) {
         // Substitute proper paths for default CSS-style virtual fonts
         if (range.path == FontDescription::SANS_SERIF) {
-            range.path = GetSansSerifPath(style);
+            range.data = GetSansSerifData(style);
         } else if (range.path == FontDescription::MONOSPACE) {
-            range.path = impl_->theme_.font_mono_path;
+            range.data = impl_->theme_.font_mono_data;
         }
         // Get the actual path
-        auto path = FindFontPath(range.path, style);
-        if (!path.empty()) {
-            range.path = path;
-        } else {
-            // If we can't find the requested style, try to at least find the
-            // typeface.
-            auto fallback = FindFontPath(range.path, FontStyle::NORMAL);
-            if (fallback.empty()) {
-                // But if that doesn't work, fall back to styled sans-serif.
-                fallback = GetSansSerifPath(style);
-            }
-            utility::LogWarning("Could not find font '{}' with style {}",
-                                range.path, GetStyleName(style));
-            range.path = fallback;
-        }
+        // auto path = FindFontPath(range.path, style);
+        // if (!path.empty()) {
+        //     range.path = path;
+        // } else {
+        //     // If we can't find the requested style, try to at least find the
+        //     // typeface.
+        //     auto fallback = FindFontPath(range.path, FontStyle::NORMAL);
+        //     if (fallback.empty()) {
+        //         // But if that doesn't work, fall back to styled sans-serif.
+        //         fallback = GetSansSerifPath(style);
+        //     }
+        //     utility::LogWarning("Could not find font '{}' with style {}",
+        //                         range.path, GetStyleName(style));
+        //     range.path = fallback;
+        // }
     }
 
     if (id == DEFAULT_FONT_ID && fd.point_size_ > 0) {
@@ -559,13 +565,13 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
         //     ShowNativeAlert(err.str().c_str());
         //     return false;
         // }
-        if (!utility::filesystem::FileExists(impl_->theme_.font_path)) {
-            std::stringstream err;
-            err << "Could not load UI font:\n'" << impl_->theme_.font_path
-                << "' does not exist";
-            ShowNativeAlert(err.str().c_str());
-            return false;
-        }
+        // if (!utility::filesystem::FileExists(impl_->theme_.font_path)) {
+        //     std::stringstream err;
+        //     err << "Could not load UI font:\n'" << impl_->theme_.font_path
+        //         << "' does not exist";
+        //     ShowNativeAlert(err.str().c_str());
+        //     return false;
+        // }
 
         impl_->PrepareForRunning();
         impl_->is_running_ = true;

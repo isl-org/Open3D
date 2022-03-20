@@ -38,6 +38,11 @@ add_custom_command(
         ./EmbedResources resources/pillars_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
         ./EmbedResources resources/pillars_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
         ./EmbedResources resources/pointcloud.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/Roboto-Bold.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/Roboto-BoldItalic.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/Roboto-Medium.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/Roboto-MediumItalic.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources resources/RobotoMono-Medium.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
         ./EmbedResources resources/streetlamp_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
         ./EmbedResources resources/streetlamp_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
         ./EmbedResources resources/ui_blit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
