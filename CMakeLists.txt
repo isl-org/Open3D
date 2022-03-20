@@ -5,7 +5,6 @@ cmake_minimum_required(VERSION 3.19.2)
 # - prevent erroneous -gencode option deduplication with CUDA
 # - simplify generator expressions for selecting compile flags and setting
 #   global hardened link flags
-# - parse JSON files for downloading files from the open3d_downloads repository
 # - use first-class language support for ISPC (3.19.2 patch release required)
 
 if (APPLE)
@@ -428,13 +427,6 @@ if(WIN32)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
     endif()
 endif()
-
-# Downloads files from https://github.com/isl-org/open3d_downloads to
-# Open3D/examples/test_data/open3d_downloads.
-add_custom_target(open3d_downloads
-    COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.cmake
-    COMMENT ""
-)
 
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

@@ -74,7 +74,7 @@ void pybind_data_classes(py::module& m) {
     py::class_<SingleDownloadDataset, PySimpleDataset<SingleDownloadDataset>,
                std::shared_ptr<SingleDownloadDataset>, Dataset>
             single_download_dataset(m, "SingleDownloadDataset",
-                                    "Simple dataset class.");
+                                    "Single file download dataset class.");
     single_download_dataset.def(
             py::init<const std::string&, const std::vector<std::string>&,
                      const std::string&, const bool, const std::string&>(),
@@ -99,8 +99,15 @@ void pybind_demo_icp_pointclouds(py::module& m) {
                         return demo_icp_pointclouds.GetPaths();
                     },
                     "List of 3 point cloud paths. Use `paths[0]`, `paths[1]`, "
-                    "and `paths[2]` to access the paths.");
+                    "and `paths[2]` to access the paths.")
+            .def_property_readonly(
+                    "transformation_log_path",
+                    &DemoICPPointClouds::GetTransformationLogPath,
+                    "Path to the transformation metadata log file, containing "
+                    "transformation between frame 0 and 1, and frame 1 and 2.");
     docstring::ClassMethodDocInject(m, "DemoICPPointClouds", "paths");
+    docstring::ClassMethodDocInject(m, "DemoICPPointClouds",
+                                    "transformation_log_path");
 }
 
 void pybind_demo_colored_icp_pointclouds(py::module& m) {
@@ -160,8 +167,7 @@ void pybind_demo_feature_matching_point_clouds(py::module& m) {
             demo_feature_matching(
                     m, "DemoFeatureMatchingPointClouds",
                     "Data class for `DemoFeatureMatchingPointClouds` contains "
-                    "2 "
-                    "pointcloud fragments and their respective FPFH features "
+                    "2 pointcloud fragments and their respective FPFH features "
                     "and L32D features. This dataset is used in Open3D for "
                     "point cloud feature matching demo.");
     demo_feature_matching
@@ -219,6 +225,39 @@ void pybind_demo_pose_graph_optimization(py::module& m) {
                                     "pose_graph_global_path");
 }
 
+void pybind_demo_custom_visualization(py::module& m) {
+    // open3d.data.DemoCustomVisualization
+    py::class_<DemoCustomVisualization,
+               PySimpleDataset<DemoCustomVisualization>,
+               std::shared_ptr<DemoCustomVisualization>, SingleDownloadDataset>
+            demo_custom_visualization(
+                    m, "DemoCustomVisualization",
+                    "Data class for `DemoCustomVisualization` contains an "
+                    "example point-cloud, camera trajectory (json file), "
+                    "rendering options (json file). This data is used in "
+                    "Open3D for custom visualization with camera trajectory "
+                    "demo.");
+    demo_custom_visualization
+            .def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("point_cloud_path",
+                                   &DemoCustomVisualization::GetPointCloudPath,
+                                   "Returns path to the point cloud (ply).")
+            .def_property_readonly(
+                    "camera_trajectory_path",
+                    &DemoCustomVisualization::GetCameraTrajectoryPath,
+                    "Returns path to the camera_trajectory.json.")
+            .def_property_readonly(
+                    "render_option_path",
+                    &DemoCustomVisualization::GetRenderOptionPath,
+                    "Returns path to the renderoption.json.");
+    docstring::ClassMethodDocInject(m, "DemoCustomVisualization",
+                                    "point_cloud_path");
+    docstring::ClassMethodDocInject(m, "DemoCustomVisualization",
+                                    "camera_trajectory_path");
+    docstring::ClassMethodDocInject(m, "DemoCustomVisualization",
+                                    "render_option_path");
+}
+
 void pybind_pcd_point_cloud(py::module& m) {
     // open3d.data.PCDPointCloud
     py::class_<PCDPointCloud, PySimpleDataset<PCDPointCloud>,
@@ -245,6 +284,19 @@ void pybind_ply_point_cloud(py::module& m) {
             .def_property_readonly("path", &PLYPointCloud::GetPath,
                                    "Path to the `ply` format point cloud.");
     docstring::ClassMethodDocInject(m, "PLYPointCloud", "path");
+}
+
+void pybind_pts_point_cloud(py::module& m) {
+    // open3d.data.PTSPointCloud
+    py::class_<PTSPointCloud, PySimpleDataset<PTSPointCloud>,
+               std::shared_ptr<PTSPointCloud>, SingleDownloadDataset>
+            pts_point_cloud(m, "PTSPointCloud",
+                            "Data class for `PTSPointCloud` contains a sample "
+                            "point-cloud of PTS format.");
+    pts_point_cloud.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("path", &PTSPointCloud::GetPath,
+                                   "Path to the PTS format point cloud.");
+    docstring::ClassMethodDocInject(m, "PTSPointCloud", "path");
 }
 
 void pybind_sample_nyu_rgbd_image(py::module& m) {
@@ -342,7 +394,11 @@ void pybind_sample_redwood_rgbd_images(py::module& m) {
             .def_property_readonly(
                     "reconstruction_path",
                     &SampleRedwoodRGBDImages::GetReconstructionPath,
-                    "Path to pointcloud reconstruction from TSDF.");
+                    "Path to pointcloud reconstruction from TSDF.")
+            .def_property_readonly(
+                    "camera_intrinsic_path",
+                    &SampleRedwoodRGBDImages::GetCameraIntrinsicPath,
+                    "Path to pinhole camera intrinsic (json).");
     docstring::ClassMethodDocInject(m, "SampleRedwoodRGBDImages",
                                     "color_paths");
     docstring::ClassMethodDocInject(m, "SampleRedwoodRGBDImages",
@@ -355,6 +411,8 @@ void pybind_sample_redwood_rgbd_images(py::module& m) {
                                     "rgbd_match_path");
     docstring::ClassMethodDocInject(m, "SampleRedwoodRGBDImages",
                                     "reconstruction_path");
+    docstring::ClassMethodDocInject(m, "SampleRedwoodRGBDImages",
+                                    "camera_intrinsic_path");
 }
 
 void pybind_sample_fountain_rgbd_images(py::module& m) {
@@ -399,14 +457,26 @@ void pybind_sample_fountain_rgbd_images(py::module& m) {
                                     "reconstruction_path");
 }
 
+void pybind_sample_l515_bag(py::module& m) {
+    // open3d.data.SampleL515Bag
+    py::class_<SampleL515Bag, PySimpleDataset<SampleL515Bag>,
+               std::shared_ptr<SampleL515Bag>, SingleDownloadDataset>
+            sample_l515_bag(m, "SampleL515Bag",
+                            "Data class for `SampleL515Bag` contains the "
+                            "`SampleL515Bag.bag` file.");
+    sample_l515_bag.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("path", &SampleL515Bag::GetPath,
+                                   "Path to the `SampleL515Bag.bag` file.");
+    docstring::ClassMethodDocInject(m, "SampleL515Bag", "path");
+}
+
 void pybind_eagle(py::module& m) {
     // open3d.data.EaglePointCloud
     py::class_<EaglePointCloud, PySimpleDataset<EaglePointCloud>,
                std::shared_ptr<EaglePointCloud>, SingleDownloadDataset>
             eagle(m, "EaglePointCloud",
                   "Data class for `EaglePointCloud` contains the "
-                  "`EaglePointCloud.ply` "
-                  "file.");
+                  "`EaglePointCloud.ply` file.");
     eagle.def(py::init<const std::string&>(), "data_root"_a = "")
             .def_property_readonly("path", &EaglePointCloud::GetPath,
                                    "Path to the `EaglePointCloud.ply` file.");
@@ -517,6 +587,7 @@ void pybind_data(py::module& m) {
     pybind_demo_crop_pointcloud(m_submodule);
     pybind_demo_feature_matching_point_clouds(m_submodule);
     pybind_demo_pose_graph_optimization(m_submodule);
+    pybind_demo_custom_visualization(m_submodule);
     pybind_pcd_point_cloud(m_submodule);
     pybind_ply_point_cloud(m_submodule);
     pybind_sample_nyu_rgbd_image(m_submodule);
@@ -524,6 +595,7 @@ void pybind_data(py::module& m) {
     pybind_sample_tum_rgbd_image(m_submodule);
     pybind_sample_redwood_rgbd_images(m_submodule);
     pybind_sample_fountain_rgbd_images(m_submodule);
+    pybind_sample_l515_bag(m_submodule);
     pybind_eagle(m_submodule);
     pybind_armadillo(m_submodule);
     pybind_bunny(m_submodule);

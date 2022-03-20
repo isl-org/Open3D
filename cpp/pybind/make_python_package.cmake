@@ -135,19 +135,8 @@ if (BUILD_GUI)
 endif()
 
 # Add all examples to installation directory.
-# TODO: after downloader is implemented, refactor test data dir
 file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/examples/")
-file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
-file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/test_data/"
-     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data")
-
-# Remove a few unneeded files to save space.
-# TODO: after downloader is fully migrated remove this
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/open3d_downloads")
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/crate")
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/sword")
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/monkey")
