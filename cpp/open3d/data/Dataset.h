@@ -135,10 +135,16 @@ public:
     /// \brief Returns path to the point cloud at index. Use `GetPaths(0)`,
     /// `GetPaths(1)`, and `GetPaths(2)` to access the paths.
     std::string GetPaths(size_t index) const;
+    /// \brief Returns path to the transformation metadata log file, containing
+    /// transformation between frame 0 and 1, and frame 1 and 2.
+    std::string GetTransformationLogPath() const {
+        return transformation_log_path_;
+    }
 
 private:
     // List of path to PCD point-cloud fragments.
     std::vector<std::string> paths_;
+    std::string transformation_log_path_;
 };
 
 /// \class DemoColoredICPPointClouds
@@ -241,6 +247,30 @@ private:
     std::string pose_graph_global_path_;
 };
 
+/// \class DemoCustomVisualization
+/// \brief Data class for `DemoCustomVisualization` contains an example
+/// point-cloud, camera trajectory (json file), rendering options (json file).
+/// This data is used in Open3D for custom visualization with camera trajectory
+/// demo.
+class DemoCustomVisualization : public SingleDownloadDataset {
+public:
+    DemoCustomVisualization(const std::string& data_root = "");
+
+    /// \brief Returns path to the point cloud (ply).
+    std::string GetPointCloudPath() const { return point_cloud_path_; }
+    /// \brief Returns path to the camera_trajectory.json.
+    std::string GetCameraTrajectoryPath() const {
+        return camera_trajectory_path_;
+    }
+    /// \brief Returns path to the renderoption.json.
+    std::string GetRenderOptionPath() const { return render_option_path_; }
+
+private:
+    std::string point_cloud_path_;
+    std::string camera_trajectory_path_;
+    std::string render_option_path_;
+};
+
 /// \class PCDPointCloud
 /// \brief Data class for `PCDPointCloud` contains the `fragment.pcd`
 /// point cloud mesh from the `Redwood Living Room` dataset.
@@ -268,6 +298,21 @@ public:
 
 private:
     /// Path to the PLY format point cloud.
+    std::string path_;
+};
+
+/// \class PTSPointCloud
+/// \brief Data class for `PTSPointCloud` contains a sample point-cloud of PTS
+/// format.
+class PTSPointCloud : public SingleDownloadDataset {
+public:
+    PTSPointCloud(const std::string& data_root = "");
+
+    /// \brief Returns path to the PTS format point cloud.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to the PTS format point cloud.
     std::string path_;
 };
 
@@ -353,6 +398,10 @@ public:
     std::string GetRGBDMatchPath() const { return rgbd_match_path_; };
     /// \brief Returns path to pointcloud reconstruction from TSDF.
     std::string GetReconstructionPath() const { return reconstruction_path_; };
+    /// \brief Returns path to pinhole camera intrinsic (json).
+    std::string GetCameraIntrinsicPath() const {
+        return camera_intrinsic_path_;
+    }
 
 private:
     /// List of paths to color image samples of size 5.
@@ -368,6 +417,8 @@ private:
     std::string rgbd_match_path_;
     /// Path to pointcloud reconstruction from TSDF.
     std::string reconstruction_path_;
+    /// Path to pinhole camera intrinsic.
+    std::string camera_intrinsic_path_;
 };
 
 /// \class SampleFountainRGBDImages
@@ -393,6 +444,20 @@ private:
     std::vector<std::string> depth_paths_;
     std::string keyframe_poses_log_path_;
     std::string reconstruction_path_;
+};
+
+/// \class SampleL515Bag
+/// \brief Data class for `SampleL515Bag` contains the `SampleL515Bag.bag` file.
+class SampleL515Bag : public SingleDownloadDataset {
+public:
+    SampleL515Bag(const std::string& data_root = "");
+
+    /// \brief Returns path to the `SampleL515Bag.bag` file.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to `SampleL515Bag.bag` file.
+    std::string path_;
 };
 
 /// \class EaglePointCloud
@@ -452,6 +517,87 @@ public:
 private:
     /// Path to `KnotMesh.ply` file.
     std::string path_;
+};
+
+/// \class MonkeyModel
+/// \brief Data class for `MonkeyModel` contains a monkey model file, along with
+/// material and various other texture files. The model file can be accessed
+/// using `GetPath()`, however in order to access the paths to the texture files
+/// one may use `GetPath(filename)` method or get the unordered map of filename
+/// to path using `GetPathMap()`.
+class MonkeyModel : public SingleDownloadDataset {
+public:
+    MonkeyModel(const std::string& data_root = "");
+
+    /// \brief Returns path to the `filename`. By default it returns the path to
+    /// `mokey.obj` file. Refer documentation page for available options.
+    std::string GetPath(const std::string filename = "monkey_model") const {
+        return map_filename_to_path_.at(filename);
+    };
+
+    /// \brief Returns the map of filename to path. Refer documentation page for
+    /// available options.
+    std::unordered_map<std::string, std::string> GetPathMap() const {
+        return map_filename_to_path_;
+    }
+
+private:
+    /// Map to path for the avialble filenames.
+    std::unordered_map<std::string, std::string> map_filename_to_path_;
+};
+
+/// \class SwordModel
+/// \brief Data class for `SwordModel` contains a sword model file, along with
+/// material and various other texture files. The model file can be accessed
+/// using `GetPath()`, however in order to access the paths to the texture files
+/// one may use `GetPath(filename)` method or get the unordered map of filename
+/// to path using `GetPathMap()`.
+class SwordModel : public SingleDownloadDataset {
+public:
+    SwordModel(const std::string& data_root = "");
+
+    /// \brief Returns path to the `filename`. By default it returns the path to
+    /// `mokey.obj` file. Refer documentation page for available options.
+    std::string GetPath(const std::string filename = "sword_model") const {
+        return map_filename_to_path_.at(filename);
+    };
+
+    /// \brief Returns the map of filename to path. Refer documentation page for
+    /// available options.
+    std::unordered_map<std::string, std::string> GetPathMap() const {
+        return map_filename_to_path_;
+    }
+
+private:
+    /// Map to path for the avialble filenames.
+    std::unordered_map<std::string, std::string> map_filename_to_path_;
+};
+
+/// \class CrateModel
+/// \brief Data class for `CrateModel` contains a sword model file, along with
+/// material and various other texture files. The model file can be accessed
+/// using `GetPath()`, however in order to access the paths to the texture files
+/// one may use `GetPath(filename)` method or get the unordered map of filename
+/// to path using `GetPathMap()`.
+class CrateModel : public SingleDownloadDataset {
+public:
+    CrateModel(const std::string& data_root = "");
+
+    /// \brief Returns path to the `filename`. By default it returns the path to
+    /// `mokey.obj` file. Refer documentation page for available options.
+    std::string GetPath(const std::string filename = "crate_model") const {
+        return map_filename_to_path_.at(filename);
+    };
+
+    /// \brief Returns the map of filename to path. Refer documentation page for
+    /// available options.
+    std::unordered_map<std::string, std::string> GetPathMap() const {
+        return map_filename_to_path_;
+    }
+
+private:
+    /// Map to path for the avialble filenames.
+    std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
 /// \class JuneauImage

@@ -330,6 +330,8 @@ class PyExampleDocsBuilder:
                       f"\n.. literalinclude:: {example.stem}.py"
                       f"\n   :language: python"
                       f"\n   :linenos:"
+                      f"\n   :lineno-start: 27"
+                      f"\n   :lines: 27-"
                       f"\n\n\n")
 
         with open(output_path / "index.rst", "a") as f:
@@ -491,14 +493,6 @@ class JupyterDocsBuilder:
         # Setting os.environ["CI"] will disable interactive (blocking) mode in
         # Jupyter notebooks
         os.environ["CI"] = "true"
-
-        # Copy test_data directory to the tutorial folder
-        test_data_in_dir = (Path(self.current_file_dir).parent / "examples" /
-                            "test_data")
-        test_data_out_dir = Path(self.current_file_dir) / "test_data"
-        if test_data_out_dir.exists():
-            shutil.rmtree(test_data_out_dir)
-        shutil.copytree(test_data_in_dir, test_data_out_dir)
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
