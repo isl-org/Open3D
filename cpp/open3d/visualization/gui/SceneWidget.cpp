@@ -955,6 +955,7 @@ void SceneWidget::SetScene(std::shared_ptr<rendering::Open3DScene> scene) {
                     impl_->ui_lines_ = lines;
                     ForceRedraw();
                 });
+        impl_->editor_ = std::make_shared<GeometryEditor>(impl_->scene_.get());
     }
 }
 
@@ -1195,6 +1196,10 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
         }
     }
 
+    if (impl_->editor_) {
+        impl_->editor_->Draw(context, f);
+    }
+
     ImGui::End();
 
     return Widget::DrawResult::NONE;
@@ -1223,7 +1228,10 @@ Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
     MouseEvent local = e;
     local.x -= frame.x;
     local.y -= frame.y;
-    impl_->controls_->Mouse(local);
+    if(!impl_->editor_ ||
+       impl_->editor_->Mouse(local) == Widget::EventResult::DISCARD) {
+        impl_->controls_->Mouse(local);
+    }
 
     if (impl_->on_camera_changed_) {
         impl_->on_camera_changed_(GetCamera());
