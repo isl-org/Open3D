@@ -40,7 +40,7 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-static RegistrationResult GetRegistrationResultAndCorrespondences(
+static RegistrationResult ComputeRegistrationResult(
         const geometry::PointCloud &source,
         const core::nns::NearestNeighborSearch &target_nns,
         const double max_correspondence_distance,
@@ -58,7 +58,19 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
     double num_correspondences =
             counts.Sum({0}).To(core::Float64).Item<double>();
 
-    if (num_correspondences == 0) {
+    if (num_correspondences != 0) {
+        // Reduction sum of "distances" for error.
+        const double squared_error =
+                distances.Sum({0}).To(core::Float64).Item<double>();
+
+        result.fitness_ =
+                num_correspondences /
+                static_cast<double>(source.GetPointPositions().GetLength());
+        result.inlier_rmse_ = std::sqrt(squared_error / num_correspondences);
+
+        return result;
+    } else {
+        // Case of no-correspondences.
         utility::LogWarning(
                 "0 correspondence present between the pointclouds. Try "
                 "increasing the max_correspondence_distance parameter.");
@@ -68,16 +80,6 @@ static RegistrationResult GetRegistrationResultAndCorrespondences(
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
         return result;
     }
-
-    // Reduction sum of "distances" for error.
-    double squared_error = distances.Sum({0}).To(core::Float64).Item<double>();
-
-    result.fitness_ =
-            num_correspondences /
-            static_cast<double>(source.GetPointPositions().GetLength());
-    result.inlier_rmse_ = std::sqrt(squared_error / num_correspondences);
-
-    return result;
 }
 
 RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
@@ -104,21 +106,21 @@ RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
                 "NearestNeighborSearch::HybridSearch: Index is not set.");
     }
 
-    return GetRegistrationResultAndCorrespondences(
-            source_transformed, target_nns, max_correspondence_distance,
-            transformation);
+    return ComputeRegistrationResult(source_transformed, target_nns,
+                                     max_correspondence_distance,
+                                     transformation);
 }
 
-RegistrationResult ICP(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const double max_correspondence_distance,
-        const core::Tensor &init_source_to_target,
-        const TransformationEstimation &estimation,
-        const ICPConvergenceCriteria &criteria,
-        const double voxel_size,
-        std::function<void(std::unordered_map<std::string, core::Tensor> &)>
-                callback_after_iteration) {
+RegistrationResult
+ICP(const geometry::PointCloud &source,
+    const geometry::PointCloud &target,
+    const double max_correspondence_distance,
+    const core::Tensor &init_source_to_target,
+    const TransformationEstimation &estimation,
+    const ICPConvergenceCriteria &criteria,
+    const double voxel_size,
+    const std::function<void(std::unordered_map<std::string, core::Tensor> &)>
+            callback_after_iteration) {
     return MultiScaleICP(source, target, {voxel_size}, {criteria},
                          {max_correspondence_distance}, init_source_to_target,
                          estimation, callback_after_iteration);
@@ -266,15 +268,15 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
         const core::Device &device,
         const core::Dtype &dtype,
         const RegistrationResult &current_result,
-        std::function<void(std::unordered_map<std::string, core::Tensor> &)>
-                callback_after_iteration) {
+        const std::function<void(std::unordered_map<std::string, core::Tensor>
+                                         &)> callback_after_iteration) {
     RegistrationResult result(current_result.transformation_);
     double prev_fitness = current_result.fitness_;
     double prev_inlier_rmse = current_result.inlier_rmse_;
     int iteration_count = 0;
     for (iteration_count = 0; iteration_count < criteria.max_iteration_;
          ++iteration_count) {
-        result = GetRegistrationResultAndCorrespondences(
+        result = ComputeRegistrationResult(
                 source.GetPointPositions(), target_nns,
                 max_correspondence_distance, result.transformation_);
 
@@ -341,8 +343,8 @@ RegistrationResult MultiScaleICP(
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation,
-        std::function<void(std::unordered_map<std::string, core::Tensor> &)>
-                callback_after_iteration) {
+        const std::function<void(std::unordered_map<std::string, core::Tensor>
+                                         &)> callback_after_iteration) {
     core::AssertTensorDtypes(source.GetPointPositions(),
                              {core::Float64, core::Float32});
 
@@ -395,7 +397,7 @@ RegistrationResult MultiScaleICP(
         // To calculate final `fitness` and `inlier_rmse` for the current
         // `transformation` stored in `result`.
         if (scale_idx == num_scales - 1) {
-            result = GetRegistrationResultAndCorrespondences(
+            result = ComputeRegistrationResult(
                     source_down_pyramid[scale_idx], target_nns,
                     max_correspondence_distances[scale_idx],
                     result.transformation_);
@@ -403,7 +405,7 @@ RegistrationResult MultiScaleICP(
 
         // No correspondences.
         if (result.fitness_ <= std::numeric_limits<double>::min()) {
-            return result;
+            break;
         }
     }
     // ---- Iterating over different resolution scale END --------------------

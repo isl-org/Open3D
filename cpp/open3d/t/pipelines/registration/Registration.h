@@ -145,18 +145,18 @@ RegistrationResult EvaluateRegistration(
 /// tensor map of attributes such as "iteration_index", "scale_index",
 /// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on CPU
 /// device, updated after each iteration.
-RegistrationResult ICP(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        const double max_correspondence_distance,
-        const core::Tensor &init_source_to_target =
-                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-        const TransformationEstimation &estimation =
-                TransformationEstimationPointToPoint(),
-        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
-        const double voxel_size = -1.0,
-        std::function<void(std::unordered_map<std::string, core::Tensor> &)>
-                callback_after_iteration = nullptr);
+RegistrationResult
+ICP(const geometry::PointCloud &source,
+    const geometry::PointCloud &target,
+    const double max_correspondence_distance,
+    const core::Tensor &init_source_to_target =
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+    const TransformationEstimation &estimation =
+            TransformationEstimationPointToPoint(),
+    const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
+    const double voxel_size = -1.0,
+    const std::function<void(std::unordered_map<std::string, core::Tensor> &)>
+            callback_after_iteration = nullptr);
 
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
@@ -193,7 +193,8 @@ RegistrationResult MultiScaleICP(
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
-        std::function<void(std::unordered_map<std::string, core::Tensor> &)>
+        const std::function<
+                void(std::unordered_map<std::string, core::Tensor> &)>
                 callback_after_iteration = nullptr);
 
 /// \brief Computes `Information Matrix`, from the transfromation between source
