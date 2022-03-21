@@ -38,13 +38,13 @@ namespace open3d {
 namespace geometry {
 class Geometry3D;
 class Image;
-}
+}  // namespace geometry
 
 namespace visualization {
 namespace rendering {
 class Open3DScene;
 class Camera;
-}
+}  // namespace rendering
 
 namespace gui {
 /// Geometry editor hooked to SceneWidget to collect points from Geometry3D
@@ -60,7 +60,7 @@ namespace gui {
 ///   - Middle click to cancel all points
 class GeometryEditor {
 public:
-    enum class SelectionType { None, Rectangle, Polygon, Circle};
+    enum class SelectionType { None, Rectangle, Polygon, Circle };
     using Target = std::shared_ptr<const geometry::Geometry3D>;
 
     explicit GeometryEditor(rendering::Open3DScene* scene);
@@ -83,10 +83,10 @@ public:
     /// hooked to SceneWidget Mouse
     Widget::EventResult Mouse(const MouseEvent& e);
     /// hooked to SceneWidget Draw
-    Widget::DrawResult Draw(const DrawContext& context, const Rect &frame);
+    Widget::DrawResult Draw(const DrawContext& context, const Rect& frame);
 
 private:
-    const std::vector<Eigen::Vector3d> & GetPoints();
+    const std::vector<Eigen::Vector3d>& GetPoints();
     bool SetSelection(SelectionType type);
     void CheckEditable();
     bool AllowEdit();
@@ -99,11 +99,12 @@ private:
     std::vector<size_t> CropPolygon();
     std::vector<size_t> CropRectangle();
     std::vector<size_t> CropCircle();
+
 private:
     rendering::Open3DScene* scene_;
     rendering::Camera* camera_;
     Target target_;
-    bool editable_ = false; // selection area ready flag
+    bool editable_ = false;  // selection area ready flag
     std::function<void(bool)> selection_callback_;
     std::vector<Eigen::Vector2i> selection_;
     SelectionType type_ = SelectionType::None;

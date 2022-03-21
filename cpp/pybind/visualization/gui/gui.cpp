@@ -1318,8 +1318,7 @@ void pybind_gui_classes(py::module &m) {
                  "at the specified 3D point.")
             .def("remove_3d_label", &PySceneWidget::RemoveLabel,
                  "Removes the 3D text label from the scene")
-            .def("start_edit",
-                 &PySceneWidget::StartEdit,
+            .def("start_edit", &PySceneWidget::StartEdit,
                  "Start geometry editing by drawing 2D shapes."
                  "Currently only PointCloud and TriangleMesh are supported."
                  "This works only in ROTATE_CAMERA view mode."
@@ -1336,8 +1335,7 @@ void pybind_gui_classes(py::module &m) {
                  &PySceneWidget::CollectSelectedIndices,
                  "Collect selected indices from geometry. For PointCloud the "
                  "indices of points is collected and for TriangleMesh the "
-                 "indices of vertices is collected.")
-            ;
+                 "indices of vertices is collected.");
 
     // ---- Slider ----
     py::class_<Slider, UnownedPointer<Slider>, Widget> slider(

@@ -38,6 +38,7 @@
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Color.h"
 #include "open3d/visualization/gui/Events.h"
+#include "open3d/visualization/gui/GeometryEditor.h"
 #include "open3d/visualization/gui/Label.h"
 #include "open3d/visualization/gui/Label3D.h"
 #include "open3d/visualization/gui/PickPointsInteractor.h"
@@ -51,7 +52,6 @@
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
-#include "open3d/visualization/gui/GeometryEditor.h"
 
 namespace open3d {
 namespace visualization {
@@ -974,16 +974,15 @@ void SceneWidget::DoPolygonPick(PolygonPickAction action) {
     };
 }
 
-bool SceneWidget::StartEdit(std::shared_ptr<const geometry::Geometry3D> geometry,
-                            std::function<void(bool)> selectionCallback) {
+bool SceneWidget::StartEdit(
+        std::shared_ptr<const geometry::Geometry3D> geometry,
+        std::function<void(bool)> selectionCallback) {
     if (impl_->controls_->GetControls() == Controls::ROTATE_CAMERA) {
         return impl_->editor_->Start(geometry, selectionCallback);
     }
     return false;
 }
-void SceneWidget::StopEdit() {
-    impl_->editor_->Stop();
-}
+void SceneWidget::StopEdit() { impl_->editor_->Stop(); }
 
 std::vector<size_t> SceneWidget::CollectSelectedIndices() {
     return impl_->editor_->CollectSelectedIndices();
