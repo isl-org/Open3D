@@ -1228,8 +1228,8 @@ Widget::EventResult SceneWidget::Mouse(const MouseEvent& e) {
     MouseEvent local = e;
     local.x -= frame.x;
     local.y -= frame.y;
-    if(!impl_->editor_ ||
-       impl_->editor_->Mouse(local) == Widget::EventResult::DISCARD) {
+    if (!impl_->editor_ ||
+        impl_->editor_->Mouse(local) == Widget::EventResult::DISCARD) {
         impl_->controls_->Mouse(local);
     }
 
