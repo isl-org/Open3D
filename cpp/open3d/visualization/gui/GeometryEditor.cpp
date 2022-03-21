@@ -405,7 +405,7 @@ std::vector<size_t> GeometryEditor::CropPolygon() {
 
     std::vector<size_t> output_index;
 #pragma omp parallel for
-    for (size_t k = 0; k < input.size(); k++) {
+    for (long k = 0; k < long(input.size()); k++) {
         std::vector<double> nodes;
         const auto &point = input[k];
         auto pos = mvp * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
@@ -454,7 +454,7 @@ std::vector<size_t> GeometryEditor::CropRectangle() {
     auto maxY = std::max(sels[0].y(), sels[1].y());
     std::vector<size_t> output_index;
 #pragma omp parallel for
-    for (size_t k = 0; k < input.size(); k++) {
+    for (long k = 0; k < long(input.size()); k++) {
         const auto &point = input[k];
         auto pos = mvp * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
         if (pos(3) != 0.0) {
@@ -492,7 +492,7 @@ std::vector<size_t> GeometryEditor::CropCircle() {
     std::vector<size_t> output_index;
 
 #pragma omp parallel for
-    for (size_t k = 0; k < input.size(); k++) {
+    for (long k = 0; k < long(input.size()); k++) {
         const auto &point = input[k];
         auto pos = mvp * Eigen::Vector4d(point(0), point(1), point(2), 1.0);
         if (pos(3) != 0.0) {
