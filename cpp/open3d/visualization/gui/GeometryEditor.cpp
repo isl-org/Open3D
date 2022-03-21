@@ -45,6 +45,9 @@ static auto col_end = colorToImguiRGBA({1.0f, 0.3f, 0.8f, 1.0f});
 static auto col_fill = colorToImguiRGBA({0.5f, 0.0f, 0.5f, 0.5f});
 static auto col_line = colorToImguiRGBA({1.0f, 0.0f, 0.0f, 1.0f});
 
+/// Line Segment.
+/// https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect
+/// Utility to check if two line segment crossing.
 template <class T>
 class Seg {
     class Point {
