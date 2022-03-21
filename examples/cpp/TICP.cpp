@@ -190,8 +190,8 @@ public:
 
 protected:
     void UpdateMain() {
-        auto callback_after_iteration = [&](std::unordered_map<std::string,
-                                                               core::Tensor>&
+        auto callback_after_iteration = [&](const std::unordered_map<
+                                                std::string, core::Tensor>&
                                                     updated_information) {
             core::Tensor transformation;
 
@@ -201,10 +201,9 @@ protected:
 
             {
                 std::lock_guard<std::mutex> lock(pcd_.lock_);
-                pcd_.source_ =
-                        source_.To(host_, true)
-                                .Transform(
-                                        updated_information["transformation"]);
+                pcd_.source_ = source_.To(host_, true)
+                                       .Transform(updated_information.at(
+                                               "transformation"));
             }
 
             // To update visualizer, we go to the `main thread`,

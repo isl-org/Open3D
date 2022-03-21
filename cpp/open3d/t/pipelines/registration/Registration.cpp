@@ -67,8 +67,6 @@ static RegistrationResult ComputeRegistrationResult(
                 num_correspondences /
                 static_cast<double>(source.GetPointPositions().GetLength());
         result.inlier_rmse_ = std::sqrt(squared_error / num_correspondences);
-
-        return result;
     } else {
         // Case of no-correspondences.
         utility::LogWarning(
@@ -78,8 +76,8 @@ static RegistrationResult ComputeRegistrationResult(
         result.inlier_rmse_ = 0.0;
         result.transformation_ =
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
-        return result;
     }
+    return result;
 }
 
 RegistrationResult EvaluateRegistration(const geometry::PointCloud &source,
@@ -119,8 +117,8 @@ ICP(const geometry::PointCloud &source,
     const TransformationEstimation &estimation,
     const ICPConvergenceCriteria &criteria,
     const double voxel_size,
-    const std::function<void(std::unordered_map<std::string, core::Tensor> &)>
-            callback_after_iteration) {
+    const std::function<void(const std::unordered_map<std::string, core::Tensor>
+                                     &)> &callback_after_iteration) {
     return MultiScaleICP(source, target, {voxel_size}, {criteria},
                          {max_correspondence_distance}, init_source_to_target,
                          estimation, callback_after_iteration);
@@ -269,7 +267,7 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
         const core::Dtype &dtype,
         const RegistrationResult &current_result,
         const std::function<void(std::unordered_map<std::string, core::Tensor>
-                                         &)> callback_after_iteration) {
+                                         &)> &callback_after_iteration) {
     RegistrationResult result(current_result.transformation_);
     double prev_fitness = current_result.fitness_;
     double prev_inlier_rmse = current_result.inlier_rmse_;
@@ -343,8 +341,9 @@ RegistrationResult MultiScaleICP(
         const std::vector<double> &max_correspondence_distances,
         const core::Tensor &init_source_to_target,
         const TransformationEstimation &estimation,
-        const std::function<void(std::unordered_map<std::string, core::Tensor>
-                                         &)> callback_after_iteration) {
+        const std::function<
+                void(const std::unordered_map<std::string, core::Tensor> &)>
+                &callback_after_iteration) {
     core::AssertTensorDtypes(source.GetPointPositions(),
                              {core::Float64, core::Float32});
 

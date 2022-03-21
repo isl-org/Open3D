@@ -155,8 +155,8 @@ ICP(const geometry::PointCloud &source,
             TransformationEstimationPointToPoint(),
     const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
     const double voxel_size = -1.0,
-    const std::function<void(std::unordered_map<std::string, core::Tensor> &)>
-            callback_after_iteration = nullptr);
+    const std::function<void(const std::unordered_map<std::string, core::Tensor>
+                                     &)> &callback_after_iteration = nullptr);
 
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
@@ -194,8 +194,8 @@ RegistrationResult MultiScaleICP(
         const TransformationEstimation &estimation =
                 TransformationEstimationPointToPoint(),
         const std::function<
-                void(std::unordered_map<std::string, core::Tensor> &)>
-                callback_after_iteration = nullptr);
+                void(const std::unordered_map<std::string, core::Tensor> &)>
+                &callback_after_iteration = nullptr);
 
 /// \brief Computes `Information Matrix`, from the transfromation between source
 /// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},
