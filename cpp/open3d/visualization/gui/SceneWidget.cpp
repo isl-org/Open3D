@@ -51,6 +51,7 @@
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
+#include "open3d/visualization/gui/GeometryEditor.h"
 
 namespace open3d {
 namespace visualization {
@@ -773,6 +774,7 @@ struct SceneWidget::Impl {
     SceneWidget::Quality current_render_quality_ = SceneWidget::Quality::BEST;
     bool scene_caching_enabled_ = false;
     std::vector<Eigen::Vector2i> ui_lines_;
+    std::shared_ptr<GeometryEditor> editor_;
     std::unordered_set<std::shared_ptr<Label3D>> labels_3d_;
     struct {
         Eigen::Matrix3d matrix;
@@ -972,6 +974,20 @@ void SceneWidget::DoPolygonPick(PolygonPickAction action) {
     };
 }
 
+bool SceneWidget::StartEdit(std::shared_ptr<const geometry::Geometry3D> geometry,
+                            std::function<void(bool)> selectionCallback) {
+    if (impl_->controls_->GetControls() == Controls::ROTATE_CAMERA) {
+        return impl_->editor_->Start(geometry, selectionCallback);
+    }
+    return false;
+}
+void SceneWidget::StopEdit() {
+    impl_->editor_->Stop();
+}
+
+std::vector<size_t> SceneWidget::CollectSelectedIndices() {
+    return impl_->editor_->CollectSelectedIndices();
+}
 std::shared_ptr<rendering::Open3DScene> SceneWidget::GetScene() const {
     return impl_->scene_;
 }

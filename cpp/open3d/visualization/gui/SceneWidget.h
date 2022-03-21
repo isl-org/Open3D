@@ -181,6 +181,25 @@ public:
     enum class PolygonPickAction { CANCEL = 0, SELECT };
     void DoPolygonPick(PolygonPickAction action);
 
+    /// Start geometry editing by drawing 2D shapes.
+    /// Currently only PointCloud and TriangleMesh are supported.
+    /// This works only in ROTATE_CAMERA view mode.
+    /// How to draw 2D shape:
+    ///   - Alt + LeftMouseDrag for a rectangle
+    ///   - Shift + LeftMouseDraw for circle from center to edge
+    ///   - Ctrl + Left Clicks for a polygon, specially, Ctrl + LeftMouseDrag
+    ///     to change vertex position dynamically, and Right click to cancel
+    ///     the latest vertex
+    ///   - Middle click to cancel all points
+    bool StartEdit(std::shared_ptr<const geometry::Geometry3D> geometry,
+                   std::function<void(bool)> selectionCallback);
+    /// Stop geometry editing
+    void StopEdit();
+    /// Collect selected indices from geometry. For PointCloud the indices of
+    /// points is collected and for TriangleMesh the indices of vertices is
+    /// collected.
+    std::vector<size_t> CollectSelectedIndices();
+
     // 3D Labels
     std::shared_ptr<Label3D> AddLabel(const Eigen::Vector3f& pos,
                                       const char* text);
