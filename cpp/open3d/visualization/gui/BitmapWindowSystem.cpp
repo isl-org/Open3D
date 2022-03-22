@@ -57,27 +57,27 @@ struct BitmapWindow {
 struct BitmapEvent {
     BitmapWindow *event_target;
 
-    BitmapEvent(BitmapWindow *target) : event_target(target) {}
+    explicit BitmapEvent(BitmapWindow *target) : event_target(target) {}
     virtual ~BitmapEvent() {}
 
     virtual void Execute() = 0;
 };
 
 struct BitmapDrawEvent : public BitmapEvent {
-    BitmapDrawEvent(BitmapWindow *target) : BitmapEvent(target) {}
+    explicit BitmapDrawEvent(BitmapWindow *target) : BitmapEvent(target) {}
 
     void Execute() override { event_target->o3d_window->OnDraw(); }
 };
 
 struct BitmapResizeEvent : public BitmapEvent {
-    BitmapResizeEvent(BitmapWindow *target) : BitmapEvent(target) {}
+    explicit BitmapResizeEvent(BitmapWindow *target) : BitmapEvent(target) {}
 
     void Execute() override { event_target->o3d_window->OnResize(); }
 };
 
 struct BitmapCallableEvent : public BitmapEvent {
     std::function<void()> callable;
-    BitmapCallableEvent(std::function<void()> todo)
+    explicit BitmapCallableEvent(std::function<void()> todo)
         : BitmapEvent(nullptr), callable(todo) {}
 
     void Execute() override {
