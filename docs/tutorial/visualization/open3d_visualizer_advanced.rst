@@ -17,8 +17,6 @@ Getting Started
 	 
 For all examples in this tutorial, we will be running a Python session. Please follow these preliminary steps:
 
-.. image:: https://user-images.githubusercontent.com/93158890/149406147-ff07bf6e-10b3-44c8-a25d-4f46a9538c47.jpg
-    :width: 700px
 
 1. First, open a command-line terminal. From there, Change Directory (``cd``) to ``Open3D``:
  
@@ -89,7 +87,7 @@ Time to render the ``monkey``:
 And we get:
 
 .. image:: https://user-images.githubusercontent.com/93158890/148610827-4a8dc85f-5664-4f7a-b0da-1808387c9f71.jpg
-    :width: 600px
+    :width: 700px
 
 Now, let's work on materials:
 
@@ -102,7 +100,7 @@ Now, let's work on materials:
 We have initialized ``mat.base_color`` to be yellow and get:
 
 .. image:: https://user-images.githubusercontent.com/93158890/148610882-14e6d348-1e8e-4bd9-b0ef-90fa884d9706.jpg
-    :width: 600px
+    :width: 700px
 
 Obviously, this looks ugly because the material (``mat``) lacks shading. To correct our 3D rendering, we use ``mat.shader`` property:
 
@@ -114,7 +112,7 @@ Obviously, this looks ugly because the material (``mat``) lacks shading. To corr
 This time, we see a big difference because the ``mat.shader`` property is initialized:
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611064-2fa5fe4c-b8cb-4588-ad46-df23cdf160be.jpg
-    :width: 600px
+    :width: 700px
 
 You can experiment with different material colors to your liking by changing numeric values in the ``mat.base_color = np.asarray([1.0, 1.0, 0.0, 1.0])`` statement.
 
@@ -134,7 +132,7 @@ Up to this point, we have been rendering *TriangleMesh* and *Tensor-based Triang
 Clearly, a staggering difference in rendering:
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611141-d424fc74-be7e-4833-913c-714fc3c4fbd2.jpg
-    :width: 600px
+    :width: 700px
 
 
 
@@ -162,7 +160,7 @@ In order to render a given 3D model's wireframe, we need to:
     >>> vis.draw(monkey_ls)
     
 .. image:: https://user-images.githubusercontent.com/93158890/148611269-78820f1d-b981-44a6-bb08-60c17d0bb45f.jpg
-    :width: 600px
+    :width: 700px
 
 Let's check to see what type of object ``monkey_ls`` is:
 
@@ -193,7 +191,7 @@ We can also change the ``line_width`` parameter for our wireframe. For this exce
     >>> vis.draw(monkey_ls, line_width=1)
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611385-cadcc6c9-a648-4775-a1b0-c6e543eea254.jpg
-    :width: 600px
+    :width: 700px
 
 Experiment with different ``line_width`` values to see which one looks best for your purposes.
 
@@ -217,7 +215,7 @@ We have just scaled the wireframe ``LineSet`` to be 2% larger. Now, let's render
     >>> vis.draw([monkey, monkey_ls])
 
 .. image:: https://user-images.githubusercontent.com/93158890/150007965-4959165f-688d-43c0-a839-c1b8efea7073.jpg
-    :width: 600px
+    :width: 700px
 
 The above image shows a zoomed-in fragment of our model where we can clearly see some space between the wireframe and the object. Experiment with scale values further to see different visual results.
 
@@ -257,7 +255,7 @@ Now that we have all *glTF-Sample-Models* files in place, let's switch back to o
    In your case, the *glTF-Sample-Models* directory location may be different, depending on where you chose to clone it.
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611761-40f95b2b-d257-4f2b-a8c0-60a73b159b96.jpg
-    :width: 600px
+    :width: 700px
 
 We've just rendered a complex model - this one actually consists of multiple sub-models with multiple types of materials and textures in it, that can each be rendered separately as we will see shortly.
 
@@ -269,7 +267,7 @@ This and other complex models can also be rendered using the ``o3d.io.read_trian
     >>> vis.draw(helmet)
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611814-09c6fe17-d209-439d-8ae9-c186387fd698.jpg
-    :width: 600px
+    :width: 700px
 
 .. note::
    For complex model rendering, please use the ``o3d.io.read_triangle_model()``, rather than ``read_triangle_mesh()``. ``read_triangle_mesh()`` is only good for loading basic meshes, but not complex materials.
@@ -377,7 +375,7 @@ We can also render meshes individually like:
     >>> vis.draw(helmet.meshes[0].mesh)
     
 .. image:: https://user-images.githubusercontent.com/93158890/149238095-5385d761-3bae-4172-ab45-1d47b6084d5c.jpg
-    :width: 600px
+    :width: 700px
 
 
 Rendering Sub-Models
@@ -396,32 +394,32 @@ A series of Open3D visualizer windows should appear. As you close each of them, 
 1) A hose:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238208-961a0a8d-ebb2-4621-aff1-8bfcdeced734.jpg
-    :width: 600px
+    :width: 700px
     
 2) All wooden and rubber parts:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238298-98a894cd-72a2-4c76-8e30-da89e26f2fa4.jpg
-    :width: 600px
+    :width: 700px
 
 3) The goggles and earphones parts:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238367-e32d7d12-5472-4f83-90ff-e365c77ef30a.jpg
-    :width: 600px
+    :width: 700px
     
 4) All metallic parts:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238437-b225282b-afae-40a2-a485-7f13e0f3122d.jpg
-    :width: 600px
+    :width: 700px
 
 5) Leather parts:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238516-3f6a95f4-6c48-43b6-82e2-8363d0c30197.jpg
-    :width: 600px
+    :width: 700px
 
 6) Lenses - they are transparent and thus, are different material as well:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238634-7919b93d-1307-4ce4-9eb0-646237eceb6e.jpg
-    :width: 600px
+    :width: 700px
 
 
 Cool, isn't it? Now, we can modify the same loop to display all materials and associated properties:
@@ -436,32 +434,32 @@ This will give us a full display of each part:
 1) A hose:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238906-065fad20-ed3f-4585-b90b-7d30b5c06912.jpg
-    :width: 600px
+    :width: 700px
     
 2) All wooden and rubber parts (breathing mask):
 
 .. image:: https://user-images.githubusercontent.com/93158890/149239024-e361bb4a-5fe5-44e7-b41d-8b6d777a1b9b.jpg
-    :width: 600px
+    :width: 700px
 
 3) The goggles and earphones parts:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149239132-cea7ad0d-3f42-4a69-a45b-9161c6e43deb.jpg
-    :width: 600px
+    :width: 700px
     
 4) All metallic parts:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149239248-b884fa06-c121-4c06-a8fd-ef06bc992638.jpg
-    :width: 600px
+    :width: 700px
 
 5) Leather parts:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149239346-13e07cd5-1d47-49b6-b43c-7840b01348e9.jpg
-    :width: 600px
+    :width: 700px
 
 6) Lenses:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149239403-e6fa3954-8cce-47be-b5b5-b388e7250fe4.jpg
-    :width: 600px
+    :width: 700px
 
 
 

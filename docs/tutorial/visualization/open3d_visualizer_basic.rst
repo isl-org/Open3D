@@ -375,6 +375,40 @@ All three properties are initialized by the ``o3d.io.read_image()`` method which
 	 * You can use absolute or relative paths to image files.
 
 
+Drawing Point Clouds
+::::::::::::::::::::
+
+Aside from rendering primitives, such as circles, spheres, rectangles, cubes, etc., the ``draw()`` function is fully capable of rendering *PointCloud* files, as shown below.
+
+Enter the following code at the Python prompt:
+
+.. code-block:: python
+
+   >>> pcd = o3d.io.read_point_cloud("examples/test_data/fragment.ply")
+   >>> rotate_180 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi, 0, 0))
+   >>> pcd.rotate(rotate_180)
+   PointCloud with 196133 points.
+   >>> vis.draw(pcd)
+	
+Open3D returns:
+	
+.. image:: https://user-images.githubusercontent.com/93158890/159548100-404afe97-8960-4e68-956f-cc6957632a93.jpg
+    :width: 700px
+
+Specifying ``point_size``
+"""""""""""""""""""""""""
+
+In this section, we will learn how to control 3D model rendering by passing in ``point_size`` as a parameter to the ``draw()`` function. To do this, let's enter the following code at the Python prompt:
+
+.. code-block:: python
+
+	>>> vis.draw(pcd, point_size=9, show_ui=True)
+
+Here we have programmatically specified a custom ``point_size`` for rendering. It is recommended to set ``show_ui=True`` to make sure Open3D Visualizer interprets ``draw()`` function input parameters correctly. You can experiment with different point sizes by moving a slider in the UI:
+
+.. image:: https://user-images.githubusercontent.com/93158890/159555822-5eb3562b-4432-4a73-ab48-342b0cd2a898.jpg
+    :width: 700px
+
 
 .. _trianglemesh_lineset:
 
@@ -583,36 +617,7 @@ So far, our ``geoms`` collection defined only a single object: *sphere*. But we 
 
 
 
-Drawing Point Clouds
-::::::::::::::::::::
 
-Aside from rendering primitives, such as circles, spheres, rectangles, cubes, etc., the ``draw()`` function is fully capable of rendering *PointCloud* files, as shown below.
-
-Enter the following code at the Python prompt:
-
-.. code-block:: python
-
-	>>> pcd = o3d.io.read_point_cloud("examples/test_data/fragment.pcd")
-	>>> vis.draw(pcd)
-	
-Open3D returns:
-	
-.. image:: https://user-images.githubusercontent.com/93158890/148607866-3de802e2-34ea-499e-a6ad-ee2b44ab9994.jpg
-    :width: 700px
-
-Specifying ``point_size``
-"""""""""""""""""""""""""
-
-In this section, we will learn how to control 3D model rendering by passing in ``point_size`` as a parameter to the ``draw()`` function. To do this, let's enter the following code at the Python prompt:
-
-.. code-block:: python
-
-	>>> vis.draw(pcd, point_size=9, show_ui=True)
-
-Here we have programmatically specified a custom ``point_size`` for rendering. It is recommended to set ``show_ui=True`` to make sure Open3D Visualizer interprets ``draw()`` function input parameters correctly. You can experiment with different point sizes by moving a slider in the UI:
-
-.. image:: https://user-images.githubusercontent.com/93158890/149423983-f89ab2b7-fa49-4723-9329-1c375fb0a965.jpg
-    :width: 700px
 
 
 
