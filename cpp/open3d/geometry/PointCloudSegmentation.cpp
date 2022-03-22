@@ -30,6 +30,7 @@
 #include <numeric>
 #include <random>
 #include <unordered_set>
+#include <mutex>
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
@@ -51,12 +52,14 @@ public:
     }
 
     std::vector<T> operator()(size_t sample_size) {
+        std::lock_guard<std::mutex> guard(mutex_);
+
         std::vector<T> sample;
         sample.reserve(sample_size);
 
         size_t valid_sample = 0;
         while (valid_sample < sample_size) {
-            size_t idx = rng_() % size_;
+            const size_t idx = rng_() % size_;
             if (std::find(sample.begin(), sample.end(), idx) == sample.end()) {
                 sample.push_back(idx);
                 valid_sample++;
@@ -69,6 +72,7 @@ public:
 private:
     size_t size_;
     std::mt19937 rng_;
+    std::mutex mutex_;
 };
 
 /// \class RANSACResult
