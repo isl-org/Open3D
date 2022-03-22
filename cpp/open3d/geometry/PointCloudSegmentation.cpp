@@ -27,10 +27,10 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <iterator>
+#include <mutex>
 #include <numeric>
 #include <random>
 #include <unordered_set>
-#include <mutex>
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
