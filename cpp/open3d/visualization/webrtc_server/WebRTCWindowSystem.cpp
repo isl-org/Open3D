@@ -103,6 +103,13 @@ static std::string GetEnvWebRTCPort() {
     }
 }
 
+static int GetEnvWebRTCFps() {
+    if (const char *env_p = std::getenv("WEBRTC_FPS")) {
+        return std::stoi(env_p);
+    }
+    return 0;
+}
+
 struct WebRTCWindowSystem::Impl {
     std::unordered_map<WebRTCWindowSystem::OSWindow, std::string>
             os_window_to_uid_;
@@ -153,6 +160,11 @@ WebRTCWindowSystem::WebRTCWindowSystem()
         OnFrame(GetWindowUID(window->GetOSWindow()), im);
     };
     SetOnWindowDraw(draw_callback);
+
+    auto fps = GetEnvWebRTCFps();
+    if (fps > 0) {
+        SetMaxRenderFPS(fps);
+    }
 
     // Client->server message default callbacks.
     RegisterDataChannelMessageCallback(
@@ -427,12 +439,14 @@ void WebRTCWindowSystem::SendInitFrames(const std::string &window_uid) {
     static const int s_sleep_between_frames_ms = 100;
     const auto os_window = GetOSWindowByUID(window_uid);
     if (!os_window) return;
+    PostCallableEvent([this]() { ForceRender(true); });
     for (int i = 0; os_window != nullptr && i < s_max_initial_frames; ++i) {
         PostRedrawEvent(os_window);
         std::this_thread::sleep_for(
                 std::chrono::milliseconds(s_sleep_between_frames_ms));
         utility::LogDebug("Sent init frames #{} to {}.", i, window_uid);
     }
+    PostCallableEvent([this]() { ForceRender(false); });
 }
 
 std::string WebRTCWindowSystem::CallHttpAPI(const std::string &entry_point,
