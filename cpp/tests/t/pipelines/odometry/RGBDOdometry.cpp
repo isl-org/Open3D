@@ -26,43 +26,48 @@
 
 #include <numeric>
 #include <sstream>
+#include <unordered_map>
 
 #include "core/CoreTest.h"
-#include "open3d/camera/PinholeCameraIntrinsic.h"
-#include "open3d/core/AdvancedIndexing.h"
-#include "open3d/core/Blob.h"
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/Device.h"
-#include "open3d/core/Dispatch.h"
-#include "open3d/core/Dtype.h"
-#include "open3d/core/ShapeUtil.h"
-#include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/TensorCheck.h"
-#include "open3d/core/TensorFunction.h"
-#include "open3d/core/TensorKey.h"
-#include "open3d/core/kernel/Arange.h"
-#include "open3d/core/kernel/Kernel.h"
-#include "open3d/core/linalg/Det.h"
-#include "open3d/core/linalg/Inverse.h"
-#include "open3d/core/linalg/LU.h"
-#include "open3d/core/linalg/LeastSquares.h"
-#include "open3d/core/linalg/Matmul.h"
-#include "open3d/core/linalg/SVD.h"
+#include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/core/linalg/Solve.h"
-#include "open3d/core/linalg/Tri.h"
 #include "open3d/data/Dataset.h"
-#include "open3d/t/geometry/Image.h"
-#include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/io/ImageIO.h"
-#include "open3d/t/io/NumpyIO.h"
-#include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
+
+void SolveNew(const core::Tensor &A, const core::Tensor &B, core::Tensor &X) {
+    const core::Device device = A.GetDevice();
+    const core::Dtype dtype = A.GetDtype();
+
+    // A and B are modified in-place
+    core::Tensor A_copy = A.T().Clone();
+    void *A_data = A_copy.GetDataPtr();
+
+    X = B.T().Clone();
+    void *B_data = X.GetDataPtr();
+
+    int64_t n = A.GetShape()[0];
+    int64_t k = B.GetShape().size() == 2 ? B.GetShape()[1] : 1;
+
+    core::Dtype ipiv_dtype;
+    if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
+        ipiv_dtype = core::Int32;
+    } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
+        ipiv_dtype = core::Int64;
+    } else {
+        utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
+    }
+    core::Tensor ipiv = core::Tensor::Empty({n}, ipiv_dtype, device);
+    void *ipiv_data = ipiv.GetDataPtr();
+
+    core::SolveCPU(A_data, B_data, ipiv_data, n, k, dtype, device);
+    X = X.T();
+}
 
 TEST(OdometryPermuteDevices, TestSolve) {
     core::Tensor lhs =
@@ -72,7 +77,7 @@ TEST(OdometryPermuteDevices, TestSolve) {
 
     utility::LogInfo("########## To run solve()");
     core::Tensor output;
-    core::Solve(lhs, rhs, output);
+    SolveNew(lhs, rhs, output);
     utility::LogInfo("########## Solve() done");
 }
 
