@@ -557,21 +557,6 @@ bool Application::RunOneTick(EnvUnlocker &unlocker,
                     "Internal error: Application::Initialize() was not called");
             return false;
         }
-        // auto resource_path = rendering::EngineInstance::GetResourcePath();
-        // if (!utility::filesystem::DirectoryExists(resource_path)) {
-        //     std::stringstream err;
-        //     err << "Could not find resource directory:\n'" << resource_path
-        //         << "' does not exist";
-        //     ShowNativeAlert(err.str().c_str());
-        //     return false;
-        // }
-        // if (!utility::filesystem::FileExists(impl_->theme_.font_path)) {
-        //     std::stringstream err;
-        //     err << "Could not load UI font:\n'" << impl_->theme_.font_path
-        //         << "' does not exist";
-        //     ShowNativeAlert(err.str().c_str());
-        //     return false;
-        // }
 
         impl_->PrepareForRunning();
         impl_->is_running_ = true;

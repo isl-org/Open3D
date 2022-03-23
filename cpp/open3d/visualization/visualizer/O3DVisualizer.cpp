@@ -54,6 +54,7 @@
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/ListView.h"
 #include "open3d/visualization/gui/NumberEdit.h"
+#include "open3d/visualization/gui/Resource.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Slider.h"
 #include "open3d/visualization/gui/TabControl.h"
@@ -689,13 +690,11 @@ struct O3DVisualizer::Impl {
 
         settings.ibl_names = new Combobox();
         for (auto &name : GetListOfIBLs()) {
-            settings.ibl_names->AddItem(name.c_str());
+            settings.ibl_names->AddItem(name.first.c_str());
         }
         settings.ibl_names->SetSelectedValue(kDefaultIBL.c_str());
         settings.ibl_names->SetOnValueChanged([this](const char *val, int idx) {
-            std::string resource_path =
-                    Application::GetInstance().GetResourcePath();
-            this->SetIBL(resource_path + std::string("/") + std::string(val));
+            this->SetIBL(std::string(val));
             this->settings.lighting->SetSelectedValue(kCustomName);
         });
         grid->AddChild(std::make_shared<Label>("HDR map"));
@@ -1525,13 +1524,10 @@ struct O3DVisualizer::Impl {
     }
 
     void SetIBL(std::string path) {
-        std::string ibl_path = path;
-        std::cout << "ibl_path form SetIBL: " << ibl_path << std::endl;
+        std::string ibl_path;
         if (path == "") {
             // Set IBL back to default
-            ibl_path =
-                    std::string(Application::GetInstance().GetResourcePath()) +
-                    std::string("/") + std::string(kDefaultIBL);
+            ibl_path = std::string(kDefaultIBL);
         } else if (utility::filesystem::FileExists(path)) {
             // User specified full path to IBL file
             if (path.find("_ibl.ktx") == path.size() - 8) {
@@ -1542,6 +1538,9 @@ struct O3DVisualizer::Impl {
                         "'name_ibl.ktx' and be paired with 'name_skybox.ktx'");
                 return;
             }
+        } else {
+            // Name of IBL was specified without _ibl.ktx suffix.
+            ibl_path = path;
         }
         ui_state_.ibl_path = ibl_path;
         scene_->GetScene()->GetScene()->SetIndirectLight(ibl_path);
@@ -2062,23 +2061,6 @@ struct O3DVisualizer::Impl {
         }
     }
 
-    std::vector<std::string> GetListOfIBLs() {
-        std::vector<std::string> ibls;
-        std::vector<std::string> resource_files;
-        std::string resource_path =
-                Application::GetInstance().GetResourcePath();
-        utility::filesystem::ListFilesInDirectory(resource_path,
-                                                  resource_files);
-        std::sort(resource_files.begin(), resource_files.end());
-        for (auto &f : resource_files) {
-            if (f.find("_ibl.ktx") == f.size() - 8) {
-                auto name = utility::filesystem::GetFileNameWithoutDirectory(f);
-                name = name.substr(0, name.size() - 8);
-                ibls.push_back(name);
-            }
-        }
-        return ibls;
-    }
 };
 
 // ----------------------------------------------------------------------------

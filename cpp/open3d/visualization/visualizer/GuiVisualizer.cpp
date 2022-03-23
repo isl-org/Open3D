@@ -362,8 +362,7 @@ struct GuiVisualizer::Impl {
     bool sun_follows_camera_ = false;
     bool basic_mode_enabled_ = false;
 
-    void InitializeMaterials(rendering::Renderer &renderer,
-                             const std::string &resource_path) {
+    void InitializeMaterials(rendering::Renderer &renderer) {
         settings_.lit_material_.shader = "defaultLit";
         settings_.unlit_material_.shader = "defaultUnlit";
 
@@ -385,10 +384,7 @@ struct GuiVisualizer::Impl {
         auto *render_scene = scene_wgt_->GetScene()->GetScene();
         std::string ibl_name(path);
         if (ibl_name.empty()) {
-            ibl_name =
-                    std::string(
-                            gui::Application::GetInstance().GetResourcePath()) +
-                    "/" + GuiSettingsModel::DEFAULT_IBL;
+            ibl_name = "default";
         }
         if (ibl_name.find("_ibl.ktx") != std::string::npos) {
             ibl_name = ibl_name.substr(0, ibl_name.size() - 8);
@@ -834,12 +830,12 @@ void GuiVisualizer::Init() {
     // Create light
     auto &settings = impl_->settings_;
     std::string resource_path = app.GetResourcePath();
-    auto ibl_path = resource_path + "/default";
+    auto ibl_name = "default";
     auto *render_scene = impl_->scene_wgt_->GetScene()->GetScene();
-    render_scene->SetIndirectLight(ibl_path);
+    render_scene->SetIndirectLight(ibl_name);
 
     // Create materials
-    impl_->InitializeMaterials(GetRenderer(), resource_path);
+    impl_->InitializeMaterials(GetRenderer());
 
     // Setup UI
     const auto em = theme.font_size;
@@ -924,10 +920,7 @@ void GuiVisualizer::Init() {
                     });
                     ShowDialog(dlg);
                 } else {
-                    std::string resource_path =
-                            gui::Application::GetInstance().GetResourcePath();
-                    impl_->SetIBL(GetRenderer(),
-                                  resource_path + "/" + name + "_ibl.ktx");
+                    impl_->SetIBL(GetRenderer(), std::string(name) + "_ibl.ktx");
                 }
             });
     settings.model_.SetOnChanged([this](bool material_type_changed) {

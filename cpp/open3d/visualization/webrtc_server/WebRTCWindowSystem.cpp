@@ -277,6 +277,7 @@ void WebRTCWindowSystem::StartWebRTCServer() {
     if (!impl_->sever_started_) {
         auto start_webrtc_thread = [this]() {
             // Ensure Application::Initialize() is called before this.
+            // TODO: move GetResourcePath to WebRTC
             std::string resource_path(
                     gui::Application::GetInstance().GetResourcePath());
             impl_->web_root_ = resource_path + "/html";

@@ -50,7 +50,8 @@ add_custom_command(
         ./EmbedResources resources/unlitGradient.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
         ./EmbedResources resources/unlitLine.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
         ./EmbedResources resources/unlitPolygonOffset.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ./EmbedResources resources/unlitSolidColor.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
+        ./EmbedResources resources/unlitSolidColor.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
+        ./EmbedResources -complete ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
     WORKING_DIRECTORY
         ${PROJECT_BINARY_DIR}/bin
     COMMENT
