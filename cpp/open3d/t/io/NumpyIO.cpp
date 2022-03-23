@@ -519,6 +519,15 @@ public:
           word_size_(t.GetDtype().ByteSize()),
           fortran_order_(false) {
         blob_ = t.To(core::Device("CPU:0")).Contiguous().GetBlob();
+
+        utility::LogInfo("Shape in NumpyArray: {}", shape_);
+
+        const void* blob_data = blob_->GetDataPtr();
+        const double* blob_data_double =
+                reinterpret_cast<const double*>(blob_data);
+        for (int i = 0; i < 36; ++i) {
+            utility::LogDebug("blob_data[{}] = {}", i, blob_data_double[i]);
+        }
     }
 
     NumpyArray(const core::SizeVector& shape,
@@ -584,15 +593,18 @@ public:
     }
 
     void Save(std::string file_name) const {
+        utility::LogInfo("To Save() NPZ file: {}", file_name);
+        utility::LogInfo("byte_size = {}", GetDtype().ByteSize());
+        utility::LogInfo("num_elements = {}", shape_.NumElements());
+
         utility::filesystem::CFile cfile;
         if (!cfile.Open(file_name, "wb")) {
             utility::LogError("Failed to open file {}, error: {}.", file_name,
                               cfile.GetError());
         }
         FILE* fp = cfile.GetFILE();
-
-        CharVector header = CreateNumpyHeader(shape_, GetDtype());
         fseek(fp, 0, SEEK_SET);
+        CharVector header = CreateNumpyHeader(shape_, GetDtype());
         fwrite(header.Data(), sizeof(char), header.Size(), fp);
         fseek(fp, 0, SEEK_END);
         fwrite(GetDataPtr<void>(), static_cast<size_t>(GetDtype().ByteSize()),

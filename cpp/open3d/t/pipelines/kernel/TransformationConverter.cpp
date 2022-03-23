@@ -136,6 +136,15 @@ void DecodeAndSolve6x6(const core::Tensor &A_reduction,
         }
     }
 
+    core::Tensor ata =
+            core::Tensor::Load("/home/yixing/repo/Open3D/debug/AtA.npy");
+    core::Tensor atb_neg =
+            core::Tensor::Load("/home/yixing/repo/Open3D/debug/Atb_neg.npy");
+    utility::LogInfo("########## To run solve()");
+    core::Tensor d = ata.Solve(atb_neg);
+    (void)d;
+    utility::LogInfo("########## Solve() done");
+
     // Solve on CPU with double to ensure precision.
     try {
         delta = AtA.Solve(Atb.Neg());
