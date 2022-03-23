@@ -175,9 +175,6 @@ function(open3d_set_global_properties target)
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
 
-    # Download test data files from open3d_downloads repo
-    add_dependencies(${target} open3d_downloads)
-
     # Enable strip
     open3d_enable_strip(${target})
 endfunction()

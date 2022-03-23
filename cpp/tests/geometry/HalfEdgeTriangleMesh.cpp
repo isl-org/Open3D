@@ -285,11 +285,11 @@ TEST(HalfEdgeTriangleMesh, Constructor_PartialHexagon) {
 }
 
 TEST(HalfEdgeTriangleMesh, Constructor_Sphere) {
-    geometry::TriangleMesh mesh;
-    io::ReadTriangleMesh(utility::GetDataPathCommon("sphere.ply"), mesh);
+    auto mesh = geometry::TriangleMesh::CreateSphere(0.05);
+    mesh->ComputeVertexNormals();
     auto het_mesh =
-            geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(mesh);
-    assert_same_vertices_and_triangles(mesh, *het_mesh);
+            geometry::HalfEdgeTriangleMesh::CreateFromTriangleMesh(*mesh);
+    assert_same_vertices_and_triangles(*mesh, *het_mesh);
     EXPECT_FALSE(het_mesh->IsEmpty());
 }
 

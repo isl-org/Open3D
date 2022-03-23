@@ -34,7 +34,7 @@
 #include <vector>
 
 #include "open3d/Macro.h"
-#include "open3d/utility/DataManager.h"
+#include "open3d/data/Dataset.h"
 #include "tests/test_utility/Compare.h"
 #include "tests/test_utility/Print.h"
 #include "tests/test_utility/Rand.h"

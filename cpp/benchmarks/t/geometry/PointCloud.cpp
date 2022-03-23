@@ -33,7 +33,6 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/t/io/PointCloudIO.h"
-#include "open3d/utility/DataManager.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 
 namespace open3d {
