@@ -103,16 +103,29 @@ bool DynamicSizeVector::IsDynamic() const {
             [](const utility::optional<int64_t>& v) { return !v.has_value(); });
 }
 
-SizeVector::SizeVector(const std::initializer_list<int64_t>& dim_sizes)
-    : std::vector<int64_t>(dim_sizes) {}
+SizeVector::SizeVector(const std::initializer_list<int64_t>& dim_sizes) {
+    for (const int64_t& dim_size : dim_sizes) {
+        this->push_back(dim_size);
+    }
+}
 
-SizeVector::SizeVector(const std::vector<int64_t>& dim_sizes)
-    : std::vector<int64_t>(dim_sizes) {}
+SizeVector::SizeVector(const std::vector<int64_t>& dim_sizes) {
+    for (const int64_t& dim_size : dim_sizes) {
+        this->push_back(dim_size);
+    }
+}
 
-SizeVector::SizeVector(const SizeVector& other) : std::vector<int64_t>(other) {}
+SizeVector::SizeVector(const SizeVector& other) {
+    for (const int64_t& dim_size : other) {
+        this->push_back(dim_size);
+    }
+}
 
-SizeVector::SizeVector(int64_t n, int64_t initial_value)
-    : std::vector<int64_t>(n, initial_value) {}
+SizeVector::SizeVector(int64_t n, int64_t initial_value) {
+    for (int64_t i = 0; i < n; i++) {
+        this->push_back(initial_value);
+    }
+}
 
 SizeVector& SizeVector::operator=(const SizeVector& v) {
     static_cast<std::vector<int64_t>*>(this)->operator=(v);
