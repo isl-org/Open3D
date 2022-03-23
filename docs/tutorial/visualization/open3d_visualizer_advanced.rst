@@ -54,75 +54,11 @@ Advanced Examples
 
 In *Basic Examples*, we covered how to render Tensor and TriangleMesh shapes, raster models, and how to control their display programmatically via code and interactively by using Open3D Visualizer UI. This section expounds on those topics to cover more advanced visualization techniques.
 
-Rendering a Tensor-based TriangleMesh Monkey
-::::::::::::::::::::::::::::::::::::::::::::
-
-At your python prompt, enter:
-
-.. code-block:: python
-
-		>>> monkey = o3d.io.read_triangle_mesh('examples/test_data/monkey/monkey.obj')
-
-Here we are invoking the ``open3d.io`` library which allows us to read 3D model files and/or selectively extract their details. In this case, we are using the ``read_triangle_mesh()`` method for extracting the ``monkey.obj`` file ``TriangleMesh`` data. Since we can't load this object directly, we will convert it into **Open3D Tensor geometry**:
-
-.. code-block:: python
-
-		>>> monkey = o3d.t.geometry.TriangleMesh.from_legacy(monkey)
-
-Let's see what properties ``monkey`` has:
-
-.. code-block:: python
-
-    >>> monkey
-    TriangleMesh on CPU:0 [9908 vertices (Float32) and 15744 triangles (Int64)].
-    Vertex Attributes: normals (dtype = Float32, shape = {9908, 3}).
-    Triangle Attributes: texture_uvs (dtype = Float32, shape = {15744, 3, 2}).
-		
-Time to render the ``monkey``:
-
-.. code-block:: python
-
-		>>> vis.draw(monkey)
-
-And we get:
-
-.. image:: https://user-images.githubusercontent.com/93158890/148610827-4a8dc85f-5664-4f7a-b0da-1808387c9f71.jpg
-    :width: 700px
-
-Now, let's work on materials:
-
-.. code-block:: python
-
-    >>> mat = vis.rendering.MaterialRecord()
-    >>> mat.base_color = np.asarray([1.0, 1.0, 0.0, 1.0])
-    >>> vis.draw({'name': 'monkey', 'geometry': monkey, 'material': mat})
-    
-We have initialized ``mat.base_color`` to be yellow and get:
-
-.. image:: https://user-images.githubusercontent.com/93158890/148610882-14e6d348-1e8e-4bd9-b0ef-90fa884d9706.jpg
-    :width: 700px
-
-Obviously, this looks ugly because the material (``mat``) lacks shading. To correct our 3D rendering, we use ``mat.shader`` property:
-
-.. code-block:: python
-
-    >>> mat.shader = 'defaultLit'
-    >>> vis.draw({'name': 'monkey', 'geometry': monkey, 'material': mat})
-
-This time, we see a big difference because the ``mat.shader`` property is initialized:
-
-.. image:: https://user-images.githubusercontent.com/93158890/148611064-2fa5fe4c-b8cb-4588-ad46-df23cdf160be.jpg
-    :width: 700px
-
-You can experiment with different material colors to your liking by changing numeric values in the ``mat.base_color = np.asarray([1.0, 1.0, 0.0, 1.0])`` statement.
-
-
-
 
 Rendering Models
 ::::::::::::::::
 
-Up to this point, we have been rendering *TriangleMesh* and *Tensor-based TriangleMesh* objects. But the ``draw()`` function can also render full-fledged 3D models containing a set of textures and material properties. To read a complete model, we need to use the ``open3d.io.read_triangle_model()`` method, which imports all the material properties in addition to the *TriangleMesh*:
+In the Basic Open3D Visualizer Tutorial, we rendered *TriangleMesh* and *Tensor-based TriangleMesh* objects. But the ``draw()`` function can also render full-fledged 3D models containing a set of textures and material properties. To read a complete model, we need to use the ``open3d.io.read_triangle_model()`` method, which imports all the material properties in addition to the *TriangleMesh*:
 
 .. code-block:: python
 
@@ -136,94 +72,8 @@ Clearly, a staggering difference in rendering:
 
 
 
-Rendering Monkey Wireframe ``LineSet``
-::::::::::::::::::::::::::::::::::::::
-
-In order to render a given 3D model's wireframe, we need to:
-
-1. extract its regular ``TriangleMesh`` information. Let's re-initialize our monkey object and check to see its current type:
-
-.. code-block:: python
-
-    >>> monkey = o3d.io.read_triangle_mesh('examples/test_data/monkey/monkey.obj')
-    >>> monkey
-    TriangleMesh with 9908 points and 15744 triangles.
-
-
-
-2. Now that our *monkey* object is of regular ``TriangleMesh``, it's time to create a ``LineSet`` object from it. We will also color it blue with the ``paint_uniform_color()`` method. Then, we'll render it with ``draw()``:
-
-.. code-block:: python
-
-    >>> monkey_ls = o3d.geometry.LineSet.create_from_triangle_mesh(monkey)
-    >>> monkey_ls.paint_uniform_color([0.0, 0.0, 1.0])
-    >>> vis.draw(monkey_ls)
-    
-.. image:: https://user-images.githubusercontent.com/93158890/148611269-78820f1d-b981-44a6-bb08-60c17d0bb45f.jpg
-    :width: 700px
-
-Let's check to see what type of object ``monkey_ls`` is:
-
-.. code-block:: python
-
-    >>> monkey_ls
-    LineSet with 25556 lines.
-
-
-
-3. Let's convert *TriangleMesh LineSets* into *Tensor-based TriangleMesh* ones:
-
-.. code-block:: python
-
-    >>> monkey_ls = o3d.t.geometry.LineSet.from_legacy(monkey_ls)
-    >>> monkey_ls
-    LineSet on CPU:0
-    [9908 points (Float32)] Attributes: None.
-    [25556 lines (Int64)] Attributes: colors (dtype = Float32, shape = {25556, 3}).
-
-Great. ``monkey_ls`` is now a ``t.geometry.LineSet`` (*Tensor-based LineSet*).
-
-
-We can also change the ``line_width`` parameter for our wireframe. For this excercise, we'll make it thinner (``line_width=1``):
-
-.. code-block:: python
-
-    >>> vis.draw(monkey_ls, line_width=1)
-
-.. image:: https://user-images.githubusercontent.com/93158890/148611385-cadcc6c9-a648-4775-a1b0-c6e543eea254.jpg
-    :width: 700px
-
-Experiment with different ``line_width`` values to see which one looks best for your purposes.
-
-
-Scaling Wireframes
-""""""""""""""""""
-
-If you need to superimpose a wireframe *LineSet* on top of a 3D object, the way to do it is through scaling the wireframe to be a tiny bit bigger than the underlying 3D object. For such cases, a ``LineSet_object.scale()`` method is used. Let's see how we would do it with both - the monkey object and its wireframe:
-
-.. code-block:: python
-
-    >>> monkey_ls.scale(1.02, np.asarray([0, 0, 0]))
-    LineSet on CPU:0
-    [9908 points (Float32)] Attributes: None.
-    [25556 lines (Int64)] Attributes: colors (dtype = Float32, shape = {25556, 3}).
-
-We have just scaled the wireframe ``LineSet`` to be 2% larger. Now, let's render both - the wireframe (``monkey_ls``) and the underlying ``monkey`` object:
-
-.. code-block:: python
-
-    >>> vis.draw([monkey, monkey_ls])
-
-.. image:: https://user-images.githubusercontent.com/93158890/150007965-4959165f-688d-43c0-a839-c1b8efea7073.jpg
-    :width: 700px
-
-The above image shows a zoomed-in fragment of our model where we can clearly see some space between the wireframe and the object. Experiment with scale values further to see different visual results.
-
-
-
-
-More Complex Models
-:::::::::::::::::::
+Rendering More Complex Models
+:::::::::::::::::::::::::::::
 
 In the previous section (**Rendering Models**) we have covered how to render complete 3D models with the ``open3d.io.read_triangle_model()`` method. This method can also handle more complex models containing a collection of materials and parts (sub-models) from which the complete object gets assembled.
 
@@ -460,6 +310,161 @@ This will give us a full display of each part:
 
 .. image:: https://user-images.githubusercontent.com/93158890/149239403-e6fa3954-8cce-47be-b5b5-b388e7250fe4.jpg
     :width: 700px
+
+
+
+Rendering a Tensor-based TriangleMesh Monkey
+::::::::::::::::::::::::::::::::::::::::::::
+
+At your python prompt, enter:
+
+.. code-block:: python
+
+		>>> monkey = o3d.io.read_triangle_mesh('examples/test_data/monkey/monkey.obj')
+
+Here we are invoking the ``open3d.io`` library which allows us to read 3D model files and/or selectively extract their details. In this case, we are using the ``read_triangle_mesh()`` method for extracting the ``monkey.obj`` file ``TriangleMesh`` data. Since we can't load this object directly, we will convert it into **Open3D Tensor geometry**:
+
+.. code-block:: python
+
+		>>> monkey = o3d.t.geometry.TriangleMesh.from_legacy(monkey)
+
+Let's see what properties ``monkey`` has:
+
+.. code-block:: python
+
+    >>> monkey
+    TriangleMesh on CPU:0 [9908 vertices (Float32) and 15744 triangles (Int64)].
+    Vertex Attributes: normals (dtype = Float32, shape = {9908, 3}).
+    Triangle Attributes: texture_uvs (dtype = Float32, shape = {15744, 3, 2}).
+		
+Time to render the ``monkey``:
+
+.. code-block:: python
+
+		>>> vis.draw(monkey)
+
+And we get:
+
+.. image:: https://user-images.githubusercontent.com/93158890/148610827-4a8dc85f-5664-4f7a-b0da-1808387c9f71.jpg
+    :width: 700px
+
+Now, let's work on materials:
+
+.. code-block:: python
+
+    >>> mat = vis.rendering.MaterialRecord()
+    >>> mat.base_color = np.asarray([1.0, 1.0, 0.0, 1.0])
+    >>> vis.draw({'name': 'monkey', 'geometry': monkey, 'material': mat})
+    
+We have initialized ``mat.base_color`` to be yellow and get:
+
+.. image:: https://user-images.githubusercontent.com/93158890/148610882-14e6d348-1e8e-4bd9-b0ef-90fa884d9706.jpg
+    :width: 700px
+
+Obviously, this looks ugly because the material (``mat``) lacks shading. To correct our 3D rendering, we use ``mat.shader`` property:
+
+.. code-block:: python
+
+    >>> mat.shader = 'defaultLit'
+    >>> vis.draw({'name': 'monkey', 'geometry': monkey, 'material': mat})
+
+This time, we see a big difference because the ``mat.shader`` property is initialized:
+
+.. image:: https://user-images.githubusercontent.com/93158890/148611064-2fa5fe4c-b8cb-4588-ad46-df23cdf160be.jpg
+    :width: 700px
+
+You can experiment with different material colors to your liking by changing numeric values in the ``mat.base_color = np.asarray([1.0, 1.0, 0.0, 1.0])`` statement.
+
+
+
+
+
+Rendering Monkey Wireframe ``LineSet``
+::::::::::::::::::::::::::::::::::::::
+
+In order to render a given 3D model's wireframe, we need to:
+
+1. extract its regular ``TriangleMesh`` information. Let's re-initialize our monkey object and check to see its current type:
+
+.. code-block:: python
+
+    >>> monkey = o3d.io.read_triangle_mesh('examples/test_data/monkey/monkey.obj')
+    >>> monkey
+    TriangleMesh with 9908 points and 15744 triangles.
+
+
+
+2. Now that our *monkey* object is of regular ``TriangleMesh``, it's time to create a ``LineSet`` object from it. We will also color it blue with the ``paint_uniform_color()`` method. Then, we'll render it with ``draw()``:
+
+.. code-block:: python
+
+    >>> monkey_ls = o3d.geometry.LineSet.create_from_triangle_mesh(monkey)
+    >>> monkey_ls.paint_uniform_color([0.0, 0.0, 1.0])
+    >>> vis.draw(monkey_ls)
+    
+.. image:: https://user-images.githubusercontent.com/93158890/148611269-78820f1d-b981-44a6-bb08-60c17d0bb45f.jpg
+    :width: 700px
+
+Let's check to see what type of object ``monkey_ls`` is:
+
+.. code-block:: python
+
+    >>> monkey_ls
+    LineSet with 25556 lines.
+
+
+
+3. Let's convert *TriangleMesh LineSets* into *Tensor-based TriangleMesh* ones:
+
+.. code-block:: python
+
+    >>> monkey_ls = o3d.t.geometry.LineSet.from_legacy(monkey_ls)
+    >>> monkey_ls
+    LineSet on CPU:0
+    [9908 points (Float32)] Attributes: None.
+    [25556 lines (Int64)] Attributes: colors (dtype = Float32, shape = {25556, 3}).
+
+Great. ``monkey_ls`` is now a ``t.geometry.LineSet`` (*Tensor-based LineSet*).
+
+
+We can also change the ``line_width`` parameter for our wireframe. For this excercise, we'll make it thinner (``line_width=1``):
+
+.. code-block:: python
+
+    >>> vis.draw(monkey_ls, line_width=1)
+
+.. image:: https://user-images.githubusercontent.com/93158890/148611385-cadcc6c9-a648-4775-a1b0-c6e543eea254.jpg
+    :width: 700px
+
+Experiment with different ``line_width`` values to see which one looks best for your purposes.
+
+
+Scaling Wireframes
+""""""""""""""""""
+
+If you need to superimpose a wireframe *LineSet* on top of a 3D object, the way to do it is through scaling the wireframe to be a tiny bit bigger than the underlying 3D object. For such cases, a ``LineSet_object.scale()`` method is used. Let's see how we would do it with both - the monkey object and its wireframe:
+
+.. code-block:: python
+
+    >>> monkey_ls.scale(1.02, np.asarray([0, 0, 0]))
+    LineSet on CPU:0
+    [9908 points (Float32)] Attributes: None.
+    [25556 lines (Int64)] Attributes: colors (dtype = Float32, shape = {25556, 3}).
+
+We have just scaled the wireframe ``LineSet`` to be 2% larger. Now, let's render both - the wireframe (``monkey_ls``) and the underlying ``monkey`` object:
+
+.. code-block:: python
+
+    >>> vis.draw([monkey, monkey_ls])
+
+.. image:: https://user-images.githubusercontent.com/93158890/150007965-4959165f-688d-43c0-a839-c1b8efea7073.jpg
+    :width: 700px
+
+The above image shows a zoomed-in fragment of our model where we can clearly see some space between the wireframe and the object. Experiment with scale values further to see different visual results.
+
+
+
+
 
 
 
