@@ -134,7 +134,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
 static auto registry = torch::RegisterOperators(
         "open3d::knn_search(Tensor points, Tensor queries, int "
         "k, Tensor points_row_splits, Tensor queries_row_splits, ScalarType "
-        "index_dtype,"
+        "index_dtype = long,"
         "str metric=\"L2\", bool ignore_query_point=False, bool "
         "return_distances=False) -> "
         "(Tensor neighbors_index, Tensor "
