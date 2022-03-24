@@ -311,7 +311,7 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPlane) {
     }
 }
 
-TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
+TEST_P(RegistrationPermuteDevices, ICPColored) {
     core::Device device = GetParam();
 
     t::geometry::PointCloud source_tpcd, target_tpcd;

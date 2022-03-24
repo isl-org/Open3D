@@ -84,15 +84,15 @@ public:
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor& query_points,
-                                                    double radius,
+                                                    const double radius,
                                                     bool sort) const override {
         utility::LogError("KnnIndex::SearchRadius not implemented.");
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchHybrid(
             const Tensor& query_points,
-            double radius,
-            int max_knn) const override {
+            const double radius,
+            const int max_knn) const override {
         utility::LogError("KnnIndex::SearchHybrid not implemented.");
     }
 
