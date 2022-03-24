@@ -50,7 +50,7 @@ public:
     // NearestNeighborSearch(const Tensor &dataset_points)
     //     : dataset_points_(dataset_points){};
     NearestNeighborSearch(const Tensor &dataset_points,
-                          const Dtype index_dtype = core::Int64)
+                          const Dtype index_dtype = core::Int32)
         : dataset_points_(dataset_points), index_dtype_(index_dtype){};
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
