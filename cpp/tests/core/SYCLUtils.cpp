@@ -39,13 +39,7 @@ INSTANTIATE_TEST_SUITE_P(SYCLUtils,
                          SYCLUtilsPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-TEST_P(SYCLUtilsPermuteDevices, SYCLDemo) {
-#ifdef BUILD_SYCL_MODULE
-    EXPECT_EQ(core::SYCLDemo(), 0);
-#else
-    EXPECT_EQ(core::SYCLDemo(), -1);
-#endif
-}
+TEST_P(SYCLUtilsPermuteDevices, SYCLDemo) { EXPECT_EQ(core::SYCLDemo(), 0); }
 
 }  // namespace tests
 }  // namespace open3d

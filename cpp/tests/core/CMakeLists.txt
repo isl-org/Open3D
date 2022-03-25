@@ -13,7 +13,6 @@ target_sources(tests PRIVATE
     Scalar.cpp
     ShapeUtil.cpp
     SizeVector.cpp
-    SYCLUtils.cpp
     Tensor.cpp
     TensorCheck.cpp
     TensorFunction.cpp
@@ -33,5 +32,11 @@ if (BUILD_ISPC_MODULE)
     target_sources(tests PRIVATE
         Indexer.ispc
         ParallelFor.ispc
+    )
+endif()
+
+if (BUILD_SYCL_MODULE)
+    target_sources(tests PRIVATE
+        SYCLUtils.cpp
     )
 endif()
