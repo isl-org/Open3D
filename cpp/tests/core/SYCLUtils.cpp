@@ -35,7 +35,7 @@ namespace open3d {
 namespace tests {
 
 class SYCLUtilsPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Tensor,
+INSTANTIATE_TEST_SUITE_P(SYCLUtils,
                          SYCLUtilsPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
