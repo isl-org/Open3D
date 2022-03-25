@@ -20,7 +20,7 @@ target_sources(core PRIVATE
     TensorList.cpp
 )
 
-open3d_target_sycl_sources(core PRIVATE VERBOSE
+open3d_sycl_target_sources(core PRIVATE VERBOSE
     SYCLUtils.cpp
 )
 
