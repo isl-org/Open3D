@@ -37,22 +37,29 @@
 #include "open3d/utility/IJsonConvertible.h"
 #include "tests/Tests.h"
 
+#ifdef WIN32
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#endif
+#ifdef __APPLE__
+// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
+#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
+#endif
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+
 namespace open3d {
 namespace tests {
 
-void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
-                             bool delete_temp = true) {
+void WriteReadAndAssertEqual(const geometry::Octree& src_octree) {
     // Write to file
-    std::string file_name = "temp_octree.json";
+    std::string file_name =
+            fs::temp_directory_path().string() + "/temp_octree.json";
     EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
 
     // Read from file
     geometry::Octree dst_octree;
     EXPECT_TRUE(io::ReadOctree(file_name, dst_octree));
     EXPECT_TRUE(src_octree == dst_octree);
-    if (delete_temp) {
-        EXPECT_EQ(std::remove(file_name.c_str()), 0);
-    }
 }
 
 TEST(OctreeIO, EmptyTree) {

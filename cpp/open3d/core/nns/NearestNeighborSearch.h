@@ -127,8 +127,8 @@ public:
     /// - counts: Counts of neighbour for each query points. [Tensor
     /// of shape {n}, with dtype Int32].
     std::tuple<Tensor, Tensor, Tensor> HybridSearch(const Tensor &query_points,
-                                                    double radius,
-                                                    int max_knn);
+                                                    const double radius,
+                                                    const int max_knn) const;
 
 private:
     bool SetIndex();

@@ -31,6 +31,16 @@
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "tests/Tests.h"
 
+#ifdef WIN32
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#endif
+#ifdef __APPLE__
+// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
+#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
+#endif
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+
 namespace open3d {
 namespace tests {
 
@@ -45,20 +55,21 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
     data::KnotMesh knot_data;
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(knot_data.GetPath(), mesh));
-    std::string file_name = "test_mesh.ply";
+    std::string file_name =
+            fs::temp_directory_path().string() + "/test_mesh.ply";
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
     EXPECT_TRUE(
             mesh.GetTriangleIndices().AllClose(mesh_read.GetTriangleIndices()));
     EXPECT_TRUE(
             mesh.GetVertexPositions().AllClose(mesh_read.GetVertexPositions()));
-    std::remove(file_name.c_str());
 }
 
 TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     auto cube_mesh = t::geometry::TriangleMesh::FromLegacy(
             *geometry::TriangleMesh::CreateBox());
-    const std::string filename = "cube.obj";
+    const std::string filename =
+            fs::temp_directory_path().string() + "/cube.obj";
     EXPECT_TRUE(t::io::WriteTriangleMesh(filename, cube_mesh));
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(filename, mesh));
@@ -86,7 +97,6 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
                                                           {4, 0, 6},
                                                           {6, 0, 2}});
     EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(triangles));
-    std::remove(filename.c_str());
 }
 
 // TODO: Add tests for triangle_uvs, materials, triangle_material_ids and
@@ -103,8 +113,9 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     EXPECT_EQ(mesh_tensor.GetVertexPositions().GetLength(),
               static_cast<int64_t>(mesh_legacy.vertices_.size()));
 
-    std::string file_name_tensor = "test_mesh_tensor.obj";
-    std::string file_name_legacy = "test_mesh_legacy.obj";
+    const std::string tmp_path = fs::temp_directory_path().string();
+    std::string file_name_tensor = tmp_path + "/test_mesh_tensor.obj";
+    std::string file_name_legacy = tmp_path + "/test_mesh_legacy.obj";
 
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name_tensor, mesh_tensor));
     EXPECT_TRUE(io::WriteTriangleMesh(file_name_legacy, mesh_legacy));
@@ -115,11 +126,6 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
               static_cast<int64_t>(mesh_legacy_read.triangles_.size()));
     EXPECT_EQ(mesh_tensor_read.GetVertexPositions().GetLength(),
               static_cast<int64_t>(mesh_legacy_read.vertices_.size()));
-
-    std::remove(file_name_tensor.c_str());
-    std::remove(file_name_legacy.c_str());
-    std::string file_name_legacy_mtl = "test_mesh_legacy.mtl";
-    std::remove(file_name_legacy_mtl.c_str());
 }
 
 }  // namespace tests
