@@ -27,17 +27,8 @@
 #include "open3d/io/PointCloudIO.h"
 
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
-
-#ifdef WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
-// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-#endif
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 namespace open3d {
 namespace tests {
@@ -155,7 +146,7 @@ TEST_P(ReadWritePC, Basic) {
     geometry::PointCloud pc;
     RandPC(pc);
 
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
 
     // we loose some precision when saving generated data
     // test writing if we have point, normal, and colors in pc
@@ -230,7 +221,7 @@ TEST_P(ReadWritePC, ColorReload) {
         pc_start.colors_.push_back(one * ((i) / 255.0));
     }
 
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
 
     EXPECT_TRUE(WritePointCloud(
             tmp_path + "/" + args.filename, pc_start,
@@ -266,7 +257,7 @@ TEST_P(ReadWritePC, ColorConvertLoad) {
         pc_start.colors_.push_back(one * ((i) / 255.0));
     }
 
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     EXPECT_TRUE(WritePointCloud(
             tmp_path + "/" + args.filename, pc_start,
             {bool(args.write_ascii), bool(args.compressed), true}));
@@ -307,7 +298,7 @@ TEST_P(ReadWritePC, ColorGrayAvg) {
         pc_start.colors_.push_back(one * ((i) / 255.0));
     }
 
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     EXPECT_TRUE(WritePointCloud(
             tmp_path + "/" + args.filename, pc_start,
             {bool(args.write_ascii), bool(args.compressed), true}));
@@ -346,7 +337,7 @@ TEST_P(ReadWritePC, ColorGrayscaleLuma) {
         pc_start.colors_.push_back(one * ((i) / 255.0));
     }
 
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     EXPECT_TRUE(WritePointCloud(
             tmp_path + "/" + args.filename, pc_start,
             {bool(args.write_ascii), bool(args.compressed), true}));
@@ -384,7 +375,7 @@ TEST_P(ReadWritePC, ColorCrop) {
     pc_start.points_.push_back(one * 0.);
     pc_start.colors_.push_back(one * (1.5));
 
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     EXPECT_TRUE(WritePointCloud(
             tmp_path + "/" + args.filename, pc_start,
             {bool(args.write_ascii), bool(args.compressed), true}));
@@ -413,7 +404,8 @@ TEST_P(ReadWritePC, ColorRounding) {
             pc_start.colors_.push_back(one * ((i - 0.2) / 255.0));
         }
 
-        const std::string tmp_path = fs::temp_directory_path().string();
+        const std::string tmp_path =
+                utility::filesystem::GetTempDirectoryPath();
         EXPECT_TRUE(WritePointCloud(
                 tmp_path + "/" + args.filename, pc_start,
                 {bool(args.write_ascii), bool(args.compressed), true}));
@@ -431,7 +423,8 @@ TEST_P(ReadWritePC, ColorRounding) {
             pc_start.colors_.push_back(one * ((i + 0.2) / 255.0));
         }
 
-        const std::string tmp_path = fs::temp_directory_path().string();
+        const std::string tmp_path =
+                utility::filesystem::GetTempDirectoryPath();
         EXPECT_TRUE(WritePointCloud(
                 tmp_path + "/" + args.filename, pc_start,
                 {bool(args.write_ascii), bool(args.compressed), true}));
@@ -460,7 +453,8 @@ TEST_P(ReadWritePC, UpdateProgressCallback) {
         WritePointCloudOption p(bool(args.write_ascii), bool(args.compressed));
         p.update_progress = Update;
         Clear();
-        const std::string tmp_path = fs::temp_directory_path().string();
+        const std::string tmp_path =
+                utility::filesystem::GetTempDirectoryPath();
         EXPECT_TRUE(WritePointCloud(tmp_path + "/" + args.filename, pc, p));
         EXPECT_EQ(last_percent, 100.);
         EXPECT_GT(num_calls, 10);
@@ -468,7 +462,8 @@ TEST_P(ReadWritePC, UpdateProgressCallback) {
     {
         ReadPointCloudOption p(Update);
         Clear();
-        const std::string tmp_path = fs::temp_directory_path().string();
+        const std::string tmp_path =
+                utility::filesystem::GetTempDirectoryPath();
         EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc, p));
         EXPECT_EQ(last_percent, 100.);
         EXPECT_GT(num_calls, 10);

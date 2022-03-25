@@ -33,17 +33,8 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/t/io/PointCloudIO.h"
+#include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
-
-#ifdef WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
-// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-#endif
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 namespace open3d {
 namespace tests {
@@ -692,7 +683,7 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     auto pcd_down = pcd.VoxelDownSample(0.1);
 
     const std::string file_path =
-            fs::temp_directory_path().string() + "/down.pcd";
+            utility::filesystem::GetTempDirectoryPath() + "/down.pcd";
     t::io::WritePointCloud(file_path, pcd_down);
 
     // Value test

@@ -38,17 +38,8 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
-
-#ifdef WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
-// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-#endif
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 namespace open3d {
 namespace tests {
@@ -113,7 +104,7 @@ TEST_P(ReadWriteTPC, Basic) {
                 attr, core::Tensor(tensor.values, tensor.size, dtype, device));
     }
 
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
 
     // we loose some precision when saving generated data
     // test writing if we have point, normal, and colors in pc
@@ -161,7 +152,7 @@ TEST_P(ReadWriteTPC, WriteBadData) {
                 attr, core::Tensor(tensor.values, tensor.size, dtype, device));
     }
 
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
 
     EXPECT_FALSE(t::io::WritePointCloud(
             tmp_path + "/" + args.filename, pc1,
@@ -189,7 +180,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
     auto pcd_in =
             t::io::CreatePointCloudFromFile(sample_ply_pointcloud.GetPath());
     const std::string filename_out =
-            fs::temp_directory_path().string() + "/SampleASCII.ply";
+            utility::filesystem::GetTempDirectoryPath() + "/SampleASCII.ply";
     t::io::WritePointCloud(filename_out, *pcd_in,
                            {/*write_ascii =*/true, false});
 
@@ -201,7 +192,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY2) {
 
 // Skip unsupported datatype.
 TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
-    std::string filename_out = fs::temp_directory_path().string() +
+    std::string filename_out = utility::filesystem::GetTempDirectoryPath() +
                                "/test_sample_wrong_format.ply";
     std::ofstream outfile;
     outfile.open(filename_out);
@@ -232,7 +223,7 @@ TEST(TPointCloudIO, ReadPointCloudFromPLY3) {
 TEST(TPointCloudIO, ReadWriteEmptyPTS) {
     t::geometry::PointCloud pcd, pcd_read;
     std::string file_name =
-            fs::temp_directory_path().string() + "/test_empty.pts";
+            utility::filesystem::GetTempDirectoryPath() + "/test_empty.pts";
     EXPECT_TRUE(pcd.IsEmpty());
     EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
     EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
@@ -258,7 +249,7 @@ TEST(TPointCloudIO, ReadWritePTS) {
             core::Tensor::Init<double>({10})));
 
     // Write pointcloud and match it after read.
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     std::string file_name = tmp_path + "/test_read.pts";
     EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
     EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,
@@ -309,8 +300,8 @@ TEST(TPointCloudIO, ReadPointCloudFromPTS1) {
 // Check PTS color float to uint8 conversion.
 TEST(TPointCloudIO, WritePTSColorConversion1) {
     t::geometry::PointCloud pcd, pcd_read;
-    std::string file_name =
-            fs::temp_directory_path().string() + "/test_color_conversion.pts";
+    std::string file_name = utility::filesystem::GetTempDirectoryPath() +
+                            "/test_color_conversion.pts";
     pcd.SetPointPositions(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
     pcd.SetPointColors(
             core::Tensor::Init<float>({{-1, 0.25, 0.4}, {0, 4, 0.1}}));
@@ -324,8 +315,8 @@ TEST(TPointCloudIO, WritePTSColorConversion1) {
 // Check PTS color boolean to uint8 conversion.
 TEST(TPointCloudIO, WritePTSColorConversion2) {
     t::geometry::PointCloud pcd, pcd_read;
-    std::string file_name =
-            fs::temp_directory_path().string() + "/test_color_conversion.pts";
+    std::string file_name = utility::filesystem::GetTempDirectoryPath() +
+                            "/test_color_conversion.pts";
     pcd.SetPointPositions(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
     pcd.SetPointColors(core::Tensor::Init<bool>({{1, 0, 0}, {1, 0, 1}}));
     EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
@@ -346,8 +337,8 @@ TEST(TPointCloudIO, ReadWritePointCloudAsNPZ) {
             pcd_ply.GetPointPositions().GetShape(), core::Float32);
     pcd_ply.SetPointAttr("custom_attr", custom_attr);
 
-    std::string filename =
-            fs::temp_directory_path().string() + "/test_npz_pointcloud.npz";
+    std::string filename = utility::filesystem::GetTempDirectoryPath() +
+                           "/test_npz_pointcloud.npz";
     EXPECT_TRUE(t::io::WritePointCloud(filename, pcd_ply));
 
     // Read from the saved pointcloud.
@@ -362,7 +353,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsNPZ) {
 TEST_P(PointCloudIOPermuteDevices, WriteDeviceTestPLY) {
     core::Device device = GetParam();
     std::string filename =
-            fs::temp_directory_path().string() + "/test_write.ply";
+            utility::filesystem::GetTempDirectoryPath() + "/test_write.ply";
     core::Tensor points = core::Tensor::Ones({10, 3}, core::Float32, device);
     t::geometry::PointCloud pcd(points);
     EXPECT_TRUE(t::io::WritePointCloud(filename, pcd));
@@ -402,7 +393,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
     input_pcd.SetPointAttr("custom_attr_double", custom_attr_double);
 
     // PCD IO for ASCII format.
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     std::string filename_ascii = tmp_path + "/test_pcd_pointcloud_ascii.pcd";
 
     EXPECT_TRUE(t::io::WritePointCloud(

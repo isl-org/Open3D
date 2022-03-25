@@ -27,18 +27,9 @@
 #include "open3d/io/VoxelGridIO.h"
 
 #include "open3d/geometry/VoxelGrid.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/Tests.h"
-
-#ifdef WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
-// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-#endif
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 namespace open3d {
 namespace tests {
@@ -54,8 +45,8 @@ TEST(VoxelGridIO, PLYWriteRead) {
                                              Eigen::Vector3d(0.4, 0.5, 0.6)));
 
     // Write to file
-    std::string file_name =
-            fs::temp_directory_path().string() + "/temp_voxel_grid.ply";
+    std::string file_name = utility::filesystem::GetTempDirectoryPath() +
+                            "/temp_voxel_grid.ply";
     EXPECT_TRUE(io::WriteVoxelGrid(file_name, *src_voxel_grid));
 
     // Read from file

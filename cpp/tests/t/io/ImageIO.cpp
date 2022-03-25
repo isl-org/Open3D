@@ -33,17 +33,8 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/Image.h"
+#include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
-
-#ifdef WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
-// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-#endif
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 namespace open3d {
 namespace tests {
@@ -70,14 +61,14 @@ void WriteTestImage(const std::string path, const t::geometry::Image image) {
 TEST(ImageIO, WriteImage) {
     t::geometry::Image test_img = CreateTestImage();
 
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
 
     EXPECT_TRUE(t::io::WriteImage(tmp_path + "/test_imageio.png", test_img));
     EXPECT_TRUE(t::io::WriteImage(tmp_path + "/test_imageio.jpg", test_img));
 }
 
 TEST(ImageIO, CreateImageFromFile) {
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     WriteTestImage(tmp_path, CreateTestImage());
     std::shared_ptr<t::geometry::Image> img_png =
             t::io::CreateImageFromFile(tmp_path + "/test_imageio.png");
@@ -104,7 +95,7 @@ TEST(ImageIO, CreateImageFromFile) {
 }
 
 TEST(ImageIO, ReadImage) {
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     WriteTestImage(tmp_path, CreateTestImage());
     t::geometry::Image img;
     EXPECT_TRUE(t::io::ReadImage(tmp_path + "/test_imageio.png", img));
@@ -127,7 +118,7 @@ TEST(ImageIO, ReadImage) {
 }
 
 TEST(ImageIO, ReadImageFromPNG) {
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     WriteTestImage(tmp_path, CreateTestImage());
     t::geometry::Image img;
     EXPECT_TRUE(t::io::ReadImageFromPNG(tmp_path + "/test_imageio.png", img));
@@ -143,7 +134,7 @@ TEST(ImageIO, ReadImageFromPNG) {
 }
 
 TEST(ImageIO, WriteImageToPNG) {
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     WriteTestImage(tmp_path, CreateTestImage());
     t::geometry::Image img = CreateTestImage();
     EXPECT_TRUE(t::io::WriteImageToPNG(tmp_path + "/test_imageio.png", img));
@@ -161,7 +152,7 @@ TEST(ImageIO, WriteImageToPNG) {
 }
 
 TEST(ImageIO, ReadImageFromJPG) {
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     WriteTestImage(tmp_path, CreateTestImage());
     t::geometry::Image img;
     EXPECT_TRUE(t::io::ReadImageFromJPG(tmp_path + "/test_imageio.jpg", img));
@@ -177,7 +168,7 @@ TEST(ImageIO, ReadImageFromJPG) {
 }
 
 TEST(ImageIO, WriteImageToJPG) {
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     WriteTestImage(tmp_path, CreateTestImage());
     t::geometry::Image img = CreateTestImage();
     EXPECT_TRUE(t::io::WriteImageToJPG(tmp_path + "/test_imageio.jpg", img));
@@ -197,7 +188,7 @@ TEST(ImageIO, WriteImageToJPG) {
 // JPG supports only UInt8, and PNG supports both UInt8 and UInt16.
 // All other data types are expected to fail.
 TEST(ImageIO, DifferentDtype) {
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     EXPECT_TRUE(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 3, core::UInt8)));
@@ -244,7 +235,7 @@ TEST(ImageIO, DifferentDtype) {
 }
 
 TEST(ImageIO, CornerCases) {
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     EXPECT_ANY_THROW(
             t::io::WriteImage(tmp_path + "/test_imageio_dtype.jpg",
                               t::geometry::Image(100, 200, 0, core::UInt8)));
