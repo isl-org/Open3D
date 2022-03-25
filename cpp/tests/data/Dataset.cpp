@@ -72,7 +72,6 @@ TEST(Dataset, SingleDownloadDataset) {
     EXPECT_TRUE(
             utility::filesystem::FileExists(extract_dir + "/BunnyMesh.ply"));
 
-    // Basic methods.
     EXPECT_EQ(single_download_dataset.GetPrefix(), prefix);
     EXPECT_EQ(single_download_dataset.GetDataRoot(), data_root);
     EXPECT_EQ(single_download_dataset.GetDownloadDir(), download_dir);
@@ -87,17 +86,14 @@ TEST(Dataset, DemoICPPointClouds) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::DemoICPPointClouds demo_icp;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Methods to get path.
     const std::vector<std::string> paths = {extract_dir + "/cloud_bin_0.pcd",
                                             extract_dir + "/cloud_bin_1.pcd",
                                             extract_dir + "/cloud_bin_2.pcd"};
     EXPECT_EQ(demo_icp.GetPaths(), paths);
     for (size_t i = 0; i < paths.size(); ++i) {
         EXPECT_EQ(demo_icp.GetPaths(i), paths[i]);
-        // Check if the file actually exists.
         EXPECT_TRUE(utility::filesystem::FileExists(demo_icp.GetPaths(i)));
     }
 
@@ -106,7 +102,6 @@ TEST(Dataset, DemoICPPointClouds) {
     EXPECT_TRUE(utility::filesystem::FileExists(
             demo_icp.GetTransformationLogPath()));
 
-    // Basic methods.
     EXPECT_EQ(demo_icp.GetPrefix(), prefix);
     EXPECT_EQ(demo_icp.GetDataRoot(), data_root);
     EXPECT_EQ(demo_icp.GetDownloadDir(), download_dir);
@@ -121,20 +116,16 @@ TEST(Dataset, DemoColoredICPPointClouds) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::DemoColoredICPPointClouds dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Methods to get path.
     const std::vector<std::string> paths = {extract_dir + "/frag_115.ply",
                                             extract_dir + "/frag_116.ply"};
     EXPECT_EQ(dataset.GetPaths(), paths);
     for (size_t i = 0; i < paths.size(); ++i) {
         EXPECT_EQ(dataset.GetPaths(i), paths[i]);
-        // Check if the file actually exists.
         EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPaths(i)));
     }
 
-    // Basic methods.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -149,16 +140,13 @@ TEST(Dataset, DemoCropPointCloud) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::DemoCropPointCloud dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Methods to get path.
     EXPECT_EQ(dataset.GetPointCloudPath(), extract_dir + "/fragment.ply");
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPointCloudPath()));
     EXPECT_EQ(dataset.GetCroppedJSONPath(), extract_dir + "/cropped.json");
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetCroppedJSONPath()));
 
-    // Basic methods.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -173,10 +161,8 @@ TEST(Dataset, DemoFeatureMatchingPointClouds) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::DemoFeatureMatchingPointClouds dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Methods to get path.
     const std::vector<std::string> point_cloud_paths = {
             extract_dir + "/cloud_bin_0.pcd", extract_dir + "/cloud_bin_1.pcd"};
     EXPECT_EQ(dataset.GetPointCloudPaths(), point_cloud_paths);
@@ -191,7 +177,6 @@ TEST(Dataset, DemoFeatureMatchingPointClouds) {
             extract_dir + "/cloud_bin_1.d32.bin"};
     EXPECT_EQ(dataset.GetL32DFeaturePaths(), l32d_feature_paths);
 
-    // Basic methods.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -206,16 +191,13 @@ TEST(Dataset, DemoPoseGraphOptimization) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::DemoPoseGraphOptimization dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Methods to get path.
     EXPECT_EQ(dataset.GetPoseGraphFragmentPath(),
               extract_dir + "/pose_graph_example_fragment.json");
     EXPECT_EQ(dataset.GetPoseGraphGlobalPath(),
               extract_dir + "/pose_graph_example_global.json");
 
-    // Basic methods.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -230,15 +212,11 @@ TEST(Dataset, PCDPointCloud) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::PCDPointCloud dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetPath(), extract_dir + "/fragment.pcd");
-    // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -253,15 +231,11 @@ TEST(Dataset, PLYPointCloud) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::PLYPointCloud dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetPath(), extract_dir + "/fragment.ply");
-    // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -276,15 +250,11 @@ TEST(Dataset, PTSPointCloud) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::PTSPointCloud dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetPath(), extract_dir + "/point_cloud_sample1.pts");
-    // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -299,16 +269,13 @@ TEST(Dataset, SampleNYURGBDImage) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::SampleNYURGBDImage dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetColorPath(), extract_dir + "/NYU_color.ppm");
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetColorPath()));
     EXPECT_EQ(dataset.GetDepthPath(), extract_dir + "/NYU_depth.pgm");
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetDepthPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -323,16 +290,13 @@ TEST(Dataset, SampleSUNRGBDImage) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::SampleSUNRGBDImage dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetColorPath(), extract_dir + "/SUN_color.jpg");
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetColorPath()));
     EXPECT_EQ(dataset.GetDepthPath(), extract_dir + "/SUN_depth.png");
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetDepthPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -347,16 +311,13 @@ TEST(Dataset, SampleTUMRGBDImage) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::SampleTUMRGBDImage dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetColorPath(), extract_dir + "/TUM_color.png");
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetColorPath()));
     EXPECT_EQ(dataset.GetDepthPath(), extract_dir + "/TUM_depth.png");
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetDepthPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -371,10 +332,8 @@ TEST(Dataset, SampleRedwoodRGBDImages) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::SampleRedwoodRGBDImages dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     const std::vector<std::string> color_paths = {
             extract_dir + "/color/00000.jpg", extract_dir + "/color/00001.jpg",
             extract_dir + "/color/00002.jpg", extract_dir + "/color/00003.jpg",
@@ -408,7 +367,6 @@ TEST(Dataset, SampleRedwoodRGBDImages) {
     EXPECT_TRUE(
             utility::filesystem::FileExists(dataset.GetReconstructionPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -423,10 +381,8 @@ TEST(Dataset, SampleFountainRGBDImages) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::SampleFountainRGBDImages dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     const std::vector<std::string> color_paths = {
             extract_dir + "/image/0000010-000001228920.jpg",
             extract_dir + "/image/0000031-000004096400.jpg",
@@ -516,7 +472,6 @@ TEST(Dataset, SampleFountainRGBDImages) {
     EXPECT_TRUE(
             utility::filesystem::FileExists(dataset.GetReconstructionPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -531,15 +486,11 @@ TEST(Dataset, SampleL515Bag) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::SampleL515Bag dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetPath(), extract_dir + "/L515_test_s.bag");
-    // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -554,15 +505,11 @@ TEST(Dataset, EaglePointCloud) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::EaglePointCloud dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetPath(), extract_dir + "/EaglePointCloud.ply");
-    // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -577,15 +524,11 @@ TEST(Dataset, ArmadilloMesh) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::ArmadilloMesh dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetPath(), extract_dir + "/ArmadilloMesh.ply");
-    // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -600,15 +543,11 @@ TEST(Dataset, BunnyMesh) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::BunnyMesh dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetPath(), extract_dir + "/BunnyMesh.ply");
-    // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -623,15 +562,11 @@ TEST(Dataset, KnotMesh) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::KnotMesh dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetPath(), extract_dir + "/KnotMesh.ply");
-    // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -646,10 +581,8 @@ TEST(Dataset, MonkeyModel) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::MonkeyModel dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     std::unordered_map<std::string, std::string> map_filename_to_path = {
             {"albedo", extract_dir + "/albedo.png"},
             {"ao", extract_dir + "/ao.png"},
@@ -662,15 +595,11 @@ TEST(Dataset, MonkeyModel) {
             {"roughness", extract_dir + "/roughness.png"}};
 
     for (auto file_name : dataset.GetPathMap()) {
-        // Check the path map.
         EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
-        // Check the `GetPath` method.
         EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
-        // Check if the file path exists.
         EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
     }
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -685,10 +614,8 @@ TEST(Dataset, SwordModel) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::SwordModel dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     std::unordered_map<std::string, std::string> map_filename_to_path = {
             {"sword_material", extract_dir + "/UV.mtl"},
             {"sword_model", extract_dir + "/UV.obj"},
@@ -698,15 +625,11 @@ TEST(Dataset, SwordModel) {
             {"roughness", extract_dir + "/UV_blinn1SG_Roughness.png"}};
 
     for (auto file_name : dataset.GetPathMap()) {
-        // Check the path map.
         EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
-        // Check the `GetPath` method.
         EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
-        // Check if the file path exists.
         EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
     }
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -721,25 +644,19 @@ TEST(Dataset, CrateModel) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::CrateModel dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     std::unordered_map<std::string, std::string> map_filename_to_path = {
             {"create_material", extract_dir + "/crate.mtl"},
             {"create_model", extract_dir + "/crate.obj"},
             {"texture_image", extract_dir + "/crate.jpg"}};
 
     for (auto file_name : dataset.GetPathMap()) {
-        // Check the path map.
         EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
-        // Check the `GetPath` method.
         EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
-        // Check if the file path exists.
         EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
     }
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -754,15 +671,11 @@ TEST(Dataset, JuneauImage) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::JuneauImage dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Method to get path.
     EXPECT_EQ(dataset.GetPath(), extract_dir + "/JuneauImage.jpg");
-    // Check if the file actually exists.
     EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
 
-    // Basic method.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -777,10 +690,8 @@ TEST(Dataset, DISABLED_RedwoodLivingRoomPointClouds) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::LivingRoomPointClouds dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Methods to get path.
     std::vector<std::string> paths;
     paths.reserve(57);
     for (int i = 0; i < 57; ++i) {
@@ -790,11 +701,9 @@ TEST(Dataset, DISABLED_RedwoodLivingRoomPointClouds) {
     EXPECT_EQ(dataset.GetPaths(), paths);
     for (size_t i = 0; i < paths.size(); ++i) {
         EXPECT_EQ(dataset.GetPaths(i), paths[i]);
-        // Check if the file actually exists.
         EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPaths(i)));
     }
 
-    // Basic methods.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
@@ -809,10 +718,8 @@ TEST(Dataset, DISABLED_RedwoodOfficePointClouds) {
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
     data::OfficePointClouds dataset;
-    // Check if downloaded.
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    // Methods to get path.
     std::vector<std::string> paths;
     paths.reserve(53);
     for (int i = 0; i < 53; ++i) {
@@ -822,18 +729,15 @@ TEST(Dataset, DISABLED_RedwoodOfficePointClouds) {
     EXPECT_EQ(dataset.GetPaths(), paths);
     for (size_t i = 0; i < paths.size(); ++i) {
         EXPECT_EQ(dataset.GetPaths(i), paths[i]);
-        // Check if the file actually exists.
         EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPaths(i)));
     }
 
     EXPECT_EQ(dataset.GetPaths(), paths);
     for (size_t i = 0; i < paths.size(); ++i) {
         EXPECT_EQ(dataset.GetPaths(i), paths[i]);
-        // Check if the file actually exists.
         EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPaths(i)));
     }
 
-    // Basic methods.
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
