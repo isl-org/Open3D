@@ -49,6 +49,12 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
 
+# The base image already contains the oneAPI packages.
+# Having this in the list can cause checksum errors when apt-get update.
+RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
+        rm -rf /etc/apt/sources.list.d/oneAPI.list; \
+    fi
+
 # Dependencies: basic
 RUN apt-get update && apt-get install -y \
     git  \
