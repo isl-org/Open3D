@@ -72,7 +72,8 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> MultiRadiusSearch(
     CHECK_TYPE(queries_row_splits, kInt64);
     CHECK_SAME_DTYPE(points, queries, radii);
     CHECK_SAME_DEVICE_TYPE(points, queries, radii);
-    assert(index_dtype == kInt32 || index_dtype == kInt64);
+    TORCH_CHECK(index_dtype == torch::kInt32 || index_dtype == torch::kInt64,
+                "index_dtype must be int32 or int64");
     // ensure that these are on the cpu
     points_row_splits = points_row_splits.to(torch::kCPU);
     queries_row_splits = queries_row_splits.to(torch::kCPU);
@@ -137,7 +138,7 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> MultiRadiusSearch(
 static auto registry = torch::RegisterOperators(
         "open3d::radius_search(Tensor points, Tensor queries, Tensor radii, "
         "Tensor points_row_splits, Tensor queries_row_splits, ScalarType "
-        "index_dtype = long,"
+        "index_dtype = 3,"
         "str metric=\"L2\", bool ignore_query_point=False, bool "
         "return_distances=False, bool normalize_distances=False) -> (Tensor "
         "neighbors_index, Tensor "
