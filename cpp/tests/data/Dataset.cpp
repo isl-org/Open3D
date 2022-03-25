@@ -36,7 +36,6 @@ namespace open3d {
 namespace tests {
 
 TEST(Dataset, DatasetBase) {
-    // Prefix cannot be empty.
     data::Dataset ds("some_prefix");
     EXPECT_EQ(ds.GetDataRoot(),
               utility::filesystem::GetHomeDirectory() + "/open3d_data");
@@ -66,7 +65,6 @@ TEST(Dataset, SingleDownloadDataset) {
             prefix, url_mirrors, md5,
             /*no_extact*/ true, data_root);
 
-    // Check if file is downloaded and extracted / copied.
     EXPECT_TRUE(
             utility::filesystem::FileExists(download_dir + "/BunnyMesh.ply"));
     EXPECT_TRUE(
@@ -97,7 +95,6 @@ TEST(Dataset, DemoICPPointClouds) {
         EXPECT_TRUE(utility::filesystem::FileExists(demo_icp.GetPaths(i)));
     }
 
-    // Path to transformation log file.
     EXPECT_EQ(demo_icp.GetTransformationLogPath(), extract_dir + "/init.log");
     EXPECT_TRUE(utility::filesystem::FileExists(
             demo_icp.GetTransformationLogPath()));
