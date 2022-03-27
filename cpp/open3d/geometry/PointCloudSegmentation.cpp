@@ -26,6 +26,7 @@
 
 #include <Eigen/Dense>
 #include <algorithm>
+#include <iostream>
 #include <iterator>
 #include <mutex>
 #include <numeric>
@@ -173,10 +174,10 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const double distance_threshold /* = 0.01 */,
         const int ransac_n /* = 3 */,
         const int num_iterations /* = 100 */,
-        const int min_iterations /* = 10 */,
+        const double probability /* = 0.99999999 */,
         utility::optional<int> seed /* = utility::nullopt */) const {
-    if (min_iterations > num_iterations) {
-        utility::LogWarning("min_iterations should <= num_iterations.");
+    if (probability <= 0 || probability > 1) {
+        utility::LogError("Probability must be > 0 or <= 1.0");
     }
 
     RANSACResult result;
@@ -203,12 +204,10 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
     // Use size_t here to avoid large integer which acceed max of int.
     size_t break_iteration = std::numeric_limits<size_t>::max();
     int iteration_count = 0;
-    const double probability = 1 - 1e-8;
 
 #pragma omp parallel for schedule(static)
     for (int itr = 0; itr < num_iterations; itr++) {
-        if ((size_t)iteration_count > break_iteration &&
-            iteration_count > min_iterations) {
+        if ((size_t)iteration_count > break_iteration) {
             continue;
         }
 
@@ -241,11 +240,15 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
                  this_result.inlier_rmse_ < result.inlier_rmse_)) {
                 result = this_result;
                 best_plane_model = plane_model;
-
-                break_iteration = log(1 - probability) /
-                                  log(1 - pow(result.fitness_, ransac_n));
-                break_iteration =
-                        std::min(break_iteration, (size_t)num_iterations);
+                if (result.fitness_ < 1.0) {
+                    break_iteration = std::min(
+                            log(1 - probability) /
+                                    log(1 - pow(result.fitness_, ransac_n)),
+                            (double)num_iterations);
+                } else {
+                    // Set break_iteration to 0 to force to break the loop.
+                    break_iteration = 0;
+                }
             }
             iteration_count++;
         }
@@ -253,13 +256,15 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
 
     // Find the final inliers using best_plane_model.
     std::vector<size_t> final_inliers;
-    for (size_t idx = 0; idx < points_.size(); ++idx) {
-        Eigen::Vector4d point(points_[idx](0), points_[idx](1), points_[idx](2),
-                              1);
-        double distance = std::abs(best_plane_model.dot(point));
+    if (!best_plane_model.isZero(0)) {
+        for (size_t idx = 0; idx < points_.size(); ++idx) {
+            Eigen::Vector4d point(points_[idx](0), points_[idx](1),
+                                  points_[idx](2), 1);
+            double distance = std::abs(best_plane_model.dot(point));
 
-        if (distance < distance_threshold) {
-            final_inliers.emplace_back(idx);
+            if (distance < distance_threshold) {
+                final_inliers.emplace_back(idx);
+            }
         }
     }
 

@@ -1238,9 +1238,9 @@ TEST(PointCloud, SegmentPlane) {
 
 TEST(PointCloud, SegmentPlaneKnownPlane) {
     // Points sampled from the plane x + y + z + 1 = 0
-    std::vector<Eigen::Vector3d> ref = {{1.0, 1.0, -3.0},
-                                        {2.0, 2.0, -5.0},
-                                        {-1.0, -1.0, 1.0},
+    std::vector<Eigen::Vector3d> ref = {{2.0, 1.0, -4.0},
+                                        {1.0, 3.0, -5.0},
+                                        {-2.0, -1.0, 2.0},
                                         {-2.0, -2.0, 3.0},
                                         {10.0, 10.0, -21.0}};
     geometry::PointCloud pcd(ref);

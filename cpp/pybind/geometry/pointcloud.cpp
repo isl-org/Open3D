@@ -202,7 +202,7 @@ Returns:
                  "Segments a plane in the point cloud using the RANSAC "
                  "algorithm.",
                  "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a,
-                 "min_iterations"_a = 1, "seed"_a = py::none())
+                 "probability"_a = 0.99999999, "seed"_a = py::none())
             .def_static(
                     "create_from_depth_image",
                     &PointCloud::CreateFromDepthImage,
