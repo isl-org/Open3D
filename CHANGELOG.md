@@ -4,6 +4,7 @@
 * Fix undefined names: docstr and VisibleDeprecationWarning (PR #3844)
 * Corrected documentation for Tensor based PointClound, LineSet, TriangleMesh (PR #4685)
 * Corrected documentation for KDTree (typo in Notebook) (PR #4744)
+* Python ImageWidget now implements set_on_mouse and set_on_key, similarly to SceneWidget
 
 ## 0.13
 

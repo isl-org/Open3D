@@ -911,30 +911,33 @@ void pybind_gui_classes(py::module &m) {
 
     // ---- ImageWidget ----
     class PyImageWidget : public ImageWidget {
-        using Super = ImageWidget; 
+        using Super = ImageWidget;
 
-    public: 
+    public:
         PyImageWidget() : Super() {}
         /// Uses image from the specified path. Each ImageWidget will use one
         /// draw call.
         explicit PyImageWidget(const char *image_path) : Super(image_path) {}
         /// Uses existing image. Each ImageWidget will use one draw call.
         explicit PyImageWidget(std::shared_ptr<open3d::geometry::Image> image)
-        : Super(image) {}
+            : Super(image) {}
         /// Uses existing image. Each ImageWidget will use one draw call.
         explicit PyImageWidget(
-        std::shared_ptr<open3d::t::geometry::Image> image)
-        : Super(image) {}
+                std::shared_ptr<open3d::t::geometry::Image> image)
+            : Super(image) {}
         /// Uses an existing texture, using texture coordinates
         /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
         /// This is useful for using an icon atlas to reduce draw calls.
         explicit PyImageWidget(
-        open3d::visualization::rendering::TextureHandle texture_id,
-        float u0 = 0.0f, float v0 = 0.0f, float u1 = 1.0f, float v1 = 1.0f)
-        : Super(texture_id, u0, v0, u1, v1) {}
+                open3d::visualization::rendering::TextureHandle texture_id,
+                float u0 = 0.0f,
+                float v0 = 0.0f,
+                float u1 = 1.0f,
+                float v1 = 1.0f)
+            : Super(texture_id, u0, v0, u1, v1) {}
         PyImageWidget(
-        std::shared_ptr<open3d::visualization::gui::UIImage> image)
-        : Super(image) {}
+                std::shared_ptr<open3d::visualization::gui::UIImage> image)
+            : Super(image) {}
 
         ~PyImageWidget() = default;
 
@@ -1013,8 +1016,8 @@ void pybind_gui_classes(py::module &m) {
                           "gui.UIImage.Scaling.ASPECT: scaled to fit but "
                           "keeping the image's aspect ratio");
 
-    py::class_<PyImageWidget, UnownedPointer<PyImageWidget>, Widget> imagewidget(
-            m, "ImageWidget", "Displays a bitmap");
+    py::class_<PyImageWidget, UnownedPointer<PyImageWidget>, Widget>
+            imagewidget(m, "ImageWidget", "Displays a bitmap");
     imagewidget
             .def(py::init<>([]() { return new PyImageWidget(); }),
                  "Creates an ImageWidget with no image")
@@ -1062,7 +1065,7 @@ void pybind_gui_classes(py::module &m) {
                  "same as creating a new UIImage and calling SetUIImage(). "
                  "This is the slow path, and may eventually exhaust internal "
                  "texture resources.")
-            .def("set_on_mouse", &PyImageWidget::SetOnMouse, 
+            .def("set_on_mouse", &PyImageWidget::SetOnMouse,
                  "Sets a callback for mouse events. This callback is passed "
                  "a MouseEvent object. The callback must return "
                  "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
