@@ -935,9 +935,6 @@ void pybind_gui_classes(py::module &m) {
                 float u1 = 1.0f,
                 float v1 = 1.0f)
             : Super(texture_id, u0, v0, u1, v1) {}
-        PyImageWidget(
-                std::shared_ptr<open3d::visualization::gui::UIImage> image)
-            : Super(image) {}
 
         ~PyImageWidget() = default;
 
