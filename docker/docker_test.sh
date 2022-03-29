@@ -126,7 +126,7 @@ cpp_python_linking_uninstall_test() {
 
     # C++ test
     if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
-        gtest_filter="-*Sum*:*TransformationEstimation*:*Registration*:*Odometry*:*ReadWriteTriangleMeshOBJ*:*LU*:*LUIpiv*"
+        gtest_filter="-*Sum*:*TransformationEstimation*:*Registration*:*Odometry*:*ReadWriteTriangleMeshOBJ*:*LU*:*LUIpiv*:*RGBDOdometry*"
     else
         gtest_filter="*"
     fi
