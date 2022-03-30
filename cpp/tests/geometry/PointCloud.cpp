@@ -1254,6 +1254,27 @@ TEST(PointCloud, SegmentPlaneKnownPlane) {
     ExpectEQ(pcd.SelectByIndex(inliers)->points_, ref);
 }
 
+TEST(PointCloud, SegmentPlaneSpecialCase) {
+    // Test SegmentPlane with probability == 1, <= 0 and > 1.
+
+    // Points sampled from the plane x + y + z + 1 = 0
+    std::vector<Eigen::Vector3d> ref = {{2.0, 1.0, -4.0},
+                                        {1.0, 3.0, -5.0},
+                                        {-2.0, -1.0, 2.0},
+                                        {-2.0, -2.0, 3.0},
+                                        {10.0, 10.0, -21.0}};
+    geometry::PointCloud pcd(ref);
+
+    Eigen::Vector4d plane_model;
+    std::vector<size_t> inliers;
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 10, 1);
+    ExpectEQ(pcd.SelectByIndex(inliers)->points_, ref);
+
+    EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, 0));
+    EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, -1));
+    EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, 1.5));
+}
+
 TEST(PointCloud, CreateFromDepthImage) {
     data::SampleRedwoodRGBDImages redwood_data;
     const std::string trajectory_path = redwood_data.GetTrajectoryLogPath();

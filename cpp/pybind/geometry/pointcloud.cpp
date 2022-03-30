@@ -353,7 +353,8 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
               "Number of initial points to be considered inliers in each "
               "iteration."},
              {"num_iterations", "Number of iterations."},
-             {"min_iterations", "Minimum number of iterations to be executed."},
+             {"probability",
+              "Expected probability of finding the optimal plane."},
              {"seed",
               "Seed value used in the random generator, set to None to use a "
               "random seed value with each function call."}});
