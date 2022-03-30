@@ -12,6 +12,7 @@ ExternalProject_Add(
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
         -DFMT_DOC=OFF
         -DFMT_TEST=OFF
         -DFMT_FUZZ=OFF

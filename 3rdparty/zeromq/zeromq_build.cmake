@@ -47,6 +47,7 @@ ExternalProject_Add(
         -DWITH_DOCS=OFF
         -DWITH_PERF_TOOL=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+        -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
         ${ExternalProject_CMAKE_ARGS_hidden}
         ${WIN_CMAKE_ARGS}
     BUILD_BYPRODUCTS
