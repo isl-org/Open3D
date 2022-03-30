@@ -578,6 +578,57 @@ void pybind_office_point_clouds(py::module& m) {
     docstring::ClassMethodDocInject(m, "OfficePointClouds", "paths");
 }
 
+void pybind_lounge_rgbd_images(py::module& m) {
+    // open3d.data.LoungeRGBDImages
+    py::class_<LoungeRGBDImages, PySimpleDataset<LoungeRGBDImages>,
+               std::shared_ptr<LoungeRGBDImages>, SingleDownloadDataset>
+            lounge_rgbd_images(
+                    m, "LoungeRGBDImages",
+                    "Data class for `LoungeRGBDImages` contains a sample set "
+                    "of 3000 color and depth images from Stanford Lounge RGBD "
+                    "dataset. Additionally it also contains camera trajectory "
+                    "log, and mesh reconstruction.");
+    lounge_rgbd_images.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "color_paths", &LoungeRGBDImages::GetColorPaths,
+                    "List of paths to color image samples of size 3000. Use "
+                    "`color_paths[0]`, `color_paths[1]` ... "
+                    "`color_paths[2999]` "
+                    "to access the paths.")
+            .def_property_readonly(
+                    "depth_paths", &LoungeRGBDImages::GetDepthPaths,
+                    "List of paths to depth image samples of size 3000. Use "
+                    "`depth_paths[0]`, `depth_paths[1]` ... "
+                    "`depth_paths[2999]` "
+                    "to access the paths.")
+            .def_property_readonly(
+                    "trajectory_log_path",
+                    &LoungeRGBDImages::GetTrajectoryLogPath,
+                    "Path to camera trajectory log file `trajectory.log`.")
+            .def_property_readonly("reconstruction_path",
+                                   &LoungeRGBDImages::GetReconstructionPath,
+                                   "Path to mesh reconstruction.");
+    docstring::ClassMethodDocInject(m, "LoungeRGBDImages", "color_paths");
+    docstring::ClassMethodDocInject(m, "LoungeRGBDImages", "depth_paths");
+    docstring::ClassMethodDocInject(m, "LoungeRGBDImages",
+                                    "trajectory_log_path");
+    docstring::ClassMethodDocInject(m, "LoungeRGBDImages",
+                                    "reconstruction_path");
+}
+
+void pybind_jackjack_l515_bag(py::module& m) {
+    // open3d.data.JackJackL515Bag
+    py::class_<JackJackL515Bag, PySimpleDataset<JackJackL515Bag>,
+               std::shared_ptr<JackJackL515Bag>, SingleDownloadDataset>
+            jackjack_l515_bag(m, "JackJackL515Bag",
+                              "Data class for `SampleL515Bag` contains the "
+                              "`JackJackL515Bag.bag` file.");
+    jackjack_l515_bag.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("path", &JackJackL515Bag::GetPath,
+                                   "Path to the `JackJackL515Bag.bag` file.");
+    docstring::ClassMethodDocInject(m, "JackJackL515Bag", "path");
+}
+
 void pybind_data(py::module& m) {
     py::module m_submodule = m.def_submodule("data", "Data handling module.");
     pybind_data_classes(m_submodule);
@@ -603,6 +654,8 @@ void pybind_data(py::module& m) {
     pybind_juneau(m_submodule);
     pybind_living_room_point_clouds(m_submodule);
     pybind_office_point_clouds(m_submodule);
+    pybind_lounge_rgbd_images(m_submodule);
+    pybind_jackjack_l515_bag(m_submodule);
 }
 
 }  // namespace data
