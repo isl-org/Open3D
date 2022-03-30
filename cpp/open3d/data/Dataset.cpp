@@ -544,5 +544,57 @@ std::string OfficePointClouds::GetPaths(size_t index) const {
     return paths_[index];
 }
 
+LoungeRGBDImages::LoungeRGBDImages(const std::string& data_root)
+    : SingleDownloadDataset(
+              "LoungeRGBDImages",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/LoungeRGBDImages.zip"},
+              "cdd307caef898519a8829ce1b6ab9f75",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+
+    color_paths_.reserve(3000);
+    depth_paths_.reserve(3000);
+    for (int i = 1; i < 10; ++i) {
+        color_paths_.push_back(extract_dir + "/color/00000" +
+                               std::to_string(i) + ".png");
+        depth_paths_.push_back(extract_dir + "/depth/00000" +
+                               std::to_string(i) + ".png");
+    }
+    for (int i = 10; i < 100; ++i) {
+        color_paths_.push_back(extract_dir + "/color/0000" + std::to_string(i) +
+                               ".png");
+        depth_paths_.push_back(extract_dir + "/depth/0000" + std::to_string(i) +
+                               ".png");
+    }
+    for (int i = 100; i < 1000; ++i) {
+        color_paths_.push_back(extract_dir + "/color/000" + std::to_string(i) +
+                               ".png");
+        depth_paths_.push_back(extract_dir + "/depth/000" + std::to_string(i) +
+                               ".png");
+    }
+    for (int i = 1000; i <= 3000; ++i) {
+        color_paths_.push_back(extract_dir + "/color/00" + std::to_string(i) +
+                               ".png");
+        depth_paths_.push_back(extract_dir + "/depth/00" + std::to_string(i) +
+                               ".png");
+    }
+
+    trajectory_log_path_ = extract_dir + "/lounge_trajectory.log";
+    reconstruction_path_ = extract_dir + "/lounge.ply";
+}
+
+JackJackL515Bag::JackJackL515Bag(const std::string& data_root)
+    : SingleDownloadDataset(
+              "JackJackL515Bag",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/JackJackL515Bag.bag"},
+              "9f670dc92569b986b739c4179a659176",
+              /*no_extract =*/false,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/JackJackL515Bag.bag";
+}
+
 }  // namespace data
 }  // namespace open3d

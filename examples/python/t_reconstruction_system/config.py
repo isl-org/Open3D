@@ -108,7 +108,7 @@ class ConfigParser(configargparse.ArgParser):
             '--icp_method', type=str,
             choices=['colored', 'point2point', 'point2plane', 'generalized'],
             help='Method used in registration between fragment point clouds with a good initial pose estimate.'
-            'Generalized ICP only available for the tensor engine.')
+            'Generalized ICP only available for the legacy engine.')
         registration_parser.add(
             '--icp_voxelsize', type=float,
             help='Voxel size used to down sample point cloud for fast/multiscale ICP.')
