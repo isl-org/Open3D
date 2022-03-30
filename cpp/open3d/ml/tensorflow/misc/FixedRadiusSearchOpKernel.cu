@@ -104,15 +104,15 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type, itype)                                           \
-    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")           \
-                                    .Device(DEVICE_GPU)               \
-                                    .TypeConstraint<type>("T")        \
-                                    .TypeConstraint<itype>("TIndex")  \
-                                    .HostMemory("radius")             \
-                                    .HostMemory("points_row_splits")  \
-                                    .HostMemory("queries_row_splits") \
-                                    .HostMemory("hash_table_splits"), \
+#define REG_KB(type, itype)                                               \
+    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")               \
+                                    .Device(DEVICE_GPU)                   \
+                                    .TypeConstraint<type>("T")            \
+                                    .TypeConstraint<itype>("index_dtype") \
+                                    .HostMemory("radius")                 \
+                                    .HostMemory("points_row_splits")      \
+                                    .HostMemory("queries_row_splits")     \
+                                    .HostMemory("hash_table_splits"),     \
                             FixedRadiusSearchOpKernelCUDA<type, itype>);
 REG_KB(float, int)
 REG_KB(float, long)

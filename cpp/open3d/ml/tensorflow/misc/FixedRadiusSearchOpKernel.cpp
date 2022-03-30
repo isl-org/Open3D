@@ -66,11 +66,11 @@ public:
     }
 };
 
-#define REG_KB(type, itype)                                           \
-    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")           \
-                                    .Device(DEVICE_CPU)               \
-                                    .TypeConstraint<type>("T")        \
-                                    .TypeConstraint<itype>("TIndex"), \
+#define REG_KB(type, itype)                                                \
+    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")                \
+                                    .Device(DEVICE_CPU)                    \
+                                    .TypeConstraint<type>("T")             \
+                                    .TypeConstraint<itype>("index_dtype"), \
                             FixedRadiusSearchOpKernelCPU<type, itype>);
 REG_KB(float, int)
 REG_KB(float, long)

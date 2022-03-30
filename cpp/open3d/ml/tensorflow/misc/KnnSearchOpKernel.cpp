@@ -194,11 +194,11 @@ public:
     }
 };
 
-#define REG_KB(type, itype)                                           \
-    REGISTER_KERNEL_BUILDER(Name("Open3DKnnSearch")                   \
-                                    .Device(DEVICE_CPU)               \
-                                    .TypeConstraint<type>("T")        \
-                                    .TypeConstraint<itype>("TIndex"), \
+#define REG_KB(type, itype)                                                \
+    REGISTER_KERNEL_BUILDER(Name("Open3DKnnSearch")                        \
+                                    .Device(DEVICE_CPU)                    \
+                                    .TypeConstraint<type>("T")             \
+                                    .TypeConstraint<itype>("index_dtype"), \
                             KnnSearchOpKernelCPU<type, itype>);
 REG_KB(float, int)
 REG_KB(float, long)

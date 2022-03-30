@@ -167,7 +167,7 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             hash_table_splits=table.hash_table_splits,
             hash_table_index=table.hash_table_index,
             hash_table_cell_splits=table.hash_table_cell_splits,
-            TIndex=self.index_dtype)
+            index_dtype=self.index_dtype)
         return result
 
 
@@ -282,7 +282,7 @@ class RadiusSearch(tf.keras.layers.Layer):
                                    radii=radii,
                                    points_row_splits=points_row_splits,
                                    queries_row_splits=queries_row_splits,
-                                   TIndex=self.index_dtype)
+                                   index_dtype=self.index_dtype)
         return result
 
 
@@ -392,5 +392,5 @@ class KNNSearch(tf.keras.layers.Layer):
                                 k=k,
                                 points_row_splits=points_row_splits,
                                 queries_row_splits=queries_row_splits,
-                                TIndex=self.index_dtype)
+                                index_dtype=self.index_dtype)
         return result
