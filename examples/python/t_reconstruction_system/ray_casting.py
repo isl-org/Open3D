@@ -38,7 +38,7 @@ import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 from config import ConfigParser
-from common import load_depth_file_names, load_intrinsic, load_extrinsics, get_default_testdata
+from common import load_depth_file_names, load_intrinsic, load_extrinsics, get_default_dataset, extract_rgbd_frames
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -50,7 +50,11 @@ if __name__ == '__main__':
         help='YAML config file path. Please refer to default_config.yml as a '
         'reference. It overrides the default config file, but will be '
         'overridden by other command line inputs.')
-
+    parser.add('--default_dataset',
+               help='Default dataset is used when config file is not provided. '
+               'Default dataset may be selected from the following options: '
+               '[lounge, jack_jack]',
+               default='lounge')
     parser.add('--path_trajectory',
                help='path to the trajectory .log or .json file.')
     parser.add('--path_npz',
@@ -59,9 +63,15 @@ if __name__ == '__main__':
     config = parser.get_config()
 
     if config.path_dataset == '':
-        config.path_dataset = get_default_testdata()
-        config.path_trajectory = os.path.join(config.path_dataset,
-                                              'trajectory.log')
+        config = get_default_dataset(config)
+
+    # Extract RGB-D frames and intrinsic from bag file.
+    if config.path_dataset.endswith(".bag"):
+        assert os.path.isfile(
+            config.path_dataset), (f"File {config.path_dataset} not found.")
+        print("Extracting frames from RGBD video file")
+        config.path_dataset, config.path_intrinsic, config.depth_scale = extract_rgbd_frames(
+            config.path_dataset)
 
     vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_npz)
     depth_file_names = load_depth_file_names(config)
