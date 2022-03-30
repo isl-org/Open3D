@@ -37,6 +37,8 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
 
+namespace {
+
 /// \class RandomSampler
 ///
 /// \brief Helper class for random sampling
@@ -76,6 +78,7 @@ private:
     std::mt19937 rng_;
     std::mutex mutex_;
 };
+}  // namespace
 
 namespace open3d {
 namespace geometry {
