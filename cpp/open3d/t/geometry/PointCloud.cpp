@@ -290,7 +290,7 @@ PointCloud PointCloud::VoxelDownSample(
     return pcd_down;
 }
 
-std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutlier(
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
         size_t nb_points, double search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogError(

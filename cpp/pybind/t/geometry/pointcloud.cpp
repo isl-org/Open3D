@@ -201,7 +201,7 @@ The attributes of the point cloud have different levels::
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);
     pointcloud.def(
-            "remove_radius_outlier", &PointCloud::RemoveRadiusOutlier,
+            "remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
             "nb_points"_a, "search_radius"_a,
             "Function to remove points that have less than nb_points in a "
             "sphere of a given radius.");

@@ -351,7 +351,7 @@ public:
     /// \param search_radius Radius of the sphere.
     /// \return tuple of filtered PointCloud and boolean indexing tensor
     /// w.r.t. input pointcloud.
-    std::tuple<PointCloud, core::Tensor> RemoveRadiusOutlier(
+    std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
 
     /// \brief Returns the device attribute of this PointCloud.

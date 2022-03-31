@@ -121,7 +121,7 @@ void pybind_pointcloud(py::module &m) {
             .def("remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
                  "Function to remove non-finite points from the PointCloud",
                  "remove_nan"_a = true, "remove_infinite"_a = true)
-            .def("remove_radius_outlier", &PointCloud::RemoveRadiusOutliers,
+            .def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
                  "nb_points"_a, "radius"_a, "print_progress"_a = false)
@@ -290,7 +290,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
              {"remove_infinite",
               "Remove infinite values from the PointCloud"}});
     docstring::ClassMethodDocInject(
-            m, "PointCloud", "remove_radius_outlier",
+            m, "PointCloud", "remove_radius_outliers",
             {{"nb_points", "Number of points within the radius."},
              {"radius", "Radius of the sphere."},
              {"print_progress", "Set to True to print progress bar."}});

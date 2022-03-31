@@ -52,5 +52,6 @@ if __name__ == "__main__":
     o3d.visualization.draw([voxel_down_pcd])
 
     print("Radius oulier removal")
-    cl, ind = voxel_down_pcd.remove_radius_outlier(nb_points=16, radius=0.05)
+    cl, ind = voxel_down_pcd.remove_radius_outliers(nb_points=16,
+                                                    search_radius=0.05)
     display_inlier_outlier(voxel_down_pcd, ind)
