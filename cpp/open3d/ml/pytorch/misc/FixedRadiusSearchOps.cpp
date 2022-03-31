@@ -25,11 +25,13 @@
 // ----------------------------------------------------------------------------
 //
 
+#include <string>
 #include <vector>
 
 #include "open3d/core/Dtype.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
+#include "open3d/utility/Helper.h"
 #include "torch/script.h"
 
 using namespace open3d::core::nns;
@@ -181,14 +183,31 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
     return std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>();
 }
 
-static auto registry = torch::RegisterOperators(
+template <typename... Args>
+std::string FormatString(const std::string& format, Args... args) {
+    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) +
+                 1;  // Extra space for '\0'
+    if (size_s <= 0) {
+        throw std::runtime_error("Error during formatting.");
+    }
+    auto size = static_cast<size_t>(size_s);
+    auto buf = std::make_unique<char[]>(size);
+    std::snprintf(buf.get(), size, format.c_str(), args...);
+    return std::string(buf.get(),
+                       buf.get() + size - 1);  // We don't want the '\0' inside
+}
+
+const char* fixed_radius_fn_format =
         "open3d::fixed_radius_search(Tensor points, Tensor queries, float "
         "radius, Tensor points_row_splits, Tensor queries_row_splits, Tensor "
         "hash_table_splits, Tensor hash_table_index, Tensor "
-        "hash_table_cell_splits, ScalarType index_dtype = 3, str "
+        "hash_table_cell_splits, ScalarType index_dtype=%d, str "
         "metric=\"L2\", "
         "bool ignore_query_point="
         "False, bool return_distances=False"
         ") -> (Tensor neighbors_index, "
-        "Tensor neighbors_row_splits, Tensor neighbors_distance)",
+        "Tensor neighbors_row_splits, Tensor neighbors_distance)";
+
+static auto registry = torch::RegisterOperators(
+        FormatString(fixed_radius_fn_format, int(c10::ScalarType::Int)),
         &FixedRadiusSearch);
