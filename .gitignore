@@ -93,3 +93,13 @@ docs/python_api/
 docs/conf.py
 docs/Doxyfile
 docs/getting_started.rst
+docs/tutorial/visualization/!temp_scratchpad.rst
+docs/tutorial/visualization/basic_tutorial.md
+docs/tutorial/visualization/open3d_visualizer_excerpts.rst
+*.tgz
+*.bin
+*.gltf
+*.png
+*.jpg
+examples/test_data/demo_scene_assets/README
+docs/tutorial/visualization/!visualizer_scratchpad.rst
