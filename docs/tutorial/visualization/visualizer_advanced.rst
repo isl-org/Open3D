@@ -1,4 +1,4 @@
-.. _visualizer_advanced:
+.. _open3d_visualizer_advanced:
 
 Advanced Open3D Visualizer
 ==========================
@@ -6,14 +6,14 @@ Advanced Open3D Visualizer
 Introduction
 ---------------
 
-.. epigraph:: Open3D provides a convenient function for visualizing geometric objects: ``draw``. The ``draw`` function allows you to visualize multiple geometry objects *(PointClouds, LineSets, TriangleMesh)* and images together along with optional, high-quality, physically based (PBR) materials. This tutorial covers a more advanced usage of  ``draw()`` calls. For basic ``draw()`` usage, please see the Basic :doc:`visualizer_basic` tutorial.
+.. epigraph:: Open3D provides a convenient function for visualizing geometric objects: ``draw``. The ``draw`` function allows you to visualize multiple geometry objects *(PointClouds, LineSets, TriangleMesh)* and images together along with optional, high-quality, physically based (PBR) materials. As will be demonstrated in the subsequent sections, ``draw`` can be used for both - simple, quick visualization or complex use-cases.
 
 
 Getting Started
 ---------------
 
 .. tip::
-	 This **Getting Started** section applies to all examples in this tutorial
+	 This **Getting Started** section applies to all subsequent examples below
 	 
 For all examples in this tutorial, we will be running a Python session. Please follow these preliminary steps:
 
@@ -103,24 +103,7 @@ Rendering More Complex Models
 
 In the previous section (:ref:`rendering_models`) we have covered how to render complete 3D models with the ``open3d.io.read_triangle_model()`` method. This method can also handle more complex models containing a collection of materials and parts (sub-models) from which the complete object gets assembled.
 
-For this example, we will need to download / ``clone`` *glTF-Sample-Models*  from the KhronosGroup. `glTF (GL Transmission Format) <https://docs.fileformat.com/3d/gltf/>`_ is a 3D file format that stores 3D model information in JSON format.
-
-
-.. attention::
-
-   **Sameer's proposed replacement of the 4 bullet points below:**
-
-   From a command prompt, download sample glTF models from the Khronos Group's git repository with:
-    
- .. code-block:: sh
-
-     $ git -C .. clone https://github.com/KhronosGroup/glTF-Sample-Models
-
-
-
-
-
-
+For this example, we will need to download / ``clone`` *glTF-Sample-Models*  from the KhronosGroup. `glTF (GL Transmission Format) <https://docs.fileformat.com/3d/gltf/>`_ is a 3D file format that stores 3D model information in JSON format. 
 
 First, **minimize your current Python terminal session and open a new one. In a new terminal session:**
 

@@ -1,4 +1,4 @@
-.. _visualizer_basic:
+.. _open3d_visualizer_basic:
 
 Open3D Visualizer
 =================
@@ -102,7 +102,7 @@ Aside from rendering Point Clouds, the Open3D ``draw()`` function is fully capab
 This example shows how to create and visualize a simple 3D box.
 
 
-At the python prompt, enter the following to open the 3D Visualizer:
+At the python prompt, enter the following four lines to open the 3D Visualizer:
 
 .. code-block:: python
 
@@ -116,7 +116,7 @@ At the end of the process, the Open3D Visualizer window should appear:
 
 Let's examine what we did here:
 
-1) We instantiated the ``cube`` object to be of ``open3d.geometry.TriangleMesh`` type using the function ``create_box(1, 2, 4)`` to which we passed values for width (``1``), height (``2``), and depth (``4``);
+1) We instantiated the ``cube`` object to be of ``open3d.geometry.TriangleMesh`` type using a macro ``create_box(1, 2, 4)`` to which we passed values for width (``1``), height (``2``), and depth (``4``);
 
 2) We called the ``open3d.visualization.draw()`` method which rendered our ``cube``.
 
@@ -127,7 +127,7 @@ Let's examine what we did here:
 ``compute_triangle_normals()`` method
 """""""""""""""""""""""""""""""""""""
 
-In the above example we learned how to create a primitive (``cube``) and render it with the ``draw()`` call. To improve it, we need to introduce some sort of surface reflection information to give our object a better, more consistent 3D look. For this, we will use the ``compute_triangle_normals()`` method as shown below:
+In the above example we learned how to create a primitive (``cube``) and render it with the ``draw()`` call. While our task was successfully accomplished, the  rendering of the ``cube`` object still leaves much to be desired. To improve it, we need to introduce some sort of surface reflection information to give our object a better, more consistent 3D look. For this, we will use the ``compute_triangle_normals()`` method as shown below:
 
 .. code-block:: python
 
@@ -209,6 +209,7 @@ The rendered sphere in this case has facets akin to what XIX-th century airships
 
 
 
+.. _colored_lit_sphere:
 
 Drawing a Colored Lit Sphere
 ::::::::::::::::::::::::::::
@@ -216,21 +217,21 @@ Drawing a Colored Lit Sphere
 ``paint_uniform_color()``
 """""""""""""""""""""""""
 
-When we rendered a lit sphere in one of the previous sections (:ref:`smoothly_lit_sphere`), we did not specify which color we would like the sphere to be. In this example, we will assign a subtle pink color to the sphere with the ``paint_uniform_color()`` method:
+When we rendered a lit sphere in one of the previous sections (:ref:`smoothly_lit_sphere`), we did not specify which color we would like the sphere to be. In this example, we will assign a magenta color to the sphere with the ``paint_uniform_color()`` method:
 
 .. code-block:: python
 
   >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
   >>> sphere.compute_vertex_normals()
   TriangleMesh with 19802 points and 39600 triangles.
-  >>> sphere.paint_uniform_color([0.65, 0.45, 0.62])
+  >>> sphere.paint_uniform_color([1, 0, 1])
   TriangleMesh with 19802 points and 39600 triangles.
   >>> vis.draw(sphere)
    
-.. image:: https://user-images.githubusercontent.com/93158890/160883817-5a22f449-62e2-45e0-8033-bfec72e09210.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/150881545-56de6d95-50d0-4965-b2a0-b6bd27340df7.jpg
     :width: 700px
 
-The ``paint_uniform_color()`` method accepts a numeric list of RGB values. Its algorithm assigns a single color to all vertices of the triangle mesh. RGB values should be in the ``0 - 1`` range. In our example, we passed respective values for Red (``0.65``), Green (``0.45``), and Blue (``0.62``).
+The ``paint_uniform_color()`` method accepts a numeric list of RGB values. Its algorithm assigns a single color to all vertices of the triangle mesh. RGB values should be in the 0 - 1 range. In our example, we passed respective values for Red (``1``), Green (``0``), and Blue (``1``).
 
 
 Drawing a Sphere With Materials
@@ -256,7 +257,7 @@ We declare ``mat`` as a material rendering object and initialize it with a defau
 
 ``MaterialRecord()`` is a structure which holds various material properties.
 
-The ``shader`` property accepts a string representing the type of material. The two most common options are *'defaultLit'* and *'defaultUnlit'*. Its other options will be covered in :doc:`visualizer_advanced` tutorial.
+The ``shader`` property accepts a string representing the type of material. The two most common options are *'defaultLit'* and *'defaultUnlit'*. Its other options will be covered in advanced tutorial.
 
 The ``mat.base_color`` represents the base material RGBA color. It expects a ``numpy`` array as a parameter. The ``numpy`` module we imported at the very beginning of this tutorial helps us pass the RGBA values as an array to the ``mat.base_color`` property.
 
@@ -276,6 +277,8 @@ Now, we'll show a ``draw()`` call variant which allows the user to specify a mat
   
 .. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
     :width: 700px
+
+The sphere looks almost identical to the one in the previous example (:ref:`colored_lit_sphere`), but this time it is based on the custom material ``mat`` which we created.
 
 
 
@@ -313,7 +316,7 @@ Let's examine new elements in the code above:
 
 ``mat.base_metallic = 1.0`` - PBR material property which defines whether the surface is metallic or not (see  `Filament Material Guide <https://google.github.io/filament/Materials.html>`_ for details)
 
-``vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")`` -  a different variant of the ``draw()`` call which uses the ``ibl`` (Image Based Lighting) property. The *'ibl'* parameter property allows the user to specify the HDR lighting to use. We assigned *"nightlights"* to ``ibl``, and thus get a realistic nighttime city scene.
+``vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")`` -  a different variant of the ``draw()`` call which uses the *'ibl'* property. The *'ibl'* parameter property allows the user to specify the HDR lighting to use. We assigned *"nightlights"* to ``ibl``, and thus get a realistic nighttime city scene.
 
 
 
@@ -342,7 +345,7 @@ In a previous metallic sphere rendering we covered a number of methods, paramete
     :width: 700px
 
 
-This code is similar to that used in the rendering of a previous metallic sphere. But, there are a couple of elements that make this version of the sphere look different:
+This code is similar to that used in rendering a previous metallic sphere. But, there are a couple of elements that make this version of the sphere look different:
 
 ``mat.base_roughness = 0.25`` - PBR material roughness here is set to ``0.25`` in contrast to the previous metallic sphere version, where ``base_roughness`` was set to ``0.4``.
 
@@ -383,9 +386,9 @@ In this example, we will add textures to rendered objects:
   TriangleMesh with 19802 points and 39600 triangles.
   >>> mat = vis.rendering.MaterialRecord()
   >>> mat.shader = "defaultLit"
-  >>> mat.albedo_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_Color.jpg')
-  >>> mat.normal_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_NormalDX.jpg')
-  >>> mat.roughness_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_Roughness.jpg')
+  >>> mat.albedo_img = o3d.io.read_image('/home/intel/Open3D/examples/test_data/demo_scene_assets/Tiles074_Color.jpg')
+  >>> mat.normal_img = o3d.io.read_image('/home/intel/Open3D/examples/test_data/demo_scene_assets/Tiles074_NormalDX.jpg')
+  >>> mat.roughness_img = o3d.io.read_image('/home/intel/Open3D/examples/test_data/demo_scene_assets/Tiles074_Roughness.jpg')
   >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
 
 
@@ -415,8 +418,8 @@ All three properties are initialized by the ``o3d.io.read_image()`` method which
 
 .. _trianglemesh_lineset:
 
-Drawing a Wireframe Sphere
-::::::::::::::::::::::::::
+Drawing a ``TriangleMesh LineSet`` Sphere
+:::::::::::::::::::::::::::::::::::::::::::::
 
 Line Sets are typically used to display a wireframe of a 3D model. Let's do that by creating a custom ``LineSet`` object:
 
@@ -500,7 +503,7 @@ Finally, we have a ``draw()`` call with multiple 3D object parameters:
 
 ``vis.draw([sphere,line_set])``
 
-You can pass as many objects to the ``draw()`` as you need.
+You can pass as may objects to the ``draw()`` as you need.
 
 
 
@@ -529,6 +532,21 @@ The default value for the ``line_width`` parameter is ``2``. The minimum supplie
     :width: 700px
 
 Experiment with the ``line_width`` parameter values to find an optimal one for your purposes.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -635,11 +653,11 @@ Next, we will explore the *background color* (``bg_color``) parameter. At the Py
 
 .. code-block:: python
 
-	>>> vis.draw(sphere, show_ui=True, title="Green Background", show_skybox=False, bg_color=(0.56, 1.0, 0.69, 1.0))
+	>>> vis.draw(sphere, show_ui=True, title="Green Background", show_skybox=False, bg_color=(0.0, 1.0, 0.0, 1.0))
 
 Here, we have displayed the UI, renamed the title bar to *"Green Background"*, turned off the default *skybox* background, and explicitly specified RGB-Alfa values for the ``bg_color``:
 
-.. image:: https://user-images.githubusercontent.com/93158890/160878317-a57755a0-8b8f-44db-b718-443aa435035a.jpg
+.. image:: https://user-images.githubusercontent.com/93158890/159093304-d92d87e9-7429-4bb4-92d8-c93eba3f2704.jpg
     :width: 700px
 
 
