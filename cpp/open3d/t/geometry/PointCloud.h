@@ -311,11 +311,48 @@ public:
     /// \return Rotated point cloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// \brief Function to select points from \p input pointcloud into
+    /// \p output pointcloud.
+    ///
+    /// Points with indices in \p indices are selected.
+    ///
+    /// \param indices Boolean indexing tensor of shape {n,} containing
+    /// true value for the indices that is to be selected.
+    /// \param invert Set to `True` to invert the selection of indices.
+    PointCloud SelectByIndex(const core::Tensor &indices,
+                             bool invert = false) const;
+
+    /// \brief Returns `True` is two pointcloud are similar.
+    ///
+    /// Two unorganised pointclouds are similar when, between the
+    /// correspondences of the two pointcloud the inliear fitness
+    /// is greater `AND` inlier rmse is smaller than the set threshold.
+    /// \param search_distance search radius, close to the voxel resolution of
+    /// the pointcloud.
+    /// \param inlier_fitness_threshold the inlier_fitness must
+    /// be greater than this threshold to be similar.
+    /// \param inlier_rmse_threshold the inliear_rmse must be smaller than this
+    /// threshold to be similar.
+    bool IsSimilar(const PointCloud &other,
+                   double search_distance = 0.05,
+                   float inlier_fitness_threshold = 0.99,
+                   float inlier_rmse_threshold = 0.0001) const;
+
     /// \brief Downsamples a point cloud with a specified voxel size.
     /// \param voxel_size Voxel size. A positive number.
     PointCloud VoxelDownSample(double voxel_size,
                                const core::HashBackendType &backend =
                                        core::HashBackendType::Default) const;
+
+    /// \brief Function to remove points that have less than \p nb_points in a
+    /// sphere of a given radius.
+    ///
+    /// \param nb_points Number of neighbour points required within the radius.
+    /// \param search_radius Radius of the sphere.
+    /// \return tuple of filtered PointCloud and boolean indexing tensor
+    /// w.r.t. input pointcloud.
+    std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
+            size_t nb_points, double search_radius) const;
 
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
