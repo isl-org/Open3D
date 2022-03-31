@@ -81,7 +81,6 @@ namespace visualization {
 Visualizer::Visualizer() {}
 
 Visualizer::~Visualizer() {
-    glfwTerminate();  // to be safe
 #if defined(__APPLE__) && defined(BUILD_GUI)
     bluegl::unbind();
 #endif
