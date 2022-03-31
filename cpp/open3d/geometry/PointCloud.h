@@ -353,7 +353,8 @@ public:
     /// model, and still be considered an inlier.
     /// \param ransac_n Number of initial points to be considered inliers in
     /// each iteration.
-    /// \param num_iterations Number of iterations.
+    /// \param num_iterations Maximum number of iterations.
+    /// \param probability Expected probability of finding the optimal plane.
     /// \param seed Sets the seed value used in the random
     /// generator, set to nullopt to use a random seed value with each function
     /// call.
@@ -363,6 +364,7 @@ public:
             const double distance_threshold = 0.01,
             const int ransac_n = 3,
             const int num_iterations = 100,
+            const double probability = 0.99999999,
             utility::optional<int> seed = utility::nullopt) const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a
