@@ -428,6 +428,9 @@ public:
     /// \return Rotated TriangleMesh
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// Clip mesh with a plane
+    TriangleMesh ClipPlane( const core::Tensor& point, const core::Tensor& normal) const;
+
     core::Device GetDevice() const { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.

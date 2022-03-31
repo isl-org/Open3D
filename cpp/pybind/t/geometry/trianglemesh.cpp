@@ -163,6 +163,12 @@ The attributes of the triangle mesh have different levels::
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
+
+    triangle_mesh.def("clip_plane", &TriangleMesh::ClipPlane, "point"_a, "normal"_a,
+    R"doc(
+Returns a new triangle mesh clipped with the plane.
+TODO
+)doc");
 }
 
 }  // namespace geometry
