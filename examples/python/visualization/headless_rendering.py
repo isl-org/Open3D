@@ -33,8 +33,8 @@ pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 
 
-def custom_draw_geometry_with_camera_trajectory(pcd, camera_trajectory_path,
-                                                render_option_path):
+def custom_draw_geometry_with_camera_trajectory(pcd, render_option_path,
+                                                camera_trajectory_path):
     custom_draw_geometry_with_camera_trajectory.index = -1
     custom_draw_geometry_with_camera_trajectory.trajectory =\
         o3d.io.read_pinhole_camera_trajectory(camera_trajectory_path)
@@ -94,10 +94,9 @@ if __name__ == "__main__":
         exit(1)
 
     sample_data = o3d.data.DemoCustomVisualization()
-    pcd = o3d.io.read_point_cloud(sample_data.path,
-                                  sample_data.camera_trajectory_path,
-                                  sample_data.render_option_path)
+    pcd = o3d.io.read_point_cloud(sample_data.point_cloud_path)
 
     print("Customized visualization playing a camera trajectory. "
           "Press ctrl+z to terminate.")
-    custom_draw_geometry_with_camera_trajectory(pcd)
+    custom_draw_geometry_with_camera_trajectory(
+        pcd, sample_data.render_option_path, sample_data.camera_trajectory_path)
