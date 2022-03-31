@@ -24,12 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-
-#include "vtkSmartPointer.h"
-#include "vtkPolyData.h"
 #include "open3d/t/geometry/Geometry.h"
-#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/geometry/TriangleMesh.h"
+#include "vtkPolyData.h"
+#include "vtkSmartPointer.h"
 
 namespace open3d {
 namespace t {
@@ -37,14 +36,13 @@ namespace geometry {
 namespace kernel {
 namespace vtkutils {
 
-vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(const Geometry& geometry);
+vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
+        const Geometry& geometry);
 
 TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polyData);
-
 
 }  // namespace vtkutils
 }  // namespace kernel
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
-

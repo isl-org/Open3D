@@ -274,13 +274,16 @@ TriangleMesh TriangleMesh::To(const core::Device &device, bool copy) const {
     return mesh;
 }
 
-TriangleMesh TriangleMesh::ClipPlane( const core::Tensor& point, const core::Tensor& normal) const {
-    using namespace kernel::vtkutils; 
+TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
+                                     const core::Tensor &normal) const {
+    using namespace kernel::vtkutils;
     core::AssertTensorShape(point, {3});
     core::AssertTensorShape(normal, {3});
     // allow int types for convenience
-    core::AssertTensorDtypes(point, {core::Float32, core::Float64, core::Int32, core::Int64});
-    core::AssertTensorDtypes(normal, {core::Float32, core::Float64, core::Int32, core::Int64});
+    core::AssertTensorDtypes(
+            point, {core::Float32, core::Float64, core::Int32, core::Int64});
+    core::AssertTensorDtypes(
+            normal, {core::Float32, core::Float64, core::Int32, core::Int64});
 
     auto point_ = point.To(core::Device(), core::Dtype::Float64).Contiguous();
     auto normal_ = normal.To(core::Device(), core::Dtype::Float64).Contiguous();
