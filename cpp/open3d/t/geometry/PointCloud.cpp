@@ -250,11 +250,15 @@ bool PointCloud::IsSimilar(const PointCloud &other,
             *this, other, search_distance,
             core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
 
+    utility::LogDebug("Inlier Fitness: {}, Inlier RMSE: {}", result.fitness_,
+                      result.inlier_rmse_);
+
     if (result.fitness_ >= inlier_fitness_threshold &&
         result.inlier_rmse_ <= inlier_rmse_threshold) {
         return true;
+    } else {
+        return false;
     }
-    return false;
 }
 
 PointCloud PointCloud::VoxelDownSample(
@@ -286,18 +290,18 @@ PointCloud PointCloud::VoxelDownSample(
     return pcd_down;
 }
 
-std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutlier(
         size_t nb_points, double search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogError(
-                "Illegal input parameters, number of points and radius must be positive");
+                "Illegal input parameters, number of points and radius must be "
+                "positive");
     }
     core::nns::NearestNeighborSearch target_nns(this->GetPointPositions());
 
     bool check = target_nns.FixedRadiusIndex(search_radius);
     if (!check) {
-        utility::LogError(
-                "FixedRadiusIndex index is not set.");
+        utility::LogError("FixedRadiusIndex index is not set.");
     }
 
     core::Tensor indices, distance, row_splits;

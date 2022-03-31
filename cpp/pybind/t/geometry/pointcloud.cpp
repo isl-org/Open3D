@@ -180,7 +180,7 @@ The attributes of the point cloud have different levels::
                    "Scale points.");
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
-    
+
     pointcloud.def("select_by_index", &PointCloud::SelectByIndex, "indices"_a,
                    "invert"_a = false);
     pointcloud.def(
@@ -191,7 +191,7 @@ The attributes of the point cloud have different levels::
             "Two unorganised pointclouds are similar when, between the "
             "correspondences of the two pointcloud the inliear fitness "
             "is greater `AND` inlier rmse is smaller than the set threshold.");
-    
+
     pointcloud.def(
             "voxel_down_sample",
             [](const PointCloud& pointcloud, const double voxel_size) {
@@ -201,7 +201,7 @@ The attributes of the point cloud have different levels::
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);
     pointcloud.def(
-            "remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
+            "remove_radius_outlier", &PointCloud::RemoveRadiusOutlier,
             "nb_points"_a, "search_radius"_a,
             "Function to remove points that have less than nb_points in a "
             "sphere of a given radius.");
