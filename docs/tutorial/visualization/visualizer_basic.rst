@@ -8,11 +8,11 @@ Introduction
 
 .. epigraph:: Open3D provides a convenient function for visualizing geometric objects: ``draw()``. The ``draw()`` function allows to visualize multiple geometry objects *(PointClouds, LineSets, TriangleMeshes)* and images together along with optional, high-quality, physically based (PBR) materials. As will be demonstrated in the subsequent sections, ``draw()`` can be used for both - simple, quick visualization or complex use-cases.
 
-Getting Started
+Getting started
 ---------------
 
 .. tip::
-    This **Getting Started** section applies to all subsequent examples below
+    This **Getting started** section applies to all subsequent examples below
 	 
 For all examples in this tutorial, we will be running a Python session. Please follow these preliminary steps :
 
@@ -53,13 +53,13 @@ These objects will be used throughout the following examples.
     * The ``math`` library is needed to reference Pi and rotate objects
 
 
-Basic Examples
+Basic examples
 --------------
 
 In the Overview section, we activated a ``conda`` environment, started a Python session, and declared Open3D objects to be used throughout this tutorial. Let’s now test various Open3D ``draw()`` function capabilities with various geometries.
 
 
-Drawing Point Clouds
+Drawing point clouds
 ::::::::::::::::::::
 
 In this example, we are going to learn how to load and render Point Clouds.
@@ -94,7 +94,7 @@ Here we have programmatically specified a custom ``point_size`` for rendering. I
     :width: 700px
 
 
-Drawing a Box 
+Drawing a box 
 :::::::::::::
 
 Aside from rendering Point Clouds, the Open3D ``draw()`` function is fully capable of rendering primitives, such as circles, spheres, rectangles, cubes, etc..
@@ -146,7 +146,7 @@ The algorithm behind ``compute_triangle_normals()`` **computes a single normal f
 
 .. _smoothly_lit_sphere:
 
-Drawing a Smoothly Lit Sphere
+Drawing a smoothly lit sphere
 :::::::::::::::::::::::::::::
 
 
@@ -185,7 +185,7 @@ Open3D returns:
     TriangleMesh with 19802 points and 39600 triangles.
 
 
-Drawing a Flat-shaded Sphere
+Drawing a flat-shaded sphere
 :::::::::::::::::::::::::::::
 
 In this example, we are going to use a ``compute_triangle_normals()`` rendering algorithm, - the same method we used for a 3D ``cube`` rendering before (see :ref:`compute_triangle_normals_s`). Again, **this algorithm computes a single normal for every triangle** in a ``TriangleMesh``:
@@ -206,7 +206,7 @@ In this example, we are going to use a ``compute_triangle_normals()`` rendering 
 The rendered sphere in this case has facets akin to what XIX-th century airships or blimps used to look like.
 
 
-Drawing a Colored Lit Sphere
+Drawing a colored lit sphere
 ::::::::::::::::::::::::::::
 
 ``paint_uniform_color()``
@@ -229,7 +229,7 @@ When we rendered a lit sphere in one of the previous sections (:ref:`smoothly_li
 The ``paint_uniform_color()`` method accepts a numeric list of RGB values. Its algorithm assigns a single color to all vertices of the triangle mesh. RGB values should be in the ``0 - 1`` range. In our example, we passed respective values for Red (``0.65``), Green (``0.45``), and Blue (``0.62``).
 
 
-Drawing a Sphere With Materials
+Drawing a sphere with materials
 :::::::::::::::::::::::::::::::
 
 In previous examples we only specified the geometry to visualize, and the ``draw()`` function internally created a default material for it. However, with the ``draw()`` function you can render geometries with customized materials.
@@ -275,7 +275,7 @@ Now, we'll show a ``draw()`` call variant which allows the user to specify a mat
 
 
 
-Drawing a Metallic Sphere
+Drawing a metallic sphere
 :::::::::::::::::::::::::
 
 In earlier examples, we used ``create_sphere()`` to render the sphere with basic RGB/RGBA colors. Next, we will look at other material properties.
@@ -313,7 +313,7 @@ Let's examine new elements in the code above:
 
 
 
-Drawing a Glossy Sphere 
+Drawing a glossy sphere 
 :::::::::::::::::::::::
 
 In a previous metallic sphere rendering we covered a number of methods, parameters, and properties for beautifying its display. Let's now create a non-metallic balloon-like sphere and see what transpires:
@@ -348,7 +348,7 @@ The ``draw()`` call here is identical to the metallic version of the sphere.
 
 
 
-Drawing a Sphere With Textures
+Drawing a sphere with textures
 ::::::::::::::::::::::::::::::
 
 
@@ -364,7 +364,7 @@ In order to run this example, you must:
 3. Decompress **demo_scene_assets.tgz** in ``Open3D/examples/test_data/`` so it becomes a subdirectory of ``/test_data/``.
 
 
-Running the Code
+Running the code
 """"""""""""""""
 
 In this example, we will add textures to rendered objects:
@@ -411,7 +411,7 @@ All three properties are initialized by the ``o3d.io.read_image()`` method which
 
 .. _trianglemesh_lineset:
 
-Drawing a Wireframe Sphere
+Drawing a wireframe sphere
 ::::::::::::::::::::::::::
 
 Line Sets are typically used to display a wireframe of a 3D model. Let's do that by creating a custom ``LineSet`` object:
@@ -443,10 +443,10 @@ So, what's new in this code?
 
 .. _bounding_box_sphere:
 
-Drawing a Sphere in a Bounding Box ``LineSet``
+Drawing a sphere in a bounding box ``LineSet``
 ::::::::::::::::::::::::::::::::::::::::::::::
 
-Rendering Multiple Objects
+Rendering multiple objects
 """"""""""""""""""""""""""
 
 In prior examples, we rendered only one 3D object at a time. But the ``draw()`` function can be used to render multiple 3D objects simultaneously. In this example, we will render two objects: the **Sphere** and its **Axis-Aligned Bounding Box** represented by a cubic frame around the sphere:
@@ -476,7 +476,7 @@ Let's go over the new code here:
 ``aabb = o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)`` - creates a bounding box fully encompassing the sphere.
 
 
-``LineSet`` Objects
+``LineSet`` objects
 """""""""""""""""""
 
 As recently shown in the ``TriangleMesh LineSet`` Sphere example (:ref:`trianglemesh_lineset`), Line Sets are used to render a wireframe of a 3D model. In our case, we are creating a basic cubic frame around our sphere based on the ``AxisAlignedBoundingBox`` object (``aabb``) we created earlier:
@@ -485,7 +485,7 @@ As recently shown in the ``TriangleMesh LineSet`` Sphere example (:ref:`triangle
 
 ``line_set.paint_uniform_color([0, 0, 1])`` - paints the bounding box ``LineSet`` blue.
 
-Multiple Object Parameters in ``draw()`` Calls
+Multiple object parameters in ``draw()`` calls
 """"""""""""""""""""""""""""""""""""""""""""""
 
 Finally, we have a ``draw()`` call with multiple 3D object parameters:
@@ -496,7 +496,7 @@ You can pass as many objects to the ``draw()`` as you need.
 
 
 
-Specifying Wireframe ``line_width``
+Specifying wireframe ``line_width``
 """""""""""""""""""""""""""""""""""
 
 Aside from rendering ``LineSet`` wireframes or grids, we can change their thickness by passing in a ``line_width`` parameter with a numeric value to the ``draw()`` function like so:
@@ -524,10 +524,10 @@ Experiment with the ``line_width`` parameter values to find an optimal one for y
 
 
 
-Commonly Used ``draw()`` Options
+Commonly used ``draw()`` options
 --------------------------------
 
-Displaying UI, Window Titles, and Specifying Window Dimensions
+Displaying UI, window titles, and specifying window dimensions
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 Aside from rendering 3D objects, you can use the ``draw()`` function calls to control a number of Open3D Visualizer display options that are not shown by default, such as:
@@ -552,10 +552,10 @@ At the bottom of the UI / control panel, you can see the section titled "*Geomet
 
 
 
-Assigning Names to Objects in the UI
+Assigning names to objects in the UI
 ::::::::::::::::::::::::::::::::::::
 
-Object Collections
+Object collections
 """"""""""""""""""
 
 In prior examples, we used the the ``draw()`` function to render 3D objects explicitly. The ``draw()`` function is not limited to 3D Objects only. You can create a collection of objects with their properties, mix them with visualizer-specific options, and render the result. In the previous example, we learned how to control a number of Open3D Visualizer display options that are not shown by default. In this case, our goal is to rename the default-assigned name of *Object 1* in the "Geometries" frame of the Visualizer UI to *sphere* .
@@ -593,7 +593,7 @@ So far, our ``geoms`` collection defined only a single object: *sphere*. But we 
 
 
 
-More ``draw()`` Options
+More ``draw()`` options
 :::::::::::::::::::::::
 
 ``show_skybox`` and ``bg_color``
