@@ -654,5 +654,51 @@ private:
     std::vector<std::string> paths_;
 };
 
+/// \class LoungeRGBDImages
+/// \brief Data class for `LoungeRGBDImages` contains a sample set of 3000 color
+/// and depth images from Stanford Lounge RGBD dataset. Additionally it also
+/// contains camera trajectory log, and mesh reconstruction.
+class LoungeRGBDImages : public SingleDownloadDataset {
+public:
+    LoungeRGBDImages(const std::string& data_root = "");
+
+    /// \brief Returns List of paths to color image samples of size 3000.
+    std::vector<std::string> GetColorPaths() const { return color_paths_; };
+    /// \brief Returns List of paths to depth image samples of size 3000.
+    std::vector<std::string> GetDepthPaths() const { return depth_paths_; };
+
+    /// \brief Returns path to camera trajectory log file
+    /// `lounge_trajectory.log`.
+    std::string GetTrajectoryLogPath() const { return trajectory_log_path_; };
+    /// \brief Returns path to mesh reconstruction `lounge.ply`.
+    std::string GetReconstructionPath() const { return reconstruction_path_; };
+
+private:
+    /// List of paths to color image samples of size 3000.
+    std::vector<std::string> color_paths_;
+    /// List of paths to depth image samples of size 3000.
+    std::vector<std::string> depth_paths_;
+
+    /// Path to camera trajectory log file `lounge_trajectory.log`.
+    std::string trajectory_log_path_;
+    /// Path to mesh reconstruction.
+    std::string reconstruction_path_;
+};
+
+/// \class JackJackL515Bag
+/// \brief Data class for `JackJackL515Bag` contains the `JackJackL515Bag.bag`
+/// file.
+class JackJackL515Bag : public SingleDownloadDataset {
+public:
+    JackJackL515Bag(const std::string& data_root = "");
+
+    /// \brief Returns path to the `JackJackL515Bag.bag` file.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to `JackJackL515Bag.bag` file.
+    std::string path_;
+};
+
 }  // namespace data
 }  // namespace open3d
