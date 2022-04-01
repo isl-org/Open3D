@@ -124,7 +124,7 @@ void pybind_pointcloud(py::module &m) {
             .def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
-                 "nb_points"_a, "radius"_a, "print_progress"_a = false)
+                 "nb_points"_a, "search_radius"_a, "print_progress"_a = false)
             .def("remove_statistical_outliers",
                  &PointCloud::RemoveStatisticalOutliers,
                  "Function to remove points that are further away from their "
@@ -292,7 +292,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_radius_outliers",
             {{"nb_points", "Number of points within the radius."},
-             {"radius", "Radius of the sphere."},
+             {"search_radius", "Radius of the sphere."},
              {"print_progress", "Set to True to print progress bar."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_statistical_outliers",
