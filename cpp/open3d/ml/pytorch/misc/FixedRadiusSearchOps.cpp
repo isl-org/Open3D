@@ -25,7 +25,6 @@
 // ----------------------------------------------------------------------------
 //
 
-#include <string>
 #include <vector>
 
 #include "open3d/core/Dtype.h"
@@ -183,20 +182,6 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> FixedRadiusSearch(
     return std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>();
 }
 
-template <typename... Args>
-std::string FormatString(const std::string& format, Args... args) {
-    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) +
-                 1;  // Extra space for '\0'
-    if (size_s <= 0) {
-        throw std::runtime_error("Error during formatting.");
-    }
-    auto size = static_cast<size_t>(size_s);
-    auto buf = std::make_unique<char[]>(size);
-    std::snprintf(buf.get(), size, format.c_str(), args...);
-    return std::string(buf.get(),
-                       buf.get() + size - 1);  // We don't want the '\0' inside
-}
-
 const char* fixed_radius_fn_format =
         "open3d::fixed_radius_search(Tensor points, Tensor queries, float "
         "radius, Tensor points_row_splits, Tensor queries_row_splits, Tensor "
@@ -209,5 +194,6 @@ const char* fixed_radius_fn_format =
         "Tensor neighbors_row_splits, Tensor neighbors_distance)";
 
 static auto registry = torch::RegisterOperators(
-        FormatString(fixed_radius_fn_format, int(c10::ScalarType::Int)),
+        open3d::utility::FormatString(fixed_radius_fn_format,
+                                      int(c10::ScalarType::Int)),
         &FixedRadiusSearch);

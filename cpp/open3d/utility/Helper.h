@@ -29,7 +29,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <functional>
+#include <memory>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -152,6 +154,10 @@ std::string ToLower(const std::string& s);
 
 /// Convert string to the upper case
 std::string ToUpper(const std::string& s);
+
+/// Format string
+template <typename... Args>
+std::string FormatString(const std::string& format, Args... args);
 
 void Sleep(int milliseconds);
 
