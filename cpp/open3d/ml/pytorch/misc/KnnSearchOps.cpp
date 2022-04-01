@@ -30,6 +30,7 @@
 #include "open3d/core/Dtype.h"
 #include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
+#include "open3d/utility/Helper.h"
 #include "torch/script.h"
 
 using namespace open3d::core::nns;
@@ -132,12 +133,15 @@ std::tuple<torch::Tensor, torch::Tensor, torch::Tensor> KnnSearch(
     return std::tuple<torch::Tensor, torch::Tensor, torch::Tensor>();
 }
 
-static auto registry = torch::RegisterOperators(
+const char* knn_fn_format =
         "open3d::knn_search(Tensor points, Tensor queries, int "
         "k, Tensor points_row_splits, Tensor queries_row_splits, ScalarType "
-        "index_dtype = 3,"
+        "index_dtype=%d,"
         "str metric=\"L2\", bool ignore_query_point=False, bool "
         "return_distances=False) -> "
         "(Tensor neighbors_index, Tensor "
-        "neighbors_row_splits, Tensor neighbors_distance)",
+        "neighbors_row_splits, Tensor neighbors_distance)";
+
+static auto registry = torch::RegisterOperators(
+        open3d::utility::FormatString(knn_fn_format, int(c10::ScalarType::Int)),
         &KnnSearch);
