@@ -12,7 +12,7 @@ Getting Started
 ---------------
 
 .. tip::
-	 This **Getting Started** section applies to all subsequent examples below
+    This **Getting Started** section applies to all subsequent examples below
 	 
 For all examples in this tutorial, we will be running a Python session. Please follow these preliminary steps :
 
@@ -20,7 +20,7 @@ For all examples in this tutorial, we will be running a Python session. Please f
  
 .. code-block:: sh
 
-	$ cd <... Path to Open3D on your computer...>
+    $ cd <... Path to Open3D on your computer...>
 	
 .. image:: https://user-images.githubusercontent.com/93158890/159073961-821e4768-3678-4385-bc37-20c5b212c030.jpg
     :width: 700px	
@@ -41,16 +41,16 @@ For all examples in this tutorial, we will be running a Python session. Please f
 
 .. code-block:: python
 
-		>>> import open3d as o3d
-		>>> import open3d.visualization as vis
-		>>> import numpy as np
-		>>> import math
+    >>> import open3d as o3d
+    >>> import open3d.visualization as vis
+    >>> import numpy as np
+    >>> import math
 		
 These objects will be used throughout the following examples.
 
 .. note::
-	 * The *numpy* object we are declaring is needed for conversions of lists to arrays.
-	 * The *math* library is needed to reference Pi and rotate objects
+    * The ``numpy`` object we are declaring is needed for conversions of lists to arrays.
+    * The ``math`` library is needed to reference Pi and rotate objects
 
 
 Basic Examples
@@ -86,7 +86,7 @@ In this section, we will learn how to control 3D model rendering by passing in `
 
 .. code-block:: python
 
-	>>> vis.draw(pcd, point_size=9, show_ui=True)
+    >>> vis.draw(pcd, point_size=9, show_ui=True)
 
 Here we have programmatically specified a custom ``point_size`` for rendering. It is recommended to set ``show_ui=True`` to make sure Open3D Visualizer interprets ``draw()`` function input parameters correctly. You can experiment with different point sizes by moving a slider in the UI:
 
@@ -106,8 +106,8 @@ At the python prompt, enter the following to open the 3D Visualizer:
 
 .. code-block:: python
 
-		>>> cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
-		>>> vis.draw(cube)
+    >>> cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+    >>> vis.draw(cube)
 
 At the end of the process, the Open3D Visualizer window should appear:
 
@@ -131,16 +131,16 @@ In the above example we learned how to create a primitive (``cube``) and render 
 
 .. code-block:: python
 
-   >>> cube.compute_triangle_normals()
-   TriangleMesh with 8 points and 12 triangles.
-   >>> vis.draw(cube)
+    >>> cube.compute_triangle_normals()
+    TriangleMesh with 8 points and 12 triangles.
+    >>> vis.draw(cube)
 
 Clearly, that makes a big difference:
 
 .. image:: https://user-images.githubusercontent.com/93158890/157720147-cde9a54b-cba5-480e-ba0e-7784b5bd5677.jpg
     :width: 700px
 
-The algorithm behind ``compute_triangle_normals()`` **computes a single normal for every triangle** in a *TriangleMesh*.
+The algorithm behind ``compute_triangle_normals()`` **computes a single normal for every triangle** in a ``TriangleMesh``.
 
 
 
@@ -153,16 +153,16 @@ Drawing a Smoothly Lit Sphere
 ``compute_vertex_normals()`` method
 """""""""""""""""""""""""""""""""""
 
-In this example, we will learn how to draw a sphere using a different rendering technique, represented by the ``compute_vertex_normals()`` method. ``compute_vertex_normals()`` uses an algorithm which **computes a smooth normal at every vertex** of the triangle unit in a *TriangleMesh*.
+In this example, we will learn how to draw a sphere using a different rendering technique, represented by the ``compute_vertex_normals()`` method. ``compute_vertex_normals()`` uses an algorithm which **computes a smooth normal at every vertex** of the triangle unit in a ``TriangleMesh``.
 
 At the Python prompt in your terminal, enter the following lines of code:
 
 .. code-block:: python
 
-   >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
-   >>> sphere.compute_vertex_normals()
-   TriangleMesh with 19802 points and 39600 triangles.
-   >>> vis.draw(sphere)
+    >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
+    >>> sphere.compute_vertex_normals()
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> vis.draw(sphere)
 		
 A rendered sphere appears:
 
@@ -176,29 +176,27 @@ To see what type of rendering was used to draw our ``sphere`` above, at the Pyth
 
 .. code-block:: python
 	
-   >>> sphere
+    >>> sphere
 
 Open3D returns:
 
 .. code-block:: sh
 	
-   TriangleMesh with 19802 points and 39600 triangles.
-
-
+    TriangleMesh with 19802 points and 39600 triangles.
 
 
 Drawing a Flat-shaded Sphere
 :::::::::::::::::::::::::::::
 
-In this example, we are going to use a ``compute_triangle_normals()`` rendering algorithm, - the same method we used for a 3D ``cube`` rendering before (see :ref:`compute_triangle_normals_s`). Again, **this algorithm computes a single normal for every triangle** in a *TriangleMesh*:
+In this example, we are going to use a ``compute_triangle_normals()`` rendering algorithm, - the same method we used for a 3D ``cube`` rendering before (see :ref:`compute_triangle_normals_s`). Again, **this algorithm computes a single normal for every triangle** in a ``TriangleMesh``:
 
 
 .. code-block:: python
 
-   >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0)
-   >>> sphere.compute_triangle_normals()
-   TriangleMesh with 19802 points and 39600 triangles.
-   >>> vis.draw(sphere)
+    >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0)
+    >>> sphere.compute_triangle_normals()
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> vis.draw(sphere)
 
 
 .. image:: https://user-images.githubusercontent.com/93158890/157728100-0a495e56-c613-40c4-a292-6e45213d61f6.jpg
@@ -206,8 +204,6 @@ In this example, we are going to use a ``compute_triangle_normals()`` rendering 
 
 
 The rendered sphere in this case has facets akin to what XIX-th century airships or blimps used to look like.
-
-
 
 
 Drawing a Colored Lit Sphere
@@ -220,12 +216,12 @@ When we rendered a lit sphere in one of the previous sections (:ref:`smoothly_li
 
 .. code-block:: python
 
-  >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
-  >>> sphere.compute_vertex_normals()
-  TriangleMesh with 19802 points and 39600 triangles.
-  >>> sphere.paint_uniform_color([0.65, 0.45, 0.62])
-  TriangleMesh with 19802 points and 39600 triangles.
-  >>> vis.draw(sphere)
+    >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
+    >>> sphere.compute_vertex_normals()
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> sphere.paint_uniform_color([0.65, 0.45, 0.62])
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> vis.draw(sphere)
    
 .. image:: https://user-images.githubusercontent.com/93158890/160883817-5a22f449-62e2-45e0-8033-bfec72e09210.jpg
     :width: 700px
@@ -243,20 +239,20 @@ Let's create a sphere based on a custom material:
 
 .. code-block:: python
 
-  >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
-  >>> sphere.compute_vertex_normals()
-  TriangleMesh with 19802 points and 39600 triangles.
-  >>> mat = vis.rendering.MaterialRecord()
-  >>> mat.shader = "defaultLit"
-  >>> mat.base_color = np.asarray([1.0, 0.0, 1.0, 1.0])
+    >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
+    >>> sphere.compute_vertex_normals()
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> mat = vis.rendering.MaterialRecord()
+    >>> mat.shader = "defaultLit"
+    >>> mat.base_color = np.asarray([1.0, 0.0, 1.0, 1.0])
   
 We declare ``mat`` as a material rendering object and initialize it with a default lighting scheme.
 
-``rendering`` is a submodule of *open3d.visualization*.
+``rendering`` is a submodule of ``open3d.visualization``.
 
 ``MaterialRecord()`` is a structure which holds various material properties.
 
-The ``shader`` property accepts a string representing the type of material. The two most common options are *'defaultLit'* and *'defaultUnlit'*. Its other options will be covered in :doc:`visualizer_advanced` tutorial.
+The ``shader`` property accepts a string representing the type of material. The two most common options are ``'defaultLit'`` and ``'defaultUnlit'``. Its other options will be covered in :doc:`visualizer_advanced` tutorial.
 
 The ``mat.base_color`` represents the base material RGBA color. It expects a ``numpy`` array as a parameter. The ``numpy`` module we imported at the very beginning of this tutorial helps us pass the RGBA values as an array to the ``mat.base_color`` property.
 
@@ -264,15 +260,15 @@ To find out what type of object *mat* is, we type in ``mat`` at the Python promp
 	
 .. code-block:: python
 
-	>>> mat
-	<open3d.cpu.pybind.visualization.rendering.MaterialRecord object at 0x7f2be5e34430>
+    >>> mat
+    <open3d.cpu.pybind.visualization.rendering.MaterialRecord object at 0x7f2be5e34430>
 
 
 Now, we'll show a ``draw()`` call variant which allows the user to specify a material to use with the geometry. This is different from previous examples where the ``draw()`` call created a default material automatically:
 
 .. code-block:: python
 
-  >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat})
+    >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat})
   
 .. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
     :width: 700px
@@ -286,18 +282,18 @@ In earlier examples, we used ``create_sphere()`` to render the sphere with basic
 
 .. code-block:: python
 
-  >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
-  >>> sphere.compute_vertex_normals()
-  TriangleMesh with 19802 points and 39600 triangles.
-  >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
-  >>> sphere.rotate(rotate_90)
-  TriangleMesh with 19802 points and 39600 triangles.
-  >>> mat = vis.rendering.MaterialRecord()
-  >>> mat.shader = "defaultLit"
-  >>> mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
-  >>> mat.base_roughness = 0.4
-  >>> mat.base_metallic = 1.0
-  >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
+    >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
+    >>> sphere.compute_vertex_normals()
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
+    >>> sphere.rotate(rotate_90)
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> mat = vis.rendering.MaterialRecord()
+    >>> mat.shader = "defaultLit"
+    >>> mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
+    >>> mat.base_roughness = 0.4
+    >>> mat.base_metallic = 1.0
+    >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
   
 
 .. image:: https://user-images.githubusercontent.com/93158890/157758092-9efb1ca0-b96a-4e1d-abd7-95243b279d2e.jpg
@@ -313,7 +309,7 @@ Let's examine new elements in the code above:
 
 ``mat.base_metallic = 1.0`` - PBR material property which defines whether the surface is metallic or not (see  `Filament Material Guide <https://google.github.io/filament/Materials.html>`_ for details)
 
-``vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")`` -  a different variant of the ``draw()`` call which uses the ``ibl`` (Image Based Lighting) property. The *'ibl'* parameter property allows the user to specify the HDR lighting to use. We assigned *"nightlights"* to ``ibl``, and thus get a realistic nighttime city scene.
+``vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")`` -  a different variant of the ``draw()`` call which uses the ``ibl`` (Image Based Lighting) property. The *'ibl'* parameter property allows the user to specify the HDR lighting to use. We assigned ``"nightlights"`` to ``ibl``, and thus get a realistic nighttime city scene.
 
 
 
@@ -325,18 +321,18 @@ In a previous metallic sphere rendering we covered a number of methods, paramete
 
 .. code-block:: python
 
-  >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
-  >>> sphere.compute_vertex_normals()
-  TriangleMesh with 19802 points and 39600 triangles.
-  >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.  pi / 2, 0, 0))
-  >>> sphere.rotate(rotate_90)
-  TriangleMesh with 19802 points and 39600 triangles.
-  >>> mat = vis.rendering.MaterialRecord()
-  >>> mat.shader = "defaultLit"
-  >>> mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
-  >>> mat.base_roughness = 0.25
-  >>> mat.base_reflectance = 0.9
-  >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material':   mat}, ibl="nightlights")
+    >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
+    >>> sphere.compute_vertex_normals()
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.  pi / 2, 0, 0))
+    >>> sphere.rotate(rotate_90)
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> mat = vis.rendering.MaterialRecord()
+    >>> mat.shader = "defaultLit"
+    >>> mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
+    >>> mat.base_roughness = 0.25
+    >>> mat.base_reflectance = 0.9
+    >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material':   mat}, ibl="nightlights")
   
 .. image:: https://user-images.githubusercontent.com/93158890/157770798-2c42e7dc-e063-4f26-90b4-16a45e263f36.jpg
     :width: 700px
@@ -375,18 +371,18 @@ In this example, we will add textures to rendered objects:
 
 .. code-block:: python
 
-  >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100, create_uv_map=True)
-  >>> sphere.compute_vertex_normals()
-  TriangleMesh with 19802 points and 39600 triangles.
-  >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
-  >>> sphere.rotate(rotate_90)
-  TriangleMesh with 19802 points and 39600 triangles.
-  >>> mat = vis.rendering.MaterialRecord()
-  >>> mat.shader = "defaultLit"
-  >>> mat.albedo_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_Color.jpg')
-  >>> mat.normal_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_NormalDX.jpg')
-  >>> mat.roughness_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_Roughness.jpg')
-  >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
+    >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100, create_uv_map=True)
+    >>> sphere.compute_vertex_normals()
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
+    >>> sphere.rotate(rotate_90)
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> mat = vis.rendering.MaterialRecord()
+    >>> mat.shader = "defaultLit"
+    >>> mat.albedo_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_Color.jpg')
+    >>> mat.normal_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_NormalDX.jpg')
+    >>> mat.roughness_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_Roughness.jpg')
+    >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
 
 
 .. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
@@ -406,9 +402,9 @@ Let's examine new method calls and properties in this rendering:
 All three properties are initialized by the ``o3d.io.read_image()`` method which loads an image in either JPEG or PNG format.
 
 .. note::
-	 * The image file path in ``o3d.io.read_image()`` on your system may be different from the one shown in our example. Please change the image path accordingly.
-	 * You can use absolute or relative paths to image files.
-
+    * The image file path in ``o3d.io.read_image()`` on your system may be different from the one shown in our example. Please change the image path accordingly.
+    * You can use absolute or relative paths to image files.
+    
 
 
 
@@ -422,16 +418,16 @@ Line Sets are typically used to display a wireframe of a 3D model. Let's do that
 
 .. code-block:: python
 
-  >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 25)
-  >>> sphere.compute_vertex_normals()
-  TriangleMesh with 1202 points and 2400 triangles.
-  >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.  pi / 2, 0, 0))
-  >>> sphere.rotate(rotate_90)
-  TriangleMesh with 1202 points and 2400 triangles.
-  >>> line_set = o3d.geometry.LineSet.create_from_triangle_mesh  (sphere)
-  >>> line_set.paint_uniform_color([0.0, 0.0, 1.0])
-  LineSet with 3600 lines.
-  >>> vis.draw(line_set)
+    >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 25)
+    >>> sphere.compute_vertex_normals()
+    TriangleMesh with 1202 points and 2400 triangles.
+    >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.  pi / 2, 0, 0))
+    >>> sphere.rotate(rotate_90)
+    TriangleMesh with 1202 points and 2400 triangles.
+    >>> line_set = o3d.geometry.LineSet.create_from_triangle_mesh  (sphere)
+    >>> line_set.paint_uniform_color([0.0, 0.0, 1.0])
+    LineSet with 3600 lines.
+    >>> vis.draw(line_set)
 
   
 .. image:: https://user-images.githubusercontent.com/93158890/157949589-8b87fa81-a5cf-4791-a4f7-2d5dc91e546e.jpg
@@ -442,10 +438,6 @@ So, what's new in this code?
 ``line_set = o3d.geometry.LineSet.create_from_triangle_mesh(sphere)`` - here we create a line set from the edges of individual triangles of a triangle mesh.
 
 ``line_set.paint_uniform_color([0.0, 0.0, 1.0])`` - here we paint the wireframe ``LineSet`` blue. [*Red=0, Green=0, Blue=1*]
-
-
-
-
 
 
 
@@ -462,14 +454,14 @@ In prior examples, we rendered only one 3D object at a time. But the ``draw()`` 
 
 .. code-block:: python
   
-  >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
-  >>> sphere.compute_vertex_normals()
-  TriangleMesh with 19802 points and 39600 triangles.
-  >>> aabb = o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)
-  >>> line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(aabb)
-  >>> line_set.paint_uniform_color([0, 0, 1])
-  LineSet with 12 lines.
-  >>> vis.draw([sphere,line_set])
+    >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
+    >>> sphere.compute_vertex_normals()
+    TriangleMesh with 19802 points and 39600 triangles.
+    >>> aabb = o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)
+    >>> line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(aabb)
+    >>> line_set.paint_uniform_color([0, 0, 1])
+    LineSet with 12 lines.
+    >>> vis.draw([sphere,line_set])
 
 
 Both objects appear and can be moved and rotated:
@@ -491,7 +483,7 @@ As recently shown in the ``TriangleMesh LineSet`` Sphere example (:ref:`triangle
 
 ``line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(aabb)``
 
-``line_set.paint_uniform_color([0, 0, 1])`` - paints the bounding box *LineSet* blue.
+``line_set.paint_uniform_color([0, 0, 1])`` - paints the bounding box ``LineSet`` blue.
 
 Multiple Object Parameters in ``draw()`` Calls
 """"""""""""""""""""""""""""""""""""""""""""""
@@ -511,7 +503,7 @@ Aside from rendering ``LineSet`` wireframes or grids, we can change their thickn
 
 .. code-block:: python
 
-	>>> vis.draw([sphere,line_set], line_width=50)
+    >>> vis.draw([sphere,line_set], line_width=50)
 
 Here we rendered a grotesquely thicker Bounding Box by increasing its thickness (``line_width`` property) to 50: 
 
@@ -522,7 +514,7 @@ The default value for the ``line_width`` parameter is ``2``. The minimum supplie
 
 .. code-block:: python
 
-	>>> vis.draw([sphere,line_set], line_width=1)
+    >>> vis.draw([sphere,line_set], line_width=1)
 
 
 .. image:: https://user-images.githubusercontent.com/93158890/158695717-042343a4-bbc3-45b8-ab6b-1118ad027cd7.jpg
@@ -542,13 +534,13 @@ Aside from rendering 3D objects, you can use the ``draw()`` function calls to co
 
 * displaying UI / control panel for interactively modifying 3D model rendering parameters of the Visualizer 
 * adding a Visualizer window title;
-* specifying window dimensions (i.e. *Width* and *Height*).
+* specifying window dimensions (i.e. ``width`` and ``height``).
 
 The code below illustrates how to rename a Visualizer title bar and set window ``width`` and ``height`` by customizing the ``draw()`` call, using our prior :ref:`bounding_box_sphere` example:
 
 .. code-block:: python
 
-	>>> vis.draw([sphere,line_set], show_ui=True, title="Sphere and AABB LineSet", width=700, height=700)
+    >>> vis.draw([sphere,line_set], show_ui=True, title="Sphere and AABB LineSet", width=700, height=700)
 	
 .. image:: https://user-images.githubusercontent.com/93158890/158281728-994ff828-53b0-485a-9feb-9b121d7354f7.jpg
     :width: 700px
@@ -572,13 +564,13 @@ We now declare the ``geoms`` collection which will contain a geometry object ``s
 
 .. code-block:: python
 
-	>>> geoms = {'name': 'sphere', 'geometry': sphere}
+    >>> geoms = {'name': 'sphere', 'geometry': sphere}
 
 We can now display the UI and confirm that our custom object is named appropriately:
 
 .. code-block:: python
 
-	>>> vis.draw(geoms, show_ui=True)
+    >>> vis.draw(geoms, show_ui=True)
 
 And here is the named object:
 
@@ -593,22 +585,11 @@ So far, our ``geoms`` collection defined only a single object: *sphere*. But we 
 
 .. code-block:: python
   
-  >>> geoms = [{'name': 'sphere', 'geometry': sphere}, {'name': 'Axis Aligned Bounding Box line_set', 'geometry': line_set}]
-  >>> vis.draw(geoms, show_ui=True)
+    >>> geoms = [{'name': 'sphere', 'geometry': sphere}, {'name': 'Axis Aligned Bounding Box line_set', 'geometry': line_set}]
+    >>> vis.draw(geoms, show_ui=True)
 
 .. image:: https://user-images.githubusercontent.com/93158890/159094500-83ddd46f-0e71-40e1-9b97-ae46480cd860.jpg
     :width: 700px
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -624,7 +605,7 @@ First, we'll demonstrate how to turn off the *skybox* using our *sphere* example
 
 .. code-block:: python
 
-	>>> vis.draw(sphere, show_ui=True, show_skybox=False)
+    >>> vis.draw(sphere, show_ui=True, show_skybox=False)
 	
 And the Visualizer window opens without the default *skybox* blue background:
 
@@ -635,7 +616,7 @@ Next, we will explore the *background color* (``bg_color``) parameter. At the Py
 
 .. code-block:: python
 
-	>>> vis.draw(sphere, show_ui=True, title="Green Background", show_skybox=False, bg_color=(0.56, 1.0, 0.69, 1.0))
+    >>> vis.draw(sphere, show_ui=True, title="Green Background", show_skybox=False, bg_color=(0.56, 1.0, 0.69, 1.0))
 
 Here, we have displayed the UI, renamed the title bar to *"Green Background"*, turned off the default *skybox* background, and explicitly specified RGB-Alfa values for the ``bg_color``:
 

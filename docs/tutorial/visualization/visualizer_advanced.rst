@@ -1,19 +1,19 @@
 .. _visualizer_advanced:
 
-Advanced Open3D Visualizer
+Advanced Open3D visualizer
 ==========================
 
 Introduction
 ---------------
 
-.. epigraph:: Open3D provides a convenient function for visualizing geometric objects: ``draw``. The ``draw`` function allows you to visualize multiple geometry objects *(PointClouds, LineSets, TriangleMesh)* and images together along with optional, high-quality, physically based (PBR) materials. This tutorial covers a more advanced usage of  ``draw()`` calls. For basic ``draw()`` usage, please see the Basic :doc:`visualizer_basic` tutorial.
+.. epigraph:: Open3D provides a convenient function for visualizing geometric objects: ``draw()``. The ``draw()`` function allows you to visualize multiple geometry objects *(PointClouds, LineSets, TriangleMesh)* and images together along with optional, high-quality, physically based (PBR) materials. This tutorial covers more advanced usages of  ``draw()`` calls. For basic ``draw()`` usage, please see the Basic :doc:`visualizer_basic` tutorial.
 
 
 Getting Started
 ---------------
 
 .. tip::
-	 This **Getting Started** section applies to all examples in this tutorial
+    This **Getting Started** section applies to all examples in this tutorial
 	 
 For all examples in this tutorial, we will be running a Python session. Please follow these preliminary steps:
 
@@ -42,9 +42,9 @@ For all examples in this tutorial, we will be running a Python session. Please f
 
 .. code-block:: python
 
-		>>> import open3d as o3d
-		>>> import open3d.visualization as vis
-		>>> import numpy as np
+    >>> import open3d as o3d
+    >>> import open3d.visualization as vis
+    >>> import numpy as np
 		
 These objects will be used throughout the following examples.
 
@@ -52,7 +52,7 @@ These objects will be used throughout the following examples.
 Advanced Examples
 -----------------
 
-In the Basic :doc:`visualizer_basic` tutorial, we covered how to render *Tensor* and *TriangleMesh* shapes, raster models, and how to control their display programmatically via code and interactively by using Open3D Visualizer UI. This section expounds on those topics to cover more advanced visualization techniques.
+In the Basic :doc:`visualizer_basic` tutorial, we covered how to render ``Tensor`` and ``TriangleMesh`` shapes, raster models, and how to control their display programmatically via code and interactively by using Open3D Visualizer UI. This section expounds on those topics to cover more advanced visualization techniques.
 
 
 .. _rendering_models:
@@ -63,13 +63,13 @@ Rendering Models
 Rendering ``TriangleMesh``'es of 3D Models
 """"""""""""""""""""""""""""""""""""""""""
 
-In the Basic :doc:`visualizer_basic` tutorial, we demonstrated how to apply materials manually to built-in Open3D geometries. It is also possible to load *TriangleMesh*'es from full 3D models using the ``o3d.io.read_triangle_mesh()`` method, as shown below:
+In the Basic :doc:`visualizer_basic` tutorial, we demonstrated how to apply materials manually to built-in Open3D geometries. It is also possible to load ``TriangleMesh``'es from full 3D models using the ``o3d.io.read_triangle_mesh()`` method, as shown below:
 
 
 .. code-block:: python
 
-  >>> monkey_model = o3d.io.read_triangle_mesh('examples/test_data/monkey/monkey.obj')
-  >>> vis.draw(monkey_model)
+    >>> monkey_model = o3d.io.read_triangle_mesh('examples/test_data/monkey/monkey.obj')
+    >>> vis.draw(monkey_model)
 
 That will automatically apply the default material which exists in a 3D model:
 
@@ -84,7 +84,7 @@ Next, we will learn how to render full 3D models in all their glory.
 Rendering Full 3D Models
 """"""""""""""""""""""""
 
-In the Basic :doc:`visualizer_basic` tutorial, we rendered *TriangleMesh* and *Tensor-based TriangleMesh* objects. But the ``draw()`` function can also render full-fledged 3D models containing a set of textures and material properties. To read a complete model, we need to use the ``open3d.io.read_triangle_model()`` method, which imports all the material properties in addition to the *TriangleMesh*:
+In the Basic :doc:`visualizer_basic` tutorial, we rendered ``TriangleMesh`` and ``Tensor``-based ``TriangleMesh`` objects. But the ``draw()`` function can also render full-fledged 3D models containing a set of textures and material properties. To read a complete model, we need to use the ``open3d.io.read_triangle_model()`` method, which imports all the material properties in addition to the ``TriangleMesh``:
 
 .. code-block:: python
 
@@ -115,11 +115,6 @@ For this example, we will need to download / ``clone`` *glTF-Sample-Models*  fro
  .. code-block:: sh
 
      $ git -C .. clone https://github.com/KhronosGroup/glTF-Sample-Models
-
-
-
-
-
 
 
 First, **minimize your current Python terminal session and open a new one. In a new terminal session:**
@@ -169,7 +164,7 @@ This and other complex models can also be rendered using the ``o3d.io.read_trian
 Examining Complex Models
 ::::::::::::::::::::::::
 
-Let's re-load our *FlightHelmet.gltf* model with ``o3d.io.read_triangle_model()``:
+Let's re-load our ``FlightHelmet.gltf`` model with ``o3d.io.read_triangle_model()``:
 
 .. code-block:: python
 
@@ -242,23 +237,23 @@ We can write a loop which displays all mesh names and material indices used in a
 
 .. code-block:: python
 
-   >>> for m in helmet.meshes:
-   ...     print(m.mesh_name)
-   ...     print(m.material_idx)
-   ... 
-   Hose_low
-   0
-   RubberWood_low
-   1
-   GlassPlastic_low
-   2
-   MetalParts_low
-   3
-   LeatherParts_low
-   4
-   Lenses_low
-   5
-
+    >>> for m in helmet.meshes:
+    ...     print(m.mesh_name)
+    ...     print(m.material_idx)
+    ... 
+    Hose_low
+    0
+    RubberWood_low
+    1
+    GlassPlastic_low
+    2
+    MetalParts_low
+    3
+    LeatherParts_low
+    4
+    Lenses_low
+    5
+  
    
 
 We can also render meshes individually like:
@@ -332,19 +327,19 @@ And other parts, just like in the previous ``helmet.meshes`` loop:
 Rendering a Tensor-based TriangleMesh Monkey
 ::::::::::::::::::::::::::::::::::::::::::::
 
-In the beginning of this tutorial (:ref:`rendering_models`), we rendered a *TriangleMesh* of a monkey model using the ``o3d.io.read_triangle_mesh()`` method. Now, we will modify our earlier exercise to convert regular *TriangleMesh* into *Tensor*.
+In the beginning of this tutorial (:ref:`rendering_models`), we rendered a ``TriangleMesh`` of a monkey model using the ``o3d.io.read_triangle_mesh()`` method. Now, we will modify our earlier exercise to convert regular ``TriangleMesh`` into ``Tensor``.
 
 Once again, in your terminal, enter:
 
 .. code-block:: python
 
-		>>> monkey = o3d.io.read_triangle_mesh('examples/test_data/monkey/monkey.obj')
+    >>> monkey = o3d.io.read_triangle_mesh('examples/test_data/monkey/monkey.obj')
 
 Here we are invoking the ``open3d.io`` library which allows us to read 3D model files and/or selectively extract their details. In this case, we are using the ``read_triangle_mesh()`` method for extracting the ``monkey.obj`` file ``TriangleMesh`` data. Now we convert it into **Open3D Tensor geometry**:
 
 .. code-block:: python
 
-		>>> monkey = o3d.t.geometry.TriangleMesh.from_legacy(monkey)
+    >>> monkey = o3d.t.geometry.TriangleMesh.from_legacy(monkey)
 
 Let's see what properties ``monkey`` has:
 
@@ -359,7 +354,7 @@ Time to render the ``monkey``:
 
 .. code-block:: python
 
-		>>> vis.draw(monkey)
+    >>> vis.draw(monkey)
 
 And we get:
 
