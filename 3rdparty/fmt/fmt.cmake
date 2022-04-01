@@ -5,8 +5,8 @@ set(FMT_LIB_NAME fmt)
 ExternalProject_Add(
     ext_fmt
     PREFIX fmt
-    URL https://github.com/fmtlib/fmt/archive/refs/tags/6.0.0.tar.gz
-    URL_HASH SHA256=f1907a58d5e86e6c382e51441d92ad9e23aea63827ba47fd647eacc0d3a16c78
+    URL https://github.com/fmtlib/fmt/archive/refs/tags/8.1.1.tar.gz
+    URL_HASH SHA256=3d794d3cf67633b34b2771eb9f073bde87e846e0d395d254df7b211ef1ec7346
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/fmt"
     UPDATE_COMMAND ""
     CMAKE_ARGS
