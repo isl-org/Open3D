@@ -58,6 +58,9 @@ dist/
 compile_commands.json
 
 # Example resources
+examples/python/t_reconstruction_system/output.log
+examples/python/t_reconstruction_system/output.ply
+examples/python/t_reconstruction_system/output.npz
 examples/python/reconstruction_system/dataset/
 examples/python/geometry/voxel_grid_test.ply
 examples/python/benchmark/testdata/
