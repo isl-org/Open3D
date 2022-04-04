@@ -51,17 +51,19 @@ print_usage_and_exit_docker_test() {
     exit 1
 }
 
-cuda_print_env() {
-    echo "[cuda_print_env()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[cuda_print_env()] BASE_IMAGE=${BASE_IMAGE}"
-    echo "[cuda_print_env()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
-    echo "[cuda_print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
-    echo "[cuda_print_env()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[cuda_print_env()] CCACHE_VERSION=${CCACHE_VERSION}"
-    echo "[cuda_print_env()] PYTHON_VERSION=${PYTHON_VERSION}"
-    echo "[cuda_print_env()] SHARED=${SHARED}"
-    echo "[cuda_print_env()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
-    echo "[cuda_print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+ci_print_env() {
+    echo "[ci_print_env()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[ci_print_env()] BASE_IMAGE=${BASE_IMAGE}"
+    echo "[ci_print_env()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
+    echo "[ci_print_env()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
+    echo "[ci_print_env()] CMAKE_VERSION=${CMAKE_VERSION}"
+    echo "[ci_print_env()] CCACHE_VERSION=${CCACHE_VERSION}"
+    echo "[ci_print_env()] PYTHON_VERSION=${PYTHON_VERSION}"
+    echo "[ci_print_env()] SHARED=${SHARED}"
+    echo "[ci_print_env()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
+    echo "[ci_print_env()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
+    echo "[ci_print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+    echo "[ci_print_env()] PACKAGE=${PACKAGE}"
 }
 
 restart_docker_daemon_if_on_gcloud() {
@@ -255,41 +257,62 @@ case "$1" in
         cpp_python_linking_uninstall_test
         ;;
 
+    # CPU CI
+    cpu-static)
+        cpu-static_export_env
+        ci_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    cpu-shared)
+        cpu-shared_export_env
+        ci_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    cpu-shared-release)
+        cpu-shared-release_export_env
+        ci_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    cpu-shared-ml)
+        cpu-shared-ml_export_env
+        ci_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    cpu-shared-ml-release)
+        cpu-shared-ml-release_export_env
+        ci_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+
     # ML CIs
     2-bionic)
         2-bionic_export_env
-        cuda_print_env
-        export BUILD_CUDA_MODULE=ON
+        ci_print_env
         cpp_python_linking_uninstall_test
         ;;
     3-ml-shared-bionic)
         3-ml-shared-bionic_export_env
-        cuda_print_env
-        export BUILD_CUDA_MODULE=ON
+        ci_print_env
         cpp_python_linking_uninstall_test
         ;;
     3-ml-shared-bionic-release)
         3-ml-shared-bionic-release_export_env
-        cuda_print_env
-        export BUILD_CUDA_MODULE=ON
+        ci_print_env
         cpp_python_linking_uninstall_test
         ;;
     4-shared-bionic)
         4-shared-bionic_export_env
-        cuda_print_env
-        export BUILD_CUDA_MODULE=ON
+        ci_print_env
         cpp_python_linking_uninstall_test
         ;;
     4-shared-bionic-release)
         4-shared-bionic-release_export_env
-        cuda_print_env
-        export BUILD_CUDA_MODULE=ON
+        ci_print_env
         cpp_python_linking_uninstall_test
         ;;
     5-ml-focal)
         5-ml-focal_export_env
-        cuda_print_env
-        export BUILD_CUDA_MODULE=ON
+        ci_print_env
         cpp_python_linking_uninstall_test
         ;;
 

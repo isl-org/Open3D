@@ -19,6 +19,12 @@ else()
     option(BUILD_CURL_FROM_SOURCE "Build CURL from source" ON)
 endif()
 
+mark_as_advanced(BUILD_CURL_FROM_SOURCE)
+
+if((MSVC OR APPLE OR LINUX_AARCH64) AND NOT BUILD_CURL_FROM_SOURCE)
+    message(FATAL_ERROR "BUILD_CURL_FROM_SOURCE is required to be ON.")
+endif()
+
 if(BUILD_CURL_FROM_SOURCE)
     ExternalProject_Add(
         ext_curl

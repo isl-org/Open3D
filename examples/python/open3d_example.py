@@ -179,26 +179,6 @@ def unzip_data(path_zip, path_extract_to):
     print("Extracted to %s" % path_extract_to)
 
 
-def get_redwood_dataset():
-    # dataset from redwood-data.org
-    dataset_names = ["livingroom1", "livingroom2", "office1", "office2"]
-    pyexample_path = os.path.dirname(os.path.abspath(__file__))
-    dataset_path = os.path.join(os.path.dirname(pyexample_path), 'test_data',
-                                'benchmark_data')
-
-    # data preparation
-    for name in dataset_names:
-        # download and unzip dataset
-        if not os.path.exists(os.path.join(dataset_path, name)):
-            print("==================================")
-            file_downloader("https://github.com/isl-org/open3d_downloads/releases/download/redwood/%s-fragments-ply.zip" % \
-                    name)
-            unzip_data("%s-fragments-ply.zip" % name,
-                       "%s/%s" % (dataset_path, name))
-            os.remove("%s-fragments-ply.zip" % name)
-            print("")
-
-
 def sorted_alphanum(file_list_ordered):
     convert = lambda text: int(text) if text.isdigit() else text
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]

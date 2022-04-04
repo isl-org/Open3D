@@ -9,8 +9,6 @@ add_subdirectory(t/geometry)
 add_subdirectory(t/io)
 add_subdirectory(t/pipelines)
 
-target_compile_definitions(benchmarks PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
-
 target_link_libraries(benchmarks PRIVATE Open3D::Open3D)
 if (BUILD_CUDA_MODULE)
     find_package(CUDAToolkit REQUIRED)

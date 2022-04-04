@@ -65,15 +65,13 @@ void ScalableTSDFVolume::Integrate(
          image.color_.num_of_channels_ != 1) ||
         (color_type_ == TSDFVolumeColorType::Gray32 &&
          image.color_.bytes_per_channel_ != 4)) {
-        utility::LogError(
-                "[ScalableTSDFVolume::Integrate] Unsupported image format.");
+        utility::LogError("Unsupported image format.");
     }
     if ((image.depth_.width_ != intrinsic.width_) ||
         (image.depth_.height_ != intrinsic.height_)) {
         utility::LogError(
-                "[ScalableTSDFVolume::Integrate] depth image size is ({} x "
-                "{}), "
-                "but got ({} x {}) from intrinsic.",
+                "Depth image size is ({} x {}), but got ({} x {}) from "
+                "intrinsic.",
                 image.depth_.width_, image.depth_.height_, intrinsic.width_,
                 intrinsic.height_);
     }
@@ -81,9 +79,8 @@ void ScalableTSDFVolume::Integrate(
         (image.color_.width_ != intrinsic.width_ ||
          image.color_.height_ != intrinsic.height_)) {
         utility::LogError(
-                "[ScalableTSDFVolume::Integrate] color image size is ({} x "
-                "{}), "
-                "but got ({} x {}) from intrinsic.",
+                "Color image size is ({} x {}), but got ({} x {}) from "
+                "intrinsic.",
                 image.color_.width_, image.color_.height_, intrinsic.width_,
                 intrinsic.height_);
     }

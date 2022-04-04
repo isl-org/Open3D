@@ -535,7 +535,7 @@ Image Image::FromLegacy(const open3d::geometry::Image &image_legacy,
 
     auto iter = kBytesToDtypeMap.find(image_legacy.bytes_per_channel_);
     if (iter == kBytesToDtypeMap.end()) {
-        utility::LogError("[Image] unsupported image bytes_per_channel ({})",
+        utility::LogError("Unsupported image bytes_per_channel ({})",
                           image_legacy.bytes_per_channel_);
     }
 

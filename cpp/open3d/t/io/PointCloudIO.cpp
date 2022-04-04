@@ -69,7 +69,8 @@ std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &format,
         bool print_progress) {
     auto pointcloud = std::make_shared<geometry::PointCloud>();
-    ReadPointCloud(filename, *pointcloud, {format, true, true, print_progress});
+    ReadPointCloud(filename, *pointcloud,
+                   {format, false, false, print_progress});
     return pointcloud;
 }
 

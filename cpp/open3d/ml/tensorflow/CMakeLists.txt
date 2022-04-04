@@ -120,6 +120,7 @@ if (BUILD_CUDA_MODULE)
 endif()
 
 open3d_show_and_abort_on_warning(open3d_tf_ops)
+open3d_enable_strip(open3d_tf_ops)
 # do not use open3d_set_global_properties(open3d_tf_ops) here because some
 # options are not compatible for tf op libraries
 

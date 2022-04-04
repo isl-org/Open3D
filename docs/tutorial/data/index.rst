@@ -4,7 +4,7 @@ Dataset
 =======
 
 Open3D comes with a built-in dataset module for convenient access to commonly
-used example datasets. These datasets will downloaded automatically from the
+used example datasets. These datasets will be downloaded automatically from the
 internet.
 
 .. code-block:: python

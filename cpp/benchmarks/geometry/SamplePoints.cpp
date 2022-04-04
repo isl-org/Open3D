@@ -29,7 +29,6 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "open3d/utility/DataManager.h"
 
 namespace open3d {
 namespace benchmarks {

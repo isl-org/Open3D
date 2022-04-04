@@ -202,27 +202,3 @@ add_custom_target(install-python-package
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
 )
-
-# Use `make conda-package` to create conda package in the build directory
-# Note that we don't provide `make install-conda-package` similar to pip. This
-# is becuase:
-#     1) `make install-pip-package` works in conda environment for local build
-#     2) `make conda-package` is mainly for internal use to distribute conda
-add_custom_target(conda-package
-    COMMAND conda-build conda_meta --channel conda-forge --output-folder conda_package
-    COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
-    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
-    DEPENDS python-package
-)
-
-# Make pip and conda package in one command. The python-package target clears
-# the ${PYTHON_PACKAGE_DST_DIR}, so if we make pip and conda package one-by-one,
-# the previous one will be deleted.
-add_custom_target(pip-conda-package
-    COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
-    COMMAND conda-build conda_meta --channel conda-forge --output-folder conda_package
-    COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
-    COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
-    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
-    DEPENDS python-package
-)

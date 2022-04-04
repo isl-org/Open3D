@@ -26,7 +26,9 @@
 
 #include <Eigen/Dense>
 #include <algorithm>
+#include <iostream>
 #include <iterator>
+#include <mutex>
 #include <numeric>
 #include <random>
 #include <unordered_set>
@@ -34,6 +36,49 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
+
+namespace {
+
+/// \class RandomSampler
+///
+/// \brief Helper class for random sampling
+template <typename T>
+class RandomSampler {
+public:
+    explicit RandomSampler(const size_t size,
+                           open3d::utility::optional<int> seed)
+        : size_(size) {
+        if (!seed.has_value()) {
+            std::random_device rd;
+            seed = rd();
+        }
+        rng_ = std::mt19937(seed.value());
+    }
+
+    std::vector<T> operator()(size_t sample_size) {
+        std::lock_guard<std::mutex> guard(mutex_);
+
+        std::vector<T> sample;
+        sample.reserve(sample_size);
+
+        size_t valid_sample = 0;
+        while (valid_sample < sample_size) {
+            const size_t idx = rng_() % size_;
+            if (std::find(sample.begin(), sample.end(), idx) == sample.end()) {
+                sample.push_back(idx);
+                valid_sample++;
+            }
+        }
+
+        return sample;
+    }
+
+private:
+    size_t size_;
+    std::mt19937 rng_;
+    std::mutex mutex_;
+};
+}  // namespace
 
 namespace open3d {
 namespace geometry {
@@ -136,50 +181,49 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const double distance_threshold /* = 0.01 */,
         const int ransac_n /* = 3 */,
         const int num_iterations /* = 100 */,
+        const double probability /* = 0.99999999 */,
         utility::optional<int> seed /* = utility::nullopt */) const {
-    RANSACResult result;
-    double error = 0;
+    if (probability <= 0 || probability > 1) {
+        utility::LogError("Probability must be > 0 or <= 1.0");
+    }
 
-    // Initialize the plane model ax + by + cz + d = 0.
-    Eigen::Vector4d plane_model = Eigen::Vector4d(0, 0, 0, 0);
+    RANSACResult result;
+
     // Initialize the best plane model.
     Eigen::Vector4d best_plane_model = Eigen::Vector4d(0, 0, 0, 0);
 
-    // Initialize consensus set.
-    std::vector<size_t> inliers;
-
     size_t num_points = points_.size();
-    std::vector<size_t> indices(num_points);
-    std::iota(std::begin(indices), std::end(indices), 0);
-
-    if (!seed.has_value()) {
-        std::random_device rd;
-        seed = rd();
-    }
-    std::mt19937 rng(seed.value());
+    RandomSampler<size_t> sampler(num_points, seed);
 
     // Return if ransac_n is less than the required plane model parameters.
     if (ransac_n < 3) {
         utility::LogError(
                 "ransac_n should be set to higher than or equal to 3.");
-        return std::make_tuple(best_plane_model, inliers);
+        return std::make_tuple(Eigen::Vector4d(0, 0, 0, 0),
+                               std::vector<size_t>{});
     }
     if (num_points < size_t(ransac_n)) {
         utility::LogError("There must be at least 'ransac_n' points.");
-        return std::make_tuple(best_plane_model, inliers);
+        return std::make_tuple(Eigen::Vector4d(0, 0, 0, 0),
+                               std::vector<size_t>{});
     }
 
+    // Use size_t here to avoid large integer which acceed max of int.
+    size_t break_iteration = std::numeric_limits<size_t>::max();
+    int iteration_count = 0;
+
+#pragma omp parallel for schedule(static)
     for (int itr = 0; itr < num_iterations; itr++) {
-        for (int i = 0; i < ransac_n; ++i) {
-            std::swap(indices[i], indices[rng() % num_points]);
+        if ((size_t)iteration_count > break_iteration) {
+            continue;
         }
-        inliers.clear();
-        for (int idx = 0; idx < ransac_n; ++idx) {
-            inliers.emplace_back(indices[idx]);
-        }
+
+        const std::vector<size_t> sampled_indices = sampler(ransac_n);
+        std::vector<size_t> inliers = sampled_indices;
 
         // Fit model to num_model_parameters randomly selected points among the
         // inliers.
+        Eigen::Vector4d plane_model;
         if (ransac_n == 3) {
             plane_model = TriangleMesh::ComputeTrianglePlane(
                     points_[inliers[0]], points_[inliers[1]],
@@ -192,36 +236,54 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
             continue;
         }
 
-        error = 0;
+        double error = 0;
         inliers.clear();
         auto this_result = EvaluateRANSACBasedOnDistance(
                 points_, plane_model, inliers, distance_threshold, error);
-        if (this_result.fitness_ > result.fitness_ ||
-            (this_result.fitness_ == result.fitness_ &&
-             this_result.inlier_rmse_ < result.inlier_rmse_)) {
-            result = this_result;
-            best_plane_model = plane_model;
+#pragma omp critical
+        {
+            if (this_result.fitness_ > result.fitness_ ||
+                (this_result.fitness_ == result.fitness_ &&
+                 this_result.inlier_rmse_ < result.inlier_rmse_)) {
+                result = this_result;
+                best_plane_model = plane_model;
+                if (result.fitness_ < 1.0) {
+                    break_iteration = std::min(
+                            log(1 - probability) /
+                                    log(1 - pow(result.fitness_, ransac_n)),
+                            (double)num_iterations);
+                } else {
+                    // Set break_iteration to 0 to force to break the loop.
+                    break_iteration = 0;
+                }
+            }
+            iteration_count++;
         }
     }
 
     // Find the final inliers using best_plane_model.
-    inliers.clear();
-    for (size_t idx = 0; idx < points_.size(); ++idx) {
-        Eigen::Vector4d point(points_[idx](0), points_[idx](1), points_[idx](2),
-                              1);
-        double distance = std::abs(best_plane_model.dot(point));
+    std::vector<size_t> final_inliers;
+    if (!best_plane_model.isZero(0)) {
+        for (size_t idx = 0; idx < points_.size(); ++idx) {
+            Eigen::Vector4d point(points_[idx](0), points_[idx](1),
+                                  points_[idx](2), 1);
+            double distance = std::abs(best_plane_model.dot(point));
 
-        if (distance < distance_threshold) {
-            inliers.emplace_back(idx);
+            if (distance < distance_threshold) {
+                final_inliers.emplace_back(idx);
+            }
         }
     }
 
     // Improve best_plane_model using the final inliers.
-    best_plane_model = GetPlaneFromPoints(points_, inliers);
+    best_plane_model = GetPlaneFromPoints(points_, final_inliers);
 
-    utility::LogDebug("RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}",
-                      inliers.size(), result.fitness_, result.inlier_rmse_);
-    return std::make_tuple(best_plane_model, inliers);
+    utility::LogDebug(
+            "RANSAC | Inliers: {:d}, Fitness: {:e}, RMSE: {:e}, Iteration: "
+            "{:d}",
+            final_inliers.size(), result.fitness_, result.inlier_rmse_,
+            iteration_count);
+    return std::make_tuple(best_plane_model, final_inliers);
 }
 
 }  // namespace geometry
