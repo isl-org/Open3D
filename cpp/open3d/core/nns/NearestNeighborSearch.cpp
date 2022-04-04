@@ -147,7 +147,9 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::HybridSearch(
-        const Tensor& query_points, double radius, int max_knn) {
+        const Tensor& query_points,
+        const double radius,
+        const int max_knn) const {
     AssertTensorDevice(query_points, dataset_points_.GetDevice());
 
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {

@@ -95,9 +95,10 @@ RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
 # Open3D Python dependencies
 COPY ./util/ci_utils.sh /root/Open3D/util/
 COPY ./python/requirements.txt /root/Open3D/python/
-COPY ./python/requirements_jupyter.txt /root/Open3D/python/
+COPY ./python/requirements_jupyter_build.txt /root/Open3D/python/
+COPY ./python/requirements_jupyter_install.txt /root/Open3D/python/
 RUN source /root/Open3D/util/ci_utils.sh \
- && install_python_dependencies with-conda with-cuda with-jupyter
+ && install_python_dependencies with-cuda with-jupyter
 
 # Open3D Jupyter dependencies
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
@@ -118,7 +119,7 @@ RUN export NPROC=$(nproc) \
  && export BUILD_TENSORFLOW_OPS=ON \
  && export BUILD_PYTORCH_OPS=ON \
  && source /root/Open3D/util/ci_utils.sh \
- && build_pip_conda_package build_azure_kinect build_jupyter
+ && build_pip_package build_azure_kinect build_jupyter
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \

@@ -32,21 +32,6 @@ import zipfile
 import numpy as np
 import pytest
 
-# Avoid pathlib to be compatible with Python 3.5+.
-_pwd = os.path.dirname(os.path.realpath(__file__))
-test_data_dir = os.path.join(_pwd, os.pardir, os.pardir, "examples",
-                             "test_data")
-
-# Whenever you import open3d_test, the test data will be downloaded
-# automatically to Open3D/examples/test_data/open3d_downloads. Therefore, make
-# sure to import open3d_test or anything inside open3d_test before running
-# unit tests. See https://github.com/isl-org/open3d_downloads for details on
-# how to manage the test data files.
-sys.path.append(test_data_dir)
-from download_utils import download_all_files as _download_all_files
-
-_download_all_files()
-
 
 def torch_available():
     try:

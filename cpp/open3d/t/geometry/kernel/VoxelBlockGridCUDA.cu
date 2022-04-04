@@ -111,9 +111,9 @@ void PointCloudTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     index_t total_block_count = count.Item<index_t>();
     if (total_block_count == 0) {
         utility::LogError(
-                "[CUDATSDFTouchKernel] No block is touched in TSDF volume, "
-                "abort integration. Please check specified parameters, "
-                "especially depth_scale and voxel_size");
+                "No block is touched in TSDF volume, abort integration. Please "
+                "check specified parameters, especially depth_scale and "
+                "voxel_size");
     }
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Tensor block_buf_indices, block_masks;
@@ -211,9 +211,9 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     index_t total_block_count = static_cast<index_t>(count[0].Item<index_t>());
     if (total_block_count == 0) {
         utility::LogError(
-                "No block is touched in TSDF volume, "
-                "abort integration. Please check specified parameters, "
-                "especially depth_scale and voxel_size");
+                "No block is touched in TSDF volume, abort integration. Please "
+                "check specified parameters, especially depth_scale and "
+                "voxel_size");
     }
 
     total_block_count = std::min(total_block_count,

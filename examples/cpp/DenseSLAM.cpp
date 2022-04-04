@@ -32,18 +32,21 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > DenseSLAM [color_folder] [depth_folder]");
+    utility::LogInfo("    > DenseSLAM [options]");
     utility::LogInfo("      Given an RGBD image sequence, perform frame-to-model tracking and mapping, and reconstruct the surface.");
     utility::LogInfo("");
     utility::LogInfo("Basic options:");
+    utility::LogInfo("    --color_folder_path");
+    utility::LogInfo("    --depth_folder_path");
     utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
     utility::LogInfo("    --voxel_size [=0.0058 (m)]");
     utility::LogInfo("    --depth_scale [=1000.0]");
     utility::LogInfo("    --max_depth [=3.0]");
     utility::LogInfo("    --trunc_voxel_multiplier [=8.0]");
     utility::LogInfo("    --block_count [=10000]");
-    utility::LogInfo("    --device [CUDA:0]");
-    utility::LogInfo("    --pointcloud");
+    utility::LogInfo("    --device [CPU:0]");
+    utility::LogInfo("    --pointcloud [file path to save the extracted pointcloud]");
+    utility::LogInfo("    --mesh [file path to save the extracted mesh]");
     // clang-format on
     utility::LogInfo("");
 }
@@ -56,14 +59,14 @@ int main(int argc, char* argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
 
-    if (argc < 3 ||
+    if (argc < 1 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
 
     // Device
-    std::string device_code = "CUDA:0";
+    std::string device_code = "CPU:0";
     if (utility::ProgramOptionExists(argc, argv, "--device")) {
         device_code = utility::GetProgramOptionAsString(argc, argv, "--device");
     }
@@ -71,19 +74,31 @@ int main(int argc, char* argv[]) {
     utility::LogInfo("Using device: {}", device.ToString());
 
     // Input RGBD files
-    std::string color_folder = std::string(argv[1]);
-    std::string depth_folder = std::string(argv[2]);
-
+    std::string color_folder_path = utility::GetProgramOptionAsString(
+            argc, argv, "--color_folder_path", "");
+    std::string depth_folder_path = utility::GetProgramOptionAsString(
+            argc, argv, "--depth_folder_path", "");
     std::vector<std::string> color_filenames, depth_filenames;
-    utility::filesystem::ListFilesInDirectory(color_folder, color_filenames);
-    utility::filesystem::ListFilesInDirectory(depth_folder, depth_filenames);
-    if (color_filenames.size() != depth_filenames.size()) {
-        utility::LogError(
-                "[DenseSLAM] numbers of color and depth files mismatch. "
-                "Please provide folders with same number of images.");
+
+    if (color_folder_path.empty() || depth_folder_path.empty()) {
+        utility::LogInfo("Using default RGBD sample dataset.");
+        data::SampleRedwoodRGBDImages sample_rgbd_data;
+        color_filenames = sample_rgbd_data.GetColorPaths();
+        depth_filenames = sample_rgbd_data.GetDepthPaths();
+    } else {
+        utility::filesystem::ListFilesInDirectory(color_folder_path,
+                                                  color_filenames);
+        utility::filesystem::ListFilesInDirectory(depth_folder_path,
+                                                  depth_filenames);
+        if (color_filenames.size() != depth_filenames.size()) {
+            utility::LogError(
+                    "Numbers of color and depth files mismatch. Please provide "
+                    "folders with same number of images.");
+        }
+        std::sort(color_filenames.begin(), color_filenames.end());
+        std::sort(depth_filenames.begin(), depth_filenames.end());
     }
-    std::sort(color_filenames.begin(), color_filenames.end());
-    std::sort(depth_filenames.begin(), depth_filenames.end());
+
     size_t n = color_filenames.size();
     size_t iterations = static_cast<size_t>(
             utility::GetProgramOptionAsInt(argc, argv, "--iterations", n));
@@ -193,15 +208,16 @@ int main(int argc, char* argv[]) {
         auto pcd = model.ExtractPointCloud();
         auto pcd_legacy =
                 std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
+        open3d::visualization::Draw({pcd_legacy}, "Extracted PointCloud.");
         open3d::io::WritePointCloud(filename, *pcd_legacy);
-    }
-
-    if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
+    } else {
+        // If nothing is specified, draw and save the geometry as mesh.
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--mesh", "mesh_" + device.ToString() + ".ply");
         auto mesh = model.ExtractTriangleMesh();
         auto mesh_legacy = std::make_shared<open3d::geometry::TriangleMesh>(
                 mesh.ToLegacy());
+        open3d::visualization::Draw({mesh_legacy}, "Extracted Mesh.");
         open3d::io::WriteTriangleMesh(filename, *mesh_legacy);
     }
 }

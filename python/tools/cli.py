@@ -25,12 +25,10 @@
 # ----------------------------------------------------------------------------
 
 import argparse
-from nis import cat
 import os
 import runpy
 import sys
 from pathlib import Path
-from unicodedata import category
 
 import open3d as o3d
 import open3d.app as app

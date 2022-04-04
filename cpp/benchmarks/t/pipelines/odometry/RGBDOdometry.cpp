@@ -36,7 +36,6 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
-#include "open3d/utility/DataManager.h"
 
 namespace open3d {
 namespace t {

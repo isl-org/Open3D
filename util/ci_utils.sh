@@ -49,7 +49,6 @@ TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/downlo
 TORCH_MACOS_VER="1.8.2"
 TORCH_REPO_URL="https://download.pytorch.org/whl/lts/1.8/torch_lts.html"
 # Python
-CONDA_BUILD_VER="3.21.4"
 PIP_VER="21.1.1"
 WHEEL_VER="0.35.1"
 STOOLS_VER="50.3.2"
@@ -65,9 +64,6 @@ install_python_dependencies() {
 
     echo "Installing Python dependencies"
     options="$(echo "$@" | tr ' ' '|')"
-    if [[ "with-conda" =~ ^($options)$ ]]; then
-        conda install conda-build="$CONDA_BUILD_VER" -y
-    fi
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
         setuptools=="$STOOLS_VER"
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
@@ -87,7 +83,7 @@ install_python_dependencies() {
     # TODO: modify other locations to use requirements.txt
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
     if [[ "with-jupyter" =~ ^($options)$ ]]; then
-        python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
+        python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     fi
 
     echo
@@ -159,12 +155,7 @@ build_all() {
     echo
 }
 
-build_pip_conda_package() {
-    # Usage:
-    #   build_pip_conda_package            # Default, build both pip and conda
-    #   build_pip_conda_package both       # Build both pip and conda
-    #   build_pip_conda_package pip        # Build pip only
-    #   build_pip_conda_package conda      # Build conda only
+build_pip_package() {
     echo "Building Open3D wheel"
     options="$(echo "$@" | tr ' ' '|')"
 
@@ -242,17 +233,9 @@ build_pip_conda_package() {
     fi
     echo
 
-    options="$(echo "$@" | tr ' ' '|')"
-    if [[ "pip" =~ ^($options)$ ]]; then
-        echo "Packaging Open3D pip package..."
-        make VERBOSE=1 -j"$NPROC" pip-package
-    elif [[ "conda" =~ ^($options)$ ]]; then
-        echo "Packaging Open3D conda package..."
-        make VERBOSE=1 -j"$NPROC" conda-package
-    else
-        echo "Packaging Open3D pip and conda package..."
-        make VERBOSE=1 -j"$NPROC" pip-conda-package
-    fi
+    echo "Packaging Open3D pip package..."
+    make VERBOSE=1 -j"$NPROC" pip-package
+
     popd # PWD=Open3D
 }
 
@@ -378,7 +361,7 @@ install_docs_dependencies() {
     python -m pip install -U -q "yapf==$YAPF_VER"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     echo
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"

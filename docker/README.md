@@ -36,6 +36,9 @@ Silicon. However, if your host is x86-64, you will need to install QEMU:
 
 ```bash
 sudo apt-get --yes install qemu binfmt-support qemu-user-static
+
+# Run the registering scripts
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 ```
 
 To verify that the ARM64 environment is working, run:

@@ -330,6 +330,8 @@ class PyExampleDocsBuilder:
                       f"\n.. literalinclude:: {example.stem}.py"
                       f"\n   :language: python"
                       f"\n   :linenos:"
+                      f"\n   :lineno-start: 27"
+                      f"\n   :lines: 27-"
                       f"\n\n\n")
 
         with open(output_path / "index.rst", "a") as f:
@@ -492,14 +494,6 @@ class JupyterDocsBuilder:
         # Jupyter notebooks
         os.environ["CI"] = "true"
 
-        # Copy test_data directory to the tutorial folder
-        test_data_in_dir = (Path(self.current_file_dir).parent / "examples" /
-                            "test_data")
-        test_data_out_dir = Path(self.current_file_dir) / "test_data"
-        if test_data_out_dir.exists():
-            shutil.rmtree(test_data_out_dir)
-        shutil.copytree(test_data_in_dir, test_data_out_dir)
-
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
         nb_direct_copy = [
@@ -572,7 +566,7 @@ class JupyterDocsBuilder:
                 with open(nb_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
 
-        url = "https://github.com/isl-org/Open3D/files/7592880/t_icp_registration.zip"
+        url = "https://github.com/isl-org/Open3D/files/8243984/t_icp_registration.zip"
         output_file = "t_icp_registration.ipynb"
         output_file_path = os.path.join(
             self.current_file_dir,

@@ -31,15 +31,14 @@ import os
 import sys
 
 pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
 sys.path.append(pyexample_path)
 
 from open3d_example import read_trajectory
 
 
 def run_benchmark():
-    dataset_path = os.path.join(test_data_path, "RGBD")
-    camera_poses = read_trajectory(os.path.join(dataset_path, "odometry.log"))
+    redwood_rgbd = o3d.data.SampleRedwoodRGBDImages()
+    camera_poses = read_trajectory(redwood_rgbd.odometry_log_path)
     camera_intrinsics = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     volume = o3d.pipelines.integration.UniformTSDFVolume(
@@ -51,10 +50,8 @@ def run_benchmark():
 
     s = time.time()
     for i in range(len(camera_poses)):
-        color = o3d.io.read_image(
-            os.path.join(dataset_path, "color", "{0:05d}.jpg".format(i)))
-        depth = o3d.io.read_image(
-            os.path.join(dataset_path, "depth", "{0:05d}.png".format(i)))
+        color = o3d.io.read_image(redwood_rgbd.color_paths[i])
+        depth = o3d.io.read_image(redwood_rgbd.depth_paths[i])
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
             color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False)
         volume.integrate(

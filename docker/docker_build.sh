@@ -20,7 +20,7 @@ __usage_docker_build="USAGE:
     $(basename $0) [OPTION]
 
 OPTION:
-    # OpenBLAS AMD64
+    # OpenBLAS AMD64 (Dockerfile.openblas)
     openblas-amd64-py36-dev: OpenBLAS AMD64 3.6 wheel, developer mode
     openblas-amd64-py37-dev: OpenBLAS AMD64 3.7 wheel, developer mode
     openblas-amd64-py38-dev: OpenBLAS AMD64 3.8 wheel, developer mode
@@ -30,7 +30,7 @@ OPTION:
     openblas-amd64-py38    : OpenBLAS AMD64 3.8 wheel, release mode
     openblas-amd64-py39    : OpenBLAS AMD64 3.9 wheel, release mode
 
-    # OpenBLAS ARM64
+    # OpenBLAS ARM64 (Dockerfile.openblas)
     openblas-arm64-py36-dev: OpenBLAS ARM64 3.6 wheel, developer mode
     openblas-arm64-py37-dev: OpenBLAS ARM64 3.7 wheel, developer mode
     openblas-arm64-py38-dev: OpenBLAS ARM64 3.8 wheel, developer mode
@@ -40,7 +40,14 @@ OPTION:
     openblas-arm64-py38    : OpenBLAS ARM64 3.8 wheel, release mode
     openblas-arm64-py39    : OpenBLAS ARM64 3.9 wheel, release mode
 
-    # CUDA wheels
+    # Ubuntu CPU CI (Dockerfile.ci)
+    cpu-static             : Ubuntu CPU static
+    cpu-shared             : Ubuntu CPU shared
+    cpu-shared-release     : Ubuntu CPU shared, release mode
+    cpu-shared-ml          : Ubuntu CPU shared with ML
+    cpu-shared-ml-release  : Ubuntu CPU shared with ML, release mode
+
+    # CUDA wheels (Dockerfile.wheel)
     cuda_wheel_py36_dev    : CUDA Python 3.6 wheel, developer mode
     cuda_wheel_py37_dev    : CUDA Python 3.7 wheel, developer mode
     cuda_wheel_py38_dev    : CUDA Python 3.8 wheel, developer mode
@@ -50,13 +57,13 @@ OPTION:
     cuda_wheel_py38        : CUDA Python 3.8 wheel, release mode
     cuda_wheel_py39        : CUDA Python 3.9 wheel, release mode
 
-    # ML CIs
-    2-bionic                    : CUDA CI, 2-bionic, developer mode
-    3-ml-shared-bionic-release  : CUDA CI, 3-ml-shared-bionic, release mode
-    3-ml-shared-bionic          : CUDA CI, 3-ml-shared-bionic, developer mode
-    4-shared-bionic             : CUDA CI, 4-shared-bionic, developer mode
-    4-shared-bionic-release     : CUDA CI, 4-shared-bionic, release mode
-    5-ml-focal                  : CUDA CI, 5-ml-focal, developer mode
+    # ML CIs (Dockerfile.ci)
+    2-bionic                   : CUDA CI, 2-bionic, developer mode
+    3-ml-shared-bionic-release : CUDA CI, 3-ml-shared-bionic, release mode
+    3-ml-shared-bionic         : CUDA CI, 3-ml-shared-bionic, developer mode
+    4-shared-bionic            : CUDA CI, 4-shared-bionic, developer mode
+    4-shared-bionic-release    : CUDA CI, 4-shared-bionic, release mode
+    5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -197,29 +204,28 @@ cuda_wheel_build() {
         -f docker/Dockerfile.wheel .
     popd
 
-    # Extract pip wheel, conda package, ccache
+    # Extract pip wheel, ccache
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
-        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl                /opt/mount \
-              && cp ${python_package_dir}/conda_package/linux-64/open3d*.tar.bz2 /opt/mount \
-              && cp /${CCACHE_TAR_NAME}.tar.gz                                   /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl                 \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.tar.bz2  \
+        bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
+              && cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
+              && chown $(id -u):$(id -g) /opt/mount/open3d*.whl \
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
 }
 
-cuda_build() {
-    echo "[cuda_build()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[cuda_build()] BASE_IMAGE=${BASE_IMAGE}"
-    echo "[cuda_build()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
-    echo "[cuda_build()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
-    echo "[cuda_build()] CMAKE_VERSION=${CMAKE_VERSION}"
-    echo "[cuda_build()] CCACHE_VERSION=${CCACHE_VERSION}"
-    echo "[cuda_build()] PYTHON_VERSION=${PYTHON_VERSION}"
-    echo "[cuda_build()] SHARED=${SHARED}"
-    echo "[cuda_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
-    echo "[cuda_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
-    echo "[cuda_build()] PACKAGE=${PACKAGE}"
+ci_build() {
+    echo "[ci_build()] DOCKER_TAG=${DOCKER_TAG}"
+    echo "[ci_build()] BASE_IMAGE=${BASE_IMAGE}"
+    echo "[ci_build()] DEVELOPER_BUILD=${DEVELOPER_BUILD}"
+    echo "[ci_build()] CCACHE_TAR_NAME=${CCACHE_TAR_NAME}"
+    echo "[ci_build()] CMAKE_VERSION=${CMAKE_VERSION}"
+    echo "[ci_build()] CCACHE_VERSION=${CCACHE_VERSION}"
+    echo "[ci_build()] PYTHON_VERSION=${PYTHON_VERSION}"
+    echo "[ci_build()] SHARED=${SHARED}"
+    echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
+    echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
+    echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
+    echo "[ci_build()] PACKAGE=${PACKAGE}"
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -230,16 +236,17 @@ cuda_build() {
         --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg SHARED="${SHARED}" \
+        --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
         --build-arg PACKAGE="${PACKAGE}" \
         -t "${DOCKER_TAG}" \
-        -f docker/Dockerfile.cuda .
+        -f docker/Dockerfile.ci .
     popd
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -cx "cp /open3d*.tar* /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/open3d*.tar*"
+               && chown $(id -u):$(id -g) /opt/mount/open3d*.tar*"
 }
 
 2-bionic_export_env() {
@@ -250,6 +257,7 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-2-bionic
     export PYTHON_VERSION=3.6
     export SHARED=OFF
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=OFF
@@ -263,6 +271,7 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
@@ -276,6 +285,7 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=ON
@@ -289,6 +299,7 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
@@ -302,6 +313,7 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
     export PYTHON_VERSION=3.6
     export SHARED=ON
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
     export PACKAGE=ON
@@ -315,9 +327,80 @@ cuda_build() {
     export CCACHE_TAR_NAME=open3d-ci-5-ml-focal
     export PYTHON_VERSION=3.6
     export SHARED=OFF
+    export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
     export PACKAGE=OFF
+}
+
+cpu-static_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-static
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=OFF
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=OFF
+}
+
+cpu-shared_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=ON
+}
+
+cpu-shared-ml_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared-ml
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
+}
+
+cpu-shared-release_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=ON
+}
+
+cpu-shared-ml-release_export_env() {
+    export DOCKER_TAG=open3d-ci:cpu-shared-ml
+
+    export BASE_IMAGE=ubuntu:18.04
+    export DEVELOPER_BUILD=OFF
+    export CCACHE_TAR_NAME=open3d-ci-cpu
+    export PYTHON_VERSION=3.6
+    export SHARED=ON
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=ON
+    export BUILD_PYTORCH_OPS=ON
+    export PACKAGE=ON
 }
 
 function main () {
@@ -395,6 +478,28 @@ function main () {
             openblas_build
             ;;
 
+        # CPU CI
+        cpu-static)
+            cpu-static_export_env
+            ci_build
+            ;;
+        cpu-shared)
+            cpu-shared_export_env
+            ci_build
+            ;;
+        cpu-shared-release)
+            cpu-shared-release_export_env
+            ci_build
+            ;;
+        cpu-shared-ml)
+            cpu-shared-ml_export_env
+            ci_build
+            ;;
+        cpu-shared-ml-release)
+            cpu-shared-ml-release_export_env
+            ci_build
+            ;;
+
         # CUDA wheels
         cuda_wheel_py36_dev)
             cuda_wheel_build py36 dev
@@ -424,27 +529,27 @@ function main () {
         # ML CIs
         2-bionic)
             2-bionic_export_env
-            cuda_build
+            ci_build
             ;;
         3-ml-shared-bionic-release)
             3-ml-shared-bionic-release_export_env
-            cuda_build
+            ci_build
             ;;
         3-ml-shared-bionic)
             3-ml-shared-bionic_export_env
-            cuda_build
+            ci_build
             ;;
         4-shared-bionic-release)
             4-shared-bionic-release_export_env
-            cuda_build
+            ci_build
             ;;
         4-shared-bionic)
             4-shared-bionic_export_env
-            cuda_build
+            ci_build
             ;;
         5-ml-focal)
             5-ml-focal_export_env
-            cuda_build
+            ci_build
             ;;
         *)
             echo "Error: invalid argument: ${1}." >&2

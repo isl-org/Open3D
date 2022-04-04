@@ -25,10 +25,10 @@ Currently, Open3D supports the Azure Kinect SDK version ``v1.4.1``, though futur
 versions might also be compatible.
 
 
-Using Open3D from Pip or Conda
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install Open3D from Pip
+~~~~~~~~~~~~~~~~~~~~~~~
 
-If you're using Open3D installed via Pip or Conda, Open3D's Azure Kinect features
+If you're using Open3D installed via Pip, Open3D's Azure Kinect features
 should work out-of-the box if K4A is installed in the system in the recommended
 way. Open3D will try to load the K4A dynamic library automatically at runtime,
 when a K4A related feature within Open3D is used.
