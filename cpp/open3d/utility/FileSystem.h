@@ -66,6 +66,8 @@ std::string GetWorkingDirectory();
 
 std::vector<std::string> GetPathComponents(const std::string &path);
 
+std::string GetTempDirectoryPath();
+
 bool ChangeWorkingDirectory(const std::string &directory);
 
 bool DirectoryExists(const std::string &directory);

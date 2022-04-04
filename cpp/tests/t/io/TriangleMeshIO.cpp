@@ -29,17 +29,8 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/t/geometry/TriangleMesh.h"
+#include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
-
-#ifdef WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
-// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-#endif
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 namespace open3d {
 namespace tests {
@@ -56,7 +47,7 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(knot_data.GetPath(), mesh));
     std::string file_name =
-            fs::temp_directory_path().string() + "/test_mesh.ply";
+            utility::filesystem::GetTempDirectoryPath() + "/test_mesh.ply";
     EXPECT_TRUE(t::io::WriteTriangleMesh(file_name, mesh));
     EXPECT_TRUE(t::io::ReadTriangleMesh(file_name, mesh_read));
     EXPECT_TRUE(
@@ -69,7 +60,7 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     auto cube_mesh = t::geometry::TriangleMesh::FromLegacy(
             *geometry::TriangleMesh::CreateBox());
     const std::string filename =
-            fs::temp_directory_path().string() + "/cube.obj";
+            utility::filesystem::GetTempDirectoryPath() + "/cube.obj";
     EXPECT_TRUE(t::io::WriteTriangleMesh(filename, cube_mesh));
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(filename, mesh));
@@ -113,7 +104,7 @@ TEST(TriangleMeshIO, TriangleMeshLegecyCompatibility) {
     EXPECT_EQ(mesh_tensor.GetVertexPositions().GetLength(),
               static_cast<int64_t>(mesh_legacy.vertices_.size()));
 
-    const std::string tmp_path = fs::temp_directory_path().string();
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     std::string file_name_tensor = tmp_path + "/test_mesh_tensor.obj";
     std::string file_name_legacy = tmp_path + "/test_mesh_legacy.obj";
 

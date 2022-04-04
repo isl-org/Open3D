@@ -34,18 +34,9 @@
 #include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/IJsonConvertible.h"
 #include "tests/Tests.h"
-
-#ifdef WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
-// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-#endif
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 namespace open3d {
 namespace tests {
@@ -53,7 +44,7 @@ namespace tests {
 void WriteReadAndAssertEqual(const geometry::Octree& src_octree) {
     // Write to file
     std::string file_name =
-            fs::temp_directory_path().string() + "/temp_octree.json";
+            utility::filesystem::GetTempDirectoryPath() + "/temp_octree.json";
     EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
 
     // Read from file

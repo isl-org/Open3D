@@ -26,17 +26,8 @@
 
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/TriangleMeshIO.h"
+#include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
-
-#ifdef WIN32
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#endif
-#ifdef __APPLE__
-// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
-#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
-#endif
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
 
 namespace open3d {
 namespace tests {
@@ -48,7 +39,7 @@ TEST(FileSTL, WriteReadTriangleMeshFromSTL) {
     tm_gt.ComputeVertexNormals();
 
     const std::string tmp_stl_path =
-            fs::temp_directory_path().string() + "/tmp.stl";
+            utility::filesystem::GetTempDirectoryPath() + "/tmp.stl";
     io::WriteTriangleMesh(tmp_stl_path, tm_gt);
 
     geometry::TriangleMesh tm_test;
