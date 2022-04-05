@@ -62,17 +62,35 @@ In the Overview section, we activated a ``conda`` environment, started a Python 
 Drawing point clouds
 ::::::::::::::::::::
 
-In this example, we are going to learn how to load and render Point Clouds.
+Using Open3D datasets
+"""""""""""""""""""""
+
+In this example, we are going to learn how to load and render Point Clouds. To retrieve our example, we will be using **Open3D Datasets**.
+
+
+.. tip::
+    Open3D comes with a built-in *dataset* module for convenient access to commonly used examples.
+    
+    * Datasets are downloaded automatically from the Internet and cached locally.
+    * The default local dataset  download directory is ``~/open3d_data``.
+    * Datasets will be downloaded to ``~/open3d_data/download`` and extracted to ``~/open3d_data/extract``
+
 
 Enter the following code at the Python prompt:
 
 .. code-block:: python
 
-   >>> pcd = o3d.io.read_point_cloud("examples/test_data/fragment.ply")
-   >>> rotate_180 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi, 0, 0))
-   >>> pcd.rotate(rotate_180)
-   PointCloud with 196133 points.
-   >>> vis.draw(pcd)
+    # Download an initialize a dataset
+    >>> dataset = o3d.data.PLYPointCloud()
+    [Open3D INFO] Downloading https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/fragment.ply
+    [Open3D INFO] Downloaded to /home/intel/open3d_data/download/PLYPointCloud/fragment.ply
+    # Create a Point Cloud object (pcd) from the dataset
+    >>> pcd = o3d.io.read_point_cloud(dataset.path)
+    # Customize the pcd object
+    >>> rotate_180 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi, 0, 0))
+    >>> pcd.rotate(rotate_180)
+    PointCloud with 196133 points.
+    >>> vis.draw(pcd)
 	
 Open3D returns:
 	
@@ -505,7 +523,7 @@ Aside from rendering ``LineSet`` wireframes or grids, we can change their thickn
 
     >>> vis.draw([sphere,line_set], line_width=50)
 
-Here we rendered a grotesquely thicker Bounding Box by increasing its thickness (``line_width`` property) to 50: 
+Here we rendered a grotesquely thicker Bounding Box by increasing its thickness (``line_width`` property) to ``50``: 
 
 .. image:: https://user-images.githubusercontent.com/93158890/158695002-f5976bfa-1e81-46dc-bf3b-b926d0c5e0af.jpg
     :width: 700px
