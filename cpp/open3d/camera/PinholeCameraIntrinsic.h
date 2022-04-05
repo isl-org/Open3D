@@ -51,12 +51,21 @@ enum class PinholeCameraIntrinsicParameters {
 class PinholeCameraIntrinsic : public utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
-    PinholeCameraIntrinsic();
+    ///
+    /// \param width width of the image. (Default: -1).
+    /// \param height height of the image. (Default: -1).
+    /// \param intrinsic_matrix 3x3 intrinsic matrix. (Default: Identity).
+    PinholeCameraIntrinsic(int width = -1,
+                           int height = -1,
+                           const Eigen::Matrix3d intrinsic_matrix =
+                                   Eigen::Matrix3d::Identity());
+
     /// \brief Parameterized Constructor.
     ///
     /// \param param Sets the camera parameters to
     /// the default settings of one of the sensors.
     PinholeCameraIntrinsic(PinholeCameraIntrinsicParameters param);
+
     /// \brief Parameterized Constructor.
     ///
     /// \param width width of the image.
@@ -67,6 +76,7 @@ public:
     /// \param cy principal point of the Y-axis.
     PinholeCameraIntrinsic(
             int width, int height, double fx, double fy, double cx, double cy);
+
     ~PinholeCameraIntrinsic() override;
 
 public:
