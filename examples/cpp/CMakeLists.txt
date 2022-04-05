@@ -91,7 +91,7 @@ if (BUILD_LIBREALSENSE)
         open3d_add_example(RealSenseBagReader    Open3D::3rdparty_librealsense Open3D::3rdparty_jsoncpp)
     endif()
     open3d_add_example(RealSenseRecorder     Open3D::3rdparty_librealsense)
-    open3d_add_example(RealSenseDenseSLAMGUI Open3D::3rdparty_librealsense)
+    open3d_add_example(RealSenseDenseSLAM    Open3D::3rdparty_librealsense)
 endif()
 
 if (BUILD_AZURE_KINECT)
