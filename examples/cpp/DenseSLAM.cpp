@@ -32,17 +32,21 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > DenseSLAM [color_folder] [depth_folder]");
+    utility::LogInfo("    > DenseSLAM [options]");
     utility::LogInfo("      Given an RGBD image sequence, perform frame-to-model tracking and mapping, and reconstruct the surface.");
     utility::LogInfo("");
     utility::LogInfo("Basic options:");
+    utility::LogInfo("    --color_folder_path");
+    utility::LogInfo("    --depth_folder_path");
     utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
     utility::LogInfo("    --voxel_size [=0.0058 (m)]");
     utility::LogInfo("    --depth_scale [=1000.0]");
     utility::LogInfo("    --max_depth [=3.0]");
+    utility::LogInfo("    --trunc_voxel_multiplier [=8.0]");
     utility::LogInfo("    --block_count [=10000]");
     utility::LogInfo("    --device [CPU:0]");
-    utility::LogInfo("    --pointcloud");
+    utility::LogInfo("    --pointcloud [file path to save the extracted pointcloud]");
+    utility::LogInfo("    --mesh [file path to save the extracted mesh]");
     // clang-format on
     utility::LogInfo("");
 }
@@ -55,7 +59,7 @@ int main(int argc, char* argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
 
-    if (argc < 3 ||
+    if (argc < 1 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
@@ -70,19 +74,31 @@ int main(int argc, char* argv[]) {
     utility::LogInfo("Using device: {}", device.ToString());
 
     // Input RGBD files
-    std::string color_folder = std::string(argv[1]);
-    std::string depth_folder = std::string(argv[2]);
-
+    std::string color_folder_path = utility::GetProgramOptionAsString(
+            argc, argv, "--color_folder_path", "");
+    std::string depth_folder_path = utility::GetProgramOptionAsString(
+            argc, argv, "--depth_folder_path", "");
     std::vector<std::string> color_filenames, depth_filenames;
-    utility::filesystem::ListFilesInDirectory(color_folder, color_filenames);
-    utility::filesystem::ListFilesInDirectory(depth_folder, depth_filenames);
-    if (color_filenames.size() != depth_filenames.size()) {
-        utility::LogError(
-                "[DenseSLAM] numbers of color and depth files mismatch. "
-                "Please provide folders with same number of images.");
+
+    if (color_folder_path.empty() || depth_folder_path.empty()) {
+        utility::LogInfo("Using default RGBD sample dataset.");
+        data::SampleRedwoodRGBDImages sample_rgbd_data;
+        color_filenames = sample_rgbd_data.GetColorPaths();
+        depth_filenames = sample_rgbd_data.GetDepthPaths();
+    } else {
+        utility::filesystem::ListFilesInDirectory(color_folder_path,
+                                                  color_filenames);
+        utility::filesystem::ListFilesInDirectory(depth_folder_path,
+                                                  depth_filenames);
+        if (color_filenames.size() != depth_filenames.size()) {
+            utility::LogError(
+                    "Numbers of color and depth files mismatch. Please provide "
+                    "folders with same number of images.");
+        }
+        std::sort(color_filenames.begin(), color_filenames.end());
+        std::sort(depth_filenames.begin(), depth_filenames.end());
     }
-    std::sort(color_filenames.begin(), color_filenames.end());
-    std::sort(depth_filenames.begin(), depth_filenames.end());
+
     size_t n = color_filenames.size();
     size_t iterations = static_cast<size_t>(
             utility::GetProgramOptionAsInt(argc, argv, "--iterations", n));
@@ -108,6 +124,10 @@ int main(int argc, char* argv[]) {
     // VoxelBlock configurations
     float voxel_size = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--voxel_size", 3.f / 512.f));
+    float trunc_voxel_multiplier =
+            static_cast<float>(utility::GetProgramOptionAsDouble(
+                    argc, argv, "--trunc_voxel_multiplier", 8.0f));
+
     int block_resolution = utility::GetProgramOptionAsInt(
             argc, argv, "--block_resolution", 16);
     int block_count =
@@ -174,28 +194,30 @@ int main(int argc, char* argv[]) {
         // Integrate
         model.UpdateFramePose(i, T_frame_to_model);
         if (tracking_success) {
-            model.Integrate(input_frame, depth_scale, depth_max);
+            model.Integrate(input_frame, depth_scale, depth_max,
+                            trunc_voxel_multiplier);
         }
         model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max,
-                                   false);
+                                   trunc_voxel_multiplier, false);
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--pointcloud",
                 "pcd_" + device.ToString() + ".ply");
-        auto pcd = model.ExtractPointCloud(-1);
+        auto pcd = model.ExtractPointCloud();
         auto pcd_legacy =
                 std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
+        open3d::visualization::Draw({pcd_legacy}, "Extracted PointCloud.");
         open3d::io::WritePointCloud(filename, *pcd_legacy);
-    }
-
-    if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
+    } else {
+        // If nothing is specified, draw and save the geometry as mesh.
         std::string filename = utility::GetProgramOptionAsString(
                 argc, argv, "--mesh", "mesh_" + device.ToString() + ".ply");
-        auto mesh = model.ExtractTriangleMesh(-1);
+        auto mesh = model.ExtractTriangleMesh();
         auto mesh_legacy = std::make_shared<open3d::geometry::TriangleMesh>(
                 mesh.ToLegacy());
+        open3d::visualization::Draw({mesh_legacy}, "Extracted Mesh.");
         open3d::io::WriteTriangleMesh(filename, *mesh_legacy);
     }
 }

@@ -30,6 +30,7 @@
 
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 
@@ -107,7 +108,7 @@ bool ReadTriangleMesh(const std::string &filename,
         auto progress_text = std::string("Reading ") +
                              utility::ToUpper(filename_ext) +
                              " file: " + filename;
-        auto pbar = utility::ConsoleProgressBar(100, progress_text, true);
+        auto pbar = utility::ProgressBar(100, progress_text, true);
         params.update_progress = [pbar](double percent) mutable -> bool {
             pbar.SetCurrentCount(size_t(percent));
             return true;
@@ -211,7 +212,7 @@ bool AddTrianglesByEarClipping(geometry::TriangleMesh &mesh,
         }
 
         found_ear = false;
-        for (int i = 1; i < n - 2; i++) {
+        for (int i = 1; i < n - 1; i++) {
             const Eigen::Vector3d &v1 =
                     mesh.vertices_[indices[i]] - mesh.vertices_[indices[i - 1]];
             const Eigen::Vector3d &v2 =

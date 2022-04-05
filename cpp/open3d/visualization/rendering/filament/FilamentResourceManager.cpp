@@ -71,6 +71,21 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
+// Implementation of FNV-1a hash function. See
+// https://en.wikipedia.org/wiki/Fowler-Noll-Vo_hash_function for details
+std::uint64_t fnv1a_block_hash(const void* const block, std::size_t len) {
+    const uint64_t kFNVPrime = 0x00000100000001B3;
+    std::uint64_t hash = 0xcbf29ce484222325;
+
+    const auto* ptr = static_cast<const unsigned char*>(block);
+    for (unsigned int i = 0; i < len; ++i) {
+        hash ^= static_cast<uint64_t>(*ptr++);
+        hash *= kFNVPrime;
+    }
+
+    return hash;
+}
+
 namespace {
 template <class ResourceType>
 using ResourcesContainer =
@@ -441,10 +456,17 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path,
 TextureHandle FilamentResourceManager::CreateTexture(
         const std::shared_ptr<geometry::Image>& img, bool srgb) {
     TextureHandle handle;
-    if (img->HasData()) {
+    auto hash = fnv1a_block_hash(img->data_.data(), img->data_.size());
+    if (texture_cache_.count(hash) > 0) {
+        handle = texture_cache_[hash];
+        textures_[handle].use_count++;
+        return handle;
+    } else if (img->HasData()) {
         auto texture = LoadTextureFromImage(img, srgb);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+        textures_[handle].use_count++;
+        texture_cache_[hash] = handle;
     }
 
     return handle;
@@ -453,12 +475,18 @@ TextureHandle FilamentResourceManager::CreateTexture(
 TextureHandle FilamentResourceManager::CreateTexture(
         const geometry::Image& image, bool srgb) {
     TextureHandle handle;
-    if (image.HasData()) {
+    auto hash = fnv1a_block_hash(image.data_.data(), image.data_.size());
+    if (texture_cache_.count(hash) > 0) {
+        handle = texture_cache_[hash];
+        textures_[handle].use_count++;
+        return handle;
+    } else if (image.HasData()) {
         auto copy = std::make_shared<geometry::Image>(image);
-
         auto texture = LoadTextureFromImage(copy, srgb);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+        textures_[handle].use_count++;
+        texture_cache_[hash] = handle;
     }
 
     return handle;
@@ -766,6 +794,7 @@ std::weak_ptr<filament::IndexBuffer> FilamentResourceManager::GetIndexBuffer(
 }
 
 void FilamentResourceManager::DestroyAll() {
+    texture_cache_.clear();
     material_instances_.clear();
     materials_.clear();
     textures_.clear();

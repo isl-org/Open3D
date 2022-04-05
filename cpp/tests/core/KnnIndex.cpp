@@ -113,7 +113,71 @@ TEST(KnnIndex, KnnSearch) {
     EXPECT_TRUE(distances.AllClose(gt_distances));
 }
 
-TEST(KnnIndex, SearchKnnBatch) {
+TEST(KnnIndex, KnnSearchHighdim) {
+    // Define test data.
+    core::Device device = core::Device("CUDA:0");
+    core::Tensor dataset_points = core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                                             {0.0, 0.0, 0.1},
+                                                             {0.0, 0.0, 0.2},
+                                                             {0.0, 0.1, 0.0},
+                                                             {0.0, 0.1, 0.1},
+                                                             {0.0, 0.1, 0.2},
+                                                             {0.0, 0.2, 0.0},
+                                                             {0.0, 0.2, 0.1},
+                                                             {0.0, 0.2, 0.2},
+                                                             {0.1, 0.0, 0.0}},
+                                                            device);
+    core::Tensor query_points;
+    core::Tensor gt_indices, gt_distances;
+
+    // Dimension = 5.
+    dataset_points = dataset_points.Reshape({-1, 5});
+    query_points = core::Tensor::Init<float>(
+            {{0.064705, 0.043921, 0.087843, 0.0, 0.0}}, device);
+    core::nns::KnnIndex knn_index(dataset_points);
+
+    // If k <= 0.
+    EXPECT_THROW(knn_index.SearchKnn(query_points, -1), std::runtime_error);
+    EXPECT_THROW(knn_index.SearchKnn(query_points, 0), std::runtime_error);
+
+    // If k == 3.
+    core::Tensor indices, distances;
+    core::SizeVector shape{1, 3};
+    gt_indices = core::Tensor::Init<int32_t>({{0, 4, 2}}, device);
+    gt_distances = core::Tensor::Init<float>(
+            {{0.01383218, 0.02869498, 0.03089118}}, device);
+
+    std::tie(indices, distances) = knn_index.SearchKnn(query_points, 3);
+
+    EXPECT_EQ(indices.GetShape(), shape);
+    EXPECT_EQ(distances.GetShape(), shape);
+    EXPECT_TRUE(indices.AllClose(gt_indices));
+    EXPECT_TRUE(distances.AllClose(gt_distances));
+
+    // Dimension = 6.
+    dataset_points = dataset_points.Reshape({-1, 6});
+    query_points = core::Tensor::Init<float>(
+            {{0.064705, 0.043921, 0.087843, 0.0, 0.0, 0.0}}, device);
+    knn_index.SetTensorData(dataset_points);
+
+    // If k <= 0.
+    EXPECT_THROW(knn_index.SearchKnn(query_points, -1), std::runtime_error);
+    EXPECT_THROW(knn_index.SearchKnn(query_points, 0), std::runtime_error);
+
+    // If k == 3.
+    gt_indices = core::Tensor::Init<int32_t>({{0, 1, 4}}, device);
+    gt_distances = core::Tensor::Init<float>(
+            {{0.02383218, 0.02869498, 0.05112658}}, device);
+
+    std::tie(indices, distances) = knn_index.SearchKnn(query_points, 3);
+
+    EXPECT_EQ(indices.GetShape(), shape);
+    EXPECT_EQ(distances.GetShape(), shape);
+    EXPECT_TRUE(indices.AllClose(gt_indices));
+    EXPECT_TRUE(distances.AllClose(gt_distances));
+}
+
+TEST(KnnIndex, KnnSearchBatch) {
     // Define test data.
     core::Device device = core::Device("CUDA:0");
     core::Tensor dataset_points = core::Tensor::Init<float>(
@@ -152,29 +216,33 @@ TEST(KnnIndex, SearchKnnBatch) {
 
     // If k == 3.
     core::Tensor indices, distances;
-    core::SizeVector shape{25, 3};
-    core::Tensor gt_indices = core::Tensor::Init<int32_t>(
-            {{3, 1, 9}, {7, 6, 0}, {2, 8, 1}, {8, 2, 5}, {7, 0, 4},
-             {2, 0, 5}, {5, 7, 8}, {0, 5, 7}, {4, 0, 7}, {7, 5, 0},
-             {8, 6, 9}, {9, 6, 3}, {8, 2, 6}, {7, 0, 4}, {9, 6, 8},
-             {4, 5, 7}, {5, 4, 7}, {4, 5, 7}, {5, 4, 7}, {0, 6, 2},
-             {4, 3, 7}, {4, 7, 5}, {1, 3, 6}, {6, 0, 9}, {2, 6, 0}},
-            device);
-    core::Tensor gt_distances = core::Tensor::Init<float>(
-            {{0.084, 0.114, 0.249}, {0.070, 0.296, 0.353},
-             {0.027, 0.307, 0.424}, {0.070, 0.246, 0.520},
-             {0.121, 0.406, 0.471}, {0.117, 0.210, 0.353},
-             {0.035, 0.319, 0.328}, {0.135, 0.221, 0.394},
-             {0.037, 0.117, 0.137}, {0.037, 0.158, 0.163},
-             {0.179, 0.268, 0.320}, {0.063, 0.087, 0.150},
-             {0.072, 0.110, 0.122}, {0.028, 0.205, 0.210},
-             {0.256, 0.309, 0.327}, {0.082, 0.201, 0.204},
-             {0.221, 0.320, 0.366}, {0.114, 0.226, 0.259},
-             {0.143, 0.225, 0.266}, {0.064, 0.090, 0.136},
-             {0.092, 0.225, 0.246}, {0.040, 0.169, 0.251},
-             {0.127, 0.247, 0.349}, {0.117, 0.125, 0.192},
-             {0.016, 0.181, 0.192}},
-            device);
+    core::SizeVector shape{25 * 3};
+    core::Tensor gt_indices =
+            core::Tensor::Init<int32_t>(
+                    {{3, 1, 9}, {7, 6, 0}, {2, 8, 1}, {8, 2, 5}, {7, 0, 4},
+                     {2, 0, 5}, {5, 7, 8}, {0, 5, 7}, {4, 0, 7}, {7, 5, 0},
+                     {8, 6, 9}, {9, 6, 3}, {8, 2, 6}, {7, 0, 4}, {9, 6, 8},
+                     {4, 5, 7}, {5, 4, 7}, {4, 5, 7}, {5, 4, 7}, {0, 6, 2},
+                     {4, 3, 7}, {4, 7, 5}, {1, 3, 6}, {6, 0, 9}, {2, 6, 0}},
+                    device)
+                    .Reshape({-1});
+    core::Tensor gt_distances =
+            core::Tensor::Init<float>(
+                    {{0.084, 0.114, 0.249}, {0.070, 0.296, 0.353},
+                     {0.027, 0.307, 0.424}, {0.070, 0.246, 0.520},
+                     {0.121, 0.406, 0.471}, {0.117, 0.210, 0.353},
+                     {0.035, 0.319, 0.328}, {0.135, 0.221, 0.394},
+                     {0.037, 0.117, 0.137}, {0.037, 0.158, 0.163},
+                     {0.179, 0.268, 0.320}, {0.063, 0.087, 0.150},
+                     {0.072, 0.110, 0.122}, {0.028, 0.205, 0.210},
+                     {0.256, 0.309, 0.327}, {0.082, 0.201, 0.204},
+                     {0.221, 0.320, 0.366}, {0.114, 0.226, 0.259},
+                     {0.143, 0.225, 0.266}, {0.064, 0.090, 0.136},
+                     {0.092, 0.225, 0.246}, {0.040, 0.169, 0.251},
+                     {0.127, 0.247, 0.349}, {0.117, 0.125, 0.192},
+                     {0.016, 0.181, 0.192}},
+                    device)
+                    .Reshape({-1});
 
     std::tie(indices, distances) =
             index.SearchKnn(query_points, queries_row_splits, 3);

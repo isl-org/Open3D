@@ -174,7 +174,21 @@ FilamentScene::FilamentScene(filament::Engine& engine,
     // covers up any SceneWidgets in the window.
 }
 
-FilamentScene::~FilamentScene() {}
+FilamentScene::~FilamentScene() {
+    for (auto& le : lights_) {
+        engine_.destroy(le.second.filament_entity);
+        le.second.filament_entity.clear();
+    }
+    engine_.destroy(sun_.filament_entity);
+    sun_.filament_entity.clear();
+    if (ibl_handle_) {
+        resource_mgr_.Destroy(ibl_handle_);
+    }
+    if (skybox_handle_) {
+        resource_mgr_.Destroy(skybox_handle_);
+    }
+    engine_.destroy(scene_);
+}
 
 Scene* FilamentScene::Copy() {
     auto copy = new FilamentScene(engine_, resource_mgr_, renderer_);
@@ -393,6 +407,10 @@ bool FilamentScene::AddGeometry(const std::string& object_name,
         buffer_builder->SetDownsampleThreshold(downsample_threshold);
     }
     buffer_builder->SetAdjustColorsForSRGBToneMapping(material.sRGB_color);
+    if (material.shader == "unlitLine") {
+        buffer_builder->SetWideLines();
+    }
+
     auto buffers = buffer_builder->ConstructBuffers();
     auto vb = std::get<0>(buffers);
     auto ib = std::get<1>(buffers);
@@ -498,6 +516,7 @@ bool FilamentScene::CreateAndAddFilamentEntity(
                 object_name,
                 RenderableGeometry{object_name,
                                    true,
+                                   false,
                                    true,
                                    true,
                                    true,
@@ -643,9 +662,11 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                 //     TPointCloudBuffersBuilder::ConstructBuffers
                 float* uv_array = static_cast<float*>(malloc(uv_array_size));
                 memset(uv_array, 0, uv_array_size);
-                const float* src = static_cast<const float*>(
+                auto vis_scalars =
                         point_cloud.GetPointAttr("__visualization_scalar")
-                                .GetDataPtr());
+                                .Contiguous();
+                const float* src =
+                        static_cast<const float*>(vis_scalars.GetDataPtr());
                 const size_t n = 2 * n_vertices;
                 for (size_t i = 0; i < n; i += 2) {
                     uv_array[i] = *src++;
@@ -1539,6 +1560,9 @@ Eigen::Vector3f FilamentScene::GetSunLightDirection() {
 }
 
 bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
+    auto old_ibl = ibl_handle_;
+    auto old_sky = skybox_handle_;
+
     // Load IBL
     std::string ibl_path = ibl_name + std::string("_ibl.ktx");
     rendering::IndirectLightHandle new_ibl =
@@ -1552,6 +1576,10 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
         indirect_light_ = wlight;
         if (ibl_enabled_) scene_->setIndirectLight(light.get());
         ibl_name_ = ibl_name;
+        ibl_handle_ = new_ibl;
+        if (old_ibl) {
+            resource_mgr_.Destroy(old_ibl);
+        }
     }
 
     // Load matching skybox
@@ -1564,6 +1592,10 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
         if (skybox_enabled_) {
             scene_->setSkybox(skybox.get());
             ShowSkybox(true);
+        }
+        skybox_handle_ = sky;
+        if (old_sky) {
+            resource_mgr_.Destroy(old_sky);
         }
     }
 
@@ -1894,6 +1926,24 @@ void FilamentScene::Draw(filament::Renderer& renderer) {
         container.view->PreRender();
         renderer.render(container.view->GetNativeView());
         container.view->PostRender();
+    }
+}
+
+void FilamentScene::HideRefractedMaterials(bool hide) {
+    for (auto geom : geometries_) {
+        if (geom.second.mat.properties.shader == "defaultLitSSR") {
+            if (hide) {
+                if (!geom.second.visible) {
+                    geom.second.was_hidden_before_picking = true;
+                } else {
+                    ShowGeometry(geom.first, false);
+                }
+            } else {
+                if (!geom.second.was_hidden_before_picking) {
+                    ShowGeometry(geom.first, true);
+                }
+            }
+        }
     }
 }
 

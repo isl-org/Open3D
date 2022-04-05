@@ -79,7 +79,7 @@ public:
                 gui::SceneWidget::Controls::ROTATE_CAMERA;
         Shader scene_shader = Shader::STANDARD;
         bool show_settings = false;
-        bool show_skybox = false;
+        bool show_skybox = true;
         bool show_axes = false;
         bool show_ground = false;
         rendering::Scene::GroundPlane ground_plane =
@@ -93,6 +93,7 @@ public:
 
         bool use_ibl = false;
         bool use_sun = true;
+        bool sun_follows_camera = true;
         std::string ibl_path = "";  // "" is default path
         int ibl_intensity = 0;
         int sun_intensity = 100000;
@@ -115,6 +116,7 @@ public:
 
     void SetShader(Shader shader);
 
+    /// Adds a legacy geometry to the Visualizer
     void AddGeometry(const std::string& name,
                      std::shared_ptr<geometry::Geometry3D> geom,
                      const rendering::MaterialRecord* material = nullptr,
@@ -122,6 +124,8 @@ public:
                      double time = 0.0,
                      bool is_visible = true);
 
+    /// Adds a t-geometry to the Visualizer, only DrawableGeometries are
+    /// supported.
     void AddGeometry(const std::string& name,
                      std::shared_ptr<t::geometry::Geometry> tgeom,
                      const rendering::MaterialRecord* material = nullptr,
@@ -129,6 +133,7 @@ public:
                      double time = 0.0,
                      bool is_visible = true);
 
+    /// Adds a triangle mesh model to the Visualizer.
     void AddGeometry(const std::string& name,
                      std::shared_ptr<rendering::TriangleMeshModel> tgeom,
                      const rendering::MaterialRecord* material = nullptr,
@@ -136,13 +141,30 @@ public:
                      double time = 0.0,
                      bool is_visible = true);
 
+    /// Removes the named geometry from the Visualizer
     void RemoveGeometry(const std::string& name);
 
+    /// Updates `update_flags` attributes of named geometry with the matching
+    /// attributes from `tgeom`
+    void UpdateGeometry(const std::string& name,
+                        std::shared_ptr<t::geometry::Geometry> tgeom,
+                        uint32_t update_flags);
+
+    /// Show/hide the named geometry
     void ShowGeometry(const std::string& name, bool show);
 
+    /// Returns Visualizer's internal DrawObject for the named geometry
     DrawObject GetGeometry(const std::string& name) const;
+    rendering::MaterialRecord GetGeometryMaterial(
+            const std::string& name) const;
 
+    void ModifyGeometryMaterial(const std::string& name,
+                                const rendering::MaterialRecord* material);
+
+    /// Adds a label with text `text` at the 3D position `pos`.
     void Add3DLabel(const Eigen::Vector3f& pos, const char* text);
+
+    /// Clears all 3D labels created with `Add3DLabel`
     void Clear3DLabels();
 
     void SetupCamera(float fov,
@@ -160,9 +182,13 @@ public:
 
     void ShowSettings(bool show);
     void ShowSkybox(bool show);
+    void SetIBL(const std::string& path);
+    void SetIBLIntensity(float intensity);
     void ShowAxes(bool show);
     void ShowGround(bool show);
     void SetGroundPlane(rendering::Scene::GroundPlane plane);
+    void EnableSunFollowsCamera(bool enable);
+    void EnableBasicMode(bool enable);
     void SetPointSize(int point_size);
     void SetLineWidth(int line_width);
     void EnableGroup(const std::string& group, bool enable);

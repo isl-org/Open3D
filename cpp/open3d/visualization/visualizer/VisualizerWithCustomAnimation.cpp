@@ -32,6 +32,7 @@
 #include "open3d/io/IJsonConvertibleIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 #include "open3d/visualization/visualizer/ViewControlWithCustomAnimation.h"
 
 namespace open3d {
@@ -96,8 +97,8 @@ void VisualizerWithCustomAnimation::Play(
     is_redraw_required_ = true;
     UpdateWindowTitle();
     recording_file_index_ = 0;
-    utility::ConsoleProgressBar progress_bar(view_control.NumOfFrames(),
-                                             "Play animation: ");
+    utility::ProgressBar progress_bar(view_control.NumOfFrames(),
+                                      "Play animation: ");
     auto trajectory_ptr = std::make_shared<camera::PinholeCameraTrajectory>();
     bool recording_trajectory = view_control.IsValidPinholeCameraTrajectory();
     if (recording) {

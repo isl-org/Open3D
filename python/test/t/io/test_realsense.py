@@ -33,9 +33,6 @@ import open3d as o3d
 import numpy as np
 import pytest
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
-from open3d_test import test_data_dir
-
 
 @pytest.mark.xfail(strict=False, reason="May fail depending on test state.")
 @pytest.mark.skipif(os.getenv('GITHUB_SHA') is not None or
@@ -43,12 +40,9 @@ from open3d_test import test_data_dir
                     reason="Hangs in Github Actions, succeeds locally or "
                     "not built with librealsense")
 def test_RSBagReader():
-
-    shutil.unpack_archive(test_data_dir +
-                          "/RGBD/other_formats/L515_test_s.bag.tar.xz")
-
+    sample_l515_bag = o3d.data.SampleL515Bag()
     bag_reader = o3d.t.io.RSBagReader()
-    bag_reader.open("L515_test_s.bag")
+    bag_reader.open(sample_l515_bag.path)
 
     # Metadata
     metadata = bag_reader.metadata

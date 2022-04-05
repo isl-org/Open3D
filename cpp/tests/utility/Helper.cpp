@@ -47,6 +47,24 @@ TEST(Helper, JoinStrings) {
     EXPECT_EQ(utility::JoinStrings(strings, "-"), "");
 }
 
+TEST(Helper, StringStartsWith) {
+    EXPECT_TRUE(utility::StringStartsWith("abc", "a"));
+    EXPECT_TRUE(utility::StringStartsWith("abc", "ab"));
+    EXPECT_TRUE(utility::StringStartsWith("abc", "abc"));
+    EXPECT_FALSE(utility::StringStartsWith("abc", "abcd"));
+    EXPECT_TRUE(utility::StringStartsWith("abc", ""));
+    EXPECT_FALSE(utility::StringStartsWith("", "a"));
+}
+
+TEST(Helper, StringEndsWith) {
+    EXPECT_TRUE(utility::StringEndsWith("abc", "c"));
+    EXPECT_TRUE(utility::StringEndsWith("abc", "bc"));
+    EXPECT_TRUE(utility::StringEndsWith("abc", "abc"));
+    EXPECT_FALSE(utility::StringEndsWith("abc", "abcd"));
+    EXPECT_TRUE(utility::StringEndsWith("abc", ""));
+    EXPECT_FALSE(utility::StringEndsWith("", "c"));
+}
+
 TEST(Helper, UniformRandIntGeneratorWithFixedSeed) {
     std::array<int, 1024> values;
     utility::UniformRandIntGenerator rand_generator(0, 9, 42);

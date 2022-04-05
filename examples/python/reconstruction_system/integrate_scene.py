@@ -28,11 +28,15 @@
 
 import numpy as np
 import math
-import sys
+import os, sys
 import open3d as o3d
-sys.path.append("../utility")
-from file import *
-sys.path.append(".")
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import *
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from make_fragments import read_rgbd_image
 
 

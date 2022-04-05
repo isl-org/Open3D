@@ -86,6 +86,13 @@ class ReconstructionWindow:
         self.fixed_prop_grid.add_child(voxel_size_label)
         self.fixed_prop_grid.add_child(self.voxel_size_slider)
 
+        trunc_multiplier_label = gui.Label('Trunc multiplier')
+        self.trunc_multiplier_slider = gui.Slider(gui.Slider.DOUBLE)
+        self.trunc_multiplier_slider.set_limits(1.0, 20.0)
+        self.trunc_multiplier_slider.double_value = config.trunc_voxel_multiplier
+        self.fixed_prop_grid.add_child(trunc_multiplier_label)
+        self.fixed_prop_grid.add_child(self.trunc_multiplier_slider)
+
         est_block_count_label = gui.Label('Est. blocks')
         self.est_block_count_slider = gui.Slider(gui.Slider.INT)
         self.est_block_count_slider.set_limits(40000, 100000)
@@ -95,7 +102,8 @@ class ReconstructionWindow:
 
         est_point_count_label = gui.Label('Est. points')
         self.est_point_count_slider = gui.Slider(gui.Slider.INT)
-        self.est_point_count_slider.set_limits(3000000, 10000000)
+        self.est_point_count_slider.set_limits(500000, 8000000)
+        self.est_point_count_slider.int_value = config.est_point_count
         self.fixed_prop_grid.add_child(est_point_count_label)
         self.fixed_prop_grid.add_child(self.est_point_count_slider)
 
@@ -249,7 +257,7 @@ class ReconstructionWindow:
             o3c.Tensor(np.zeros((max_points, 3), dtype=np.float32)))
         pcd_placeholder.point['colors'] = o3c.Tensor(
             np.zeros((max_points, 3), dtype=np.float32))
-        mat = rendering.Material()
+        mat = rendering.MaterialRecord()
         mat.shader = 'defaultUnlit'
         mat.sRGB_color = True
         self.widget3d.scene.scene.add_geometry('points', pcd_placeholder, mat)
@@ -264,6 +272,8 @@ class ReconstructionWindow:
         set_enabled(self.adjustable_prop_grid, True)
 
     def _on_close(self):
+        self.is_done = True
+
         if self.is_started:
             print('Saving model to {}...'.format(config.path_npz))
             self.model.voxel_grid.save(config.path_npz)
@@ -322,7 +332,7 @@ class ReconstructionWindow:
                     rendering.Scene.UPDATE_COLORS_FLAG)
 
         self.widget3d.scene.remove_geometry("frustum")
-        mat = rendering.Material()
+        mat = rendering.MaterialRecord()
         mat.shader = "unlitLine"
         mat.line_width = 5.0
         self.widget3d.scene.add_geometry("frustum", frustum, mat)
@@ -383,18 +393,21 @@ class ReconstructionWindow:
             self.model.update_frame_pose(self.idx, T_frame_to_model)
             self.model.integrate(input_frame,
                                  float(self.scale_slider.int_value),
-                                 self.max_slider.double_value)
+                                 self.max_slider.double_value,
+                                 self.trunc_multiplier_slider.double_value)
             self.model.synthesize_model_frame(
                 raycast_frame, float(self.scale_slider.int_value),
                 config.depth_min, self.max_slider.double_value,
+                self.trunc_multiplier_slider.double_value,
                 self.raycast_box.checked)
 
             if (self.idx % self.interval_slider.int_value == 0 and
                     self.update_box.checked) \
                     or (self.idx == 3) \
                     or (self.idx == n_files - 1):
-                pcd = self.model.voxel_grid.extract_point_cloud().to(
-                    o3d.core.Device('CPU:0'))
+                pcd = self.model.voxel_grid.extract_point_cloud(
+                    3.0, self.est_point_count_slider.int_value).to(
+                        o3d.core.Device('CPU:0'))
                 self.is_scene_updated = True
             else:
                 self.is_scene_updated = False

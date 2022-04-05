@@ -219,11 +219,11 @@ static void ComputeJacobianAndResidualNonRigid(
     r = (gray - proxy_intensity[vid]);
 }
 
-geometry::TriangleMesh RunNonRigidOptimizer(
-        const geometry::TriangleMesh& mesh,
-        const std::vector<geometry::RGBDImage>& images_rgbd,
-        const camera::PinholeCameraTrajectory& camera_trajectory,
-        const NonRigidOptimizerOption& option) {
+std::pair<geometry::TriangleMesh, camera::PinholeCameraTrajectory>
+RunNonRigidOptimizer(const geometry::TriangleMesh& mesh,
+                     const std::vector<geometry::RGBDImage>& images_rgbd,
+                     const camera::PinholeCameraTrajectory& camera_trajectory,
+                     const NonRigidOptimizerOption& option) {
     // The following properties will change during optimization.
     geometry::TriangleMesh opt_mesh = mesh;
     camera::PinholeCameraTrajectory opt_camera_trajectory = camera_trajectory;
@@ -413,7 +413,7 @@ geometry::TriangleMesh RunNonRigidOptimizer(
                             option.image_boundary_margin_,
                             option.invisible_vertex_color_knn_);
 
-    return opt_mesh;
+    return std::make_pair(opt_mesh, opt_camera_trajectory);
 }
 
 }  // namespace color_map

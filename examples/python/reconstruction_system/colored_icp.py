@@ -24,13 +24,16 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-# examples/python/reconstruction_system/refine_registration.py
+# examples/python/reconstruction_system/colored_icp.py
 
 import numpy as np
 import open3d as o3d
-import sys
-sys.path.append("../utility")
-from visualization import draw_registration_result_original_color
+import os, sys
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from utility.visualization import draw_registration_result_original_color
 import argparse
 
 
@@ -79,12 +82,6 @@ if __name__ == '__main__':
     target = o3d.io.read_point_cloud(args.dst)
     voxel_size = args.voxel_size
 
-    trans = np.array([
-        0.60949996, 0.49802465, -0.61683162, 0.15081973, -0.57239243,
-        0.81477382, 0.09225254, -0.21454357, 0.5485223, 0.29684183, 0.78167015,
-        -0.05018587, 0, 0, 0, 1
-    ]).reshape((4, 4))
-
     trans = multiscale_icp(source, target,
                            [voxel_size, voxel_size / 2.0, voxel_size / 4.0],
-                           [50, 30, 14], trans)
+                           [50, 30, 14], np.identity(4))

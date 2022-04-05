@@ -1,0 +1,26 @@
+name: Ask a Question
+description: Ask a question on how to use Open3D, how to implement something, etc.
+title: "Summarize the question. (e.g., \"How to run reconstruction system with RealSense D435i? \")"
+labels: [question]
+
+body:
+
+- type: checkboxes
+  attributes:
+    label: "Checklist"
+    options:
+      - label: "I have searched for [similar issues](https://github.com/isl-org/Open3D/issues)."
+        required: true
+      - label: "For Python issues, I have tested with the [latest development wheel](http://www.open3d.org/docs/latest/getting_started.html#development-version-pip)."
+        required: true
+      - label: "I have checked the [release documentation](http://www.open3d.org/docs/release/) and the [latest documentation](http://www.open3d.org/docs/latest/) (for `master` branch)."
+        required: true
+
+- type: textarea
+  attributes:
+    label: "My Question"
+    description: >
+      Provide the *detailed* description of your query. Kindly attach code
+      snippets, screen-shots, data files used in your application, etc.
+  validations:
+    required: true

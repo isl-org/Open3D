@@ -416,7 +416,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
              std::shared_ptr<open3d::geometry::TriangleMesh>& out_mesh,
              std::vector<double>& out_densities,
              int depth,
-             size_t width,
+             float width,
              float scale,
              bool linear_fit,
              UIntPack<FEMSigs...>) {
@@ -467,7 +467,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
     {
         Open3DPointStream<Real> pointStream(&pcd);
 
-        if (width > 0) {
+        if (width > 0.0f) {
             xForm = GetPointXForm<Real, Dim>(pointStream, (Real)width,
                                              (Real)(scale > 0 ? scale : 1.),
                                              depth) *
@@ -516,9 +516,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
 
     int kernelDepth = depth - 2;
     if (kernelDepth < 0) {
-        utility::LogError(
-                "[CreateFromPointCloudPoisson] depth (={}) has to be >= 2",
-                depth);
+        utility::LogError("depth (={}) has to be >= 2", depth);
     }
 
     DenseNodeData<Real, Sigs> solution;
@@ -739,7 +737,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
 TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
                                           size_t depth,
-                                          size_t width,
+                                          float width,
                                           float scale,
                                           bool linear_fit,
                                           int n_threads) {
@@ -750,7 +748,7 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
             FEMSigs;
 
     if (!pcd.HasNormals()) {
-        utility::LogError("[CreateFromPointCloudPoisson] pcd has no normals");
+        utility::LogError("Point cloud has no normals");
     }
 
     if (n_threads <= 0) {

@@ -11,3 +11,4 @@ Visualization
     non_blocking_visualization
     headless_rendering
     web_visualizer
+    tensorboard_plugin

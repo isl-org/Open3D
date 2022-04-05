@@ -14,12 +14,20 @@ document.write('\
     </style>\
     <table class="version-table">\
         <tr>\
-            <td><a href="http://www.open3d.org/docs/latest">latest</a></td>\
-            <td><a href="http://www.open3d.org/docs/latest/cpp_api">latest C++</a></td>\
+            <td><a href="http://www.open3d.org/docs/latest">master</a></td>\
+            <td><a href="http://www.open3d.org/docs/latest/cpp_api">master C++</a></td>\
         </tr>\
         <tr>\
-            <td><a href="http://www.open3d.org/docs/release">0.13.0</a></td>\
-            <td><a href="http://www.open3d.org/docs/release/cpp_api">0.13.0 C++</a></td>\
+            <td><a href="http://www.open3d.org/docs/release">0.15.1 (release)</a></td>\
+            <td><a href="http://www.open3d.org/docs/release/cpp_api">0.15.1 C++ (release)</a></td>\
+        </tr>\
+        <tr>\
+            <td><a href="http://www.open3d.org/docs/0.14.1">0.14.1</a></td>\
+            <td><a href="http://www.open3d.org/docs/0.14.1/cpp_api">0.14.1 C++</a></td>\
+        </tr>\
+        <tr>\
+            <td><a href="http://www.open3d.org/docs/0.13.0">0.13.0</a></td>\
+            <td><a href="http://www.open3d.org/docs/0.13.0/cpp_api">0.13.0 C++</a></td>\
         </tr>\
         <tr>\
             <td><a href="http://www.open3d.org/docs/0.12.0">0.12.0</a></td>\

@@ -76,6 +76,7 @@ private:
     filament::Renderer* renderer_ = nullptr;
     filament::SwapChain* swapchain_ = nullptr;
     FilamentView* view_ = nullptr;
+    FilamentScene* scene_ = nullptr;
 
     std::size_t width_ = 0;
     std::size_t height_ = 0;

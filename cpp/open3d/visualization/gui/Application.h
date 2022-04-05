@@ -197,7 +197,8 @@ public:
             rendering::View *view,
             rendering::Scene *scene,
             int width,
-            int height);
+            int height,
+            bool z_in_view_space = false);
 
 private:
     Application();

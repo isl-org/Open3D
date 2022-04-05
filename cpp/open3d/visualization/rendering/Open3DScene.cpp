@@ -210,25 +210,25 @@ void Open3DScene::SetLighting(LightingProfile profile,
         case LightingProfile::DARK_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
-            scene->SetIndirectLightIntensity(5000);
+            scene->SetIndirectLightIntensity(10000);
             scene->SetSunLight(sun_dir, sun_color, 85000);
             break;
         default:
         case LightingProfile::MED_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
-            scene->SetIndirectLightIntensity(7500);
-            scene->SetSunLight(sun_dir, sun_color, 70000);
+            scene->SetIndirectLightIntensity(20000);
+            scene->SetSunLight(sun_dir, sun_color, 80000);
             break;
         case LightingProfile::SOFT_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
-            scene->SetIndirectLightIntensity(15000);
-            scene->SetSunLight(sun_dir, sun_color, 35000);
+            scene->SetIndirectLightIntensity(37500);
+            scene->SetSunLight(sun_dir, sun_color, 75000);
             break;
         case LightingProfile::NO_SHADOWS:
             scene->EnableIndirectLight(true);
-            scene->SetIndirectLightIntensity(20000);
+            scene->SetIndirectLightIntensity(37500);
             scene->EnableSunLight(false);
             break;
     }
@@ -340,6 +340,33 @@ void Open3DScene::RemoveGeometry(const std::string& name) {
         }
         geometries_.erase(name);
     }
+}
+
+bool Open3DScene::GeometryIsVisible(const std::string& name) {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->GeometryIsVisible(name);
+}
+
+void Open3DScene::SetGeometryTransform(const std::string& name,
+                                       const Eigen::Matrix4d& transform) {
+    auto scene = renderer_.GetScene(scene_);
+    auto g = geometries_.find(name);
+    if (g != geometries_.end()) {
+        const Eigen::Transform<float, 3, Eigen::Affine> t(
+                transform.cast<float>());
+        scene->SetGeometryTransform(name, t);
+        if (!g->second.fast_name.empty()) {
+            scene->SetGeometryTransform(g->second.fast_name, t);
+        }
+        if (!g->second.low_name.empty()) {
+            scene->SetGeometryTransform(g->second.low_name, t);
+        }
+    }
+}
+
+Eigen::Matrix4d Open3DScene::GetGeometryTransform(const std::string& name) {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->GetGeometryTransform(name).matrix().cast<double>();
 }
 
 void Open3DScene::ModifyGeometryMaterial(const std::string& name,

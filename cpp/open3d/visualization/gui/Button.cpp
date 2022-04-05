@@ -151,6 +151,11 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
                 ImGuiCol_ButtonActive,
                 colorToImgui(context.theme.button_on_active_color));
     }
+    bool def_bg = IsDefaultBackgroundColor();
+    if (!def_bg) {
+        ImGui::PushStyleColor(ImGuiCol_Button,
+                              colorToImgui(Widget::GetBackgroundColor()));
+    }
     DrawImGuiPushEnabledState();
     bool pressed = false;
     if (impl_->image_) {
@@ -176,6 +181,9 @@ Widget::DrawResult Button::Draw(const DrawContext& context) {
     }
     DrawImGuiPopEnabledState();
     DrawImGuiTooltip();
+    if (!def_bg) {
+        ImGui::PopStyleColor(1);
+    }
     if (was_on) {
         ImGui::PopStyleColor(4);
     }

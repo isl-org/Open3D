@@ -30,7 +30,7 @@ include(CMakeDependentOption)
 cmake_dependent_option(WEBRTC_IS_DEBUG
     "WebRTC Debug build. Use ON for Win32 Open3D Debug." OFF
     "NOT CMAKE_BUILD_TYPE STREQUAL Debug OR NOT WIN32" ON)
-option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" OFF)
+option(GLIBCXX_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1" ON)
 
 # Set paths
 set(WEBRTC_ROOT ${PROJECT_SOURCE_DIR})

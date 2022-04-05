@@ -65,6 +65,8 @@ void ProjectCUDA(
 
                 // coordinate in image (in pixel)
                 transform_indexer.Project(xc, yc, zc, &u, &v);
+                u = round(u);
+                v = round(v);
                 if (!depth_indexer.InBoundary(u, v) || zc <= 0 ||
                     zc > depth_max) {
                     return;
@@ -105,14 +107,11 @@ void ProjectCUDA(
                         static_cast<int64_t>(u), static_cast<int64_t>(v));
                 float d = zc * depth_scale;
                 if (d < dmap + precision_bound) {
-                    uint8_t* color_ptr = color_indexer.GetDataPtr<uint8_t>(
+                    float* color_ptr = color_indexer.GetDataPtr<float>(
                             static_cast<int64_t>(u), static_cast<int64_t>(v));
-                    color_ptr[0] = static_cast<uint8_t>(
-                            point_colors_ptr[3 * workload_idx + 0] * 255.0);
-                    color_ptr[1] = static_cast<uint8_t>(
-                            point_colors_ptr[3 * workload_idx + 1] * 255.0);
-                    color_ptr[2] = static_cast<uint8_t>(
-                            point_colors_ptr[3 * workload_idx + 2] * 255.0);
+                    color_ptr[0] = point_colors_ptr[3 * workload_idx + 0];
+                    color_ptr[1] = point_colors_ptr[3 * workload_idx + 1];
+                    color_ptr[2] = point_colors_ptr[3 * workload_idx + 2];
                 }
             });
 }

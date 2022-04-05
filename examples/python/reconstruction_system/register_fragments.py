@@ -28,11 +28,14 @@
 
 import numpy as np
 import open3d as o3d
-import sys
-sys.path.append("../utility")
-from file import join, get_file_list, make_clean_folder
-from visualization import draw_registration_result
-sys.path.append(".")
+import os, sys
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import join, get_file_list, make_clean_folder, draw_registration_result
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_scene
 from refine_registration import multiscale_icp
 
@@ -51,6 +54,7 @@ def preprocess_point_cloud(pcd, config):
 
 
 def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
     distance_threshold = config["voxel_size"] * 1.4
     if config["global_registration"] == "fgr":
         result = o3d.pipelines.registration.registration_fast_based_on_feature_matching(
@@ -58,10 +62,11 @@ def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
             o3d.pipelines.registration.FastGlobalRegistrationOption(
                 maximum_correspondence_distance=distance_threshold))
     if config["global_registration"] == "ransac":
+        # Fallback to preset parameters that works better
         result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-            source, target, source_fpfh, target_fpfh, True, distance_threshold,
+            source, target, source_fpfh, target_fpfh, False, distance_threshold,
             o3d.pipelines.registration.TransformationEstimationPointToPoint(
-                False), 3,
+                False), 4,
             [
                 o3d.pipelines.registration.
                 CorrespondenceCheckerBasedOnEdgeLength(0.9),

@@ -43,7 +43,6 @@ void PrintHelp() {
     utility::LogInfo("    --gt file                 : A log file of the ground truth pairwise matching results. Must have.");
     utility::LogInfo("    --threshold t             : Distance threshold. Must have.");
     utility::LogInfo("    --threshold_rmse t        : Distance threshold to decide if a match is good or not. Default: 2t.");
-    utility::LogInfo("    --dir directory           : The directory storing all pcd files. By default it is the parent directory of the log file + pcd/.");
     utility::LogInfo("    --verbose n               : Set verbose level (0-4). Default: 2.");
     // clang-format on
 }
@@ -118,27 +117,19 @@ int main(int argc, char *argv[]) {
             utility::GetProgramOptionAsString(argc, argv, "--log");
     std::string gt_filename =
             utility::GetProgramOptionAsString(argc, argv, "--gt");
-    std::string pcd_dirname =
-            utility::GetProgramOptionAsString(argc, argv, "--dir");
+
     double threshold =
             utility::GetProgramOptionAsDouble(argc, argv, "--threshold");
     double threshold_rmse = utility::GetProgramOptionAsDouble(
             argc, argv, "--threshold_rmse", threshold * 2.0);
-    if (pcd_dirname.empty()) {
-        pcd_dirname =
-                utility::filesystem::GetFileParentDirectory(log_filename) +
-                "pcds/";
-    }
+
     double threshold2 = threshold * threshold;
-    std::vector<std::string> pcd_names;
-    utility::filesystem::ListFilesInDirectoryWithExtension(pcd_dirname, "pcd",
-                                                           pcd_names);
-    std::vector<geometry::PointCloud> pcds(pcd_names.size());
-    std::vector<geometry::KDTreeFlann> kdtrees(pcd_names.size());
-    for (size_t i = 0; i < pcd_names.size(); i++) {
-        io::ReadPointCloud(
-                pcd_dirname + "cloud_bin_" + std::to_string(i) + ".pcd",
-                pcds[i]);
+
+    data::DemoICPPointClouds sample_data;
+    std::vector<geometry::PointCloud> pcds(sample_data.GetPaths().size());
+    std::vector<geometry::KDTreeFlann> kdtrees(sample_data.GetPaths().size());
+    for (size_t i = 0; i < sample_data.GetPaths().size(); i++) {
+        io::ReadPointCloud(sample_data.GetPaths()[i], pcds[i]);
         kdtrees[i].SetGeometry(pcds[i]);
     }
 

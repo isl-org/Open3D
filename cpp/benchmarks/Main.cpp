@@ -42,6 +42,7 @@
 #include "open3d/Open3D.h"
 
 int main(int argc, char** argv) {
+    open3d::utility::CompilerInfo::GetInstance().Print();
     open3d::utility::CPUInfo::GetInstance().Print();
     open3d::utility::ISAInfo::GetInstance().Print();
     benchmark::Initialize(&argc, argv);

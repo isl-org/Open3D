@@ -55,6 +55,7 @@ int main(int argc, char** argv) {
     using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    utility::CompilerInfo::GetInstance().Print();
     utility::CPUInfo::GetInstance().Print();
     utility::ISAInfo::GetInstance().Print();
 

@@ -28,11 +28,14 @@
 
 import numpy as np
 import open3d as o3d
-import sys
-sys.path.append("../utility")
-from file import join, get_file_list, write_poses_to_log
+import os, sys
 
-sys.path.append(".")
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import join, get_file_list, write_poses_to_log
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
 def run(config):

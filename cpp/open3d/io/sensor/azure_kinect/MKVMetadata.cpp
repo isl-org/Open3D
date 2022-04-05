@@ -36,7 +36,7 @@ namespace io {
 bool MKVMetadata::ConvertToJsonValue(Json::Value &value) const {
     intrinsics_.ConvertToJsonValue(value);
 
-    value["serial_number_"] = serial_number_;
+    value["serial_number"] = serial_number_;
     value["color_mode"] = color_mode_;
     value["depth_mode"] = depth_mode_;
 
