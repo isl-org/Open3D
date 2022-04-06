@@ -161,17 +161,17 @@ class ReconstructionWindow : public gui::Window {
 
 public:
     ReconstructionWindow(
-            const std::function<t::geometry::RGBDImage(const int idx)>
+            const std::function<t::geometry::RGBDImage(const size_t idx)>
                     get_rgbd_image_input,
             const core::Tensor& intrinsic,
             const std::unordered_map<std::string, double> default_parameters,
-            const std::string& device,
+            const core::Device device,
             gui::FontId monospace)
         : gui::Window("Open3D - Reconstruction", 1280, 800),
           get_rgbd_image_input_(get_rgbd_image_input),
           intrinsic_(intrinsic),
           default_parameters_(default_parameters),
-          device_str_(device),
+          device_(device),
           is_running_(false),
           is_started_(false),
           monospace_(monospace) {
@@ -306,7 +306,7 @@ public:
                                             core::Tensor::Eye(
                                                     4, core::Dtype::Float64,
                                                     core::Device("CPU:0")),
-                                            core::Device(device_str_));
+                                            device_);
                             this->is_started_ = true;
                         });
             }
@@ -406,10 +406,11 @@ public:
     }
 
 protected:
-    std::function<t::geometry::RGBDImage(const int idx)> get_rgbd_image_input_;
+    std::function<t::geometry::RGBDImage(const size_t idx)>
+            get_rgbd_image_input_;
     core::Tensor intrinsic_;
     std::unordered_map<std::string, double> default_parameters_;
-    std::string device_str_;
+    core::Device device_;
 
     // General logic
     std::atomic<bool> is_running_;
@@ -465,16 +466,20 @@ protected:
         float depth_scale = prop_values_.depth_scale;
         core::Tensor T_frame_to_model = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
-        core::Device device(device_str_);
 
         t::geometry::RGBDImage ref_rgbd_input = get_rgbd_image_input_(0);
+        if (ref_rgbd_input.IsEmpty()) {
+            utility::LogInfo("Reached EOF. Empty frame received.");
+            is_done_ = true;
+            return;
+        }
 
         t::pipelines::slam::Frame input_frame(ref_rgbd_input.depth_.GetRows(),
                                               ref_rgbd_input.depth_.GetCols(),
-                                              intrinsic_, device);
+                                              intrinsic_, device_);
         t::pipelines::slam::Frame raycast_frame(ref_rgbd_input.depth_.GetRows(),
                                                 ref_rgbd_input.depth_.GetCols(),
-                                                intrinsic_, device);
+                                                intrinsic_, device_);
 
         // Odometry
         auto traj = std::make_shared<geometry::LineSet>();
@@ -562,6 +567,11 @@ protected:
             }
 
             t::geometry::RGBDImage rgbd_input = get_rgbd_image_input_(idx);
+            if (rgbd_input.IsEmpty()) {
+                utility::LogInfo("Reached EOF. Empty frame received.");
+                is_done_ = true;
+                break;
+            }
 
             // Input
             input_frame.SetDataFromImage("depth", rgbd_input.depth_);

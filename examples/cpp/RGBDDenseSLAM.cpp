@@ -33,6 +33,51 @@
 
 using namespace open3d;
 
+std::pair<std::vector<std::string>, std::vector<std::string>> LoadFilenames(
+        const std::string dataset_path) {
+    std::vector<std::string> rgb_candidates{"color", "image", "rgb"};
+    std::vector<std::string> rgb_files;
+
+    // Load rgb
+    for (auto rgb_candidate : rgb_candidates) {
+        const std::string rgb_dir = dataset_path + "/" + rgb_candidate;
+        utility::filesystem::ListFilesInDirectoryWithExtension(rgb_dir, "jpg",
+                                                               rgb_files);
+        if (rgb_files.size() != 0) break;
+        utility::filesystem::ListFilesInDirectoryWithExtension(rgb_dir, "png",
+                                                               rgb_files);
+        if (rgb_files.size() != 0) break;
+    }
+    if (rgb_files.size() == 0) {
+        utility::LogError(
+                "RGB images not found! Please ensure a folder named color, "
+                "image, or rgb is in {}",
+                dataset_path);
+    }
+
+    const std::string depth_dir = dataset_path + "/depth";
+    std::vector<std::string> depth_files;
+    utility::filesystem::ListFilesInDirectoryWithExtension(depth_dir, "png",
+                                                           depth_files);
+    if (depth_files.size() == 0) {
+        utility::LogError(
+                "Depth images not found! Please ensure a folder named "
+                "depth is in {}",
+                dataset_path);
+    }
+
+    if (depth_files.size() != rgb_files.size()) {
+        utility::LogError(
+                "Number of depth images ({}) and color image ({}) "
+                "mismatch!",
+                dataset_path);
+    }
+
+    std::sort(rgb_files.begin(), rgb_files.end());
+    std::sort(depth_files.begin(), depth_files.end());
+    return std::make_pair(rgb_files, depth_files);
+}
+
 //------------------------------------------------------------------------------
 void PrintHelp() {
     using namespace open3d;
@@ -40,13 +85,11 @@ void PrintHelp() {
 
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > RealSenseDenseSLAMGUI [options]");
+    utility::LogInfo("    > RGBDDenseSLAM [dataset_path] [options]");
     utility::LogInfo("Basic options:");
     utility::LogInfo("    [-V]");
-    utility::LogInfo("    [-l|--list-devices]");
+    utility::LogInfo("    [--intrinsic_path camera_intrinsic.json]");
     utility::LogInfo("    [--align]");
-    utility::LogInfo("    [--record rgbd_video_file.bag]");
-    utility::LogInfo("    [-c|--config rs-config.json]");
     utility::LogInfo("    [--device CUDA:0]");
     // clang-format on
     utility::LogInfo("");
@@ -63,71 +106,78 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (utility::ProgramOptionExists(argc, argv, "--list-devices") ||
-        utility::ProgramOptionExists(argc, argv, "-l")) {
-        t::io::RealSenseSensor::ListDevices();
-        return 0;
+    std::string dataset_path = argv[1];
+    if (!utility::filesystem::DirectoryExists(dataset_path)) {
+        utility::LogWarning(
+                "Expected an existing directory, but {} does not exist.",
+                dataset_path);
+        return -1;
     }
+
     if (utility::ProgramOptionExists(argc, argv, "-V")) {
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     } else {
         utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     }
-    bool align_streams = false;
-    std::string config_file, bag_file;
 
-    if (utility::ProgramOptionExists(argc, argv, "-c")) {
-        config_file = utility::GetProgramOptionAsString(argc, argv, "-c");
-    } else if (utility::ProgramOptionExists(argc, argv, "--config")) {
-        config_file = utility::GetProgramOptionAsString(argc, argv, "--config");
-    }
+    std::string intrinsic_path = utility::GetProgramOptionAsString(
+            argc, argv, "--intrinsics_path", "");
+
+    bool align_streams = false;
     if (utility::ProgramOptionExists(argc, argv, "--align")) {
         align_streams = true;
-    }
-    if (utility::ProgramOptionExists(argc, argv, "--record")) {
-        bag_file = utility::GetProgramOptionAsString(argc, argv, "--record");
     }
 
     std::string device_code =
             utility::GetProgramOptionAsString(argc, argv, "--device", "CUDA:0");
-    if (device_code != "CPU:0" && device_code != "CUDA:0") {
-        utility::LogWarning(
-                "Unrecognized device {}. Expecting CPU:0 or CUDA:0.",
-                device_code);
-        return -1;
-    }
+    core::Device device(device_code);
     utility::LogInfo("Using device {}.", device_code);
 
-    // Read in camera configuration.
-    t::io::RealSenseSensorConfig rs_cfg;
-    if (!config_file.empty())
-        open3d::io::ReadIJsonConvertible(config_file, rs_cfg);
+    // Load files
+    std::vector<std::string> rgb_files, depth_files;
+    std::tie(rgb_files, depth_files) = LoadFilenames(dataset_path);
 
-    // Initialize camera.
-    t::io::RealSenseSensor rs;
-    rs.ListDevices();
-    rs.InitSensor(rs_cfg, 0, bag_file);
-    utility::LogInfo("{}", rs.GetMetadata().ToString());
-    rs.StartCapture();
-
-    auto get_rgbd_image_input = [&](const int idx) {
-        return rs.CaptureFrame(true, align_streams);
-    };
+    // Load intrinsics (if provided)
+    // Default
+    camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
+            camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
+    if (intrinsic_path.empty()) {
+        utility::LogInfo("Using Primesense default intrinsics.");
+    } else if (!io::ReadIJsonConvertible(intrinsic_path, intrinsic)) {
+        utility::LogWarning(
+                "Failed to load {}, using Primesense default intrinsics.",
+                intrinsic_path);
+    } else {
+        utility::LogInfo("Loaded intrinsics from {}.", intrinsic_path);
+    }
     core::Tensor intrinsic_t = core::eigen_converter::EigenMatrixToTensor(
-            rs.GetMetadata().intrinsics_.intrinsic_matrix_);
+            intrinsic.intrinsic_matrix_);
+
+    const size_t max_idx = depth_files.size();
+    auto get_rgbd_image_input = [&](const size_t idx) {
+        if (idx < max_idx) {
+            t::geometry::Image depth =
+                    *t::io::CreateImageFromFile(depth_files[idx]);
+            t::geometry::Image color =
+                    *t::io::CreateImageFromFile(rgb_files[idx]);
+            t::geometry::RGBDImage rgbd_im(color, depth, align_streams);
+            return rgbd_im;
+        } else {
+            // Return empty image to indicate EOF.
+            return t::geometry::RGBDImage();
+        }
+    };
+
     std::unordered_map<std::string, double> default_params = {
-            {"depth_scale", rs.GetMetadata().depth_scale_}};
+            {"depth_scale", 1000}};
 
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, const_cast<const char**>(argv));
     auto mono =
             app.AddFont(gui::FontDescription(gui::FontDescription::MONOSPACE));
     app.AddWindow(std::make_shared<ReconstructionWindow>(
-            get_rgbd_image_input, intrinsic_t, default_params, device_code,
-            mono));
+            get_rgbd_image_input, intrinsic_t, default_params, device, mono));
     app.Run();
-
-    rs.StopCapture();
 
     return 0;
 }

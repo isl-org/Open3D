@@ -43,6 +43,7 @@ void PrintHelp() {
     utility::LogInfo("    > RealSenseDenseSLAMGUI [options]");
     utility::LogInfo("Basic options:");
     utility::LogInfo("    [-V]");
+    utility::LogInfo("    [--use_bag_file /path/to/realsense_video_file.bag] If not provided, it will look for realsense sensor.");
     utility::LogInfo("    [-l|--list-devices]");
     utility::LogInfo("    [--align]");
     utility::LogInfo("    [--record rgbd_video_file.bag]");
@@ -57,10 +58,22 @@ int main(int argc, char* argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
+    std::cout << "Hello" << std::endl;
+
     if (argc < 2 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
+    }
+
+    std::string bag_file;
+    bool use_bag_file = false;
+    if (utility::ProgramOptionExists(argc, argv, "--use_bag_file")) {
+        bag_file =
+                utility::GetProgramOptionAsString(argc, argv, "--use_bag_file");
+    }
+    if (!bag_file.empty()) {
+        use_bag_file = true;
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--list-devices") ||
@@ -74,7 +87,7 @@ int main(int argc, char* argv[]) {
         utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     }
     bool align_streams = false;
-    std::string config_file, bag_file;
+    std::string config_file, record_to_bag_file;
 
     if (utility::ProgramOptionExists(argc, argv, "-c")) {
         config_file = utility::GetProgramOptionAsString(argc, argv, "-c");
@@ -85,38 +98,69 @@ int main(int argc, char* argv[]) {
         align_streams = true;
     }
     if (utility::ProgramOptionExists(argc, argv, "--record")) {
-        bag_file = utility::GetProgramOptionAsString(argc, argv, "--record");
+        record_to_bag_file =
+                utility::GetProgramOptionAsString(argc, argv, "--record");
     }
 
     std::string device_code =
             utility::GetProgramOptionAsString(argc, argv, "--device", "CUDA:0");
-    if (device_code != "CPU:0" && device_code != "CUDA:0") {
-        utility::LogWarning(
-                "Unrecognized device {}. Expecting CPU:0 or CUDA:0.",
-                device_code);
-        return -1;
-    }
+    core::Device device(device_code);
     utility::LogInfo("Using device {}.", device_code);
 
-    // Read in camera configuration.
-    t::io::RealSenseSensorConfig rs_cfg;
-    if (!config_file.empty())
-        open3d::io::ReadIJsonConvertible(config_file, rs_cfg);
-
-    // Initialize camera.
+    std::function<t::geometry::RGBDImage(const int)> get_rgbd_image_input;
+    core::Tensor intrinsic_t;
+    std::unordered_map<std::string, double> default_params;
     t::io::RealSenseSensor rs;
-    rs.ListDevices();
-    rs.InitSensor(rs_cfg, 0, bag_file);
-    utility::LogInfo("{}", rs.GetMetadata().ToString());
-    rs.StartCapture();
+    t::io::RSBagReader bag_reader;
 
-    auto get_rgbd_image_input = [&](const int idx) {
-        return rs.CaptureFrame(true, align_streams);
-    };
-    core::Tensor intrinsic_t = core::eigen_converter::EigenMatrixToTensor(
-            rs.GetMetadata().intrinsics_.intrinsic_matrix_);
-    std::unordered_map<std::string, double> default_params = {
-            {"depth_scale", rs.GetMetadata().depth_scale_}};
+    if (!use_bag_file) {
+        // Read in camera configuration.
+        t::io::RealSenseSensorConfig rs_cfg;
+        if (!config_file.empty())
+            open3d::io::ReadIJsonConvertible(config_file, rs_cfg);
+
+        // Initialize camera.
+        rs.ListDevices();
+        rs.InitSensor(rs_cfg, 0, bag_file);
+        utility::LogInfo("{}", rs.GetMetadata().ToString());
+        rs.StartCapture();
+
+        get_rgbd_image_input = [&](const size_t idx) {
+            return rs.CaptureFrame(true, align_streams);
+        };
+        intrinsic_t = core::eigen_converter::EigenMatrixToTensor(
+                rs.GetMetadata().intrinsics_.intrinsic_matrix_);
+        default_params = {{"depth_scale", rs.GetMetadata().depth_scale_}};
+    } else {
+        utility::LogError("Bag file method is not supported yet.");
+
+        // Use Bag File.
+        // bag_reader.Open(bag_file);
+
+        // if (!bag_reader.IsOpened()) {
+        //     utility::LogError("Unable to open {}", bag_file);
+        //     return 1;
+        // }
+        // const auto bag_metadata = bag_reader.GetMetadata();
+        // utility::LogInfo("{}", bag_metadata.ToString());
+
+        // auto next_frame = bag_reader.NextFrame();
+        // get_rgbd_image_input = [&](const int idx) {
+        //     if (!bag_reader.IsEOF()) {
+        //         // next_frame = bag_reader.NextFrame();
+        //         // std::cout << "Sending Frame " << idx << " : "
+        //         //           << next_frame.ToString() << std::endl;
+        //         return next_frame;
+        //     } else {
+        //         // Return empty image.
+        //         return open3d::t::geometry::RGBDImage();
+        //     }
+        // };
+
+        // intrinsic_t = core::eigen_converter::EigenMatrixToTensor(
+        //         bag_metadata.intrinsics_.intrinsic_matrix_);
+        // default_params = {{"depth_scale", bag_metadata.depth_scale_}};
+    }
 
     auto& app = gui::Application::GetInstance();
     app.Initialize(argc, const_cast<const char**>(argv));
@@ -127,7 +171,11 @@ int main(int argc, char* argv[]) {
             mono));
     app.Run();
 
-    rs.StopCapture();
+    if (!use_bag_file) {
+        rs.StopCapture();
+    } else {
+        bag_reader.Close();
+    }
 
     return 0;
 }
