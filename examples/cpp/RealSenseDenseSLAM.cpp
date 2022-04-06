@@ -132,34 +132,29 @@ int main(int argc, char* argv[]) {
                 rs.GetMetadata().intrinsics_.intrinsic_matrix_);
         default_params = {{"depth_scale", rs.GetMetadata().depth_scale_}};
     } else {
-        utility::LogError("Bag file method is not supported yet.");
-
         // Use Bag File.
-        // bag_reader.Open(bag_file);
+        bag_reader.Open(bag_file);
 
-        // if (!bag_reader.IsOpened()) {
-        //     utility::LogError("Unable to open {}", bag_file);
-        //     return 1;
-        // }
-        // const auto bag_metadata = bag_reader.GetMetadata();
-        // utility::LogInfo("{}", bag_metadata.ToString());
+        if (!bag_reader.IsOpened()) {
+            utility::LogError("Unable to open {}", bag_file);
+            return 1;
+        }
+        const auto bag_metadata = bag_reader.GetMetadata();
+        utility::LogInfo("{}", bag_metadata.ToString());
 
-        // auto next_frame = bag_reader.NextFrame();
-        // get_rgbd_image_input = [&](const int idx) {
-        //     if (!bag_reader.IsEOF()) {
-        //         // next_frame = bag_reader.NextFrame();
-        //         // std::cout << "Sending Frame " << idx << " : "
-        //         //           << next_frame.ToString() << std::endl;
-        //         return next_frame;
-        //     } else {
-        //         // Return empty image.
-        //         return open3d::t::geometry::RGBDImage();
-        //     }
-        // };
+        auto next_frame = bag_reader.NextFrame();
+        get_rgbd_image_input = [&](const int idx) {
+            if (!bag_reader.IsEOF()) {
+                return bag_reader.NextFrame();
+            } else {
+                // Return empty image.
+                return open3d::t::geometry::RGBDImage();
+            }
+        };
 
-        // intrinsic_t = core::eigen_converter::EigenMatrixToTensor(
-        //         bag_metadata.intrinsics_.intrinsic_matrix_);
-        // default_params = {{"depth_scale", bag_metadata.depth_scale_}};
+        intrinsic_t = core::eigen_converter::EigenMatrixToTensor(
+                bag_metadata.intrinsics_.intrinsic_matrix_);
+        default_params = {{"depth_scale", bag_metadata.depth_scale_}};
     }
 
     auto& app = gui::Application::GetInstance();
@@ -167,8 +162,7 @@ int main(int argc, char* argv[]) {
     auto mono =
             app.AddFont(gui::FontDescription(gui::FontDescription::MONOSPACE));
     app.AddWindow(std::make_shared<ReconstructionWindow>(
-            get_rgbd_image_input, intrinsic_t, default_params, device_code,
-            mono));
+            get_rgbd_image_input, intrinsic_t, default_params, device, mono));
     app.Run();
 
     if (!use_bag_file) {

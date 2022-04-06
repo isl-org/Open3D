@@ -467,7 +467,8 @@ protected:
         core::Tensor T_frame_to_model = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
 
-        t::geometry::RGBDImage ref_rgbd_input = get_rgbd_image_input_(0);
+        t::geometry::RGBDImage ref_rgbd_input =
+                get_rgbd_image_input_(0).To(device_);
         if (ref_rgbd_input.IsEmpty()) {
             utility::LogInfo("Reached EOF. Empty frame received.");
             is_done_ = true;
@@ -494,6 +495,7 @@ protected:
 
         color = std::make_shared<geometry::Image>(
                 ref_rgbd_input.color_.ToLegacy());
+
         depth_colored = std::make_shared<geometry::Image>(
                 ref_rgbd_input.depth_
                         .ColorizeDepth(depth_scale, 0.3, prop_values_.depth_max)
@@ -566,7 +568,8 @@ protected:
                 continue;
             }
 
-            t::geometry::RGBDImage rgbd_input = get_rgbd_image_input_(idx);
+            t::geometry::RGBDImage rgbd_input =
+                    get_rgbd_image_input_(idx).To(device_);
             if (rgbd_input.IsEmpty()) {
                 utility::LogInfo("Reached EOF. Empty frame received.");
                 is_done_ = true;
