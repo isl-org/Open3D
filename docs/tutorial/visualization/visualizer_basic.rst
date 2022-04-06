@@ -80,7 +80,7 @@ Enter the following code at the Python prompt:
 
 .. code-block:: python
 
-    # Download an initialize a dataset
+    # Download and initialize the dataset
     >>> dataset = o3d.data.PLYPointCloud()
     [Open3D INFO] Downloading https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/fragment.ply
     [Open3D INFO] Downloaded to /home/intel/open3d_data/download/PLYPointCloud/fragment.ply
