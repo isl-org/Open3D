@@ -69,11 +69,18 @@ In this example, we are going to learn how to load and render Point Clouds. To r
 
 
 .. tip::
-    Open3D comes with a built-in *dataset* module for convenient access to commonly used examples.
+
+    Open3D provides a built-in *dataset* module for retrieval of commonly used 3D model examples.
     
-    * Datasets are downloaded automatically from the Internet and cached locally.
-    * The default local dataset  download directory is ``~/open3d_data``.
+    * Datasets are automatically downloaded from the Internet and cached locally.
+    * The **default local dataset  download directory** is ``~/open3d_data``.
     * Datasets will be downloaded to ``~/open3d_data/download`` and extracted to ``~/open3d_data/extract``
+
+
+.. seealso::
+
+    For more information on datasets, please refer to the 
+    :doc:`Datasets <../data/index>` page
 
 
 Enter the following code at the Python prompt:
