@@ -1288,8 +1288,6 @@ list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 if (BUILD_SYCL_MODULE)
     # DPC++ (compile and link flags only)
     add_library(3rdparty_sycl INTERFACE)
-    # target_compile_options(3rdparty_sycl INTERFACE
-    #     $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda -fsycl-targets=spir64_x86_64>)
     # TODO: resolve issue:
     # relocation R_X86_64_32 against `.rodata' can not be used when making a PIE
     # object; recompile with -fPIE
@@ -1301,10 +1299,12 @@ if (BUILD_SYCL_MODULE)
     #   - Unit test cannot find kernel at run time: "No kernel named xxx was found"
     # Ref:
     # - https://github.com/intel/llvm/issues/1427
+    target_compile_options(3rdparty_sycl INTERFACE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl>)
     target_link_libraries(3rdparty_sycl INTERFACE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl>)
     target_link_options(3rdparty_sycl INTERFACE
-        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=spir64_x86_64>)
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl>)
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS 3rdparty_sycl EXPORT Open3DTargets)
     endif()

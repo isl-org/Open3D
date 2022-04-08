@@ -10,4 +10,3 @@ target_link_libraries(tests PRIVATE
 
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
-
