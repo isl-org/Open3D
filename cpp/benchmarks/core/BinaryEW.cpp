@@ -116,7 +116,7 @@ static std::function<Tensor(const Tensor&, const Tensor&)> MakeOperation(
             };
 
         default:
-            utility::LogError("Unknown operation {}", op);
+            utility::LogError("Unknown operation {}", static_cast<int>(op));
     }
 }
 

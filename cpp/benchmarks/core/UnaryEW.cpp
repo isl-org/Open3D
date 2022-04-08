@@ -101,7 +101,7 @@ std::function<Tensor(const Tensor&)> MakeOperation(UnaryOpCode op) {
             return [](const Tensor& arg) -> Tensor { return arg.LogicalNot(); };
 
         default:
-            utility::LogError("Unknown operation {}", op);
+            utility::LogError("Unknown operation {}", static_cast<int>(op));
     }
 }
 
