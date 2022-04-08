@@ -5,7 +5,7 @@ Datasets
 ========
 
 
-.. epigraph:: Open3D comes with a built-in *dataset* module for automatic downloading of 3D models from the Internet and storing them in a designated directory on a local computer. It makes accessing commonly used 3D model examples a lot more convenient - no more manual downloading, *git* cloning, saving, and / or archive decompressing of models.
+Open3D comes with a built-in *dataset* module for automatic downloading of 3D models from the Internet and storing them in a designated directory on a local computer. It makes accessing commonly used 3D model examples a lot more convenient - no more manual downloading, *git* cloning, saving, and / or archive decompressing of models.
 
 Here is an example of loading the 3D Eagle *PointCloud* model in Python and C++ via an Open3D dataset:
 
@@ -39,11 +39,11 @@ Here is an example of loading the 3D Eagle *PointCloud* model in Python and C++ 
     }
 
 
-.. important::
 
-    - Datasets are downloaded and cached automatically.
-    - The default data root directory for downloaded datasets is ``~/open3d_data``. Data will be downloaded to ``~/open3d_data/download`` and extracted to ``~/open3d_data/extract``. 
-    - Optionally, you can change the default data root directory by setting the environment variable ``OPEN3D_DATA_ROOT`` or passing the ``data_root`` argument when constructing a dataset object.
+
+- Datasets are downloaded and cached automatically.
+- The default data root directory for downloaded datasets is ``~/open3d_data``. Data will be downloaded to ``~/open3d_data/download`` and extracted to ``~/open3d_data/extract``. 
+- Optionally, you can change the default data root directory by setting the environment variable ``OPEN3D_DATA_ROOT`` or passing the ``data_root`` argument when constructing a dataset object.
   
   
 

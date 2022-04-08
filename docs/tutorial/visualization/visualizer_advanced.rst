@@ -13,40 +13,16 @@ Getting started
 ---------------
 
 .. tip::
-    This **Getting Started** section applies to all examples in this tutorial
+    This **Getting started** section applies to all subsequent examples below
 	 
-For all examples in this tutorial, we will be running a Python session. Please follow these preliminary steps:
-
-
-1. First, open a command-line terminal. From there, Change Directory (``cd``) to ``Open3D``:
- 
-.. code-block:: sh
-
-	$ cd <... Path to Open3D on your computer...>
-	
-
-    
-2. **Optionally**, if you have a ``conda`` virtual environment, activate it from the command line like so:
-
-.. code-block:: sh
-
-    $ conda activate <...your virtual environment name...>
-    
-3. Run the ``python`` command:
-
-.. code-block:: sh
-
-    $ python
-
-4. At the Python prompt, enter the following lines to create Open3D objects:
+1. Open your preferred Python environment;
+2. In Python, set up common imports that we will use throughout this tutorial:
 
 .. code-block:: python
 
     >>> import open3d as o3d
     >>> import open3d.visualization as vis
     >>> import numpy as np
-		
-These objects will be used throughout the following examples.
 
 
 Advanced examples

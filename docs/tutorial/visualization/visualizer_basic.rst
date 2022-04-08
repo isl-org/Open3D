@@ -14,30 +14,27 @@ Getting started
 .. tip::
     This **Getting started** section applies to all subsequent examples below
 	 
-For all examples in this tutorial, we will be running a Python session. Please follow these preliminary steps :
+For all examples in this tutorial, we will be using Python. Please follow these preliminary steps :
 
-1. First, open a command-line terminal. From there, Change Directory (``cd``) to ``Open3D``:
+1. Navigate to the ``Open3D`` location on your computer:
  
 .. code-block:: sh
 
     $ cd <... Path to Open3D on your computer...>
 	
-.. image:: https://user-images.githubusercontent.com/93158890/159073961-821e4768-3678-4385-bc37-20c5b212c030.jpg
-    :width: 700px	
-    
 2. **Optionally**, if you have a ``conda`` virtual environment, activate it from the command line like so:
 
 .. code-block:: sh
 
     $ conda activate <...your virtual environment name...>
     
-3. Run the ``python`` command:
+3. Run ``python``:
 
 .. code-block:: sh
 
     $ python
 
-4. At the Python prompt, enter the following lines to create Open3D objects:
+4. In Python, set up common imports that we will use throughout this tutorial:
 
 .. code-block:: python
 
@@ -45,12 +42,19 @@ For all examples in this tutorial, we will be running a Python session. Please f
     >>> import open3d.visualization as vis
     >>> import numpy as np
     >>> import math
-		
-These objects will be used throughout the following examples.
+
 
 .. note::
     * The ``numpy`` object we are declaring is needed for conversions of lists to arrays.
     * The ``math`` library is needed to reference Pi and rotate objects
+
+Below is a screenshot of how you would set up your environment from the command terminal:
+
+
+.. image:: https://user-images.githubusercontent.com/93158890/159073961-821e4768-3678-4385-bc37-20c5b212c030.jpg
+    :width: 700px
+
+
 
 
 Basic examples
@@ -80,7 +84,7 @@ In this example, we are going to learn how to load and render Point Clouds. To r
 .. seealso::
 
     For more information on datasets, please refer to the 
-    :doc:`Datasets <../data/index>` page
+    :doc:`Open3D Datasets page <../data/index>`
 
 
 Enter the following code at the Python prompt:
