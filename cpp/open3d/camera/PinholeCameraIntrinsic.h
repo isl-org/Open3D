@@ -52,13 +52,16 @@ class PinholeCameraIntrinsic : public utility::IJsonConvertible {
 public:
     /// \brief Default Constructor.
     ///
+    PinholeCameraIntrinsic();
+
+    /// \brief Parameterized Constructor.
+    ///
     /// \param width width of the image. (Default: -1).
     /// \param height height of the image. (Default: -1).
     /// \param intrinsic_matrix 3x3 intrinsic matrix. (Default: Identity).
-    PinholeCameraIntrinsic(int width = -1,
-                           int height = -1,
-                           const Eigen::Matrix3d intrinsic_matrix =
-                                   Eigen::Matrix3d::Identity());
+    PinholeCameraIntrinsic(int width,
+                           int height,
+                           const Eigen::Matrix3d &intrinsic_matrix);
 
     /// \brief Parameterized Constructor.
     ///

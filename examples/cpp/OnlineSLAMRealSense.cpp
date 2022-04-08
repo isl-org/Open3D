@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
     app.Initialize(argc, const_cast<const char**>(argv));
     auto mono =
             app.AddFont(gui::FontDescription(gui::FontDescription::MONOSPACE));
-    app.AddWindow(std::make_shared<online_slam::ReconstructionWindow>(
+    app.AddWindow(std::make_shared<examples::online_slam::ReconstructionWindow>(
             get_rgbd_image_input, intrinsic_t, default_params, device, mono));
     app.Run();
 

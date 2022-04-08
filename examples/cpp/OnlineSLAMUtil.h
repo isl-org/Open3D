@@ -35,6 +35,7 @@ static const Eigen::Vector3d kTangoOrange(0.961, 0.475, 0.000);
 static const Eigen::Vector3d kTangoSkyBlueDark(0.125, 0.290, 0.529);
 
 namespace open3d {
+namespace examples {
 namespace online_slam {
 using namespace open3d::visualization;
 
@@ -768,4 +769,5 @@ protected:
 };
 
 }  // namespace online_slam
+}  // namespace examples
 }  // namespace open3d
