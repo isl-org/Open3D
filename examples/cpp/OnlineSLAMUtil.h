@@ -39,7 +39,6 @@ namespace examples {
 namespace online_slam {
 using namespace open3d::visualization;
 
-//------------------------------------------------------------------------------
 class PropertyPanel : public gui::VGrid {
     using Super = gui::VGrid;
 
@@ -157,7 +156,6 @@ private:
     }
 };
 
-//------------------------------------------------------------------------------
 class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
 
