@@ -30,8 +30,7 @@ function(open3d_sycl_target_sources target)
 
         if(BUILD_SYCL_MODULE)
             foreach(sycl_file IN LISTS arg_UNPARSED_ARGUMENTS)
-                set_source_files_properties(${sycl_file} PROPERTIES
-                    COMPILE_OPTIONS -fsycl -fsycl-unnamed-lambda -fsycl-targets=spir64_x86_64)
+                set_source_files_properties(${sycl_file} PROPERTIES COMPILE_OPTIONS -fsycl)
                 if(arg_VERBOSE)
                     message(STATUS "open3d_sycl_target_sources(${target}): marked ${sycl_file} as SYCL code")
                 endif()
