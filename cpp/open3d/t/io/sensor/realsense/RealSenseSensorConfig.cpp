@@ -274,7 +274,7 @@ Json::Value RealSenseSensorConfig::GetMetadataJson(
         utility::LogError(
                 "Different frame rates for color ({} fps) and depth ({} fps) "
                 "streams is not supported.",
-                value["fps"], rs_depth.fps());
+                value["fps"].asString(), rs_depth.fps());
     }
     if (rs_device.is<rs2::playback>()) {
         value["stream_length_usec"] =
