@@ -56,7 +56,7 @@ inline void CheckColorTensor(const core::Tensor& color) {
 inline void CheckIntrinsicTensor(const core::Tensor& intrinsic) {
     if (intrinsic.GetShape() != core::SizeVector{3, 3}) {
         utility::LogError("Unsupported intrinsic matrix shape {}",
-                          intrinsic.GetShape());
+                          intrinsic.GetShape().ToString());
     }
 
     if (intrinsic.GetDtype() != core::Dtype::Float64) {

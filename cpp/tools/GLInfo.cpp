@@ -81,7 +81,7 @@ void TryGLVersion(int major,
         if (!r) {
             utility::LogWarning("Unable to get info on {} id {:d}", name, id);
         } else {
-            utility::LogDebug("{}:\t{}", name, r);
+            utility::LogDebug("{}:\t{}", name, static_cast<const char *>(r));
         }
     };
 #define OPEN3D_REPORT_GL_STRING(n) reportGlStringFunc(n, #n)
