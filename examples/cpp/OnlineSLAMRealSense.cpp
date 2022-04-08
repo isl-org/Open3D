@@ -57,8 +57,6 @@ int main(int argc, char* argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    std::cout << "Hello" << std::endl;
-
     if (argc < 2 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
@@ -120,7 +118,7 @@ int main(int argc, char* argv[]) {
 
         // Initialize camera.
         rs.ListDevices();
-        rs.InitSensor(rs_cfg, 0, bag_file);
+        rs.InitSensor(rs_cfg, 0, record_to_bag_file);
         utility::LogInfo("{}", rs.GetMetadata().ToString());
         rs.StartCapture();
 
