@@ -30,12 +30,13 @@
 
 #include "open3d/Open3D.h"
 
-using namespace open3d;
-using namespace open3d::visualization;
-
 // Tanglo colorscheme (see https://en.wikipedia.org/wiki/Tango_Desktop_Project)
 static const Eigen::Vector3d kTangoOrange(0.961, 0.475, 0.000);
 static const Eigen::Vector3d kTangoSkyBlueDark(0.125, 0.290, 0.529);
+
+namespace open3d {
+namespace online_slam {
+using namespace open3d::visualization;
 
 //------------------------------------------------------------------------------
 class PropertyPanel : public gui::VGrid {
@@ -765,3 +766,6 @@ protected:
         }
     }
 };
+
+}  // namespace online_slam
+}  // namespace open3d

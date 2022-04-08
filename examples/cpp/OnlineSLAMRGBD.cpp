@@ -28,13 +28,13 @@
 #include <memory>
 #include <string>
 
-#include "OnlineSLAMGUI.h"
+#include "OnlineSLAMUtil.h"
 #include "open3d/Open3D.h"
-
-using namespace open3d;
 
 std::pair<std::vector<std::string>, std::vector<std::string>> LoadFilenames(
         const std::string dataset_path) {
+    using namespace open3d;
+
     std::vector<std::string> rgb_candidates{"color", "image", "rgb"};
     std::vector<std::string> rgb_files;
 
@@ -97,6 +97,7 @@ void PrintHelp() {
 
 int main(int argc, char* argv[]) {
     using namespace open3d;
+    using namespace open3d::visualization;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
@@ -175,7 +176,7 @@ int main(int argc, char* argv[]) {
     app.Initialize(argc, const_cast<const char**>(argv));
     auto mono =
             app.AddFont(gui::FontDescription(gui::FontDescription::MONOSPACE));
-    app.AddWindow(std::make_shared<ReconstructionWindow>(
+    app.AddWindow(std::make_shared<online_slam::ReconstructionWindow>(
             get_rgbd_image_input, intrinsic_t, default_params, device, mono));
     app.Run();
 
