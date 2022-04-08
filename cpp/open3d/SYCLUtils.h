@@ -24,12 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <cstring>
-#include <string>
+#pragma once
 
-#include "open3d/SYCLUtils.h"
+namespace open3d {
+namespace utility {
 
-int main(int argc, char** argv) {
-    using namespace open3d;
-    utility::SYCLDemo();
-}
+int SYCLDemo();
+
+}  // namespace utility
+}  // namespace open3d

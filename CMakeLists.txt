@@ -220,27 +220,7 @@ if(BUILD_JUPYTER_EXTENSION AND NOT BUILD_PYTHON_MODULE)
     message(FATAL_ERROR "BUILD_JUPYTER_EXTENSION=ON requires BUILD_PYTHON_MODULE=ON")
 endif()
 
-# Parse Open3D version number
-file(STRINGS "cpp/open3d/version.txt" OPEN3D_VERSION_READ)
-foreach(ver ${OPEN3D_VERSION_READ})
-    if (ver MATCHES "OPEN3D_VERSION_(MAJOR|MINOR|PATCH) +([^ ]+)$")
-        set(OPEN3D_VERSION_${CMAKE_MATCH_1} "${CMAKE_MATCH_2}" CACHE INTERNAL "")
-    endif()
-endforeach()
-set(OPEN3D_VERSION_DEVHASH "")
-if(DEVELOPER_BUILD)
-    execute_process(COMMAND git -C "${CMAKE_SOURCE_DIR}" log --pretty=format:%h -n 1
-        OUTPUT_VARIABLE GIT_REV)
-    if (GIT_REV)
-        set(OPEN3D_VERSION_DEVHASH "+${GIT_REV}")
-    endif()
-endif()
-string(CONCAT OPEN3D_VERSION
-    "${OPEN3D_VERSION_MAJOR}"
-    ".${OPEN3D_VERSION_MINOR}"
-    ".${OPEN3D_VERSION_PATCH}"
-)
-set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
+set(OPEN3D_VERSION_FULL "0.15.2")
 # Set additional info
 set(PROJECT_EMAIL       "info@open3d.org")
 set(PROJECT_DOCS        "http://www.open3d.org/docs")
@@ -494,7 +474,7 @@ include(3rdparty/find_dependencies.cmake)
 add_subdirectory(cpp)
 
 # Examples
-add_subdirectory(examples)
+# add_subdirectory(examples)
 
 # Documentation
 add_subdirectory(docs)
