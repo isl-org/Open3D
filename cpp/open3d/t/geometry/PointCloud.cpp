@@ -312,7 +312,7 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
     core::Tensor num_neighbours =
             row_splits.Slice(0, 1, size) - row_splits.Slice(0, 0, size - 1);
 
-    core::Tensor valid = num_neighbours.Ge(nb_points);
+    core::Tensor valid = num_neighbours.Ge(static_cast<int64_t>(nb_points));
     PointCloud pcd = this->SelectByIndex(valid);
 
     return std::make_tuple(pcd, valid);
