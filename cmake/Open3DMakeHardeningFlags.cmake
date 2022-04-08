@@ -42,7 +42,7 @@ function(open3d_make_hardening_flags hardening_cflags hardening_ldflags)
         )
         set(${hardening_ldflags}
             -Wl,-z,relro,-z,now             # Data relocation protection
-            -pie                            # Position independent executable
+            # -pie                            # Position independent executable
             $<$<CONFIG:Release>:LINKER:-S>  # Exclude debug info
         )
     elseif (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
