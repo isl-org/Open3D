@@ -436,7 +436,8 @@ MaterialInstanceHandle FilamentResourceManager::CreateMaterialInstance(
                 engine_, material_instance, material_instances_);
     }
 
-    utility::LogWarning("Material ({}) for creating instance not found", id);
+    utility::LogWarning("Material ({}) for creating instance not found",
+                        id.GetId());
     return {};
 }
 

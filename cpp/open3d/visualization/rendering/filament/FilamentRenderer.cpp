@@ -283,7 +283,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(const MaterialHandle& id) {
     } else {
         utility::LogWarning(
                 "Failed to create material instance for material handle {}.",
-                id);
+                id.GetId());
     }
 
     return *materials_modifier_;
@@ -300,7 +300,7 @@ MaterialModifier& FilamentRenderer::ModifyMaterial(
         utility::LogWarning(
                 "Failed to modify material instance: unknown instance handle "
                 "{}.",
-                id);
+                id.GetId());
     }
 
     return *materials_modifier_;

@@ -212,7 +212,7 @@ MaterialModifier& FilamentMaterialModifier::SetTexture(
             utility::LogWarning(
                     "Failed to set texture for material.\n\tMaterial handle: "
                     "{}\n\tTexture handle: {}\n\tParameter name: {}",
-                    current_handle_, texture_handle, parameter);
+                    current_handle_.GetId(), texture_handle.GetId(), parameter);
         }
     }
 
