@@ -9,7 +9,3 @@ open3d_set_global_properties(Open3D)
 open3d_link_3rdparty_libraries(Open3D)
 
 include(CMakePackageConfigHelpers)
-
-
-
-
