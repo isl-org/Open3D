@@ -74,7 +74,7 @@ void RadiusSearchCPU(const torch::Tensor& points,
         std::unique_ptr<NanoFlannIndexHolderBase> holder =
                 impl::BuildKdTree<T, TIndex>(num_points_i, points_i, 3, metric);
 
-        open3d::core::nns::impl::RadiusSearchCPU<T, TIndex>(
+        impl::RadiusSearchCPU<T, TIndex>(
                 holder.get(), neighbors_row_splits_i, num_points_i, points_i,
                 num_queries_i, queries_i, 3, radius_i, metric,
                 ignore_query_point, return_distances, normalize_distances,

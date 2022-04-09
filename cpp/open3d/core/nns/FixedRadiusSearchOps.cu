@@ -48,7 +48,7 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
 
-    open3d::core::nns::impl::BuildSpatialHashTableCUDA(
+    impl::BuildSpatialHashTableCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             points.GetShape()[0], points.GetDataPtr<T>(), T(radius),
             points_row_splits.GetShape()[0],
@@ -63,7 +63,7 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
             Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8, device);
     temp_ptr = temp_tensor.GetDataPtr();
 
-    open3d::core::nns::impl::BuildSpatialHashTableCUDA(
+    impl::BuildSpatialHashTableCUDA(
             stream, temp_ptr, temp_size, texture_alignment,
             points.GetShape()[0], points.GetDataPtr<T>(), T(radius),
             points_row_splits.GetShape()[0],
@@ -101,7 +101,7 @@ void FixedRadiusSearchCUDA(const Tensor& points,
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
 
-    open3d::core::nns::impl::FixedRadiusSearchCUDA<T, TIndex>(
+    impl::FixedRadiusSearchCUDA<T, TIndex>(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.GetDataPtr<int64_t>(), points.GetShape()[0],
             points.GetDataPtr<T>(), queries.GetShape()[0],
@@ -119,7 +119,7 @@ void FixedRadiusSearchCUDA(const Tensor& points,
             Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8, device);
     temp_ptr = temp_tensor.GetDataPtr();
 
-    open3d::core::nns::impl::FixedRadiusSearchCUDA<T, TIndex>(
+    impl::FixedRadiusSearchCUDA<T, TIndex>(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.GetDataPtr<int64_t>(), points.GetShape()[0],
             points.GetDataPtr<T>(), queries.GetShape()[0],
@@ -151,25 +151,25 @@ void FixedRadiusSearchCUDA(const Tensor& points,
         Tensor distances_sorted = Tensor::Empty({num_indices}, dtype, device);
 
         // Determine temp_size for sorting
-        open3d::core::nns::impl::SortPairs(
-                temp_ptr, temp_size, texture_alignment, num_indices,
-                num_segments, neighbors_row_splits.GetDataPtr<int64_t>(),
-                indices_unsorted.GetDataPtr<TIndex>(),
-                distances_unsorted.GetDataPtr<T>(),
-                indices_sorted.GetDataPtr<TIndex>(),
-                distances_sorted.GetDataPtr<T>());
+        impl::SortPairs(temp_ptr, temp_size, texture_alignment, num_indices,
+                        num_segments,
+                        neighbors_row_splits.GetDataPtr<int64_t>(),
+                        indices_unsorted.GetDataPtr<TIndex>(),
+                        distances_unsorted.GetDataPtr<T>(),
+                        indices_sorted.GetDataPtr<TIndex>(),
+                        distances_sorted.GetDataPtr<T>());
 
         temp_tensor = Tensor::Empty({int64_t(temp_size)}, Dtype::UInt8, device);
         temp_ptr = temp_tensor.GetDataPtr();
 
         // Actually run the sorting.
-        open3d::core::nns::impl::SortPairs(
-                temp_ptr, temp_size, texture_alignment, num_indices,
-                num_segments, neighbors_row_splits.GetDataPtr<int64_t>(),
-                indices_unsorted.GetDataPtr<TIndex>(),
-                distances_unsorted.GetDataPtr<T>(),
-                indices_sorted.GetDataPtr<TIndex>(),
-                distances_sorted.GetDataPtr<T>());
+        impl::SortPairs(temp_ptr, temp_size, texture_alignment, num_indices,
+                        num_segments,
+                        neighbors_row_splits.GetDataPtr<int64_t>(),
+                        indices_unsorted.GetDataPtr<TIndex>(),
+                        distances_unsorted.GetDataPtr<T>(),
+                        indices_sorted.GetDataPtr<TIndex>(),
+                        distances_sorted.GetDataPtr<T>());
         neighbors_index = indices_sorted;
         neighbors_distance = distances_sorted;
     }
@@ -195,7 +195,7 @@ void HybridSearchCUDA(const Tensor& points,
 
     NeighborSearchAllocator<T, TIndex> output_allocator(device);
 
-    open3d::core::nns::impl::HybridSearchCUDA<T, TIndex>(
+    impl::HybridSearchCUDA<T, TIndex>(
             stream, points.GetShape()[0], points.GetDataPtr<T>(),
             queries.GetShape()[0], queries.GetDataPtr<T>(), T(radius), max_knn,
             points_row_splits.GetShape()[0],

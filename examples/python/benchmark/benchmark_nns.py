@@ -48,7 +48,7 @@ class NNS:
         assert index_type in ["int", "long"]
         self.device = device
         self.search_type = search_type
-        self.index_type = o3d.core.Dtype.Int32 if index_type == "int" else o3d.core.Dtype.Int64
+        self.index_type = o3d.core.Int32 if index_type == "int" else o3d.core.Int64
 
     def setup(self, points, queries, radius):
         points_dev = points.to(self.device)
@@ -115,7 +115,7 @@ def prepare_benchmark_data():
 
         print(f"loading the random dataset, random_1e{log10_n}.npy...")
         points = queries = o3d.core.Tensor(np.load(npy_file),
-                                           dtype=o3d.core.Dtype.Float32)
+                                           dtype=o3d.core.Float32)
         queries = queries[::10]
         filename = os.path.basename(npy_file)
         datasets[filename] = {'points': points, 'queries': queries}

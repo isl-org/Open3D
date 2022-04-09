@@ -410,14 +410,14 @@ public:
     FixedRadiusIndex(const Tensor& dataset_points, double radius);
     FixedRadiusIndex(const Tensor& dataset_points,
                      double radius,
-                     const Dtype index_dtype);
+                     const Dtype& index_dtype);
     ~FixedRadiusIndex();
     FixedRadiusIndex(const FixedRadiusIndex&) = delete;
     FixedRadiusIndex& operator=(const FixedRadiusIndex&) = delete;
 
 public:
     bool SetTensorData(const Tensor& dataset_points,
-                       const Dtype index_dtype = core::Int64) override {
+                       const Dtype& index_dtype = core::Int64) override {
         utility::LogError(
                 "FixedRadiusIndex::SetTensorData witout radius not "
                 "implemented.");
@@ -425,11 +425,11 @@ public:
 
     bool SetTensorData(const Tensor& dataset_points,
                        double radius,
-                       const Dtype index_dtype = core::Int64) override;
+                       const Dtype& index_dtype = core::Int64) override;
     bool SetTensorData(const Tensor& dataset_points,
                        const Tensor& points_row_splits,
                        double radius,
-                       const Dtype index_dtype = core::Int64);
+                       const Dtype& index_dtype = core::Int64);
 
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         int knn) const override {

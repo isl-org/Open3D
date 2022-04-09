@@ -45,14 +45,14 @@ NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
 };
 
 NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points,
-                               const Dtype index_dtype) {
+                               const Dtype &index_dtype) {
     SetTensorData(dataset_points, index_dtype);
 };
 
 NanoFlannIndex::~NanoFlannIndex(){};
 
 bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points,
-                                   const Dtype index_dtype) {
+                                   const Dtype &index_dtype) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
     assert(index_dtype == Int32 || index_dtype == Int64);
 

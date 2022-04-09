@@ -61,7 +61,7 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     size_t temp_size = 0;
 
     // determine temp_size
-    open3d::core::nns::impl::FixedRadiusSearchCUDA<T, TIndex>(
+    impl::FixedRadiusSearchCUDA<T, TIndex>(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),
@@ -77,7 +77,7 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     auto temp_tensor = CreateTempTensor(temp_size, points.device(), &temp_ptr);
 
     // actually run the search
-    open3d::core::nns::impl::FixedRadiusSearchCUDA<T, TIndex>(
+    impl::FixedRadiusSearchCUDA<T, TIndex>(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),

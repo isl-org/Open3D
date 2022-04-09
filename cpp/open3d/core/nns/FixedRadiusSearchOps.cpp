@@ -43,7 +43,7 @@ void BuildSpatialHashTableCPU(const Tensor& points,
                               const Tensor& hash_table_splits,
                               Tensor& hash_table_index,
                               Tensor& hash_table_cell_splits) {
-    open3d::core::nns::impl::BuildSpatialHashTableCPU(
+    impl::BuildSpatialHashTableCPU(
             points.GetShape()[0], points.GetDataPtr<T>(), T(radius),
             points_row_splits.GetShape()[0],
             points_row_splits.GetDataPtr<int64_t>(),
@@ -72,7 +72,7 @@ void FixedRadiusSearchCPU(const Tensor& points,
     Device device = points.GetDevice();
     NeighborSearchAllocator<T, TIndex> output_allocator(device);
 
-    open3d::core::nns::impl::FixedRadiusSearchCPU<T, TIndex>(
+    impl::FixedRadiusSearchCPU<T, TIndex>(
             neighbors_row_splits.GetDataPtr<int64_t>(), points.GetShape()[0],
             points.GetDataPtr<T>(), queries.GetShape()[0],
             queries.GetDataPtr<T>(), T(radius), points_row_splits.GetShape()[0],

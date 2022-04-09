@@ -44,7 +44,7 @@ FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
 
 FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
                                    double radius,
-                                   const Dtype index_dtype) {
+                                   const Dtype &index_dtype) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
     assert(index_dtype == Int32 || index_dtype == Int64);
     SetTensorData(dataset_points, radius, index_dtype);
@@ -54,7 +54,7 @@ FixedRadiusIndex::~FixedRadiusIndex(){};
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      double radius,
-                                     const Dtype index_dtype) {
+                                     const Dtype &index_dtype) {
     const int64_t num_dataset_points = dataset_points.GetShape()[0];
     Tensor points_row_splits(std::vector<int64_t>({0, num_dataset_points}), {2},
                              Int64);
@@ -65,7 +65,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      const Tensor &points_row_splits,
                                      double radius,
-                                     const Dtype index_dtype) {
+                                     const Dtype &index_dtype) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
     assert(index_dtype == Int32 || index_dtype == Int64);
     AssertTensorDevice(points_row_splits, Device("CPU:0"));
@@ -185,38 +185,18 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        if (dtype == Float32) {
-            if (index_dtype == Int32) {
-                FixedRadiusSearchCUDA<float, int32_t>(RADIUS_PARAMETERS);
-            } else {
-                FixedRadiusSearchCUDA<float, int64_t>(RADIUS_PARAMETERS);
-            }
-        } else {
-            if (index_dtype == Int32) {
-                FixedRadiusSearchCUDA<double, int32_t>(RADIUS_PARAMETERS);
-            } else {
-                FixedRadiusSearchCUDA<double, int64_t>(RADIUS_PARAMETERS);
-            }
-        }
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            FixedRadiusSearchCUDA<scalar_t, int_t>(RADIUS_PARAMETERS);
+        });
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
-        if (dtype == Float32) {
-            if (index_dtype == Int32) {
-                FixedRadiusSearchCPU<float, int32_t>(RADIUS_PARAMETERS);
-            } else {
-                FixedRadiusSearchCPU<float, int64_t>(RADIUS_PARAMETERS);
-            }
-        } else {
-            if (index_dtype == Int32) {
-                FixedRadiusSearchCPU<double, int32_t>(RADIUS_PARAMETERS);
-            } else {
-                FixedRadiusSearchCPU<double, int64_t>(RADIUS_PARAMETERS);
-            }
-        }
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            FixedRadiusSearchCPU<scalar_t, int_t>(RADIUS_PARAMETERS);
+        });
     }
 
     return std::make_tuple(neighbors_index, neighbors_distance,
@@ -274,38 +254,18 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
 
     if (device.GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
-        if (dtype == Float32) {
-            if (index_dtype == Int32) {
-                HybridSearchCUDA<float, int32_t>(HYBRID_PARAMETERS);
-            } else {
-                HybridSearchCUDA<float, int64_t>(HYBRID_PARAMETERS);
-            }
-        } else {
-            if (index_dtype == Int32) {
-                HybridSearchCUDA<double, int32_t>(HYBRID_PARAMETERS);
-            } else {
-                HybridSearchCUDA<double, int64_t>(HYBRID_PARAMETERS);
-            }
-        }
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            HybridSearchCUDA<scalar_t, int_t>(HYBRID_PARAMETERS);
+        });
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
-        if (dtype == Float32) {
-            if (index_dtype == Int32) {
-                HybridSearchCPU<float, int32_t>(HYBRID_PARAMETERS);
-            } else {
-                HybridSearchCPU<float, int64_t>(HYBRID_PARAMETERS);
-            }
-        } else {
-            if (index_dtype == Int32) {
-                HybridSearchCPU<double, int32_t>(HYBRID_PARAMETERS);
-            } else {
-                HybridSearchCPU<double, int64_t>(HYBRID_PARAMETERS);
-            }
-        }
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            HybridSearchCPU<scalar_t, int_t>(HYBRID_PARAMETERS);
+        });
     }
 
     return std::make_tuple(neighbors_index.View({num_query_points, max_knn}),
