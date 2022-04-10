@@ -169,21 +169,17 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
                 double it = (target.colors_[ct](0) + target.colors_[ct](1) +
                              target.colors_[ct](2)) /
                             3.0;
+                double is_proj = (dit.dot(vs_proj - vt)) + it;
+
                 const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
-                double is0_proj = (dit.dot(vs_proj - vt)) + it;
+                const Eigen::Matrix3d &M =
+                        Eigen::Matrix3d::Identity() - nt * nt.transpose();
+                const Eigen::Vector3d &ditM = dit.transpose() * M;
 
-                const Eigen::Matrix3d M =
-                        (Eigen::Matrix3d() << 1.0 - nt(0) * nt(0),
-                         -nt(0) * nt(1), -nt(0) * nt(2), -nt(0) * nt(1),
-                         1.0 - nt(1) * nt(1), -nt(1) * nt(2), -nt(0) * nt(2),
-                         -nt(1) * nt(2), 1.0 - nt(2) * nt(2))
-                                .finished();
-
-                const Eigen::Vector3d &ditM = -dit.transpose() * M;
                 J_r[1].block<3, 1>(0, 0) =
                         sqrt_lambda_photometric * vs.cross(ditM);
                 J_r[1].block<3, 1>(3, 0) = sqrt_lambda_photometric * ditM;
-                r[1] = sqrt_lambda_photometric * (is - is0_proj);
+                r[1] = sqrt_lambda_photometric * (is_proj - is);
                 w[1] = kernel_->Weight(r[1]);
             };
 
