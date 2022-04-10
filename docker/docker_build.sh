@@ -49,6 +49,7 @@ OPTION:
 
     # Sycl CPU CI (Dockerfile.ci)
     sycl-shared                : SYCL (oneAPI) with shared lib
+    sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
     2-bionic                   : CUDA CI, 2-bionic, developer mode
@@ -436,6 +437,23 @@ sycl-shared_export_env() {
     export BUILD_SYCL_MODULE=ON
 }
 
+sycl-static_export_env() {
+    export DOCKER_TAG=open3d-ci:sycl-static
+
+    # https://hub.docker.com/r/intel/oneapi
+    # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-18.04
+    export BASE_IMAGE=intel/oneapi-basekit:2022.1.2-devel-ubuntu18.04
+    export DEVELOPER_BUILD=ON
+    export CCACHE_TAR_NAME=open3d-ci-sycl
+    export PYTHON_VERSION=3.6
+    export SHARED=OFF
+    export BUILD_CUDA_MODULE=OFF
+    export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_PYTORCH_OPS=OFF
+    export PACKAGE=OFF
+    export BUILD_SYCL_MODULE=ON
+}
+
 function main () {
     if [[ "$#" -ne 1 ]]; then
         echo "Error: invalid number of arguments: $#." >&2
@@ -536,6 +554,10 @@ function main () {
         # SYCL CI
         sycl-shared)
             sycl-shared_export_env
+            ci_build
+            ;;
+        sycl-static)
+            sycl-static_export_env
             ci_build
             ;;
 

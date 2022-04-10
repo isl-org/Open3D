@@ -44,6 +44,7 @@ OPTION:
 
     # Sycl CPU CI (Dockerfile.ci)
     sycl-shared                : SYCL (oneAPI) with shared lib
+    sycl-static                : SYCL (oneAPI) with static lib
 
     # ML CIs (Dockerfile.ci)
     2-bionic                   : CUDA CI, 2-bionic, developer mode
@@ -303,6 +304,11 @@ case "$1" in
     # SYCL CI
     sycl-shared)
         sycl-shared_export_env
+        ci_print_env
+        cpp_python_linking_uninstall_test
+        ;;
+    sycl-static)
+        sycl-static_export_env
         ci_print_env
         cpp_python_linking_uninstall_test
         ;;
