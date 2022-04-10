@@ -1285,7 +1285,7 @@ if(NOT USE_SYSTEM_MSGPACK)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
 
-if (BUILD_SYCL_MODULE)
+if(BUILD_SYCL_MODULE)
     # DPC++ (compile and link flags only)
     add_library(3rdparty_sycl INTERFACE)
     # target_compile_options(3rdparty_sycl INTERFACE
@@ -1310,7 +1310,17 @@ if (BUILD_SYCL_MODULE)
     endif()
     add_library(Open3D::3rdparty_sycl ALIAS 3rdparty_sycl)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_sycl)
+endif()
 
+if(BUILD_SYCL_MODULE)
+    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." ON)
+else()
+    # TODO: set to OFF
+    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." ON)
+endif()
+mark_as_advanced(USE_ONEAPI)
+
+if(OPEN3D_USE_ONEAPI_PACKAGES)
     # oneTBB
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/tbb/latest/lib/cmake/tbb)
     open3d_find_package_3rdparty_library(3rdparty_tbb
@@ -1337,9 +1347,10 @@ if (BUILD_SYCL_MODULE)
         TARGETS MKL::mkl_intel_ilp64 MKL::mkl_core MKL::mkl_tbb_thread
         INCLUDE_DIRS MKL_INCLUDE
     )
+    # Define OPEN3D_USE_ONEAPI_PACKAGES macro
+    target_compile_definitions(3rdparty_mkl INTERFACE OPEN3D_USE_ONEAPI_PACKAGES)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
-
-else() # BUILD_SYCL_MODULE
+else() # USE_ONEAPI_PACKAGES
     # TBB
     if(USE_SYSTEM_TBB)
     open3d_find_package_3rdparty_library(3rdparty_tbb
@@ -1487,7 +1498,7 @@ else() # BUILD_SYCL_MODULE
         target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
-endif() # BUILD_SYCL_MODULE
+endif() # USE_ONEAPI_PACKAGES
 
 # cuBLAS
 if(BUILD_CUDA_MODULE)
