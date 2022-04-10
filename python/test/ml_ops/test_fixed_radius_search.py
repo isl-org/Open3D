@@ -29,6 +29,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 import pytest
 import mltest
+import torch
 import tensorflow as tf
 
 # skip all tests if the ml ops were not built
@@ -50,9 +51,10 @@ gpu_dtypes = [np.float32]
 @pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
+@pytest.mark.parametrize('index_dtype', ['int32', 'int64'])
 def test_fixed_radius_search(dtype, ml, num_points_queries, radius,
                              hash_table_size_factor, metric, ignore_query_point,
-                             return_distances):
+                             return_distances, index_dtype):
 
     # skip dtype not supported on GPU
     if mltest.is_gpu_device_name(ml.device) and not dtype in gpu_dtypes:
@@ -73,9 +75,17 @@ def test_fixed_radius_search(dtype, ml, num_points_queries, radius,
     p_norm = {'L1': 1, 'L2': 2, 'Linf': np.inf}[metric]
     gt_neighbors_index = tree.query_ball_point(queries, radius, p=p_norm)
 
+    if ml.module.__name__ == 'tensorflow':
+        index_dtype_ = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
+    elif ml.module.__name__ == 'torch':
+        index_dtype_ = {'int32': torch.int32, 'int64': torch.int64}[index_dtype]
+    else:
+        raise Exception('Unsupported ml framework')
+
     layer = ml.layers.FixedRadiusSearch(metric=metric,
                                         ignore_query_point=ignore_query_point,
-                                        return_distances=return_distances)
+                                        return_distances=return_distances,
+                                        index_dtype=index_dtype_)
     ans = mltest.run_op(
         ml,
         ml.device,
@@ -86,6 +96,9 @@ def test_fixed_radius_search(dtype, ml, num_points_queries, radius,
         radius=radius,
         hash_table_size_factor=hash_table_size_factor,
     )
+
+    index_dtype_np = {'int32': np.int32, 'int64': np.int64}[index_dtype]
+    assert ans.neighbors_index.dtype == index_dtype_np
 
     for i, q in enumerate(queries):
         # check neighbors
@@ -167,9 +180,11 @@ def test_fixed_radius_search_empty_point_sets(ml):
 @pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
+@pytest.mark.parametrize('index_dtype', ['int32', 'int64'])
 def test_fixed_radius_search_batches(dtype, ml, batch_size, radius,
                                      hash_table_size_factor, metric,
-                                     ignore_query_point, return_distances):
+                                     ignore_query_point, return_distances,
+                                     index_dtype):
     # skip dtype not supported on GPU
     if mltest.is_gpu_device_name(ml.device) and not dtype in gpu_dtypes:
         return
@@ -207,9 +222,17 @@ def test_fixed_radius_search_batches(dtype, ml, batch_size, radius,
                 points_row_splits[i]) for q in queries_i
         ])
 
+    if ml.module.__name__ == 'tensorflow':
+        index_dtype_ = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
+    elif ml.module.__name__ == 'torch':
+        index_dtype_ = {'int32': torch.int32, 'int64': torch.int64}[index_dtype]
+    else:
+        raise Exception('Unsupported ml framework')
+
     layer = ml.layers.FixedRadiusSearch(metric=metric,
                                         ignore_query_point=ignore_query_point,
-                                        return_distances=return_distances)
+                                        return_distances=return_distances,
+                                        index_dtype=index_dtype_)
     ans = mltest.run_op(
         ml,
         ml.device,
@@ -222,6 +245,9 @@ def test_fixed_radius_search_batches(dtype, ml, batch_size, radius,
         queries_row_splits=queries_row_splits,
         hash_table_size_factor=hash_table_size_factor,
     )
+
+    index_dtype_np = {'int32': np.int32, 'int64': np.int64}[index_dtype]
+    assert ans.neighbors_index.dtype == index_dtype_np
 
     for i, q in enumerate(queries):
         # check neighbors
@@ -253,9 +279,11 @@ def test_fixed_radius_search_batches(dtype, ml, batch_size, radius,
 @pytest.mark.parametrize('metric', ['L1', 'L2', 'Linf'])
 @pytest.mark.parametrize('ignore_query_point', [False, True])
 @pytest.mark.parametrize('return_distances', [False, True])
+@pytest.mark.parametrize('index_dtype', ['int32', 'int64'])
 def test_fixed_radius_search_raggedtensor(dtype, ml, batch_size, radius,
                                           hash_table_size_factor, metric,
-                                          ignore_query_point, return_distances):
+                                          ignore_query_point, return_distances,
+                                          index_dtype):
     # the problem is specific to tensorflow
     if ml.module.__name__ != 'tensorflow':
         return
@@ -296,6 +324,13 @@ def test_fixed_radius_search_raggedtensor(dtype, ml, batch_size, radius,
                 points_row_splits[i]) for q in queries_i
         ])
 
+    if ml.module.__name__ == 'tensorflow':
+        index_dtype_ = {'int32': tf.int32, 'int64': tf.int64}[index_dtype]
+    elif ml.module.__name__ == 'torch':
+        index_dtype_ = {'int32': torch.int32, 'int64': torch.int64}[index_dtype]
+    else:
+        raise Exception('Unsupported ml framework')
+
     points_ragged = tf.RaggedTensor.from_row_splits(
         values=points, row_splits=points_row_splits)
     queries_ragged = tf.RaggedTensor.from_row_splits(
@@ -303,7 +338,8 @@ def test_fixed_radius_search_raggedtensor(dtype, ml, batch_size, radius,
 
     layer = ml.layers.FixedRadiusSearch(metric=metric,
                                         ignore_query_point=ignore_query_point,
-                                        return_distances=return_distances)
+                                        return_distances=return_distances,
+                                        index_dtype=index_dtype_)
     ans = mltest.run_op(
         ml,
         ml.device,
@@ -314,6 +350,9 @@ def test_fixed_radius_search_raggedtensor(dtype, ml, batch_size, radius,
         radius=radius,
         hash_table_size_factor=hash_table_size_factor,
     )
+
+    index_dtype_np = {'int32': np.int32, 'int64': np.int64}[index_dtype]
+    assert ans.neighbors_index.dtype == index_dtype_np
 
     for i, q in enumerate(queries):
         # check neighbors
