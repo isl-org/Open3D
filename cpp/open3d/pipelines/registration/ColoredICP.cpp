@@ -169,9 +169,9 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
                 double it = (target.colors_[ct](0) + target.colors_[ct](1) +
                              target.colors_[ct](2)) /
                             3.0;
+                const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
                 double is_proj = (dit.dot(vs_proj - vt)) + it;
 
-                const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
                 const Eigen::Matrix3d &M =
                         Eigen::Matrix3d::Identity() - nt * nt.transpose();
                 const Eigen::Vector3d &ditM = dit.transpose() * M;
