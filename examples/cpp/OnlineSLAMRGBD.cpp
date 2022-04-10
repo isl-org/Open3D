@@ -78,7 +78,6 @@ std::pair<std::vector<std::string>, std::vector<std::string>> LoadFilenames(
     return std::make_pair(rgb_files, depth_files);
 }
 
-//------------------------------------------------------------------------------
 void PrintHelp() {
     using namespace open3d;
     PrintOpen3DVersion();
