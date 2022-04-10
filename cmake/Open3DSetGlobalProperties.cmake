@@ -168,4 +168,9 @@ function(open3d_set_global_properties target)
 
     # Enable strip
     open3d_enable_strip(${target})
+
+    # Harderning flags
+    target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>")
+    target_link_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>")
+    target_compile_definitions(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_DEFINITIONS}>")
 endfunction()
