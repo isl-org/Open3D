@@ -9,6 +9,8 @@ ExternalProject_Add(
     # do not update
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
+        -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -256,18 +258,25 @@ ExternalProject_Add(
 ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
 set(VTK_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
 set(VTK_INCLUDE_DIRS "${INSTALL_DIR}/include/vtk-9.1/" )
+
+if(WIN32)
+    set(VTK_LIB_SUFFIX $<$<CONFIG:Debug>:d>)
+else()
+    set(VTK_LIB_SUFFIX "")
+endif()
+
 set(VTK_LIBRARIES 
-    vtkFiltersGeneral-9.1
-    # vtkCommonComputationalGeometry-9.1
-    vtkFiltersCore-9.1
-    vtkCommonExecutionModel-9.1
-    vtkCommonDataModel-9.1
-    vtkCommonMath-9.1
-    vtkCommonMisc-9.1
-    vtkCommonSystem-9.1
-    vtkCommonTransforms-9.1
-    vtkCommonCore-9.1
-    vtkkissfft-9.1
-    vtkpugixml-9.1
-    vtksys-9.1
+    vtkFiltersGeneral-9.1${VTK_LIB_SUFFIX}
+    # vtkCommonComputationalGeometry-9.1${VTK_LIB_SUFFIX}
+    vtkFiltersCore-9.1${VTK_LIB_SUFFIX}
+    vtkCommonExecutionModel-9.1${VTK_LIB_SUFFIX}
+    vtkCommonDataModel-9.1${VTK_LIB_SUFFIX}
+    vtkCommonMath-9.1${VTK_LIB_SUFFIX}
+    vtkCommonMisc-9.1${VTK_LIB_SUFFIX}
+    vtkCommonSystem-9.1${VTK_LIB_SUFFIX}
+    vtkCommonTransforms-9.1${VTK_LIB_SUFFIX}
+    vtkCommonCore-9.1${VTK_LIB_SUFFIX}
+    vtkkissfft-9.1${VTK_LIB_SUFFIX}
+    vtkpugixml-9.1${VTK_LIB_SUFFIX}
+    vtksys-9.1${VTK_LIB_SUFFIX}
 )
