@@ -733,10 +733,10 @@ TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
                                        {1.3, 1.3, 1.3}},
                                       device)));
 
-    auto gt = core::Tensor::Init<bool>({true, true, true, true, false, false},
-                                       device);
-
-    EXPECT_TRUE(selected_boolean_mask.AllClose(gt, 0.01, 0.01));
+    const core::Tensor selected_boolean_mask_int =
+            selected_boolean_mask.To(core::Dtype::Int32).Div(255);
+    EXPECT_TRUE(selected_boolean_mask_int.AllClose(
+            core::Tensor::Init<int32_t>({1, 1, 1, 1, 0, 0}, device)));
 }
 
 }  // namespace tests
