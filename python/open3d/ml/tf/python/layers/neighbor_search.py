@@ -69,11 +69,13 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
                  ignore_query_point=False,
                  return_distances=False,
                  max_hash_table_size=32 * 2**20,
+                 index_dtype=tf.int32,
                  **kwargs):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         self.max_hash_table_size = max_hash_table_size
+        self.index_dtype = index_dtype
         super().__init__(autocast=False, **kwargs)
 
     def build(self, inp_shape):
@@ -164,7 +166,8 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             queries_row_splits=queries_row_splits,
             hash_table_splits=table.hash_table_splits,
             hash_table_index=table.hash_table_index,
-            hash_table_cell_splits=table.hash_table_cell_splits)
+            hash_table_cell_splits=table.hash_table_cell_splits,
+            index_dtype=self.index_dtype)
         return result
 
 
@@ -209,11 +212,13 @@ class RadiusSearch(tf.keras.layers.Layer):
                  ignore_query_point=False,
                  return_distances=False,
                  normalize_distances=False,
+                 index_dtype=tf.int32,
                  **kwargs):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         self.normalize_distances = normalize_distances
+        self.index_dtype = index_dtype
         super().__init__(autocast=False, **kwargs)
 
     def build(self, inp_shape):
@@ -276,7 +281,8 @@ class RadiusSearch(tf.keras.layers.Layer):
                                    queries=queries,
                                    radii=radii,
                                    points_row_splits=points_row_splits,
-                                   queries_row_splits=queries_row_splits)
+                                   queries_row_splits=queries_row_splits,
+                                   index_dtype=self.index_dtype)
         return result
 
 
@@ -320,10 +326,12 @@ class KNNSearch(tf.keras.layers.Layer):
                  metric='L2',
                  ignore_query_point=False,
                  return_distances=False,
+                 index_dtype=tf.int32,
                  **kwargs):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
+        self.index_dtype = index_dtype
         super().__init__(autocast=False, **kwargs)
 
     def build(self, inp_shape):
@@ -383,5 +391,6 @@ class KNNSearch(tf.keras.layers.Layer):
                                 queries=queries,
                                 k=k,
                                 points_row_splits=points_row_splits,
-                                queries_row_splits=queries_row_splits)
+                                queries_row_splits=queries_row_splits,
+                                index_dtype=self.index_dtype)
         return result
