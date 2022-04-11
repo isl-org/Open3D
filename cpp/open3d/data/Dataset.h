@@ -557,7 +557,7 @@ public:
     SwordModel(const std::string& data_root = "");
 
     /// \brief Returns path to the `filename`. By default it returns the path to
-    /// `mokey.obj` file. Refer documentation page for available options.
+    /// `sword.obj` file. Refer documentation page for available options.
     std::string GetPath(const std::string filename = "sword_model") const {
         return map_filename_to_path_.at(filename);
     };
@@ -584,8 +584,36 @@ public:
     CrateModel(const std::string& data_root = "");
 
     /// \brief Returns path to the `filename`. By default it returns the path to
-    /// `mokey.obj` file. Refer documentation page for available options.
+    /// `crate.obj` file. Refer documentation page for available options.
     std::string GetPath(const std::string filename = "crate_model") const {
+        return map_filename_to_path_.at(filename);
+    };
+
+    /// \brief Returns the map of filename to path. Refer documentation page for
+    /// available options.
+    std::unordered_map<std::string, std::string> GetPathMap() const {
+        return map_filename_to_path_;
+    }
+
+private:
+    /// Map to path for the avialble filenames.
+    std::unordered_map<std::string, std::string> map_filename_to_path_;
+};
+
+/// \class FlightHelmetModel
+/// \brief Data class for `FlightHelmetModel` contains a flight helmet model
+/// file, along with material and various other texture files. The model file
+/// can be accessed using `GetPath()`, however in order to access the paths to
+/// the texture files one may use `GetPath(filename)` method or get the
+/// unordered map of filename to path using `GetPathMap()`.
+class FlightHelmetModel : public SingleDownloadDataset {
+public:
+    FlightHelmetModel(const std::string& data_root = "");
+
+    /// \brief Returns path to the `filename`. By default it returns the path to
+    /// `FlightHelmet.gltf` file. Refer documentation page for available
+    /// options.
+    std::string GetPath(const std::string filename = "flight_helmet") const {
         return map_filename_to_path_.at(filename);
     };
 
