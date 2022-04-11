@@ -64,11 +64,11 @@ namespace core {
 namespace nns {
 
 // L2 + select kernel for k == 1, implements re-use of ||c||^2
-template <typename T, int kRowsPerBlock, int kBlockSize>
+template <typename T, typename TIndex, int kRowsPerBlock, int kBlockSize>
 __global__ void l2SelectMin1(T* productDistances,
                              T* centroidDistances,
                              T* outDistances,
-                             int32_t* outIndices,
+                             TIndex* outIndices,
                              int num_points,
                              int dim) {
     // Each block handles kRowsPerBlock rows of the distances (results)
@@ -161,11 +161,15 @@ __global__ void l2SelectMin1(T* productDistances,
 }
 
 // L2 + select kernel for k > 1, no re-use of ||c||^2
-template <typename T, int NumWarpQ, int NumThreadQ, int ThreadsPerBlock>
+template <typename T,
+          typename TIndex,
+          int NumWarpQ,
+          int NumThreadQ,
+          int ThreadsPerBlock>
 __global__ void l2SelectMinK(T* productDistances,
                              T* centroidDistances,
                              T* outDistances,
-                             int32_t* outIndices,
+                             TIndex* outIndices,
                              int k,
                              int dim,
                              int num_cols,
@@ -204,7 +208,7 @@ __global__ void l2SelectMinK(T* productDistances,
     }
 }
 
-template <typename T>
+template <typename T, typename TIndex>
 void runL2SelectMin(const cudaStream_t stream,
                     Tensor& productDistances,
                     Tensor& centroidDistances,
@@ -229,11 +233,11 @@ void runL2SelectMin(const cudaStream_t stream,
         auto grid =
                 dim3(utility::DivUp(outDistances.GetShape(0), kRowsPerBlock));
 
-        l2SelectMin1<T, kRowsPerBlock, kThreadsPerBlock>
+        l2SelectMin1<T, TIndex, kRowsPerBlock, kThreadsPerBlock>
                 <<<grid, block, 0, stream>>>(productDistances.GetDataPtr<T>(),
                                              centroidDistances.GetDataPtr<T>(),
                                              outDistances.GetDataPtr<T>(),
-                                             outIndices.GetDataPtr<int32_t>(),
+                                             outIndices.GetDataPtr<TIndex>(),
                                              (int)productDistances.GetShape(0),
                                              (int)productDistances.GetShape(1));
     } else {
@@ -241,12 +245,12 @@ void runL2SelectMin(const cudaStream_t stream,
 
 #define RUN_L2_SELECT(BLOCK, NUM_WARP_Q, NUM_THREAD_Q)                     \
     do {                                                                   \
-        l2SelectMinK<T, NUM_WARP_Q, NUM_THREAD_Q, BLOCK>                   \
+        l2SelectMinK<T, TIndex, NUM_WARP_Q, NUM_THREAD_Q, BLOCK>           \
                 <<<grid, BLOCK, 0, stream>>>(                              \
                         productDistances.GetDataPtr<T>(),                  \
                         centroidDistances.GetDataPtr<T>(),                 \
                         outDistances.GetDataPtr<T>(),                      \
-                        outIndices.GetDataPtr<int32_t>(), k,               \
+                        outIndices.GetDataPtr<TIndex>(), k,                \
                         productDistances.GetShape(1), num_cols, tile_cols, \
                         Limits<T>::getMax());                              \
     } while (0)
