@@ -182,11 +182,11 @@ public:
             double strength,
             FilterScope scope = FilterScope::All) const;
 
-    /// \brief Function to smooth triangle mesh with simple neighbour average.
+    /// \brief Function to smooth triangle mesh with simple neighbors average.
     ///
     /// \f$v_o = \frac{v_i + \sum_{n \in N} v_n)}{|N| + 1}\f$, with \f$v_i\f$
     /// being the input value, \f$v_o\f$ the output value, and \f$N\f$ is the
-    /// set of adjacent neighbours.
+    /// set of adjacent neighbors.
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
@@ -198,8 +198,8 @@ public:
     ///
     /// \f$v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)\f$,
     /// with \f$v_i\f$ being the input value, \f$v_o\f$ the output value,
-    /// \f$N\f$ is the set of adjacent neighbours, \f$w_n\f$ is the weighting of
-    /// the neighbour based on the inverse distance (closer neighbours have
+    /// \f$N\f$ is the set of adjacent neighbors, \f$w_n\f$ is the weighting of
+    /// the neighbors based on the inverse distance (closer neighbors have
     /// higher weight),
     ///
     /// \param number_of_iterations defines the number of repetitions
@@ -769,7 +769,7 @@ protected:
     /// \brief Function that computes for each edge in the triangle mesh and
     /// passed as parameter edges_to_vertices the cot weight.
     ///
-    /// \param edges_to_vertices map from edge to vector of neighbouring
+    /// \param edges_to_vertices map from edge to vector of neighboring
     /// vertices.
     /// \param min_weight minimum weight returned. Weights smaller than this
     /// get clamped.

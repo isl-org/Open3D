@@ -671,20 +671,31 @@ TEST_P(PointCloudPermuteDevices, CreateFromRGBDOrDepthImageWithNormals) {
     EXPECT_TRUE(pcd_out.GetPointNormals().AllClose(t_normal_ref));
 }
 
-TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
+TEST_P(PointCloudPermuteDevices, SelectPoints) {
     core::Device device = GetParam();
 
-    data::PCDPointCloud sample_pcd;
-    // Sanity test to visualize
-    t::geometry::PointCloud pcd =
-            t::geometry::PointCloud::FromLegacy(
-                    *io::CreatePointCloudFromFile(sample_pcd.GetPath()))
-                    .To(device);
-    auto pcd_down = pcd.VoxelDownSample(0.1);
+    const t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<float>({{0.1, 0.3, 0.9},
+                                       {0.9, 0.2, 0.4},
+                                       {0.3, 0.6, 0.8},
+                                       {0.2, 0.4, 0.2}},
+                                      device));
+    const core::Tensor boolean_mask =
+            core::Tensor::Init<bool>({true, false, false, true}, device);
 
-    const std::string file_path =
-            utility::filesystem::GetTempDirectoryPath() + "/down.pcd";
-    t::io::WritePointCloud(file_path, pcd_down);
+    const auto pcd_select = pcd_small.SelectPoints(boolean_mask, false);
+    EXPECT_TRUE(
+            pcd_select.GetPointPositions().AllClose(core::Tensor::Init<float>(
+                    {{0.1, 0.3, 0.9}, {0.2, 0.4, 0.2}}, device)));
+
+    const auto pcd_select_invert = pcd_small.SelectPoints(boolean_mask, true);
+    EXPECT_TRUE(pcd_select_invert.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{0.9, 0.2, 0.4}, {0.3, 0.6, 0.8}},
+                                      device)));
+}
+
+TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
+    core::Device device = GetParam();
 
     // Value test
     t::geometry::PointCloud pcd_small(
@@ -696,6 +707,36 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
     auto pcd_small_down = pcd_small.VoxelDownSample(1);
     EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(
             core::Tensor::Init<float>({{0, 0, 0}}, device)));
+}
+
+TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
+    core::Device device = GetParam();
+
+    const t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<float>({{1.0, 1.0, 1.0},
+                                       {1.1, 1.1, 1.1},
+                                       {1.2, 1.2, 1.2},
+                                       {1.3, 1.3, 1.3},
+                                       {5.0, 5.0, 5.0},
+                                       {5.1, 5.1, 5.1}},
+                                      device));
+
+    t::geometry::PointCloud output_pcd;
+    core::Tensor selected_boolean_mask;
+    std::tie(output_pcd, selected_boolean_mask) =
+            pcd_small.RemoveRadiusOutliers(3, 0.5);
+
+    EXPECT_TRUE(output_pcd.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{1.0, 1.0, 1.0},
+                                       {1.1, 1.1, 1.1},
+                                       {1.2, 1.2, 1.2},
+                                       {1.3, 1.3, 1.3}},
+                                      device)));
+
+    auto gt = core::Tensor::Init<bool>({true, true, true, true, false, false},
+                                       device);
+
+    EXPECT_TRUE(selected_boolean_mask.AllClose(gt, 0.01, 0.01));
 }
 
 }  // namespace tests

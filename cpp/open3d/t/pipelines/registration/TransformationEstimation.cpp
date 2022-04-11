@@ -72,18 +72,18 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
     AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
     core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
-    core::Tensor neighbour_indices =
+    core::Tensor neighbors_indices =
             correspondences.IndexGet({valid}).Reshape({-1});
     core::Tensor source_points_indexed =
             source.GetPointPositions().IndexGet({valid});
     core::Tensor target_points_indexed =
-            target.GetPointPositions().IndexGet({neighbour_indices});
+            target.GetPointPositions().IndexGet({neighbors_indices});
 
     core::Tensor error_t = (source_points_indexed - target_points_indexed);
     error_t.Mul_(error_t);
     double error = error_t.Sum({0, 1}).To(core::Float64).Item<double>();
     return std::sqrt(error /
-                     static_cast<double>(neighbour_indices.GetLength()));
+                     static_cast<double>(neighbors_indices.GetLength()));
 }
 
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
@@ -131,21 +131,21 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
     AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
     core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
-    core::Tensor neighbour_indices =
+    core::Tensor neighbors_indices =
             correspondences.IndexGet({valid}).Reshape({-1});
     core::Tensor source_points_indexed =
             source.GetPointPositions().IndexGet({valid});
     core::Tensor target_points_indexed =
-            target.GetPointPositions().IndexGet({neighbour_indices});
+            target.GetPointPositions().IndexGet({neighbors_indices});
     core::Tensor target_normals_indexed =
-            target.GetPointNormals().IndexGet({neighbour_indices});
+            target.GetPointNormals().IndexGet({neighbors_indices});
 
     core::Tensor error_t = (source_points_indexed - target_points_indexed)
                                    .Mul_(target_normals_indexed);
     error_t.Mul_(error_t);
     double error = error_t.Sum({0, 1}).To(core::Float64).Item<double>();
     return std::sqrt(error /
-                     static_cast<double>(neighbour_indices.GetLength()));
+                     static_cast<double>(neighbors_indices.GetLength()));
 }
 
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
@@ -217,7 +217,7 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
     double sqrt_lambda_photometric = sqrt(lambda_photometric);
 
     core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
-    core::Tensor neighbour_indices =
+    core::Tensor neighbors_indices =
             correspondences.IndexGet({valid}).Reshape({-1});
 
     // vs - source points (or vertices)
@@ -234,11 +234,11 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
     core::Tensor vs = source.GetPointPositions().IndexGet({valid});
     core::Tensor cs = source.GetPointColors().IndexGet({valid});
 
-    core::Tensor vt = target.GetPointPositions().IndexGet({neighbour_indices});
-    core::Tensor nt = target.GetPointNormals().IndexGet({neighbour_indices});
-    core::Tensor ct = target.GetPointColors().IndexGet({neighbour_indices});
+    core::Tensor vt = target.GetPointPositions().IndexGet({neighbors_indices});
+    core::Tensor nt = target.GetPointNormals().IndexGet({neighbors_indices});
+    core::Tensor ct = target.GetPointColors().IndexGet({neighbors_indices});
     core::Tensor dit = target.GetPointAttr("color_gradients")
-                               .IndexGet({neighbour_indices});
+                               .IndexGet({neighbors_indices});
 
     // vs_proj = vs - (vs - vt).dot(nt) * nt
     // d = (vs - vt).dot(nt)

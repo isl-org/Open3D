@@ -214,51 +214,31 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
-PointCloud PointCloud::SelectByIndex(const core::Tensor &indices,
-                                     bool invert /* = false */) const {
-    const int64_t length = this->GetPointPositions().GetLength();
-    core::AssertTensorDtype(indices, core::Dtype::Bool);
-    core::AssertTensorShape(indices, {length});
-    core::AssertTensorDevice(indices, GetDevice());
+PointCloud PointCloud::SelectPoints(const core::Tensor &boolean_mask,
+                                    bool invert /* = false */) const {
+    const int64_t length = GetPointPositions().GetLength();
+    core::AssertTensorDtype(boolean_mask, core::Dtype::Bool);
+    core::AssertTensorShape(boolean_mask, {length});
+    core::AssertTensorDevice(boolean_mask, GetDevice());
 
     core::Tensor indices_local;
     if (invert) {
-        indices_local = indices.LogicalNot();
+        indices_local = boolean_mask.LogicalNot();
     } else {
-        indices_local = indices;
+        indices_local = boolean_mask;
     }
 
     PointCloud pcd(GetDevice());
-    for (std::string attr : {"positions", "colors", "normals"}) {
-        if (this->HasPointAttr(attr)) {
-            pcd.SetPointAttr(
-                    attr,
-                    this->GetPointAttr(attr).IndexGet({indices_local}).Clone());
+    for (auto &kv : GetPointAttr()) {
+        if (HasPointAttr(kv.first)) {
+            pcd.SetPointAttr(kv.first,
+                             kv.second.IndexGet({indices_local}).Clone());
         }
     }
 
     utility::LogDebug("Pointcloud down sampled from {} points to {} points.",
                       length, pcd.GetPointPositions().GetLength());
     return pcd;
-}
-
-bool PointCloud::IsSimilar(const PointCloud &other,
-                           double search_distance,
-                           float inlier_fitness_threshold,
-                           float inlier_rmse_threshold) const {
-    auto result = t::pipelines::registration::EvaluateRegistration(
-            *this, other, search_distance,
-            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
-
-    utility::LogDebug("Inlier Fitness: {}, Inlier RMSE: {}", result.fitness_,
-                      result.inlier_rmse_);
-
-    if (result.fitness_ >= inlier_fitness_threshold &&
-        result.inlier_rmse_ <= inlier_rmse_threshold) {
-        return true;
-    } else {
-        return false;
-    }
 }
 
 PointCloud PointCloud::VoxelDownSample(
@@ -297,23 +277,25 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
                 "Illegal input parameters, number of points and radius must be "
                 "positive");
     }
-    core::nns::NearestNeighborSearch target_nns(this->GetPointPositions());
+    core::nns::NearestNeighborSearch target_nns(GetPointPositions());
 
-    bool check = target_nns.FixedRadiusIndex(search_radius);
+    const bool check = target_nns.FixedRadiusIndex(search_radius);
     if (!check) {
-        utility::LogError("FixedRadiusIndex index is not set.");
+        utility::LogError("Fixed radius search index is not set.");
     }
 
     core::Tensor indices, distance, row_splits;
     std::tie(indices, distance, row_splits) = target_nns.FixedRadiusSearch(
-            this->GetPointPositions(), search_radius, false);
+            GetPointPositions(), search_radius, false);
+    row_splits = row_splits.To(GetDevice());
 
-    int64_t size = row_splits.GetLength();
-    core::Tensor num_neighbours =
+    const int64_t size = row_splits.GetLength();
+    const core::Tensor num_neighbors =
             row_splits.Slice(0, 1, size) - row_splits.Slice(0, 0, size - 1);
 
-    core::Tensor valid = num_neighbours.Ge(static_cast<int64_t>(nb_points));
-    PointCloud pcd = this->SelectByIndex(valid);
+    const core::Tensor valid =
+            num_neighbors.Ge(static_cast<int64_t>(nb_points));
+    const PointCloud pcd = SelectPoints(valid);
 
     return std::make_tuple(pcd, valid);
 }

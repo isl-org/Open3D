@@ -59,10 +59,10 @@ static const std::unordered_map<std::string, std::string>
                  "normals are requested, the depth map is first filtered to "
                  "ensure smooth normals."},
                 {"max_nn",
-                 "NeighbourSearch max neighbours parameter [default = 30]."},
+                 "Neighbor search max neighbors parameter [default = 30]."},
                 {"radius",
-                 "[optional] NeighbourSearch radius parameter to use "
-                 "HybridSearch. [Recommended ~1.4x voxel size]."}};
+                 "neighbors search radius parameter to use HybridSearch. "
+                 "[Recommended ~1.4x voxel size]."}};
 
 void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
@@ -181,17 +181,10 @@ The attributes of the point cloud have different levels::
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
 
-    pointcloud.def("select_by_index", &PointCloud::SelectByIndex, "indices"_a,
-                   "invert"_a = false);
-    pointcloud.def(
-            "is_similar", &PointCloud::IsSimilar, "pointcloud"_a,
-            "search_distance"_a = 0.05, "inlier_fitness_threshold"_a = 0.99,
-            "inlier_rmse_threshold"_a = 0.0001,
-            "Returns true if two pointclouds are similar. "
-            "Two unorganised pointclouds are similar when, between the "
-            "correspondences of the two pointcloud the inliear fitness "
-            "is greater `AND` inlier rmse is smaller than the set threshold.");
-
+    pointcloud.def("select_points", &PointCloud::SelectPoints, "boolean_mask"_a,
+                   "invert"_a = false,
+                   "Select points from input pointcloud, based on boolean mask "
+                   "indices into output point cloud.");
     pointcloud.def(
             "voxel_down_sample",
             [](const PointCloud& pointcloud, const double voxel_size) {
@@ -200,11 +193,10 @@ The attributes of the point cloud have different levels::
             },
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);
-    pointcloud.def(
-            "remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
-            "nb_points"_a, "search_radius"_a,
-            "Function to remove points that have less than nb_points in a "
-            "sphere of a given radius.");
+    pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
+                   "nb_points"_a, "search_radius"_a,
+                   "Remove points that have less than nb_points neighbors in a "
+                   "sphere of a given search radius.");
 
     pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
                    py::call_guard<py::gil_scoped_release>(),
@@ -272,6 +264,8 @@ The attributes of the point cloud have different levels::
                                     map_shared_argument_docstrings);
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image",
                                     map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(m, "PointCloud", "select_points");
+    docstring::ClassMethodDocInject(m, "PointCloud", "remove_radius_outliers");
 }
 
 }  // namespace geometry

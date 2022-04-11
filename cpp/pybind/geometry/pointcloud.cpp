@@ -347,7 +347,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
     docstring::ClassMethodDocInject(
             m, "PointCloud", "cluster_dbscan",
             {{"eps",
-              "Density parameter that is used to find neighbouring points."},
+              "Density parameter that is used to find neighboring points."},
              {"min_points", "Minimum number of points to form a cluster."},
              {"print_progress",
               "If true the progress is visualized in the console."}});

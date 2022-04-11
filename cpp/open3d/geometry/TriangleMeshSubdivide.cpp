@@ -125,7 +125,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
     typedef std::unordered_map<Eigen::Vector2i, std::unordered_set<int>,
                                utility::hash_eigen<Eigen::Vector2i>>
             EdgeTrianglesMap;
-    typedef std::vector<std::unordered_set<int>> VertexNeighbours;
+    typedef std::vector<std::unordered_set<int>> VertexNeighbors;
 
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
@@ -147,7 +147,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
         // in manifold meshes this should not happen
         if (boundary_nbs.size() > 2) {
             utility::LogWarning(
-                    "[SubdivideLoop] boundary edge with > 2 neighbours, maybe "
+                    "[SubdivideLoop] boundary edge with > 2 neighbors, maybe "
                     "mesh is not manifold.");
         }
 
@@ -273,21 +273,21 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
     auto InsertTriangle = [&](int tidx, int vidx0, int vidx1, int vidx2,
                               std::shared_ptr<TriangleMesh>& mesh,
                               EdgeTrianglesMap& edge_to_triangles,
-                              VertexNeighbours& vertex_neighbours) {
+                              VertexNeighbors& vertex_neighbors) {
         mesh->triangles_[tidx] = Eigen::Vector3i(vidx0, vidx1, vidx2);
         edge_to_triangles[GetOrderedEdge(vidx0, vidx1)].insert(tidx);
         edge_to_triangles[GetOrderedEdge(vidx1, vidx2)].insert(tidx);
         edge_to_triangles[GetOrderedEdge(vidx2, vidx0)].insert(tidx);
-        vertex_neighbours[vidx0].insert(vidx1);
-        vertex_neighbours[vidx0].insert(vidx2);
-        vertex_neighbours[vidx1].insert(vidx0);
-        vertex_neighbours[vidx1].insert(vidx2);
-        vertex_neighbours[vidx2].insert(vidx0);
-        vertex_neighbours[vidx2].insert(vidx1);
+        vertex_neighbors[vidx0].insert(vidx1);
+        vertex_neighbors[vidx0].insert(vidx2);
+        vertex_neighbors[vidx1].insert(vidx0);
+        vertex_neighbors[vidx1].insert(vidx2);
+        vertex_neighbors[vidx2].insert(vidx0);
+        vertex_neighbors[vidx2].insert(vidx1);
     };
 
     EdgeTrianglesMap edge_to_triangles;
-    VertexNeighbours vertex_neighbours(vertices_.size());
+    VertexNeighbors vertex_neighbors(vertices_.size());
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         const auto& tria = triangles_[tidx];
         Eigen::Vector2i e0 = GetOrderedEdge(tria(0), tria(1));
@@ -303,12 +303,12 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
             utility::LogWarning("[SubdivideLoop] non-manifold edge.");
         }
 
-        vertex_neighbours[tria(0)].insert(tria(1));
-        vertex_neighbours[tria(0)].insert(tria(2));
-        vertex_neighbours[tria(1)].insert(tria(0));
-        vertex_neighbours[tria(1)].insert(tria(2));
-        vertex_neighbours[tria(2)].insert(tria(0));
-        vertex_neighbours[tria(2)].insert(tria(1));
+        vertex_neighbors[tria(0)].insert(tria(1));
+        vertex_neighbors[tria(0)].insert(tria(2));
+        vertex_neighbors[tria(1)].insert(tria(0));
+        vertex_neighbors[tria(1)].insert(tria(2));
+        vertex_neighbors[tria(2)].insert(tria(0));
+        vertex_neighbors[tria(2)].insert(tria(1));
     }
 
     auto old_mesh = std::make_shared<TriangleMesh>();
@@ -333,10 +333,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
 
         EdgeNewVertMap new_verts;
         EdgeTrianglesMap new_edge_to_triangles;
-        VertexNeighbours new_vertex_neighbours(n_new_vertices);
+        VertexNeighbors new_vertex_neighbors(n_new_vertices);
 
         for (size_t vidx = 0; vidx < old_mesh->vertices_.size(); ++vidx) {
-            UpdateVertex(int(vidx), old_mesh, new_mesh, vertex_neighbours[vidx],
+            UpdateVertex(int(vidx), old_mesh, new_mesh, vertex_neighbors[vidx],
                          edge_to_triangles);
         }
 
@@ -354,18 +354,18 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
                                        new_verts, edge_to_triangles);
 
             InsertTriangle(int(tidx) * 4 + 0, vidx0, vidx01, vidx20, new_mesh,
-                           new_edge_to_triangles, new_vertex_neighbours);
+                           new_edge_to_triangles, new_vertex_neighbors);
             InsertTriangle(int(tidx) * 4 + 1, vidx01, vidx1, vidx12, new_mesh,
-                           new_edge_to_triangles, new_vertex_neighbours);
+                           new_edge_to_triangles, new_vertex_neighbors);
             InsertTriangle(int(tidx) * 4 + 2, vidx12, vidx2, vidx20, new_mesh,
-                           new_edge_to_triangles, new_vertex_neighbours);
+                           new_edge_to_triangles, new_vertex_neighbors);
             InsertTriangle(int(tidx) * 4 + 3, vidx01, vidx12, vidx20, new_mesh,
-                           new_edge_to_triangles, new_vertex_neighbours);
+                           new_edge_to_triangles, new_vertex_neighbors);
         }
 
         old_mesh = std::move(new_mesh);
         edge_to_triangles = std::move(new_edge_to_triangles);
-        vertex_neighbours = std::move(new_vertex_neighbours);
+        vertex_neighbors = std::move(new_vertex_neighbors);
     }
 
     if (HasTriangleNormals()) {

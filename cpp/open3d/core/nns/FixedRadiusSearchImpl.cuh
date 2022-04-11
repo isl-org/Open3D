@@ -652,7 +652,7 @@ __global__ void WriteNeighborsHybridKernel(
 /// \param distances    Output array with the neighbors distances. May be null
 ///        if return_distances is false.
 ///
-/// \param counts    Output array with the neighbour counts.
+/// \param counts    Output array with the neighbors counts.
 ///
 /// \param point_index_table    The array storing the point indices for all
 ///        cells. Start and end of each cell is defined by

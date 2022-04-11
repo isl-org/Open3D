@@ -174,8 +174,8 @@ static core::Tensor GetCorrespondenceSetForPointCloudPair(
     if (!check) {
         utility::LogError("Index is not set.");
     }
-    core::Tensor target_indices, residual_distances_Tij, neighbour_counts;
-    std::tie(target_indices, residual_distances_Tij, neighbour_counts) =
+    core::Tensor target_indices, residual_distances_Tij, neighbors_counts;
+    std::tie(target_indices, residual_distances_Tij, neighbors_counts) =
             tpcd_j_nns.HybridSearch(tpcd_i_transformed_Tij.GetPointPositions(),
                                     distance_threshold, 1);
 

@@ -112,7 +112,7 @@ public:
     /// \return Tuple of Tensors, (indices, distances, counts):
     /// - indices: Tensor of shape {n, knn}, with dtype Int32.
     /// - distances: Tensor of shape {n, knn}, with dtype Float32.
-    /// - counts: Counts of neighbour for each query points. [Tensor
+    /// - counts: Counts of neighbors for each query points. [Tensor
     /// of shape {n}, with dtype Int32].
     std::tuple<Tensor, Tensor, Tensor> SearchHybrid(const Tensor &query_points,
                                                     double radius,

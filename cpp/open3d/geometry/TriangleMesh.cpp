@@ -937,8 +937,8 @@ TriangleMesh &TriangleMesh::RemoveNonManifoldEdges() {
 
 TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
     KDTreeFlann kdtree(*this);
-    // precompute all neighbours
-    utility::LogDebug("Precompute Neighbours");
+    // precompute all neighbors
+    utility::LogDebug("Precompute Neighbors");
     std::vector<std::vector<int>> nbs(vertices_.size());
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
@@ -946,7 +946,7 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
         std::vector<double> dists2;
         kdtree.SearchRadius(vertices_[idx], eps, nbs[idx], dists2);
     }
-    utility::LogDebug("Done Precompute Neighbours");
+    utility::LogDebug("Done Precompute Neighbors");
 
     bool has_vertex_normals = HasVertexNormals();
     bool has_vertex_colors = HasVertexColors();
@@ -1385,7 +1385,7 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
 
         for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
             const Eigen::Vector3i &tria_q = triangles_[tidx1];
-            // check if neighbour triangle
+            // check if neighbors triangle
             if (tria_p(0) == tria_q(0) || tria_p(0) == tria_q(1) ||
                 tria_p(0) == tria_q(2) || tria_p(1) == tria_q(0) ||
                 tria_p(1) == tria_q(1) || tria_p(1) == tria_q(2) ||

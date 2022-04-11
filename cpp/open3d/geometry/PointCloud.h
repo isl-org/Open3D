@@ -267,7 +267,7 @@ public:
     /// consistent tangent planes as described in Hoppe et al., "Surface
     /// Reconstruction from Unorganized Points", 1992.
     ///
-    /// \param k k nearest neighbour for graph reconstruction for normal
+    /// \param k k nearest neighbors for graph reconstruction for normal
     /// propagation.
     void OrientNormalsConsistentTangentPlane(size_t k);
 
@@ -344,7 +344,7 @@ public:
     /// Returns a list of point labels, -1 indicates noise according to
     /// the algorithm.
     ///
-    /// \param eps Density parameter that is used to find neighbouring points.
+    /// \param eps Density parameter that is used to find neighboring points.
     /// \param min_points Minimum number of points to form a cluster.
     /// \param print_progress If `true` the progress is visualized in the
     /// console.
@@ -372,7 +372,7 @@ public:
             const double probability = 0.99999999,
             utility::optional<int> seed = utility::nullopt) const;
 
-    /// \brief Factory function to create a pointcloud from a depth image and a
+    /// \brief Factory function to create a point cloud from a depth image and a
     /// camera model.
     ///
     /// Given depth value d at (u, v) image coordinate, the corresponding 3d
@@ -386,7 +386,7 @@ public:
     /// \param depth_trunc Truncated at \p depth_trunc distance.
     /// \param stride Sampling factor to support coarse point cloud extraction.
     ///
-    /// \return An empty pointcloud if the conversion fails.
+    /// \return An empty point cloud if the conversion fails.
     /// If \param project_valid_depth_only is true, return point cloud, which
     /// doesn't
     /// have nan point. If the value is false, return point cloud, which has
@@ -400,8 +400,8 @@ public:
             int stride = 1,
             bool project_valid_depth_only = true);
 
-    /// \brief Factory function to create a pointcloud from an RGB-D image and a
-    /// camera model.
+    /// \brief Factory function to create a point cloud from an RGB-D image and
+    /// a camera model.
     ///
     /// Given depth value d at (u, v) image coordinate, the corresponding 3d
     /// point is: z = d / depth_scale\n x = (u - cx) * z / fx\n y = (v - cy) * z
@@ -411,7 +411,7 @@ public:
     /// \param intrinsic Intrinsic parameters of the camera.
     /// \param extrinsic Extrinsic parameters of the camera.
     ///
-    /// \return An empty pointcloud if the conversion fails.
+    /// \return An empty point cloud if the conversion fails.
     /// If \param project_valid_depth_only is true, return point cloud, which
     /// doesn't
     /// have nan point. If the value is false, return point cloud, which has

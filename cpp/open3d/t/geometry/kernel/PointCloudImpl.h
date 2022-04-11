@@ -254,25 +254,25 @@ void EstimateCovariancesUsingHybridSearchCPU
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
-        int32_t* neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
-        int32_t* neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
+        int32_t* neighbors_indices_ptr = indices.GetDataPtr<int32_t>();
+        int32_t* neighbors_counts_ptr = counts.GetDataPtr<int32_t>();
         scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
                 points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     // NNS [Hybrid Search].
-                    const int32_t neighbour_offset = max_nn * workload_idx;
+                    const int32_t neighbors_offset = max_nn * workload_idx;
                     // Count of valid correspondences per point.
-                    const int32_t neighbour_count =
-                            neighbour_counts_ptr[workload_idx];
+                    const int32_t neighbors_count =
+                            neighbors_counts_ptr[workload_idx];
                     // Covariance is of shape {3, 3}, so it has an
                     // offset factor of 9 x workload_idx.
                     const int32_t covariances_offset = 9 * workload_idx;
 
                     EstimatePointWiseRobustNormalizedCovarianceKernel(
                             points_ptr,
-                            neighbour_indices_ptr + neighbour_offset,
-                            neighbour_count,
+                            neighbors_indices_ptr + neighbors_offset,
+                            neighbors_count,
                             covariances_ptr + covariances_offset);
                 });
     });
@@ -311,20 +311,20 @@ void EstimateCovariancesUsingKNNSearchCPU
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         auto points_ptr = points.GetDataPtr<scalar_t>();
-        auto neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
+        auto neighbors_indices_ptr = indices.GetDataPtr<int32_t>();
         auto covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
                 points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     // NNS [KNN Search].
-                    const int32_t neighbour_offset = nn_count * workload_idx;
+                    const int32_t neighbors_offset = nn_count * workload_idx;
                     // Covariance is of shape {3, 3}, so it has an offset factor
                     // of 9 x workload_idx.
                     const int32_t covariances_offset = 9 * workload_idx;
 
                     EstimatePointWiseRobustNormalizedCovarianceKernel(
                             points_ptr,
-                            neighbour_indices_ptr + neighbour_offset, nn_count,
+                            neighbors_indices_ptr + neighbors_offset, nn_count,
                             covariances_ptr + covariances_offset);
                 });
     });
@@ -690,15 +690,15 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseColorGradientKernel(
 
         int i = 1;
         for (; i < indices_count; i++) {
-            int64_t neighbour_idx_offset = 3 * indices_ptr[i];
+            int64_t neighbors_idx_offset = 3 * indices_ptr[i];
 
-            if (neighbour_idx_offset == -1) {
+            if (neighbors_idx_offset == -1) {
                 break;
             }
 
-            scalar_t vt_adj[3] = {points_ptr[neighbour_idx_offset],
-                                  points_ptr[neighbour_idx_offset + 1],
-                                  points_ptr[neighbour_idx_offset + 2]};
+            scalar_t vt_adj[3] = {points_ptr[neighbors_idx_offset],
+                                  points_ptr[neighbors_idx_offset + 1],
+                                  points_ptr[neighbors_idx_offset + 2]};
 
             // p' = p - d * n [where d = p.dot(n) - s]
             // Computing the scalar d.
@@ -709,9 +709,9 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseColorGradientKernel(
             scalar_t vt_proj[3] = {vt_adj[0] - d * nt[0], vt_adj[1] - d * nt[1],
                                    vt_adj[2] - d * nt[2]};
 
-            scalar_t it_adj = (colors_ptr[neighbour_idx_offset + 0] +
-                               colors_ptr[neighbour_idx_offset + 1] +
-                               colors_ptr[neighbour_idx_offset + 2]) /
+            scalar_t it_adj = (colors_ptr[neighbors_idx_offset + 0] +
+                               colors_ptr[neighbors_idx_offset + 1] +
+                               colors_ptr[neighbors_idx_offset + 2]) /
                               3.0;
 
             scalar_t A[3] = {vt_proj[0] - vt[0], vt_proj[1] - vt[1],
@@ -781,23 +781,23 @@ void EstimateColorGradientsUsingHybridSearchCPU
         auto points_ptr = points.GetDataPtr<scalar_t>();
         auto normals_ptr = normals.GetDataPtr<scalar_t>();
         auto colors_ptr = colors.GetDataPtr<scalar_t>();
-        auto neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
-        auto neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
+        auto neighbors_indices_ptr = indices.GetDataPtr<int32_t>();
+        auto neighbors_counts_ptr = counts.GetDataPtr<int32_t>();
         auto color_gradients_ptr = color_gradients.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
                 points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     // NNS [Hybrid Search].
-                    int32_t neighbour_offset = max_nn * workload_idx;
+                    int32_t neighbors_offset = max_nn * workload_idx;
                     // Count of valid correspondences per point.
-                    int32_t neighbour_count =
-                            neighbour_counts_ptr[workload_idx];
+                    int32_t neighbors_count =
+                            neighbors_counts_ptr[workload_idx];
                     int32_t idx_offset = 3 * workload_idx;
 
                     EstimatePointWiseColorGradientKernel(
                             points_ptr, normals_ptr, colors_ptr, idx_offset,
-                            neighbour_indices_ptr + neighbour_offset,
-                            neighbour_count, color_gradients_ptr);
+                            neighbors_indices_ptr + neighbors_offset,
+                            neighbors_count, color_gradients_ptr);
                 });
     });
 
@@ -840,17 +840,17 @@ void EstimateColorGradientsUsingKNNSearchCPU
         auto points_ptr = points.GetDataPtr<scalar_t>();
         auto normals_ptr = normals.GetDataPtr<scalar_t>();
         auto colors_ptr = colors.GetDataPtr<scalar_t>();
-        auto neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
+        auto neighbors_indices_ptr = indices.GetDataPtr<int32_t>();
         auto color_gradients_ptr = color_gradients.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
                 points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    int32_t neighbour_offset = max_nn * workload_idx;
+                    int32_t neighbors_offset = max_nn * workload_idx;
                     int32_t idx_offset = 3 * workload_idx;
 
                     EstimatePointWiseColorGradientKernel(
                             points_ptr, normals_ptr, colors_ptr, idx_offset,
-                            neighbour_indices_ptr + neighbour_offset, nn_count,
+                            neighbors_indices_ptr + neighbors_offset, nn_count,
                             color_gradients_ptr);
                 });
     });

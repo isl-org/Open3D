@@ -125,11 +125,11 @@ void pybind_trianglemesh(py::module &m) {
                  "number_of_iterations"_a = 1, "strength"_a = 1,
                  "filter_scope"_a = MeshBase::FilterScope::All)
             .def("filter_smooth_simple", &TriangleMesh::FilterSmoothSimple,
-                 "Function to smooth triangle mesh with simple neighbour "
+                 "Function to smooth triangle mesh with simple neighbors "
                  "average. :math:`v_o = \\frac{v_i + \\sum_{n \\in N} "
                  "v_n)}{|N| + 1}`, with :math:`v_i` being the input value, "
                  ":math:`v_o` the output value, and :math:`N` is the set of "
-                 "adjacent neighbours.",
+                 "adjacent neighbors.",
                  "number_of_iterations"_a = 1,
                  "filter_scope"_a = MeshBase::FilterScope::All)
             .def("filter_smooth_laplacian",
@@ -137,9 +137,9 @@ void pybind_trianglemesh(py::module &m) {
                  "Function to smooth triangle mesh using Laplacian. :math:`v_o "
                  "= v_i \\cdot \\lambda (sum_{n \\in N} w_n v_n - v_i)`, with "
                  ":math:`v_i` being the input value, :math:`v_o` the output "
-                 "value, :math:`N` is the  set of adjacent neighbours, "
-                 ":math:`w_n` is the weighting of the neighbour based on the "
-                 "inverse distance (closer neighbours have higher weight), and "
+                 "value, :math:`N` is the  set of adjacent neighbors, "
+                 ":math:`w_n` is the weighting of the neighbors based on the "
+                 "inverse distance (closer neighbors have higher weight), and "
                  "lambda_filter is the smoothing parameter.",
                  "number_of_iterations"_a = 1, "lambda_filter"_a = 0.5,
                  "filter_scope"_a = MeshBase::FilterScope::All)
@@ -246,7 +246,7 @@ void pybind_trianglemesh(py::module &m) {
                  &TriangleMesh::SamplePointsPoissonDisk,
                  "Function to sample points from the mesh, where each point "
                  "has "
-                 "approximately the same distance to the neighbouring points "
+                 "approximately the same distance to the neighboring points "
                  "(blue "
                  "noise). Method is based on Yuksel, \"Sample Elimination for "
                  "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
