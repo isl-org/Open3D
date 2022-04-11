@@ -288,9 +288,7 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     auto point_ = point.To(core::Device(), core::Dtype::Float64).Contiguous();
     auto normal_ = normal.To(core::Device(), core::Dtype::Float64).Contiguous();
 
-    std::cerr << "before polydata\n";
     auto polydata = CreateVtkPolyDataFromGeometry(*this);
-    std::cerr << "after polydata\n";
 
     vtkNew<vtkPlane> clipPlane;
     clipPlane->SetNormal(normal_.GetDataPtr<double>());

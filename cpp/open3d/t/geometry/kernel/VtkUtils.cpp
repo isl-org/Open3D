@@ -70,8 +70,6 @@ vtkSmartPointer<vtkPoints> CreateVtkPointsFromTensor(
 
 vtkSmartPointer<vtkCellArray> CreateVtkCellArrayFromTensor(
         const core::Tensor& tensor) {
-    std::cerr << "create cellarr\n";
-
     vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
 
     core::AssertTensorShape(tensor, {utility::nullopt, utility::nullopt});
@@ -152,8 +150,6 @@ struct CreateTensorFromVtkDataArrayWorker {
         auto dtype = core::Dtype::FromType<TTensor>();
         int64_t length = array->GetNumberOfTuples();
         int64_t num_components = array->GetNumberOfComponents();
-        // std::cerr << "len " << length << "  num_components " <<
-        // num_components <<  "  dtype " << dtype.ToString() << "\n";
 
         result = core::Tensor({length, num_components}, dtype);
 
@@ -169,7 +165,6 @@ struct CreateTensorFromVtkDataArrayWorker {
 
 core::Tensor CreateTensorFromVtkDataArray(vtkDataArray* array) {
     CreateTensorFromVtkDataArrayWorker worker;
-    // std::cerr << "array dtype " << array->GetDataType() << "\n";
     typedef vtkTypeList_Create_7(float, double, int32_t, int64_t, uint32_t,
                                  uint64_t, long long) ArrayTypes;
     vtkArrayDispatch::DispatchByValueType<ArrayTypes>::Execute(array, worker);
@@ -190,7 +185,6 @@ core::Tensor CreateTensorFromVtkCellArray(vtkCellArray* cells) {
                     cell_size, i, cells->GetCellSize(i));
         }
     }
-    // std::cerr << " connectivity " << cells->GetConnectivityArray() << "\n";
     core::Tensor result =
             CreateTensorFromVtkDataArray(cells->GetConnectivityArray());
     if (num_cells * cell_size != result.NumElements()) {
