@@ -476,8 +476,8 @@ CrateModel::CrateModel(const std::string& data_root)
               /*no_extract =*/false,
               data_root) {
     const std::string extract_dir = Dataset::GetExtractDir();
-    map_filename_to_path_ = {{"create_material", extract_dir + "/crate.mtl"},
-                             {"create_model", extract_dir + "/crate.obj"},
+    map_filename_to_path_ = {{"crate_material", extract_dir + "/crate.mtl"},
+                             {"crate_model", extract_dir + "/crate.obj"},
                              {"texture_image", extract_dir + "/crate.jpg"}};
 }
 
