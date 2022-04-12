@@ -311,11 +311,30 @@ public:
     /// \return Rotated point cloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// \brief Select points from input pointcloud, based on boolean mask
+    /// indices into output point cloud.
+    ///
+    /// \param boolean_mask Boolean indexing tensor of shape {n,} containing
+    /// true value for the indices that is to be selected.
+    /// \param invert Set to `True` to invert the selection of indices.
+    PointCloud SelectPoints(const core::Tensor &boolean_mask,
+                            bool invert = false) const;
+
     /// \brief Downsamples a point cloud with a specified voxel size.
     /// \param voxel_size Voxel size. A positive number.
     PointCloud VoxelDownSample(double voxel_size,
                                const core::HashBackendType &backend =
                                        core::HashBackendType::Default) const;
+
+    /// \brief Remove points that have less than \p nb_points neighbors in a
+    /// sphere of a given radius.
+    ///
+    /// \param nb_points Number of neighbor points required within the radius.
+    /// \param search_radius Radius of the sphere.
+    /// \return tuple of filtered PointCloud and boolean indexing tensor
+    /// w.r.t. input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
+            size_t nb_points, double search_radius) const;
 
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
@@ -325,8 +344,8 @@ public:
     /// exist, the estimated normals are oriented with respect to the same.
     /// It uses KNN search if only max_nn parameter is provided, and
     /// HybridSearch if radius parameter is also provided.
-    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
-    /// \param radius [optional] NeighbourSearch radius parameter to use
+    /// \param max_nn Neighbor search max neighbors parameter [Default = 30].
+    /// \param radius [optional] Neighbor search radius parameter to use
     /// HybridSearch. [Recommended ~1.4x voxel size].
     void EstimateNormals(
             const int max_nn = 30,
@@ -336,8 +355,8 @@ public:
     /// then HybridSearch is used, otherwise KNN-Search is used.
     /// Reference: Park, Q.-Y. Zhou, and V. Koltun,
     /// Colored Point Cloud Registration Revisited, ICCV, 2017.
-    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
-    /// \param radius [optional] NeighbourSearch radius parameter to use
+    /// \param max_nn Neighbor search max neighbors parameter [Default = 30].
+    /// \param radius [optional] Neighbor search radius parameter to use
     /// HybridSearch. [Recommended ~1.4x voxel size].
     void EstimateColorGradients(
             const int max_nn = 30,
