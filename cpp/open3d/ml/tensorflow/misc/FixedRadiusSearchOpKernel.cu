@@ -34,7 +34,7 @@ using namespace open3d;
 using namespace fixed_radius_search_opkernel;
 using namespace tensorflow;
 
-template <class T>
+template <class T, class TIndex>
 class FixedRadiusSearchOpKernelCUDA : public FixedRadiusSearchOpKernel {
 public:
     explicit FixedRadiusSearchOpKernelCUDA(OpKernelConstruction* construction)
@@ -55,13 +55,13 @@ public:
                 tensorflow::Tensor& query_neighbors_row_splits) {
         auto device = context->eigen_gpu_device();
 
-        OutputAllocator<T> output_allocator(context);
+        OutputAllocator<T, TIndex> output_allocator(context);
 
         void* temp_ptr = nullptr;
         size_t temp_size = 0;
 
         // determine temp_size
-        open3d::core::nns::impl::FixedRadiusSearchCUDA(
+        open3d::core::nns::impl::FixedRadiusSearchCUDA<T, TIndex>(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
@@ -84,7 +84,7 @@ public:
         temp_ptr = temp_tensor.flat<uint8_t>().data();
 
         // actually run the search
-        open3d::core::nns::impl::FixedRadiusSearchCUDA(
+        open3d::core::nns::impl::FixedRadiusSearchCUDA<T, TIndex>(
                 device.stream(), temp_ptr, temp_size, texture_alignment,
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
@@ -104,14 +104,16 @@ private:
     int texture_alignment;
 };
 
-#define REG_KB(type)                                                  \
-    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")           \
-                                    .Device(DEVICE_GPU)               \
-                                    .TypeConstraint<type>("T")        \
-                                    .HostMemory("radius")             \
-                                    .HostMemory("points_row_splits")  \
-                                    .HostMemory("queries_row_splits") \
-                                    .HostMemory("hash_table_splits"), \
-                            FixedRadiusSearchOpKernelCUDA<type>);
-REG_KB(float)
+#define REG_KB(type, itype)                                               \
+    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")               \
+                                    .Device(DEVICE_GPU)                   \
+                                    .TypeConstraint<type>("T")            \
+                                    .TypeConstraint<itype>("index_dtype") \
+                                    .HostMemory("radius")                 \
+                                    .HostMemory("points_row_splits")      \
+                                    .HostMemory("queries_row_splits")     \
+                                    .HostMemory("hash_table_splits"),     \
+                            FixedRadiusSearchOpKernelCUDA<type, itype>);
+REG_KB(float, int)
+REG_KB(float, long)
 #undef REG_KB

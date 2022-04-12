@@ -38,21 +38,20 @@
 namespace fixed_radius_search_opkernel {
 
 // class for the allocator object
-template <class T>
+template <class T, class TIndex>
 class OutputAllocator {
 public:
     OutputAllocator(tensorflow::OpKernelContext* context) : context(context) {}
 
-    void AllocIndices(int32_t** ptr, size_t num) {
+    void AllocIndices(TIndex** ptr, size_t num) {
         using namespace tensorflow;
         *ptr = nullptr;
         Tensor* tensor = 0;
         TensorShape shape({int64_t(num)});
         OP_REQUIRES_OK(context, context->allocate_output(0, shape, &tensor));
-        auto flat_tensor = tensor->flat<int32>();
-        static_assert(sizeof(int32) == sizeof(int32_t),
-                      "int32 and int32_t not compatible");
-        *ptr = (int32_t*)flat_tensor.data();
+
+        auto flat_tensor = tensor->flat<TIndex>();
+        *ptr = (TIndex*)flat_tensor.data();
     }
 
     void AllocDistances(T** ptr, size_t num) {

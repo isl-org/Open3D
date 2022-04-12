@@ -30,6 +30,8 @@
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "torch/script.h"
 
+using namespace open3d::core::nns;
+
 template <class T>
 void BuildSpatialHashTableCUDA(const torch::Tensor& points,
                                double radius,
@@ -45,7 +47,7 @@ void BuildSpatialHashTableCUDA(const torch::Tensor& points,
     size_t temp_size = 0;
 
     // determine temp_size
-    open3d::core::nns::impl::BuildSpatialHashTableCUDA(
+    impl::BuildSpatialHashTableCUDA(
             stream, temp_ptr, temp_size, texture_alignment, points.size(0),
             points.data_ptr<T>(), T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), hash_table_splits.data(),
@@ -57,7 +59,7 @@ void BuildSpatialHashTableCUDA(const torch::Tensor& points,
     auto temp_tensor = CreateTempTensor(temp_size, device, &temp_ptr);
 
     // actually build the table
-    open3d::core::nns::impl::BuildSpatialHashTableCUDA(
+    impl::BuildSpatialHashTableCUDA(
             stream, temp_ptr, temp_size, texture_alignment, points.size(0),
             points.data_ptr<T>(), T(radius), points_row_splits.size(0),
             points_row_splits.data_ptr<int64_t>(), hash_table_splits.data(),
