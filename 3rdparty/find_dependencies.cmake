@@ -1347,7 +1347,10 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
         TARGETS MKL::mkl_intel_ilp64 MKL::mkl_core MKL::mkl_tbb_thread
         INCLUDE_DIRS MKL_INCLUDE
     )
-    # Define OPEN3D_USE_ONEAPI_PACKAGES macro
+    # MKL macros
+    target_compile_options(3rdparty_mkl INTERFACE "$<$<PLATFORM_ID:Linux,Darwin>:$<$<COMPILE_LANGUAGE:CXX>:-m64>>")
+    target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    # Other global macros: OPEN3D_USE_ONEAPI_PACKAGES
     target_compile_definitions(3rdparty_mkl INTERFACE OPEN3D_USE_ONEAPI_PACKAGES)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
 else() # USE_ONEAPI_PACKAGES
