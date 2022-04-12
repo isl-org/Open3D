@@ -194,18 +194,7 @@ int main(int argc, char *argv[]) {
     bool is_geometry_added = false;
     int idx = 0;
     const auto bag_metadata = bag_reader.GetMetadata();
-    utility::LogInfo("Recorded with device {}", bag_metadata.device_name_);
-    utility::LogInfo("    Serial number: {}", bag_metadata.serial_number_);
-    utility::LogInfo("Video resolution: {}x{}", bag_metadata.width_,
-                     bag_metadata.height_);
-    utility::LogInfo("      frame rate: {}", bag_metadata.fps_);
-    utility::LogInfo(
-            "      duration: {:.6f}s",
-            static_cast<double>(bag_metadata.stream_length_usec_) * 1e-6);
-    utility::LogInfo("      color pixel format: {}",
-                     bag_metadata.color_format_);
-    utility::LogInfo("      depth pixel format: {}",
-                     bag_metadata.depth_format_);
+    utility::LogInfo("{}", bag_metadata.ToString());
 
     if (write_image) {
         io::WriteIJsonConvertibleToJSON(
