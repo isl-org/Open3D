@@ -39,13 +39,28 @@ Rendering models
 Rendering ``TriangleMesh``'es of 3D models
 """"""""""""""""""""""""""""""""""""""""""
 
-In the Basic :doc:`visualizer_basic` tutorial, we demonstrated how to apply materials manually to built-in Open3D geometries. It is also possible to load ``TriangleMesh``'es from full 3D models using the ``o3d.io.read_triangle_mesh()`` method, as shown below:
+In the Basic :doc:`visualizer_basic` tutorial, we showed how to use Open3D datasets. In this tutorial, we will likewise be using Open3D datasets to load 3D models.
+
+.. seealso::
+
+    For more information on datasets, please refer to the 
+    :doc:`Open3D Datasets page <../data/index>`
+
+We also demonstrated how to apply materials manually to built-in Open3D geometries. It is also possible to load ``TriangleMesh``'es from full 3D models using the ``o3d.io.read_triangle_mesh()`` method, as you will see below: 
 
 
 .. code-block:: python
 
-    >>> monkey_model = o3d.io.read_triangle_mesh('examples/test_data/monkey/monkey.obj')
-    >>> vis.draw(monkey_model)
+    # Initialize the monkey dataset with downloaded and extracted 3D model
+    >>> monkey_model = o3d.data.MonkeyModel()
+    [Open3D INFO] Downloading https://github.com/isl-org/open3d_downloads/releases/download/20220301-data/MonkeyModel.zip
+    [Open3D INFO] Downloaded to /home/intel/open3d_data/download/MonkeyModel/MonkeyModel.zip
+    [Open3D INFO] Extracting /home/intel/open3d_data/download/MonkeyModel/MonkeyModel.zip.
+    [Open3D INFO] Extracted to /home/intel/open3d_data/extract/MonkeyModel.
+    # Extract Triangle Mesh data from the preloaded monkey dataset
+    >>> monkey = o3d.io.read_triangle_mesh(monkey_model.path)
+    >>> vis.draw(monkey)
+
 
 That will automatically apply the default material which exists in a 3D model:
 
@@ -64,7 +79,7 @@ In the Basic :doc:`visualizer_basic` tutorial, we rendered ``TriangleMesh`` and 
 
 .. code-block:: python
 
-    >>> monkey_model = o3d.io.read_triangle_model('examples/test_data/monkey/monkey.obj')
+    >>> monkey_model = o3d.io.read_triangle_model(monkey.path)
     >>> vis.draw(monkey_model)
 
 Clearly, a staggering difference in rendering:
@@ -79,44 +94,29 @@ Rendering more complex models
 
 In the previous section (:ref:`rendering_models`) we have covered how to render complete 3D models with the ``open3d.io.read_triangle_model()`` method. This method can also handle more complex models containing a collection of materials and parts (sub-models) from which the complete object gets assembled.
 
-For this example, we will need to download / ``clone`` *glTF-Sample-Models*  from the KhronosGroup. `glTF (GL Transmission Format) <https://docs.fileformat.com/3d/gltf/>`_ is a 3D file format that stores 3D model information in JSON format.
+For this example, we will be rendering a model of a WWII-era flight helmet from the KhronosGroup *glTF-Sample-Models* . `glTF (GL Transmission Format) <https://docs.fileformat.com/3d/gltf/>`_ is a 3D file format that stores 3D model information in JSON format.
 
 
-.. attention::
+.. tip::
 
-   **Sameer's proposed replacement of the 4 bullet points below:**
-
-   From a command prompt, download sample glTF models from the Khronos Group's git repository with:
+    If you are interested in looking at other *glTF-Sample-Models*, you can go to the KhronosGroup GitHub repository and clone it at this URL:
     
- .. code-block:: sh
-
-     $ git -C .. clone https://github.com/KhronosGroup/glTF-Sample-Models
+    https://github.com/KhronosGroup/glTF-Sample-Models 
 
 
-First, **minimize your current Python terminal session and open a new one. In a new terminal session:**
 
-.. image:: https://user-images.githubusercontent.com/93158890/150047410-de591582-67c5-42bd-b644-764c36b8c4b8.jpg
-    :width: 800px
-
-1. Change Directory (``cd``) to where you would like the *glTF-Sample-Models* repository to be copied;
-2. Use the ``git clone`` command to download the *glTF-Sample-Models* repository:
-
-.. code-block:: sh
-
-    $ git clone https://github.com/KhronosGroup/glTF-Sample-Models
-
-3. Wait for the cloning process to complete. The command prompt will return when the process is done.
-4. Close the command prompt window you've just used for the ``git clone`` command.
-
-Now that we have all *glTF-Sample-Models* files in place, let's switch back to our Python terminal session and load the model of a WWII-era flight helmet:
+Now, let's run the code which loads and renders the 3D model of a flight helmet:
 
 .. code-block:: python
 
-    >>> helmet = o3d.io.read_triangle_model('../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf')
+    >>> helmet_model = o3d.data.FlightHelmetModel()
+    [Open3D INFO] Downloading https://github.com/isl-org/open3d_downloads/releases/download/20220301-data/FlightHelmetModel.zip
+    [Open3D INFO] Downloaded to /home/intel/open3d_data/download/FlightHelmetModel/FlightHelmetModel.zip
+    [Open3D INFO] Extracting /home/intel/open3d_data/download/FlightHelmetModel/FlightHelmetModel.zip.
+    [Open3D INFO] Extracted to /home/intel/open3d_data/extract/FlightHelmetModel.
+    >>> helmet = o3d.io.read_triangle_model(helmet_model.path)
     >>> vis.draw(helmet)
     
-.. note::
-   In your case, the *glTF-Sample-Models* directory location may be different, depending on where you chose to clone it.
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611761-40f95b2b-d257-4f2b-a8c0-60a73b159b96.jpg
     :width: 700px
@@ -127,8 +127,9 @@ This and other complex models can also be rendered using the ``o3d.io.read_trian
 
 .. code-block:: python
 
-    >>> helmet = o3d.io.read_triangle_mesh('../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf')
+    >>> helmet = o3d.io.read_triangle_mesh(helmet_model.path)
     >>> vis.draw(helmet)
+
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611814-09c6fe17-d209-439d-8ae9-c186387fd698.jpg
     :width: 700px
@@ -140,11 +141,11 @@ This and other complex models can also be rendered using the ``o3d.io.read_trian
 Examining complex models
 ::::::::::::::::::::::::
 
-Let's re-load our ``FlightHelmet.gltf`` model with ``o3d.io.read_triangle_model()``:
+Let's re-load our ``FlightHelmetModel`` with ``o3d.io.read_triangle_model()``:
 
 .. code-block:: python
 
-    >>> helmet = o3d.io.read_triangle_model('../glTF-Sample-Models/2.0/FlightHelmet/glTF/FlightHelmet.gltf')
+    >>> helmet = o3d.io.read_triangle_model(helmet_model.path)
 
 Take a look at what the ``helmet`` object consists of. First, we find out its type:
 
@@ -309,7 +310,7 @@ Once again, in your terminal, enter:
 
 .. code-block:: python
 
-    >>> monkey = o3d.io.read_triangle_mesh('examples/test_data/monkey/monkey.obj')
+    >>> monkey = o3d.io.read_triangle_mesh(monkey_model.path)
 
 Here we are invoking the ``open3d.io`` library which allows us to read 3D model files and/or selectively extract their details. In this case, we are using the ``read_triangle_mesh()`` method for extracting the ``monkey.obj`` file ``TriangleMesh`` data. Now we convert it into **Open3D Tensor geometry**:
 
