@@ -523,6 +523,96 @@ void pybind_knot(py::module& m) {
     docstring::ClassMethodDocInject(m, "KnotMesh", "path");
 }
 
+void pybind_monkey(py::module& m) {
+    // open3d.data.MonkeyModel
+    py::class_<MonkeyModel, PySimpleDataset<MonkeyModel>,
+               std::shared_ptr<MonkeyModel>, SingleDownloadDataset>
+            monkey(m, "MonkeyModel",
+                   "Data class for `MonkeyModel` contains a monkey model file, "
+                   "along with material and various other texture files. The "
+                   "model file can be accessed using `path`, however in order "
+                   "to access the paths to the texture files one may use "
+                   "path_map[\"filename\"]` method.");
+    monkey.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const MonkeyModel& monkey) { return monkey.GetPath(); },
+                    "Returns the `monkey` model file.")
+            .def_property_readonly("path_map", &MonkeyModel::GetPathMap,
+                                   "Returns the map of filename to path. Refer "
+                                   "documentation page for available options.");
+    docstring::ClassMethodDocInject(m, "MonkeyModel", "path");
+    docstring::ClassMethodDocInject(m, "MonkeyModel", "path_map");
+}
+
+void pybind_sword(py::module& m) {
+    // open3d.data.SwordModel
+    py::class_<SwordModel, PySimpleDataset<SwordModel>,
+               std::shared_ptr<SwordModel>, SingleDownloadDataset>
+            sword(m, "SwordModel",
+                  "Data class for `SwordModel` contains a monkey model file, "
+                  "along with material and various other texture files. The "
+                  "model file can be accessed using `path`, however in order "
+                  "to access the paths to the texture files one may use "
+                  "path_map[\"filename\"]` method.");
+    sword.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const SwordModel& sword) { return sword.GetPath(); },
+                    "Returns the `sword` model file.")
+            .def_property_readonly("path_map", &SwordModel::GetPathMap,
+                                   "Returns the map of filename to path. Refer "
+                                   "documentation page for available options.");
+    docstring::ClassMethodDocInject(m, "SwordModel", "path");
+    docstring::ClassMethodDocInject(m, "SwordModel", "path_map");
+}
+
+void pybind_crate(py::module& m) {
+    // open3d.data.CrateModel
+    py::class_<CrateModel, PySimpleDataset<CrateModel>,
+               std::shared_ptr<CrateModel>, SingleDownloadDataset>
+            crate(m, "CrateModel",
+                  "Data class for `CrateModel` contains a crate model file, "
+                  "along with material and various other texture files. The "
+                  "model file can be accessed using `path`, however in order "
+                  "to access the paths to the texture files one may use "
+                  "path_map[\"filename\"]` method.");
+    crate.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const CrateModel& crate) { return crate.GetPath(); },
+                    "Returns the `crate` model file.")
+            .def_property_readonly("path_map", &CrateModel::GetPathMap,
+                                   "Returns the map of filename to path. Refer "
+                                   "documentation page for available options.");
+    docstring::ClassMethodDocInject(m, "CrateModel", "path");
+    docstring::ClassMethodDocInject(m, "CrateModel", "path_map");
+}
+
+void pybind_helmet(py::module& m) {
+    // open3d.data.FlightHelmetModel
+    py::class_<FlightHelmetModel, PySimpleDataset<FlightHelmetModel>,
+               std::shared_ptr<FlightHelmetModel>, SingleDownloadDataset>
+            helmet(m, "FlightHelmetModel",
+                   "Data class for `FlightHelmetModel` contains a flight "
+                   "helmet GLTF model file, along with material and various "
+                   "other texture files. The model file can be accessed using "
+                   "`path`, however in order to access the paths to the "
+                   "texture files one may use path_map[\"filename\"]` method.");
+    helmet.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const FlightHelmetModel& helmet) {
+                        return helmet.GetPath();
+                    },
+                    "Returns the `FlightHelmet.gltf` model file.")
+            .def_property_readonly("path_map", &FlightHelmetModel::GetPathMap,
+                                   "Returns the map of filename to path. Refer "
+                                   "documentation page for available options.");
+    docstring::ClassMethodDocInject(m, "FlightHelmetModel", "path");
+    docstring::ClassMethodDocInject(m, "FlightHelmetModel", "path_map");
+}
+
 void pybind_juneau(py::module& m) {
     // open3d.data.JuneauImage
     py::class_<JuneauImage, PySimpleDataset<JuneauImage>,
@@ -600,6 +690,10 @@ void pybind_data(py::module& m) {
     pybind_armadillo(m_submodule);
     pybind_bunny(m_submodule);
     pybind_knot(m_submodule);
+    pybind_monkey(m_submodule);
+    pybind_sword(m_submodule);
+    pybind_crate(m_submodule);
+    pybind_helmet(m_submodule);
     pybind_juneau(m_submodule);
     pybind_living_room_point_clouds(m_submodule);
     pybind_office_point_clouds(m_submodule);
