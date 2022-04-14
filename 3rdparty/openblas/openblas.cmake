@@ -9,8 +9,8 @@ endif()
 ExternalProject_Add(
     ext_openblas
     PREFIX openblas
-    URL https://github.com/xianyi/OpenBLAS/releases/download/v0.3.19/OpenBLAS-0.3.19.tar.gz
-    URL_HASH SHA256=947f51bfe50c2a0749304fbe373e00e7637600b0a47b78a51382aeb30ca08562
+    URL https://github.com/xianyi/OpenBLAS/releases/download/v0.3.20/OpenBLAS-0.3.20.tar.gz
+    URL_HASH SHA256=8495c9affc536253648e942908e88e097f2ec7753ede55aca52e5dead3029e3c
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/openblas"
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS}
