@@ -528,6 +528,169 @@ def test_knot():
     assert Path(knot.extract_dir) == gt_extract_dir
 
 
+def test_monkey():
+    gt_prefix = "MonkeyModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    monkey = o3d.data.MonkeyModel()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "albedo.png",
+        "ao": Path(gt_extract_dir) / "ao.png",
+        "metallic": Path(gt_extract_dir) / "metallic.png",
+        "monkey_material": Path(gt_extract_dir) / "monkey.mtl",
+        "monkey_model": Path(gt_extract_dir) / "monkey.obj",
+        "monkey_solid_material": Path(gt_extract_dir) / "monkey_solid.mtl",
+        "monkey_solid_model": Path(gt_extract_dir) / "monkey_solid.obj",
+        "normal": Path(gt_extract_dir) / "normal.png",
+        "roughness": Path(gt_extract_dir) / "roughness.png"
+    }
+
+    for file_name, file_path in monkey.path_map:
+        assert Path(file_path) == gt_path_map[file_name]
+        assert Path(file_path).is_file()
+
+    assert Path(monkey.path) == gt_extract_dir / "monkey.obj"
+    assert Path(monkey.path).is_file()
+
+    assert monkey.prefix == gt_prefix
+    assert Path(monkey.data_root) == gt_data_root
+    assert Path(monkey.download_dir) == gt_download_dir
+    assert Path(monkey.extract_dir) == gt_extract_dir
+
+
+def test_sword():
+    gt_prefix = "SwordModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    sword = o3d.data.SwordModel()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "sword_material": Path(gt_extract_dir) / "UV.mtl",
+        "sword_model": Path(gt_extract_dir) / "UV.obj",
+        "base_color": Path(gt_extract_dir) / "UV_blinn1SG_BaseColor.png",
+        "metallic": Path(gt_extract_dir) / "UV_blinn1SG_Metallic.png",
+        "normal": Path(gt_extract_dir) / "UV_blinn1SG_Normal.png",
+        "roughness": Path(gt_extract_dir) / "UV_blinn1SG_Roughness.png"
+    }
+
+    for file_name, file_path in sword.path_map:
+        assert Path(file_path) == gt_path_map[file_name]
+        assert Path(file_path).is_file()
+
+    assert Path(sword.path) == gt_extract_dir / "UV.obj"
+    assert Path(sword.path).is_file()
+
+    assert sword.prefix == gt_prefix
+    assert Path(sword.data_root) == gt_data_root
+    assert Path(sword.download_dir) == gt_download_dir
+    assert Path(sword.extract_dir) == gt_extract_dir
+
+
+def test_crate():
+    gt_prefix = "CrateModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    crate = o3d.data.CrateModel()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "crate_material": Path(gt_extract_dir) / "crate.mtl",
+        "crate_model": Path(gt_extract_dir) / "crate.obj",
+        "texture_image": Path(gt_extract_dir) / "crate.jpg"
+    }
+
+    for file_name, file_path in crate.path_map:
+        assert Path(file_path) == gt_path_map[file_name]
+        assert Path(file_path).is_file()
+
+    assert Path(crate.path) == gt_extract_dir / "crate.obj"
+    assert Path(crate.path).is_file()
+
+    assert crate.prefix == gt_prefix
+    assert Path(crate.data_root) == gt_data_root
+    assert Path(crate.download_dir) == gt_download_dir
+    assert Path(crate.extract_dir) == gt_extract_dir
+
+
+def test_flight_helmet():
+    gt_prefix = "FlightHelmetModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    crate = o3d.data.FlightHelmetModel()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "flight_helmet":
+            Path(gt_extract_dir) / "FlightHelmet.gltf",
+        "flight_helmet_bin":
+            Path(gt_extract_dir) / "FlightHelmet.bin",
+        "mat_glass_plastic_base":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_GlassPlasticMat_BaseColor.png",
+        "mat_glass_plastic_normal":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_GlassPlasticMat_Normal.png",
+        "mat_glass_plastic_occlusion_rough_metal":
+            Path(gt_extract_dir) / "FlightHelmet_Materials_GlassPlasticMat_"
+            "OcclusionRoughMetal.png",
+        "mat_leather_parts_base":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_LeatherPartsMat_BaseColor.png",
+        "mat_leather_parts_normal":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_LeatherPartsMat_Normal.png",
+        "mat_leather_parts_occlusion_rough_metal":
+            Path(gt_extract_dir) / "FlightHelmet_Materials_LeatherPartsMat_"
+            "OcclusionRoughMetal.png",
+        "mat_lenses_base":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_LensesMat_BaseColor.png",
+        "mat_lenses_normal":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_LensesMat_Normal.png",
+        "mat_lenses_occlusion_rough_metal":
+            Path(gt_extract_dir) / "FlightHelmet_Materials_LensesMat_"
+            "OcclusionRoughMetal.png",
+        "mat_metal_parts_base":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_MetalPartsMat_BaseColor.png",
+        "mat_metal_parts_normal":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_MetalPartsMat_Normal.png",
+        "mat_metal_parts_occlusion_rough_metal":
+            Path(gt_extract_dir) / "FlightHelmet_Materials_MetalPartsMat_"
+            "OcclusionRoughMetal.png",
+        "mat_rubber_wood_base":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_RubberWoodMat_BaseColor.png",
+        "mat_rubber_wood_normal":
+            Path(gt_extract_dir) /
+            "FlightHelmet_Materials_RubberWoodMat_Normal.png",
+        "mat_rubber_wood_occlusion_rough_metal":
+            Path(gt_extract_dir) / "FlightHelmet_Materials_RubberWoodMat_"
+            "OcclusionRoughMetal.png"
+    }
+
+    for file_name, file_path in crate.path_map:
+        assert Path(file_path) == gt_path_map[file_name]
+        assert Path(file_path).is_file()
+
+    assert Path(crate.path) == gt_extract_dir / "FlightHelmet.gltf"
+    assert Path(crate.path).is_file()
+
+    assert crate.prefix == gt_prefix
+    assert Path(crate.data_root) == gt_data_root
+    assert Path(crate.download_dir) == gt_download_dir
+    assert Path(crate.extract_dir) == gt_extract_dir
+
+
 def test_juneau():
     gt_prefix = "JuneauImage"
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
