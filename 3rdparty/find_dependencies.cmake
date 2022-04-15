@@ -1315,10 +1315,9 @@ endif()
 if(BUILD_SYCL_MODULE)
     option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." ON)
 else()
-    # TODO: set to OFF
-    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." ON)
+    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." OFF)
 endif()
-mark_as_advanced(USE_ONEAPI)
+mark_as_advanced(OPEN3D_USE_ONEAPI_PACKAGES)
 
 if(OPEN3D_USE_ONEAPI_PACKAGES)
     # oneTBB
