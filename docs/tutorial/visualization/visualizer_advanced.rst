@@ -99,13 +99,13 @@ For this example, we will be rendering a model of a WWII-era flight helmet from 
 
 .. tip::
 
-    If you are interested in looking at other *glTF-Sample-Models*, you can go to the KhronosGroup GitHub repository and clone it at this URL:
+    If you are interested in looking at other *glTF-Sample-Models*, you can go to the KhronosGroup GitHub repository and clone it from this URL:
     
     https://github.com/KhronosGroup/glTF-Sample-Models 
 
 
 
-Now, let's run the code which loads and renders the 3D model of a flight helmet:
+Now, let's run the code which loads and renders the full 3D model of a flight helmet:
 
 .. code-block:: python
 
@@ -247,7 +247,7 @@ Rendering sub-models
 ::::::::::::::::::::
 
 
-Just like in the previous loop example which displays all ``mesh_name`` properties, we can write a loop which renders each mesh separately:
+Just like in the previous loop example which displays all ``mesh_name`` and ``material_idx`` properties, we can write a loop which renders each mesh separately:
 
 .. code-block:: python
 
