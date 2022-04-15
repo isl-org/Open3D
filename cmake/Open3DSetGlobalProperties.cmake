@@ -1,3 +1,11 @@
+# Make hardening flags
+include(Open3DMakeHardeningFlags)
+open3d_make_hardening_flags(HARDENING_CFLAGS HARDENING_LDFLAGS)
+open3d_make_hardening_definitions(HARDENING_DEFINITIONS)
+message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS}")
+message(STATUS "Using security hardening linker flags: ${HARDENING_LDFLAGS}")
+message(STATUS "Using security hardening compiler definitions: ${HARDENING_DEFINITIONS}")
+
 # open3d_enable_strip(target)
 #
 # Enable binary strip. Only effective on Linux or macOS.
