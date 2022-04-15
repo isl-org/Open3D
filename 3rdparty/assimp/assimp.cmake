@@ -15,7 +15,7 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
-        -DCMAKE_CXX_FLAGS="-Wno-tautological-constant-compare"
+        -DCMAKE_CXX_FLAGS="-fno-fast-math"
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DASSIMP_NO_EXPORT=ON
