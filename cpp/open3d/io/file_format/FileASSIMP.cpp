@@ -144,6 +144,9 @@ bool ReadTriangleMeshUsingASSIMP(
         const std::string& filename,
         geometry::TriangleMesh& mesh,
         const ReadTriangleMeshOptions& params /*={}*/) {
+    utility::LogInfo("enable_post_processing: {}",
+                     params.enable_post_processing);
+
     Assimp::Importer importer;
 
     unsigned int post_process_flags = kPostProcessFlags_compulsory;
