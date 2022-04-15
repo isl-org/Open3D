@@ -328,18 +328,6 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # Add -fPIC for library and -fPIE for executable to compiler and linker. Does not add -pie !
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-include(Open3DMakeHardeningFlags)
-open3d_make_hardening_flags(HARDENING_CFLAGS HARDENING_LDFLAGS)
-open3d_make_hardening_definitions(HARDENING_DEFINITIONS)
-
-message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS}")
-message(STATUS "Using security hardening linker flags: ${HARDENING_LDFLAGS}")
-message(STATUS "Using security hardening compiler definitions: ${HARDENING_DEFINITIONS}")
-
-add_compile_options("${HARDENING_CFLAGS}")
-add_link_options("${HARDENING_LDFLAGS}")
-add_compile_definitions("${HARDENING_DEFINITIONS}")
-
 # Explicitly specifiy the preference of using -pthread over -lpthread.
 # This must be defined here since CUDA calls find_package(Threads) internally.
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
