@@ -1,16 +1,10 @@
 include(ExternalProject)
 
-set(OPENBLAS_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/openblas)
-
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     set(OPENBLAS_TARGET "ARMV8")
 else()
     set(OPENBLAS_TARGET "NEHALEM")
 endif()
-
-set(OPENBLAS_INCLUDE_DIR "${OPENBLAS_INSTALL_PREFIX}/include/openblas/") # The "/"" is critical, see open3d_import_3rdparty_library.
-set(OPENBLAS_LIB_DIR "${OPENBLAS_INSTALL_PREFIX}/lib")
-set(OPENBLAS_LIBRARIES openblas)  # Extends to libopenblas.a automatically.
 
 ExternalProject_Add(
     ext_openblas
@@ -21,9 +15,15 @@ ExternalProject_Add(
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS}
         -DTARGET=${OPENBLAS_TARGET}
-        -DCMAKE_INSTALL_PREFIX=${OPENBLAS_INSTALL_PREFIX}
-    BUILD_BYPRODUCTS ${OPENBLAS_LIB_DIR}/libopenblas.a
+        -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    BUILD_BYPRODUCTS 
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${lib_suffix}${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
+
+ExternalProject_Get_Property(ext_openblas INSTALL_DIR)
+set(OPENBLAS_INCLUDE_DIR ${INSTALL_DIR}/include/openblas/) # "/" is critical.
+set(OPENBLAS_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
+set(OPENBLAS_LIBRARIES openblas)
 
 message(STATUS "OPENBLAS_INCLUDE_DIR: ${OPENBLAS_INCLUDE_DIR}")
 message(STATUS "OPENBLAS_LIB_DIR ${OPENBLAS_LIB_DIR}")
