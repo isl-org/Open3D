@@ -18,6 +18,10 @@ env:
 jobs:
   ubuntu:
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        SHARED: [ON, OFF]
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -27,7 +31,15 @@ jobs:
           maximize_ubuntu_github_actions_build_space
       - name: Docker build
         run: |
-          docker/docker_build.sh sycl-shared
+          if [ "${{ matrix.SHARED }}" = "ON" ]; then
+            docker/docker_build.sh sycl-shared
+          else
+            docker/docker_build.sh sycl-static
+          fi
       - name: Docker test
         run: |
-          docker/docker_test.sh sycl-shared
+          if [ "${{ matrix.SHARED }}" = "ON" ]; then
+            docker/docker_test.sh sycl-shared
+          else
+            docker/docker_test.sh sycl-static
+          fi

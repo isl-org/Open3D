@@ -126,12 +126,6 @@ cpp_python_linking_uninstall_test() {
     restart_docker_daemon_if_on_gcloud
 
     # C++ test
-    if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
-        gtest_filter="-*Sum*:*TransformationEstimation*:*Registration*:*Odometry*:*ReadWriteTriangleMeshOBJ*:*LU*:*LUIpiv*:*RGBDOdometry*"
-    else
-        gtest_filter="*"
-    fi
-
     echo "gtest is randomized, add --gtest_random_seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm ${DOCKER_TAG} /bin/bash -c "\
         cd build \
