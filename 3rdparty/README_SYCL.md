@@ -2,11 +2,12 @@
 
 ## Concepts
 
-- OpenCL: Low-level programming interface for heterogeneous platforms.
-- SYCL: High-level programming interface for heterogeneous platforms. SYCL was
-  originally based on OpenCL.
-- DPC++: Intel's implementation of the SYCL standard.
-- oneAPI: A collection of open standards, including DPC++, oneMKL, oneTBB, etc.
+- **OpenCL**: Low-level programming interface for heterogeneous platforms.
+- **SYCL**: High-level programming interface for heterogeneous platforms. SYCL was
+  originally based on OpenCL, but now you can consider SYCL as an independent
+  standard.
+- **DPC++**: Intel's implementation of the SYCL standard.
+- **oneAPI**: A collection of open standards, including DPC++, oneMKL, oneTBB, etc.
 
 Open3D's SYCL support runs on DPC++ and requires oneAPI dependencies. For
 convenience, in the source code, we use the term "SYCL" although we may be
@@ -33,7 +34,7 @@ referring to "DPC++".
    python --version # Python 3.8.12 :: Intel Corporation
    ```
 4. Config
-   Add the following flag to CMake:
+   Add the following flag to CMake
    ```bash
    cmake -DBUILD_SYCL_MODULE=ON ..
    ```
