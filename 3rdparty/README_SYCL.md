@@ -3,9 +3,8 @@
 ## Concepts
 
 - **OpenCL**: Low-level programming interface for heterogeneous platforms.
-- **SYCL**: High-level programming interface for heterogeneous platforms. SYCL was
-  originally based on OpenCL, but now you can consider SYCL as an independent
-  standard.
+- **SYCL**: High-level programming interface for heterogeneous platforms. SYCL
+  was originally based on OpenCL but now SYCL is an independent standard.
 - **DPC++**: Intel's implementation of the SYCL standard.
 - **oneAPI**: A collection of open standards, including DPC++, oneMKL, oneTBB, etc.
 
