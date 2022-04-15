@@ -33,8 +33,8 @@ referring to "DPC++".
    python --version # Python 3.8.12 :: Intel Corporation
    ```
 4. Config
-   Add the following flag to CMake
    ```bash
+   # Add the following flag to CMake
    cmake -DBUILD_SYCL_MODULE=ON ..
    ```
 
