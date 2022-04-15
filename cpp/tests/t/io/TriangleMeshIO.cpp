@@ -62,47 +62,33 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
     const std::string filename =
             utility::filesystem::GetTempDirectoryPath() + "/cube.obj";
     EXPECT_TRUE(t::io::WriteTriangleMesh(filename, cube_mesh));
-
     t::geometry::TriangleMesh mesh, mesh_read;
     EXPECT_TRUE(t::io::ReadTriangleMesh(filename, mesh));
 
-    utility::LogInfo("mesh.vertices:\n{}",
-                     mesh.GetVertexPositions().ToString());
+    core::Tensor vertices = core::Tensor::Init<float>({{0.0, 1.0, 0.0},
+                                                       {1.0, 1.0, 1.0},
+                                                       {1.0, 1.0, 0.0},
+                                                       {0.0, 1.0, 1.0},
+                                                       {0.0, 0.0, 0.0},
+                                                       {0.0, 0.0, 1.0},
+                                                       {1.0, 0.0, 0.0},
+                                                       {1.0, 0.0, 1.0}});
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(vertices));
+
+    core::Tensor triangles = core::Tensor::Init<int64_t>({{0, 1, 2},
+                                                          {0, 3, 1},
+                                                          {4, 5, 0},
+                                                          {5, 3, 0},
+                                                          {4, 6, 5},
+                                                          {6, 7, 5},
+                                                          {6, 2, 1},
+                                                          {6, 1, 7},
+                                                          {5, 7, 1},
+                                                          {5, 1, 3},
+                                                          {4, 0, 6},
+                                                          {6, 0, 2}});
+    EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(triangles));
 }
-
-// TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
-//     auto cube_mesh = t::geometry::TriangleMesh::FromLegacy(
-//             *geometry::TriangleMesh::CreateBox());
-//     const std::string filename =
-//             utility::filesystem::GetTempDirectoryPath() + "/cube.obj";
-//     EXPECT_TRUE(t::io::WriteTriangleMesh(filename, cube_mesh));
-//     t::geometry::TriangleMesh mesh, mesh_read;
-//     EXPECT_TRUE(t::io::ReadTriangleMesh(filename, mesh));
-
-//     core::Tensor vertices = core::Tensor::Init<float>({{0.0, 1.0, 0.0},
-//                                                        {1.0, 1.0, 1.0},
-//                                                        {1.0, 1.0, 0.0},
-//                                                        {0.0, 1.0, 1.0},
-//                                                        {0.0, 0.0, 0.0},
-//                                                        {0.0, 0.0, 1.0},
-//                                                        {1.0, 0.0, 0.0},
-//                                                        {1.0, 0.0, 1.0}});
-//     EXPECT_TRUE(mesh.GetVertexPositions().AllClose(vertices));
-
-//     core::Tensor triangles = core::Tensor::Init<int64_t>({{0, 1, 2},
-//                                                           {0, 3, 1},
-//                                                           {4, 5, 0},
-//                                                           {5, 3, 0},
-//                                                           {4, 6, 5},
-//                                                           {6, 7, 5},
-//                                                           {6, 2, 1},
-//                                                           {6, 1, 7},
-//                                                           {5, 7, 1},
-//                                                           {5, 1, 3},
-//                                                           {4, 0, 6},
-//                                                           {6, 0, 2}});
-//     EXPECT_TRUE(mesh.GetTriangleIndices().AllClose(triangles));
-// }
 
 // TODO: Add tests for triangle_uvs, materials, triangle_material_ids and
 // textures once these are supported.
