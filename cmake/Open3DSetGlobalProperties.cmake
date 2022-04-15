@@ -1,3 +1,11 @@
+# Make hardening flags
+include(Open3DMakeHardeningFlags)
+open3d_make_hardening_flags(HARDENING_CFLAGS HARDENING_LDFLAGS)
+open3d_make_hardening_definitions(HARDENING_DEFINITIONS)
+message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS}")
+message(STATUS "Using security hardening linker flags: ${HARDENING_LDFLAGS}")
+message(STATUS "Using security hardening compiler definitions: ${HARDENING_DEFINITIONS}")
+
 # open3d_enable_strip(target)
 #
 # Enable binary strip. Only effective on Linux or macOS.
@@ -177,4 +185,9 @@ function(open3d_set_global_properties target)
 
     # Enable strip
     open3d_enable_strip(${target})
+
+    # Harderning flags
+    target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>")
+    target_link_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>")
+    target_compile_definitions(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_DEFINITIONS}>")
 endfunction()
