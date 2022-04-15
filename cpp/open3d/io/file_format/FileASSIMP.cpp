@@ -24,16 +24,15 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <assimp/GltfMaterial.h>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
-
-#include <assimp/Importer.hpp>
-#include <assimp/ProgressHandler.hpp>
 #include <fstream>
 #include <numeric>
 #include <vector>
 
+#include "assimp/GltfMaterial.h"
+#include "assimp/Importer.hpp"
+#include "assimp/ProgressHandler.hpp"
+#include "assimp/postprocess.h"
+#include "assimp/scene.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/io/ModelIO.h"
@@ -145,9 +144,6 @@ bool ReadTriangleMeshUsingASSIMP(
         const std::string& filename,
         geometry::TriangleMesh& mesh,
         const ReadTriangleMeshOptions& params /*={}*/) {
-    utility::LogInfo("enable_post_processing: {}",
-                     params.enable_post_processing);
-
     Assimp::Importer importer;
 
     unsigned int post_process_flags = kPostProcessFlags_compulsory;
@@ -165,9 +161,6 @@ bool ReadTriangleMeshUsingASSIMP(
     mesh.Clear();
 
     size_t current_vidx = 0;
-
-    utility::LogInfo("scene->mNumMeshes: {}", scene->mNumMeshes);
-
     // Merge individual meshes in aiScene into a single TriangleMesh
     for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
         const auto* assimp_mesh = scene->mMeshes[midx];
@@ -181,8 +174,6 @@ bool ReadTriangleMeshUsingASSIMP(
         }
 
         // copy vertex data
-        utility::LogInfo("assimp_mesh->mNumVertices: {}",
-                         assimp_mesh->mNumVertices);
         for (size_t vidx = 0; vidx < assimp_mesh->mNumVertices; ++vidx) {
             auto& vertex = assimp_mesh->mVertices[vidx];
             mesh.vertices_.push_back(
