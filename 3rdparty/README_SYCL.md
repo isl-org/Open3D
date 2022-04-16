@@ -56,6 +56,7 @@ https://pypi.org/user/IntelAutomationEngineering/
 - Limitations (not implemented yet)
   - Only supports Linux
   - Only supports `BUILD_CUDA_MODULE=OFF`
+  - ML ops not supported (C++17 cannot be enabled for TF)
 - Requirements (required by DPC++)
   - Only supports `GLIBCXX_USE_CXX11_ABI=ON`
   - Only supports `set(CMAKE_CXX_STANDARD 17)`
