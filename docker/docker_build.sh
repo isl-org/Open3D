@@ -170,8 +170,6 @@ openblas_build() {
 cuda_wheel_build() {
     BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
     CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
-    CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-    CCACHE_VERSION=4.3
 
     options="$(echo "$@" | tr ' ' '|')"
     echo "[cuda_wheel_build()] options: ${options}"
