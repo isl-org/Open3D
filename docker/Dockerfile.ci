@@ -104,16 +104,28 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && ccache -s
 
 # Miniconda
+# - OneAPI docker image comes with conda
+# - `conda activate` or `source activate` does not work, setting PATH works
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
- && bash Miniconda3-latest-Linux-x86_64.sh -b \
- && rm Miniconda3-latest-Linux-x86_64.sh \
- && conda --version \
- && conda create -y -n open3d python=${PYTHON_VERSION} \
- && source activate open3d \
- && which python \
- && python --version
+ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
+ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/open3d/bin:${PATH}"
+RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
+        wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh; \
+        bash Miniconda3-latest-Linux-x86_64.sh -b; \
+        rm Miniconda3-latest-Linux-x86_64.sh; \
+    fi
+RUN conda --version \
+ && conda create -y -n open3d python=${PYTHON_VERSION}
+RUN which python \
+ && python --version \
+ && which pip
+RUN if [[ "$(which python)" != *"/open3d/"* ]]; then \
+        echo "Error: python is not in the correct location."; \
+        exit 1; \
+    else \
+        echo "python is in the correct location."; \
+    fi
 
 # Checkout Open3D-ML master branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
@@ -183,6 +195,9 @@ RUN if [ "${BUILD_PYTORCH_OPS}" = "ON" ] || [ "${BUILD_TENSORFLOW_OPS}" = "ON" ]
  && make install-pip-package -j$(nproc) \
  && make install -j$(nproc) \
  && if [ "${PACKAGE}" = "ON" ]; then make package; fi
+
+# Try importing open3d
+RUN python -c "import open3d; print(open3d)"
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \
