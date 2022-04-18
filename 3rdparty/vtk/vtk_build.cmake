@@ -25,7 +25,6 @@ set(VTK_LIBRARIES
 
 foreach( item IN LISTS VTK_LIBRARIES )
     list( APPEND VTK_BUILD_BYPRODUCTS <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${item}${CMAKE_STATIC_LIBRARY_SUFFIX} )
-    message( STATUS ${VTK_BUILD_BYPRODUCTS} )
 endforeach()
 
 
@@ -39,6 +38,7 @@ ExternalProject_Add(
     # do not update
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        ${ExternalProject_CMAKE_ARGS_hidden}
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DVTK_GROUP_ENABLE_Imaging=NO
@@ -280,7 +280,6 @@ ExternalProject_Add(
         -DVTK_MODULE_ENABLE_VTK_xdmf3=DONT_WANT
         -DVTK_MODULE_ENABLE_VTK_zfp=DONT_WANT
         -DVTK_MODULE_ENABLE_VTK_zlib=DONT_WANT
-        ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
         ${VTK_BUILD_BYPRODUCTS}
 )

@@ -36,9 +36,11 @@ namespace geometry {
 namespace kernel {
 namespace vtkutils {
 
+/// Creates a vtkPolyData object from a point cloud or triangle mesh.
 vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
         const Geometry& geometry);
 
+/// Creates a triangle mesh from a vtkPolyData object.
 TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polyData);
 
 }  // namespace vtkutils
