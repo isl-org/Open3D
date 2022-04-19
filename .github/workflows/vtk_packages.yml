@@ -45,11 +45,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        SHARED: [ON, OFF]
-        STATIC_RUNTIME: [ON, OFF]
-        CONFIG: [Release]
-        exclude:
-          - SHARED: ON
+        configuration: [dllrt, staticrt]
+        include:
+          - configuration: dllrt
+            STATIC_RUNTIME: OFF
+          - configuration: staticrt
             STATIC_RUNTIME: ON
 
     steps:
@@ -67,7 +67,6 @@ jobs:
           cd ${{ env.BUILD_DIR }}
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
-            -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             "${{ env.SRC_DIR }}\3rdparty\vtk"
           ls
@@ -76,12 +75,13 @@ jobs:
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+          cmake --build . --parallel ${{ env.NPROC }} --config Release
+          ls
 
       - name: Upload package
         uses: actions/upload-artifact@v2
         with:
-          name: vtk_windows_${{matrix.SHARED}}_${{matrix.STATIC_RUNTIME}}
+          name: vtk_windows_${{matrix.configuration}}
           path: |
                  ${{ env.BUILD_DIR }}/vtk*.tar.gz
                  ${{ env.BUILD_DIR }}/checksum.txt
@@ -101,7 +101,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake ../3rdparty/vtk
+          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 ../3rdparty/vtk
 
       - name: Build
         run: |
