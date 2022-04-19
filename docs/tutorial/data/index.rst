@@ -175,6 +175,89 @@ A 3D Mobius knot mesh in PLY format.
     data::KnotMesh dataset;
     auto mesh = io::CreateMeshFromFile(dataset.GetPath());
 
+TriangleModel with PRB Texture
+~~~~~~~~~~~~
+
+MonkeyModel
+---------
+
+The monkey model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.MonkeyModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::BunnyMesh dataset;
+    visualization::rendering::TriangleMeshModel model;
+    auto model = io::ReadTriangleModel(dataset.GetPath(), model);
+
+MonkeyModel
+---------
+
+The monkey model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.MonkeyModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::MonkeyModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+SwordModel
+---------
+
+The sword model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.SwordModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::SwordModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+CrateModel
+---------
+
+The crate model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.CrateModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::CrateModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+FlightHelmetModel
+---------
+
+The flight helmet gltf model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.FlightHelmetModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::FlightHelmetModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
 Image
 ~~~~~
 
