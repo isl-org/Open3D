@@ -77,6 +77,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config Release
           ls
+          cmake --build . --parallel ${{ env.NPROC }} --config Debug
+          ls
 
       - name: Upload package
         uses: actions/upload-artifact@v2
