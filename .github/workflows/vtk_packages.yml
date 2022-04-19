@@ -69,7 +69,7 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
-            ${{ env.SRC_DIR }}
+            "${{ env.SRC_DIR }}\3rdparty\vtk"
 
       - name: Build
         working-directory: ${{ env.BUILD_DIR }}
