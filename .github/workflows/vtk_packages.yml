@@ -83,6 +83,37 @@ jobs:
         with:
           name: vtk_windows_${{matrix.SHARED}}_${{matrix.STATIC_RUNTIME}}
           path: |
+                 ${{ env.BUILD_DIR }}/vtk*.tar.gz
+                 ${{ env.BUILD_DIR }}/checksum.txt
+          if-no-files-found: error
+
+
+  MacOS:
+    runs-on: macos-10.15
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: CMake configure
+        run: |
+          mkdir build
+          cd build
+          cmake ../3rdparty/vtk
+
+      - name: Build
+        run: |
+          cd build
+          make -j2
+          cmake -E sha256sum vtk*.tar.gz > checksum.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vtk_macos
+          path: |
                  build/vtk*.tar.gz
                  build/checksum.txt
           if-no-files-found: error
