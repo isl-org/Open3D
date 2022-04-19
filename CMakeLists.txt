@@ -99,8 +99,10 @@ option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
 option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
+    option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                ON )
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
 else()
+    option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                OFF)
     option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           OFF)
 endif()
 

@@ -9,6 +9,7 @@ endif()
 
 set(VTK_VERSION 9.1)
 
+
 set(VTK_LIBRARIES 
     vtkFiltersGeneral-${VTK_VERSION}${VTK_LIB_SUFFIX}
     # vtkCommonComputationalGeometry-${VTK_VERSION}${VTK_LIB_SUFFIX}
@@ -30,6 +31,7 @@ foreach( item IN LISTS VTK_LIBRARIES )
 endforeach()
 
 
+if( BUILD_VTK_FROM_SOURCE )
 
 ExternalProject_Add(
     ext_vtk
@@ -285,6 +287,54 @@ ExternalProject_Add(
     BUILD_BYPRODUCTS
         ${VTK_BUILD_BYPRODUCTS}
 )
+
+
+else() #### download prebuilt vtk
+
+if(LINUX_AARCH64)
+    message(FATAL "No precompiled vtk for platform. Enable BUILD_VTK_FROM_SOURCE")
+elseif(APPLE_AARCH64)
+    message(FATAL "No precompiled vtk for platform. Enable BUILD_VTK_FROM_SOURCE")
+elseif( APPLE )
+    set(VTK_URL 
+        https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_macos_10.15.tar.gz
+    )
+    set(VTK_SHA256 eb81112dc62ea7ab39ca11d899399247311867db4b53a367f3efb4f5535e582b)
+elseif( UNIX )
+    set(VTK_URL 
+        https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_linux_x86_64.tar.gz
+    )
+    set(VTK_SHA256 ab388f476e202aa0c2d1349c2047cf680d95253c044792830b8b80a0285c4afb)
+elseif( WIN32 )
+    if (STATIC_WINDOWS_RUNTIME)
+        set(VTK_URL
+            https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_win_staticrt.tar.gz
+        )
+        set(VTK_SHA256 5c445a3015bc48ce74381306e7f35f4e3f330f987bde73dfb95d4c0486143b85)
+    else()
+        set(VTK_URL
+            https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_win.tar.gz
+        )
+        set(VTK_SHA256 f24d96b6f45a15c9dada87443f892328cbf9d8017d756b6e8c5f83e9f34ec99d)
+    endif()
+else()
+    message(FATAL "Unsupported platform")
+endif()
+
+ExternalProject_Add(
+    ext_vtk
+    PREFIX vtk
+    URL ${VTK_URL}
+    URL_HASH SHA256=${VTK_SHA256}
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/vtk"
+    UPDATE_COMMAND ""
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    BUILD_BYPRODUCTS ""
+)
+
+endif() # BUILD_VTK_FROM_SOURCE
 
 ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
 set(VTK_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})

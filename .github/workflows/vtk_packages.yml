@@ -25,7 +25,7 @@ jobs:
         run: |
           cd build
           make -j2
-          cmake -E sha256sum vtk*.tar.gz > checksum.txt
+          cmake -E sha256sum vtk*.tar.gz > checksum_linux.txt
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
@@ -33,7 +33,7 @@ jobs:
           name: vtk_linux
           path: |
                  build/vtk*.tar.gz
-                 build/checksum.txt
+                 build/checksum*.txt
           if-no-files-found: error
 
   Windows:
@@ -79,6 +79,7 @@ jobs:
           ls
           cmake --build . --parallel ${{ env.NPROC }} --config Debug
           ls
+          cmake -E sha256sum vtk*.tar.gz > checksum_win_${{matrix.configuration}}.txt
 
       - name: Upload package
         uses: actions/upload-artifact@v2
@@ -86,7 +87,7 @@ jobs:
           name: vtk_windows_${{matrix.configuration}}
           path: |
                  ${{ env.BUILD_DIR }}/vtk*.tar.gz
-                 ${{ env.BUILD_DIR }}/checksum.txt
+                 ${{ env.BUILD_DIR }}/checksum*.txt
           if-no-files-found: error
 
 
@@ -109,7 +110,7 @@ jobs:
         run: |
           cd build
           make -j2
-          cmake -E sha256sum vtk*.tar.gz > checksum.txt
+          cmake -E sha256sum vtk*.tar.gz > checksum_macos.txt
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
@@ -117,5 +118,5 @@ jobs:
           name: vtk_macos
           path: |
                  build/vtk*.tar.gz
-                 build/checksum.txt
+                 build/checksum*.txt
           if-no-files-found: error

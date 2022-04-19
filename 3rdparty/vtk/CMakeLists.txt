@@ -1,4 +1,4 @@
-# This file is used for creating the precompiled VTK archives that can will be
+# This file is used for creating the precompiled VTK archives that will be
 # downloaded when building Open3D. This will make use of vtk_build.cmake.
 cmake_minimum_required(VERSION 3.19.2)
 project(VTKArchiveBuild)
@@ -88,7 +88,7 @@ set(ExternalProject_CMAKE_ARGS_hidden
 set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${PROJECT_SOURCE_DIR}/../../3rdparty_downloads")
 set(Open3D_INSTALL_LIB_DIR lib)
 
-
+set(BUILD_VTK_FROM_SOURCE ON)
 include( vtk_build.cmake )
 
 if(LINUX_AARCH64)
