@@ -21,15 +21,13 @@ jobs:
 
       - name: CMake configure
         run: |
-          pwd
-          ls
           mkdir build
           cd build
           cmake ../3rdparty/vtk
 
       - name: Build
         run: |
-          pwd
+          cd build
           make -j2
           cmake -E sha256sum vtk*.tar.gz > checksum.txt
 
