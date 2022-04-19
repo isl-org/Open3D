@@ -1,0 +1,39 @@
+name: VTK_Packages
+
+on:
+  pull_request:
+    branches: [ master ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+
+# env:
+#   WEBRTC_COMMIT: ${{ github.event.inputs.webrtc_commit }}
+#   DEPOT_TOOLS_COMMIT: ${{ github.event.inputs.depot_tools_commit }}
+
+jobs:
+
+  Unix:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: CMake configure
+        run: |
+          mkdir build
+          cd build
+          cmake ../3rdparty/vtk
+
+      - name: Build
+        run: |
+          pwd
+          make -j2
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: webrtc_release
+          path: |
+                 build/vtk*.tar.gz
+          if-no-files-found: error
