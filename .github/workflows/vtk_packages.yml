@@ -70,6 +70,7 @@ jobs:
             -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             "${{ env.SRC_DIR }}\3rdparty\vtk"
+          ls
 
       - name: Build
         working-directory: ${{ env.BUILD_DIR }}
