@@ -33,5 +33,5 @@ def test_clip_plane():
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
     clipped_cube = cube.clip_plane(point=[0.5, 0, 0], normal=[1, 0, 0])
-    assert clipped_cube.vertex['positions'] == (12, 3)
-    assert clipped_cube.triangle['indices'] == (14, 3)
+    assert clipped_cube.vertex['positions'].shape == (12, 3)
+    assert clipped_cube.triangle['indices'].shape == (14, 3)
