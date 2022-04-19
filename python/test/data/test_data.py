@@ -548,9 +548,9 @@ def test_monkey():
         "roughness": Path(gt_extract_dir) / "roughness.png"
     }
 
-    for file_name, file_path in monkey.path_map:
-        assert Path(file_path) == gt_path_map[file_name]
-        assert Path(file_path).is_file()
+    for file_name in monkey.path_map:
+        assert Path(monkey.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(monkey.path_map[file_name]).is_file()
 
     assert Path(monkey.path) == gt_extract_dir / "monkey.obj"
     assert Path(monkey.path).is_file()
@@ -578,9 +578,9 @@ def test_sword():
         "roughness": Path(gt_extract_dir) / "UV_blinn1SG_Roughness.png"
     }
 
-    for file_name, file_path in sword.path_map:
-        assert Path(file_path) == gt_path_map[file_name]
-        assert Path(file_path).is_file()
+    for file_name in sword.path_map:
+        assert Path(sword.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(sword.path_map[file_name]).is_file()
 
     assert Path(sword.path) == gt_extract_dir / "UV.obj"
     assert Path(sword.path).is_file()
@@ -605,9 +605,9 @@ def test_crate():
         "texture_image": Path(gt_extract_dir) / "crate.jpg"
     }
 
-    for file_name, file_path in crate.path_map:
-        assert Path(file_path) == gt_path_map[file_name]
-        assert Path(file_path).is_file()
+    for file_name in crate.path_map:
+        assert Path(crate.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(crate.path_map[file_name]).is_file()
 
     assert Path(crate.path) == gt_extract_dir / "crate.obj"
     assert Path(crate.path).is_file()
@@ -623,7 +623,7 @@ def test_flight_helmet():
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
         gt_prefix)
 
-    crate = o3d.data.FlightHelmetModel()
+    helmet = o3d.data.FlightHelmetModel()
     assert Path(gt_download_dir).is_dir()
 
     gt_path_map = {
@@ -678,17 +678,17 @@ def test_flight_helmet():
             "OcclusionRoughMetal.png"
     }
 
-    for file_name, file_path in crate.path_map:
-        assert Path(file_path) == gt_path_map[file_name]
-        assert Path(file_path).is_file()
+    for file_name in helmet.path_map:
+        assert Path(helmet.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(helmet.path_map[file_name]).is_file()
 
-    assert Path(crate.path) == gt_extract_dir / "FlightHelmet.gltf"
-    assert Path(crate.path).is_file()
+    assert Path(helmet.path) == gt_extract_dir / "FlightHelmet.gltf"
+    assert Path(helmet.path).is_file()
 
-    assert crate.prefix == gt_prefix
-    assert Path(crate.data_root) == gt_data_root
-    assert Path(crate.download_dir) == gt_download_dir
-    assert Path(crate.extract_dir) == gt_extract_dir
+    assert helmet.prefix == gt_prefix
+    assert Path(helmet.data_root) == gt_data_root
+    assert Path(helmet.download_dir) == gt_download_dir
+    assert Path(helmet.extract_dir) == gt_extract_dir
 
 
 def test_juneau():
