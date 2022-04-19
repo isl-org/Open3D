@@ -21,6 +21,8 @@ jobs:
 
       - name: CMake configure
         run: |
+          pwd
+          ls
           mkdir build
           cd build
           cmake ../3rdparty/vtk
@@ -29,11 +31,13 @@ jobs:
         run: |
           pwd
           make -j2
+          cmake -E sha256sum vtk*.tar.gz > checksum.txt
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: webrtc_release
+          name: vtk_linux
           path: |
                  build/vtk*.tar.gz
+                 build/checksum.txt
           if-no-files-found: error
