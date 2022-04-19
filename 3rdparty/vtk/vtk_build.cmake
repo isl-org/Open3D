@@ -7,20 +7,22 @@ else()
     set(VTK_LIB_SUFFIX "")
 endif()
 
+set(VTK_VERSION 9.1)
+
 set(VTK_LIBRARIES 
-    vtkFiltersGeneral-9.1${VTK_LIB_SUFFIX}
-    # vtkCommonComputationalGeometry-9.1${VTK_LIB_SUFFIX}
-    vtkFiltersCore-9.1${VTK_LIB_SUFFIX}
-    vtkCommonExecutionModel-9.1${VTK_LIB_SUFFIX}
-    vtkCommonDataModel-9.1${VTK_LIB_SUFFIX}
-    vtkCommonMath-9.1${VTK_LIB_SUFFIX}
-    vtkCommonMisc-9.1${VTK_LIB_SUFFIX}
-    vtkCommonSystem-9.1${VTK_LIB_SUFFIX}
-    vtkCommonTransforms-9.1${VTK_LIB_SUFFIX}
-    vtkCommonCore-9.1${VTK_LIB_SUFFIX}
-    vtkkissfft-9.1${VTK_LIB_SUFFIX}
-    vtkpugixml-9.1${VTK_LIB_SUFFIX}
-    vtksys-9.1${VTK_LIB_SUFFIX}
+    vtkFiltersGeneral-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    # vtkCommonComputationalGeometry-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkFiltersCore-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkCommonExecutionModel-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkCommonDataModel-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkCommonMath-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkCommonMisc-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkCommonSystem-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkCommonTransforms-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkCommonCore-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkkissfft-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkpugixml-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtksys-${VTK_VERSION}${VTK_LIB_SUFFIX}
 )
 
 foreach( item IN LISTS VTK_LIBRARIES )
@@ -32,7 +34,7 @@ endforeach()
 ExternalProject_Add(
     ext_vtk
     PREFIX vtk
-    URL https://www.vtk.org/files/release/9.1/VTK-9.1.0.tar.gz
+    URL https://www.vtk.org/files/release/${VTK_VERSION}/VTK-${VTK_VERSION}.0.tar.gz
     URL_HASH SHA256=8fed42f4f8f1eb8083107b68eaa9ad71da07110161a3116ad807f43e5ca5ce96
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/vtk"
     # do not update
@@ -286,4 +288,4 @@ ExternalProject_Add(
 
 ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
 set(VTK_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-set(VTK_INCLUDE_DIRS "${INSTALL_DIR}/include/vtk-9.1/" )
+set(VTK_INCLUDE_DIRS "${INSTALL_DIR}/include/vtk-${VTK_VERSION}/" )

@@ -114,7 +114,7 @@ else()
     message(FATAL "Unsupported platform")
 endif()
 
-set(ARCHIVE_NAME "vtk${ARCHIVE_SUFFIX}.tar.gz")
+set(ARCHIVE_NAME "vtk_${VTK_VERSION}${ARCHIVE_SUFFIX}.tar.gz")
 
 add_custom_target( vtk_archive ALL 
     COMMENT "Creating tar archive"

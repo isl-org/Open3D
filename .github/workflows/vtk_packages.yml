@@ -7,10 +7,6 @@ on:
   workflow_dispatch:
 
 
-# env:
-#   WEBRTC_COMMIT: ${{ github.event.inputs.webrtc_commit }}
-#   DEPOT_TOOLS_COMMIT: ${{ github.event.inputs.depot_tools_commit }}
-
 jobs:
 
   Unix:
@@ -35,6 +31,57 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: vtk_linux
+          path: |
+                 build/vtk*.tar.gz
+                 build/checksum.txt
+          if-no-files-found: error
+
+  Windows:
+    runs-on: windows-2019
+    env:
+      SRC_DIR: "D:\\a\\open3d\\open3d"
+      BUILD_DIR: "C:\\Open3D\\build"
+      NPROC: 2
+    strategy:
+      fail-fast: false
+      matrix:
+        SHARED: [ON, OFF]
+        STATIC_RUNTIME: [ON, OFF]
+        CONFIG: [Release]
+        exclude:
+          - SHARED: ON
+            STATIC_RUNTIME: ON
+
+    steps:
+      - name: Disk space used
+        run: Get-PSDrive
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Config
+        # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
+          cd ${{ env.BUILD_DIR }}
+          cmake -G "Visual Studio 16 2019" -A x64 `
+            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
+            -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+            ${{ env.SRC_DIR }}
+
+      - name: Build
+        working-directory: ${{ env.BUILD_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+            --target INSTALL
+
+      - name: Upload package
+        uses: actions/upload-artifact@v2
+        with:
+          name: vtk_windows_${{matrix.SHARED}}_${{matrix.STATIC_RUNTIME}}
           path: |
                  build/vtk*.tar.gz
                  build/checksum.txt
