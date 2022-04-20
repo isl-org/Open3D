@@ -378,11 +378,12 @@ In this example, we will add textures to rendered objects:
     >>> sphere.compute_vertex_normals()
     >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
     >>> sphere.rotate(rotate_90)
-    # Get the texture data.
+    # Get the texture data from the dataset
     >>> mat_data = o3d.data.TilesTexture()
-    # Create the material.
+    # Create the material
     >>> mat = o3d.visualization.rendering.MaterialRecord()
     >>> mat.shader = "defaultLit"
+    # Load graphic texture files from the dataset into material properties
     >>> mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
     >>> mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
     >>> mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
@@ -404,12 +405,6 @@ Let's examine new method calls and properties in this rendering:
 ``mat.roughness_img`` - modifies the roughness
 
 All three properties are initialized by the ``o3d.io.read_image()`` method which loads an image in either JPEG or PNG format.
-
-.. note::
-    * The image file path in ``o3d.io.read_image()`` on your system may be different from the one shown in our example. Please change the image path accordingly.
-    * You can use absolute or relative paths to image files.
-    
-
 
 
 
