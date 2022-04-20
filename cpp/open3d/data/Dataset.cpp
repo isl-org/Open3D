@@ -536,6 +536,37 @@ FlightHelmetModel::FlightHelmetModel(const std::string& data_root)
                            "OcclusionRoughMetal.png"}};
 }
 
+MetalTexture::MetalTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "MetalTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/MetalTexture.zip"},
+              "2b6a17e41157138868a2cd2926eedcc7",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/Metal008_Color.jpg"},
+            {"normal", extract_dir + "/Metal008_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Metal008_Roughness.jpg"},
+            {"metallic", extract_dir + "/Metal008_Metalness.jpg"}};
+}
+
+PaintedPlasterTexture::PaintedPlasterTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "PaintedPlasterTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/PaintedPlasterTexture.zip"},
+              "344096b29b06f14aac58f9ad73851dc2",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/PaintedPlaster017_Color.jpg"},
+            {"normal", extract_dir + "/PaintedPlaster017_NormalDX.jpg"},
+            {"roughness", extract_dir + "/noiseTexture.png"}};
+}
+
 TilesTexture::TilesTexture(const std::string& data_root)
     : SingleDownloadDataset(
               "TilesTexture",
@@ -549,6 +580,21 @@ TilesTexture::TilesTexture(const std::string& data_root)
             {"albedo", extract_dir + "/Tiles074_Color.jpg"},
             {"normal", extract_dir + "/Tiles074_NormalDX.jpg"},
             {"roughness", extract_dir + "/Tiles074_Roughness.jpg"}};
+}
+
+TerrazzoTexture::TerrazzoTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "TerrazzoTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/TerrazzoTexture.zip"},
+              "8d67f191fb5d80a27d8110902cac008e",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/Terrazzo018_Color.jpg"},
+            {"normal", extract_dir + "/Terrazzo018_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Terrazzo018_Roughness.jpg"}};
 }
 
 WoodTexture::WoodTexture(const std::string& data_root)
@@ -579,37 +625,6 @@ WoodFloorTexture::WoodFloorTexture(const std::string& data_root)
             {"albedo", extract_dir + "/WoodFloor050_Color.jpg"},
             {"normal", extract_dir + "/WoodFloor050_NormalDX.jpg"},
             {"roughness", extract_dir + "/WoodFloor050_Roughness.jpg"}};
-}
-
-TerrazzoTexture::TerrazzoTexture(const std::string& data_root)
-    : SingleDownloadDataset(
-              "TerrazzoTexture",
-              {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220301-data/TerrazzoTexture.zip"},
-              "8d67f191fb5d80a27d8110902cac008e",
-              /*no_extract =*/false,
-              data_root) {
-    const std::string extract_dir = Dataset::GetExtractDir();
-    map_filename_to_path_ = {
-            {"albedo", extract_dir + "/Terrazzo018_Color.jpg"},
-            {"normal", extract_dir + "/Terrazzo018_NormalDX.jpg"},
-            {"roughness", extract_dir + "/Terrazzo018_Roughness.jpg"}};
-}
-
-MetalTexture::MetalTexture(const std::string& data_root)
-    : SingleDownloadDataset(
-              "MetalTexture",
-              {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220301-data/MetalTexture.zip"},
-              "2b6a17e41157138868a2cd2926eedcc7",
-              /*no_extract =*/false,
-              data_root) {
-    const std::string extract_dir = Dataset::GetExtractDir();
-    map_filename_to_path_ = {
-            {"albedo", extract_dir + "/Metal008_Color.jpg"},
-            {"normal", extract_dir + "/Metal008_NormalDX.jpg"},
-            {"roughness", extract_dir + "/Metal008_Roughness.jpg"},
-            {"metallic", extract_dir + "/Metal008_Metalness.jpg"}};
 }
 
 JuneauImage::JuneauImage(const std::string& data_root)

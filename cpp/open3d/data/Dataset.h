@@ -628,12 +628,103 @@ private:
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
+/// \class MetalTexture
+/// \brief Data class for `MetalTexture` contains albedo, normal, roughness and
+/// metallic texture files for metal based material.
+class MetalTexture : public SingleDownloadDataset {
+public:
+    MetalTexture(const std::string& data_root = "");
+    /// \brief Returns the path to albedo color texture image.
+    std::string GetAlbedoTexturePath() const {
+        return map_filename_to_path_.at("albedo");
+    };
+    /// \brief Returns the path to normal texture image.
+    std::string GetNormalTexturePath() const {
+        return map_filename_to_path_.at("normal");
+    };
+    /// \brief Returns the path to roughness texture image.
+    std::string GetRoughnessTexturePath() const {
+        return map_filename_to_path_.at("roughness");
+    };
+    /// \brief Returns the path to metallic texture image.
+    std::string GetMetallicTexturePath() const {
+        return map_filename_to_path_.at("metallic");
+    };
+    /// \brief Returns the map of filename to path. Refer documentation page for
+    /// available options.
+    std::unordered_map<std::string, std::string> GetPathMap() const {
+        return map_filename_to_path_;
+    }
+
+private:
+    /// Map to path for the avialble filenames.
+    std::unordered_map<std::string, std::string> map_filename_to_path_;
+};
+
+/// \class PaintedPlasterTexture
+/// \brief Data class for `PaintedPlasterTexture` contains albedo, normal and
+/// roughness texture files for painted plaster based material.
+class PaintedPlasterTexture : public SingleDownloadDataset {
+public:
+    PaintedPlasterTexture(const std::string& data_root = "");
+    /// \brief Returns the path to albedo color texture image.
+    std::string GetAlbedoTexturePath() const {
+        return map_filename_to_path_.at("albedo");
+    };
+    /// \brief Returns the path to normal texture image.
+    std::string GetNormalTexturePath() const {
+        return map_filename_to_path_.at("normal");
+    };
+    /// \brief Returns the path to roughness texture image.
+    std::string GetRoughnessTexturePath() const {
+        return map_filename_to_path_.at("roughness");
+    };
+    /// \brief Returns the map of filename to path. Refer documentation page for
+    /// available options.
+    std::unordered_map<std::string, std::string> GetPathMap() const {
+        return map_filename_to_path_;
+    }
+
+private:
+    /// Map to path for the avialble filenames.
+    std::unordered_map<std::string, std::string> map_filename_to_path_;
+};
+
 /// \class TilesTexture
 /// \brief Data class for `TilesTexture` contains albedo, normal and roughness
 /// texture files for tiles based material.
 class TilesTexture : public SingleDownloadDataset {
 public:
     TilesTexture(const std::string& data_root = "");
+    /// \brief Returns the path to albedo color texture image.
+    std::string GetAlbedoTexturePath() const {
+        return map_filename_to_path_.at("albedo");
+    };
+    /// \brief Returns the path to normal texture image.
+    std::string GetNormalTexturePath() const {
+        return map_filename_to_path_.at("normal");
+    };
+    /// \brief Returns the path to roughness texture image.
+    std::string GetRoughnessTexturePath() const {
+        return map_filename_to_path_.at("roughness");
+    };
+    /// \brief Returns the map of filename to path. Refer documentation page for
+    /// available options.
+    std::unordered_map<std::string, std::string> GetPathMap() const {
+        return map_filename_to_path_;
+    }
+
+private:
+    /// Map to path for the avialble filenames.
+    std::unordered_map<std::string, std::string> map_filename_to_path_;
+};
+
+/// \class TerrazzoTexture
+/// \brief Data class for `TerrazzoTexture` contains albedo, normal and
+/// roughness texture files for terrazzo based material.
+class TerrazzoTexture : public SingleDownloadDataset {
+public:
+    TerrazzoTexture(const std::string& data_root = "");
     /// \brief Returns the path to albedo color texture image.
     std::string GetAlbedoTexturePath() const {
         return map_filename_to_path_.at("albedo");
@@ -703,68 +794,6 @@ public:
     /// \brief Returns the path to roughness texture image.
     std::string GetRoughnessTexturePath() const {
         return map_filename_to_path_.at("roughness");
-    };
-    /// \brief Returns the map of filename to path. Refer documentation page for
-    /// available options.
-    std::unordered_map<std::string, std::string> GetPathMap() const {
-        return map_filename_to_path_;
-    }
-
-private:
-    /// Map to path for the avialble filenames.
-    std::unordered_map<std::string, std::string> map_filename_to_path_;
-};
-
-/// \class TerrazzoTexture
-/// \brief Data class for `TerrazzoTexture` contains albedo, normal and
-/// roughness texture files for terrazzo based material.
-class TerrazzoTexture : public SingleDownloadDataset {
-public:
-    TerrazzoTexture(const std::string& data_root = "");
-    /// \brief Returns the path to albedo color texture image.
-    std::string GetAlbedoTexturePath() const {
-        return map_filename_to_path_.at("albedo");
-    };
-    /// \brief Returns the path to normal texture image.
-    std::string GetNormalTexturePath() const {
-        return map_filename_to_path_.at("normal");
-    };
-    /// \brief Returns the path to roughness texture image.
-    std::string GetRoughnessTexturePath() const {
-        return map_filename_to_path_.at("roughness");
-    };
-    /// \brief Returns the map of filename to path. Refer documentation page for
-    /// available options.
-    std::unordered_map<std::string, std::string> GetPathMap() const {
-        return map_filename_to_path_;
-    }
-
-private:
-    /// Map to path for the avialble filenames.
-    std::unordered_map<std::string, std::string> map_filename_to_path_;
-};
-
-/// \class MetalTexture
-/// \brief Data class for `MetalTexture` contains albedo, normal, roughness and
-/// metallic texture files for metal based material.
-class MetalTexture : public SingleDownloadDataset {
-public:
-    MetalTexture(const std::string& data_root = "");
-    /// \brief Returns the path to albedo color texture image.
-    std::string GetAlbedoTexturePath() const {
-        return map_filename_to_path_.at("albedo");
-    };
-    /// \brief Returns the path to normal texture image.
-    std::string GetNormalTexturePath() const {
-        return map_filename_to_path_.at("normal");
-    };
-    /// \brief Returns the path to roughness texture image.
-    std::string GetRoughnessTexturePath() const {
-        return map_filename_to_path_.at("roughness");
-    };
-    /// \brief Returns the path to metallic texture image.
-    std::string GetMetallicTexturePath() const {
-        return map_filename_to_path_.at("metallic");
     };
     /// \brief Returns the map of filename to path. Refer documentation page for
     /// available options.
