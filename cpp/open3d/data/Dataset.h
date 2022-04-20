@@ -629,8 +629,8 @@ private:
 };
 
 /// \class TilesTexture
-/// \brief Data class for `TilesTexture` contains texture image files for
-/// color, normal and roughness.
+/// \brief Data class for `TilesTexture` contains albedo, normal and roughness
+/// texture files for tiles based material.
 class TilesTexture : public SingleDownloadDataset {
 public:
     TilesTexture(const std::string& data_root = "");
@@ -658,8 +658,8 @@ private:
 };
 
 /// \class WoodTexture
-/// \brief Data class for `WoodTexture` contains texture image files for
-/// color, normal and roughness.
+/// \brief Data class for `WoodTexture` contains albedo, normal and roughness
+/// texture files for wood based material.
 class WoodTexture : public SingleDownloadDataset {
 public:
     WoodTexture(const std::string& data_root = "");
@@ -687,8 +687,8 @@ private:
 };
 
 /// \class WoodFloorTexture
-/// \brief Data class for `WoodFloorTexture` contains texture image files for
-/// color, normal and roughness.
+/// \brief Data class for `WoodFloorTexture` contains albedo, normal and
+/// roughness texture files for wooden floor based material.
 class WoodFloorTexture : public SingleDownloadDataset {
 public:
     WoodFloorTexture(const std::string& data_root = "");
@@ -716,8 +716,8 @@ private:
 };
 
 /// \class TerrazzoTexture
-/// \brief Data class for `TerrazzoTexture` contains texture image files for
-/// color, normal and roughness.
+/// \brief Data class for `TerrazzoTexture` contains albedo, normal and
+/// roughness texture files for terrazzo based material.
 class TerrazzoTexture : public SingleDownloadDataset {
 public:
     TerrazzoTexture(const std::string& data_root = "");
@@ -745,8 +745,8 @@ private:
 };
 
 /// \class MetalTexture
-/// \brief Data class for `MetalTexture` contains texture image files for
-/// color, normal, roughness and metalness.
+/// \brief Data class for `MetalTexture` contains albedo, normal, roughness and
+/// metallic texture files for metal based material.
 class MetalTexture : public SingleDownloadDataset {
 public:
     MetalTexture(const std::string& data_root = "");

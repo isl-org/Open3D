@@ -617,9 +617,10 @@ void pybind_tiles_texture(py::module& m) {
     // open3d.data.TilesTexture
     py::class_<TilesTexture, PySimpleDataset<TilesTexture>,
                std::shared_ptr<TilesTexture>, SingleDownloadDataset>
-            tiles_texture(m, "TilesTexture",
-                          "Data class for `TilesTexture` contains texture "
-                          "image files for color, normal and roughness.");
+            tiles_texture(
+                    m, "TilesTexture",
+                    "Data class for `TilesTexture` contains albedo, normal and "
+                    "roughness texture files for tiles based material.");
     tiles_texture.def(py::init<const std::string&>(), "data_root"_a = "")
             .def_property_readonly("albedo_texture_path",
                                    &TilesTexture::GetAlbedoTexturePath,
@@ -643,9 +644,10 @@ void pybind_wood_texture(py::module& m) {
     // open3d.data.WoodTexture
     py::class_<WoodTexture, PySimpleDataset<WoodTexture>,
                std::shared_ptr<WoodTexture>, SingleDownloadDataset>
-            wood_texture(m, "WoodTexture",
-                         "Data class for `WoodTexture` contains texture image "
-                         "files for color, normal and roughness.");
+            wood_texture(
+                    m, "WoodTexture",
+                    "Data class for `WoodTexture` contains albedo, normal and "
+                    "roughness texture files for wood based material.");
     wood_texture.def(py::init<const std::string&>(), "data_root"_a = "")
             .def_property_readonly("albedo_texture_path",
                                    &WoodTexture::GetAlbedoTexturePath,
@@ -668,10 +670,10 @@ void pybind_wood_floor_texture(py::module& m) {
     // open3d.data.WoodFloorTexture
     py::class_<WoodFloorTexture, PySimpleDataset<WoodFloorTexture>,
                std::shared_ptr<WoodFloorTexture>, SingleDownloadDataset>
-            wood_floor_texture(
-                    m, "WoodFloorTexture",
-                    "Data class for `WoodFloorTexture` contains texture image "
-                    "files for color, normal and roughness.");
+            wood_floor_texture(m, "WoodFloorTexture",
+                               " Data class for `WoodFloorTexture` contains "
+                               "albedo, normal and roughness texture files for "
+                               "wooden floor based material.");
     wood_floor_texture.def(py::init<const std::string&>(), "data_root"_a = "")
             .def_property_readonly("albedo_texture_path",
                                    &WoodFloorTexture::GetAlbedoTexturePath,
@@ -699,8 +701,8 @@ void pybind_terrazzo_texture(py::module& m) {
                std::shared_ptr<TerrazzoTexture>, SingleDownloadDataset>
             terrazzo_texture(
                     m, "TerrazzoTexture",
-                    "Data class for `TerrazzoTexture` contains texture "
-                    "image files for color, normal and roughness.");
+                    "Data class for `TerrazzoTexture` contains albedo, normal "
+                    "and roughness texture files for terrazzo based material.");
     terrazzo_texture.def(py::init<const std::string&>(), "data_root"_a = "")
             .def_property_readonly("albedo_texture_path",
                                    &TerrazzoTexture::GetAlbedoTexturePath,
@@ -726,10 +728,10 @@ void pybind_metal_texture(py::module& m) {
     // open3d.data.MetalTexture
     py::class_<MetalTexture, PySimpleDataset<MetalTexture>,
                std::shared_ptr<MetalTexture>, SingleDownloadDataset>
-            metal_texture(
-                    m, "MetalTexture",
-                    "Data class for `MetalTexture` contains texture "
-                    "image files for color, normal, roughness and metalness.");
+            metal_texture(m, "MetalTexture",
+                          "Data class for `MetalTexture` contains albedo, "
+                          "normal, roughness and metallic texture files for "
+                          "metal based material.");
     metal_texture.def(py::init<const std::string&>(), "data_root"_a = "")
             .def_property_readonly("albedo_texture_path",
                                    &MetalTexture::GetAlbedoTexturePath,
