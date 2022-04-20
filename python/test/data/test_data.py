@@ -691,6 +691,176 @@ def test_flight_helmet():
     assert Path(helmet.extract_dir) == gt_extract_dir
 
 
+def test_metal_texture():
+    gt_prefix = "MetalTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.MetalTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "Metal008_Color.jpg",
+        "normal": Path(gt_extract_dir) / "Metal008_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "Metal008_Roughness.jpg",
+        "metallic": Path(gt_extract_dir) / "Metal008_Metalness.jpg"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+    assert Path(data.metallic_texture_path) == gt_path_map["metallic"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
+def test_painted_plaster_texture():
+    gt_prefix = "PaintedPlasterTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.PaintedPlasterTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "PaintedPlaster017_Color.jpg",
+        "normal": Path(gt_extract_dir) / "PaintedPlaster017_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "noiseTexture.png"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
+def test_tiles_texture():
+    gt_prefix = "TilesTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.TilesTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "Tiles074_Color.jpg",
+        "normal": Path(gt_extract_dir) / "Tiles074_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "Tiles074_Roughness.jpg"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
+def test_terrazzo_texture():
+    gt_prefix = "TerrazzoTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.TerrazzoTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "Terrazzo018_Color.jpg",
+        "normal": Path(gt_extract_dir) / "Terrazzo018_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "Terrazzo018_Roughness.jpg"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
+def test_wood_texture():
+    gt_prefix = "WoodTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.WoodTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "Wood049_Color.jpg",
+        "normal": Path(gt_extract_dir) / "Wood049_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "Wood049_Roughness.jpg"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
+def test_wood_floor_texture():
+    gt_prefix = "WoodFloorTexture"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    data = o3d.data.WoodFloorTexture()
+    assert Path(gt_download_dir).is_dir()
+
+    gt_path_map = {
+        "albedo": Path(gt_extract_dir) / "WoodFloor050_Color.jpg",
+        "normal": Path(gt_extract_dir) / "WoodFloor050_NormalDX.jpg",
+        "roughness": Path(gt_extract_dir) / "WoodFloor050_Roughness.jpg"
+    }
+
+    for file_name in data.path_map:
+        assert Path(data.path_map[file_name]) == gt_path_map[file_name]
+        assert Path(data.path_map[file_name]).is_file()
+
+    assert Path(data.albedo_texture_path) == gt_path_map["albedo"]
+    assert Path(data.normal_texture_path) == gt_path_map["normal"]
+    assert Path(data.roughness_texture_path) == gt_path_map["roughness"]
+
+    assert data.prefix == gt_prefix
+    assert Path(data.data_root) == gt_data_root
+    assert Path(data.download_dir) == gt_download_dir
+    assert Path(data.extract_dir) == gt_extract_dir
+
+
 def test_juneau():
     gt_prefix = "JuneauImage"
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
