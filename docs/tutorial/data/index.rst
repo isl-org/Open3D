@@ -9,7 +9,7 @@ Open3D comes with a built-in *dataset* module for automatic downloading of 3D mo
 
 Here is an example of loading the 3D Eagle *PointCloud* model in Python and C++ via an Open3D dataset:
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -20,7 +20,7 @@ Here is an example of loading the 3D Eagle *PointCloud* model in Python and C++ 
         pcd = o3d.io.read_point_cloud(dataset.path)
         o3d.visualization.draw(pcd)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -47,10 +47,8 @@ Here is an example of loading the 3D Eagle *PointCloud* model in Python and C++ 
   
   
 
-Open3D dataset reference
-************************
 
-Below is the code reference of currently available datasets in Open3D:
+Below are code references of currently available datasets in Open3D:
 
 
 PointCloud
@@ -61,14 +59,14 @@ PCDPointCloud
 
 Colored point cloud of a living room from the Redwood dataset in PCD format.
 
-**Python:**
+
 
 .. code-block:: python
 
     dataset = o3d.data.PCDPointCloud()
     pcd = o3d.io.read_point_cloud(dataset.path)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -80,14 +78,14 @@ PLYPointCloud
 
 Colored point cloud of a living room from the Redwood dataset in PLY format.
 
-**Python:**
+
 
 .. code-block:: python
 
     dataset = o3d.data.PLYPointCloud()
     pcd = o3d.io.read_point_cloud(dataset.path)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -99,14 +97,14 @@ EaglePointCloud
 
 Eagle colored point cloud.
 
-**Python:**
+
 
 .. code-block:: python
 
     dataset = o3d.data.EaglePointCloud()
     pcd = o3d.io.read_point_cloud(dataset.path)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -118,7 +116,7 @@ LivingRoomPointClouds
 
 57 point clouds of binary PLY format from the Redwood RGB-D Dataset.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -127,7 +125,7 @@ LivingRoomPointClouds
     for pcd_path in dataset.paths:
         pcds.append(o3d.io.read_point_cloud(pcd_path))
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -142,7 +140,7 @@ OfficePointClouds
 
 53 point clouds of binary PLY format from Redwood RGB-D Dataset.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -151,7 +149,7 @@ OfficePointClouds
     for pcd_path in dataset.paths:
         pcds.append(o3d.io.read_point_cloud(pcd_path))
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -169,14 +167,14 @@ BunnyMesh
 
 The bunny triangle mesh from Stanford in PLY format.
 
-**Python:**
+
 
 .. code-block:: python
 
     dataset = o3d.data.BunnyMesh()
     mesh = o3d.io.read_triangle_mesh(dataset.path)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -188,14 +186,14 @@ ArmadilloMesh
 
 The armadillo mesh from Stanford in PLY format.
 
-**Python:**
+
 
 .. code-block:: python
 
     dataset = o3d.data.ArmadilloMesh()
     mesh = o3d.io.read_triangle_mesh(dataset.path)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -207,14 +205,14 @@ KnotMesh
 
 A 3D Mobius knot mesh in PLY format.
 
-**Python:**
+
 
 .. code-block:: python
 
     dataset = o3d.data.KnotMesh()
     mesh = o3d.io.read_triangle_mesh(dataset.path)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -229,14 +227,14 @@ JuneauImage
 
 The RGB image ``JuneauImage.jpg`` file.
 
-**Python:**
+
 
 .. code-block:: python
 
     img_data = o3d.data.JuneauImage()
     img = o3d.io.read_image(img_data.path)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -254,7 +252,7 @@ living-room1 dataset. It also contains a camera trajectory log, a camera
 odometry log, an rgbd match file, and a point cloud reconstruction obtained from
 TSDF.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -270,7 +268,7 @@ TSDF.
 
     pcd = o3d.io.read_point_cloud(dataset.reconstruction_path)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -297,7 +295,7 @@ SampleFountainRGBDImages
 Sample set of 33 color and depth images from the Fountain RGBD dataset.
 It also contains camera poses at key frames log and mesh reconstruction.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -315,7 +313,7 @@ It also contains camera poses at key frames log and mesh reconstruction.
                               dataset.keyframe_poses_log_path)
     mesh = o3d.io.read_triangle_mesh(dataset.reconstruction_path)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -345,7 +343,7 @@ SampleNYURGBDImage
 Color image ``NYU_color.ppm`` and depth image ``NYU_depth.pgm`` sample from NYU
 RGBD dataset.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -383,7 +381,7 @@ SampleSUNRGBDImage
 Color image ``SUN_color.jpg`` and depth image ``SUN_depth.png`` sample from SUN
 RGBD dataset.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -393,7 +391,7 @@ RGBD dataset.
     rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -411,7 +409,7 @@ SampleTUMRGBDImage
 Color image ``TUM_color.png`` and depth image ``TUM_depth.png`` sample from TUM
 RGBD dataset.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -421,7 +419,7 @@ RGBD dataset.
     rgbd_image = o3d.geometry.RGBDImage.create_from_tum_format(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -441,7 +439,7 @@ DemoICPPointClouds
 3 point cloud fragments of binary PCD format, from living-room1 scene of Redwood
 RGB-D dataset. This data is used for ICP demo.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -450,7 +448,7 @@ RGB-D dataset. This data is used for ICP demo.
     pcd1 = o3d.io.read_point_cloud(dataset.paths[1])
     pcd2 = o3d.io.read_point_cloud(dataset.paths[2])
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -465,7 +463,7 @@ DemoColoredICPPointClouds
 2 point cloud fragments of binary PCD format, from apartment scene of Redwood
 RGB-D dataset. This data is used for Colored-ICP demo.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -473,7 +471,7 @@ RGB-D dataset. This data is used for Colored-ICP demo.
     pcd0 = o3d.io.read_point_cloud(dataset.paths[0])
     pcd1 = o3d.io.read_point_cloud(dataset.paths[1])
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -487,7 +485,7 @@ DemoCropPointCloud
 Point cloud and ``cropped.json`` (a saved selected polygon volume file).
 This data is used for point cloud crop demo.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -496,7 +494,7 @@ This data is used for point cloud crop demo.
     vol = o3d.visualization.read_selection_polygon_volume(dataset.cropped_json_path)
     chair = vol.crop_point_cloud(pcd)
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -512,7 +510,7 @@ DemoFeatureMatchingPointClouds
 Sample set of 2 point cloud fragments and their respective FPFH features and
 L32D features. This data is used for point cloud feature matching demo.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -527,7 +525,7 @@ L32D features. This data is used for point cloud feature matching demo.
     l32d_feature0 = o3d.io.read_feature(dataset.l32d_feature_paths[0])
     l32d_feature1 = o3d.io.read_feature(dataset.l32d_feature_paths[1])
 
-**C++:**
+
 
 .. code-block:: cpp
 
@@ -550,7 +548,7 @@ DemoPoseGraphOptimization
 Sample fragment pose graph, and global pose graph. This data is used for pose
 graph optimization demo.
 
-**Python:**
+
 
 .. code-block:: python
 
@@ -558,7 +556,7 @@ graph optimization demo.
     pose_graph_fragment = o3d.io.read_pose_graph(dataset.pose_graph_fragment_path)
     pose_graph_global = o3d.io.read_pose_graph(dataset.pose_graph_global_path)
 
-**C++:**
+
 
 .. code-block:: cpp
 

@@ -53,10 +53,6 @@ We also demonstrated how to apply materials manually to built-in Open3D geometri
 
     # Initialize the monkey dataset with downloaded and extracted 3D model
     >>> monkey_model = o3d.data.MonkeyModel()
-    [Open3D INFO] Downloading https://github.com/isl-org/open3d_downloads/releases/download/20220301-data/MonkeyModel.zip
-    [Open3D INFO] Downloaded to /home/intel/open3d_data/download/MonkeyModel/MonkeyModel.zip
-    [Open3D INFO] Extracting /home/intel/open3d_data/download/MonkeyModel/MonkeyModel.zip.
-    [Open3D INFO] Extracted to /home/intel/open3d_data/extract/MonkeyModel.
     # Extract Triangle Mesh data from the preloaded monkey dataset
     >>> monkey = o3d.io.read_triangle_mesh(monkey_model.path)
     >>> vis.draw(monkey)
@@ -110,10 +106,6 @@ Now, let's run the code which loads and renders the full 3D model of a flight he
 .. code-block:: python
 
     >>> helmet_model = o3d.data.FlightHelmetModel()
-    [Open3D INFO] Downloading https://github.com/isl-org/open3d_downloads/releases/download/20220301-data/FlightHelmetModel.zip
-    [Open3D INFO] Downloaded to /home/intel/open3d_data/download/FlightHelmetModel/FlightHelmetModel.zip
-    [Open3D INFO] Extracting /home/intel/open3d_data/download/FlightHelmetModel/FlightHelmetModel.zip.
-    [Open3D INFO] Extracted to /home/intel/open3d_data/extract/FlightHelmetModel.
     >>> helmet = o3d.io.read_triangle_model(helmet_model.path)
     >>> vis.draw(helmet)
     

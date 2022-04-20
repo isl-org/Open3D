@@ -93,14 +93,11 @@ Enter the following code at the Python prompt:
 
     # Download and initialize the dataset
     >>> dataset = o3d.data.PLYPointCloud()
-    [Open3D INFO] Downloading https://github.com/isl-org/open3d_downloads/releases/download/20220201-data/fragment.ply
-    [Open3D INFO] Downloaded to /home/intel/open3d_data/download/PLYPointCloud/fragment.ply
     # Create a Point Cloud object (pcd) from the dataset
     >>> pcd = o3d.io.read_point_cloud(dataset.path)
     # Customize the pcd object
     >>> rotate_180 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi, 0, 0))
     >>> pcd.rotate(rotate_180)
-    PointCloud with 196133 points.
     >>> vis.draw(pcd)
 	
 Open3D returns:
@@ -161,7 +158,6 @@ In the above example we learned how to create a primitive (``cube``) and render 
 .. code-block:: python
 
     >>> cube.compute_triangle_normals()
-    TriangleMesh with 8 points and 12 triangles.
     >>> vis.draw(cube)
 
 Clearly, that makes a big difference:
@@ -190,7 +186,6 @@ At the Python prompt in your terminal, enter the following lines of code:
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     >>> sphere.compute_vertex_normals()
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> vis.draw(sphere)
 		
 A rendered sphere appears:
@@ -224,7 +219,6 @@ In this example, we are going to use a ``compute_triangle_normals()`` rendering 
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0)
     >>> sphere.compute_triangle_normals()
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> vis.draw(sphere)
 
 
@@ -247,9 +241,7 @@ When we rendered a lit sphere in one of the previous sections (:ref:`smoothly_li
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     >>> sphere.compute_vertex_normals()
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> sphere.paint_uniform_color([0.65, 0.45, 0.62])
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> vis.draw(sphere)
    
 .. image:: https://user-images.githubusercontent.com/93158890/160883817-5a22f449-62e2-45e0-8033-bfec72e09210.jpg
@@ -270,7 +262,6 @@ Let's create a sphere based on a custom material:
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     >>> sphere.compute_vertex_normals()
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> mat = vis.rendering.MaterialRecord()
     >>> mat.shader = "defaultLit"
     >>> mat.base_color = np.asarray([1.0, 0.0, 1.0, 1.0])
@@ -313,10 +304,8 @@ In earlier examples, we used ``create_sphere()`` to render the sphere with basic
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     >>> sphere.compute_vertex_normals()
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
     >>> sphere.rotate(rotate_90)
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> mat = vis.rendering.MaterialRecord()
     >>> mat.shader = "defaultLit"
     >>> mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
@@ -352,10 +341,8 @@ In a previous metallic sphere rendering we covered a number of methods, paramete
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     >>> sphere.compute_vertex_normals()
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.  pi / 2, 0, 0))
     >>> sphere.rotate(rotate_90)
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> mat = vis.rendering.MaterialRecord()
     >>> mat.shader = "defaultLit"
     >>> mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
@@ -402,10 +389,8 @@ In this example, we will add textures to rendered objects:
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100, create_uv_map=True)
     >>> sphere.compute_vertex_normals()
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
     >>> sphere.rotate(rotate_90)
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> mat = vis.rendering.MaterialRecord()
     >>> mat.shader = "defaultLit"
     >>> mat.albedo_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_Color.jpg')
@@ -449,13 +434,10 @@ Line Sets are typically used to display a wireframe of a 3D model. Let's do that
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 25)
     >>> sphere.compute_vertex_normals()
-    TriangleMesh with 1202 points and 2400 triangles.
     >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.  pi / 2, 0, 0))
     >>> sphere.rotate(rotate_90)
-    TriangleMesh with 1202 points and 2400 triangles.
     >>> line_set = o3d.geometry.LineSet.create_from_triangle_mesh  (sphere)
     >>> line_set.paint_uniform_color([0.0, 0.0, 1.0])
-    LineSet with 3600 lines.
     >>> vis.draw(line_set)
 
   
@@ -485,11 +467,9 @@ In prior examples, we rendered only one 3D object at a time. But the ``draw()`` 
   
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     >>> sphere.compute_vertex_normals()
-    TriangleMesh with 19802 points and 39600 triangles.
     >>> aabb = o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)
     >>> line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(aabb)
     >>> line_set.paint_uniform_color([0, 0, 1])
-    LineSet with 12 lines.
     >>> vis.draw([sphere,line_set])
 
 
