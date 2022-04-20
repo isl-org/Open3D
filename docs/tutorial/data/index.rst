@@ -219,6 +219,244 @@ A 3D Mobius knot mesh in PLY format.
     data::KnotMesh dataset;
     auto mesh = io::CreateMeshFromFile(dataset.GetPath());
 
+TriangleModel with PRB Texture
+~~~~~~~~~~~~
+
+MonkeyModel
+---------
+
+The monkey model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.MonkeyModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::BunnyMesh dataset;
+    visualization::rendering::TriangleMeshModel model;
+    auto model = io::ReadTriangleModel(dataset.GetPath(), model);
+
+MonkeyModel
+---------
+
+The monkey model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.MonkeyModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::MonkeyModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+SwordModel
+---------
+
+The sword model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.SwordModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::SwordModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+CrateModel
+---------
+
+The crate model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.CrateModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::CrateModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+FlightHelmetModel
+---------
+
+The flight helmet gltf model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.FlightHelmetModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::FlightHelmetModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+Texture Material Images
+~~~~~
+
+MetalTexture
+-----------
+
+Albedo, normal, roughness and metallic texture files for metal based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.MetalTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+    mat.metallic_img = o3d.io.read_image(mat_data.metallic_texture_path)
+
+.. code-block:: cpp
+
+    data::MetalTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+    mat.metallic_img = io::CreateImageFromFile(mat_data.metallic_texture_path);
+
+PaintedPlasterTexture
+-----------
+
+Albedo, normal and roughness texture files for painted plaster based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.PaintedPlasterTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::PaintedPlasterTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+TilesTexture
+-----------
+
+Albedo, normal and roughness texture files for tiles based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.TilesTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::TilesTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+TerrazzoTexture
+-----------
+
+Albedo, normal and roughness texture files for terrazzo based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.TerrazzoTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::TerrazzoTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+WoodTexture
+-----------
+
+Albedo, normal and roughness texture files for wood based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.WoodTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::WoodTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+WoodFloorTexture
+-----------
+
+Albedo, normal and roughness texture files for wooden floor based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.WoodFloorTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::WoodFloorTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
 Image
 ~~~~~
 

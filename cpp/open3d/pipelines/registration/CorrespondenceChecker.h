@@ -62,8 +62,6 @@ public:
 public:
     /// \brief Function to check if two points can be aligned.
     ///
-    /// The two input point
-    /// clouds must have exact the same number of points.
     /// \param source Source point cloud.
     /// \param target Target point cloud.
     /// \param corres Correspondence set between source and target point cloud.

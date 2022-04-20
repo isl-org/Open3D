@@ -367,19 +367,6 @@ The ``draw()`` call here is identical to the metallic version of the sphere.
 Drawing a sphere with textures
 ::::::::::::::::::::::::::::::
 
-
-Pre-Requisites
-""""""""""""""
-
-In order to run this example, you must:
-
-1. Download the **demo_scene_assets.tgz** compressed file from https://github.com/isl-org/open3d_downloads/releases/tag/o3d_demo_scene 
-
-2. Copy **demo_scene_assets.tgz** to ``Open3D/examples/test_data/`` location on your system
-
-3. Decompress **demo_scene_assets.tgz** in ``Open3D/examples/test_data/`` so it becomes a subdirectory of ``/test_data/``.
-
-
 Running the code
 """"""""""""""""
 
@@ -391,11 +378,14 @@ In this example, we will add textures to rendered objects:
     >>> sphere.compute_vertex_normals()
     >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
     >>> sphere.rotate(rotate_90)
-    >>> mat = vis.rendering.MaterialRecord()
+    # Get the texture data.
+    >>> mat_data = o3d.data.TilesTexture()
+    # Create the material.
+    >>> mat = o3d.visualization.rendering.MaterialRecord()
     >>> mat.shader = "defaultLit"
-    >>> mat.albedo_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_Color.jpg')
-    >>> mat.normal_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_NormalDX.jpg')
-    >>> mat.roughness_img = o3d.io.read_image('examples/test_data/demo_scene_assets/Tiles074_Roughness.jpg')
+    >>> mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    >>> mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    >>> mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
     >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
 
 
