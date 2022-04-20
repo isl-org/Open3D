@@ -58,7 +58,7 @@ def jackjack_data_loader():
 
     # Set dataset specific parameters.
     config = {}
-    config['path_dataset'] = jackjack_bag.extract_dir
+    config['path_dataset'] = jackjack_bag.path
     config['path_intrinsic'] = ""
     config['max_depth'] = 0.85
     config['voxel_size'] = 0.025

@@ -75,8 +75,6 @@ def jack_jack_dataloader(config):
     # Override default config parameters with dataset specific parameters.
     print("Extracting frames from RGBD video file")
     config.path_dataset = jackjack_rgbd.path
-    config.depth_max = 0.85
-    config.voxel_size = 0.025
     return config
 
 

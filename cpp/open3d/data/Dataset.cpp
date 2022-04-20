@@ -591,7 +591,7 @@ JackJackL515Bag::JackJackL515Bag(const std::string& data_root)
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
                "20220301-data/JackJackL515Bag.bag"},
               "9f670dc92569b986b739c4179a659176",
-              /*no_extract =*/false,
+              /*no_extract =*/true,
               data_root) {
     path_ = Dataset::GetExtractDir() + "/JackJackL515Bag.bag";
 }
