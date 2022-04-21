@@ -147,17 +147,16 @@ class CppFormatter:
         subprocess.check_output(cmd)
 
     def run(self, apply, no_parallel, verbose):
-        num_processes = multiprocessing.cpu_count() if not no_parallel else 1
+        num_procs = multiprocessing.cpu_count() if not no_parallel else 1
         action_name = "Applying C++/CUDA style" if apply else "Checking C++/CUDA style"
-        print(f"{action_name} ({num_processes} processes)")
-
+        print(f"{action_name} ({num_procs} process{'es'[:2*num_procs^2]})")
         if verbose:
             print("To format:")
             for file_path in self.file_paths:
                 print(f"> {file_path}")
 
         start_time = time.time()
-        with multiprocessing.Pool(num_processes) as pool:
+        with multiprocessing.Pool(num_procs) as pool:
             is_valid_files = pool.map(
                 partial(self._check_style,
                         clang_format_bin=self.clang_format_bin),
@@ -237,9 +236,9 @@ class PythonFormatter:
                                                    in_place=True)
 
     def run(self, apply, no_parallel, verbose):
-        num_processes = multiprocessing.cpu_count() if not no_parallel else 1
+        num_procs = multiprocessing.cpu_count() if not no_parallel else 1
         action_name = "Applying Python style" if apply else "Checking Python style"
-        print(f"{action_name} ({num_processes} processes)")
+        print(f"{action_name} ({num_procs} process{'es'[:2*num_procs^2]})")
 
         if verbose:
             print("To format:")
@@ -247,7 +246,7 @@ class PythonFormatter:
                 print(f"> {file_path}")
 
         start_time = time.time()
-        with multiprocessing.Pool(num_processes) as pool:
+        with multiprocessing.Pool(num_procs) as pool:
             is_valid_files = pool.map(
                 partial(self._check_style, style_config=self.style_config),
                 self.file_paths)
@@ -312,9 +311,9 @@ class JupyterFormatter:
         return not changed
 
     def run(self, apply, no_parallel, verbose):
-        num_processes = multiprocessing.cpu_count() if not no_parallel else 1
+        num_procs = multiprocessing.cpu_count() if not no_parallel else 1
         action_name = "Applying Jupyter style" if apply else "Checking Jupyter style"
-        print(f"{action_name} ({num_processes} processes)")
+        print(f"{action_name} ({num_procs} process{'es'[:2*num_procs^2]})")
 
         if verbose:
             print("To format:")
@@ -322,7 +321,7 @@ class JupyterFormatter:
                 print(f"> {file_path}")
 
         start_time = time.time()
-        with multiprocessing.Pool(num_processes) as pool:
+        with multiprocessing.Pool(num_procs) as pool:
             is_valid_files = pool.map(
                 partial(self._check_or_apply_style,
                         style_config=self.style_config,
