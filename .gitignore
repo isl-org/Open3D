@@ -27,7 +27,6 @@ cmake-build-release/
 util/pip_package/dist/
 doxygen/
 node_modules/
-examples/
 
 # Editor files
 *.*~
@@ -91,7 +90,3 @@ docs/Doxyfile
 docs/getting_started.rst
 docs/docker.rst
 docs/tensorboard.md
-docs/tutorial/visualization/!visualizer_scratchpad.rst
-docs/tutorial/visualization/visualizer_basic (backup).rst
-docs/tutorial/visualization/visualizer_advanced (backup).rst
-docs/tutorial/data/index (backup).rst
