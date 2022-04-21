@@ -34,7 +34,6 @@ System requirements
   <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_ to
   install the CUDA toolkit from Nvidia.
 
-
 Cloning Open3D
 --------------
 
@@ -56,7 +55,6 @@ Ubuntu/macOS
 
     # Only needed for Ubuntu
     util/install_deps_ubuntu.sh
-
 
 .. _compilation_unix_python:
 
@@ -115,7 +113,6 @@ To install Open3D C++ library:
 To link a C++ project against the Open3D C++ library, please refer to
 :ref:`cplusplus_example_project`.
 
-
 To install Open3D Python library, build one of the following options:
 
 .. code-block:: bash
@@ -136,7 +133,6 @@ Finally, verify the python installation with:
 .. code-block:: bash
 
     python -c "import open3d"
-
 
 .. _compilation_windows:
 
@@ -270,7 +266,6 @@ Open3D-ML from GitHub during the build with
     To reproduce the Open3D PyTorch wheels see the builder repository `here.
     <https://github.com/isl-org/pytorch_builder>`_
 
-
 The following example shows the command for building the ops with GPU support
 for all supported ML frameworks and bundling the high level Open3D-ML code.
 
@@ -368,7 +363,6 @@ To build and run C++ unit tests:
     cmake -DBUILD_UNIT_TESTS=ON ..
     make -j$(nproc)
     ./bin/tests
-
 
 To run Python unit tests:
 

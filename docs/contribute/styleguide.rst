@@ -24,7 +24,6 @@ We also recommend reading the `C++ Core Guidelines <https://github.com/isocpp/Cp
 
 For Python, please use Google style guidelines, as shown `here <http://google.github.io/styleguide/pyguide.html>`_.
 
-
 Style checker
 =============
 
@@ -81,7 +80,6 @@ macOS
    brew install clang-format@10
    clang-format --version
 
-
 Alternatively, you may also download the clang-10 macOS package from
 `LLVM Download Page`_, unzip and add the directory containing ``clang-format``
 to ``PATH``.
@@ -99,7 +97,6 @@ installation, select the option which allows adding clang toolchains to
 
    clang-format --version
 
-
 .. _14-check-version:
 
 Checking clang-format version
@@ -114,7 +111,6 @@ After installation, check ``clang-format``'s version with:
 
    # Or, when installed as clang-format-10, e.g. on Ubuntu
    clang-format-10 --version
-
 
 .. _2-install-yapf:
 
@@ -134,7 +130,6 @@ Install YAPF with
 
 You can also download `YAPF <https://github.com/google/yapf.git>`_ and install
 it from source.
-
 
 .. _3-checking-and-applying-format:
 
