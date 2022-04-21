@@ -93,8 +93,10 @@ Enter the following code at the Python prompt:
 
     # Download and initialize the dataset
     >>> dataset = o3d.data.PLYPointCloud()
+    
     # Create a Point Cloud object (pcd) from the dataset
     >>> pcd = o3d.io.read_point_cloud(dataset.path)
+    
     # Customize the pcd object
     >>> rotate_180 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi, 0, 0))
     >>> pcd.rotate(rotate_180)
@@ -378,11 +380,14 @@ In this example, we will add textures to rendered objects:
     >>> sphere.compute_vertex_normals()
     >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
     >>> sphere.rotate(rotate_90)
+    
     # Get the texture data from the dataset
     >>> mat_data = o3d.data.TilesTexture()
+    
     # Create the material
     >>> mat = o3d.visualization.rendering.MaterialRecord()
     >>> mat.shader = "defaultLit"
+    
     # Load graphic texture files from the dataset into material properties
     >>> mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
     >>> mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
