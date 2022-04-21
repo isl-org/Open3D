@@ -53,7 +53,7 @@ public:
 
     Material(const Material &mat) = default;
 
-    Material& operator=(const Material& other) = default;
+    Material &operator=(const Material &other) = default;
 
     /// Create an empty but valid material for the specified material name
     Material(const std::string &material_name)
