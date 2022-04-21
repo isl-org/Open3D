@@ -173,7 +173,7 @@ class CppFormatter:
                     self._apply_style(file_path, self.clang_format_bin)
             if not is_valid_header:
                 wrong_header_files.append(file_path)
-        print(f"{action_name} takes {time.time() - start_time:.2f}s")
+        print(f"{action_name} took {time.time() - start_time:.2f}s")
 
         return (changed_files, wrong_header_files)
 
@@ -263,7 +263,7 @@ class PythonFormatter:
             if not is_valid_header:
                 wrong_header_files.append(file_path)
 
-        print(f"{action_name} takes {time.time() - start_time:.2f}s")
+        print(f"{action_name} took {time.time() - start_time:.2f}s")
         return (changed_files, wrong_header_files)
 
 
@@ -335,7 +335,7 @@ class JupyterFormatter:
                     self._check_or_apply_style(file_path,
                                                style_config=self.style_config,
                                                apply=True)
-        print(f"{action_name} takes {time.time() - start_time:.2f}s")
+        print(f"{action_name} took {time.time() - start_time:.2f}s")
 
         return changed_files
 
