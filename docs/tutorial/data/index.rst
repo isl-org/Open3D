@@ -1,15 +1,11 @@
 .. _dataset:
 
+Dataset
+=======
 
-Datasets
-========
-
-
-Open3D comes with a built-in *dataset* module for automatic downloading of 3D models from the Internet and storing them in a designated directory on a local computer. It makes accessing commonly used 3D model examples a lot more convenient - no more manual downloading, *git* cloning, saving, and / or archive decompressing of models.
-
-Here is an example of loading the 3D Eagle *PointCloud* model in Python and C++ via an Open3D dataset:
-
-
+Open3D comes with a built-in dataset module for convenient access to commonly
+used example datasets. These datasets will be downloaded automatically from the
+internet.
 
 .. code-block:: python
 
@@ -19,8 +15,6 @@ Here is an example of loading the 3D Eagle *PointCloud* model in Python and C++ 
         dataset = o3d.data.EaglePointCloud()
         pcd = o3d.io.read_point_cloud(dataset.path)
         o3d.visualization.draw(pcd)
-
-
 
 .. code-block:: cpp
 
@@ -38,18 +32,12 @@ Here is an example of loading the 3D Eagle *PointCloud* model in Python and C++ 
         return 0;
     }
 
-
-
-
-- Datasets are downloaded and cached automatically.
-- The default data root directory for downloaded datasets is ``~/open3d_data``. Data will be downloaded to ``~/open3d_data/download`` and extracted to ``~/open3d_data/extract``. 
-- Optionally, you can change the default data root directory by setting the environment variable ``OPEN3D_DATA_ROOT`` or passing the ``data_root`` argument when constructing a dataset object.
-  
-  
-
-
-Below are code references of currently available datasets in Open3D:
-
+- Datasets are downloaded can cached automatically. The default data root is
+  ``~/open3d_data``. Data will be downloaded to ``~/open3d_data/download``
+  and extracted to ``~/open3d_data/extract``.
+- Optionally, you can change the default data root. This can be done by setting
+  the environment variable ``OPEN3D_DATA_ROOT`` or passing the ``data_root``
+  argument when constructing a dataset object.
 
 PointCloud
 ~~~~~~~~~~
@@ -59,14 +47,10 @@ PCDPointCloud
 
 Colored point cloud of a living room from the Redwood dataset in PCD format.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.PCDPointCloud()
     pcd = o3d.io.read_point_cloud(dataset.path)
-
-
 
 .. code-block:: cpp
 
@@ -78,14 +62,10 @@ PLYPointCloud
 
 Colored point cloud of a living room from the Redwood dataset in PLY format.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.PLYPointCloud()
     pcd = o3d.io.read_point_cloud(dataset.path)
-
-
 
 .. code-block:: cpp
 
@@ -97,14 +77,10 @@ EaglePointCloud
 
 Eagle colored point cloud.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.EaglePointCloud()
     pcd = o3d.io.read_point_cloud(dataset.path)
-
-
 
 .. code-block:: cpp
 
@@ -116,16 +92,12 @@ LivingRoomPointClouds
 
 57 point clouds of binary PLY format from the Redwood RGB-D Dataset.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.LivingRoomPointClouds()
     pcds = []
     for pcd_path in dataset.paths:
         pcds.append(o3d.io.read_point_cloud(pcd_path))
-
-
 
 .. code-block:: cpp
 
@@ -140,16 +112,12 @@ OfficePointClouds
 
 53 point clouds of binary PLY format from Redwood RGB-D Dataset.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.OfficePointClouds()
     pcds = []
     for pcd_path in dataset.paths:
         pcds.append(o3d.io.read_point_cloud(pcd_path))
-
-
 
 .. code-block:: cpp
 
@@ -167,14 +135,10 @@ BunnyMesh
 
 The bunny triangle mesh from Stanford in PLY format.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.BunnyMesh()
     mesh = o3d.io.read_triangle_mesh(dataset.path)
-
-
 
 .. code-block:: cpp
 
@@ -186,14 +150,10 @@ ArmadilloMesh
 
 The armadillo mesh from Stanford in PLY format.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.ArmadilloMesh()
     mesh = o3d.io.read_triangle_mesh(dataset.path)
-
-
 
 .. code-block:: cpp
 
@@ -205,257 +165,15 @@ KnotMesh
 
 A 3D Mobius knot mesh in PLY format.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.KnotMesh()
     mesh = o3d.io.read_triangle_mesh(dataset.path)
 
-
-
 .. code-block:: cpp
 
     data::KnotMesh dataset;
     auto mesh = io::CreateMeshFromFile(dataset.GetPath());
-
-TriangleModel with PRB Texture
-~~~~~~~~~~~~
-
-MonkeyModel
----------
-
-The monkey model with PRB texture.
-
-.. code-block:: python
-
-    dataset = o3d.data.MonkeyModel()
-    model = o3d.io.read_triangle_model(dataset.path)
-
-.. code-block:: cpp
-
-    data::BunnyMesh dataset;
-    visualization::rendering::TriangleMeshModel model;
-    auto model = io::ReadTriangleModel(dataset.GetPath(), model);
-
-MonkeyModel
----------
-
-The monkey model with PRB texture.
-
-.. code-block:: python
-
-    dataset = o3d.data.MonkeyModel()
-    model = o3d.io.read_triangle_model(dataset.path)
-
-.. code-block:: cpp
-
-    data::MonkeyModel dataset;
-    visualization::rendering::TriangleMeshModel model;
-    io::ReadTriangleModel(dataset.GetPath(), model);
-
-SwordModel
----------
-
-The sword model with PRB texture.
-
-.. code-block:: python
-
-    dataset = o3d.data.SwordModel()
-    model = o3d.io.read_triangle_model(dataset.path)
-
-.. code-block:: cpp
-
-    data::SwordModel dataset;
-    visualization::rendering::TriangleMeshModel model;
-    io::ReadTriangleModel(dataset.GetPath(), model);
-
-CrateModel
----------
-
-The crate model with PRB texture.
-
-.. code-block:: python
-
-    dataset = o3d.data.CrateModel()
-    model = o3d.io.read_triangle_model(dataset.path)
-
-.. code-block:: cpp
-
-    data::CrateModel dataset;
-    visualization::rendering::TriangleMeshModel model;
-    io::ReadTriangleModel(dataset.GetPath(), model);
-
-FlightHelmetModel
----------
-
-The flight helmet gltf model with PRB texture.
-
-.. code-block:: python
-
-    dataset = o3d.data.FlightHelmetModel()
-    model = o3d.io.read_triangle_model(dataset.path)
-
-.. code-block:: cpp
-
-    data::FlightHelmetModel dataset;
-    visualization::rendering::TriangleMeshModel model;
-    io::ReadTriangleModel(dataset.GetPath(), model);
-
-Texture Material Images
-~~~~~
-
-MetalTexture
------------
-
-Albedo, normal, roughness and metallic texture files for metal based material.
-
-.. code-block:: python
-
-    mat_data = o3d.data.MetalTexture()
-
-    mat = o3d.visualization.rendering.MaterialRecord()
-    mat.shader = "defaultLit"
-    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
-    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
-    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
-    mat.metallic_img = o3d.io.read_image(mat_data.metallic_texture_path)
-
-.. code-block:: cpp
-
-    data::MetalTexture mat_data;
-
-    auto mat = visualization::rendering::MaterialRecord();
-    mat.shader = "defaultUnlit";
-    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
-    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
-    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
-    mat.metallic_img = io::CreateImageFromFile(mat_data.metallic_texture_path);
-
-PaintedPlasterTexture
------------
-
-Albedo, normal and roughness texture files for painted plaster based material.
-
-.. code-block:: python
-
-    mat_data = o3d.data.PaintedPlasterTexture()
-
-    mat = o3d.visualization.rendering.MaterialRecord()
-    mat.shader = "defaultLit"
-    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
-    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
-    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
-
-.. code-block:: cpp
-
-    data::PaintedPlasterTexture mat_data;
-
-    auto mat = visualization::rendering::MaterialRecord();
-    mat.shader = "defaultUnlit";
-    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
-    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
-    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
-
-TilesTexture
------------
-
-Albedo, normal and roughness texture files for tiles based material.
-
-.. code-block:: python
-
-    mat_data = o3d.data.TilesTexture()
-
-    mat = o3d.visualization.rendering.MaterialRecord()
-    mat.shader = "defaultLit"
-    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
-    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
-    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
-
-.. code-block:: cpp
-
-    data::TilesTexture mat_data;
-
-    auto mat = visualization::rendering::MaterialRecord();
-    mat.shader = "defaultUnlit";
-    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
-    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
-    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
-
-TerrazzoTexture
------------
-
-Albedo, normal and roughness texture files for terrazzo based material.
-
-.. code-block:: python
-
-    mat_data = o3d.data.TerrazzoTexture()
-
-    mat = o3d.visualization.rendering.MaterialRecord()
-    mat.shader = "defaultLit"
-    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
-    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
-    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
-
-.. code-block:: cpp
-
-    data::TerrazzoTexture mat_data;
-
-    auto mat = visualization::rendering::MaterialRecord();
-    mat.shader = "defaultUnlit";
-    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
-    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
-    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
-
-WoodTexture
------------
-
-Albedo, normal and roughness texture files for wood based material.
-
-.. code-block:: python
-
-    mat_data = o3d.data.WoodTexture()
-
-    mat = o3d.visualization.rendering.MaterialRecord()
-    mat.shader = "defaultLit"
-    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
-    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
-    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
-
-.. code-block:: cpp
-
-    data::WoodTexture mat_data;
-
-    auto mat = visualization::rendering::MaterialRecord();
-    mat.shader = "defaultUnlit";
-    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
-    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
-    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
-
-WoodFloorTexture
------------
-
-Albedo, normal and roughness texture files for wooden floor based material.
-
-.. code-block:: python
-
-    mat_data = o3d.data.WoodFloorTexture()
-
-    mat = o3d.visualization.rendering.MaterialRecord()
-    mat.shader = "defaultLit"
-    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
-    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
-    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
-
-.. code-block:: cpp
-
-    data::WoodFloorTexture mat_data;
-
-    auto mat = visualization::rendering::MaterialRecord();
-    mat.shader = "defaultUnlit";
-    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
-    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
-    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
 
 Image
 ~~~~~
@@ -465,14 +183,10 @@ JuneauImage
 
 The RGB image ``JuneauImage.jpg`` file.
 
-
-
 .. code-block:: python
 
     img_data = o3d.data.JuneauImage()
     img = o3d.io.read_image(img_data.path)
-
-
 
 .. code-block:: cpp
 
@@ -490,8 +204,6 @@ living-room1 dataset. It also contains a camera trajectory log, a camera
 odometry log, an rgbd match file, and a point cloud reconstruction obtained from
 TSDF.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.SampleRedwoodRGBDImages()
@@ -505,8 +217,6 @@ TSDF.
         rgbd_images.append(rgbd_image)
 
     pcd = o3d.io.read_point_cloud(dataset.reconstruction_path)
-
-
 
 .. code-block:: cpp
 
@@ -533,8 +243,6 @@ SampleFountainRGBDImages
 Sample set of 33 color and depth images from the Fountain RGBD dataset.
 It also contains camera poses at key frames log and mesh reconstruction.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.SampleFountainRGBDImages()
@@ -550,8 +258,6 @@ It also contains camera poses at key frames log and mesh reconstruction.
     camera_trajectory = o3d.io.read_pinhole_camera_trajectory(
                               dataset.keyframe_poses_log_path)
     mesh = o3d.io.read_triangle_mesh(dataset.reconstruction_path)
-
-
 
 .. code-block:: cpp
 
@@ -580,8 +286,6 @@ SampleNYURGBDImage
 
 Color image ``NYU_color.ppm`` and depth image ``NYU_depth.pgm`` sample from NYU
 RGBD dataset.
-
-
 
 .. code-block:: python
 
@@ -619,8 +323,6 @@ SampleSUNRGBDImage
 Color image ``SUN_color.jpg`` and depth image ``SUN_depth.png`` sample from SUN
 RGBD dataset.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.SampleSUNRGBDImage()
@@ -628,8 +330,6 @@ RGBD dataset.
     depth_raw = o3d.io.read_image(dataset.depth_path)
     rgbd_image = o3d.geometry.RGBDImage.create_from_sun_format(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
-
-
 
 .. code-block:: cpp
 
@@ -647,8 +347,6 @@ SampleTUMRGBDImage
 Color image ``TUM_color.png`` and depth image ``TUM_depth.png`` sample from TUM
 RGBD dataset.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.SampleTUMRGBDImage()
@@ -656,8 +354,6 @@ RGBD dataset.
     depth_raw = o3d.io.read_image(dataset.depth_path)
     rgbd_image = o3d.geometry.RGBDImage.create_from_tum_format(
         color_raw, depth_raw, convert_rgb_to_intensity=False)
-
-
 
 .. code-block:: cpp
 
@@ -677,16 +373,12 @@ DemoICPPointClouds
 3 point cloud fragments of binary PCD format, from living-room1 scene of Redwood
 RGB-D dataset. This data is used for ICP demo.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.DemoICPPointClouds()
     pcd0 = o3d.io.read_point_cloud(dataset.paths[0])
     pcd1 = o3d.io.read_point_cloud(dataset.paths[1])
     pcd2 = o3d.io.read_point_cloud(dataset.paths[2])
-
-
 
 .. code-block:: cpp
 
@@ -701,15 +393,11 @@ DemoColoredICPPointClouds
 2 point cloud fragments of binary PCD format, from apartment scene of Redwood
 RGB-D dataset. This data is used for Colored-ICP demo.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.DemoColoredICPPointClouds()
     pcd0 = o3d.io.read_point_cloud(dataset.paths[0])
     pcd1 = o3d.io.read_point_cloud(dataset.paths[1])
-
-
 
 .. code-block:: cpp
 
@@ -723,16 +411,12 @@ DemoCropPointCloud
 Point cloud and ``cropped.json`` (a saved selected polygon volume file).
 This data is used for point cloud crop demo.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.DemoCropPointCloud()
     pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
     vol = o3d.visualization.read_selection_polygon_volume(dataset.cropped_json_path)
     chair = vol.crop_point_cloud(pcd)
-
-
 
 .. code-block:: cpp
 
@@ -743,12 +427,10 @@ This data is used for point cloud crop demo.
     auto chair = vol.CropPointCloud(*pcd);
 
 DemoFeatureMatchingPointClouds
-------------------------------
+-----------------------------
 
 Sample set of 2 point cloud fragments and their respective FPFH features and
 L32D features. This data is used for point cloud feature matching demo.
-
-
 
 .. code-block:: python
 
@@ -762,8 +444,6 @@ L32D features. This data is used for point cloud feature matching demo.
 
     l32d_feature0 = o3d.io.read_feature(dataset.l32d_feature_paths[0])
     l32d_feature1 = o3d.io.read_feature(dataset.l32d_feature_paths[1])
-
-
 
 .. code-block:: cpp
 
@@ -786,15 +466,11 @@ DemoPoseGraphOptimization
 Sample fragment pose graph, and global pose graph. This data is used for pose
 graph optimization demo.
 
-
-
 .. code-block:: python
 
     dataset = o3d.data.DemoPoseGraphOptimization()
     pose_graph_fragment = o3d.io.read_pose_graph(dataset.pose_graph_fragment_path)
     pose_graph_global = o3d.io.read_pose_graph(dataset.pose_graph_global_path)
-
-
 
 .. code-block:: cpp
 
