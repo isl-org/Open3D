@@ -6,7 +6,7 @@ Open3D style guide
 Style checker
 =============
 
-Install requirements
+Install dependencies
 --------------------
 
 .. code:: bash
