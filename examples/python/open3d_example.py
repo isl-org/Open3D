@@ -207,6 +207,18 @@ def add_if_exists(path_dataset, folder_names):
         f"None of the folders {folder_names} found in {path_dataset}")
 
 
+def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
+    color = o3d.io.read_image(color_file)
+    depth = o3d.io.read_image(depth_file)
+    rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
+        color,
+        depth,
+        depth_scale=config["depth_scale"],
+        depth_trunc=config["max_depth"],
+        convert_rgb_to_intensity=convert_rgb_to_intensity)
+    return rgbd_image
+
+
 def get_rgbd_folders(path_dataset):
     path_color = add_if_exists(path_dataset, ["image/", "rgb/", "color/"])
     path_depth = join(path_dataset, "depth/")

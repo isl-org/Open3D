@@ -22,7 +22,7 @@ Integrate RGBD frames
 .. literalinclude:: ../../../examples/python/reconstruction_system/integrate_scene.py
    :language: python
    :lineno-start: 38
-   :lines: 27,39-75
+   :lines: 27,40-72
    :linenos:
 
 This function first reads the alignment results from both
