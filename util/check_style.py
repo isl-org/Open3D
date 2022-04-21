@@ -26,7 +26,6 @@
 
 import subprocess
 import re
-import os
 import shutil
 import argparse
 from pathlib import Path
@@ -34,34 +33,6 @@ import multiprocessing
 from functools import partial
 import time
 import sys
-
-# Yapf requires python 3.6+
-if sys.version_info < (3, 6):
-    raise RuntimeError(
-        "Requires Python 3.6+, currently using Python {}.{}.".format(
-            sys.version_info.major, sys.version_info.minor))
-
-# Check and import yapf
-# > not found: throw exception
-# > version mismatch: throw exception
-try:
-    import yapf
-except ImportError:
-    raise ImportError(
-        "yapf not found. Install with `pip install yapf==0.30.0`.")
-if yapf.__version__ != "0.30.0":
-    raise RuntimeError(
-        "yapf 0.30.0 required. Install with `pip install yapf==0.30.0`.")
-print("Using yapf version {}".format(yapf.__version__))
-
-# Check and import nbformat
-# > not found: throw exception
-try:
-    import nbformat
-except ImportError:
-    raise ImportError(
-        "nbformat not found. Install with `pip install nbformat`.")
-print("Using nbformat version {}".format(nbformat.__version__))
 
 PYTHON_FORMAT_DIRS = [
     "examples",
@@ -81,68 +52,30 @@ CPP_FORMAT_DIRS = [
     "docs/_static",
 ]
 
+# Yapf requires python 3.6+
+if sys.version_info < (3, 6):
+    raise RuntimeError("Requires Python 3.6+, currently using Python "
+                       f"{sys.version_info.major}.{sys.version_info.minor}.")
 
-def _glob_files(directories, extensions):
-    """
-    Find files with certain extensions in directories recursively.
+# Check and import yapf
+# > not found: throw exception
+# > version mismatch: throw exception
+try:
+    import yapf
+except ImportError:
+    raise ImportError(
+        "yapf not found. Install with `pip install yapf==0.30.0`.")
+if yapf.__version__ != "0.30.0":
+    raise RuntimeError(
+        "yapf 0.30.0 required. Install with `pip install yapf==0.30.0`.")
 
-    Args:
-        directories: list of directories, relative to the root Open3D repo directory.
-        extensions: list of extensions, e.g. ["cpp", "h"].
-
-    Return:
-        List of file paths.
-    """
-    pwd = Path(os.path.dirname(os.path.abspath(__file__)))
-    open3d_root_dir = pwd.parent
-
-    file_paths = []
-    for directory in directories:
-        directory = open3d_root_dir / directory
-        for extension in extensions:
-            extension_regex = "*." + extension
-            file_paths.extend(directory.rglob(extension_regex))
-    file_paths = [str(file_path) for file_path in file_paths]
-    file_paths = sorted(list(set(file_paths)))
-    return file_paths
-
-
-def _find_clang_format():
-    """
-    Find clang-format:
-      - not found: throw exception
-      - version mismatch: print warning
-    """
-    preferred_clang_format_name = "clang-format-10"
-    preferred_version_major = 10
-    clang_format_bin = shutil.which(preferred_clang_format_name)
-    if clang_format_bin is None:
-        clang_format_bin = shutil.which("clang-format")
-    if clang_format_bin is None:
-        raise RuntimeError(
-            "clang-format not found. "
-            "See http://www.open3d.org/docs/release/contribute/styleguide.html#style-guide "
-            "for help on clang-format installation.")
-    version_str = subprocess.check_output([clang_format_bin, "--version"
-                                          ]).decode("utf-8").strip()
-    try:
-        m = re.match("^clang-format version ([0-9.]*).*$", version_str)
-        if m:
-            version_str = m.group(1)
-            version_str_token = version_str.split(".")
-            major = int(version_str_token[0])
-            if major != preferred_version_major:
-                print("Warning: {} required, but got {}.".format(
-                    preferred_clang_format_name, version_str))
-        else:
-            raise
-    except:
-        print("Warning: failed to parse clang-format version {}, "
-              "please ensure {} is used.".format(version_str,
-                                                 preferred_clang_format_name))
-    print("Using clang-format version {}.".format(version_str))
-
-    return clang_format_bin
+# Check and import nbformat
+# > not found: throw exception
+try:
+    import nbformat
+except ImportError:
+    raise ImportError(
+        "nbformat not found. Install with `pip install nbformat`.")
 
 
 class CppFormatter:
@@ -214,28 +147,21 @@ class CppFormatter:
         subprocess.check_output(cmd)
 
     def run(self, do_apply_style, no_parallel, verbose):
-        if do_apply_style:
-            print("Applying C++/CUDA style...")
-        else:
-            print("Checking C++/CUDA style...")
+        num_processes = multiprocessing.cpu_count() if not no_parallel else 1
+        action_name = "Applying C++/CUDA style" if do_apply_style else "Checking C++/CUDA style"
+        print(f"{action_name} ({num_processes} processes)")
 
         if verbose:
             print("To format:")
             for file_path in self.file_paths:
-                print("> {}".format(file_path))
+                print(f"> {file_path}")
 
         start_time = time.time()
-        if no_parallel:
-            is_valid_files = map(
+        with multiprocessing.Pool(num_processes) as pool:
+            is_valid_files = pool.map(
                 partial(self._check_style,
                         clang_format_bin=self.clang_format_bin),
                 self.file_paths)
-        else:
-            with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-                is_valid_files = pool.map(
-                    partial(self._check_style,
-                            clang_format_bin=self.clang_format_bin),
-                    self.file_paths)
 
         changed_files = []
         wrong_header_files = []
@@ -248,7 +174,7 @@ class CppFormatter:
                     self._apply_style(file_path, self.clang_format_bin)
             if not is_valid_header:
                 wrong_header_files.append(file_path)
-        print("Formatting takes {:.2f}s".format(time.time() - start_time))
+        print(f"{action_name} takes {time.time() - start_time:.2f}s")
 
         return (changed_files, wrong_header_files)
 
@@ -311,26 +237,20 @@ class PythonFormatter:
                                                    in_place=True)
 
     def run(self, do_apply_style, no_parallel, verbose):
-        if do_apply_style:
-            print("Applying Python style...")
-        else:
-            print("Checking Python style...")
+        num_processes = multiprocessing.cpu_count() if not no_parallel else 1
+        action_name = "Applying Python style" if do_apply_style else "Checking Python style"
+        print(f"{action_name} ({num_processes} processes)")
 
         if verbose:
             print("To format:")
             for file_path in self.file_paths:
-                print("> {}".format(file_path))
+                print(f"> {file_path}")
 
         start_time = time.time()
-        if no_parallel:
-            is_valid_files = map(
+        with multiprocessing.Pool(num_processes) as pool:
+            is_valid_files = pool.map(
                 partial(self._check_style, style_config=self.style_config),
                 self.file_paths)
-        else:
-            with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-                is_valid_files = pool.map(
-                    partial(self._check_style, style_config=self.style_config),
-                    self.file_paths)
 
         changed_files = []
         wrong_header_files = []
@@ -344,7 +264,7 @@ class PythonFormatter:
             if not is_valid_header:
                 wrong_header_files.append(file_path)
 
-        print("Formatting takes {:.2f}s".format(time.time() - start_time))
+        print(f"{action_name} takes {time.time() - start_time:.2f}s")
         return (changed_files, wrong_header_files)
 
 
@@ -392,28 +312,21 @@ class JupyterFormatter:
         return not changed
 
     def run(self, do_apply_style, no_parallel, verbose):
-        if do_apply_style:
-            print("Applying Jupyter style...")
-        else:
-            print("Checking Jupyter style...")
+        num_processes = multiprocessing.cpu_count() if not no_parallel else 1
+        action_name = "Applying Jupyter style" if do_apply_style else "Checking Jupyter style"
+        print(f"{action_name} ({num_processes} processes)")
 
         if verbose:
             print("To format:")
             for file_path in self.file_paths:
-                print("> {}".format(file_path))
+                print(f"> {file_path}")
 
         start_time = time.time()
-        if no_parallel:
-            is_valid_files = map(
+        with multiprocessing.Pool(num_processes) as pool:
+            is_valid_files = pool.map(
                 partial(self._check_or_apply_style,
                         style_config=self.style_config,
                         do_apply_style=False), self.file_paths)
-        else:
-            with multiprocessing.Pool(multiprocessing.cpu_count()) as pool:
-                is_valid_files = pool.map(
-                    partial(self._check_or_apply_style,
-                            style_config=self.style_config,
-                            do_apply_style=False), self.file_paths)
 
         changed_files = []
         for is_valid, file_path in zip(is_valid_files, self.file_paths):
@@ -423,9 +336,84 @@ class JupyterFormatter:
                     self._check_or_apply_style(file_path,
                                                style_config=self.style_config,
                                                do_apply_style=True)
-        print("Formatting takes {:.2f}s".format(time.time() - start_time))
+        print(f"{action_name} takes {time.time() - start_time:.2f}s")
 
         return changed_files
+
+
+def _glob_files(directories, extensions):
+    """
+    Find files with certain extensions in directories recursively.
+
+    Args:
+        directories: list of directories, relative to the root Open3D repo directory.
+        extensions: list of extensions, e.g. ["cpp", "h"].
+
+    Return:
+        List of file paths.
+    """
+    pwd = Path(__file__).resolve().parent
+    open3d_root_dir = pwd.parent
+
+    file_paths = []
+    for directory in directories:
+        directory = open3d_root_dir / directory
+        for extension in extensions:
+            extension_regex = "*." + extension
+            file_paths.extend(directory.rglob(extension_regex))
+    file_paths = [str(file_path) for file_path in file_paths]
+    file_paths = sorted(list(set(file_paths)))
+    return file_paths
+
+
+def _find_clang_format():
+    """
+    Returns (bin_path, version) to clang-format version 10, throws exception
+    otherwise.
+    """
+    required_clang_format_major = 10
+
+    def parse_version(bin_path):
+        """
+        Get clang-format versio string. Returns None if parsing fails.
+        """
+        version_str = subprocess.check_output([bin_path, "--version"
+                                              ]).decode("utf-8").strip()
+        match = re.match("^clang-format version ([0-9.]*).*$", version_str)
+        return match.group(1) if match else None
+
+    def parse_version_major(bin_path):
+        """
+        Get clang-format major version. Returns None if parsing fails.
+        """
+        version = parse_version(bin_path)
+        return int(version.split(".")[0]) if version else None
+
+    def find_bin_by_name(bin_name):
+        """
+        Returns bin path if found. Otherwise, returns None.
+        """
+        bin_path = shutil.which(bin_name)
+        if bin_path is None:
+            return None
+        else:
+            major = parse_version_major(bin_path)
+            return bin_path if major == required_clang_format_major else None
+
+    bin_path = find_bin_by_name("clang-format")
+    if bin_path is not None:
+        bin_version = parse_version(bin_path)
+        return bin_path, bin_version
+
+    bin_path = find_bin_by_name(f"clang-format-{required_clang_format_major}")
+    if bin_path is not None:
+        bin_version = parse_version(bin_path)
+        return bin_path, bin_version
+
+    raise RuntimeError(
+        "clang-format not found. "
+        "See http://www.open3d.org/docs/release/contribute/styleguide.html#style-guide "
+        "for help on clang-format installation.")
 
 
 def _filter_files(files, ignored_patterns):
@@ -435,7 +423,7 @@ def _filter_files(files, ignored_patterns):
     ]
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--do_apply_style",
@@ -461,8 +449,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Check formatting libs
-    clang_format_bin = _find_clang_format()
-    pwd = Path(os.path.dirname(os.path.abspath(__file__)))
+    clang_format_bin, clang_format_version = _find_clang_format()
+    print(f"Using clang-format {clang_format_bin} ({clang_format_bin})")
+    print(f"Using yapf {yapf.__version__} ({yapf.__file__})")
+    print(f"Using nbformat {nbformat.__version__} ({nbformat.__file__})")
+    pwd = Path(__file__).resolve().parent
     python_style_config = str(pwd.parent / ".style.yapf")
 
     cpp_ignored_files = ['cpp/open3d/visualization/shader/Shader.h']
@@ -500,7 +491,7 @@ if __name__ == "__main__":
                               verbose=args.verbose))
 
     if len(changed_files) == 0 and len(wrong_header_files) == 0:
-        print("All files passed style check.")
+        print("All files passed style check")
         exit(0)
 
     if args.do_apply_style:
@@ -519,3 +510,7 @@ if __name__ == "__main__":
             print("Style error found in the following files:")
             print("\n".join(error_files_no_duplicates))
             exit(1)
+
+
+if __name__ == "__main__":
+    main()
