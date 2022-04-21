@@ -468,7 +468,7 @@ if (Python3_EXECUTABLE)
     # `make apply-style` applies style for c++/cuda/python/ipynb files
     add_custom_target(apply-style
         COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --do_apply_style
+        ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --apply
         COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
     )
 endif()
@@ -480,7 +480,7 @@ include(Open3DPackaging)
 add_custom_target(check-cpp-style
     COMMAND ${CMAKE_COMMAND}
     -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -DDO_APPLY_STYLE=OFF
+    -DAPPLY=OFF
     -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
 )
 
@@ -489,7 +489,7 @@ add_custom_target(check-cpp-style
 add_custom_target(apply-cpp-style
     COMMAND ${CMAKE_COMMAND}
     -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -DDO_APPLY_STYLE=ON
+    -DAPPLY=ON
     -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
 )
 
