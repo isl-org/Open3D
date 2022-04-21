@@ -24,7 +24,7 @@ Option 1: Run the style checker directly.
 .. code:: bash
 
    python util/check_style.py
-   python util/check_style.py --do_apply_style
+   python util/check_style.py --apply
 
 Option 2: Configure the project and run ``make``.
 

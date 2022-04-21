@@ -146,9 +146,9 @@ class CppFormatter:
         ]
         subprocess.check_output(cmd)
 
-    def run(self, do_apply_style, no_parallel, verbose):
+    def run(self, apply, no_parallel, verbose):
         num_processes = multiprocessing.cpu_count() if not no_parallel else 1
-        action_name = "Applying C++/CUDA style" if do_apply_style else "Checking C++/CUDA style"
+        action_name = "Applying C++/CUDA style" if apply else "Checking C++/CUDA style"
         print(f"{action_name} ({num_processes} processes)")
 
         if verbose:
@@ -170,7 +170,7 @@ class CppFormatter:
             is_valid_header = is_valid[1]
             if not is_valid_style:
                 changed_files.append(file_path)
-                if do_apply_style:
+                if apply:
                     self._apply_style(file_path, self.clang_format_bin)
             if not is_valid_header:
                 wrong_header_files.append(file_path)
@@ -236,9 +236,9 @@ class PythonFormatter:
                                                    style_config=style_config,
                                                    in_place=True)
 
-    def run(self, do_apply_style, no_parallel, verbose):
+    def run(self, apply, no_parallel, verbose):
         num_processes = multiprocessing.cpu_count() if not no_parallel else 1
-        action_name = "Applying Python style" if do_apply_style else "Checking Python style"
+        action_name = "Applying Python style" if apply else "Checking Python style"
         print(f"{action_name} ({num_processes} processes)")
 
         if verbose:
@@ -259,7 +259,7 @@ class PythonFormatter:
             is_valid_header = is_valid[1]
             if not is_valid_style:
                 changed_files.append(file_path)
-                if do_apply_style:
+                if apply:
                     self._apply_style(file_path, self.style_config)
             if not is_valid_header:
                 wrong_header_files.append(file_path)
@@ -275,7 +275,7 @@ class JupyterFormatter:
         self.style_config = style_config
 
     @staticmethod
-    def _check_or_apply_style(file_path, style_config, do_apply_style):
+    def _check_or_apply_style(file_path, style_config, apply):
         """
         Returns true if style is valid.
 
@@ -305,15 +305,15 @@ class JupyterFormatter:
                 cell["source"] = formatted_src
                 changed = True
 
-        if do_apply_style:
+        if apply:
             with open(file_path, "w") as f:
                 nbformat.write(notebook, f, version=nbformat.NO_CONVERT)
 
         return not changed
 
-    def run(self, do_apply_style, no_parallel, verbose):
+    def run(self, apply, no_parallel, verbose):
         num_processes = multiprocessing.cpu_count() if not no_parallel else 1
-        action_name = "Applying Jupyter style" if do_apply_style else "Checking Jupyter style"
+        action_name = "Applying Jupyter style" if apply else "Checking Jupyter style"
         print(f"{action_name} ({num_processes} processes)")
 
         if verbose:
@@ -326,16 +326,16 @@ class JupyterFormatter:
             is_valid_files = pool.map(
                 partial(self._check_or_apply_style,
                         style_config=self.style_config,
-                        do_apply_style=False), self.file_paths)
+                        apply=False), self.file_paths)
 
         changed_files = []
         for is_valid, file_path in zip(is_valid_files, self.file_paths):
             if not is_valid:
                 changed_files.append(file_path)
-                if do_apply_style:
+                if apply:
                     self._check_or_apply_style(file_path,
                                                style_config=self.style_config,
-                                               do_apply_style=True)
+                                               apply=True)
         print(f"{action_name} takes {time.time() - start_time:.2f}s")
 
         return changed_files
@@ -426,8 +426,8 @@ def _filter_files(files, ignored_patterns):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--do_apply_style",
-        dest="do_apply_style",
+        "--apply",
+        dest="apply",
         action="store_true",
         default=False,
         help="Apply style to files in-place.",
@@ -472,21 +472,17 @@ def main():
     changed_files = []
     wrong_header_files = []
     changed_files_cpp, wrong_header_files_cpp = cpp_formatter.run(
-        do_apply_style=args.do_apply_style,
-        no_parallel=args.no_parallel,
-        verbose=args.verbose)
+        apply=args.apply, no_parallel=args.no_parallel, verbose=args.verbose)
     changed_files.extend(changed_files_cpp)
     wrong_header_files.extend(wrong_header_files_cpp)
 
     changed_files_python, wrong_header_files_python = python_formatter.run(
-        do_apply_style=args.do_apply_style,
-        no_parallel=args.no_parallel,
-        verbose=args.verbose)
+        apply=args.apply, no_parallel=args.no_parallel, verbose=args.verbose)
     changed_files.extend(changed_files_python)
     wrong_header_files.extend(wrong_header_files_python)
 
     changed_files.extend(
-        jupyter_formatter.run(do_apply_style=args.do_apply_style,
+        jupyter_formatter.run(apply=args.apply,
                               no_parallel=args.no_parallel,
                               verbose=args.verbose))
 
@@ -494,7 +490,7 @@ def main():
         print("All files passed style check")
         exit(0)
 
-    if args.do_apply_style:
+    if args.apply:
         if len(changed_files) != 0:
             print("Style applied to the following files:")
             print("\n".join(changed_files))
