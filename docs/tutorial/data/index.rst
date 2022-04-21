@@ -43,7 +43,7 @@ PointCloud
 ~~~~~~~~~~
 
 PCDPointCloud
--------------------
+-------------
 
 Colored point cloud of a living room from the Redwood dataset in PCD format.
 
@@ -58,7 +58,7 @@ Colored point cloud of a living room from the Redwood dataset in PCD format.
     auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
 PLYPointCloud
--------------------
+-------------
 
 Colored point cloud of a living room from the Redwood dataset in PLY format.
 
@@ -88,7 +88,7 @@ Eagle colored point cloud.
     auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
 LivingRoomPointClouds
-----------------------------
+---------------------
 
 57 point clouds of binary PLY format from the Redwood RGB-D Dataset.
 
@@ -108,7 +108,7 @@ LivingRoomPointClouds
     }
 
 OfficePointClouds
-------------------------
+-----------------
 
 53 point clouds of binary PLY format from Redwood RGB-D Dataset.
 
@@ -175,11 +175,11 @@ A 3D Mobius knot mesh in PLY format.
     data::KnotMesh dataset;
     auto mesh = io::CreateMeshFromFile(dataset.GetPath());
 
-TriangleModel with PRB Texture
-~~~~~~~~~~~~
+TriangleModel with PRB texture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 MonkeyModel
----------
+-----------
 
 The monkey model with PRB texture.
 
@@ -194,24 +194,8 @@ The monkey model with PRB texture.
     visualization::rendering::TriangleMeshModel model;
     auto model = io::ReadTriangleModel(dataset.GetPath(), model);
 
-MonkeyModel
----------
-
-The monkey model with PRB texture.
-
-.. code-block:: python
-
-    dataset = o3d.data.MonkeyModel()
-    model = o3d.io.read_triangle_model(dataset.path)
-
-.. code-block:: cpp
-
-    data::MonkeyModel dataset;
-    visualization::rendering::TriangleMeshModel model;
-    io::ReadTriangleModel(dataset.GetPath(), model);
-
 SwordModel
----------
+----------
 
 The sword model with PRB texture.
 
@@ -227,7 +211,7 @@ The sword model with PRB texture.
     io::ReadTriangleModel(dataset.GetPath(), model);
 
 CrateModel
----------
+----------
 
 The crate model with PRB texture.
 
@@ -243,7 +227,7 @@ The crate model with PRB texture.
     io::ReadTriangleModel(dataset.GetPath(), model);
 
 FlightHelmetModel
----------
+-----------------
 
 The flight helmet gltf model with PRB texture.
 
@@ -258,11 +242,11 @@ The flight helmet gltf model with PRB texture.
     visualization::rendering::TriangleMeshModel model;
     io::ReadTriangleModel(dataset.GetPath(), model);
 
-Texture Material Images
-~~~~~
+Texture material images
+~~~~~~~~~~~~~~~~~~~~~~~
 
 MetalTexture
------------
+------------
 
 Albedo, normal, roughness and metallic texture files for metal based material.
 
@@ -289,7 +273,7 @@ Albedo, normal, roughness and metallic texture files for metal based material.
     mat.metallic_img = io::CreateImageFromFile(mat_data.metallic_texture_path);
 
 PaintedPlasterTexture
------------
+---------------------
 
 Albedo, normal and roughness texture files for painted plaster based material.
 
@@ -314,7 +298,7 @@ Albedo, normal and roughness texture files for painted plaster based material.
     mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
 
 TilesTexture
------------
+------------
 
 Albedo, normal and roughness texture files for tiles based material.
 
@@ -339,7 +323,7 @@ Albedo, normal and roughness texture files for tiles based material.
     mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
 
 TerrazzoTexture
------------
+---------------
 
 Albedo, normal and roughness texture files for terrazzo based material.
 
@@ -389,7 +373,7 @@ Albedo, normal and roughness texture files for wood based material.
     mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
 
 WoodFloorTexture
------------
+----------------
 
 Albedo, normal and roughness texture files for wooden floor based material.
 
@@ -435,7 +419,7 @@ RGBDImage
 ~~~~~~~~~
 
 SampleRedwoodRGBDImages
-------------------------
+-----------------------
 
 Sample set of 5 color images, 5 depth images from the Redwood RGBD
 living-room1 dataset. It also contains a camera trajectory log, a camera
@@ -476,7 +460,7 @@ TSDF.
     auto pcd = io::CreatePointCloudFromFile(dataset.GetReconstructionPath());
 
 SampleFountainRGBDImages
--------------------------
+------------------------
 
 Sample set of 33 color and depth images from the Fountain RGBD dataset.
 It also contains camera poses at key frames log and mesh reconstruction.
@@ -575,7 +559,7 @@ RGBD dataset.
 
     auto color_raw = io::CreateImageFromFile(dataset.GetColorPath());
     auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPath());
-    
+
     auto rgbd_image = geometry::RGBDImage::CreateFromSUNFormat(
         *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ false);
 
@@ -665,7 +649,7 @@ This data is used for point cloud crop demo.
     auto chair = vol.CropPointCloud(*pcd);
 
 DemoFeatureMatchingPointClouds
------------------------------
+------------------------------
 
 Sample set of 2 point cloud fragments and their respective FPFH features and
 L32D features. This data is used for point cloud feature matching demo.
