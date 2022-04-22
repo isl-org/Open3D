@@ -125,7 +125,8 @@ cpp_python_linking_uninstall_test() {
     # Python test
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        python -m pytest python/test ${pytest_args} \
+        python -m pip install -r python/requirements_test.txt \
+     && python -m pytest python/test ${pytest_args} \
     "
     restart_docker_daemon_if_on_gcloud
 
