@@ -86,6 +86,13 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.6
+      - name: Install Python dependencies
+        working-directory: ${{ env.SRC_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install -r python\requirements.txt
+          python -m pip install -r python\requirements_build.txt
+          python -m pip install -r python\requirements_jupyter_build.txt
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
@@ -183,7 +190,6 @@ jobs:
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          python -m pip install -r ..\python\requirements_build.txt
           python -m pip install --upgrade jedi==${{ env.JEDI_VER }} idna==${{ env.IDNA_VER }}
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
