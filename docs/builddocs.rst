@@ -40,7 +40,7 @@ First, install a TeX distribution such as `MacTeX <http://www.tug.org/mactex/>`_
 
 .. code-block:: bash
 
-    pip install -r docs/requirements.txt
+    pip install -r requirements_docs.txt
 
 
 Build

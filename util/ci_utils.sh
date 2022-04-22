@@ -340,9 +340,9 @@ install_docs_dependencies() {
     echo Install Python dependencies for building docs
     command -v python
     python -V
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_docs.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     echo
     if [[ -d "$1" ]]; then
