@@ -126,7 +126,7 @@ Let's examine new elements in the code above:
 - The ``mat.base_color`` represents the base material RGBA color.
 
 Metallic and roughness
-----------------------
+::::::::::::::::::::::
 
 .. code-block:: python
 
@@ -160,7 +160,7 @@ Let's examine new elements in the code above:
   scene.
 
 Reflectance
------------
+:::::::::::
 
 .. code-block:: python
 
@@ -185,7 +185,7 @@ Let's examine new elements in the code above:
   <https://google.github.io/filament/Materials.html>`_ for details)
 
 Texture map
------------
+:::::::::::
 
 .. code-block:: python
 
