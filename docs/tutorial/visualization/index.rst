@@ -4,7 +4,7 @@ Visualization
 .. toctree::
 
     visualization
-    visualizer_basic
+    draw
     visualizer_advanced
     customized_visualization
     interactive_visualization
