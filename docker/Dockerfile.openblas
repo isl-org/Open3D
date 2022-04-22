@@ -126,8 +126,7 @@ RUN pyenv install $(pyenv install --list | sort -r --version-sort | grep -m1 "^ 
 RUN pyenv local $(pyenv versions | grep ${PYTHON_VERSION})
 RUN which python \
  && python --version \
- && python -m pip install -r python/requirements_build.txt \
- && python -m pip install -r python/requirements_test.txt
+ && python -m pip install -r python/requirements_build.txt
 
 RUN mkdir build \
  && cd build \

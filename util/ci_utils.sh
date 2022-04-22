@@ -58,11 +58,10 @@ install_python_dependencies() {
 
     # TODO: modify other locations to use requirements.txt
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
     if [[ "with-jupyter" =~ ^($options)$ ]]; then
         python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     fi
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
-
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
         python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_test.txt"
     fi

@@ -48,7 +48,6 @@ jobs:
     steps:
       - name: Disk space used
         run: Get-PSDrive
-
       - name: Install CUDA
         if: ${{ matrix.BUILD_CUDA == 'ON' }}
         run: |
@@ -81,15 +80,12 @@ jobs:
           echo "CUDA_PATH=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "CUDA_PATH_V$CUDA_VER_ID=$CUDA_PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
       - name: Checkout source code
         uses: actions/checkout@v2
-
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
           python-version: 3.6
-
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
@@ -111,7 +107,6 @@ jobs:
             -DBUILD_UNIT_TESTS=ON `
             -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA }} `
             ${{ env.SRC_DIR }}
-
       - name: Build
         working-directory: ${{ env.BUILD_DIR }}
         run: |
@@ -120,7 +115,6 @@ jobs:
             --target build-examples-iteratively
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
-
       - name: Package
         working-directory: ${{ env.BUILD_DIR }}
         if: ${{ matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
@@ -135,7 +129,6 @@ jobs:
           $DEVEL_PKG_NAME=(Get-ChildItem package/open3d-devel-*.zip).Name
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" | Out-File -FilePath `
             $env:GITHUB_ENV -Encoding utf8 -Append
-
       - name: Upload package
         if: ${{ matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
         uses: actions/upload-artifact@v2
@@ -143,7 +136,6 @@ jobs:
           name: open3d-devel-windows
           path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
-
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' && matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
@@ -155,7 +147,6 @@ jobs:
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
-
       - name: Upload package to GCS bucket
         if: ${{ github.ref == 'refs/heads/master' && matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
         env:
@@ -168,7 +159,6 @@ jobs:
           } else {
             throw "Devel package upload failed"
           }
-
       - name: Run C++ unit tests
         if: ${{ matrix.BUILD_CUDA == 'OFF' }}
         working-directory: ${{ env.BUILD_DIR }}
@@ -226,19 +216,17 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python_version }}
-
       - name: Install Python dependencies
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          python -m pip install -r python/requirements.txt
-          python -m pip install -r python/requirements_jupyter_build.txt
-
+          python -m pip install -r python\requirements.txt
+          python -m pip install -r python\requirements_build.txt
+          python -m pip install -r python\requirements_jupyter_build.txt
       - name: Config
         run: |
           $ErrorActionPreference = 'Stop'
@@ -258,26 +246,22 @@ jobs:
             -DBUILD_WEBRTC=ON `
             -DBUILD_JUPYTER_EXTENSION=ON `
             ${{ env.SRC_DIR }}
-
       - name: Build Python package
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
-          python -m pip install -r ..\python\requirements_build.txt
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           $PYTHON_EXECUTABLE=(python -c "import sys; print(sys.executable)")
           echo $PYTHON_EXECUTABLE
           echo "PYTHON_EXECUTABLE=$PYTHON_EXECUTABLE"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
       - name: Upload wheel
         uses: actions/upload-artifact@v2
         with:
           name: open3d_win_amd64_wheels
           path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
-
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
@@ -289,7 +273,6 @@ jobs:
           service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
-
       - name: Upload wheel to GCS bucket
         if: ${{ github.ref == 'refs/heads/master' }}
         env:
@@ -326,26 +309,22 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-
       - name: Download wheels
         uses: actions/download-artifact@v2
         # See https://github.com/dawidd6/action-download-artifact for more
         # flexible artifact download options
         with:
           name: open3d_win_amd64_wheels
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python_version }}
-
       - name: Test Python package
         run: |
           $ErrorActionPreference = 'Stop'
           python -V
           python -m venv open3d_test_venv
           open3d_test_venv\Scripts\Activate.ps1
-
           python -m pip install -r python\requirements_build.txt
           python -m pip install -r python\requirements_test.txt
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
@@ -358,9 +337,7 @@ jobs:
           python -m pip install "$PIP_PKG_NAME"
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
-
           deactivate
-
       - name: Run Python unit tests (benchmarks)
         run: |
           $ErrorActionPreference = 'Stop'
