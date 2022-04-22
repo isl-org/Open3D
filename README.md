@@ -24,6 +24,10 @@ data structures and algorithms in both C++ and Python. The backend is highly
 optimized and is set up for parallelization. We welcome contributions from
 the open-source community.
 
+**News:**
+- Open3D is selected to participate in 2022 [Google Summer of Code](https://github.com/isl-org/Open3D/wiki/Google-Summer-of-Code-2022) and [Google Season of Docs](https://github.com/isl-org/Open3D/wiki/Google-Season-of-Docs-2022).
+- We are hiring Google Season of Docs contributors. **Please apply by May 06, 2022.** Check out [this link](https://github.com/isl-org/Open3D/wiki/Google-Season-of-Docs-2022) for more details.
+
 [![Ubuntu CI](https://github.com/isl-org/Open3D/workflows/Ubuntu%20CI/badge.svg)](https://github.com/isl-org/Open3D/actions?query=workflow%3A%22Ubuntu+CI%22)
 [![macOS CI](https://github.com/isl-org/Open3D/workflows/macOS%20CI/badge.svg)](https://github.com/isl-org/Open3D/actions?query=workflow%3A%22macOS+CI%22)
 [![Windows CI](https://github.com/isl-org/Open3D/workflows/Windows%20CI/badge.svg)](https://github.com/isl-org/Open3D/actions?query=workflow%3A%22Windows+CI%22)
