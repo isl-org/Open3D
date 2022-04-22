@@ -58,7 +58,7 @@ Python package with:
 
     # Run `python make_docs.py --help` to usage of the flags.
     # Example usage: execute notebooks when it has not been executed.
-    python make_docs.py --clean_notebooks --execute_notebooks=auto --sphinx --doxygen --parallel
+    python make_docs.py --clean_notebooks --execute_notebooks=auto --sphinx --doxygen
 
 The docs html will be saved in ``docs/_out`` folder.
 
