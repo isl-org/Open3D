@@ -131,9 +131,6 @@ Base color
     mat.base_color = np.asarray([1.0, 0.0, 1.0, 1.0])
     o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material': mat})
 
-.. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
-    :width: 700px
-
 Let's examine new elements in the code above:
 
 - ``MaterialRecord()`` is a structure which holds various material properties.
@@ -141,6 +138,9 @@ Let's examine new elements in the code above:
   The two most common options are ``'defaultLit'`` and ``'defaultUnlit'``. Other
   available options will be covered in :doc:`visualizer_advanced` tutorial.
 - The ``mat.base_color`` represents the base material RGBA color.
+
+.. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
+    :width: 700px
 
 Metallic and roughness
 ::::::::::::::::::::::
@@ -158,9 +158,6 @@ Metallic and roughness
     mat.base_metallic = 1.0
     o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material': mat}, ibl="nightlights")
 
-.. image:: https://user-images.githubusercontent.com/93158890/157758092-9efb1ca0-b96a-4e1d-abd7-95243b279d2e.jpg
-    :width: 700px
-
 Let's examine new elements in the code above:
 
 - ``get_rotation_matrix_from_xyz()``: Creates a rotation matrix given angles to
@@ -175,6 +172,9 @@ Let's examine new elements in the code above:
   lighting) property. The *'ibl'* parameter property allows the user to specify
   the built-in HDR lighting to use. ``"nightlights"`` is from a nighttime city
   scene.
+
+.. image:: https://user-images.githubusercontent.com/93158890/157758092-9efb1ca0-b96a-4e1d-abd7-95243b279d2e.jpg
+    :width: 700px
 
 Reflectance
 :::::::::::
@@ -192,14 +192,15 @@ Reflectance
     mat.base_reflectance = 0.9
     o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material':   mat}, ibl="nightlights")
 
-.. image:: https://user-images.githubusercontent.com/93158890/157770798-2c42e7dc-e063-4f26-90b4-16a45e263f36.jpg
-    :width: 700px
-
 Let's examine new elements in the code above:
 
 - ``mat.base_reflectance = 0.9``: PBR material property which controls the
   reflectance (glossiness) of the surface (see  `Filament Material Guide
   <https://google.github.io/filament/Materials.html>`_ for details)
+
+.. image:: https://user-images.githubusercontent.com/93158890/157770798-2c42e7dc-e063-4f26-90b4-16a45e263f36.jpg
+    :width: 700px
+
 
 Texture map
 :::::::::::
@@ -218,15 +219,16 @@ Texture map
     mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
     o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material': mat}, ibl="nightlights")
 
-.. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
-    :width: 700px
-
 Let's examine new elements in the code above:
 
 - ``create_sphere(2.0, 100, create_uv_map=True)``: Generates texture UV map coordinates.
 - ``mat.albedo_img``: Sets the base color texture image.
 - ``mat.normal_img``: Sets the normal texture image.
 - ``mat.roughness_img``: Sets the roughness texture image.
+
+.. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
+    :width: 700px
+
 
 Common options
 --------------
