@@ -48,15 +48,6 @@ PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_i
 TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.2/torch-1.8.2-${PYTHON_VER}-linux_x86_64.whl"
 TORCH_MACOS_VER="1.8.2"
 TORCH_REPO_URL="https://download.pytorch.org/whl/lts/1.8/torch_lts.html"
-# Python
-PIP_VER="21.1.1"
-WHEEL_VER="0.35.1"
-STOOLS_VER="50.3.2"
-PYTEST_VER="6.0.1"
-PYTEST_RANDOMLY_VER="3.8.0"
-SCIPY_VER="1.5.4"
-YAPF_VER="0.30.0"
-
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
 
@@ -64,11 +55,15 @@ install_python_dependencies() {
 
     echo "Installing Python dependencies"
     options="$(echo "$@" | tr ' ' '|')"
-    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
-        setuptools=="$STOOLS_VER"
+
+    # TODO: modify other locations to use requirements.txt
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
+    if [[ "with-jupyter" =~ ^($options)$ ]]; then
+        python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
+    fi
     if [[ "with-unit-test" =~ ^($options)$ ]]; then
-        python -m pip install -U scipy=="$SCIPY_VER" pytest=="$PYTEST_VER" \
-            pytest-randomly=="$PYTEST_RANDOMLY_VER"
+        python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_test.txt"
     fi
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow-gpu
@@ -78,12 +73,6 @@ install_python_dependencies() {
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow-gpu
         TORCH_GLNX="torch==$TORCH_CPU_GLNX_VER"
-    fi
-
-    # TODO: modify other locations to use requirements.txt
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
-    if [[ "with-jupyter" =~ ^($options)$ ]]; then
-        python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     fi
 
     echo
@@ -102,9 +91,6 @@ install_python_dependencies() {
             echo "unknown OS $OSTYPE"
             exit 1
         fi
-    fi
-    if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
-        python -m pip install -U yapf=="$YAPF_VER"
     fi
     if [[ "purge-cache" =~ ^($options)$ ]]; then
         echo "Purge pip cache"
@@ -246,8 +232,8 @@ test_wheel() {
     python -m venv open3d_test.venv
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
-    python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
-        setuptools=="$STOOLS_VER"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_test.txt"
     echo "Using python: $(command -v python)"
     python --version
     echo -n "Using pip: "
@@ -294,10 +280,7 @@ test_wheel() {
 run_python_tests() {
     # shellcheck disable=SC1091
     source open3d_test.venv/bin/activate
-    python -m pip install -U pytest=="$PYTEST_VER" \
-        pytest-randomly=="$PYTEST_RANDOMLY_VER" \
-        scipy=="$SCIPY_VER" \
-        tensorboard=="$TENSORBOARD_VER"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_test.txt"
     echo Add --randomly-seed=SEED to the test command to reproduce test order.
     pytest_args=("$OPEN3D_SOURCE_ROOT"/python/test/)
     if [ "$BUILD_PYTORCH_OPS" == "OFF" ] || [ "$BUILD_TENSORFLOW_OPS" == "OFF" ]; then
@@ -356,11 +339,9 @@ install_docs_dependencies() {
     echo Install Python dependencies for building docs
     command -v python
     python -V
-    python -m pip install -U -q "wheel==$WHEEL_VER" \
-        "pip==$PIP_VER"
-    python -m pip install -U -q "yapf==$YAPF_VER"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_build.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_docs.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     echo
     if [[ -d "$1" ]]; then
@@ -369,7 +350,7 @@ install_docs_dependencies() {
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements.txt"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-torch.txt"
         python -m pip install -r "${OPEN3D_ML_ROOT}/requirements-tensorflow.txt" ||
-            python -m pip install tensorflow # FIXME: Remove after Open3D-ML update
+        python -m pip install tensorflow # FIXME: Remove after Open3D-ML update
     else
         echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
     fi
