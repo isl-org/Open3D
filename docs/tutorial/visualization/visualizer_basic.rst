@@ -15,8 +15,8 @@ executed the following import statements:
     import open3d as o3d
     import numpy as np
 
-Drawing a point cloud
----------------------
+Basic drawing
+-------------
 
 .. code-block:: python
 
@@ -26,9 +26,6 @@ Drawing a point cloud
 
 .. image:: https://user-images.githubusercontent.com/93158890/159548100-404afe97-8960-4e68-956f-cc6957632a93.jpg
     :width: 700px
-
-Drawing a triangle mesh
------------------------
 
 .. code-block:: python
 
@@ -81,26 +78,8 @@ compute the triangle normals.
 .. image:: https://user-images.githubusercontent.com/93158890/157339234-1a92a944-ac38-4256-8297-0ad78fd24b9c.jpg
     :width: 700px
 
-Coloring the geometry
----------------------
-
-You may use ``PointCloud::paint_uniform_color()`` or
-``TriangleMesh::paint_uniform_color()`` to assign a single color to all vertices
-of the geometry.
-
-.. code-block:: python
-
-    sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
-    sphere.compute_vertex_normals()
-    sphere.paint_uniform_color([0.65, 0.45, 0.62])
-    o3d.visualization.draw(sphere)
-
-.. image:: https://user-images.githubusercontent.com/93158890/160883817-5a22f449-62e2-45e0-8033-bfec72e09210.jpg
-    :width: 700px
-
-
-Drawing a sphere with materials
--------------------------------
+Materials
+---------
 
 Base color
 ::::::::::
