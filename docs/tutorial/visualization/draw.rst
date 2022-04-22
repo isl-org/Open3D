@@ -314,8 +314,8 @@ Set background color
 Drawing TriangleMeshModel
 -------------------------
 
-TriangleMesh vs. TriangleMeshModel
-::::::::::::::::::::::::::::::::::
+Introducing TriangleMeshModel
+:::::::::::::::::::::::::::::
 
 In Open3D, ``TriangleMeshModel`` is a class containing ``TriangleMesh``es and
 materials.
@@ -348,7 +348,8 @@ render the full set of materials.
 Examining complex models
 ::::::::::::::::::::::::
 
-``TriangleMeshModel`` can contain multiple ``TriangleMesh``es and materials.
+In the following example, we will see that ``TriangleMeshModel`` can contain
+multiple triangle meshes and materials.
 
 .. code-block:: python
 
