@@ -13,7 +13,6 @@ optional, high-quality, physically based (PBR) materials. This tutorial covers
 more advanced usages of  ``draw()`` calls. For basic ``draw()`` usage, please
 see the Basic :doc:`visualizer_basic` tutorial.
 
-
 Getting started
 ---------------
 
@@ -29,7 +28,6 @@ Getting started
     >>> import open3d.visualization as vis
     >>> import numpy as np
 
-
 Advanced examples
 -----------------
 
@@ -38,7 +36,6 @@ In the Basic :doc:`visualizer_basic` tutorial, we covered how to render
 display programmatically via code and interactively by using Open3D Visualizer
 UI. This section expounds on those topics to cover more advanced visualization
 techniques.
-
 
 .. _rendering_models:
 
@@ -61,7 +58,6 @@ We also demonstrated how to apply materials manually to built-in Open3D
 geometries. It is also possible to load ``TriangleMesh``'es from full 3D models
 using the ``o3d.io.read_triangle_mesh()`` method, as you will see below:
 
-
 .. code-block:: python
 
     # Initialize the monkey dataset with downloaded and extracted 3D model >>>
@@ -71,16 +67,12 @@ using the ``o3d.io.read_triangle_mesh()`` method, as you will see below:
     monkey_mesh = o3d.io.read_triangle_mesh(monkey_data.path) >>>
     vis.draw(monkey_mesh)
 
-
 That will automatically apply the default material which exists in a 3D model:
 
 .. image:: https://user-images.githubusercontent.com/93158890/160008560-4834c962-efa7-4d69-b99d-9ff321a03c02.jpg
     :width: 700px
 
-
 Next, we will learn how to render full 3D models in all their glory.
-
-
 
 Rendering full 3D models
 """"""""""""""""""""""""
@@ -102,8 +94,6 @@ Clearly, a staggering difference in rendering:
 .. image:: https://user-images.githubusercontent.com/93158890/148611141-d424fc74-be7e-4833-913c-714fc3c4fbd2.jpg
     :width: 700px
 
-
-
 Rendering more complex models
 :::::::::::::::::::::::::::::
 
@@ -117,15 +107,12 @@ the KhronosGroup *glTF-Sample-Models* . `glTF (GL Transmission Format)
 <https://docs.fileformat.com/3d/gltf/>`_ is a 3D file format that stores 3D
 model information in JSON format.
 
-
 .. tip::
 
     If you are interested in looking at other *glTF-Sample-Models*, you can go
     to the KhronosGroup GitHub repository and clone it from this URL:
 
     https://github.com/KhronosGroup/glTF-Sample-Models
-
-
 
 Now, let's run the code which loads and renders the full 3D model of a flight
 helmet:
@@ -135,7 +122,6 @@ helmet:
     >>> helmet_data = o3d.data.FlightHelmetModel()
     >>> helmet_model = o3d.io.read_triangle_model(helmet_data.path)
     >>> vis.draw(helmet_model)
-
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611761-40f95b2b-d257-4f2b-a8c0-60a73b159b96.jpg
     :width: 700px
@@ -153,13 +139,11 @@ yields inferior results:
     >>> helmet_mesh = o3d.io.read_triangle_mesh(helmet_data.path)
     >>> vis.draw(helmet_mesh)
 
-
 .. image:: https://user-images.githubusercontent.com/93158890/148611814-09c6fe17-d209-439d-8ae9-c186387fd698.jpg
     :width: 700px
 
 .. note::
    For complex model rendering, please use the ``o3d.io.read_triangle_model()``, rather than ``read_triangle_mesh()``. ``read_triangle_mesh()`` is only good for loading basic meshes, but not complex materials.
-
 
 Examining complex models
 ::::::::::::::::::::::::
@@ -234,10 +218,8 @@ And what is its mesh name?
     >>> helmet_model.meshes[0].mesh_name
     'Hose_low'
 
-
 We can write a loop which displays all mesh names and material indices used in a
 complex model like so:
-
 
 .. code-block:: python
 
@@ -258,8 +240,6 @@ complex model like so:
     Lenses_low
     5
 
-
-
 We can also render meshes individually like:
 
 .. code-block:: python
@@ -269,10 +249,8 @@ We can also render meshes individually like:
 .. image:: https://user-images.githubusercontent.com/93158890/149238095-5385d761-3bae-4172-ab45-1d47b6084d5c.jpg
     :width: 700px
 
-
 Rendering sub-models
 ::::::::::::::::::::
-
 
 Just like in the previous loop example which displays all ``mesh_name`` and
 ``material_idx`` properties, we can write a loop which renders each mesh
@@ -329,8 +307,6 @@ And other parts, just like in the previous ``helmet.meshes`` loop:
 4) All metallic parts
 5) Leather parts:
 6) Lenses
-
-
 
 Rendering a ``Tensor``-based ``TriangleMesh`` monkey
 ::::::::::::::::::::::::::::::::::::::::::::::::::::

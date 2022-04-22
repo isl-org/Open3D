@@ -50,7 +50,6 @@ preliminary steps :
     >>> import numpy as np
     >>> import math
 
-
 .. note::
     * The ``numpy`` object we are declaring is needed for conversions of lists to arrays.
     * The ``math`` library is needed to reference Pi and rotate objects
@@ -58,12 +57,8 @@ preliminary steps :
 Below is a screenshot of how you would set up your environment from the command
 terminal:
 
-
 .. image:: https://user-images.githubusercontent.com/93158890/159073961-821e4768-3678-4385-bc37-20c5b212c030.jpg
     :width: 700px
-
-
-
 
 Basic examples
 --------------
@@ -73,7 +68,6 @@ session, and declared Open3D objects to be used throughout this tutorial. Let’
 now test various Open3D ``draw()`` function capabilities with various
 geometries.
 
-
 Drawing point clouds
 ::::::::::::::::::::
 
@@ -82,7 +76,6 @@ Using Open3D datasets
 
 In this example, we are going to learn how to load and render Point Clouds. To
 retrieve our example, we will be using **Open3D Datasets**.
-
 
 .. tip::
 
@@ -95,12 +88,10 @@ retrieve our example, we will be using **Open3D Datasets**.
     * Datasets will be downloaded to ``~/open3d_data/download`` and extracted to
       ``~/open3d_data/extract``
 
-
 .. seealso::
 
     For more information on datasets, please refer to the :doc:`Open3D Datasets
     page <../data/index>`
-
 
 Enter the following code at the Python prompt:
 
@@ -139,7 +130,6 @@ with different point sizes by moving a slider in the UI:
 .. image:: https://user-images.githubusercontent.com/93158890/159555822-5eb3562b-4432-4a73-ab48-342b0cd2a898.jpg
     :width: 700px
 
-
 Drawing a box
 :::::::::::::
 
@@ -148,7 +138,6 @@ capable of rendering primitives, such as circles, spheres, rectangles, cubes,
 etc..
 
 This example shows how to create and visualize a simple 3D box.
-
 
 At the python prompt, enter the following to open the 3D Visualizer:
 
@@ -170,8 +159,6 @@ Let's examine what we did here:
 
 2) We called the ``open3d.visualization.draw()`` method which rendered our
    ``cube``.
-
-
 
 .. _compute_triangle_normals_s:
 
@@ -197,13 +184,10 @@ Clearly, that makes a big difference:
 The algorithm behind ``compute_triangle_normals()`` **computes a single normal
 for every triangle** in a ``TriangleMesh``.
 
-
-
 .. _smoothly_lit_sphere:
 
 Drawing a smoothly lit sphere
 :::::::::::::::::::::::::::::
-
 
 ``compute_vertex_normals()`` method
 """""""""""""""""""""""""""""""""""
@@ -226,7 +210,6 @@ A rendered sphere appears:
 .. image:: https://user-images.githubusercontent.com/93158890/157339234-1a92a944-ac38-4256-8297-0ad78fd24b9c.jpg
     :width: 700px
 
-
 As you can see, calling ``compute_vertex_normals()`` on the ``sphere`` object
 gave us a realistic rendering of a ball-like object.
 
@@ -243,7 +226,6 @@ Open3D returns:
 
     TriangleMesh with 19802 points and 39600 triangles.
 
-
 Drawing a flat-shaded sphere
 :::::::::::::::::::::::::::::
 
@@ -252,21 +234,17 @@ algorithm, - the same method we used for a 3D ``cube`` rendering before (see
 :ref:`compute_triangle_normals_s`). Again, **this algorithm computes a single
 normal for every triangle** in a ``TriangleMesh``:
 
-
 .. code-block:: python
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0)
     >>> sphere.compute_triangle_normals()
     >>> vis.draw(sphere)
 
-
 .. image:: https://user-images.githubusercontent.com/93158890/157728100-0a495e56-c613-40c4-a292-6e45213d61f6.jpg
     :width: 700px
 
-
 The rendered sphere in this case has facets akin to what XIX-th century airships
 or blimps used to look like.
-
 
 Drawing a colored lit sphere
 ::::::::::::::::::::::::::::
@@ -294,7 +272,6 @@ algorithm assigns a single color to all vertices of the triangle mesh. RGB
 values should be in the ``0 - 1`` range. In our example, we passed respective
 values for Red (``0.65``), Green (``0.45``), and Blue (``0.62``).
 
-
 Drawing a sphere with materials
 :::::::::::::::::::::::::::::::
 
@@ -303,7 +280,6 @@ In previous examples we only specified the geometry to visualize, and the
 the ``draw()`` function you can render geometries with customized materials.
 
 Let's create a sphere based on a custom material:
-
 
 .. code-block:: python
 
@@ -337,7 +313,6 @@ prompt:
     >>> mat
     <open3d.cpu.pybind.visualization.rendering.MaterialRecord object at 0x7f2be5e34430>
 
-
 Now, we'll show a ``draw()`` call variant which allows the user to specify a
 material to use with the geometry. This is different from previous examples
 where the ``draw()`` call created a default material automatically:
@@ -348,8 +323,6 @@ where the ``draw()`` call created a default material automatically:
 
 .. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
     :width: 700px
-
-
 
 Drawing a metallic sphere
 :::::::::::::::::::::::::
@@ -369,7 +342,6 @@ RGB/RGBA colors. Next, we will look at other material properties.
     >>> mat.base_roughness = 0.4
     >>> mat.base_metallic = 1.0
     >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
-
 
 .. image:: https://user-images.githubusercontent.com/93158890/157758092-9efb1ca0-b96a-4e1d-abd7-95243b279d2e.jpg
     :width: 700px
@@ -397,15 +369,12 @@ the ``ibl`` (Image Based Lighting) property. The *'ibl'* parameter property
 allows the user to specify the HDR lighting to use. We assigned
 ``"nightlights"`` to ``ibl``, and thus get a realistic nighttime city scene.
 
-
-
 Drawing a glossy sphere
 :::::::::::::::::::::::
 
 In a previous metallic sphere rendering we covered a number of methods,
 parameters, and properties for beautifying its display. Let's now create a
 non-metallic balloon-like sphere and see what transpires:
-
 
 .. code-block:: python
 
@@ -423,7 +392,6 @@ non-metallic balloon-like sphere and see what transpires:
 .. image:: https://user-images.githubusercontent.com/93158890/157770798-2c42e7dc-e063-4f26-90b4-16a45e263f36.jpg
     :width: 700px
 
-
 This code is similar to that used in the rendering of a previous metallic
 sphere. But, there are a couple of elements that make this version of the sphere
 look different:
@@ -437,8 +405,6 @@ reflectance (glossiness) of the surface (see  `Filament Material Guide
 <https://google.github.io/filament/Materials.html>`_ for details)
 
 The ``draw()`` call here is identical to the metallic version of the sphere.
-
-
 
 Drawing a sphere with textures
 ::::::::::::::::::::::::::::::
@@ -468,10 +434,8 @@ In this example, we will add textures to rendered objects:
     vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat},
     ibl="nightlights")
 
-
 .. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
     :width: 700px
-
 
 Let's examine new method calls and properties in this rendering:
 
@@ -486,8 +450,6 @@ for the sphere that can be used later with textures
 
 All three properties are initialized by the ``o3d.io.read_image()`` method which
 loads an image in either JPEG or PNG format.
-
-
 
 .. _trianglemesh_lineset:
 
@@ -507,7 +469,6 @@ by creating a custom ``LineSet`` object:
     >>> line_set.paint_uniform_color([0.0, 0.0, 1.0])
     >>> vis.draw(line_set)
 
-
 .. image:: https://user-images.githubusercontent.com/93158890/157949589-8b87fa81-a5cf-4791-a4f7-2d5dc91e546e.jpg
     :width: 700px
 
@@ -518,8 +479,6 @@ create a line set from the edges of individual triangles of a triangle mesh.
 
 ``line_set.paint_uniform_color([0.0, 0.0, 1.0])`` - here we paint the wireframe
 ``LineSet`` blue. [*Red=0, Green=0, Blue=1*]
-
-
 
 .. _bounding_box_sphere:
 
@@ -534,7 +493,6 @@ function can be used to render multiple 3D objects simultaneously. In this
 example, we will render two objects: the **Sphere** and its **Axis-Aligned
 Bounding Box** represented by a cubic frame around the sphere:
 
-
 .. code-block:: python
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
@@ -543,7 +501,6 @@ Bounding Box** represented by a cubic frame around the sphere:
     >>> line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(aabb)
     >>> line_set.paint_uniform_color([0, 0, 1])
     >>> vis.draw([sphere,line_set])
-
 
 Both objects appear and can be moved and rotated:
 
@@ -557,7 +514,6 @@ Let's go over the new code here:
 ``aabb =
 o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)`` -
 creates a bounding box fully encompassing the sphere.
-
 
 ``LineSet`` objects
 """""""""""""""""""
@@ -580,8 +536,6 @@ Finally, we have a ``draw()`` call with multiple 3D object parameters:
 ``vis.draw([sphere,line_set])``
 
 You can pass as many objects to the ``draw()`` as you need.
-
-
 
 Specifying wireframe ``line_width``
 """""""""""""""""""""""""""""""""""
@@ -607,14 +561,11 @@ supplied value is ``1``. The rendering at ``line_width=1`` will be more subtle:
 
     >>> vis.draw([sphere,line_set], line_width=1)
 
-
 .. image:: https://user-images.githubusercontent.com/93158890/158695717-042343a4-bbc3-45b8-ab6b-1118ad027cd7.jpg
     :width: 700px
 
 Experiment with the ``line_width`` parameter values to find an optimal one for
 your purposes.
-
-
 
 Commonly used ``draw()`` options
 --------------------------------
@@ -642,15 +593,10 @@ The code below illustrates how to rename a Visualizer title bar and set window
 .. image:: https://user-images.githubusercontent.com/93158890/158281728-994ff828-53b0-485a-9feb-9b121d7354f7.jpg
     :width: 700px
 
-
 At the bottom of the UI / control panel, you can see the section titled
 "*Geometries*" (outlined in a dark grey box). This section contains a list of
 rendered objects that can be individually turned on or off by clicking a
 checkbox to the left of their names.
-
-
-
-
 
 Assigning names to objects in the UI
 ::::::::::::::::::::::::::::::::::::
@@ -703,8 +649,6 @@ can turn it into a list and define multiple objects there:
 .. image:: https://user-images.githubusercontent.com/93158890/159094500-83ddd46f-0e71-40e1-9b97-ae46480cd860.jpg
     :width: 700px
 
-
-
 More ``draw()`` options
 :::::::::::::::::::::::
 
@@ -741,8 +685,4 @@ values for the ``bg_color``:
 
 .. image:: https://user-images.githubusercontent.com/93158890/160878317-a57755a0-8b8f-44db-b718-443aa435035a.jpg
     :width: 700px
-
-
-
-
 
