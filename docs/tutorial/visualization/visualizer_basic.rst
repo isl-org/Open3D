@@ -30,17 +30,6 @@ Draw a point cloud
 .. image:: https://user-images.githubusercontent.com/93158890/159548100-404afe97-8960-4e68-956f-cc6957632a93.jpg
     :width: 700px
 
-You can specify the point size of the point cloud with the ``point_size``
-argument. Or, you may change the point size with the UI. Use ``show_ui=True``
-to enable the UI side bar.
-
-.. code-block:: python
-
-    o3d.visualization.draw(pcd, point_size=9, show_ui=True)
-
-.. image:: https://user-images.githubusercontent.com/93158890/159555822-5eb3562b-4432-4a73-ab48-342b0cd2a898.jpg
-    :width: 700px
-
 Draw a triangle mesh
 ::::::::::::::::::::
 
