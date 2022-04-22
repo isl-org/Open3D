@@ -48,6 +48,21 @@ This example draws a triangle mesh.
 .. image:: https://user-images.githubusercontent.com/93158890/148607529-ee0ae0de-05af-423d-932c-2a5a6c8d7bda.jpg
     :width: 700px
 
+Line set
+::::::::
+
+This example draws a line set.
+
+.. code-block:: python
+
+    sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 25)
+    line_set = o3d.geometry.LineSet.create_from_triangle_mesh(sphere)
+    line_set.paint_uniform_color([0.0, 0.0, 1.0])
+    o3d.visualization.draw(line_set)
+
+.. image:: https://user-images.githubusercontent.com/93158890/157949589-8b87fa81-a5cf-4791-a4f7-2d5dc91e546e.jpg
+    :width: 700px
+
 Multiple objects
 ::::::::::::::::
 
@@ -219,203 +234,74 @@ Let's examine new elements in the code above:
 - ``mat.normal_img``: Sets the normal texture image.
 - ``mat.roughness_img``: Sets the roughness texture image.
 
-.. _trianglemesh_lineset:
+Common options
+--------------
 
-Drawing a wireframe sphere
---------------------------
+UI menu, title, and window dimension
+::::::::::::::::::::::::::::::::::::
 
-Line Sets are typically used to display a wireframe of a 3D model. Let's do that
-by creating a custom ``LineSet`` object:
+@Alex, update the screen capture, now the title has been changed to "Sphere and bounding box".
 
 .. code-block:: python
 
-    sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 25)
+    sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     sphere.compute_vertex_normals()
-    rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.  pi / 2, 0, 0))
-    sphere.rotate(rotate_90)
-    line_set = o3d.geometry.LineSet.create_from_triangle_mesh(sphere)
-    line_set.paint_uniform_color([0.0, 0.0, 1.0])
-    o3d.visualization.draw(line_set)
+    bbox = o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)
+    line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(bbox)
+    line_set.paint_uniform_color([0, 0, 1])
 
-.. image:: https://user-images.githubusercontent.com/93158890/157949589-8b87fa81-a5cf-4791-a4f7-2d5dc91e546e.jpg
-    :width: 700px
-
-So, what's new in this code?
-
-``line_set = o3d.geometry.LineSet.create_from_triangle_mesh(sphere)`` - here we
-create a line set from the edges of individual triangles of a triangle mesh.
-
-``line_set.paint_uniform_color([0.0, 0.0, 1.0])`` - here we paint the wireframe
-``LineSet`` blue. [*Red=0, Green=0, Blue=1*]
-
-``LineSet`` objects
-:::::::::::::::::::
-
-As recently shown in the ``TriangleMesh LineSet`` Sphere example
-(:ref:`trianglemesh_lineset`), Line Sets are used to render a wireframe of a 3D
-model. In our case, we are creating a basic cubic frame around our sphere based
-on the ``AxisAlignedBoundingBox`` object (``aabb``) we created earlier:
-
-``line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(aabb)``
-
-``line_set.paint_uniform_color([0, 0, 1])`` - paints the bounding box
-``LineSet`` blue.
-
-Multiple object parameters in ``draw()`` calls
-::::::::::::::::::::::::::::::::::::::::::::::
-
-Finally, we have a ``draw()`` call with multiple 3D object parameters:
-
-``o3d.visualization.draw([sphere,line_set])``
-
-You can pass as many objects to the ``draw()`` as you need.
-
-Specifying wireframe ``line_width``
-:::::::::::::::::::::::::::::::::::
-
-Aside from rendering ``LineSet`` wireframes or grids, we can change their
-thickness by passing in a ``line_width`` parameter with a numeric value to the
-``draw()`` function like so:
-
-.. code-block:: python
-
-    o3d.visualization.draw([sphere,line_set], line_width=50)
-
-Here we rendered a grotesquely thicker Bounding Box by increasing its thickness
-(``line_width`` property) to ``50``:
-
-.. image:: https://user-images.githubusercontent.com/93158890/158695002-f5976bfa-1e81-46dc-bf3b-b926d0c5e0af.jpg
-    :width: 700px
-
-The default value for the ``line_width`` parameter is ``2``. The minimum
-supplied value is ``1``. The rendering at ``line_width=1`` will be more subtle:
-
-.. code-block:: python
-
-    o3d.visualization.draw([sphere,line_set], line_width=1)
-
-.. image:: https://user-images.githubusercontent.com/93158890/158695717-042343a4-bbc3-45b8-ab6b-1118ad027cd7.jpg
-    :width: 700px
-
-Experiment with the ``line_width`` parameter values to find an optimal one for
-your purposes.
-
-Commonly used ``draw()`` options
---------------------------------
-
-Displaying UI, window titles, and specifying window dimensions
---------------------------------------------------------------
-
-Aside from rendering 3D objects, you can use the ``draw()`` function calls to
-control a number of Open3D Visualizer display options that are not shown by
-default, such as:
-
-* displaying UI / control panel for interactively modifying 3D model rendering
-  parameters of the Visualizer
-* adding a Visualizer window title;
-* specifying window dimensions (i.e. ``width`` and ``height``).
-
-The code below illustrates how to rename a Visualizer title bar and set window
-``width`` and ``height`` by customizing the ``draw()`` call, using our prior
-:ref:`bounding_box_sphere` example:
-
-.. code-block:: python
-
-    o3d.visualization.draw([sphere,line_set], show_ui=True, title="Sphere and AABB LineSet", width=700, height=700)
+    o3d.visualization.draw([sphere, line_set],
+                            show_ui=True,
+                            title="Sphere and bounding box",
+                            width=700,
+                            height=700)
 
 .. image:: https://user-images.githubusercontent.com/93158890/158281728-994ff828-53b0-485a-9feb-9b121d7354f7.jpg
     :width: 700px
 
-At the bottom of the UI / control panel, you can see the section titled
-"*Geometries*" (outlined in a dark grey box). This section contains a list of
-rendered objects that can be individually turned on or off by clicking a
-checkbox to the left of their names.
+Assigning object names
+::::::::::::::::::::::
 
-Assigning names to objects in the UI
-------------------------------------
-
-Object collections
-::::::::::::::::::
-
-In prior examples, we used the the ``draw()`` function to render 3D objects
-explicitly. The ``draw()`` function is not limited to 3D Objects only. You can
-create a collection of objects with their properties, mix them with
-visualizer-specific options, and render the result. In the previous example, we
-learned how to control a number of Open3D Visualizer display options that are
-not shown by default. In this case, our goal is to rename the default-assigned
-name of *Object 1* in the "Geometries" frame of the Visualizer UI to *sphere* .
-
-We now declare the ``geoms`` collection which will contain a geometry object
-``sphere`` (from previous examples), and we will name it *sphere* (``"name":
-"sphere"``). This will serve as a signal to the Visualizer UI to replace its
-default "Geometries" from *Object 1* to *sphere*:
+@Alex, rename the sphere to "Sphere".
+@Alex, rename the line set to "Bounding box".
+@Alex, create a new rendering.
 
 .. code-block:: python
 
-    geoms = {"name": "sphere", "geometry": sphere}
-
-We can now display the UI and confirm that our custom object is named
-appropriately:
-
-.. code-block:: python
-
-    o3d.visualization.draw(geoms, show_ui=True)
-
-And here is the named object:
-
-.. image:: https://user-images.githubusercontent.com/93158890/159092908-a2462f6d-34fc-4703-9845-9b311a7f1630.jpg
-    :width: 700px
-
-So far, our ``geoms`` collection defined only a single object: *sphere*. But we
-can turn it into a list and define multiple objects there:
-
-1. Re-declare ``geoms`` object to contain a collection list of the ``sphere``
-   and ``aabb`` bounding box from the :ref:`bounding_box_sphere` section.
-
-2. Call ``draw(geoms, show_ui=True)``:
-
-.. code-block:: python
-
-    geoms = [{"name": "sphere", "geometry": sphere}, {"name": "Axis Aligned Bounding Box line_set", "geometry": line_set}]
+    geoms = [{"name": "sphere", "geometry": sphere},
+             {"name": "Axis Aligned Bounding Box line_set", "geometry": line_set}]
     o3d.visualization.draw(geoms, show_ui=True)
 
 .. image:: https://user-images.githubusercontent.com/93158890/159094500-83ddd46f-0e71-40e1-9b97-ae46480cd860.jpg
     :width: 700px
 
-More ``draw()`` options
------------------------
-
-``show_skybox`` and ``bg_color``
-::::::::::::::::::::::::::::::::
-
-Aside from naming Open3D Visualizer status bar, geometries, and displaying the
-UI, you also have options to programmatically turn the light blue *skybox* on or
-off (``show_skybox=False/True``) as well as change the background color
-(``bg_color=(x.x, x.x, x.x, x.x)``).
-
-First, we'll demonstrate how to turn off the *skybox* using our *sphere*
-example. At your Python prompt, enter:
+Show/hide the skybox
+::::::::::::::::::::
 
 .. code-block:: python
 
     o3d.visualization.draw(sphere, show_ui=True, show_skybox=False)
 
-And the Visualizer window opens without the default *skybox* blue background:
+And the Visualizer window opens without the default skybox blue background:
 
 .. image:: https://user-images.githubusercontent.com/93158890/159093215-31dcacf7-306f-4231-9155-0df474ce4828.jpg
     :width: 700px
 
-Next, we will explore the *background color* (``bg_color``) parameter. At the
-Python prompt, enter:
+Set background color
+::::::::::::::::::::
+
+@Alex, can we skip ``show_skybox=False``?
 
 .. code-block:: python
 
-    o3d.visualization.draw(sphere, show_ui=True, title="Green Background", show_skybox=False, bg_color=(0.56, 1.0, 0.69, 1.0))
-
-Here, we have displayed the UI, renamed the title bar to *"Green Background"*,
-turned off the default *skybox* background, and explicitly specified RGB-Alfa
-values for the ``bg_color``:
+    o3d.visualization.draw(sphere,
+                           show_ui=True,
+                           title="Green Background",
+                           show_skybox=False,
+                           bg_color=(0.56, 1.0, 0.69, 1.0))
 
 .. image:: https://user-images.githubusercontent.com/93158890/160878317-a57755a0-8b8f-44db-b718-443aa435035a.jpg
     :width: 700px
 
+
+@Alex, add ``raw_mode`` example.
