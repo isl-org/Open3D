@@ -21,8 +21,6 @@ Basic drawing
 Point cloud
 :::::::::::
 
-This example draws a point cloud.
-
 .. code-block:: python
 
     dataset = o3d.data.PCDPointCloud()  # Downloads the demo point cloud dataset
@@ -34,8 +32,6 @@ This example draws a point cloud.
 
 Triangle mesh
 ::::::::::::::
-
-This example draws a triangle mesh.
 
 .. code-block:: python
 
@@ -50,8 +46,6 @@ This example draws a triangle mesh.
 
 Line set
 ::::::::
-
-This example draws a line set.
 
 .. code-block:: python
 
