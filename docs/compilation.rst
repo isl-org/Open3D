@@ -399,29 +399,29 @@ it to ``${HOME}/bin``, and adding ``${HOME}/bin`` to ``${PATH}``.
 
 .. code-block:: bash
 
+    # Clone
     git clone https://github.com/ccache/ccache.git
     cd ccache
     git checkout v4.6 -b 4.6
 
+    # Build
     mkdir build
     cd build
     cmake -DZSTD_FROM_INTERNET=ON \
           -DHIREDIS_FROM_INTERNET=ON \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_INSTALL_PREFIX=$HOME \
+          -DCMAKE_INSTALL_PREFIX=${HOME} \
           ..
     make -j$(nproc)
     make install -j$(nproc)
 
-Now, open your ``~/.bashrc`` file and add the following line:
+    # Add ${HOME}/bin to ${PATH} in your ~/.bashrc
+    echo "PATH=${HOME}/bin:${PATH}" >> ~/.bashrc
 
-.. code-block:: bash
-    PATH=${HOME}:${PATH}
+    # Restart the terminal now, or source ~/.bashrc
+    source ~/.bashrc
 
-Restart the terminal, and verify ``ccache`` has been installed correctly.
-
-.. code-block:: bash
-
+    # Verify `ccache` has been installed correctly
     which ccache
     ccache --version
 
