@@ -217,6 +217,7 @@ static Eigen::Matrix4d OptimizePairwiseRegistration(
         JTJ.setZero();
         JTr.setZero();
         double r = 0.0, r2 = 0.0;
+        (void)r2;  // r2 is not used for now. Suppress clang warning.
 
         for (size_t c = 0; c < corres.size(); c++) {
             int ii = corres[c].first;
