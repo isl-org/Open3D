@@ -3,30 +3,13 @@
 Open3D visualizer (advanced)
 ============================
 
-Introduction
----------------
-
-Open3D provides a convenient function for visualizing geometric objects:
-``draw()``. The ``draw()`` function allows you to visualize multiple geometry
-objects *(PointClouds, LineSets, TriangleMesh)* and images together along with
-optional, high-quality, physically based (PBR) materials. This tutorial covers
-more advanced usages of  ``draw()`` calls. For basic ``draw()`` usage, please
-see the Basic :doc:`visualizer_basic` tutorial.
-
-Getting started
----------------
-
-.. tip::
-    This **Getting started** section applies to all subsequent examples below
-
-1. Open your preferred Python environment;
-2. In Python, set up common imports that we will use throughout this tutorial:
+In this tutorial, we assume that you have already installed Open3D and have
+run the following import statements:
 
 .. code-block:: python
 
-    >>> import open3d as o3d
-    >>> import open3d.visualization as vis
-    >>> import numpy as np
+    import open3d as o3d
+    import numpy as np
 
 Advanced examples
 -----------------
@@ -65,7 +48,7 @@ using the ``o3d.io.read_triangle_mesh()`` method, as you will see below:
 
     # Extract Triangle Mesh data from the preloaded monkey dataset >>>
     monkey_mesh = o3d.io.read_triangle_mesh(monkey_data.path) >>>
-    vis.draw(monkey_mesh)
+    o3d.visualization.draw(monkey_mesh)
 
 That will automatically apply the default material which exists in a 3D model:
 
@@ -86,8 +69,8 @@ properties in addition to the ``TriangleMesh``:
 
 .. code-block:: python
 
-    >>> monkey_model = o3d.io.read_triangle_model(monkey_data.path)
-    >>> vis.draw(monkey_model)
+    monkey_model = o3d.io.read_triangle_model(monkey_data.path)
+    o3d.visualization.draw(monkey_model)
 
 Clearly, a staggering difference in rendering:
 
@@ -119,9 +102,9 @@ helmet:
 
 .. code-block:: python
 
-    >>> helmet_data = o3d.data.FlightHelmetModel()
-    >>> helmet_model = o3d.io.read_triangle_model(helmet_data.path)
-    >>> vis.draw(helmet_model)
+    helmet_data = o3d.data.FlightHelmetModel()
+    helmet_model = o3d.io.read_triangle_model(helmet_data.path)
+    o3d.visualization.draw(helmet_model)
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611761-40f95b2b-d257-4f2b-a8c0-60a73b159b96.jpg
     :width: 700px
@@ -136,8 +119,8 @@ yields inferior results:
 
 .. code-block:: python
 
-    >>> helmet_mesh = o3d.io.read_triangle_mesh(helmet_data.path)
-    >>> vis.draw(helmet_mesh)
+    helmet_mesh = o3d.io.read_triangle_mesh(helmet_data.path)
+    o3d.visualization.draw(helmet_mesh)
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611814-09c6fe17-d209-439d-8ae9-c186387fd698.jpg
     :width: 700px
@@ -152,21 +135,21 @@ Let's re-load our ``FlightHelmetModel`` with ``o3d.io.read_triangle_model()``:
 
 .. code-block:: python
 
-    >>> helmet_model = o3d.io.read_triangle_model(helmet_data.path)
+    helmet_model = o3d.io.read_triangle_model(helmet_data.path)
 
 Take a look at what the ``helmet`` object consists of. First, we find out its
 type:
 
 .. code-block:: python
 
-    >>> helmet_model
+    helmet_model
     <open3d.cpu.pybind.visualization.rendering.TriangleMeshModel object at 0x7f019efa7770>
 
 Now, we'll look at its meshes:
 
 .. code-block:: python
 
-    >>> helmet_model.meshes
+    helmet_model.meshes
     [<open3d.cpu.pybind.visualization.rendering.TriangleMeshModel.MeshInfo object at 0x7f0134034170>,
      <open3d.cpu.pybind.visualization.rendering.TriangleMeshModel.MeshInfo object at 0x7f013402ff70>,
      <open3d.cpu.pybind.visualization.rendering.TriangleMeshModel.MeshInfo object at 0x7f0132d09a30>,
@@ -178,7 +161,7 @@ We can also list materials used in the model like so:
 
 .. code-block:: python
 
-    >>> helmet_model.materials
+    helmet_model.materials
     [<open3d.cpu.pybind.visualization.rendering.MaterialRecord object at 0x7f0132d09ab0>,
      <open3d.cpu.pybind.visualization.rendering.MaterialRecord object at 0x7f0132d09db0>,
      <open3d.cpu.pybind.visualization.rendering.MaterialRecord object at 0x7f0132d092f0>,
@@ -192,30 +175,30 @@ different materials or meshes a model has:
 
 .. code-block:: python
 
-    >>> len(helmet_model.materials)
+    len(helmet_model.materials)
     6
-    >>> len(helmet_model.meshes)
+    len(helmet_model.meshes)
     6
 
 We can reference each individual mesh by its array index:
 
 .. code-block:: python
 
-    >>> helmet_model.meshes[0]
+    helmet_model.meshes[0]
     <open3d.cpu.pybind.visualization.rendering.TriangleMeshModel.MeshInfo object at 0x7f0134034170>
 
 Which material is it using?
 
 .. code-block:: python
 
-    >>> helmet_model.meshes[0].material_idx
+    helmet_model.meshes[0].material_idx
     0
 
 And what is its mesh name?
 
 .. code-block:: python
 
-    >>> helmet_model.meshes[0].mesh_name
+    helmet_model.meshes[0].mesh_name
     'Hose_low'
 
 We can write a loop which displays all mesh names and material indices used in a
@@ -223,7 +206,7 @@ complex model like so:
 
 .. code-block:: python
 
-    >>> for m in helmet_model.meshes:
+    for m in helmet_model.meshes:
     ...     print(m.mesh_name)
     ...     print(m.material_idx)
     ...
@@ -244,7 +227,7 @@ We can also render meshes individually like:
 
 .. code-block:: python
 
-    >>> vis.draw(helmet_model.meshes[0].mesh)
+    o3d.visualization.draw(helmet_model.meshes[0].mesh)
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238095-5385d761-3bae-4172-ab45-1d47b6084d5c.jpg
     :width: 700px
@@ -258,8 +241,8 @@ separately:
 
 .. code-block:: python
 
-    >>> for m in helmet_model.meshes:
-    ...     vis.draw(m.mesh)
+    for m in helmet_model.meshes:
+    ...     o3d.visualization.draw(m.mesh)
 
 A series of Open3D visualizer windows should appear. As you close each of them,
 a new one will appear with a different mesh:
@@ -286,8 +269,8 @@ associated properties:
 
 .. code-block:: python
 
-    >>> for m in helmet_model.meshes:
-    ...     vis.draw({'name' : m.mesh_name, 'geometry' : m.mesh, 'material' : helmet_model.materials[m.material_idx]})
+    for m in helmet_model.meshes:
+    ...     o3d.visualization.draw({'name' : m.mesh_name, 'geometry' : m.mesh, 'material' : helmet_model.materials[m.material_idx]})
 
 This will give us a full display of each part:
 
@@ -320,7 +303,7 @@ Once again, in your terminal, enter:
 
 .. code-block:: python
 
-    >>> monkey_mesh = o3d.io.read_triangle_mesh(monkey_data.path)
+    monkey_mesh = o3d.io.read_triangle_mesh(monkey_data.path)
 
 Here we are invoking the ``open3d.io`` library which allows us to read 3D model
 files and/or selectively extract their details. In this case, we are using the
@@ -329,13 +312,13 @@ files and/or selectively extract their details. In this case, we are using the
 
 .. code-block:: python
 
-    >>> monkey_tensor = o3d.t.geometry.TriangleMesh.from_legacy(monkey_mesh)
+    monkey_tensor = o3d.t.geometry.TriangleMesh.from_legacy(monkey_mesh)
 
 Let's see what properties ``monkey_tensor`` has:
 
 .. code-block:: python
 
-    >>> monkey_tensor
+    monkey_tensor
     TriangleMesh on CPU:0 [9908 vertices (Float32) and 15744 triangles (Int64)].
     Vertex Attributes: normals (dtype = Float32, shape = {9908, 3}).
     Triangle Attributes: texture_uvs (dtype = Float32, shape = {15744, 3, 2}).
@@ -344,7 +327,7 @@ Time to render the ``monkey_tensor``:
 
 .. code-block:: python
 
-    >>> vis.draw(monkey_tensor)
+    o3d.visualization.draw(monkey_tensor)
 
 And we get:
 
@@ -355,9 +338,9 @@ Now, let's work on materials:
 
 .. code-block:: python
 
-    >>> mat = vis.rendering.MaterialRecord()
-    >>> mat.base_color = np.asarray([1.0, 1.0, 0.0, 1.0])
-    >>> vis.draw({'name': 'monkey', 'geometry': monkey_tensor, 'material': mat})
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.base_color = np.asarray([1.0, 1.0, 0.0, 1.0])
+    o3d.visualization.draw({'name': 'monkey', 'geometry': monkey_tensor, 'material': mat})
 
 We have initialized ``mat.base_color`` to be yellow and get:
 
@@ -369,8 +352,8 @@ correct our 3D rendering, we use ``mat.shader`` property:
 
 .. code-block:: python
 
-    >>> mat.shader = 'defaultLit'
-    >>> vis.draw({'name': 'monkey', 'geometry': monkey_tensor, 'material': mat})
+    mat.shader = 'defaultLit'
+    o3d.visualization.draw({'name': 'monkey', 'geometry': monkey_tensor, 'material': mat})
 
 This time, we see a big difference because the ``mat.shader`` property is
 initialized:
