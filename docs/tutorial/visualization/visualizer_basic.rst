@@ -43,6 +43,8 @@ This example draws a triangle mesh.
     sphere.compute_vertex_normals()  # See "vertex and triangle normals" section for details
     o3d.visualization.draw(cube)
 
+@Alex change the image here. The mesh should be shown with vertex normals.
+
 .. image:: https://user-images.githubusercontent.com/93158890/148607529-ee0ae0de-05af-423d-932c-2a5a6c8d7bda.jpg
     :width: 700px
 
@@ -62,7 +64,6 @@ This example draws a triangle mesh together with a line set.
 
 .. image:: https://user-images.githubusercontent.com/93158890/157901535-fbe78fc0-9b85-476e-a0a1-01e0e5d80738.jpg
     :width: 700px
-
 
 Vertex and triangle normals
 ---------------------------
