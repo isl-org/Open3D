@@ -8,7 +8,7 @@ visualizing geometries. This tutorial will demonstrate the basic usage of the
 draw function.
 
 In this tutorial, we assume that you have already installed Open3D and have
-executed the following import statements:
+run the following import statements:
 
 .. code-block:: python
 
@@ -18,23 +18,51 @@ executed the following import statements:
 Basic drawing
 -------------
 
+Point cloud
+:::::::::::
+
+This example draws a point cloud.
+
 .. code-block:: python
 
-    dataset = o3d.data.PCDPointCloud() # Demo point cloud dataset
+    dataset = o3d.data.PCDPointCloud()  # Downloads the demo point cloud dataset
     pcd = o3d.io.read_point_cloud(dataset.path)
     o3d.visualization.draw(pcd)
 
 .. image:: https://user-images.githubusercontent.com/93158890/159548100-404afe97-8960-4e68-956f-cc6957632a93.jpg
     :width: 700px
 
+Triangle mesh
+::::::::::::::
+
+This example draws a triangle mesh.
+
 .. code-block:: python
 
-    # Create a "box" triangle mesh with dimension 1x2x4
     cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+    sphere.compute_vertex_normals()  # See "vertex and triangle normals" section for details
     o3d.visualization.draw(cube)
 
 .. image:: https://user-images.githubusercontent.com/93158890/148607529-ee0ae0de-05af-423d-932c-2a5a6c8d7bda.jpg
     :width: 700px
+
+Multiple objects
+::::::::::::::::
+
+This example draws a triangle mesh together with a line set.
+
+.. code-block:: python
+
+    sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
+    sphere.compute_vertex_normals()
+    bbox = o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)
+    line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(bbox)
+    line_set.paint_uniform_color([0, 0, 1])
+    o3d.visualization.draw([sphere, line_set])
+
+.. image:: https://user-images.githubusercontent.com/93158890/157901535-fbe78fc0-9b85-476e-a0a1-01e0e5d80738.jpg
+    :width: 700px
+
 
 Vertex and triangle normals
 ---------------------------
@@ -204,7 +232,7 @@ by creating a custom ``LineSet`` object:
     sphere.compute_vertex_normals()
     rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.  pi / 2, 0, 0))
     sphere.rotate(rotate_90)
-    line_set = o3d.geometry.LineSet.create_from_triangle_mesh  (sphere)
+    line_set = o3d.geometry.LineSet.create_from_triangle_mesh(sphere)
     line_set.paint_uniform_color([0.0, 0.0, 1.0])
     o3d.visualization.draw(line_set)
 
@@ -218,41 +246,6 @@ create a line set from the edges of individual triangles of a triangle mesh.
 
 ``line_set.paint_uniform_color([0.0, 0.0, 1.0])`` - here we paint the wireframe
 ``LineSet`` blue. [*Red=0, Green=0, Blue=1*]
-
-.. _bounding_box_sphere:
-
-Drawing a sphere in a bounding box ``LineSet``
-----------------------------------------------
-
-Rendering multiple objects
-::::::::::::::::::::::::::
-
-In prior examples, we rendered only one 3D object at a time. But the ``draw()``
-function can be used to render multiple 3D objects simultaneously. In this
-example, we will render two objects: the **Sphere** and its **Axis-Aligned
-Bounding Box** represented by a cubic frame around the sphere:
-
-.. code-block:: python
-
-    sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
-    sphere.compute_vertex_normals()
-    aabb = o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)
-    line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(aabb)
-    line_set.paint_uniform_color([0, 0, 1])
-    o3d.visualization.draw([sphere,line_set])
-
-Both objects appear and can be moved and rotated:
-
-.. image:: https://user-images.githubusercontent.com/93158890/157901535-fbe78fc0-9b85-476e-a0a1-01e0e5d80738.jpg
-    :width: 700px
-
-Let's go over the new code here:
-
-``aabb`` stands for *axis-aligned bounding box*.
-
-``aabb =
-o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)`` -
-creates a bounding box fully encompassing the sphere.
 
 ``LineSet`` objects
 :::::::::::::::::::
