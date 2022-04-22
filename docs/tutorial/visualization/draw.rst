@@ -311,64 +311,40 @@ Set background color
 @Alex, add ``raw_mode`` example.
 
 
-Rendering models
-::::::::::::::::
+Drawing TriangleMeshModel
+-------------------------
 
-Rendering ``TriangleMesh``'es of 3D models
-""""""""""""""""""""""""""""""""""""""""""
+TriangleMesh vs. TriangleMeshModel
+::::::::::::::::::::::::::::::::::
 
-In the Basic :doc:`draw` tutorial, we showed how to use Open3D
-datasets. In this tutorial, we will likewise be using Open3D datasets to load 3D
-models.
+In Open3D ``TriangleMeshModel`` is a class containing ``TriangleMesh``es and
+materials.
 
-.. seealso::
+The following example reads and render the monkey ``TriangleMesh`` with its
+default material.
 
-    For more information on datasets, please refer to the :doc:`Open3D Datasets
-    page <../data/index>`
-
-We also demonstrated how to apply materials manually to built-in Open3D
-geometries. It is also possible to load ``TriangleMesh``'es from full 3D models
-using the ``o3d.io.read_triangle_mesh()`` method, as you will see below:
+@Alex, explain why do we still get the default material?
 
 .. code-block:: python
 
-    # Initialize the monkey dataset with downloaded and extracted 3D model
     monkey_data = o3d.data.MonkeyModel()
-
-    # Extract Triangle Mesh data from the preloaded monkey dataset
     monkey_mesh = o3d.io.read_triangle_mesh(monkey_data.path)
     o3d.visualization.draw(monkey_mesh)
-
-That will automatically apply the default material which exists in a 3D model:
 
 .. image:: https://user-images.githubusercontent.com/93158890/160008560-4834c962-efa7-4d69-b99d-9ff321a03c02.jpg
     :width: 700px
 
-Next, we will learn how to render full 3D models in all their glory.
-
-Rendering full 3D models
-""""""""""""""""""""""""
-
-In the Basic :doc:`draw` tutorial, we rendered ``TriangleMesh`` and
-``Tensor``-based ``TriangleMesh`` objects. But the ``draw()`` function can also
-render full-fledged 3D models containing a set of textures and material
-properties. To read a complete model, we need to use the
-``open3d.io.read_triangle_mesh_model()`` method, which imports all the material
-properties in addition to the ``TriangleMesh``:
+With ``TriangleMeshModel`` and ``read_triangle_mesh_model`` we can read and
+render the full set of materials.
 
 .. code-block:: python
 
     monkey_model = o3d.io.read_triangle_mesh_model(monkey_data.path)
     o3d.visualization.draw(monkey_model)
 
-Clearly, a staggering difference in rendering:
-
 .. image:: https://user-images.githubusercontent.com/93158890/148611141-d424fc74-be7e-4833-913c-714fc3c4fbd2.jpg
     :width: 700px
 
-
-Drawing ``TriangleMeshModel``
------------------------------
 
 In the previous section (:ref:`rendering_models`) we have covered how to render
 complete 3D models with the ``open3d.io.read_triangle_mesh_model()`` method. This
