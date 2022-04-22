@@ -80,6 +80,9 @@ Vertex and triangle normals
 Vertex normals and triangle normals are important for the shading of triangle
 mesh.
 
+Without normals
+:::::::::::::::
+
 First, we draw a sphere without normals.
 
 .. code-block:: python
@@ -88,6 +91,9 @@ First, we draw a sphere without normals.
     o3d.visualization.draw(sphere)
 
 @Alex, add an image here.
+
+With triangle normals
+:::::::::::::::::::::
 
 Then, we compute the triangle normals of the sphere. The resulting visualization
 shows a flat-shaded sphere for each face (triangles).
@@ -100,6 +106,9 @@ shows a flat-shaded sphere for each face (triangles).
 
 .. image:: https://user-images.githubusercontent.com/93158890/157728100-0a495e56-c613-40c4-a292-6e45213d61f6.jpg
     :width: 700px
+
+With vertex normals
+:::::::::::::::::::
 
 Finally, we compute the vertex normals of the sphere. The resulting
 visualization shows a smooth-shaded sphere. Note that internally,
