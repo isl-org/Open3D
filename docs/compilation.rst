@@ -380,14 +380,14 @@ To run Python unit tests:
 Caching compilation with ccache
 -------------------------------
 
-ccache is a compiler cache that can speeds up the compilation process by
-avoiding recompilation of the same source code. It can significantly speed up
+ccache is a compiler cache that can speed up the compilation process by avoiding
+recompilation of the same source code. It can significantly speed up
 recompilation of Open3D on Linux/macOS, even if you clear the ``build``
 directory. You'll need ccache 4.0+ to cache both C++ and CUDA compilations.
 
-After installing ``ccache``, reconfigure and recompile the Open3D library.
-Open3D's CMake script can detect and use it automatically. You don't need to
-setup additional paths except for the ``ccache`` program itself.
+After installing ``ccache``, simply reconfigure and recompile the Open3D
+library. Open3D's CMake script can detect and use it automatically. You don't
+need to setup additional paths except for the ``ccache`` program itself.
 
 Ubuntu 18.04, 20.04
 ```````````````````
