@@ -126,7 +126,6 @@ custom port number, set the ``WEBRTC_PORT`` environment variable. For instance:
     # Bind to 127.0.0.1:8889
     WEBRTC_IP=127.0.0.1 WEBRTC_PORT=8889 python draw_webrtc.py
 
-
 To enable remote visualization, we typically bind to the internal IP and
 internal port as seen by the server. The router may translate the internal IP
 and internal port to external IP and port. For instance, on Google cloud, we
@@ -144,7 +143,6 @@ external IP address from the browser.
     by any one with network access. For sensitive or confidential data, please
     rebuild with `appropriate web server configuration and SSL certificates
     <https://github.com/civetweb/civetweb/blob/master/docs/OpenSSL.md>`_.
-
 
 Jupyter mode
 ------------
@@ -214,7 +212,6 @@ need to :
      cmake -DBUILD_JUPYTER_EXTENSION ..
      make install-pip-package -j$(nproc)
 
-
 Advanced topic: local server in airplane mode
 ------------------------------------------------
 
@@ -222,7 +219,6 @@ When the computer has no active network interfaces (e.g. Wi-Fi is turned off and
 ethernet is unplugged, the machine only has the loopback ``lo`` interface),
 WebRTC may fail to work. In this case, we need to create a dummy interface.
 The workaround is tested on Ubuntu.
-
 
 .. code-block:: sh
 
@@ -241,7 +237,6 @@ The workaround is tested on Ubuntu.
     # Clean up
     sudo ip link set dummy0 down
     sudo ip link delete dummy0
-
 
 Advanced topic: TURN server
 ------------------------------
@@ -266,7 +261,6 @@ with ``;``. For instance:
     WEBRTC_STUN_SERVER="turn:user:password@my_tcp_turn_server.com:3478?transport=tcp"
     # UDP and TCP (more than one TURN servers)
     WEBRTC_STUN_SERVER="turn:user:password@my_turn_server.com:3478;turn:user:password@my_tcp_turn_server.com:3478?transport=tcp"
-
 
 Advanced topic: debugging network issues
 -------------------------------------------

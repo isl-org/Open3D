@@ -38,7 +38,6 @@ computes OpenCV ORB feature to match sparse features over wide baseline images,
 then performs 5-point RANSAC to estimate a rough alignment, which is used as
 the initialization of ``compute_rgbd_odometry``.
 
-
 .. _make_fragments_make_a_posegraph:
 
 Multiway registration
