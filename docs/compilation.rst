@@ -393,10 +393,9 @@ Ubuntu 18.04, 20.04
 ```````````````````
 
 If you install ``ccache`` via ``sudo apt install ccache``, the 3.x version will
-be installed. This will be good for caching C++ compilations. For CUDA
-compilations, you'll need to install the 4.0+ version. Here, we demonstrate one
-way to setup ``ccache`` by compiling it from source, installing it to
-``$HOME/bin``, and adding ``$HOME/bin`` to ``$PATH``.
+be installed. To cache CUDA compilations, you'll need the 4.0+ version. Here, we
+demonstrate one way to setup ``ccache`` by compiling it from source, installing
+it to ``${HOME}/bin``, and adding ``${HOME}/bin`` to ``${PATH}``.
 
 .. code-block:: bash
 
@@ -417,7 +416,7 @@ way to setup ``ccache`` by compiling it from source, installing it to
 Now, open your ``~/.bashrc`` file and add the following line:
 
 .. code-block:: bash
-    PATH=${HOME}:$PATH
+    PATH=${HOME}:${PATH}
 
 Restart the terminal, and verify ``ccache`` has been installed correctly.
 
