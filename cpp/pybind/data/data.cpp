@@ -523,6 +523,271 @@ void pybind_knot(py::module& m) {
     docstring::ClassMethodDocInject(m, "KnotMesh", "path");
 }
 
+void pybind_monkey(py::module& m) {
+    // open3d.data.MonkeyModel
+    py::class_<MonkeyModel, PySimpleDataset<MonkeyModel>,
+               std::shared_ptr<MonkeyModel>, SingleDownloadDataset>
+            monkey(m, "MonkeyModel",
+                   "Data class for `MonkeyModel` contains a monkey model file, "
+                   "along with material and various other texture files. The "
+                   "model file can be accessed using `path`, however in order "
+                   "to access the paths to the texture files one may use "
+                   "path_map[\"filename\"]` method.");
+    monkey.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const MonkeyModel& monkey) { return monkey.GetPath(); },
+                    "Returns the `monkey` model file.")
+            .def_property_readonly("path_map", &MonkeyModel::GetPathMap,
+                                   "Returns the map of filename to path. Refer "
+                                   "documentation page for available options.");
+    docstring::ClassMethodDocInject(m, "MonkeyModel", "path");
+    docstring::ClassMethodDocInject(m, "MonkeyModel", "path_map");
+}
+
+void pybind_sword(py::module& m) {
+    // open3d.data.SwordModel
+    py::class_<SwordModel, PySimpleDataset<SwordModel>,
+               std::shared_ptr<SwordModel>, SingleDownloadDataset>
+            sword(m, "SwordModel",
+                  "Data class for `SwordModel` contains a monkey model file, "
+                  "along with material and various other texture files. The "
+                  "model file can be accessed using `path`, however in order "
+                  "to access the paths to the texture files one may use "
+                  "path_map[\"filename\"]` method.");
+    sword.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const SwordModel& sword) { return sword.GetPath(); },
+                    "Returns the `sword` model file.")
+            .def_property_readonly("path_map", &SwordModel::GetPathMap,
+                                   "Returns the map of filename to path. Refer "
+                                   "documentation page for available options.");
+    docstring::ClassMethodDocInject(m, "SwordModel", "path");
+    docstring::ClassMethodDocInject(m, "SwordModel", "path_map");
+}
+
+void pybind_crate(py::module& m) {
+    // open3d.data.CrateModel
+    py::class_<CrateModel, PySimpleDataset<CrateModel>,
+               std::shared_ptr<CrateModel>, SingleDownloadDataset>
+            crate(m, "CrateModel",
+                  "Data class for `CrateModel` contains a crate model file, "
+                  "along with material and various other texture files. The "
+                  "model file can be accessed using `path`, however in order "
+                  "to access the paths to the texture files one may use "
+                  "path_map[\"filename\"]` method.");
+    crate.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const CrateModel& crate) { return crate.GetPath(); },
+                    "Returns the `crate` model file.")
+            .def_property_readonly("path_map", &CrateModel::GetPathMap,
+                                   "Returns the map of filename to path. Refer "
+                                   "documentation page for available options.");
+    docstring::ClassMethodDocInject(m, "CrateModel", "path");
+    docstring::ClassMethodDocInject(m, "CrateModel", "path_map");
+}
+
+void pybind_helmet(py::module& m) {
+    // open3d.data.FlightHelmetModel
+    py::class_<FlightHelmetModel, PySimpleDataset<FlightHelmetModel>,
+               std::shared_ptr<FlightHelmetModel>, SingleDownloadDataset>
+            helmet(m, "FlightHelmetModel",
+                   "Data class for `FlightHelmetModel` contains a flight "
+                   "helmet GLTF model file, along with material and various "
+                   "other texture files. The model file can be accessed using "
+                   "`path`, however in order to access the paths to the "
+                   "texture files one may use path_map[\"filename\"]` method.");
+    helmet.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "path",
+                    [](const FlightHelmetModel& helmet) {
+                        return helmet.GetPath();
+                    },
+                    "Returns the `FlightHelmet.gltf` model file.")
+            .def_property_readonly("path_map", &FlightHelmetModel::GetPathMap,
+                                   "Returns the map of filename to path. Refer "
+                                   "documentation page for available options.");
+    docstring::ClassMethodDocInject(m, "FlightHelmetModel", "path");
+    docstring::ClassMethodDocInject(m, "FlightHelmetModel", "path_map");
+}
+
+void pybind_metal_texture(py::module& m) {
+    // open3d.data.MetalTexture
+    py::class_<MetalTexture, PySimpleDataset<MetalTexture>,
+               std::shared_ptr<MetalTexture>, SingleDownloadDataset>
+            metal_texture(m, "MetalTexture",
+                          "Data class for `MetalTexture` contains albedo, "
+                          "normal, roughness and metallic texture files for "
+                          "metal based material.");
+    metal_texture.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("albedo_texture_path",
+                                   &MetalTexture::GetAlbedoTexturePath,
+                                   "Path to albedo color texture image.")
+            .def_property_readonly("normal_texture_path",
+                                   &MetalTexture::GetNormalTexturePath,
+                                   "Path to normal texture image.")
+            .def_property_readonly("roughness_texture_path",
+                                   &MetalTexture::GetRoughnessTexturePath,
+                                   "Path to roughness texture image.")
+            .def_property_readonly("metallic_texture_path",
+                                   &MetalTexture::GetMetallicTexturePath,
+                                   "Path to metallic texture image.")
+            .def_property_readonly("path_map", &MetalTexture::GetPathMap,
+                                   "Returns the map of filename to path.");
+    docstring::ClassMethodDocInject(m, "MetalTexture", "albedo_texture_path");
+    docstring::ClassMethodDocInject(m, "MetalTexture", "normal_texture_path");
+    docstring::ClassMethodDocInject(m, "MetalTexture",
+                                    "roughness_texture_path");
+    docstring::ClassMethodDocInject(m, "MetalTexture", "metallic_texture_path");
+    docstring::ClassMethodDocInject(m, "MetalTexture", "path_map");
+}
+
+void pybind_painted_plaster_texture(py::module& m) {
+    // open3d.data.PaintedPlasterTexture
+    py::class_<PaintedPlasterTexture, PySimpleDataset<PaintedPlasterTexture>,
+               std::shared_ptr<PaintedPlasterTexture>, SingleDownloadDataset>
+            painted_plaster_texture(
+                    m, "PaintedPlasterTexture",
+                    "Data class for `PaintedPlasterTexture` contains albedo, "
+                    "normal and roughness texture files for painted plaster "
+                    "based material.");
+    painted_plaster_texture
+            .def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("albedo_texture_path",
+                                   &PaintedPlasterTexture::GetAlbedoTexturePath,
+                                   "Path to albedo color texture image.")
+            .def_property_readonly("normal_texture_path",
+                                   &PaintedPlasterTexture::GetNormalTexturePath,
+                                   "Path to normal texture image.")
+            .def_property_readonly(
+                    "roughness_texture_path",
+                    &PaintedPlasterTexture::GetRoughnessTexturePath,
+                    "Path to roughness texture image.")
+            .def_property_readonly("path_map",
+                                   &PaintedPlasterTexture::GetPathMap,
+                                   "Returns the map of filename to path.");
+    docstring::ClassMethodDocInject(m, "PaintedPlasterTexture",
+                                    "albedo_texture_path");
+    docstring::ClassMethodDocInject(m, "PaintedPlasterTexture",
+                                    "normal_texture_path");
+    docstring::ClassMethodDocInject(m, "PaintedPlasterTexture",
+                                    "roughness_texture_path");
+    docstring::ClassMethodDocInject(m, "PaintedPlasterTexture", "path_map");
+}
+
+void pybind_tiles_texture(py::module& m) {
+    // open3d.data.TilesTexture
+    py::class_<TilesTexture, PySimpleDataset<TilesTexture>,
+               std::shared_ptr<TilesTexture>, SingleDownloadDataset>
+            tiles_texture(
+                    m, "TilesTexture",
+                    "Data class for `TilesTexture` contains albedo, normal and "
+                    "roughness texture files for tiles based material.");
+    tiles_texture.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("albedo_texture_path",
+                                   &TilesTexture::GetAlbedoTexturePath,
+                                   "Path to albedo color texture image.")
+            .def_property_readonly("normal_texture_path",
+                                   &TilesTexture::GetNormalTexturePath,
+                                   "Path to normal texture image.")
+            .def_property_readonly("roughness_texture_path",
+                                   &TilesTexture::GetRoughnessTexturePath,
+                                   "Path to roughness texture image.")
+            .def_property_readonly("path_map", &TilesTexture::GetPathMap,
+                                   "Returns the map of filename to path.");
+    docstring::ClassMethodDocInject(m, "TilesTexture", "albedo_texture_path");
+    docstring::ClassMethodDocInject(m, "TilesTexture", "normal_texture_path");
+    docstring::ClassMethodDocInject(m, "TilesTexture",
+                                    "roughness_texture_path");
+    docstring::ClassMethodDocInject(m, "TilesTexture", "path_map");
+}
+
+void pybind_terrazzo_texture(py::module& m) {
+    // open3d.data.TerrazzoTexture
+    py::class_<TerrazzoTexture, PySimpleDataset<TerrazzoTexture>,
+               std::shared_ptr<TerrazzoTexture>, SingleDownloadDataset>
+            terrazzo_texture(
+                    m, "TerrazzoTexture",
+                    "Data class for `TerrazzoTexture` contains albedo, normal "
+                    "and roughness texture files for terrazzo based material.");
+    terrazzo_texture.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("albedo_texture_path",
+                                   &TerrazzoTexture::GetAlbedoTexturePath,
+                                   "Path to albedo color texture image.")
+            .def_property_readonly("normal_texture_path",
+                                   &TerrazzoTexture::GetNormalTexturePath,
+                                   "Path to normal texture image.")
+            .def_property_readonly("roughness_texture_path",
+                                   &TerrazzoTexture::GetRoughnessTexturePath,
+                                   "Path to roughness texture image.")
+            .def_property_readonly("path_map", &TerrazzoTexture::GetPathMap,
+                                   "Returns the map of filename to path.");
+    docstring::ClassMethodDocInject(m, "TerrazzoTexture",
+                                    "albedo_texture_path");
+    docstring::ClassMethodDocInject(m, "TerrazzoTexture",
+                                    "normal_texture_path");
+    docstring::ClassMethodDocInject(m, "TerrazzoTexture",
+                                    "roughness_texture_path");
+    docstring::ClassMethodDocInject(m, "TerrazzoTexture", "path_map");
+}
+
+void pybind_wood_texture(py::module& m) {
+    // open3d.data.WoodTexture
+    py::class_<WoodTexture, PySimpleDataset<WoodTexture>,
+               std::shared_ptr<WoodTexture>, SingleDownloadDataset>
+            wood_texture(
+                    m, "WoodTexture",
+                    "Data class for `WoodTexture` contains albedo, normal and "
+                    "roughness texture files for wood based material.");
+    wood_texture.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("albedo_texture_path",
+                                   &WoodTexture::GetAlbedoTexturePath,
+                                   "Path to albedo color texture image.")
+            .def_property_readonly("normal_texture_path",
+                                   &WoodTexture::GetNormalTexturePath,
+                                   "Path to normal texture image.")
+            .def_property_readonly("roughness_texture_path",
+                                   &WoodTexture::GetRoughnessTexturePath,
+                                   "Path to roughness texture image.")
+            .def_property_readonly("path_map", &WoodTexture::GetPathMap,
+                                   "Returns the map of filename to path.");
+    docstring::ClassMethodDocInject(m, "WoodTexture", "albedo_texture_path");
+    docstring::ClassMethodDocInject(m, "WoodTexture", "normal_texture_path");
+    docstring::ClassMethodDocInject(m, "WoodTexture", "roughness_texture_path");
+    docstring::ClassMethodDocInject(m, "WoodTexture", "path_map");
+}
+
+void pybind_wood_floor_texture(py::module& m) {
+    // open3d.data.WoodFloorTexture
+    py::class_<WoodFloorTexture, PySimpleDataset<WoodFloorTexture>,
+               std::shared_ptr<WoodFloorTexture>, SingleDownloadDataset>
+            wood_floor_texture(m, "WoodFloorTexture",
+                               " Data class for `WoodFloorTexture` contains "
+                               "albedo, normal and roughness texture files for "
+                               "wooden floor based material.");
+    wood_floor_texture.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("albedo_texture_path",
+                                   &WoodFloorTexture::GetAlbedoTexturePath,
+                                   "Path to albedo color texture image.")
+            .def_property_readonly("normal_texture_path",
+                                   &WoodFloorTexture::GetNormalTexturePath,
+                                   "Path to normal texture image.")
+            .def_property_readonly("roughness_texture_path",
+                                   &WoodFloorTexture::GetRoughnessTexturePath,
+                                   "Path to roughness texture image.")
+            .def_property_readonly("path_map", &WoodFloorTexture::GetPathMap,
+                                   "Returns the map of filename to path.");
+    docstring::ClassMethodDocInject(m, "WoodFloorTexture",
+                                    "albedo_texture_path");
+    docstring::ClassMethodDocInject(m, "WoodFloorTexture",
+                                    "normal_texture_path");
+    docstring::ClassMethodDocInject(m, "WoodFloorTexture",
+                                    "roughness_texture_path");
+    docstring::ClassMethodDocInject(m, "WoodFloorTexture", "path_map");
+}
+
 void pybind_juneau(py::module& m) {
     // open3d.data.JuneauImage
     py::class_<JuneauImage, PySimpleDataset<JuneauImage>,
@@ -581,26 +846,45 @@ void pybind_office_point_clouds(py::module& m) {
 void pybind_data(py::module& m) {
     py::module m_submodule = m.def_submodule("data", "Data handling module.");
     pybind_data_classes(m_submodule);
-
+    // Demo data.
     pybind_demo_icp_pointclouds(m_submodule);
     pybind_demo_colored_icp_pointclouds(m_submodule);
     pybind_demo_crop_pointcloud(m_submodule);
     pybind_demo_feature_matching_point_clouds(m_submodule);
     pybind_demo_pose_graph_optimization(m_submodule);
     pybind_demo_custom_visualization(m_submodule);
+    // Sample point cloud data.
     pybind_pcd_point_cloud(m_submodule);
     pybind_ply_point_cloud(m_submodule);
+    // RGBD data.
     pybind_sample_nyu_rgbd_image(m_submodule);
     pybind_sample_sun_rgbd_image(m_submodule);
     pybind_sample_tum_rgbd_image(m_submodule);
     pybind_sample_redwood_rgbd_images(m_submodule);
     pybind_sample_fountain_rgbd_images(m_submodule);
+    // RealSense Bag file.
     pybind_sample_l515_bag(m_submodule);
+    // Point Cloud data.
     pybind_eagle(m_submodule);
+    // Triangle Mesh data.
     pybind_armadillo(m_submodule);
     pybind_bunny(m_submodule);
     pybind_knot(m_submodule);
+    // Triangle Model data with PBR material.
+    pybind_monkey(m_submodule);
+    pybind_sword(m_submodule);
+    pybind_crate(m_submodule);
+    pybind_helmet(m_submodule);
+    // Texture images for material.
+    pybind_metal_texture(m_submodule);
+    pybind_painted_plaster_texture(m_submodule);
+    pybind_tiles_texture(m_submodule);
+    pybind_terrazzo_texture(m_submodule);
+    pybind_wood_texture(m_submodule);
+    pybind_wood_floor_texture(m_submodule);
+    // Image data.
     pybind_juneau(m_submodule);
+    // Point Cloud fragments data.
     pybind_living_room_point_clouds(m_submodule);
     pybind_office_point_clouds(m_submodule);
 }
