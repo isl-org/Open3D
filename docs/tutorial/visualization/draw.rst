@@ -237,14 +237,15 @@ Let's examine new elements in the code above:
 .. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
     :width: 700px
 
-Drawing a TriangleMeshModel
----------------------------
+TriangleMeshModel
+-----------------
 
 Introducing TriangleMeshModel
 :::::::::::::::::::::::::::::
 
-In Open3D, ``TriangleMeshModel`` is a class containing ``TriangleMesh``es and
-materials.
+In Open3D, ``TriangleMeshModel`` is a class containing one or more triangles
+meshes and materials. When loading a ``.gltf`` model, we typically want to use
+``TriangleMeshModel`` instead of ``TriangleMesh``.
 
 The following example reads and render the monkey ``TriangleMesh`` with its
 default material.
