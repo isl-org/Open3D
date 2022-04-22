@@ -210,7 +210,6 @@ Let's examine new elements in the code above:
 .. image:: https://user-images.githubusercontent.com/93158890/157770798-2c42e7dc-e063-4f26-90b4-16a45e263f36.jpg
     :width: 700px
 
-
 Texture map
 :::::::::::
 
@@ -237,79 +236,6 @@ Let's examine new elements in the code above:
 
 .. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
     :width: 700px
-
-
-Common options
---------------
-
-UI menu, title, and window dimension
-::::::::::::::::::::::::::::::::::::
-
-@Alex, update the screen capture, now the title has been changed to "Sphere and bounding box".
-
-.. code-block:: python
-
-    sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
-    sphere.compute_vertex_normals()
-    bbox = o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)
-    line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(bbox)
-    line_set.paint_uniform_color([0, 0, 1])
-
-    o3d.visualization.draw([sphere, line_set],
-                            show_ui=True,
-                            title="Sphere and bounding box",
-                            width=700,
-                            height=700)
-
-.. image:: https://user-images.githubusercontent.com/93158890/158281728-994ff828-53b0-485a-9feb-9b121d7354f7.jpg
-    :width: 700px
-
-Assigning object names
-::::::::::::::::::::::
-
-@Alex, rename the sphere to "Sphere".
-@Alex, rename the line set to "Bounding box".
-@Alex, create a new rendering.
-
-.. code-block:: python
-
-    geoms = [{"name": "sphere", "geometry": sphere},
-             {"name": "Axis Aligned Bounding Box line_set", "geometry": line_set}]
-    o3d.visualization.draw(geoms, show_ui=True)
-
-.. image:: https://user-images.githubusercontent.com/93158890/159094500-83ddd46f-0e71-40e1-9b97-ae46480cd860.jpg
-    :width: 700px
-
-Show/hide the skybox
-::::::::::::::::::::
-
-.. code-block:: python
-
-    o3d.visualization.draw(sphere, show_ui=True, show_skybox=False)
-
-And the Visualizer window opens without the default skybox blue background:
-
-.. image:: https://user-images.githubusercontent.com/93158890/159093215-31dcacf7-306f-4231-9155-0df474ce4828.jpg
-    :width: 700px
-
-Set background color
-::::::::::::::::::::
-
-@Alex, can we skip ``show_skybox=False``?
-
-.. code-block:: python
-
-    o3d.visualization.draw(sphere,
-                           show_ui=True,
-                           title="Green Background",
-                           show_skybox=False,
-                           bg_color=(0.56, 1.0, 0.69, 1.0))
-
-.. image:: https://user-images.githubusercontent.com/93158890/160878317-a57755a0-8b8f-44db-b718-443aa435035a.jpg
-    :width: 700px
-
-@Alex, add ``raw_mode`` example.
-
 
 Drawing TriangleMeshModel
 -------------------------
@@ -407,7 +333,6 @@ Let's render a sub-mesh from the ``helmet_model``.
 .. image:: https://user-images.githubusercontent.com/93158890/149238906-065fad20-ed3f-4585-b90b-7d30b5c06912.jpg
     :width: 700px
 
-
 If you use ``read_triangle_mesh()`` instead of ``read_triangle_mesh_model()``,
 all sub-meshes will be merged into one ``TriangleMesh``, and the materials
 might be ignored.
@@ -420,3 +345,73 @@ might be ignored.
 .. image:: https://user-images.githubusercontent.com/93158890/148611814-09c6fe17-d209-439d-8ae9-c186387fd698.jpg
     :width: 700px
 
+Common options
+--------------
+
+UI menu, title, and window dimension
+::::::::::::::::::::::::::::::::::::
+
+@Alex, update the screen capture, now the title has been changed to "Sphere and bounding box".
+
+.. code-block:: python
+
+    sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
+    sphere.compute_vertex_normals()
+    bbox = o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)
+    line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(bbox)
+    line_set.paint_uniform_color([0, 0, 1])
+
+    o3d.visualization.draw([sphere, line_set],
+                            show_ui=True,
+                            title="Sphere and bounding box",
+                            width=700,
+                            height=700)
+
+.. image:: https://user-images.githubusercontent.com/93158890/158281728-994ff828-53b0-485a-9feb-9b121d7354f7.jpg
+    :width: 700px
+
+Assigning object names
+::::::::::::::::::::::
+
+@Alex, rename the sphere to "Sphere".
+@Alex, rename the line set to "Bounding box".
+@Alex, create a new rendering.
+
+.. code-block:: python
+
+    geoms = [{"name": "sphere", "geometry": sphere},
+             {"name": "Axis Aligned Bounding Box line_set", "geometry": line_set}]
+    o3d.visualization.draw(geoms, show_ui=True)
+
+.. image:: https://user-images.githubusercontent.com/93158890/159094500-83ddd46f-0e71-40e1-9b97-ae46480cd860.jpg
+    :width: 700px
+
+Show/hide the skybox
+::::::::::::::::::::
+
+.. code-block:: python
+
+    o3d.visualization.draw(sphere, show_ui=True, show_skybox=False)
+
+And the Visualizer window opens without the default skybox blue background:
+
+.. image:: https://user-images.githubusercontent.com/93158890/159093215-31dcacf7-306f-4231-9155-0df474ce4828.jpg
+    :width: 700px
+
+Set background color
+::::::::::::::::::::
+
+@Alex, can we skip ``show_skybox=False``?
+
+.. code-block:: python
+
+    o3d.visualization.draw(sphere,
+                           show_ui=True,
+                           title="Green Background",
+                           show_skybox=False,
+                           bg_color=(0.56, 1.0, 0.69, 1.0))
+
+.. image:: https://user-images.githubusercontent.com/93158890/160878317-a57755a0-8b8f-44db-b718-443aa435035a.jpg
+    :width: 700px
+
+@Alex, add ``raw_mode`` example.
