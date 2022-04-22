@@ -7,7 +7,6 @@ The usage of Open3D convenient visualization functions ``draw_geometries`` and `
 
 This tutorial focuses on more advanced functionalities to customize the behavior of the visualizer window. Please refer to examples/python/visualization/customized_visualization.py to try the following examples.
 
-
 Mimic draw_geometries() with Visualizer class
 ````````````````````````````````````````````````````
 
@@ -34,7 +33,6 @@ Outputs:
 
 .. image:: ../../_static/visualization/customized_visualization/normal.png
     :width: 400px
-
 
 Change field of view
 ````````````````````````````````````
@@ -67,7 +65,6 @@ will set FoV to 5 degrees, because 60 - 90 = -30 is less than 5 degrees.
 
 .. image:: ../../_static/visualization/customized_visualization/fov_5.png
     :width: 400px
-
 
 Callback functions
 ````````````````````````````````````
