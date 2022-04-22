@@ -1,7 +1,7 @@
 .. _visualizer_advanced:
 
-Open3D visualizer (advanced)
-============================
+Drawing TriangleMeshModel
+=========================
 
 In this tutorial, we assume that you have already installed Open3D and have
 run the following import statements:

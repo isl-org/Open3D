@@ -1,7 +1,7 @@
 .. _visualizer_basic:
 
-Open3D visualizer
-=================
+The draw() function
+===================
 
 Open3D provides a convenient draw function (``open3d.visualization.draw()``) for
 visualizing geometries. This tutorial will demonstrate the basic usage of the
