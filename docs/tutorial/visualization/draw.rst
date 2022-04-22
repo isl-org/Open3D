@@ -345,29 +345,14 @@ render the full set of materials.
 .. image:: https://user-images.githubusercontent.com/93158890/148611141-d424fc74-be7e-4833-913c-714fc3c4fbd2.jpg
     :width: 700px
 
-
-In the previous section (:ref:`rendering_models`) we have covered how to render
-complete 3D models with the ``open3d.io.read_triangle_mesh_model()`` method. This
-method can also handle more complex models containing a collection of materials
-and parts (sub-models) from which the complete object gets assembled.
-
-For this example, we will be rendering a model of a WWII-era flight helmet from
-the KhronosGroup *glTF-Sample-Models* . `glTF (GL Transmission Format)
-<https://docs.fileformat.com/3d/gltf/>`_ is a 3D file format that stores 3D
-model information in JSON format.
-
-.. tip::
-
-    If you are interested in looking at other *glTF-Sample-Models*, you can go
-    to the KhronosGroup GitHub repository and clone it from this URL:
-
-    https://github.com/KhronosGroup/glTF-Sample-Models
-
 Now, let's run the code which loads and renders the full 3D model of a flight
 helmet:
 
 .. code-block:: python
 
+    # For more models like this, checkout
+    # - http://www.open3d.org/docs/latest/tutorial/data/index.html
+    # - https://github.com/KhronosGroup/glTF-Sample-Models
     helmet_data = o3d.data.FlightHelmetModel()
     helmet_model = o3d.io.read_triangle_mesh_model(helmet_data.path)
     o3d.visualization.draw(helmet_model)
