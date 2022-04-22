@@ -137,14 +137,14 @@ Base color
     sphere.compute_vertex_normals()
     mat = o3d.visualization.rendering.MaterialRecord()
     mat.shader = "defaultLit"
-    mat.base_color = np.asarray([1.0, 0.0, 1.0, 1.0])
-    o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material': mat})
+    mat.base_color = [1.0, 0.0, 1.0, 1.0]
+    o3d.visualization.draw({"name": "sphere", "geometry": sphere, "material": mat})
 
 Let's examine new elements in the code above:
 
 - ``MaterialRecord()`` is a structure which holds various material properties.
 - The ``mat.shader`` property accepts a string representing the material type.
-  The two most common options are ``'defaultLit'`` and ``'defaultUnlit'``. Other
+  The two most common options are ``"defaultLit"`` and ``"defaultUnlit"``. Other
   available options will be covered in :doc:`visualizer_advanced` tutorial.
 - The ``mat.base_color`` represents the base material RGBA color.
 
@@ -162,10 +162,10 @@ Metallic and roughness
     sphere.rotate(rotate_90)
     mat = o3d.visualization.rendering.MaterialRecord()
     mat.shader = "defaultLit"
-    mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
+    mat.base_color = [0.8, 0.9, 1.0, 1.0]
     mat.base_roughness = 0.4
     mat.base_metallic = 1.0
-    o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material': mat}, ibl="nightlights")
+    o3d.visualization.draw({"name": "sphere", "geometry": sphere, "material": mat}, ibl="nightlights")
 
 Let's examine new elements in the code above:
 
@@ -178,7 +178,7 @@ Let's examine new elements in the code above:
   surface is metallic or not (see  `Filament Material Guide
   <https://google.github.io/filament/Materials.html>`_ for details).
 - ``o3d.visualization.draw(..., ibl="nightlights")``: The ``ibl`` (image based
-  lighting) property. The *'ibl'* parameter property allows the user to specify
+  lighting) property. The ``ibl`` parameter property allows the user to specify
   the built-in HDR lighting to use. ``"nightlights"`` is from a nighttime city
   scene.
 
@@ -196,10 +196,10 @@ Reflectance
     sphere.rotate(rotate_90)
     mat = o3d.visualization.rendering.MaterialRecord()
     mat.shader = "defaultLit"
-    mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
+    mat.base_color = [0.8, 0.9, 1.0, 1.0]
     mat.base_roughness = 0.25
     mat.base_reflectance = 0.9
-    o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material':   mat}, ibl="nightlights")
+    o3d.visualization.draw({"name": "sphere", "geometry": sphere, "material": mat}, ibl="nightlights")
 
 Let's examine new elements in the code above:
 
@@ -225,7 +225,7 @@ Texture map
     mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
     mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
     mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
-    o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material': mat}, ibl="nightlights")
+    o3d.visualization.draw({"name": "sphere", "geometry": sphere, "material": mat}, ibl="nightlights")
 
 Let's examine new elements in the code above:
 
