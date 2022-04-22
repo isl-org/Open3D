@@ -1,188 +1,70 @@
 .. _visualizer_basic:
 
-Open3D Visualizer
+Open3D visualizer
 =================
 
-Introduction
----------------
+Open3D provides a convenient draw function (``open3d.visualization.draw()``) for
+visualizing geometries. This tutorial will demonstrate the basic usage of the
+draw function.
 
-Open3D provides a convenient function for visualizing geometric objects:
-``draw()``. The ``draw()`` function allows to visualize multiple geometry
-objects *(PointClouds, LineSets, TriangleMeshes)* and images together along with
-optional, high-quality, physically based (PBR) materials. As will be
-demonstrated in the subsequent sections, ``draw()`` can be used for both -
-simple, quick visualization or complex use-cases.
-
-Getting started
----------------
-
-.. tip::
-    This **Getting started** section applies to all subsequent examples below
-
-For all examples in this tutorial, we will be using Python. Please follow these
-preliminary steps :
-
-1. Navigate to the ``Open3D`` location on your computer:
-
-.. code-block:: sh
-
-    $ cd <... Path to Open3D on your computer...>
-
-2. **Optionally**, if you have a ``conda`` virtual environment, activate it from
-   the command line like so:
-
-.. code-block:: sh
-
-    $ conda activate <...your virtual environment name...>
-
-3. Run ``python``:
-
-.. code-block:: sh
-
-    $ python
-
-4. In Python, set up common imports that we will use throughout this tutorial:
+In this tutorial, we assume that you have already installed Open3D and have
+executed the following import statements:
 
 .. code-block:: python
 
-    >>> import open3d as o3d
-    >>> import open3d.visualization as vis
-    >>> import numpy as np
-    >>> import math
+    import open3d as o3d
+    import numpy as np
 
-.. note::
-    * The ``numpy`` object we are declaring is needed for conversions of lists to arrays.
-    * The ``math`` library is needed to reference Pi and rotate objects
-
-Below is a screenshot of how you would set up your environment from the command
-terminal:
-
-.. image:: https://user-images.githubusercontent.com/93158890/159073961-821e4768-3678-4385-bc37-20c5b212c030.jpg
-    :width: 700px
 
 Basic examples
 --------------
 
-In the Overview section, we activated a ``conda`` environment, started a Python
-session, and declared Open3D objects to be used throughout this tutorial. Let’s
-now test various Open3D ``draw()`` function capabilities with various
-geometries.
-
-Drawing point clouds
-::::::::::::::::::::
-
-Using Open3D datasets
-"""""""""""""""""""""
-
-In this example, we are going to learn how to load and render Point Clouds. To
-retrieve our example, we will be using **Open3D Datasets**.
-
-.. tip::
-
-    Open3D provides a built-in *dataset* module for retrieval of commonly used
-    3D model examples.
-
-    * Datasets are automatically downloaded from the Internet and cached
-      locally.
-    * The **default local dataset  download directory** is ``~/open3d_data``.
-    * Datasets will be downloaded to ``~/open3d_data/download`` and extracted to
-      ``~/open3d_data/extract``
-
-.. seealso::
-
-    For more information on datasets, please refer to the :doc:`Open3D Datasets
-    page <../data/index>`
-
-Enter the following code at the Python prompt:
+Draw a point cloud
+::::::::::::::::::
 
 .. code-block:: python
 
-    # Download and initialize the dataset >>> dataset = o3d.data.PLYPointCloud()
-
-    # Create a Point Cloud object (pcd) from the dataset >>> pcd =
-    o3d.io.read_point_cloud(dataset.path)
-
-    # Customize the pcd object >>> rotate_180 =
-    o3d.geometry.get_rotation_matrix_from_xyz((-math.pi, 0, 0)) >>>
-    pcd.rotate(rotate_180) >>> vis.draw(pcd)
-
-Open3D returns:
+    pcd = o3d.io.read_point_cloud(dataset.path)
+    o3d.visualization.draw(pcd)
 
 .. image:: https://user-images.githubusercontent.com/93158890/159548100-404afe97-8960-4e68-956f-cc6957632a93.jpg
     :width: 700px
 
-Specifying ``point_size``
-"""""""""""""""""""""""""
-
-In this section, we will learn how to control 3D model rendering by passing in
-``point_size`` as a parameter to the ``draw()`` function. To do this, let's
-enter the following code at the Python prompt:
+You can specify the point size of the point cloud with the ``point_size``
+argument. Or, you may change the point size with the UI. Use ``show_ui=True``
+to enable the UI side bar.
 
 .. code-block:: python
 
-    >>> vis.draw(pcd, point_size=9, show_ui=True)
-
-Here we have programmatically specified a custom ``point_size`` for rendering.
-It is recommended to set ``show_ui=True`` to make sure Open3D Visualizer
-interprets ``draw()`` function input parameters correctly. You can experiment
-with different point sizes by moving a slider in the UI:
+    o3d.visualization.draw(pcd, point_size=9, show_ui=True)
 
 .. image:: https://user-images.githubusercontent.com/93158890/159555822-5eb3562b-4432-4a73-ab48-342b0cd2a898.jpg
     :width: 700px
 
-Drawing a box
-:::::::::::::
-
-Aside from rendering Point Clouds, the Open3D ``draw()`` function is fully
-capable of rendering primitives, such as circles, spheres, rectangles, cubes,
-etc..
-
-This example shows how to create and visualize a simple 3D box.
-
-At the python prompt, enter the following to open the 3D Visualizer:
+Draw a triangle mesh
+::::::::::::::::::::
 
 .. code-block:: python
 
-    >>> cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
-    >>> vis.draw(cube)
-
-At the end of the process, the Open3D Visualizer window should appear:
+    # Create a "box" triangle mesh with dimension 1x2x4
+    cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
+    o3d.visualization.draw(cube)
 
 .. image:: https://user-images.githubusercontent.com/93158890/148607529-ee0ae0de-05af-423d-932c-2a5a6c8d7bda.jpg
     :width: 700px
 
-Let's examine what we did here:
-
-1) We instantiated the ``cube`` object to be of ``open3d.geometry.TriangleMesh``
-   type using the function ``create_box(1, 2, 4)`` to which we passed values for
-   width (``1``), height (``2``), and depth (``4``);
-
-2) We called the ``open3d.visualization.draw()`` method which rendered our
-   ``cube``.
-
-.. _compute_triangle_normals_s:
-
-``compute_triangle_normals()`` method
-"""""""""""""""""""""""""""""""""""""
-
-In the above example we learned how to create a primitive (``cube``) and render
-it with the ``draw()`` call. To improve it, we need to introduce some sort of
-surface reflection information to give our object a better, more consistent 3D
-look. For this, we will use the ``compute_triangle_normals()`` method as shown
-below:
+You may notice that the above triangle mesh looks flat with no shading. To
+improve it, we need to compute the triangle normals of the mesh.
 
 .. code-block:: python
 
     >>> cube.compute_triangle_normals()
-    >>> vis.draw(cube)
+    >>> o3d.visualization.draw(cube)
 
 Clearly, that makes a big difference:
 
 .. image:: https://user-images.githubusercontent.com/93158890/157720147-cde9a54b-cba5-480e-ba0e-7784b5bd5677.jpg
     :width: 700px
-
-The algorithm behind ``compute_triangle_normals()`` **computes a single normal
-for every triangle** in a ``TriangleMesh``.
 
 .. _smoothly_lit_sphere:
 
@@ -203,7 +85,7 @@ At the Python prompt in your terminal, enter the following lines of code:
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     >>> sphere.compute_vertex_normals()
-    >>> vis.draw(sphere)
+    >>> o3d.visualization.draw(sphere)
 
 A rendered sphere appears:
 
@@ -238,7 +120,7 @@ normal for every triangle** in a ``TriangleMesh``:
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0)
     >>> sphere.compute_triangle_normals()
-    >>> vis.draw(sphere)
+    >>> o3d.visualization.draw(sphere)
 
 .. image:: https://user-images.githubusercontent.com/93158890/157728100-0a495e56-c613-40c4-a292-6e45213d61f6.jpg
     :width: 700px
@@ -262,7 +144,7 @@ with the ``paint_uniform_color()`` method:
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     >>> sphere.compute_vertex_normals()
     >>> sphere.paint_uniform_color([0.65, 0.45, 0.62])
-    >>> vis.draw(sphere)
+    >>> o3d.visualization.draw(sphere)
 
 .. image:: https://user-images.githubusercontent.com/93158890/160883817-5a22f449-62e2-45e0-8033-bfec72e09210.jpg
     :width: 700px
@@ -319,7 +201,7 @@ where the ``draw()`` call created a default material automatically:
 
 .. code-block:: python
 
-    >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat})
+    >>> o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat})
 
 .. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
     :width: 700px
@@ -341,7 +223,7 @@ RGB/RGBA colors. Next, we will look at other material properties.
     >>> mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
     >>> mat.base_roughness = 0.4
     >>> mat.base_metallic = 1.0
-    >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
+    >>> o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
 
 .. image:: https://user-images.githubusercontent.com/93158890/157758092-9efb1ca0-b96a-4e1d-abd7-95243b279d2e.jpg
     :width: 700px
@@ -363,7 +245,7 @@ Guide <https://google.github.io/filament/Materials.html>`_ for details)
 surface is metallic or not (see  `Filament Material Guide
 <https://google.github.io/filament/Materials.html>`_ for details)
 
-``vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat},
+``o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat},
 ibl="nightlights")`` -  a different variant of the ``draw()`` call which uses
 the ``ibl`` (Image Based Lighting) property. The *'ibl'* parameter property
 allows the user to specify the HDR lighting to use. We assigned
@@ -380,14 +262,14 @@ non-metallic balloon-like sphere and see what transpires:
 
     >>> sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     >>> sphere.compute_vertex_normals()
-    >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.  pi / 2, 0, 0))
+    >>> rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
     >>> sphere.rotate(rotate_90)
     >>> mat = vis.rendering.MaterialRecord()
     >>> mat.shader = "defaultLit"
     >>> mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
     >>> mat.base_roughness = 0.25
     >>> mat.base_reflectance = 0.9
-    >>> vis.draw({'name': 'sphere', 'geometry': sphere, 'material':   mat}, ibl="nightlights")
+    >>> o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material':   mat}, ibl="nightlights")
 
 .. image:: https://user-images.githubusercontent.com/93158890/157770798-2c42e7dc-e063-4f26-90b4-16a45e263f36.jpg
     :width: 700px
@@ -431,7 +313,7 @@ In this example, we will add textures to rendered objects:
     mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path) >>>
     mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path) >>>
     mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path) >>>
-    vis.draw({'name': 'sphere', 'geometry': sphere, 'material': mat},
+    o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat},
     ibl="nightlights")
 
 .. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
@@ -467,7 +349,7 @@ by creating a custom ``LineSet`` object:
     >>> sphere.rotate(rotate_90)
     >>> line_set = o3d.geometry.LineSet.create_from_triangle_mesh  (sphere)
     >>> line_set.paint_uniform_color([0.0, 0.0, 1.0])
-    >>> vis.draw(line_set)
+    >>> o3d.visualization.draw(line_set)
 
 .. image:: https://user-images.githubusercontent.com/93158890/157949589-8b87fa81-a5cf-4791-a4f7-2d5dc91e546e.jpg
     :width: 700px
@@ -500,7 +382,7 @@ Bounding Box** represented by a cubic frame around the sphere:
     >>> aabb = o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)
     >>> line_set = o3d.geometry.LineSet.create_from_axis_aligned_bounding_box(aabb)
     >>> line_set.paint_uniform_color([0, 0, 1])
-    >>> vis.draw([sphere,line_set])
+    >>> o3d.visualization.draw([sphere,line_set])
 
 Both objects appear and can be moved and rotated:
 
@@ -533,7 +415,7 @@ Multiple object parameters in ``draw()`` calls
 
 Finally, we have a ``draw()`` call with multiple 3D object parameters:
 
-``vis.draw([sphere,line_set])``
+``o3d.visualization.draw([sphere,line_set])``
 
 You can pass as many objects to the ``draw()`` as you need.
 
@@ -546,7 +428,7 @@ thickness by passing in a ``line_width`` parameter with a numeric value to the
 
 .. code-block:: python
 
-    >>> vis.draw([sphere,line_set], line_width=50)
+    >>> o3d.visualization.draw([sphere,line_set], line_width=50)
 
 Here we rendered a grotesquely thicker Bounding Box by increasing its thickness
 (``line_width`` property) to ``50``:
@@ -559,7 +441,7 @@ supplied value is ``1``. The rendering at ``line_width=1`` will be more subtle:
 
 .. code-block:: python
 
-    >>> vis.draw([sphere,line_set], line_width=1)
+    >>> o3d.visualization.draw([sphere,line_set], line_width=1)
 
 .. image:: https://user-images.githubusercontent.com/93158890/158695717-042343a4-bbc3-45b8-ab6b-1118ad027cd7.jpg
     :width: 700px
@@ -588,7 +470,7 @@ The code below illustrates how to rename a Visualizer title bar and set window
 
 .. code-block:: python
 
-    >>> vis.draw([sphere,line_set], show_ui=True, title="Sphere and AABB LineSet", width=700, height=700)
+    >>> o3d.visualization.draw([sphere,line_set], show_ui=True, title="Sphere and AABB LineSet", width=700, height=700)
 
 .. image:: https://user-images.githubusercontent.com/93158890/158281728-994ff828-53b0-485a-9feb-9b121d7354f7.jpg
     :width: 700px
@@ -626,7 +508,7 @@ appropriately:
 
 .. code-block:: python
 
-    >>> vis.draw(geoms, show_ui=True)
+    >>> o3d.visualization.draw(geoms, show_ui=True)
 
 And here is the named object:
 
@@ -644,7 +526,7 @@ can turn it into a list and define multiple objects there:
 .. code-block:: python
 
     >>> geoms = [{'name': 'sphere', 'geometry': sphere}, {'name': 'Axis Aligned Bounding Box line_set', 'geometry': line_set}]
-    >>> vis.draw(geoms, show_ui=True)
+    >>> o3d.visualization.draw(geoms, show_ui=True)
 
 .. image:: https://user-images.githubusercontent.com/93158890/159094500-83ddd46f-0e71-40e1-9b97-ae46480cd860.jpg
     :width: 700px
@@ -665,7 +547,7 @@ example. At your Python prompt, enter:
 
 .. code-block:: python
 
-    >>> vis.draw(sphere, show_ui=True, show_skybox=False)
+    >>> o3d.visualization.draw(sphere, show_ui=True, show_skybox=False)
 
 And the Visualizer window opens without the default *skybox* blue background:
 
@@ -677,7 +559,7 @@ Python prompt, enter:
 
 .. code-block:: python
 
-    >>> vis.draw(sphere, show_ui=True, title="Green Background", show_skybox=False, bg_color=(0.56, 1.0, 0.69, 1.0))
+    >>> o3d.visualization.draw(sphere, show_ui=True, title="Green Background", show_skybox=False, bg_color=(0.56, 1.0, 0.69, 1.0))
 
 Here, we have displayed the UI, renamed the title bar to *"Green Background"*,
 turned off the default *skybox* background, and explicitly specified RGB-Alfa
