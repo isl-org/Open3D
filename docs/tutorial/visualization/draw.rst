@@ -402,7 +402,8 @@ And the Visualizer window opens without the default skybox blue background:
 Set background color
 ::::::::::::::::::::
 
-@Alex, can we skip ``show_skybox=False``?
+@Alex, if we already set ``show_skybox=False``, do we still need to specify
+``show_skybox=False``?
 
 .. code-block:: python
 
