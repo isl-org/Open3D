@@ -164,6 +164,7 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
     -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+    -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
     # Always build 3rd party code in Release mode. Ignored by multi-config
     # generators (XCode, MSVC). MSVC needs matching config anyway.
     -DCMAKE_BUILD_TYPE=Release

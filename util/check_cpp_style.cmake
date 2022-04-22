@@ -5,14 +5,14 @@
 #
 # This cmake file expects the following variables:
 # > PROJECT_SOURCE_DIR
-# > DO_APPLY_STYLE
+# > APPLY
 #
 # Example usage:
 # cmake -DPROJECT_SOURCE_DIR=/path/to/open3d \
-#       -DDO_APPLY_STYLE=ON \
+#       -DAPPLY=ON \
 #       -P check_cpp_style.cmake
 
-option(DO_APPLY_STYLE "Apply style to files in-place." OFF)
+option(APPLY "Apply style to files in-place." OFF)
 
 # Try to locate "clang-format-10" and then "clang-format"
 find_program(CLANG_FORMAT clang-format-10 PATHS ENV PATH)
@@ -37,7 +37,7 @@ macro(style_apply_file_cpp FILE)
         OUTPUT_VARIABLE STYLE_CHECK_RESULT
     )
     if("${STYLE_CHECK_RESULT}" MATCHES ".*<replacement .*")
-        if(DO_APPLY_STYLE)
+        if(APPLY)
             message(STATUS "Style applied for: ${FILE}")
             execute_process(COMMAND ${CLANG_FORMAT} -style=file -i ${FILE})
         else()
@@ -54,7 +54,7 @@ set(CPP_FORMAT_DIRS
     docs/_static
 )
 
-if(DO_APPLY_STYLE)
+if(APPLY)
     message(STATUS "C++/CUDA apply-style...")
 else()
     message(STATUS "C++/CUDA check-style...")
@@ -82,13 +82,13 @@ foreach(DIRECTORY ${CPP_FORMAT_DIRS})
         style_apply_file_cpp(${FILE})
     endforeach(FILE)
 endforeach(DIRECTORY)
-if(DO_APPLY_STYLE)
+if(APPLY)
     message(STATUS "C++/CUDA apply-style done.")
 else()
     message(STATUS "C++/CUDA check-style done.")
 endif()
 
 # Throw error if under style check mode.
-if(ERROR_LIST_CPP AND (NOT DO_APPLY_STYLE))
+if(ERROR_LIST_CPP AND (NOT APPLY))
     message(FATAL_ERROR "Style errors found.")
 endif()

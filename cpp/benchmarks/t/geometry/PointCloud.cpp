@@ -165,6 +165,38 @@ void LegacyEstimateNormals(
     }
 }
 
+void RemoveRadiusOutliers(benchmark::State& state,
+                          const core::Device& device,
+                          const int nb_points,
+                          const double search_radius) {
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    pcd = pcd.To(device).VoxelDownSample(0.01);
+
+    // Warp up
+    pcd.RemoveRadiusOutliers(nb_points, search_radius);
+    for (auto _ : state) {
+        pcd.RemoveRadiusOutliers(nb_points, search_radius);
+    }
+}
+
+void LegacyRemoveRadiusOutliers(benchmark::State& state,
+                                const int nb_points,
+                                const double search_radius) {
+    open3d::geometry::PointCloud pcd;
+    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    auto pcd_down = pcd.VoxelDownSample(0.01);
+
+    // Warp up
+    pcd_down->RemoveRadiusOutliers(nb_points, search_radius);
+
+    for (auto _ : state) {
+        pcd_down->RemoveRadiusOutliers(nb_points, search_radius);
+    }
+}
+
 BENCHMARK_CAPTURE(FromLegacyPointCloud, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
@@ -302,6 +334,18 @@ BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   Legacy KNN[0.02 | 30],
                   0.02,
                   open3d::geometry::KDTreeSearchParamKNN(30))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(
+        RemoveRadiusOutliers, CPU[50 | 0.05], core::Device("CPU:0"), 50, 0.03)
+        ->Unit(benchmark::kMillisecond);
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(
+        RemoveRadiusOutliers, CUDA[50 | 0.05], core::Device("CUDA:0"), 50, 0.03)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(LegacyRemoveRadiusOutliers, Legacy[50 | 0.05], 50, 0.03)
         ->Unit(benchmark::kMillisecond);
 
 }  // namespace geometry
