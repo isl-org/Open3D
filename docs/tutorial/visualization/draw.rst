@@ -237,8 +237,8 @@ Let's examine new elements in the code above:
 .. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
     :width: 700px
 
-Drawing TriangleMeshModel
--------------------------
+Drawing a TriangleMeshModel
+---------------------------
 
 Introducing TriangleMeshModel
 :::::::::::::::::::::::::::::
@@ -345,8 +345,8 @@ might be ignored.
 .. image:: https://user-images.githubusercontent.com/93158890/148611814-09c6fe17-d209-439d-8ae9-c186387fd698.jpg
     :width: 700px
 
-Common options
---------------
+Commonly used options
+---------------------
 
 UI menu, title, and window dimension
 ::::::::::::::::::::::::::::::::::::
