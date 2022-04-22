@@ -20,6 +20,7 @@ Drawing a point cloud
 
 .. code-block:: python
 
+    dataset = o3d.data.PCDPointCloud() # Demo point cloud dataset
     pcd = o3d.io.read_point_cloud(dataset.path)
     o3d.visualization.draw(pcd)
 
@@ -44,7 +45,7 @@ Vertex and triangle normals
 Vertex normals and triangle normals are important for the shading of triangle
 mesh.
 
-First, we draw a sphere without normals
+First, we draw a sphere without normals.
 
 .. code-block:: python
 
@@ -80,16 +81,12 @@ compute the triangle normals.
 .. image:: https://user-images.githubusercontent.com/93158890/157339234-1a92a944-ac38-4256-8297-0ad78fd24b9c.jpg
     :width: 700px
 
-Drawing a colored lit sphere
-----------------------------
+Coloring the geometry
+---------------------
 
-``paint_uniform_color()``
-"""""""""""""""""""""""""
-
-When we rendered a lit sphere in one of the previous sections
-(:ref:`smoothly_lit_sphere`), we did not specify which color we would like the
-sphere to be. In this example, we will assign a subtle pink color to the sphere
-with the ``paint_uniform_color()`` method:
+You may use ``PointCloud::paint_uniform_color()`` or
+``TriangleMesh::paint_uniform_color()`` to assign a single color to all vertices
+of the geometry.
 
 .. code-block:: python
 
@@ -101,76 +98,43 @@ with the ``paint_uniform_color()`` method:
 .. image:: https://user-images.githubusercontent.com/93158890/160883817-5a22f449-62e2-45e0-8033-bfec72e09210.jpg
     :width: 700px
 
-The ``paint_uniform_color()`` method accepts a numeric list of RGB values. Its
-algorithm assigns a single color to all vertices of the triangle mesh. RGB
-values should be in the ``0 - 1`` range. In our example, we passed respective
-values for Red (``0.65``), Green (``0.45``), and Blue (``0.62``).
 
 Drawing a sphere with materials
 -------------------------------
 
-In previous examples we only specified the geometry to visualize, and the
-``draw()`` function internally created a default material for it. However, with
-the ``draw()`` function you can render geometries with customized materials.
-
-Let's create a sphere based on a custom material:
+Base color
+::::::::::
 
 .. code-block:: python
 
     sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     sphere.compute_vertex_normals()
-    mat = vis.rendering.MaterialRecord()
+    mat = o3d.visualization.rendering.MaterialRecord()
     mat.shader = "defaultLit"
     mat.base_color = np.asarray([1.0, 0.0, 1.0, 1.0])
-
-We declare ``mat`` as a material rendering object and initialize it with a
-default lighting scheme.
-
-``rendering`` is a submodule of ``open3d.visualization``.
-
-``MaterialRecord()`` is a structure which holds various material properties.
-
-The ``shader`` property accepts a string representing the type of material. The
-two most common options are ``'defaultLit'`` and ``'defaultUnlit'``. Its other
-options will be covered in :doc:`visualizer_advanced` tutorial.
-
-The ``mat.base_color`` represents the base material RGBA color. It expects a
-``numpy`` array as a parameter. The ``numpy`` module we imported at the very
-beginning of this tutorial helps us pass the RGBA values as an array to the
-``mat.base_color`` property.
-
-To find out what type of object *mat* is, we type in ``mat`` at the Python
-prompt:
-
-.. code-block:: python
-
-    mat
-    <open3d.cpu.pybind.visualization.rendering.MaterialRecord object at 0x7f2be5e34430>
-
-Now, we'll show a ``draw()`` call variant which allows the user to specify a
-material to use with the geometry. This is different from previous examples
-where the ``draw()`` call created a default material automatically:
-
-.. code-block:: python
-
     o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat})
 
 .. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
     :width: 700px
 
-Drawing a metallic sphere
--------------------------
+Let's examine new elements in the code above:
 
-In earlier examples, we used ``create_sphere()`` to render the sphere with basic
-RGB/RGBA colors. Next, we will look at other material properties.
+- ``MaterialRecord()`` is a structure which holds various material properties.
+- The ``mat.shader`` property accepts a string representing the material type.
+  The two most common options are ``'defaultLit'`` and ``'defaultUnlit'``. Other
+  available options will be covered in :doc:`visualizer_advanced` tutorial.
+- The ``mat.base_color`` represents the base material RGBA color.
+
+Metallic and roughness
+----------------------
 
 .. code-block:: python
 
     sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     sphere.compute_vertex_normals()
-    rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
+    rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-np.pi / 2, 0, 0))
     sphere.rotate(rotate_90)
-    mat = vis.rendering.MaterialRecord()
+    mat = o3d.visualization.rendering.MaterialRecord()
     mat.shader = "defaultLit"
     mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
     mat.base_roughness = 0.4
@@ -182,41 +146,29 @@ RGB/RGBA colors. Next, we will look at other material properties.
 
 Let's examine new elements in the code above:
 
-``rotate_90`` - utility object from a special function -
-``get_rotation_matrix_from_xyz()`` - for creating a rotation matrix given angles
-to rotate around the ``x``, ``y``, and ``z`` axes.
+- ``get_rotation_matrix_from_xyz()``: Creates a rotation matrix given angles to
+  rotate around the ``x``, ``y``, and ``z`` axes.
+- ``mat.base_roughness = 0.4``: PBR (physically based rendering) material
+  property which controls the smoothness of the surface (see  `Filament Material
+  Guide <https://google.github.io/filament/Materials.html>`_ for details).
+- ``mat.base_metallic = 1.0``: PBR material property which defines whether the
+  surface is metallic or not (see  `Filament Material Guide
+  <https://google.github.io/filament/Materials.html>`_ for details).
+- ``o3d.visualization.draw(..., ibl="nightlights")``: The ``ibl`` (image based
+  lighting) property. The *'ibl'* parameter property allows the user to specify
+  the built-in HDR lighting to use. ``"nightlights"`` is from a nighttime city
+  scene.
 
-``sphere.rotate(rotate_90)`` - rotates the triangle mesh based on a rotation
-matrix object we pass in.
-
-``mat.base_roughness = 0.4`` - PBR (Physically-Based Rendering) material
-property which controls the smoothness of the surface (see  `Filament Material
-Guide <https://google.github.io/filament/Materials.html>`_ for details)
-
-``mat.base_metallic = 1.0`` - PBR material property which defines whether the
-surface is metallic or not (see  `Filament Material Guide
-<https://google.github.io/filament/Materials.html>`_ for details)
-
-``o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat},
-ibl="nightlights")`` -  a different variant of the ``draw()`` call which uses
-the ``ibl`` (Image Based Lighting) property. The *'ibl'* parameter property
-allows the user to specify the HDR lighting to use. We assigned
-``"nightlights"`` to ``ibl``, and thus get a realistic nighttime city scene.
-
-Drawing a glossy sphere
------------------------
-
-In a previous metallic sphere rendering we covered a number of methods,
-parameters, and properties for beautifying its display. Let's now create a
-non-metallic balloon-like sphere and see what transpires:
+Reflectance
+-----------
 
 .. code-block:: python
 
     sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100)
     sphere.compute_vertex_normals()
-    rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
+    rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-np.pi / 2, 0, 0))
     sphere.rotate(rotate_90)
-    mat = vis.rendering.MaterialRecord()
+    mat = o3d.visualization.rendering.MaterialRecord()
     mat.shader = "defaultLit"
     mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
     mat.base_roughness = 0.25
@@ -226,64 +178,38 @@ non-metallic balloon-like sphere and see what transpires:
 .. image:: https://user-images.githubusercontent.com/93158890/157770798-2c42e7dc-e063-4f26-90b4-16a45e263f36.jpg
     :width: 700px
 
-This code is similar to that used in the rendering of a previous metallic
-sphere. But, there are a couple of elements that make this version of the sphere
-look different:
+Let's examine new elements in the code above:
 
-``mat.base_roughness = 0.25`` - PBR material roughness here is set to ``0.25``
-in contrast to the previous metallic sphere version, where ``base_roughness``
-was set to ``0.4``.
+- ``mat.base_reflectance = 0.9``: PBR material property which controls the
+  reflectance (glossiness) of the surface (see  `Filament Material Guide
+  <https://google.github.io/filament/Materials.html>`_ for details)
 
-``mat.base_reflectance = 0.9`` - PBR material property which controls the
-reflectance (glossiness) of the surface (see  `Filament Material Guide
-<https://google.github.io/filament/Materials.html>`_ for details)
-
-The ``draw()`` call here is identical to the metallic version of the sphere.
-
-Drawing a sphere with textures
-------------------------------
-
-Running the code
-""""""""""""""""
-
-In this example, we will add textures to rendered objects:
+Texture map
+-----------
 
 .. code-block:: python
 
     sphere = o3d.geometry.TriangleMesh.create_sphere(2.0, 100, create_uv_map=True)
     sphere.compute_vertex_normals()
-    rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-math.pi / 2, 0, 0))
+    rotate_90 = o3d.geometry.get_rotation_matrix_from_xyz((-np.pi / 2, 0, 0))
     sphere.rotate(rotate_90)
 
-    # Get the texture data from the dataset mat_data =
-    o3d.data.TilesTexture()
-
-    # Create the material mat = o3d.visualization.rendering.MaterialRecord()
+    mat_data = o3d.data.TilesTexture()
     mat.shader = "defaultLit"
-
-    # Load graphic texture files from the dataset into material properties >>>
-    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path) >>>
-    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path) >>>
-    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path) >>>
-    o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat},
-    ibl="nightlights")
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+    o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
 
 .. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
     :width: 700px
 
-Let's examine new method calls and properties in this rendering:
+Let's examine new elements in the code above:
 
-``create_sphere(2.0, 100, create_uv_map=True)`` - generates texture coordinates
-for the sphere that can be used later with textures
-
-``mat.albedo_img`` - modifies the base color of the geometry
-
-``mat.normal_img`` - modifies the normal of the geometry
-
-``mat.roughness_img`` - modifies the roughness
-
-All three properties are initialized by the ``o3d.io.read_image()`` method which
-loads an image in either JPEG or PNG format.
+- ``create_sphere(2.0, 100, create_uv_map=True)``: Generates texture UV map coordinates.
+- ``mat.albedo_img``: Sets the base color texture image.
+- ``mat.normal_img``: Sets the normal texture image.
+- ``mat.roughness_img``: Sets the roughness texture image.
 
 .. _trianglemesh_lineset:
 
