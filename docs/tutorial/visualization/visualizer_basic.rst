@@ -15,7 +15,6 @@ executed the following import statements:
     import open3d as o3d
     import numpy as np
 
-
 Drawing a point cloud
 ---------------------
 
@@ -38,21 +37,6 @@ Drawing a triangle mesh
 
 .. image:: https://user-images.githubusercontent.com/93158890/148607529-ee0ae0de-05af-423d-932c-2a5a6c8d7bda.jpg
     :width: 700px
-
-You may notice that the above triangle mesh looks flat with no shading. To
-improve it, we need to compute the triangle normals of the mesh.
-
-.. code-block:: python
-
-    cube.compute_triangle_normals()
-    o3d.visualization.draw(cube)
-
-Clearly, that makes a big difference:
-
-.. image:: https://user-images.githubusercontent.com/93158890/157720147-cde9a54b-cba5-480e-ba0e-7784b5bd5677.jpg
-    :width: 700px
-
-.. _smoothly_lit_sphere:
 
 Vertex and triangle normals
 ---------------------------
@@ -95,7 +79,6 @@ compute the triangle normals.
 
 .. image:: https://user-images.githubusercontent.com/93158890/157339234-1a92a944-ac38-4256-8297-0ad78fd24b9c.jpg
     :width: 700px
-
 
 Drawing a colored lit sphere
 ----------------------------
