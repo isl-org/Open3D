@@ -91,7 +91,7 @@ Base color
     mat = o3d.visualization.rendering.MaterialRecord()
     mat.shader = "defaultLit"
     mat.base_color = np.asarray([1.0, 0.0, 1.0, 1.0])
-    o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat})
+    o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material': mat})
 
 .. image:: https://user-images.githubusercontent.com/93158890/150883605-a5e65a3f-0a25-4ff4-b039-4aa6e53a1440.jpg
     :width: 700px
@@ -118,7 +118,7 @@ Metallic and roughness
     mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
     mat.base_roughness = 0.4
     mat.base_metallic = 1.0
-    o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
+    o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material': mat}, ibl="nightlights")
 
 .. image:: https://user-images.githubusercontent.com/93158890/157758092-9efb1ca0-b96a-4e1d-abd7-95243b279d2e.jpg
     :width: 700px
@@ -152,7 +152,7 @@ Reflectance
     mat.base_color = np.asarray([0.8, 0.9, 1.0, 1.0])
     mat.base_roughness = 0.25
     mat.base_reflectance = 0.9
-    o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material':   mat}, ibl="nightlights")
+    o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material':   mat}, ibl="nightlights")
 
 .. image:: https://user-images.githubusercontent.com/93158890/157770798-2c42e7dc-e063-4f26-90b4-16a45e263f36.jpg
     :width: 700px
@@ -178,7 +178,7 @@ Texture map
     mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
     mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
     mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
-    o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': mat}, ibl="nightlights")
+    o3d.visualization.draw({"name": "sphere", "geometry": sphere, 'material': mat}, ibl="nightlights")
 
 .. image:: https://user-images.githubusercontent.com/93158890/157775220-443aad2d-9123-42d0-b584-31e9fb8f38c3.jpg
     :width: 700px
@@ -352,13 +352,13 @@ not shown by default. In this case, our goal is to rename the default-assigned
 name of *Object 1* in the "Geometries" frame of the Visualizer UI to *sphere* .
 
 We now declare the ``geoms`` collection which will contain a geometry object
-``sphere`` (from previous examples), and we will name it *sphere* (``'name':
-'sphere'``). This will serve as a signal to the Visualizer UI to replace its
+``sphere`` (from previous examples), and we will name it *sphere* (``"name":
+"sphere"``). This will serve as a signal to the Visualizer UI to replace its
 default "Geometries" from *Object 1* to *sphere*:
 
 .. code-block:: python
 
-    geoms = {'name': 'sphere', 'geometry': sphere}
+    geoms = {"name": "sphere", "geometry": sphere}
 
 We can now display the UI and confirm that our custom object is named
 appropriately:
@@ -382,7 +382,7 @@ can turn it into a list and define multiple objects there:
 
 .. code-block:: python
 
-    geoms = [{'name': 'sphere', 'geometry': sphere}, {'name': 'Axis Aligned Bounding Box line_set', 'geometry': line_set}]
+    geoms = [{"name": "sphere", "geometry": sphere}, {"name": "Axis Aligned Bounding Box line_set", "geometry": line_set}]
     o3d.visualization.draw(geoms, show_ui=True)
 
 .. image:: https://user-images.githubusercontent.com/93158890/159094500-83ddd46f-0e71-40e1-9b97-ae46480cd860.jpg
