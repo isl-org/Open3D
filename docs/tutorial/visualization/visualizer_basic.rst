@@ -246,7 +246,7 @@ Drawing a sphere in a bounding box ``LineSet``
 ----------------------------------------------
 
 Rendering multiple objects
-""""""""""""""""""""""""""
+::::::::::::::::::::::::::
 
 In prior examples, we rendered only one 3D object at a time. But the ``draw()``
 function can be used to render multiple 3D objects simultaneously. In this
@@ -276,7 +276,7 @@ o3d.geometry.AxisAlignedBoundingBox.create_from_points(sphere.vertices)`` -
 creates a bounding box fully encompassing the sphere.
 
 ``LineSet`` objects
-"""""""""""""""""""
+:::::::::::::::::::
 
 As recently shown in the ``TriangleMesh LineSet`` Sphere example
 (:ref:`trianglemesh_lineset`), Line Sets are used to render a wireframe of a 3D
@@ -289,7 +289,7 @@ on the ``AxisAlignedBoundingBox`` object (``aabb``) we created earlier:
 ``LineSet`` blue.
 
 Multiple object parameters in ``draw()`` calls
-""""""""""""""""""""""""""""""""""""""""""""""
+::::::::::::::::::::::::::::::::::::::::::::::
 
 Finally, we have a ``draw()`` call with multiple 3D object parameters:
 
@@ -298,7 +298,7 @@ Finally, we have a ``draw()`` call with multiple 3D object parameters:
 You can pass as many objects to the ``draw()`` as you need.
 
 Specifying wireframe ``line_width``
-"""""""""""""""""""""""""""""""""""
+:::::::::::::::::::::::::::::::::::
 
 Aside from rendering ``LineSet`` wireframes or grids, we can change their
 thickness by passing in a ``line_width`` parameter with a numeric value to the
@@ -362,7 +362,7 @@ Assigning names to objects in the UI
 ------------------------------------
 
 Object collections
-""""""""""""""""""
+::::::::::::::::::
 
 In prior examples, we used the the ``draw()`` function to render 3D objects
 explicitly. The ``draw()`` function is not limited to 3D Objects only. You can
@@ -413,7 +413,7 @@ More ``draw()`` options
 -----------------------
 
 ``show_skybox`` and ``bg_color``
-""""""""""""""""""""""""""""""""
+::::::::::::::::::::::::::::::::
 
 Aside from naming Open3D Visualizer status bar, geometries, and displaying the
 UI, you also have options to programmatically turn the light blue *skybox* on or
