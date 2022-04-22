@@ -327,9 +327,9 @@ Let's render a sub-mesh from the ``helmet_model``.
 .. code-block:: python
 
     sub_mesh = helmet_model.meshes[0]
-    o3d.visualization.draw({"name" : sub_mesh.mesh_name,
-                            "geometry" : sub_mesh.mesh,
-                            "material" : helmet_model.materials[sub_mesh.material_idx]})
+    o3d.visualization.draw({"name": sub_mesh.mesh_name,
+                            "geometry": sub_mesh.mesh,
+                            "material": helmet_model.materials[sub_mesh.material_idx]})
 
 .. image:: https://user-images.githubusercontent.com/93158890/149238906-065fad20-ed3f-4585-b90b-7d30b5c06912.jpg
     :width: 700px
