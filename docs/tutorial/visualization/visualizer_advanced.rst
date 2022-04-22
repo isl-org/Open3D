@@ -11,15 +11,6 @@ run the following import statements:
     import open3d as o3d
     import numpy as np
 
-Advanced examples
------------------
-
-In the Basic :doc:`visualizer_basic` tutorial, we covered how to render
-``Tensor`` and ``TriangleMesh`` shapes, raster models, and how to control their
-display programmatically via code and interactively by using Open3D Visualizer
-UI. This section expounds on those topics to cover more advanced visualization
-techniques.
-
 .. _rendering_models:
 
 Rendering models
@@ -43,11 +34,11 @@ using the ``o3d.io.read_triangle_mesh()`` method, as you will see below:
 
 .. code-block:: python
 
-    # Initialize the monkey dataset with downloaded and extracted 3D model >>>
+    # Initialize the monkey dataset with downloaded and extracted 3D model
     monkey_data = o3d.data.MonkeyModel()
 
-    # Extract Triangle Mesh data from the preloaded monkey dataset >>>
-    monkey_mesh = o3d.io.read_triangle_mesh(monkey_data.path) >>>
+    # Extract Triangle Mesh data from the preloaded monkey dataset
+    monkey_mesh = o3d.io.read_triangle_mesh(monkey_data.path)
     o3d.visualization.draw(monkey_mesh)
 
 That will automatically apply the default material which exists in a 3D model:

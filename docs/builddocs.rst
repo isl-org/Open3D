@@ -34,14 +34,12 @@ First, install a TeX distribution such as `MacTeX <http://www.tug.org/mactex/>`_
 
     brew install ghostscript pandoc doxygen
 
-
 2. Install Python dependencies
 ``````````````````````````````
 
 .. code-block:: bash
 
     pip install -r docs/requirements.txt
-
 
 Build
 -----

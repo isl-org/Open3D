@@ -297,5 +297,4 @@ Set background color
 .. image:: https://user-images.githubusercontent.com/93158890/160878317-a57755a0-8b8f-44db-b718-443aa435035a.jpg
     :width: 700px
 
-
 @Alex, add ``raw_mode`` example.
