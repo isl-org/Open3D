@@ -39,9 +39,9 @@ bool ReadModelUsingAssimp(const std::string& filename,
                           visualization::rendering::TriangleMeshModel& model,
                           const ReadTriangleModelOptions& params /*={}*/);
 
-bool ReadTriangleModel(const std::string& filename,
-                       visualization::rendering::TriangleMeshModel& model,
-                       ReadTriangleModelOptions params /*={}*/) {
+bool ReadTriangleMeshModel(const std::string& filename,
+                           visualization::rendering::TriangleMeshModel& model,
+                           ReadTriangleModelOptions params /*={}*/) {
     if (params.print_progress) {
         auto progress_text = std::string("Reading model file") + filename;
         auto pbar = utility::ProgressBar(100, progress_text, true);

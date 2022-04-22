@@ -55,12 +55,12 @@ In the Basic :doc:`visualizer_basic` tutorial, we rendered ``TriangleMesh`` and
 ``Tensor``-based ``TriangleMesh`` objects. But the ``draw()`` function can also
 render full-fledged 3D models containing a set of textures and material
 properties. To read a complete model, we need to use the
-``open3d.io.read_triangle_model()`` method, which imports all the material
+``open3d.io.read_triangle_mesh_model()`` method, which imports all the material
 properties in addition to the ``TriangleMesh``:
 
 .. code-block:: python
 
-    monkey_model = o3d.io.read_triangle_model(monkey_data.path)
+    monkey_model = o3d.io.read_triangle_mesh_model(monkey_data.path)
     o3d.visualization.draw(monkey_model)
 
 Clearly, a staggering difference in rendering:
@@ -72,7 +72,7 @@ Rendering more complex models
 :::::::::::::::::::::::::::::
 
 In the previous section (:ref:`rendering_models`) we have covered how to render
-complete 3D models with the ``open3d.io.read_triangle_model()`` method. This
+complete 3D models with the ``open3d.io.read_triangle_mesh_model()`` method. This
 method can also handle more complex models containing a collection of materials
 and parts (sub-models) from which the complete object gets assembled.
 
@@ -94,7 +94,7 @@ helmet:
 .. code-block:: python
 
     helmet_data = o3d.data.FlightHelmetModel()
-    helmet_model = o3d.io.read_triangle_model(helmet_data.path)
+    helmet_model = o3d.io.read_triangle_mesh_model(helmet_data.path)
     o3d.visualization.draw(helmet_model)
 
 .. image:: https://user-images.githubusercontent.com/93158890/148611761-40f95b2b-d257-4f2b-a8c0-60a73b159b96.jpg
@@ -117,16 +117,16 @@ yields inferior results:
     :width: 700px
 
 .. note::
-   For complex model rendering, please use the ``o3d.io.read_triangle_model()``, rather than ``read_triangle_mesh()``. ``read_triangle_mesh()`` is only good for loading basic meshes, but not complex materials.
+   For complex model rendering, please use the ``o3d.io.read_triangle_mesh_model()``, rather than ``read_triangle_mesh()``. ``read_triangle_mesh()`` is only good for loading basic meshes, but not complex materials.
 
 Examining complex models
 ::::::::::::::::::::::::
 
-Let's re-load our ``FlightHelmetModel`` with ``o3d.io.read_triangle_model()``:
+Let's re-load our ``FlightHelmetModel`` with ``o3d.io.read_triangle_mesh_model()``:
 
 .. code-block:: python
 
-    helmet_model = o3d.io.read_triangle_model(helmet_data.path)
+    helmet_model = o3d.io.read_triangle_mesh_model(helmet_data.path)
 
 Take a look at what the ``helmet`` object consists of. First, we find out its
 type:

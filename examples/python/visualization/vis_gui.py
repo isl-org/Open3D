@@ -727,7 +727,7 @@ class AppWindow:
 
         mesh = None
         if geometry_type & o3d.io.CONTAINS_TRIANGLES:
-            mesh = o3d.io.read_triangle_model(path)
+            mesh = o3d.io.read_triangle_mesh_model(path)
         if mesh is None:
             print("[Info]", path, "appears to be a point cloud")
             cloud = None

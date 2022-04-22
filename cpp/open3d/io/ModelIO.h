@@ -49,9 +49,9 @@ struct ReadTriangleModelOptions {
     std::function<bool(double)> update_progress;
 };
 
-bool ReadTriangleModel(const std::string& filename,
-                       visualization::rendering::TriangleMeshModel& model,
-                       ReadTriangleModelOptions params = {});
+bool ReadTriangleMeshModel(const std::string& filename,
+                           visualization::rendering::TriangleMeshModel& model,
+                           ReadTriangleModelOptions params = {});
 
 }  // namespace io
 }  // namespace open3d

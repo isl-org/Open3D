@@ -1146,8 +1146,8 @@ void GuiVisualizer::LoadGeometry(const std::string &path) {
                     UpdateProgress(ioProgressAmount * float(percent / 100.0));
                     return true;
                 };
-                model_success =
-                        io::ReadTriangleModel(path, impl_->loaded_model_, opt);
+                model_success = io::ReadTriangleMeshModel(
+                        path, impl_->loaded_model_, opt);
             } catch (...) {
                 model_success = false;
             }

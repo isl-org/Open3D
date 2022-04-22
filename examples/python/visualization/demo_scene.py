@@ -86,7 +86,7 @@ def create_scene():
 
     # Load an OBJ model for our scene
     helmet_data = o3d.data.FlightHelmetModel()
-    helmet = o3d.io.read_triangle_model(helmet_data.path)
+    helmet = o3d.io.read_triangle_mesh_model(helmet_data.path)
     helmet_parts = []
     for m in helmet.meshes:
         # m.mesh.paint_uniform_color((1.0, 0.75, 0.3))
