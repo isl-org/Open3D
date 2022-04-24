@@ -127,6 +127,10 @@ public:
     PointCloud &RemoveNonFinitePoints(bool remove_nan = true,
                                       bool remove_infinite = true);
 
+    /// \brief Function that removes duplicated points, i.e., points that
+    /// have identical coordinates.
+    PointCloud &RemoveDuplicatedPoints();
+
     /// \brief Function to select points from \p input pointcloud into
     /// \p output pointcloud.
     ///

@@ -121,6 +121,10 @@ void pybind_pointcloud(py::module &m) {
             .def("remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
                  "Function to remove non-finite points from the PointCloud",
                  "remove_nan"_a = true, "remove_infinite"_a = true)
+            .def("remove_duplicated_points",
+                 &PointCloud::RemoveDuplicatedPoints,
+                 "Function that removes duplicated points, i.e., points "
+                 "that have identical coordinates.")
             .def("remove_radius_outlier", &PointCloud::RemoveRadiusOutliers,
                  "Function to remove points that have less than nb_points"
                  " in a given sphere of a given radius",
@@ -289,6 +293,8 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             {{"remove_nan", "Remove NaN values from the PointCloud"},
              {"remove_infinite",
               "Remove infinite values from the PointCloud"}});
+    docstring::ClassMethodDocInject(m, "PointCloud",
+                                    "remove_duplicated_points");
     docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_radius_outlier",
             {{"nb_points", "Number of points within the radius."},
