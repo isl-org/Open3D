@@ -1066,6 +1066,13 @@ TEST(PointCloud, ComputePointCloudToPointCloudDistance) {
              std::vector<double>({1, 2, 3}));
 }
 
+TEST(PointCloud, RemoveDuplicatedPoints) {
+    geometry::PointCloud pc({{0, 0, 0}, {1, 3, 0}, {1, 3, 0}, {2, 2, 0}});
+    std::vector<Eigen::Vector3d> ref_points = {{0, 0, 0}, {1, 3, 0}, {2, 2, 0}};
+    pc.RemoveDuplicatedPoints();
+    ExpectEQ(ref_points, pc.points_);
+}
+
 // TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, DISABLED_EstimatePerPointCovariances) { NotImplemented(); }
 TEST(PointCloud, DISABLED_EstimateCovariances) { NotImplemented(); }
