@@ -47,21 +47,47 @@ There are lots of excellent RGBD datasets such as
 
 Quick start
 ``````````````````````````````````````
-Running the example code
+Getting the example code
 .. code-block:: sh
     # Activate your conda enviroment, where you have installed open3d pip package.
-    # Run
+    # Clone the Open3D github repository and go to the example.
+    cd examples/python/reconstruction_system/
 
-Put all color images in the ``image`` folder, and all depth images in the
-``depth`` folder. Run the following commands from the root folder.
+Show CLI help for `run_system.py`
+.. code-block:: sh
+    python dense_slam_gui.py --help
+
+Running the example with default dataset.
+.. code-block:: sh
+    # The following command, will download and use the default dataset,
+    # which is `lounge` dataset from stanford. 
+    # --make will make fragments from RGBD sequence.
+    # --register will register all fragments to detect loop closure.
+    # --refine flag will refine rough registrations.
+    # --integrate flag will integrate the whole RGBD sequence to make final mesh.
+    # [Optional] Use --slac and --slac_integrate flags to perform SLAC optimisation.
+    python run_system.py --make --register --refine --integrate
+
+Changing the default dataset.
+One may change the default dataset to other avaialble datasets. 
+Currently the following datasets are available:
+
+1. Lounge (keyword: `lounge`) (Default)
+
+2. Jack Jack (keyword: `jack_jack`)
 
 .. code-block:: sh
+    # Using jack_jack as the default dataset.
+    python run_system.py --default_dataset 'jack_jack' --make --register --refine --integrate
 
-    cd examples/python/reconstruction_system/
-    python run_system.py [config_file] [--make] [--register] [--refine] [--integrate]
+Running the example with custom dataset using config file.
+Manually download or store the data in a folder and store all the color images 
+in the ``image`` sub-folder, and all the depth images in the ``depth`` sub-folder. 
+Create a ``config.json`` file and set the `path_dataset` to the data directory.
+Override the parameters for which you want to change the default values.
 
-``config_file`` has parameters and file paths. For example,
-``reconstruction_system/config/tutorial.json`` has the following script.
+Example config file for offline reconstruction system has been provided in 
+``examples/python/reconstruction_system/config/tutorial.json``, which looks like the following:
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/config/tutorial.json
    :language: json
