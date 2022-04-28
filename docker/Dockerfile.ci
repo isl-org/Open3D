@@ -2,7 +2,7 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-# For miniconda and the rest of this Dockerfile
+# For bash-specific commands, e.g, if [[ xxx ]]
 SHELL ["/bin/bash", "-c"]
 
 # Required build args, should be specified in docker_build.sh
@@ -63,6 +63,21 @@ RUN apt-get update && apt-get install -y \
     build-essential \
  && rm -rf /var/lib/apt/lists/*
 
+# Miniconda or Intel conda
+ENV PATH="/root/miniconda3/bin:${PATH}"
+ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
+RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
+        wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh; \
+        bash Miniconda3-latest-Linux-x86_64.sh -b; \
+        rm Miniconda3-latest-Linux-x86_64.sh; \
+    fi
+RUN conda --version \
+ && conda create -y -n open3d python=${PYTHON_VERSION}
+
+# Activate open3d virtualenv
+# This works during docker build and docker run
+SHELL ["conda", "run", "-n", "open3d", "/bin/bash", "-c"]
+
 # Dependencies: cmake
 ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
@@ -102,30 +117,6 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && mkdir -p ${CCACHE_DIR} \
  && ccache -M 5G \
  && ccache -s
-
-# Miniconda
-# - OneAPI docker image comes with conda
-# - `conda activate` or `source activate` does not work, setting PATH works
-ENV PATH="/root/miniconda3/bin:${PATH}"
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
-ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/open3d/bin:${PATH}"
-RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
-        wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh; \
-        bash Miniconda3-latest-Linux-x86_64.sh -b; \
-        rm Miniconda3-latest-Linux-x86_64.sh; \
-    fi
-RUN conda --version \
- && conda create -y -n open3d python=${PYTHON_VERSION}
-RUN which python \
- && python --version \
- && which pip
-RUN if [[ "$(which python)" != *"/open3d/"* ]]; then \
-        echo "Error: python is not in the correct location."; \
-        exit 1; \
-    else \
-        echo "python is in the correct location."; \
-    fi
 
 # Checkout Open3D-ML master branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
