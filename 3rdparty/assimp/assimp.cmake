@@ -6,6 +6,12 @@ else()
     set(lib_name assimp)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    set(assimp_cxx_flags "-fno-fast-math")
+else()
+    set(assimp_cxx_flags "")
+endif()
+
 ExternalProject_Add(
     ext_assimp
     PREFIX assimp
@@ -15,7 +21,7 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
-        -DCMAKE_CXX_FLAGS="-fno-fast-math"
+        -DCMAKE_CXX_FLAGS=${assimp_cxx_flags}
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DASSIMP_NO_EXPORT=ON
