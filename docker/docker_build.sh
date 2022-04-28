@@ -75,6 +75,7 @@ HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pw
 # Shared variables
 CCACHE_VERSION=4.3
 CMAKE_VERSION=cmake-3.20.6-linux-x86_64
+CMAKE_VERSION_AARCH64=cmake-3.20.6-linux-aarch64
 
 print_usage_and_exit_docker_build() {
     echo "$__usage_docker_build"
@@ -84,7 +85,7 @@ print_usage_and_exit_docker_build() {
 openblas_print_env() {
     echo "[openblas_print_env()] DOCKER_TAG: ${DOCKER_TAG}"
     echo "[openblas_print_env()] BASE_IMAGE: ${BASE_IMAGE}"
-    echo "[openblas_print_env()] CMAKE_VER: ${CMAKE_VER}"
+    echo "[openblas_print_env()] CMAKE_VERSION: ${CMAKE_VERSION}"
     echo "[openblas_print_env()] CCACHE_TAR_NAME: ${CCACHE_TAR_NAME}"
     echo "[openblas_print_env()] PYTHON_VERSION: ${PYTHON_VERSION}"
     echo "[openblas_print_env()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
@@ -98,13 +99,13 @@ openblas_export_env() {
         echo "[openblas_export_env()] platform AMD64"
         export DOCKER_TAG=open3d-ci:openblas-amd64
         export BASE_IMAGE=ubuntu:18.04
-        export CMAKE_VER=cmake-3.19.7-Linux-x86_64
+        export CMAKE_VERSION=${CMAKE_VERSION}
         export CCACHE_TAR_NAME=open3d-ci-openblas-amd64
     elif [[ "arm64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform ARM64"
         export DOCKER_TAG=open3d-ci:openblas-arm64
         export BASE_IMAGE=arm64v8/ubuntu:18.04
-        export CMAKE_VER=cmake-3.19.7-Linux-aarch64
+        export CMAKE_VERSION=${CMAKE_VERSION_AARCH64}
         export CCACHE_TAR_NAME=open3d-ci-openblas-arm64
     else
         echo "Invalid platform."
@@ -148,7 +149,7 @@ openblas_build() {
     # Docker build
     pushd "${HOST_OPEN3D_ROOT}"
     docker build --build-arg BASE_IMAGE="${BASE_IMAGE}" \
-                 --build-arg CMAKE_VER="${CMAKE_VER}" \
+                 --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
                  --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
                  --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
                  --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
