@@ -32,27 +32,25 @@ the scene. This part uses :ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
 Example dataset
 ``````````````````````````````````````
 
-We use `the SceneNN dataset <http://people.sutd.edu.sg/~saikit/projects/sceneNN/>`_
-to demonstrate the system in this tutorial. Alternatively, there are lots of
-excellent RGBD datasets such as `Redwood data <http://redwood-data.org/>`_,
-`TUM RGBD data <https://vision.in.tum.de/data/datasets/rgbd-dataset>`_,
-`ICL-NUIM data <https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html>`_, and
-`SUN3D data <http://sun3d.cs.princeton.edu/>`_.
+We provide default datasets such as Lounge RGB-D dataset from Stanford, 
+Jack Jack RealSense L515 bag file dataset to demonstrate the system in this tutorial.
+Other than this, one may user any RGB-D data.
 
-The tutorial uses sequence ``016`` from the SceneNN dataset. This is a
-`quick link <https://drive.google.com/open?id=11U8jEDYKvB5lXsK3L1rQcGTjp0YmRrzT>`_
-to download the RGBD sequence used in this tutorial. Alternatively, you can
-download the original dataset from
-`SceneNN oni file archive <https://drive.google.com/drive/folders/0B-aa7y5Ox4eZUmhJdmlYc3BQSG8>`_,
-and then extract the ``oni`` file into color and depth image sequence using
-`OniParser from the Redwood reconstruction system <http://redwood-data.org/indoor/tutorial.html>`_
-or other conversion tools. Some helper scripts can be found from
-``reconstruction_system/scripts``.
+There are lots of excellent RGBD datasets such as 
+ `Redwood data <http://redwood-data.org/>`_,
+`TUM RGBD data <https://vision.in.tum.de/data/datasets/rgbd-dataset>`_,
+`ICL-NUIM data <https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html>`_, 
+`the SceneNN dataset <http://people.sutd.edu.sg/~saikit/projects/sceneNN/>`_ and
+`SUN3D data <http://sun3d.cs.princeton.edu/>`_.
 
 .. _reconstruction_system_how_to_run_the_pipeline:
 
 Quick start
 ``````````````````````````````````````
+Running the example code
+.. code-block:: sh
+    # Activate your conda enviroment, where you have installed open3d pip package.
+    # Run
 
 Put all color images in the ``image`` folder, and all depth images in the
 ``depth`` folder. Run the following commands from the root folder.
