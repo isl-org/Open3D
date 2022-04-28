@@ -84,7 +84,6 @@ own dataset, use an appropriate camera intrinsic and visualize a depth image
     an unexpected program termination. To avoid this issue, set this flag to
     ``false``.
 
-
 Capture your own dataset
 ``````````````````````````````````````
 
