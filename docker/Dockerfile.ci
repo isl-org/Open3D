@@ -76,6 +76,7 @@ RUN conda --version \
 
 # Activate open3d virtualenv
 # This works during docker build and docker run
+# Ref: https://stackoverflow.com/a/60148365/1255535
 SHELL ["conda", "run", "-n", "open3d", "/bin/bash", "-c"]
 
 # Dependencies: cmake
