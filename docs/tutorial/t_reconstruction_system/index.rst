@@ -19,27 +19,34 @@ If you use any part of the tensor-based reconstruction system or the hash map ba
 .. note::
    As of now the tutorial is only for **online** dense SLAM, and **offline** integration **with** provided poses. The tutorials for tensor-based **offline** reconstruction system, Simultaneous localization and calibration (SLAC), and shape from shading (SfS) tutorials as mentioned in [Dong2021]_ are still under construction. At current, please refer to :ref:`reconstruction_system` for the legacy versions.
 
+Quick start
+``````````````````````````````````````
 Getting the example code
+
 .. code-block:: sh
+
     # Activate your conda enviroment, where you have installed open3d pip package.
     # Clone the Open3D github repository and go to the example.
     cd examples/python/t_reconstruction_system/
 
-Show CLI help for `dense_slam_gui.py`
-.. code-block:: sh
+    # Show CLI help for `dense_slam_gui.py`
     python dense_slam_gui.py --help
 
 Running the example with default dataset.
+
 .. code-block:: sh
+
     # The following command, will download and use the default dataset,
     # which is `lounge` dataset from stanford. 
-    # python dense_slam_gui.py 
+    python dense_slam_gui.py 
 
 It is recommended to use CUDA if avaialble.
+
 .. code-block:: sh
+
     # The following command, will download and use the default dataset,
     # which is `lounge` dataset from stanford. 
-    # python dense_slam_gui.py --device 'cuda:0'
+    python dense_slam_gui.py --device 'cuda:0'
 
 Changing the default dataset.
 One may change the default dataset to other avaialble datasets. 
@@ -50,8 +57,9 @@ Currently the following datasets are available:
 2. Jack Jack (keyword: `jack_jack`)
 
 .. code-block:: sh
+
     # Using jack_jack as the default dataset.
-    python run_system.py --default_dataset 'jack_jack' --make --register --refine --integrate
+    python dense_slam_gui.py --default_dataset 'jack_jack'
 
 
 Running the example with custom dataset using config file.
@@ -75,6 +83,9 @@ Capture your own dataset
 This tutorial provides an example that can record synchronized and aligned RGBD
 images using the Intel RealSense camera. For more details, please see
 :ref:`capture_your_own_dataset`.
+
+Getting started with online reconstruction system
+``````````````````````````````````````
 
 .. toctree::
 

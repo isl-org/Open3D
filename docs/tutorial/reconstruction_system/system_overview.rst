@@ -35,30 +35,30 @@ Example dataset
 We provide default datasets such as Lounge RGB-D dataset from Stanford, 
 Jack Jack RealSense L515 bag file dataset to demonstrate the system in this tutorial.
 Other than this, one may user any RGB-D data.
-
-There are lots of excellent RGBD datasets such as 
- `Redwood data <http://redwood-data.org/>`_,
-`TUM RGBD data <https://vision.in.tum.de/data/datasets/rgbd-dataset>`_,
+There are lots of excellent RGBD datasets such as: 
+`Redwood data <http://redwood-data.org/>`_, `TUM RGBD data <https://vision.in.tum.de/data/datasets/rgbd-dataset>`_, 
 `ICL-NUIM data <https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html>`_, 
-`the SceneNN dataset <http://people.sutd.edu.sg/~saikit/projects/sceneNN/>`_ and
-`SUN3D data <http://sun3d.cs.princeton.edu/>`_.
+`the SceneNN dataset <http://people.sutd.edu.sg/~saikit/projects/sceneNN/>`_ and `SUN3D data <http://sun3d.cs.princeton.edu/>`_.
 
 .. _reconstruction_system_how_to_run_the_pipeline:
 
 Quick start
 ``````````````````````````````````````
 Getting the example code
+
 .. code-block:: sh
+
     # Activate your conda enviroment, where you have installed open3d pip package.
     # Clone the Open3D github repository and go to the example.
     cd examples/python/reconstruction_system/
 
-Show CLI help for `run_system.py`
-.. code-block:: sh
+    # Show CLI help for `run_system.py`
     python dense_slam_gui.py --help
 
 Running the example with default dataset.
+
 .. code-block:: sh
+
     # The following command, will download and use the default dataset,
     # which is `lounge` dataset from stanford. 
     # --make will make fragments from RGBD sequence.
@@ -76,7 +76,9 @@ Currently the following datasets are available:
 
 2. Jack Jack (keyword: `jack_jack`)
 
+
 .. code-block:: sh
+
     # Using jack_jack as the default dataset.
     python run_system.py --default_dataset 'jack_jack' --make --register --refine --integrate
 
