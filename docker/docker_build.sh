@@ -141,6 +141,7 @@ openblas_export_env() {
     export BUILD_CUDA_MODULE=OFF
     export BUILD_PYTORCH_OPS=OFF
     export BUILD_TENSORFLOW_OPS=OFF
+    export BUILD_SYCL_MODULE=OFF
 }
 
 openblas_build() {
