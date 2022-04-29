@@ -69,10 +69,10 @@ SingleDownloadDataset::SingleDownloadDataset(
     const std::string filename =
             utility::filesystem::GetFileNameWithoutDirectory(urls[0]);
 
-    const bool is_extract_present =
+    const bool is_extract_folder_present =
             utility::filesystem::DirectoryExists(Dataset::GetExtractDir());
 
-    if (!is_extract_present) {
+    if (!is_extract_folder_present) {
         // `download_dir` is relative path from `${data_root}`.
         const std::string download_dir = "download/" + GetPrefix();
         const std::string download_file_path =
@@ -86,6 +86,50 @@ SingleDownloadDataset::SingleDownloadDataset(
                     Dataset::GetExtractDir());
             utility::filesystem::Copy(download_file_path,
                                       Dataset::GetExtractDir());
+        }
+    }
+}
+
+MultiDownloadDataset::MultiDownloadDataset(
+        const std::string& prefix,
+        const std::vector<std::vector<std::string>>& urls,
+        const std::vector<std::string>& md5_list,
+        const bool no_extract,
+        const std::string& data_root)
+    : Dataset(prefix, data_root) {
+    std::vector<std::string> filenames;
+    for (auto& file_mirrors : urls) {
+        filenames.push_back(file_mirrors[0]);
+    }
+    const bool is_extract_folder_present =
+            utility::filesystem::DirectoryExists(Dataset::GetExtractDir());
+
+    if (!is_extract_folder_present) {
+        size_t number_of_files = urls.size();
+        if (md5_list.size() != number_of_files) {
+            utility::LogError("md5_list and urls must be of same length.");
+        }
+
+        // `download_dir` is relative path from `${data_root}`.
+        const std::string download_dir = "download/" + GetPrefix();
+        std::vector<std::string> download_file_paths;
+        for (size_t i = 0; i < number_of_files; ++i) {
+            download_file_paths.push_back(utility::DownloadFromURL(
+                    urls[i], md5_list[i], download_dir, data_root_));
+        }
+
+        // Extract / Copy data.
+        if (!no_extract) {
+            for (auto& download_file_path : download_file_paths) {
+                utility::Extract(download_file_path, Dataset::GetExtractDir());
+            }
+        } else {
+            utility::filesystem::MakeDirectoryHierarchy(
+                    Dataset::GetExtractDir());
+            for (auto& download_file_path : download_file_paths) {
+                utility::filesystem::Copy(download_file_path,
+                                          Dataset::GetExtractDir());
+            }
         }
     }
 }
