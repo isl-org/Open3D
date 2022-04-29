@@ -1292,10 +1292,9 @@ open3d_import_3rdparty_library(3rdparty_vtk
     INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
     LIB_DIR      ${VTK_LIB_DIR}
     LIBRARIES    ${VTK_LIBRARIES}
-    DEPENDS      ext_vtk 
+    DEPENDS      ext_vtk
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_vtk)
-
 
 # TBB
 if(USE_SYSTEM_TBB)

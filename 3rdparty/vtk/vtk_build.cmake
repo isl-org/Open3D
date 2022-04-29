@@ -24,12 +24,12 @@ set(VTK_LIBRARIES
     vtksys-${VTK_VERSION}${VTK_LIB_SUFFIX}
 )
 
-foreach( item IN LISTS VTK_LIBRARIES )
-    list( APPEND VTK_BUILD_BYPRODUCTS <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${item}${CMAKE_STATIC_LIBRARY_SUFFIX} )
+foreach(item IN LISTS VTK_LIBRARIES)
+    list(APPEND VTK_BUILD_BYPRODUCTS <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${item}${CMAKE_STATIC_LIBRARY_SUFFIX})
 endforeach()
 
 
-if( BUILD_VTK_FROM_SOURCE )
+if(BUILD_VTK_FROM_SOURCE)
 
     ExternalProject_Add(
         ext_vtk
@@ -288,7 +288,7 @@ if( BUILD_VTK_FROM_SOURCE )
 
     ExternalProject_Get_Property(ext_vtk INSTALL_DIR)
     set(VTK_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
-    set(VTK_INCLUDE_DIRS "${INSTALL_DIR}/include/vtk-${VTK_VERSION}/" )
+    set(VTK_INCLUDE_DIRS "${INSTALL_DIR}/include/vtk-${VTK_VERSION}/")
 
 else() #### download prebuilt vtk
 
@@ -296,17 +296,17 @@ else() #### download prebuilt vtk
         message(FATAL "No precompiled vtk for platform. Enable BUILD_VTK_FROM_SOURCE")
     elseif(APPLE_AARCH64)
         message(FATAL "No precompiled vtk for platform. Enable BUILD_VTK_FROM_SOURCE")
-    elseif( APPLE )
+    elseif(APPLE)
         set(VTK_URL
             https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_macos_10.15.tar.gz
         )
         set(VTK_SHA256 eb81112dc62ea7ab39ca11d899399247311867db4b53a367f3efb4f5535e582b)
-    elseif( UNIX )
+    elseif(UNIX)
         set(VTK_URL
             https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_linux_x86_64.tar.gz
         )
         set(VTK_SHA256 ab388f476e202aa0c2d1349c2047cf680d95253c044792830b8b80a0285c4afb)
-    elseif( WIN32 )
+    elseif(WIN32)
         if (STATIC_WINDOWS_RUNTIME)
             set(VTK_URL
                 https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_win_staticrt.tar.gz
@@ -336,7 +336,7 @@ else() #### download prebuilt vtk
     )
 
     ExternalProject_Get_Property(ext_vtk SOURCE_DIR)
-    set(VTK_LIB_DIR "${SOURCE_DIR}/lib" )
-    set(VTK_INCLUDE_DIRS "${SOURCE_DIR}/include/vtk-${VTK_VERSION}/" )
+    set(VTK_LIB_DIR "${SOURCE_DIR}/lib")
+    set(VTK_INCLUDE_DIRS "${SOURCE_DIR}/include/vtk-${VTK_VERSION}/")
 
 endif() # BUILD_VTK_FROM_SOURCE

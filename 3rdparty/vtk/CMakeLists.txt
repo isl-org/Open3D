@@ -1,10 +1,10 @@
 # This file is used for creating the precompiled VTK archives that will be
 # downloaded when building Open3D. This will make use of vtk_build.cmake.
+# See .github/workflows/vtk_packages.yml for more information.
 cmake_minimum_required(VERSION 3.19.2)
 project(VTKArchiveBuild)
 
-
-option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      OFF)
+option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
 
 # OS specific settings
 if(WIN32)
@@ -71,7 +71,7 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_POLICY_DEFAULT_CMP0091:STRING=NEW
     -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-    )
+)
 # Keep 3rd party symbols hidden from Open3D user code. Do not use if 3rd party
 # libraries throw exceptions that escape Open3D.
 set(ExternalProject_CMAKE_ARGS_hidden
@@ -82,28 +82,27 @@ set(ExternalProject_CMAKE_ARGS_hidden
     -DCMAKE_CUDA_VISIBILITY_PRESET=hidden
     -DCMAKE_C_VISIBILITY_PRESET=hidden
     -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON
-    )
-
+)
 
 set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${PROJECT_SOURCE_DIR}/../../3rdparty_downloads")
 set(Open3D_INSTALL_LIB_DIR lib)
 
 set(BUILD_VTK_FROM_SOURCE ON)
-include( vtk_build.cmake )
+include(vtk_build.cmake)
 
 if(LINUX_AARCH64)
-    set( ARCHIVE_SUFFIX "_linux_aarch64" )
+    set(ARCHIVE_SUFFIX "_linux_aarch64")
 elseif(APPLE_AARCH64)
-    set( ARCHIVE_SUFFIX "_macos_${CMAKE_OSX_DEPLOYMENT_TARGET}_arm64" )
-elseif( APPLE )
-    set( ARCHIVE_SUFFIX "_macos_${CMAKE_OSX_DEPLOYMENT_TARGET}" )
-elseif( UNIX )
-    set( ARCHIVE_SUFFIX "_linux_x86_64" )
-elseif( WIN32 )
+    set(ARCHIVE_SUFFIX "_macos_${CMAKE_OSX_DEPLOYMENT_TARGET}_arm64")
+elseif(APPLE)
+    set(ARCHIVE_SUFFIX "_macos_${CMAKE_OSX_DEPLOYMENT_TARGET}")
+elseif(UNIX)
+    set(ARCHIVE_SUFFIX "_linux_x86_64")
+elseif(WIN32)
     if (STATIC_WINDOWS_RUNTIME)
-        set( ARCHIVE_SUFFIX "_win_staticrt" )
+        set(ARCHIVE_SUFFIX "_win_staticrt")
     else()
-        set( ARCHIVE_SUFFIX "_win" )
+        set(ARCHIVE_SUFFIX "_win")
     endif()
 else()
     message(FATAL "Unsupported platform")
@@ -111,7 +110,7 @@ endif()
 
 set(ARCHIVE_NAME "vtk_${VTK_VERSION}${ARCHIVE_SUFFIX}.tar.gz")
 
-add_custom_target( vtk_archive ALL 
+add_custom_target(vtk_archive ALL
     COMMENT "Creating tar archive"
     COMMAND ${CMAKE_COMMAND} -E tar -cvzf ${ARCHIVE_NAME} vtk/include vtk/lib vtk/share
     COMMAND ${CMAKE_COMMAND} -E sha256sum ${ARCHIVE_NAME}
