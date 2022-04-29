@@ -7,7 +7,6 @@ Equipped with the fast volumetric reconstruction backend, we in addition provide
 .. note::
    This SLAM prototype is mainly a showcase of the real-time volumetric processing. Please be aware that the tracking/RGB-D odometry module is **not fully optimized for accuracy**, and there is **no relocalization module** implemented currently. In general, it should work for room-scale scenes with relatively moderate motion, and may fail on more challenging sequences. More robust and reliable localization is our future work.
 
-
 Model and frame initialization
 ````````````````````````````````
 In a SLAM system, we maintain a ``model`` built upon a :ref:`voxel_block_grid`, an input ``frame`` containing raw RGB-D input, and a synthesized ``frame`` generated from the ``model`` with volumetric ray casting.
@@ -30,7 +29,6 @@ where we iteratively update the synthesized frame via ray-casting from the model
 
 The reconstruction results can be saved following :ref:`optimized_integration`, and the trajectory of the camera pose in the world coordinate system can be obtained by accumulating ``T_frame_to_model``.
 
-
 FAQ
 ``````````
 **Q**: Why did my tracking fail?
@@ -44,11 +42,9 @@ FAQ
 
 If all above have been correctly set but still no luck, please file an issue.
 
-
 **Q**: So WHY did my tracking fail?
 
 **A**: For the front end, we are using direct RGB-D odometry. Comparing to feature-based odometry, RGB-D odometry is more accurate when it completes successfully but is less robust. We will add support for feature-based tracking in the future. For the backend, unlike our offline reconstruction system, we do not detect loop closures, and do not perform pose graph optimization or bundle adjustment at the moment.
-
 
 **Q**: Why don't you implement loop closure or relocalization?
 

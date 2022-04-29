@@ -39,7 +39,7 @@ TEST(PinholeCameraIntrinsic, Constructor_Default) {
     EXPECT_EQ(-1, intrinsic.width_);
     EXPECT_EQ(-1, intrinsic.height_);
 
-    Eigen::Matrix3d reference = Eigen::Matrix3d::Zero();
+    Eigen::Matrix3d reference = Eigen::Matrix3d::Identity();
     ExpectEQ(reference, intrinsic.intrinsic_matrix_);
 }
 

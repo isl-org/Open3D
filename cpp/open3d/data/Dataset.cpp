@@ -476,9 +476,155 @@ CrateModel::CrateModel(const std::string& data_root)
               /*no_extract =*/false,
               data_root) {
     const std::string extract_dir = Dataset::GetExtractDir();
-    map_filename_to_path_ = {{"create_material", extract_dir + "/crate.mtl"},
-                             {"create_model", extract_dir + "/crate.obj"},
+    map_filename_to_path_ = {{"crate_material", extract_dir + "/crate.mtl"},
+                             {"crate_model", extract_dir + "/crate.obj"},
                              {"texture_image", extract_dir + "/crate.jpg"}};
+}
+
+FlightHelmetModel::FlightHelmetModel(const std::string& data_root)
+    : SingleDownloadDataset(
+              "FlightHelmetModel",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/FlightHelmetModel.zip"},
+              "597c3aa8b46955fff1949a8baa768bb4",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"flight_helmet", extract_dir + "/FlightHelmet.gltf"},
+            {"flight_helmet_bin", extract_dir + "/FlightHelmet.bin"},
+            {"mat_glass_plastic_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_GlassPlasticMat_BaseColor.png"},
+            {"mat_glass_plastic_normal",
+             extract_dir +
+                     "/FlightHelmet_Materials_GlassPlasticMat_Normal.png"},
+            {"mat_glass_plastic_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_GlassPlasticMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_leather_parts_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_LeatherPartsMat_BaseColor.png"},
+            {"mat_leather_parts_normal",
+             extract_dir +
+                     "/FlightHelmet_Materials_LeatherPartsMat_Normal.png"},
+            {"mat_leather_parts_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_LeatherPartsMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_lenses_base",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_BaseColor.png"},
+            {"mat_lenses_normal",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_Normal.png"},
+            {"mat_lenses_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_metal_parts_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_MetalPartsMat_BaseColor.png"},
+            {"mat_metal_parts_normal",
+             extract_dir + "/FlightHelmet_Materials_MetalPartsMat_Normal.png"},
+            {"mat_metal_parts_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_MetalPartsMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_rubber_wood_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_RubberWoodMat_BaseColor.png"},
+            {"mat_rubber_wood_normal",
+             extract_dir + "/FlightHelmet_Materials_RubberWoodMat_Normal.png"},
+            {"mat_rubber_wood_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_RubberWoodMat_"
+                           "OcclusionRoughMetal.png"}};
+}
+
+MetalTexture::MetalTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "MetalTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/MetalTexture.zip"},
+              "2b6a17e41157138868a2cd2926eedcc7",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/Metal008_Color.jpg"},
+            {"normal", extract_dir + "/Metal008_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Metal008_Roughness.jpg"},
+            {"metallic", extract_dir + "/Metal008_Metalness.jpg"}};
+}
+
+PaintedPlasterTexture::PaintedPlasterTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "PaintedPlasterTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/PaintedPlasterTexture.zip"},
+              "344096b29b06f14aac58f9ad73851dc2",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/PaintedPlaster017_Color.jpg"},
+            {"normal", extract_dir + "/PaintedPlaster017_NormalDX.jpg"},
+            {"roughness", extract_dir + "/noiseTexture.png"}};
+}
+
+TilesTexture::TilesTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "TilesTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/TilesTexture.zip"},
+              "23f47f1e8e1799216724eb0c837c274d",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/Tiles074_Color.jpg"},
+            {"normal", extract_dir + "/Tiles074_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Tiles074_Roughness.jpg"}};
+}
+
+TerrazzoTexture::TerrazzoTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "TerrazzoTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/TerrazzoTexture.zip"},
+              "8d67f191fb5d80a27d8110902cac008e",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/Terrazzo018_Color.jpg"},
+            {"normal", extract_dir + "/Terrazzo018_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Terrazzo018_Roughness.jpg"}};
+}
+
+WoodTexture::WoodTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "WoodTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/WoodTexture.zip"},
+              "28788c7ecc42d78d4d623afbab2301e9",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/Wood049_Color.jpg"},
+            {"normal", extract_dir + "/Wood049_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Wood049_Roughness.jpg"}};
+}
+
+WoodFloorTexture::WoodFloorTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "WoodFloorTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/WoodFloorTexture.zip"},
+              "f11b3e50208095e87340049b9ac3c319",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/WoodFloor050_Color.jpg"},
+            {"normal", extract_dir + "/WoodFloor050_NormalDX.jpg"},
+            {"roughness", extract_dir + "/WoodFloor050_Roughness.jpg"}};
 }
 
 JuneauImage::JuneauImage(const std::string& data_root)

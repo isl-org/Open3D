@@ -64,6 +64,8 @@ examples/python/t_reconstruction_system/output.npz
 examples/python/reconstruction_system/dataset/
 examples/python/geometry/voxel_grid_test.ply
 examples/python/benchmark/testdata/
+examples/python/benchmark/*.pkl
+examples/python/benchmark/*.png
 examples/python/misc/test.jpg
 examples/python/pipelines/multiway_registration.pcd
 examples/python/geometry/test.json
