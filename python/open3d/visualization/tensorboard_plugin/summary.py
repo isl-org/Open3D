@@ -547,7 +547,7 @@ def _write_geometry_data(write_dir, tag, step, data, max_outputs=1):
                 connection=buf_con):
             raise IOError(
                 "[Open3D set_mesh_data] Geometry data serialization for tag "
-                "{tag} step {step} failed!")
+                f"{tag} step {step} failed!")
         # TODO(ssheorey): This returns a copy instead of the original. Benchmark
         # vs numpy
         data_buffer = buf_con.get_buffer()

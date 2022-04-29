@@ -26,7 +26,6 @@ open3d.visualization
     VisualizerWithKeyCallback
     VisualizerWithVertexSelection
 
-
 **Functions**
 
 .. autosummary::
@@ -40,7 +39,6 @@ open3d.visualization
     draw_geometries_with_vertex_selection
     read_selection_polygon_volume
 
-
 **Modules**
 
 .. autosummary::
@@ -49,7 +47,6 @@ open3d.visualization
     rendering
     webrtc_server
     tensorboard_plugin.summary
-
 
 .. toctree::
     :hidden:

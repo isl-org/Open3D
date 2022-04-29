@@ -42,7 +42,6 @@ Option 2: Configure the project and run ``make``.
    cmake --build . --target check-style
    cmake --build . --target apply-style
 
-
 Coding style
 =============
 

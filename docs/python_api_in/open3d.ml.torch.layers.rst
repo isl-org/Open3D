@@ -17,7 +17,6 @@ open3d.ml.torch.layers
     SparseConvTranspose
     VoxelPooling
 
-
 .. toctree::
     :hidden:
 
