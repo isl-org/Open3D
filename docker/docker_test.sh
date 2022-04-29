@@ -104,10 +104,12 @@ cpp_python_linking_uninstall_test() {
     # - BUILD_CUDA_MODULE
     # - BUILD_PYTORCH_OPS
     # - BUILD_TENSORFLOW_OPS
+    # - BUILD_SYCL_MODULE
     echo "[cpp_python_linking_uninstall_test()] DOCKER_TAG=${DOCKER_TAG}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
+    echo "[cpp_python_linking_uninstall_test()] BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}"
 
     # Config-dependent argument: gpu_run_args
     if [ "${BUILD_CUDA_MODULE}" == "ON" ]; then
@@ -135,9 +137,27 @@ cpp_python_linking_uninstall_test() {
 
     # Python test
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
-    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        python -m pytest python/test ${pytest_args} \
-    "
+    if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
+        # TODO: this is a temporary fix for MKL linkage. SYCL iself is fine.
+        # https://bugs.launchpad.net/ubuntu/+source/intel-mkl/+bug/1947626
+        # https://community.intel.com/t5/Intel-oneAPI-Math-Kernel-Library/mkl-fails-to-load/m-p/1155538
+        python_ld_preload=""
+        python_ld_preload="${python_ld_preload}:/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_def.so.2"
+        python_ld_preload="${python_ld_preload}:/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_avx2.so.2"
+        python_ld_preload="${python_ld_preload}:/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_core.so"
+        python_ld_preload="${python_ld_preload}:/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_intel_lp64.so"
+        python_ld_preload="${python_ld_preload}:/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_tbb_thread.so"
+        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
+            export LD_PRELOAD=${python_ld_preload} \
+         && python -m pytest python/test/core/test_linalg.py ${pytest_args} --skip_sycl_failed_tests -s \
+        "
+    else
+        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
+            python -m pytest python/test/core/test_linalg.py ${pytest_args} -s
+        "
+        python_ld_preload=""
+    fi
+
     restart_docker_daemon_if_on_gcloud
 
     # Command-line tools test

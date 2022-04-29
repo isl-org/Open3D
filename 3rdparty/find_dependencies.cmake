@@ -1343,7 +1343,7 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/mkl/latest/lib/cmake/mkl)
     open3d_find_package_3rdparty_library(3rdparty_mkl
         PACKAGE MKL
-        TARGETS MKL::mkl_intel_ilp64 MKL::mkl_core MKL::mkl_tbb_thread
+        TARGETS MKL::mkl_intel_ilp64 MKL::mkl_tbb_thread MKL::mkl_core
         INCLUDE_DIRS MKL_INCLUDE
     )
     # MKL macros
