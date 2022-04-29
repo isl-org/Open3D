@@ -43,7 +43,7 @@ PointCloud
 ~~~~~~~~~~
 
 PCDPointCloud
--------------------
+-------------
 
 Colored point cloud of a living room from the Redwood dataset in PCD format.
 
@@ -58,7 +58,7 @@ Colored point cloud of a living room from the Redwood dataset in PCD format.
     auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
 PLYPointCloud
--------------------
+-------------
 
 Colored point cloud of a living room from the Redwood dataset in PLY format.
 
@@ -88,7 +88,7 @@ Eagle colored point cloud.
     auto pcd = io::CreatePointCloudFromFile(dataset.GetPath());
 
 LivingRoomPointClouds
-----------------------------
+---------------------
 
 57 point clouds of binary PLY format from the Redwood RGB-D Dataset.
 
@@ -108,7 +108,7 @@ LivingRoomPointClouds
     }
 
 OfficePointClouds
-------------------------
+-----------------
 
 53 point clouds of binary PLY format from Redwood RGB-D Dataset.
 
@@ -175,6 +175,228 @@ A 3D Mobius knot mesh in PLY format.
     data::KnotMesh dataset;
     auto mesh = io::CreateMeshFromFile(dataset.GetPath());
 
+TriangleModel with PRB texture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+MonkeyModel
+-----------
+
+The monkey model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.MonkeyModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::BunnyMesh dataset;
+    visualization::rendering::TriangleMeshModel model;
+    auto model = io::ReadTriangleModel(dataset.GetPath(), model);
+
+SwordModel
+----------
+
+The sword model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.SwordModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::SwordModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+CrateModel
+----------
+
+The crate model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.CrateModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::CrateModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+FlightHelmetModel
+-----------------
+
+The flight helmet gltf model with PRB texture.
+
+.. code-block:: python
+
+    dataset = o3d.data.FlightHelmetModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::FlightHelmetModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+Texture material images
+~~~~~~~~~~~~~~~~~~~~~~~
+
+MetalTexture
+------------
+
+Albedo, normal, roughness and metallic texture files for metal based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.MetalTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+    mat.metallic_img = o3d.io.read_image(mat_data.metallic_texture_path)
+
+.. code-block:: cpp
+
+    data::MetalTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+    mat.metallic_img = io::CreateImageFromFile(mat_data.metallic_texture_path);
+
+PaintedPlasterTexture
+---------------------
+
+Albedo, normal and roughness texture files for painted plaster based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.PaintedPlasterTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::PaintedPlasterTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+TilesTexture
+------------
+
+Albedo, normal and roughness texture files for tiles based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.TilesTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::TilesTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+TerrazzoTexture
+---------------
+
+Albedo, normal and roughness texture files for terrazzo based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.TerrazzoTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::TerrazzoTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+WoodTexture
+-----------
+
+Albedo, normal and roughness texture files for wood based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.WoodTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::WoodTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
+WoodFloorTexture
+----------------
+
+Albedo, normal and roughness texture files for wooden floor based material.
+
+.. code-block:: python
+
+    mat_data = o3d.data.WoodFloorTexture()
+
+    mat = o3d.visualization.rendering.MaterialRecord()
+    mat.shader = "defaultLit"
+    mat.albedo_img = o3d.io.read_image(mat_data.albedo_texture_path)
+    mat.normal_img = o3d.io.read_image(mat_data.normal_texture_path)
+    mat.roughness_img = o3d.io.read_image(mat_data.roughness_texture_path)
+
+.. code-block:: cpp
+
+    data::WoodFloorTexture mat_data;
+
+    auto mat = visualization::rendering::MaterialRecord();
+    mat.shader = "defaultUnlit";
+    mat.albedo_img = io::CreateImageFromFile(mat_data.albedo_texture_path);
+    mat.normal_img = io::CreateImageFromFile(mat_data.normal_texture_path);
+    mat.roughness_img = io::CreateImageFromFile(mat_data.roughness_texture_path);
+
 Image
 ~~~~~
 
@@ -197,7 +419,7 @@ RGBDImage
 ~~~~~~~~~
 
 SampleRedwoodRGBDImages
-------------------------
+-----------------------
 
 Sample set of 5 color images, 5 depth images from the Redwood RGBD
 living-room1 dataset. It also contains a camera trajectory log, a camera
@@ -238,7 +460,7 @@ TSDF.
     auto pcd = io::CreatePointCloudFromFile(dataset.GetReconstructionPath());
 
 SampleFountainRGBDImages
--------------------------
+------------------------
 
 Sample set of 33 color and depth images from the Fountain RGBD dataset.
 It also contains camera poses at key frames log and mesh reconstruction.
@@ -337,7 +559,7 @@ RGBD dataset.
 
     auto color_raw = io::CreateImageFromFile(dataset.GetColorPath());
     auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPath());
-    
+
     auto rgbd_image = geometry::RGBDImage::CreateFromSUNFormat(
         *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ false);
 
@@ -427,7 +649,7 @@ This data is used for point cloud crop demo.
     auto chair = vol.CropPointCloud(*pcd);
 
 DemoFeatureMatchingPointClouds
------------------------------
+------------------------------
 
 Sample set of 2 point cloud fragments and their respective FPFH features and
 L32D features. This data is used for point cloud feature matching demo.

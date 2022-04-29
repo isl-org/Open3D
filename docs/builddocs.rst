@@ -34,7 +34,6 @@ First, install a TeX distribution such as `MacTeX <http://www.tug.org/mactex/>`_
 
     brew install ghostscript pandoc doxygen
 
-
 2. Install Python dependencies
 ``````````````````````````````
 
@@ -42,7 +41,6 @@ First, install a TeX distribution such as `MacTeX <http://www.tug.org/mactex/>`_
 
     # Go to the root Open3D directory first
     pip install -r python/requirements_docs.txt
-
 
 Build
 -----
@@ -60,8 +58,16 @@ Python package with:
     cd docs
 
     # Run `python make_docs.py --help` to usage of the flags.
-    # Example usage: execute notebooks when it has not been executed.
-    python make_docs.py --clean_notebooks --execute_notebooks=auto --sphinx --doxygen
+    python make_docs.py --help
+
+    # Example: build .rst and C++ docs only, skip notebooks.
+    python make_docs.py --execute_notebooks=never --sphinx --doxygen
+
+    # Example: build .rst and C++ docs only, skip notebooks, with parallel build.
+    python make_docs.py --execute_notebooks=never --sphinx --doxygen --parallel
+
+    # Example: build .rst and c++ docs, execute notebooks when it has not been executed.
+    python make_docs.py --execute_notebooks=auto --sphinx --doxygen
 
 The docs html will be saved in ``docs/_out`` folder.
 

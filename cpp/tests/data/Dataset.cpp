@@ -644,8 +644,8 @@ TEST(Dataset, CrateModel) {
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     std::unordered_map<std::string, std::string> map_filename_to_path = {
-            {"create_material", extract_dir + "/crate.mtl"},
-            {"create_model", extract_dir + "/crate.obj"},
+            {"crate_material", extract_dir + "/crate.mtl"},
+            {"crate_model", extract_dir + "/crate.obj"},
             {"texture_image", extract_dir + "/crate.jpg"}};
 
     for (auto file_name : dataset.GetPathMap()) {
@@ -653,6 +653,274 @@ TEST(Dataset, CrateModel) {
         EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
         EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
     }
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, FlightHelmetModel) {
+    const std::string prefix = "FlightHelmetModel";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::FlightHelmetModel dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"flight_helmet", extract_dir + "/FlightHelmet.gltf"},
+            {"flight_helmet_bin", extract_dir + "/FlightHelmet.bin"},
+            {"mat_glass_plastic_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_GlassPlasticMat_BaseColor.png"},
+            {"mat_glass_plastic_normal",
+             extract_dir +
+                     "/FlightHelmet_Materials_GlassPlasticMat_Normal.png"},
+            {"mat_glass_plastic_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_GlassPlasticMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_leather_parts_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_LeatherPartsMat_BaseColor.png"},
+            {"mat_leather_parts_normal",
+             extract_dir +
+                     "/FlightHelmet_Materials_LeatherPartsMat_Normal.png"},
+            {"mat_leather_parts_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_LeatherPartsMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_lenses_base",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_BaseColor.png"},
+            {"mat_lenses_normal",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_Normal.png"},
+            {"mat_lenses_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_metal_parts_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_MetalPartsMat_BaseColor.png"},
+            {"mat_metal_parts_normal",
+             extract_dir + "/FlightHelmet_Materials_MetalPartsMat_Normal.png"},
+            {"mat_metal_parts_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_MetalPartsMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_rubber_wood_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_RubberWoodMat_BaseColor.png"},
+            {"mat_rubber_wood_normal",
+             extract_dir + "/FlightHelmet_Materials_RubberWoodMat_Normal.png"},
+            {"mat_rubber_wood_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_RubberWoodMat_"
+                           "OcclusionRoughMetal.png"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, MetalTexture) {
+    const std::string prefix = "MetalTexture";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::MetalTexture dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"albedo", extract_dir + "/Metal008_Color.jpg"},
+            {"normal", extract_dir + "/Metal008_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Metal008_Roughness.jpg"},
+            {"metallic", extract_dir + "/Metal008_Metalness.jpg"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    EXPECT_EQ(dataset.GetAlbedoTexturePath(),
+              map_filename_to_path.at("albedo"));
+    EXPECT_EQ(dataset.GetNormalTexturePath(),
+              map_filename_to_path.at("normal"));
+    EXPECT_EQ(dataset.GetRoughnessTexturePath(),
+              map_filename_to_path.at("roughness"));
+    EXPECT_EQ(dataset.GetMetallicTexturePath(),
+              map_filename_to_path.at("metallic"));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, PaintedPlasterTexture) {
+    const std::string prefix = "PaintedPlasterTexture";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::PaintedPlasterTexture dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"albedo", extract_dir + "/PaintedPlaster017_Color.jpg"},
+            {"normal", extract_dir + "/PaintedPlaster017_NormalDX.jpg"},
+            {"roughness", extract_dir + "/noiseTexture.png"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    EXPECT_EQ(dataset.GetAlbedoTexturePath(),
+              map_filename_to_path.at("albedo"));
+    EXPECT_EQ(dataset.GetNormalTexturePath(),
+              map_filename_to_path.at("normal"));
+    EXPECT_EQ(dataset.GetRoughnessTexturePath(),
+              map_filename_to_path.at("roughness"));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, TilesTexture) {
+    const std::string prefix = "TilesTexture";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::TilesTexture dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"albedo", extract_dir + "/Tiles074_Color.jpg"},
+            {"normal", extract_dir + "/Tiles074_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Tiles074_Roughness.jpg"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    EXPECT_EQ(dataset.GetAlbedoTexturePath(),
+              map_filename_to_path.at("albedo"));
+    EXPECT_EQ(dataset.GetNormalTexturePath(),
+              map_filename_to_path.at("normal"));
+    EXPECT_EQ(dataset.GetRoughnessTexturePath(),
+              map_filename_to_path.at("roughness"));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, TerrazzoTexture) {
+    const std::string prefix = "TerrazzoTexture";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::TerrazzoTexture dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"albedo", extract_dir + "/Terrazzo018_Color.jpg"},
+            {"normal", extract_dir + "/Terrazzo018_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Terrazzo018_Roughness.jpg"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    EXPECT_EQ(dataset.GetAlbedoTexturePath(),
+              map_filename_to_path.at("albedo"));
+    EXPECT_EQ(dataset.GetNormalTexturePath(),
+              map_filename_to_path.at("normal"));
+    EXPECT_EQ(dataset.GetRoughnessTexturePath(),
+              map_filename_to_path.at("roughness"));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, WoodTexture) {
+    const std::string prefix = "WoodTexture";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::WoodTexture dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"albedo", extract_dir + "/Wood049_Color.jpg"},
+            {"normal", extract_dir + "/Wood049_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Wood049_Roughness.jpg"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    EXPECT_EQ(dataset.GetAlbedoTexturePath(),
+              map_filename_to_path.at("albedo"));
+    EXPECT_EQ(dataset.GetNormalTexturePath(),
+              map_filename_to_path.at("normal"));
+    EXPECT_EQ(dataset.GetRoughnessTexturePath(),
+              map_filename_to_path.at("roughness"));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, WoodFloorTexture) {
+    const std::string prefix = "WoodFloorTexture";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::WoodFloorTexture dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"albedo", extract_dir + "/WoodFloor050_Color.jpg"},
+            {"normal", extract_dir + "/WoodFloor050_NormalDX.jpg"},
+            {"roughness", extract_dir + "/WoodFloor050_Roughness.jpg"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    EXPECT_EQ(dataset.GetAlbedoTexturePath(),
+              map_filename_to_path.at("albedo"));
+    EXPECT_EQ(dataset.GetNormalTexturePath(),
+              map_filename_to_path.at("normal"));
+    EXPECT_EQ(dataset.GetRoughnessTexturePath(),
+              map_filename_to_path.at("roughness"));
 
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);

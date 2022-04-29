@@ -56,7 +56,6 @@ Prepare example data
 
 This part reads two point clouds and downsamples them. The source point cloud is intentionally transformed for the misalignment. Both point clouds are flipped for better visualization.
 
-
 Initialize Visualizer class
 ````````````````````````````````````````````````````
 
