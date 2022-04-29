@@ -32,7 +32,7 @@ the scene. This part uses :ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
 Example dataset
 ``````````````````````````````````````
 
-We provide default datasets such as Lounge RGB-D dataset from Stanford, 
+We provide default datasets such as Lounge RGB-D dataset from Stanford, Bedroom RGB-D dataset from Redwood,
 Jack Jack RealSense L515 bag file dataset to demonstrate the system in this tutorial.
 Other than this, one may user any RGB-D data.
 There are lots of excellent RGBD datasets such as: 
@@ -74,13 +74,15 @@ Currently the following datasets are available:
 
 1. Lounge (keyword: `lounge`) (Default)
 
-2. Jack Jack (keyword: `jack_jack`)
+2. Bedroom (keyword: `bedroom`)
+
+3. Jack Jack (keyword: `jack_jack`)
 
 
 .. code-block:: sh
 
     # Using jack_jack as the default dataset.
-    python run_system.py --default_dataset 'jack_jack' --make --register --refine --integrate
+    python run_system.py --default_dataset 'bedroom' --make --register --refine --integrate
 
 Running the example with custom dataset using config file.
 Manually download or store the data in a folder and store all the color images 

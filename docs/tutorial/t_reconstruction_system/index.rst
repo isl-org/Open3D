@@ -54,12 +54,14 @@ Currently the following datasets are available:
 
 1. Lounge (keyword: `lounge`) (Default)
 
-2. Jack Jack (keyword: `jack_jack`)
+2. Bedroom (keyword: `bedroom`)
+
+3. Jack Jack (keyword: `jack_jack`)
 
 .. code-block:: sh
 
     # Using jack_jack as the default dataset.
-    python dense_slam_gui.py --default_dataset 'jack_jack'
+    python dense_slam_gui.py --default_dataset 'bedroom'
 
 
 Running the example with custom dataset using config file.
