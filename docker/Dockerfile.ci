@@ -28,6 +28,17 @@ RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD  
  && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
  && if [ -z "${PACKAGE}"              ]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi
 
+# Fix Nvidia repo key rotation issue
+# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
+# https://forums.developer.nvidia.com/t/18-04-cuda-docker-image-is-broken/212892/10
+# https://code.visualstudio.com/remote/advancedcontainers/reduce-docker-warnings#:~:text=Warning%3A%20apt%2Dkey%20output%20should,not%20running%20from%20a%20terminal.
+RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
+        export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn; \
+        apt-key del 7fa2af80; \
+        apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub; \
+        apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub; \
+    fi
+
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
