@@ -64,6 +64,8 @@ RUN apt-get update && apt-get install -y \
  && rm -rf /var/lib/apt/lists/*
 
 # Miniconda or Intel conda
+# The **/open3d/bin paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
 ENV PATH="/root/miniconda3/bin:${PATH}"
 ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
 ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
@@ -77,7 +79,7 @@ RUN conda --version \
  && conda create -y -n open3d python=${PYTHON_VERSION}
 
 # Activate open3d virtualenv
-# This works during docker build and docker run
+# This works during docker build. It becomes the prefix of all RUN commands.
 # Ref: https://stackoverflow.com/a/60148365/1255535
 SHELL ["conda", "run", "-n", "open3d", "/bin/bash", "-c"]
 
