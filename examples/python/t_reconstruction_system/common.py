@@ -66,6 +66,8 @@ def lounge_dataloader(config):
     # Override default config parameters with dataset specific parameters.
     config.path_dataset = lounge_rgbd.extract_dir
     config.path_trajectory = lounge_rgbd.trajectory_log_path
+    config.depth_folder = "depth"
+    config.color_folder = "color"
     return config
 
 
@@ -75,6 +77,8 @@ def jack_jack_dataloader(config):
     # Override default config parameters with dataset specific parameters.
     print("Extracting frames from RGBD video file")
     config.path_dataset = jackjack_rgbd.path
+    config.depth_folder = "depth"
+    config.color_folder = "color"
     return config
 
 
