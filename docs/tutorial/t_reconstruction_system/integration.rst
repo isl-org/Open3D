@@ -53,7 +53,6 @@ You may use the provided APIs to extract surface points.
 
 Note ``extract_triangle_mesh`` applies marching cubes and generate mesh. ``extract_point_cloud`` uses the similar algorithm, but skips the triangle face generation step.
 
-
 Save and load
 ``````````````
 The voxel block grids can be saved to and loaded from `.npz` files that are accessible via numpy.
@@ -62,7 +61,7 @@ The voxel block grids can be saved to and loaded from `.npz` files that are acce
    :language: python
    :lineno-start: 47
    :lines: 27,48,98
-   
+
 The `.npz` file of the aforementioned voxel block grid contains the following entries:
 
 - ``attr_name_tsdf``: stores the value buffer index: 0
