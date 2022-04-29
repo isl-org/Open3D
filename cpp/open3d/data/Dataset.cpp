@@ -790,10 +790,10 @@ BedroomRGBDImages::BedroomRGBDImages(const std::string& data_root)
                 "20220301-data/bedroom04.zip"},
                {"https://github.com/isl-org/open3d_downloads/releases/download/"
                 "20220301-data/bedroom05.zip"}},
-              {"c23b38da1ca2ad8d3c17fdf57fb06f16",
-               "94310ecaa3a22dc575f242b724fc9963",
-               "1bd5de356e450d255e02fd812c34b664",
-               "18c3d32151a7e6453adb7a59da9ec6bf",
+              {"2d1018ceeb72680f5d16b2f419da9bb1",
+               "5e6ffbccc0907dc5acc374aa76a79081",
+               "ebf13b89ec364b1788dd492c27b9b800",
+               "94c0e6c862a54588582b06520946fb15",
                "54b927edb6fd61838025bc66ed767408"},
               /*no_extract =*/false,
               data_root) {
@@ -802,34 +802,34 @@ BedroomRGBDImages::BedroomRGBDImages(const std::string& data_root)
     color_paths_.reserve(21931);
     depth_paths_.reserve(21931);
     for (int i = 1; i < 10; ++i) {
-        color_paths_.push_back(extract_dir + "/bedroom/image/00000" +
+        color_paths_.push_back(extract_dir + "/image/00000" +
                                std::to_string(i) + ".jpg");
-        depth_paths_.push_back(extract_dir + "/bedroom/depth/00000" +
+        depth_paths_.push_back(extract_dir + "/depth/00000" +
                                std::to_string(i) + ".png");
     }
     for (int i = 10; i < 100; ++i) {
-        color_paths_.push_back(extract_dir + "/bedroom/image/0000" +
-                               std::to_string(i) + ".jpg");
-        depth_paths_.push_back(extract_dir + "/bedroom/depth/0000" +
-                               std::to_string(i) + ".png");
+        color_paths_.push_back(extract_dir + "/image/0000" + std::to_string(i) +
+                               ".jpg");
+        depth_paths_.push_back(extract_dir + "/depth/0000" + std::to_string(i) +
+                               ".png");
     }
     for (int i = 100; i < 1000; ++i) {
-        color_paths_.push_back(extract_dir + "/bedroom/image/000" +
-                               std::to_string(i) + ".jpg");
-        depth_paths_.push_back(extract_dir + "/bedroom/depth/000" +
-                               std::to_string(i) + ".png");
+        color_paths_.push_back(extract_dir + "/image/000" + std::to_string(i) +
+                               ".jpg");
+        depth_paths_.push_back(extract_dir + "/depth/000" + std::to_string(i) +
+                               ".png");
     }
     for (int i = 1000; i < 10000; ++i) {
-        color_paths_.push_back(extract_dir + "/bedroom/image/00" +
-                               std::to_string(i) + ".jpg");
-        depth_paths_.push_back(extract_dir + "/bedroom/depth/00" +
-                               std::to_string(i) + ".png");
+        color_paths_.push_back(extract_dir + "/image/00" + std::to_string(i) +
+                               ".jpg");
+        depth_paths_.push_back(extract_dir + "/depth/00" + std::to_string(i) +
+                               ".png");
     }
     for (int i = 10000; i <= 21930; ++i) {
-        color_paths_.push_back(extract_dir + "/bedroom/image/0" +
-                               std::to_string(i) + ".jpg");
-        depth_paths_.push_back(extract_dir + "/bedroom/depth/0" +
-                               std::to_string(i) + ".png");
+        color_paths_.push_back(extract_dir + "/image/0" + std::to_string(i) +
+                               ".jpg");
+        depth_paths_.push_back(extract_dir + "/depth/0" + std::to_string(i) +
+                               ".png");
     }
 
     trajectory_log_path_ = extract_dir + "/bedroom.log";

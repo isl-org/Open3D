@@ -907,16 +907,16 @@ private:
 };
 
 /// \class BedroomRGBDImages
-/// \brief Data class for `BedroomRGBDImages` contains a sample set of 29301
+/// \brief Data class for `BedroomRGBDImages` contains a sample set of 21931
 /// color and depth images from Redwood RGBD dataset. Additionally it also
 /// contains camera trajectory log, and mesh reconstruction.
 class BedroomRGBDImages : public MultiDownloadDataset {
 public:
     BedroomRGBDImages(const std::string& data_root = "");
 
-    /// \brief Returns List of paths to color image samples of size 3000.
+    /// \brief Returns List of paths to color image samples of size 21931.
     std::vector<std::string> GetColorPaths() const { return color_paths_; };
-    /// \brief Returns List of paths to depth image samples of size 3000.
+    /// \brief Returns List of paths to depth image samples of size 21931.
     std::vector<std::string> GetDepthPaths() const { return depth_paths_; };
 
     /// \brief Returns path to camera trajectory log file
