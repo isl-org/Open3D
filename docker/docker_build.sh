@@ -146,23 +146,22 @@ openblas_export_env() {
 openblas_build() {
     openblas_print_env
 
-    # Docker build
     pushd "${HOST_OPEN3D_ROOT}"
-    docker build --build-arg BASE_IMAGE="${BASE_IMAGE}" \
-                 --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
-                 --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
-                 --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
-                 --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
-                 -t "${DOCKER_TAG}" \
-                 -f docker/Dockerfile.openblas .
+    docker build \
+        --progress plain \
+        --build-arg BASE_IMAGE="${BASE_IMAGE}" \
+        --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
+        --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
+        --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+        --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
+        -t "${DOCKER_TAG}" \
+        -f docker/Dockerfile.openblas .
     popd
 
-    # Extract ccache
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
               && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
 
-    # Extract wheels
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -c "cp /*.whl /opt/mount \
               && chown $(id -u):$(id -g) /opt/mount/*.whl"
@@ -194,9 +193,9 @@ cuda_wheel_build() {
     echo "[cuda_wheel_build()] PYTHON_VERSION: ${PYTHON_VERSION}"
     echo "[cuda_wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
 
-    # Docker build
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
+        --progress plain \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
@@ -207,7 +206,6 @@ cuda_wheel_build() {
         -f docker/Dockerfile.wheel .
     popd
 
-    # Extract pip wheel, ccache
     python_package_dir=/root/Open3D/build/lib/python_package
     docker run -v "${PWD}:/opt/mount" --rm open3d-ci:wheel \
         bash -c "cp ${python_package_dir}/pip_package/open3d*.whl /opt/mount \
@@ -233,6 +231,7 @@ ci_build() {
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
+        --progress plain \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
