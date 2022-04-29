@@ -54,6 +54,8 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
+#include "open3d/utility/ProgressReporters.h"
 
 namespace open3d {
 namespace utility {
@@ -99,6 +101,48 @@ static size_t WriteDataCb(void* ptr, size_t size, size_t nmemb, FILE* stream) {
     size_t written;
     written = fwrite(ptr, size, nmemb, stream);
     return written;
+}
+
+static int progress_func(void* ptr,
+                         double TotalToDownload,
+                         double NowDownloaded,
+                         double TotalToUpload,
+                         double NowUploaded) {
+    // utility::CountingProgressReporter reporter(params.update_progress);
+
+    // It's here you will write the code for the progress message or bar
+    // ensure that the file to be downloaded is not empty
+    // because that would cause a division by zero error later on
+    if (TotalToDownload <= 0.0) {
+        return 0;
+    }
+
+    // how wide you want the progress meter to be
+    int totaldotz = 40;
+    double fractiondownloaded = NowDownloaded / TotalToDownload;
+    // part of the progressmeter that's already "full"
+    int dotz = (int)round(fractiondownloaded * totaldotz);
+
+    // create the "meter"
+    int ii = 0;
+    printf("%3.0f%% [", fractiondownloaded * 100);
+    // part  that's full already
+    for (; ii < dotz; ii++) {
+        printf("=");
+    }
+    // remaining part (spaces)
+    for (; ii < totaldotz; ii++) {
+        printf(" ");
+    }
+    // and back to line begin - do not forget the fflush to avoid output
+    // buffering problems!
+    printf("] %lf MB / %lf MB \r", NowDownloaded / (1024.0 * 1024.0),
+           TotalToDownload / (1024.0 * 1024.0));
+    fflush(stdout);
+
+    // if you don't return 0, the transfer will be aborted - see the
+    // documentation
+    return 0;
 }
 
 std::string DownloadFromURL(const std::string& url,
@@ -155,6 +199,12 @@ std::string DownloadFromURL(const std::string& url,
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteDataCb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+
+    // utility::CountingProgressReporter reporter;
+
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, false);
+    curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, progress_func);
+
     res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
     fclose(fp);
