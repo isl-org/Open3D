@@ -26,6 +26,10 @@
 
 #include "open3d/t/geometry/TriangleMesh.h"
 
+#include <vtkCleanPolyData.h>
+#include <vtkClipPolyData.h>
+#include <vtkPlane.h>
+
 #include <Eigen/Core>
 #include <string>
 #include <unordered_map>
@@ -37,9 +41,6 @@
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/geometry/kernel/VtkUtils.h"
-#include "vtkCleanPolyData.h"
-#include "vtkClipPolyData.h"
-#include "vtkPlane.h"
 
 namespace open3d {
 namespace t {
@@ -285,8 +286,8 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     core::AssertTensorDtypes(
             normal, {core::Float32, core::Float64, core::Int32, core::Int64});
 
-    auto point_ = point.To(core::Device(), core::Dtype::Float64).Contiguous();
-    auto normal_ = normal.To(core::Device(), core::Dtype::Float64).Contiguous();
+    auto point_ = point.To(core::Device(), core::Float64).Contiguous();
+    auto normal_ = normal.To(core::Device(), core::Float64).Contiguous();
 
     auto polydata = CreateVtkPolyDataFromGeometry(*this);
 

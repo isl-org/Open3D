@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
+
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
-#include "vtkPolyData.h"
-#include "vtkSmartPointer.h"
 
 namespace open3d {
 namespace t {

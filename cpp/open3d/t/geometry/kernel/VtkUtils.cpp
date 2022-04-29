@@ -26,11 +26,11 @@
 
 #include "open3d/t/geometry/kernel/VtkUtils.h"
 
-#include "vtkArrayDispatch.h"
-#include "vtkCellArray.h"
-#include "vtkDoubleArray.h"
-#include "vtkFloatArray.h"
-#include "vtkPoints.h"
+#include <vtkArrayDispatch.h>
+#include <vtkCellArray.h>
+#include <vtkDoubleArray.h>
+#include <vtkFloatArray.h>
+#include <vtkPoints.h>
 
 namespace open3d {
 namespace t {
@@ -40,7 +40,7 @@ namespace vtkutils {
 
 vtkSmartPointer<vtkPoints> CreateVtkPointsFromTensor(
         const core::Tensor& tensor) {
-    core::AssertTensorShape(tensor, {utility::nullopt, 3});
+    core::AssertTensorShape(tensor, {core::None, 3});
     core::AssertTensorDtypes(tensor, {core::Float32, core::Float64});
 
     auto tensor_cpu = tensor.To(core::Device()).Contiguous();
@@ -72,7 +72,7 @@ vtkSmartPointer<vtkCellArray> CreateVtkCellArrayFromTensor(
         const core::Tensor& tensor) {
     vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
 
-    core::AssertTensorShape(tensor, {utility::nullopt, utility::nullopt});
+    core::AssertTensorShape(tensor, {core::None, core::None});
     core::AssertTensorDtypes(tensor, {core::Int32, core::Int64});
 
     auto tensor_cpu = tensor.To(core::Device()).Contiguous();
@@ -119,7 +119,6 @@ core::Tensor CreateTensorFromVtkPoints(vtkPoints* points) {
             points->GetPoint(i, data);
             data += 3;
         }
-
     } else {
         utility::LogError(
                 "Unexpected data type for vtkPoints. Expected float or double "
