@@ -180,7 +180,8 @@ cpp_python_linking_uninstall_test() {
 
     # C++ linking with new project
     if [ "${BUILD_SYCL_MODULE}" == "OFF" ]; then
-        # TOOD: Fix SYCL/MKL linking when building new project
+        # TOOD: Fix SYCL/MKL linking when building new project.
+        # This does not work if BUILD_SYCL_MODULE==ON && BUILD_SHARED_LIBS==OFF.
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
             git clone https://github.com/isl-org/open3d-cmake-find-package.git \
         && cd open3d-cmake-find-package \
