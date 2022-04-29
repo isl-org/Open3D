@@ -36,7 +36,7 @@ def pytest_addoption(parser):
 
 def pytest_configure(config):
     config.addinivalue_line("markers",
-                            "skip_sycl_failed_tests: mark test as slow to run")
+                            "skip_sycl_failed_tests: Temporarily skipped test for SYCL")
 
 
 def pytest_collection_modifyitems(config, items):
