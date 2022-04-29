@@ -465,7 +465,7 @@ if __name__ == '__main__':
     parser.add('--default_dataset',
                help='Default dataset is used when config file is not provided. '
                'Default dataset may be selected from the following options: '
-               '[lounge, jack_jack]',
+               '[lounge, bedroom, jack_jack]',
                default='lounge')
     parser.add('--path_npz',
                help='path to the npz file that stores voxel block grid.',

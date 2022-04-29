@@ -134,7 +134,7 @@ def dataset_loader(dataset_name):
     config = {}
     if dataset_name == 'lounge':
         config = lounge_data_loader()
-    elif dataset_name == 'bedroom_loader':
+    elif dataset_name == 'bedroom':
         config = bedroom_data_loader()
     elif dataset_name == 'jack_jack':
         config = jackjack_data_loader()

@@ -73,7 +73,7 @@ def lounge_dataloader(config):
 
 def bedroom_dataloader(config):
     # Get the dataset.
-    bedroom_rgbd = o3d.data.LoungeRGBDImages()
+    bedroom_rgbd = o3d.data.BedroomRGBDImages()
     # Override default config parameters with dataset specific parameters.
     config.path_dataset = bedroom_rgbd.extract_dir
     config.path_trajectory = bedroom_rgbd.trajectory_log_path
