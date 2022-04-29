@@ -421,7 +421,7 @@ cpu-shared-ml-release_export_env() {
 sycl-shared_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-shared
 
-    # https://hub.docker.com/r/intel/oneapi
+    # https://hub.docker.com/r/intel/oneapi-basekit
     # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-18.04
     export BASE_IMAGE=intel/oneapi-basekit:2022.1.2-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
@@ -438,7 +438,7 @@ sycl-shared_export_env() {
 sycl-static_export_env() {
     export DOCKER_TAG=open3d-ci:sycl-static
 
-    # https://hub.docker.com/r/intel/oneapi
+    # https://hub.docker.com/r/intel/oneapi-basekit
     # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-18.04
     export BASE_IMAGE=intel/oneapi-basekit:2022.1.2-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
