@@ -71,6 +71,17 @@ def lounge_dataloader(config):
     return config
 
 
+def bedroom_dataloader(config):
+    # Get the dataset.
+    bedroom_rgbd = o3d.data.LoungeRGBDImages()
+    # Override default config parameters with dataset specific parameters.
+    config.path_dataset = bedroom_rgbd.extract_dir
+    config.path_trajectory = bedroom_rgbd.trajectory_log_path
+    config.depth_folder = "depth"
+    config.color_folder = "image"
+    return config
+
+
 def jack_jack_dataloader(config):
     # Get the dataset.
     jackjack_rgbd = o3d.data.JackJackL515Bag()
@@ -86,6 +97,8 @@ def get_default_dataset(config):
     print('Config file was not provided, falling back to default dataset.')
     if config.default_dataset == 'lounge':
         config = lounge_dataloader(config)
+    elif config.default_dataset == 'bedroom':
+        config = bedroom_dataloader(config)
     elif config.default_dataset == 'jack_jack':
         config = jack_jack_dataloader(config)
     else:

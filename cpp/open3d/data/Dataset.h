@@ -114,7 +114,7 @@ protected:
 class SingleDownloadDataset : public Dataset {
 public:
     SingleDownloadDataset(const std::string& prefix,
-                          const std::vector<std::string>& urls,
+                          const std::vector<std::string>& url_mirrors,
                           const std::string& md5,
                           const bool no_extract = false,
                           const std::string& data_root = "");
@@ -127,11 +127,12 @@ public:
 /// file downloading and extracting / copying.
 class MultiDownloadDataset : public Dataset {
 public:
-    MultiDownloadDataset(const std::string& prefix,
-                         const std::vector<std::vector<std::string>>& urls,
-                         const std::string& md5,
-                         const bool no_extract = false,
-                         const std::string& data_root = "");
+    MultiDownloadDataset(
+            const std::string& prefix,
+            const std::vector<std::vector<std::string>>& url_mirrors_list,
+            const std::vector<std::string>& md5_list,
+            const bool no_extract = false,
+            const std::string& data_root = "");
 
     virtual ~MultiDownloadDataset() {}
 };
@@ -906,8 +907,8 @@ private:
 };
 
 /// \class BedroomRGBDImages
-/// \brief Data class for `BedroomRGBDImages` contains a sample set of 3000 color
-/// and depth images from Redwood RGBD dataset. Additionally it also
+/// \brief Data class for `BedroomRGBDImages` contains a sample set of 29301
+/// color and depth images from Redwood RGBD dataset. Additionally it also
 /// contains camera trajectory log, and mesh reconstruction.
 class BedroomRGBDImages : public MultiDownloadDataset {
 public:

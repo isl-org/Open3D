@@ -51,7 +51,7 @@ if __name__ == "__main__":
     parser.add_argument("--default_dataset",
                         help="(optional) default dataset to be used, only if "
                         "config file is not provided. "
-                        "Options: lounge and jack_jack",
+                        "Options: [lounge, bedroom, jack_jack]",
                         type=str,
                         default="lounge")
     parser.add_argument("--make",

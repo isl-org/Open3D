@@ -50,6 +50,29 @@ def lounge_data_loader():
     return config
 
 
+def bedroom_data_loader():
+    print('Loading Redwood Bedroom RGB-D Dataset')
+
+    # Get the dataset.
+    bedroom_rgbd = o3d.data.BedroomRGBDImages()
+
+    # Set dataset specific parameters.
+    config = {}
+    config['path_dataset'] = bedroom_rgbd.extract_dir
+    config['path_intrinsic'] = ""
+    config['max_depth'] = 3.0
+    config['voxel_size'] = 0.05
+    config['max_depth_diff'] = 0.07
+    config['preference_loop_closure_odometry'] = 0.1
+    config['preference_loop_closure_registration'] = 5.0
+    config['tsdf_cubic_size'] = 3.0
+    config['icp_method'] = "color"
+    config['global_registration'] = "ransac"
+    config['python_multi_threading'] = True
+
+    return config
+
+
 def jackjack_data_loader():
     print('Loading RealSense L515 Jack-Jack RGB-D Bag Dataset')
 

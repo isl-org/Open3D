@@ -61,13 +61,13 @@ Dataset::Dataset(const std::string& prefix, const std::string& data_root)
 
 SingleDownloadDataset::SingleDownloadDataset(
         const std::string& prefix,
-        const std::vector<std::string>& urls,
+        const std::vector<std::string>& url_mirrors,
         const std::string& md5,
         const bool no_extract,
         const std::string& data_root)
     : Dataset(prefix, data_root) {
     const std::string filename =
-            utility::filesystem::GetFileNameWithoutDirectory(urls[0]);
+            utility::filesystem::GetFileNameWithoutDirectory(url_mirrors[0]);
 
     const bool is_extract_folder_present =
             utility::filesystem::DirectoryExists(Dataset::GetExtractDir());
@@ -75,8 +75,8 @@ SingleDownloadDataset::SingleDownloadDataset(
     if (!is_extract_folder_present) {
         // `download_dir` is relative path from `${data_root}`.
         const std::string download_dir = "download/" + GetPrefix();
-        const std::string download_file_path =
-                utility::DownloadFromURL(urls, md5, download_dir, data_root_);
+        const std::string download_file_path = utility::DownloadFromURL(
+                url_mirrors, md5, download_dir, data_root_);
 
         // Extract / Copy data.
         if (!no_extract) {
@@ -92,30 +92,32 @@ SingleDownloadDataset::SingleDownloadDataset(
 
 MultiDownloadDataset::MultiDownloadDataset(
         const std::string& prefix,
-        const std::vector<std::vector<std::string>>& urls,
+        const std::vector<std::vector<std::string>>& url_mirrors_list,
         const std::vector<std::string>& md5_list,
         const bool no_extract,
         const std::string& data_root)
     : Dataset(prefix, data_root) {
     std::vector<std::string> filenames;
-    for (auto& file_mirrors : urls) {
+    for (auto& file_mirrors : url_mirrors_list) {
         filenames.push_back(file_mirrors[0]);
     }
     const bool is_extract_folder_present =
             utility::filesystem::DirectoryExists(Dataset::GetExtractDir());
 
     if (!is_extract_folder_present) {
-        size_t number_of_files = urls.size();
+        size_t number_of_files = url_mirrors_list.size();
         if (md5_list.size() != number_of_files) {
-            utility::LogError("md5_list and urls must be of same length.");
+            utility::LogError(
+                    "md5_list and url_mirrors_list must be of same length.");
         }
 
         // `download_dir` is relative path from `${data_root}`.
         const std::string download_dir = "download/" + GetPrefix();
         std::vector<std::string> download_file_paths;
         for (size_t i = 0; i < number_of_files; ++i) {
-            download_file_paths.push_back(utility::DownloadFromURL(
-                    urls[i], md5_list[i], download_dir, data_root_));
+            download_file_paths.push_back(
+                    utility::DownloadFromURL(url_mirrors_list[i], md5_list[i],
+                                             download_dir, data_root_));
         }
 
         // Extract / Copy data.
@@ -773,6 +775,65 @@ LoungeRGBDImages::LoungeRGBDImages(const std::string& data_root)
 
     trajectory_log_path_ = extract_dir + "/lounge_trajectory.log";
     reconstruction_path_ = extract_dir + "/lounge.ply";
+}
+
+BedroomRGBDImages::BedroomRGBDImages(const std::string& data_root)
+    : MultiDownloadDataset(
+              "BedroomRGBDImages",
+              {{"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom01.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom02.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom03.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom04.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom05.zip"}},
+              {"c23b38da1ca2ad8d3c17fdf57fb06f16",
+               "94310ecaa3a22dc575f242b724fc9963",
+               "1bd5de356e450d255e02fd812c34b664",
+               "18c3d32151a7e6453adb7a59da9ec6bf",
+               "54b927edb6fd61838025bc66ed767408"},
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+
+    color_paths_.reserve(21931);
+    depth_paths_.reserve(21931);
+    for (int i = 1; i < 10; ++i) {
+        color_paths_.push_back(extract_dir + "/bedroom/image/00000" +
+                               std::to_string(i) + ".jpg");
+        depth_paths_.push_back(extract_dir + "/bedroom/depth/00000" +
+                               std::to_string(i) + ".png");
+    }
+    for (int i = 10; i < 100; ++i) {
+        color_paths_.push_back(extract_dir + "/bedroom/image/0000" +
+                               std::to_string(i) + ".jpg");
+        depth_paths_.push_back(extract_dir + "/bedroom/depth/0000" +
+                               std::to_string(i) + ".png");
+    }
+    for (int i = 100; i < 1000; ++i) {
+        color_paths_.push_back(extract_dir + "/bedroom/image/000" +
+                               std::to_string(i) + ".jpg");
+        depth_paths_.push_back(extract_dir + "/bedroom/depth/000" +
+                               std::to_string(i) + ".png");
+    }
+    for (int i = 1000; i < 10000; ++i) {
+        color_paths_.push_back(extract_dir + "/bedroom/image/00" +
+                               std::to_string(i) + ".jpg");
+        depth_paths_.push_back(extract_dir + "/bedroom/depth/00" +
+                               std::to_string(i) + ".png");
+    }
+    for (int i = 10000; i <= 21930; ++i) {
+        color_paths_.push_back(extract_dir + "/bedroom/image/0" +
+                               std::to_string(i) + ".jpg");
+        depth_paths_.push_back(extract_dir + "/bedroom/depth/0" +
+                               std::to_string(i) + ".png");
+    }
+
+    trajectory_log_path_ = extract_dir + "/bedroom.log";
+    reconstruction_path_ = extract_dir + "/bedroom.ply";
 }
 
 JackJackL515Bag::JackJackL515Bag(const std::string& data_root)
