@@ -31,7 +31,7 @@ SHELL ["/bin/bash", "-c"]
 # https://code.visualstudio.com/remote/advancedcontainers/reduce-docker-warnings#:~:text=Warning%3A%20apt%2Dkey%20output%20should,not%20running%20from%20a%20terminal.
 RUN export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn \
  && apt-key del 7fa2af80 \
- && apt-key adv --fetch-keys http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub \
+ && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub \
  && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
 
 # Dependencies: basic
