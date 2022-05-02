@@ -1339,6 +1339,10 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_onedpl)
 
     # oneMKL
+    # TODO:
+    # - Option 1: link MKL statically
+    # - Option 2: link MKL dynamically, but link dpes as interface. The goal is
+    #             to avoid LD_PRELOAD.
     set(MKL_THREADING tbb_thread)
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/mkl/latest/lib/cmake/mkl)
     open3d_find_package_3rdparty_library(3rdparty_mkl
