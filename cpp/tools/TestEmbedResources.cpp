@@ -24,13 +24,20 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <experimental/filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
 
 #include "open3d/Open3D.h"
 
+#ifdef WIN32
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#endif
+#ifdef __APPLE__
+// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
+#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
+#endif
+#include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 
 int main(int argc, char* argv[]) {

@@ -1,0 +1,182 @@
+name: Ubuntu CUDA
+
+on:
+  workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release packages.'
+        required: false
+        default: 'ON'
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
+  GCE_CLI_GHA_VERSION: "302.0.0"
+  DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+
+jobs:
+  skip-check:
+    runs-on: ubuntu-18.04
+    name: Skip job for forks
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Skip check
+        id: check
+        run: |
+          if [ "${GITHUB_REPOSITORY}" == "isl-org/Open3D" ] && [ -n "${GCE_GPU_CI_SA}" ] ; then
+            echo "Secrets available: performing GCE test"
+            echo "::set-output name=skip::no"
+          else
+            echo "Secrets not available: skipping GCE test"
+            echo "::set-output name=skip::yes"
+          fi
+
+  build-and-run-docker:
+    name: Build and run
+    runs-on: ubuntu-18.04
+    needs: [skip-check]
+    if: needs.skip-check.outputs.skip == 'no'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - CI_CONFIG: 2-bionic
+          - CI_CONFIG: 3-ml-shared-bionic
+          - CI_CONFIG: 4-shared-bionic
+          - CI_CONFIG: 5-ml-focal
+    env:
+      # Export everything from matrix to be easily used.
+      # Docker tag and ccache names must be consistent with docker_build.sh
+      CI_CONFIG          : ${{ matrix.CI_CONFIG }}
+      BUILD_PACKAGE      : ${{ contains(fromJson('["3-ml-shared-bionic", "4-shared-bionic"]'), matrix.CI_CONFIG) }}
+      GCE_INSTANCE_PREFIX: open3d-ci-${{ matrix.CI_CONFIG }}
+      DOCKER_TAG         : open3d-ci:${{ matrix.CI_CONFIG }}
+      CCACHE_TAR_NAME    : open3d-ci-${{ matrix.CI_CONFIG }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: 'false'
+      - name: Package code
+        run: |
+          # GITHUB_WORKSPACE: /home/runner/work/Open3D/Open3D
+          cd "${GITHUB_WORKSPACE}/.."
+          tar -czvf Open3D.tar.gz Open3D
+          ls -alh
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@v0.2.1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+      - name: VM create
+        run: |
+          INSTANCE_NAME="${GCE_INSTANCE_PREFIX}-${GITHUB_SHA::8}"
+          INSTANCE_ZONES=(us-west1-a
+                          us-west1-b
+                          us-central1-a
+                          us-central1-b
+                          us-central1-f
+                          us-east1-c
+                          us-east1-d
+                          us-east4-b
+                          southamerica-east1-c
+                          europe-west2-b
+                          europe-west3-b
+                          europe-west4-b
+                          europe-west4-c
+                          europe-west2-a
+                          asia-southeast1-b
+                          asia-southeast1-c
+                          australia-southeast1-a)
+          # GCE only supports GPU on n1-standard (2020/07)
+          ZONE_ID=0
+          until ((ZONE_ID >= ${#INSTANCE_ZONES[@]})) ||
+            gcloud compute instances create "$INSTANCE_NAME" \
+              --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
+              --accelerator="count=2,type=nvidia-tesla-t4" \
+              --maintenance-policy="TERMINATE" \
+              --machine-type=n1-standard-8 \
+              --boot-disk-size="128GB" \
+              --boot-disk-type="pd-ssd" \
+              --image-family="ubuntu-os-docker-gpu-2004-lts" \
+              --metadata-from-file=startup-script=./util/gcloud_auto_clean.sh \
+              --scopes="storage-full,compute-rw" \
+              --service-account="$GCE_GPU_CI_SA"; do
+              ((ZONE_ID = ZONE_ID + 1))
+          done
+          sleep 30
+          echo "GCE_ZONE=${INSTANCE_ZONES[$ZONE_ID]}" >> "${GITHUB_ENV}"
+          echo "INSTANCE_NAME=${INSTANCE_NAME}" >> "${GITHUB_ENV}"
+          exit $((ZONE_ID >= ${#INSTANCE_ZONES[@]})) # 0 => success
+      - name: VM copy code
+        run: |
+          gcloud compute scp \
+            "${GITHUB_WORKSPACE}/../Open3D.tar.gz" "${INSTANCE_NAME}":~ \
+            --zone "${GCE_ZONE}"
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone "${GCE_ZONE}" \
+            --command "ls -alh \
+                    && tar -xvzf Open3D.tar.gz \
+                    && ls -alh \
+                    && ls -alh Open3D \
+                    && nvidia-smi"
+      - name: VM build docker
+        run: |
+          if [ "${BUILD_PACKAGE}" == "true" ] && [ "$DEVELOPER_BUILD" == "OFF" ]; then
+            export RELEASE_TAG="-release"
+          fi
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="sudo Open3D/docker/docker_build.sh ${CI_CONFIG}${RELEASE_TAG:-}"
+          if [ "${BUILD_PACKAGE}" == 'true' ]; then
+            gcloud compute scp --zone="${GCE_ZONE}" \
+              "${INSTANCE_NAME}":open3d-devel-linux*.tar.xz "$PWD"
+          fi
+
+      - name: Upload package
+        if: ${{ env.BUILD_PACKAGE == 'true' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d-devel-linux-x86_64-cuda
+          path: open3d-devel-linux*.tar.xz
+          if-no-files-found: error
+
+      - name: Upload package to GCS bucket
+        if: ${{ github.ref == 'refs/heads/master' && env.BUILD_PACKAGE == 'true' }}
+        run: |
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="ls -alh \
+                       && gsutil cp open3d-devel-linux-*.tar.xz \
+                       gs://open3d-releases-master/devel/"
+
+      - name: VM run docker
+        run: |
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="sudo Open3D/docker/docker_test.sh ${CI_CONFIG}"
+
+      - name: VM ccache upload
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="ls -alh \
+                    && gsutil cp ${CCACHE_TAR_NAME}.tar.gz gs://open3d-ci-cache/"
+
+      - name: VM delete
+        if: always()
+        run: |
+          gcloud compute instances delete "${INSTANCE_NAME}" --zone "${GCE_ZONE}"
+          ls -alh "${HOME}/.ssh"
+          gcloud compute os-login ssh-keys remove --key-file "${HOME}/.ssh/google_compute_engine.pub"
