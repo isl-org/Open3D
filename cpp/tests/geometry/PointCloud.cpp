@@ -1294,7 +1294,8 @@ TEST(PointCloud, SegmentPlaneSpecialCase) {
 
 TEST(PointCloud, DetectPlanarPatches) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(utility::GetDataPathCommon("fragment.pcd"), pcd);
+    data::PCDPointCloud pointcloud_pcd;
+    io::ReadPointCloud(pointcloud_pcd.GetPath(), pcd);
     EXPECT_EQ(pcd.points_.size(), 113662);
 
     static constexpr int nrNeighbors = 75;
