@@ -178,10 +178,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreatePlanarPatch(
 
     const Eigen::Vector3d n = normal.normalized();
 
-    mesh->vertices_[4] = center + depth*n - basis_x - basis_y;
-    mesh->vertices_[5] = center + depth*n - basis_x + basis_y;
-    mesh->vertices_[6] = center + depth*n + basis_x - basis_y;
-    mesh->vertices_[7] = center + depth*n + basis_x + basis_y;
+    mesh->vertices_[4] = center + depth * n - basis_x - basis_y;
+    mesh->vertices_[5] = center + depth * n - basis_x + basis_y;
+    mesh->vertices_[6] = center + depth * n + basis_x - basis_y;
+    mesh->vertices_[7] = center + depth * n + basis_x + basis_y;
 
     // Triangles.
     mesh->triangles_ = {{4, 7, 5}, {4, 6, 7}, {0, 2, 4}, {2, 6, 4},
@@ -190,15 +190,15 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreatePlanarPatch(
 
     // UV Map.
     if (create_uv_map) {
-        mesh->triangle_uvs_ = {
-                    {0.0, 0.0}, {1.0, 1.0}, {1.0, 0.0}, {0.0, 0.0}, {0.0, 1.0},
-                    {1.0, 1.0}, {0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {0.0, 1.0},
-                    {1.0, 1.0}, {1.0, 0.0}, {0.0, 0.0}, {1.0, 0.0}, {0.0, 1.0},
-                    {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}, {0.0, 0.0}, {1.0, 0.0},
-                    {1.0, 1.0}, {0.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}, {0.0, 0.0},
-                    {1.0, 0.0}, {1.0, 1.0}, {0.0, 0.0}, {1.0, 1.0}, {0.0, 1.0},
-                    {0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 0.0}, {0.0, 1.0},
-                    {1.0, 1.0}};
+        mesh->triangle_uvs_ = {{0.0, 0.0}, {1.0, 1.0}, {1.0, 0.0}, {0.0, 0.0},
+                               {0.0, 1.0}, {1.0, 1.0}, {0.0, 0.0}, {0.0, 1.0},
+                               {1.0, 0.0}, {0.0, 1.0}, {1.0, 1.0}, {1.0, 0.0},
+                               {0.0, 0.0}, {1.0, 0.0}, {0.0, 1.0}, {1.0, 0.0},
+                               {1.0, 1.0}, {0.0, 1.0}, {0.0, 0.0}, {1.0, 0.0},
+                               {1.0, 1.0}, {0.0, 0.0}, {1.0, 1.0}, {0.0, 1.0},
+                               {0.0, 0.0}, {1.0, 0.0}, {1.0, 1.0}, {0.0, 0.0},
+                               {1.0, 1.0}, {0.0, 1.0}, {0.0, 0.0}, {0.0, 1.0},
+                               {1.0, 0.0}, {1.0, 0.0}, {0.0, 1.0}, {1.0, 1.0}};
     }
 
     return mesh;
@@ -813,7 +813,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateArrow(
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateCoordinateFrame(
         double size /* = 1.0*/,
-        const Eigen::Vector3d &origin /* = Eigen::Vector3d(0.0, 0.0, 0.0)*/) {
+        const Eigen::Vector3d& origin /* = Eigen::Vector3d(0.0, 0.0, 0.0)*/) {
     if (size <= 0) {
         utility::LogError("size <= 0");
     }

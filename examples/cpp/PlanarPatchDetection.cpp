@@ -75,9 +75,9 @@ int main(int argc, char **argv) {
 
     t1 = std::chrono::high_resolution_clock::now();
     const std::vector<Eigen::Matrix<double, 12, 1>> patches =
-            cloud_ptr->DetectPlanarPatches(
-                normal_similarity, coplanarity, outlier_ratio,
-                min_plane_edge_length, min_num_points, search_param);
+            cloud_ptr->DetectPlanarPatches(normal_similarity, coplanarity,
+                                           outlier_ratio, min_plane_edge_length,
+                                           min_num_points, search_param);
     std::cout << "DetectPlanarPatches: " << patches.size() << " in "
               << std::chrono::duration_cast<std::chrono::duration<double>>(
                          std::chrono::high_resolution_clock::now() - t1)
@@ -98,7 +98,7 @@ int main(int argc, char **argv) {
     std::vector<std::shared_ptr<const geometry::Geometry>> geometries;
     geometries.reserve(patches.size());
     for (size_t i = 0; i < patches.size(); ++i) {
-        const auto& patch = patches[i];
+        const auto &patch = patches[i];
 
         const Eigen::Vector3d normal = patch.head<3>().normalized();
         // const double d = patch.head<3>().norm();
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
         const Eigen::Vector3d basis_y = patch.segment<3>(9);
 
         auto mesh = geometry::TriangleMesh::CreatePlanarPatch(
-            center, basis_x, basis_y, normal, true);
+                center, basis_x, basis_y, normal, true);
         mesh->PaintUniformColor(colors[i % NUM_COLORS]);
         geometries.push_back(mesh);
     }

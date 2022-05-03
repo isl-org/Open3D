@@ -48,22 +48,21 @@ namespace {
 /// \class PlanarPatch
 ///
 /// \brief Patch parameters
-class PlanarPatch
-{
+class PlanarPatch {
 public:
     using Parameters = Eigen::Matrix<double, 12, 1>;
 
     PlanarPatch() = default;
     ~PlanarPatch() = default;
-    
+
     double GetSignedDistanceToPoint(const Eigen::Vector3d& point) const {
         return normal_.dot(point) + dist_from_origin_;
     }
 
     Parameters GetParameters() const {
-      Parameters patch;
-      patch << (dist_from_origin_ * normal_), center_, basis_x_, basis_y_;
-      return patch;
+        Parameters patch;
+        patch << (dist_from_origin_ * normal_), center_, basis_x_, basis_y_;
+        return patch;
     }
 
     Eigen::Vector3d center_ = Eigen::Vector3d::Zero();
@@ -956,9 +955,8 @@ bool Update(std::vector<PlaneDetectorPtr>& planes) {
 }
 
 /// \brief Finds the bounds of each plane and forms planar patches.
-void ExtractPatchesFromPlanes(
-        const std::vector<PlaneDetectorPtr>& planes,
-        std::vector<PlanarPatch::Parameters>& patches) {
+void ExtractPatchesFromPlanes(const std::vector<PlaneDetectorPtr>& planes,
+                              std::vector<PlanarPatch::Parameters>& patches) {
     for (size_t i = 0; i < planes.size(); i++) {
         if (!planes[i]->IsFalsePositive()) {
             // create a patch by delimiting the plane using its perimeter points

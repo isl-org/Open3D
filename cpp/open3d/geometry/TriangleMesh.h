@@ -616,10 +616,10 @@ public:
     /// \param depth thickness mesh along the normal
     /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreatePlanarPatch(
-            const Eigen::Vector3d& center,
-            const Eigen::Vector3d& basis_x,
-            const Eigen::Vector3d& basis_y,
-            const Eigen::Vector3d& normal,
+            const Eigen::Vector3d &center,
+            const Eigen::Vector3d &basis_x,
+            const Eigen::Vector3d &basis_y,
+            const Eigen::Vector3d &normal,
             double depth = 0.001,
             bool create_uv_map = false);
 
