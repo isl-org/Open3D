@@ -704,27 +704,6 @@ private:
         normal_depth.point_size = materials.point_size;
     }
 
-    void OnNewIBL(Window &window, const char *name) {
-        std::string path = gui::Application::GetInstance().GetResourcePath();
-        path += std::string("/") + name + "_ibl.ktx";
-        if (!SetIBL(window.GetRenderer(), path)) {
-            // must be the "Custom..." option
-            auto dlg = std::make_shared<gui::FileDialog>(
-                    gui::FileDialog::Mode::OPEN, "Open HDR Map",
-                    window.GetTheme());
-            dlg->AddFilter(".ktx", "Khronos Texture (.ktx)");
-            dlg->SetOnCancel([&window]() { window.CloseDialog(); });
-            dlg->SetOnDone([this, &window](const char *path) {
-                window.CloseDialog();
-                SetIBL(window.GetRenderer(), path);
-                // We need to set the "custom" bit, so just call the current
-                // profile a custom profile.
-                settings_.model_.SetCustomLighting(
-                        settings_.model_.GetLighting());
-            });
-            window.ShowDialog(dlg);
-        }
-    }
 };
 
 GuiVisualizer::GuiVisualizer(const std::string &title, int width, int height)
