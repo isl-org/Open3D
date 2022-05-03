@@ -84,12 +84,33 @@ int main(int argc, char **argv) {
                          .count()
               << " seconds" << std::endl;
 
+    // Colors (default MATLAB colors)
+    static constexpr int NUM_COLORS = 6;
+    static std::array<Eigen::Vector3d, NUM_COLORS> colors = {
+            Eigen::Vector3d(0.8500, 0.3250, 0.0980),
+            Eigen::Vector3d(0.9290, 0.6940, 0.1250),
+            Eigen::Vector3d(0.4940, 0.1840, 0.5560),
+            Eigen::Vector3d(0.4660, 0.6740, 0.1880),
+            Eigen::Vector3d(0.3010, 0.7450, 0.9330),
+            Eigen::Vector3d(0.6350, 0.0780, 0.1840)};
+
     // for const-correctness
     std::vector<std::shared_ptr<const geometry::Geometry>> geometries;
-    // geometries.reserve(patches.size());
-    // for (const auto &patch : patches) {
-    //     geometries.push_back(patch);
-    // }
+    geometries.reserve(patches.size());
+    for (size_t i = 0; i < patches.size(); ++i) {
+        const auto& patch = patches[i];
+
+        const Eigen::Vector3d normal = patch.head<3>().normalized();
+        // const double d = patch.head<3>().norm();
+        const Eigen::Vector3d center = patch.segment<3>(3);
+        const Eigen::Vector3d basis_x = patch.segment<3>(6);
+        const Eigen::Vector3d basis_y = patch.segment<3>(9);
+
+        auto mesh = geometry::TriangleMesh::CreatePlanarPatch(
+            center, basis_x, basis_y, normal, true);
+        mesh->PaintUniformColor(colors[i % NUM_COLORS]);
+        geometries.push_back(mesh);
+    }
 
     // visualize point cloud, too
     geometries.push_back(cloud_ptr);
