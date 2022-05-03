@@ -30,7 +30,6 @@
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/Image.h"
-#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "pybind/docstring.h"
 #include "pybind/geometry/geometry.h"
@@ -212,8 +211,17 @@ Returns:
                  "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a,
                  "probability"_a = 0.99999999, "seed"_a = py::none())
             .def("detect_planar_patches", &PointCloud::DetectPlanarPatches,
-                 "Detects planar patches in the point cloud using a robust "
-                 "statistics-based approach.",
+                 R"doc(
+Detects planar patches in the point cloud using a robust statistics-based approach.
+
+Returns:
+     A list of detected planar patches. Each planar patch consists of four
+     3-vectors (12 parameters total) ordered as
+     (d * normal, center, basis_x, basis_y), where d * normal is the compact
+     representation of ax + by + cz + d = 0, center is the center position
+     of the planar patch, basis_x and basis_y are the scaled basis vectors
+     of the planar patch, i.e., their magnitudes determine the patch extent.
+)doc",
                  "normal_similarity"_a = 0.5, "coplanarity"_a = 0.25,
                  "outlier_ratio"_a = 0.75, "min_plane_edge_length"_a = 0.0,
                  "min_num_points"_a = 0,

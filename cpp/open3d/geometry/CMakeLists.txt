@@ -15,7 +15,6 @@ target_sources(geometry PRIVATE
     LineSetFactory.cpp
     MeshBase.cpp
     Octree.cpp
-    PlanarPatch.cpp
     PointCloud.cpp
     PointCloudCluster.cpp
     PointCloudFactory.cpp

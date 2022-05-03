@@ -28,7 +28,6 @@
 #include <iostream>
 
 #include "open3d/Open3D.h"
-#include "open3d/geometry/Qhull.h"
 
 int main(int argc, char **argv) {
     using namespace open3d;
@@ -75,9 +74,10 @@ int main(int argc, char **argv) {
     constexpr size_t min_num_points = 30;
 
     t1 = std::chrono::high_resolution_clock::now();
-    const auto patches = cloud_ptr->DetectPlanarPatches(
-            normal_similarity, coplanarity, outlier_ratio,
-            min_plane_edge_length, min_num_points, search_param);
+    const std::vector<Eigen::Matrix<double, 12, 1>> patches =
+            cloud_ptr->DetectPlanarPatches(
+                normal_similarity, coplanarity, outlier_ratio,
+                min_plane_edge_length, min_num_points, search_param);
     std::cout << "DetectPlanarPatches: " << patches.size() << " in "
               << std::chrono::duration_cast<std::chrono::duration<double>>(
                          std::chrono::high_resolution_clock::now() - t1)
@@ -86,10 +86,10 @@ int main(int argc, char **argv) {
 
     // for const-correctness
     std::vector<std::shared_ptr<const geometry::Geometry>> geometries;
-    geometries.reserve(patches.size());
-    for (const auto &patch : patches) {
-        geometries.push_back(patch);
-    }
+    // geometries.reserve(patches.size());
+    // for (const auto &patch : patches) {
+    //     geometries.push_back(patch);
+    // }
 
     // visualize point cloud, too
     geometries.push_back(cloud_ptr);

@@ -47,7 +47,6 @@ class Image;
 class RGBDImage;
 class TriangleMesh;
 class VoxelGrid;
-class PlanarPatch;
 
 /// \class PointCloud
 ///
@@ -388,8 +387,13 @@ public:
     /// \param search_param Point neighbors are used to grow and merge detected
     /// planes. Neighbors are found with KDTree search using these params. More
     /// neighbors results in higher quality patches at the cost of compute.
-    /// \return Returns a list of detected PlanarPatch objects.
-    std::vector<std::shared_ptr<PlanarPatch>> DetectPlanarPatches(
+    /// \return Returns a list of detected planar patches. Each planar patch
+    /// consists of four 3-vectors (12 parameters total) ordered as
+    /// (d * normal, center, basis_x, basis_y), where d * normal is the compact
+    /// representation of ax + by + cz + d = 0, center is the center position
+    /// of the planar patch, basis_x and basis_y are the scaled basis vectors
+    /// of the planar patch, i.e., their magnitudes determine the patch extent.
+    std::vector<Eigen::Matrix<double, 12, 1>> DetectPlanarPatches(
             double normal_similarity = 0.5,
             double coplanarity = 0.25,
             double outlier_ratio = 0.75,

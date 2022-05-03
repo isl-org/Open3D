@@ -32,7 +32,6 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
-#include "open3d/geometry/PlanarPatch.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/ImageIO.h"
@@ -1310,16 +1309,18 @@ TEST(PointCloud, DetectPlanarPatches) {
     constexpr double min_plane_edge_length = 0.0;
     constexpr size_t min_num_points = 30;
 
-    const auto patches = pcd.DetectPlanarPatches(
+    std::vector<Eigen::Matrix<double, 12, 1>> patches;
+    patches = pcd.DetectPlanarPatches(
             normal_similarity, coplanarity, outlier_ratio,
             min_plane_edge_length, min_num_points, search_param);
 
     EXPECT_EQ(patches.size(), 17);
 
-    const auto& patch = patches[15];
-    Eigen::Vector4d plane_model;
-    plane_model << patch->normal_.x(), patch->normal_.y(), patch->normal_.z(),
-            patch->dist_from_origin_;
+    // extract a specific planar patch
+    const Eigen::Matrix<double, 12, 1>& patch = patches[15];
+    const Eigen::Vector3d n = patch.head<3>().normalized();
+    const double d = patch.head<3>().norm();
+    Eigen::Vector4d plane_model = Eigen::Vector4d(n.x(), n.y(), n.z(), d);
 
     // TODO: seed the ransac
     ExpectEQ(plane_model, Eigen::Vector4d(0.06, 0.10, -0.99, 1.06), 0.1);
