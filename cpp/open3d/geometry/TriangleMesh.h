@@ -620,7 +620,7 @@ public:
             const Eigen::Vector3d& basis_x,
             const Eigen::Vector3d& basis_y,
             const Eigen::Vector3d& normal,
-            double depth = 0.01,
+            double depth = 0.001,
             bool create_uv_map = false);
 
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
