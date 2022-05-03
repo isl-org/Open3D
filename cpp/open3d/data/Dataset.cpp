@@ -744,33 +744,15 @@ LoungeRGBDImages::LoungeRGBDImages(const std::string& data_root)
               "cdd307caef898519a8829ce1b6ab9f75",
               /*no_extract =*/false,
               data_root) {
-    const std::string extract_dir = Dataset::GetExtractDir();
-
     color_paths_.reserve(3000);
     depth_paths_.reserve(3000);
-    for (int i = 1; i < 10; ++i) {
-        color_paths_.push_back(extract_dir + "/color/00000" +
-                               std::to_string(i) + ".png");
-        depth_paths_.push_back(extract_dir + "/depth/00000" +
-                               std::to_string(i) + ".png");
-    }
-    for (int i = 10; i < 100; ++i) {
-        color_paths_.push_back(extract_dir + "/color/0000" + std::to_string(i) +
-                               ".png");
-        depth_paths_.push_back(extract_dir + "/depth/0000" + std::to_string(i) +
-                               ".png");
-    }
-    for (int i = 100; i < 1000; ++i) {
-        color_paths_.push_back(extract_dir + "/color/000" + std::to_string(i) +
-                               ".png");
-        depth_paths_.push_back(extract_dir + "/depth/000" + std::to_string(i) +
-                               ".png");
-    }
-    for (int i = 1000; i <= 3000; ++i) {
-        color_paths_.push_back(extract_dir + "/color/00" + std::to_string(i) +
-                               ".png");
-        depth_paths_.push_back(extract_dir + "/depth/00" + std::to_string(i) +
-                               ".png");
+    const std::string extract_dir = Dataset::GetExtractDir();
+    const size_t n_zero = 6;
+    for (int i = 1; i < 3000; ++i) {
+        std::string idx = std::to_string(i);
+        idx = std::string(n_zero - std::min(n_zero, idx.length()), '0') + idx;
+        color_paths_.push_back(extract_dir + "/color/" + idx + ".png");
+        depth_paths_.push_back(extract_dir + "/depth/" + idx + ".png");
     }
 
     trajectory_log_path_ = extract_dir + "/lounge_trajectory.log";
@@ -797,39 +779,15 @@ BedroomRGBDImages::BedroomRGBDImages(const std::string& data_root)
                "54b927edb6fd61838025bc66ed767408"},
               /*no_extract =*/false,
               data_root) {
-    const std::string extract_dir = Dataset::GetExtractDir();
-
     color_paths_.reserve(21931);
     depth_paths_.reserve(21931);
-    for (int i = 1; i < 10; ++i) {
-        color_paths_.push_back(extract_dir + "/image/00000" +
-                               std::to_string(i) + ".jpg");
-        depth_paths_.push_back(extract_dir + "/depth/00000" +
-                               std::to_string(i) + ".png");
-    }
-    for (int i = 10; i < 100; ++i) {
-        color_paths_.push_back(extract_dir + "/image/0000" + std::to_string(i) +
-                               ".jpg");
-        depth_paths_.push_back(extract_dir + "/depth/0000" + std::to_string(i) +
-                               ".png");
-    }
-    for (int i = 100; i < 1000; ++i) {
-        color_paths_.push_back(extract_dir + "/image/000" + std::to_string(i) +
-                               ".jpg");
-        depth_paths_.push_back(extract_dir + "/depth/000" + std::to_string(i) +
-                               ".png");
-    }
-    for (int i = 1000; i < 10000; ++i) {
-        color_paths_.push_back(extract_dir + "/image/00" + std::to_string(i) +
-                               ".jpg");
-        depth_paths_.push_back(extract_dir + "/depth/00" + std::to_string(i) +
-                               ".png");
-    }
-    for (int i = 10000; i <= 21930; ++i) {
-        color_paths_.push_back(extract_dir + "/image/0" + std::to_string(i) +
-                               ".jpg");
-        depth_paths_.push_back(extract_dir + "/depth/0" + std::to_string(i) +
-                               ".png");
+    const std::string extract_dir = Dataset::GetExtractDir();
+    const size_t n_zero = 6;
+    for (int i = 1; i < 21931; ++i) {
+        std::string idx = std::to_string(i);
+        idx = std::string(n_zero - std::min(n_zero, idx.length()), '0') + idx;
+        color_paths_.push_back(extract_dir + "/image/" + idx + ".jpg");
+        depth_paths_.push_back(extract_dir + "/depth/" + idx + ".png");
     }
 
     trajectory_log_path_ = extract_dir + "/bedroom.log";

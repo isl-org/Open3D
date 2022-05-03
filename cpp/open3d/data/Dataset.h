@@ -922,7 +922,7 @@ public:
     /// \brief Returns path to camera trajectory log file
     /// `lounge_trajectory.log`.
     std::string GetTrajectoryLogPath() const { return trajectory_log_path_; };
-    /// \brief Returns path to mesh reconstruction `lounge.ply`.
+    /// \brief Returns path to mesh reconstruction `bedroom.ply`.
     std::string GetReconstructionPath() const { return reconstruction_path_; };
 
 private:
@@ -931,15 +931,15 @@ private:
     /// List of paths to depth image samples of size 3000.
     std::vector<std::string> depth_paths_;
 
-    /// Path to camera trajectory log file `lounge_trajectory.log`.
+    /// Path to camera trajectory log file `bedroom.log`.
     std::string trajectory_log_path_;
     /// Path to mesh reconstruction.
     std::string reconstruction_path_;
 };
 
 /// \class JackJackL515Bag
-/// \brief Data class for `JackJackL515Bag` contains the `JackJackL515Bag.bag`
-/// file.
+/// \brief Data class for `JackJackL515Bag` contains the RealSense L515
+/// `JackJackL515Bag.bag` file.
 class JackJackL515Bag : public SingleDownloadDataset {
 public:
     JackJackL515Bag(const std::string& data_root = "");
