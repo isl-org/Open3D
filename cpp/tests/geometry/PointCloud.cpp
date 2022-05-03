@@ -1310,9 +1310,9 @@ TEST(PointCloud, DetectPlanarPatches) {
     constexpr size_t min_num_points = 30;
 
     std::vector<Eigen::Matrix<double, 12, 1>> patches;
-    patches = pcd.DetectPlanarPatches(
-            normal_similarity, coplanarity, outlier_ratio,
-            min_plane_edge_length, min_num_points, search_param);
+    patches = pcd.DetectPlanarPatches(normal_similarity, coplanarity,
+                                      outlier_ratio, min_plane_edge_length,
+                                      min_num_points, search_param);
 
     EXPECT_EQ(patches.size(), 17);
 
