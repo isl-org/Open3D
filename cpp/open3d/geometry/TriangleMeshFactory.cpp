@@ -157,6 +157,53 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateIcosahedron(
     return mesh;
 }
 
+std::shared_ptr<TriangleMesh> TriangleMesh::CreatePlanarPatch(
+        const Eigen::Vector3d& center,
+        const Eigen::Vector3d& basis_x,
+        const Eigen::Vector3d& basis_y,
+        const Eigen::Vector3d& normal,
+        double depth /* = 0.01*/,
+        bool create_uv_map /* = false*/) {
+    auto mesh = std::make_shared<TriangleMesh>();
+    if (depth <= 0) {
+        utility::LogError("depth <= 0");
+    }
+
+    // Vertices.
+    mesh->vertices_.resize(8);
+    mesh->vertices_[0] = center - basis_x - basis_y;
+    mesh->vertices_[1] = center - basis_x + basis_y;
+    mesh->vertices_[2] = center + basis_x - basis_y;
+    mesh->vertices_[3] = center + basis_x + basis_y;
+
+    const Eigen::Vector3d n = normal.normalized();
+
+    mesh->vertices_[4] = center + depth*n - basis_x - basis_y;
+    mesh->vertices_[5] = center + depth*n - basis_x + basis_y;
+    mesh->vertices_[6] = center + depth*n + basis_x - basis_y;
+    mesh->vertices_[7] = center + depth*n + basis_x + basis_y;
+
+    // Triangles.
+    mesh->triangles_ = {{4, 7, 5}, {4, 6, 7}, {0, 2, 4}, {2, 6, 4},
+                        {0, 1, 2}, {1, 3, 2}, {1, 5, 7}, {1, 7, 3},
+                        {2, 3, 7}, {2, 7, 6}, {0, 4, 1}, {1, 4, 5}};
+
+    // UV Map.
+    if (create_uv_map) {
+        mesh->triangle_uvs_ = {
+                    {0.0, 0.0}, {1.0, 1.0}, {1.0, 0.0}, {0.0, 0.0}, {0.0, 1.0},
+                    {1.0, 1.0}, {0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {0.0, 1.0},
+                    {1.0, 1.0}, {1.0, 0.0}, {0.0, 0.0}, {1.0, 0.0}, {0.0, 1.0},
+                    {1.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}, {0.0, 0.0}, {1.0, 0.0},
+                    {1.0, 1.0}, {0.0, 0.0}, {1.0, 1.0}, {0.0, 1.0}, {0.0, 0.0},
+                    {1.0, 0.0}, {1.0, 1.0}, {0.0, 0.0}, {1.0, 1.0}, {0.0, 1.0},
+                    {0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 0.0}, {0.0, 1.0},
+                    {1.0, 1.0}};
+    }
+
+    return mesh;
+}
+
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateBox(
         double width /* = 1.0*/,
         double height /* = 1.0*/,
