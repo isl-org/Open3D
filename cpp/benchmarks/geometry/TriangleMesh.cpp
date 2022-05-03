@@ -36,7 +36,7 @@ namespace pipelines {
 namespace registration {
 
 // This pcd does not contains non-finite points.
-// TODO: Change this to pcd with non-finite poins.
+// TODO: Change this to pcd with non-finite points.
 static void BenchmarkCreateFromPointCloudBallPivoting(
         benchmark::State& state, const bool remove_non_finite_points) {
     data::PCDPointCloud sample_pcd;

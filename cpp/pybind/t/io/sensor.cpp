@@ -252,7 +252,7 @@ void pybind_sensor(py::module &m) {
             .def_readwrite("name", &RealSenseValidConfigs::name, "Device name.")
             .def_readwrite("valid_configs",
                            &RealSenseValidConfigs::valid_configs,
-                           "Mapping between configuraiton option name and a "
+                           "Mapping between configuration option name and a "
                            "list of valid values.");
 
     // Class RealSenseSensor

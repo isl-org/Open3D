@@ -285,7 +285,7 @@ def interpolate(xyz, xyz_size, interpolation):
     interpolation: One of LINEAR, LINEAR_BORDER, NEAREST_NEIGHBOR.
             LINEAR is trilinear interpolation with coordinate clamping.
             LINEAR_BORDER uses a zero border if outside the range.
-            NEAREST_NEIGHBOR uses the neares neighbor instead of interpolation.
+            NEAREST_NEIGHBOR uses the nearest neighbor instead of interpolation.
 
     Returns a tuple with the interpolation weights and the indices
     """

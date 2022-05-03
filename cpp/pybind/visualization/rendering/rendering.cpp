@@ -148,7 +148,7 @@ void pybind_rendering_classes(py::module &m) {
                  "returns False and does nothing if the image is a different "
                  "size. It is more efficient to call update_texture() rather "
                  "than removing and adding a new texture, especially when "
-                 "changes happen frequently, such as when implmenting video. "
+                 "changes happen frequently, such as when implementing video. "
                  "add_texture(geometry.Image, bool). The first parameter is "
                  "the image, the second parameter is optional and is True "
                  "if the image is in the sRGB colorspace and False otherwise")

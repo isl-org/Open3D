@@ -179,7 +179,7 @@ TEST(ShapeUtil, CanBeBrocastedToShape) {
 }
 
 TEST(ShapeUtil, ReductionShape) {
-    // Emtpy cases
+    // Empty cases
     EXPECT_EQ(core::shape_util::ReductionShape({}, {}, false),
               core::SizeVector({}));
     EXPECT_EQ(core::shape_util::ReductionShape({}, {}, true),

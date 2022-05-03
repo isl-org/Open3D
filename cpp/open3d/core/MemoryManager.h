@@ -85,7 +85,7 @@ protected:
             const Device& device);
 };
 
-/// Interface for all concrete memory manager classses.
+/// Interface for all concrete memory manager classes.
 class DeviceMemoryManager {
 public:
     virtual ~DeviceMemoryManager() = default;

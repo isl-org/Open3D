@@ -39,7 +39,7 @@ void pybind_core_size_vector(py::module& m) {
             "A vector of integers for specifying shape, strides, etc.");
 
     // In Python, We want (3), (3,), [3] and [3,] to represent the same thing.
-    // The followings are all equivalent to core::SizeVector({3}):
+    // The following are all equivalent to core::SizeVector({3}):
     // - o3d.core.SizeVector(3)     # int
     // - o3d.core.SizeVector((3))   # int, not tuple
     // - o3d.core.SizeVector((3,))  # tuple

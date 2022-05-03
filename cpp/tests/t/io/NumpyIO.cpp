@@ -135,7 +135,7 @@ TEST_P(NumpyIOPermuteDevices, NpzWriteRead) {
     // t5: {0, 1, 0} tensor.
     core::Tensor t5 = core::Tensor::Ones({0, 1, 0}, core::Float32, device);
 
-    // Wrtie t0 to t5.
+    // Write t0 to t5.
     t::io::WriteNpz(file_name, {{"t0", t0},
                                 {"t1", t1},
                                 {"t2", t2},

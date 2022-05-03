@@ -444,7 +444,7 @@ TEST(TPointCloudIO, ReadWritePointCloudAsPCD) {
 
     // Colors data type will be converted to UInt8 during Write / Read.
     // Only Float32, Float64, UInt8, UInt16, UInt32 colors data types are
-    // suppoted for conversion.
+    // supported for conversion.
 
     // PointCloud with Float32 type white color
     core::Tensor color_float32 = core::Tensor::Ones(

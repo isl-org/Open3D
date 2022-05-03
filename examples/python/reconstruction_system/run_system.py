@@ -66,7 +66,7 @@ if __name__ == "__main__":
         action="store_true")
     parser.add_argument(
         "--slac_integrate",
-        help="Step 6) (optional) integrate fragements using slac to make final "
+        help="Step 6) (optional) integrate fragments using slac to make final "
         "pointcloud / mesh.",
         action="store_true")
     parser.add_argument("--debug_mode",

@@ -273,7 +273,7 @@ void pybind_image(py::module &m) {
             rgbd_image(
                     m, "RGBDImage",
                     "RGBDImage is a pair of color and depth images. For most "
-                    "procesing, the image pair should be aligned (same "
+                    "processing, the image pair should be aligned (same "
                     "viewpoint and  "
                     "resolution).");
     rgbd_image
