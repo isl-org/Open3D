@@ -163,6 +163,35 @@ The attributes of the triangle mesh have different levels::
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
+
+    triangle_mesh.def("clip_plane", &TriangleMesh::ClipPlane, "point"_a,
+                      "normal"_a,
+                      R"(
+Returns a new triangle mesh clipped with the plane.
+
+This method clips the triangle mesh with the specified plane. 
+Parts of the mesh on the positive side of the plane will be kept and triangles
+intersected by the plane will be cut.
+
+Args:
+    point (open3d.core.Tensor): A point on the plane.
+
+    normal (open3d.core.Tensor): The normal of the plane. The normal points to
+        the positive side of the plane for which the geometry will be kept.
+
+Returns:
+    New triangle mesh clipped with the plane.
+
+
+This example shows how to create a hemisphere from a sphere::
+
+    import open3d as o3d
+
+    sphere = o3d.t.geometry.TriangleMesh.from_legacy(o3d.geometry.TriangleMesh.create_sphere())
+    hemisphere = sphere.clip_plane(point=[0,0,0], normal=[1,0,0])
+
+    o3d.visualization.draw(hemisphere)
+)");
 }
 
 }  // namespace geometry
