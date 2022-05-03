@@ -808,6 +808,23 @@ TEST(PointCloud, UniformDownSample) {
                                     }));
 }
 
+TEST(PointCloud, FarthestPointDownSample) {
+    geometry::PointCloud pcd({{0, 2.0, 0},
+                              {1.0, 1.5, 0},
+                              {0, 1.0, 0},
+                              {1.0, 1.0, 0},
+                              {0, 0, 1.0},
+                              {1.0, 0, 1.0},
+                              {0, 1.0, 1.0},
+                              {1.0, 1.0, 1.5}});
+    std::shared_ptr<geometry::PointCloud> pcd_down =
+            pcd.FarthestPointDownSample(4);
+    ExpectEQ(pcd_down->points_, std::vector<Eigen::Vector3d>({{0, 2.0, 0},
+                                                              {1.0, 1.0, 0},
+                                                              {1.0, 0, 1.0},
+                                                              {0, 1.0, 1.0}}));
+}  // namespace tests
+
 TEST(PointCloud, Crop_AxisAlignedBoundingBox) {
     geometry::AxisAlignedBoundingBox aabb({0, 0, 0}, {2, 2, 2});
     geometry::PointCloud pcd({{0, 0, 0},
@@ -1238,9 +1255,9 @@ TEST(PointCloud, SegmentPlane) {
 
 TEST(PointCloud, SegmentPlaneKnownPlane) {
     // Points sampled from the plane x + y + z + 1 = 0
-    std::vector<Eigen::Vector3d> ref = {{1.0, 1.0, -3.0},
-                                        {2.0, 2.0, -5.0},
-                                        {-1.0, -1.0, 1.0},
+    std::vector<Eigen::Vector3d> ref = {{2.0, 1.0, -4.0},
+                                        {1.0, 3.0, -5.0},
+                                        {-2.0, -1.0, 2.0},
                                         {-2.0, -2.0, 3.0},
                                         {10.0, 10.0, -21.0}};
     geometry::PointCloud pcd(ref);
@@ -1252,6 +1269,27 @@ TEST(PointCloud, SegmentPlaneKnownPlane) {
 
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 4, 10);
     ExpectEQ(pcd.SelectByIndex(inliers)->points_, ref);
+}
+
+TEST(PointCloud, SegmentPlaneSpecialCase) {
+    // Test SegmentPlane with probability == 1, <= 0 and > 1.
+
+    // Points sampled from the plane x + y + z + 1 = 0
+    std::vector<Eigen::Vector3d> ref = {{2.0, 1.0, -4.0},
+                                        {1.0, 3.0, -5.0},
+                                        {-2.0, -1.0, 2.0},
+                                        {-2.0, -2.0, 3.0},
+                                        {10.0, 10.0, -21.0}};
+    geometry::PointCloud pcd(ref);
+
+    Eigen::Vector4d plane_model;
+    std::vector<size_t> inliers;
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 10, 1);
+    ExpectEQ(pcd.SelectByIndex(inliers)->points_, ref);
+
+    EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, 0));
+    EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, -1));
+    EXPECT_ANY_THROW(pcd.SegmentPlane(0.01, 3, 10, 1.5));
 }
 
 TEST(PointCloud, CreateFromDepthImage) {

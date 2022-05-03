@@ -320,7 +320,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
     for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
         const auto* assimp_mesh = scene->mMeshes[midx];
         // Only process triangle meshes
-        if (assimp_mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
+        if (!(assimp_mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE)) {
             utility::LogInfo(
                     "Skipping non-triangle primitive geometry of type: "
                     "{}",

@@ -164,6 +164,7 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
     -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+    -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
     # Always build 3rd party code in Release mode. Ignored by multi-config
     # generators (XCode, MSVC). MSVC needs matching config anyway.
     -DCMAKE_BUILD_TYPE=Release
@@ -1283,6 +1284,17 @@ if(NOT USE_SYSTEM_MSGPACK)
     )
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_msgpack)
+
+# VTK
+include(${Open3D_3RDPARTY_DIR}/vtk/vtk_build.cmake)
+open3d_import_3rdparty_library(3rdparty_vtk
+    HIDDEN
+    INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
+    LIB_DIR      ${VTK_LIB_DIR}
+    LIBRARIES    ${VTK_LIBRARIES}
+    DEPENDS      ext_vtk
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_vtk)
 
 # TBB
 if(USE_SYSTEM_TBB)

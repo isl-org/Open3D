@@ -43,9 +43,6 @@ from open3d.visualization.tensorboard_plugin import summary
 from open3d.visualization.tensorboard_plugin.util import to_dict_batch
 from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
-from open3d_test import test_data_dir
-
 
 @pytest.fixture
 def geometry_data():
@@ -372,10 +369,13 @@ def check_material_dict(o3d_geo, material, batch_idx):
 @pytest.fixture
 def logdir():
     """Extract logdir zip to provide logdir for tests, cleanup afterwards."""
-    shutil.unpack_archive(
-        os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
-    yield "test_tensorboard_plugin"
-    shutil.rmtree("test_tensorboard_plugin")
+    test_data = o3d.data.SingleDownloadDataset(
+        "TestTensorboardPlugin", [
+            "https://github.com/isl-org/open3d_downloads/releases/"
+            "download/20220301-data/test_tensorboard_plugin.zip"
+        ], "746612f1d3b413236091d263bff29dc9", False)
+    yield test_data.extract_dir
+    shutil.rmtree(test_data.extract_dir)
 
 
 def test_plugin_data_reader(geometry_data, logdir):
@@ -393,9 +393,11 @@ def test_plugin_data_reader(geometry_data, logdir):
 
     reader = Open3DPluginDataReader(logdir)
     assert reader.is_active()
-    assert reader.run_to_tags == {'.': tags_ref}
-    assert reader.get_label_to_names('.', 'cube_pcd') == label_to_names_ref
-    assert reader.get_label_to_names('.', 'bboxes') == label_to_names_ref
+    assert reader.run_to_tags == {'test_tensorboard_plugin': tags_ref}
+    assert reader.get_label_to_names('test_tensorboard_plugin',
+                                     'cube_pcd') == label_to_names_ref
+    assert reader.get_label_to_names('test_tensorboard_plugin',
+                                     'bboxes') == label_to_names_ref
     step_to_idx = {i: i for i in range(3)}
     for step in range(3):
         for batch_idx in range(max_outputs):
@@ -406,8 +408,8 @@ def test_plugin_data_reader(geometry_data, logdir):
             cube_ref.vertex['colors'] = (cube_ref.vertex['colors'] * 255).to(
                 o3d.core.uint8)
 
-            cube_out = reader.read_geometry(".", "cube", step, batch_idx,
-                                            step_to_idx)[0]
+            cube_out = reader.read_geometry("test_tensorboard_plugin", "cube",
+                                            step, batch_idx, step_to_idx)[0]
             assert (cube_out.vertex['positions'] == cube_ref.vertex['positions']
                    ).all()
             assert (
@@ -418,8 +420,9 @@ def test_plugin_data_reader(geometry_data, logdir):
                    ).all()
             check_material_dict(cube_out, material, batch_idx)
 
-            cube_pcd_out = reader.read_geometry(".", "cube_pcd", step,
-                                                batch_idx, step_to_idx)[0]
+            cube_pcd_out = reader.read_geometry("test_tensorboard_plugin",
+                                                "cube_pcd", step, batch_idx,
+                                                step_to_idx)[0]
             assert (cube_pcd_out.point['positions'] ==
                     cube_ref.vertex['positions']).all()
             assert cube_pcd_out.has_valid_material()
@@ -443,7 +446,8 @@ def test_plugin_data_reader(geometry_data, logdir):
             cube_ls_ref.line['colors'] = (cube_ls_ref.line['colors'] * 255).to(
                 o3d.core.uint8)
 
-            cube_ls_out = reader.read_geometry(".", "cube_ls", step, batch_idx,
+            cube_ls_out = reader.read_geometry("test_tensorboard_plugin",
+                                               "cube_ls", step, batch_idx,
                                                step_to_idx)[0]
             assert (cube_ls_out.point['positions'] ==
                     cube_ls_ref.point['positions']).all()
@@ -454,7 +458,8 @@ def test_plugin_data_reader(geometry_data, logdir):
             check_material_dict(cube_ls_out, material_ls, batch_idx)
 
             bbox_ls_out, data_bbox_proto = reader.read_geometry(
-                ".", "bboxes", step, batch_idx, step_to_idx)
+                "test_tensorboard_plugin", "bboxes", step, batch_idx,
+                step_to_idx)
             bbox_ls_ref = o3d.t.geometry.LineSet.from_legacy(
                 BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
             bbox_ls_ref.line["indices"] = bbox_ls_ref.line["indices"].to(

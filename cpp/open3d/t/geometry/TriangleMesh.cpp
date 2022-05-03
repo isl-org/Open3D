@@ -26,6 +26,10 @@
 
 #include "open3d/t/geometry/TriangleMesh.h"
 
+#include <vtkCleanPolyData.h>
+#include <vtkClipPolyData.h>
+#include <vtkPlane.h>
+
 #include <Eigen/Core>
 #include <string>
 #include <unordered_map>
@@ -36,6 +40,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
+#include "open3d/t/geometry/kernel/VtkUtils.h"
 
 namespace open3d {
 namespace t {
@@ -268,6 +273,35 @@ TriangleMesh TriangleMesh::To(const core::Device &device, bool copy) const {
         mesh.SetVertexAttr(kv.first, kv.second.To(device, /*copy=*/true));
     }
     return mesh;
+}
+
+TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
+                                     const core::Tensor &normal) const {
+    using namespace kernel::vtkutils;
+    core::AssertTensorShape(point, {3});
+    core::AssertTensorShape(normal, {3});
+    // allow int types for convenience
+    core::AssertTensorDtypes(
+            point, {core::Float32, core::Float64, core::Int32, core::Int64});
+    core::AssertTensorDtypes(
+            normal, {core::Float32, core::Float64, core::Int32, core::Int64});
+
+    auto point_ = point.To(core::Device(), core::Float64).Contiguous();
+    auto normal_ = normal.To(core::Device(), core::Float64).Contiguous();
+
+    auto polydata = CreateVtkPolyDataFromGeometry(*this);
+
+    vtkNew<vtkPlane> clipPlane;
+    clipPlane->SetNormal(normal_.GetDataPtr<double>());
+    clipPlane->SetOrigin(point_.GetDataPtr<double>());
+    vtkNew<vtkClipPolyData> clipper;
+    clipper->SetInputData(polydata);
+    clipper->SetClipFunction(clipPlane);
+    vtkNew<vtkCleanPolyData> cleaner;
+    cleaner->SetInputConnection(clipper->GetOutputPort());
+    cleaner->Update();
+    auto clipped_polydata = cleaner->GetOutput();
+    return CreateTriangleMeshFromVtkPolyData(clipped_polydata);
 }
 
 }  // namespace geometry

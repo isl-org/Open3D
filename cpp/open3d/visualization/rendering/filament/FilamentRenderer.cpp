@@ -135,32 +135,6 @@ void FilamentRenderer::SetOnAfterDraw(std::function<void()> callback) {
 void FilamentRenderer::UpdateSwapChain() {
     void* native_win = swap_chain_->getNativeWindow();
     engine_.destroy(swap_chain_);
-
-#if defined(__APPLE__)
-    auto resize_metal_layer = [](void* native_win) -> void* {
-        utility::LogError(
-                "::resizeMetalLayer() needs to be implemented. Please see "
-                "filament/samples/app/NativeWindowHelperCocoa.mm for "
-                "reference.");
-        return native_win;
-    };
-
-    void* native_swap_chain = native_win;
-    void* metal_layer = nullptr;
-    auto backend = engine_.getBackend();
-    if (backend == filament::Engine::Backend::METAL) {
-        metal_layer = resize_metal_layer(native_win);
-        // The swap chain on Metal is a CAMetalLayer.
-        native_swap_chain = metal_layer;
-    }
-
-#if defined(FILAMENT_DRIVER_SUPPORTS_VULKAN)
-    if (backend == filament::Engine::Backend::VULKAN) {
-        resize_native_layer(native_win);
-    }
-#endif  // vulkan
-#endif  // __APPLE__
-
     swap_chain_ = engine_.createSwapChain(native_win);
 }
 

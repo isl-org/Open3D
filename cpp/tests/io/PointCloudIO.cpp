@@ -27,6 +27,7 @@
 #include "open3d/io/PointCloudIO.h"
 
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
 
 namespace open3d {
@@ -145,14 +146,16 @@ TEST_P(ReadWritePC, Basic) {
     geometry::PointCloud pc;
     RandPC(pc);
 
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
+
     // we loose some precision when saving generated data
     // test writing if we have point, normal, and colors in pc
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc,
+            tmp_path + "/" + args.filename, pc,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc2;
-    EXPECT_TRUE(
-            ReadPointCloud(args.filename, pc2, {"auto", false, false, true}));
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc2,
+                               {"auto", false, false, true}));
     const double points_max_error =
             1e-3;  //.ply ascii has the highest error, others <1e-4
     EXPECT_LT(MaxDistance(pc.points_, pc2.points_), points_max_error);
@@ -179,11 +182,11 @@ TEST_P(ReadWritePC, Basic) {
 
     // Loaded data when saved should be identical when reloaded
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc2,
+            tmp_path + "/" + args.filename, pc2,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc3;
-    EXPECT_TRUE(
-            ReadPointCloud(args.filename, pc3, {"auto", false, false, true}));
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc3,
+                               {"auto", false, false, true}));
     EXPECT_EQ(MaxDistance(pc3.points_, pc2.points_), 0);
     if (int(args.compare) & int(Compare::NORMALS)) {
         SCOPED_TRACE("Normals");
@@ -217,20 +220,23 @@ TEST_P(ReadWritePC, ColorReload) {
         pc_start.points_.push_back(one * 0.);
         pc_start.colors_.push_back(one * ((i) / 255.0));
     }
+
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
+
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc_start,
+            tmp_path + "/" + args.filename, pc_start,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc_load;
-    EXPECT_TRUE(ReadPointCloud(args.filename, pc_load,
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc_load,
                                {"auto", false, false, true}));
     EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
 
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc_load,
+            tmp_path + "/" + args.filename, pc_load,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc;
-    EXPECT_TRUE(
-            ReadPointCloud(args.filename, pc, {"auto", false, false, true}));
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc,
+                               {"auto", false, false, true}));
     EXPECT_LT(MaxDistance(pc_start.colors_, pc.colors_) * 255, .5);
 }
 
@@ -250,26 +256,29 @@ TEST_P(ReadWritePC, ColorConvertLoad) {
         pc_start.points_.push_back(one * 0.);
         pc_start.colors_.push_back(one * ((i) / 255.0));
     }
+
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc_start,
+            tmp_path + "/" + args.filename, pc_start,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc_load;
-    EXPECT_TRUE(ReadPointCloud(args.filename, pc_load,
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc_load,
                                {"auto", false, false, true}));
     EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
 
-    EXPECT_TRUE(WritePointCloud("test0.xyzrgb", pc_load, {true, false, true}));
+    EXPECT_TRUE(WritePointCloud(tmp_path + "/test0.xyzrgb", pc_load,
+                                {true, false, true}));
     geometry::PointCloud pc2;
-    EXPECT_TRUE(
-            ReadPointCloud("test0.xyzrgb", pc2, {"auto", false, false, true}));
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/test0.xyzrgb", pc2,
+                               {"auto", false, false, true}));
     EXPECT_LT(MaxDistance(pc_start.colors_, pc2.colors_) * 255., .5);
 
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc2,
+            tmp_path + "/" + args.filename, pc2,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc3;
-    EXPECT_TRUE(
-            ReadPointCloud(args.filename, pc3, {"auto", false, false, true}));
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc3,
+                               {"auto", false, false, true}));
     EXPECT_LT(MaxDistance(pc_start.colors_, pc3.colors_) * 255., .5);
 }
 
@@ -288,11 +297,13 @@ TEST_P(ReadWritePC, ColorGrayAvg) {
         pc_start.points_.push_back(one * 0.);
         pc_start.colors_.push_back(one * ((i) / 255.0));
     }
+
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc_start,
+            tmp_path + "/" + args.filename, pc_start,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc_load;
-    EXPECT_TRUE(ReadPointCloud(args.filename, pc_load,
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc_load,
                                {"auto", false, false, true}));
     EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
 
@@ -302,11 +313,11 @@ TEST_P(ReadWritePC, ColorGrayAvg) {
         c[0] = c[1] = c[2] = avg;
     }
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc_avg_col,
+            tmp_path + "/" + args.filename, pc_avg_col,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc;
-    EXPECT_TRUE(
-            ReadPointCloud(args.filename, pc, {"auto", false, false, true}));
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc,
+                               {"auto", false, false, true}));
     EXPECT_LT(MaxDistance(pc_start.colors_, pc.colors_) * 255, .5);
 }
 
@@ -325,11 +336,13 @@ TEST_P(ReadWritePC, ColorGrayscaleLuma) {
         pc_start.points_.push_back(one * 0.);
         pc_start.colors_.push_back(one * ((i) / 255.0));
     }
+
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc_start,
+            tmp_path + "/" + args.filename, pc_start,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc_load;
-    EXPECT_TRUE(ReadPointCloud(args.filename, pc_load,
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc_load,
                                {"auto", false, false, true}));
     EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
 
@@ -339,11 +352,11 @@ TEST_P(ReadWritePC, ColorGrayscaleLuma) {
         c[0] = c[1] = c[2] = gray;
     }
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc_avg_col,
+            tmp_path + "/" + args.filename, pc_avg_col,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc;
-    EXPECT_TRUE(
-            ReadPointCloud(args.filename, pc, {"auto", false, false, true}));
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc,
+                               {"auto", false, false, true}));
     EXPECT_LT(MaxDistance(pc_start.colors_, pc.colors_) * 255, .5);
 }
 
@@ -361,11 +374,13 @@ TEST_P(ReadWritePC, ColorCrop) {
     pc_start.colors_.push_back(one * (-.5));
     pc_start.points_.push_back(one * 0.);
     pc_start.colors_.push_back(one * (1.5));
+
+    const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
     EXPECT_TRUE(WritePointCloud(
-            args.filename, pc_start,
+            tmp_path + "/" + args.filename, pc_start,
             {bool(args.write_ascii), bool(args.compressed), true}));
     geometry::PointCloud pc_load;
-    EXPECT_TRUE(ReadPointCloud(args.filename, pc_load,
+    EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc_load,
                                {"auto", false, false, true}));
     EXPECT_LT(pc_load.colors_[0](0), .001);
     EXPECT_GT(pc_load.colors_[1](0), .999);
@@ -388,11 +403,14 @@ TEST_P(ReadWritePC, ColorRounding) {
             pc_start.points_.push_back(one * 0.);
             pc_start.colors_.push_back(one * ((i - 0.2) / 255.0));
         }
+
+        const std::string tmp_path =
+                utility::filesystem::GetTempDirectoryPath();
         EXPECT_TRUE(WritePointCloud(
-                args.filename, pc_start,
+                tmp_path + "/" + args.filename, pc_start,
                 {bool(args.write_ascii), bool(args.compressed), true}));
         geometry::PointCloud pc_load;
-        EXPECT_TRUE(ReadPointCloud(args.filename, pc_load,
+        EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc_load,
                                    {"auto", false, false, true}));
         EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
     }
@@ -404,11 +422,14 @@ TEST_P(ReadWritePC, ColorRounding) {
             pc_start.points_.push_back(one * 0.);
             pc_start.colors_.push_back(one * ((i + 0.2) / 255.0));
         }
+
+        const std::string tmp_path =
+                utility::filesystem::GetTempDirectoryPath();
         EXPECT_TRUE(WritePointCloud(
-                args.filename, pc_start,
+                tmp_path + "/" + args.filename, pc_start,
                 {bool(args.write_ascii), bool(args.compressed), true}));
         geometry::PointCloud pc_load;
-        EXPECT_TRUE(ReadPointCloud(args.filename, pc_load,
+        EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc_load,
                                    {"auto", false, false, true}));
         EXPECT_LT(MaxDistance(pc_start.colors_, pc_load.colors_) * 255., .5);
     }
@@ -432,14 +453,18 @@ TEST_P(ReadWritePC, UpdateProgressCallback) {
         WritePointCloudOption p(bool(args.write_ascii), bool(args.compressed));
         p.update_progress = Update;
         Clear();
-        EXPECT_TRUE(WritePointCloud(args.filename, pc, p));
+        const std::string tmp_path =
+                utility::filesystem::GetTempDirectoryPath();
+        EXPECT_TRUE(WritePointCloud(tmp_path + "/" + args.filename, pc, p));
         EXPECT_EQ(last_percent, 100.);
         EXPECT_GT(num_calls, 10);
     }
     {
         ReadPointCloudOption p(Update);
         Clear();
-        EXPECT_TRUE(ReadPointCloud(args.filename, pc, p));
+        const std::string tmp_path =
+                utility::filesystem::GetTempDirectoryPath();
+        EXPECT_TRUE(ReadPointCloud(tmp_path + "/" + args.filename, pc, p));
         EXPECT_EQ(last_percent, 100.);
         EXPECT_GT(num_calls, 10);
     }

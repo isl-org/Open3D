@@ -62,16 +62,16 @@ def integrate(depth_file_names, color_file_names, depth_intrinsic,
                 voxel_size=3.0 / 512,
                 block_resolution=16,
                 block_count=50000,
-                device=o3d.core.Device('CUDA:0'))
+                device=device)
         else:
-            vbg = o3d.t.geometry.VoxelBlockGrid(
-                attr_names=('tsdf', 'weight'),
-                attr_dtypes=(o3c.float32, o3c.float32),
-                attr_channels=((1), (1)),
-                voxel_size=3.0 / 512,
-                block_resolution=16,
-                block_count=50000,
-                device=o3d.core.Device('CUDA:0'))
+            vbg = o3d.t.geometry.VoxelBlockGrid(attr_names=('tsdf', 'weight'),
+                                                attr_dtypes=(o3c.float32,
+                                                             o3c.float32),
+                                                attr_channels=((1), (1)),
+                                                voxel_size=3.0 / 512,
+                                                block_resolution=16,
+                                                block_count=50000,
+                                                device=device)
 
         start = time.time()
         for i in range(n_files):

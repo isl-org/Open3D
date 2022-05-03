@@ -27,7 +27,6 @@ env:
   SCIPY_VER: "1.5.4"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
-  CONDA_BUILD_VER: "3.21.4"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -237,22 +236,19 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
 
-      - name: Set up Python version
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          auto-update-conda: false
           python-version: ${{ matrix.python_version }}
 
       - name: Install Python dependencies
-        shell: pwsh
         working-directory: ${{ env.SRC_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -r python/requirements.txt
-          python -m pip install -r python/requirements_jupyter.txt
+          python -m pip install -r python/requirements_jupyter_build.txt
 
       - name: Config
-        shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
@@ -273,20 +269,15 @@ jobs:
             ${{ env.SRC_DIR }}
 
       - name: Build Python package
-        shell: pwsh
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install --upgrade pip==${{ env.PIP_VER }} `
-            wheel==${{ env.WHEEL_VER }} `
-            setuptools==${{ env.STOOLS_VER }}
-          conda install conda-build=${{ env.CONDA_BUILD_VER }} -y
-          conda-build --version
-          cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-conda-package
+                                          wheel==${{ env.WHEEL_VER }} `
+                                          setuptools==${{ env.STOOLS_VER }}
+          cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          $CONDA_PKG_NAME=(Get-ChildItem lib/python_package/conda_package/win-64/open3d*.tar.bz2).Name
-          echo "CONDA_PKG_NAME=$CONDA_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           $PYTHON_EXECUTABLE=(python -c "import sys; print(sys.executable)")
           echo $PYTHON_EXECUTABLE
           echo "PYTHON_EXECUTABLE=$PYTHON_EXECUTABLE"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
@@ -295,9 +286,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: open3d_win_amd64_wheels
-          path: |
-            ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
-            ${{ env.BUILD_DIR }}/lib/python_package/conda_package/win-64/${{ env.CONDA_PKG_NAME }}
+          path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
       - name: GCloud CLI setup
@@ -323,12 +312,6 @@ jobs:
           gsutil cp ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }} gs://open3d-releases-master/python-wheels/
           if ($LastExitCode -eq 0) {
             echo "Download pip package at: https://storage.googleapis.com/open3d-releases-master/python-wheels/${{ env.PIP_PKG_NAME }}"
-          } else {
-            throw "Wheel upload failed"
-          }
-          gsutil cp ${{ env.BUILD_DIR }}/lib/python_package/conda_package/win-64/${{ env.CONDA_PKG_NAME }} gs://open3d-releases-master/conda_package/win-64/
-          if ($LastExitCode -eq 0) {
-            echo "Download conda package at: https://storage.googleapis.com/open3d-releases-master/conda_package/win-64/${{ env.CONDA_PKG_NAME }}"
           } else {
             throw "Wheel upload failed"
           }
@@ -381,10 +364,14 @@ jobs:
           python -m pip install -U pytest-randomly==${{ env.PYTEST_RANDOMLY_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }} `
             tensorboard==${{ env.TENSORFLOW_VER }}
-          $pi_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
-          $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$pi_tag-*.whl).Name
-          echo "Installing Open3D wheel pip_package\$PIP_PKG_NAME in virtual environment..."
-          python -m pip install "pip_package\$PIP_PKG_NAME"
+          $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
+          if (Test-Path -Path "pip_package") {
+            $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
+          } else {
+            $PIP_PKG_NAME=(Get-ChildItem open3d*-$py_tag-*.whl).Name
+          }
+          echo "Installing Open3D wheel $PIP_PKG_NAME in virtual environment..."
+          python -m pip install "$PIP_PKG_NAME"
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 

@@ -876,6 +876,8 @@ struct O3DVisualizer::Impl {
                     std::dynamic_pointer_cast<geometry::AxisAlignedBoundingBox>(
                             geom);
             auto mesh = std::dynamic_pointer_cast<geometry::MeshBase>(geom);
+            auto tmesh =
+                    std::dynamic_pointer_cast<geometry::TriangleMesh>(geom);
             auto voxel_grid =
                     std::dynamic_pointer_cast<geometry::VoxelGrid>(geom);
             auto octree = std::dynamic_pointer_cast<geometry::Octree>(geom);
@@ -906,10 +908,12 @@ struct O3DVisualizer::Impl {
                 has_colors = (aabb->color_ != Eigen::Vector3d{0.0, 0.0, 0.0});
                 no_shadows = true;
             } else if (mesh) {
-                has_normals = !mesh->vertex_normals_.empty();
+                has_normals = !mesh->vertex_normals_.empty() ||
+                              (tmesh && !tmesh->triangle_normals_.empty());
                 has_colors = true;  // always want base_color as white
             } else if (t_mesh) {
-                has_normals = t_mesh->HasVertexNormals();
+                has_normals = t_mesh->HasVertexNormals() ||
+                              t_mesh->HasTriangleNormals();
                 has_colors = true;  // always want base_color as white
             } else if (voxel_grid) {
                 has_normals = false;
@@ -947,8 +951,6 @@ struct O3DVisualizer::Impl {
             }
 
             // Finally assign material properties if geometry is a triangle mesh
-            auto tmesh =
-                    std::dynamic_pointer_cast<geometry::TriangleMesh>(geom);
             if (tmesh && tmesh->materials_.size() > 0) {
                 // Only a single material is supported for TriangleMesh so we
                 // just grab the first one we find. Users should be using

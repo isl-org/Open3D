@@ -59,7 +59,7 @@ int EstimateMaxThreads() {
         return utility::CPUInfo::GetInstance().NumCores();
     }
 #else
-    (void)GetEnvVar;  // Avoids compiler warning.
+    (void)&GetEnvVar;  // Avoids compiler warning.
     return 1;
 #endif
 }

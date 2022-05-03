@@ -60,10 +60,6 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/rendering/__init_
                "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/rendering/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/web_visualizer.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/web_visualizer.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/conda_build_config.yaml"
-               "${PYTHON_PACKAGE_DST_DIR}/conda_meta/conda_build_config.yaml")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/meta.yaml"
-               "${PYTHON_PACKAGE_DST_DIR}/conda_meta/meta.yaml")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/lib/web_visualizer.js"
                "${PYTHON_PACKAGE_DST_DIR}/js/lib/web_visualizer.js")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
@@ -121,13 +117,15 @@ if (BUILD_JUPYTER_EXTENSION)
                             "npm install -g yarn.")
     endif()
 
-    # Append requirements_jupyter.txt to requirements.txt
+    # Append requirements_jupyter_install.txt to requirements.txt
+    # These will be installed when `pip install open3d`.
     execute_process(COMMAND ${CMAKE_COMMAND} -E cat
         ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt
-        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter.txt
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter_install.txt
         OUTPUT_VARIABLE ALL_REQUIREMENTS
     )
-    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt ${ALL_REQUIREMENTS})
+    # The double-quote "" is important as it keeps the semicolons.
+    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt "${ALL_REQUIREMENTS}")
 endif()
 
 if (BUILD_GUI)
@@ -137,19 +135,8 @@ if (BUILD_GUI)
 endif()
 
 # Add all examples to installation directory.
-# TODO: after downloader is implemented, refactor test data dir
 file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/examples/")
-file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
-file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/test_data/"
-     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data")
-
-# Remove a few unneeded files to save space.
-# TODO: after downloader is fully migrated remove this
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/open3d_downloads")
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/crate")
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/sword")
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/monkey")

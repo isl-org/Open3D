@@ -17,7 +17,6 @@ Docker is installed correctly, run:
     # You should be able to run this without sudo.
     docker run hello-world
 
-
 Install and run Open3D apps in docker
 -------------------------------------
 

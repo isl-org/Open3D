@@ -10,7 +10,6 @@ open3d.io.rpc
     BufferConnection
     Connection
 
-
 **Functions**
 
 .. autosummary::
@@ -23,7 +22,6 @@ open3d.io.rpc
     set_point_cloud
     set_time
     set_triangle_mesh
-
 
 .. toctree::
     :hidden:

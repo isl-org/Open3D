@@ -36,14 +36,14 @@ NearestNeighborSearch::~NearestNeighborSearch(){};
 
 bool NearestNeighborSearch::SetIndex() {
     nanoflann_index_.reset(new NanoFlannIndex());
-    return nanoflann_index_->SetTensorData(dataset_points_);
+    return nanoflann_index_->SetTensorData(dataset_points_, index_dtype_);
 };
 
 bool NearestNeighborSearch::KnnIndex() {
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
         knn_index_.reset(new nns::KnnIndex());
-        return knn_index_->SetTensorData(dataset_points_);
+        return knn_index_->SetTensorData(dataset_points_, index_dtype_);
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
@@ -63,7 +63,7 @@ bool NearestNeighborSearch::FixedRadiusIndex(utility::optional<double> radius) {
 #ifdef BUILD_CUDA_MODULE
         fixed_radius_index_.reset(new nns::FixedRadiusIndex());
         return fixed_radius_index_->SetTensorData(dataset_points_,
-                                                  radius.value());
+                                                  radius.value(), index_dtype_);
 #else
         utility::LogError(
                 "FixedRadiusIndex with GPU tensor is disabled since "
@@ -83,7 +83,7 @@ bool NearestNeighborSearch::HybridIndex(utility::optional<double> radius) {
 #ifdef BUILD_CUDA_MODULE
         fixed_radius_index_.reset(new nns::FixedRadiusIndex());
         return fixed_radius_index_->SetTensorData(dataset_points_,
-                                                  radius.value());
+                                                  radius.value(), index_dtype_);
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please recompile Open3D with "
@@ -147,7 +147,9 @@ std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::MultiRadiusSearch(
 }
 
 std::tuple<Tensor, Tensor, Tensor> NearestNeighborSearch::HybridSearch(
-        const Tensor& query_points, double radius, int max_knn) {
+        const Tensor& query_points,
+        const double radius,
+        const int max_knn) const {
     AssertTensorDevice(query_points, dataset_points_.GetDevice());
 
     if (dataset_points_.GetDevice().GetType() == Device::DeviceType::CUDA) {

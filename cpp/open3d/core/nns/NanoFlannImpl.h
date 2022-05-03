@@ -40,8 +40,6 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-typedef int32_t index_t;
-
 /// NanoFlann Index Holder.
 template <int METRIC, class TReal, class TIndex>
 struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
@@ -106,16 +104,16 @@ struct NanoFlannIndexHolder : NanoFlannIndexHolderBase {
 namespace impl {
 
 namespace {
-template <class T, int METRIC>
+template <class T, class TIndex, int METRIC>
 void _BuildKdTree(size_t num_points,
                   const T *const points,
                   size_t dimension,
                   NanoFlannIndexHolderBase **holder) {
-    *holder = new NanoFlannIndexHolder<METRIC, T, index_t>(num_points,
-                                                           dimension, points);
+    *holder = new NanoFlannIndexHolder<METRIC, T, TIndex>(num_points, dimension,
+                                                          points);
 }
 
-template <class T, class OUTPUT_ALLOCATOR, int METRIC>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR, int METRIC>
 void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                    int64_t *query_neighbors_row_splits,
                    size_t num_points,
@@ -131,7 +129,7 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
     if (num_queries == 0 || num_points == 0 || holder == nullptr) {
         std::fill(query_neighbors_row_splits,
                   query_neighbors_row_splits + num_queries + 1, 0);
-        index_t *indices_ptr;
+        TIndex *indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
         T *distances_ptr;
@@ -146,18 +144,18 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
         return p1_vec == p2_vec;
     };
 
-    std::vector<std::vector<index_t>> neighbors_indices(num_queries);
+    std::vector<std::vector<TIndex>> neighbors_indices(num_queries);
     std::vector<std::vector<T>> neighbors_distances(num_queries);
     std::vector<uint32_t> neighbors_count(num_queries, 0);
 
     // cast NanoFlannIndexHolder
     auto holder_ =
-            static_cast<NanoFlannIndexHolder<METRIC, T, index_t> *>(holder);
+            static_cast<NanoFlannIndexHolder<METRIC, T, TIndex> *>(holder);
 
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_queries),
             [&](const tbb::blocked_range<size_t> &r) {
-                std::vector<index_t> result_indices(knn);
+                std::vector<TIndex> result_indices(knn);
                 std::vector<T> result_distances(knn);
                 for (size_t i = r.begin(); i != r.end(); ++i) {
                     size_t num_valid = holder_->index_->knnSearch(
@@ -166,7 +164,7 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 
                     int num_neighbors = 0;
                     for (size_t valid_i = 0; valid_i < num_valid; ++valid_i) {
-                        index_t idx = result_indices[valid_i];
+                        TIndex idx = result_indices[valid_i];
                         if (ignore_query_point &&
                             points_equal(&queries[i * dimension],
                                          &points[idx * dimension], dimension)) {
@@ -190,7 +188,7 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 
     int64_t num_indices = query_neighbors_row_splits[num_queries];
 
-    index_t *indices_ptr;
+    TIndex *indices_ptr;
     output_allocator.AllocIndices(&indices_ptr, num_indices);
     T *distances_ptr;
     if (return_distances)
@@ -218,7 +216,7 @@ void _KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                       });
 }
 
-template <class T, class OUTPUT_ALLOCATOR, int METRIC>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR, int METRIC>
 void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                       int64_t *query_neighbors_row_splits,
                       size_t num_points,
@@ -235,7 +233,7 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
     if (num_queries == 0 || num_points == 0 || holder == nullptr) {
         std::fill(query_neighbors_row_splits,
                   query_neighbors_row_splits + num_queries + 1, 0);
-        index_t *indices_ptr;
+        TIndex *indices_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
 
         T *distances_ptr;
@@ -250,7 +248,7 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
         return p1_vec == p2_vec;
     };
 
-    std::vector<std::vector<index_t>> neighbors_indices(num_queries);
+    std::vector<std::vector<TIndex>> neighbors_indices(num_queries);
     std::vector<std::vector<T>> neighbors_distances(num_queries);
     std::vector<uint32_t> neighbors_count(num_queries, 0);
 
@@ -258,11 +256,11 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
     params.sorted = sort;
 
     auto holder_ =
-            static_cast<NanoFlannIndexHolder<METRIC, T, index_t> *>(holder);
+            static_cast<NanoFlannIndexHolder<METRIC, T, TIndex> *>(holder);
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_queries),
             [&](const tbb::blocked_range<size_t> &r) {
-                std::vector<std::pair<index_t, T>> search_result;
+                std::vector<std::pair<TIndex, T>> search_result;
                 for (size_t i = r.begin(); i != r.end(); ++i) {
                     T radius = radii[i];
                     if (METRIC == L2) {
@@ -298,7 +296,7 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
 
     int64_t num_indices = query_neighbors_row_splits[num_queries];
 
-    index_t *indices_ptr;
+    TIndex *indices_ptr;
     output_allocator.AllocIndices(&indices_ptr, num_indices);
     T *distances_ptr;
     if (return_distances)
@@ -336,7 +334,7 @@ void _RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
             });
 }
 
-template <class T, class OUTPUT_ALLOCATOR, int METRIC>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR, int METRIC>
 void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
                       size_t num_points,
                       const T *const points,
@@ -349,7 +347,7 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
                       bool return_distances,
                       OUTPUT_ALLOCATOR &output_allocator) {
     if (num_queries == 0 || num_points == 0 || holder == nullptr) {
-        index_t *indices_ptr, *counts_ptr;
+        TIndex *indices_ptr, *counts_ptr;
         output_allocator.AllocIndices(&indices_ptr, 0);
         output_allocator.AllocCounts(&counts_ptr, 0);
 
@@ -359,7 +357,7 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
     }
 
     T radius_squared = radius * radius;
-    index_t *indices_ptr, *counts_ptr;
+    TIndex *indices_ptr, *counts_ptr;
     T *distances_ptr;
 
     size_t num_indices = static_cast<size_t>(max_knn) * num_queries;
@@ -371,18 +369,18 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
     params.sorted = true;
 
     auto holder_ =
-            static_cast<NanoFlannIndexHolder<METRIC, T, index_t> *>(holder);
+            static_cast<NanoFlannIndexHolder<METRIC, T, TIndex> *>(holder);
     tbb::parallel_for(
             tbb::blocked_range<size_t>(0, num_queries),
             [&](const tbb::blocked_range<size_t> &r) {
-                std::vector<std::pair<index_t, T>> ret_matches;
+                std::vector<std::pair<TIndex, T>> ret_matches;
                 for (size_t i = r.begin(); i != r.end(); ++i) {
                     size_t num_results = holder_->index_->radiusSearch(
                             &queries[i * dimension], radius_squared,
                             ret_matches, params);
                     ret_matches.resize(num_results);
 
-                    index_t count_i = static_cast<index_t>(num_results);
+                    TIndex count_i = static_cast<TIndex>(num_results);
                     count_i = count_i < max_knn ? count_i : max_knn;
                     counts_ptr[i] = count_i;
 
@@ -419,7 +417,7 @@ void _HybridSearchCPU(NanoFlannIndexHolderBase *holder,
 /// \param metric   Onf of L1, L2. Defines the distance metric for the
 /// search
 ///
-template <class T>
+template <class T, class TIndex>
 std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
                                                       const T *const points,
                                                       size_t dimension,
@@ -427,9 +425,9 @@ std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
     NanoFlannIndexHolderBase *holder = nullptr;
 #define FN_PARAMETERS num_points, points, dimension, &holder
 
-#define CALL_TEMPLATE(METRIC)                   \
-    if (METRIC == metric) {                     \
-        _BuildKdTree<T, METRIC>(FN_PARAMETERS); \
+#define CALL_TEMPLATE(METRIC)                           \
+    if (METRIC == metric) {                             \
+        _BuildKdTree<T, TIndex, METRIC>(FN_PARAMETERS); \
     }
 
 #define CALL_TEMPLATE2 \
@@ -497,7 +495,7 @@ std::unique_ptr<NanoFlannIndexHolderBase> BuildKdTree(size_t num_points,
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
 ///
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR>
 void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
                   int64_t *query_neighbors_row_splits,
                   size_t num_points,
@@ -515,9 +513,9 @@ void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
             queries, dimension, knn, ignore_query_point, return_distances, \
             output_allocator
 
-#define CALL_TEMPLATE(METRIC)                                      \
-    if (METRIC == metric) {                                        \
-        _KnnSearchCPU<T, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
+#define CALL_TEMPLATE(METRIC)                                              \
+    if (METRIC == metric) {                                                \
+        _KnnSearchCPU<T, TIndex, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
     }
 
 #define CALL_TEMPLATE2 \
@@ -591,7 +589,7 @@ void KnnSearchCPU(NanoFlannIndexHolderBase *holder,
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
 ///
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR>
 void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
                      int64_t *query_neighbors_row_splits,
                      size_t num_points,
@@ -611,9 +609,9 @@ void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
             queries, dimension, radii, ignore_query_point, return_distances, \
             normalize_distances, sort, output_allocator
 
-#define CALL_TEMPLATE(METRIC)                                         \
-    if (METRIC == metric) {                                           \
-        _RadiusSearchCPU<T, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
+#define CALL_TEMPLATE(METRIC)                                                 \
+    if (METRIC == metric) {                                                   \
+        _RadiusSearchCPU<T, TIndex, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
     }
 
 #define CALL_TEMPLATE2 \
@@ -679,7 +677,7 @@ void RadiusSearchCPU(NanoFlannIndexHolderBase *holder,
 ///         elements. Both functions must accept the argument size==0.
 ///         In this case ptr does not need to be set.
 ///
-template <class T, class OUTPUT_ALLOCATOR>
+template <class T, class TIndex, class OUTPUT_ALLOCATOR>
 void HybridSearchCPU(NanoFlannIndexHolderBase *holder,
                      size_t num_points,
                      const T *const points,
@@ -696,9 +694,9 @@ void HybridSearchCPU(NanoFlannIndexHolderBase *holder,
     holder, num_points, points, num_queries, queries, dimension, radius, \
             max_knn, ignore_query_point, return_distances, output_allocator
 
-#define CALL_TEMPLATE(METRIC)                                         \
-    if (METRIC == metric) {                                           \
-        _HybridSearchCPU<T, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
+#define CALL_TEMPLATE(METRIC)                                                 \
+    if (METRIC == metric) {                                                   \
+        _HybridSearchCPU<T, TIndex, OUTPUT_ALLOCATOR, METRIC>(FN_PARAMETERS); \
     }
 
 #define CALL_TEMPLATE2 \

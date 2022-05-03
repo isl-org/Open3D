@@ -50,14 +50,18 @@ public:
     /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     NanoFlannIndex(const Tensor &dataset_points);
+    NanoFlannIndex(const Tensor &dataset_points, const Dtype &index_dtype);
     ~NanoFlannIndex();
     NanoFlannIndex(const NanoFlannIndex &) = delete;
     NanoFlannIndex &operator=(const NanoFlannIndex &) = delete;
 
 public:
-    bool SetTensorData(const Tensor &dataset_points) override;
+    bool SetTensorData(const Tensor &dataset_points,
+                       const Dtype &index_dtype = core::Int64) override;
 
-    bool SetTensorData(const Tensor &dataset_points, double radius) override {
+    bool SetTensorData(const Tensor &dataset_points,
+                       double radius,
+                       const Dtype &index_dtype = core::Int64) override {
         utility::LogError(
                 "NanoFlannIndex::SetTensorData with radius not implemented.");
     }
