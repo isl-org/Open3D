@@ -339,6 +339,22 @@ public:
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
 
+    /// \brief Cluster PointCloud using the DBSCAN algorithm
+    /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
+    /// in Large Spatial Databases with Noise", 1996
+    /// This is a wrapper for a CPU implementation and a copy of the point cloud
+    /// data and resulting labels will be made.
+    ///
+    /// \param eps Density parameter that is used to find neighbouring points.
+    /// \param min_points Minimum number of points to form a cluster.
+    /// \param print_progress If `true` the progress is visualized in the
+    /// console.
+    /// \return A Tensor list of point labels on the same device as the point
+    /// cloud, -1 indicates noise according to the algorithm
+    core::Tensor ClusterDBSCAN(double eps,
+                               size_t min_points,
+                               bool print_progress = false) const;
+
 public:
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.

@@ -716,6 +716,21 @@ open3d::geometry::PointCloud PointCloud::ToLegacy() const {
     return pcd_legacy;
 }
 
+core::Tensor PointCloud::ClusterDBSCAN(double eps,
+                                       size_t min_points,
+                                       bool print_progress) const {
+    // Create a legacy point cloud with only points, no attributes to reduce
+    // copying.
+    PointCloud tpcd(point_attr_.at("positions"));
+    open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    const std::vector<int> labels =
+            lpcd.ClusterDBSCAN(eps, min_points, print_progress);
+    // labels must be copied into Tensor since it will be destructed at the end
+    // of this function.
+    return core::Tensor(labels, {static_cast<int64_t>(labels.size())},
+                        core::Dtype::Int32, device_);
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
