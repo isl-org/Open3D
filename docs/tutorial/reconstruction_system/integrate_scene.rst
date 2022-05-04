@@ -31,7 +31,6 @@ This function first reads the alignment results from both
 RGBD image in the global space. After that, RGBD images are integrated using
 :ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
 
-
 Results
 ``````````````````````````````````````
 This is a printed log from the volume integration script.

@@ -30,14 +30,15 @@
 
 #include "open3d/Open3D.h"
 
-using namespace open3d;
+namespace open3d {
+namespace examples {
+namespace online_slam {
 using namespace open3d::visualization;
 
 // Tanglo colorscheme (see https://en.wikipedia.org/wiki/Tango_Desktop_Project)
 static const Eigen::Vector3d kTangoOrange(0.961, 0.475, 0.000);
 static const Eigen::Vector3d kTangoSkyBlueDark(0.125, 0.290, 0.529);
 
-//------------------------------------------------------------------------------
 class PropertyPanel : public gui::VGrid {
     using Super = gui::VGrid;
 
@@ -155,19 +156,22 @@ private:
     }
 };
 
-//------------------------------------------------------------------------------
 class ReconstructionWindow : public gui::Window {
     using Super = gui::Window;
 
 public:
-    ReconstructionWindow(const std::string& dataset_path,
-                         const std::string& intrinsic_path,
-                         const std::string& device,
-                         gui::FontId monospace)
+    ReconstructionWindow(
+            const std::function<t::geometry::RGBDImage(const size_t idx)>
+                    get_rgbd_image_input,
+            const core::Tensor& intrinsic,
+            const std::unordered_map<std::string, double> default_parameters,
+            const core::Device device,
+            gui::FontId monospace)
         : gui::Window("Open3D - Reconstruction", 1280, 800),
-          dataset_path_(dataset_path),
-          intrinsic_path_(intrinsic_path),
-          device_str_(device),
+          get_rgbd_image_input_(get_rgbd_image_input),
+          intrinsic_(intrinsic),
+          default_parameters_(default_parameters),
+          device_(device),
           is_running_(false),
           is_started_(false),
           monospace_(monospace) {
@@ -189,42 +193,64 @@ public:
 
         ////////////////////////////////////////
         /// Property panels
+        /// Default value look up map.
+        std::unordered_map<std::string, double> default_param = {
+                {"depth_scale", 1000},
+                {"voxel_size", 3.0 / 512.0},
+                {"trunc_multiplier", 8.0},
+                {"block_count", 40000},
+                {"estimated_points", 6000000},
+                {"update_interval", 50},
+                {"depth_max", 3.0},
+                {"depth_diff", 0.07}};
+        /// Override values by user provided default parameters
+        for (auto it : default_parameters_) {
+            if (default_param.find(it.first) != default_param.end()) {
+                default_param[it.first] = default_parameters_.at(it.first);
+            }
+        }
+
         fixed_props_ = std::make_shared<PropertyPanel>(spacing, left_margin);
         fixed_props_->AddIntSlider("Depth scale", &prop_values_.depth_scale,
-                                   1000, 1000, 5000,
+                                   default_param.at("depth_scale"), 1000, 5000,
                                    "Scale factor applied to the depth values "
                                    "from the depth image.");
         fixed_props_->AddFloatSlider("Voxel size", &prop_values_.voxel_size,
-                                     3.0 / 512, 0.004, 0.01,
+                                     default_param.at("voxel_size"), 0.004,
+                                     0.01,
                                      "Voxel size for the TSDF voxel grid.");
         fixed_props_->AddFloatSlider(
-                "Trunc multiplier", &prop_values_.trunc_voxel_multiplier, 8.0,
-                1.0, 20.0,
+                "Trunc multiplier", &prop_values_.trunc_multiplier,
+                default_param.at("trunc_multiplier"), 1.0, 20.0,
                 "Truncate distance multiplier (in voxel size) to control "
                 "the volumetric surface thickness.");
         fixed_props_->AddIntSlider(
-                "Block count", &prop_values_.bucket_count, 40000, 10000, 100000,
+                "Block count", &prop_values_.block_count,
+                default_param.at("block_count"), 10000, 100000,
                 "Number of estimated voxel blocks for spatial "
                 "hashmap. Will be adapted dynamically, but "
                 "may trigger memory issue during rehashing for large scenes.");
         fixed_props_->AddIntSlider(
-                "Estimated points", &prop_values_.pointcloud_size, 6000000,
-                500000, 8000000,
+                "Estimated points", &prop_values_.estimated_points,
+                default_param.at("estimated_points"), 500000, 8000000,
                 "Estimated number of points in the point cloud; used to speed "
                 "extraction of points into the 3D scene.");
 
         adjustable_props_ =
                 std::make_shared<PropertyPanel>(spacing, left_margin);
         adjustable_props_->AddIntSlider(
-                "Update interval", &prop_values_.surface_interval, 50, 1, 500,
+                "Update interval", &prop_values_.update_interval,
+                default_param.at("update_interval"), 1, 500,
                 "The number of iterations between updating the 3D display.");
 
         adjustable_props_->AddFloatSlider("Depth max", &prop_values_.depth_max,
-                                          3.0, 1.0, 5.0,
+                                          default_param.at("depth_max"), 1.0,
+                                          5.0,
                                           "Maximum depth before point is "
                                           "discarded as part of background.");
         adjustable_props_->AddFloatSlider(
-                "Depth diff", &prop_values_.depth_diff, 0.07, 0.03, 0.5,
+                "Depth diff", &prop_values_.depth_diff,
+                default_param.at("depth_diff"), 0.03, 0.5,
                 "Depth truncation to reject outlier correspondences in "
                 "tracking.");
         adjustable_props_->AddBool("Update surface",
@@ -247,7 +273,7 @@ public:
             if (!this->is_started_) {
                 gui::Application::GetInstance().PostToMainThread(
                         this, [this]() {
-                            int max_points = prop_values_.pointcloud_size;
+                            int max_points = prop_values_.estimated_points;
                             t::geometry::PointCloud pcd_placeholder(
                                     core::Tensor({max_points, 3},
                                                  core::Dtype::Float32,
@@ -276,11 +302,11 @@ public:
                             this->model_ =
                                     std::make_shared<t::pipelines::slam::Model>(
                                             voxel_size, 16,
-                                            prop_values_.bucket_count,
+                                            prop_values_.block_count,
                                             core::Tensor::Eye(
                                                     4, core::Dtype::Float64,
                                                     core::Device("CPU:0")),
-                                            core::Device(device_str_));
+                                            device_);
                             this->is_started_ = true;
                         });
             }
@@ -332,7 +358,7 @@ public:
             if (is_started_) {
                 utility::LogInfo("Writing reconstruction to scene.ply...");
                 auto pcd = model_->ExtractPointCloud(
-                        3.0, prop_values_.pointcloud_size);
+                        3.0, prop_values_.estimated_points);
                 auto pcd_legacy =
                         std::make_shared<geometry::PointCloud>(pcd.ToLegacy());
                 io::WritePointCloud("scene.ply", *pcd_legacy);
@@ -380,9 +406,11 @@ public:
     }
 
 protected:
-    std::string dataset_path_;
-    std::string intrinsic_path_;
-    std::string device_str_;
+    std::function<t::geometry::RGBDImage(const size_t idx)>
+            get_rgbd_image_input_;
+    core::Tensor intrinsic_;
+    std::unordered_map<std::string, double> default_parameters_;
+    core::Device device_;
 
     // General logic
     std::atomic<bool> is_running_;
@@ -408,12 +436,12 @@ protected:
     std::shared_ptr<gui::ImageWidget> raycast_depth_image_;
 
     struct {
-        std::atomic<int> surface_interval;
-        std::atomic<int> pointcloud_size;
+        std::atomic<int> update_interval;
+        std::atomic<int> estimated_points;
         std::atomic<int> depth_scale;
-        std::atomic<int> bucket_count;
+        std::atomic<int> block_count;
         std::atomic<double> voxel_size;
-        std::atomic<double> trunc_voxel_multiplier;
+        std::atomic<double> trunc_multiplier;
         std::atomic<double> depth_max;
         std::atomic<double> depth_diff;
         std::atomic<bool> raycast_color;
@@ -431,108 +459,28 @@ protected:
     std::thread update_thread_;
 
 protected:
-    std::pair<std::vector<std::string>, std::vector<std::string>>
-    LoadFilenames() {
-        std::vector<std::string> rgb_candidates{"color", "image", "rgb"};
-        std::vector<std::string> rgb_files;
-
-        // Load rgb
-        for (auto rgb_candidate : rgb_candidates) {
-            const std::string rgb_dir = dataset_path_ + "/" + rgb_candidate;
-            utility::filesystem::ListFilesInDirectoryWithExtension(
-                    rgb_dir, "jpg", rgb_files);
-            if (rgb_files.size() != 0) break;
-            utility::filesystem::ListFilesInDirectoryWithExtension(
-                    rgb_dir, "png", rgb_files);
-            if (rgb_files.size() != 0) break;
-        }
-        if (rgb_files.size() == 0) {
-            utility::LogError(
-                    "RGB images not found! Please ensure a folder named color, "
-                    "image, or rgb is in {}",
-                    dataset_path_);
-        }
-
-        const std::string depth_dir = dataset_path_ + "/depth";
-        std::vector<std::string> depth_files;
-        utility::filesystem::ListFilesInDirectoryWithExtension(depth_dir, "png",
-                                                               depth_files);
-        if (depth_files.size() == 0) {
-            utility::LogError(
-                    "Depth images not found! Please ensure a folder named "
-                    "depth is in {}",
-                    dataset_path_);
-        }
-
-        if (depth_files.size() != rgb_files.size()) {
-            utility::LogError(
-                    "Number of depth images ({}) and color image ({}) "
-                    "mismatch!",
-                    dataset_path_);
-        }
-
-        std::sort(rgb_files.begin(), rgb_files.end());
-        std::sort(depth_files.begin(), depth_files.end());
-        return std::make_pair(rgb_files, depth_files);
-    }
-
-    std::pair<core::Tensor, camera::PinholeCameraIntrinsic> LoadIntrinsics() {
-        // Default
-        camera::PinholeCameraIntrinsic intrinsic =
-                camera::PinholeCameraIntrinsic(
-                        camera::PinholeCameraIntrinsicParameters::
-                                PrimeSenseDefault);
-        if (intrinsic_path_.empty()) {
-            utility::LogInfo("Using Primesense default intrinsics.");
-        } else if (!io::ReadIJsonConvertible(intrinsic_path_, intrinsic)) {
-            utility::LogWarning(
-                    "Failed to load {}, using Primesense default intrinsics.",
-                    intrinsic_path_);
-        } else {
-            utility::LogInfo("Loaded intrinsics from {}.", intrinsic_path_);
-        }
-        auto focal_length = intrinsic.GetFocalLength();
-        auto principal_point = intrinsic.GetPrincipalPoint();
-        core::Tensor intrinsic_t = core::Tensor::Init<double>(
-                {{focal_length.first, 0, principal_point.first},
-                 {0, focal_length.second, principal_point.second},
-                 {0, 0, 1}});
-
-        camera::PinholeCameraIntrinsic intrinsic_legacy(
-                -1, -1, focal_length.first, focal_length.second,
-                principal_point.first, principal_point.second);
-        return std::make_pair(intrinsic_t, intrinsic_legacy);
-    }
-
     // Note that we cannot update the GUI on this thread, we must post to
     // the main thread!
     void UpdateMain() {
-        // Load files
-        std::vector<std::string> rgb_files, depth_files;
-        std::tie(rgb_files, depth_files) = LoadFilenames();
-
-        // Load intrinsics (if provided)
-        core::Tensor intrinsic_t;
-        camera::PinholeCameraIntrinsic intrinsic_legacy;
-        std::tie(intrinsic_t, intrinsic_legacy) = LoadIntrinsics();
-        camera::PinholeCameraParameters traj_param;
-        traj_param.intrinsic_ = intrinsic_legacy;
-
         // Only set at initialization
         float depth_scale = prop_values_.depth_scale;
         core::Tensor T_frame_to_model = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
-        core::Device device(device_str_);
 
-        t::geometry::Image ref_depth =
-                *t::io::CreateImageFromFile(depth_files[0]);
-        t::geometry::Image ref_color =
-                *t::io::CreateImageFromFile(rgb_files[0]);
+        t::geometry::RGBDImage ref_rgbd_input =
+                get_rgbd_image_input_(0).To(device_);
+        if (ref_rgbd_input.IsEmpty()) {
+            utility::LogInfo("Reached EOF. Empty frame received.");
+            is_done_ = true;
+            return;
+        }
 
-        t::pipelines::slam::Frame input_frame(
-                ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
-        t::pipelines::slam::Frame raycast_frame(
-                ref_depth.GetRows(), ref_depth.GetCols(), intrinsic_t, device);
+        t::pipelines::slam::Frame input_frame(ref_rgbd_input.depth_.GetRows(),
+                                              ref_rgbd_input.depth_.GetCols(),
+                                              intrinsic_, device_);
+        t::pipelines::slam::Frame raycast_frame(ref_rgbd_input.depth_.GetRows(),
+                                                ref_rgbd_input.depth_.GetCols(),
+                                                intrinsic_, device_);
 
         // Odometry
         auto traj = std::make_shared<geometry::LineSet>();
@@ -545,30 +493,41 @@ protected:
 
         is_scene_updated_ = false;
 
-        color = std::make_shared<geometry::Image>(ref_color.ToLegacy());
+        color = std::make_shared<geometry::Image>(
+                ref_rgbd_input.color_.ToLegacy());
+
         depth_colored = std::make_shared<geometry::Image>(
-                ref_depth
+                ref_rgbd_input.depth_
                         .ColorizeDepth(depth_scale, 0.3, prop_values_.depth_max)
                         .ToLegacy());
 
         raycast_color = std::make_shared<geometry::Image>(
-                t::geometry::Image(
-                        core::Tensor::Zeros(
-                                {ref_depth.GetRows(), ref_depth.GetCols(), 3},
-                                core::Dtype::UInt8, core::Device("CPU:0")))
+                t::geometry::Image(core::Tensor::Zeros(
+                                           {ref_rgbd_input.depth_.GetRows(),
+                                            ref_rgbd_input.depth_.GetCols(), 3},
+                                           core::Dtype::UInt8,
+                                           core::Device("CPU:0")))
                         .ToLegacy());
         raycast_depth_colored = std::make_shared<geometry::Image>(
-                t::geometry::Image(
-                        core::Tensor::Zeros(
-                                {ref_depth.GetRows(), ref_depth.GetCols(), 3},
-                                core::Dtype::UInt8, core::Device("CPU:0")))
+                t::geometry::Image(core::Tensor::Zeros(
+                                           {ref_rgbd_input.depth_.GetRows(),
+                                            ref_rgbd_input.depth_.GetCols(), 3},
+                                           core::Dtype::UInt8,
+                                           core::Device("CPU:0")))
                         .ToLegacy());
 
         // Add placeholder in case color raycast is disabled in the beginning.
         raycast_frame.SetData(
-                "color", core::Tensor::Zeros(
-                                 {ref_depth.GetRows(), ref_depth.GetCols(), 3},
-                                 core::Dtype::UInt8, core::Device("CPU:0")));
+                "color",
+                core::Tensor::Zeros({ref_rgbd_input.depth_.GetRows(),
+                                     ref_rgbd_input.depth_.GetCols(), 3},
+                                    core::Dtype::UInt8, core::Device("CPU:0")));
+
+        camera::PinholeCameraParameters traj_param;
+        traj_param.intrinsic_ = camera::PinholeCameraIntrinsic(
+                ref_rgbd_input.depth_.GetRows(),
+                ref_rgbd_input.depth_.GetCols(),
+                core::eigen_converter::TensorToEigenMatrixXd(intrinsic_));
 
         // Render once to refresh
         gui::Application::GetInstance().PostToMainThread(
@@ -609,13 +568,17 @@ protected:
                 continue;
             }
 
+            t::geometry::RGBDImage rgbd_input =
+                    get_rgbd_image_input_(idx).To(device_);
+            if (rgbd_input.IsEmpty()) {
+                utility::LogInfo("Reached EOF. Empty frame received.");
+                is_done_ = true;
+                break;
+            }
+
             // Input
-            t::geometry::Image input_depth =
-                    *t::io::CreateImageFromFile(depth_files[idx]);
-            t::geometry::Image input_color =
-                    *t::io::CreateImageFromFile(rgb_files[idx]);
-            input_frame.SetDataFromImage("depth", input_depth);
-            input_frame.SetDataFromImage("color", input_color);
+            input_frame.SetDataFromImage("depth", rgbd_input.depth_);
+            input_frame.SetDataFromImage("color", rgbd_input.color_);
 
             bool tracking_success = true;
             if (idx > 0) {
@@ -645,15 +608,14 @@ protected:
             if (tracking_success) {
                 model_->Integrate(input_frame, depth_scale,
                                   prop_values_.depth_max,
-                                  prop_values_.trunc_voxel_multiplier);
+                                  prop_values_.trunc_multiplier);
             }
-            model_->SynthesizeModelFrame(raycast_frame, depth_scale, 0.1,
-                                         prop_values_.depth_max,
-                                         prop_values_.trunc_voxel_multiplier,
-                                         prop_values_.raycast_color);
+            model_->SynthesizeModelFrame(
+                    raycast_frame, depth_scale, 0.1, prop_values_.depth_max,
+                    prop_values_.trunc_multiplier, prop_values_.raycast_color);
 
             auto K_eigen =
-                    core::eigen_converter::TensorToEigenMatrixXd(intrinsic_t);
+                    core::eigen_converter::TensorToEigenMatrixXd(intrinsic_);
             auto T_eigen = core::eigen_converter::TensorToEigenMatrixXd(
                     T_frame_to_model);
             traj_param.extrinsic_ = T_eigen;
@@ -662,7 +624,7 @@ protected:
             std::stringstream info, fps;
             info.setf(std::ios::fixed, std::ios::floatfield);
             info.precision(4);
-            info << fmt::format("Frame {}/{}\n\n", idx, rgb_files.size());
+            info << fmt::format("Frame {}\n\n", idx);
 
             info << "Transformation:\n";
             info << T_eigen.format(CleanFmt) << "\n\n";
@@ -677,7 +639,7 @@ protected:
                                 ? surface_.pcd.GetPointPositions().GetLength()
                                 : 0;
                 info << fmt::format("Surface points: {}/{}\n", len,
-                                    prop_values_.pointcloud_size)
+                                    prop_values_.estimated_points)
                      << "\n";
             }
 
@@ -729,12 +691,11 @@ protected:
             // Extract surface on demand (do before we increment idx, so that
             // we see something immediately, on interation 0)
             if ((prop_values_.update_surface &&
-                 idx % static_cast<int>(prop_values_.surface_interval) == 0) ||
-                idx == depth_files.size() - 1) {
+                 idx % static_cast<int>(prop_values_.update_interval) == 0)) {
                 std::lock_guard<std::mutex> locker(surface_.lock);
                 surface_.pcd =
                         model_->ExtractPointCloud(std::min<float>(idx, 3.0f),
-                                                  prop_values_.pointcloud_size)
+                                                  prop_values_.estimated_points)
                                 .To(core::Device("CPU:0"));
                 is_scene_updated_ = true;
             }
@@ -801,64 +762,10 @@ protected:
             // Note that the user might have closed the window, in which case we
             // want to maintain a value of true.
             idx++;
-            is_done_ = is_done_ | (idx >= depth_files.size());
         }
     }
 };
 
-//------------------------------------------------------------------------------
-void PrintHelp() {
-    using namespace open3d;
-
-    PrintOpen3DVersion();
-    // clang-format off
-    utility::LogInfo("Usage:");
-    utility::LogInfo("    > DenseSLAMGUI [dataset_path]");
-    utility::LogInfo("      Given a sequence of RGBD images, reconstruct point cloud from color and depth images");
-    utility::LogInfo("");
-    utility::LogInfo("Basic options:");
-    utility::LogInfo("    --voxel_size [=0.0058 (m)]");
-    utility::LogInfo("    --intrinsic_path [camera_intrinsic.json]");
-    utility::LogInfo("    --device [CUDA:0]");
-    // clang-format on
-    utility::LogInfo("");
-}
-
-int main(int argc, char* argv[]) {
-    using namespace open3d;
-
-    if (argc < 2 ||
-        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
-        PrintHelp();
-        return 1;
-    }
-
-    std::string dataset_path = argv[1];
-    if (!utility::filesystem::DirectoryExists(dataset_path)) {
-        utility::LogWarning(
-                "Expected an existing directory, but {} does not exist.",
-                dataset_path);
-        return -1;
-    }
-
-    std::string intrinsic_path = utility::GetProgramOptionAsString(
-            argc, argv, "--intrinsics_path", "");
-
-    std::string device_code =
-            utility::GetProgramOptionAsString(argc, argv, "--device", "CUDA:0");
-    if (device_code != "CPU:0" && device_code != "CUDA:0") {
-        utility::LogWarning(
-                "Unrecognized device {}. Expecting CPU:0 or CUDA:0.",
-                device_code);
-        return -1;
-    }
-    utility::LogInfo("Using device {}.", device_code);
-
-    auto& app = gui::Application::GetInstance();
-    app.Initialize(argc, const_cast<const char**>(argv));
-    auto mono =
-            app.AddFont(gui::FontDescription(gui::FontDescription::MONOSPACE));
-    app.AddWindow(std::make_shared<ReconstructionWindow>(
-            dataset_path, intrinsic_path, device_code, mono));
-    app.Run();
-}
+}  // namespace online_slam
+}  // namespace examples
+}  // namespace open3d

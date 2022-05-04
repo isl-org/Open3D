@@ -30,6 +30,7 @@ import subprocess
 
 import numpy as np
 import tabulate
+import nvidia_smi
 
 
 def get_processor_name():
@@ -97,6 +98,19 @@ def measure_time(fn, min_samples=10, max_samples=100, max_time_in_sec=10.0):
     return np.array(t) / 1e9
 
 
+def measure_memory(fn, handle):
+    """Measure memory to run fn. Returns the maximum allocated memory each run."""
+    try:
+        _ = fn()
+    except Exception as e:
+        print(e)
+        return np.nan
+    info = nvidia_smi.nvmlDeviceGetMemoryInfo(handle)
+    memory = info.used / 1000. / 1000. / 1000.
+    print('.', end='')
+    return memory
+
+
 def print_table(methods, results):
     headers = [''] + [f'{n}_setup' for n in methods
                      ] + [f'{n}_search' for n in methods]
@@ -106,6 +120,28 @@ def print_table(methods, results):
         r = [x] + list(
             map(np.median, [r[x]['setup'] for r in results] +
                 [r[x]['search'] for r in results]))
+        rows.append(r)
+
+    print(tabulate.tabulate(rows, headers=headers))
+
+
+def print_table_simple(methods, results):
+    headers = [''] + [f'{n}_search' for n in methods]
+    rows = []
+
+    for x in results[0]:
+        r = [x] + list(map(np.median, [r[x]['search'] for r in results]))
+        rows.append(r)
+
+    print(tabulate.tabulate(rows, headers=headers))
+
+
+def print_table_memory(methods, results):
+    headers = [''] + [f'{n}' for n in methods]
+    rows = []
+
+    for x in results[0]:
+        r = [x] + list(map(np.median, [r[x]['memory'] for r in results]))
         rows.append(r)
 
     print(tabulate.tabulate(rows, headers=headers))
