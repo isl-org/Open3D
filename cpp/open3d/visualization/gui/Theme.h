@@ -39,11 +39,6 @@ namespace gui {
 struct Theme {
     Color background_color;
 
-    // std::string font_path;
-    // std::string font_bold_path;
-    // std::string font_italic_path;
-    // std::string font_bold_italic_path;
-    // std::string font_mono_path;
     std::vector<char> font_data;
     std::vector<char> font_bold_data;
     std::vector<char> font_italic_data;

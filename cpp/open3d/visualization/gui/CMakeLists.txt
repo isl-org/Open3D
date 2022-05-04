@@ -1,5 +1,5 @@
 if (WIN32)
-    set (EmbedResourcesExecutable "Release/EmbedResources.exe")
+    set (EmbedResourcesExecutable ${PROJECT_BINARY_DIR}/bin/Release/EmbedResources.exe)
 else()
     set (EmbedResourcesExecutable "./EmbedResources")
 endif()

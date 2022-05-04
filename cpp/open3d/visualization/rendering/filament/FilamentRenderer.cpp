@@ -323,12 +323,6 @@ void FilamentRenderer::RemoveIndirectLight(const IndirectLightHandle& id) {
 }
 
 SkyboxHandle FilamentRenderer::AddSkybox(const ResourceLoadRequest& request) {
-    // if (request.path_.empty()) {
-    //     request.error_callback_(request, -1,
-    //                             "Skyboxes can be loaded only from files");
-    //     return {};
-    // }
-
     return resource_mgr_.CreateSkybox(request);
 }
 

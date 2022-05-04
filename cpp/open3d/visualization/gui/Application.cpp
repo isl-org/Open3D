@@ -213,12 +213,6 @@ Application::Application() : impl_(new Application::Impl()) {
     Color highlight_color(0.5, 0.5, 0.5);
 
     // Note that any values here need to be scaled by the scale factor in Window
-    // impl_->theme_.font_path =
-    //         "Roboto-Medium.ttf";  // full path will be added in Initialize()
-    // impl_->theme_.font_bold_path = "Roboto-Bold.ttf";
-    // impl_->theme_.font_italic_path = "Roboto-MediumItalic.ttf";
-    // impl_->theme_.font_bold_italic_path = "Roboto-BoldItalic.ttf";
-    // impl_->theme_.font_mono_path = "RobotoMono-Medium.ttf";
     impl_->theme_.font_data = Roboto_Medium_ttf();
     impl_->theme_.font_bold_data = Roboto_Bold_ttf();
     impl_->theme_.font_italic_data = Roboto_MediumItalic_ttf();
@@ -306,27 +300,6 @@ void Application::Initialize(const char *resource_path) {
     }
 
     rendering::EngineInstance::SetResourcePath(resource_path);
-    // std::string uiblit_path = std::string(resource_path) +
-    // "/ui_blit.filamat"; if (!utility::filesystem::FileExists(uiblit_path)) {
-    //     utility::LogError(
-    //             "Resource directory does not have Open3D resources: {}",
-    //             resource_path);
-    // }
-
-    // impl_->theme_.font_path = std::string(resource_path) + std::string("/") +
-    //                           impl_->theme_.font_path;
-    // impl_->theme_.font_bold_path = std::string(resource_path) +
-    //                                std::string("/") +
-    //                                impl_->theme_.font_bold_path;
-    // impl_->theme_.font_italic_path = std::string(resource_path) +
-    //                                  std::string("/") +
-    //                                  impl_->theme_.font_italic_path;
-    // impl_->theme_.font_bold_italic_path = std::string(resource_path) +
-    //                                       std::string("/") +
-    //                                       impl_->theme_.font_bold_italic_path;
-    // impl_->theme_.font_mono_path = std::string(resource_path) +
-    //                                std::string("/") +
-    //                                impl_->theme_.font_mono_path;
     if (impl_->fonts_.empty()) {
         AddFont(FontDescription(FontDescription::SANS_SERIF,
                                 FontStyle::NORMAL));
@@ -390,19 +363,6 @@ void Application::SetFont(FontId id, const FontDescription &fd) {
         }
     };
 
-    // auto GetStyleName = [](FontStyle style) {
-    //     switch (style) {
-    //         case FontStyle::BOLD:
-    //             return "BOLD";
-    //         case FontStyle::ITALIC:
-    //             return "ITALIC";
-    //         case FontStyle::BOLD_ITALIC:
-    //             return "BOLD_ITALIC";
-    //         default:
-    //             return "NORMAL";
-    //     }
-    // };
-
     impl_->fonts_[id] = fd;
     auto style = impl_->fonts_[id].style_;
     for (auto &range : impl_->fonts_[id].ranges_) {
@@ -412,22 +372,6 @@ void Application::SetFont(FontId id, const FontDescription &fd) {
         } else if (range.path == FontDescription::MONOSPACE) {
             range.data = impl_->theme_.font_mono_data;
         }
-        // Get the actual path
-        // auto path = FindFontPath(range.path, style);
-        // if (!path.empty()) {
-        //     range.path = path;
-        // } else {
-        //     // If we can't find the requested style, try to at least find the
-        //     // typeface.
-        //     auto fallback = FindFontPath(range.path, FontStyle::NORMAL);
-        //     if (fallback.empty()) {
-        //         // But if that doesn't work, fall back to styled sans-serif.
-        //         fallback = GetSansSerifPath(style);
-        //     }
-        //     utility::LogWarning("Could not find font '{}' with style {}",
-        //                         range.path, GetStyleName(style));
-        //     range.path = fallback;
-        // }
     }
 
     if (id == DEFAULT_FONT_ID && fd.point_size_ > 0) {
