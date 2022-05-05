@@ -151,20 +151,8 @@ void install_cleanup_atexit() {
     }
 }
 
-void InitializeForPython(std::string resource_path /*= ""*/) {
-    if (resource_path.empty()) {
-        // We need to find the resources directory. Fortunately,
-        // Python knows where the module lives (open3d.__file__
-        // is the path to
-        // __init__.py), so we can use that to find the
-        // resources included in the wheel.
-        py::object o3d = py::module::import("open3d");
-        auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
-        auto module_path =
-                utility::filesystem::GetFileParentDirectory(o3d_init_path);
-        resource_path = module_path + "/resources";
-    }
-    Application::GetInstance().Initialize(resource_path.c_str());
+void InitializeForPython() {
+    Application::GetInstance().Initialize();
     install_cleanup_atexit();
 }
 
@@ -382,12 +370,8 @@ void pybind_gui_classes(py::module &m) {
                           &Application::SetMenubar,
                           "The Menu for the application (initially None)")
             .def_property_readonly("now", &Application::Now,
-                                   "Returns current time in seconds")
+                                   "Returns current time in seconds");
             // Note: we cannot export AddWindow and RemoveWindow
-            .def_property_readonly("resource_path",
-                                   &Application::GetResourcePath,
-                                   "Returns a string with the path to the "
-                                   "resources directory");
 
     // ---- LayoutContext ----
     py::class_<LayoutContext> lc(

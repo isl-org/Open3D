@@ -52,7 +52,6 @@ class GuiSettingsView : public gui::Vert {
 public:
     GuiSettingsView(GuiSettingsModel& model,
                     const gui::Theme& theme,
-                    const std::string& resource_path,
                     std::function<void(const char*)> on_load_ibl);
 
     void ShowFileMaterialEntry(bool show);

@@ -614,10 +614,6 @@ void Application::PostToMainThread(Window *window, std::function<void()> f) {
     impl_->posted_.emplace_back(window, f);
 }
 
-const char *Application::GetResourcePath() const {
-    return rendering::EngineInstance::GetResourcePath().c_str();
-}
-
 const Theme &Application::GetTheme() const { return impl_->theme_; }
 
 std::shared_ptr<geometry::Image> Application::RenderToImage(

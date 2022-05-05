@@ -55,7 +55,7 @@ void RunViewer(int argc, const char *argv[]) {
     }
 
     auto &app = gui::Application::GetInstance();
-    app.Initialize(argc, argv);
+    app.Initialize();
 
     auto vis = std::make_shared<open3d::visualization::GuiVisualizer>(
             "Open3D", width, height);

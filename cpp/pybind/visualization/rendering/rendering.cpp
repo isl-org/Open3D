@@ -50,9 +50,8 @@ class PyOffscreenRenderer {
 public:
     PyOffscreenRenderer(int width,
                         int height,
-                        const std::string &resource_path,
                         bool headless) {
-        gui::InitializeForPython(resource_path);
+        gui::InitializeForPython();
         width_ = width;
         height_ = height;
         if (headless) {

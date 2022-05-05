@@ -32,7 +32,6 @@
 //       32 so that x >> 32 gives a warning. (Or maybe the compiler can't
 //       determine the if statement does not run.)
 // 4305: LightManager.h needs to specify some constants as floats
-#include <experimental/filesystem>
 #include <unordered_set>
 
 #ifdef _MSC_VER
@@ -75,6 +74,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Resource.h"
 #include "open3d/visualization/rendering/Light.h"
@@ -1569,8 +1569,7 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
     std::vector<char> skybox_bytes;
 
     bool use_embedded_resources = true;
-    namespace fs = std::experimental::filesystem;
-    std::string ibl_filename = std::string(fs::path(ibl_name).filename());
+    std::string ibl_filename = utility::filesystem::GetFileNameWithoutDirectory(ibl_name);
     auto ibl_list = GetListOfIBLs();
     if (ibl_list.find(ibl_filename) != ibl_list.end()) {
         ibl_bytes = ibl_list[ibl_filename].ibl();

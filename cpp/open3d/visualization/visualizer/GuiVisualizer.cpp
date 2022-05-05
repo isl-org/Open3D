@@ -740,7 +740,6 @@ GuiVisualizer::GuiVisualizer(
 }
 
 void GuiVisualizer::Init() {
-    auto &app = gui::Application::GetInstance();
     auto &theme = GetTheme();
 
     // Create menu
@@ -808,7 +807,6 @@ void GuiVisualizer::Init() {
 
     // Create light
     auto &settings = impl_->settings_;
-    std::string resource_path = app.GetResourcePath();
     auto ibl_name = "default";
     auto *render_scene = impl_->scene_wgt_->GetScene()->GetScene();
     render_scene->SetIndirectLight(ibl_name);
@@ -885,7 +883,7 @@ void GuiVisualizer::Init() {
 
     // ... lighting and materials
     settings.view_ = std::make_shared<GuiSettingsView>(
-            settings.model_, theme, resource_path, [this](const char *name) {
+            settings.model_, theme, [this](const char *name) {
                 if (std::string(name) ==
                     std::string(GuiSettingsModel::CUSTOM_IBL)) {
                     auto dlg = std::make_shared<gui::FileDialog>(

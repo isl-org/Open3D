@@ -123,9 +123,6 @@ public:
 
     WindowSystem &GetWindowSystem() const;
 
-    // (std::string not good in interfaces for ABI reasons)
-    const char *GetResourcePath() const;
-
     /// This is primarily intended for use by the Window class. Any size-related
     /// fields (for example, fontSize) should be accessed through
     /// Window::GetTheme() as they are updated to reflect the pixel scaling

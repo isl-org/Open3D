@@ -34,6 +34,7 @@
 #include "open3d/visualization/gui/ColorEdit.h"
 #include "open3d/visualization/gui/Combobox.h"
 #include "open3d/visualization/gui/Label.h"
+#include "open3d/visualization/gui/Resource.h"
 #include "open3d/visualization/gui/Slider.h"
 #include "open3d/visualization/gui/Theme.h"
 #include "open3d/visualization/gui/VectorEdit.h"
@@ -57,7 +58,6 @@ std::shared_ptr<gui::Slider> MakeSlider(const gui::Slider::Type type,
 
 GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
                                  const gui::Theme &theme,
-                                 const std::string &resource_path,
                                  std::function<void(const char *)> on_load_ibl)
     : model_(model), on_load_ibl_(on_load_ibl) {
     const auto em = theme.font_size;
@@ -164,20 +164,15 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
 
     // ... IBL
     ibls_ = std::make_shared<gui::Combobox>();
-    std::vector<std::string> resource_files;
-    utility::filesystem::ListFilesInDirectory(resource_path, resource_files);
-    std::sort(resource_files.begin(), resource_files.end());
+    auto list_of_ibls = GetListOfIBLs();
     int n = 0;
-    for (auto &f : resource_files) {
-        if (f.find("_ibl.ktx") == f.size() - 8) {
-            auto name = utility::filesystem::GetFileNameWithoutDirectory(f);
-            name = name.substr(0, name.size() - 8);
-            ibls_->AddItem(name.c_str());
-            if (name == GuiSettingsModel::DEFAULT_IBL) {
-                ibls_->SetSelectedIndex(n);
-            }
-            n++;
+    for (auto &ibl : list_of_ibls) {
+        auto name = ibl.first;
+        ibls_->AddItem(name.c_str());
+        if (name == GuiSettingsModel::DEFAULT_IBL) {
+            ibls_->SetSelectedIndex(n);
         }
+        n++;
     }
     ibls_->AddItem(GuiSettingsModel::CUSTOM_IBL);
     ibls_->SetOnValueChanged(

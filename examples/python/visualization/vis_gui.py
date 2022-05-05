@@ -219,8 +219,7 @@ class AppWindow:
 
     def __init__(self, width, height):
         self.settings = Settings()
-        resource_path = gui.Application.instance.resource_path
-        self.settings.new_ibl_name = resource_path + "/" + AppWindow.DEFAULT_IBL
+        self.settings.new_ibl_name = AppWindow.DEFAULT_IBL
 
         self.window = gui.Application.instance.create_window(
             "Open3D", width, height)
@@ -342,6 +341,7 @@ class AppWindow:
         advanced.add_child(h)
 
         self._ibl_map = gui.Combobox()
+        # TODO: remove resource path from here
         for ibl in glob.glob(gui.Application.instance.resource_path +
                              "/*_ibl.ktx"):
 
@@ -584,7 +584,7 @@ class AppWindow:
             self._apply_settings()
 
     def _on_new_ibl(self, name, index):
-        self.settings.new_ibl_name = gui.Application.instance.resource_path + "/" + name
+        self.settings.new_ibl_name = name
         self._profiles.selected_text = Settings.CUSTOM_PROFILE_NAME
         self._apply_settings()
 

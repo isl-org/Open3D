@@ -444,6 +444,7 @@ class Open3DPlugin(base_plugin.TBPlugin):
         be nonempty, or a ValueError will similarly be thrown.
     """
     plugin_name = metadata.PLUGIN_NAME
+    # TODO: remove resource path from here
     _RESOURCE_PATH = os.path.join(os.path.dirname(__file__), "..", "..",
                                   "resources")
     _PLUGIN_DIRECTORY_PATH_PART = "/data/plugin/" + metadata.PLUGIN_NAME + "/"

@@ -44,6 +44,7 @@
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Events.h"
 #include "open3d/visualization/gui/Window.h"
+#include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/webrtc_server/HttpServerRequestHandler.h"
 #include "open3d/visualization/webrtc_server/PeerConnectionManager.h"
 
@@ -273,13 +274,16 @@ WebRTCWindowSystem::OSWindow WebRTCWindowSystem::GetOSWindowByUID(
     return nullptr;
 }
 
+const char *GetResourcePath() {
+    return rendering::EngineInstance::GetResourcePath().c_str();
+}
+
 void WebRTCWindowSystem::StartWebRTCServer() {
     if (!impl_->sever_started_) {
         auto start_webrtc_thread = [this]() {
             // Ensure Application::Initialize() is called before this.
             // TODO: move GetResourcePath to WebRTC
-            std::string resource_path(
-                    gui::Application::GetInstance().GetResourcePath());
+            std::string resource_path(GetResourcePath());
             impl_->web_root_ = resource_path + "/html";
 
             // Logging settings.
