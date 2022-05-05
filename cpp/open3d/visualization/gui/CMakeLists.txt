@@ -1,65 +1,104 @@
-if (WIN32)
-    set (EmbedResourcesExecutable ${PROJECT_BINARY_DIR}/bin/Release/EmbedResources.exe)
-else()
-    set (EmbedResourcesExecutable "./EmbedResources")
-endif()
-
 add_custom_command(
     OUTPUT
         ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
+        ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h
     DEPENDS
         EmbedResources
     COMMAND
         ${CMAKE_COMMAND} -E rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${CMAKE_COMMAND} -E rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h &&
-        ${EmbedResourcesExecutable} resources/brightday_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/brightday_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/colorMap.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/crossroads_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/crossroads_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/defaultGradient.png ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/default_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/defaultLit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/defaultLitSSR.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/defaultLitTransparency.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/default_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/defaultTexture.png ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/defaultUnlit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/defaultUnlitTransparency.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/depth.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/depth_value.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/hall_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/hall_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/img_blit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/infiniteGroundPlane.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/konzerthaus_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/konzerthaus_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/nightlights_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/nightlights_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/normals.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/park2_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/park2_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/park_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/park_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/pillars_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/pillars_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/pointcloud.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/Roboto-Bold.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/Roboto-BoldItalic.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/Roboto-Medium.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/Roboto-MediumItalic.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/RobotoMono-Medium.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/streetlamp_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/streetlamp_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/ui_blit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/unlitBackground.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/unlitGradient.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/unlitLine.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/unlitPolygonOffset.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} resources/unlitSolidColor.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
-        ${EmbedResourcesExecutable} -complete ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
-    WORKING_DIRECTORY
-        ${PROJECT_BINARY_DIR}/bin
+        ${CMAKE_COMMAND} -E rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/brightday_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/brightday_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/colorMap.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/crossroads_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/crossroads_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/defaultGradient.png ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/default_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/defaultLit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/defaultLitSSR.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/defaultLitTransparency.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/default_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/defaultTexture.png ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/defaultUnlit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/defaultUnlitTransparency.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/depth.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/depth_value.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/hall_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/hall_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/img_blit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/infiniteGroundPlane.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/konzerthaus_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/konzerthaus_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/nightlights_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/nightlights_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/normals.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/park2_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/park2_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/park_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/park_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/pillars_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/pillars_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/pointcloud.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/Roboto-Bold.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/Roboto-BoldItalic.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/Roboto-Medium.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/Roboto-MediumItalic.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/RobotoMono-Medium.ttf ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/streetlamp_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/streetlamp_skybox.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/ui_blit.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/unlitBackground.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/unlitGradient.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/unlitLine.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/unlitPolygonOffset.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources ${PROJECT_BINARY_DIR}/bin/resources/unlitSolidColor.filamat ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp 
+    COMMAND
+        EmbedResources -complete ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
     COMMENT
         "Generating Resource.cpp"
     VERBATIM
