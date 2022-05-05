@@ -114,8 +114,8 @@ public:
     core::Tensor GetVoxelCoordinates(const core::Tensor &voxel_indices) const;
 
     /// Accelerated combination of GetVoxelIndices and GetVoxelCoordinates.
-    /// Returns a (N, 3) coordinate in float, and a (N, ) flattened index tensor,
-    /// where N is the number of active voxels located at buf_indices.
+    /// Returns a (N, 3) coordinate in float, and a (N, ) flattened index
+    /// tensor, where N is the number of active voxels located at buf_indices.
     std::pair<core::Tensor, core::Tensor>
     GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor &buf_indices);
 
