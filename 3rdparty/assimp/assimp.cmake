@@ -58,7 +58,7 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
-        -DCMAKE_CXX_FLAGS=${assimp_cxx_flags}
+        $<$<NOT:$<PLATFORM_ID:Windows>>:-DCMAKE_CXX_FLAGS=${assimp_cxx_flags}>
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DASSIMP_NO_EXPORT=ON
