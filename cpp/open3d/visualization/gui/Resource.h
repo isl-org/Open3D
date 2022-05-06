@@ -1,0 +1,53 @@
+#include <vector>
+#include <unordered_map>
+#include <functional>
+std::vector<char> brightday_ibl_ktx();
+std::vector<char> brightday_skybox_ktx();
+std::vector<char> colorMap_filamat();
+std::vector<char> crossroads_ibl_ktx();
+std::vector<char> crossroads_skybox_ktx();
+std::vector<char> defaultGradient_png();
+std::vector<char> default_ibl_ktx();
+std::vector<char> defaultLit_filamat();
+std::vector<char> defaultLitSSR_filamat();
+std::vector<char> defaultLitTransparency_filamat();
+std::vector<char> default_skybox_ktx();
+std::vector<char> defaultTexture_png();
+std::vector<char> defaultUnlit_filamat();
+std::vector<char> defaultUnlitTransparency_filamat();
+std::vector<char> depth_filamat();
+std::vector<char> depth_value_filamat();
+std::vector<char> hall_ibl_ktx();
+std::vector<char> hall_skybox_ktx();
+std::vector<char> img_blit_filamat();
+std::vector<char> infiniteGroundPlane_filamat();
+std::vector<char> konzerthaus_ibl_ktx();
+std::vector<char> konzerthaus_skybox_ktx();
+std::vector<char> nightlights_ibl_ktx();
+std::vector<char> nightlights_skybox_ktx();
+std::vector<char> normals_filamat();
+std::vector<char> park2_ibl_ktx();
+std::vector<char> park2_skybox_ktx();
+std::vector<char> park_ibl_ktx();
+std::vector<char> park_skybox_ktx();
+std::vector<char> pillars_ibl_ktx();
+std::vector<char> pillars_skybox_ktx();
+std::vector<char> pointcloud_filamat();
+std::vector<char> Roboto_Bold_ttf();
+std::vector<char> Roboto_BoldItalic_ttf();
+std::vector<char> Roboto_Medium_ttf();
+std::vector<char> Roboto_MediumItalic_ttf();
+std::vector<char> RobotoMono_Medium_ttf();
+std::vector<char> streetlamp_ibl_ktx();
+std::vector<char> streetlamp_skybox_ktx();
+std::vector<char> ui_blit_filamat();
+std::vector<char> unlitBackground_filamat();
+std::vector<char> unlitGradient_filamat();
+std::vector<char> unlitLine_filamat();
+std::vector<char> unlitPolygonOffset_filamat();
+std::vector<char> unlitSolidColor_filamat();
+struct IBL {
+    std::function<std::vector<char>()> ibl;
+    std::function<std::vector<char>()> skybox;
+};
+const std::unordered_map<std::string, IBL> GetListOfIBLs();
