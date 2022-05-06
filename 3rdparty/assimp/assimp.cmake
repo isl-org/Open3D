@@ -44,9 +44,9 @@ else()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
-    set(assimp_cmake_cxx_flags ${CMAKE_CXX_FLAGS} "-fno-fast-math")
+    set(assimp_cmake_cxx_flags ${CMAKE_CXX_FLAGS} -fno-fast-math)
 else()
-    set(assimp_cmake_cxx_flags "${CMAKE_CXX_FLAGS}")
+    set(assimp_cmake_cxx_flags ${CMAKE_CXX_FLAGS})
 endif()
 
 message(STATUS "######## assimp_cmake_cxx_flags: ${assimp_cmake_cxx_flags}")
