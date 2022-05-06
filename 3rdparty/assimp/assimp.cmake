@@ -44,12 +44,12 @@ else()
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
-    set(assimp_cxx_flags "-fno-fast-math")
+    set(assimp_cxx_flags ${CMAKE_CXX_FLAGS} "-fno-fast-math")
 else()
-    set(assimp_cxx_flags "")
+    set(assimp_cxx_flags "${CMAKE_CXX_FLAGS}")
 endif()
 
-message(STATUS "########### CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+message(STATUS "######## assimp_cxx_flags: ${assimp_cxx_flags}")
 
 ExternalProject_Add(
     ext_assimp
@@ -60,7 +60,7 @@ ExternalProject_Add(
     UPDATE_COMMAND ""
     CMAKE_ARGS
         ${ExternalProject_CMAKE_ARGS_hidden}
-        $<$<NOT:$<PLATFORM_ID:Windows>>:-DCMAKE_CXX_FLAGS=${assimp_cxx_flags}>
+        -DCMAKE_CXX_FLAGS="${assimp_cxx_flags}"
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DASSIMP_NO_EXPORT=ON
