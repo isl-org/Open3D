@@ -2,7 +2,7 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-# For bash-specific commands, e.g, if [[ xxx ]]
+# For bash-specific commands
 SHELL ["/bin/bash", "-c"]
 
 # Required build args, should be specified in docker_build.sh
