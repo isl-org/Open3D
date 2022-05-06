@@ -138,18 +138,8 @@ cpp_python_linking_uninstall_test() {
     # Python test
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
     if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
-        # TODO: this is a temporary fix for MKL linkage. SYCL iself is fine.
-        # https://bugs.launchpad.net/ubuntu/+source/intel-mkl/+bug/1947626
-        # https://community.intel.com/t5/Intel-oneAPI-Math-Kernel-Library/mkl-fails-to-load/m-p/1155538
-        python_ld_preload=""
-        python_ld_preload="${python_ld_preload}:/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_def.so.2"
-        python_ld_preload="${python_ld_preload}:/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_avx2.so.2"
-        python_ld_preload="${python_ld_preload}:/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_core.so"
-        python_ld_preload="${python_ld_preload}:/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_intel_lp64.so"
-        python_ld_preload="${python_ld_preload}:/opt/intel/oneapi/mkl/latest/lib/intel64/libmkl_tbb_thread.so"
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-            export LD_PRELOAD=${python_ld_preload} \
-         && python -m pytest python/test/core/test_linalg.py ${pytest_args} --skip_sycl_failed_tests -s \
+            python -m pytest python/test/core/test_linalg.py ${pytest_args} -s
         "
     else
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\

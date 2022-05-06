@@ -1339,22 +1339,31 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_onedpl)
 
     # oneMKL
-    # TODO:
-    # - Option 1: link MKL statically
-    # - Option 2: link MKL dynamically, but link dpes as interface. The goal is
-    #             to avoid LD_PRELOAD.
     set(MKL_THREADING tbb_thread)
+    set(MKL_LINK static)
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/mkl/latest/lib/cmake/mkl)
-    open3d_find_package_3rdparty_library(3rdparty_mkl
+    open3d_find_package_3rdparty_library(3rdparty_mkl_libs
         PACKAGE MKL
         TARGETS MKL::mkl_intel_ilp64 MKL::mkl_tbb_thread MKL::mkl_core
         INCLUDE_DIRS MKL_INCLUDE
     )
-    # MKL macros
+    # Grouped static libs avoid missing symbols:
+    # https://gitlab.kitware.com/cmake/cmake/-/issues/21511#note_865669
+    add_library(3rdparty_mkl INTERFACE)
+    target_link_libraries(3rdparty_mkl INTERFACE
+        "-Wl,--start-group"
+        MKL::mkl_intel_ilp64
+        MKL::mkl_tbb_thread
+        MKL::mkl_core
+        "-Wl,--end-group"
+    )
+    # MKL definitions
     target_compile_options(3rdparty_mkl INTERFACE "$<$<PLATFORM_ID:Linux,Darwin>:$<$<COMPILE_LANGUAGE:CXX>:-m64>>")
     target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
     # Other global macros: OPEN3D_USE_ONEAPI_PACKAGES
     target_compile_definitions(3rdparty_mkl INTERFACE OPEN3D_USE_ONEAPI_PACKAGES)
+
+    add_library(Open3D::3rdparty_mkl ALIAS 3rdparty_mkl)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
 else() # USE_ONEAPI_PACKAGES
     # TBB
