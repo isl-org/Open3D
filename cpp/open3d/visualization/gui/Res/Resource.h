@@ -1,6 +1,7 @@
 #include <vector>
 #include <unordered_map>
 #include <functional>
+#include <string>
 std::vector<char> brightday_ibl_ktx();
 std::vector<char> brightday_skybox_ktx();
 std::vector<char> colorMap_filamat();
