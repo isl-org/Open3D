@@ -45,6 +45,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+class TriangleMesh;  // forward declaration
+
 /// \class PointCloud
 /// \brief A point cloud contains a list of 3D points.
 ///
@@ -354,6 +356,22 @@ public:
     core::Tensor ClusterDBSCAN(double eps,
                                size_t min_points,
                                bool print_progress = false) const;
+
+    /// Compute the convex hull of a point cloud using qhull.
+    ///
+    /// This runs on the CPU.
+    ///
+    /// \param joggle_inputs (default False). Handle precision problems by
+    /// randomly perturbing the input data. Set to True if perturbing the input
+    /// iis acceptable but you need convex simplicial output. If False,
+    /// neighboring facets may be merged in case of precision problems. See
+    /// [QHull docs](http://www.qhull.org/html/qh-impre.htm#joggle) for more
+    /// details.
+    ///
+    /// \return TriangleMesh representing the convexh hull. This contains an
+    /// extra vertex property "point_map" that contains the index of the
+    /// corresponding vertex in the original mesh.
+    TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
 
 public:
     /// \brief Function to estimate point normals. If the point cloud normals
