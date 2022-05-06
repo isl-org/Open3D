@@ -226,16 +226,17 @@ std::vector<char> unlitSolidColor_filamat() {
     return unlitSolidColor_filamat_data;
 }
 const std::unordered_map<std::string, IBL> GetListOfIBLs() {
-    std::unordered_map<std::string, IBL> ibl_name_to_embedded_resource;
-    ibl_name_to_embedded_resource["brightday"] = {brightday_ibl_ktx, brightday_skybox_ktx};
-    ibl_name_to_embedded_resource["crossroads"] = {crossroads_ibl_ktx, crossroads_skybox_ktx};
-    ibl_name_to_embedded_resource["default"] = {default_ibl_ktx, default_skybox_ktx};
-    ibl_name_to_embedded_resource["hall"] = {hall_ibl_ktx, hall_skybox_ktx};
-    ibl_name_to_embedded_resource["konzerthaus"] = {konzerthaus_ibl_ktx, konzerthaus_skybox_ktx};
-    ibl_name_to_embedded_resource["nightlights"] = {nightlights_ibl_ktx, nightlights_skybox_ktx};
-    ibl_name_to_embedded_resource["park2"] = {park2_ibl_ktx, park2_skybox_ktx};
-    ibl_name_to_embedded_resource["park"] = {park_ibl_ktx, park_skybox_ktx};
-    ibl_name_to_embedded_resource["pillars"] = {pillars_ibl_ktx, pillars_skybox_ktx};
-    ibl_name_to_embedded_resource["streetlamp"] = {streetlamp_ibl_ktx, streetlamp_skybox_ktx};
+    std::unordered_map<std::string, IBL> ibl_name_to_embedded_resource = {
+            {"brightday", {brightday_ibl_ktx, brightday_skybox_ktx}},
+            {"crossroads", {crossroads_ibl_ktx, crossroads_skybox_ktx}},
+            {"default", {default_ibl_ktx, default_skybox_ktx}},
+            {"hall", {hall_ibl_ktx, hall_skybox_ktx}},
+            {"konzerthaus", {konzerthaus_ibl_ktx, konzerthaus_skybox_ktx}},
+            {"nightlights", {nightlights_ibl_ktx, nightlights_skybox_ktx}},
+            {"park2", {park2_ibl_ktx, park2_skybox_ktx}},
+            {"park", {park_ibl_ktx, park_skybox_ktx}},
+            {"pillars", {pillars_ibl_ktx, pillars_skybox_ktx}},
+            {"streetlamp", {streetlamp_ibl_ktx, streetlamp_skybox_ktx}},
+    };
     return ibl_name_to_embedded_resource;
 }
