@@ -350,10 +350,13 @@ endif()
 #    INCLUDE_ALL
 #        install all files in the include directories. Default is *.h, *.hpp
 #    HIDDEN
-#         Symbols from this library will not be exported to client code during
-#         linking with Open3D. This is the opposite of the VISIBLE option in
-#         open3d_build_3rdparty_library.  Prefer hiding symbols during building 3rd
-#         party libraries, since this option is not supported by the MSVC linker.
+#        Symbols from this library will not be exported to client code during
+#        linking with Open3D. This is the opposite of the VISIBLE option in
+#        open3d_build_3rdparty_library.  Prefer hiding symbols during building 3rd
+#        party libraries, since this option is not supported by the MSVC linker.
+#    GROUPED
+#        add "-Wl,--start-group" libx.a liby.a libz.a "-Wl,--end-group" around
+#        the libraries.
 #    INCLUDE_DIRS
 #        the temporary location where the library headers have been installed.
 #        Trailing slashes have the same meaning as with install(DIRECTORY).
@@ -372,7 +375,7 @@ endif()
 #        targets on which <name> depends on and that must be built before.
 #
 function(open3d_import_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;INCLUDE_ALL;HIDDEN" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES;DEPENDS" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;INCLUDE_ALL;HIDDEN;GROUPED" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES;DEPENDS" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: open3d_import_3rdparty_library(${name} ${ARGN})")
