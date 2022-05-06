@@ -228,24 +228,24 @@ std::vector<char> unlitSolidColor_filamat() {
 const std::unordered_map<std::string, IBL> GetListOfIBLs() {
     std::unordered_map<std::string, IBL> ibl_name_to_embedded_resource;
     IBL brightday_ibl = {brightday_ibl_ktx, brightday_skybox_ktx};
-    ibl_name_to_embedded_resource["brightday"] = brightday_ibl; 
+    ibl_name_to_embedded_resource[std::string("brightday")] = brightday_ibl; 
     IBL crossroads_ibl = {crossroads_ibl_ktx, crossroads_skybox_ktx};
-    ibl_name_to_embedded_resource["crossroads"] = crossroads_ibl; 
+    ibl_name_to_embedded_resource[std::string("crossroads")] = crossroads_ibl; 
     IBL default_ibl = {default_ibl_ktx, default_skybox_ktx};
-    ibl_name_to_embedded_resource["default"] = default_ibl; 
+    ibl_name_to_embedded_resource[std::string("default")] = default_ibl; 
     IBL hall_ibl = {hall_ibl_ktx, hall_skybox_ktx};
-    ibl_name_to_embedded_resource["hall"] = hall_ibl; 
+    ibl_name_to_embedded_resource[std::string("hall")] = hall_ibl; 
     IBL konzerthaus_ibl = {konzerthaus_ibl_ktx, konzerthaus_skybox_ktx};
-    ibl_name_to_embedded_resource["konzerthaus"] = konzerthaus_ibl; 
+    ibl_name_to_embedded_resource[std::string("konzerthaus")] = konzerthaus_ibl; 
     IBL nightlights_ibl = {nightlights_ibl_ktx, nightlights_skybox_ktx};
-    ibl_name_to_embedded_resource["nightlights"] = nightlights_ibl; 
+    ibl_name_to_embedded_resource[std::string("nightlights")] = nightlights_ibl; 
     IBL park2_ibl = {park2_ibl_ktx, park2_skybox_ktx};
-    ibl_name_to_embedded_resource["park2"] = park2_ibl; 
+    ibl_name_to_embedded_resource[std::string("park2")] = park2_ibl; 
     IBL park_ibl = {park_ibl_ktx, park_skybox_ktx};
-    ibl_name_to_embedded_resource["park"] = park_ibl; 
+    ibl_name_to_embedded_resource[std::string("park")] = park_ibl; 
     IBL pillars_ibl = {pillars_ibl_ktx, pillars_skybox_ktx};
-    ibl_name_to_embedded_resource["pillars"] = pillars_ibl; 
+    ibl_name_to_embedded_resource[std::string("pillars")] = pillars_ibl; 
     IBL streetlamp_ibl = {streetlamp_ibl_ktx, streetlamp_skybox_ktx};
-    ibl_name_to_embedded_resource["streetlamp"] = streetlamp_ibl; 
+    ibl_name_to_embedded_resource[std::string("streetlamp")] = streetlamp_ibl; 
     return ibl_name_to_embedded_resource;
 }
