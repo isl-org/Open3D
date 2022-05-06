@@ -350,10 +350,13 @@ endif()
 #    INCLUDE_ALL
 #        install all files in the include directories. Default is *.h, *.hpp
 #    HIDDEN
-#         Symbols from this library will not be exported to client code during
-#         linking with Open3D. This is the opposite of the VISIBLE option in
-#         open3d_build_3rdparty_library.  Prefer hiding symbols during building 3rd
-#         party libraries, since this option is not supported by the MSVC linker.
+#        Symbols from this library will not be exported to client code during
+#        linking with Open3D. This is the opposite of the VISIBLE option in
+#        open3d_build_3rdparty_library.  Prefer hiding symbols during building 3rd
+#        party libraries, since this option is not supported by the MSVC linker.
+#    GROUPED
+#        add "-Wl,--start-group" libx.a liby.a libz.a "-Wl,--end-group" around
+#        the libraries.
 #    INCLUDE_DIRS
 #        the temporary location where the library headers have been installed.
 #        Trailing slashes have the same meaning as with install(DIRECTORY).
@@ -372,7 +375,7 @@ endif()
 #        targets on which <name> depends on and that must be built before.
 #
 function(open3d_import_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;INCLUDE_ALL;HIDDEN" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES;DEPENDS" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;INCLUDE_ALL;HIDDEN;GROUPED" "LIB_DIR" "INCLUDE_DIRS;LIBRARIES;DEPENDS" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: open3d_import_3rdparty_library(${name} ${ARGN})")
@@ -413,6 +416,9 @@ function(open3d_import_3rdparty_library name)
         else()
             set(HIDDEN 0)
         endif()
+        if(arg_GROUPED)
+            target_link_libraries(${name} INTERFACE "-Wl,--start-group")
+        endif()
         foreach(arg_LIBRARY IN LISTS arg_LIBRARIES)
             set(library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
             if(libcount EQUAL 1)
@@ -439,6 +445,9 @@ function(open3d_import_3rdparty_library name)
                     ${OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS} PARENT_SCOPE)
             endif()
         endforeach()
+        if(arg_GROUPED)
+            target_link_libraries(${name} INTERFACE "-Wl,--end-group")
+        endif()
     endif()
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
@@ -1296,8 +1305,87 @@ open3d_import_3rdparty_library(3rdparty_vtk
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_vtk)
 
-# TBB
-if(USE_SYSTEM_TBB)
+if(BUILD_SYCL_MODULE)
+    # DPC++ (compile and link flags only)
+    add_library(3rdparty_sycl INTERFACE)
+    # target_compile_options(3rdparty_sycl INTERFACE
+    #     $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fsycl -fsycl-unnamed-lambda -fsycl-targets=spir64_x86_64>)
+    # TODO: resolve issue:
+    # relocation R_X86_64_32 against `.rodata' can not be used when making a PIE
+    # object; recompile with -fPIE
+    # - Link "sycl -fsycl"
+    #   - Shared lib: viewer has pie issue
+    #   - Static lib: examples, unit test, viewer have pie issue
+    # - Link "sycl" only
+    #   - No pie issue at all
+    #   - Unit test cannot find kernel at run time: "No kernel named xxx was found"
+    # Ref:
+    # - https://github.com/intel/llvm/issues/1427
+    target_link_libraries(3rdparty_sycl INTERFACE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:sycl>)
+    target_link_options(3rdparty_sycl INTERFACE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=spir64_x86_64>)
+    if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
+        install(TARGETS 3rdparty_sycl EXPORT Open3DTargets)
+    endif()
+    add_library(Open3D::3rdparty_sycl ALIAS 3rdparty_sycl)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_sycl)
+endif()
+
+if(BUILD_SYCL_MODULE)
+    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." ON)
+else()
+    option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." OFF)
+endif()
+mark_as_advanced(OPEN3D_USE_ONEAPI_PACKAGES)
+
+if(OPEN3D_USE_ONEAPI_PACKAGES)
+    if(DEFINED ENV{ONEAPI_ROOT})
+        message(STATUS "Using OneAPI packages from: $ENV{ONEAPI_ROOT}")
+    else()
+        message(FATAL_ERROR "OneAPI packages not found. Please run `source /opt/intel/oneapi/setvars.sh`")
+    endif()
+
+    # 1. oneTBB
+    # /opt/intel/oneapi/tbb/latest/lib/cmake/tbb
+    open3d_find_package_3rdparty_library(3rdparty_tbb
+        PACKAGE TBB
+        TARGETS TBB::tbb
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
+
+    # 2. oneDPL
+    # /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL
+    open3d_find_package_3rdparty_library(3rdparty_onedpl
+        PACKAGE oneDPL
+        TARGETS oneDPL
+    )
+    target_compile_definitions(3rdparty_onedpl INTERFACE _GLIBCXX_USE_TBB_PAR_BACKEND=0)
+    target_compile_definitions(3rdparty_onedpl INTERFACE PSTL_USE_PARALLEL_POLICIES=0)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_onedpl)
+
+    # 3. oneMKL
+    # /opt/intel/oneapi/mkl/latest/lib/cmake/mkl
+    set(MKL_THREADING tbb_thread)
+    set(MKL_LINK static)
+    find_package(MKL REQUIRED)
+    open3d_import_3rdparty_library(3rdparty_mkl
+        HIDDEN
+        GROUPED
+        INCLUDE_DIRS ${MKL_INCLUDE}/
+        LIB_DIR      ${MKL_ROOT}/lib/intel64
+        LIBRARIES    mkl_intel_ilp64 mkl_tbb_thread mkl_core
+    )
+    # MKL definitions
+    target_compile_options(3rdparty_mkl INTERFACE "$<$<PLATFORM_ID:Linux,Darwin>:$<$<COMPILE_LANGUAGE:CXX>:-m64>>")
+    target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
+    # Other global macros
+    target_compile_definitions(3rdparty_mkl INTERFACE OPEN3D_USE_ONEAPI_PACKAGES)
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
+
+else() # USE_ONEAPI_PACKAGES
+    # TBB
+    if(USE_SYSTEM_TBB)
     open3d_find_package_3rdparty_library(3rdparty_tbb
         PACKAGE TBB
         TARGETS TBB::tbb
@@ -1305,8 +1393,8 @@ if(USE_SYSTEM_TBB)
     if(NOT 3rdparty_tbb_FOUND)
         set(USE_SYSTEM_TBB OFF)
     endif()
-endif()
-if(NOT USE_SYSTEM_TBB)
+    endif()
+    if(NOT USE_SYSTEM_TBB)
     include(${Open3D_3RDPARTY_DIR}/mkl/tbb.cmake)
     open3d_import_3rdparty_library(3rdparty_tbb
         INCLUDE_DIRS ${STATIC_TBB_INCLUDE_DIR}
@@ -1314,136 +1402,136 @@ if(NOT USE_SYSTEM_TBB)
         LIBRARIES    ${STATIC_TBB_LIBRARIES}
         DEPENDS      ext_tbb
     )
-endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
+    endif()
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
 
-# parallelstl
-include(${Open3D_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
-open3d_import_3rdparty_library(3rdparty_parallelstl
+    # parallelstl
+    include(${Open3D_3RDPARTY_DIR}/parallelstl/parallelstl.cmake)
+    open3d_import_3rdparty_library(3rdparty_parallelstl
     PUBLIC
     INCLUDE_DIRS ${PARALLELSTL_INCLUDE_DIRS}
     INCLUDE_ALL
     DEPENDS      ext_parallelstl
-)
-list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
+    )
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS Open3D::3rdparty_parallelstl)
 
+    # MKL/BLAS
+    if(USE_BLAS)
+        if (USE_SYSTEM_BLAS)
+            find_package(BLAS)
+            find_package(LAPACK)
+            find_package(LAPACKE)
+            if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
+                message(STATUS "System BLAS/LAPACK/LAPACKE found.")
+                list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
+                    ${BLAS_LIBRARIES}
+                    ${LAPACK_LIBRARIES}
+                    ${LAPACKE_LIBRARIES}
+                )
+            else()
+                message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting USE_SYSTEM_BLAS=OFF.")
+                set(USE_SYSTEM_BLAS OFF)
+            endif()
+        endif()
 
-# MKL/BLAS
-if(USE_BLAS)
-    if (USE_SYSTEM_BLAS)
-        find_package(BLAS)
-        find_package(LAPACK)
-        find_package(LAPACKE)
-        if(BLAS_FOUND AND LAPACK_FOUND AND LAPACKE_FOUND)
-            message(STATUS "System BLAS/LAPACK/LAPACKE found.")
-            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS
-                ${BLAS_LIBRARIES}
-                ${LAPACK_LIBRARIES}
-                ${LAPACKE_LIBRARIES}
+        if (NOT USE_SYSTEM_BLAS)
+            # Install gfortran first for compiling OpenBLAS/Lapack from source.
+            message(STATUS "Building OpenBLAS with LAPACK from source")
+
+            find_program(gfortran_bin "gfortran")
+            if (gfortran_bin)
+                message(STATUS "gfortran found at ${gfortran}")
+            else()
+                message(FATAL_ERROR "gfortran is required to compile LAPACK from source. "
+                                    "On Ubuntu, please install by `apt install gfortran`. "
+                                    "On macOS, please install by `brew install gfortran`. ")
+            endif()
+
+            include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
+            open3d_import_3rdparty_library(3rdparty_blas
+                HIDDEN
+                INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
+                LIB_DIR      ${OPENBLAS_LIB_DIR}
+                LIBRARIES    ${OPENBLAS_LIBRARIES}
+                DEPENDS      ext_openblas
             )
-        else()
-            message(STATUS "System BLAS/LAPACK/LAPACKE not found, setting USE_SYSTEM_BLAS=OFF.")
-            set(USE_SYSTEM_BLAS OFF)
+            # Get gfortran library search directories.
+            execute_process(COMMAND ${gfortran_bin} -print-search-dirs
+                OUTPUT_VARIABLE gfortran_search_dirs
+                RESULT_VARIABLE RET
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+            if(RET AND NOT RET EQUAL 0)
+                message(FATAL_ERROR "Failed to run `${gfortran_bin} -print-search-dirs`")
+            endif()
+
+            # Parse gfortran library search directories into CMake list.
+            string(REGEX MATCH "libraries: =(.*)" match_result ${gfortran_search_dirs})
+            if (match_result)
+                string(REPLACE ":" ";" gfortran_lib_dirs ${CMAKE_MATCH_1})
+            else()
+                message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
+            endif()
+
+            if(LINUX_AARCH64 OR APPLE_AARCH64)
+                # Find libgfortran.a and libgcc.a inside the gfortran library search
+                # directories. This ensures that the library matches the compiler.
+                # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
+                find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
+                find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
+                target_link_libraries(3rdparty_blas INTERFACE
+                    ${gfortran_lib}
+                    ${gcc_lib}
+                )
+                if(APPLE_AARCH64)
+                    # Suppress Apple compiler warnigns.
+                    target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
+                endif()
+            elseif(UNIX AND NOT APPLE)
+                # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
+                # The temporary solution is to link the shared library libgfortran.so.
+                # If we distribute a Python wheel, the user's system will also need
+                # to have libgfortran.so preinstalled.
+                #
+                # If you have to link libgfortran.a statically
+                # - Read https://gcc.gnu.org/wiki/InstallingGCC
+                # - Run `gfortran --version`, e.g. you get 9.3.0
+                # - Checkout gcc source code to the corresponding version
+                # - Configure with
+                #   ${PWD}/../gcc/configure --prefix=${HOME}/gcc-9.3.0 \
+                #                           --enable-languages=c,c++,fortran \
+                #                           --with-pic --disable-multilib
+                # - make install -j$(nproc) # This will take a while
+                # - Change this cmake file to libgfortran.a statically.
+                # - Link
+                #   - libgfortran.a
+                #   - libgcc.a
+                #   - libquadmath.a
+                target_link_libraries(3rdparty_blas INTERFACE gfortran)
+            endif()
+            list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
         endif()
-    endif()
-
-    if (NOT USE_SYSTEM_BLAS)
-        # Install gfortran first for compiling OpenBLAS/Lapack from source.
-        message(STATUS "Building OpenBLAS with LAPACK from source")
-
-        find_program(gfortran_bin "gfortran")
-        if (gfortran_bin)
-            message(STATUS "gfortran found at ${gfortran}")
-        else()
-            message(FATAL_ERROR "gfortran is required to compile LAPACK from source. "
-                                "On Ubuntu, please install by `apt install gfortran`. "
-                                "On macOS, please install by `brew install gfortran`. ")
-        endif()
-
-        include(${Open3D_3RDPARTY_DIR}/openblas/openblas.cmake)
+    else()
+        include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
+        # MKL, cuSOLVER, cuBLAS
+        # We link MKL statically. For MKL link flags, refer to:
+        # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
+        message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
         open3d_import_3rdparty_library(3rdparty_blas
             HIDDEN
-            INCLUDE_DIRS ${OPENBLAS_INCLUDE_DIR}
-            LIB_DIR      ${OPENBLAS_LIB_DIR}
-            LIBRARIES    ${OPENBLAS_LIBRARIES}
-            DEPENDS      ext_openblas
+            INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
+            LIB_DIR      ${STATIC_MKL_LIB_DIR}
+            LIBRARIES    ${STATIC_MKL_LIBRARIES}
+            DEPENDS      ext_tbb ext_mkl_include ext_mkl
         )
-        # Get gfortran library search directories.
-        execute_process(COMMAND ${gfortran_bin} -print-search-dirs
-            OUTPUT_VARIABLE gfortran_search_dirs
-            RESULT_VARIABLE RET
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        if(RET AND NOT RET EQUAL 0)
-            message(FATAL_ERROR "Failed to run `${gfortran_bin} -print-search-dirs`")
+        if(UNIX)
+            target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
+            target_link_libraries(3rdparty_blas INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
         endif()
-
-        # Parse gfortran library search directories into CMake list.
-        string(REGEX MATCH "libraries: =(.*)" match_result ${gfortran_search_dirs})
-        if (match_result)
-            string(REPLACE ":" ";" gfortran_lib_dirs ${CMAKE_MATCH_1})
-        else()
-            message(FATAL_ERROR "Failed to parse gfortran_search_dirs: ${gfortran_search_dirs}")
-        endif()
-
-        if(LINUX_AARCH64 OR APPLE_AARCH64)
-            # Find libgfortran.a and libgcc.a inside the gfortran library search
-            # directories. This ensures that the library matches the compiler.
-            # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
-            find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
-            find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
-            target_link_libraries(3rdparty_blas INTERFACE
-                ${gfortran_lib}
-                ${gcc_lib}
-            )
-            if(APPLE_AARCH64)
-                # Suppress Apple compiler warnigns.
-                target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
-            endif()
-        elseif(UNIX AND NOT APPLE)
-            # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
-            # The temporary solution is to link the shared library libgfortran.so.
-            # If we distribute a Python wheel, the user's system will also need
-            # to have libgfortran.so preinstalled.
-            #
-            # If you have to link libgfortran.a statically
-            # - Read https://gcc.gnu.org/wiki/InstallingGCC
-            # - Run `gfortran --version`, e.g. you get 9.3.0
-            # - Checkout gcc source code to the corresponding version
-            # - Configure with
-            #   ${PWD}/../gcc/configure --prefix=${HOME}/gcc-9.3.0 \
-            #                           --enable-languages=c,c++,fortran \
-            #                           --with-pic --disable-multilib
-            # - make install -j$(nproc) # This will take a while
-            # - Change this cmake file to libgfortran.a statically.
-            # - Link
-            #   - libgfortran.a
-            #   - libgcc.a
-            #   - libquadmath.a
-            target_link_libraries(3rdparty_blas INTERFACE gfortran)
-        endif()
+        target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
     endif()
-else()
-    include(${Open3D_3RDPARTY_DIR}/mkl/mkl.cmake)
-    # MKL, cuSOLVER, cuBLAS
-    # We link MKL statically. For MKL link flags, refer to:
-    # https://software.intel.com/content/www/us/en/develop/articles/intel-mkl-link-line-advisor.html
-    message(STATUS "Using MKL to support BLAS and LAPACK functionalities.")
-    open3d_import_3rdparty_library(3rdparty_blas
-        HIDDEN
-        INCLUDE_DIRS ${STATIC_MKL_INCLUDE_DIR}
-        LIB_DIR      ${STATIC_MKL_LIB_DIR}
-        LIBRARIES    ${STATIC_MKL_LIBRARIES}
-        DEPENDS      ext_tbb ext_mkl_include ext_mkl
-    )
-    if(UNIX)
-        target_compile_options(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:-m64>")
-        target_link_libraries(3rdparty_blas INTERFACE Open3D::3rdparty_threads ${CMAKE_DL_LIBS})
-    endif()
-    target_compile_definitions(3rdparty_blas INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
-    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_blas)
-endif()
+endif() # USE_ONEAPI_PACKAGES
 
 # cuBLAS
 if(BUILD_CUDA_MODULE)

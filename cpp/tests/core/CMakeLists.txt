@@ -34,3 +34,9 @@ if (BUILD_ISPC_MODULE)
         ParallelFor.ispc
     )
 endif()
+
+if (BUILD_SYCL_MODULE)
+    target_sources(tests PRIVATE
+        SYCLUtils.cpp
+    )
+endif()

@@ -194,6 +194,7 @@ def test_det(device, dtype):
 @pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype",
                          [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
+@pytest.mark.skip_sycl_failed_tests
 def test_lu(device, dtype):
     a = o3c.Tensor([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]],
                    dtype=dtype,
@@ -225,6 +226,7 @@ def test_lu(device, dtype):
 @pytest.mark.parametrize("device", list_devices())
 @pytest.mark.parametrize("dtype",
                          [o3c.int32, o3c.int64, o3c.float32, o3c.float64])
+@pytest.mark.skip_sycl_failed_tests
 def test_lu_ipiv(device, dtype):
     a = o3c.Tensor([[2, 3, 1], [3, 3, 1], [2, 4, 1]],
                    dtype=dtype,

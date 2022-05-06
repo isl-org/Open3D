@@ -2,7 +2,7 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-# For miniconda and the rest of this Dockerfile
+# For bash-specific commands
 SHELL ["/bin/bash", "-c"]
 
 # Required build args, should be specified in docker_build.sh
@@ -16,6 +16,7 @@ ARG BUILD_CUDA_MODULE
 ARG BUILD_TENSORFLOW_OPS
 ARG BUILD_PYTORCH_OPS
 ARG PACKAGE
+ARG BUILD_SYCL_MODULE
 
 RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD      not specified."; exit 1; fi \
  && if [ -z "${CCACHE_TAR_NAME}"      ]; then echo "Error: ARG CCACHE_TAR_NAME      not specified."; exit 1; fi \
@@ -26,7 +27,8 @@ RUN if [ -z "${DEVELOPER_BUILD}"      ]; then echo "Error: ARG DEVELOPER_BUILD  
  && if [ -z "${BUILD_CUDA_MODULE}"    ]; then echo "Error: ARG BUILD_CUDA_MODULE    not specified."; exit 1; fi \
  && if [ -z "${BUILD_TENSORFLOW_OPS}" ]; then echo "Error: ARG BUILD_TENSORFLOW_OPS not specified."; exit 1; fi \
  && if [ -z "${BUILD_PYTORCH_OPS}"    ]; then echo "Error: ARG BUILD_PYTORCH_OPS    not specified."; exit 1; fi \
- && if [ -z "${PACKAGE}"              ]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi
+ && if [ -z "${PACKAGE}"              ]; then echo "Error: ARG PACKAGE              not specified."; exit 1; fi \
+ && if [ -z "${BUILD_SYCL_MODULE}"    ]; then echo "Error: ARG BUILD_SYCL_MODULE    not specified."; exit 1; fi
 
 # Fix Nvidia repo key rotation issue
 # https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
@@ -40,20 +42,29 @@ RUN if [ "${BUILD_CUDA_MODULE}" = "ON" ]; then \
     fi
 
 # Forward all ARG to ENV
-# ci_utils.sh requires these environment variables
+# ci_utils.sh may require these environment variables
 ENV DEVELOPER_BUILD=${DEVELOPER_BUILD}
 ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
 ENV CCACHE_VERSION=${CCACHE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV SHARED=${SHARED}
+ENV BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
 ENV BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
 ENV BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
+ENV PACKAGE=${PACKAGE}
+ENV BUILD_SYCL_MODULE=${BUILD_SYCL_MODULE}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=America/Los_Angeles
 ENV SUDO=command
+
+# The base image already contains the oneAPI packages.
+# Having this in the list can cause checksum errors when apt-get update.
+RUN if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
+        rm -rf /etc/apt/sources.list.d/oneAPI.list; \
+    fi
 
 # Dependencies: basic
 RUN apt-get update && apt-get install -y \
@@ -63,12 +74,33 @@ RUN apt-get update && apt-get install -y \
     build-essential \
  && rm -rf /var/lib/apt/lists/*
 
+# Miniconda or Intel conda
+# The **/open3d/bin paths are used during docker run, in this way docker run
+# does not need to activate the environment again.
+ENV PATH="/root/miniconda3/bin:${PATH}"
+ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
+ENV PATH="/opt/intel/oneapi/intelpython/latest/bin:${PATH}"
+ENV PATH="/opt/intel/oneapi/intelpython/latest/envs/open3d/bin:${PATH}"
+RUN if [ "${BUILD_SYCL_MODULE}" = "OFF" ]; then \
+        wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh; \
+        bash Miniconda3-latest-Linux-x86_64.sh -b; \
+        rm Miniconda3-latest-Linux-x86_64.sh; \
+    fi
+RUN conda --version \
+ && conda create -y -n open3d python=${PYTHON_VERSION}
+
+# Activate open3d virtualenv
+# This works during docker build. It becomes the prefix of all RUN commands.
+# Ref: https://stackoverflow.com/a/60148365/1255535
+SHELL ["conda", "run", "-n", "open3d", "/bin/bash", "-c"]
+
 # Dependencies: cmake
+ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 RUN CMAKE_VERSION_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
  && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION_NUMBERS}/${CMAKE_VERSION}.tar.gz \
  && tar -xf ${CMAKE_VERSION}.tar.gz \
- && cp -ar ${CMAKE_VERSION} ${HOME}
-ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
+ && cp -ar ${CMAKE_VERSION} ${HOME} \
+ && cmake --version
 
 # Dependencies: ccache
 WORKDIR /root
@@ -89,6 +121,8 @@ RUN git clone https://github.com/ccache/ccache.git \
 # - CCACHE_DIR        = ~/.cache/ccache
 # - CCACHE_DIR_NAME   = ccache
 # - CCACHE_DIR_PARENT = ~/.cache
+# We need to set ccache size explicitly with -M, otherwise the defualt size is
+# *not* determined by ccache's default, but the downloaded ccache file's config.
 RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && CCACHE_DIR_NAME=$(basename ${CCACHE_DIR}) \
  && CCACHE_DIR_PARENT=$(dirname ${CCACHE_DIR}) \
@@ -96,23 +130,9 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && cd ${CCACHE_DIR_PARENT} \
  && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
  && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi \
- && mkdir -p ${CCACHE_DIR}
-# We need to set ccache size explicitly with -M, otherwise the defualt size is
-# *not* determined by ccache's default, but the downloaded ccache file's config.
-RUN ccache -M 5G \
+ && mkdir -p ${CCACHE_DIR} \
+ && ccache -M 5G \
  && ccache -s
-
-# Miniconda
-ENV PATH="/root/miniconda3/bin:${PATH}"
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
- && bash Miniconda3-latest-Linux-x86_64.sh -b \
- && rm Miniconda3-latest-Linux-x86_64.sh \
- && conda --version
-ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
-RUN conda create -y -n open3d python=${PYTHON_VERSION} \
- && source activate open3d
-RUN which python \
- && python --version
 
 # Checkout Open3D-ML master branch
 # TODO: We may add support for local Open3D-ML repo or pinned ML repo tag
@@ -141,8 +161,8 @@ RUN source util/ci_utils.sh \
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/* \
- && node --version
-RUN npm install -g yarn \
+ && node --version \
+ && npm install -g yarn \
  && yarn --version
 
 # Build all
@@ -151,18 +171,28 @@ RUN if [ "${BUILD_PYTORCH_OPS}" = "ON" ] || [ "${BUILD_TENSORFLOW_OPS}" = "ON" ]
     else \
         export GLIBCXX_USE_CXX11_ABI=ON; \
     fi \
+ && if [ "${BUILD_SYCL_MODULE}" = "ON" ]; then \
+        export CMAKE_CXX_COMPILER=icpx; \
+        export CMAKE_C_COMPILER=icx; \
+    else \
+        export CMAKE_CXX_COMPILER=g++; \
+        export CMAKE_C_COMPILER=gcc; \
+    fi \
  && mkdir build \
  && cd build \
- && cmake -DBUILD_SHARED_LIBS="${SHARED}" \
+ && cmake -DBUILD_SHARED_LIBS=${SHARED} \
           -DCMAKE_BUILD_TYPE=Release \
-          -DDEVELOPER_BUILD="${DEVELOPER_BUILD}" \
+          -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} \
+          -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} \
+          -DBUILD_SYCL_MODULE=${BUILD_SYCL_MODULE} \
+          -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
           -DBUILD_LIBREALSENSE=ON \
-          -DBUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
+          -DBUILD_CUDA_MODULE=${BUILD_CUDA_MODULE} \
           -DBUILD_COMMON_CUDA_ARCHS=ON \
           -DBUILD_COMMON_ISPC_ISAS=ON \
-          -DGLIBCXX_USE_CXX11_ABI="${GLIBCXX_USE_CXX11_ABI}" \
-          -DBUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
-          -DBUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
+          -DGLIBCXX_USE_CXX11_ABI=${GLIBCXX_USE_CXX11_ABI} \
+          -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS} \
+          -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS} \
           -DBUILD_UNIT_TESTS=ON \
           -DBUILD_BENCHMARKS=ON \
           -DBUILD_EXAMPLES=ON \
