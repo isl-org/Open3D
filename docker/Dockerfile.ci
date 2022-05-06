@@ -203,14 +203,6 @@ RUN if [ "${BUILD_PYTORCH_OPS}" = "ON" ] || [ "${BUILD_TENSORFLOW_OPS}" = "ON" ]
  && make install -j$(nproc) \
  && if [ "${PACKAGE}" = "ON" ]; then make package; fi
 
-# Try importing open3d
-# If CUDA is enabled, you need to have a CUDA device installed to run `import
-# open3d`, as the CPU pybind is not build. In wheel releases, both the CPU and
-# CUDA pybind are built.
-RUN if [ "${BUILD_CUDA_MODULE}" = "OFF" ]; then \
-        python -c "import open3d; print(open3d)"; \
-    fi
-
 # Compress ccache folder, move to / directory
 RUN ccache -s \
  && CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
