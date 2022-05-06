@@ -137,17 +137,9 @@ cpp_python_linking_uninstall_test() {
 
     # Python test
     echo "pytest is randomized, add --randomly-seed=SEED to repeat the test sequence."
-    if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
-        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-            python -m pytest python/test/core/test_linalg.py ${pytest_args} -s
-        "
-    else
-        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-            python -m pytest python/test/core/test_linalg.py ${pytest_args} -s
-        "
-        python_ld_preload=""
-    fi
-
+    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
+        python -m pytest python/test/core/test_linalg.py ${pytest_args} -s
+    "
     restart_docker_daemon_if_on_gcloud
 
     # Command-line tools test
