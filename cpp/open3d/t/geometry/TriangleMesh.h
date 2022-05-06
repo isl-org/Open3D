@@ -428,6 +428,18 @@ public:
     /// \return Rotated TriangleMesh
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// \brief Clip mesh with a plane.
+    /// This method clips the triangle mesh with the specified plane.
+    /// Parts of the mesh on the positive side of the plane will be kept and
+    /// triangles intersected by the plane will be cut.
+    /// \param point A point on the plane as [Tensor of dim {3}].
+    /// \param normal The normal of the plane as [Tensor of dim {3}]. The normal
+    /// points to the positive side of the plane for which the geometry will be
+    /// kept.
+    /// \return New triangle mesh clipped with the plane.
+    TriangleMesh ClipPlane(const core::Tensor &point,
+                           const core::Tensor &normal) const;
+
     core::Device GetDevice() const { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
