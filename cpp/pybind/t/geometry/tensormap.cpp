@@ -119,7 +119,7 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
     // Deleted the "__delitem__" function.
     // This will be implemented in `pybind_tensormap()`.
 
-    cl.def("__len__", &Map::size);
+    cl.def("__len__", [](const Map &m) -> size_t { return m.size(); });
 
     return cl;
 }
