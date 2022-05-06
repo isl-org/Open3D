@@ -156,11 +156,31 @@ The attributes of the triangle mesh have different levels::
     triangle_mesh.def("rotate", &TriangleMesh::Rotate, "R"_a, "center"_a,
                       "Rotate points and normals (if exist).");
 
+    triangle_mesh.def(
+            "compute_convex_hull", &TriangleMesh::ComputeConvexHull,
+            "joggle_inputs"_a = false,
+            R"(Compute the convex hull of a point cloud using qhull. This runs on the CPU.
+
+Args:
+    joggle_inputs (default False). Handle precision problems by
+    randomly perturbing the input data. Set to True if perturbing the input
+    iis acceptable but you need convex simplicial output. If False,
+    neighboring facets may be merged in case of precision problems. See
+    `QHull docs <http://www.qhull.org/html/qh-impre.htm#joggle`__ for more
+    details.
+
+Returns:
+    TriangleMesh representing the convexh hull. This contains an
+    extra vertex property "point_map" that contains the index of the
+    corresponding vertex in the original mesh.)");
+
+    // creation
     triangle_mesh.def_static(
             "from_legacy", &TriangleMesh::FromLegacy, "mesh_legacy"_a,
             "vertex_dtype"_a = core::Float32, "triangle_dtype"_a = core::Int64,
             "device"_a = core::Device("CPU:0"),
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
+    // conversion
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
 }
