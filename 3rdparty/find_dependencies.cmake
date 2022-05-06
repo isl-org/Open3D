@@ -416,6 +416,9 @@ function(open3d_import_3rdparty_library name)
         else()
             set(HIDDEN 0)
         endif()
+        if(arg_GROUPED)
+            target_link_libraries(${name} INTERFACE "-Wl,--start-group")
+        endif()
         foreach(arg_LIBRARY IN LISTS arg_LIBRARIES)
             set(library_filename ${CMAKE_STATIC_LIBRARY_PREFIX}${arg_LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
             if(libcount EQUAL 1)
@@ -442,6 +445,9 @@ function(open3d_import_3rdparty_library name)
                     ${OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS} PARENT_SCOPE)
             endif()
         endforeach()
+        if(arg_GROUPED)
+            target_link_libraries(${name} INTERFACE "-Wl,--end-group")
+        endif()
     endif()
     if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
         install(TARGETS ${name} EXPORT ${PROJECT_NAME}Targets)
@@ -1345,36 +1351,21 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     set(MKL_THREADING tbb_thread)
     set(MKL_LINK static)
     list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/mkl/latest/lib/cmake/mkl)
-
-    # We didn't use open3d_find_package_3rdparty_library() due to the need for
-    # grouped static libs.
-    # https://gitlab.kitware.com/cmake/cmake/-/issues/21511#note_865669
     find_package(MKL REQUIRED)
-    add_library(3rdparty_mkl INTERFACE)
-    target_link_libraries(3rdparty_mkl INTERFACE
-        "-Wl,--start-group"
-        MKL::mkl_intel_ilp64
-        MKL::mkl_tbb_thread
-        MKL::mkl_core
-        "-Wl,--end-group"
+    open3d_import_3rdparty_library(3rdparty_mkl
+        HIDDEN
+        GROUPED
+        INCLUDE_DIRS ${MKL_INCLUDE}/
+        LIB_DIR      ${MKL_ROOT}/lib/intel64
+        LIBRARIES    mkl_intel_ilp64 mkl_tbb_thread mkl_core
     )
-    if(NOT BUILD_SHARED_LIBS OR arg_PUBLIC)
-        install(TARGETS 3rdparty_mkl EXPORT Open3DTargets)
-    endif()
-
-    # MKL includes
-    message(STATUS "MKL include: ${MKL_INCLUDE}")
-    target_include_directories(3rdparty_mkl INTERFACE ${MKL_INCLUDE})
-
     # MKL definitions
     target_compile_options(3rdparty_mkl INTERFACE "$<$<PLATFORM_ID:Linux,Darwin>:$<$<COMPILE_LANGUAGE:CXX>:-m64>>")
     target_compile_definitions(3rdparty_mkl INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:MKL_ILP64>")
-
-    # Other global macros: OPEN3D_USE_ONEAPI_PACKAGES
+    # Other global macros
     target_compile_definitions(3rdparty_mkl INTERFACE OPEN3D_USE_ONEAPI_PACKAGES)
-
-    add_library(Open3D::3rdparty_mkl ALIAS 3rdparty_mkl)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_mkl)
+
 else() # USE_ONEAPI_PACKAGES
     # TBB
     if(USE_SYSTEM_TBB)
