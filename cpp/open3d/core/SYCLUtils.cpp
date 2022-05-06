@@ -39,6 +39,7 @@ namespace core {
 
 int SYCLDemo() {
 #ifdef BUILD_SYCL_MODULE
+    // Ref: https://intel.github.io/llvm-docs/GetStartedGuide.html
     // Creating buffer of 4 ints to be used inside the kernel code.
     cl::sycl::buffer<cl::sycl::cl_int, 1> buffer(4);
 

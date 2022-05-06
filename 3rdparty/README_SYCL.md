@@ -1,5 +1,7 @@
 # Open3D SYCL
 
+Note: this file will be moved to the `docs` folder once SYCL support is mature.
+
 ## Concepts
 
 - **OpenCL**: Low-level programming interface for heterogeneous platforms.
@@ -32,24 +34,27 @@ referring to "DPC++".
    which python     # ${HOME}/.conda/envs/sycl/bin/python
    python --version # Python 3.8.12 :: Intel Corporation
    ```
-4. Config
+4. Config and build
    ```bash
-   # Add the following flag to CMake
    cmake -DBUILD_SYCL_MODULE=ON ..
+   make -j$(nproc)
    ```
+5. Run demos
+   We provide several ways to run SYCL demos. This ensures the linking are
+   correct and all run-time dependencies are satisfied.
+   ```bash
+   # C++ test
+   make tests -j$(nproc)
+   ./bin/tests --gtest_filter="*SYCLDemo*"
 
-## List of oneAPI Python packages
+   # C++ example
+   make SYCLDemo -j$(nproc)
+   ./bin/examples/SYCLDemo
 
-https://pypi.org/user/IntelAutomationEngineering/
-- dpcpp-cpp-rt     https://pypi.org/project/dpcpp-cpp-rt/#history
-- mkl              https://pypi.org/project/mkl/#history
-- mkl-static       https://pypi.org/project/mkl-static/#history
-- mkl-include      https://pypi.org/project/mkl-include/#history
-- mkl-dpcpp        https://pypi.org/project/mkl-dpcpp/#history
-- mkl-devel-dpcpp  https://pypi.org/project/mkl-devel-dpcpp/#history
-- ipp              https://pypi.org/project/ipp/#history
-- ipp-static       https://pypi.org/project/ipp-static/#history
-- tbb              https://pypi.org/project/tbb/#history
+   # Python
+   make install-pip-package -j$(nproc)
+   pytest ../python/test/core/test_sycl_utils.py -s
+   ```
 
 ## Known limitations/requirement
 
@@ -60,3 +65,24 @@ https://pypi.org/user/IntelAutomationEngineering/
 - Requirements (required by DPC++)
   - Only supports `GLIBCXX_USE_CXX11_ABI=ON`
   - Only supports `set(CMAKE_CXX_STANDARD 17)`
+
+
+## List of oneAPI Python packages
+
+To make `pip install open3d` works out-of-the box on SYCL-enabled platforms,
+we can utilize runtime libraries released via PyPI. This feature needs to be
+implemented.
+
+User:
+- https://pypi.org/user/IntelAutomationEngineering/
+
+Libraries:
+- dpcpp-cpp-rt     https://pypi.org/project/dpcpp-cpp-rt/#history
+- mkl              https://pypi.org/project/mkl/#history
+- mkl-static       https://pypi.org/project/mkl-static/#history
+- mkl-include      https://pypi.org/project/mkl-include/#history
+- mkl-dpcpp        https://pypi.org/project/mkl-dpcpp/#history
+- mkl-devel-dpcpp  https://pypi.org/project/mkl-devel-dpcpp/#history
+- ipp              https://pypi.org/project/ipp/#history
+- ipp-static       https://pypi.org/project/ipp-static/#history
+- tbb              https://pypi.org/project/tbb/#history

@@ -44,7 +44,7 @@ jobs:
             docker/docker_test.sh sycl-static
           fi
       - name: GCloud CLI setup
-        # if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/master' }}
         uses: google-github-actions/setup-gcloud@v0.2.1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
@@ -52,6 +52,6 @@ jobs:
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
       - name: Upload ccache to GCS
-        # if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/master' }}
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-sycl.tar.gz gs://open3d-ci-cache/ || true

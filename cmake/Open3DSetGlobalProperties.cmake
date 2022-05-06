@@ -173,9 +173,9 @@ function(open3d_set_global_properties target)
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=x86-64>)
     endif()
 
-    # Turn off fast math for IntelLLVM DPC++ compiler
+    # Turn off fast math for IntelLLVM DPC++ compiler.
     # Fast math is turned off for clang by default even for -O3.
-    # We may make this optional and tune unit tests floating point precisions.
+    # TODO: We may make this optional and tune unit tests floating point precisions.
     target_compile_options(${target} PRIVATE
         $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>)
 

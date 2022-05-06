@@ -30,9 +30,6 @@ namespace open3d {
 namespace core {
 
 /// Runs simple SYCL test program for sanity checks.
-///
-/// Ref: https://intel.github.io/llvm-docs/GetStartedGuide.html
-///
 /// \return Retuns 0 if successful.
 int SYCLDemo();
 
