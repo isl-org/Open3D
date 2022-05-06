@@ -49,6 +49,8 @@ else()
     set(assimp_cxx_flags "")
 endif()
 
+message(STATUS "########### CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+
 ExternalProject_Add(
     ext_assimp
     PREFIX assimp
