@@ -220,7 +220,8 @@ int main(int argc, char *argv[]) {
             h_out.open(output_h_file, std::ios::trunc);
             h_out << "#include <vector>\n"
                      "#include <unordered_map>\n"
-                     "#include <functional>\n";
+                     "#include <functional>\n"
+                     "#include <string>\n";
         } else {
             h_out.open(output_h_file, std::ios::app);
         }

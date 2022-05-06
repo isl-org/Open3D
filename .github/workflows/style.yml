@@ -1,0 +1,30 @@
+name: Style Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  style-check:
+    runs-on: ubuntu-20.04     # No need for cmake repo
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Set up Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: Install dependencies
+        run: |
+          pip install -U clang-format~=10.0.0 yapf==0.30.0 nbformat
+      - name: Run style check
+        run: |
+          python util/check_style.py

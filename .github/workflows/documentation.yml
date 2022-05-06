@@ -1,0 +1,122 @@
+name: Documentation
+
+on:
+  workflow_dispatch:
+    inputs:
+      developer_build:
+        description: 'Set to OFF for Release documentation'
+        required: false
+        default: 'ON'
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
+
+jobs:
+  headless-docs:
+    # Build headless and docs
+    runs-on: ubuntu-18.04
+    env:
+      OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+    steps:
+      - name: Checkout Open3D source code
+        uses: actions/checkout@v2
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+
+      - name: Checkout Open3D-ML source code
+        uses: actions/checkout@v2
+        with:
+          repository: isl-org/Open3D-ML
+          path: ${{ env.OPEN3D_ML_ROOT }}
+
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
+          path: ~/.ccache
+          # We include the commit sha in the cache key, as new cache entries are
+          # only created if there is no existing entry for the key yet.
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          # Restore any ccache cache entry, if none for
+          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
+          # Common prefix will be used so that ccache can be used across commits.
+          restore-keys: |
+            ${{ runner.os }}-ccache
+      - name: Set up Python version
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@v0.2.1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          # the build system of the main repo expects a master branch. make sure
+          # master exists
+          pushd "${OPEN3D_ML_ROOT}"
+          git checkout -b master || true
+          popd
+          source util/ci_utils.sh
+          install_docs_dependencies "${OPEN3D_ML_ROOT}"
+      - name: Build docs
+        run: |
+          PATH=/usr/lib/ccache:$PATH
+          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
+          ccache -s
+          source util/ci_utils.sh
+          build_docs "$DEVELOPER_BUILD"
+          ccache -s
+
+      - name: Upload docs
+        uses: actions/upload-artifact@v2
+        with:
+          name: open3d_docs
+          path: docs/_out/html
+          if-no-files-found: error
+
+      - name: Deploy docs
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+          # Compress and upload the docs, only for master branch
+          docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
+          tar_file="${{ github.sha }}_ready.tar.gz"
+          rm -rf ${tar_file}
+          tar -C ${docs_out_dir} -czvf ${tar_file} html
+          gsutil cp ${tar_file} gs://open3d-docs/${tar_file}
+          echo "Docs archive uploaded to:"
+          echo "https://storage.googleapis.com/open3d-docs/${tar_file}"
+
+      - name: Check wheels and ready documentation archive
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+            if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
+                -eq 4 ]; then
+                echo "All wheels and docs available. Making docs ready."
+                # Remove all marker files: Note _ at end of pattern.
+                gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
+                # Rename docs archive:
+                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
+                    gs://open3d-docs/${{ github.sha }}.tar.gz
+            else
+                echo "All wheels / docs not available yet."
+            fi
