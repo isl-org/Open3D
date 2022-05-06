@@ -146,12 +146,7 @@ build_all() {
     cmake "${cmakeOptions[@]}" ..
     echo
     echo "Build & install Open3D..."
-    make VERBOSE=1 -j"$NPROC"
-    make VERBOSE=1 install -j"$NPROC"
-    if [[ "$SHARED" == "ON" ]]; then
-        make package
-    fi
-    make VERBOSE=1 install-pip-package -j"$NPROC"
+    make VERBOSE=1 -j"$NPROC" Mac
     echo
 }
 

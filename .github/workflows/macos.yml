@@ -65,12 +65,3 @@ jobs:
           ./util/run_ci.sh
           DEVEL_PKG_NAME="$(basename package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
-      - name: Build Open3D viewer app
-        if: ${{ env.SHARED == 'OFF' }}
-        run: |
-          PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
-          pushd build
-          make -j${NPROC} Open3DViewer
-          pushd bin
-          zip -rv open3d-app-macosx-10_15.zip Open3D.app
-          ccache -s

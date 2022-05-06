@@ -112,3 +112,13 @@ set(GUI_RESOURCE_FILES
     ${GUI_RESOURCE_SOURCE_FILES} ${GUI_MATERIAL_COMPILED_FILES}
     PARENT_SCOPE)
 set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
+
+
+add_subdirectory(Res)
+add_executable(Mac Mac.cpp)
+target_link_libraries(Mac PUBLIC Res)
+
+# target_include_directories(Mac PUBLIC
+#                           "${PROJECT_BINARY_DIR}"
+#                           "${PROJECT_SOURCE_DIR}/MathFunctions"
+#                           )

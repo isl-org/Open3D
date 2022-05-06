@@ -1,4 +1,4 @@
-#include "open3d/visualization/gui/Resource.h"
+#include "Resource.h"
 
 std::vector<char> brightday_ibl_ktx() {
     static const std::vector<char> brightday_ibl_ktx_data = {
