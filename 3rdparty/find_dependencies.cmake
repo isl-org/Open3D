@@ -1340,8 +1340,14 @@ endif()
 mark_as_advanced(OPEN3D_USE_ONEAPI_PACKAGES)
 
 if(OPEN3D_USE_ONEAPI_PACKAGES)
+    if(DEFINED ENV{ONEAPI_ROOT})
+        message(STATUS "Using OneAPI packages from: $ENV{ONEAPI_ROOT}")
+    else()
+        message(FATAL_ERROR "OneAPI packages not found. Please run `source /opt/intel/oneapi/setvars.sh`")
+    endif()
+
     # 1. oneTBB
-    list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/tbb/latest/lib/cmake/tbb)
+    # /opt/intel/oneapi/tbb/latest/lib/cmake/tbb
     open3d_find_package_3rdparty_library(3rdparty_tbb
         PACKAGE TBB
         TARGETS TBB::tbb
@@ -1349,7 +1355,7 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_tbb)
 
     # 2. oneDPL
-    list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL)
+    # /opt/intel/oneapi/dpl/latest/lib/cmake/oneDPL
     open3d_find_package_3rdparty_library(3rdparty_onedpl
         PACKAGE oneDPL
         TARGETS oneDPL
@@ -1359,9 +1365,9 @@ if(OPEN3D_USE_ONEAPI_PACKAGES)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_onedpl)
 
     # 3. oneMKL
+    # /opt/intel/oneapi/mkl/latest/lib/cmake/mkl
     set(MKL_THREADING tbb_thread)
     set(MKL_LINK static)
-    list(APPEND CMAKE_MODULE_PATH /opt/intel/oneapi/mkl/latest/lib/cmake/mkl)
     find_package(MKL REQUIRED)
     open3d_import_3rdparty_library(3rdparty_mkl
         HIDDEN
