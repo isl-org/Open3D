@@ -731,6 +731,7 @@ core::Tensor PointCloud::ClusterDBSCAN(double eps,
     open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
     const std::vector<int> labels =
             lpcd.ClusterDBSCAN(eps, min_points, print_progress);
+
     // labels must be copied into Tensor since it will be destructed at the end
     // of this function.
     return core::Tensor(labels, {static_cast<int64_t>(labels.size())},
@@ -750,7 +751,7 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
     orgQhull::Qhull qhull;
     std::string options = "Qt";  // triangulated output
     if (joggle_inputs) {
-        options += " QJ";  // joggle input to avoid precision problems
+        options = "QJ";  // joggle input to avoid precision problems
     }
     qhull.runQhull("", 3, coordinates.GetLength(),
                    coordinates.GetDataPtr<double>(), options.c_str());
