@@ -72,7 +72,6 @@ def test_tensormap(device):
 
 
 @pytest.mark.parametrize("device", list_devices())
-@pytest.mark.skip_sycl_failed_tests
 def test_tensormap_modify(device):
     # Assigning to the *elements* of an alias will change the value in the map.
     # This tests that the alias shares the same memory as the tensor in the map.
