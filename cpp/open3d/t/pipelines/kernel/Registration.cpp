@@ -41,7 +41,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const registration::RobustKernel &kernel) {
     const core::Device device = source_points.GetDevice();
 
-    // Pose {6,} tensor [ouput].
+    // Pose {6,} tensor [output].
     core::Tensor pose = core::Tensor::Empty({6}, core::Float64, device);
 
     float residual = 0;
@@ -80,7 +80,7 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                                    const double &lambda_geometric) {
     const core::Device device = source_points.GetDevice();
 
-    // Pose {6,} tensor [ouput].
+    // Pose {6,} tensor [output].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
 
     float residual = 0;

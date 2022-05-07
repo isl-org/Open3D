@@ -35,7 +35,7 @@ namespace geometry {
 
 /// \brief RGBDImage A pair of color and depth images.
 ///
-/// For most procesing, the image pair should be aligned (same viewpoint and
+/// For most processing, the image pair should be aligned (same viewpoint and
 /// resolution).
 class RGBDImage : public Geometry {
 public:

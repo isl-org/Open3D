@@ -349,7 +349,7 @@ bool TexturePhongShaderForTriangleMesh::PrepareBinding(
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
 
-    // Point seperations
+    // Point separations
     array_offsets_[0] = 0;
     draw_array_sizes_[0] = static_cast<int>(tmp_points[0].size());
     for (int mi = 1; mi < num_materials_; ++mi) {

@@ -154,7 +154,7 @@ void _SparseConvComputeFeaturesCPU(TOut* out_features,
 /// \param neighbors_kernel_index    Defines which kernel element to use for
 ///        each neighbor. This array has the same length as \p neighbors_index.
 ///
-/// \param neighbors_importance    Array of the same lenght as
+/// \param neighbors_importance    Array of the same length as
 ///        \p neighbors_importance. Defines which of the kernel elements to use
 ///        in the matrix multiplication.
 ///

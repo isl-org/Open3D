@@ -123,7 +123,7 @@ weights :math:`w_i` for each residual :math:`r_i`
 
 The different loss functions will only impact in the weight for each residual
 during the optimization step.
-Therefore, the only impact of the choice on the kernel is thorugh its first
+Therefore, the only impact of the choice on the kernel is through its first
 order derivate.
 
 The kernels implemented so far, and the notation has been inspired by the
@@ -314,7 +314,7 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
                             std::to_string(tk.k_);
                  })
             .def_readwrite("k", &TukeyLoss::k_,
-                           "``k`` Is a tunning constant for the loss.");
+                           "``k`` Is a running constant for the loss.");
 }  // namespace pipelines
 
 }  // namespace registration

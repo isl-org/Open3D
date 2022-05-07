@@ -46,7 +46,7 @@ def test_tensormap(device):
     assert tl.get_primary_key() == "positions"
 
     # Map member access, assignment and "contains" check. This should be the
-    # preferrred way to construct a TensorMap with values in python.
+    # preferred way to construct a TensorMap with values in python.
     points = o3c.Tensor.ones((0, 3), dtype, device)
     colors = o3c.Tensor.ones((0, 3), dtype, device)
     tl = o3d.t.geometry.TensorMap("positions")

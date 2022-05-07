@@ -191,7 +191,7 @@ protected:
 
     /// Lays out all the widgets in the window. If all children
     /// of the window are layouts, this function does not need to
-    /// be overriden.
+    /// be overridden.
     virtual void Layout(const LayoutContext& context);
 
     LayoutContext GetLayoutContext();

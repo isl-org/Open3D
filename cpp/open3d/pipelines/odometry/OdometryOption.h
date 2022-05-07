@@ -63,7 +63,7 @@ public:
 
 public:
     /// Iteration number per image pyramid level, typically larger image in the
-    /// pyramid have lower interation number to reduce computation time.
+    /// pyramid have lower iteration number to reduce computation time.
     std::vector<int> iteration_number_per_pyramid_level_;
     /// Maximum depth difference to be considered as correspondence. In depth
     /// image domain, if two aligned pixels have a depth difference less than

@@ -532,7 +532,7 @@ void pybind_trianglemesh(py::module &m) {
             m, "TriangleMesh", "filter_sharpen",
             {{"number_of_iterations",
               " Number of repetitions of this operation"},
-             {"strengh", "Filter parameter."},
+             {"strength", "Filter parameter."},
              {"scope", "Mesh property that should be filtered."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "filter_smooth_simple",
@@ -781,7 +781,7 @@ void pybind_trianglemesh(py::module &m) {
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_coordinate_frame",
             {{"size", "The size of the coordinate frame."},
-             {"origin", "The origin of the cooridnate frame."}});
+             {"origin", "The origin of the coordinate frame."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_mobius",
             {{"length_split", "The number of segments along the Mobius strip."},

@@ -66,7 +66,7 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
         target = *target.VoxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                " VoxelDownsample: Impractical voxel size [< 0.001], skipping "
                 "downsampling.");
     }
 

@@ -252,7 +252,7 @@ public:
         SetLineAttr("colors", value);
     }
 
-    /// Returns true if all of the followings are true in point_attr_:
+    /// Returns true if all of the following are true in point_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as "points"'s length
     /// 3) attribute's length > 0
@@ -265,7 +265,7 @@ public:
     /// 0. Convenience function.
     bool HasPointPositions() const { return HasPointAttr("positions"); }
 
-    /// Returns true if all of the followings are true in line_attr_:
+    /// Returns true if all of the following are true in line_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as "indices"'s length
     /// 3) attribute's length > 0
@@ -278,7 +278,7 @@ public:
     /// length > 0.  Convenience function.
     bool HasLineIndices() const { return HasLineAttr("indices"); }
 
-    /// Returns true if all of the followings are true in line_attr_:
+    /// Returns true if all of the following are true in line_attr_:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as "indices"'s length
     /// 3) attribute "colors"'s length > 0

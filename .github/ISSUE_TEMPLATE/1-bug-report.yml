@@ -56,7 +56,7 @@ body:
           o3d.core.Dtype.Float32) / 255.0
 
       # Initial guess transform between the two point-cloud.
-      # ICP algortihm requires a good initial allignment to converge efficiently.
+      # ICP algorithm requires a good initial alignment to converge efficiently.
       current_transformation = np.identity(4)
 
       draw([source.transform(current_transformation), target])

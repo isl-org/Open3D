@@ -149,7 +149,7 @@ voxel_size: The voxel size.
 
 pooled_positions: The output point positions with shape [M,3] and M <= N.
 
-pooled_features: The output point features with shape [M,channnels] and M <= N.
+pooled_features: The output point features with shape [M,channels] and M <= N.
 
 )doc");
 

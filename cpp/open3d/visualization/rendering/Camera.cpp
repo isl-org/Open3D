@@ -37,7 +37,7 @@ static const double MIN_FAR_PLANE = 1.0;
 
 void Camera::FromExtrinsics(const Eigen::Matrix4d& extrinsic) {
     // The intrinsic * extrinsic matrix models projection from the world through
-    // a pinhole onto the projection plane. The instrinsic matrix is the
+    // a pinhole onto the projection plane. The intrinsic matrix is the
     // projection matrix, and extrinsic.inverse() is the camera pose. But the
     // OpenGL camera has the projection plane in front of the camera, which
     // essentially inverts all the axes of the projection. (Pinhole camera

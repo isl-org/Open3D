@@ -172,7 +172,7 @@ private:
                         pointclouds_device_[0].To(core::Device("CPU:0"));
 
                 // Removing `normal` attribute before passing it to
-                // the visualizer might give us some performance benifits.
+                // the visualizer might give us some performance benefits.
                 pcd_and_bbox_.current_scan_.RemovePointAttr("normals");
             }
 
@@ -197,7 +197,7 @@ private:
         }
         // ------------------------------------------------------------------
 
-        // Initial transfrom from source to target, to initialize ICP.
+        // Initial transform from source to target, to initialize ICP.
         core::Tensor initial_transform = core::Tensor::Eye(
                 4, core::Dtype::Float64, core::Device("CPU:0"));
 
@@ -253,7 +253,7 @@ private:
             // so, `cumulative_transform @ (result.transformation_).Inverse`
             // gives `transformation of [i + 1]th frame to 0` [reference or
             // initial] frame. So, pose of the ego-vehicle / sensor
-            // till this frame w.r.t. the inital frame, or `global_pose`
+            // till this frame w.r.t. the initial frame, or `global_pose`
             // or `frame to model transform` is given by `cumulative_transform.`
             cumulative_transform = cumulative_transform.Matmul(
                     t::geometry::InverseTransformation(
@@ -293,7 +293,7 @@ private:
                                     .GetLength();
 
                     // Removing `normal` attribute before passing it to
-                    // the visualizer might give us some performance benifits.
+                    // the visualizer might give us some performance benefits.
                     pcd_and_bbox_.current_scan_.RemovePointAttr("normals");
                 }
 
@@ -413,7 +413,7 @@ private:
         }
         //-------------------------------------------------------------------
 
-        //-------- Prining values and intilising class data members ---------
+        //-------- Printing values and intialising class data members -------
 
         if (end_index_ < start_index_ + 1) {
             utility::LogError(
@@ -569,7 +569,7 @@ private:
                                 .To(dtype_, false));
 
                 // Normals are required by `PointToPlane` registration method.
-                // Currenly Normal Estimation is not supported by
+                // Currently Normal Estimation is not supported by
                 // Tensor Pointcloud.
                 if (registration_method_ == "PointToPlane" &&
                     !pointcloud_local.HasPointNormals()) {
@@ -654,7 +654,7 @@ private:
     // the value, ensuring the visualizer thread doesn't read the
     // data, while we are modifying it.
     struct {
-        // Mutex lock to protect data memeber current_scan_.
+        // Mutex lock to protect data member current_scan_.
         std::mutex lock_;
         // Pointcloud to store the "current scan", used for visualization.
         t::geometry::PointCloud current_scan_;

@@ -75,7 +75,7 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
         target = target.VoxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                "VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                "VoxelDownsample: Impractical voxel size [< 0.001], skipping "
                 "downsampling.");
     }
 

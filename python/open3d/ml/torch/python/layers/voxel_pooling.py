@@ -107,7 +107,7 @@ class VoxelPooling(torch.nn.Module):
             The output point positions with shape [M,3] and M <= N.
 
           pooled_features:
-            The output point features with shape [M,channnels] and M <= N.
+            The output point features with shape [M,channels] and M <= N.
         """
         if isinstance(voxel_size, (float, int)):
             voxel_size = torch.tensor(voxel_size, dtype=positions.dtype)

@@ -68,7 +68,7 @@ ci_print_env() {
 
 restart_docker_daemon_if_on_gcloud() {
     # Sometimes `docker run` may fail on the second run on Google Cloud with the
-    # following erorr:
+    # following error:
     # ```
     # docker: Error response from daemon: OCI runtime create failed:
     # container_linux.go:349: starting container process caused

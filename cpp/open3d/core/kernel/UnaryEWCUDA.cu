@@ -259,7 +259,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
 }
 
 void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
-    // src and dst have been chaged to have the same shape, dtype, device.
+    // src and dst have been changed to have the same shape, dtype, device.
     Dtype src_dtype = src.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
     Device src_device = src.GetDevice();
