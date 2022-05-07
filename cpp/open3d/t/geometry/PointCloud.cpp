@@ -729,13 +729,9 @@ core::Tensor PointCloud::ClusterDBSCAN(double eps,
     // copying.
     PointCloud tpcd(GetPointPositions());
     open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
-    const std::vector<int> labels =
+    std::vector<int> labels =
             lpcd.ClusterDBSCAN(eps, min_points, print_progress);
-
-    // labels must be copied into Tensor since it will be destructed at the end
-    // of this function.
-    return core::Tensor(labels, {static_cast<int64_t>(labels.size())},
-                        core::Int32, device_);
+    return core::Tensor(std::move(labels));
 }
 
 TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {

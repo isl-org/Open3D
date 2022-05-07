@@ -72,7 +72,6 @@ public:
            const Device& device = Device("CPU:0"))
         : Tensor(shape, dtype, device) {
         // Check number of elements
-
         if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
             utility::LogError(
                     "Tensor initialization values' size {} does not match the "
@@ -121,6 +120,38 @@ public:
           data_ptr_(data_ptr),
           dtype_(dtype),
           blob_(blob) {}
+
+    /// \brief Take ownership of data in std::vector<T>
+    ///
+    /// Create a Tensor from data "moved" from an std::vector<T>. This always
+    /// prodcues a Tensor on the CPU device.
+    ///
+    /// \param vec source for the data as an r-value reference. After the Tensor
+    /// is created this will not have access to or manage the data any more.
+    /// \param shape List of dimensions of data in buffer. e.g. `{640, 480, 3}`
+    /// for a 640x480 RGB image. A 1D {vec.size()} shape is assumed if not
+    /// specified.
+    template <typename T>
+    Tensor(std::vector<T>&& vec, const SizeVector& shape = {})
+        : shape_(shape), dtype_(Dtype::FromType<T>()) {
+        if (shape_.empty()) shape_ = {(int64_t)vec.size()};
+        // Check number of elements
+        if (static_cast<int64_t>(vec.size()) != shape_.NumElements()) {
+            utility::LogError(
+                    "Tensor initialization values' size {} does not match the "
+                    "shape {}",
+                    vec.size(), shape_.NumElements());
+        }
+        strides_ = shape_util::DefaultStrides(shape_);
+        auto sp_vec = std::make_shared<std::vector<T>>();
+        sp_vec->swap(vec);
+        data_ptr_ = (void*)(sp_vec->data());
+        // Create blob that owns the shared pointer to vec. The deleter function
+        // object just stores a shared pointer, ensuring that memory is freed
+        // only when the Tensor is destructed.
+        blob_ = std::make_shared<Blob>(Device("CPU:0"), data_ptr_,
+                                       [sp_vec](void*) { (void)sp_vec; });
+    }
 
     /// \brief Tensor wrapper constructor from raw host buffer.
     ///
