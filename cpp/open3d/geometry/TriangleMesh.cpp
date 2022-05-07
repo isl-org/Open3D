@@ -1100,7 +1100,7 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
             }
 
             // check if each edge looks in different direction compared to
-            // existing ones if not existend, add the edge to map
+            // existing ones if not existed, add the edge to map
             if (!VerifyAndAdd(vidx0, vidx1)) {
                 return false;
             }

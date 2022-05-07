@@ -109,7 +109,7 @@ public:
     /// For TensorKeyMode::Slice only.
     int64_t GetStep() const;
 
-    /// When dim_size is know, conver the None values in start, stop, step with
+    /// When dim_size is know, convert the None values in start, stop, step with
     /// to concrete values and returns a new TensorKey.
     /// \code
     /// E.g. if t.shape == (5,), t[:4]:

@@ -114,7 +114,7 @@ public:
             return z;
     }
 
-    // opperations
+    // operations
     float dot(const PointXYZ P) const { return x * P.x + y * P.y + z * P.z; }
 
     float sq_norm() { return x * x + y * y + z * z; }
@@ -150,7 +150,7 @@ public:
     }
 };
 
-// Point Opperations
+// Point Operations
 // *****************
 
 inline PointXYZ operator+(const PointXYZ A, const PointXYZ B) {

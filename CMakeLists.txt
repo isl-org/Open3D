@@ -363,7 +363,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # Add -fPIC for library and -fPIE for executable to compiler and linker. Does not add -pie !
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Explicitly specifiy the preference of using -pthread over -lpthread.
+# Explicitly specify the preference of using -pthread over -lpthread.
 # This must be defined here since CUDA calls find_package(Threads) internally.
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 
@@ -431,7 +431,7 @@ endif()
 # OS specific settings
 if(WIN32)
     # Windows defaults to hidden symbol visibility, override that
-    # TODO: It would be better to explictly export symbols.
+    # TODO: It would be better to explicitly export symbols.
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)

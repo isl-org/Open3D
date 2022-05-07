@@ -1814,7 +1814,7 @@ TEST_P(TensorPermuteDevices, ReduceSumSpecialShapes) {
     EXPECT_THROW(dst.Sum({1}, false), std::runtime_error);
     EXPECT_THROW(dst.Sum({1}, true), std::runtime_error);
 
-    // Emtpy reduction axis ().
+    // Empty reduction axis ().
     // This reduces no axis, which is different from reduce all axis.
     // np.sum(np.ones((0)), axis=(), keepdims=*)
     src = core::Tensor::Ones({0}, core::Float32, device);

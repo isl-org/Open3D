@@ -169,7 +169,7 @@ struct Application::Impl {
         // Aside from general tidiness in shutting down rendering,
         // failure to do this causes the Python module to hang on
         // Windows. (Specifically, if a widget is has been assigned a
-        // Python function as a callback, the Python interpretter will
+        // Python function as a callback, the Python interpreter will
         // not delete the objects, the Window's destructor will not be
         // called, and the Filament threads will not stop, causing the
         // Python process to remain running even after execution of the

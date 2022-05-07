@@ -67,8 +67,9 @@ void AddMM(const Tensor& A,
     }
     if (output_shape[0] != A_shape[0] &&
         output_shape[1] != B_shape[B_shape.size() - 1]) {
-        utility::LogError("Tensor output must match A rows {} and B colums {}.",
-                          A_shape[0], B_shape[B_shape.size() - 1]);
+        utility::LogError(
+                "Tensor output must match A rows {} and B columns {}.",
+                A_shape[0], B_shape[B_shape.size() - 1]);
     }
 
     // Check the memory layout of tensors.

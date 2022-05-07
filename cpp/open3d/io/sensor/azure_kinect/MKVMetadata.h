@@ -48,7 +48,7 @@ public:
     bool ConvertFromJsonValue(const Json::Value &value) override;
 
 public:
-    /// \brief Shared intrinsics betwee RGB & depth.
+    /// \brief Shared intrinsics between RGB & depth.
     ///
     /// We assume depth image is always warped to the color image system.
     camera::PinholeCameraIntrinsic intrinsics_;

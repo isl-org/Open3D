@@ -319,7 +319,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             m, "PointCloud", "orient_normals_consistent_tangent_plane",
             {{"k",
               "Number of k nearest neighbors used in constructing the "
-              "Riemannian graph used to propogate normal orientation."}});
+              "Riemannian graph used to propagate normal orientation."}});
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_point_cloud_distance",
                                     {{"target", "The target point cloud."}});
@@ -342,7 +342,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             m, "PointCloud", "hidden_point_removal",
             {{"input", "The input point cloud."},
              {"camera_location",
-              "All points not visible from that location will be reomved"},
+              "All points not visible from that location will be removed"},
              {"radius", "The radius of the sperical projection"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "cluster_dbscan",

@@ -192,7 +192,7 @@ public:
         SetPointAttr("normals", value);
     }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute key exist
     /// 2) attribute's length as points' length
     /// 3) attribute's length > 0
@@ -211,14 +211,14 @@ public:
     /// This is a convenience function.
     bool HasPointPositions() const { return HasPointAttr("positions"); }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as points' length
     /// 3) attribute "colors"'s length > 0
     /// This is a convenience function.
     bool HasPointColors() const { return HasPointAttr("colors"); }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as points' length
     /// 3) attribute "normals"'s length > 0
