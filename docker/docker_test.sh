@@ -124,7 +124,6 @@ cpp_python_linking_uninstall_test() {
     else
         pytest_args=""
     fi
-
     restart_docker_daemon_if_on_gcloud
 
     # C++ test
@@ -161,19 +160,20 @@ cpp_python_linking_uninstall_test() {
     "
 
     # C++ linking with new project
-    if [ "${BUILD_SYCL_MODULE}" == "OFF" ]; then
-        # TOOD: Fix SYCL/MKL linking when building new project.
-        # This does not work if BUILD_SYCL_MODULE==ON && BUILD_SHARED_LIBS==OFF.
-        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-            git clone https://github.com/isl-org/open3d-cmake-find-package.git \
-        && cd open3d-cmake-find-package \
-        && mkdir build \
-        && cd build \
-        && cmake -DCMAKE_INSTALL_PREFIX=~/open3d_install .. \
-        && make -j$(nproc) VERBOSE=1 \
-        && ./Draw --skip-for-unit-test \
-        "
+    if [ "${BUILD_SYCL_MODULE}" == "ON" ]; then
+        cmake_compiler_args="-DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx"
+    else
+        cmake_compiler_args=""
     fi
+    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
+        git clone https://github.com/isl-org/open3d-cmake-find-package.git \
+     && cd open3d-cmake-find-package \
+     && mkdir build \
+     && cd build \
+     && cmake ${cmake_compiler_args} -DCMAKE_INSTALL_PREFIX=~/open3d_install .. \
+     && make -j$(nproc) VERBOSE=1 \
+     && ./Draw --skip-for-unit-test \
+    "
     restart_docker_daemon_if_on_gcloud
 
     # Uninstall
