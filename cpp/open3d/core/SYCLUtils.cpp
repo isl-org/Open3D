@@ -56,7 +56,7 @@ int SYCLDemo() {
         // Execute kernel.
         cgh.parallel_for<class FillBuffer>(
                 num_workloads, [=](cl::sycl::id<1> WIid) {
-                    // Fill buffer with indexes
+                    // Fill buffer with indexes.
                     accessor[WIid] = (cl::sycl::cl_int)WIid.get(0);
                 });
     });
