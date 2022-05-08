@@ -252,15 +252,6 @@ void pybind_gui_classes(py::module &m) {
                     "Initializes the application, using the resources included "
                     "in the wheel. One of the `initialize` functions _must_ be "
                     "called prior to using anything in the gui module")
-            .def(
-                    "initialize",
-                    [](Application &instance, const char *resource_dir) {
-                        InitializeForPython(resource_dir);
-                    },
-                    "Initializes the application with location of the "
-                    "resources provided by the caller. One of the `initialize` "
-                    "functions _must_ be called prior to using anything in the "
-                    "gui module")
             .def("add_font", &Application::AddFont,
                  "Adds a font. Must be called after initialize() and before "
                  "a window is created. Returns the font id, which can be used "
