@@ -63,7 +63,8 @@ bool WriteImage(const std::string &filename,
                 int quality = kOpen3DImageIODefaultQuality);
 
 bool ReadImageFromPNG(const std::string &filename, geometry::Image &image);
-bool ReadImageFromMemoryPNG(const std::vector<char> &image_bytes, geometry::Image &image);
+bool ReadImageFromMemoryPNG(const std::vector<char> &image_bytes,
+                            geometry::Image &image);
 
 bool WriteImageToPNG(const std::string &filename,
                      const geometry::Image &image,

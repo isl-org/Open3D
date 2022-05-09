@@ -48,9 +48,7 @@ namespace rendering {
 
 class PyOffscreenRenderer {
 public:
-    PyOffscreenRenderer(int width,
-                        int height,
-                        bool headless) {
+    PyOffscreenRenderer(int width, int height, bool headless) {
         gui::InitializeForPython();
         width_ = width;
         height_ = height;
@@ -165,8 +163,8 @@ void pybind_rendering_classes(py::module &m) {
                       "image");
     offscreen
             .def(py::init([](int w, int h, bool headless) {
-                     return std::make_shared<PyOffscreenRenderer>(
-                             w, h, headless);
+                     return std::make_shared<PyOffscreenRenderer>(w, h,
+                                                                  headless);
                  }),
                  "width"_a, "height"_a, "headless"_a = false,
                  "Takes width, height and optionally a "

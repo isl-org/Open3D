@@ -125,10 +125,10 @@ struct ImguiWindowContext : public FontContext {
             io.Fonts->Clear();
             size_t font_data_size = this->theme->font_data.size();
             void* font_data = ImGui::MemAlloc(font_data_size);
-            std::copy(this->theme->font_data.begin(), this->theme->font_data.end(), (char*)font_data);
-            this->fonts[0] =
-                    io.Fonts->AddFontFromMemoryTTF(font_data, font_data_size,
-                                                 float(this->theme->font_size));
+            std::copy(this->theme->font_data.begin(),
+                      this->theme->font_data.end(), (char*)font_data);
+            this->fonts[0] = io.Fonts->AddFontFromMemoryTTF(
+                    font_data, font_data_size, float(this->theme->font_size));
             for (unsigned int i = 1; i < font_descs.size(); ++i) {
                 this->fonts[i] = this->fonts[0];
             }
@@ -156,10 +156,11 @@ struct ImguiWindowContext : public FontContext {
         // FontDescription::FontDescription()
         size_t font_data_size = fd.ranges_[0].data.size();
         void* font_data = ImGui::MemAlloc(font_data_size);
-        std::copy(fd.ranges_[0].data.begin(), fd.ranges_[0].data.end(), (char*)font_data);
+        std::copy(fd.ranges_[0].data.begin(), fd.ranges_[0].data.end(),
+                  (char*)font_data);
         if (fd.ranges_.size() == 1) {
             imfont = io.Fonts->AddFontFromMemoryTTF(font_data, font_data_size,
-                                                  point_size);
+                                                    point_size);
         } else {
             imfont = io.Fonts->AddFontFromMemoryTTF(
                     font_data, font_data_size, point_size, NULL,
@@ -207,7 +208,8 @@ struct ImguiWindowContext : public FontContext {
                 void* font_data = ImGui::MemAlloc(font_data_size);
                 std::copy(r.data.begin(), r.data.end(), (char*)font_data);
                 imfont = io.Fonts->AddFontFromMemoryTTF(
-                        font_data, font_data_size, point_size, &config, range.Data);
+                        font_data, font_data_size, point_size, &config,
+                        range.Data);
             }
         }
 

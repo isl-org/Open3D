@@ -1569,7 +1569,8 @@ bool FilamentScene::SetIndirectLight(const std::string& ibl_name) {
     std::vector<char> skybox_bytes;
 
     bool use_embedded_resources = true;
-    std::string ibl_filename = utility::filesystem::GetFileNameWithoutDirectory(ibl_name);
+    std::string ibl_filename =
+            utility::filesystem::GetFileNameWithoutDirectory(ibl_name);
     auto ibl_list = GetListOfIBLs();
     if (ibl_list.find(ibl_filename) != ibl_list.end()) {
         ibl_bytes = ibl_list[ibl_filename].ibl();

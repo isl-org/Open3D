@@ -29,8 +29,8 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 #ifdef WIN32
 #include <windows.h>
@@ -173,30 +173,39 @@ int main(int argc, char *argv[]) {
     if (std::string(argv[1]) == "-complete") {
         std::ofstream cpp_out;
         cpp_out.open(output_cpp_file, std::ios::app);
-        cpp_out << "const std::unordered_map<std::string, IBL> GetListOfIBLs() {\n"
-"    static const std::unordered_map<std::string, IBL>\n"
-"    ibl_name_to_embedded_resource {\n"
-"        {\"brightday\", {brightday_ibl_ktx, brightday_skybox_ktx}},\n"
-"        {\"crossroads\", {crossroads_ibl_ktx, crossroads_skybox_ktx}},\n"
-"        {\"default\", {default_ibl_ktx, default_skybox_ktx}},\n"
-"        {\"hall\", {hall_ibl_ktx, hall_skybox_ktx}},\n"
-"        {\"konzerthaus\", {konzerthaus_ibl_ktx, konzerthaus_skybox_ktx}},\n"
-"        {\"nightlights\", {nightlights_ibl_ktx, nightlights_skybox_ktx}},\n"
-"        {\"park2\", {park2_ibl_ktx, park2_skybox_ktx}},\n"
-"        {\"park\", {park_ibl_ktx, park_skybox_ktx}},\n"
-"        {\"pillars\", {pillars_ibl_ktx, pillars_skybox_ktx}},\n"
-"        {\"streetlamp\", {streetlamp_ibl_ktx, streetlamp_skybox_ktx}},\n"
-"    };\n"
-"    return ibl_name_to_embedded_resource;\n"
-"}\n";
+        cpp_out << "const std::unordered_map<std::string, IBL> GetListOfIBLs() "
+                   "{\n"
+                   "    static const std::unordered_map<std::string, IBL>\n"
+                   "    ibl_name_to_embedded_resource {\n"
+                   "        {\"brightday\", {brightday_ibl_ktx, "
+                   "brightday_skybox_ktx}},\n"
+                   "        {\"crossroads\", {crossroads_ibl_ktx, "
+                   "crossroads_skybox_ktx}},\n"
+                   "        {\"default\", {default_ibl_ktx, "
+                   "default_skybox_ktx}},\n"
+                   "        {\"hall\", {hall_ibl_ktx, hall_skybox_ktx}},\n"
+                   "        {\"konzerthaus\", {konzerthaus_ibl_ktx, "
+                   "konzerthaus_skybox_ktx}},\n"
+                   "        {\"nightlights\", {nightlights_ibl_ktx, "
+                   "nightlights_skybox_ktx}},\n"
+                   "        {\"park2\", {park2_ibl_ktx, park2_skybox_ktx}},\n"
+                   "        {\"park\", {park_ibl_ktx, park_skybox_ktx}},\n"
+                   "        {\"pillars\", {pillars_ibl_ktx, "
+                   "pillars_skybox_ktx}},\n"
+                   "        {\"streetlamp\", {streetlamp_ibl_ktx, "
+                   "streetlamp_skybox_ktx}},\n"
+                   "    };\n"
+                   "    return ibl_name_to_embedded_resource;\n"
+                   "}\n";
 
         std::ofstream h_out;
         h_out.open(output_h_file, std::ios::app);
         h_out << "struct IBL {\n"
-"    std::function<std::vector<char>()> ibl;\n"
-"    std::function<std::vector<char>()> skybox;\n"
-"};\n"
-"const std::unordered_map<std::string, IBL> GetListOfIBLs();\n";
+                 "    std::function<std::vector<char>()> ibl;\n"
+                 "    std::function<std::vector<char>()> skybox;\n"
+                 "};\n"
+                 "const std::unordered_map<std::string, IBL> "
+                 "GetListOfIBLs();\n";
         return 0;
     }
 

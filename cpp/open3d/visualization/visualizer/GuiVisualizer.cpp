@@ -703,7 +703,6 @@ private:
         // Update normal/depth from GUI
         normal_depth.point_size = materials.point_size;
     }
-
 };
 
 GuiVisualizer::GuiVisualizer(const std::string &title, int width, int height)
@@ -897,7 +896,8 @@ void GuiVisualizer::Init() {
                     });
                     ShowDialog(dlg);
                 } else {
-                    impl_->SetIBL(GetRenderer(), std::string(name) + "_ibl.ktx");
+                    impl_->SetIBL(GetRenderer(),
+                                  std::string(name) + "_ibl.ktx");
                 }
             });
     settings.model_.SetOnChanged([this](bool material_type_changed) {

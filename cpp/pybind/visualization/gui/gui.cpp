@@ -362,7 +362,7 @@ void pybind_gui_classes(py::module &m) {
                           "The Menu for the application (initially None)")
             .def_property_readonly("now", &Application::Now,
                                    "Returns current time in seconds");
-            // Note: we cannot export AddWindow and RemoveWindow
+    // Note: we cannot export AddWindow and RemoveWindow
 
     // ---- LayoutContext ----
     py::class_<LayoutContext> lc(
