@@ -4,6 +4,7 @@ add_custom_command(
         ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h
     DEPENDS
         EmbedResources
+        materials
     COMMAND
         ${CMAKE_COMMAND} -E rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp &&
         ${CMAKE_COMMAND} -E rm -f ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h 
