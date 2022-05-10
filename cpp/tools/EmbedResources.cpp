@@ -161,55 +161,19 @@ bool FReadToBuffer(const std::string &path,
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        std::cout << "Usage: " << argv[0] << " <input_file> <output_cpp_file>"
-                  << "       " << argv[0] << " -complete <output_cpp_file>";
-        return 0;
-    }
-
-    std::string output_cpp_file = argv[2];
-    std::string output_h_file = argv[2];
-    output_h_file =
-            output_h_file.substr(0, output_cpp_file.length() - 4) + ".h";
-    if (std::string(argv[1]) == "-complete") {
-        std::ofstream cpp_out;
-        cpp_out.open(output_cpp_file, std::ios::app);
-        cpp_out << "const std::unordered_map<std::string, IBL> GetListOfIBLs() "
-                   "{\n"
-                   "    static const std::unordered_map<std::string, IBL>\n"
-                   "    ibl_name_to_embedded_resource {\n"
-                   "        {\"brightday\", {brightday_ibl_ktx, "
-                   "brightday_skybox_ktx}},\n"
-                   "        {\"crossroads\", {crossroads_ibl_ktx, "
-                   "crossroads_skybox_ktx}},\n"
-                   "        {\"default\", {default_ibl_ktx, "
-                   "default_skybox_ktx}},\n"
-                   "        {\"hall\", {hall_ibl_ktx, hall_skybox_ktx}},\n"
-                   "        {\"konzerthaus\", {konzerthaus_ibl_ktx, "
-                   "konzerthaus_skybox_ktx}},\n"
-                   "        {\"nightlights\", {nightlights_ibl_ktx, "
-                   "nightlights_skybox_ktx}},\n"
-                   "        {\"park2\", {park2_ibl_ktx, park2_skybox_ktx}},\n"
-                   "        {\"park\", {park_ibl_ktx, park_skybox_ktx}},\n"
-                   "        {\"pillars\", {pillars_ibl_ktx, "
-                   "pillars_skybox_ktx}},\n"
-                   "        {\"streetlamp\", {streetlamp_ibl_ktx, "
-                   "streetlamp_skybox_ktx}},\n"
-                   "    };\n"
-                   "    return ibl_name_to_embedded_resource;\n"
-                   "}\n";
-
-        std::ofstream h_out;
-        h_out.open(output_h_file, std::ios::app);
-        h_out << "struct IBL {\n"
-                 "    std::function<std::vector<char>()> ibl;\n"
-                 "    std::function<std::vector<char>()> skybox;\n"
-                 "};\n"
-                 "const std::unordered_map<std::string, IBL> "
-                 "GetListOfIBLs();\n";
+        std::cout << "Usage: " << argv[0] << " <input_file> <compiled_resources_folder>";
         return 0;
     }
 
     std::string input_file = argv[1];
+    std::string var_name = fs::path(input_file).filename().string();
+    var_name.replace(var_name.find('.'), 1, "_");
+    if (var_name.find('-') != std::string::npos) {
+        var_name.replace(var_name.find('-'), 1, "_");
+    }
+
+    std::string output_cpp_file = fs::path(argv[2])/(var_name + ".cpp");
+    std::string output_h_file = fs::path(argv[2])/(var_name + ".h");
 
     std::vector<char> resource_data;
     std::string error_str;
@@ -218,35 +182,17 @@ int main(int argc, char *argv[]) {
         std::ofstream cpp_out;
         std::ofstream h_out;
 
-        if (!fs::exists(output_cpp_file)) {
-            cpp_out.open(output_cpp_file, std::ios::trunc);
-            cpp_out << "#include \"open3d/visualization/gui/Resource.h\"\n\n";
-        } else {
-            cpp_out.open(output_cpp_file, std::ios::app);
-        }
-
-        if (!fs::exists(output_h_file)) {
-            h_out.open(output_h_file, std::ios::trunc);
-            h_out << "#include <vector>\n"
-                     "#include <unordered_map>\n"
-                     "#include <functional>\n"
-                     "#include <string>\n";
-        } else {
-            h_out.open(output_h_file, std::ios::app);
-        }
+        cpp_out.open(output_cpp_file, std::ios::trunc);
+        h_out.open(output_h_file, std::ios::trunc);
 
         std::stringstream byte_data;
-        std::string var_name = fs::path(input_file).filename().string();
-        var_name.replace(var_name.find('.'), 1, "_");
-        if (var_name.find('-') != std::string::npos) {
-            var_name.replace(var_name.find('-'), 1, "_");
-        }
 
-        h_out << "extern const char " << var_name << "_array[];\n"
-              << "extern size_t "<< var_name << "_count;\n"
-              << "std::vector<char> " << var_name << "();" << std::endl;
+        h_out << "#include <cstddef>\n"
+              << "extern const char " << var_name << "_array[];\n"
+              << "extern size_t "<< var_name << "_count;" << std::endl;
 
-        cpp_out << "const char " << var_name << "_array[] = {\n" 
+        cpp_out << "#include \"" << fs::path(output_h_file).filename().string() << "\"\n"
+                << "const char " << var_name << "_array[] = {\n"
                 << "    ";
 
         for (auto byte : resource_data) {
@@ -255,13 +201,7 @@ int main(int argc, char *argv[]) {
 
         cpp_out << "\n};\n"
                 << "size_t " << var_name << "_count =\n"
-                << "        sizeof(" << var_name << "_array)/sizeof(char);\n"
-                << "std::vector<char> " << var_name << "() {\n"
-                << "    static const std::vector<char> " << var_name
-                << "_data(\n        " << var_name << "_array,\n        "
-                << var_name << "_array + " << var_name << "_count);\n"
-                << "    return " << var_name << "_data;\n"
-                << "}\n"
+                << "        sizeof(" << var_name << "_array)/sizeof(char);" 
                 << std::endl;
 
         cpp_out.close();

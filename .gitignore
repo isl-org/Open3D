@@ -15,6 +15,7 @@ cpp/open3d/Open3D.h
 cpp/open3d/Open3DConfig.h
 cpp/open3d/visualization/shader/Shader.h
 util/pip_package/setup.py
+cpp/open3d/visualization/gui/CompiledResources/
 
 # CMake temp file from Visual Studio
 CMakeSettings.json
