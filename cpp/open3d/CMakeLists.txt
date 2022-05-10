@@ -19,6 +19,43 @@ function(open3d_set_open3d_lib_properties target)
 
 endfunction()
 
+# https://stackoverflow.com/a/65177331
+# file(REAL_PATH "${CMAKE_INSTALL_PREFIX}" prefix)
+function(auto_pc TARGET)
+  file(CONFIGURE OUTPUT "pc.${TARGET}/CMakeLists.txt"
+       CONTENT [[
+cmake_minimum_required(VERSION 3.20)
+project(pc_@TARGET@)
+
+find_package(@TARGET@ REQUIRED CONFIG PATHS @CMAKE_INSTALL_PREFIX@ NO_DEFAULT_PATH)
+
+file(GENERATE OUTPUT lib@TARGET@.pc
+     CONTENT [=[
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${prefix}/lib
+includedir=${prefix}/include/
+
+Name: lib@TARGET@
+Description: @PROJECT_DESCRIPTION@
+URL: @PROJECT_HOMEPAGE_URL@
+Version: @PROJECT_VERSION@
+Cflags: -I$<JOIN:$<TARGET_PROPERTY:INTERFACE_INCLUDE_DIRECTORIES>, -I> -D$<JOIN:$<TARGET_PROPERTY:INTERFACE_COMPILE_DEFINITIONS>, -D>
+Libs: -L$<TARGET_FILE_DIR:Open3D::@TARGET@> -l@TARGET@
+Libs.private: $<JOIN:$<TARGET_PROPERTY:INTERFACE_LINK_OPTIONS>, >
+$<JOIN:$<TARGET_PROPERTY:INTERFACE_LINK_LIBRARIES>, >
+]=]   TARGET "Open3D::@TARGET@")
+]] @ONLY NEWLINE_STYLE LF)
+
+  file(CONFIGURE OUTPUT "pc.${TARGET}/post-install.cmake"
+       CONTENT [[
+set(proj "@CMAKE_CURRENT_BINARY_DIR@/pc.@TARGET@")
+execute_process(COMMAND "@CMAKE_COMMAND@" -S "${proj}" -B "${proj}/build")
+file(INSTALL "${proj}/build/lib@TARGET@.pc" DESTINATION "@CMAKE_INSTALL_PREFIX@/@Open3D_INSTALL_LIB_DIR@/pkgconfig")
+]] @ONLY NEWLINE_STYLE LF)
+
+  install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/pc.${TARGET}/post-install.cmake")
+endfunction()
+
 # Configure a header file to pass the version settings to the source code
 configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h.in"
                "${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h")
@@ -126,17 +163,12 @@ write_basic_package_version_file("${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmak
                                  VERSION ${PROJECT_VERSION}
                                  COMPATIBILITY ExactVersion)
 
-configure_file("${PROJECT_SOURCE_DIR}/libopen3d.pc.in" ${PROJECT_BINARY_DIR}/libopen3d.pc @ONLY)
-
 # Installation
 install(TARGETS Open3D EXPORT Open3DTargets
         RUNTIME DESTINATION ${Open3D_INSTALL_BIN_DIR}
         LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
         ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}
 )
-
-install(FILES ${PROJECT_BINARY_DIR}/libopen3d.pc
-    DESTINATION ${Open3D_INSTALL_LIB_DIR}/pkgconfig)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}
@@ -150,6 +182,8 @@ install(FILES
         "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
         "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
         DESTINATION "${Open3D_INSTALL_CMAKE_DIR}" COMPONENT dev)
+
+auto_pc(Open3D)
 
 # uninstall target
 if(NOT TARGET uninstall)
