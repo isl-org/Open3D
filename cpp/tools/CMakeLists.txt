@@ -23,20 +23,22 @@ set_target_properties(EmbedResources PROPERTIES FOLDER "Tools")
 open3d_show_and_abort_on_warning(EmbedResources)
 open3d_set_global_properties(EmbedResources)
 
-add_executable(TestEmbedResources)
-target_sources(TestEmbedResources PRIVATE TestEmbedResources.cpp)
-target_link_libraries(TestEmbedResources PRIVATE Open3D::Open3D)
-add_dependencies(TestEmbedResources resource-embed)
+if (BUILD_GUI)
+    add_executable(TestEmbedResources)
+    target_sources(TestEmbedResources PRIVATE TestEmbedResources.cpp)
+    target_link_libraries(TestEmbedResources PRIVATE Open3D::Open3D)
+    add_dependencies(TestEmbedResources resource-embed)
 
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/test_embed)
-add_custom_target(test-embed
-    COMMAND
-        ${CMAKE_COMMAND} -E echo "Running test for embedding GUI resources" &&
-        ./TestEmbedResources ${PROJECT_BINARY_DIR}/test_embed &&
-        ${CMAKE_COMMAND} -E compare_files ${PROJECT_BINARY_DIR}/test_embed/brightday_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resources/brightday_ibl.ktx
-    WORKING_DIRECTORY
-        ${PROJECT_BINARY_DIR}/bin/
-    DEPENDS 
-        ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
-)
-add_dependencies(test-embed TestEmbedResources)
+    file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/test_embed)
+    add_custom_target(test-embed
+        COMMAND
+            ${CMAKE_COMMAND} -E echo "Running test for embedding GUI resources" &&
+            ./TestEmbedResources ${PROJECT_BINARY_DIR}/test_embed &&
+            ${CMAKE_COMMAND} -E compare_files ${PROJECT_BINARY_DIR}/test_embed/brightday_ibl.ktx ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resources/brightday_ibl.ktx
+        WORKING_DIRECTORY
+            ${PROJECT_BINARY_DIR}/bin/
+        DEPENDS 
+            ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
+    )
+    add_dependencies(test-embed TestEmbedResources)
+endif()

@@ -1,22 +1,27 @@
-#include <vector>
-#include <unordered_map>
 #include <functional>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
+#include "open3d/visualization/gui/CompiledResources/RobotoMono_Medium_ttf.h"
+#include "open3d/visualization/gui/CompiledResources/Roboto_BoldItalic_ttf.h"
+#include "open3d/visualization/gui/CompiledResources/Roboto_Bold_ttf.h"
+#include "open3d/visualization/gui/CompiledResources/Roboto_MediumItalic_ttf.h"
+#include "open3d/visualization/gui/CompiledResources/Roboto_Medium_ttf.h"
 #include "open3d/visualization/gui/CompiledResources/brightday_ibl_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/brightday_skybox_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/colorMap_filamat.h"
 #include "open3d/visualization/gui/CompiledResources/crossroads_ibl_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/crossroads_skybox_ktx.h"
-#include "open3d/visualization/gui/CompiledResources/default_ibl_ktx.h"
-#include "open3d/visualization/gui/CompiledResources/default_skybox_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/defaultGradient_png.h"
-#include "open3d/visualization/gui/CompiledResources/defaultLit_filamat.h"
 #include "open3d/visualization/gui/CompiledResources/defaultLitSSR_filamat.h"
 #include "open3d/visualization/gui/CompiledResources/defaultLitTransparency_filamat.h"
+#include "open3d/visualization/gui/CompiledResources/defaultLit_filamat.h"
 #include "open3d/visualization/gui/CompiledResources/defaultTexture_png.h"
-#include "open3d/visualization/gui/CompiledResources/defaultUnlit_filamat.h"
 #include "open3d/visualization/gui/CompiledResources/defaultUnlitTransparency_filamat.h"
+#include "open3d/visualization/gui/CompiledResources/defaultUnlit_filamat.h"
+#include "open3d/visualization/gui/CompiledResources/default_ibl_ktx.h"
+#include "open3d/visualization/gui/CompiledResources/default_skybox_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/depth_filamat.h"
 #include "open3d/visualization/gui/CompiledResources/depth_value_filamat.h"
 #include "open3d/visualization/gui/CompiledResources/hall_ibl_ktx.h"
@@ -28,18 +33,13 @@
 #include "open3d/visualization/gui/CompiledResources/nightlights_ibl_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/nightlights_skybox_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/normals_filamat.h"
-#include "open3d/visualization/gui/CompiledResources/park_ibl_ktx.h"
-#include "open3d/visualization/gui/CompiledResources/park_skybox_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/park2_ibl_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/park2_skybox_ktx.h"
+#include "open3d/visualization/gui/CompiledResources/park_ibl_ktx.h"
+#include "open3d/visualization/gui/CompiledResources/park_skybox_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/pillars_ibl_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/pillars_skybox_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/pointcloud_filamat.h"
-#include "open3d/visualization/gui/CompiledResources/Roboto_Bold_ttf.h"
-#include "open3d/visualization/gui/CompiledResources/Roboto_BoldItalic_ttf.h"
-#include "open3d/visualization/gui/CompiledResources/Roboto_Medium_ttf.h"
-#include "open3d/visualization/gui/CompiledResources/Roboto_MediumItalic_ttf.h"
-#include "open3d/visualization/gui/CompiledResources/RobotoMono_Medium_ttf.h"
 #include "open3d/visualization/gui/CompiledResources/streetlamp_ibl_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/streetlamp_skybox_ktx.h"
 #include "open3d/visualization/gui/CompiledResources/ui_blit_filamat.h"
@@ -48,7 +48,6 @@
 #include "open3d/visualization/gui/CompiledResources/unlitLine_filamat.h"
 #include "open3d/visualization/gui/CompiledResources/unlitPolygonOffset_filamat.h"
 #include "open3d/visualization/gui/CompiledResources/unlitSolidColor_filamat.h"
-
 
 std::vector<char> brightday_ibl_ktx();
 std::vector<char> brightday_skybox_ktx();

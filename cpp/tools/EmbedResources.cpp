@@ -161,7 +161,8 @@ bool FReadToBuffer(const std::string &path,
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        std::cout << "Usage: " << argv[0] << " <input_file> <compiled_resources_folder>";
+        std::cout << "Usage: " << argv[0]
+                  << " <input_file> <compiled_resources_folder>";
         return 0;
     }
 
@@ -172,8 +173,10 @@ int main(int argc, char *argv[]) {
         var_name.replace(var_name.find('-'), 1, "_");
     }
 
-    std::string output_cpp_file = fs::path(argv[2])/(var_name + ".cpp");
-    std::string output_h_file = fs::path(argv[2])/(var_name + ".h");
+    std::string output_cpp_file =
+            (fs::path(argv[2]) / (var_name + ".cpp")).string();
+    std::string output_h_file =
+            (fs::path(argv[2]) / (var_name + ".h")).string();
 
     std::vector<char> resource_data;
     std::string error_str;
@@ -189,9 +192,10 @@ int main(int argc, char *argv[]) {
 
         h_out << "#include <cstddef>\n"
               << "extern const char " << var_name << "_array[];\n"
-              << "extern size_t "<< var_name << "_count;" << std::endl;
+              << "extern size_t " << var_name << "_count;" << std::endl;
 
-        cpp_out << "#include \"" << fs::path(output_h_file).filename().string() << "\"\n"
+        cpp_out << "#include \"" << fs::path(output_h_file).filename().string()
+                << "\"\n"
                 << "const char " << var_name << "_array[] = {\n"
                 << "    ";
 
@@ -201,7 +205,7 @@ int main(int argc, char *argv[]) {
 
         cpp_out << "\n};\n"
                 << "size_t " << var_name << "_count =\n"
-                << "        sizeof(" << var_name << "_array)/sizeof(char);" 
+                << "        sizeof(" << var_name << "_array)/sizeof(char);"
                 << std::endl;
 
         cpp_out.close();

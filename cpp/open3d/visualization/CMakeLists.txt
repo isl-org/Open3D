@@ -131,7 +131,11 @@ open3d_add_encoded_shader(shader
 # Source group for Visual Studio
 add_source_group(shader/glsl)
 
-add_dependencies(visualization shader resource-embed)
+add_dependencies(visualization shader)
+
+if (BUILD_GUI)
+    add_dependencies(visualization resource-embed)
+endif()
 
 
 open3d_show_and_abort_on_warning(visualization)
