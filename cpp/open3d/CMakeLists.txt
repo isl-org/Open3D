@@ -126,12 +126,17 @@ write_basic_package_version_file("${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmak
                                  VERSION ${PROJECT_VERSION}
                                  COMPATIBILITY ExactVersion)
 
+configure_file("${PROJECT_SOURCE_DIR}/libopen3d.pc.in" ${PROJECT_BINARY_DIR}/libopen3d.pc @ONLY)
+
 # Installation
 install(TARGETS Open3D EXPORT Open3DTargets
         RUNTIME DESTINATION ${Open3D_INSTALL_BIN_DIR}
         LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
         ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}
 )
+
+install(FILES ${PROJECT_BINARY_DIR}/libopen3d.pc
+    DESTINATION ${Open3D_INSTALL_LIB_DIR}/pkgconfig)
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DESTINATION ${Open3D_INSTALL_INCLUDE_DIR}
