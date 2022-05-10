@@ -242,26 +242,32 @@ int main(int argc, char *argv[]) {
             var_name.replace(var_name.find('-'), 1, "_");
         }
 
-        h_out << "std::vector<char> " << var_name << "();" << std::endl;
+        h_out << "extern const char " << var_name << "_array[];\n"
+              << "extern size_t "<< var_name << "_count;\n"
+              << "std::vector<char> " << var_name << "();" << std::endl;
 
-        cpp_out << "std::vector<char> " << var_name << "() {\n"
-                << "    static const std::vector<char> " << var_name
-                << "_data = {\n"
-                << "        ";
+        cpp_out << "const char " << var_name << "_array[] = {\n" 
+                << "    ";
 
         for (auto byte : resource_data) {
-            cpp_out << (int)byte << ", ";
+            cpp_out << (int)byte << ",";
         }
 
-        cpp_out << "    };\n"
+        cpp_out << "\n};\n"
+                << "size_t " << var_name << "_count =\n"
+                << "        sizeof(" << var_name << "_array)/sizeof(char);\n"
+                << "std::vector<char> " << var_name << "() {\n"
+                << "    static const std::vector<char> " << var_name
+                << "_data(\n        " << var_name << "_array,\n        "
+                << var_name << "_array + " << var_name << "_count);\n"
                 << "    return " << var_name << "_data;\n"
-                << "}" << std::endl;
+                << "}\n"
+                << std::endl;
 
         cpp_out.close();
         h_out.close();
     } else {
         std::cout << "Error loading file: " << error_str << std::endl;
     }
-
     return 0;
 }
