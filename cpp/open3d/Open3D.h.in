@@ -126,7 +126,6 @@
 #include "open3d/visualization/gui/Layout.h"
 #include "open3d/visualization/gui/Menu.h"
 #include "open3d/visualization/gui/ProgressBar.h"
-#include "open3d/visualization/gui/Resource.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Slider.h"
 #include "open3d/visualization/gui/TabControl.h"
@@ -152,6 +151,7 @@
 #include "open3d/visualization/visualizer/VisualizerWithKeyCallback.h"
 #include "open3d/visualization/visualizer/VisualizerWithVertexSelection.h"
 
+
 // clang-format off
 @BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/AzureKinectRecorder.h"
 @BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
@@ -166,4 +166,5 @@
 @BUILD_LIBREALSENSE_COMMENT@#include "open3d/t/io/sensor/realsense/RSBagReader.h"
 @BUILD_LIBREALSENSE_COMMENT@#include "open3d/t/io/sensor/realsense/RealSenseSensor.h"
 
+@BUILD_GUI_COMMENT@#include "open3d/visualization/gui/Resource.h"
 @BUILD_WEBRTC_COMMENT@#include "open3d/visualization/webrtc_server/WebRTCWindowSystem.h"

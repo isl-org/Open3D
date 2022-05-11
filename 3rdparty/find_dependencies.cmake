@@ -1600,6 +1600,13 @@ else()
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
 
+# WebRTC
+if(BUILD_GUI)
+    set(BUILD_GUI_COMMENT "")
+else()
+    set(BUILD_GUI_COMMENT "//")
+endif()
+
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
 list(REMOVE_DUPLICATES Open3D_3RDPARTY_EXTERNAL_MODULES)
