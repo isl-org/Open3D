@@ -151,7 +151,6 @@
 #include "open3d/visualization/visualizer/VisualizerWithKeyCallback.h"
 #include "open3d/visualization/visualizer/VisualizerWithVertexSelection.h"
 
-
 // clang-format off
 @BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/AzureKinectRecorder.h"
 @BUILD_AZURE_KINECT_COMMENT@#include "open3d/io/sensor/azure_kinect/AzureKinectSensorConfig.h"
