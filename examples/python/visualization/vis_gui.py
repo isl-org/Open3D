@@ -341,11 +341,12 @@ class AppWindow:
         advanced.add_child(h)
 
         self._ibl_map = gui.Combobox()
-        # TODO: remove resource path from here
-        for ibl in glob.glob(gui.Application.instance.resource_path +
-                             "/*_ibl.ktx"):
+        for ibl in [
+                "brightday", "crossroads", "default", "hall", "konzerthaus",
+                "nightlights", "park", "park2", "pillars", "streetlamp"
+        ]:
 
-            self._ibl_map.add_item(os.path.basename(ibl[:-8]))
+            self._ibl_map.add_item(ibl)
         self._ibl_map.selected_text = AppWindow.DEFAULT_IBL
         self._ibl_map.set_on_selection_changed(self._on_new_ibl)
         self._ibl_intensity = gui.Slider(gui.Slider.INT)

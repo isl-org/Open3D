@@ -130,8 +130,8 @@ endif()
 
 if (BUILD_GUI)
     file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
-    file(COPY ${GUI_RESOURCE_DIR}
-         DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
+    file(COPY ${GUI_RESOURCE_DIR}/html
+         DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
 endif()
 
 # Add all examples to installation directory.
