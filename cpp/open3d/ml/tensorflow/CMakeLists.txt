@@ -191,8 +191,7 @@ URL: @PROJECT_HOMEPAGE_URL@
 Version: @PROJECT_VERSION@
 Requires: Open3D = @PROJECT_VERSION@
 Cflags:
-Libs: -lopen3d_tf_ops
-        ]=]  @ONLY)
+Libs: -lopen3d_tf_ops]=]  @ONLY NEWLINE_STYLE LF)
     file(GENERATE OUTPUT open3d_tf_ops.pc INPUT
         "${CMAKE_CURRENT_BINARY_DIR}/open3d_tf_ops.pc.in"
         TARGET open3d_tf_ops)
