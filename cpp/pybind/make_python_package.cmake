@@ -128,7 +128,7 @@ if (BUILD_JUPYTER_EXTENSION)
     file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt "${ALL_REQUIREMENTS}")
 endif()
 
-if (BUILD_GUI)
+if (BUILD_WEBRTC)
     file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
     file(COPY ${GUI_RESOURCE_DIR}/html
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
