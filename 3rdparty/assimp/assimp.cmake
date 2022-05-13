@@ -6,10 +6,12 @@ else()
     set(lib_name assimp)
 endif()
 
+# IntelLLVM (SYCL) compiler defaults to fast math, causing NaN comparison code
+# compilation error.
 if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
-    set(assimp_cmake_cxx_flags ${CMAKE_CXX_FLAGS} -fno-fast-math)
+    set(assimp_cmake_cxx_flags "${CMAKE_CXX_FLAGS} -ffp-contract=on -fno-fast-math")
 else()
-    set(assimp_cmake_cxx_flags ${CMAKE_CXX_FLAGS})
+    set(assimp_cmake_cxx_flags "${CMAKE_CXX_FLAGS}")
 endif()
 
 ExternalProject_Add(

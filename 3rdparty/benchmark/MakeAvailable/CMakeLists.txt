@@ -9,6 +9,9 @@ else()
     add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
 endif()
 
+# IntelLLVM (SYCL) compiler defaults to fast math, causing NaN comparison
+# code compilation error.
+add_compile_options($<$<CXX_COMPILER_ID:IntelLLVM>:-ffp-contract=on>)
 add_compile_options($<$<CXX_COMPILER_ID:IntelLLVM>:-fno-fast-math>)
 
 FetchContent_MakeAvailable(ext_benchmark)
