@@ -157,9 +157,8 @@ Name: Open3D
 Description: @PROJECT_DESCRIPTION@
 URL: @PROJECT_HOMEPAGE_URL@
 Version: @PROJECT_VERSION@
-Cflags: -isystem ${includedir} -isystem ${includedir}/open3d/3rdparty -D$<JOIN:$<TARGET_PROPERTY:INTERFACE_COMPILE_DEFINITIONS>, -D>
-Libs: -L ${libdir} -Wl,-rpath,${libdir} -lOpen3D
-    ]=]  @ONLY)
+Cflags: -std=c++@CMAKE_CXX_STANDARD@ -isystem ${includedir} -isystem ${includedir}/open3d/3rdparty -D$<JOIN:$<TARGET_PROPERTY:INTERFACE_COMPILE_DEFINITIONS>, -D>
+Libs: -L ${libdir} -Wl,-rpath,${libdir} -lOpen3D]=]  @ONLY)
     file(GENERATE OUTPUT Open3D.pc INPUT "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc.in"
         TARGET "Open3D::Open3D")
     install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc"

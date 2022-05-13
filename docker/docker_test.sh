@@ -153,13 +153,17 @@ cpp_python_linking_uninstall_test() {
      && cd open3d-cmake-find-package \
      && mkdir build \
      && pushd build \
+     && echo Testing build with cmake \
      && cmake -DCMAKE_INSTALL_PREFIX=~/open3d_install .. \
      && make -j$(nproc) VERBOSE=1 \
      && ./Draw --skip-for-unit-test \
-     && rm -r ./* \
-     && c++ ../Draw.cpp -o Draw \
-     $(PKG_CONFIG_PATH=~/open3d_install/lib/pkgconfig pkg-config --cflags --libs Open3D) \
-     && ./Draw --skip-for-unit-test \
+     && [ $SHARED == OFF ]
+     || { rm -r ./* \
+     && echo Testing build with pkg-config \
+     && export PKG_CONFIG_PATH=~/open3d_install/lib/pkgconfig \
+     && pkg-config --cflags --libs Open3D \
+     && c++ ../Draw.cpp -o Draw $(pkg-config --cflags --libs Open3D) \
+     && ./Draw --skip-for-unit-test ; } \
     "
     restart_docker_daemon_if_on_gcloud
 
@@ -177,151 +181,151 @@ fi
 echo "[$(basename $0)] building $1"
 source "${HOST_OPEN3D_ROOT}/docker/docker_build.sh"
 case "$1" in
-    # OpenBLAS AMD64
-    openblas-amd64-py36-dev)
-        openblas_export_env amd64 py36 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py37-dev)
-        openblas_export_env amd64 py37 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py38-dev)
-        openblas_export_env amd64 py38 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py39-dev)
-        openblas_export_env amd64 py39 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py36)
-        openblas_export_env amd64 py36
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py37)
-        openblas_export_env amd64 py37
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py38)
-        openblas_export_env amd64 py38
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-amd64-py39)
-        openblas_export_env amd64 py39
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
+# OpenBLAS AMD64
+openblas-amd64-py36-dev)
+    openblas_export_env amd64 py36 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py37-dev)
+    openblas_export_env amd64 py37 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py38-dev)
+    openblas_export_env amd64 py38 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py39-dev)
+    openblas_export_env amd64 py39 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py36)
+    openblas_export_env amd64 py36
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py37)
+    openblas_export_env amd64 py37
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py38)
+    openblas_export_env amd64 py38
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-amd64-py39)
+    openblas_export_env amd64 py39
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 
-    # OpenBLAS ARM64
-    openblas-arm64-py36-dev)
-        openblas_export_env arm64 py36 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py37-dev)
-        openblas_export_env arm64 py37 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py38-dev)
-        openblas_export_env arm64 py38 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py39-dev)
-        openblas_export_env arm64 py39 dev
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py36)
-        openblas_export_env arm64 py36
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py37)
-        openblas_export_env arm64 py37
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py38)
-        openblas_export_env arm64 py38
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    openblas-arm64-py39)
-        openblas_export_env arm64 py39
-        openblas_print_env
-        cpp_python_linking_uninstall_test
-        ;;
+# OpenBLAS ARM64
+openblas-arm64-py36-dev)
+    openblas_export_env arm64 py36 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-arm64-py37-dev)
+    openblas_export_env arm64 py37 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-arm64-py38-dev)
+    openblas_export_env arm64 py38 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-arm64-py39-dev)
+    openblas_export_env arm64 py39 dev
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-arm64-py36)
+    openblas_export_env arm64 py36
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-arm64-py37)
+    openblas_export_env arm64 py37
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-arm64-py38)
+    openblas_export_env arm64 py38
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+openblas-arm64-py39)
+    openblas_export_env arm64 py39
+    openblas_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 
-    # CPU CI
-    cpu-static)
-        cpu-static_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    cpu-shared)
-        cpu-shared_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    cpu-shared-release)
-        cpu-shared-release_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    cpu-shared-ml)
-        cpu-shared-ml_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    cpu-shared-ml-release)
-        cpu-shared-ml-release_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
+# CPU CI
+cpu-static)
+    cpu-static_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+cpu-shared)
+    cpu-shared_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+cpu-shared-release)
+    cpu-shared-release_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+cpu-shared-ml)
+    cpu-shared-ml_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+cpu-shared-ml-release)
+    cpu-shared-ml-release_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 
-    # ML CIs
-    2-bionic)
-        2-bionic_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    3-ml-shared-bionic)
-        3-ml-shared-bionic_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    3-ml-shared-bionic-release)
-        3-ml-shared-bionic-release_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    4-shared-bionic)
-        4-shared-bionic_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    4-shared-bionic-release)
-        4-shared-bionic-release_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
-    5-ml-focal)
-        5-ml-focal_export_env
-        ci_print_env
-        cpp_python_linking_uninstall_test
-        ;;
+# ML CIs
+2-bionic)
+    2-bionic_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+3-ml-shared-bionic)
+    3-ml-shared-bionic_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+3-ml-shared-bionic-release)
+    3-ml-shared-bionic-release_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+4-shared-bionic)
+    4-shared-bionic_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+4-shared-bionic-release)
+    4-shared-bionic-release_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
+5-ml-focal)
+    5-ml-focal_export_env
+    ci_print_env
+    cpp_python_linking_uninstall_test
+    ;;
 
-    *)
-        echo "Error: invalid argument: ${1}." >&2
-        print_usage_and_exit_docker_test
-        ;;
+*)
+    echo "Error: invalid argument: ${1}." >&2
+    print_usage_and_exit_docker_test
+    ;;
 esac
