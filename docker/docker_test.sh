@@ -157,7 +157,7 @@ cpp_python_linking_uninstall_test() {
      && cmake -DCMAKE_INSTALL_PREFIX=~/open3d_install .. \
      && make -j$(nproc) VERBOSE=1 \
      && ./Draw --skip-for-unit-test \
-     && [ $SHARED == OFF ]
+     && [ ${SHARED:-OFF} == OFF ] \
      || { rm -r ./* \
      && echo Testing build with pkg-config \
      && export PKG_CONFIG_PATH=~/open3d_install/lib/pkgconfig \

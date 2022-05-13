@@ -24,8 +24,10 @@ pkg-config
 ----------
 
 If you don't use the CMake build system in your project, you can use the simpler
-`pkg-config` tool to obtain the build settings needed to link it with Open3D.
-This is available on Linux and macOS.
+``pkg-config`` tool to get the build settings needed to link it with Open3D.
+This is available on Linux and macOS, if you use Open3D shared libraries. Note
+that we recommend using ``CMake`` over ``pkg-config``, since the latter cannot
+properly account for complex build configurations.
 
 For example, you can equivalently build the `Draw` executable from the above
 example project with this command:
@@ -37,4 +39,4 @@ example project with this command:
 
 ``pkg-config`` reads ``.pc`` files included in the Open3D install and fills in the
 required build options. Note that the ``pkg-config --libs`` options must appear
-*after* all of your source files to avoid unrecognized symbol linker errors.
+*after* your source files to avoid unrecognized symbol linker errors.
