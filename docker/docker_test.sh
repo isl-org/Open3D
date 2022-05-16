@@ -161,8 +161,8 @@ cpp_python_linking_uninstall_test() {
      || { rm -r ./* \
      && echo Testing build with pkg-config \
      && export PKG_CONFIG_PATH=~/open3d_install/lib/pkgconfig \
-     && pkg-config --cflags --libs Open3D \
-     && c++ ../Draw.cpp -o Draw $(pkg-config --cflags --libs Open3D) \
+     && echo Open3D build options: \$(pkg-config --cflags --libs Open3D) \
+     && c++ -v ../Draw.cpp -o Draw \$(pkg-config --cflags --libs Open3D) \
      && ./Draw --skip-for-unit-test ; } \
     "
     restart_docker_daemon_if_on_gcloud

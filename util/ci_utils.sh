@@ -337,7 +337,7 @@ test_cpp_example() {
         rm -r ./*
         echo Testing build with pkg-config
         export PKG_CONFIG_PATH=${OPEN3D_INSTALL_DIR}/lib/pkgconfig
-        pkg-config --cflags --libs Open3D
+        echo Open3D build options: $(pkg-config --cflags --libs Open3D)
         c++ ../Draw.cpp -o Draw $(pkg-config --cflags --libs Open3D)
         if [ "$runExample" == ON ]; then
             ./Draw --skip-for-unit-test
