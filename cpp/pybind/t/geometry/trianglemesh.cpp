@@ -171,8 +171,17 @@ Args:
 
 Returns:
     TriangleMesh representing the convexh hull. This contains an
-    extra vertex property "point_map" that contains the index of the
-    corresponding vertex in the original mesh.)");
+    extra vertex property "point_indices" that contains the index of the
+    corresponding vertex in the original mesh.
+
+Example:
+    We will load the Stanford Bunny dataset, compute and display it's convex hull.
+
+    >>> bunny = o3d.data.BunnyMesh()
+    >>> mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+    >>> hull = mesh.compute_convex_hull()
+    >>> o3d.visualization.draw([{'name': 'bunny', 'geometry': mesh}, {'name': 'convex hull', 'geometry': hull}])
+)");
 
     // creation
     triangle_mesh.def_static(
@@ -189,7 +198,7 @@ Returns:
                       R"(
 Returns a new triangle mesh clipped with the plane.
 
-This method clips the triangle mesh with the specified plane. 
+This method clips the triangle mesh with the specified plane.
 Parts of the mesh on the positive side of the plane will be kept and triangles
 intersected by the plane will be cut.
 

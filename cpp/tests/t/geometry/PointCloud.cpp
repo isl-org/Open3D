@@ -784,11 +784,12 @@ TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
     pcd.SetPointPositions(core::Tensor::Init<float>(
             {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}}));
     mesh = pcd.ComputeConvexHull();
-    auto point_index = mesh.GetVertexAttr("point_index");
-    EXPECT_EQ(point_index.GetDtype(), core::Int32);
-    EXPECT_EQ(point_index.ToFlatVector<int>(), std::vector<int>({2, 3, 0, 1}));
+    auto point_indices = mesh.GetVertexAttr("point_indices");
+    EXPECT_EQ(point_indices.GetDtype(), core::Int32);
+    EXPECT_EQ(point_indices.ToFlatVector<int>(),
+              std::vector<int>({2, 3, 0, 1}));
     EXPECT_TRUE(mesh.GetVertexPositions().AllEqual(
-            pcd.GetPointPositions().IndexGet({point_index.To(core::Int64)})));
+            pcd.GetPointPositions().IndexGet({point_indices.To(core::Int64)})));
 
     // Hard-coded test
     pcd.SetPointPositions(core::Tensor::Init<float>({{0.5, 0.5, 0.5},
@@ -801,11 +802,11 @@ TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
                                                      {1, 1, 0},
                                                      {1, 1, 1}}));
     mesh = pcd.ComputeConvexHull();
-    point_index = mesh.GetVertexAttr("point_index");
-    EXPECT_EQ(point_index.ToFlatVector<int>(),
+    point_indices = mesh.GetVertexAttr("point_indices");
+    EXPECT_EQ(point_indices.ToFlatVector<int>(),
               std::vector<int>({7, 3, 1, 5, 6, 2, 8, 4}));
     EXPECT_TRUE(mesh.GetVertexPositions().AllEqual(
-            pcd.GetPointPositions().IndexGet({point_index.To(core::Int64)})));
+            pcd.GetPointPositions().IndexGet({point_indices.To(core::Int64)})));
     ExpectEQ(mesh.GetTriangleIndices().ToFlatVector<int>(),
              std::vector<int>{1, 0, 2,  //
                               0, 3, 2,  //

@@ -288,8 +288,17 @@ Args:
 
 Return:
     TriangleMesh representing the convexh hull. This contains an
-    extra vertex property "point_map" that contains the index of the
-    corresponding vertex in the original mesh.)doc");
+    extra vertex property "point_indices" that contains the index of the
+    corresponding vertex in the original mesh.
+
+Example:
+    We will load the Eagle dataset, compute and display it's convex hull.
+
+    >>> eagle = o3d.data.EaglePointCloud()
+    >>> pcd = o3d.t.io.read_triangle_mesh(eagle.path)
+    >>> hull = pcd.compute_convex_hull()
+    >>> o3d.visualization.draw([{'name': 'eagle', 'geometry': pcd}, {'name': 'convex hull', 'geometry': hull}])
+    )doc");
 
     // conversion
     pointcloud.def("to_legacy", &PointCloud::ToLegacy,
