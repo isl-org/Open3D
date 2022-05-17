@@ -485,19 +485,6 @@ if(NOT USE_SYSTEM_ASSIMP)
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_assimp)
 
-# OpenMP
-if(WITH_OPENMP)
-    open3d_find_package_3rdparty_library(3rdparty_openmp
-        PACKAGE OpenMP
-        PACKAGE_VERSION_VAR OpenMP_CXX_VERSION
-        TARGETS OpenMP::OpenMP_CXX
-    )
-    if(3rdparty_openmp_FOUND)
-        message(STATUS "Building with OpenMP")
-        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openmp)
-    endif()
-endif()
-
 # X11
 if(UNIX AND NOT APPLE)
     open3d_find_package_3rdparty_library(3rdparty_x11
@@ -1598,6 +1585,19 @@ if(BUILD_WEBRTC)
 else()
     # Don't include WebRTC headers in Open3D.h.
     set(BUILD_WEBRTC_COMMENT "//")
+endif()
+
+# OpenMP
+if(WITH_OPENMP)
+    open3d_find_package_3rdparty_library(3rdparty_openmp
+        PACKAGE OpenMP
+        PACKAGE_VERSION_VAR OpenMP_CXX_VERSION
+        TARGETS OpenMP::OpenMP_CXX
+    )
+    if(3rdparty_openmp_FOUND)
+        message(STATUS "Building with OpenMP")
+        list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_openmp)
+    endif()
 endif()
 
 # Compactify list of external modules.
