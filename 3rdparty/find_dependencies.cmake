@@ -1657,7 +1657,7 @@ list(REMOVE_DUPLICATES Open3D_3RDPARTY_EXTERNAL_MODULES)
 #
 # Current rules:
 # 1. 3rdparty_curl should be linked before 3rdparty_png.
-# 2. Link "FROM_SOURCE" before "FROM_SYSTEM" targets.
+# 2. Link "FROM_CUSTOM" before "FROM_SYSTEM" targets.
 # 3. ...
 set(Open3D_3RDPARTY_PUBLIC_TARGETS
     ${Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_CUSTOM}
