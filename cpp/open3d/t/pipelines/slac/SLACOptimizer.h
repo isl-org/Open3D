@@ -167,7 +167,7 @@ void SaveCorrespondencesForPointClouds(
 /// \param fragment_pose_graph Legacy PoseGraph for pointcloud fragments.
 /// \param params  Parameters to tune in SLAC.
 /// \param debug_option Debug options.
-/// \return pair of optimized registraion::PoseGraph and slac::ControlGrid.
+/// \return pair of optimized registration::PoseGraph and slac::ControlGrid.
 std::pair<PoseGraph, ControlGrid> RunSLACOptimizerForFragments(
         const std::vector<std::string>& fragment_filenames,
         const PoseGraph& fragment_pose_graph,

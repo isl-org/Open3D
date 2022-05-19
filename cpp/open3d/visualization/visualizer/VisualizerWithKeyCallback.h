@@ -35,7 +35,7 @@ namespace visualization {
 
 /// \class VisualizerWithKeyCallback
 ///
-/// \brief Visualizer with custom key callack capabilities.
+/// \brief Visualizer with custom key callback capabilities.
 class VisualizerWithKeyCallback : public Visualizer {
 public:
     typedef std::pair<int, std::function<bool(Visualizer *)>> KeyCallbackPair;

@@ -235,7 +235,7 @@ public:
     int width_ = 0;
     /// Height of the image.
     int height_ = 0;
-    /// Number of chanels in the image.
+    /// Number of channels in the image.
     int num_of_channels_ = 0;
     /// Number of bytes per channel.
     int bytes_per_channel_ = 0;

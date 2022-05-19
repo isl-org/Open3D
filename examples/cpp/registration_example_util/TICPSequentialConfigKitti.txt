@@ -5,7 +5,7 @@
 #    python3 download_kitti.py 
 #    This will download a city sequence in examples/test_data/open3d_downloads/datasets/kitti_samples/
 #    if it does not exists, and save the processed frames in `/output/`.
-# 2. If you are downloading it anywhere else, change the `dataset_path` acccordingly.
+# 2. If you are downloading it anywhere else, change the `dataset_path` accordingly.
 # 3. Go to build/bin/examples directory.
 # 4. Run the following command:
 # ./TICPSequential CPU:0 ../../../examples/cpp/registration_example_util/TICPOdomConfigKitti.txt

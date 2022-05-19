@@ -63,7 +63,7 @@
 /// \param is_training  Whether model is in training phase.
 /// \param coords   Array with the point positions. The shape is
 ///        [b, 3, n]
-/// \param feat    Aray with the voxel grid. The shape is
+/// \param feat    Array with the voxel grid. The shape is
 ///        [b, c, r, r, r]
 /// \param inds    The voxel coordinates of point cube [b, 8, n]
 /// \param wgts    weight for trilinear interpolation [b, 8, n]

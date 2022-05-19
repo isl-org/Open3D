@@ -59,7 +59,7 @@ void ImageWarpingField::InitializeWarpingFields(
 
 Eigen::Vector2d ImageWarpingField::QueryFlow(int i, int j) const {
     int baseidx = (i + j * anchor_w_) * 2;
-    // exceptional case: quried anchor index is out of pre-defined space
+    // exceptional case: queried anchor index is out of pre-defined space
     if (baseidx < 0 || baseidx >= anchor_w_ * anchor_h_ * 2)
         return Eigen::Vector2d(0.0, 0.0);
     else

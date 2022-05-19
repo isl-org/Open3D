@@ -65,7 +65,7 @@ class ReadWriteLock:
     """A lock object that allows many simultaneous "read locks", but
     only one "write lock."
 
-    Implmentation from Python Cookbook (O'Reilly)
+    Implementation from Python Cookbook (O'Reilly)
     https://www.oreilly.com/library/view/python-cookbook/0596001673/ch06s04.html
     Credit: Sami Hangaslammi
     """

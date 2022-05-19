@@ -56,7 +56,7 @@ namespace core {
 // 1) a stored buf_index;
 // 2) a ptr to the next slab if at the end of the slab.
 // In case 0) and 1), it is interpreted as a buf_index_t.
-// In case 2), it is intepreted as uint32_t.
+// In case 2), it is interpreted as uint32_t.
 // They are equivalent, but we differentiate them in the implementation to
 // emphasize the differences.
 
@@ -297,7 +297,7 @@ __device__ bool SlabHashBackendImpl<Key, Hash, Eq>::Insert(
                         FreeSlab(new_next_slab_ptr);
                     }
 
-                    // Branch 3.2.2: this thread allocated succesfully.
+                    // Branch 3.2.2: this thread allocated successfully.
                     // RESTART, goto Branch 2
                 }
             }

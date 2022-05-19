@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-### Docker dependencis
+### Docker dependencies
 
 - [Install Docker](https://docs.docker.com/get-docker/).
 - [Post-installation steps for linux](https://docs.docker.com/engine/install/linux-postinstall/).

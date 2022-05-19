@@ -130,7 +130,7 @@ class _AsyncDataWriter:
                         _log.debug(f"Flushed {tagfilepath}.")
                 except (StopIteration, RuntimeError):
                     # RuntimeError: possible race condition in dict iterator,
-                    # but PEP3106 guarantees no coruption. Try again later.
+                    # but PEP3106 guarantees no corruption. Try again later.
                     pass
                 self._next_flush_time += self._flush_secs
 
@@ -727,7 +727,7 @@ def add_3d(name,
         Now use ``tensorboard --logdir demo_logs`` to visualize the 3D data.
 
     Note:
-        Sumary writing works on all platforms, and the visualization can be
+        Summary writing works on all platforms, and the visualization can be
         accessed from a browser on any platform. Running the tensorboard process
         is not supported on macOS as yet.
     """

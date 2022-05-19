@@ -51,7 +51,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
     bool has_vert_color = HasVertexColors();
 
     // Compute and return midpoint.
-    // Also adds edge - new vertex refrence to new_verts map.
+    // Also adds edge - new vertex reference to new_verts map.
     auto SubdivideEdge =
             [&](std::unordered_map<Eigen::Vector2i, int,
                                    utility::hash_eigen<Eigen::Vector2i>>&
