@@ -160,9 +160,55 @@ bool FReadToBuffer(const std::string &path,
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) {
+    if (argc < 4) {
         std::cout << "Usage: " << argv[0]
-                  << " <input_file> <compiled_resources_folder>";
+                  << " <input_file> <resource_header> "
+                     "<compiled_resources_folder>\n"
+                  << "       " << argv[0]
+                  << " -complete <resource_header> <compiled_resources_folder>";
+        return 0;
+    }
+
+    std::string resource_h_file = fs::path(argv[2]).string();
+    std::string header_str = "open3d/visualization/gui/Resource.h";
+    std::string resource_cpp_file = resource_h_file.substr(0, resource_h_file.find_last_of(".")) + ".cpp";
+    std::ofstream resrc_cpp_out;
+
+    if (std::string(argv[1]) == "-complete") {
+        resrc_cpp_out.open(resource_cpp_file, std::ios::app);
+        resrc_cpp_out
+                << "const std::unordered_map<std::string, IBL> GetListOfIBLs() "
+                   "{\n"
+                   "    static const std::unordered_map<std::string, IBL>\n"
+                   "    ibl_name_to_embedded_resource {\n";
+
+        for (const auto & resrc_file : fs::directory_iterator(fs::path(argv[3]))) {
+            std::string resrc_filename = resrc_file.path().filename().string();
+            std::string ibl_suffix = "_ibl_ktx.cpp";
+            std::size_t found = resrc_filename.find(ibl_suffix);
+            std::cout << found << " " << resrc_filename.length() - ibl_suffix.length()<< std::endl;
+            if (found == resrc_filename.length() - ibl_suffix.length()) {   
+                std::string var_name = resrc_filename.substr(0, found);
+                resrc_cpp_out << "        {\"" << var_name << "\", {"
+                              << var_name << "_ibl_ktx, " << var_name
+                              << "_skybox_ktx}},\n";
+            }
+        }
+        resrc_cpp_out << "    };\n"
+                         "    return ibl_name_to_embedded_resource;\n"
+                         "}\n";
+
+        std::ofstream resrc_h_out;
+        resrc_h_out.open(resource_h_file, std::ios::app);
+        resrc_h_out << "struct IBL {\n"
+                 "    std::function<std::vector<char>()> ibl;\n"
+                 "    std::function<std::vector<char>()> skybox;\n"
+                 "};\n"
+                 "const std::unordered_map<std::string, IBL> "
+                 "GetListOfIBLs();\n";
+
+        resrc_cpp_out.close();
+        resrc_h_out.close();
         return 0;
     }
 
@@ -174,27 +220,49 @@ int main(int argc, char *argv[]) {
     }
 
     std::string output_cpp_file =
-            (fs::path(argv[2]) / (var_name + ".cpp")).string();
-    std::string output_h_file =
-            (fs::path(argv[2]) / (var_name + ".h")).string();
+            (fs::path(argv[3]) / (var_name + ".cpp")).string();
 
     std::vector<char> resource_data;
     std::string error_str;
 
     if (FReadToBuffer(input_file, resource_data, &error_str)) {
         std::ofstream cpp_out;
-        std::ofstream h_out;
+        std::ofstream resrc_h_out;
 
         cpp_out.open(output_cpp_file, std::ios::trunc);
-        h_out.open(output_h_file, std::ios::trunc);
+        if (!fs::exists(resource_h_file)) {
+            resrc_h_out.open(resource_h_file, std::ios::trunc);
+            resrc_h_out << "#include <cstddef>\n"
+                           "#include <functional>\n"
+                           "#include <string>\n"
+                           "#include <unordered_map>\n"
+                           "#include <vector>\n\n";
+        } else {
+            resrc_h_out.open(resource_h_file, std::ios::app);
+        }
+
+        if (!fs::exists(resource_cpp_file)) {
+            resrc_cpp_out.open(resource_cpp_file, std::ios::trunc);
+            resrc_cpp_out << "#include \"" << header_str << "\"\n\n";
+        } else {
+            resrc_cpp_out.open(resource_cpp_file, std::ios::app);
+        }
+
+        resrc_cpp_out << "std::vector<char> " << var_name << "() {\n"
+                      << "    static const std::vector<char> " << var_name
+                      << "_data(\n        " << var_name << "_array,\n        "
+                      << var_name << "_array + " << var_name << "_count);\n"
+                      << "    return " << var_name << "_data;\n"
+                      << "}\n"
+                      << std::endl;
 
         std::stringstream byte_data;
 
-        h_out << "#include <cstddef>\n"
-              << "extern const char " << var_name << "_array[];\n"
-              << "extern size_t " << var_name << "_count;" << std::endl;
+        resrc_h_out << "extern const char " << var_name << "_array[];\n"
+              << "extern size_t " << var_name << "_count;\n"
+              << "std::vector<char> " << var_name << "();\n" << std::endl;
 
-        cpp_out << "#include \"" << fs::path(output_h_file).filename().string()
+        cpp_out << "#include \"" << header_str
                 << "\"\n"
                 << "const char " << var_name << "_array[] = {\n"
                 << "    ";
@@ -209,7 +277,8 @@ int main(int argc, char *argv[]) {
                 << std::endl;
 
         cpp_out.close();
-        h_out.close();
+        resrc_h_out.close();
+        resrc_cpp_out.close();
     } else {
         std::cout << "Error loading file: " << error_str << std::endl;
     }
