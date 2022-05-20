@@ -60,7 +60,7 @@ Running the example with default dataset.
 .. code-block:: sh
 
     # The following command, will download and use the default dataset,
-    # which is `lounge` dataset from stanford. 
+    # which is ``lounge`` dataset from stanford. 
     # --make will make fragments from RGBD sequence.
     # --register will register all fragments to detect loop closure.
     # --refine flag will refine rough registrations.
@@ -72,11 +72,11 @@ Changing the default dataset.
 One may change the default dataset to other avaialble datasets. 
 Currently the following datasets are available:
 
-1. Lounge (keyword: `lounge`) (Default)
+1. Lounge (keyword: ``lounge``) (Default)
 
-2. Bedroom (keyword: `bedroom`)
+2. Bedroom (keyword: ``bedroom``)
 
-3. Jack Jack (keyword: `jack_jack`)
+3. Jack Jack (keyword: ``jack_jack``)
 
 
 .. code-block:: sh
@@ -87,7 +87,7 @@ Currently the following datasets are available:
 Running the example with custom dataset using config file.
 Manually download or store the data in a folder and store all the color images 
 in the ``image`` sub-folder, and all the depth images in the ``depth`` sub-folder. 
-Create a ``config.json`` file and set the `path_dataset` to the data directory.
+Create a ``config.json`` file and set the ``path_dataset`` to the data directory.
 Override the parameters for which you want to change the default values.
 
 Example config file for offline reconstruction system has been provided in 

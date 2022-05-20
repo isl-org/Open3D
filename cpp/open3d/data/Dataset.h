@@ -123,8 +123,8 @@ public:
 };
 
 /// \class MultiDownloadDataset
-/// \brief This class allows user to create simple dataset which includes single
-/// file downloading and extracting / copying.
+/// \brief This class allows user to create simple dataset which includes
+/// multiple file downloading and extracting / copying.
 class MultiDownloadDataset : public Dataset {
 public:
     MultiDownloadDataset(
