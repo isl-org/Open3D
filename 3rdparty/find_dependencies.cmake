@@ -973,11 +973,9 @@ if(NOT USE_SYSTEM_QHULLCPP)
             src/libqhull_r/mem_r.c
             src/libqhull_r/random_r.c
             src/libqhull_r/usermem_r.c
-            src/libqhull_r/userprintf_r.c
             src/libqhull_r/io_r.c
             src/libqhull_r/user_r.c
             src/libqhull_r/rboxlib_r.c
-            src/libqhull_r/userprintf_rbox_r.c
         INCLUDE_DIRS
             src/
         DEPENDS
@@ -999,6 +997,7 @@ if(NOT USE_SYSTEM_QHULLCPP)
             src/libqhullcpp/QhullRidge.cpp
             src/libqhullcpp/QhullSet.cpp
             src/libqhullcpp/QhullStat.cpp
+            src/libqhullcpp/QhullUser.cpp
             src/libqhullcpp/QhullVertex.cpp
             src/libqhullcpp/QhullVertexSet.cpp
             src/libqhullcpp/RboxPoints.cpp
