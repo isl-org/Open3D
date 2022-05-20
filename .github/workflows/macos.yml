@@ -58,7 +58,7 @@ jobs:
           python-version: 3.6
       - name: Install dependencies
         run: |
-          brew install ccache
+          brew install ccache pkg-config
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
