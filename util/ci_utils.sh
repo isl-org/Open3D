@@ -24,7 +24,7 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
 # CUDA
-if [[ $BUILD_TENSORFLOW_OPS == ON || $BUILD_PYTORCH_OPS == ON || \
+if [[ $BUILD_TENSORFLOW_OPS == ON || $BUILD_PYTORCH_OPS == ON ||
     $UBUNTU_VERSION != bionic ]]; then
     # CUDA version in sync with PyTorch and Tensorflow
     CUDA_VERSION=("11-0" "11.0")
@@ -326,11 +326,22 @@ test_cpp_example() {
     cd open3d-cmake-find-package
     mkdir build
     cd build
+    echo Testing build with cmake
     cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
     make -j"$NPROC" VERBOSE=1
     runExample="$1"
     if [ "$runExample" == ON ]; then
         ./Draw --skip-for-unit-test
+    fi
+    if [ $SHARED == ON ]; then
+        rm -r ./*
+        echo Testing build with pkg-config
+        export PKG_CONFIG_PATH=${OPEN3D_INSTALL_DIR}/lib/pkgconfig
+        echo Open3D build options: $(pkg-config --cflags --libs Open3D)
+        c++ ../Draw.cpp -o Draw $(pkg-config --cflags --libs Open3D)
+        if [ "$runExample" == ON ]; then
+            ./Draw --skip-for-unit-test
+        fi
     fi
     # Now I am in Open3D/open3d-cmake-find-package/build/
     cd ../../build

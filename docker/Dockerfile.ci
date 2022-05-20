@@ -72,6 +72,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     curl \
     build-essential \
+    pkg-config \
  && rm -rf /var/lib/apt/lists/*
 
 # Miniconda or Intel conda
