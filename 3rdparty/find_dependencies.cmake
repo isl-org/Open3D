@@ -1371,12 +1371,6 @@ endif()
 mark_as_advanced(OPEN3D_USE_ONEAPI_PACKAGES)
 
 if(OPEN3D_USE_ONEAPI_PACKAGES)
-    if(DEFINED ENV{ONEAPI_ROOT})
-        message(STATUS "Using OneAPI packages from: $ENV{ONEAPI_ROOT}")
-    else()
-        message(FATAL_ERROR "OneAPI packages not found. Please run `source /opt/intel/oneapi/setvars.sh`")
-    endif()
-
     # 1. oneTBB
     # /opt/intel/oneapi/tbb/latest/lib/cmake/tbb
     open3d_find_package_3rdparty_library(3rdparty_tbb
