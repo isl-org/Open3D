@@ -175,12 +175,12 @@ Returns:
     corresponding vertex in the original mesh.
 
 Example:
-    We will load the Stanford Bunny dataset, compute and display it's convex hull.
+    We will load the Stanford Bunny dataset, compute and display it's convex hull::
 
-    >>> bunny = o3d.data.BunnyMesh()
-    >>> mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
-    >>> hull = mesh.compute_convex_hull()
-    >>> o3d.visualization.draw([{'name': 'bunny', 'geometry': mesh}, {'name': 'convex hull', 'geometry': hull}])
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        hull = mesh.compute_convex_hull()
+        o3d.visualization.draw([{'name': 'bunny', 'geometry': mesh}, {'name': 'convex hull', 'geometry': hull}])
 )");
 
     // creation

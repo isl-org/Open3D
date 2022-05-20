@@ -292,12 +292,12 @@ Return:
     corresponding vertex in the original mesh.
 
 Example:
-    We will load the Eagle dataset, compute and display it's convex hull.
+    We will load the Eagle dataset, compute and display it's convex hull::
 
-    >>> eagle = o3d.data.EaglePointCloud()
-    >>> pcd = o3d.t.io.read_triangle_mesh(eagle.path)
-    >>> hull = pcd.compute_convex_hull()
-    >>> o3d.visualization.draw([{'name': 'eagle', 'geometry': pcd}, {'name': 'convex hull', 'geometry': hull}])
+        eagle = o3d.data.EaglePointCloud()
+        pcd = o3d.t.io.read_triangle_mesh(eagle.path)
+        hull = pcd.compute_convex_hull()
+        o3d.visualization.draw([{'name': 'eagle', 'geometry': pcd}, {'name': 'convex hull', 'geometry': hull}])
     )doc");
 
     // conversion
