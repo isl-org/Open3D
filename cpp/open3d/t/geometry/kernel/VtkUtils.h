@@ -38,11 +38,23 @@ namespace kernel {
 namespace vtkutils {
 
 /// Creates a vtkPolyData object from a point cloud or triangle mesh.
+/// The returned vtkPolyData object may directly use the memory of the tensors
+/// stored inside the Geometry object. Therefore, the Geometry object must be
+/// kept alive until the returned vtkPolyData object is deleted.
+/// \param geometry Open3D geometry object, e.g., a TriangleMesh.
+/// \param copy If true always create a copy of the data.
 vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
-        const Geometry& geometry);
+        const Geometry& geometry, bool copy=false);
 
 /// Creates a triangle mesh from a vtkPolyData object.
-TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polyData);
+/// The returned TriangleMesh may directly use the memory of the data arrays in
+/// the vtkPolyData object.
+/// The returned TriangleMesh will hold references to the arrays and it is not 
+/// necessary to keep other references to the vtkPolyData object or its arrays
+/// alive.
+/// \param polyData Input polyData object.
+/// \param copy If true always create a copy of the data.
+TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polyData, bool copy=false);
 
 }  // namespace vtkutils
 }  // namespace kernel
