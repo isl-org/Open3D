@@ -62,7 +62,7 @@ public:
     void* Malloc(size_t byte_size, const core::Device& device) override {
         if (GetAllocatedSize() + byte_size > limit_) {
             utility::LogError(
-                    "This should be catched: Limit {} reached via {} + {} = {}",
+                    "This should be caught: Limit {} reached via {} + {} = {}",
                     limit_, GetAllocatedSize(), byte_size,
                     GetAllocatedSize() + byte_size);
             return nullptr;

@@ -74,7 +74,7 @@ if __name__ == '__main__':
         '--max_tuples',
         type=int,
         default=1000,
-        help='max number of accepted tuples for correpsondence filtering')
+        help='max number of accepted tuples for correspondence filtering')
 
     args = parser.parse_args()
 

@@ -289,7 +289,7 @@ public:
         triangle_attr_[key] = value;
     }
 
-    /// Set the vlaue of the "indices" attribute in triangle_attr_.
+    /// Set the value of the "indices" attribute in triangle_attr_.
     void SetTriangleIndices(const core::Tensor &value) {
         core::AssertTensorShape(value, {utility::nullopt, 3});
         SetTriangleAttr("indices", value);
@@ -309,7 +309,7 @@ public:
         SetTriangleAttr("colors", value);
     }
 
-    /// Returns true if all of the followings are true in vertex_attr_:
+    /// Returns true if all of the following are true in vertex_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as vertices' length
     /// 3) attribute's length > 0
@@ -324,21 +324,21 @@ public:
     /// 0. Convenience function.
     bool HasVertexPositions() const { return HasVertexAttr("positions"); }
 
-    /// Returns true if all of the followings are true in vertex_attr_:
+    /// Returns true if all of the following are true in vertex_attr_:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as vertices' length
     /// 3) attribute "colors"'s length > 0
     /// Convenience function.
     bool HasVertexColors() const { return HasVertexAttr("colors"); }
 
-    /// Returns true if all of the followings are true in vertex_attr_:
+    /// Returns true if all of the following are true in vertex_attr_:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as vertices' length
     /// 3) attribute "normals"'s length > 0
     /// Convenience function.
     bool HasVertexNormals() const { return HasVertexAttr("normals"); }
 
-    /// Returns true if all of the followings are true in triangle_attr_:
+    /// Returns true if all of the following are true in triangle_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as triangles' length
     /// 3) attribute's length > 0
@@ -354,14 +354,14 @@ public:
     /// Convenience function.
     bool HasTriangleIndices() const { return HasTriangleAttr("indices"); }
 
-    /// Returns true if all of the followings are true in triangle_attr_:
+    /// Returns true if all of the following are true in triangle_attr_:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as vertices' length
     /// 3) attribute "normals"'s length > 0
     /// Convenience function.
     bool HasTriangleNormals() const { return HasTriangleAttr("normals"); }
 
-    /// Returns true if all of the followings are true in triangle_attr_:
+    /// Returns true if all of the following are true in triangle_attr_:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as vertices' length
     /// 3) attribute "colors"'s length > 0
@@ -427,6 +427,18 @@ public:
     /// to be scaled.
     /// \return Rotated TriangleMesh
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
+
+    /// \brief Clip mesh with a plane.
+    /// This method clips the triangle mesh with the specified plane.
+    /// Parts of the mesh on the positive side of the plane will be kept and
+    /// triangles intersected by the plane will be cut.
+    /// \param point A point on the plane as [Tensor of dim {3}].
+    /// \param normal The normal of the plane as [Tensor of dim {3}]. The normal
+    /// points to the positive side of the plane for which the geometry will be
+    /// kept.
+    /// \return New triangle mesh clipped with the plane.
+    TriangleMesh ClipPlane(const core::Tensor &point,
+                           const core::Tensor &normal) const;
 
     core::Device GetDevice() const { return device_; }
 

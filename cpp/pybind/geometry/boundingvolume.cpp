@@ -118,7 +118,7 @@ Returns:
                                       "Class that defines an axis_aligned box "
                                       "that can be computed from 3D "
                                       "geometries, The axis aligned bounding "
-                                      "box uses the cooridnate axes for "
+                                      "box uses the coordinate axes for "
                                       "bounding box generation.");
     py::detail::bind_default_constructor<AxisAlignedBoundingBox>(
             axis_aligned_bounding_box);

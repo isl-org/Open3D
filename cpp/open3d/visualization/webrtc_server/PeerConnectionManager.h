@@ -66,7 +66,7 @@ namespace webrtc_server {
 /// - /api/getMediaList: Returns a list of active Open3D visualizer windows.
 /// - /api/getIceServers: Returns a list of ICE (STUN/TURN) servers. The ICE
 ///   server is used to forward requests through the remote peer's NAT layer. We
-///   use publicly availble STUN servers. In certain network configurations
+///   use publicly available STUN servers. In certain network configurations
 ///   (e.g. if the peers are behind certain type of firewalls), STUN server may
 ///   fail to resolve and in this case, we'll need to implement and host a
 ///   separate TURN server.

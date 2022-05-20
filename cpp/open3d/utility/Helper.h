@@ -133,7 +133,7 @@ std::string JoinStrings(const std::vector<std::string>& strs,
 
 /// String util: find length of current word staring from a position
 /// By default, alpha numeric chars and chars in valid_chars are considered
-/// as valid charactors in a word
+/// as valid characters in a word
 size_t WordLength(const std::string& doc,
                   size_t start_pos,
                   const std::string& valid_chars = "_");
@@ -144,7 +144,7 @@ std::string& LeftStripString(std::string& str,
 std::string& RightStripString(std::string& str,
                               const std::string& chars = "\t\n\v\f\r ");
 
-/// Strip empty charactors in front and after string. Similar to Python's
+/// Strip empty characters in front and after string. Similar to Python's
 /// str.strip()
 std::string& StripString(std::string& str,
                          const std::string& chars = "\t\n\v\f\r ");

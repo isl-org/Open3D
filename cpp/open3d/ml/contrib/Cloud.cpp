@@ -59,7 +59,7 @@
 //---------------------------------------------------
 //
 //		Cloud source :
-//		Define usefull Functions/Methods
+//		Define useful Functions/Methods
 //
 //----------------------------------------------------
 //

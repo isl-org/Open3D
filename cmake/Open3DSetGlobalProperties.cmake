@@ -36,8 +36,8 @@ function(open3d_set_global_properties target)
     # - OPEN3D_CXX_STANDARD
     # - OPEN3D_CXX_COMPILER_ID
     # - OPEN3D_CXX_COMPILER_VERSION
-    # - OPEN3D_CUDA_COMPILER_ID       # Emtpy if not BUILD_CUDA_MODULE
-    # - OPEN3D_CUDA_COMPILER_VERSION  # Emtpy if not BUILD_CUDA_MODULE
+    # - OPEN3D_CUDA_COMPILER_ID       # Empty if not BUILD_CUDA_MODULE
+    # - OPEN3D_CUDA_COMPILER_VERSION  # Empty if not BUILD_CUDA_MODULE
     if (NOT CMAKE_CXX_STANDARD)
         message(FATAL_ERROR "CMAKE_CXX_STANDARD must be defined globally.")
     endif()

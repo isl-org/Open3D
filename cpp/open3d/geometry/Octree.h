@@ -314,7 +314,7 @@ public:
     ///
     /// \param point_cloud Input point cloud.
     /// \param size_expand A small expansion size such that the octree is
-    /// slightly bigger than the original point cloud bounds to accomodate all
+    /// slightly bigger than the original point cloud bounds to accommodate all
     /// points.
     void ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
                                double size_expand = 0.01);

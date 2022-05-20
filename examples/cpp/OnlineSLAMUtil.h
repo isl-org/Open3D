@@ -689,7 +689,7 @@ protected:
                             .ToLegacy());
 
             // Extract surface on demand (do before we increment idx, so that
-            // we see something immediately, on interation 0)
+            // we see something immediately, on iteration 0)
             if ((prop_values_.update_surface &&
                  idx % static_cast<int>(prop_values_.update_interval) == 0)) {
                 std::lock_guard<std::mutex> locker(surface_.lock);

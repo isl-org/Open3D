@@ -35,7 +35,7 @@ namespace pipelines {
 namespace odometry {
 
 void pybind_odometry_classes(py::module &m) {
-    py::enum_<Method>(m, "Method", "Tensor odometry esitmation method.")
+    py::enum_<Method>(m, "Method", "Tensor odometry estimation method.")
             .value("PointToPlane", Method::PointToPlane)
             .value("Intensity", Method::Intensity)
             .value("Hybrid", Method::Hybrid)

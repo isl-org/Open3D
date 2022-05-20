@@ -168,7 +168,7 @@ std::shared_ptr<LineSet> LineSet::CreateCameraVisualization(
     };
     double w = double(view_width_px);
     double h = double(view_height_px);
-    // Matrix m transforms from homogenous pixel coordinates to world
+    // Matrix m transforms from homogeneous pixel coordinates to world
     // coordinates so x and y need to be multiplied by z. In the case of the
     // first point, the eye point, z=0, so x and y will be zero, too regardless
     // of their initial values as the center.

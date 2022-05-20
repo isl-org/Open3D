@@ -230,7 +230,7 @@ class Open3DPluginWindow:
 
     def _validate_batch_idx(self, selected_batch_idx):
         """Validate batch_idx assuming self.run, self.tags and self.step are
-        valid. Use self.batch_idx or 0 if selected_batch_idx is invalud.
+        valid. Use self.batch_idx or 0 if selected_batch_idx is invalid.
         """
         if len(self.tags) == 0:  # No tags in this run
             return

@@ -47,7 +47,7 @@ namespace keypoint {
 /// \param input The input PointCloud where to compute the ISS Keypoints.
 /// \param salient_radius The radius of the spherical neighborhood used to
 /// detect the keypoints
-/// \param non_max_radius The non maxima supression radius. If non of
+/// \param non_max_radius The non maxima suppression radius. If non of
 /// the input parameters are specified or are 0.0, then they will be computed
 /// from the input data, taking into account the Model Resolution.
 /// \param gamma_21 The upper bound on the ratio between the second and the

@@ -139,7 +139,7 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
             attr_shape[0] = combined_length;
             if (other_attr_shape != attr_shape) {
                 utility::LogError(
-                        "Shape mismatch. Attribure {}, shape {}, is not "
+                        "Shape mismatch. Attribute {}, shape {}, is not "
                         "compatible with {}.",
                         kv.first, other_attr.GetShape(), kv.second.GetShape());
             }
@@ -328,7 +328,7 @@ void PointCloud::EstimateNormals(
     if (radius.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing covariances");
         // Computes and sets `covariances` attribute using Hybrid Search
-        // mehtod.
+        // method.
         if (device_type == core::Device::DeviceType::CPU) {
             kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
                     this->GetPointPositions().Contiguous(),
