@@ -1,7 +1,61 @@
+# set(COMPILED_RESOURCE_DIR ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/CompiledResources)
+set(GUI_RESOURCE_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources)
+file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
+file(GLOB GUI_RESOURCE_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
+# file(MAKE_DIRECTORY ${COMPILED_RESOURCE_DIR})
+# file(COPY ${GUI_RESOURCE_SOURCE_FILES}
+# DESTINATION ${GUI_RESOURCE_DIR})
+
+
+include(Open3DAddCompiledMaterials)
+open3d_add_compiled_materials(materials
+OUTPUT_DIRECTORY
+${GUI_RESOURCE_DIR}
+SOURCES
+Materials/colorMap.mat
+Materials/defaultLit.mat
+Materials/defaultLitSSR.mat
+Materials/defaultLitTransparency.mat
+Materials/defaultUnlit.mat
+Materials/defaultUnlitTransparency.mat
+Materials/depth_value.mat
+Materials/depth.mat
+Materials/img_blit.mat
+Materials/infiniteGroundPlane.mat
+Materials/normals.mat
+Materials/pointcloud.mat
+Materials/ui_blit.mat
+Materials/unlitBackground.mat
+Materials/unlitGradient.mat
+Materials/unlitLine.mat
+Materials/unlitPolygonOffset.mat
+Materials/unlitSolidColor.mat
+)
+
+# Source group for Visual Studio
+add_source_group(Materials)
+
+get_target_property(GUI_MATERIAL_COMPILED_FILES materials COMPILED_MATERIALS)
+
+# Export GUI_RESOURCE_FILES to parent CMake context (cpp/open3d/)
+set(GUI_RESOURCE_FILES
+${GUI_RESOURCE_SOURCE_FILES} ${GUI_MATERIAL_COMPILED_FILES})
+set(GUI_RESOURCE_FILES
+${GUI_RESOURCE_FILES}
+PARENT_SCOPE)
+set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
+
 include(Open3DEmbedResources)
-open3d_embed_resources(resource-embed)
+open3d_embed_resources(resource-embed 
+OUTPUT_DIRECTORY
+${GUI_RESOURCE_DIR}
+SOURCES
+${GUI_RESOURCE_FILES}
+)
 
 open3d_ispc_add_library(GUI OBJECT)
+
+add_dependencies(GUI materials resource-embed)
 
 target_sources(GUI PRIVATE
     Application.cpp
@@ -50,51 +104,52 @@ target_sources(GUI PRIVATE
 )
 
 target_sources(GUI PRIVATE
-    CompiledResources/brightday_ibl_ktx.cpp
-    CompiledResources/brightday_skybox_ktx.cpp
-    CompiledResources/colorMap_filamat.cpp
-    CompiledResources/crossroads_ibl_ktx.cpp
-    CompiledResources/crossroads_skybox_ktx.cpp
-    CompiledResources/default_ibl_ktx.cpp
-    CompiledResources/default_skybox_ktx.cpp
-    CompiledResources/defaultGradient_png.cpp
-    CompiledResources/defaultLit_filamat.cpp
-    CompiledResources/defaultLitSSR_filamat.cpp
-    CompiledResources/defaultLitTransparency_filamat.cpp
-    CompiledResources/defaultTexture_png.cpp
-    CompiledResources/defaultUnlit_filamat.cpp
-    CompiledResources/defaultUnlitTransparency_filamat.cpp
-    CompiledResources/depth_filamat.cpp
-    CompiledResources/depth_value_filamat.cpp
-    CompiledResources/hall_ibl_ktx.cpp
-    CompiledResources/hall_skybox_ktx.cpp
-    CompiledResources/img_blit_filamat.cpp
-    CompiledResources/infiniteGroundPlane_filamat.cpp
-    CompiledResources/konzerthaus_ibl_ktx.cpp
-    CompiledResources/konzerthaus_skybox_ktx.cpp
-    CompiledResources/nightlights_ibl_ktx.cpp
-    CompiledResources/nightlights_skybox_ktx.cpp
-    CompiledResources/normals_filamat.cpp
-    CompiledResources/park_ibl_ktx.cpp
-    CompiledResources/park_skybox_ktx.cpp
-    CompiledResources/park2_ibl_ktx.cpp
-    CompiledResources/park2_skybox_ktx.cpp
-    CompiledResources/pillars_ibl_ktx.cpp
-    CompiledResources/pillars_skybox_ktx.cpp
-    CompiledResources/pointcloud_filamat.cpp
-    CompiledResources/Roboto_Bold_ttf.cpp
-    CompiledResources/Roboto_BoldItalic_ttf.cpp
-    CompiledResources/Roboto_Medium_ttf.cpp
-    CompiledResources/Roboto_MediumItalic_ttf.cpp
-    CompiledResources/RobotoMono_Medium_ttf.cpp
-    CompiledResources/streetlamp_ibl_ktx.cpp
-    CompiledResources/streetlamp_skybox_ktx.cpp
-    CompiledResources/ui_blit_filamat.cpp
-    CompiledResources/unlitBackground_filamat.cpp
-    CompiledResources/unlitGradient_filamat.cpp
-    CompiledResources/unlitLine_filamat.cpp
-    CompiledResources/unlitPolygonOffset_filamat.cpp
-    CompiledResources/unlitSolidColor_filamat.cpp
+    ${EMBEDDED_RESOURCES}
+    # ${COMPILED_RESOURCE_DIR}/brightday_ibl_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/brightday_skybox_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/colorMap_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/crossroads_ibl_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/crossroads_skybox_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/default_ibl_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/default_skybox_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/defaultGradient_png.cpp
+    # ${COMPILED_RESOURCE_DIR}/defaultLit_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/defaultLitSSR_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/defaultLitTransparency_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/defaultTexture_png.cpp
+    # ${COMPILED_RESOURCE_DIR}/defaultUnlit_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/defaultUnlitTransparency_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/depth_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/depth_value_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/hall_ibl_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/hall_skybox_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/img_blit_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/infiniteGroundPlane_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/konzerthaus_ibl_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/konzerthaus_skybox_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/nightlights_ibl_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/nightlights_skybox_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/normals_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/park_ibl_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/park_skybox_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/park2_ibl_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/park2_skybox_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/pillars_ibl_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/pillars_skybox_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/pointcloud_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/Roboto_Bold_ttf.cpp
+    # ${COMPILED_RESOURCE_DIR}/Roboto_BoldItalic_ttf.cpp
+    # ${COMPILED_RESOURCE_DIR}/Roboto_Medium_ttf.cpp
+    # ${COMPILED_RESOURCE_DIR}/Roboto_MediumItalic_ttf.cpp
+    # ${COMPILED_RESOURCE_DIR}/RobotoMono_Medium_ttf.cpp
+    # ${COMPILED_RESOURCE_DIR}/streetlamp_ibl_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/streetlamp_skybox_ktx.cpp
+    # ${COMPILED_RESOURCE_DIR}/ui_blit_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/unlitBackground_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/unlitGradient_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/unlitLine_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/unlitPolygonOffset_filamat.cpp
+    # ${COMPILED_RESOURCE_DIR}/unlitSolidColor_filamat.cpp
 )
 
 if (WIN32)
@@ -115,52 +170,3 @@ endif()
 open3d_show_and_abort_on_warning(GUI)
 open3d_set_global_properties(GUI)
 open3d_link_3rdparty_libraries(GUI)
-
-# --- build resources ----
-file(GLOB GUI_RESOURCE_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
-
-# copy GUI/Resources -> <output>/resources
-set(GUI_RESOURCE_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources")
-file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
-file(COPY ${GUI_RESOURCE_SOURCE_FILES}
-     DESTINATION ${GUI_RESOURCE_DIR})
-
-
-include(Open3DAddCompiledMaterials)
-
-open3d_add_compiled_materials(materials
-    OUTPUT_DIRECTORY
-    ${GUI_RESOURCE_DIR}
-    SOURCES
-    Materials/colorMap.mat
-    Materials/defaultLit.mat
-    Materials/defaultLitSSR.mat
-    Materials/defaultLitTransparency.mat
-    Materials/defaultUnlit.mat
-    Materials/defaultUnlitTransparency.mat
-    Materials/depth_value.mat
-    Materials/depth.mat
-    Materials/img_blit.mat
-    Materials/infiniteGroundPlane.mat
-    Materials/normals.mat
-    Materials/pointcloud.mat
-    Materials/ui_blit.mat
-    Materials/unlitBackground.mat
-    Materials/unlitGradient.mat
-    Materials/unlitLine.mat
-    Materials/unlitPolygonOffset.mat
-    Materials/unlitSolidColor.mat
-)
-
-# Source group for Visual Studio
-add_source_group(Materials)
-
-add_dependencies(GUI materials resource-embed)
-
-get_target_property(GUI_MATERIAL_COMPILED_FILES materials COMPILED_MATERIALS)
-
-# Export GUI_RESOURCE_FILES to parent CMake context (cpp/open3d/)
-set(GUI_RESOURCE_FILES
-    ${GUI_RESOURCE_SOURCE_FILES} ${GUI_MATERIAL_COMPILED_FILES}
-    PARENT_SCOPE)
-set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
