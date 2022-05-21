@@ -47,11 +47,14 @@ set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
 
 include(Open3DEmbedResources)
 open3d_embed_resources(resource-embed 
-OUTPUT_DIRECTORY
-${GUI_RESOURCE_DIR}
-SOURCES
-${GUI_RESOURCE_FILES}
+    OUTPUT_DIRECTORY
+    ${GUI_RESOURCE_DIR}
+    SOURCES
+    ${GUI_RESOURCE_FILES}
 )
+
+get_target_property(EMBEDDED_RESOURCE_FILES resource-embed EMBEDDED_RESOURCES)
+
 
 open3d_ispc_add_library(GUI OBJECT)
 
@@ -103,54 +106,7 @@ target_sources(GUI PRIVATE
     Window.cpp
 )
 
-target_sources(GUI PRIVATE
-    ${EMBEDDED_RESOURCES}
-    # ${COMPILED_RESOURCE_DIR}/brightday_ibl_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/brightday_skybox_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/colorMap_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/crossroads_ibl_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/crossroads_skybox_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/default_ibl_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/default_skybox_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/defaultGradient_png.cpp
-    # ${COMPILED_RESOURCE_DIR}/defaultLit_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/defaultLitSSR_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/defaultLitTransparency_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/defaultTexture_png.cpp
-    # ${COMPILED_RESOURCE_DIR}/defaultUnlit_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/defaultUnlitTransparency_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/depth_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/depth_value_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/hall_ibl_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/hall_skybox_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/img_blit_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/infiniteGroundPlane_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/konzerthaus_ibl_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/konzerthaus_skybox_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/nightlights_ibl_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/nightlights_skybox_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/normals_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/park_ibl_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/park_skybox_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/park2_ibl_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/park2_skybox_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/pillars_ibl_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/pillars_skybox_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/pointcloud_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/Roboto_Bold_ttf.cpp
-    # ${COMPILED_RESOURCE_DIR}/Roboto_BoldItalic_ttf.cpp
-    # ${COMPILED_RESOURCE_DIR}/Roboto_Medium_ttf.cpp
-    # ${COMPILED_RESOURCE_DIR}/Roboto_MediumItalic_ttf.cpp
-    # ${COMPILED_RESOURCE_DIR}/RobotoMono_Medium_ttf.cpp
-    # ${COMPILED_RESOURCE_DIR}/streetlamp_ibl_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/streetlamp_skybox_ktx.cpp
-    # ${COMPILED_RESOURCE_DIR}/ui_blit_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/unlitBackground_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/unlitGradient_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/unlitLine_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/unlitPolygonOffset_filamat.cpp
-    # ${COMPILED_RESOURCE_DIR}/unlitSolidColor_filamat.cpp
-)
+target_sources(GUI PRIVATE ${EMBEDDED_RESOURCE_FILES})
 
 if (WIN32)
     target_sources(GUI PRIVATE

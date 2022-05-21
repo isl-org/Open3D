@@ -35,9 +35,11 @@ function(open3d_embed_resources target)
 
 # copy GUI/Resources -> <output>/resources
 
-file(REMOVE ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h)
-file(REMOVE ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp)
+set(RESOURCE_HEADER ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h)
+set(RESOURCE_CPP ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp)
 
+file(REMOVE ${RESOURCE_HEADER})
+file(REMOVE ${RESOURCE_CPP})
 
 foreach (resource IN LISTS ARG_SOURCES)
     # get_filename_component(RESOURCE_FULL_PATH "${resource}" ABSOLUTE)
@@ -53,7 +55,7 @@ foreach (resource IN LISTS ARG_SOURCES)
         OUTPUT 
             ${EMBEDDED_RESOURCE_FULL_PATH}
         COMMAND 
-            EmbedResources ${resource} ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h ${ARG_OUTPUT_DIRECTORY} 
+            EmbedResources -embed_gui_resource ${resource} ${ARG_OUTPUT_DIRECTORY} 
         COMMENT 
             "Building Embedded resource object ${EMBEDDED_RESOURCE_RELATIVE_PATH}"
         DEPENDS 
@@ -67,13 +69,13 @@ endforeach()
 
 add_custom_command(
     OUTPUT
-        ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h
-        ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
+        ${RESOURCE_HEADER}
+        ${RESOURCE_CPP}
     DEPENDS
         EmbedResources
         ${EMBEDDED_RESOURCES}
     COMMAND
-        EmbedResources -complete ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h ${ARG_OUTPUT_DIRECTORY}
+        EmbedResources -generate_resource_header ${RESOURCE_HEADER} ${ARG_OUTPUT_DIRECTORY}
     COMMENT
         "Generating Resource.h and Resource.cpp"
     VERBATIM
@@ -83,14 +85,14 @@ add_custom_target(${target} ALL
     COMMAND
         echo "Embedding resources into the binary"
     DEPENDS 
-        ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h
-        ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp
+        ${RESOURCE_HEADER}
+        ${RESOURCE_CPP}
         ${EMBEDDED_RESOURCES}
 )
 
 
 
-set(EMBEDDED_RESOURCES ${EMBEDDED_RESOURCES} PARENT_SCOPE)
-# set_target_properties(${target} PROPERTIES COMPILED_RESOURCES "${COMPILED_RESOURCES}")
+# set(EMBEDDED_RESOURCES ${EMBEDDED_RESOURCES} PARENT_SCOPE)
+set_target_properties(${target} PROPERTIES EMBEDDED_RESOURCES "${EMBEDDED_RESOURCES}")
 
 endfunction()
