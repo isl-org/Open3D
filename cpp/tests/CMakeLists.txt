@@ -46,6 +46,8 @@ if (TARGET Open3D::3rdparty_openmp)
         Open3D::3rdparty_openmp
     )
 endif()
+    
+target_include_directories(tests SYSTEM PRIVATE ${VTK_INCLUDE_DIRS})
 
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)

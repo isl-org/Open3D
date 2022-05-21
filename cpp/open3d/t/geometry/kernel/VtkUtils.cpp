@@ -40,43 +40,33 @@ namespace vtkutils {
 
 /// Returns the corresponding vtk data type for core::Dtype
 /// Logs an error if no conversion exists.
-static int DtypeToVtkType(const core::Dtype& dtype ){
-    if( dtype == core::Float32 ){
+static int DtypeToVtkType(const core::Dtype& dtype) {
+    if (dtype == core::Float32) {
         return VTK_FLOAT;
-    }
-    else if( dtype == core::Float64 ){
+    } else if (dtype == core::Float64) {
         return VTK_DOUBLE;
-    }
-    else if( dtype == core::Int8 ){
+    } else if (dtype == core::Int8) {
         return VTK_CHAR;
-    }
-    else if( dtype == core::Int16 ){
+    } else if (dtype == core::Int16) {
         return VTK_SHORT;
-    }
-    else if( dtype == core::Int32 ){
+    } else if (dtype == core::Int32) {
         return VTK_INT;
-    }
-    else if( dtype == core::Int64 ){
+    } else if (dtype == core::Int64) {
         return VTK_LONG;
-    }
-    else if( dtype == core::UInt8 ){
+    } else if (dtype == core::UInt8) {
         return VTK_UNSIGNED_CHAR;
-    }
-    else if( dtype == core::UInt16 ){
+    } else if (dtype == core::UInt16) {
         return VTK_UNSIGNED_SHORT;
-    }
-    else if( dtype == core::UInt32 ){
+    } else if (dtype == core::UInt32) {
         return VTK_UNSIGNED_INT;
-    }
-    else if( dtype == core::UInt64 ){
+    } else if (dtype == core::UInt64) {
         return VTK_UNSIGNED_LONG;
-    }
-    else if( dtype == core::Bool ){
+    } else if (dtype == core::Bool) {
         // VTK_BIT arrays are compact and store 8 booleans per byte!
         return VTK_BIT;
-    }
-    else{
-        utility::LogError("Type {} cannot be converted to a vtk data type!", dtype.ToString());
+    } else {
+        utility::LogError("Type {} cannot be converted to a vtk data type!",
+                          dtype.ToString());
     }
     return VTK_INT;
 }
@@ -86,41 +76,36 @@ static int DtypeToVtkType(const core::Dtype& dtype ){
 /// must be kept alive until the returned vtkDataArray is deleted.
 /// \param tensor The source tensor.
 /// \param copy If true always create a copy of the data.
-static vtkSmartPointer<vtkDataArray> CreateVtkDataArrayFromTensor(core::Tensor& tensor, bool copy){
+static vtkSmartPointer<vtkDataArray> CreateVtkDataArrayFromTensor(
+        core::Tensor& tensor, bool copy) {
     core::AssertTensorShape(tensor, {core::None, core::None});
+    if (tensor.GetDtype() == core::Bool) {
+        utility::LogError(
+                "Tensor conversion with type Bool is not implemented!");
+    }
 
     int vtk_data_type = DtypeToVtkType(tensor.GetDtype());
     auto tensor_cpu = tensor.To(core::Device()).Contiguous();
-    
+
     vtkSmartPointer<vtkDataArray> data_array;
     data_array.TakeReference(vtkDataArray::CreateDataArray(vtk_data_type));
-    
-    if( !copy && tensor.GetDataPtr() == tensor_cpu.GetDataPtr() && vtk_data_type != VTK_BIT){
+
+    if (!copy && tensor.GetDataPtr() == tensor_cpu.GetDataPtr()) {
         // reuse tensor memory
-        data_array->SetVoidArray(tensor.GetDataPtr(), tensor.NumElements(), 1/*dont delete*/);
+        data_array->SetVoidArray(tensor.GetDataPtr(), tensor.NumElements(),
+                                 1 /*dont delete*/);
         data_array->SetNumberOfComponents(tensor.GetShape(1));
         data_array->SetNumberOfTuples(tensor.GetShape(0));
-    }
-    else {
+    } else {
         // allocate new data array and copy
         data_array->SetNumberOfComponents(tensor.GetShape(1));
         data_array->SetNumberOfTuples(tensor.GetShape(0));
-        if( data_array->HasStandardMemoryLayout() ){
-            memcpy(data_array->GetVoidPointer(0), tensor_cpu.GetDataPtr(), tensor_cpu.GetDtype().ByteSize() * tensor_cpu.NumElements() );
-        }
-        else{
-            std::cerr << "nonstandard memlayout\n";
-
-        }
+        memcpy(data_array->GetVoidPointer(0), tensor_cpu.GetDataPtr(),
+               tensor_cpu.GetDtype().ByteSize() * tensor_cpu.NumElements());
     }
 
-#define REFCOUNT(x) std::cerr << __FILE__ << ":" << __LINE__ << "  " << (x)->GetVoidPointer(0) << "  refcount " << (x)->GetReferenceCount() << "\n" << std::flush;
-
-    REFCOUNT(data_array);
     return data_array;
 }
-
-
 
 /// Creates a vtkPoints object from a Tensor.
 /// The returned array may directly use the memory of the tensor and the tensor
@@ -128,60 +113,30 @@ static vtkSmartPointer<vtkDataArray> CreateVtkDataArrayFromTensor(core::Tensor& 
 /// \param tensor The source tensor.
 /// \param copy If true always create a copy of the data.
 static vtkSmartPointer<vtkPoints> CreateVtkPointsFromTensor(
-        core::Tensor& tensor, bool copy=false) {
+        core::Tensor& tensor, bool copy = false) {
     core::AssertTensorShape(tensor, {core::None, 3});
     core::AssertTensorDtypes(tensor, {core::Float32, core::Float64});
 
-
     vtkSmartPointer<vtkPoints> pts = vtkSmartPointer<vtkPoints>::New();
-    {
     auto data_array = CreateVtkDataArrayFromTensor(tensor, copy);
     pts->SetData(data_array);
-    REFCOUNT(data_array);
-    REFCOUNT(pts->GetData());
-    }
-    REFCOUNT(pts->GetData());
     return pts;
-    
-    // auto tensor_cpu = tensor.To(core::Device()).Contiguous();
-    // const size_t num_points = tensor.GetLength();
-
-
-    // if (tensor.GetDtype() == core::Float32) {
-    //     pts->SetDataTypeToFloat();
-    //     pts->SetNumberOfPoints(num_points);
-    //     const float* data = tensor_cpu.GetDataPtr<float>();
-    //     for (size_t i = 0; i < num_points; ++i) {
-    //         pts->SetPoint(i, data);
-    //         data += 3;
-    //     }
-    // } else {
-    //     pts->SetDataTypeToDouble();
-    //     pts->SetNumberOfPoints(num_points);
-    //     const double* data = tensor_cpu.GetDataPtr<double>();
-    //     for (size_t i = 0; i < num_points; ++i) {
-    //         pts->SetPoint(i, data);
-    //         data += 3;
-    //     }
-    // }
-    // return pts;
 }
 
 // Helper for creating the offset array from Common/DataModel/vtkCellArray.cxx
-struct GenerateOffsetsImpl
-{
-  vtkIdType CellSize;
-  vtkIdType ConnectivityArraySize;
+struct GenerateOffsetsImpl {
+    vtkIdType CellSize;
+    vtkIdType ConnectivityArraySize;
 
-  template <typename ArrayT>
-  void operator()(ArrayT* offsets)
-  {
-    for (vtkIdType cc = 0, max = (offsets->GetNumberOfTuples() - 1); cc < max; ++cc)
-    {
-      offsets->SetTypedComponent(cc, 0, cc * this->CellSize);
+    template <typename ArrayT>
+    void operator()(ArrayT* offsets) {
+        for (vtkIdType cc = 0, max = (offsets->GetNumberOfTuples() - 1);
+             cc < max; ++cc) {
+            offsets->SetTypedComponent(cc, 0, cc * this->CellSize);
+        }
+        offsets->SetTypedComponent(offsets->GetNumberOfTuples() - 1, 0,
+                                   this->ConnectivityArraySize);
     }
-    offsets->SetTypedComponent(offsets->GetNumberOfTuples() - 1, 0, this->ConnectivityArraySize);
-  }
 };
 
 /// Creates a vtkCellArray from a Tensor.
@@ -190,8 +145,7 @@ struct GenerateOffsetsImpl
 /// \param tensor The source tensor.
 /// \param copy If true always create a copy of the data.
 static vtkSmartPointer<vtkCellArray> CreateVtkCellArrayFromTensor(
-        core::Tensor& tensor, bool copy=false) {
-
+        core::Tensor& tensor, bool copy = false) {
     core::AssertTensorShape(tensor, {core::None, core::None});
     core::AssertTensorDtypes(tensor, {core::Int32, core::Int64});
 
@@ -201,14 +155,16 @@ static vtkSmartPointer<vtkCellArray> CreateVtkCellArrayFromTensor(
     copy = copy && tensor.GetDataPtr() == tensor_flat.GetDataPtr();
     auto connectivity = CreateVtkDataArrayFromTensor(tensor_flat, copy);
 
-    // vtk nightly build (9.1.20220520) has a function cells->SetData(cell_size, connectivity)
-    // which allows to remove the code below
+    // vtk nightly build (9.1.20220520) has a function cells->SetData(cell_size,
+    // connectivity) which allows to remove the code below
     vtkSmartPointer<vtkDataArray> offsets;
     {
         offsets.TakeReference(connectivity->NewInstance());
-        offsets->SetNumberOfTuples(1 + connectivity->GetNumberOfTuples() / cell_size);
+        offsets->SetNumberOfTuples(1 + connectivity->GetNumberOfTuples() /
+                                               cell_size);
 
-        GenerateOffsetsImpl worker{ cell_size, connectivity->GetNumberOfTuples() };
+        GenerateOffsetsImpl worker{cell_size,
+                                   connectivity->GetNumberOfTuples()};
         using SupportedArrays = vtkCellArray::InputArrayList;
         using Dispatch = vtkArrayDispatch::DispatchByArray<SupportedArrays>;
         Dispatch::Execute(offsets, worker);
@@ -216,66 +172,12 @@ static vtkSmartPointer<vtkCellArray> CreateVtkCellArrayFromTensor(
     //--
 
     vtkSmartPointer<vtkCellArray> cells = vtkSmartPointer<vtkCellArray>::New();
-    // grr, this always makes a deep copy. 
+    // grr, this always makes a deep copy.
     // See ShallowCopy() in Common/Core/vtkDataArray.cxx for why.
-    cells->SetData(offsets, connectivity); 
-    REFCOUNT(connectivity);
-    REFCOUNT(cells->GetConnectivityArray());
+    cells->SetData(offsets, connectivity);
 
     return cells;
-
-    // auto tensor_cpu = tensor.To(core::Device()).Contiguous();
-    // const size_t num_cells = tensor.GetLength();
-    // // const int cell_size = tensor.GetShape()[1];
-
-    // if (tensor.GetDtype() == core::Int64) {
-    //     const int64_t* data = tensor_cpu.GetDataPtr<int64_t>();
-    //     for (size_t cell_i = 0; cell_i < num_cells; ++cell_i) {
-    //         cells->InsertNextCell(cell_size);
-    //         for (int j = 0; j < cell_size; ++j) cells->InsertCellPoint(data[j]);
-    //         data += cell_size;
-    //     }
-    // } else {
-    //     const int32_t* data = tensor_cpu.GetDataPtr<int32_t>();
-    //     for (size_t cell_i = 0; cell_i < num_cells; ++cell_i) {
-    //         cells->InsertNextCell(cell_size);
-    //         for (int j = 0; j < cell_size; ++j) cells->InsertCellPoint(data[j]);
-    //         data += cell_size;
-    //     }
-    // }
-
-    // return cells;
 }
-
-// core::Tensor CreateTensorFromVtkPoints(vtkPoints* points) {
-//     core::Tensor result;
-//     int64_t num_points = points->GetNumberOfPoints();
-//     if (points->GetDataType() == VTK_FLOAT) {
-//         result = core::Tensor({num_points, 3}, core::Float32);
-//         float* data = result.GetDataPtr<float>();
-//         for (int64_t i = 0; i < num_points; ++i) {
-//             double p[3];
-//             points->GetPoint(i, p);
-//             data[0] = p[0];
-//             data[1] = p[1];
-//             data[2] = p[2];
-//             data += 3;
-//         }
-//     } else if (points->GetDataType() == VTK_DOUBLE) {
-//         result = core::Tensor({num_points, 3}, core::Float64);
-//         double* data = result.GetDataPtr<double>();
-//         for (int64_t i = 0; i < num_points; ++i) {
-//             points->GetPoint(i, data);
-//             data += 3;
-//         }
-//     } else {
-//         utility::LogError(
-//                 "Unexpected data type for vtkPoints. Expected float or double "
-//                 "but got {}",
-//                 points->GetDataType());
-//     }
-//     return result;
-// }
 
 // map types used by vtk to compatible Tensor types
 template <class T>
@@ -301,14 +203,13 @@ struct CreateTensorFromVtkDataArrayWorker {
         int64_t length = array->GetNumberOfTuples();
         int64_t num_components = array->GetNumberOfComponents();
 
-
         // copy if requested or the layout is not contiguous
-        if( copy || !array->HasStandardMemoryLayout() ){
+        if (copy || !array->HasStandardMemoryLayout()) {
             result = core::Tensor({length, num_components}, dtype);
-            if( array->HasStandardMemoryLayout() ){
-                memcpy(array->GetVoidPointer(0), result.GetDataPtr(), dtype.ByteSize() * result.NumElements() );
-            }
-            else {
+            if (array->HasStandardMemoryLayout()) {
+                memcpy(array->GetVoidPointer(0), result.GetDataPtr(),
+                       dtype.ByteSize() * result.NumElements());
+            } else {
                 TTensor* data = result.GetDataPtr<TTensor>();
                 for (int64_t i = 0; i < length; ++i) {
                     for (int64_t j = 0; j < num_components; ++j) {
@@ -317,15 +218,15 @@ struct CreateTensorFromVtkDataArrayWorker {
                     }
                 }
             }
-        }
-        else{
+        } else {
             auto sp = data_array;
-            REFCOUNT(data_array);
-            REFCOUNT(sp);
-            auto blob = std::make_shared<core::Blob>(core::Device(), array->GetVoidPointer(0), [sp](void*){(void)sp; REFCOUNT(sp);});
+            auto blob = std::make_shared<core::Blob>(core::Device(),
+                                                     array->GetVoidPointer(0),
+                                                     [sp](void*) { (void)sp; });
             core::SizeVector shape{length, num_components};
             auto strides = core::shape_util::DefaultStrides(shape);
-            result = core::Tensor(shape, strides, blob->GetDataPtr(), dtype, blob);
+            result = core::Tensor(shape, strides, blob->GetDataPtr(), dtype,
+                                  blob);
         }
     }
 };
@@ -333,33 +234,33 @@ struct CreateTensorFromVtkDataArrayWorker {
 /// Creates a tensor from a vtkDataArray.
 /// The returned Tensor may directly use the memory of the array if device (CPU)
 /// and memory layout are compatible.
-/// The returned Tensor will hold a reference to the array and it is not 
+/// The returned Tensor will hold a reference to the array and it is not
 /// necessary to keep other references to the array alive.
 /// \param array The source array.
 /// \param copy If true always create a copy of the data.
-static core::Tensor CreateTensorFromVtkDataArray(vtkDataArray* array, bool copy=false) {
-    REFCOUNT(array);
+static core::Tensor CreateTensorFromVtkDataArray(vtkDataArray* array,
+                                                 bool copy = false) {
     CreateTensorFromVtkDataArrayWorker worker;
     worker.copy = copy;
-    worker.data_array = vtkSmartPointer<vtkDataArray>(array); // inc the refcount
-    REFCOUNT(array);
+    worker.data_array =
+            vtkSmartPointer<vtkDataArray>(array);  // inc the refcount
     typedef vtkTypeList_Create_7(float, double, int32_t, int64_t, uint32_t,
                                  uint64_t, long long) ArrayTypes;
     vtkArrayDispatch::DispatchByValueType<ArrayTypes>::Execute(array, worker);
     return worker.result;
 }
 
-
 /// Creates a tensor from a vtkCellArray.
 /// The returned Tensor may directly use the memory of the array if device (CPU)
 /// and memory layout are compatible.
-/// The returned Tensor will hold a reference to the array and it is not 
+/// The returned Tensor will hold a reference to the array and it is not
 /// necessary to keep other references to the array alive.
 /// Note that cell arrays with varying cell sizes cannot be converted and the
 /// function will throw an exception.
 /// \param array The source array.
 /// \param copy If true always create a copy of the data.
-static core::Tensor CreateTensorFromVtkCellArray(vtkCellArray* cells, bool copy=false) {
+static core::Tensor CreateTensorFromVtkCellArray(vtkCellArray* cells,
+                                                 bool copy = false) {
     auto num_cells = cells->GetNumberOfCells();
     int cell_size = 0;
     if (num_cells) {
@@ -385,11 +286,12 @@ static core::Tensor CreateTensorFromVtkCellArray(vtkCellArray* cells, bool copy=
 
 vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
         const Geometry& geometry, bool copy) {
-    vtkSmartPointer<vtkPolyData> polyData = vtkSmartPointer<vtkPolyData>::New();
+    vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
 
     if (geometry.GetGeometryType() == Geometry::GeometryType::PointCloud) {
         auto pcd = static_cast<const PointCloud&>(geometry);
-        polyData->SetPoints(CreateVtkPointsFromTensor(pcd.GetPointPositions(), copy));
+        polydata->SetPoints(
+                CreateVtkPointsFromTensor(pcd.GetPointPositions(), copy));
         vtkSmartPointer<vtkCellArray> cells =
                 vtkSmartPointer<vtkCellArray>::New();
 
@@ -399,27 +301,29 @@ vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
             cells->InsertCellPoint(i);
         }
 
-        polyData->SetVerts(cells);
+        polydata->SetVerts(cells);
     } else if (geometry.GetGeometryType() ==
                Geometry::GeometryType::TriangleMesh) {
         auto mesh = static_cast<const TriangleMesh&>(geometry);
-        polyData->SetPoints(
+        polydata->SetPoints(
                 CreateVtkPointsFromTensor(mesh.GetVertexPositions(), copy));
-        polyData->SetPolys(
+        polydata->SetPolys(
                 CreateVtkCellArrayFromTensor(mesh.GetTriangleIndices(), copy));
-    }
-    else {
-        utility::LogError("Unsupported geometry type {}", geometry.GetGeometryType());
+    } else {
+        utility::LogError("Unsupported geometry type {}",
+                          geometry.GetGeometryType());
     }
     // TODO convert other data like normals, colors, ...
 
-    return polyData;
+    return polydata;
 }
 
-TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polyData, bool copy) {
-    core::Tensor vertices =
-            CreateTensorFromVtkDataArray(polyData->GetPoints()->GetData(), copy);
-    core::Tensor triangles = CreateTensorFromVtkCellArray(polyData->GetPolys(), copy);
+TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
+                                               bool copy) {
+    core::Tensor vertices = CreateTensorFromVtkDataArray(
+            polydata->GetPoints()->GetData(), copy);
+    core::Tensor triangles =
+            CreateTensorFromVtkCellArray(polydata->GetPolys(), copy);
     TriangleMesh mesh(vertices, triangles);
     return mesh;
 }

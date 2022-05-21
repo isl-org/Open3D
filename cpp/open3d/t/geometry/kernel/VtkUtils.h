@@ -44,17 +44,18 @@ namespace vtkutils {
 /// \param geometry Open3D geometry object, e.g., a TriangleMesh.
 /// \param copy If true always create a copy of the data.
 vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
-        const Geometry& geometry, bool copy=false);
+        const Geometry& geometry, bool copy = false);
 
 /// Creates a triangle mesh from a vtkPolyData object.
 /// The returned TriangleMesh may directly use the memory of the data arrays in
 /// the vtkPolyData object.
-/// The returned TriangleMesh will hold references to the arrays and it is not 
+/// The returned TriangleMesh will hold references to the arrays and it is not
 /// necessary to keep other references to the vtkPolyData object or its arrays
 /// alive.
-/// \param polyData Input polyData object.
+/// \param polydata Input polyData object.
 /// \param copy If true always create a copy of the data.
-TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polyData, bool copy=false);
+TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
+                                               bool copy = false);
 
 }  // namespace vtkutils
 }  // namespace kernel
