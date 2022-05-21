@@ -34,7 +34,6 @@
 namespace open3d {
 namespace t {
 namespace geometry {
-namespace kernel {
 namespace vtkutils {
 
 /// Creates a vtkPolyData object from a point cloud or triangle mesh.
@@ -58,7 +57,6 @@ TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
                                                bool copy = false);
 
 }  // namespace vtkutils
-}  // namespace kernel
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

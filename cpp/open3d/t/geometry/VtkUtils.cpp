@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/kernel/VtkUtils.h"
+#include "open3d/t/geometry/VtkUtils.h"
 
 #include <vtkArrayDispatch.h>
 #include <vtkCellArray.h>
@@ -35,7 +35,6 @@
 namespace open3d {
 namespace t {
 namespace geometry {
-namespace kernel {
 namespace vtkutils {
 
 /// Returns the corresponding vtk data type for core::Dtype
@@ -329,7 +328,6 @@ TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
 }
 
 }  // namespace vtkutils
-}  // namespace kernel
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

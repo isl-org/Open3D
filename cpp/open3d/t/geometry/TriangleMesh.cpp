@@ -38,9 +38,9 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
-#include "open3d/t/geometry/kernel/VtkUtils.h"
 
 namespace open3d {
 namespace t {
@@ -277,7 +277,7 @@ TriangleMesh TriangleMesh::To(const core::Device &device, bool copy) const {
 
 TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
                                      const core::Tensor &normal) const {
-    using namespace kernel::vtkutils;
+    using namespace vtkutils;
     core::AssertTensorShape(point, {3});
     core::AssertTensorShape(normal, {3});
     // allow int types for convenience
