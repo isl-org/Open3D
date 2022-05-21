@@ -781,7 +781,7 @@ TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
     EXPECT_NO_THROW(pcd.ComputeConvexHull(true));
 
     // Hard-coded test
-    pcd.SetPointPositions(core::Tensor::Init<float>(
+    pcd.SetPointPositions(core::Tensor::Init<double>(
             {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}}));
     mesh = pcd.ComputeConvexHull();
     auto point_indices = mesh.GetVertexAttr("point_indices");
@@ -792,15 +792,15 @@ TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
             pcd.GetPointPositions().IndexGet({point_indices.To(core::Int64)})));
 
     // Hard-coded test
-    pcd.SetPointPositions(core::Tensor::Init<float>({{0.5, 0.5, 0.5},
-                                                     {0, 0, 0},
-                                                     {0, 0, 1},
-                                                     {0, 1, 0},
-                                                     {0, 1, 1},
-                                                     {1, 0, 0},
-                                                     {1, 0, 1},
-                                                     {1, 1, 0},
-                                                     {1, 1, 1}}));
+    pcd.SetPointPositions(core::Tensor::Init<double>({{0.5, 0.5, 0.5},
+                                                      {0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0},
+                                                      {1, 1, 1}}));
     mesh = pcd.ComputeConvexHull();
     point_indices = mesh.GetVertexAttr("point_indices");
     EXPECT_EQ(point_indices.ToFlatVector<int>(),

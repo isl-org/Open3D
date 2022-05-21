@@ -39,13 +39,12 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
-
-class TriangleMesh;  // forward declaration
 
 /// \class PointCloud
 /// \brief A point cloud contains a list of 3D points.

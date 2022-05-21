@@ -33,9 +33,12 @@
 #include <libqhullcpp/QhullVertexSet.h>
 
 #include <Eigen/Core>
+#include <algorithm>
 #include <limits>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/EigenConverter.h"
@@ -741,7 +744,6 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
                   "Qhull realT is not double. Update code!");
     using int_t = int32_t;
     const auto int_dtype = core::Int32;
-    const auto position_dtype = GetPointPositions().GetDtype();
     core::Tensor coordinates(
             GetPointPositions().To(core::Float64).To(core::Device("CPU:0")));
 
@@ -754,18 +756,14 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
                    coordinates.GetDataPtr<double>(), options.c_str());
     orgQhull::QhullFacetList facets = qhull.facetList();
 
-    int_t n_good_facets = 0;
-    for (orgQhull::QhullFacetList::iterator it = facets.begin();
-         it != facets.end(); ++it) {
-        if ((*it).isGood()) ++n_good_facets;
-    }
-
-    core::Tensor vertices({qhull.vertexCount(), 3}, position_dtype),
-            triangles({n_good_facets, 3}, int_dtype),
+    core::Tensor vertices({qhull.vertexCount(), 3}, core::Float64),
+            triangles({qhull.facetCount(), 3}, int_dtype),
             point_indices({qhull.vertexCount()}, int_dtype);
     std::unordered_map<int_t, int_t> vertex_map;  // pcd -> conv hull
-    auto center = core::Tensor::Zeros({3}, core::Float64);
     int_t tidx = 0, next_vtx = 0;
+    auto p_vertices = vertices.GetDataPtr<double>();
+    auto p_triangle = triangles.GetDataPtr<int_t>();
+    auto p_point_indices = point_indices.GetDataPtr<int_t>();
     for (orgQhull::QhullFacetList::iterator it = facets.begin();
          it != facets.end(); ++it) {
         if (!(*it).isGood()) continue;
@@ -773,58 +771,36 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
         orgQhull::QhullVertexSet vSet = it->vertices();
         int_t triangle_subscript = 0;
         for (orgQhull::QhullVertexSet::iterator vIt = vSet.begin();
-             vIt != vSet.end(); ++vIt) {
+             vIt != vSet.end(); ++vIt, ++triangle_subscript) {
             orgQhull::QhullPoint p = (*vIt).point();
             int_t vidx = p.id();
-            triangles[tidx][triangle_subscript++] = vidx;  // pcd vertex idx
 
             auto inserted = vertex_map.insert({vidx, next_vtx});
             if (inserted.second) {
-                vertex_map[vidx] = int_t(next_vtx);
+                p_triangle[triangle_subscript] = next_vtx;  // hull vertex idx
                 double *coords = p.coordinates();
-                DISPATCH_DTYPE_TO_TEMPLATE(position_dtype, [&]() {
-                    scalar_t *pt = vertices[next_vtx].GetDataPtr<scalar_t>();
-                    pt[0] = static_cast<scalar_t>(coords[0]);
-                    pt[1] = static_cast<scalar_t>(coords[1]);
-                    pt[2] = static_cast<scalar_t>(coords[2]);
-                    center[0] += coords[0];
-                    center[1] += coords[1];
-                    center[2] += coords[2];
-                });
-                point_indices[next_vtx++] = vidx;
+                std::copy(coords, coords + 3, p_vertices);
+                p_vertices += 3;
+                p_point_indices[next_vtx++] = vidx;
+            } else {
+                p_triangle[triangle_subscript] =
+                        inserted.first->second;  // hull vertex idx
             }
         }
+        if ((*it).isTopOrient()) {
+            std::swap(p_triangle[0], p_triangle[1]);
+        }
         tidx++;
+        p_triangle += 3;
+    }
+    if (tidx < triangles.GetShape(0)) {
+        triangles = triangles.Slice(0, 0, tidx);
     }
     if (next_vtx != vertices.GetShape(0)) {
         utility::LogError(
                 "Qhull output has incorrect number of vertices {} instead of "
                 "reported {}",
                 next_vtx, vertices.GetShape(0));
-    }
-
-    center /= next_vtx;
-    core::Tensor face_center({3, 3}, core::Float64);
-    for (int_t k = 0; k < triangles.GetShape(0); ++k) {
-        auto triangle = triangles[k].GetDataPtr<int_t>();
-        // switch from pcd vertex idx to convex hull vertex idx
-        triangle[0] = vertex_map[triangle[0]];
-        triangle[1] = vertex_map[triangle[1]];
-        triangle[2] = vertex_map[triangle[2]];
-
-        // orient triangle vertices so that normal points out
-        auto triangle_center =
-                (1. / 3) * (vertices[triangle[0]] + vertices[triangle[1]] +
-                            vertices[triangle[2]])
-                                   .To(core::Float64);
-        face_center[0] = triangle_center - center;
-        face_center[1] = (vertices[triangle[1]] - vertices[triangle[0]])
-                                 .To(core::Float64);
-        face_center[2] = (vertices[triangle[2]] - vertices[triangle[0]])
-                                 .To(core::Float64);
-        if (face_center.Det() < 0) {
-            std::swap(triangle[0], triangle[1]);
-        }
     }
 
     TriangleMesh convex_hull(vertices, triangles);
