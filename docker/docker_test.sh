@@ -165,6 +165,7 @@ cpp_python_linking_uninstall_test() {
     else
         cmake_compiler_args=""
     fi
+
     ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
         git clone https://github.com/isl-org/open3d-cmake-find-package.git \
      && cd open3d-cmake-find-package \
@@ -173,20 +174,22 @@ cpp_python_linking_uninstall_test() {
      && echo Testing build with cmake \
      && cmake ${cmake_compiler_args} -DCMAKE_INSTALL_PREFIX=~/open3d_install .. \
      && make -j$(nproc) VERBOSE=1 \
-     && ./Draw --skip-for-unit-test"
+     && ./Draw --skip-for-unit-test \
+    "
 
     if [ "${SHARED}" == "OFF" ] && [ "${BUILD_SYCL_MODULE}" == "OFF" ]; then
-    ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
-        git clone https://github.com/isl-org/open3d-cmake-find-package.git \
-     && cd open3d-cmake-find-package \
-     && mkdir build \
-     && pushd build \
-     && echo Testing build with pkg-config \
-     && export PKG_CONFIG_PATH=~/open3d_install/lib/pkgconfig \
-     && echo Open3D build options: \$(pkg-config --cflags --libs Open3D) \
-     && c++ ../Draw.cpp -o Draw \$(pkg-config --cflags --libs Open3D) \
-     && ./Draw --skip-for-unit-test ; } \
-    "
+        ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
+            git clone https://github.com/isl-org/open3d-cmake-find-package.git \
+         && cd open3d-cmake-find-package \
+         && mkdir build \
+         && pushd build \
+         && echo Testing build with pkg-config \
+         && export PKG_CONFIG_PATH=~/open3d_install/lib/pkgconfig \
+         && echo Open3D build options: \$(pkg-config --cflags --libs Open3D) \
+         && c++ ../Draw.cpp -o Draw \$(pkg-config --cflags --libs Open3D) \
+         && ./Draw --skip-for-unit-test \
+        "
+    fi
     restart_docker_daemon_if_on_gcloud
 
     # Uninstall
