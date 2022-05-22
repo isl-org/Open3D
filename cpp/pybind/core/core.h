@@ -34,6 +34,7 @@ namespace core {
 
 void pybind_core(py::module& m);
 void pybind_cuda_utils(py::module& m);
+void pybind_sycl_utils(py::module& m);
 void pybind_core_blob(py::module& m);
 void pybind_core_dtype(py::module& m);
 void pybind_core_device(py::module& m);

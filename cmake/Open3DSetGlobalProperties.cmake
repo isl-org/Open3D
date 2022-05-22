@@ -94,6 +94,9 @@ function(open3d_set_global_properties target)
     if (BUILD_ISPC_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_ISPC_MODULE)
     endif()
+    if (BUILD_SYCL_MODULE)
+        target_compile_definitions(${target} PRIVATE BUILD_SYCL_MODULE)
+    endif()
     if (BUILD_GUI)
         target_compile_definitions(${target} PRIVATE BUILD_GUI)
     endif()
@@ -169,6 +172,13 @@ function(open3d_set_global_properties target)
     else()
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=x86-64>)
     endif()
+
+    # Turn off fast math for IntelLLVM DPC++ compiler.
+    # Fast math does not work with some of our NaN handling logics.
+    target_compile_options(${target} PRIVATE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-ffp-contract=on>)
+    target_compile_options(${target} PRIVATE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>)
 
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c

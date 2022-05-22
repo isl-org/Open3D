@@ -24,39 +24,22 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/core/core.h"
+#include "open3d/core/SYCLUtils.h"
 
-#include "open3d/core/Tensor.h"
-#include "open3d/utility/Logging.h"
-#include "pybind/core/nns/nearest_neighbor_search.h"
-#include "pybind/open3d_pybind.h"
-#include "pybind/pybind_utils.h"
+#include "open3d/utility/Helper.h"
+#include "open3d/utility/Timer.h"
+#include "tests/Tests.h"
+#include "tests/core/CoreTest.h"
 
 namespace open3d {
-namespace core {
+namespace tests {
 
-void pybind_core(py::module& m) {
-    py::module m_core = m.def_submodule("core");
+class SYCLUtilsPermuteDevices : public PermuteDevices {};
+INSTANTIATE_TEST_SUITE_P(SYCLUtils,
+                         SYCLUtilsPermuteDevices,
+                         testing::ValuesIn(PermuteDevices::TestCases()));
 
-    // opn3d::core namespace.
-    pybind_cuda_utils(m_core);
-    pybind_sycl_utils(m_core);
-    pybind_core_blob(m_core);
-    pybind_core_dtype(m_core);
-    pybind_core_device(m_core);
-    pybind_core_size_vector(m_core);
-    pybind_core_tensor(m_core);
-    pybind_core_tensor_function(m_core);
-    pybind_core_linalg(m_core);
-    pybind_core_kernel(m_core);
-    pybind_core_hashmap(m_core);
-    pybind_core_hashset(m_core);
-    pybind_core_scalar(m_core);
+TEST_P(SYCLUtilsPermuteDevices, SYCLDemo) { EXPECT_EQ(core::SYCLDemo(), 0); }
 
-    // opn3d::core::nns namespace.
-    py::module m_nns = m_core.def_submodule("nns");
-    nns::pybind_core_nns(m_nns);
-}
-
-}  // namespace core
+}  // namespace tests
 }  // namespace open3d
