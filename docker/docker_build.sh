@@ -138,6 +138,7 @@ openblas_export_env() {
     fi
 
     # For docker_test.sh
+    export SHARED=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_PYTORCH_OPS=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -453,173 +454,173 @@ sycl-static_export_env() {
     export BUILD_SYCL_MODULE=ON
 }
 
-function main () {
+function main() {
     if [[ "$#" -ne 1 ]]; then
         echo "Error: invalid number of arguments: $#." >&2
         print_usage_and_exit_docker_build
     fi
     echo "[$(basename $0)] building $1"
     case "$1" in
-        # OpenBLAS AMD64
-        openblas-amd64-py36-dev)
-            openblas_export_env amd64 py36 dev
-            openblas_build
-            ;;
-        openblas-amd64-py37-dev)
-            openblas_export_env amd64 py37 dev
-            openblas_build
-            ;;
-        openblas-amd64-py38-dev)
-            openblas_export_env amd64 py38 dev
-            openblas_build
-            ;;
-        openblas-amd64-py39-dev)
-            openblas_export_env amd64 py39 dev
-            openblas_build
-            ;;
-        openblas-amd64-py36)
-            openblas_export_env amd64 py36
-            openblas_build
-            ;;
-        openblas-amd64-py37)
-            openblas_export_env amd64 py37
-            openblas_build
-            ;;
-        openblas-amd64-py38)
-            openblas_export_env amd64 py38
-            openblas_build
-            ;;
-        openblas-amd64-py39)
-            openblas_export_env amd64 py39
-            openblas_build
-            ;;
+    # OpenBLAS AMD64
+    openblas-amd64-py36-dev)
+        openblas_export_env amd64 py36 dev
+        openblas_build
+        ;;
+    openblas-amd64-py37-dev)
+        openblas_export_env amd64 py37 dev
+        openblas_build
+        ;;
+    openblas-amd64-py38-dev)
+        openblas_export_env amd64 py38 dev
+        openblas_build
+        ;;
+    openblas-amd64-py39-dev)
+        openblas_export_env amd64 py39 dev
+        openblas_build
+        ;;
+    openblas-amd64-py36)
+        openblas_export_env amd64 py36
+        openblas_build
+        ;;
+    openblas-amd64-py37)
+        openblas_export_env amd64 py37
+        openblas_build
+        ;;
+    openblas-amd64-py38)
+        openblas_export_env amd64 py38
+        openblas_build
+        ;;
+    openblas-amd64-py39)
+        openblas_export_env amd64 py39
+        openblas_build
+        ;;
 
-        # OpenBLAS ARM64
-        openblas-arm64-py36-dev)
-            openblas_export_env arm64 py36 dev
-            openblas_build
-            ;;
-        openblas-arm64-py37-dev)
-            openblas_export_env arm64 py37 dev
-            openblas_build
-            ;;
-        openblas-arm64-py38-dev)
-            openblas_export_env arm64 py38 dev
-            openblas_build
-            ;;
-        openblas-arm64-py39-dev)
-            openblas_export_env arm64 py39 dev
-            openblas_build
-            ;;
-        openblas-arm64-py36)
-            openblas_export_env arm64 py36
-            openblas_build
-            ;;
-        openblas-arm64-py37)
-            openblas_export_env arm64 py37
-            openblas_build
-            ;;
-        openblas-arm64-py38)
-            openblas_export_env arm64 py38
-            openblas_build
-            ;;
-        openblas-arm64-py39)
-            openblas_export_env arm64 py39
-            openblas_build
-            ;;
+    # OpenBLAS ARM64
+    openblas-arm64-py36-dev)
+        openblas_export_env arm64 py36 dev
+        openblas_build
+        ;;
+    openblas-arm64-py37-dev)
+        openblas_export_env arm64 py37 dev
+        openblas_build
+        ;;
+    openblas-arm64-py38-dev)
+        openblas_export_env arm64 py38 dev
+        openblas_build
+        ;;
+    openblas-arm64-py39-dev)
+        openblas_export_env arm64 py39 dev
+        openblas_build
+        ;;
+    openblas-arm64-py36)
+        openblas_export_env arm64 py36
+        openblas_build
+        ;;
+    openblas-arm64-py37)
+        openblas_export_env arm64 py37
+        openblas_build
+        ;;
+    openblas-arm64-py38)
+        openblas_export_env arm64 py38
+        openblas_build
+        ;;
+    openblas-arm64-py39)
+        openblas_export_env arm64 py39
+        openblas_build
+        ;;
 
-        # CPU CI
-        cpu-static)
-            cpu-static_export_env
-            ci_build
-            ;;
-        cpu-shared)
-            cpu-shared_export_env
-            ci_build
-            ;;
-        cpu-shared-release)
-            cpu-shared-release_export_env
-            ci_build
-            ;;
-        cpu-shared-ml)
-            cpu-shared-ml_export_env
-            ci_build
-            ;;
-        cpu-shared-ml-release)
-            cpu-shared-ml-release_export_env
-            ci_build
-            ;;
+    # CPU CI
+    cpu-static)
+        cpu-static_export_env
+        ci_build
+        ;;
+    cpu-shared)
+        cpu-shared_export_env
+        ci_build
+        ;;
+    cpu-shared-release)
+        cpu-shared-release_export_env
+        ci_build
+        ;;
+    cpu-shared-ml)
+        cpu-shared-ml_export_env
+        ci_build
+        ;;
+    cpu-shared-ml-release)
+        cpu-shared-ml-release_export_env
+        ci_build
+        ;;
 
-        # SYCL CI
-        sycl-shared)
-            sycl-shared_export_env
-            ci_build
-            ;;
-        sycl-static)
-            sycl-static_export_env
-            ci_build
-            ;;
+    # SYCL CI
+    sycl-shared)
+        sycl-shared_export_env
+        ci_build
+        ;;
+    sycl-static)
+        sycl-static_export_env
+        ci_build
+        ;;
 
-        # CUDA wheels
-        cuda_wheel_py36_dev)
-            cuda_wheel_build py36 dev
-            ;;
-        cuda_wheel_py37_dev)
-            cuda_wheel_build py37 dev
-            ;;
-        cuda_wheel_py38_dev)
-            cuda_wheel_build py38 dev
-            ;;
-        cuda_wheel_py39_dev)
-            cuda_wheel_build py39 dev
-            ;;
-        cuda_wheel_py36)
-            cuda_wheel_build py36
-            ;;
-        cuda_wheel_py37)
-            cuda_wheel_build py37
-            ;;
-        cuda_wheel_py38)
-            cuda_wheel_build py38
-            ;;
-        cuda_wheel_py39)
-            cuda_wheel_build py39
-            ;;
+    # CUDA wheels
+    cuda_wheel_py36_dev)
+        cuda_wheel_build py36 dev
+        ;;
+    cuda_wheel_py37_dev)
+        cuda_wheel_build py37 dev
+        ;;
+    cuda_wheel_py38_dev)
+        cuda_wheel_build py38 dev
+        ;;
+    cuda_wheel_py39_dev)
+        cuda_wheel_build py39 dev
+        ;;
+    cuda_wheel_py36)
+        cuda_wheel_build py36
+        ;;
+    cuda_wheel_py37)
+        cuda_wheel_build py37
+        ;;
+    cuda_wheel_py38)
+        cuda_wheel_build py38
+        ;;
+    cuda_wheel_py39)
+        cuda_wheel_build py39
+        ;;
 
-        # ML CIs
-        2-bionic)
-            2-bionic_export_env
-            ci_build
-            ;;
-        3-ml-shared-bionic-release)
-            3-ml-shared-bionic-release_export_env
-            ci_build
-            ;;
-        3-ml-shared-bionic)
-            3-ml-shared-bionic_export_env
-            ci_build
-            ;;
-        4-shared-bionic-release)
-            4-shared-bionic-release_export_env
-            ci_build
-            ;;
-        4-shared-bionic)
-            4-shared-bionic_export_env
-            ci_build
-            ;;
-        5-ml-focal)
-            5-ml-focal_export_env
-            ci_build
-            ;;
-        *)
-            echo "Error: invalid argument: ${1}." >&2
-            print_usage_and_exit_docker_build
-            ;;
+    # ML CIs
+    2-bionic)
+        2-bionic_export_env
+        ci_build
+        ;;
+    3-ml-shared-bionic-release)
+        3-ml-shared-bionic-release_export_env
+        ci_build
+        ;;
+    3-ml-shared-bionic)
+        3-ml-shared-bionic_export_env
+        ci_build
+        ;;
+    4-shared-bionic-release)
+        4-shared-bionic-release_export_env
+        ci_build
+        ;;
+    4-shared-bionic)
+        4-shared-bionic_export_env
+        ci_build
+        ;;
+    5-ml-focal)
+        5-ml-focal_export_env
+        ci_build
+        ;;
+    *)
+        echo "Error: invalid argument: ${1}." >&2
+        print_usage_and_exit_docker_build
+        ;;
     esac
 }
 
 # main() will be executed when ./docker_build.sh is called directly.
 # main() will not be executed when ./docker_build.sh is sourced.
-if [ "$0" = "$BASH_SOURCE" ] ; then
+if [ "$0" = "$BASH_SOURCE" ]; then
     main "$@"
 fi
