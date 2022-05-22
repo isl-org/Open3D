@@ -9,7 +9,7 @@ DEVELOPER_BUILD="${DEVELOPER_BUILD:-ON}"
 if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
     DEVELOPER_BUILD="ON"
 fi
-SHARED=${SHARED:-OFF}
+BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -126,7 +126,7 @@ build_all() {
 
     cmakeOptions=(
         -DDEVELOPER_BUILD=$DEVELOPER_BUILD
-        -DBUILD_SHARED_LIBS="$SHARED"
+        -DBUILD_SHARED_LIBS="$BUILD_SHARED_LIBS"
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_LIBREALSENSE=ON
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
@@ -148,7 +148,7 @@ build_all() {
     echo "Build & install Open3D..."
     make VERBOSE=1 -j"$NPROC"
     make VERBOSE=1 install -j"$NPROC"
-    if [[ "$SHARED" == "ON" ]]; then
+    if [[ "$BUILD_SHARED_LIBS" == "ON" ]]; then
         make package
     fi
     make VERBOSE=1 install-pip-package -j"$NPROC"
@@ -333,7 +333,7 @@ test_cpp_example() {
     if [ "$runExample" == ON ]; then
         ./Draw --skip-for-unit-test
     fi
-    if [ $SHARED == ON ]; then
+    if [ $BUILD_SHARED_LIBS == ON ]; then
         rm -r ./*
         echo Testing build with pkg-config
         export PKG_CONFIG_PATH=${OPEN3D_INSTALL_DIR}/lib/pkgconfig

@@ -138,7 +138,7 @@ openblas_export_env() {
     fi
 
     # For docker_test.sh
-    export SHARED=OFF
+    export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_PYTORCH_OPS=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -224,7 +224,7 @@ ci_build() {
     echo "[ci_build()] CMAKE_VERSION=${CMAKE_VERSION}"
     echo "[ci_build()] CCACHE_VERSION=${CCACHE_VERSION}"
     echo "[ci_build()] PYTHON_VERSION=${PYTHON_VERSION}"
-    echo "[ci_build()] SHARED=${SHARED}"
+    echo "[ci_build()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[ci_build()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[ci_build()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_build()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
@@ -240,7 +240,7 @@ ci_build() {
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
         --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
-        --build-arg SHARED="${SHARED}" \
+        --build-arg BUILD_SHARED_LIBS="${BUILD_SHARED_LIBS}" \
         --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
         --build-arg BUILD_TENSORFLOW_OPS="${BUILD_TENSORFLOW_OPS}" \
         --build-arg BUILD_PYTORCH_OPS="${BUILD_PYTORCH_OPS}" \
@@ -262,7 +262,7 @@ ci_build() {
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-2-bionic
     export PYTHON_VERSION=3.6
-    export SHARED=OFF
+    export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
@@ -277,7 +277,7 @@ ci_build() {
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
     export PYTHON_VERSION=3.6
-    export SHARED=ON
+    export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
@@ -292,7 +292,7 @@ ci_build() {
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
     export PYTHON_VERSION=3.6
-    export SHARED=ON
+    export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
@@ -307,7 +307,7 @@ ci_build() {
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
     export PYTHON_VERSION=3.6
-    export SHARED=ON
+    export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
@@ -322,7 +322,7 @@ ci_build() {
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
     export PYTHON_VERSION=3.6
-    export SHARED=ON
+    export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
@@ -337,7 +337,7 @@ ci_build() {
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-5-ml-focal
     export PYTHON_VERSION=3.6
-    export SHARED=OFF
+    export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
@@ -352,7 +352,7 @@ cpu-static_export_env() {
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.6
-    export SHARED=OFF
+    export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
@@ -367,7 +367,7 @@ cpu-shared_export_env() {
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.6
-    export SHARED=ON
+    export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
@@ -382,7 +382,7 @@ cpu-shared-ml_export_env() {
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.6
-    export SHARED=ON
+    export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
@@ -397,7 +397,7 @@ cpu-shared-release_export_env() {
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.6
-    export SHARED=ON
+    export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
@@ -412,7 +412,7 @@ cpu-shared-ml-release_export_env() {
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
     export PYTHON_VERSION=3.6
-    export SHARED=ON
+    export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
     export BUILD_PYTORCH_OPS=ON
@@ -429,7 +429,7 @@ sycl-shared_export_env() {
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
     export PYTHON_VERSION=3.6
-    export SHARED=ON
+    export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
@@ -446,7 +446,7 @@ sycl-static_export_env() {
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
     export PYTHON_VERSION=3.6
-    export SHARED=OFF
+    export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF

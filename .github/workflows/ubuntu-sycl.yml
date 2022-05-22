@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        SHARED: [ON, OFF]
+        BUILD_SHARED_LIBS: [ON, OFF]
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -31,14 +31,14 @@ jobs:
           maximize_ubuntu_github_actions_build_space
       - name: Docker build
         run: |
-          if [ "${{ matrix.SHARED }}" = "ON" ]; then
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
             docker/docker_build.sh sycl-shared
           else
             docker/docker_build.sh sycl-static
           fi
       - name: Docker test
         run: |
-          if [ "${{ matrix.SHARED }}" = "ON" ]; then
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
             docker/docker_test.sh sycl-shared
           else
             docker/docker_test.sh sycl-static

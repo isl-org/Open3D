@@ -70,7 +70,7 @@ ci_print_env() {
     echo "[ci_print_env()] CMAKE_VERSION=${CMAKE_VERSION}"
     echo "[ci_print_env()] CCACHE_VERSION=${CCACHE_VERSION}"
     echo "[ci_print_env()] PYTHON_VERSION=${PYTHON_VERSION}"
-    echo "[ci_print_env()] SHARED=${SHARED}"
+    echo "[ci_print_env()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[ci_print_env()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[ci_print_env()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
     echo "[ci_print_env()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
@@ -101,13 +101,13 @@ restart_docker_daemon_if_on_gcloud() {
 cpp_python_linking_uninstall_test() {
     # Expects the following environment variables to be set:
     # - DOCKER_TAG
-    # - SHARED
+    # - BUILD_SHARED_LIBS
     # - BUILD_CUDA_MODULE
     # - BUILD_PYTORCH_OPS
     # - BUILD_TENSORFLOW_OPS
     # - BUILD_SYCL_MODULE
     echo "[cpp_python_linking_uninstall_test()] DOCKER_TAG=${DOCKER_TAG}"
-    echo "[cpp_python_linking_uninstall_test()] SHARED=${SHARED}"
+    echo "[cpp_python_linking_uninstall_test()] BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}"
     echo "[cpp_python_linking_uninstall_test()] BUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}"
@@ -179,7 +179,7 @@ cpp_python_linking_uninstall_test() {
      && ./Draw --skip-for-unit-test \
     "
 
-    if [ "${SHARED}" == "ON" ] && [ "${BUILD_SYCL_MODULE}" == "OFF" ]; then
+    if [ "${BUILD_SHARED_LIBS}" == "ON" ] && [ "${BUILD_SYCL_MODULE}" == "OFF" ]; then
         ${docker_run} -i --rm "${DOCKER_TAG}" /bin/bash -c "\
             git clone https://github.com/isl-org/open3d-cmake-find-package.git \
          && cd open3d-cmake-find-package \

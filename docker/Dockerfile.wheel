@@ -124,7 +124,7 @@ WORKDIR /root/Open3D
 
 # Build python wheel
 RUN export NPROC=$(nproc) \
- && export SHARED=OFF \
+ && export BUILD_SHARED_LIBS=OFF \
  && export BUILD_TENSORFLOW_OPS=ON \
  && export BUILD_PYTORCH_OPS=ON \
  && source /root/Open3D/util/ci_utils.sh \
