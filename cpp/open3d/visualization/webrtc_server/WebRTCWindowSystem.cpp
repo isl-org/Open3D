@@ -38,6 +38,7 @@
 #include <unordered_map>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/IJsonConvertible.h"
 #include "open3d/utility/Logging.h"
@@ -282,8 +283,12 @@ void WebRTCWindowSystem::StartWebRTCServer() {
     if (!impl_->sever_started_) {
         auto start_webrtc_thread = [this]() {
             // Ensure Application::Initialize() is called before this.
-            // TODO: move GetResourcePath to WebRTC
             std::string resource_path(GetResourcePath());
+            if (!utility::filesystem::DirectoryExists(resource_path)) {
+                utility::LogError(
+                        ("Can't find resource directory: " + resource_path)
+                                .c_str());
+            }
             impl_->web_root_ = resource_path + "/html";
 
             // Logging settings.
