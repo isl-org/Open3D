@@ -708,12 +708,10 @@ void pybind_trianglemesh(py::module &m) {
               "Number of threads used for reconstruction. Set to -1 to "
               "automatically determine it."}});
     docstring::ClassMethodDocInject(
-            m, "TriangleMesh", "create_planar_patch",
-            {{"center", "center of planar patch."},
-             {"basis_x", "x-direction and length."},
-             {"basis_y", "y-direction and length."},
-             {"normal", "plane normal direction"},
-             {"depth", "thickness in normal direction."},
+            m, "TriangleMesh", "create_from_oriented_bounding_box",
+            {{"obox", "OrientedBoundingBox object to create mesh of."},
+             {"scale",
+              "scale factor along each direction of OrientedBoundingBox"},
              {"create_uv_map", "Add default uv map to the mesh."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_box",

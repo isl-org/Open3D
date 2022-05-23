@@ -971,8 +971,8 @@ void ExtractPatchesFromPlanes(
 
 std::vector<std::shared_ptr<OrientedBoundingBox>>
 PointCloud::DetectPlanarPatches(
-        double normal_similarity,
-        double coplanarity,
+        double normal_similarity_deg,
+        double coplanarity_deg,
         double outlier_ratio,
         double min_plane_edge_length,
         size_t min_num_points,
@@ -1006,14 +1006,17 @@ PointCloud::DetectPlanarPatches(
         kdtree.Search(points_[i], search_param, neighbors[i], distance2);
     }
 
+    const double normal_similarity_rad = normal_similarity_deg * M_PI / 180.0;
+    const double coplanarity_rad = coplanarity_deg * M_PI / 180.0;
+
     // partition the point cloud and search for planar regions
     BoundaryVolumeHierarchyPtr root = std::make_shared<BoundaryVolumeHierarchy>(
             this, min_bound, max_bound);
     std::vector<PlaneDetectorPtr> planes;
     std::vector<PlaneDetectorPtr> plane_points(points_.size(), nullptr);
     SplitAndDetectPlanesRecursive(root, min_num_points,
-                                  std::cos(normal_similarity),
-                                  std::cos(coplanarity), outlier_ratio,
+                                  std::cos(normal_similarity_rad),
+                                  std::cos(coplanarity_rad), outlier_ratio,
                                   min_plane_edge_length, planes, plane_points);
 
     // iteratively grow and merge planes until each is stable

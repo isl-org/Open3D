@@ -371,34 +371,33 @@ public:
     /// Araújo and Oliveira, “A robust statistics approach for plane
     /// detection in unorganized point clouds,” Pattern Recognition, 2020.
     ///
-    /// \param normal_similarity Planes having point normals with high variance
-    /// are rejected. The default value is 60 deg. Larger values would allow
-    /// more noisy planes to be detected.
-    /// \param coplanarity The curvature of plane detections are scored using
-    /// the angle between the plane's normal vector and an auxiliary vector.
-    /// An ideal plane would have a score of 90 deg. The default value for this
-    /// threshold is 75 deg, and detected planes with scores lower than this
-    /// are rejected. Large threshold values encourage a tighter distribution
-    /// of points around the detected plane, i.e., less curvature.
-    /// \param outlier_ratio Maximum allowable ratio of outliers in associated
-    /// plane points before plane is rejected.
-    /// \param min_plane_edge_length A patch's largest edge must greater than
-    /// this value to be considered a true planar patch. If set to 0, defaults
-    /// to 1% of largest span of point cloud.
-    /// \param min_num_points Determines the how deep the associated octree
-    /// becomes and how many points must be used for estimating a plane.
-    /// If set to 0, defaults to 0.1% of the number of points in point cloud.
-    /// \param search_param Point neighbors are used to grow and merge detected
-    /// planes. Neighbors are found with KDTree search using these params. More
-    /// neighbors results in higher quality patches at the cost of compute.
-    /// \return Returns a list of detected planar patches, represented as
-    /// OrientedBoundingBox objects, with the third column (z) of R indicating
-    /// the planar patch normal vector. The extent in the z direction is
-    /// non-zero so that the OrientedBoundingBox contains the points that
-    /// contribute to the plane detection.
+    /// \param normal_variance_threshold_deg Planes having point normals with
+    /// high variance are rejected. The default value is 60 deg. Larger values
+    /// would allow more noisy planes to be detected. \param coplanarity_deg The
+    /// curvature of plane detections are scored using the angle between the
+    /// plane's normal vector and an auxiliary vector. An ideal plane would have
+    /// a score of 90 deg. The default value for this threshold is 75 deg, and
+    /// detected planes with scores lower than this are rejected. Large
+    /// threshold values encourage a tighter distribution of points around the
+    /// detected plane, i.e., less curvature. \param outlier_ratio Maximum
+    /// allowable ratio of outliers in associated plane points before plane is
+    /// rejected. \param min_plane_edge_length A patch's largest edge must
+    /// greater than this value to be considered a true planar patch. If set to
+    /// 0, defaults to 1% of largest span of point cloud. \param min_num_points
+    /// Determines how deep the associated octree becomes and how many points
+    /// must be used for estimating a plane. If set to 0, defaults to 0.1% of
+    /// the number of points in point cloud. \param search_param Point neighbors
+    /// are used to grow and merge detected planes. Neighbors are found with
+    /// KDTree search using these params. More neighbors results in higher
+    /// quality patches at the cost of compute. \return Returns a list of
+    /// detected planar patches, represented as OrientedBoundingBox objects,
+    /// with the third column (z) of R indicating the planar patch normal
+    /// vector. The extent in the z direction is non-zero so that the
+    /// OrientedBoundingBox contains the points that contribute to the plane
+    /// detection.
     std::vector<std::shared_ptr<OrientedBoundingBox>> DetectPlanarPatches(
-            double normal_similarity = 60,
-            double coplanarity = 75,
+            double normal_variance_threshold_deg = 60,
+            double coplanarity_deg = 75,
             double outlier_ratio = 0.75,
             double min_plane_edge_length = 0.0,
             size_t min_num_points = 0,

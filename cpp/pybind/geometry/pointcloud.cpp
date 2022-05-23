@@ -221,9 +221,9 @@ Returns:
      non-zero so that the OrientedBoundingBox contains the points that
      contribute to the plane detection.
 )doc",
-                 "normal_similarity"_a = 60, "coplanarity"_a = 75,
-                 "outlier_ratio"_a = 0.75, "min_plane_edge_length"_a = 0.0,
-                 "min_num_points"_a = 0,
+                 "normal_variance_threshold_deg"_a = 60,
+                 "coplanarity_deg"_a = 75, "outlier_ratio"_a = 0.75,
+                 "min_plane_edge_length"_a = 0.0, "min_num_points"_a = 0,
                  "search_param"_a = KDTreeSearchParamKNN())
             .def_static(
                     "create_from_depth_image",

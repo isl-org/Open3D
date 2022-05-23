@@ -73,16 +73,17 @@ int main(int argc, char **argv) {
             geometry::KDTreeSearchParamHybrid(radius, max_nn);
 
     // set parameters
-    constexpr double normal_similarity = 0.8;
-    constexpr double coplanarity = 0.25;
+    constexpr double normal_variance_threshold_deg = 60;
+    constexpr double coplanarity_deg = 75;
     constexpr double outlier_ratio = 0.75;
     constexpr double min_plane_edge_length = 0.0;
     constexpr size_t min_num_points = 30;
 
     t1 = std::chrono::high_resolution_clock::now();
     const std::vector<std::shared_ptr<geometry::OrientedBoundingBox>> patches =
-            cloud_ptr->DetectPlanarPatches(normal_similarity, coplanarity,
-                                           outlier_ratio, min_plane_edge_length,
+            cloud_ptr->DetectPlanarPatches(normal_variance_threshold_deg,
+                                           coplanarity_deg, outlier_ratio,
+                                           min_plane_edge_length,
                                            min_num_points, search_param);
     std::cout << "DetectPlanarPatches: " << patches.size() << " in "
               << std::chrono::duration_cast<std::chrono::duration<double>>(
