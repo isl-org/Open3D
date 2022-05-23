@@ -372,10 +372,14 @@ public:
     /// detection in unorganized point clouds,” Pattern Recognition, 2020.
     ///
     /// \param normal_similarity Planes having point normals with high variance
-    /// are rejected. Higher values allow more noisy planes to be detected.
-    /// Default is cos(60 deg).
-    /// \param coplanarity Smaller values encourage a tighter distribution of
-    /// points around the detected plane. Default is cos(75 deg).
+    /// are rejected. The default value is 60 deg. Larger values would allow
+    /// more noisy planes to be detected.
+    /// \param coplanarity The curvature of plane detections are scored using
+    /// the angle between the plane's normal vector and an auxiliary vector.
+    /// An ideal plane would have a score of 90 deg. The default value for this
+    /// threshold is 75 deg, and detected planes with scores lower than this
+    /// are rejected. Large threshold values encourage a tighter distribution
+    /// of points around the detected plane, i.e., less curvature.
     /// \param outlier_ratio Maximum allowable ratio of outliers in associated
     /// plane points before plane is rejected.
     /// \param min_plane_edge_length A patch's largest edge must greater than
@@ -387,15 +391,14 @@ public:
     /// \param search_param Point neighbors are used to grow and merge detected
     /// planes. Neighbors are found with KDTree search using these params. More
     /// neighbors results in higher quality patches at the cost of compute.
-    /// \return Returns a list of detected planar patches. Each planar patch
-    /// consists of four 3-vectors (12 parameters total) ordered as
-    /// (d * normal, center, basis_x, basis_y), where d * normal is the compact
-    /// representation of ax + by + cz + d = 0, center is the center position
-    /// of the planar patch, basis_x and basis_y are the scaled basis vectors
-    /// of the planar patch, i.e., their magnitudes determine the patch extent.
-    std::vector<Eigen::Matrix<double, 12, 1>> DetectPlanarPatches(
-            double normal_similarity = 0.5,
-            double coplanarity = 0.25,
+    /// \return Returns a list of detected planar patches, represented as
+    /// OrientedBoundingBox objects, with the third column (z) of R indicating
+    /// the planar patch normal vector. The extent in the z direction is
+    /// non-zero so that the OrientedBoundingBox contains the points that
+    /// contribute to the plane detection.
+    std::vector<std::shared_ptr<OrientedBoundingBox>> DetectPlanarPatches(
+            double normal_similarity = 60,
+            double coplanarity = 75,
             double outlier_ratio = 0.75,
             double min_plane_edge_length = 0.0,
             size_t min_num_points = 0,

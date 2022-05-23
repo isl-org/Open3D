@@ -215,14 +215,13 @@ Returns:
 Detects planar patches in the point cloud using a robust statistics-based approach.
 
 Returns:
-     A list of detected planar patches. Each planar patch consists of four
-     3-vectors (12 parameters total) ordered as
-     (d * normal, center, basis_x, basis_y), where d * normal is the compact
-     representation of ax + by + cz + d = 0, center is the center position
-     of the planar patch, basis_x and basis_y are the scaled basis vectors
-     of the planar patch, i.e., their magnitudes determine the patch extent.
+     A list of detected planar patches, represented as
+     OrientedBoundingBox objects, with the third column (z) of R indicating
+     the planar patch normal vector. The extent in the z direction is
+     non-zero so that the OrientedBoundingBox contains the points that
+     contribute to the plane detection.
 )doc",
-                 "normal_similarity"_a = 0.5, "coplanarity"_a = 0.25,
+                 "normal_similarity"_a = 60, "coplanarity"_a = 75,
                  "outlier_ratio"_a = 0.75, "min_plane_edge_length"_a = 0.0,
                  "min_num_points"_a = 0,
                  "search_param"_a = KDTreeSearchParamKNN())
@@ -386,10 +385,10 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             {
                     {"normal_similarity",
                      "Angle threshold based on robust statistics for planarity "
-                     "test."},
+                     "test. Larger values allow more noisy planes to be detected."},
                     {"coplanarity",
                      "Angle threshold based on robust statistics for planarity "
-                     "test."},
+                     "test. Smaller values allow more noisy planes to be detected."},
                     {"outlier_ratio",
                      "Maximum allowable ratio of outliers "
                      "associated to a plane."},

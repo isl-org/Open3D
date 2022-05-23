@@ -35,6 +35,7 @@
 #include "libqhullcpp/PointCoordinates.h"
 #include "libqhullcpp/Qhull.h"
 #include "libqhullcpp/QhullVertex.h"
+#include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
 #include "open3d/geometry/PointCloud.h"
@@ -45,31 +46,15 @@ namespace geometry {
 
 namespace {
 
-/// \class PlanarPatch
-///
-/// \brief Patch parameters
-class PlanarPatch {
-public:
-    using Parameters = Eigen::Matrix<double, 12, 1>;
-
-    PlanarPatch() = default;
-    ~PlanarPatch() = default;
-
+/// \brief Planar patch container
+struct PlanarPatch {
     double GetSignedDistanceToPoint(const Eigen::Vector3d& point) const {
         return normal_.dot(point) + dist_from_origin_;
-    }
-
-    Parameters GetParameters() const {
-        Parameters patch;
-        patch << (dist_from_origin_ * normal_), center_, basis_x_, basis_y_;
-        return patch;
     }
 
     Eigen::Vector3d center_ = Eigen::Vector3d::Zero();
     Eigen::Vector3d normal_ = Eigen::Vector3d::Zero();
     double dist_from_origin_ = 0;
-    Eigen::Vector3d basis_x_ = Eigen::Vector3d::Zero();
-    Eigen::Vector3d basis_y_ = Eigen::Vector3d::Zero();
 };
 
 /// \class BoundaryVolumeHierarchy
@@ -398,7 +383,7 @@ public:
     /// \brief Delimit the plane using its perimeter points.
     ///
     /// \return A patch which is the bounded version of the plane.
-    PlanarPatch::Parameters DelimitPlane() {
+    std::shared_ptr<OrientedBoundingBox> DelimitPlane() {
         Eigen::Matrix3Xd M;
         GetPlanePerimeterPoints(M);
 
@@ -434,12 +419,16 @@ public:
                 (rect.bottom_left(1) + rect.top_right(1)) / 2. * rect.B.col(1);
 
         // Scale basis to fit points
-        const double sx = (rect.top_right.x() - rect.bottom_left.x()) / 2.;
-        const double sy = (rect.top_right.y() - rect.bottom_left.y()) / 2.;
-        patch_->basis_x_ = sx * rect.B.col(0);
-        patch_->basis_y_ = sy * rect.B.col(1);
+        const double width = (rect.top_right.x() - rect.bottom_left.x());
+        const double height = (rect.top_right.y() - rect.bottom_left.y());
+        const double depth = (rect.top_right.z() - rect.bottom_left.z());
 
-        return patch_->GetParameters();
+        std::shared_ptr<OrientedBoundingBox> obox =
+                std::make_shared<OrientedBoundingBox>();
+        obox->center_ = patch_->center_;
+        obox->R_ = rect.B;
+        obox->extent_ = Eigen::Vector3d(width, height, depth);
+        return obox;
     }
 
     /// \brief Determine if a point is an inlier to the estimated plane model.
@@ -955,20 +944,33 @@ bool Update(std::vector<PlaneDetectorPtr>& planes) {
 }
 
 /// \brief Finds the bounds of each plane and forms planar patches.
-void ExtractPatchesFromPlanes(const std::vector<PlaneDetectorPtr>& planes,
-                              std::vector<PlanarPatch::Parameters>& patches) {
+void ExtractPatchesFromPlanes(
+        const std::vector<PlaneDetectorPtr>& planes,
+        std::vector<std::shared_ptr<OrientedBoundingBox>>& patches) {
+    // Colors (default MATLAB colors)
+    static constexpr int NUM_COLORS = 6;
+    static std::array<Eigen::Vector3d, NUM_COLORS> colors = {
+            Eigen::Vector3d(0.8500, 0.3250, 0.0980),
+            Eigen::Vector3d(0.9290, 0.6940, 0.1250),
+            Eigen::Vector3d(0.4940, 0.1840, 0.5560),
+            Eigen::Vector3d(0.4660, 0.6740, 0.1880),
+            Eigen::Vector3d(0.3010, 0.7450, 0.9330),
+            Eigen::Vector3d(0.6350, 0.0780, 0.1840)};
+
     for (size_t i = 0; i < planes.size(); i++) {
         if (!planes[i]->IsFalsePositive()) {
             // create a patch by delimiting the plane using its perimeter points
-            auto patch = planes[i]->DelimitPlane();
-            patches.push_back(patch);
+            auto obox = planes[i]->DelimitPlane();
+            obox->color_ = colors[i % NUM_COLORS];
+            patches.push_back(obox);
         }
     }
 }
 
 }  // unnamed namespace
 
-std::vector<PlanarPatch::Parameters> PointCloud::DetectPlanarPatches(
+std::vector<std::shared_ptr<OrientedBoundingBox>>
+PointCloud::DetectPlanarPatches(
         double normal_similarity,
         double coplanarity,
         double outlier_ratio,
@@ -1009,8 +1011,8 @@ std::vector<PlanarPatch::Parameters> PointCloud::DetectPlanarPatches(
             this, min_bound, max_bound);
     std::vector<PlaneDetectorPtr> planes;
     std::vector<PlaneDetectorPtr> plane_points(points_.size(), nullptr);
-    SplitAndDetectPlanesRecursive(root, min_num_points, normal_similarity,
-                                  coplanarity, outlier_ratio,
+    SplitAndDetectPlanesRecursive(root, min_num_points, std::cos(normal_similarity),
+                                  std::cos(coplanarity), outlier_ratio,
                                   min_plane_edge_length, planes, plane_points);
 
     // iteratively grow and merge planes until each is stable
@@ -1025,7 +1027,7 @@ std::vector<PlanarPatch::Parameters> PointCloud::DetectPlanarPatches(
     } while (changed);
 
     // extract planar patches by calculating the bounds of each detected plane
-    std::vector<PlanarPatch::Parameters> patches;
+    std::vector<std::shared_ptr<OrientedBoundingBox>> patches;
     ExtractPatchesFromPlanes(planes, patches);
 
     return patches;
