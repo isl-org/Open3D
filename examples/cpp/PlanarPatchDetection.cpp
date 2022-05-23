@@ -102,6 +102,11 @@ int main(int argc, char **argv) {
             cloud_ptr->colors_[idxs[j]] = obox->color_;
         }
         geometries.push_back(obox);
+
+        // turn bounding box into a plane
+        auto mesh = geometry::TriangleMesh::CreateFromOrientedBoundingBox(*obox, Eigen::Vector3d(1,1,0.0001));
+        mesh->PaintUniformColor(obox->color_);
+        geometries.push_back(mesh);
     }
 
     // visualize point cloud, too

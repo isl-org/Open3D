@@ -608,19 +608,13 @@ public:
     static std::shared_ptr<TriangleMesh> CreateIcosahedron(
             double radius = 1.0, bool create_uv_map = false);
 
-    /// Factory function to create a planar patch / 2D rectangular mesh.
-    /// \param center mesh centroid will be placed at center
-    /// \param basis_x direction of width, scale encoded as vector magnitude
-    /// \param basis_y direction of height, scale encoded as vector magnitude
-    /// \param normal direction of plane normal, vector magnitude ignored
-    /// \param depth thickness mesh along the normal
+    /// Factory function to create solid mesh from an OrientedBoundingBox.
+    /// \param obox OrientedBoundingBox object to create a mesh of
+    /// \param scale scale factor along each direction of OrientedBoundingBox
     /// \param create_uv_map add default UV map to the mesh.
-    static std::shared_ptr<TriangleMesh> CreatePlanarPatch(
-            const Eigen::Vector3d &center,
-            const Eigen::Vector3d &basis_x,
-            const Eigen::Vector3d &basis_y,
-            const Eigen::Vector3d &normal,
-            double depth = 0.001,
+    static std::shared_ptr<TriangleMesh> CreateFromOrientedBoundingBox(
+            const OrientedBoundingBox &obox,
+            const Eigen::Vector3d &scale = Eigen::Vector3d::Ones(),
             bool create_uv_map = false);
 
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
