@@ -102,10 +102,10 @@ Example:
 
 .. code-block:: sh
 
-    python examples/python/gui/draw_webrtc.py
+    python examples/python/visualization/draw_webrtc.py
     google-chrome http://localhost:8888  # Or, open the address in your browser
 
-Checkout `examples/python/gui/draw_webrtc.py <https://github.com/isl-org/Open3D/blob/master/examples/python/gui/draw_webrtc.py>`_
+Checkout `examples/python/visualization/draw_webrtc.py <https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/draw_webrtc.py>`_
 for the complete source code.
 
 IP/port binding
@@ -121,7 +121,7 @@ custom port number, set the ``WEBRTC_PORT`` environment variable. For instance:
 .. code-block:: sh
 
     # Bind to localhost:8888 (default)
-    python examples/python/gui/draw_webrtc.py
+    python examples/python/visualization/draw_webrtc.py
 
     # Bind to 127.0.0.1:8889
     WEBRTC_IP=127.0.0.1 WEBRTC_PORT=8889 python draw_webrtc.py
@@ -231,7 +231,7 @@ The workaround is tested on Ubuntu.
     ip addr
 
     # Do WebRTC things here
-    python examples/python/gui/draw_webrtc.py
+    python examples/python/visualization/draw_webrtc.py
     google-chrome http://localhost:8888  # Or, open the address in your browser
 
     # Clean up
