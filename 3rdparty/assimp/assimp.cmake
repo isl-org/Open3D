@@ -1,7 +1,7 @@
 include(ExternalProject)
 
 if(MSVC)
-    set(lib_name assimp-vc142-mt)
+    set(lib_name assimp-vc${MSVC_TOOLSET_VERSION}-mt)
 else()
     set(lib_name assimp)
 endif()
