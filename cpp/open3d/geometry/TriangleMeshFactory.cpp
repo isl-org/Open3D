@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/geometry/BoundingVolume.h"
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -159,9 +159,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateIcosahedron(
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromOrientedBoundingBox(
-            const OrientedBoundingBox &obox,
-            const Eigen::Vector3d &scale /*= Eigen::Vector3d::Ones()*/,
-            bool create_uv_map /*= false*/) {
+        const OrientedBoundingBox &obox,
+        const Eigen::Vector3d &scale /*= Eigen::Vector3d::Ones()*/,
+        bool create_uv_map /*= false*/) {
     Eigen::Vector3d origin = scale.asDiagonal() * obox.extent_;
     auto mesh = CreateBox(origin.x(), origin.y(), origin.z(), create_uv_map);
     mesh->Rotate(obox.R_, origin / 2.);
@@ -778,7 +778,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateArrow(
 
 std::shared_ptr<TriangleMesh> TriangleMesh::CreateCoordinateFrame(
         double size /* = 1.0*/,
-        const Eigen::Vector3d& origin /* = Eigen::Vector3d(0.0, 0.0, 0.0)*/) {
+        const Eigen::Vector3d &origin /* = Eigen::Vector3d(0.0, 0.0, 0.0)*/) {
     if (size <= 0) {
         utility::LogError("size <= 0");
     }

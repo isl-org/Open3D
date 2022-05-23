@@ -1011,7 +1011,8 @@ PointCloud::DetectPlanarPatches(
             this, min_bound, max_bound);
     std::vector<PlaneDetectorPtr> planes;
     std::vector<PlaneDetectorPtr> plane_points(points_.size(), nullptr);
-    SplitAndDetectPlanesRecursive(root, min_num_points, std::cos(normal_similarity),
+    SplitAndDetectPlanesRecursive(root, min_num_points,
+                                  std::cos(normal_similarity),
                                   std::cos(coplanarity), outlier_ratio,
                                   min_plane_edge_length, planes, plane_points);
 

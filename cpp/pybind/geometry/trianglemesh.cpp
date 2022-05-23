@@ -357,9 +357,12 @@ void pybind_trianglemesh(py::module &m) {
                         "Kazhdan. See https://github.com/mkazhdan/PoissonRecon",
                         "pcd"_a, "depth"_a = 8, "width"_a = 0, "scale"_a = 1.1,
                         "linear_fit"_a = false, "n_threads"_a = -1)
-            .def_static("create_from_oriented_bounding_box", &TriangleMesh::CreateFromOrientedBoundingBox,
-                        "Factory function to create a solid oriented bounding box.",
-                        "obox"_a, "scale"_a = Eigen::Vector3d::Ones(), "create_uv_map"_a = false)
+            .def_static(
+                    "create_from_oriented_bounding_box",
+                    &TriangleMesh::CreateFromOrientedBoundingBox,
+                    "Factory function to create a solid oriented bounding box.",
+                    "obox"_a, "scale"_a = Eigen::Vector3d::Ones(),
+                    "create_uv_map"_a = false)
             .def_static("create_box", &TriangleMesh::CreateBox,
                         "Factory function to create a box. The left bottom "
                         "corner on the "

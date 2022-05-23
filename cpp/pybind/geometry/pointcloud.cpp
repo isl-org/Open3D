@@ -385,10 +385,12 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             {
                     {"normal_similarity",
                      "Angle threshold based on robust statistics for planarity "
-                     "test. Larger values allow more noisy planes to be detected."},
+                     "test. Larger values allow more noisy planes to be "
+                     "detected."},
                     {"coplanarity",
                      "Angle threshold based on robust statistics for planarity "
-                     "test. Smaller values allow more noisy planes to be detected."},
+                     "test. Smaller values allow more noisy planes to be "
+                     "detected."},
                     {"outlier_ratio",
                      "Maximum allowable ratio of outliers "
                      "associated to a plane."},
