@@ -1304,26 +1304,33 @@ TEST(PointCloud, DetectPlanarPatches) {
     pcd.EstimateNormals(search_param);
 
     // set parameters
-    constexpr double normal_similarity = 0.5;
-    constexpr double coplanarity = 0.25;
-    constexpr double outlier_ratio = 0.75;
+    constexpr double normal_variance_threshold_deg = 60;
+    constexpr double coplanarity_deg = 89;
+    constexpr double outlier_ratio = 0.25;
     constexpr double min_plane_edge_length = 0.0;
     constexpr size_t min_num_points = 30;
 
-    std::vector<Eigen::Matrix<double, 12, 1>> patches;
-    patches = pcd.DetectPlanarPatches(normal_similarity, coplanarity,
-                                      outlier_ratio, min_plane_edge_length,
-                                      min_num_points, search_param);
+    std::vector<std::shared_ptr<geometry::OrientedBoundingBox>> patches;
+    patches = pcd.DetectPlanarPatches(
+            normal_variance_threshold_deg, coplanarity_deg, outlier_ratio,
+            min_plane_edge_length, min_num_points, search_param);
 
-    EXPECT_EQ(patches.size(), 17);
+    EXPECT_EQ(patches.size(), 6);
 
-    // extract a specific planar patch
-    const Eigen::Matrix<double, 12, 1>& patch = patches[15];
-    const Eigen::Vector3d n = patch.head<3>().normalized();
-    const double d = patch.head<3>().norm();
+    double largest_area = 0;
+    std::shared_ptr<geometry::OrientedBoundingBox> largest_patch;
+    for (const auto& obox : patches) {
+        const double area = obox->extent_.x() * obox->extent_.y();
+        if (area > largest_area) {
+            largest_patch = obox;
+            largest_area = area;
+        }
+    }
+
+    const Eigen::Vector3d n = largest_patch->R_.col(2);
+    const double d = -n.dot(largest_patch->center_);
     Eigen::Vector4d plane_model = Eigen::Vector4d(n.x(), n.y(), n.z(), d);
 
-    // TODO: seed the ransac
     ExpectEQ(plane_model, Eigen::Vector4d(0.06, 0.10, -0.99, 1.06), 0.1);
 }
 
