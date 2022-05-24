@@ -213,11 +213,11 @@ Application::Application() : impl_(new Application::Impl()) {
     Color highlight_color(0.5, 0.5, 0.5);
 
     // Note that any values here need to be scaled by the scale factor in Window
-    impl_->theme_.font_data = Roboto_Medium_ttf();
-    impl_->theme_.font_bold_data = Roboto_Bold_ttf();
-    impl_->theme_.font_italic_data = Roboto_MediumItalic_ttf();
-    impl_->theme_.font_bold_italic_data = Roboto_BoldItalic_ttf();
-    impl_->theme_.font_mono_data = RobotoMono_Medium_ttf();
+    impl_->theme_.font_data = get_buffer_Roboto_Medium_ttf();
+    impl_->theme_.font_bold_data = get_buffer_Roboto_Bold_ttf();
+    impl_->theme_.font_italic_data = get_buffer_Roboto_MediumItalic_ttf();
+    impl_->theme_.font_bold_italic_data = get_buffer_Roboto_BoldItalic_ttf();
+    impl_->theme_.font_mono_data = get_buffer_RobotoMono_Medium_ttf();
     impl_->theme_.font_size = 16;      // 1 em (font size is em in digital type)
     impl_->theme_.default_margin = 8;  // 0.5 * em
     impl_->theme_.default_layout_spacing = 6;  // 0.333 * em

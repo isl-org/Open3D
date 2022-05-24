@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 
     std::ofstream file_out;
     file_out.open(output_file_path.string(), std::ios::trunc);
-    for (auto byte : brightday_ibl_ktx()) {
+    for (auto byte : get_buffer_brightday_ibl_ktx()) {
         file_out << byte;
     }
     file_out.close();

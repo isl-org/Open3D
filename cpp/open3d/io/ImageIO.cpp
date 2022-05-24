@@ -65,13 +65,6 @@ std::shared_ptr<geometry::Image> CreateImageFromFile(
     return image;
 }
 
-std::shared_ptr<geometry::Image> CreateImageFromMemoryPNG(
-        const std::vector<char> &image_bytes) {
-    auto image = std::make_shared<geometry::Image>();
-    ReadImageFromMemoryPNG(image_bytes, *image);
-    return image;
-}
-
 bool ReadImage(const std::string &filename, geometry::Image &image) {
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);

@@ -169,10 +169,10 @@ ImguiFilamentBridge::ImguiFilamentBridge(
     impl_->renderer_ = renderer;
     // The UI needs a special material (just a pass-through blit)
     impl_->uiblit_material_ = LoadMaterialTemplate(
-            ui_blit_filamat(),
+            get_buffer_ui_blit_filamat(),
             visualization::rendering::EngineInstance::GetInstance());
     impl_->image_material_ = LoadMaterialTemplate(
-            img_blit_filamat(),
+            get_buffer_img_blit_filamat(),
             visualization::rendering::EngineInstance::GetInstance());
 
     auto& engine = visualization::rendering::EngineInstance::GetInstance();

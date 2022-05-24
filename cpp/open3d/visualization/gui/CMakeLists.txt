@@ -1,36 +1,31 @@
-# set(COMPILED_RESOURCE_DIR ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/CompiledResources)
 set(GUI_RESOURCE_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources)
 file(MAKE_DIRECTORY ${GUI_RESOURCE_DIR})
 file(GLOB GUI_RESOURCE_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Resources/*")
-# file(MAKE_DIRECTORY ${COMPILED_RESOURCE_DIR})
-# file(COPY ${GUI_RESOURCE_SOURCE_FILES}
-# DESTINATION ${GUI_RESOURCE_DIR})
-
 
 include(Open3DAddCompiledMaterials)
-open3d_add_compiled_materials(materials
-OUTPUT_DIRECTORY
-${GUI_RESOURCE_DIR}
-SOURCES
-Materials/colorMap.mat
-Materials/defaultLit.mat
-Materials/defaultLitSSR.mat
-Materials/defaultLitTransparency.mat
-Materials/defaultUnlit.mat
-Materials/defaultUnlitTransparency.mat
-Materials/depth_value.mat
-Materials/depth.mat
-Materials/img_blit.mat
-Materials/infiniteGroundPlane.mat
-Materials/normals.mat
-Materials/pointcloud.mat
-Materials/ui_blit.mat
-Materials/unlitBackground.mat
-Materials/unlitGradient.mat
-Materials/unlitLine.mat
-Materials/unlitPolygonOffset.mat
-Materials/unlitSolidColor.mat
-)
+    open3d_add_compiled_materials(materials
+    OUTPUT_DIRECTORY
+    ${GUI_RESOURCE_DIR}
+    SOURCES
+    Materials/colorMap.mat
+    Materials/defaultLit.mat
+    Materials/defaultLitSSR.mat
+    Materials/defaultLitTransparency.mat
+    Materials/defaultUnlit.mat
+    Materials/defaultUnlitTransparency.mat
+    Materials/depth_value.mat
+    Materials/depth.mat
+    Materials/img_blit.mat
+    Materials/infiniteGroundPlane.mat
+    Materials/normals.mat
+    Materials/pointcloud.mat
+    Materials/ui_blit.mat
+    Materials/unlitBackground.mat
+    Materials/unlitGradient.mat
+    Materials/unlitLine.mat
+    Materials/unlitPolygonOffset.mat
+    Materials/unlitSolidColor.mat
+    )
 
 # Source group for Visual Studio
 add_source_group(Materials)
@@ -39,25 +34,20 @@ get_target_property(GUI_MATERIAL_COMPILED_FILES materials COMPILED_MATERIALS)
 
 # Export GUI_RESOURCE_FILES to parent CMake context (cpp/open3d/)
 set(GUI_RESOURCE_FILES
-${GUI_RESOURCE_SOURCE_FILES} ${GUI_MATERIAL_COMPILED_FILES})
-set(GUI_RESOURCE_FILES
-${GUI_RESOURCE_FILES}
-PARENT_SCOPE)
+    ${GUI_RESOURCE_SOURCE_FILES} ${GUI_MATERIAL_COMPILED_FILES})
+set(GUI_RESOURCE_FILES ${GUI_RESOURCE_FILES} PARENT_SCOPE)
 set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
 
 include(Open3DEmbedResources)
-open3d_embed_resources(resource-embed 
+open3d_embed_resources(resource-embed
     OUTPUT_DIRECTORY
     ${GUI_RESOURCE_DIR}
     SOURCES
     ${GUI_RESOURCE_FILES}
 )
-
 get_target_property(EMBEDDED_RESOURCE_FILES resource-embed EMBEDDED_RESOURCES)
 
-
 open3d_ispc_add_library(GUI OBJECT)
-
 add_dependencies(GUI materials resource-embed)
 
 target_sources(GUI PRIVATE

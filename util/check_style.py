@@ -457,7 +457,8 @@ def main():
 
     cpp_ignored_files = [
         'cpp/open3d/visualization/shader/Shader.h',
-        'cpp/open3d/visualization/gui/CompiledResources'
+        'cpp/open3d/visualization/gui/Resource.h',
+        'cpp/open3d/visualization/gui/Resource.cpp'
     ]
     cpp_files = _glob_files(CPP_FORMAT_DIRS,
                             ["h", "cpp", "cuh", "cu", "isph", "ispc", "h.in"])

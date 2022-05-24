@@ -2,8 +2,8 @@
 #    OUTPUT_DIRECTORY <dir>
 #    SOURCES <mat1> [<mat2>...]
 # )
-
-# --- build resources ----
+# Embeds the given set of resources into c++ source files that can then
+# be compiled along with the rest of the library
 
 function(open3d_embed_resources target)
     cmake_parse_arguments(PARSE_ARGV 1 ARG "" "OUTPUT_DIRECTORY" "SOURCES")
@@ -24,16 +24,6 @@ function(open3d_embed_resources target)
     if (NOT ARG_SOURCES)
         message(FATAL_ERROR "No resource files specified for compilation.")
     endif()
-# file(GLOB GUI_MATERIAL_SOURCE_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Materials/*")
-
-# foreach (material_src IN LISTS GUI_MATERIAL_SOURCE_FILES)
-#     get_filename_component(MATERIAL_NAME "${material_src}" NAME)
-#     string(REPLACE ".mat" "_filamat.cpp" EMBEDDED_MATERIAL_NAME ${MATERIAL_NAME})
-#     set(EMBEDDED_MATERIAL_FULL_PATH "${OUTPUT_DIRECTORY}/${EMBEDDED_RESOURCE_NAME}.cpp")
-#     list(APPEND EMBEDDED_MATERIALS "${EMBEDDED_MATERIAL_FULL_PATH}")
-# endforeach()
-
-# copy GUI/Resources -> <output>/resources
 
 set(RESOURCE_HEADER ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.h)
 set(RESOURCE_CPP ${PROJECT_SOURCE_DIR}/cpp/open3d/visualization/gui/Resource.cpp)
@@ -50,15 +40,15 @@ foreach (resource IN LISTS ARG_SOURCES)
     set(EMBEDDED_RESOURCE_FULL_PATH "${ARG_OUTPUT_DIRECTORY}/${EMBEDDED_RESOURCE_NAME}.cpp")
 
     file(RELATIVE_PATH EMBEDDED_RESOURCE_RELATIVE_PATH "${CMAKE_CURRENT_BINARY_DIR}" "${EMBEDDED_RESOURCE_FULL_PATH}")
-    
+
     add_custom_command(
-        OUTPUT 
+        OUTPUT
             ${EMBEDDED_RESOURCE_FULL_PATH}
-        COMMAND 
-            EmbedResources -embed_gui_resource ${resource} ${ARG_OUTPUT_DIRECTORY} 
-        COMMENT 
+        COMMAND
+            EmbedResources -embed_gui_resource ${resource} ${ARG_OUTPUT_DIRECTORY}
+        COMMENT
             "Building Embedded resource object ${EMBEDDED_RESOURCE_RELATIVE_PATH}"
-        DEPENDS 
+        DEPENDS
             EmbedResources materials
         VERBATIM
     )
@@ -84,15 +74,12 @@ add_custom_command(
 add_custom_target(${target} ALL
     COMMAND
         echo "Embedding resources into the binary"
-    DEPENDS 
+    DEPENDS
         ${RESOURCE_HEADER}
         ${RESOURCE_CPP}
         ${EMBEDDED_RESOURCES}
 )
 
-
-
-# set(EMBEDDED_RESOURCES ${EMBEDDED_RESOURCES} PARENT_SCOPE)
 set_target_properties(${target} PROPERTIES EMBEDDED_RESOURCES "${EMBEDDED_RESOURCES}")
 
 endfunction()
