@@ -374,7 +374,7 @@ def _find_clang_format():
 
     def parse_version(bin_path):
         """
-        Get clang-format versio string. Returns None if parsing fails.
+        Get clang-format version string. Returns None if parsing fails.
         """
         version_str = subprocess.check_output([bin_path, "--version"
                                               ]).decode("utf-8").strip()

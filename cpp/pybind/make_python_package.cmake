@@ -33,7 +33,7 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
 endforeach()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament)
-# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filname
+# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
     get_filename_component(SO_VER_NAME ${PYTHON_EXTRA_LIB_REAL} NAME)

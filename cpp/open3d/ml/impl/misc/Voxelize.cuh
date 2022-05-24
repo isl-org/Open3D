@@ -568,7 +568,7 @@ void CopyPointIndices(const cudaStream_t& stream,
 ///
 /// \param row_splits    row_splits for defining batches.
 ///
-/// \param voxel_size    The edge lenghts of the voxel. The shape is
+/// \param voxel_size    The edge lengths of the voxel. The shape is
 ///        [NDIM]. This pointer points to host memory!
 ///
 /// \param points_range_min    The lower bound of the domain to be
@@ -595,7 +595,7 @@ void CopyPointIndices(const cudaStream_t& stream,
 ///         size), AllocVoxelPointRowSplits(int64_t** ptr, int64_t
 ///         size) and AllocVoxelBatchSplits(int64_t** ptr, int64_t size).
 ///         All functions should allocate memory and return a pointer
-///         to that memory in ptr. The argments size, rows, and cols
+///         to that memory in ptr. The arguments size, rows, and cols
 ///         define the size of the array as the number of elements.
 ///         All functions must accept zero size arguments. In this case
 ///         ptr does not need to be set.

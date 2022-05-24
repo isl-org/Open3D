@@ -45,7 +45,7 @@ void pybind_core_tensor_function(py::module& m) {
             R"(Concatenates the list of tensors in their order, along the given
 axis into a new tensor. All the tensors must have same data-type, device, and
 number of dimensions. All dimensions must be the same, except the dimension
-along the axis the tensors are to be concatinated.
+along the axis the tensors are to be concatenated.
 Using Concatenate for a single tensor, the tensor is split along its first 
 dimension (length), and concatenated along the axis.
 

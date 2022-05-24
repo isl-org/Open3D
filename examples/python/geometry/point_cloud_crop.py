@@ -39,5 +39,5 @@ if __name__ == "__main__":
 
     print("Displaying original pointcloud ...")
     o3d.visualization.draw([pcd])
-    print("Diplaying cropped pointcloud")
+    print("Displaying cropped pointcloud")
     o3d.visualization.draw([chair])

@@ -134,7 +134,7 @@ public:
         AddChild(widget3d_);
 
         // ----------------- VISUALIZER -----------------
-        // Intialize visualizer.
+        // Initialize visualizer.
         {
             // lock to protect `source_` and `target_`
             // before modifying the value, ensuring the
@@ -238,7 +238,7 @@ private:
     // For Visualization.
     // The members of this structure can be protected by the mutex lock,
     // to avoid the case, when we are trying to modify the values,
-    // while visualizer is tring to access it.
+    // while visualizer is trying to access it.
     struct {
         std::mutex lock_;
         t::geometry::PointCloud source_;

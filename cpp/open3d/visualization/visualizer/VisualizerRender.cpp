@@ -370,7 +370,7 @@ void Visualizer::CaptureDepthImage(const std::string &filename /* = ""*/,
 #if __APPLE__
     // On OSX with Retina display and glfw3, there is a bug with glReadPixels().
     // When using glReadPixels() to read a block of depth data. The data is
-    // horizontally streched (vertically it is fine). This issue is related
+    // horizontally stretched (vertically it is fine). This issue is related
     // to GLFW_SAMPLES hint. When it is set to 0 (anti-aliasing disabled),
     // glReadPixels() works fine. See this post for details:
     // http://stackoverflow.com/questions/30608121/glreadpixel-one-pass-vs-looping-through-points

@@ -99,7 +99,7 @@ private:
     PrintLevel level_ = PrintLevel::Unbalanced;
 
     /// Print at the end of the program, enabled by default. If leaks are
-    /// detected, the exit code will be overriden with EXIT_FAILURE.
+    /// detected, the exit code will be overridden with EXIT_FAILURE.
     bool print_at_program_end_ = true;
 
     /// Print at each malloc and free, disabled by default.

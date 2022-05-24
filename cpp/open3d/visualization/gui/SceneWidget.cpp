@@ -823,7 +823,7 @@ SceneWidget::~SceneWidget() {
 
 void SceneWidget::SetFrame(const Rect& f) {
     // Early exit if frame hasn't changed because changing frame size causes GPU
-    // memory re-allocations that are best avoided if unecessary
+    // memory re-allocations that are best avoided if unnecessary
     auto old_frame = GetFrame();
     if (f.width == old_frame.width && f.height == old_frame.height) return;
 

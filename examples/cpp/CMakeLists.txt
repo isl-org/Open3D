@@ -9,7 +9,7 @@ macro(open3d_add_example EXAMPLE_CPP_NAME)
     # Don't use open3d_link_3rdparty_libraries(${EXAMPLE_CPP_NAME}).
     # Unlike benchmarks, examples are intended as standalone apps that link
     # the main Open3D library, while the benchmarks executable needs 3rd-party
-    # libraries since it measures the internal componets of Open3D.
+    # libraries since it measures the internal components of Open3D.
     open3d_show_and_abort_on_warning(${EXAMPLE_CPP_NAME})
     open3d_set_global_properties(${EXAMPLE_CPP_NAME})
 
@@ -69,6 +69,7 @@ open3d_add_example(ViewDistances)
 open3d_add_example(ViewPCDMatch)
 open3d_add_example(Visualizer)
 open3d_add_example(Voxelization)
+open3d_add_example(SYCLDemo)
 
 if (BUILD_GUI)
     open3d_add_example(Draw)

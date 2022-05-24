@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 //
-// This file is retrived from:
+// This file is retrieved from:
 // https://github.com/dmlc/dlpack/blob/master/include/dlpack/dlpack.h
 // Commit: 3ec0443, Feb 16 2020
 //

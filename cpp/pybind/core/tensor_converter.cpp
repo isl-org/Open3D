@@ -76,7 +76,7 @@ py::array TensorToPyArray(const Tensor& tensor) {
     // tensors referencing the base have gone out-of-scope), the
     // deleter is called to free the `base_tensor`.
     //
-    // This behavior is important when the origianl `tensor` goes
+    // This behavior is important when the original `tensor` goes
     // out-of-scope while we still want to keep the data alive.
     // e.g.
     //

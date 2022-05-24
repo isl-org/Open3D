@@ -65,7 +65,7 @@ def test_buffer_protocol_cpu(device):
         src_t = np.array([[0, 1, 2], [3, 4, 5]], dtype=np.float32)
         im = o3d.t.geometry.Image(o3d.core.Tensor.from_numpy(src_t))
         im = im.to(device=device)
-        # Ideally we shall test excpetion if .cpu() is not called, but
+        # Ideally we shall test exception if .cpu() is not called, but
         # pytest.raises() cannot catch this exception for some reason.
         dst_t = np.asarray(im.cpu())
         np.testing.assert_array_equal(src_t[..., None], dst_t)

@@ -149,7 +149,7 @@ public:
 ///
 /// \brief A bounding box that is aligned along the coordinate axes.
 ///
-///  The AxisAlignedBoundingBox uses the cooridnate axes for bounding box
+///  The AxisAlignedBoundingBox uses the coordinate axes for bounding box
 ///  generation. This means that the bounding box is oriented along the
 ///  coordinate axes.
 class AxisAlignedBoundingBox : public Geometry3D {
@@ -188,7 +188,7 @@ public:
     virtual AxisAlignedBoundingBox& Translate(
             const Eigen::Vector3d& translation, bool relative = true) override;
 
-    /// \brief Scales the axis-aligned bounding boxs.
+    /// \brief Scales the axis-aligned bounding boxes.
     /// If \f$mi\f$ is the min_bound and \f$ma\f$ is the max_bound of
     /// the axis aligned bounding box, and \f$s\f$ and \f$c\f$ are the
     /// provided scaling factor and center respectively, then the new

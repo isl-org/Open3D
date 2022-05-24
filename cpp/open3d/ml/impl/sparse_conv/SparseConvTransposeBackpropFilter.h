@@ -162,7 +162,7 @@ void _SparseConvTransposeBackpropFilterCPU(
 /// Computes the backprop for the filter of a transpose sparse convolution.
 ///
 /// \param filter_backrop    Output array for the computed filter gradient
-///        with shape [depth,height,witdth, inp channels, out channels]
+///        with shape [depth,height,width, inp channels, out channels]
 ///
 /// \param filter_dims    The sizes of the filter dimensions. The size of
 ///        filter_dims must be >=3. The order is

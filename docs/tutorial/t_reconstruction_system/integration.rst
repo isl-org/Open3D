@@ -62,7 +62,7 @@ The voxel block grids can be saved to and loaded from `.npz` files that are acce
    :lineno-start: 47
    :lines: 27,48,98
 
-The `.npz` file of the aforementioned voxel block grid contains the following entries:
+The ``.npz`` file of the aforementioned voxel block grid contains the following entries:
 
 - ``attr_name_tsdf``: stores the value buffer index: 0
 - ``attr_name_weight``: stores the value buffer index: 1

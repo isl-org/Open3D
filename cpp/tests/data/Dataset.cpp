@@ -997,12 +997,6 @@ TEST(Dataset, DISABLED_RedwoodOfficePointClouds) {
         EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPaths(i)));
     }
 
-    EXPECT_EQ(dataset.GetPaths(), paths);
-    for (size_t i = 0; i < paths.size(); ++i) {
-        EXPECT_EQ(dataset.GetPaths(i), paths[i]);
-        EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPaths(i)));
-    }
-
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);

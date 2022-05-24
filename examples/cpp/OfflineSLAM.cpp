@@ -32,7 +32,7 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > DenseSLAM [options]");
+    utility::LogInfo("    > OfflineSLAM [options]");
     utility::LogInfo("      Given an RGBD image sequence, perform frame-to-model tracking and mapping, and reconstruct the surface.");
     utility::LogInfo("");
     utility::LogInfo("Basic options:");
@@ -47,6 +47,7 @@ void PrintHelp() {
     utility::LogInfo("    --device [CPU:0]");
     utility::LogInfo("    --pointcloud [file path to save the extracted pointcloud]");
     utility::LogInfo("    --mesh [file path to save the extracted mesh]");
+    utility::LogInfo("To run similar example with a default dataset, try the `OnlineSLAMRGBD` example");
     // clang-format on
     utility::LogInfo("");
 }

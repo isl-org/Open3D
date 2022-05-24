@@ -353,7 +353,7 @@ Windows
 We provide Windows MSVC static libraries built in Release and Debug mode built with
 the static Windows runtime. This corresponds to building with the ``/MT`` and
 ``/MTd`` options respectively. For the build procedure, please see
-``.github/workflows/webrtc.yml``. Other configrations are not supported.
+``.github/workflows/webrtc.yml``. Other configurations are not supported.
 
 Unit test
 ---------

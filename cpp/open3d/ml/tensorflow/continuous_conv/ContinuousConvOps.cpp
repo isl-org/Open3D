@@ -230,7 +230,7 @@ coordinate_mapping: Defines how the relative positions of the neighbors are
     "ball_to_cube_volume_preserving": maps a unit ball to a unit cube preserving the volume.
     "identity": the identity mapping.
   Use "ball_to_cube_radial" for a spherical or ellipsoidal filter window
-  and "identiy" for a rectangular filter window.
+  and "identity" for a rectangular filter window.
 
 
 normalize: If True the output feature values will be normalized using the sum
