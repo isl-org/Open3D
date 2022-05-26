@@ -196,7 +196,8 @@ int main(int argc, char *argv[]) {
             std::size_t found = resrc_filename.find(cpp_suffix);
             if (found == resrc_filename.length() - cpp_suffix.length()) {
                 std::string var_name = resrc_file.path().stem().string();
-                resrc_cpp_out << "std::vector<char> get_buffer_" << var_name << "() {\n"
+                resrc_cpp_out << "std::vector<char> get_buffer_" << var_name
+                              << "() {\n"
                               << "    static const std::vector<char> "
                               << var_name << "_data(\n        " << var_name
                               << "_array,\n        " << var_name << "_array + "
@@ -207,7 +208,8 @@ int main(int argc, char *argv[]) {
 
                 resrc_h_out << "extern const char " << var_name << "_array[];\n"
                             << "extern size_t " << var_name << "_count;\n"
-                            << "std::vector<char> get_buffer_" << var_name << "();\n"
+                            << "std::vector<char> get_buffer_" << var_name
+                            << "();\n"
                             << std::endl;
             }
         }

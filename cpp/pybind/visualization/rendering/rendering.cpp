@@ -48,7 +48,10 @@ namespace rendering {
 
 class PyOffscreenRenderer {
 public:
-    PyOffscreenRenderer(int width, int height, bool headless) {
+    PyOffscreenRenderer(int width,
+                        int height,
+                        const std::string &resource_path,
+                        bool headless) {
         gui::InitializeForPython();
         width_ = width;
         height_ = height;
