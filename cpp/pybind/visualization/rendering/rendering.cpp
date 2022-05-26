@@ -162,13 +162,17 @@ void pybind_rendering_classes(py::module &m) {
                       "Renderer instance that can be used for rendering to an "
                       "image");
     offscreen
-            .def(py::init([](int w, int h, bool headless) {
-                     return std::make_shared<PyOffscreenRenderer>(w, h,
-                                                                  headless);
+            .def(py::init([](int w, int h, const std::string &resource_path,
+                             bool headless) {
+                     return std::make_shared<PyOffscreenRenderer>(
+                             w, h, resource_path, headless);
                  }),
-                 "width"_a, "height"_a, "headless"_a = false,
-                 "Takes width, height and optionally a "
-                 "headless flag. By default a running windowing "
+                 "width"_a, "height"_a, "resource_path"_a = "",
+                 "headless"_a = false,
+                 "Takes width, height and optionally a resource_path and "
+                 "headless flag. If "
+                 "unspecified, resource_path will use the resource path from "
+                 "the installed Open3D library. By default a running windowing "
                  "session is required. To enable headless rendering set "
                  "headless to True")
             .def_property_readonly(

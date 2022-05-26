@@ -159,6 +159,7 @@ add_custom_target(python-package
             -DBUNDLE_OPEN3D_ML=${BUNDLE_OPEN3D_ML}
             -DOPEN3D_ML_ROOT=${OPEN3D_ML_ROOT}
             -DBUILD_GUI=${BUILD_GUI}
+            -DBUILD_WEBRTC=${BUILD_WEBRTC}
             -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
             -DPROJECT_HOMEPAGE_URL=${PROJECT_HOMEPAGE_URL}

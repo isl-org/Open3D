@@ -151,8 +151,20 @@ void install_cleanup_atexit() {
     }
 }
 
-void InitializeForPython() {
-    Application::GetInstance().Initialize();
+void InitializeForPython(std::string resource_path /*= ""*/) {
+    if (resource_path.empty()) {
+        // We need to find the resources directory. Fortunately,
+        // Python knows where the module lives (open3d.__file__
+        // is the path to
+        // __init__.py), so we can use that to find the
+        // resources included in the wheel.
+        py::object o3d = py::module::import("open3d");
+        auto o3d_init_path = o3d.attr("__file__").cast<std::string>();
+        auto module_path =
+                utility::filesystem::GetFileParentDirectory(o3d_init_path);
+        resource_path = module_path + "/resources";
+    }
+    Application::GetInstance().Initialize(resource_path.c_str());
     install_cleanup_atexit();
 }
 
@@ -252,6 +264,15 @@ void pybind_gui_classes(py::module &m) {
                     "Initializes the application, using the resources included "
                     "in the wheel. One of the `initialize` functions _must_ be "
                     "called prior to using anything in the gui module")
+            .def(
+                    "initialize",
+                    [](Application &instance, const char *resource_dir) {
+                        InitializeForPython(resource_dir);
+                    },
+                    "Initializes the application with location of the "
+                    "resources provided by the caller. One of the `initialize` "
+                    "functions _must_ be called prior to using anything in the "
+                    "gui module")
             .def("add_font", &Application::AddFont,
                  "Adds a font. Must be called after initialize() and before "
                  "a window is created. Returns the font id, which can be used "

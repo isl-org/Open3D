@@ -130,13 +130,12 @@ endif()
 
 if (BUILD_WEBRTC)
     file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
-    file(COPY ${GUI_RESOURCE_DIR}/html
-         DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/")
+    file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/html/")
+    file(COPY "${GUI_RESOURCE_DIR}/html/"
+         DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/resources/html")
 endif()
 
 # Add all examples to installation directory.
 file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/examples/")
-file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
-     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
