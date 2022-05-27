@@ -26,6 +26,8 @@
 
 #include <cuda.h>
 
+#include <cub/cub.cuh>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/ParallelFor.h"
@@ -36,6 +38,7 @@
 #include "open3d/t/pipelines/kernel/RGBDOdometryJacobianImpl.h"
 #include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/utility/MiniVec.h"
 
 namespace open3d {
 namespace t {
@@ -54,72 +57,47 @@ __global__ void ComputeOdometryResultPointToPlaneCUDAKernel(
         const float depth_outlier_trunc,
         const float depth_huber_delta) {
     const int kBlockSize = 256;
-    __shared__ float local_sum0[kBlockSize];
-    __shared__ float local_sum1[kBlockSize];
-    __shared__ float local_sum2[kBlockSize];
 
-    const int x = threadIdx.x + blockIdx.x * blockDim.x;
-    const int y = threadIdx.y + blockIdx.y * blockDim.y;
-    const int tid = threadIdx.x + threadIdx.y * blockDim.x;
+    typedef utility::MiniVec<float, 29> ReduceVec;
+    typedef cub::BlockReduce<ReduceVec, kBlockSize> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
 
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
+    const int workload = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = workload / cols;
+    int x = workload % cols;
+    const int tid = threadIdx.x;
 
-    if (y >= rows || x >= cols) return;
+    ReduceVec local_sum;
+    if (workload < rows * cols) {
+        float J[6] = {0};
+        float r = 0;
+        bool valid = GetJacobianPointToPlane(
+                x, y, depth_outlier_trunc, source_vertex_indexer,
+                target_vertex_indexer, target_normal_indexer, ti, J, r);
 
-    float J[6] = {0}, reduction[21 + 6 + 2];
-    float r = 0;
-    bool valid = GetJacobianPointToPlane(
-            x, y, depth_outlier_trunc, source_vertex_indexer,
-            target_vertex_indexer, target_normal_indexer, ti, J, r);
+        float d_huber = HuberDeriv(r, depth_huber_delta);
+        float r_huber = HuberLoss(r, depth_huber_delta);
 
-    float d_huber = HuberDeriv(r, depth_huber_delta);
-    float r_huber = HuberLoss(r, depth_huber_delta);
-
-    // Dump J, r into JtJ and Jtr
-    int offset = 0;
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j <= i; ++j) {
-            reduction[offset++] = J[i] * J[j];
+        // Dump J, r into JtJ and Jtr
+        int offset = 0;
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j <= i; ++j) {
+                local_sum[offset++] = valid ? J[i] * J[j] : 0;
+            }
         }
-    }
-    for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * d_huber;
-    }
-    reduction[offset++] = r_huber;
-    reduction[offset++] = valid;
-
-    // Sum reduction: JtJ(21) and Jtr(6)
-    for (size_t i = 0; i < 27; i += 3) {
-        local_sum0[tid] = valid ? reduction[i + 0] : 0;
-        local_sum1[tid] = valid ? reduction[i + 1] : 0;
-        local_sum2[tid] = valid ? reduction[i + 2] : 0;
-        __syncthreads();
-
-        BlockReduceSum<float, kBlockSize>(tid, local_sum0, local_sum1,
-                                          local_sum2);
-
-        if (tid == 0) {
-            atomicAdd(&global_sum[i + 0], local_sum0[0]);
-            atomicAdd(&global_sum[i + 1], local_sum1[0]);
-            atomicAdd(&global_sum[i + 2], local_sum2[0]);
+        for (int i = 0; i < 6; ++i) {
+            local_sum[offset++] = valid ? J[i] * d_huber : 0;
         }
-        __syncthreads();
+        local_sum[offset++] = valid ? r_huber : 0;
+        local_sum[offset++] = valid;
     }
 
-    // Sum reduction: residual(1) and inlier(1)
-    {
-        local_sum0[tid] = valid ? reduction[27] : 0;
-        local_sum1[tid] = valid ? reduction[28] : 0;
-        __syncthreads();
-
-        BlockReduceSum<float, kBlockSize>(tid, local_sum0, local_sum1);
-        if (tid == 0) {
-            atomicAdd(&global_sum[27], local_sum0[0]);
-            atomicAdd(&global_sum[28], local_sum1[0]);
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+    if (tid == 0) {
+#pragma unroll
+        for (int i = 0; i < 29; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
         }
-        __syncthreads();
     }
 }
 
@@ -149,10 +127,9 @@ void ComputeOdometryResultPointToPlaneCUDA(
     core::Tensor global_sum = core::Tensor::Zeros({29}, core::Float32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    const int kThreadSize = 16;
-    const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
-                      (rows + kThreadSize - 1) / kThreadSize);
-    const dim3 threads(kThreadSize, kThreadSize);
+    const int kThreadSize = 256;
+    const dim3 blocks((rows * cols + kThreadSize - 1) / kThreadSize);
+    const dim3 threads(kThreadSize);
     ComputeOdometryResultPointToPlaneCUDAKernel<<<blocks, threads, 0,
                                                   core::cuda::GetStream()>>>(
             source_vertex_indexer, target_vertex_indexer, target_normal_indexer,
