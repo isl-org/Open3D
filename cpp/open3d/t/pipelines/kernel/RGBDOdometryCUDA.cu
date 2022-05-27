@@ -60,6 +60,7 @@ __global__ void ComputeOdometryResultPointToPlaneCUDAKernel(
         int cols,
         const float depth_outlier_trunc,
         const float depth_huber_delta) {
+
     __shared__ typename BlockReduce::TempStorage temp_storage;
 
     const int workload = threadIdx.x + blockIdx.x * blockDim.x;
@@ -129,6 +130,7 @@ void ComputeOdometryResultPointToPlaneCUDA(
     core::Tensor global_sum =
             core::Tensor::Zeros({kReduceDim}, core::Float32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
+
 
     const dim3 blocks((rows * cols + kBlockSize - 1) / kBlockSize);
     const dim3 threads(kBlockSize);
