@@ -967,7 +967,7 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
         if (has_vertex_normals) {
             normal = vertex_normals_[vidx];
         }
-        Eigen::Vector3d color = {0, 0, 0};
+        Eigen::Vector3d color{0, 0, 0};
         if (has_vertex_colors) {
             color = vertex_colors_[vidx];
         }
