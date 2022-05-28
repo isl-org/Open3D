@@ -204,12 +204,12 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
         if (new_verts.count(edge) == 0) {
             Eigen::Vector3d new_vert =
                     old_mesh->vertices_[vidx0] + old_mesh->vertices_[vidx1];
-            Eigen::Vector3d new_normal;
+            Eigen::Vector3d new_normal{0, 0, 0};
             if (has_vert_normal) {
                 new_normal = old_mesh->vertex_normals_[vidx0] +
                              old_mesh->vertex_normals_[vidx1];
             }
-            Eigen::Vector3d new_color;
+            Eigen::Vector3d new_color{0, 0, 0};
             if (has_vert_color) {
                 new_color = old_mesh->vertex_colors_[vidx0] +
                             old_mesh->vertex_colors_[vidx1];

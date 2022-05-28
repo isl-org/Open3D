@@ -168,7 +168,7 @@ public:
             // Getting bounding box and center to
             // setup camera view.
             auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
-            auto center = bbox.GetCenter().cast<float>();
+            Eigen::Vector3f center = bbox.GetCenter().cast<float>();
             this->widget3d_->SetupCamera(18, bbox, center);
             this->widget3d_->LookAt(center, center - Eigen::Vector3f{-10, 5, 8},
                                     {0.0f, -1.0f, 0.0f});

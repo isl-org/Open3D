@@ -190,7 +190,8 @@ private:
                 // Getting bounding box and center to setup camera view.
                 pcd_and_bbox_.bbox_ =
                         this->widget3d_->GetScene()->GetBoundingBox();
-                auto center = pcd_and_bbox_.bbox_.GetCenter().cast<float>();
+                Eigen::Vector3f center =
+                        pcd_and_bbox_.bbox_.GetCenter().cast<float>();
                 this->widget3d_->SetupCamera(verticalFoV, pcd_and_bbox_.bbox_,
                                              center);
             });
@@ -334,8 +335,9 @@ private:
                                     &pcd_and_bbox_.current_scan_, mat_);
 
                             // Setup camera.
-                            auto center = pcd_and_bbox_.bbox_.GetCenter()
-                                                  .cast<float>();
+                            Eigen::Vector3f center =
+                                    pcd_and_bbox_.bbox_.GetCenter()
+                                            .cast<float>();
                             this->widget3d_->SetupCamera(
                                     verticalFoV, pcd_and_bbox_.bbox_, center);
                         });
