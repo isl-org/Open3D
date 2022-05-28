@@ -62,28 +62,29 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-      - name: Maximize build space
+      - name: Package code
         run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
-      # https://www.stereolabs.com/docs/docker/building-arm-container-on-x86/
-      - name: Install QEMU dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get --yes install qemu binfmt-support qemu-user-static
-      - name: Docker build
-        run: |
-          docker/docker_build.sh openblas-arm64-py36-dev
-      - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
-      - name: Upload ccache to GCS
-        run: |
-          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-arm64.tar.gz gs://open3d-ci-cache/ || true
-      - name: Docker test
-        run: |
-          docker/docker_test.sh openblas-arm64-py36-dev
+          # GITHUB_WORKSPACE: /home/runner/work/Open3D/Open3D
+          cd "${GITHUB_WORKSPACE}/.."
+          tar -czvf Open3D.tar.gz Open3D
+          ls -alh
+      # - name: Install QEMU dependencies
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get --yes install qemu binfmt-support qemu-user-static
+      # - name: Docker build
+      #   run: |
+      #     docker/docker_build.sh openblas-arm64-py36-dev
+      # - name: GCloud CLI setup
+      #   uses: google-github-actions/setup-gcloud@v0.2.1
+      #   with:
+      #     version: ${{ env.GCE_CLI_GHA_VERSION }}
+      #     service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
+      #     project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+      #     export_default_credentials: true
+      # - name: Upload ccache to GCS
+      #   run: |
+      #     gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-arm64.tar.gz gs://open3d-ci-cache/ || true
+      # - name: Docker test
+      #   run: |
+      #     docker/docker_test.sh openblas-arm64-py36-dev
