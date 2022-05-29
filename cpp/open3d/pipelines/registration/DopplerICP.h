@@ -51,8 +51,9 @@ class TransformationEstimationForDopplerICP : public TransformationEstimation {
 public:
     ~TransformationEstimationForDopplerICP() override{};
 
-    /// \brief Constructor that takes as input a RobustKernel \param kernel Any
-    /// of the implemented statistical robust kernel for outlier rejection.
+    /// \brief Constructor that takes as input a RobustKernel
+    /// \param kernel Any of the implemented statistical robust kernel for
+    /// outlier rejection.
     explicit TransformationEstimationForDopplerICP(
             double lambda_doppler = 0.01,
             bool prune_correspondences = false,
@@ -122,6 +123,10 @@ private:
 };
 
 /// \brief Function for Doppler ICP registration.
+///
+/// This is the implementation of the following paper:
+/// B. Hexsel, H. Vhavle, Y. Chen,
+/// DICP: Doppler Iterative Closest Point Algorithm, RSS 2022.
 ///
 /// \param source The source point cloud.
 /// \param target The target point cloud.

@@ -75,7 +75,7 @@ Eigen::Matrix4d TransformationEstimationForDopplerICP::ComputeTransformation(
                 "DopplerICP requires source pointcloud to have Dopplers.");
     }
     if (std::abs(period) < 1e-3) {
-        utility::LogError("Time period too small");
+        utility::LogError("Time period too small.");
     }
 
     const double lambda_geometric = 1.0 - lambda_doppler_;

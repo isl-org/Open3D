@@ -64,7 +64,7 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param points Points coordinates.
-    /// \param dopplers Doppler velocitues.
+    /// \param dopplers Doppler velocities.
     PointCloud(const std::vector<Eigen::Vector3d> &points,
                const std::vector<double> &dopplers)
         : Geometry3D(Geometry::GeometryType::PointCloud),

@@ -44,8 +44,8 @@ static std::map<std::string, FileGeometry (*)(const std::string&)> gExt2Func = {
         {"pts", ReadFileGeometryTypePTS},
         {"stl", ReadFileGeometryTypeSTL},
         {"xyz", ReadFileGeometryTypeXYZ},
+        {"xyzd", ReadFileGeometryTypeXYZD},
         {"xyzn", ReadFileGeometryTypeXYZN},
-        {"xyznd", ReadFileGeometryTypeXYZND},
         {"xyzrgb", ReadFileGeometryTypeXYZRGB},
 };
 

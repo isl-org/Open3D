@@ -35,17 +35,17 @@
 namespace open3d {
 namespace io {
 
-FileGeometry ReadFileGeometryTypeXYZND(const std::string &path) {
+FileGeometry ReadFileGeometryTypeXYZD(const std::string &path) {
     return CONTAINS_POINTS;
 }
 
-bool ReadPointCloudFromXYZND(const std::string &filename,
-                             geometry::PointCloud &pointcloud,
-                             const ReadPointCloudOption &params) {
+bool ReadPointCloudFromXYZD(const std::string &filename,
+                            geometry::PointCloud &pointcloud,
+                            const ReadPointCloudOption &params) {
     try {
         utility::filesystem::CFile file;
         if (!file.Open(filename, "r")) {
-            utility::LogWarning("Read XYZND failed: unable to open file: {}",
+            utility::LogWarning("Read XYZD failed: unable to open file: {}",
                                 filename);
             return false;
         }
@@ -54,13 +54,12 @@ bool ReadPointCloudFromXYZND(const std::string &filename,
 
         pointcloud.Clear();
         int i = 0;
-        double x, y, z, nx, ny, nz, doppler;
+        double x, y, z, doppler;
         const char *line_buffer;
         while ((line_buffer = file.ReadLine())) {
-            if (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf %lf", &x, &y, &z,
-                       &nx, &ny, &nz, &doppler) == 7) {
+            if (sscanf(line_buffer, "%lf %lf %lf %lf", &x, &y, &z, &doppler) ==
+                4) {
                 pointcloud.points_.push_back(Eigen::Vector3d(x, y, z));
-                pointcloud.normals_.push_back(Eigen::Vector3d(nx, ny, nz));
                 pointcloud.dopplers_.push_back(doppler);
             }
             if (++i % 1000 == 0) {
@@ -71,22 +70,22 @@ bool ReadPointCloudFromXYZND(const std::string &filename,
 
         return true;
     } catch (const std::exception &e) {
-        utility::LogWarning("Read XYZND failed with exception: {}", e.what());
+        utility::LogWarning("Read XYZD failed with exception: {}", e.what());
         return false;
     }
 }
 
-bool WritePointCloudToXYZND(const std::string &filename,
-                            const geometry::PointCloud &pointcloud,
-                            const WritePointCloudOption &params) {
-    if (!pointcloud.HasNormals() || !pointcloud.HasDopplers()) {
+bool WritePointCloudToXYZD(const std::string &filename,
+                           const geometry::PointCloud &pointcloud,
+                           const WritePointCloudOption &params) {
+    if (!pointcloud.HasDopplers()) {
         return false;
     }
 
     try {
         utility::filesystem::CFile file;
         if (!file.Open(filename, "w")) {
-            utility::LogWarning("Write XYZND failed: unable to open file: {}",
+            utility::LogWarning("Write XYZD failed: unable to open file: {}",
                                 filename);
             return false;
         }
@@ -95,14 +94,11 @@ bool WritePointCloudToXYZND(const std::string &filename,
 
         for (size_t i = 0; i < pointcloud.points_.size(); i++) {
             const Eigen::Vector3d &point = pointcloud.points_[i];
-            const Eigen::Vector3d &normal = pointcloud.normals_[i];
             const double &doppler = pointcloud.dopplers_[i];
-            if (fprintf(file.GetFILE(),
-                        "%.10f %.10f %.10f %.10f %.10f %.10f %.10f\n", point(0),
-                        point(1), point(2), normal(0), normal(1), normal(2),
-                        doppler) < 0) {
+            if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\n", point(0),
+                        point(1), point(2), doppler) < 0) {
                 utility::LogWarning(
-                        "Write XYZND failed: unable to write file: {}",
+                        "Write XYZD failed: unable to write file: {}",
                         filename);
                 return false;  // error happened during writing.
             }
@@ -113,7 +109,7 @@ bool WritePointCloudToXYZND(const std::string &filename,
         reporter.Finish();
         return true;
     } catch (const std::exception &e) {
-        utility::LogWarning("Write XYZND failed with exception: {}", e.what());
+        utility::LogWarning("Write XYZD failed with exception: {}", e.what());
         return false;
     }
 }

@@ -323,7 +323,7 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                "lambda_doppler"_a, "prune_correspondences"_a,
                "doppler_outlier_threshold"_a,
                "geometric_robust_loss_min_iteration"_a,
-               "doppler_robust_loss_min_iteration"_a, "goemetric_kernel"_a,
+               "doppler_robust_loss_min_iteration"_a, "geometric_kernel"_a,
                "doppler_kernel"_a)
             .def(py::init([](double lambda_doppler) {
                      return new TransformationEstimationForDopplerICP(
@@ -656,8 +656,6 @@ must hold true for all edges.)");
             .def_readwrite(
                     "num_iterations", &RegistrationResult::num_iterations_,
                     "int: Number of iterations the algorithm took to converge.")
-            .def_readwrite("errors", &RegistrationResult::errors_,
-                           "error vector")
             .def("__repr__", [](const RegistrationResult &rr) {
                 return fmt::format(
                         "RegistrationResult with "

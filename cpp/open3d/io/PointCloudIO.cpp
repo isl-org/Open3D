@@ -44,8 +44,8 @@ static const std::unordered_map<
                            const ReadPointCloudOption &)>>
         file_extension_to_pointcloud_read_function{
                 {"xyz", ReadPointCloudFromXYZ},
+                {"xyzd", ReadPointCloudFromXYZD},
                 {"xyzn", ReadPointCloudFromXYZN},
-                {"xyznd", ReadPointCloudFromXYZND},
                 {"xyzrgb", ReadPointCloudFromXYZRGB},
                 {"ply", ReadPointCloudFromPLY},
                 {"pcd", ReadPointCloudFromPCD},
@@ -59,8 +59,8 @@ static const std::unordered_map<
                            const WritePointCloudOption &)>>
         file_extension_to_pointcloud_write_function{
                 {"xyz", WritePointCloudToXYZ},
+                {"xyzd", WritePointCloudToXYZD},
                 {"xyzn", WritePointCloudToXYZN},
-                {"xyznd", WritePointCloudToXYZND},
                 {"xyzrgb", WritePointCloudToXYZRGB},
                 {"ply", WritePointCloudToPLY},
                 {"pcd", WritePointCloudToPCD},
