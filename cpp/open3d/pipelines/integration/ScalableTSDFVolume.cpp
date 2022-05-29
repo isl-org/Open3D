@@ -120,7 +120,7 @@ std::shared_ptr<geometry::PointCloud> ScalableTSDFVolume::ExtractPointCloud() {
     auto pointcloud = std::make_shared<geometry::PointCloud>();
     double half_voxel_length = voxel_length_ * 0.5;
     float w0, w1, f0, f1;
-    Eigen::Vector3f c0, c1;
+    Eigen::Vector3f c0{0.0, 0.0, 0.0}, c1{0.0, 0.0, 0.0};
     for (const auto &unit : volume_units_) {
         if (unit.second.volume_) {
             const auto &volume0 = *unit.second.volume_;
