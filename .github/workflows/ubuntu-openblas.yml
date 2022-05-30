@@ -65,7 +65,7 @@ jobs:
       # Docker tag and ccache names must be consistent with docker_build.sh
       CI_CONFIG          : openblas-arm64-py36-dev
       GCE_INSTANCE_PREFIX: open3d-ci-openblas-arm64-py36-dev
-      CCACHE_TAR_NAME    : open3d-ci-openblas-arm64-py36-dev
+      CCACHE_TAR_NAME    : open3d-ci-openblas-arm64
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -107,7 +107,7 @@ jobs:
           until ((ZONE_ID >= ${#INSTANCE_ZONES[@]})) ||
             gcloud compute instances create "$INSTANCE_NAME" \
               --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
-              --accelerator="count=0,type=nvidia-tesla-t4" \
+              --accelerator="count=1,type=nvidia-tesla-t4" \
               --maintenance-policy="TERMINATE" \
               --machine-type=n1-standard-8 \
               --boot-disk-size="128GB" \
@@ -134,6 +134,17 @@ jobs:
                     && ls -alh \
                     && ls -alh Open3D \
                     && nvidia-smi"
+      - name: VM install QEMU dependencies
+        run: |
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone "${GCE_ZONE}" \
+            --command "sudo apt-get update \
+                    && sudo apt-get --yes install qemu binfmt-support qemu-user-static"
+      - name: VM build docker
+        run: |
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="sudo Open3D/docker/docker_build.sh ${CI_CONFIG}"
       - name: VM ccache upload
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
@@ -141,20 +152,17 @@ jobs:
             --zone="${GCE_ZONE}" \
             --command="ls -alh \
                     && gsutil cp ${CCACHE_TAR_NAME}.tar.gz gs://open3d-ci-cache/"
-
+      - name: VM run docker
+        run: |
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="sudo Open3D/docker/docker_test.sh ${CI_CONFIG}"
       - name: VM delete
         if: always()
         run: |
           gcloud compute instances delete "${INSTANCE_NAME}" --zone "${GCE_ZONE}"
           ls -alh "${HOME}/.ssh"
           gcloud compute os-login ssh-keys remove --key-file "${HOME}/.ssh/google_compute_engine.pub"
-      # - name: Install QEMU dependencies
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get --yes install qemu binfmt-support qemu-user-static
-      # - name: Docker build
-      #   run: |
-      #     docker/docker_build.sh openblas-arm64-py36-dev
       # - name: GCloud CLI setup
       #   uses: google-github-actions/setup-gcloud@v0.2.1
       #   with:
