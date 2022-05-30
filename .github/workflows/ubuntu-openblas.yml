@@ -83,6 +83,7 @@ jobs:
           project_id: ${{ secrets.GCE_PROJECT }}
       - name: VM create
         run: |
+          gcloud compute images list
           INSTANCE_NAME="${GCE_INSTANCE_PREFIX}-${GITHUB_SHA::8}"
           INSTANCE_ZONES=(us-west1-a
                           us-west1-b
@@ -106,7 +107,7 @@ jobs:
           until ((ZONE_ID >= ${#INSTANCE_ZONES[@]})) ||
             gcloud compute instances create "$INSTANCE_NAME" \
               --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
-              --accelerator="count=2,type=nvidia-tesla-t4" \
+              --accelerator="count=0" \
               --maintenance-policy="TERMINATE" \
               --machine-type=n1-standard-8 \
               --boot-disk-size="128GB" \
