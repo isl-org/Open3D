@@ -13,6 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
