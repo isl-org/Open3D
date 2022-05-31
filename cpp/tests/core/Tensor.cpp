@@ -1814,7 +1814,7 @@ TEST_P(TensorPermuteDevices, ReduceSumSpecialShapes) {
     EXPECT_THROW(dst.Sum({1}, false), std::runtime_error);
     EXPECT_THROW(dst.Sum({1}, true), std::runtime_error);
 
-    // Emtpy reduction axis ().
+    // Empty reduction axis ().
     // This reduces no axis, which is different from reduce all axis.
     // np.sum(np.ones((0)), axis=(), keepdims=*)
     src = core::Tensor::Ones({0}, core::Float32, device);
@@ -3451,5 +3451,19 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
     }
 }
 
+TEST_P(TensorPermuteDevices, TakeOwnership) {
+    core::Device device = GetParam();
+    if (device.GetType() != core::Device::DeviceType::CPU) {
+        GTEST_SKIP();
+    }
+    std::vector<int> values{1, 2, 3, 4, 5, 6};
+    std::vector<int> vec(values);
+    void *vec_data = (void *)vec.data();
+    int64_t vec_size = (int64_t)vec.size();
+    core::Tensor t(std::move(vec));
+    EXPECT_TRUE(t.GetDataPtr<int>() == vec_data);
+    EXPECT_TRUE(t.GetShape() == core::SizeVector({vec_size}));
+    EXPECT_EQ(t.ToFlatVector<int>(), values);
+}
 }  // namespace tests
 }  // namespace open3d

@@ -184,7 +184,7 @@ std::string DownloadFromURL(const std::vector<std::string>& mirror_urls,
         try {
             return DownloadFromURL(mirror_urls[i], md5, prefix, data_root);
         } catch (const std::exception& ex) {
-            utility::LogWarning("Failed to download from {}. Expection {}.",
+            utility::LogWarning("Failed to download from {}. Exception {}.",
                                 mirror_urls[i], ex.what());
         }
     }

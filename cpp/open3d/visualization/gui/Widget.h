@@ -79,7 +79,7 @@ public:
     /// Returns the frame size in pixels.
     virtual const Rect& GetFrame() const;
     /// The frame is in pixels. The size of a pixel varies on different
-    /// and operatings sytems now frequently scale text sizes on high DPI
+    /// and operating systems now frequently scale text sizes on high DPI
     /// monitors. Prefer using a Layout to using this function, but if you
     /// must use it, it is best to use a multiple of
     /// Window::GetTheme().fontSize, which represents 1em and is scaled

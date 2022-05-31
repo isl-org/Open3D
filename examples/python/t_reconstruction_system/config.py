@@ -40,7 +40,7 @@ class ConfigParser(configargparse.ArgParser):
         # Default arguments
         self.add(
             '--name', type=str,
-            help='Name of the config for the offline reconsturction system.')
+            help='Name of the config for the offline reconstruction system.')
         self.add(
             '--fragment_size', type=int,
             help='Number of RGBD frames to construct a fragment.')

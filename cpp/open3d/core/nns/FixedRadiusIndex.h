@@ -419,7 +419,7 @@ public:
     bool SetTensorData(const Tensor& dataset_points,
                        const Dtype& index_dtype = core::Int64) override {
         utility::LogError(
-                "FixedRadiusIndex::SetTensorData witout radius not "
+                "FixedRadiusIndex::SetTensorData without radius not "
                 "implemented.");
     }
 

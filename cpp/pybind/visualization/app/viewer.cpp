@@ -50,7 +50,7 @@ static void pybind_app_functions(py::module &m) {
             m, "run_viewer",
             {{"args",
               "List of arguments containing the path of the calling program "
-              "(which should be in the same directory as the gui resoruces "
+              "(which should be in the same directory as the gui resources "
               "folder) and the optional path of the geometry to visualize."}});
 }
 

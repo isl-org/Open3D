@@ -39,7 +39,7 @@ if __name__ == "__main__":
     x = o3d.io.read_image(sample_image.path)
     print(np.asarray(x))
     print(
-        "Convet a numpy image to o3d.geometry.Image and show it with DrawGeomtries()."
+        "Convert a numpy image to o3d.geometry.Image and show it with DrawGeomtries()."
     )
     y = mpimg.imread(sample_image.path)
     print(y.shape)

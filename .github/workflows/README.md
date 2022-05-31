@@ -7,7 +7,7 @@
 - `.github/workflows/documentation.yml`: Github Actions workflow file to
   create and deploy documentation. Documentation is created for every branch
   as a CI test, but deployed only for `master`.
-- `util/ci_utils.sh:build_docs()`: Called by GitHub Actions to buld documentation.
+- `util/ci_utils.sh:build_docs()`: Called by GitHub Actions to build documentation.
 - `unpack_docs.sh`: Called by the documentation server to deploy the docs into
   the website.
 

@@ -84,12 +84,21 @@ void PrintHelp() {
 
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > RGBDDenseSLAM [dataset_path] [options]");
+    utility::LogInfo("    > OnlineSLAMRGBD [options]");
     utility::LogInfo("Basic options:");
     utility::LogInfo("    [-V]");
+    utility::LogInfo("    [--dataset_path /path/to/dataset]"); 
+    utility::LogInfo("                    - To use your own dataset, pass the path");
+    utility::LogInfo("                      to the dataset root folder containing");
+    utility::LogInfo("                      `image` and `depth` folder. If not");
+    utility::LogInfo("                      provided, default dataset will be used.");
     utility::LogInfo("    [--intrinsic_path camera_intrinsic.json]");
     utility::LogInfo("    [--align]");
     utility::LogInfo("    [--device CUDA:0]");
+    utility::LogInfo("    [--default_dataset lounge]");
+    utility::LogInfo("                    - To change default dataset (used when");
+    utility::LogInfo("                      dataset_path is not set).");
+    utility::LogInfo("                      Available options: `lounge` and `bedroom`.");
     // clang-format on
     utility::LogInfo("");
 }
@@ -100,18 +109,41 @@ int main(int argc, char* argv[]) {
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc < 2 ||
+    if (argc < 1 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
 
-    std::string dataset_path = argv[1];
-    if (!utility::filesystem::DirectoryExists(dataset_path)) {
-        utility::LogWarning(
-                "Expected an existing directory, but {} does not exist.",
-                dataset_path);
-        return -1;
+    bool use_default_dataset = true;
+
+    std::string dataset_path =
+            utility::GetProgramOptionAsString(argc, argv, "--dataset_path", "");
+    if (!dataset_path.empty()) {
+        if (!utility::filesystem::DirectoryExists(dataset_path)) {
+            utility::LogError(
+                    "Expected an existing directory, but {} does not exist.",
+                    dataset_path);
+        }
+
+        use_default_dataset = false;
+    }
+
+    if (use_default_dataset) {
+        const std::string default_dataset = utility::GetProgramOptionAsString(
+                argc, argv, "--default_dataset", "lounge");
+        if (default_dataset == "lounge") {
+            data::LoungeRGBDImages dataset;
+            dataset_path = dataset.GetExtractDir();
+        } else if (default_dataset == "bedroom") {
+            data::BedroomRGBDImages dataset;
+            dataset_path = dataset.GetExtractDir();
+        } else {
+            utility::LogError(
+                    "The default_dataset {}, is not available. Please select "
+                    "from `lounge` (default) and `bedroom` dataset.",
+                    default_dataset);
+        }
     }
 
     if (utility::ProgramOptionExists(argc, argv, "-V")) {

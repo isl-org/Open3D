@@ -79,7 +79,8 @@ void ProjectCPU(
         float* depth_ptr = depth_indexer.GetDataPtr<float>(
                 static_cast<int64_t>(u), static_cast<int64_t>(v));
         float d = zc * depth_scale;
-        // TODO: this can be wrong if ParallelFor is not implmented with OpenMP.
+        // TODO: this can be wrong if ParallelFor is not implemented with
+        // OpenMP.
 #pragma omp critical(ProjectCPU)
         {
             if (*depth_ptr == 0 || *depth_ptr >= d) {

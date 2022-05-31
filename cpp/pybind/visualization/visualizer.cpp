@@ -142,7 +142,7 @@ void pybind_visualizer(py::module &m) {
                PyVisualizer<VisualizerWithKeyCallback>,
                std::shared_ptr<VisualizerWithKeyCallback>>
             visualizer_key(m, "VisualizerWithKeyCallback", visualizer,
-                           "Visualizer with custom key callack capabilities.");
+                           "Visualizer with custom key callback capabilities.");
     py::detail::bind_default_constructor<VisualizerWithKeyCallback>(
             visualizer_key);
     visualizer_key

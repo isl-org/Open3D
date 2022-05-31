@@ -81,7 +81,7 @@ void pybind_odometry_classes(py::module &m) {
                            &OdometryOption::iteration_number_per_pyramid_level_,
                            "List(int): Iteration number per image pyramid "
                            "level, typically larger image in the pyramid have "
-                           "lower interation number to reduce computation "
+                           "lower iteration number to reduce computation "
                            "time.")
             .def_readwrite("max_depth_diff", &OdometryOption::max_depth_diff_,
                            "Maximum depth difference to be considered as "
@@ -199,7 +199,7 @@ void pybind_odometry_methods(py::module &m) {
                      "RGBDOdometryJacobianFromHybridTerm()`` or "
                      "``RGBDOdometryJacobianFromColorTerm("
                      ").``"},
-                    {"option", "Odometry hyper parameteres."},
+                    {"option", "Odometry hyper parameters."},
             });
 }
 

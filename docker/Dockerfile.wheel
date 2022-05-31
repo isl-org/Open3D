@@ -3,11 +3,11 @@ ARG BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
 FROM ${BASE_IMAGE}
 
 # Customizable build arguments from cuda.yml
-ARG DEVELOPER_BUILD=ON
-ARG CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
-ARG CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-ARG CCACHE_VERSION=4.3
-ARG PYTHON_VERSION=3.6
+ARG DEVELOPER_BUILD
+ARG CCACHE_TAR_NAME
+ARG CMAKE_VERSION
+ARG CCACHE_VERSION
+ARG PYTHON_VERSION
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
@@ -73,7 +73,7 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && cd ${CCACHE_DIR_PARENT} \
  && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
  && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi
-# We need to set ccache size explicitly with -M, otherwise the defualt size is
+# We need to set ccache size explicitly with -M, otherwise the default size is
 # *not* determined by ccache's default, but the downloaded ccache file's config.
 RUN ccache -M 5G \
  && ccache -s
@@ -124,7 +124,7 @@ WORKDIR /root/Open3D
 
 # Build python wheel
 RUN export NPROC=$(nproc) \
- && export SHARED=OFF \
+ && export BUILD_SHARED_LIBS=OFF \
  && export BUILD_TENSORFLOW_OPS=ON \
  && export BUILD_PYTORCH_OPS=ON \
  && source /root/Open3D/util/ci_utils.sh \
