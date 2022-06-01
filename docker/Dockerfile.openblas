@@ -133,14 +133,14 @@ RUN which python \
     yapf=="0.30.0" \
     pytest=="6.0.1"
 
-# RUN mkdir build \
-#  && cd build \
-#  && cmake \
-#     -DBUILD_UNIT_TESTS=ON \
-#     -DCMAKE_BUILD_TYPE=Release \
-#     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
-#     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
-#     .. \
+RUN mkdir build \
+ && cd build \
+ && cmake \
+    -DBUILD_UNIT_TESTS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=~/open3d_install \
+    -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
+    .. \
 #  && make -j$(nproc) \
 #  && make install-pip-package -j$(nproc) \
 #  && make install -j$(nproc) \
