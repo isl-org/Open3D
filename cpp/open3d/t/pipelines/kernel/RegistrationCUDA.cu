@@ -26,14 +26,17 @@
 
 #include <cuda.h>
 
+#include <cub/cub.cuh>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
+#include "open3d/t/pipelines/kernel/CUDAUtils.cuh"
 #include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
+#include "open3d/utility/MiniVec.h"
 
 namespace open3d {
 namespace t {
@@ -41,6 +44,7 @@ namespace pipelines {
 namespace kernel {
 
 const int kThread1DUnit = 256;
+const int kReduceDim = 29;  // 21 (JtJ) + 6 (Jtr) + 1 (inlier) + 1 (r)
 
 template <typename scalar_t, typename func_t>
 __global__ void ComputePosePointToPlaneKernelCUDA(
@@ -51,46 +55,33 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
         const int n,
         scalar_t *global_sum,
         func_t GetWeightFromRobustKernel) {
-    __shared__ scalar_t local_sum0[kThread1DUnit];
-    __shared__ scalar_t local_sum1[kThread1DUnit];
-    __shared__ scalar_t local_sum2[kThread1DUnit];
-
-    const int tid = threadIdx.x;
-
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
-
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
-
     if (workload_idx >= n) return;
 
-    scalar_t J_ij[6] = {0}, reduction[29] = {0};
+    scalar_t J_ij[6] = {0};
     scalar_t r = 0;
-
     bool valid = GetJacobianPointToPlane<scalar_t>(
             workload_idx, source_points_ptr, target_points_ptr,
             target_normals_ptr, correspondence_indices, J_ij, r);
 
     scalar_t w = GetWeightFromRobustKernel(r);
 
+    utility::MiniVec<scalar_t, kReduceDim> local_sum(static_cast<scalar_t>(0));
     if (valid) {
         // Dump J, r into JtJ and Jtr
         int i = 0;
         for (int j = 0; j < 6; ++j) {
             for (int k = 0; k <= j; ++k) {
-                reduction[i] += J_ij[j] * w * J_ij[k];
+                local_sum[i] += J_ij[j] * w * J_ij[k];
                 ++i;
             }
-            reduction[21 + j] += J_ij[j] * w * r;
+            local_sum[21 + j] += J_ij[j] * w * r;
         }
-        reduction[27] += r;
-        reduction[28] += 1;
+        local_sum[27] += r;
+        local_sum[28] += 1;
     }
 
-    ReduceSum6x6LinearSystem<scalar_t, kThread1DUnit>(tid, valid, reduction,
-                                                      local_sum0, local_sum1,
-                                                      local_sum2, global_sum);
+    Reduce1D<scalar_t, kThread1DUnit, kReduceDim>(global_sum, local_sum);
 }
 
 void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
@@ -144,21 +135,10 @@ __global__ void ComputePoseColoredICPKernelCUDA(
         const int n,
         scalar_t *global_sum,
         funct_t GetWeightFromRobustKernel) {
-    __shared__ scalar_t local_sum0[kThread1DUnit];
-    __shared__ scalar_t local_sum1[kThread1DUnit];
-    __shared__ scalar_t local_sum2[kThread1DUnit];
-
-    const int tid = threadIdx.x;
-
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
-
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
-
     if (workload_idx >= n) return;
 
-    scalar_t J_G[6] = {0}, J_I[6] = {0}, reduction[29] = {0};
+    scalar_t J_G[6] = {0}, J_I[6] = {0};
     scalar_t r_G = 0, r_I = 0;
 
     bool valid = GetJacobianColoredICP<scalar_t>(
@@ -170,23 +150,22 @@ __global__ void ComputePoseColoredICPKernelCUDA(
     scalar_t w_G = GetWeightFromRobustKernel(r_G);
     scalar_t w_I = GetWeightFromRobustKernel(r_I);
 
+    utility::MiniVec<scalar_t, kReduceDim> local_sum(static_cast<scalar_t>(0));
     if (valid) {
         // Dump J, r into JtJ and Jtr
         int i = 0;
         for (int j = 0; j < 6; ++j) {
             for (int k = 0; k <= j; ++k) {
-                reduction[i] += J_G[j] * w_G * J_G[k] + J_I[j] * w_I * J_I[k];
+                local_sum[i] += J_G[j] * w_G * J_G[k] + J_I[j] * w_I * J_I[k];
                 ++i;
             }
-            reduction[21 + j] += J_G[j] * w_G * r_G + J_I[j] * w_I * r_I;
+            local_sum[21 + j] += J_G[j] * w_G * r_G + J_I[j] * w_I * r_I;
         }
-        reduction[27] += r_G * r_G + r_I * r_I;
-        reduction[28] += 1;
+        local_sum[27] += r_G * r_G + r_I * r_I;
+        local_sum[28] += 1;
     }
 
-    ReduceSum6x6LinearSystem<scalar_t, kThread1DUnit>(tid, valid, reduction,
-                                                      local_sum0, local_sum1,
-                                                      local_sum2, global_sum);
+    Reduce1D<scalar_t, kThread1DUnit, kReduceDim>(global_sum, local_sum);
 }
 
 void ComputePoseColoredICPCUDA(const core::Tensor &source_points,

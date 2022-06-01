@@ -32,6 +32,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
+#include "open3d/utility/MiniVec.h"
 
 namespace open3d {
 namespace t {
@@ -212,6 +213,27 @@ __device__ inline void ReduceSum6x6InformationJacobian(
             atomicAdd(&global_sum[i + 2], local_sum2[0]);
         }
         __syncthreads();
+    }
+}
+
+template <typename scalar_t, int block_dim, int reduce_dim>
+__device__ void Reduce1D(scalar_t* global_sum,
+                         utility::MiniVec<scalar_t, reduce_dim>& local_sum) {
+    // Create shared memory.
+    typedef utility::MiniVec<scalar_t, reduce_dim> ReduceVec;
+    typedef cub::BlockReduce<ReduceVec, block_dim> BlockReduce;
+
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+
+    // Reduction.
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+
+    // Add result to global_sum.
+    if (threadIdx.x == 0) {
+#pragma unroll
+        for (int i = 0; i < reduce_dim; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
+        }
     }
 }
 

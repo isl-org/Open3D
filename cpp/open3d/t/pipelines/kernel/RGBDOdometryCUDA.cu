@@ -34,9 +34,9 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/t/geometry/kernel/GeometryIndexer.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
+#include "open3d/t/pipelines/kernel/CUDAUtils.cuh"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryJacobianImpl.h"
-#include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/utility/MiniVec.h"
 
