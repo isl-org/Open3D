@@ -123,15 +123,15 @@ WORKDIR /root/Open3D
 
 # Build Python wheel
 RUN pyenv install $(pyenv install --list | sort -r --version-sort | grep -m1 "^ *${PYTHON_VERSION}\.")
-# RUN pyenv local $(pyenv versions | grep ${PYTHON_VERSION})
-# RUN which python \
-#  && python --version \
-#  && python -m pip install -U \
-#     pip=="21.1.1" \
-#     wheel=="0.35.1" \
-#     setuptools=="50.3.2" \
-#     yapf=="0.30.0" \
-#     pytest=="6.0.1"
+RUN pyenv local $(pyenv versions | grep ${PYTHON_VERSION})
+RUN which python \
+ && python --version \
+ && python -m pip install -U \
+    pip=="21.1.1" \
+    wheel=="0.35.1" \
+    setuptools=="50.3.2" \
+    yapf=="0.30.0" \
+    pytest=="6.0.1"
 
 # RUN mkdir build \
 #  && cd build \
