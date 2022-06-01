@@ -140,7 +140,7 @@ RUN mkdir build \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
-    .. \
+    ..
 #  && make -j$(nproc) \
 #  && make install-pip-package -j$(nproc) \
 #  && make install -j$(nproc) \
