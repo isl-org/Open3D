@@ -31,7 +31,6 @@
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/kernel/CUDAUtils.cuh"
 #include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
@@ -251,40 +250,42 @@ __global__ void ComputeInformationMatrixKernelCUDA(
         const int64_t *correspondence_indices,
         const int n,
         scalar_t *global_sum) {
-    __shared__ scalar_t local_sum0[kThread1DUnit];
-    __shared__ scalar_t local_sum1[kThread1DUnit];
-    __shared__ scalar_t local_sum2[kThread1DUnit];
-
-    const int tid = threadIdx.x;
-
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
-
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
-
     if (workload_idx >= n) return;
 
-    scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0}, reduction[21] = {0};
-
-    bool valid = GetInformationJacobians<scalar_t>(
+    scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
+    const bool valid = GetInformationJacobians<scalar_t>(
             workload_idx, target_points_ptr, correspondence_indices, J_x, J_y,
             J_z);
+
+    // Reduce dimention for this function is 21
+    typedef utility::MiniVec<scalar_t, 21> ReduceVec;
+    ReduceVec local_sum(static_cast<scalar_t>(0));
 
     if (valid) {
         int i = 0;
         for (int j = 0; j < 6; ++j) {
             for (int k = 0; k <= j; ++k) {
-                reduction[i] +=
+                local_sum[i] +=
                         J_x[j] * J_x[k] + J_y[j] * J_y[k] + J_z[j] * J_z[k];
                 ++i;
             }
         }
     }
 
-    ReduceSum6x6InformationJacobian<scalar_t, kThread1DUnit>(
-            tid, valid, reduction, local_sum0, local_sum1, local_sum2,
-            global_sum);
+    // Create shared memory.
+    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+    // Reduction.
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+
+    // Add result to global_sum.
+    if (threadIdx.x == 0) {
+#pragma unroll
+        for (int i = 0; i < 21; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
+        }
+    }
 }
 
 void ComputeInformationMatrixCUDA(const core::Tensor &target_points,
