@@ -1347,12 +1347,9 @@ open3d_import_3rdparty_library(3rdparty_vtk
     LIBRARIES    ${VTK_LIBRARIES}
     DEPENDS      ext_vtk
 )
-<<<<<<< HEAD
 if(UNIX AND NOT APPLE)
     target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
 endif()
-list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS Open3D::3rdparty_vtk)
-=======
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vtk)
 
 if(BUILD_SYCL_MODULE)
@@ -1374,7 +1371,6 @@ else()
     option(OPEN3D_USE_ONEAPI_PACKAGES "Use the oneAPI distribution of MKL/TBB/DPL." OFF)
 endif()
 mark_as_advanced(OPEN3D_USE_ONEAPI_PACKAGES)
->>>>>>> master
 
 if(OPEN3D_USE_ONEAPI_PACKAGES)
     # 1. oneTBB
