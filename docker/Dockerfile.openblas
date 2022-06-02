@@ -141,7 +141,9 @@ RUN mkdir build \
     -DCMAKE_INSTALL_PREFIX=~/open3d_install \
     -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
     ..
-RUN make -j$(nproc)
+RUN echo "$PWD" \ 
+ && cd build \
+ && make -j$(nproc)
 #  && make install-pip-package -j$(nproc) \
 #  && make install -j$(nproc) \
 #  && pyenv rehash
