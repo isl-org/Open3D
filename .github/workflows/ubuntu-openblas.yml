@@ -163,6 +163,7 @@ jobs:
           gcloud compute instances delete "${INSTANCE_NAME}" --zone "${GCE_ZONE}"
           ls -alh "${HOME}/.ssh"
           gcloud compute os-login ssh-keys remove --key-file "${HOME}/.ssh/google_compute_engine.pub"
+  
       # - name: GCloud CLI setup
       #   uses: google-github-actions/setup-gcloud@v0.2.1
       #   with:
