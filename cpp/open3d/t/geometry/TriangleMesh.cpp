@@ -38,11 +38,8 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
-<<<<<<< HEAD
 #include "open3d/t/geometry/VtkUtils.h"
-=======
 #include "open3d/t/geometry/PointCloud.h"
->>>>>>> master
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 
