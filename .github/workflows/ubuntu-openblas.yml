@@ -83,7 +83,7 @@ jobs:
           project_id: ${{ secrets.GCE_PROJECT }}
       - name: VM create
         run: |
-          gcloud compute images list
+          gcloud compute images list --project ${project_id}
           INSTANCE_NAME="${GCE_INSTANCE_PREFIX}-${GITHUB_SHA::8}"
           INSTANCE_ZONES=(us-west1-a
                           us-west1-b
