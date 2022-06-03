@@ -83,7 +83,7 @@ jobs:
           project_id: ${{ secrets.GCE_PROJECT }}
       - name: VM create
         run: |
-          gcloud compute images list --project ${project_id}
+          gcloud compute images list
           INSTANCE_NAME="${GCE_INSTANCE_PREFIX}-${GITHUB_SHA::8}"
           INSTANCE_ZONES=(us-west1-a
                           us-west1-b
@@ -113,6 +113,7 @@ jobs:
               --boot-disk-size="128GB" \
               --boot-disk-type="pd-ssd" \
               --image-family="ubuntu-2004-lts" \
+              --image-project="ubuntu-os-cloud" \ 
               --metadata-from-file=startup-script=./util/gcloud_auto_clean.sh \
               --scopes="storage-full,compute-rw" \
               --service-account="$GCE_GPU_CI_SA"; do
