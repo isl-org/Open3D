@@ -39,6 +39,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+static const std::string sample_ply_path = data::PLYPointCloud().GetPath();
+
 void FromLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     open3d::geometry::PointCloud legacy_pcd;
     size_t num_points = 1000000;  // 1M
@@ -75,11 +77,8 @@ void ToLegacyPointCloud(benchmark::State& state, const core::Device& device) {
     }
 }
 
-data::PLYPointCloud pointcloud_ply;
-static const std::string path = pointcloud_ply.GetPath();
-
 void LegacyVoxelDownSample(benchmark::State& state, float voxel_size) {
-    auto pcd = open3d::io::CreatePointCloudFromFile(path);
+    auto pcd = open3d::io::CreatePointCloudFromFile(sample_ply_path);
     for (auto _ : state) {
         pcd->VoxelDownSample(voxel_size);
     }
@@ -92,7 +91,7 @@ void VoxelDownSample(benchmark::State& state,
     t::geometry::PointCloud pcd;
     // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
     // remove_nan_points
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(sample_ply_path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
     // Warp up
@@ -106,7 +105,7 @@ void VoxelDownSample(benchmark::State& state,
 
 void Transform(benchmark::State& state, const core::Device& device) {
     PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(sample_ply_path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
     core::Dtype dtype = pcd.GetPointPositions().GetDtype();
@@ -133,7 +132,7 @@ void EstimateNormals(benchmark::State& state,
                      const int max_nn,
                      const utility::optional<double> radius) {
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(sample_ply_path, pcd, {"auto", false, false, false});
 
     pcd = pcd.To(device).VoxelDownSample(voxel_size);
     pcd.SetPointPositions(pcd.GetPointPositions().To(dtype));
@@ -153,7 +152,8 @@ void LegacyEstimateNormals(
         const double voxel_size,
         const open3d::geometry::KDTreeSearchParam& search_param) {
     open3d::geometry::PointCloud pcd;
-    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    open3d::io::ReadPointCloud(sample_ply_path, pcd,
+                               {"auto", false, false, false});
 
     auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
@@ -170,7 +170,7 @@ void RemoveRadiusOutliers(benchmark::State& state,
                           const int nb_points,
                           const double search_radius) {
     t::geometry::PointCloud pcd;
-    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    t::io::ReadPointCloud(sample_ply_path, pcd, {"auto", false, false, false});
 
     pcd = pcd.To(device).VoxelDownSample(0.01);
 
@@ -185,7 +185,8 @@ void LegacyRemoveRadiusOutliers(benchmark::State& state,
                                 const int nb_points,
                                 const double search_radius) {
     open3d::geometry::PointCloud pcd;
-    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    open3d::io::ReadPointCloud(sample_ply_path, pcd,
+                               {"auto", false, false, false});
 
     auto pcd_down = pcd.VoxelDownSample(0.01);
 
