@@ -368,6 +368,24 @@ public:
     /// Convenience function.
     bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
 
+    /// \brief Compute triangle normals, usually called before rendering. The
+    /// normals will be stored as triangle attributes. Access the normal with
+    /// TriangleMesh::GetTriangleNormals() or
+    /// TriangleMesh::GetTriangleAttr("normals").
+    ///
+    /// \param normalize If true, the normals will be normalized to have norm 1.
+    /// \return A reference to the mesh itself.
+    TriangleMesh &ComputeTriangleNormals(bool normalized = true);
+
+    /// \brief Compute vertex normals, usually called before rendering. The
+    /// normals will be stored as vertex attributes. Access the normal with
+    /// TriangleMesh::GetVertexNormals() or
+    /// TriangleMesh::GetVertexAttr("normals").
+    ///
+    /// \param normalize If true, the normals will be normalized to have norm 1.
+    /// \return A reference to the mesh itself.
+    TriangleMesh &ComputeVertexNormals(bool normalized = true);
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {

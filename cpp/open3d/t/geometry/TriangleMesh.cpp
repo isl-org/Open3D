@@ -312,6 +312,19 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     return CreateTriangleMeshFromVtkPolyData(clipped_polydata);
 }
 
+TriangleMesh &TriangleMesh::ComputeTriangleNormals(bool normalized) {
+    const core::Dtype float_dtype = GetVertexPositions().GetDtype();
+    const int64_t num_triangles = GetTriangleIndices().GetLength();
+    core::Tensor triangle_normals({num_triangles, 3}, float_dtype, device_);
+
+    (void)triangle_normals;
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized) {
+    return *this;
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
