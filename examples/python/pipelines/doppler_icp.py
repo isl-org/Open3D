@@ -72,8 +72,9 @@ if __name__ == '__main__':
         source, target, source_directions, max_corr_distance, init_transform,
         o3d.pipelines.registration.TransformationEstimationForDopplerICP(
             lambda_doppler=0.01,
-            prune_correspondences=False,
+            reject_dynamic_outliers=False,
             doppler_outlier_threshold=2.0,  # m/s
+            outlier_rejection_min_iteration=2,
             geometric_robust_loss_min_iteration=0,
             doppler_robust_loss_min_iteration=2,
             geometric_kernel=o3d.pipelines.registration.TukeyLoss(k=0.5),

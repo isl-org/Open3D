@@ -56,8 +56,9 @@ public:
     /// outlier rejection.
     explicit TransformationEstimationForDopplerICP(
             double lambda_doppler = 0.01,
-            bool prune_correspondences = false,
+            bool reject_dynamic_outliers = false,
             double doppler_outlier_threshold = 2.0,
+            size_t outlier_rejection_min_iteration = 2,
             size_t geometric_robust_loss_min_iteration = 0,
             size_t doppler_robust_loss_min_iteration = 2,
             std::shared_ptr<RobustKernel> geometric_kernel =
@@ -65,8 +66,9 @@ public:
             std::shared_ptr<RobustKernel> doppler_kernel =
                     std::make_shared<L2Loss>())
         : lambda_doppler_(lambda_doppler),
-          prune_correspondences_(prune_correspondences),
+          reject_dynamic_outliers_(reject_dynamic_outliers),
           doppler_outlier_threshold_(doppler_outlier_threshold),
+          outlier_rejection_min_iteration_(outlier_rejection_min_iteration),
           geometric_robust_loss_min_iteration_(
                   geometric_robust_loss_min_iteration),
           doppler_robust_loss_min_iteration_(doppler_robust_loss_min_iteration),
@@ -103,10 +105,12 @@ public:
     /// Factor that weighs the Doppler residual term in DICP objective.
     double lambda_doppler_{0.01};
     /// Whether or not to prune dynamic point outlier correspondences.
-    bool prune_correspondences_{false};
+    bool reject_dynamic_outliers_{false};
     /// Correspondences with Doppler error greater than this threshold are
     /// rejected from optimization.
     double doppler_outlier_threshold_{2.0};
+    /// Number of iterations of ICP after which outlier rejection is enabled.
+    size_t outlier_rejection_min_iteration_{2};
     /// Number of iterations of ICP after which robust loss kicks in.
     size_t geometric_robust_loss_min_iteration_{0};
     size_t doppler_robust_loss_min_iteration_{2};

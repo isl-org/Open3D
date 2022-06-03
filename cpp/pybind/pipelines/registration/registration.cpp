@@ -305,23 +305,25 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
             te_dop);
     py::detail::bind_copy_functions<TransformationEstimationForDopplerICP>(
             te_dop);
-    te_dop.def(py::init([](double lambda_doppler, bool prune_correspondences,
+    te_dop.def(py::init([](double lambda_doppler, bool reject_dynamic_outliers,
                            double doppler_outlier_threshold,
+                           size_t outlier_rejection_min_iteration,
                            size_t geometric_robust_loss_min_iteration,
                            size_t doppler_robust_loss_min_iteration,
                            std::shared_ptr<RobustKernel> geometric_kernel,
                            std::shared_ptr<RobustKernel> doppler_kernel) {
                    return new TransformationEstimationForDopplerICP(
-                           lambda_doppler,
-                           prune_correspondences,
+                           lambda_doppler, reject_dynamic_outliers,
                            doppler_outlier_threshold,
+                           outlier_rejection_min_iteration,
                            geometric_robust_loss_min_iteration,
                            doppler_robust_loss_min_iteration,
                            std::move(geometric_kernel),
                            std::move(doppler_kernel));
                }),
-               "lambda_doppler"_a, "prune_correspondences"_a,
+               "lambda_doppler"_a, "reject_dynamic_outliers"_a,
                "doppler_outlier_threshold"_a,
+               "outlier_rejection_min_iteration"_a,
                "geometric_robust_loss_min_iteration"_a,
                "doppler_robust_loss_min_iteration"_a, "geometric_kernel"_a,
                "doppler_kernel"_a)
@@ -353,27 +355,30 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                     "lambda_doppler",
                     &TransformationEstimationForDopplerICP::lambda_doppler_,
                     "lambda_doppler")
-            .def_readwrite("prune_correspondences",
+            .def_readwrite("reject_dynamic_outliers",
                            &TransformationEstimationForDopplerICP::
-                                   prune_correspondences_,
+                                   reject_dynamic_outliers_,
                            "Performs dynamic point outlier rejection of "
                            "correspondences")
             .def_readwrite("doppler_outlier_threshold",
                            &TransformationEstimationForDopplerICP::
                                    doppler_outlier_threshold_,
                            "doppler_outlier_threshold")
-            .def_readwrite(
-                    "geometric_robust_loss_min_iteration",
-                    &TransformationEstimationForDopplerICP::
-                            geometric_robust_loss_min_iteration_,
-                    "Minimum iterations after which Robust Kernel is used for "
-                    "the Geometric error")
-            .def_readwrite(
-                    "doppler_robust_loss_min_iteration",
-                    &TransformationEstimationForDopplerICP::
-                            doppler_robust_loss_min_iteration_,
-                    "Minimum iterations after which Robust Kernel is used for "
-                    "the Doppler error")
+            .def_readwrite("outlier_rejection_min_iteration",
+                           &TransformationEstimationForDopplerICP::
+                                   outlier_rejection_min_iteration_,
+                           "Minimum iterations after which the dynamic point "
+                           "outlier rejection is enabled")
+            .def_readwrite("geometric_robust_loss_min_iteration",
+                           &TransformationEstimationForDopplerICP::
+                                   geometric_robust_loss_min_iteration_,
+                           "Minimum iterations after which Robust Kernel is "
+                           "used for the Geometric error")
+            .def_readwrite("doppler_robust_loss_min_iteration",
+                           &TransformationEstimationForDopplerICP::
+                                   doppler_robust_loss_min_iteration_,
+                           "Minimum iterations after which Robust Kernel is "
+                           "used for the Doppler error")
             .def_readwrite(
                     "geometric_kernel",
                     &TransformationEstimationForDopplerICP::geometric_kernel_,
@@ -708,7 +713,7 @@ static const std::unordered_map<std::string, std::string>
                 {"period",
                  "Time period (in seconds) between the source and the target "
                  "point clouds."},
-                {"prune_correspondences",
+                {"reject_dynamic_outliers",
                  "Prune dynamic point outlier correspondences."},
                 {"ransac_n", "Fit ransac with ``ransac_n`` correspondences"},
                 {"seed", "Random seed."},

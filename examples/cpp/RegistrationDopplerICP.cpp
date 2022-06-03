@@ -102,8 +102,9 @@ int main(int argc, char *argv[]) {
     // Configure DICP parameters.
     const double max_neighbor_distance = {0.3};
     const double lambda_doppler = {0.01};
-    const bool prune_correspondences = {false};
+    const bool reject_dynamic_outliers = {false};
     const double doppler_outlier_threshold = {2.0};
+    const size_t outlier_rejection_min_iteration = {2};
     const size_t geometric_robust_loss_min_iteration = {0};
     const size_t doppler_robust_loss_min_iteration = {2};
     const double period = {0.1};  // seconds
@@ -123,8 +124,8 @@ int main(int argc, char *argv[]) {
             *source, *target, source_directions, max_neighbor_distance,
             transform,
             TransformationEstimationForDopplerICP(
-                    lambda_doppler, prune_correspondences,
-                    doppler_outlier_threshold,
+                    lambda_doppler, reject_dynamic_outliers,
+                    doppler_outlier_threshold, outlier_rejection_min_iteration,
                     geometric_robust_loss_min_iteration,
                     doppler_robust_loss_min_iteration, geometric_kernel,
                     doppler_kernel),

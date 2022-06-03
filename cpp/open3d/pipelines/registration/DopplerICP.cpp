@@ -115,14 +115,16 @@ Eigen::Matrix4d TransformationEstimationForDopplerICP::ComputeTransformation(
 
                 // Dynamic point outlier pruning of correspondences.
                 bool optimize{true};
-                if (prune_correspondences_ &&
+                if (reject_dynamic_outliers_ &&
+                    iteration >= outlier_rejection_min_iteration_ &&
                     std::abs(doppler_error) > doppler_outlier_threshold_) {
                     optimize = false;
                 }
 
                 if (optimize) {
                     // Compute geometric point-to-plane error and Jacobian.
-                    const double geometric_error = (ps_in_V - pt_in_V).dot(nt_in_V);
+                    const double geometric_error =
+                            (ps_in_V - pt_in_V).dot(nt_in_V);
                     r[0] = sqrt_lambda_geometric * geometric_error;
                     w[0] = (iteration >= geometric_robust_loss_min_iteration_)
                                    ? geometric_kernel_->Weight(r[0])
@@ -138,7 +140,8 @@ Eigen::Matrix4d TransformationEstimationForDopplerICP::ComputeTransformation(
                                    : default_kernel_->Weight(r[1]);
                     J_r[1].block<3, 1>(0, 0) = sqrt_lambda_doppler_by_dt *
                                                ds_in_V.cross(r_v_to_s_in_V);
-                    J_r[1].block<3, 1>(3, 0) = sqrt_lambda_doppler_by_dt * -ds_in_V;
+                    J_r[1].block<3, 1>(3, 0) =
+                            sqrt_lambda_doppler_by_dt * -ds_in_V;
                 } else {
                     r[0] = 0.F;
                     w[0] = 0.F;
