@@ -63,9 +63,10 @@ static void LaunchBinaryEWKernel(const Indexer& indexer,
     ParallelFor(
             Device("CPU:0"), indexer.NumWorkloads(),
             [&indexer, &element_func](int64_t i) {
-                element_func(indexer.GetInputPtr<src_t>(0, i),
-                             indexer.GetInputPtr<src_t>(1, i),
-                             indexer.GetOutputPtr<dst_t>(i));
+                src_t* lhs = indexer.GetInputPtr<src_t>(0, i);
+                src_t* rhs = indexer.GetInputPtr<src_t>(1, i);
+                dst_t* dst = indexer.GetOutputPtr<dst_t>(i);
+                element_func(lhs, rhs, dst);
             },
             vec_func);
 }
