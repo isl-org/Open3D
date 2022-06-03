@@ -60,8 +60,10 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
                 B_shape.size());
     }
     if (A_shape[1] != B_shape[0]) {
-        utility::LogError("Tensor A columns {} mismatch with Tensor B rows {}.",
-                          A_shape[1], B_shape[0]);
+        utility::LogError(
+                "Tensor A (shape: {}) is not compatible with Tensor B "
+                "(shape: {}).",
+                A_shape, B_shape);
     }
 
     // Dispatch to backends
