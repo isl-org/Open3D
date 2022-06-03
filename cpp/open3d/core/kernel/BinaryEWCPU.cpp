@@ -84,17 +84,29 @@ static void LaunchBinaryEWKernel(const Indexer& indexer,
 
     // The theoretically fastest indexing
     // 0.087ms
-    const src_t* lhs_base = indexer.GetInputPtr<src_t>(0, 0);
-    const src_t* rhs_base = indexer.GetInputPtr<src_t>(1, 0);
-    dst_t* dst_base = indexer.GetOutputPtr<dst_t>(0);
+    // const src_t* lhs_base = indexer.GetInputPtr<src_t>(0, 0);
+    // const src_t* rhs_base = indexer.GetInputPtr<src_t>(1, 0);
+    // dst_t* dst_base = indexer.GetOutputPtr<dst_t>(0);
+    // ParallelFor(
+    //         Device("CPU:0"), indexer.NumWorkloads(),
+    //         [&indexer, &element_func, &lhs_base, &rhs_base,
+    //          &dst_base](int64_t i) {
+    //             const src_t* lhs = lhs_base + i;
+    //             const src_t* rhs = rhs_base + i % 3;
+    //             dst_t* dst = dst_base + i;
+    //             element_func(lhs, rhs, dst);
+    //         },
+    //         vec_func);
+
+    // No lambda function (lambda function is not the problem)
+    // 0.305 ms
     ParallelFor(
             Device("CPU:0"), indexer.NumWorkloads(),
-            [&indexer, &element_func, &lhs_base, &rhs_base,
-             &dst_base](int64_t i) {
-                const src_t* lhs = lhs_base + i;
-                const src_t* rhs = rhs_base + i % 3;
-                dst_t* dst = dst_base + i;
-                element_func(lhs, rhs, dst);
+            [&indexer, &element_func](int64_t i) {
+                src_t* lhs = indexer.GetInputPtr<src_t>(0, i);
+                src_t* rhs = indexer.GetInputPtr<src_t>(1, i);
+                dst_t* dst = indexer.GetOutputPtr<dst_t>(i);
+                *dst = *lhs + *rhs;
             },
             vec_func);
 }
