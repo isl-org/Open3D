@@ -110,6 +110,7 @@ void Transform(benchmark::State& state, const core::Device& device) {
     pcd = pcd.To(device);
 
     core::Dtype dtype = pcd.GetPointPositions().GetDtype();
+    utility::LogInfo("dtype: {}", dtype.ToString());
     core::Tensor transformation = core::Tensor::Init<double>({{1, 0, 0, 1.0},
                                                               {0, 1, 0, 2.0},
                                                               {0, 0, 1, 3.0},

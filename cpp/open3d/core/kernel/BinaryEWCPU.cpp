@@ -45,6 +45,7 @@ namespace kernel {
 template <typename src_t, typename dst_t, typename element_func_t>
 static void LaunchBinaryEWKernel(const Indexer& indexer,
                                  const element_func_t& element_func) {
+    throw std::runtime_error("Should not reach here");
     ParallelFor(Device("CPU:0"), indexer.NumWorkloads(),
                 [&indexer, &element_func](int64_t i) {
                     element_func(indexer.GetInputPtr<src_t>(0, i),
@@ -60,6 +61,7 @@ template <typename src_t,
 static void LaunchBinaryEWKernel(const Indexer& indexer,
                                  const element_func_t& element_func,
                                  const vec_func_t& vec_func) {
+    // 0.305 ms
     ParallelFor(
             Device("CPU:0"), indexer.NumWorkloads(),
             [&indexer, &element_func](int64_t i) {
@@ -69,6 +71,8 @@ static void LaunchBinaryEWKernel(const Indexer& indexer,
                 element_func(lhs, rhs, dst);
             },
             vec_func);
+
+    // pass
 }
 
 template <typename scalar_t>
