@@ -54,6 +54,11 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
         const int n,
         scalar_t *global_sum,
         func_t GetWeightFromRobustKernel) {
+    typedef utility::MiniVec<scalar_t, kReduceDim> ReduceVec;
+    // Create shared memory.
+    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (workload_idx >= n) return;
 
@@ -63,9 +68,7 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
             workload_idx, source_points_ptr, target_points_ptr,
             target_normals_ptr, correspondence_indices, J_ij, r);
 
-    typedef utility::MiniVec<scalar_t, kReduceDim> ReduceVec;
     ReduceVec local_sum(static_cast<scalar_t>(0));
-
     if (valid) {
         const scalar_t w = GetWeightFromRobustKernel(r);
 
@@ -82,9 +85,6 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
         local_sum[28] += 1;
     }
 
-    // Create shared memory.
-    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
-    __shared__ typename BlockReduce::TempStorage temp_storage;
     // Reduction.
     auto result = BlockReduce(temp_storage).Sum(local_sum);
 
@@ -148,6 +148,11 @@ __global__ void ComputePoseColoredICPKernelCUDA(
         const int n,
         scalar_t *global_sum,
         funct_t GetWeightFromRobustKernel) {
+    typedef utility::MiniVec<scalar_t, kReduceDim> ReduceVec;
+    // Create shared memory.
+    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (workload_idx >= n) return;
 
@@ -160,9 +165,7 @@ __global__ void ComputePoseColoredICPKernelCUDA(
             target_color_gradients_ptr, correspondence_indices,
             sqrt_lambda_geometric, sqrt_lambda_photometric, J_G, J_I, r_G, r_I);
 
-    typedef utility::MiniVec<scalar_t, kReduceDim> ReduceVec;
     ReduceVec local_sum(static_cast<scalar_t>(0));
-
     if (valid) {
         const scalar_t w_G = GetWeightFromRobustKernel(r_G);
         const scalar_t w_I = GetWeightFromRobustKernel(r_I);
@@ -180,9 +183,6 @@ __global__ void ComputePoseColoredICPKernelCUDA(
         local_sum[28] += 1;
     }
 
-    // Create shared memory.
-    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
-    __shared__ typename BlockReduce::TempStorage temp_storage;
     // Reduction.
     auto result = BlockReduce(temp_storage).Sum(local_sum);
 
@@ -250,6 +250,12 @@ __global__ void ComputeInformationMatrixKernelCUDA(
         const int64_t *correspondence_indices,
         const int n,
         scalar_t *global_sum) {
+    // Reduce dimention for this function is 21
+    typedef utility::MiniVec<scalar_t, 21> ReduceVec;
+    // Create shared memory.
+    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (workload_idx >= n) return;
 
@@ -258,10 +264,7 @@ __global__ void ComputeInformationMatrixKernelCUDA(
             workload_idx, target_points_ptr, correspondence_indices, J_x, J_y,
             J_z);
 
-    // Reduce dimention for this function is 21
-    typedef utility::MiniVec<scalar_t, 21> ReduceVec;
     ReduceVec local_sum(static_cast<scalar_t>(0));
-
     if (valid) {
         int i = 0;
         for (int j = 0; j < 6; ++j) {
@@ -273,9 +276,6 @@ __global__ void ComputeInformationMatrixKernelCUDA(
         }
     }
 
-    // Create shared memory.
-    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
-    __shared__ typename BlockReduce::TempStorage temp_storage;
     // Reduction.
     auto result = BlockReduce(temp_storage).Sum(local_sum);
 
