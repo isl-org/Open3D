@@ -30,6 +30,7 @@
 #include <string>
 #include <vector>
 
+#include "open3d/core/SmallVector.h"
 #include "open3d/utility/Optional.h"
 
 namespace open3d {
@@ -76,7 +77,7 @@ public:
 
 /// SizeVector is a vector of int64_t, typically used in Tensor shape and
 /// strides. A signed int64_t type is chosen to allow negative strides.
-class SizeVector : public std::vector<int64_t> {
+class SizeVector : public SmallVector<int64_t> {
 public:
     SizeVector() {}
 
@@ -90,7 +91,7 @@ public:
 
     template <class InputIterator>
     SizeVector(InputIterator first, InputIterator last)
-        : std::vector<int64_t>(first, last) {}
+        : SmallVector<int64_t>(first, last) {}
 
     SizeVector& operator=(const SizeVector& v);
 
@@ -106,6 +107,12 @@ public:
                           const std::string msg = "") const;
 
     bool IsCompatible(const DynamicSizeVector& dsv) const;
+
+    explicit operator std::vector<int64_t>() const {
+        return std::vector<int64_t>(begin(), end());
+    }
+
+    void shrink_to_fit() {}
 };
 
 }  // namespace core

@@ -104,23 +104,23 @@ bool DynamicSizeVector::IsDynamic() const {
 }
 
 SizeVector::SizeVector(const std::initializer_list<int64_t>& dim_sizes)
-    : std::vector<int64_t>(dim_sizes) {}
+    : SmallVector<int64_t>(dim_sizes) {}
 
 SizeVector::SizeVector(const std::vector<int64_t>& dim_sizes)
-    : std::vector<int64_t>(dim_sizes) {}
+    : SmallVector<int64_t>(dim_sizes.begin(), dim_sizes.end()) {}
 
-SizeVector::SizeVector(const SizeVector& other) : std::vector<int64_t>(other) {}
+SizeVector::SizeVector(const SizeVector& other) : SmallVector<int64_t>(other) {}
 
 SizeVector::SizeVector(int64_t n, int64_t initial_value)
-    : std::vector<int64_t>(n, initial_value) {}
+    : SmallVector<int64_t>(n, initial_value) {}
 
 SizeVector& SizeVector::operator=(const SizeVector& v) {
-    static_cast<std::vector<int64_t>*>(this)->operator=(v);
+    static_cast<SmallVector<int64_t>*>(this)->operator=(v);
     return *this;
 }
 
 SizeVector& SizeVector::operator=(SizeVector&& v) {
-    static_cast<std::vector<int64_t>*>(this)->operator=(v);
+    static_cast<SmallVector<int64_t>*>(this)->operator=(v);
     return *this;
 }
 
@@ -168,7 +168,7 @@ bool SizeVector::IsCompatible(const DynamicSizeVector& dsv) const {
         return false;
     }
     for (size_t i = 0; i < size(); ++i) {
-        if (dsv[i].has_value() && dsv[i].value() != at(i)) {
+        if (dsv[i].has_value() && dsv[i].value() != this->operator[](i)) {
             return false;
         }
     }
