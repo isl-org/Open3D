@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include "open3d/core/SmallVector.h"
+#include "SmallVector.h"
 #include "open3d/utility/Optional.h"
 
 namespace open3d {
@@ -38,14 +38,16 @@ namespace core {
 
 class SizeVector;
 
-/// DynamicSizeVector is a vector of optional<int64_t>, it is used to represent
-/// a shape with unknown (dynamic) dimensions.
+/// DynamicSizeVector is a SmallVector of optional<int64_t>, it is used to
+/// represent a shape with unknown (dynamic) dimensions. Dimensions up to size 6
+/// are stored on the stack, and larger vectors are stored on the heap
+/// automatically.
 ///
 /// Example: create a shape of (None, 3)
 /// ```
 /// core::DynamicSizeVector shape{utility::nullopt, 3};
 /// ```
-class DynamicSizeVector : public std::vector<utility::optional<int64_t>> {
+class DynamicSizeVector : public llvm::SmallVector<utility::optional<int64_t>> {
 public:
     DynamicSizeVector() {}
 
@@ -60,7 +62,7 @@ public:
 
     template <class InputIterator>
     DynamicSizeVector(InputIterator first, InputIterator last)
-        : std::vector<utility::optional<int64_t>>(first, last) {}
+        : llvm::SmallVector<utility::optional<int64_t>>(first, last) {}
 
     DynamicSizeVector(const SizeVector& dim_sizes);
 
@@ -73,11 +75,16 @@ public:
     std::string ToString() const;
 
     bool IsDynamic() const;
+
+    // required for pybind
+    void shrink_to_fit() {}
 };
 
-/// SizeVector is a vector of int64_t, typically used in Tensor shape and
-/// strides. A signed int64_t type is chosen to allow negative strides.
-class SizeVector : public SmallVector<int64_t> {
+/// SizeVector is a SmallVector of int64_t, typically used in Tensor shape and
+/// strides. Dimensions up to size 6 are stored on the stack, and larger vectors
+/// are stored on the heap automatically.  A signed int64_t type is chosen to
+/// allow negative strides.
+class SizeVector : public llvm::SmallVector<int64_t> {
 public:
     SizeVector() {}
 
@@ -91,7 +98,7 @@ public:
 
     template <class InputIterator>
     SizeVector(InputIterator first, InputIterator last)
-        : SmallVector<int64_t>(first, last) {}
+        : llvm::SmallVector<int64_t>(first, last) {}
 
     SizeVector& operator=(const SizeVector& v);
 
@@ -108,10 +115,12 @@ public:
 
     bool IsCompatible(const DynamicSizeVector& dsv) const;
 
+    // Used by RPC
     explicit operator std::vector<int64_t>() const {
         return std::vector<int64_t>(begin(), end());
     }
 
+    // required for pybind
     void shrink_to_fit() {}
 };
 

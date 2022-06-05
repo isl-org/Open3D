@@ -1,3 +1,8 @@
+// Adapted for Open3D.
+// Commit 75e164f61d391979b4829bf2746a5d74b94e95f2 2022-01-21
+// Documentation:
+// https://llvm.org/docs/ProgrammersManual.html#llvm-adt-smallvector-h
+//
 //===- llvm/ADT/SmallVector.h - 'Normally small' vectors --------*- C++ -*-===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -11,7 +16,8 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#pragma once
+#ifndef LLVM_ADT_SMALLVECTOR_H
+#define LLVM_ADT_SMALLVECTOR_H
 
 #include <algorithm>
 #include <cassert>
@@ -27,17 +33,21 @@
 #include <type_traits>
 #include <utility>
 
-#define OPEN3D_NODISCARD
-#define OPEN3D_UNLIKELY
-#define OPEN3D_LIKELY
-/* #define OPEN3D_LIKELY [[likely]] */
-/* #define OPEN3D_UNLIKELY [[unlikely]] */
-/* #define OPEN3D_NODISCARD [[nodiscard]] */
+#ifndef LLVM_LIKELY
+#define LLVM_LIKELY /* [[likely]] */
+#endif
+#ifndef LLVM_UNLIKELY
+#define LLVM_UNLIKELY /* [[unlikely]] */
+#endif
+#ifndef LLVM_NODISCARD
+#define LLVM_NODISCARD /* [[nodiscard]] */
+#endif
+#ifndef LLVM_GSL_OWNER
+#define LLVM_GSL_OWNER
+#endif
 
-namespace open3d {
-namespace core {
-
-// llvm/include/llvm/Support/MemAlloc.h
+namespace llvm {
+// from llvm/include/llvm/Support/MemAlloc.h
 inline void *safe_malloc(size_t Sz) {
     void *Result = std::malloc(Sz);
     if (Result == nullptr) {
@@ -102,7 +112,7 @@ public:
     size_t size() const { return Size; }
     size_t capacity() const { return Capacity; }
 
-    OPEN3D_NODISCARD bool empty() const { return !Size; }
+    LLVM_NODISCARD bool empty() const { return !Size; }
 
 protected:
     /// Set the array size to \p N, which the current array must have enough
@@ -193,7 +203,7 @@ protected:
     /// NewSize.
     bool isSafeToReferenceAfterResize(const void *Elt, size_t NewSize) {
         // Past the end.
-        if (OPEN3D_LIKELY(!isReferenceToStorage(Elt))) return true;
+        if (LLVM_LIKELY(!isReferenceToStorage(Elt))) return true;
 
         // Return false if Elt will be destroyed by shrinking.
         if (NewSize <= this->size()) return Elt < this->begin() + NewSize;
@@ -247,12 +257,12 @@ protected:
                                                      const T &Elt,
                                                      size_t N) {
         size_t NewSize = This->size() + N;
-        if (OPEN3D_LIKELY(NewSize <= This->capacity())) return &Elt;
+        if (LLVM_LIKELY(NewSize <= This->capacity())) return &Elt;
 
         bool ReferencesStorage = false;
         int64_t Index = -1;
         if (!U::TakesParamByValue) {
-            if (OPEN3D_UNLIKELY(This->isReferenceToStorage(&Elt))) {
+            if (LLVM_UNLIKELY(This->isReferenceToStorage(&Elt))) {
                 ReferencesStorage = true;
                 Index = &Elt - This->begin();
             }
@@ -691,7 +701,7 @@ public:
         truncate(this->size() - NumItems);
     }
 
-    OPEN3D_NODISCARD T pop_back_val() {
+    LLVM_NODISCARD T pop_back_val() {
         T Result = ::std::move(this->back());
         this->pop_back();
         return Result;
@@ -976,7 +986,7 @@ public:
 
     template <typename... ArgTypes>
     reference emplace_back(ArgTypes &&...Args) {
-        if (OPEN3D_UNLIKELY(this->size() >= this->capacity()))
+        if (LLVM_UNLIKELY(this->size() >= this->capacity()))
             return this->growAndEmplaceBack(std::forward<ArgTypes>(Args)...);
 
         ::new ((void *)this->end()) T(std::forward<ArgTypes>(Args)...);
@@ -1163,7 +1173,7 @@ struct alignas(T) SmallVectorStorage<T, 0> {};
 /// calculateSmallVectorDefaultInlinedElements can reference
 /// `sizeof(SmallVector<T, 0>)`.
 template <typename T, unsigned N>
-class SmallVector;
+class LLVM_GSL_OWNER SmallVector;
 
 /// Helper class for calculating the default number of inline elements for
 /// `SmallVector<T>`.
@@ -1240,7 +1250,8 @@ struct CalculateSmallVectorDefaultInlinedElements {
 /// \see https://llvm.org/docs/ProgrammersManual.html#llvm-adt-smallvector-h
 template <typename T,
           unsigned N = CalculateSmallVectorDefaultInlinedElements<T>::value>
-class SmallVector : public SmallVectorImpl<T>, SmallVectorStorage<T, N> {
+class LLVM_GSL_OWNER SmallVector : public SmallVectorImpl<T>,
+                                   SmallVectorStorage<T, N> {
 public:
     SmallVector() : SmallVectorImpl<T>(N) {}
 
@@ -1342,23 +1353,22 @@ to_vector(R &&Range) {
     return {std::begin(Range), std::end(Range)};
 }
 
-}  // namespace core
-}  // namespace open3d
+}  // end namespace llvm
 
 namespace std {
 
 /// Implement std::swap in terms of SmallVector swap.
 template <typename T>
-inline void swap(open3d::core::SmallVectorImpl<T> &LHS,
-                 open3d::core::SmallVectorImpl<T> &RHS) {
+inline void swap(llvm::SmallVectorImpl<T> &LHS, llvm::SmallVectorImpl<T> &RHS) {
     LHS.swap(RHS);
 }
 
 /// Implement std::swap in terms of SmallVector swap.
 template <typename T, unsigned N>
-inline void swap(open3d::core::SmallVector<T, N> &LHS,
-                 open3d::core::SmallVector<T, N> &RHS) {
+inline void swap(llvm::SmallVector<T, N> &LHS, llvm::SmallVector<T, N> &RHS) {
     LHS.swap(RHS);
 }
 
 }  // end namespace std
+
+#endif  // LLVM_ADT_SMALLVECTOR_H

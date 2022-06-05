@@ -1,3 +1,8 @@
+// Adapted for Open3D.
+// Commit 75e164f61d391979b4829bf2746a5d74b94e95f2 2022-01-21
+// Documentation:
+// https://llvm.org/docs/ProgrammersManual.html#llvm-adt-smallvector-h
+//
 //===- llvm/ADT/SmallVector.cpp - 'Normally small' vectors ----------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -12,19 +17,31 @@
 
 #include "SmallVector.h"
 
-#include <cstdint>
+#define LLVM_ENABLE_EXCEPTIONS
+
+#ifdef LLVM_ENABLE_EXCEPTIONS
 #include <stdexcept>
+#endif
 #include <string>
-using namespace open3d::core;
+using namespace llvm;
 
 // Check that no bytes are wasted and everything is well-aligned.
 namespace {
+// These structures may cause binary compat warnings on AIX. Suppress the
+// warning since we are only using these types for the static assertions below.
+#if defined(_AIX)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waix-compat"
+#endif
 struct Struct16B {
     alignas(16) void *X;
 };
 struct Struct32B {
     alignas(32) void *X;
 };
+#if defined(_AIX)
+#pragma GCC diagnostic pop
+#endif
 }  // namespace
 static_assert(sizeof(SmallVector<void *, 0>) ==
                       sizeof(unsigned) * 2 + sizeof(void *),
@@ -53,7 +70,11 @@ static void report_size_overflow(size_t MinSize, size_t MaxSize) {
                          std::to_string(MinSize) +
                          ") is larger than maximum value for size type (" +
                          std::to_string(MaxSize) + ")";
+#ifdef LLVM_ENABLE_EXCEPTIONS
     throw std::length_error(Reason);
+#else
+    report_fatal_error(Twine(Reason));
+#endif
 }
 
 /// Report that this vector is already at maximum capacity. Throws
@@ -63,7 +84,11 @@ static void report_at_maximum_capacity(size_t MaxSize) {
     std::string Reason =
             "SmallVector capacity unable to grow. Already at maximum size " +
             std::to_string(MaxSize);
+#ifdef LLVM_ENABLE_EXCEPTIONS
     throw std::length_error(Reason);
+#else
+    report_fatal_error(Twine(Reason));
+#endif
 }
 
 // Note: Moving this function into the header may cause performance regression.
@@ -93,7 +118,7 @@ void *SmallVectorBase<Size_T>::mallocForGrow(size_t MinSize,
                                              size_t TSize,
                                              size_t &NewCapacity) {
     NewCapacity = getNewCapacity<Size_T>(MinSize, TSize, this->capacity());
-    return safe_malloc(NewCapacity * TSize);
+    return llvm::safe_malloc(NewCapacity * TSize);
 }
 
 // Note: Moving this function into the header may cause performance regression.
@@ -118,14 +143,14 @@ void SmallVectorBase<Size_T>::grow_pod(void *FirstEl,
     this->Capacity = NewCapacity;
 }
 
-template class open3d::core::SmallVectorBase<uint32_t>;
+template class llvm::SmallVectorBase<uint32_t>;
 
 // Disable the uint64_t instantiation for 32-bit builds.
 // Both uint32_t and uint64_t instantiations are needed for 64-bit builds.
 // This instantiation will never be used in 32-bit builds, and will cause
 // warnings when sizeof(Size_T) > sizeof(size_t).
 #if SIZE_MAX > UINT32_MAX
-template class open3d::core::SmallVectorBase<uint64_t>;
+template class llvm::SmallVectorBase<uint64_t>;
 
 // Assertions to ensure this #if stays in sync with SmallVectorSizeType.
 static_assert(sizeof(SmallVectorSizeType<char>) == sizeof(uint64_t),
@@ -134,13 +159,3 @@ static_assert(sizeof(SmallVectorSizeType<char>) == sizeof(uint64_t),
 static_assert(sizeof(SmallVectorSizeType<char>) == sizeof(uint32_t),
               "Expected SmallVectorBase<uint32_t> variant to be in use.");
 #endif
-
-/* #include <iostream> */
-/* int main() { */
-/*     SmallVector<int64_t> vec = {2, 3, 4, 5, 6, 7, 8, 9}; */
-/*     std::cout << "vec.size()=" << vec.size() */
-/*               << ", vec.capacity()=" << vec.capacity() */
-/*               << ", sizeof(vec)=" << sizeof(vec) << std::endl; */
-/*     for (auto v : vec) std::cout << v << ", "; */
-/*     std::cout << std::endl; */
-/* } */
