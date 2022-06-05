@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <chrono>
 #include <cstdio>
 
 #include "open3d/core/Dtype.h"
@@ -122,8 +121,6 @@ bool WritePointCloudToXYZI(const std::string &filename,
         }
         reporter.SetTotal(points.GetShape(0));
 
-        namespace sc = std::chrono;
-        auto start = sc::steady_clock::now();
         for (int i = 0; i < points.GetShape(0); i++) {
             if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\n",
                         points[i][0].Item<double>(),
@@ -139,9 +136,6 @@ bool WritePointCloudToXYZI(const std::string &filename,
                 reporter.Update(i);
             }
         }
-        auto end = sc::steady_clock::now();
-        utility::LogWarning("Writing took {}s",
-                            sc::duration<double>(end - start).count());
         reporter.Finish();
         return true;
     } catch (const std::exception &e) {

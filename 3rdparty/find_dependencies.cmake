@@ -903,6 +903,16 @@ open3d_build_3rdparty_library(3rdparty_rply DIRECTORY rply
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_rply)
 
+# llvm SmallVector
+open3d_build_3rdparty_library(3rdparty_SmallVector HEADER DIRECTORY llvmSmallVector
+    SOURCES
+        SmallVector.cpp
+    INCLUDE_DIRS
+        ./
+)
+list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM
+    Open3D::3rdparty_SmallVector)
+
 # tinyfiledialogs
 open3d_build_3rdparty_library(3rdparty_tinyfiledialogs DIRECTORY tinyfiledialogs
     SOURCES
