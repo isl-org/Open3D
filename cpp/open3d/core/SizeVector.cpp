@@ -41,18 +41,17 @@ namespace core {
 
 DynamicSizeVector::DynamicSizeVector(
         const std::initializer_list<utility::optional<int64_t>>& dim_sizes)
-    : llvm::SmallVector<utility::optional<int64_t>>(dim_sizes) {}
+    : super_t(dim_sizes) {}
 
 DynamicSizeVector::DynamicSizeVector(
         const std::vector<utility::optional<int64_t>>& dim_sizes)
-    : llvm::SmallVector<utility::optional<int64_t>>(dim_sizes.begin(),
-                                                    dim_sizes.end()) {}
+    : super_t(dim_sizes.begin(), dim_sizes.end()) {}
 
 DynamicSizeVector::DynamicSizeVector(const DynamicSizeVector& other)
-    : llvm::SmallVector<utility::optional<int64_t>>(other) {}
+    : super_t(other) {}
 
 DynamicSizeVector::DynamicSizeVector(int64_t n, int64_t initial_value)
-    : llvm::SmallVector<utility::optional<int64_t>>(n, initial_value) {}
+    : super_t(n, initial_value) {}
 
 DynamicSizeVector::DynamicSizeVector(const SizeVector& dim_sizes)
     : DynamicSizeVector(dim_sizes.begin(), dim_sizes.end()) {}
@@ -69,14 +68,12 @@ SizeVector DynamicSizeVector::ToSizeVector() const {
 }
 
 DynamicSizeVector& DynamicSizeVector::operator=(const DynamicSizeVector& v) {
-    static_cast<llvm::SmallVector<utility::optional<int64_t>>*>(this)->
-    operator=(v);
+    static_cast<super_t*>(this)->operator=(v);
     return *this;
 }
 
 DynamicSizeVector& DynamicSizeVector::operator=(DynamicSizeVector&& v) {
-    static_cast<llvm::SmallVector<utility::optional<int64_t>>*>(this)->
-    operator=(v);
+    static_cast<super_t*>(this)->operator=(v);
     return *this;
 }
 
@@ -107,24 +104,23 @@ bool DynamicSizeVector::IsDynamic() const {
 }
 
 SizeVector::SizeVector(const std::initializer_list<int64_t>& dim_sizes)
-    : llvm::SmallVector<int64_t>(dim_sizes) {}
+    : super_t(dim_sizes) {}
 
 SizeVector::SizeVector(const std::vector<int64_t>& dim_sizes)
-    : llvm::SmallVector<int64_t>(dim_sizes.begin(), dim_sizes.end()) {}
+    : super_t(dim_sizes.begin(), dim_sizes.end()) {}
 
-SizeVector::SizeVector(const SizeVector& other)
-    : llvm::SmallVector<int64_t>(other) {}
+SizeVector::SizeVector(const SizeVector& other) : super_t(other) {}
 
 SizeVector::SizeVector(int64_t n, int64_t initial_value)
-    : llvm::SmallVector<int64_t>(n, initial_value) {}
+    : super_t(n, initial_value) {}
 
 SizeVector& SizeVector::operator=(const SizeVector& v) {
-    static_cast<llvm::SmallVector<int64_t>*>(this)->operator=(v);
+    static_cast<super_t*>(this)->operator=(v);
     return *this;
 }
 
 SizeVector& SizeVector::operator=(SizeVector&& v) {
-    static_cast<llvm::SmallVector<int64_t>*>(this)->operator=(v);
+    static_cast<super_t*>(this)->operator=(v);
     return *this;
 }
 

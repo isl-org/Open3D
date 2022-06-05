@@ -39,7 +39,7 @@ namespace core {
 class SizeVector;
 
 /// DynamicSizeVector is a SmallVector of optional<int64_t>, it is used to
-/// represent a shape with unknown (dynamic) dimensions. Dimensions up to size 6
+/// represent a shape with unknown (dynamic) dimensions. Dimensions up to size 4
 /// are stored on the stack, and larger vectors are stored on the heap
 /// automatically.
 ///
@@ -47,8 +47,10 @@ class SizeVector;
 /// ```
 /// core::DynamicSizeVector shape{utility::nullopt, 3};
 /// ```
-class DynamicSizeVector : public llvm::SmallVector<utility::optional<int64_t>> {
+class DynamicSizeVector
+    : public llvm::SmallVector<utility::optional<int64_t>, 4> {
 public:
+    using super_t = llvm::SmallVector<utility::optional<int64_t>, 4>;
     DynamicSizeVector() {}
 
     DynamicSizeVector(
@@ -62,7 +64,7 @@ public:
 
     template <class InputIterator>
     DynamicSizeVector(InputIterator first, InputIterator last)
-        : llvm::SmallVector<utility::optional<int64_t>>(first, last) {}
+        : super_t(first, last) {}
 
     DynamicSizeVector(const SizeVector& dim_sizes);
 
@@ -81,11 +83,12 @@ public:
 };
 
 /// SizeVector is a SmallVector of int64_t, typically used in Tensor shape and
-/// strides. Dimensions up to size 6 are stored on the stack, and larger vectors
+/// strides. Dimensions up to size 4 are stored on the stack, and larger vectors
 /// are stored on the heap automatically.  A signed int64_t type is chosen to
 /// allow negative strides.
-class SizeVector : public llvm::SmallVector<int64_t> {
+class SizeVector : public llvm::SmallVector<int64_t, 4> {
 public:
+    using super_t = llvm::SmallVector<int64_t, 4>;
     SizeVector() {}
 
     SizeVector(const std::initializer_list<int64_t>& dim_sizes);
@@ -98,7 +101,7 @@ public:
 
     template <class InputIterator>
     SizeVector(InputIterator first, InputIterator last)
-        : llvm::SmallVector<int64_t>(first, last) {}
+        : super_t(first, last) {}
 
     SizeVector& operator=(const SizeVector& v);
 
@@ -115,8 +118,7 @@ public:
 
     bool IsCompatible(const DynamicSizeVector& dsv) const;
 
-    // Used by RPC
-    explicit operator std::vector<int64_t>() const {
+    operator std::vector<int64_t>() const {
         return std::vector<int64_t>(begin(), end());
     }
 
