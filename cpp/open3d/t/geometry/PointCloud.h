@@ -318,8 +318,18 @@ public:
     /// \param boolean_mask Boolean indexing tensor of shape {n,} containing
     /// true value for the indices that is to be selected.
     /// \param invert Set to `True` to invert the selection of indices.
-    PointCloud SelectPoints(const core::Tensor &boolean_mask,
+    PointCloud SelectByMask(const core::Tensor &boolean_mask,
                             bool invert = false) const;
+
+    /// \brief Select points from input pointcloud, based on indices list into
+    /// output point cloud.
+    ///
+
+    /// \param indices Int32 indexing tensor of shape {n,} containing
+    /// index value that is to be selected.
+    /// \param invert Set to `True` to invert the selection of indices.
+    PointCloud SelectByIndex(const core::Tensor &indices,
+                             bool invert = false) const;
 
     /// \brief Downsamples a point cloud with a specified voxel size.
     /// \param voxel_size Voxel size. A positive number.

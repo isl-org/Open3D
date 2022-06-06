@@ -224,7 +224,7 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
-PointCloud PointCloud::SelectPoints(const core::Tensor &boolean_mask,
+PointCloud PointCloud::SelectByMask(const core::Tensor &boolean_mask,
                                     bool invert /* = false */) const {
     const int64_t length = GetPointPositions().GetLength();
     core::AssertTensorDtype(boolean_mask, core::Dtype::Bool);
@@ -241,10 +241,31 @@ PointCloud PointCloud::SelectPoints(const core::Tensor &boolean_mask,
     PointCloud pcd(GetDevice());
     for (auto &kv : GetPointAttr()) {
         if (HasPointAttr(kv.first)) {
-            pcd.SetPointAttr(kv.first,
-                             kv.second.IndexGet({indices_local}).Clone());
+            pcd.SetPointAttr(kv.first, kv.second.IndexGet({indices_local}));
         }
     }
+
+    utility::LogDebug("Pointcloud down sampled from {} points to {} points.",
+                      length, pcd.GetPointPositions().GetLength());
+    return pcd;
+}
+
+PointCloud PointCloud::SelectByIndex(const core::Tensor &indices,
+                                     bool invert /* = false */) const {
+    const int64_t length = GetPointPositions().GetLength();
+    core::AssertTensorDtype(indices, core::Dtype::Int64);
+    core::AssertTensorDevice(indices, GetDevice());
+
+    // The indices may have duplicate index value and will result in identity
+    // point cloud attributes. We convert indices Tensor into mask Tensor to and
+    // call SelectByMask to avoid this situation.
+    core::Tensor mask =
+            core::Tensor::Zeros({length}, core::Dtype::Int16, GetDevice());
+    mask.SetItem(core::TensorKey::IndexTensor(indices),
+                 core::Tensor(std::vector<int16_t>{1}, {}, core::Dtype::Int16,
+                              GetDevice()));
+
+    PointCloud pcd = SelectByMask(mask.To(core::Dtype::Bool), invert);
 
     utility::LogDebug("Pointcloud down sampled from {} points to {} points.",
                       length, pcd.GetPointPositions().GetLength());
@@ -305,7 +326,7 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
 
     const core::Tensor valid =
             num_neighbors.Ge(static_cast<int64_t>(nb_points));
-    const PointCloud pcd = SelectPoints(valid);
+    const PointCloud pcd = SelectByMask(valid);
 
     return std::make_tuple(pcd, valid);
 }
