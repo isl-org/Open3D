@@ -125,6 +125,12 @@ boringssl:                  edfe413            Dual OpenSSL, SSLeay, ISC license
 BoringSSL is a fork of OpenSSL that is designed to meet Google's needs.
 https://github.com/google/boringssl
 --------------------------------------------------------------------------------
+llvm                        75e164f6                            Apache-2 license
+The LLVM Project is a collection of modular and reusable compiler and toolchain
+technologies.
+We only use the SmallVector class from llvm.
+https://github.com/llvm/llvm-project
+--------------------------------------------------------------------------------
 ```
 
 ## Patching a third-party library

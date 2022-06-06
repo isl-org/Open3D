@@ -15,7 +15,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "SmallVector.h"
+#define LLVM_ENABLE_DLL_EXPORTS
+#include "llvm/ADT/SmallVector.h"
+#undef LLVM_ENABLE_DLL_EXPORTS
 
 #define LLVM_ENABLE_EXCEPTIONS
 

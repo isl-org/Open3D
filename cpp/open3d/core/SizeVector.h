@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include "SmallVector.h"
+#include "llvm/ADT/SmallVector.h"
 #include "open3d/utility/Optional.h"
 
 namespace open3d {
