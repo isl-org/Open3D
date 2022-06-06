@@ -28,12 +28,15 @@
 
 #include <benchmark/benchmark.h>
 
+#include <algorithm>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
+
 
 namespace open3d {
 namespace t {
@@ -104,6 +107,22 @@ void VoxelDownSample(benchmark::State& state,
     }
 }
 
+void LegacyTransform(benchmark::State& state, const int no_use) {
+    open3d::geometry::PointCloud pcd;
+    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
+    transformation.block<3, 1>(0, 3) = Eigen::Vector3d(1, 2, 3);
+
+    // Warm Up.
+    open3d::geometry::PointCloud pcd_transformed =
+            pcd.Transform(transformation);
+
+    for (auto _ : state) {
+        pcd_transformed = pcd.Transform(transformation);
+    }
+}
+
 void Transform(benchmark::State& state, const core::Device& device) {
     PointCloud pcd;
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
@@ -123,6 +142,40 @@ void Transform(benchmark::State& state, const core::Device& device) {
     for (auto _ : state) {
         pcd_transformed = pcd.Transform(transformation);
         core::cuda::Synchronize(device);
+    }
+}
+
+void SelectByIndex(benchmark::State& state, const core::Device& device) {
+    PointCloud pcd;
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    const int64_t num_points = pcd.GetPointPositions().GetLength();
+    core::Tensor indices =
+            core::Tensor::Arange(0, num_points, 1, core::Dtype::Int64, device);
+
+    // Warm Up.
+    PointCloud pcd_selected = pcd.SelectByIndex(indices);
+
+    for (auto _ : state) {
+        pcd_selected = pcd.SelectByIndex(indices);
+        core::cuda::Synchronize(device);
+    }
+}
+
+void LegacySelectByIndex(benchmark::State& state, const int no_use) {
+    open3d::geometry::PointCloud pcd;
+    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    const size_t num_points = pcd.points_.size();
+    std::vector<size_t> indices(num_points);
+    std::iota(indices.begin(), indices.end(), 0);
+
+    // Warm Up.
+    open3d::geometry::PointCloud pcd_selected = *pcd.SelectByIndex(indices);
+
+    for (auto _ : state) {
+        pcd_selected = *pcd.SelectByIndex(indices);
     }
 }
 
@@ -252,8 +305,13 @@ ENUM_VOXELDOWNSAMPLE_BACKEND()
 BENCHMARK_CAPTURE(Transform, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
+BENCHMARK_CAPTURE(SelectByIndex, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(SelectByIndex, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 
@@ -323,6 +381,9 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   utility::nullopt)
         ->Unit(benchmark::kMillisecond);
 #endif
+
+BENCHMARK_CAPTURE(LegacyTransform, CPU, 1)->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacySelectByIndex, CPU, 1)->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   Legacy Hybrid[0.02 | 30 | 0.06],
