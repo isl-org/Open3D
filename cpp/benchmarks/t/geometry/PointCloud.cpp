@@ -37,7 +37,6 @@
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 
-
 namespace open3d {
 namespace t {
 namespace geometry {
