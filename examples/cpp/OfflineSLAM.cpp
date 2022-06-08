@@ -47,6 +47,7 @@ void PrintHelp() {
     utility::LogInfo("    --device [CPU:0]");
     utility::LogInfo("    --pointcloud [file path to save the extracted pointcloud]");
     utility::LogInfo("    --mesh [file path to save the extracted mesh]");
+    utility::LogInfo("    --vis [whether to visualize the result]");
     utility::LogInfo("To run similar example with a default dataset, try the `OnlineSLAMRGBD` example");
     // clang-format on
     utility::LogInfo("");
@@ -137,8 +138,8 @@ int main(int argc, char* argv[]) {
     // Odometry configurations
     float depth_scale = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--depth_scale", 1000.f));
-    float depth_max = static_cast<float>(
-            utility::GetProgramOptionAsDouble(argc, argv, "--depth_max", 3.f));
+    float max_depth = static_cast<float>(
+            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
     float depth_diff = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--depth_diff", 0.07f));
 
@@ -169,7 +170,7 @@ int main(int argc, char* argv[]) {
         if (i > 0) {
             auto result =
                     model.TrackFrameToModel(input_frame, raycast_frame,
-                                            depth_scale, depth_max, depth_diff);
+                                            depth_scale, max_depth, depth_diff);
 
             core::Tensor translation =
                     result.transformation_.Slice(0, 0, 3).Slice(1, 3, 4);
@@ -195,10 +196,10 @@ int main(int argc, char* argv[]) {
         // Integrate
         model.UpdateFramePose(i, T_frame_to_model);
         if (tracking_success) {
-            model.Integrate(input_frame, depth_scale, depth_max,
+            model.Integrate(input_frame, depth_scale, max_depth,
                             trunc_voxel_multiplier);
         }
-        model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, depth_max,
+        model.SynthesizeModelFrame(raycast_frame, depth_scale, 0.1, max_depth,
                                    trunc_voxel_multiplier, false);
     }
 
@@ -209,8 +210,10 @@ int main(int argc, char* argv[]) {
         auto pcd = model.ExtractPointCloud();
         auto pcd_legacy =
                 std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
-        open3d::visualization::Draw({pcd_legacy}, "Extracted PointCloud.");
         open3d::io::WritePointCloud(filename, *pcd_legacy);
+        if (utility::ProgramOptionExists(argc, argv, "--vis")) {
+            open3d::visualization::Draw({pcd_legacy}, "Extracted PointCloud.");
+        }
     } else {
         // If nothing is specified, draw and save the geometry as mesh.
         std::string filename = utility::GetProgramOptionAsString(
@@ -218,7 +221,9 @@ int main(int argc, char* argv[]) {
         auto mesh = model.ExtractTriangleMesh();
         auto mesh_legacy = std::make_shared<open3d::geometry::TriangleMesh>(
                 mesh.ToLegacy());
-        open3d::visualization::Draw({mesh_legacy}, "Extracted Mesh.");
         open3d::io::WriteTriangleMesh(filename, *mesh_legacy);
+        if (utility::ProgramOptionExists(argc, argv, "--vis")) {
+            open3d::visualization::Draw({mesh_legacy}, "Extracted Mesh.");
+        }
     }
 }
