@@ -324,8 +324,7 @@ public:
     /// \brief Select points from input pointcloud, based on indices list into
     /// output point cloud.
     ///
-
-    /// \param indices Int32 indexing tensor of shape {n,} containing
+    /// \param indices Int64 indexing tensor of shape {n,} containing
     /// index value that is to be selected.
     /// \param invert Set to `True` to invert the selection of indices.
     PointCloud SelectByIndex(const core::Tensor &indices,

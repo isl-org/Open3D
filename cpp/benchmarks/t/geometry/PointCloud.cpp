@@ -28,8 +28,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include <algorithm>
-
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
@@ -151,7 +149,7 @@ void SelectByIndex(benchmark::State& state, const core::Device& device) {
 
     const int64_t num_points = pcd.GetPointPositions().GetLength();
     core::Tensor indices =
-            core::Tensor::Arange(0, num_points, 1, core::Dtype::Int64, device);
+            core::Tensor::Arange(0, num_points, 1, core::Int64, device);
 
     // Warm Up.
     PointCloud pcd_selected = pcd.SelectByIndex(indices);

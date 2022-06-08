@@ -253,19 +253,19 @@ PointCloud PointCloud::SelectByMask(const core::Tensor &boolean_mask,
 PointCloud PointCloud::SelectByIndex(const core::Tensor &indices,
                                      bool invert /* = false */) const {
     const int64_t length = GetPointPositions().GetLength();
-    core::AssertTensorDtype(indices, core::Dtype::Int64);
+    core::AssertTensorDtype(indices, core::Int64);
     core::AssertTensorDevice(indices, GetDevice());
 
     // The indices may have duplicate index value and will result in identity
-    // point cloud attributes. We convert indices Tensor into mask Tensor to and
+    // point cloud attributes. We convert indices Tensor into mask Tensor and
     // call SelectByMask to avoid this situation.
     core::Tensor mask =
-            core::Tensor::Zeros({length}, core::Dtype::Int16, GetDevice());
+            core::Tensor::Zeros({length}, core::Int16, GetDevice());
     mask.SetItem(core::TensorKey::IndexTensor(indices),
-                 core::Tensor(std::vector<int16_t>{1}, {}, core::Dtype::Int16,
+                 core::Tensor(std::vector<int16_t>{1}, {}, core::Int16,
                               GetDevice()));
 
-    PointCloud pcd = SelectByMask(mask.To(core::Dtype::Bool), invert);
+    PointCloud pcd = SelectByMask(mask.To(core::Bool), invert);
 
     utility::LogDebug("Pointcloud down sampled from {} points to {} points.",
                       length, pcd.GetPointPositions().GetLength());
