@@ -968,7 +968,7 @@ if(USE_SYSTEM_QHULLCPP)
 endif()
 if(NOT USE_SYSTEM_QHULLCPP)
     include(${Open3D_3RDPARTY_DIR}/qhull/qhull.cmake)
-    open3d_build_3rdparty_library(3rdparty_qhull_r DIRECTORY ${QHULL_SOURCE_DIR}
+    open3d_build_3rdparty_library(3rdparty_qhullcpp DIRECTORY ${QHULL_SOURCE_DIR}
         SOURCES
             src/libqhull_r/global_r.c
             src/libqhull_r/stat_r.c
@@ -985,13 +985,8 @@ if(NOT USE_SYSTEM_QHULLCPP)
             src/libqhull_r/io_r.c
             src/libqhull_r/user_r.c
             src/libqhull_r/rboxlib_r.c
-        INCLUDE_DIRS
-            src/
-        DEPENDS
-            ext_qhull
-    )
-    open3d_build_3rdparty_library(3rdparty_qhullcpp DIRECTORY ${QHULL_SOURCE_DIR}
-        SOURCES
+            # src/libqhull_r/userprintf_r.c
+            # src/libqhull_r/userprintf_rbox_r.c
             src/libqhullcpp/Coordinates.cpp
             src/libqhullcpp/PointCoordinates.cpp
             src/libqhullcpp/Qhull.cpp
@@ -1017,7 +1012,6 @@ if(NOT USE_SYSTEM_QHULLCPP)
         DEPENDS
             ext_qhull
     )
-    target_link_libraries(3rdparty_qhullcpp PRIVATE 3rdparty_qhull_r)
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_qhullcpp)
 else()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_qhullcpp)
