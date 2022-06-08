@@ -26,11 +26,12 @@
 
 #include "open3d/geometry/Qhull.h"
 
-#include "libqhullcpp/PointCoordinates.h"
-#include "libqhullcpp/Qhull.h"
-#include "libqhullcpp/QhullFacet.h"
-#include "libqhullcpp/QhullFacetList.h"
-#include "libqhullcpp/QhullVertexSet.h"
+#include <libqhullcpp/PointCoordinates.h>
+#include <libqhullcpp/Qhull.h>
+#include <libqhullcpp/QhullFacet.h>
+#include <libqhullcpp/QhullFacetList.h>
+#include <libqhullcpp/QhullVertexSet.h>
+
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
