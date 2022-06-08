@@ -45,21 +45,21 @@ static int DtypeToVtkType(const core::Dtype& dtype) {
     } else if (dtype == core::Float64) {
         return VTK_DOUBLE;
     } else if (dtype == core::Int8) {
-        return VTK_CHAR;
+        return VTK_TYPE_INT8;
     } else if (dtype == core::Int16) {
-        return VTK_SHORT;
+        return VTK_TYPE_INT16;
     } else if (dtype == core::Int32) {
-        return VTK_INT;
+        return VTK_TYPE_INT32;
     } else if (dtype == core::Int64) {
-        return VTK_LONG;
+        return VTK_TYPE_INT64;
     } else if (dtype == core::UInt8) {
-        return VTK_UNSIGNED_CHAR;
+        return VTK_TYPE_UINT8;
     } else if (dtype == core::UInt16) {
-        return VTK_UNSIGNED_SHORT;
+        return VTK_TYPE_UINT16;
     } else if (dtype == core::UInt32) {
-        return VTK_UNSIGNED_INT;
+        return VTK_TYPE_UINT32;
     } else if (dtype == core::UInt64) {
-        return VTK_UNSIGNED_LONG;
+        return VTK_TYPE_UINT64;
     } else if (dtype == core::Bool) {
         // VTK_BIT arrays are compact and store 8 booleans per byte!
         return VTK_BIT;
