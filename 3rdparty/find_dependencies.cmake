@@ -985,8 +985,6 @@ if(NOT USE_SYSTEM_QHULLCPP)
             src/libqhull_r/io_r.c
             src/libqhull_r/user_r.c
             src/libqhull_r/rboxlib_r.c
-            src/libqhull_r/userprintf_r.c
-            src/libqhull_r/userprintf_rbox_r.c
             src/libqhullcpp/Coordinates.cpp
             src/libqhullcpp/PointCoordinates.cpp
             src/libqhullcpp/Qhull.cpp
