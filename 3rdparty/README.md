@@ -128,7 +128,7 @@ https://github.com/google/boringssl
 llvm                        75e164f6                            Apache-2 license
 The LLVM Project is a collection of modular and reusable compiler and toolchain
 technologies.
-We only use the SmallVector class from llvm.
+We only use the SmallVector class from llvm, placed in cpp/open3d/core.
 https://github.com/llvm/llvm-project
 --------------------------------------------------------------------------------
 ```

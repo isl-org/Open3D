@@ -16,8 +16,7 @@
 ///
 //===----------------------------------------------------------------------===//
 
-#ifndef LLVM_ADT_SMALLVECTOR_H
-#define LLVM_ADT_SMALLVECTOR_H
+#pragma once
 
 #include <algorithm>
 #include <cassert>
@@ -46,17 +45,8 @@
 #define LLVM_GSL_OWNER
 #endif
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#if defined(LLVM_ENABLE_DLL_EXPORTS)   // Only defined in SmallVector.cpp
-#define DLL_API __declspec(dllexport)  // when building DLL
-#else
-#define DLL_API __declspec(dllimport)  // when linking to DLL
-#endif
-#else
-#define DLL_API [[gnu::visibility("default")]]
-#endif
-
-namespace llvm {
+namespace open3d {
+namespace core {
 // from llvm/include/llvm/Support/MemAlloc.h
 inline void *safe_malloc(size_t Sz) {
     void *Result = std::malloc(Sz);
@@ -94,7 +84,7 @@ class iterator_range;
 /// 32 bit size would limit the vector to ~4GB. SmallVectors are used for
 /// buffering bitcode output - which can exceed 4GB.
 template <class Size_T>
-class DLL_API SmallVectorBase {
+class SmallVectorBase {
 protected:
     void *BeginX;
     Size_T Size = 0, Capacity;
@@ -1363,23 +1353,23 @@ to_vector(R &&Range) {
     return {std::begin(Range), std::end(Range)};
 }
 
-}  // end namespace llvm
+}  // namespace core
+}  // namespace open3d
 
 namespace std {
 
 /// Implement std::swap in terms of SmallVector swap.
 template <typename T>
-inline void swap(llvm::SmallVectorImpl<T> &LHS, llvm::SmallVectorImpl<T> &RHS) {
+inline void swap(open3d::core::SmallVectorImpl<T> &LHS,
+                 open3d::core::SmallVectorImpl<T> &RHS) {
     LHS.swap(RHS);
 }
 
 /// Implement std::swap in terms of SmallVector swap.
 template <typename T, unsigned N>
-inline void swap(llvm::SmallVector<T, N> &LHS, llvm::SmallVector<T, N> &RHS) {
+inline void swap(open3d::core::SmallVector<T, N> &LHS,
+                 open3d::core::SmallVector<T, N> &RHS) {
     LHS.swap(RHS);
 }
 
 }  // end namespace std
-
-#undef DLL_API
-#endif  // LLVM_ADT_SMALLVECTOR_H

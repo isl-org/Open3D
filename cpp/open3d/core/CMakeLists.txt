@@ -12,6 +12,7 @@ target_sources(core PRIVATE
     MemoryManagerStatistic.cpp
     ShapeUtil.cpp
     SizeVector.cpp
+    SmallVector.cpp
     SYCLUtils.cpp
     Tensor.cpp
     TensorCheck.cpp

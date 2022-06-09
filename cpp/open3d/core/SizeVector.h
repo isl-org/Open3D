@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include "llvm/ADT/SmallVector.h"
+#include "open3d/core/SmallVector.h"
 #include "open3d/utility/Optional.h"
 
 namespace open3d {
@@ -47,10 +47,9 @@ class SizeVector;
 /// ```
 /// core::DynamicSizeVector shape{utility::nullopt, 3};
 /// ```
-class DynamicSizeVector
-    : public llvm::SmallVector<utility::optional<int64_t>, 4> {
+class DynamicSizeVector : public SmallVector<utility::optional<int64_t>, 4> {
 public:
-    using super_t = llvm::SmallVector<utility::optional<int64_t>, 4>;
+    using super_t = SmallVector<utility::optional<int64_t>, 4>;
     DynamicSizeVector() {}
 
     DynamicSizeVector(
@@ -86,9 +85,9 @@ public:
 /// strides. Dimensions up to size 4 are stored on the stack, and larger vectors
 /// are stored on the heap automatically.  A signed int64_t type is chosen to
 /// allow negative strides.
-class SizeVector : public llvm::SmallVector<int64_t, 4> {
+class SizeVector : public SmallVector<int64_t, 4> {
 public:
-    using super_t = llvm::SmallVector<int64_t, 4>;
+    using super_t = SmallVector<int64_t, 4>;
     SizeVector() {}
 
     SizeVector(const std::initializer_list<int64_t>& dim_sizes);

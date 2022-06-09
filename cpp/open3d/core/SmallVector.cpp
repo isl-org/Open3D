@@ -15,9 +15,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define LLVM_ENABLE_DLL_EXPORTS
-#include "llvm/ADT/SmallVector.h"
-#undef LLVM_ENABLE_DLL_EXPORTS
+#include "open3d/core/SmallVector.h"
 
 #define LLVM_ENABLE_EXCEPTIONS
 
@@ -25,7 +23,8 @@
 #include <stdexcept>
 #endif
 #include <string>
-using namespace llvm;
+namespace open3d {
+namespace core {
 
 // Check that no bytes are wasted and everything is well-aligned.
 namespace {
@@ -120,7 +119,7 @@ void *SmallVectorBase<Size_T>::mallocForGrow(size_t MinSize,
                                              size_t TSize,
                                              size_t &NewCapacity) {
     NewCapacity = getNewCapacity<Size_T>(MinSize, TSize, this->capacity());
-    return llvm::safe_malloc(NewCapacity * TSize);
+    return open3d::core::safe_malloc(NewCapacity * TSize);
 }
 
 // Note: Moving this function into the header may cause performance regression.
@@ -145,14 +144,14 @@ void SmallVectorBase<Size_T>::grow_pod(void *FirstEl,
     this->Capacity = NewCapacity;
 }
 
-template class llvm::SmallVectorBase<uint32_t>;
+template class SmallVectorBase<uint32_t>;
 
 // Disable the uint64_t instantiation for 32-bit builds.
 // Both uint32_t and uint64_t instantiations are needed for 64-bit builds.
 // This instantiation will never be used in 32-bit builds, and will cause
 // warnings when sizeof(Size_T) > sizeof(size_t).
 #if SIZE_MAX > UINT32_MAX
-template class llvm::SmallVectorBase<uint64_t>;
+template class SmallVectorBase<uint64_t>;
 
 // Assertions to ensure this #if stays in sync with SmallVectorSizeType.
 static_assert(sizeof(SmallVectorSizeType<char>) == sizeof(uint64_t),
@@ -161,3 +160,5 @@ static_assert(sizeof(SmallVectorSizeType<char>) == sizeof(uint64_t),
 static_assert(sizeof(SmallVectorSizeType<char>) == sizeof(uint32_t),
               "Expected SmallVectorBase<uint32_t> variant to be in use.");
 #endif
+}  // namespace core
+}  // namespace open3d
