@@ -115,7 +115,7 @@ with the configuration changes::
     "depth_max": 0.85,
     "tsdf_cubic_size": 0.75,
     "voxel_size": 0.025,
-    "max_depth_diff": 0.03
+    "depth_diff_max": 0.03
 
 .. raw:: html
 
