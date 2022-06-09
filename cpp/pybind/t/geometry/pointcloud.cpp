@@ -187,7 +187,7 @@ The attributes of the point cloud have different levels::
                    "Select points from input pointcloud, based on boolean mask "
                    "indices into output point cloud.");
     pointcloud.def("select_by_index", &PointCloud::SelectByIndex, "indices"_a,
-                   "invert"_a = false,
+                   "invert"_a = false, "remove_duplicates"_a = false,
                    "Select points from input pointcloud, based on indices into "
                    "output point cloud.");
     pointcloud.def(

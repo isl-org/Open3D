@@ -142,7 +142,9 @@ void Transform(benchmark::State& state, const core::Device& device) {
     }
 }
 
-void SelectByIndex(benchmark::State& state, const core::Device& device) {
+void SelectByIndex(benchmark::State& state,
+                   bool remove_duplicates,
+                   const core::Device& device) {
     PointCloud pcd;
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
@@ -152,7 +154,8 @@ void SelectByIndex(benchmark::State& state, const core::Device& device) {
             core::Tensor::Arange(0, num_points, 1, core::Int64, device);
 
     // Warm Up.
-    PointCloud pcd_selected = pcd.SelectByIndex(indices);
+    PointCloud pcd_selected =
+            pcd.SelectByIndex(indices, false, remove_duplicates);
 
     for (auto _ : state) {
         pcd_selected = pcd.SelectByIndex(indices);
@@ -302,13 +305,23 @@ ENUM_VOXELDOWNSAMPLE_BACKEND()
 BENCHMARK_CAPTURE(Transform, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(SelectByIndex, CPU, core::Device("CPU:0"))
+BENCHMARK_CAPTURE(SelectByIndex, CPU, false, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(SelectByIndex,
+                  CPU(remove duplicates),
+                  true,
+                  core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(SelectByIndex, CUDA, core::Device("CUDA:0"))
+BENCHMARK_CAPTURE(SelectByIndex, CUDA, false core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(SelectByIndex,
+                  CUDA(remove duplicates),
+                  true core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 

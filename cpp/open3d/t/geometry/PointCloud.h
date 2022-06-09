@@ -326,9 +326,12 @@ public:
     ///
     /// \param indices Int64 indexing tensor of shape {n,} containing
     /// index value that is to be selected.
-    /// \param invert Set to `True` to invert the selection of indices.
+    /// \param invert Set to `True` to invert the selection of indices, and also
+    /// ignore the duplicated indices.
+    /// \param remove_duplicates Set to `True` to remove the duplicated indices.
     PointCloud SelectByIndex(const core::Tensor &indices,
-                             bool invert = false) const;
+                             bool invert = false,
+                             bool remove_duplicates = false) const;
 
     /// \brief Downsamples a point cloud with a specified voxel size.
     /// \param voxel_size Voxel size. A positive number.

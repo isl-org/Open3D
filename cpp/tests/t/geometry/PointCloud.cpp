@@ -704,6 +704,7 @@ TEST_P(PointCloudPermuteDevices, SelectByIndex) {
                                        {0.3, 0.6, 0.8},
                                        {0.2, 0.4, 0.2}},
                                       device));
+    // Test indices without duplicated value.
     const core::Tensor indices = core::Tensor::Init<int64_t>({0, 3}, device);
 
     const auto pcd_select = pcd_small.SelectByIndex(indices, false);
@@ -713,6 +714,37 @@ TEST_P(PointCloudPermuteDevices, SelectByIndex) {
 
     const auto pcd_select_invert = pcd_small.SelectByIndex(indices, true);
     EXPECT_TRUE(pcd_select_invert.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{0.9, 0.2, 0.4}, {0.3, 0.6, 0.8}},
+                                      device)));
+
+    // Test indices with duplicated value.
+    const core::Tensor duplicated_indices =
+            core::Tensor::Init<int64_t>({0, 0, 3, 3}, device);
+
+    const auto pcd_select_no_remove =
+            pcd_small.SelectByIndex(duplicated_indices, false, false);
+    EXPECT_TRUE(pcd_select_no_remove.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{0.1, 0.3, 0.9},
+                                       {0.1, 0.3, 0.9},
+                                       {0.2, 0.4, 0.2},
+                                       {0.2, 0.4, 0.2}},
+                                      device)));
+
+    const auto pcd_select_remove =
+            pcd_small.SelectByIndex(duplicated_indices, false, true);
+    EXPECT_TRUE(pcd_select_remove.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{0.1, 0.3, 0.9}, {0.2, 0.4, 0.2}},
+                                      device)));
+
+    const auto pcd_select_invert_no_remove =
+            pcd_small.SelectByIndex(duplicated_indices, true, false);
+    EXPECT_TRUE(pcd_select_invert_no_remove.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{0.9, 0.2, 0.4}, {0.3, 0.6, 0.8}},
+                                      device)));
+
+    const auto pcd_select_invert_remove =
+            pcd_small.SelectByIndex(duplicated_indices, true, true);
+    EXPECT_TRUE(pcd_select_invert_remove.GetPointPositions().AllClose(
             core::Tensor::Init<float>({{0.9, 0.2, 0.4}, {0.3, 0.6, 0.8}},
                                       device)));
 }

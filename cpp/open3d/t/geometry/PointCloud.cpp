@@ -250,25 +250,38 @@ PointCloud PointCloud::SelectByMask(const core::Tensor &boolean_mask,
     return pcd;
 }
 
-PointCloud PointCloud::SelectByIndex(const core::Tensor &indices,
-                                     bool invert /* = false */) const {
+PointCloud PointCloud::SelectByIndex(
+        const core::Tensor &indices,
+        bool invert /* = false */,
+        bool remove_duplicates /* = false */) const {
     const int64_t length = GetPointPositions().GetLength();
     core::AssertTensorDtype(indices, core::Int64);
     core::AssertTensorDevice(indices, GetDevice());
 
-    // The indices may have duplicate index value and will result in identity
-    // point cloud attributes. We convert indices Tensor into mask Tensor and
-    // call SelectByMask to avoid this situation.
-    core::Tensor mask =
-            core::Tensor::Zeros({length}, core::Int16, GetDevice());
-    mask.SetItem(core::TensorKey::IndexTensor(indices),
-                 core::Tensor(std::vector<int16_t>{1}, {}, core::Int16,
-                              GetDevice()));
+    PointCloud pcd;
 
-    PointCloud pcd = SelectByMask(mask.To(core::Bool), invert);
+    if (!remove_duplicates && !invert) {
+        core::TensorKey key = core::TensorKey::IndexTensor(indices);
+        for (auto &kv : GetPointAttr()) {
+            if (HasPointAttr(kv.first)) {
+                pcd.SetPointAttr(kv.first, kv.second.GetItem(key));
+            }
+        }
+        utility::LogDebug(
+                "Pointcloud down sampled from {} points to {} points.", length,
+                pcd.GetPointPositions().GetLength());
+    } else {
+        // The indices may have duplicate index value and will result in
+        // identity point cloud attributes. We convert indices Tensor into mask
+        // Tensor and call SelectByMask to avoid this situation.
+        core::Tensor mask =
+                core::Tensor::Zeros({length}, core::Bool, GetDevice());
+        mask.SetItem(core::TensorKey::IndexTensor(indices),
+                     core::Tensor::Init<bool>(true, GetDevice()));
 
-    utility::LogDebug("Pointcloud down sampled from {} points to {} points.",
-                      length, pcd.GetPointPositions().GetLength());
+        pcd = SelectByMask(mask, invert);
+    }
+
     return pcd;
 }
 
