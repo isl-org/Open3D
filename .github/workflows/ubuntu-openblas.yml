@@ -150,7 +150,8 @@ jobs:
                     && docker --version \
                     && sudo systemctl start docker \
                     && sudo systemctl enable docker \
-                    && sudo systemctl status docker"
+                    && sudo systemctl status docker \
+                    && docker images"
       # && sudo groupadd docker \
       # && sudo usermod -aG docker $USER \
       # && su - $USER \
