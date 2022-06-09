@@ -263,7 +263,7 @@ std::vector<size_t> &VisualizerWithEditing::GetPickedPoints() {
     return pointcloud_picker_ptr_->picked_indices_;
 }
 
-std::shared_ptr<geometry::Geometry> VisualizerWithEditing::GetCroppingGeometry()
+std::shared_ptr<geometry::Geometry> VisualizerWithEditing::GetCroppedGeometry()
         const {
     if (editing_geometry_ptr_->GetGeometryType() ==
         geometry::Geometry::GeometryType::PointCloud)
