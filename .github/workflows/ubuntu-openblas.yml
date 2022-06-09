@@ -84,6 +84,7 @@ jobs:
       - name: VM create
         run: |
           gcloud compute images list
+          gcloud container images list
           INSTANCE_NAME="${GCE_INSTANCE_PREFIX}-${GITHUB_SHA::8}"
           INSTANCE_ZONES=(us-west1-a
                           us-west1-b
