@@ -150,11 +150,11 @@ jobs:
                     && docker --version \
                     && sudo systemctl start docker \
                     && sudo systemctl enable docker \
-                    && sudo systemctl status docker \
-                    && sudo groupadd docker \
-                    && sudo usermod -aG docker $USER \
-                    && su - $USER \
-                    && id -nG"
+                    && sudo systemctl status docker"
+      # && sudo groupadd docker \
+      # && sudo usermod -aG docker $USER \
+      # && su - $USER \
+      # && id -nG"
       - name: VM build docker
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
