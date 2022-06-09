@@ -146,7 +146,7 @@ jobs:
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
             --command="sudo apt update \
-                    && sudo apt install docker.io \
+                    && sudo apt install -y docker.io \
                     && docker --version \
                     && sudo systemctl start docker \
                     && sudo systemctl enable docker \
