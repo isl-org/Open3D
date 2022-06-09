@@ -112,7 +112,6 @@ jobs:
               --machine-type=n1-standard-8 \
               --boot-disk-size="128GB" \
               --boot-disk-type="pd-ssd" \
-              --image-family-scope="global" \
               --image-project="ubuntu-os-cloud" \ 
               --image-family="ubuntu-2004-lts" \
               --metadata-from-file=startup-script=./util/gcloud_auto_clean.sh \
