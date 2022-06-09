@@ -112,8 +112,7 @@ jobs:
               --machine-type=n1-standard-8 \
               --boot-disk-size="128GB" \
               --boot-disk-type="pd-ssd" \
-              --image-project="debian-cloud" \ 
-              --image="debian-10-buster-v20220519" \
+              --image-project="debian-cloud" \
               --metadata-from-file=startup-script=./util/gcloud_auto_clean.sh \
               --scopes="storage-full,compute-rw" \
               --service-account="$GCE_GPU_CI_SA"; do
