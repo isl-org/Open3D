@@ -32,6 +32,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
@@ -732,6 +733,93 @@ TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
                                        {1.2, 1.2, 1.2},
                                        {1.3, 1.3, 1.3}},
                                       device)));
+}
+
+TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
+    core::Device device = GetParam();
+    if (device.GetType() != core::Device::DeviceType::CPU) GTEST_SKIP();
+    t::geometry::PointCloud pcd;
+    data::PLYPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
+    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
+
+    // Hard-coded test
+    core::Tensor cluster = pcd.ClusterDBSCAN(0.02, 10, false);
+
+    EXPECT_EQ(cluster.GetDtype(), core::Int32);
+    EXPECT_EQ(cluster.GetLength(), 196133);
+    std::unordered_set<int> cluster_set(
+            cluster.GetDataPtr<int>(),
+            cluster.GetDataPtr<int>() + cluster.GetLength());
+    EXPECT_EQ(cluster_set.size(), 11);
+    int cluster_sum = cluster.Sum({0}).Item<int>();
+    EXPECT_EQ(cluster_sum, 398580);
+}
+
+TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
+    core::Device device = GetParam();
+    if (device.GetType() != core::Device::DeviceType::CPU) GTEST_SKIP();
+    t::geometry::PointCloud pcd;
+    t::geometry::TriangleMesh mesh;
+
+    // Needs at least 4 points
+    pcd.SetPointPositions(core::Tensor({0, 3}, core::Float32));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    pcd.SetPointPositions(core::Tensor::Init<float>({{0, 0, 0}}));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    pcd.SetPointPositions(core::Tensor::Init<float>({{0, 0, 0}, {0, 0, 1}}));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    pcd.SetPointPositions(
+            core::Tensor::Init<float>({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}}));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+
+    // Degenerate input
+    pcd.SetPointPositions(core::Tensor::Init<float>(
+            {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    // Allow adding random noise to fix the degenerate input
+    EXPECT_NO_THROW(pcd.ComputeConvexHull(true));
+
+    // Hard-coded test
+    pcd.SetPointPositions(core::Tensor::Init<double>(
+            {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}}));
+    mesh = pcd.ComputeConvexHull();
+    auto point_indices = mesh.GetVertexAttr("point_indices");
+    EXPECT_EQ(point_indices.GetDtype(), core::Int32);
+    EXPECT_EQ(point_indices.ToFlatVector<int>(),
+              std::vector<int>({2, 3, 0, 1}));
+    EXPECT_TRUE(mesh.GetVertexPositions().AllEqual(
+            pcd.GetPointPositions().IndexGet({point_indices.To(core::Int64)})));
+
+    // Hard-coded test
+    pcd.SetPointPositions(core::Tensor::Init<double>({{0.5, 0.5, 0.5},
+                                                      {0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0},
+                                                      {1, 1, 1}}));
+    mesh = pcd.ComputeConvexHull();
+    point_indices = mesh.GetVertexAttr("point_indices");
+    EXPECT_EQ(point_indices.ToFlatVector<int>(),
+              std::vector<int>({7, 3, 1, 5, 6, 2, 8, 4}));
+    EXPECT_TRUE(mesh.GetVertexPositions().AllEqual(
+            pcd.GetPointPositions().IndexGet({point_indices.To(core::Int64)})));
+    ExpectEQ(mesh.GetTriangleIndices().ToFlatVector<int>(),
+             std::vector<int>{1, 0, 2,  //
+                              0, 3, 2,  //
+                              3, 4, 2,  //
+                              4, 5, 2,  //
+                              0, 4, 3,  //
+                              4, 0, 6,  //
+                              7, 1, 2,  //
+                              5, 7, 2,  //
+                              7, 0, 1,  //
+                              0, 7, 6,  //
+                              4, 7, 5,  //
+                              7, 4, 6});
 }
 
 }  // namespace tests

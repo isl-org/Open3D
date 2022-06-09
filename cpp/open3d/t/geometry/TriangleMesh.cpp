@@ -38,6 +38,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/geometry/kernel/VtkUtils.h"
@@ -45,6 +46,8 @@
 namespace open3d {
 namespace t {
 namespace geometry {
+
+class PointCloud;  // forward declaration
 
 TriangleMesh::TriangleMesh(const core::Device &device)
     : Geometry(Geometry::GeometryType::TriangleMesh, 3),
@@ -273,6 +276,11 @@ TriangleMesh TriangleMesh::To(const core::Device &device, bool copy) const {
         mesh.SetVertexAttr(kv.first, kv.second.To(device, /*copy=*/true));
     }
     return mesh;
+}
+
+TriangleMesh TriangleMesh::ComputeConvexHull(bool joggle_inputs) const {
+    PointCloud pcd(GetVertexPositions());
+    return pcd.ComputeConvexHull();
 }
 
 TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
