@@ -134,8 +134,7 @@ jobs:
             --command "ls -alh \
                     && tar -xvzf Open3D.tar.gz \
                     && ls -alh \
-                    && ls -alh Open3D \
-                    && nvidia-smi"
+                    && ls -alh Open3D"
       - name: VM install QEMU dependencies
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
