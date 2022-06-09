@@ -126,6 +126,7 @@ jobs:
           exit $((ZONE_ID >= ${#INSTANCE_ZONES[@]})) # 0 => success
       - name: VM copy code
         run: |
+          gcloud compute ssh "${INSTANCE_NAME}" --troubleshoot
           gcloud compute scp \
             "${GITHUB_WORKSPACE}/../Open3D.tar.gz" "${INSTANCE_NAME}":~ \
             --zone "${GCE_ZONE}"
