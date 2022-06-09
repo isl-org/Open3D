@@ -214,7 +214,7 @@ def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
         color,
         depth,
         depth_scale=config["depth_scale"],
-        depth_trunc=config["max_depth"],
+        depth_trunc=config["depth_max"],
         convert_rgb_to_intensity=convert_rgb_to_intensity)
     return rgbd_image
 

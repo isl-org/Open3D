@@ -65,7 +65,7 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
     }
 
     value["name"] = "Azure Kinect Record";
-    value["max_depth"] = 3.0;
+    value["depth_max"] = 3.0;
     value["voxel_size"] = 0.05;
     value["max_depth_diff"] = 0.07;
     value["preference_loop_closure_odometry"] = 0.1;
