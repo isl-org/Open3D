@@ -141,11 +141,16 @@ TEST_P(VtkUtilsTest, VtkPolyDataToO3D) {
             EXPECT_GE(data_array->GetReferenceCount(), 2);
         }
         Compare2DTensorVtkDataArrayContent(tensor, data_array);
-    
+
         // connectivity is always a copy, just check the content
         auto tensor_connectivity = tmesh.GetTriangleIndices();
-        tensor_connectivity = tensor_connectivity.Reshape({tensor_connectivity.NumElements(), 1}).Contiguous();
-        Compare2DTensorVtkDataArrayContent(tensor_connectivity, polydata->GetPolys()->GetConnectivityArray());
+        tensor_connectivity =
+                tensor_connectivity
+                        .Reshape({tensor_connectivity.NumElements(), 1})
+                        .Contiguous();
+        Compare2DTensorVtkDataArrayContent(
+                tensor_connectivity,
+                polydata->GetPolys()->GetConnectivityArray());
     }
     if (!copy) {
         // Only tmesh holds a reference to the data array

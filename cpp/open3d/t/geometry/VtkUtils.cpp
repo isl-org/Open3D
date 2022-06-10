@@ -108,10 +108,10 @@ struct CreateTensorFromVtkDataArrayWorker {
                 }
             }
         } else {
-            vtkSmartPointer<vtkDataArray> sp(data_array); // inc the refcount
-            auto blob = std::make_shared<core::Blob>(
-                    core::Device(), array->GetVoidPointer(0),
-                    [sp](void*) { (void)sp; });
+            vtkSmartPointer<vtkDataArray> sp(data_array);  // inc the refcount
+            auto blob = std::make_shared<core::Blob>(core::Device(),
+                                                     array->GetVoidPointer(0),
+                                                     [sp](void*) { (void)sp; });
             core::SizeVector shape{length, num_components};
             auto strides = core::shape_util::DefaultStrides(shape);
             result = core::Tensor(shape, strides, blob->GetDataPtr(), dtype,
@@ -137,7 +137,6 @@ static core::Tensor CreateTensorFromVtkDataArray(vtkDataArray* array,
     vtkArrayDispatch::DispatchByValueType<ArrayTypes>::Execute(array, worker);
     return worker.result;
 }
-
 
 /// Creates a vtkDataArray from a Tensor.
 /// The returned array may directly use the memory of the tensor and the tensor
@@ -165,7 +164,8 @@ static vtkSmartPointer<vtkDataArray> CreateVtkDataArrayFromTensor(
         data_array->SetNumberOfComponents(tensor.GetShape(1));
         data_array->SetNumberOfTuples(tensor.GetShape(0));
     } else {
-        // copy if requested or if data is not contiguous and/or is on different devices
+        // copy if requested or if data is not contiguous and/or is on different
+        // devices
         data_array->SetNumberOfComponents(tensor.GetShape(1));
         data_array->SetNumberOfTuples(tensor.GetShape(0));
         auto dst_tensor = CreateTensorFromVtkDataArray(data_array, false);
