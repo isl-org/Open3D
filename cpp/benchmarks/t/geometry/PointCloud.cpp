@@ -317,11 +317,12 @@ BENCHMARK_CAPTURE(SelectByIndex,
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(SelectByIndex, CUDA, false core::Device("CUDA:0"))
+BENCHMARK_CAPTURE(SelectByIndex, CUDA, false, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(SelectByIndex,
                   CUDA(remove duplicates),
-                  true core::Device("CUDA:0"))
+                  true,
+                  core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 
