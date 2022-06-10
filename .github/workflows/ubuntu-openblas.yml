@@ -108,7 +108,6 @@ jobs:
           until ((ZONE_ID >= ${#INSTANCE_ZONES[@]})) ||
             gcloud compute instances create "$INSTANCE_NAME" \
               --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
-              --maintenance-policy="TERMINATE" \
               --machine-type=e2-highcpu-16 \
               --boot-disk-size="128GB" \
               --boot-disk-type="pd-ssd" \
