@@ -1347,6 +1347,9 @@ open3d_import_3rdparty_library(3rdparty_vtk
     LIBRARIES    ${VTK_LIBRARIES}
     DEPENDS      ext_vtk
 )
+if(UNIX AND NOT APPLE)
+    target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vtk)
 
 if(BUILD_SYCL_MODULE)
