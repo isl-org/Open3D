@@ -52,11 +52,6 @@ CPP_FORMAT_DIRS = [
     "docs/_static",
 ]
 
-# Exceptions to license header checks, e.g. if files have a diffferent license.
-HEADER_EXCEPTION_FILES = [
-    "cpp/open3d/core/SmallVector.h", "cpp/open3d/core/SmallVector.cpp"
-]
-
 # Yapf requires python 3.6+
 if sys.version_info < (3, 6):
     raise RuntimeError("Requires Python 3.6+, currently using Python "
@@ -121,12 +116,8 @@ class CppFormatter:
         """
         Returns (true, true) if (style, header) is valid.
         """
-        is_valid_header = any(
-            file_path.endswith(ex_file) for ex_file in HEADER_EXCEPTION_FILES)
-        if not is_valid_header:
-            with open(file_path, 'r') as f:
-                is_valid_header = f.read().startswith(
-                    CppFormatter.standard_header)
+        with open(file_path, 'r') as f:
+            is_valid_header = f.read().startswith(CppFormatter.standard_header)
 
         cmd = [
             clang_format_bin,
@@ -222,13 +213,10 @@ class PythonFormatter:
         Returns (true, true) if (style, header) is valid.
         """
 
-        is_valid_header = any(
-            file_path.endswith(ex_file) for ex_file in HEADER_EXCEPTION_FILES)
-        if not is_valid_header:
-            with open(file_path, 'r') as f:
-                content = f.read()
-                is_valid_header = (len(content) == 0 or content.startswith(
-                    PythonFormatter.standard_header))
+        with open(file_path, 'r') as f:
+            content = f.read()
+            is_valid_header = (len(content) == 0 or content.startswith(
+                PythonFormatter.standard_header))
 
         _, _, changed = yapf.yapflib.yapf_api.FormatFile(
             file_path, style_config=style_config, in_place=False)
