@@ -109,7 +109,7 @@ jobs:
             gcloud compute instances create "$INSTANCE_NAME" \
               --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
               --maintenance-policy="TERMINATE" \
-              --machine-type=n1-standard-8 \
+              --machine-type=e2-highcpu-16 \
               --boot-disk-size="128GB" \
               --boot-disk-type="pd-ssd" \
               --image-project="ubuntu-os-cloud" \
