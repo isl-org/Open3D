@@ -116,12 +116,8 @@ class CppFormatter:
         """
         Returns (true, true) if (style, header) is valid.
         """
-
         with open(file_path, 'r') as f:
-            if f.read().startswith(CppFormatter.standard_header):
-                is_valid_header = True
-            else:
-                is_valid_header = False
+            is_valid_header = f.read().startswith(CppFormatter.standard_header)
 
         cmd = [
             clang_format_bin,
@@ -219,11 +215,8 @@ class PythonFormatter:
 
         with open(file_path, 'r') as f:
             content = f.read()
-            if len(content) == 0 or content.startswith(
-                    PythonFormatter.standard_header):
-                is_valid_header = True
-            else:
-                is_valid_header = False
+            is_valid_header = (len(content) == 0 or content.startswith(
+                PythonFormatter.standard_header))
 
         _, _, changed = yapf.yapflib.yapf_api.FormatFile(
             file_path, style_config=style_config, in_place=False)
@@ -410,7 +403,7 @@ def _find_clang_format():
         return bin_path, bin_version
 
     raise RuntimeError(
-        "clang-format not found. "
+        f"clang-format version {required_clang_format_major} not found. "
         "See http://www.open3d.org/docs/release/contribute/styleguide.html#style-guide "
         "for help on clang-format installation.")
 
