@@ -36,6 +36,10 @@ namespace t {
 namespace geometry {
 namespace vtkutils {
 
+/// Returns the corresponding vtk data type for core::Dtype
+/// Logs an error if no conversion exists.
+int DtypeToVtkType(const core::Dtype& dtype);
+
 /// Creates a vtkPolyData object from a point cloud or triangle mesh.
 /// The returned vtkPolyData object may directly use the memory of the tensors
 /// stored inside the Geometry object. Therefore, the Geometry object must be
