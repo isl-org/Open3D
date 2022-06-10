@@ -39,6 +39,8 @@ void PrintHelp() {
     utility::LogInfo("      2. Register multiple fragments.");
     utility::LogInfo("      3. Refine rough registration.");
     utility::LogInfo("      4. Integrate the whole RGBD sequence to make final mesh or point clouds.");
+    utility::LogInfo("      5. (Optional) Run slac optimization for fragments.");
+    utility::LogInfo("      6. (Optional) Run slac optimization for fragments.");
     utility::LogInfo("");
     utility::LogInfo("Basic options:");
     utility::LogInfo("    --color_folder_path");

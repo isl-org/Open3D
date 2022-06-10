@@ -42,8 +42,8 @@ public:
     PipelineConfig() {
         data_path_ = "";
         depth_scale_ = 1000.0;
-        max_depth_ = 3.0;
-        max_depth_diff_ = 0.07;
+        depth_max_ = 3.0;
+        depth_diff_max_ = 0.07;
         voxel_size_ = 0.01;
         tsdf_voxel_size_ = 0.005;
         tsdf_integration_ = false;
@@ -83,8 +83,8 @@ public:
     std::string data_path_;
     open3d::camera::PinholeCameraIntrinsic camera_intrinsic_;
     float depth_scale_;
-    float max_depth_;
-    float max_depth_diff_;
+    float depth_max_;
+    float depth_diff_max_;
     float voxel_size_;
     float tsdf_voxel_size_;
     bool tsdf_integration_;
@@ -155,7 +155,7 @@ private:
     // Member variables for make fragments.
     std::vector<open3d::geometry::RGBDImage> rgbd_lists_;
     std::vector<open3d::geometry::Image> intensity_img_lists_;
-    std::vector<std::tuple<std::vector<cv::KeyPoint>, cv::Mat>> kp_des_lists_;
+    std::vector<pipelines::registration::Feature> fpfh_lists_;
     std::vector<open3d::pipelines::registration::PoseGraph>
             fragment_pose_graphs_;
     std::vector<open3d::geometry::PointCloud> fragment_point_clouds_;
@@ -212,10 +212,8 @@ private:
 
     void ReadJsonPipelineConfig(const std::string& file_name);
 
-    // TODO: Change with FPFH descriptors for pose initialization.
-    // void ComputeKeypointsAndDescriptors(const cv::Mat& img,
-    //                                     std::vector<cv::KeyPoint>& kp,
-    //                                     cv::Mat& des);
+    void ComputeFPFH(const geometry::PointCloud& pcd,
+                     pipelines::registration::Feature& feature);
 
     void BuildSingleFragment(int fragment_id);
 
