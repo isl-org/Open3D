@@ -425,7 +425,7 @@ sycl-shared_export_env() {
 
     # https://hub.docker.com/r/intel/oneapi-basekit
     # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-18.04
-    export BASE_IMAGE=intel/oneapi-basekit:2022.1.2-devel-ubuntu18.04
+    export BASE_IMAGE=intel/oneapi-basekit:2022.2-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
     export PYTHON_VERSION=3.6
@@ -442,7 +442,7 @@ sycl-static_export_env() {
 
     # https://hub.docker.com/r/intel/oneapi-basekit
     # https://github.com/intel/oneapi-containers/blob/master/images/docker/basekit/Dockerfile.ubuntu-18.04
-    export BASE_IMAGE=intel/oneapi-basekit:2022.1.2-devel-ubuntu18.04
+    export BASE_IMAGE=intel/oneapi-basekit:2022.2-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
     export PYTHON_VERSION=3.6
