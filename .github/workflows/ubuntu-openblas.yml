@@ -154,7 +154,7 @@ jobs:
                     && sudo docker run --rm arm64v8/ubuntu:18.04 uname -p \
                     && sudo Open3D/docker/docker_build.sh ${CI_CONFIG}"
       - name: VM ccache upload
-        if: ${{ github.ref == 'refs/heads/master' }}
+        # if: ${{ github.ref == 'refs/heads/master' }}
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
