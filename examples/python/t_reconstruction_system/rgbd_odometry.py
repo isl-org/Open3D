@@ -27,10 +27,10 @@
 import numpy as np
 import open3d as o3d
 from config import ConfigParser
-from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics
+from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics, get_default_dataset
 
 
-def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity):
+def read_legacy_rgbd_image(color_file, depth_file, convert_rgb_to_intensity):
     color = o3d.io.read_image(color_file)
     depth = o3d.io.read_image(depth_file)
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
@@ -44,13 +44,22 @@ def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity):
 
 if __name__ == '__main__':
     parser = ConfigParser()
-    parser.add(
-        '--config',
-        is_config_file=True,
-        help='YAML config file path. Please refer to default_config.yml as a '
-        'reference. It overrides the default config file, but will be '
-        'overridden by other command line inputs.')
+    parser.add('--config',
+               is_config_file=True,
+               help='YAML config file path.'
+               'Please refer to config.py for the options,'
+               'and default_config.yml for default settings '
+               'It overrides the default config file, but will be '
+               'overridden by other command line inputs.')
+    parser.add('--default_dataset',
+               help='Default dataset is used when config file is not provided. '
+               'Default dataset may be selected from the following options: '
+               '[lounge, jack_jack]',
+               default='lounge')
     config = parser.get_config()
+
+    if config.path_dataset == '':
+        config = get_default_dataset(config)
 
     depth_file_names, color_file_names = load_rgbd_file_names(config)
 
@@ -76,10 +85,10 @@ if __name__ == '__main__':
     print(res.transformation, info)
 
     # Legacy for reference, can be a little bit different due to minor implementation discrepancies
-    rgbd_src_legacy = read_rgbd_image(color_file_names[i], depth_file_names[i],
-                                      True)
-    rgbd_dst_legacy = read_rgbd_image(color_file_names[j], depth_file_names[j],
-                                      True)
+    rgbd_src_legacy = read_legacy_rgbd_image(color_file_names[i],
+                                             depth_file_names[i], True)
+    rgbd_dst_legacy = read_legacy_rgbd_image(color_file_names[j],
+                                             depth_file_names[j], True)
     intrinsic_legacy = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     success, trans, info = o3d.pipelines.odometry.compute_rgbd_odometry(
