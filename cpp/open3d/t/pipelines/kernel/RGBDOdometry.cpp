@@ -211,6 +211,41 @@ void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
     }
 }
 
+void ComputeOdometryInformationMatrix(const core::Tensor &source_vertex_map,
+                                      const core::Tensor &target_vertex_map,
+                                      const core::Tensor &intrinsic,
+                                      const core::Tensor &source_to_target,
+                                      const float square_dist_thr,
+                                      core::Tensor &information) {
+    core::AssertTensorDtypes(source_vertex_map, {core::Float32});
+
+    const core::Dtype supported_dtype = source_vertex_map.GetDtype();
+    const core::Device device = source_vertex_map.GetDevice();
+
+    core::AssertTensorDtype(target_vertex_map, supported_dtype);
+    core::AssertTensorDevice(target_vertex_map, device);
+
+    core::AssertTensorShape(intrinsic, {3, 3});
+    core::AssertTensorShape(source_to_target, {4, 4});
+
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d = intrinsic.To(host, core::Float64).Contiguous();
+    core::Tensor trans_d =
+            source_to_target.To(host, core::Float64).Contiguous();
+
+    if (device.GetType() == core::Device::DeviceType::CPU) {
+        ComputeOdometryInformationMatrixCPU(
+                source_vertex_map, target_vertex_map, intrinsic,
+                source_to_target, square_dist_thr, information);
+    } else if (device.GetType() == core::Device::DeviceType::CUDA) {
+        CUDA_CALL(ComputeOdometryInformationMatrixCUDA, source_vertex_map,
+                  target_vertex_map, intrinsic, source_to_target,
+                  square_dist_thr, information);
+    } else {
+        utility::LogError("Unimplemented device.");
+    }
+}
+
 }  // namespace odometry
 }  // namespace kernel
 }  // namespace pipelines

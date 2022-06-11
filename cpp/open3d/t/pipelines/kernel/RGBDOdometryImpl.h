@@ -80,6 +80,14 @@ void ComputeOdometryResultHybridCPU(const core::Tensor& source_depth,
                                     float depth_outlier_trunc,
                                     const float depth_huber_delta,
                                     const float intensity_huber_delta);
+
+void ComputeOdometryInformationMatrixCPU(const core::Tensor& source_depth,
+                                         const core::Tensor& target_depth,
+                                         const core::Tensor& intrinsic,
+                                         const core::Tensor& source_to_target,
+                                         const float depth_outlier_trunc,
+                                         core::Tensor& information);
+
 #ifdef BUILD_CUDA_MODULE
 
 void ComputeOdometryResultPointToPlaneCUDA(
@@ -127,6 +135,13 @@ void ComputeOdometryResultHybridCUDA(const core::Tensor& source_depth,
                                      const float depth_outlier_trunc,
                                      const float depth_huber_delta,
                                      const float intensity_huber_delta);
+
+void ComputeOdometryInformationMatrixCUDA(const core::Tensor& source_depth,
+                                          const core::Tensor& target_depth,
+                                          const core::Tensor& intrinsic,
+                                          const core::Tensor& source_to_target,
+                                          const float square_dist_thr,
+                                          core::Tensor& information);
 #endif
 
 }  // namespace odometry
