@@ -32,7 +32,7 @@
 
 namespace open3d {
 namespace examples {
-namespace offline_reconstruction {
+namespace legacy_reconstruction {
 
 /// \class PipelineConfig
 /// \brief Configuration for the offline reconstruction pipeline.
@@ -81,7 +81,7 @@ public:
 
     // Path to data stored folder.
     std::string data_path_;
-    open3d::camera::PinholeCameraIntrinsic camera_intrinsic_;
+    camera::PinholeCameraIntrinsic camera_intrinsic_;
     float depth_scale_;
     float depth_max_;
     float depth_diff_max_;
@@ -153,20 +153,19 @@ private:
     std::map<std::string, double> time_cost_table_;
 
     // Member variables for make fragments.
-    std::vector<open3d::geometry::RGBDImage> rgbd_lists_;
-    std::vector<open3d::geometry::Image> intensity_img_lists_;
+    std::vector<geometry::RGBDImage> rgbd_lists_;
+    std::vector<geometry::Image> intensity_img_lists_;
     std::vector<pipelines::registration::Feature> fpfh_lists_;
-    std::vector<open3d::pipelines::registration::PoseGraph>
-            fragment_pose_graphs_;
-    std::vector<open3d::geometry::PointCloud> fragment_point_clouds_;
+    std::vector<pipelines::registration::PoseGraph> fragment_pose_graphs_;
+    std::vector<geometry::PointCloud> fragment_point_clouds_;
     int n_fragments_;
     int n_keyframes_per_n_frame_;
 
     // Member variables for register fragments.
-    std::vector<open3d::geometry::PointCloud> preprocessed_fragment_lists_;
-    std::vector<open3d::pipelines::registration::Feature> fragment_features_;
+    std::vector<geometry::PointCloud> preprocessed_fragment_lists_;
+    std::vector<pipelines::registration::Feature> fragment_features_;
     std::vector<MatchingResult> fragment_matching_results_;
-    open3d::pipelines::registration::PoseGraph scene_pose_graph_;
+    pipelines::registration::PoseGraph scene_pose_graph_;
     OdometryTrajectory scene_odometry_trajectory_;
 
 public:
@@ -221,10 +220,9 @@ private:
 
     void BuildPoseGraphForScene();
 
-    void OptimizePoseGraph(
-            double max_correspondence_distance,
-            double preference_loop_closure,
-            open3d::pipelines::registration::PoseGraph& pose_graph);
+    void OptimizePoseGraph(double max_correspondence_distance,
+                           double preference_loop_closure,
+                           pipelines::registration::PoseGraph& pose_graph);
 
     void RefineRegistration();
 
@@ -255,16 +253,16 @@ private:
     std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeOdometry(
             int s, int t, const Eigen::Matrix4d& init_trans);
 
-    void PreProcessFragments(open3d::geometry::PointCloud& pcd, int i);
+    void PreProcessFragments(geometry::PointCloud& pcd, int i);
 
     std::tuple<Eigen::Matrix4d, Eigen::Matrix6d> MultiScaleICP(
-            const open3d::geometry::PointCloud& src,
-            const open3d::geometry::PointCloud& dst,
+            const geometry::PointCloud& src,
+            const geometry::PointCloud& dst,
             const std::vector<float>& voxel_size,
             const std::vector<int>& max_iter,
             const Eigen::Matrix4d& init_trans = Eigen::Matrix4d::Identity());
 };
 
-}  // namespace offline_reconstruction
+}  // namespace legacy_reconstruction
 }  // namespace examples
 }  // namespace open3d
