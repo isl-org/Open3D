@@ -71,7 +71,7 @@ void IndexGetCPU(const Tensor& src,
             CPUCopyObjectElementKernel(src, dst, object_byte_size);
         });
     } else {
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
             LaunchAdvancedIndexerKernel(ai, CPUCopyElementKernel<scalar_t>);
         });
     }
@@ -91,7 +91,7 @@ void IndexSetCPU(const Tensor& src,
             CPUCopyObjectElementKernel(src, dst, object_byte_size);
         });
     } else {
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
             LaunchAdvancedIndexerKernel(ai, CPUCopyElementKernel<scalar_t>);
         });
     }

@@ -890,7 +890,7 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 
         if (index_tensor.IsNonZero()) {
             // E.g. np.array(5)[np.array(True)].
-            return *this;
+            return Clone();
         } else {
             // E.g. np.array(5)[np.array(False)].
             // The output tensor becomes 1D of 0 element.

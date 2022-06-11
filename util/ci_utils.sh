@@ -56,6 +56,7 @@ PYTEST_VER="6.0.1"
 PYTEST_RANDOMLY_VER="3.8.0"
 SCIPY_VER="1.5.4"
 YAPF_VER="0.30.0"
+PROTOBUF_VER="3.19.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -105,6 +106,10 @@ install_python_dependencies() {
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         python -m pip install -U yapf=="$YAPF_VER"
+        # Fix Protobuf compatibility issue
+        # https://stackoverflow.com/a/72493690/1255535
+        # https://github.com/protocolbuffers/protobuf/issues/10051
+        python -m pip install -U protobuf=="$PROTOBUF_VER"
     fi
     if [[ "purge-cache" =~ ^($options)$ ]]; then
         echo "Purge pip cache"
