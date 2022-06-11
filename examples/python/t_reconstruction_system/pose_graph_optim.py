@@ -114,8 +114,8 @@ class PoseGraphWrapper:
 
         return ans
 
-    def write(self, fname):
-        self.pose_grpah = self._dicts2graph()
+    def save(self, fname):
+        self.pose_graph = self._dicts2graph()
         o3d.io.write_pose_graph(fname, self.pose_graph)
 
     def export_extrinsics(self):
@@ -132,6 +132,6 @@ if __name__ == '__main__':
     pose_graph = PoseGraphWrapper.load(args.path_pose_graph)
     pose_graph.solve()
 
-    pose_graph.write('test.json')
+    pose_graph.save('test.json')
     pose_graph = PoseGraphWrapper.load('test.json')
     pose_graph.solve()

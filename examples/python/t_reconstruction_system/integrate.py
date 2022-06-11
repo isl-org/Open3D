@@ -35,18 +35,18 @@ import open3d as o3d
 import open3d.core as o3c
 import time
 import matplotlib.pyplot as plt
-
+from tqdm import tqdm
 from config import ConfigParser
 from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics, get_default_dataset
 
 
 def integrate(depth_file_names, color_file_names, depth_intrinsic,
-              color_intrinsic, extrinsics, config):
+              color_intrinsic, extrinsics, integrate_color, config):
 
     n_files = len(depth_file_names)
     device = o3d.core.Device(config.device)
 
-    if config.integrate_color:
+    if integrate_color:
         vbg = o3d.t.geometry.VoxelBlockGrid(
             attr_names=('tsdf', 'weight', 'color'),
             attr_dtypes=(o3c.float32, o3c.float32, o3c.float32),
@@ -66,9 +66,7 @@ def integrate(depth_file_names, color_file_names, depth_intrinsic,
                                             device=device)
 
     start = time.time()
-    for i in range(n_files):
-        print('Integrating frame {}/{}'.format(i, n_files))
-
+    for i in tqdm(range(n_files)):
         depth = o3d.t.io.read_image(depth_file_names[i]).to(device)
         extrinsic = extrinsics[i]
 
@@ -76,17 +74,16 @@ def integrate(depth_file_names, color_file_names, depth_intrinsic,
             depth, depth_intrinsic, extrinsic, config.depth_scale,
             config.depth_max)
 
-        if config.integrate_color:
+        if integrate_color:
             color = o3d.t.io.read_image(color_file_names[i]).to(device)
-            vbg.integrate(frustum_block_coords, depth, color,
-                          depth_intrinsic, color_intrinsic, extrinsic,
-                          config.depth_scale, config.depth_max)
+            vbg.integrate(frustum_block_coords, depth, color, depth_intrinsic,
+                          color_intrinsic, extrinsic, config.depth_scale,
+                          config.depth_max)
         else:
             vbg.integrate(frustum_block_coords, depth, depth_intrinsic,
                           extrinsic, config.depth_scale, config.depth_max)
         dt = time.time() - start
-    print('Finished integrating {} frames in {} seconds'.format(
-        n_files, dt))
+    print('Finished integrating {} frames in {} seconds'.format(n_files, dt))
 
     return vbg
 

@@ -24,22 +24,20 @@ if __name__ == '__main__':
                '[lounge, jack_jack]',
                default='lounge')
     parser.add('--path_npz', type=str, default='test.npz')
-    parser.add('--integrate_color', action='store_true')
     parser.add('--split_fragments', action='store_true')
-    parser.add('--rgbd_odometry', action='store_true')
+    parser.add('--fragment_odometry', action='store_true')
+    parser.add('--fragment_integration', action='store_true')
     config = parser.get_config()
 
     if config.split_fragments:
         split_fragments(config)
 
-    if config.rgbd_odometry:
+    if config.fragment_odometry:
         intrinsic = load_intrinsic(config)
         depth_lists, color_lists = load_fragments(config)
 
-        for i, (depth_list,
-                color_list) in enumerate(zip(depth_lists, color_lists)):
-            print(depth_list)
-
+        for frag_id, (depth_list,
+                      color_list) in enumerate(zip(depth_lists, color_lists)):
             pose_graph = PoseGraphWrapper()
 
             # Odometry: (i, i+1), trans(i, i+1), info(i, i+1)
@@ -72,10 +70,32 @@ if __name__ == '__main__':
                                     True)
 
             pose_graph.solve_()
+            pose_graph.save(
+                os.path.join(config.path_dataset, 'fragments',
+                             'fragment_posegraph_{:03d}.json'.format(frag_id)))
+
+    if config.fragment_integration:
+        intrinsic = load_intrinsic(config)
+        depth_lists, color_lists = load_fragments(config)
+
+        for frag_id, (depth_list,
+                      color_list) in enumerate(zip(depth_lists, color_lists)):
+            pose_graph = PoseGraphWrapper.load(
+                os.path.join(config.path_dataset, 'fragments',
+                             'fragment_posegraph_{:03d}.json'.format(frag_id)))
             extrinsics = pose_graph.export_extrinsics()
 
-            vbg = integrate(depth_list, color_list, intrinsic, intrinsic,
-                            extrinsics, config)
+            vbg = integrate(depth_list,
+                            color_list,
+                            intrinsic,
+                            intrinsic,
+                            extrinsics,
+                            integrate_color=True,
+                            config=config)
+
             pcd = vbg.extract_point_cloud()
             o3d.visualization.draw([pcd])
 
+            o3d.t.io.write_point_cloud(
+                os.path.join(config.path_dataset, 'fragments',
+                             'fragment_pcd_{:03d}.ply'.format(frag_id)), pcd)
