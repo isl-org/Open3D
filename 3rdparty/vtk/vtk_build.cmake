@@ -14,10 +14,10 @@ set(VTK_LIBRARIES
     vtkFiltersCore-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkCommonExecutionModel-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkCommonDataModel-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkCommonTransforms-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkCommonMath-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkCommonMisc-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkCommonSystem-${VTK_VERSION}${VTK_LIB_SUFFIX}
-    vtkCommonTransforms-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkCommonCore-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkkissfft-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkpugixml-${VTK_VERSION}${VTK_LIB_SUFFIX}
