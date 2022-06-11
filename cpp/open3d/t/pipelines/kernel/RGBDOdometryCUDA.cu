@@ -402,7 +402,7 @@ __global__ void ComputeOdometryInformationMatrixCUDAKernel(
         int offset = 0;
         for (int i = 0; i < 6; ++i) {
             for (int j = 0; j <= i; ++j) {
-                local_sum[offset] += valid ? J_x[i] * J_x[j] : 0;
+                local_sum[offset] = valid ? J_x[i] * J_x[j] : 0;
                 local_sum[offset] += valid ? J_y[i] * J_y[j] : 0;
                 local_sum[offset] += valid ? J_z[i] * J_z[j] : 0;
                 offset++;

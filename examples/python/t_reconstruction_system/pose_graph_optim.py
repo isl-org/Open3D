@@ -79,7 +79,7 @@ class PoseGraphWrapper:
                                                  edge.uncertain)
         return dict_nodes, dict_edges
 
-    def solve(self, dist_threshold=0.07, preference_loop_closure=0.1):
+    def solve_(self, dist_threshold=0.07, preference_loop_closure=0.1):
         # Update from graph
         self.pose_graph = self._dicts2graph()
 
@@ -117,6 +117,11 @@ class PoseGraphWrapper:
     def write(self, fname):
         self.pose_grpah = self._dicts2graph()
         o3d.io.write_pose_graph(fname, self.pose_graph)
+
+    def export_extrinsics(self):
+        return [
+            np.linalg.inv(self.dict_nodes[k]) for k in sorted(self.dict_nodes)
+        ]
 
 
 if __name__ == '__main__':
