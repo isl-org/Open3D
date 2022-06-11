@@ -505,6 +505,25 @@ OdometryResult ComputeOdometryResultHybrid(const Tensor& source_depth,
                                           source_vertex_map.GetShape(1)));
 }
 
+core::Tensor ComputeOdometryInformationMatrix(
+        const core::Tensor& source_depth,
+        const core::Tensor& target_depth,
+        const core::Tensor& intrinsic,
+        const core::Tensor& source_to_target,
+        const float dist_thr) {
+    core::Tensor information;
+
+    Image source_vertex_map =
+            Image(source_depth).CreateVertexMap(intrinsic, NAN);
+    Image target_vertex_map =
+            Image(target_depth).CreateVertexMap(intrinsic, NAN);
+
+    kernel::odometry::ComputeOdometryInformationMatrix(
+            source_vertex_map.AsTensor(), target_vertex_map.AsTensor(),
+            intrinsic, source_to_target, dist_thr * dist_thr, information);
+    return information;
+}
+
 }  // namespace odometry
 }  // namespace pipelines
 }  // namespace t
