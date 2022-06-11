@@ -26,14 +26,16 @@
 
 #include <cuda.h>
 
+#include <cub/cub.cuh>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
 #include "open3d/t/pipelines/kernel/RegistrationImpl.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
+#include "open3d/utility/MiniVec.h"
 
 namespace open3d {
 namespace t {
@@ -41,6 +43,7 @@ namespace pipelines {
 namespace kernel {
 
 const int kThread1DUnit = 256;
+const int kReduceDim = 29;  // 21 (JtJ) + 6 (Jtr) + 1 (inlier) + 1 (r)
 
 template <typename scalar_t, typename func_t>
 __global__ void ComputePosePointToPlaneKernelCUDA(
@@ -51,46 +54,47 @@ __global__ void ComputePosePointToPlaneKernelCUDA(
         const int n,
         scalar_t *global_sum,
         func_t GetWeightFromRobustKernel) {
-    __shared__ scalar_t local_sum0[kThread1DUnit];
-    __shared__ scalar_t local_sum1[kThread1DUnit];
-    __shared__ scalar_t local_sum2[kThread1DUnit];
-
-    const int tid = threadIdx.x;
-
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
+    typedef utility::MiniVec<scalar_t, kReduceDim> ReduceVec;
+    // Create shared memory.
+    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+    ReduceVec local_sum(static_cast<scalar_t>(0));
 
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (workload_idx < n) {
+        scalar_t J_ij[6] = {0};
+        scalar_t r = 0;
+        const bool valid = GetJacobianPointToPlane<scalar_t>(
+                workload_idx, source_points_ptr, target_points_ptr,
+                target_normals_ptr, correspondence_indices, J_ij, r);
 
-    if (workload_idx >= n) return;
+        if (valid) {
+            const scalar_t w = GetWeightFromRobustKernel(r);
 
-    scalar_t J_ij[6] = {0}, reduction[29] = {0};
-    scalar_t r = 0;
-
-    bool valid = GetJacobianPointToPlane<scalar_t>(
-            workload_idx, source_points_ptr, target_points_ptr,
-            target_normals_ptr, correspondence_indices, J_ij, r);
-
-    scalar_t w = GetWeightFromRobustKernel(r);
-
-    if (valid) {
-        // Dump J, r into JtJ and Jtr
-        int i = 0;
-        for (int j = 0; j < 6; ++j) {
-            for (int k = 0; k <= j; ++k) {
-                reduction[i] += J_ij[j] * w * J_ij[k];
-                ++i;
+            // Dump J, r into JtJ and Jtr
+            int i = 0;
+            for (int j = 0; j < 6; ++j) {
+                for (int k = 0; k <= j; ++k) {
+                    local_sum[i] += J_ij[j] * w * J_ij[k];
+                    ++i;
+                }
+                local_sum[21 + j] += J_ij[j] * w * r;
             }
-            reduction[21 + j] += J_ij[j] * w * r;
+            local_sum[27] += r;
+            local_sum[28] += 1;
         }
-        reduction[27] += r;
-        reduction[28] += 1;
     }
 
-    ReduceSum6x6LinearSystem<scalar_t, kThread1DUnit>(tid, valid, reduction,
-                                                      local_sum0, local_sum1,
-                                                      local_sum2, global_sum);
+    // Reduction.
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+
+    // Add result to global_sum.
+    if (threadIdx.x == 0) {
+#pragma unroll
+        for (int i = 0; i < kReduceDim; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
+        }
+    }
 }
 
 void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
@@ -144,49 +148,53 @@ __global__ void ComputePoseColoredICPKernelCUDA(
         const int n,
         scalar_t *global_sum,
         funct_t GetWeightFromRobustKernel) {
-    __shared__ scalar_t local_sum0[kThread1DUnit];
-    __shared__ scalar_t local_sum1[kThread1DUnit];
-    __shared__ scalar_t local_sum2[kThread1DUnit];
-
-    const int tid = threadIdx.x;
-
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
+    typedef utility::MiniVec<scalar_t, kReduceDim> ReduceVec;
+    // Create shared memory.
+    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+    ReduceVec local_sum(static_cast<scalar_t>(0));
 
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (workload_idx < n) {
+        scalar_t J_G[6] = {0}, J_I[6] = {0};
+        scalar_t r_G = 0, r_I = 0;
 
-    if (workload_idx >= n) return;
+        const bool valid = GetJacobianColoredICP<scalar_t>(
+                workload_idx, source_points_ptr, source_colors_ptr,
+                target_points_ptr, target_normals_ptr, target_colors_ptr,
+                target_color_gradients_ptr, correspondence_indices,
+                sqrt_lambda_geometric, sqrt_lambda_photometric, J_G, J_I, r_G,
+                r_I);
 
-    scalar_t J_G[6] = {0}, J_I[6] = {0}, reduction[29] = {0};
-    scalar_t r_G = 0, r_I = 0;
+        if (valid) {
+            const scalar_t w_G = GetWeightFromRobustKernel(r_G);
+            const scalar_t w_I = GetWeightFromRobustKernel(r_I);
 
-    bool valid = GetJacobianColoredICP<scalar_t>(
-            workload_idx, source_points_ptr, source_colors_ptr,
-            target_points_ptr, target_normals_ptr, target_colors_ptr,
-            target_color_gradients_ptr, correspondence_indices,
-            sqrt_lambda_geometric, sqrt_lambda_photometric, J_G, J_I, r_G, r_I);
-
-    scalar_t w_G = GetWeightFromRobustKernel(r_G);
-    scalar_t w_I = GetWeightFromRobustKernel(r_I);
-
-    if (valid) {
-        // Dump J, r into JtJ and Jtr
-        int i = 0;
-        for (int j = 0; j < 6; ++j) {
-            for (int k = 0; k <= j; ++k) {
-                reduction[i] += J_G[j] * w_G * J_G[k] + J_I[j] * w_I * J_I[k];
-                ++i;
+            // Dump J, r into JtJ and Jtr
+            int i = 0;
+            for (int j = 0; j < 6; ++j) {
+                for (int k = 0; k <= j; ++k) {
+                    local_sum[i] +=
+                            J_G[j] * w_G * J_G[k] + J_I[j] * w_I * J_I[k];
+                    ++i;
+                }
+                local_sum[21 + j] += J_G[j] * w_G * r_G + J_I[j] * w_I * r_I;
             }
-            reduction[21 + j] += J_G[j] * w_G * r_G + J_I[j] * w_I * r_I;
+            local_sum[27] += r_G * r_G + r_I * r_I;
+            local_sum[28] += 1;
         }
-        reduction[27] += r_G * r_G + r_I * r_I;
-        reduction[28] += 1;
     }
 
-    ReduceSum6x6LinearSystem<scalar_t, kThread1DUnit>(tid, valid, reduction,
-                                                      local_sum0, local_sum1,
-                                                      local_sum2, global_sum);
+    // Reduction.
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+
+    // Add result to global_sum.
+    if (threadIdx.x == 0) {
+#pragma unroll
+        for (int i = 0; i < kReduceDim; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
+        }
+    }
 }
 
 void ComputePoseColoredICPCUDA(const core::Tensor &source_points,
@@ -244,40 +252,42 @@ __global__ void ComputeInformationMatrixKernelCUDA(
         const int64_t *correspondence_indices,
         const int n,
         scalar_t *global_sum) {
-    __shared__ scalar_t local_sum0[kThread1DUnit];
-    __shared__ scalar_t local_sum1[kThread1DUnit];
-    __shared__ scalar_t local_sum2[kThread1DUnit];
-
-    const int tid = threadIdx.x;
-
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
+    // Reduce dimention for this function is 21
+    typedef utility::MiniVec<scalar_t, 21> ReduceVec;
+    // Create shared memory.
+    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+    ReduceVec local_sum(static_cast<scalar_t>(0));
 
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (workload_idx < n) {
+        scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0};
+        const bool valid = GetInformationJacobians<scalar_t>(
+                workload_idx, target_points_ptr, correspondence_indices, J_x,
+                J_y, J_z);
 
-    if (workload_idx >= n) return;
-
-    scalar_t J_x[6] = {0}, J_y[6] = {0}, J_z[6] = {0}, reduction[21] = {0};
-
-    bool valid = GetInformationJacobians<scalar_t>(
-            workload_idx, target_points_ptr, correspondence_indices, J_x, J_y,
-            J_z);
-
-    if (valid) {
-        int i = 0;
-        for (int j = 0; j < 6; ++j) {
-            for (int k = 0; k <= j; ++k) {
-                reduction[i] +=
-                        J_x[j] * J_x[k] + J_y[j] * J_y[k] + J_z[j] * J_z[k];
-                ++i;
+        if (valid) {
+            int i = 0;
+            for (int j = 0; j < 6; ++j) {
+                for (int k = 0; k <= j; ++k) {
+                    local_sum[i] +=
+                            J_x[j] * J_x[k] + J_y[j] * J_y[k] + J_z[j] * J_z[k];
+                    ++i;
+                }
             }
         }
     }
 
-    ReduceSum6x6InformationJacobian<scalar_t, kThread1DUnit>(
-            tid, valid, reduction, local_sum0, local_sum1, local_sum2,
-            global_sum);
+    // Reduction.
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+
+    // Add result to global_sum.
+    if (threadIdx.x == 0) {
+#pragma unroll
+        for (int i = 0; i < 21; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
+        }
+    }
 }
 
 void ComputeInformationMatrixCUDA(const core::Tensor &target_points,

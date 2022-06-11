@@ -86,7 +86,7 @@ private:
         }
 
         new_vis->ResetCameraToDefault();
-        auto center = bounds.GetCenter().cast<float>();
+        Eigen::Vector3f center = bounds.GetCenter().cast<float>();
         new_vis->SetupCamera(60, center, center + CENTER_OFFSET,
                              {0.0f, -1.0f, 0.0f});
         gui::Application::GetInstance().AddWindow(new_vis);

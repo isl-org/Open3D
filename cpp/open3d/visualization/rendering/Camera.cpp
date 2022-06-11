@@ -72,7 +72,8 @@ float Camera::CalcFarPlane(
     // The far plane needs to be the max absolute distance, not just the
     // max extent, so that axes are visible if requested.
     // See also RotationInteractorLogic::UpdateCameraFarPlane().
-    auto cam_xlate = camera.GetModelMatrix().translation().cast<double>();
+    Eigen::Vector3d cam_xlate =
+            camera.GetModelMatrix().translation().cast<double>();
     auto far1 = (scene_bounds.GetCenter() - cam_xlate).norm() * 2.5;
     auto far2 = cam_xlate.norm();
     auto model_size = 4.0 * scene_bounds.GetExtent().norm();

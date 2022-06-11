@@ -458,6 +458,22 @@ public:
     /// Convert to a legacy Open3D TriangleMesh.
     open3d::geometry::TriangleMesh ToLegacy() const;
 
+    /// Compute the convex hull of the triangle mesh using qhull.
+    ///
+    /// This runs on the CPU.
+    ///
+    /// \param joggle_inputs (default False). Handle precision problems by
+    /// randomly perturbing the input data. Set to True if perturbing the input
+    /// iis acceptable but you need convex simplicial output. If False,
+    /// neighboring facets may be merged in case of precision problems. See
+    /// [QHull docs](http://www.qhull.org/html/qh-impre.htm#joggle) for more
+    /// details.
+    ///
+    /// \return TriangleMesh representing the convexh hull. This contains an
+    /// extra vertex property "point_map" that contains the index of the
+    /// corresponding vertex in the original mesh.
+    TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;

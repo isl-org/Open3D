@@ -26,6 +26,8 @@
 
 #include <cuda.h>
 
+#include <cub/cub.cuh>
+
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/ParallelFor.h"
@@ -34,14 +36,19 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryImpl.h"
 #include "open3d/t/pipelines/kernel/RGBDOdometryJacobianImpl.h"
-#include "open3d/t/pipelines/kernel/Reduction6x6Impl.cuh"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/utility/MiniVec.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace kernel {
 namespace odometry {
+
+const int kBlockSize = 256;
+const int kReduceDim = 29;  // 21 (JtJ) + 6 (Jtr) + 1 (inlier) + 1 (r)
+typedef utility::MiniVec<float, kReduceDim> ReduceVec;
+typedef cub::BlockReduce<ReduceVec, kBlockSize> BlockReduce;
 
 __global__ void ComputeOdometryResultPointToPlaneCUDAKernel(
         NDArrayIndexer source_vertex_indexer,
@@ -53,73 +60,44 @@ __global__ void ComputeOdometryResultPointToPlaneCUDAKernel(
         int cols,
         const float depth_outlier_trunc,
         const float depth_huber_delta) {
-    const int kBlockSize = 256;
-    __shared__ float local_sum0[kBlockSize];
-    __shared__ float local_sum1[kBlockSize];
-    __shared__ float local_sum2[kBlockSize];
+    __shared__ typename BlockReduce::TempStorage temp_storage;
 
-    const int x = threadIdx.x + blockIdx.x * blockDim.x;
-    const int y = threadIdx.y + blockIdx.y * blockDim.y;
-    const int tid = threadIdx.x + threadIdx.y * blockDim.x;
+    const int workload = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = workload / cols;
+    int x = workload % cols;
+    const int tid = threadIdx.x;
 
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
+    ReduceVec local_sum;
+    if (workload < rows * cols) {
+        float J[6] = {0};
+        float r = 0;
+        bool valid = GetJacobianPointToPlane(
+                x, y, depth_outlier_trunc, source_vertex_indexer,
+                target_vertex_indexer, target_normal_indexer, ti, J, r);
 
-    if (y >= rows || x >= cols) return;
+        float d_huber = HuberDeriv(r, depth_huber_delta);
+        float r_huber = HuberLoss(r, depth_huber_delta);
 
-    float J[6] = {0}, reduction[21 + 6 + 2];
-    float r = 0;
-    bool valid = GetJacobianPointToPlane(
-            x, y, depth_outlier_trunc, source_vertex_indexer,
-            target_vertex_indexer, target_normal_indexer, ti, J, r);
-
-    float d_huber = HuberDeriv(r, depth_huber_delta);
-    float r_huber = HuberLoss(r, depth_huber_delta);
-
-    // Dump J, r into JtJ and Jtr
-    int offset = 0;
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j <= i; ++j) {
-            reduction[offset++] = J[i] * J[j];
+        // Dump J, r into JtJ and Jtr
+        int offset = 0;
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j <= i; ++j) {
+                local_sum[offset++] = valid ? J[i] * J[j] : 0;
+            }
         }
-    }
-    for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * d_huber;
-    }
-    reduction[offset++] = r_huber;
-    reduction[offset++] = valid;
-
-    // Sum reduction: JtJ(21) and Jtr(6)
-    for (size_t i = 0; i < 27; i += 3) {
-        local_sum0[tid] = valid ? reduction[i + 0] : 0;
-        local_sum1[tid] = valid ? reduction[i + 1] : 0;
-        local_sum2[tid] = valid ? reduction[i + 2] : 0;
-        __syncthreads();
-
-        BlockReduceSum<float, kBlockSize>(tid, local_sum0, local_sum1,
-                                          local_sum2);
-
-        if (tid == 0) {
-            atomicAdd(&global_sum[i + 0], local_sum0[0]);
-            atomicAdd(&global_sum[i + 1], local_sum1[0]);
-            atomicAdd(&global_sum[i + 2], local_sum2[0]);
+        for (int i = 0; i < 6; ++i) {
+            local_sum[offset++] = valid ? J[i] * d_huber : 0;
         }
-        __syncthreads();
+        local_sum[offset++] = valid ? r_huber : 0;
+        local_sum[offset++] = valid;
     }
 
-    // Sum reduction: residual(1) and inlier(1)
-    {
-        local_sum0[tid] = valid ? reduction[27] : 0;
-        local_sum1[tid] = valid ? reduction[28] : 0;
-        __syncthreads();
-
-        BlockReduceSum<float, kBlockSize>(tid, local_sum0, local_sum1);
-        if (tid == 0) {
-            atomicAdd(&global_sum[27], local_sum0[0]);
-            atomicAdd(&global_sum[28], local_sum1[0]);
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+    if (tid == 0) {
+#pragma unroll
+        for (int i = 0; i < kReduceDim; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
         }
-        __syncthreads();
     }
 }
 
@@ -146,13 +124,12 @@ void ComputeOdometryResultPointToPlaneCUDA(
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
 
-    core::Tensor global_sum = core::Tensor::Zeros({29}, core::Float32, device);
+    core::Tensor global_sum =
+            core::Tensor::Zeros({kReduceDim}, core::Float32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    const int kThreadSize = 16;
-    const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
-                      (rows + kThreadSize - 1) / kThreadSize);
-    const dim3 threads(kThreadSize, kThreadSize);
+    const dim3 blocks((rows * cols + kBlockSize - 1) / kBlockSize);
+    const dim3 threads(kBlockSize);
     ComputeOdometryResultPointToPlaneCUDAKernel<<<blocks, threads, 0,
                                                   core::cuda::GetStream()>>>(
             source_vertex_indexer, target_vertex_indexer, target_normal_indexer,
@@ -176,48 +153,47 @@ __global__ void ComputeOdometryResultIntensityCUDAKernel(
         int cols,
         const float depth_outlier_trunc,
         const float intensity_huber_delta) {
-    const int kBlockSize = 256;
-    __shared__ float local_sum0[kBlockSize];
-    __shared__ float local_sum1[kBlockSize];
-    __shared__ float local_sum2[kBlockSize];
+    __shared__ typename BlockReduce::TempStorage temp_storage;
 
-    const int x = threadIdx.x + blockIdx.x * blockDim.x;
-    const int y = threadIdx.y + blockIdx.y * blockDim.y;
-    const int tid = threadIdx.x + threadIdx.y * blockDim.x;
+    const int workload = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = workload / cols;
+    int x = workload % cols;
+    const int tid = threadIdx.x;
 
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
+    ReduceVec local_sum;
+    if (workload < rows * cols) {
+        float J[6] = {0};
+        float r = 0;
+        bool valid = GetJacobianIntensity(
+                x, y, depth_outlier_trunc, source_depth_indexer,
+                target_depth_indexer, source_intensity_indexer,
+                target_intensity_indexer, target_intensity_dx_indexer,
+                target_intensity_dy_indexer, source_vertex_indexer, ti, J, r);
 
-    if (y >= rows || x >= cols) return;
+        float d_huber = HuberDeriv(r, intensity_huber_delta);
+        float r_huber = HuberLoss(r, intensity_huber_delta);
 
-    float J[6] = {0}, reduction[21 + 6 + 2];
-    float r = 0;
-    bool valid = GetJacobianIntensity(
-            x, y, depth_outlier_trunc, source_depth_indexer,
-            target_depth_indexer, source_intensity_indexer,
-            target_intensity_indexer, target_intensity_dx_indexer,
-            target_intensity_dy_indexer, source_vertex_indexer, ti, J, r);
+        // Dump J, r into JtJ and Jtr
+        int offset = 0;
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j <= i; ++j) {
+                local_sum[offset++] = J[i] * J[j];
+            }
+        }
+        for (int i = 0; i < 6; ++i) {
+            local_sum[offset++] = J[i] * HuberDeriv(r, intensity_huber_delta);
+        }
+        local_sum[offset++] = HuberLoss(r, intensity_huber_delta);
+        local_sum[offset++] = valid;
+    }
 
-    float d_huber = HuberDeriv(r, intensity_huber_delta);
-    float r_huber = HuberLoss(r, intensity_huber_delta);
-
-    // Dump J, r into JtJ and Jtr
-    int offset = 0;
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j <= i; ++j) {
-            reduction[offset++] = J[i] * J[j];
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+    if (tid == 0) {
+#pragma unroll
+        for (int i = 0; i < kReduceDim; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
         }
     }
-    for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J[i] * HuberDeriv(r, intensity_huber_delta);
-    }
-    reduction[offset++] = HuberLoss(r, intensity_huber_delta);
-    reduction[offset++] = valid;
-
-    ReduceSum6x6LinearSystem<float, kBlockSize>(tid, valid, reduction,
-                                                local_sum0, local_sum1,
-                                                local_sum2, global_sum);
 }
 
 void ComputeOdometryResultIntensityCUDA(
@@ -253,13 +229,12 @@ void ComputeOdometryResultIntensityCUDA(
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
 
-    core::Tensor global_sum = core::Tensor::Zeros({29}, core::Float32, device);
+    core::Tensor global_sum =
+            core::Tensor::Zeros({kReduceDim}, core::Float32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    const int kThreadSize = 16;
-    const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
-                      (rows + kThreadSize - 1) / kThreadSize);
-    const dim3 threads(kThreadSize, kThreadSize);
+    const dim3 blocks((cols * rows + kBlockSize - 1) / kBlockSize);
+    const dim3 threads(kBlockSize);
     ComputeOdometryResultIntensityCUDAKernel<<<blocks, threads, 0,
                                                core::cuda::GetStream()>>>(
             source_depth_indexer, target_depth_indexer,
@@ -288,53 +263,52 @@ __global__ void ComputeOdometryResultHybridCUDAKernel(
         const float depth_outlier_trunc,
         const float depth_huber_delta,
         const float intensity_huber_delta) {
-    const int kBlockSize = 256;
-    __shared__ float local_sum0[kBlockSize];
-    __shared__ float local_sum1[kBlockSize];
-    __shared__ float local_sum2[kBlockSize];
+    __shared__ typename BlockReduce::TempStorage temp_storage;
 
-    const int x = threadIdx.x + blockIdx.x * blockDim.x;
-    const int y = threadIdx.y + blockIdx.y * blockDim.y;
-    const int tid = threadIdx.x + threadIdx.y * blockDim.x;
+    const int workload = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = workload / cols;
+    int x = workload % cols;
+    const int tid = threadIdx.x;
 
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
+    ReduceVec local_sum;
+    if (workload < rows * cols) {
+        float J_I[6] = {0}, J_D[6] = {0};
+        float r_I = 0, r_D = 0;
+        bool valid = GetJacobianHybrid(
+                x, y, depth_outlier_trunc, source_depth_indexer,
+                target_depth_indexer, source_intensity_indexer,
+                target_intensity_indexer, target_depth_dx_indexer,
+                target_depth_dy_indexer, target_intensity_dx_indexer,
+                target_intensity_dy_indexer, source_vertex_indexer, ti, J_I,
+                J_D, r_I, r_D);
 
-    if (y >= rows || x >= cols) return;
+        float d_huber_D = HuberDeriv(r_D, depth_huber_delta);
+        float d_huber_I = HuberDeriv(r_I, intensity_huber_delta);
 
-    float J_I[6] = {0}, J_D[6] = {0}, reduction[21 + 6 + 2];
-    float r_I = 0, r_D = 0;
-    bool valid = GetJacobianHybrid(
-            x, y, depth_outlier_trunc, source_depth_indexer,
-            target_depth_indexer, source_intensity_indexer,
-            target_intensity_indexer, target_depth_dx_indexer,
-            target_depth_dy_indexer, target_intensity_dx_indexer,
-            target_intensity_dy_indexer, source_vertex_indexer, ti, J_I, J_D,
-            r_I, r_D);
+        float r_huber_D = HuberLoss(r_D, depth_huber_delta);
+        float r_huber_I = HuberLoss(r_I, intensity_huber_delta);
 
-    float d_huber_D = HuberDeriv(r_D, depth_huber_delta);
-    float d_huber_I = HuberDeriv(r_I, intensity_huber_delta);
+        // Dump J, r into JtJ and Jtr
+        int offset = 0;
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j <= i; ++j) {
+                local_sum[offset++] = J_I[i] * J_I[j] + J_D[i] * J_D[j];
+            }
+        }
+        for (int i = 0; i < 6; ++i) {
+            local_sum[offset++] = J_I[i] * d_huber_I + J_D[i] * d_huber_D;
+        }
+        local_sum[offset++] = r_huber_D + r_huber_I;
+        local_sum[offset++] = valid;
+    }
 
-    float r_huber_D = HuberLoss(r_D, depth_huber_delta);
-    float r_huber_I = HuberLoss(r_I, intensity_huber_delta);
-
-    // Dump J, r into JtJ and Jtr
-    int offset = 0;
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j <= i; ++j) {
-            reduction[offset++] = J_I[i] * J_I[j] + J_D[i] * J_D[j];
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+    if (tid == 0) {
+#pragma unroll
+        for (int i = 0; i < kReduceDim; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
         }
     }
-    for (int i = 0; i < 6; ++i) {
-        reduction[offset++] = J_I[i] * d_huber_I + J_D[i] * d_huber_D;
-    }
-    reduction[offset++] = r_huber_D + r_huber_I;
-    reduction[offset++] = valid;
-
-    ReduceSum6x6LinearSystem<float, kBlockSize>(tid, valid, reduction,
-                                                local_sum0, local_sum1,
-                                                local_sum2, global_sum);
 }
 
 void ComputeOdometryResultHybridCUDA(const core::Tensor& source_depth,
@@ -374,13 +348,12 @@ void ComputeOdometryResultHybridCUDA(const core::Tensor& source_depth,
     const int64_t rows = source_vertex_indexer.GetShape(0);
     const int64_t cols = source_vertex_indexer.GetShape(1);
 
-    core::Tensor global_sum = core::Tensor::Zeros({29}, core::Float32, device);
+    core::Tensor global_sum =
+            core::Tensor::Zeros({kReduceDim}, core::Float32, device);
     float* global_sum_ptr = global_sum.GetDataPtr<float>();
 
-    const int kThreadSize = 16;
-    const dim3 blocks((cols + kThreadSize - 1) / kThreadSize,
-                      (rows + kThreadSize - 1) / kThreadSize);
-    const dim3 threads(kThreadSize, kThreadSize);
+    const dim3 blocks((cols * rows + kBlockSize - 1) / kBlockSize);
+    const dim3 threads(kBlockSize);
     ComputeOdometryResultHybridCUDAKernel<<<blocks, threads, 0,
                                             core::cuda::GetStream()>>>(
             source_depth_indexer, target_depth_indexer,

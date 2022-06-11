@@ -963,11 +963,11 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
         new_vert_mapping[vidx] = new_vidx;
 
         Eigen::Vector3d vertex = vertices_[vidx];
-        Eigen::Vector3d normal;
+        Eigen::Vector3d normal{0, 0, 0};
         if (has_vertex_normals) {
             normal = vertex_normals_[vidx];
         }
-        Eigen::Vector3d color;
+        Eigen::Vector3d color{0, 0, 0};
         if (has_vertex_colors) {
             color = vertex_colors_[vidx];
         }

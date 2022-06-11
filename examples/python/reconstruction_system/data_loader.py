@@ -37,9 +37,9 @@ def lounge_data_loader():
     config = {}
     config['path_dataset'] = lounge_rgbd.extract_dir
     config['path_intrinsic'] = ""
-    config['max_depth'] = 3.0
+    config['depth_max'] = 3.0
     config['voxel_size'] = 0.05
-    config['max_depth_diff'] = 0.07
+    config['depth_diff_max'] = 0.07
     config['preference_loop_closure_odometry'] = 0.1
     config['preference_loop_closure_registration'] = 5.0
     config['tsdf_cubic_size'] = 3.0
@@ -60,9 +60,9 @@ def bedroom_data_loader():
     config = {}
     config['path_dataset'] = bedroom_rgbd.extract_dir
     config['path_intrinsic'] = ""
-    config['max_depth'] = 3.0
+    config['depth_max'] = 3.0
     config['voxel_size'] = 0.05
-    config['max_depth_diff'] = 0.07
+    config['depth_diff_max'] = 0.07
     config['preference_loop_closure_odometry'] = 0.1
     config['preference_loop_closure_registration'] = 5.0
     config['tsdf_cubic_size'] = 3.0
@@ -83,9 +83,9 @@ def jackjack_data_loader():
     config = {}
     config['path_dataset'] = jackjack_bag.path
     config['path_intrinsic'] = ""
-    config['max_depth'] = 0.85
+    config['depth_max'] = 0.85
     config['voxel_size'] = 0.025
-    config['max_depth_diff'] = 0.03
+    config['depth_diff_max'] = 0.03
     config['preference_loop_closure_odometry'] = 0.1
     config['preference_loop_closure_registration'] = 5.0
     config['tsdf_cubic_size'] = 0.75
