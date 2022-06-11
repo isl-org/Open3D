@@ -42,6 +42,14 @@ if __name__ == '__main__':
     rgbd_src = o3d.t.geometry.RGBDImage(color_src, depth_src)
     rgbd_dst = o3d.t.geometry.RGBDImage(color_dst, depth_dst)
 
+    # RGBD odmetry and information matrix computation
+    res = o3d.t.pipelines.odometry.rgbd_odometry_multi_scale(
+        rgbd_src, rgbd_dst, intrinsic)
+    info = o3d.t.pipelines.odometry.compute_odometry_information_matrix(
+        depth_src, depth_dst, intrinsic, res.transformation, 0.07)
+    print(res.transformation, info)
+
+    # Legacy for reference, can be a little bit different due to minor implementation discrepancies
     rgbd_src_legacy = read_rgbd_image(color_file_names[i], depth_file_names[i],
                                       True)
     rgbd_dst_legacy = read_rgbd_image(color_file_names[j], depth_file_names[j],
@@ -51,21 +59,12 @@ if __name__ == '__main__':
     success, trans, info = o3d.pipelines.odometry.compute_rgbd_odometry(
         rgbd_src_legacy, rgbd_dst_legacy, intrinsic_legacy, np.eye(4),
         o3d.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm())
-    print(info)
+    print(trans, info)
 
-    res = o3d.t.pipelines.odometry.rgbd_odometry_multi_scale(
-        rgbd_src, rgbd_dst, intrinsic)
-    depth_srcf = depth_src.clip_transform(1000.0, 0.0, 3.0, np.nan)
-    depth_dstf = depth_dst.clip_transform(1000.0, 0.0, 3.0, np.nan)
-    info = o3d.t.pipelines.odometry.compute_odometry_information_matrix(
-        depth_srcf.as_tensor(), depth_dstf.as_tensor(), intrinsic,
-        res.transformation, 0.03)
-    print(info)
-
+    # Visualization
     pcd_src = o3d.t.geometry.PointCloud.create_from_rgbd_image(
         rgbd_src, intrinsic)
     pcd_dst = o3d.t.geometry.PointCloud.create_from_rgbd_image(
         rgbd_dst, intrinsic)
-
     o3d.visualization.draw([pcd_src, pcd_dst])
     o3d.visualization.draw([pcd_src.transform(res.transformation), pcd_dst])

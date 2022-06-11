@@ -274,7 +274,7 @@ Colored Point Cloud Registration Revisited, ICCV, 2017.)",
           &ComputeOdometryInformationMatrix,
           py::call_guard<py::gil_scoped_release>(), "source_depth"_a,
           "target_depth"_a, "intrinsic"_a, "source_to_target"_a,
-          "dist_threshold"_a);
+          "dist_threshold"_a, "depth_scale"_a = 1000.0, "depth_max"_a = 3.0);
 }
 
 void pybind_odometry(py::module &m) {
