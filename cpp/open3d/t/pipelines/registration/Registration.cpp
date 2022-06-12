@@ -452,6 +452,66 @@ core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
                                             correspondences);
 }
 
+RegistrationResult RANSACBasedOnFeatureMatching(
+        const geometry::PointCloud &source,  // (N, 3)
+        const geometry::PointCloud &target,  // (N, 3)
+        const core::Tensor &source_feature,  // (N, D)
+        const core::Tensor &target_feature,  // (N, D)
+        double max_correspondence_distance,
+        int ransac_n,
+        const RANSACConvergenceCriteria &criteria,
+        const TransformationEstimation &estimation) {
+    utility::LogError("Unimplemented.");
+}
+
+RegistrationResult RANSACBasedOnCorrespondences(
+        const geometry::PointCloud &source,   // (N, 3)
+        const geometry::PointCloud &target,   // (N, 3)
+        const core::Tensor &correspondences,  // (N, 2)
+        double max_correspondence_distance,
+        int ransac_n,
+        const RANSACConvergenceCriteria &criteria,
+        const TransformationEstimation &estimation) {
+    if (ransac_n < 3 || correspondences.GetLength() < ransac_n ||
+        max_correspondence_distance < 0) {
+        utility::LogWarning("Invalid configuration for RANSAC, abort.");
+        return RegistrationResult();
+    }
+
+    // TODO: select seed value
+    utility::UniformRandIntGenerator rand_gen(
+            0, correspondences.GetLength() - 1, 0);
+
+    core::Tensor ransac_corres({ransac_n, 2}, core::Dtype::Int64,
+                               core::Device("CPU:0"));
+    RegistrationResult best_result;
+    // TODO: use omp, but need to check how to use stream
+    for (int itr = 0; itr < criteria.max_iteration_; ++itr) {
+        for (int j = 0; j < ransac_n; ++j) {
+            ransac_corres.SetItem(core::TensorKey::Index(j),
+                                  correspondences[rand_gen()]);
+        }
+
+        // Estimate RANSAC result, on device
+        core::Tensor transformation =
+                estimation.ComputeTransformation(source, target, ransac_corres)
+                        .To(core::Float64);
+
+        // TODO: add early check
+        auto source_copy = source.Clone();
+        source_copy.Transform(transformation);
+
+        // Evaluate RANSAC result, on device
+        auto result_itr = EvaluateRegistration(
+                source, target, max_correspondence_distance, transformation);
+        if (result_itr.IsBetterThan(best_result)) {
+            best_result = result_itr;
+        }
+    }
+
+    return best_result;
+}
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

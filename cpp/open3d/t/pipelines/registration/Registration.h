@@ -212,6 +212,58 @@ core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
                                   const double max_correspondence_distance,
                                   const core::Tensor &transformation);
 
+/// \class RANSACConvergenceCriteria
+///
+/// \brief Class that defines the convergence criteria of RANSAC.
+///
+/// RANSAC algorithm stops if the iteration number hits max_iteration_, or the
+/// fitness measured during validation suggests that the algorithm can be
+/// terminated early with some confidence_. Early termination takes place when
+/// the number of iteration reaches k = log(1 - confidence)/log(1 -
+/// fitness^{ransac_n}), where ransac_n is the number of points used during a
+/// ransac iteration. Use confidence=1.0 to avoid early termination.
+class RANSACConvergenceCriteria {
+public:
+    /// \brief Parameterized Constructor.
+    ///
+    /// \param max_iteration Maximum iteration before iteration stops.
+    /// \param confidence Desired probability of success. Used for estimating
+    /// early termination.
+    RANSACConvergenceCriteria(int max_iteration = 100000,
+                              double confidence = 0.999)
+        : max_iteration_(max_iteration),
+          confidence_(std::max(std::min(confidence, 1.0), 0.0)) {}
+
+    ~RANSACConvergenceCriteria() {}
+
+public:
+    /// Maximum iteration before iteration stops.
+    int max_iteration_;
+    /// Desired probability of success.
+    double confidence_;
+};
+
+RegistrationResult RANSACBasedOnFeatureMatching(
+        const geometry::PointCloud &source,  // (N, 3)
+        const geometry::PointCloud &target,  // (N, 3)
+        const core::Tensor &source_feature,  // (N, D)
+        const core::Tensor &target_feature,  // (N, D)
+        double max_correspondence_distance,
+        int ransac_n = 3,
+        const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria(),
+        const TransformationEstimation &estimation =
+                TransformationEstimationPointToPoint());
+
+RegistrationResult RANSACBasedOnCorrespondences(
+        const geometry::PointCloud &source,   // (N, 3)
+        const geometry::PointCloud &target,   // (N, 3)
+        const core::Tensor &correpsondences,  // (N, 2)
+        double max_correspondence_distance,
+        int ransac_n = 3,
+        const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria(),
+        const TransformationEstimation &estimation =
+                TransformationEstimationPointToPoint());
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t
