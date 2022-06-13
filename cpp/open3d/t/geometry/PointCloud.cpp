@@ -258,7 +258,7 @@ PointCloud PointCloud::SelectByIndex(
     core::AssertTensorDtype(indices, core::Int64);
     core::AssertTensorDevice(indices, GetDevice());
 
-    PointCloud pcd;
+    PointCloud pcd(GetDevice());
 
     if (!remove_duplicates && !invert) {
         core::TensorKey key = core::TensorKey::IndexTensor(indices);
