@@ -25,17 +25,16 @@
 // ----------------------------------------------------------------------------
 
 #pragma once
+
 #include <string>
-#include <vector>
 
 #include "open3d/utility/Helper.h"
-#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
 /// Device context specifying device type and device id.
-/// For CPU, there is only one device with id 0
+/// For CPU, there is only one device with id 0.
 class Device {
 public:
     /// Type for device.

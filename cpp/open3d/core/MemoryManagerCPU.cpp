@@ -27,6 +27,7 @@
 #include <cstdlib>
 
 #include "open3d/core/MemoryManager.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
