@@ -24,7 +24,10 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <json/json.h>
+
 #include <atomic>
+#include <iomanip>
 #include <sstream>
 #include <thread>
 
@@ -34,66 +37,237 @@ namespace open3d {
 namespace examples {
 namespace legacy_reconstruction {
 
-/// \class PipelineConfig
-/// \brief Configuration for the offline reconstruction pipeline.
-///
-class PipelineConfig {
-public:
-    PipelineConfig() {
-        data_path_ = "";
-        depth_scale_ = 1000.0;
-        depth_max_ = 3.0;
-        depth_diff_max_ = 0.07;
-        voxel_size_ = 0.01;
-        tsdf_voxel_size_ = 0.005;
-        tsdf_integration_ = false;
-        enable_slac_ = false;
-        make_fragment_param_ = {PipelineConfig::DescriptorType::FPFH, 40, 0.2};
-        local_refine_method_ = LocalRefineMethod::ColoredICP;
-        global_registration_method_ = GlobalRegistrationMethod::Ransac;
-        optimization_param_ = {0.1, 5.0};
+std::string FloatToString(float f, int precision = 3) {
+    std::stringstream oss;
+    oss << std::fixed << std::setprecision(precision) << f;
+    return oss.str();
+}
+
+std::string JoinPath(const std::string& path1, const std::string& path2) {
+    std::string path = path1;
+    if (path.back() != '/') {
+        path += "/";
+    }
+    path += path2;
+    return path;
+}
+
+std::string JoinPath(const std::vector<std::string>& paths) {
+    std::string path = paths[0];
+    for (size_t i = 1; i < paths.size(); i++) {
+        path = JoinPath(path, paths[i]);
+    }
+    return path;
+}
+
+std::string AddIfExist(const std::string& path,
+                       const std::vector<std::string>& folder_names) {
+    for (auto& folder_name : folder_names) {
+        const std::string folder_path = JoinPath(path, folder_name);
+        if (utility::filesystem::DirectoryExists(folder_path)) {
+            return folder_path;
+        }
+    }
+    utility::LogError("None of the folders {} found in {}", folder_names, path);
+}
+
+bool CheckFolderStructure(const std::string& path_dataset) {
+    if (utility::filesystem::FileExists(path_dataset) &&
+        utility::filesystem::GetFileExtensionInLowerCase(path_dataset) ==
+                "bag") {
+        return true;
+    }
+    const std::string path_color =
+            AddIfExist(path_dataset, {"color", "rgb", "image"});
+    const std::string path_depth = JoinPath(path_dataset, "depth");
+    if (!utility::filesystem::DirectoryExists(path_color) ||
+        !utility::filesystem::DirectoryExists(path_depth)) {
+        utility::LogWarning("Folder structure of {} is not correct",
+                            path_dataset);
+        return false;
+    }
+    return true;
+}
+
+std::tuple<std::string, std::string, float> ExtractRGBDFrames(
+        const std::string& rgbd_video_file) {
+    const std::string frames_folder =
+            utility::filesystem::GetFileParentDirectory(rgbd_video_file);
+    const std::string path_intrinsic = frames_folder + "intrinsic.json";
+    if (!utility::filesystem::FileExists(path_intrinsic)) {
+        utility::LogError("Intrinsic file not found: {}", path_intrinsic);
+    } else {
+        auto rgbd_video = t::io::RGBDVideoReader::Create(rgbd_video_file);
+        rgbd_video->SaveFrames(frames_folder);
     }
 
-    virtual ~PipelineConfig() {}
+    Json::Value intrinsic = utility::StringToJson(path_intrinsic);
+    return std::make_tuple(frames_folder, path_intrinsic,
+                           intrinsic["depth_scale"].asFloat());
+}
 
-public:
-    enum class DescriptorType { FPFH = 0 };
+void SetDefaultValue(Json::Value& config,
+                     const std::string& key,
+                     int default_value) {
+    if (!config.isMember(key)) {
+        config[key] = default_value;
+    }
+}
 
-    struct MakeFragmentParam {
-        DescriptorType descriptor_type;
-        int n_frame_per_fragment;
-        float keyframe_ratio;
-    };
+void SetDefaultValue(Json::Value& config,
+                     const std::string& key,
+                     float default_value) {
+    if (!config.isMember(key)) {
+        config[key] = default_value;
+    }
+}
 
-    enum class LocalRefineMethod {
-        Point2PointICP = 0,
-        Point2PlaneICP = 1,
-        ColoredICP = 2,
-        GeneralizedICP = 3
-    };
+void SetDefaultValue(Json::Value& config,
+                     const std::string& key,
+                     const std::string& default_value) {
+    if (!config.isMember(key)) {
+        config[key] = default_value;
+    }
+}
 
-    enum class GlobalRegistrationMethod { Ransac = 0, FGR = 1 };
+void InitConfig(Json::Value& config) {
+    // Set default parameters if not specified.
+    SetDefaultValue(config, "n_frames_per_fragment", 100);
+    SetDefaultValue(config, "n_frames_per_fragment", 100);
+    SetDefaultValue(config, "n_keyframes_per_n_frame", 5);
+    SetDefaultValue(config, "depth_min", 0.3f);
+    SetDefaultValue(config, "depth_max", 3.0f);
+    SetDefaultValue(config, "voxel_size", 0.05f);
+    SetDefaultValue(config, "depth_diff_max", 0.07f);
+    SetDefaultValue(config, "depth_scale", 1000);
+    SetDefaultValue(config, "preference_loop_closure_odometry", 0.1f);
+    SetDefaultValue(config, "preference_loop_closure_registration", 5.0f);
+    SetDefaultValue(config, "tsdf_cubic_size", 3.0f);
+    SetDefaultValue(config, "icp_method", "color");
+    SetDefaultValue(config, "global_registration", "ransac");
+    SetDefaultValue(config, "multi_threading", true);
 
-    struct OptimizationParam {
-        float preference_loop_closure_odometry;
-        float preference_loop_closure_registration;
-    };
+    // `slac` and `slac_integrate` related parameters. `voxel_size` and
+    // `depth_min` parameters from previous section, are also used in `slac`
+    // and `slac_integrate`.
+    SetDefaultValue(config, "max_iterations", 5);
+    SetDefaultValue(config, "sdf_trunc", 0.04f);
+    SetDefaultValue(config, "block_count", 40000);
+    SetDefaultValue(config, "distance_threshold", 0.07f);
+    SetDefaultValue(config, "fitness_threshold", 0.3f);
+    SetDefaultValue(config, "regularizer_weight", 1);
+    SetDefaultValue(config, "method", "slac");
+    SetDefaultValue(config, "device", "CPU:0");
+    SetDefaultValue(config, "save_output_as", "pointcloud");
+    SetDefaultValue(config, "folder_slac", "slac/");
+    SetDefaultValue(config, "template_optimized_posegraph_slac",
+                    "optimized_posegraph_slac.json");
 
-    // Path to data stored folder.
-    std::string data_path_;
-    camera::PinholeCameraIntrinsic camera_intrinsic_;
-    float depth_scale_;
-    float depth_max_;
-    float depth_diff_max_;
-    float voxel_size_;
-    float tsdf_voxel_size_;
-    bool tsdf_integration_;
-    bool enable_slac_;
-    MakeFragmentParam make_fragment_param_;
-    LocalRefineMethod local_refine_method_;
-    GlobalRegistrationMethod global_registration_method_;
-    OptimizationParam optimization_param_;
-};
+    // Path related parameters.
+    SetDefaultValue(config, "folder_fragment", "fragments/");
+    SetDefaultValue(
+            config, "subfolder_slac",
+            "slac/" + FloatToString(config["voxel_size"].asFloat(), 3) + "/");
+    SetDefaultValue(config, "template_fragment_posegraph", "fragments/");
+    SetDefaultValue(config, "template_fragment_posegraph_optimized",
+                    "fragments/");
+    SetDefaultValue(config, "template_fragment_pointcloud", "fragments/");
+    SetDefaultValue(config, "folder_scene", "scene/");
+    SetDefaultValue(config, "template_global_posegraph",
+                    "scene/global_registration.json");
+    SetDefaultValue(config, "template_global_posegraph_optimized",
+                    "scene/global_registration_optimized.json");
+    SetDefaultValue(config, "template_refined_posegraph",
+                    "scene/refined_registration.json");
+    SetDefaultValue(config, "template_refined_posegraph_optimized",
+                    "scene/refined_registration_optimized.json");
+    SetDefaultValue(config, "template_global_mesh", "scene/integrated.ply");
+    SetDefaultValue(config, "template_global_traj", "scene/trajectory.log");
+
+    if (utility::filesystem::GetFileExtensionInLowerCase(
+                config["path_dataset"].asString()) == "bag") {
+        std::tie(config["path_dataset"], config["path_intrinsic"],
+                 config["depth_scale"]) =
+                ExtractRGBDFrames(config["path_dataset"].asString());
+    }
+}
+
+void LoungeDataLoader(Json::Value& config) {
+    utility::LogInfo("Loading Stanford Lounge RGB-D Dataset");
+
+    data::LoungeRGBDImages rgbd;
+
+    // Set dataset specific parameters.
+    config["path_dataset"] = rgbd.GetExtractDir();
+    config["path_intrinsic"] = "";
+    config["depth_max"] = 3.0f;
+    config["voxel_size"] = 0.05f;
+    config["depth_diff_max"] = 0.07f;
+    config["preference_loop_closure_odometry"] = 0.1f;
+    config["preference_loop_closure_registration"] = 5.0f;
+    config["tsdf_cubic_size"] = 3.0f;
+    config["icp_method"] = "color";
+    config["global_registration"] = "ransac";
+    config["multi_threading"] = true;
+}
+
+void BedroomDataLoader(Json::Value& config) {
+    utility::LogInfo("Loading Redwood Bedroom RGB-D Dataset");
+
+    data::BedroomRGBDImages rgbd;
+
+    // Set dataset specific parameters.
+    config["path_dataset"] = rgbd.GetExtractDir();
+    config["path_intrinsic"] = "";
+    config["depth_max"] = 3.0f;
+    config["voxel_size"] = 0.05f;
+    config["depth_diff_max"] = 0.07f;
+    config["preference_loop_closure_odometry"] = 0.1f;
+    config["preference_loop_closure_registration"] = 5.0f;
+    config["tsdf_cubic_size"] = 3.0f;
+    config["icp_method"] = "color";
+    config["global_registration"] = "ransac";
+    config["multi_threading"] = true;
+}
+
+void JackJackroomDataLoader(Json::Value& config) {
+    utility::LogInfo("Loading RealSense L515 Jack-Jack RGB-D Dataset");
+
+    data::JackJackL515Bag rgbd;
+
+    // Set dataset specific parameters.
+    config["path_dataset"] = rgbd.GetExtractDir();
+    config["path_intrinsic"] = "";
+    config["depth_max"] = 0.85f;
+    config["voxel_size"] = 0.025f;
+    config["depth_diff_max"] = 0.03f;
+    config["preference_loop_closure_odometry"] = 0.1f;
+    config["preference_loop_closure_registration"] = 5.0f;
+    config["tsdf_cubic_size"] = 0.75f;
+    config["icp_method"] = "color";
+    config["global_registration"] = "ransac";
+    config["multi_threading"] = true;
+}
+
+Json::Value DefaultDatasetLoader(const std::string& name) {
+    utility::LogInfo("Config file was not passed. Using deafult dataset: {}.",
+                     name);
+    Json::Value config;
+    if (name == "lounge") {
+        LoungeDataLoader(config);
+    } else if (name == "bedroom") {
+        BedroomDataLoader(config);
+    } else if (name == "jack_jack") {
+        JackJackroomDataLoader(config);
+    } else {
+        utility::LogError("Dataset {} is not supported.", name);
+    }
+
+    InitConfig(config);
+    utility::LogInfo("Loaded data from {}", config["path_dataset"].asString());
+
+    return config;
+}
 
 /// \class MatchingResult
 /// \brief Result of matching with two fragments.
@@ -137,7 +311,7 @@ public:
      *
      * @param config
      */
-    explicit ReconstructionPipeline(const PipelineConfig& config);
+    explicit ReconstructionPipeline(const Json::Value& config);
 
     /**
      * @brief Construct a new Reconstruction Pipeline from file.
@@ -149,7 +323,7 @@ public:
     virtual ~ReconstructionPipeline() {}
 
 private:
-    PipelineConfig config_;
+    Json::Value config_;
     std::map<std::string, double> time_cost_table_;
 
     // Member variables for make fragments.
@@ -194,13 +368,6 @@ public:
      *
      */
     void RunSystem();
-
-    /**
-     * @brief Get the Data Path
-     *
-     * @return std::string
-     */
-    std::string GetDataPath() const { return config_.data_path_; }
 
 private:
     void CheckConfig();

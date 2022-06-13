@@ -33,24 +33,27 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > LegacyOfflineReconstruction [options]");
+    utility::LogInfo("    > LegacyReconstruction [options]");
     utility::LogInfo("      Given an RGBD image sequence, perform the following steps:");
     utility::LogInfo("      1. Make fragments from the RGBD image sequence.");
     utility::LogInfo("      2. Register multiple fragments.");
     utility::LogInfo("      3. Refine rough registration.");
     utility::LogInfo("      4. Integrate the whole RGBD sequence to make final mesh or point clouds.");
     utility::LogInfo("      5. (Optional) Run slac optimization for fragments.");
-    utility::LogInfo("      6. (Optional) Run slac optimization for fragments.");
+    utility::LogInfo("      6. (Optional) Run slac integration for sequence.");
     utility::LogInfo("");
     utility::LogInfo("Basic options:");
-    utility::LogInfo("    --color_folder_path");
-    utility::LogInfo("    --depth_folder_path");
-    utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
-    utility::LogInfo("    --voxel_size [=0.0058 (m)]");
-    utility::LogInfo("    --depth_scale [=1000.0]");
-    utility::LogInfo("    --max_depth [=3.0]");
-    utility::LogInfo("    --pointcloud [file path to save the extracted pointcloud]");
-    utility::LogInfo("    --mesh [file path to save the extracted mesh]");
+    utility::LogInfo("    --config [path to config json file]");
+    utility::LogInfo("    --default_dataset [(optional) default dataset to be used, only if the config file is not provided]");
+    utility::LogInfo("                      [options: (lounge, bedroom, jack_jack), default: lounge]");
+    utility::LogInfo("    --make");
+    utility::LogInfo("    --register");
+    utility::LogInfo("    --refine");
+    utility::LogInfo("    --integrate");
+    utility::LogInfo("    --slac");
+    utility::LogInfo("    --slac_integrate");
+    utility::LogInfo("    --debug_mode [turn on debug mode]");
+    utility::LogInfo("    --device [(optional) select processing device for slac and slac_integrate. example: CPU:0, CUDA:0]");
     utility::LogInfo("Description:");
     // clang-format on
     utility::LogInfo("");
@@ -58,5 +61,52 @@ void PrintHelp() {
 
 int main(int argc, char* argv[]) {
     using namespace open3d;
-    
+    using namespace open3d::examples::legacy_reconstruction;
+
+    if (argc < 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
+    }
+
+    // Load dataset.
+    Json::Value config;
+    if (utility::ProgramOptionExists(argc, argv, "--config")) {
+        try {
+            config = utility::StringToJson(utility::GetProgramOptionAsString(
+                    argc, argv, "--config", ""));
+        } catch (const std::exception& e) {
+            utility::LogWarning("Failed to load config file: {}", e.what());
+            return 1;
+        }
+        InitConfig(config);
+        const bool ret =
+                CheckFolderStructure(config["path_dataset"].asString());
+        if (!ret) {
+            return 1;
+        }
+    } else {
+        config = DefaultDatasetLoader(utility::GetProgramOptionAsString(
+                argc, argv, "--default_dataset", "lounge"));
+    }
+
+    if (utility::ProgramOptionExists(argc, argv, "--debug_mode")) {
+        config["debug_mode"] = true;
+    } else {
+        config["debug_mode"] = false;
+    }
+
+    config["device"] =
+            utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0");
+
+    // Print configuation in console.
+    std::cout << "====================================\n";
+    std::cout << "Configuration:\n";
+    std::cout << "====================================\n";
+    for (Json::Value::const_iterator it = config.begin(); it != config.end();
+         ++it) {
+        std::cout << it.key() << ": " << it->asString() << "\n";
+    }
+
+    return 0;
 }
