@@ -66,39 +66,11 @@ public:
     int GetID() const;
 
 protected:
-    void AssertCPUDeviceIDIsZero() {
-        if (device_type_ == DeviceType::CPU && device_id_ != 0) {
-            utility::LogError("CPU has device_id {}, but it must be 0.",
-                              device_id_);
-        }
-    }
+    void AssertCPUDeviceIDIsZero();
 
-    static DeviceType StringToDeviceType(const std::string& type_colon_id) {
-        std::vector<std::string> tokens =
-                utility::SplitString(type_colon_id, ":", true);
-        if (tokens.size() == 2) {
-            std::string device_name_lower = utility::ToLower(tokens[0]);
-            if (device_name_lower == "cpu") {
-                return DeviceType::CPU;
-            } else if (device_name_lower == "cuda") {
-                return DeviceType::CUDA;
-            } else {
-                utility::LogError("Invalid device string {}.", type_colon_id);
-            }
-        } else {
-            utility::LogError("Invalid device string {}.", type_colon_id);
-        }
-    }
+    static DeviceType StringToDeviceType(const std::string& type_colon_id);
 
-    static int StringToDeviceId(const std::string& type_colon_id) {
-        std::vector<std::string> tokens =
-                utility::SplitString(type_colon_id, ":", true);
-        if (tokens.size() == 2) {
-            return std::stoi(tokens[1]);
-        } else {
-            utility::LogError("Invalid device string {}.", type_colon_id);
-        }
-    }
+    static int StringToDeviceId(const std::string& type_colon_id);
 
 protected:
     DeviceType device_type_ = DeviceType::CPU;
