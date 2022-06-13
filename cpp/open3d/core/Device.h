@@ -57,10 +57,10 @@ public:
 
     bool operator<(const Device& other) const;
 
-    /// Returns true iff device type is CPU.
+    /// Returns true if the device type is CPU.
     bool IsCPU() const;
 
-    /// Returns true iff device type is CUDA.
+    /// Returns true if the device type is CUDA.
     bool IsCUDA() const;
 
     std::string ToString() const;
