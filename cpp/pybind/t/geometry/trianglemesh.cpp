@@ -31,6 +31,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "pybind/t/geometry/geometry.h"
+#include "pybind/docstring.h"
 
 namespace open3d {
 namespace t {
@@ -221,6 +222,27 @@ This example shows how to create a hemisphere from a sphere::
 
     o3d.visualization.draw(hemisphere)
 )");
+
+
+    // Triangle Mesh's creation APIs.
+    triangle_mesh.def_static("create_box", &TriangleMesh::CreateBox,
+                            "Factory function to create a box. The left bottom "
+                            "corner on the "
+                            "front will be placed at (0, 0, 0), and default UV "
+                            "map, maps the entire texture to each face.",
+                            "width"_a = 1.0, "height"_a = 1.0, "depth"_a = 1.0,
+                            "vertex_dtype"_a = core::Float32, "triangle_dtype"_a = core::Int64,
+                            "device"_a = core::Device("CPU:0"));
+
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_box",
+            {{"width", "x-directional length."},
+             {"height", "y-directional length."},
+             {"depth", "z-directional length."},
+             {"vertex_dtype", "Float_dtype, Float32 or Float64."},
+             {"triangle_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device, CPU or GPU."}});
+
 }
 
 }  // namespace geometry

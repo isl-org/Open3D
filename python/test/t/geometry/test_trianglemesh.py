@@ -24,6 +24,7 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+from turtle import width
 import open3d as o3d
 import numpy as np
 import pytest
@@ -35,3 +36,19 @@ def test_clip_plane():
     clipped_cube = cube.clip_plane(point=[0.5, 0, 0], normal=[1, 0, 0])
     assert clipped_cube.vertex['positions'].shape == (12, 3)
     assert clipped_cube.triangle['indices'].shape == (14, 3)
+
+
+
+def test_create_box():
+    
+    # Test legacy
+    # box = o3d.geometry.TriangleMesh.create_box()
+    # box.compute_vertex_normals()
+    # o3d.visualization.draw([box], raw_mode=True)
+
+
+    # To implement
+    print("hello world")
+    box = o3d.t.geometry.TriangleMesh.create_box(1, 2, 4)
+    o3d.visualization.draw([box], raw_mode=True)
+
