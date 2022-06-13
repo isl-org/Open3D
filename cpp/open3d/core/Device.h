@@ -45,52 +45,25 @@ public:
     Device() = default;
 
     /// Constructor with device specified.
-    explicit Device(DeviceType device_type, int device_id)
-        : device_type_(device_type), device_id_(device_id) {
-        AssertCPUDeviceIDIsZero();
-    }
+    explicit Device(DeviceType device_type, int device_id);
 
     /// Constructor from device type string and device id.
-    explicit Device(const std::string& device_type, int device_id)
-        : Device(device_type + ":" + std::to_string(device_id)) {}
+    explicit Device(const std::string& device_type, int device_id);
 
     /// Constructor from string, e.g. "CUDA:0".
-    explicit Device(const std::string& type_colon_id)
-        : device_type_(StringToDeviceType(type_colon_id)),
-          device_id_(StringToDeviceId(type_colon_id)) {
-        AssertCPUDeviceIDIsZero();
-    }
+    explicit Device(const std::string& type_colon_id);
 
-    bool operator==(const Device& other) const {
-        return this->device_type_ == other.device_type_ &&
-               this->device_id_ == other.device_id_;
-    }
+    bool operator==(const Device& other) const;
 
-    bool operator!=(const Device& other) const { return !operator==(other); }
+    bool operator!=(const Device& other) const;
 
-    bool operator<(const Device& other) const {
-        return ToString() < other.ToString();
-    }
+    bool operator<(const Device& other) const;
 
-    std::string ToString() const {
-        std::string str = "";
-        switch (device_type_) {
-            case DeviceType::CPU:
-                str += "CPU";
-                break;
-            case DeviceType::CUDA:
-                str += "CUDA";
-                break;
-            default:
-                utility::LogError("Unsupported device type");
-        }
-        str += ":" + std::to_string(device_id_);
-        return str;
-    }
+    std::string ToString() const;
 
-    DeviceType GetType() const { return device_type_; }
+    DeviceType GetType() const;
 
-    int GetID() const { return device_id_; }
+    int GetID() const;
 
 protected:
     void AssertCPUDeviceIDIsZero() {
