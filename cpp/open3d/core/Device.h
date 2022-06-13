@@ -28,8 +28,6 @@
 
 #include <string>
 
-#include "open3d/utility/Helper.h"
-
 namespace open3d {
 namespace core {
 
