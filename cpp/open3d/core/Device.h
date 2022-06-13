@@ -65,9 +65,20 @@ public:
 
     std::string ToString() const;
 
+    /// Returns type of the device, e.g. DeviceType::CPU, DeviceType::CUDA.
     DeviceType GetType() const;
 
+    /// Returns the device index (within the same device type).
     int GetID() const;
+
+    /// Returns true if the device is available.
+    bool IsAvailable() const;
+
+    /// Returns a vector of available devices.
+    static std::vector<Device> GetAvailableDevices();
+
+    /// Print all available devices.
+    static void PrintAvailableDevices();
 
 protected:
     void AssertCPUDeviceIDIsZero();

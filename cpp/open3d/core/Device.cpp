@@ -29,6 +29,7 @@
 #include <string>
 #include <vector>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
@@ -88,6 +89,37 @@ std::string Device::ToString() const {
 Device::DeviceType Device::GetType() const { return device_type_; }
 
 int Device::GetID() const { return device_id_; }
+
+bool Device::IsAvailable() const {
+    bool rc = false;
+
+    if (device_type_ == DeviceType::CPU && device_id_ == 0) {
+        // CPU is hard-coded to have device_id_ == 0
+        rc = true;
+    } else if (device_type_ == DeviceType::CUDA) {
+        rc = cuda::IsAvailable() && device_id_ >= 0 &&
+             device_id_ < cuda::DeviceCount();
+    }
+
+    return rc;
+}
+
+std::vector<Device> Device::GetAvailableDevices() {
+    std::vector<Device> devices;
+
+    // CPU.
+    devices.push_back(Device(DeviceType::CPU, 0));
+
+    // CUDA.
+    if (cuda::IsAvailable()) {
+        int device_count = cuda::DeviceCount();
+        for (int i = 0; i < device_count; i++) {
+            devices.push_back(Device(DeviceType::CUDA, i));
+        }
+    }
+
+    return devices;
+}
 
 void Device::AssertCPUDeviceIDIsZero() {
     if (device_type_ == DeviceType::CPU && device_id_ != 0) {
