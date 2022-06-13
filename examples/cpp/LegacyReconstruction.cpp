@@ -100,13 +100,71 @@ int main(int argc, char* argv[]) {
             utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0");
 
     // Print configuation in console.
-    std::cout << "====================================\n";
-    std::cout << "Configuration:\n";
-    std::cout << "====================================\n";
+    utility::LogInfo("====================================");
+    utility::LogInfo("Configuration");
+    utility::LogInfo("====================================");
     for (Json::Value::const_iterator it = config.begin(); it != config.end();
          ++it) {
-        std::cout << it.key() << ": " << it->asString() << "\n";
+        utility::LogInfo("{}: {}", it.key().asString(), it->asString());
     }
+
+    // Init Reconstruction pipeline.
+    ReconstructionPipeline pipeline(config);
+
+    utility::Timer timer;
+    std::array<double, 6> time_elapsed({0, 0, 0, 0, 0, 0});
+    if (utility::ProgramOptionExists(argc, argv, "--make")) {
+        timer.Start();
+        pipeline.MakeFragments();
+        timer.Stop();
+        time_elapsed[0] = timer.GetDuration() / 1000.0;
+    }
+    if (utility::ProgramOptionExists(argc, argv, "--register")) {
+        timer.Start();
+        pipeline.RegisterFragments();
+        timer.Stop();
+        time_elapsed[1] = timer.GetDuration() / 1000.0;
+    }
+    if (utility::ProgramOptionExists(argc, argv, "--refine")) {
+        timer.Start();
+        pipeline.RefineFragments();
+        timer.Stop();
+        time_elapsed[2] = timer.GetDuration() / 1000.0;
+    }
+    if (utility::ProgramOptionExists(argc, argv, "--integrate")) {
+        timer.Start();
+        pipeline.IntegrateScene();
+        timer.Stop();
+        time_elapsed[3] = timer.GetDuration() / 1000.0;
+    }
+    if (utility::ProgramOptionExists(argc, argv, "--slac")) {
+        timer.Start();
+        pipeline.SLAC();
+        timer.Stop();
+        time_elapsed[4] = timer.GetDuration() / 1000.0;
+    }
+    if (utility::ProgramOptionExists(argc, argv, "--slac_integrate")) {
+        timer.Start();
+        pipeline.IntegrateSceneSLAC();
+        timer.Stop();
+        time_elapsed[5] = timer.GetDuration() / 1000.0;
+    }
+
+    utility::LogInfo("====================================");
+    utility::LogInfo("Elapsed time (in h:m:s)");
+    utility::LogInfo("====================================");
+    utility::LogInfo("Making fragments:      {}",
+                     ElapseTimeToHMS(time_elapsed[0]));
+    utility::LogInfo("Register fragments:    {}",
+                     ElapseTimeToHMS(time_elapsed[1]));
+    utility::LogInfo("Refining registration: {}",
+                     ElapseTimeToHMS(time_elapsed[2]));
+    utility::LogInfo("Integrating frames:    {}",
+                     ElapseTimeToHMS(time_elapsed[3]));
+    utility::LogInfo("SLAC:                  {}",
+                     ElapseTimeToHMS(time_elapsed[4]));
+    utility::LogInfo("SLAC integration:      {}",
+                     ElapseTimeToHMS(time_elapsed[5]));
 
     return 0;
 }

@@ -37,6 +37,27 @@ namespace open3d {
 namespace examples {
 namespace legacy_reconstruction {
 
+std::string ElapseTimeToHMS(double seconds) {
+    int h = seconds / 3600;
+    int m = (seconds - h * 3600) / 60;
+    int s = seconds - h * 3600 - m * 60;
+
+    std::string hs = std::to_string(h);
+    std::string ms = std::to_string(m);
+    std::string ss = std::to_string(s);
+
+    if (h < 10) {
+        hs = "0" + hs;
+    }
+    if (m < 10) {
+        ms = "0" + ms;
+    }
+    if (s < 10) {
+        ss = "0" + ss;
+    }
+    return hs + ":" + ms + ":" + ss;
+}
+
 std::string FloatToString(float f, int precision = 3) {
     std::stringstream oss;
     oss << std::fixed << std::setprecision(precision) << f;
@@ -311,14 +332,8 @@ public:
      *
      * @param config
      */
-    explicit ReconstructionPipeline(const Json::Value& config);
-
-    /**
-     * @brief Construct a new Reconstruction Pipeline from file.
-     *
-     * @param config_file
-     */
-    ReconstructionPipeline(const std::string& config_file);
+    explicit ReconstructionPipeline(const Json::Value& config)
+        : config_(config) {}
 
     virtual ~ReconstructionPipeline() {}
 
@@ -345,29 +360,34 @@ private:
 public:
     /**
      * @brief Make fragments from raw RGBD images.
-     * The output will be the fragment point clouds and fragment pose graph.
-     *
      */
-    void MakeFragments();
+    void MakeFragments() {}
 
     /**
      * @brief Register fragments and compute global odometry.
-     * The output will be the global odometry trajectory.
+     */
+    void RegisterFragments() {}
+
+    /**
+     * @brief Refine fragments registration and re-compute global odometry.
      *
      */
-    void RegisterFragments();
+    void RefineFragments() {}
 
     /**
      * @brief Integrate RGBD images with global odometry.
-     *  The output will be the integrated triangle mesh of scene.
      */
-    void IntegrateScene();
+    void IntegrateScene() {}
 
     /**
-     * @brief Run the whole pipeline.
-     *
+     * @brief Run SLAC optimization or fragments.
      */
-    void RunSystem();
+    void SLAC() {}
+
+    /**
+     * @brief integrate scene using SLAC results.
+     */
+    void IntegrateSceneSLAC() {}
 
 private:
     void CheckConfig();
