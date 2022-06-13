@@ -45,19 +45,28 @@ jobs:
         run: |
           docker/docker_test.sh openblas-amd64-py36-dev
 
-  # How to resolve GitHub Actions ARM64 build timeout.
-  #
-  # When there are large amount of code change (e.g. changed some headers that
-  # causes re-compilation of many files), the GitHub Actions build could timeout
-  # due to excessive ccache misses. The solution is to build the branch manually
-  # and update the ccache artifacts on the Google Cloud bucket. Run:
-  #
-  # ```bash
-  # docker/docker_build.sh openblas-arm64-py36-dev
-  # gsutil cp open3d-ci-openblas-arm64.tar.gz gs://open3d-ci-cache/
-  # ```
+  # With forked repo, the GitHub secret is not available.
+  skip-arm64-check-on-fork:
+    runs-on: ubuntu-20.04
+    name: Skip job for forks
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Skip check
+        id: check
+        run: |
+          if [ "${GITHUB_REPOSITORY}" == "isl-org/Open3D" ] && [ -n "${GCE_GPU_CI_SA}" ] ; then
+            echo "Secrets available: performing GCE test"
+            echo "::set-output name=skip::no"
+          else
+            echo "Secrets not available: skipping GCE test"
+            echo "::set-output name=skip::yes"
+          fi
+
   openblas-arm64:
     runs-on: ubuntu-20.04
+    needs: [skip-arm64-check-on-fork]
+    if: needs.skip-arm64-check-on-fork.outputs.skip == 'no'
     strategy:
       fail-fast: false
     env:
