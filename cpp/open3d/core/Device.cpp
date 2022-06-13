@@ -65,6 +65,10 @@ bool Device::operator<(const Device& other) const {
     return ToString() < other.ToString();
 }
 
+bool Device::IsCPU() const { return device_type_ == DeviceType::CPU; }
+
+bool Device::IsCUDA() const { return device_type_ == DeviceType::CUDA; }
+
 std::string Device::ToString() const {
     std::string str = "";
     switch (device_type_) {

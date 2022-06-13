@@ -27,6 +27,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace open3d {
 namespace core {
@@ -55,6 +56,12 @@ public:
     bool operator!=(const Device& other) const;
 
     bool operator<(const Device& other) const;
+
+    /// Returns true iff device type is CPU.
+    bool IsCPU() const;
+
+    /// Returns true iff device type is CUDA.
+    bool IsCUDA() const;
 
     std::string ToString() const;
 
