@@ -179,4 +179,5 @@ jobs:
         run: |
           gcloud compute instances delete "${INSTANCE_NAME}" --zone "${GCE_ZONE}"
           ls -alh "${HOME}/.ssh"
+          gcloud compute os-login describe-profile
           gcloud compute os-login ssh-keys remove --key-file "${HOME}/.ssh/google_compute_engine.pub"
