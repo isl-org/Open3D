@@ -32,21 +32,8 @@ from config import ConfigParser
 from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics, get_default_dataset
 
 
-def read_legacy_rgbd_image(color_file, depth_file, convert_rgb_to_intensity):
-    color = o3d.io.read_image(color_file)
-    depth = o3d.io.read_image(depth_file)
-    rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
-        color,
-        depth,
-        depth_scale=1000.0,
-        depth_trunc=3.0,
-        convert_rgb_to_intensity=convert_rgb_to_intensity)
-    return rgbd_image
-
-
 def rgbd_loop_closure(depth_list, color_list, intrinsic, config):
-    # TODO: load it from config
-    device = o3c.Device('CUDA:0')
+    device = o3c.Device(config.device)
 
     interval = config.odometry_loop_interval
     n_files = len(depth_list)
@@ -67,6 +54,7 @@ def rgbd_loop_closure(depth_list, color_list, intrinsic, config):
     ]
     method = o3d.t.pipelines.odometry.Method.PointToPlane
 
+    # Running loop closure between all the keyframes.
     for i in range(n_key_indices - 1):
         key_i = key_indices[i]
         depth_curr = o3d.t.io.read_image(depth_list[key_i]).to(device)
@@ -96,13 +84,22 @@ def rgbd_loop_closure(depth_list, color_list, intrinsic, config):
                     poses.append(res.transformation.cpu().numpy())
                     infos.append(info.cpu().numpy())
 
-                    # pcd_src = o3d.t.geometry.PointCloud.create_from_rgbd_image(
-                    #     rgbd_curr, intrinsic)
-                    # pcd_dst = o3d.t.geometry.PointCloud.create_from_rgbd_image(
-                    #     rgbd_next, intrinsic)
-                    # o3d.visualization.draw([pcd_src, pcd_dst])
-                    # o3d.visualization.draw(
-                    #     [pcd_src.transform(res.transformation), pcd_dst])
+                if (config.debug_mode):
+                    print("[DEBUG] Loop closure point-cloud allignment between "
+                          "fragment {} and fragment {}".format(key_i, key_j))
+
+                    pcd_src = o3d.t.geometry.PointCloud.create_from_rgbd_image(
+                        rgbd_curr, intrinsic)
+                    pcd_dst = o3d.t.geometry.PointCloud.create_from_rgbd_image(
+                        rgbd_next, intrinsic)
+                    o3d.visualization.draw(
+                        [pcd_src, pcd_dst],
+                        title="Loop Closure Fragment {}, {} Aligment Input".
+                        format(key_i, key_j))
+                    o3d.visualization.draw(
+                        [pcd_src.transform(res.transformation), pcd_dst],
+                        title="Loop Closure Fragment {}, {} Aligment Result".
+                        format(key_i, key_j))
 
     return edges, poses, infos
 
@@ -127,7 +124,17 @@ def rgbd_odometry(depth_list, color_list, intrinsic, config):
         o3d.t.pipelines.odometry.OdometryConvergenceCriteria(10),
         o3d.t.pipelines.odometry.OdometryConvergenceCriteria(5)
     ]
-    method = o3d.t.pipelines.odometry.Method.PointToPlane
+
+    method = o3d.t.pipelines.odometry.Method
+    if (config.odometry_method == 'point2plane'):
+        method = o3d.t.pipelines.odometry.Method.PointToPlane
+    elif (config.odometry_method == 'intensity'):
+        method = o3d.t.pipelines.odometry.Method.Intensity
+    elif (config.odometry_method == 'hybrid'):
+        method = o3d.t.pipelines.odometry.Method.Hybrid
+    else:
+        raise Exception('odometry method: {} is not implemented.'.format(
+            config.odometry_method))
 
     for i in tqdm(range(0, n_files - 1)):
         depth_next = o3d.t.io.read_image(depth_list[i + 1]).to(device)
@@ -150,67 +157,3 @@ def rgbd_odometry(depth_list, color_list, intrinsic, config):
         rgbd_curr = rgbd_next
 
     return edges, poses, infos
-
-
-if __name__ == '__main__':
-    parser = ConfigParser()
-    parser.add('--config',
-               is_config_file=True,
-               help='YAML config file path.'
-               'Please refer to config.py for the options,'
-               'and default_config.yml for default settings '
-               'It overrides the default config file, but will be '
-               'overridden by other command line inputs.')
-    parser.add('--default_dataset',
-               help='Default dataset is used when config file is not provided. '
-               'Default dataset may be selected from the following options: '
-               '[lounge, jack_jack]',
-               default='lounge')
-    config = parser.get_config()
-
-    if config.path_dataset == '':
-        config = get_default_dataset(config)
-
-    depth_file_names, color_file_names = load_rgbd_file_names(config)
-
-    intrinsic = load_intrinsic(config)
-
-    i = 0
-    j = 10
-
-    depth_src = o3d.t.io.read_image(depth_file_names[i])
-    color_src = o3d.t.io.read_image(color_file_names[i])
-
-    depth_dst = o3d.t.io.read_image(depth_file_names[j])
-    color_dst = o3d.t.io.read_image(color_file_names[j])
-
-    rgbd_src = o3d.t.geometry.RGBDImage(color_src, depth_src)
-    rgbd_dst = o3d.t.geometry.RGBDImage(color_dst, depth_dst)
-
-    # RGBD odmetry and information matrix computation
-    res = o3d.t.pipelines.odometry.rgbd_odometry_multi_scale(
-        rgbd_src, rgbd_dst, intrinsic)
-    info = o3d.t.pipelines.odometry.compute_odometry_information_matrix(
-        depth_src, depth_dst, intrinsic, res.transformation, 0.07)
-    print(res.transformation, info)
-    print(info[5, 5] / (depth_src.columns * depth_src.rows))
-
-    # Legacy for reference, can be a little bit different due to minor implementation discrepancies
-    rgbd_src_legacy = read_legacy_rgbd_image(color_file_names[i],
-                                             depth_file_names[i], True)
-    rgbd_dst_legacy = read_legacy_rgbd_image(color_file_names[j],
-                                             depth_file_names[j], True)
-    intrinsic_legacy = o3d.camera.PinholeCameraIntrinsic(
-        o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
-    success, trans, info = o3d.pipelines.odometry.compute_rgbd_odometry(
-        rgbd_src_legacy, rgbd_dst_legacy, intrinsic_legacy, np.eye(4),
-        o3d.pipelines.odometry.RGBDOdometryJacobianFromHybridTerm())
-    print(trans, info)
-
-    # Visualization
-    pcd_src = o3d.t.geometry.PointCloud.create_from_rgbd_image(
-        rgbd_src, intrinsic)
-    pcd_dst = o3d.t.geometry.PointCloud.create_from_rgbd_image(
-        rgbd_dst, intrinsic)
-    o3d.visualization.draw([pcd_src, pcd_dst])
-    o3d.visualization.draw([pcd_src.transform(res.transformation), pcd_dst])

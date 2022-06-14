@@ -37,7 +37,7 @@ class ConfigParser(configargparse.ArgParser):
                          conflict_handler='resolve')
 
         # yapf:disable
-        # Default arguments
+        # General parameters.
         self.add(
             '--name', type=str,
             help='Name of the config for the offline reconstruction system.')
@@ -54,7 +54,11 @@ class ConfigParser(configargparse.ArgParser):
         self.add(
             '--multiprocessing', action='store_true',
             help='Use multiprocessing in operations. Only available for the legacy engine.')
+        self.add(
+            '--debug_mode', action='store_true',
+            help='Enables debug informations for development.')
 
+        # Path to input data.
         input_parser = self.add_argument_group('input')
         input_parser.add(
             '--path_dataset', type=str,
@@ -77,6 +81,8 @@ class ConfigParser(configargparse.ArgParser):
             'If the intrinsic matrix for color image is different,'
             'specify it by --path_color_intrinsic.'
             'By default PrimeSense intrinsics is used.')
+
+        # RGB-D input related parameters.
         input_parser.add(
             '--depth_min', type=float,
             help='Min clipping distance (in meter) for input depth data.')
@@ -88,6 +94,7 @@ class ConfigParser(configargparse.ArgParser):
             help='Scale factor to convert raw input depth data to meters.')
         input_parser.add('--fragment_size', type=int, help='Number of RGBD frames per fragment')
 
+        # RGB-D registation related parameters.
         odometry_parser = self.add_argument_group('odometry')
         odometry_parser.add(
             '--odometry_method', type=str,
@@ -104,6 +111,7 @@ class ConfigParser(configargparse.ArgParser):
             '--odometry_distance_thr', type=float,
             help='Default distance threshold to filter outliers in odometry correspondences.')
 
+        # Point-cloud fragments registration related parameters.
         registration_parser = self.add_argument_group('registration')
         registration_parser.add(
             '--icp_method', type=str,
@@ -124,6 +132,7 @@ class ConfigParser(configargparse.ArgParser):
             '--registration_loop_weight', type=float,
             help='Weight of loop closure edges when optimizing pose graphs for registration.')
 
+        # TSDF integration related parameters.
         integration_parser = self.add_argument_group('integration')
         integration_parser.add(
             '--integration_mode',type=str,

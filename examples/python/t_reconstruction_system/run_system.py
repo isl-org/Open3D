@@ -62,6 +62,8 @@ if __name__ == '__main__':
     if config.fragment_odometry:
         start = time.time()
         intrinsic = load_intrinsic(config)
+
+        # depth_lists is the list of list of depth in each fragment.
         depth_lists, color_lists = load_fragments(config)
 
         for frag_id, (depth_list,
@@ -71,6 +73,8 @@ if __name__ == '__main__':
             # Odometry: (i, i+1), trans(i, i+1), info(i, i+1)
             edges, trans, infos = rgbd_odometry(depth_list, color_list,
                                                 intrinsic, config)
+
+            # Frame of first node for each fragment is assumed to be the world frame itself.
             pose_i2w = np.eye(4)
             pose_graph.add_node(0, pose_i2w.copy())
 
