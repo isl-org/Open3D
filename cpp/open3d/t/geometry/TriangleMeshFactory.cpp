@@ -81,7 +81,7 @@ TriangleMesh TriangleMesh::CreateBox(double width,
                                                                  {0, 4, 1},
                                                                  {1, 4, 5}},
                                                                 device);
-    ;
+
     if (int_dtype == core::Int32) {
         triangle_indices = triangle_indices.To(core::Int32);
     } else if (int_dtype != core::Int64) {
