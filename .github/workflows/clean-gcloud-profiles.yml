@@ -19,11 +19,11 @@ name: Clean GCloud Profiles
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-  pull_request:
-    types: [opened, reopened, synchronize]
+  # push:
+  #   branches:
+  #     - master
+  # pull_request:
+  #   types: [opened, reopened, synchronize]
 
 env:
   GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
