@@ -115,12 +115,12 @@ protected:
 
 std::shared_ptr<core::MemoryManagerCached> MakeCachedMemoryManagerDevice(
         const core::Device& device) {
-    if (device.GetType() == core::Device::DeviceType::CPU) {
+    if (device.IsCPU()) {
         return std::make_shared<core::MemoryManagerCached>(
                 std::make_shared<core::MemoryManagerCPU>());
     }
 #ifdef BUILD_CUDA_MODULE
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         return std::make_shared<core::MemoryManagerCached>(
                 std::make_shared<core::MemoryManagerCUDA>());
     }

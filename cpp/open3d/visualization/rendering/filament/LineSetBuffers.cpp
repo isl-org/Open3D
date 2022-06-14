@@ -386,7 +386,7 @@ TLineSetBuffersBuilder::TLineSetBuffersBuilder(
     : geometry_(geometry) {
     // Make sure geometry is on CPU
     auto pts = geometry.GetPointPositions();
-    if (pts.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (pts.GetDevice().IsCUDA()) {
         utility::LogWarning(
                 "GPU resident line sets are not currently supported for "
                 "visualization. Copying data to CPU.");

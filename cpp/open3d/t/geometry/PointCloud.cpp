@@ -506,9 +506,7 @@ static PointCloud CreatePointCloudWithNormals(
     const float invalid_fill = NAN;
     // Filter defaults for depth processing
     const int bilateral_kernel_size =  // bilateral filter defaults for backends
-            depth_in.GetDevice().GetType() == core::Device::DeviceType::CUDA
-                    ? 3
-                    : 5;
+            depth_in.GetDevice().IsCUDA() ? 3 : 5;
     const float depth_diff_threshold = 0.14f;
     const float bilateral_value_sigma = 10.f;
     const float bilateral_distance_sigma = 10.f;
