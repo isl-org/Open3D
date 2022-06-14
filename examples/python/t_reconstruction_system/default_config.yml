@@ -5,6 +5,7 @@ device: CUDA:0
 engine: tensor
 multiprocessing: false
 debug_mode: true
+path_output: 
 
 # Path to input data.
 path_dataset: ''

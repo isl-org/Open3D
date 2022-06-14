@@ -67,15 +67,16 @@ def rgbd_loop_closure(depth_list, color_list, intrinsic, config):
             color_next = o3d.t.io.read_image(color_list[key_j]).to(device)
             rgbd_next = o3d.t.geometry.RGBDImage(color_next, depth_next)
 
-            # TODO: add OpenCV initialization if necessary
+            # TODO: add OpenCV initialization if necessary.
             # TODO: better failure check
             try:
                 res = o3d.t.pipelines.odometry.rgbd_odometry_multi_scale(
                     rgbd_curr, rgbd_next, intrinsic, o3c.Tensor(np.eye(4)),
-                    1000.0, 3.0, criteria_list, method)
+                    config.depth_scale, config.depth_max, criteria_list, method)
                 info = o3d.t.pipelines.odometry.compute_odometry_information_matrix(
-                    depth_curr, depth_next, intrinsic, res.transformation, 0.07,
-                    1000.0, 3.0)
+                    depth_curr, depth_next, intrinsic, res.transformation,
+                    config.odometry_distance_thr, config.depth_scale,
+                    config.depth_max)
             except Exception as e:
                 pass
             else:
@@ -105,20 +106,14 @@ def rgbd_loop_closure(depth_list, color_list, intrinsic, config):
 
 
 def rgbd_odometry(depth_list, color_list, intrinsic, config):
-    # TODO: load it from config
-    device = o3c.Device('CUDA:0')
+    device = o3c.Device(config.device)
 
-    n_files = len(depth_list)
-
+    # Load input rgb-d image.
     depth_curr = o3d.t.io.read_image(depth_list[0]).to(device)
     color_curr = o3d.t.io.read_image(color_list[0]).to(device)
     rgbd_curr = o3d.t.geometry.RGBDImage(color_curr, depth_curr)
 
-    # TODO: load all params and scale/max factors from config
-    edges = []
-    poses = []
-    infos = []
-
+    # Set odometry convergence criteria and method.
     criteria_list = [
         o3d.t.pipelines.odometry.OdometryConvergenceCriteria(20),
         o3d.t.pipelines.odometry.OdometryConvergenceCriteria(10),
@@ -136,17 +131,21 @@ def rgbd_odometry(depth_list, color_list, intrinsic, config):
         raise Exception('odometry method: {} is not implemented.'.format(
             config.odometry_method))
 
-    for i in tqdm(range(0, n_files - 1)):
+    # Compute pose graph from frame to frame odometry.
+    edges = []
+    poses = []
+    infos = []
+    for i in tqdm(range(0, len(depth_list) - 1)):
         depth_next = o3d.t.io.read_image(depth_list[i + 1]).to(device)
         color_next = o3d.t.io.read_image(color_list[i + 1]).to(device)
         rgbd_next = o3d.t.geometry.RGBDImage(color_next, depth_next)
 
         res = o3d.t.pipelines.odometry.rgbd_odometry_multi_scale(
-            rgbd_curr, rgbd_next, intrinsic, o3c.Tensor(np.eye(4)), 1000.0, 3.0,
-            criteria_list, method)
+            rgbd_curr, rgbd_next, intrinsic, o3c.Tensor(np.eye(4)),
+            config.depth_scale, config.depth_max, criteria_list, method)
         info = o3d.t.pipelines.odometry.compute_odometry_information_matrix(
-            depth_curr, depth_next, intrinsic, res.transformation, 0.07, 1000.0,
-            3.0)
+            depth_curr, depth_next, intrinsic, res.transformation,
+            config.odometry_distance_thr, config.depth_scale, config.depth_max)
 
         edges.append((i, i + 1))
         poses.append(res.transformation.cpu().numpy())
