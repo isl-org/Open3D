@@ -368,8 +368,8 @@ public:
     /// Convenience function.
     bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
 
-    /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
-    /// The left bottom corner on the front will be placed at (0, 0, 0).
+    /// Create a box triangle mesh. One vertex of the box will be placed at
+    /// the origin and the box aligns with the positive x, y, and z axes.
     /// \param width is x-directional length.
     /// \param height is y-directional length.
     /// \param depth is z-directional length.
@@ -379,9 +379,9 @@ public:
     /// triangles.
     /// \param device The device where the resulting TriangleMesh resides in.
     static TriangleMesh CreateBox(
-            float width = 1.0,
-            float height = 1.0,
-            float depth = 1.0,
+            double width = 1.0,
+            double height = 1.0,
+            double depth = 1.0,
             core::Dtype float_dtype = core::Float32,
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));

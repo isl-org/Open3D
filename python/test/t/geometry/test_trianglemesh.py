@@ -26,6 +26,7 @@
 
 from turtle import width
 import open3d as o3d
+import open3d.core as o3c
 import numpy as np
 import pytest
 
@@ -38,17 +39,44 @@ def test_clip_plane():
     assert clipped_cube.triangle['indices'].shape == (14, 3)
 
 
-
 def test_create_box():
-    
-    # Test legacy
-    # box = o3d.geometry.TriangleMesh.create_box()
-    # box.compute_vertex_normals()
-    # o3d.visualization.draw([box], raw_mode=True)
+    # test with default parameters
+    box_default = o3d.t.geometry.TriangleMesh.create_box()
 
+    vertex_positions_default = o3c.Tensor(np.array([[0.0, 0.0, 0.0],
+                                                    [1.0, 0.0, 0.0],
+                                                    [0.0, 0.0, 1.0],
+                                                    [1.0, 0.0, 1.0],
+                                                    [0.0, 1.0, 0.0],
+                                                    [1.0, 1.0, 0.0],
+                                                    [0.0, 1.0, 1.0],
+                                                    [1.0, 1.0, 1.0]]),
+                                          dtype=o3c.Dtype.Float32,
+                                          device=o3c.Device("CPU:0"))
 
-    # To implement
-    print("hello world")
-    box = o3d.t.geometry.TriangleMesh.create_box(1, 2, 4)
-    o3d.visualization.draw([box], raw_mode=True)
+    triangle_indices = o3c.Tensor(np.array([[4, 7, 5], [4, 6, 7], [0, 2, 4],
+                                            [2, 6, 4], [0, 1, 2], [1, 3, 2],
+                                            [1, 5, 7], [1, 7, 3], [2, 3, 7],
+                                            [2, 7, 6], [0, 4, 1], [1, 4, 5]]),
+                                  dtype=o3c.Dtype.Int64,
+                                  device=o3c.Device("CPU:0"))
 
+    assert box_default.vertex['positions'].allclose(vertex_positions_default)
+    assert box_default.triangle['indices'].allclose(triangle_indices)
+
+    # test with custom parameters
+    box_custom = o3d.t.geometry.TriangleMesh.create_box(2, 4, 3)
+
+    vertex_positions_custom = o3c.Tensor(np.array([[0.0, 0.0, 0.0],
+                                                   [2.0, 0.0, 0.0],
+                                                   [0.0, 0.0, 3.0],
+                                                   [2.0, 0.0, 3.0],
+                                                   [0.0, 4.0, 0.0],
+                                                   [2.0, 4.0, 0.0],
+                                                   [0.0, 4.0, 3.0],
+                                                   [2.0, 4.0, 3.0]]),
+                                         dtype=o3c.Dtype.Float32,
+                                         device=o3c.Device("CPU:0"))
+
+    assert box_custom.vertex['positions'].allclose(vertex_positions_custom)
+    assert box_custom.triangle['indices'].allclose(triangle_indices)

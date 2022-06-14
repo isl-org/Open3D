@@ -453,9 +453,60 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
                                   Pointwise(FloatEq(), {1.0, 1.1})}));
 }
 
+TEST_P(TriangleMeshPermuteDevices, CreateBox) {
+    core::Device device = GetParam();
 
-TEST_P(TriangleMeshPermuteDevices, CreateBox){
-    // to do
+    // test with default parameters
+    t::geometry::TriangleMesh box_default =
+            t::geometry::TriangleMesh::CreateBox();
+
+    core::Tensor vertex_positions_default =
+            core::Tensor::Init<double>({{0.0, 0.0, 0.0},
+                                        {1.0, 0.0, 0.0},
+                                        {0.0, 0.0, 1.0},
+                                        {1.0, 0.0, 1.0},
+                                        {0.0, 1.0, 0.0},
+                                        {1.0, 1.0, 0.0},
+                                        {0.0, 1.0, 1.0},
+                                        {1.0, 1.0, 1.0}},
+                                       device);
+
+    core::Tensor triangle_indices = core::Tensor::Init<int64_t>({{4, 7, 5},
+                                                                 {4, 6, 7},
+                                                                 {0, 2, 4},
+                                                                 {2, 6, 4},
+                                                                 {0, 1, 2},
+                                                                 {1, 3, 2},
+                                                                 {1, 5, 7},
+                                                                 {1, 7, 3},
+                                                                 {2, 3, 7},
+                                                                 {2, 7, 6},
+                                                                 {0, 4, 1},
+                                                                 {1, 4, 5}},
+                                                                device);
+
+    EXPECT_TRUE(box_default.GetVertexPositions().AllClose(
+            vertex_positions_default));
+    EXPECT_TRUE(box_default.GetTriangleIndices().AllClose(triangle_indices));
+
+    // test with custom parameters
+    t::geometry::TriangleMesh box_custom =
+            t::geometry::TriangleMesh::CreateBox(2, 3, 4);
+
+    core::Tensor vertex_positions_custom =
+            core::Tensor::Init<double>({{0.0, 0.0, 0.0},
+                                        {2.0, 0.0, 0.0},
+                                        {0.0, 0.0, 3.0},
+                                        {2.0, 0.0, 3.0},
+                                        {0.0, 4.0, 0.0},
+                                        {2.0, 4.0, 0.0},
+                                        {0.0, 4.0, 3.0},
+                                        {2.0, 4.0, 3.0}},
+                                       device);
+
+    EXPECT_TRUE(
+            box_custom.GetVertexPositions().AllClose(vertex_positions_custom));
+    EXPECT_TRUE(box_custom.GetTriangleIndices().AllClose(triangle_indices));
 }
 
 }  // namespace tests
