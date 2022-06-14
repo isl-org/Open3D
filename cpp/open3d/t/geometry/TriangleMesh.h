@@ -474,6 +474,19 @@ public:
     /// corresponding vertex in the original mesh.
     TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
 
+    /// Function to simplify mesh using Quadric Error Metric Decimation by
+    /// Garland and Heckbert.
+    /// \param target_reduction The factor of triangles to delete, i.e.,
+    /// setting this to 0.9 will return a mesh with about 10% of the original
+    /// triangle count.
+    /// It is not guaranteed that the target reduction factor will be reached.
+    /// \param preserve_volume If set to true this enables volume preservation
+    /// which reduces the error in triangle normal direction.
+    ///
+    /// \return Simplified TriangleMesh.
+    TriangleMesh SimplifyQuadricDecimation(double target_reduction,
+                                           bool preserve_volume = true) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;
