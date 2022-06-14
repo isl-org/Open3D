@@ -51,7 +51,7 @@ def test_create_box():
                                                     [1.0, 1.0, 0.0],
                                                     [0.0, 1.0, 1.0],
                                                     [1.0, 1.0, 1.0]]),
-                                          dtype=o3c.Dtype.Float32,
+                                          dtype=o3c.Dtype.Float64,
                                           device=o3c.Device("CPU:0"))
 
     triangle_indices = o3c.Tensor(np.array([[4, 7, 5], [4, 6, 7], [0, 2, 4],
@@ -75,7 +75,7 @@ def test_create_box():
                                                    [2.0, 4.0, 0.0],
                                                    [0.0, 4.0, 3.0],
                                                    [2.0, 4.0, 3.0]]),
-                                         dtype=o3c.Dtype.Float32,
+                                         dtype=o3c.Dtype.Float64,
                                          device=o3c.Device("CPU:0"))
 
     assert box_custom.vertex['positions'].allclose(vertex_positions_custom)

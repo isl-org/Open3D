@@ -230,7 +230,7 @@ This example shows how to create a hemisphere from a sphere::
                              "with the positive x, y, and z axes."
                              "width"_a = 1.0,
                              "height"_a = 1.0, "depth"_a = 1.0,
-                             "vertex_dtype"_a = core::Float32,
+                             "vertex_dtype"_a = core::Float64,
                              "triangle_dtype"_a = core::Int64,
                              "device"_a = core::Device("CPU:0"));
 
