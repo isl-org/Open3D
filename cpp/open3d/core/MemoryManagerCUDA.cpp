@@ -33,7 +33,7 @@
 namespace open3d {
 namespace core {
 
-void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
+void* MemoryManagerCUDA::Malloc(size_t byte_size, const Device& device) {
     CUDAScopedDevice scoped_device(device);
 
     void* ptr;
@@ -45,12 +45,12 @@ void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
         OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
 #endif
     } else {
-        utility::LogError("CUDAMemoryManager::Malloc: Unimplemented device.");
+        utility::LogError("MemoryManagerCUDA::Malloc: Unimplemented device.");
     }
     return ptr;
 }
 
-void CUDAMemoryManager::Free(void* ptr, const Device& device) {
+void MemoryManagerCUDA::Free(void* ptr, const Device& device) {
     CUDAScopedDevice scoped_device(device);
 
     if (device.GetType() == Device::DeviceType::CUDA) {
@@ -62,11 +62,11 @@ void CUDAMemoryManager::Free(void* ptr, const Device& device) {
 #endif
         }
     } else {
-        utility::LogError("CUDAMemoryManager::Free: Unimplemented device.");
+        utility::LogError("MemoryManagerCUDA::Free: Unimplemented device.");
     }
 }
 
-void CUDAMemoryManager::Memcpy(void* dst_ptr,
+void MemoryManagerCUDA::Memcpy(void* dst_ptr,
                                const Device& dst_device,
                                const void* src_ptr,
                                const Device& src_device,
@@ -129,7 +129,7 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
     }
 }
 
-bool CUDAMemoryManager::IsCUDAPointer(const void* ptr, const Device& device) {
+bool MemoryManagerCUDA::IsCUDAPointer(const void* ptr, const Device& device) {
     CUDAScopedDevice scoped_device(device);
 
     cudaPointerAttributes attributes;

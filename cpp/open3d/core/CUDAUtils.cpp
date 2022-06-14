@@ -60,10 +60,10 @@ bool IsAvailable() { return cuda::DeviceCount() > 0; }
 void ReleaseCache() {
 #ifdef BUILD_CUDA_MODULE
 #ifdef BUILD_CACHED_CUDA_MANAGER
-    // Release cache from all devices. Since only memory from CUDAMemoryManager
+    // Release cache from all devices. Since only memory from MemoryManagerCUDA
     // is cached at the moment, this works as expected. In the future, the logic
     // could become more fine-grained.
-    CachedMemoryManager::ReleaseCache();
+    MemoryManagerCached::ReleaseCache();
 #else
     utility::LogWarning(
             "Built without cached CUDA memory manager, cuda::ReleaseCache() "
