@@ -71,22 +71,22 @@ INSTANTIATE_TEST_SUITE_P(
         TensorPermuteDevicesWithSYCL,
         testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
-class TensorPermuteDevicePairsWithSYCL : public PermuteDevicePairsWithSYCL {};
-INSTANTIATE_TEST_SUITE_P(
-        Tensor,
-        TensorPermuteDevicePairsWithSYCL,
-        testing::ValuesIn(TensorPermuteDevicePairsWithSYCL::TestCases()));
+// class TensorPermuteDevicePairsWithSYCL : public PermuteDevicePairsWithSYCL
+// {}; INSTANTIATE_TEST_SUITE_P(
+//         Tensor,
+//         TensorPermuteDevicePairsWithSYCL,
+//         testing::ValuesIn(TensorPermuteDevicePairsWithSYCL::TestCases()));
 
-class TensorPermuteSizesDefaultStridesAndDevicesWithSYCL
-    : public testing::TestWithParam<
-              std::tuple<std::pair<core::SizeVector, core::SizeVector>,
-                         core::Device>> {};
-INSTANTIATE_TEST_SUITE_P(
-        Tensor,
-        TensorPermuteSizesDefaultStridesAndDevicesWithSYCL,
-        testing::Combine(
-                testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
-                testing::ValuesIn(PermuteDevicesWithSYCL::TestCases())));
+// class TensorPermuteSizesDefaultStridesAndDevicesWithSYCL
+//     : public testing::TestWithParam<
+//               std::tuple<std::pair<core::SizeVector, core::SizeVector>,
+//                          core::Device>> {};
+// INSTANTIATE_TEST_SUITE_P(
+//         Tensor,
+//         TensorPermuteSizesDefaultStridesAndDevicesWithSYCL,
+//         testing::Combine(
+//                 testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
+//                 testing::ValuesIn(PermuteDevicesWithSYCL::TestCases())));
 
 /// Convert to const reference.
 /// https://stackoverflow.com/a/15519125/1255535
@@ -95,7 +95,7 @@ static constexpr const T &AsConst(T &t) noexcept {
     return t;
 }
 
-TEST_P(TensorPermuteDevices, Constructor) {
+TEST_P(TensorPermuteDevicesWithSYCL, Constructor) {
     core::Device device = GetParam();
     core::Dtype dtype = core::Float32;
 
