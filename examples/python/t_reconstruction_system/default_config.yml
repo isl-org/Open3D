@@ -22,15 +22,20 @@ depth_scale: 1000.0
 # RGB-D registation related parameters.
 fragment_size: 100
 odometry_method: hybrid
+odometry_scales: []
+odometry_distance_thr: 0.07
+
 odometry_loop_interval: 10
 odometry_loop_weight: 0.1
-odometry_distance_thr: 0.07
 
 # Point-cloud fragments registration related parameters.
 icp_method: colored
 icp_voxelsize: 0.05
 icp_distance_thr: 0.07
 global_registration_method: ransac
+global_distance_thr: 0.07
+edge_prune_threshold: 0.25
+preference_loop_closure: 0.1
 registration_loop_weight: 0.1
 
 # TSDF integration related parameters.

@@ -101,7 +101,9 @@ if __name__ == '__main__':
                 pose_graph.add_edge(ki, kj, trans_i2j.copy(), info_i2j.copy(),
                                     True)
 
-            pose_graph.solve_()
+            pose_graph.solve_(config.global_distance_thr,
+                              config.edge_prune_threshold,
+                              config.preference_loop_closure, 0)
             pose_graph.save(
                 os.path.join(config.path_dataset, 'fragments',
                              'fragment_posegraph_{:03d}.json'.format(frag_id)))
