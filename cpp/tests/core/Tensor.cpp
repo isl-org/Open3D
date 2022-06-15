@@ -64,6 +64,30 @@ INSTANTIATE_TEST_SUITE_P(
                 testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
                 testing::ValuesIn(PermuteDevices::TestCases())));
 
+// SYCL enabled tests
+class TensorPermuteDevicesWithSYCL : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Tensor,
+        TensorPermuteDevicesWithSYCL,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+
+class TensorPermuteDevicePairsWithSYCL : public PermuteDevicePairsWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Tensor,
+        TensorPermuteDevicePairsWithSYCL,
+        testing::ValuesIn(TensorPermuteDevicePairsWithSYCL::TestCases()));
+
+class TensorPermuteSizesDefaultStridesAndDevicesWithSYCL
+    : public testing::TestWithParam<
+              std::tuple<std::pair<core::SizeVector, core::SizeVector>,
+                         core::Device>> {};
+INSTANTIATE_TEST_SUITE_P(
+        Tensor,
+        TensorPermuteSizesDefaultStridesAndDevicesWithSYCL,
+        testing::Combine(
+                testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
+                testing::ValuesIn(PermuteDevicesWithSYCL::TestCases())));
+
 /// Convert to const reference.
 /// https://stackoverflow.com/a/15519125/1255535
 template <typename T>
