@@ -900,7 +900,7 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     const size_t image_bytes = image.GetRows() * image.GetCols() *
                                image.GetChannels() *
                                image.GetDtype().ByteSize();
-    if (image.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (image.GetDevice().IsCUDA()) {
         t::geometry::Image cpu_image = image.To(core::Device("CPU:0"));
         auto* image_data = malloc(image_bytes);
         memcpy(image_data, cpu_image.GetDataPtr(), image_bytes);

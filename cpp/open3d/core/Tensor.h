@@ -48,7 +48,7 @@ namespace core {
 
 /// A Tensor is a "view" of a data Blob with shape, stride, data_ptr.
 /// Tensor can also be used to perform numerical operations.
-class Tensor {
+class Tensor : public IsDevice {
 public:
     Tensor() {}
 
@@ -1162,7 +1162,7 @@ public:
 
     inline Dtype GetDtype() const { return dtype_; }
 
-    Device GetDevice() const;
+    Device GetDevice() const override;
 
     inline std::shared_ptr<Blob> GetBlob() const { return blob_; }
 

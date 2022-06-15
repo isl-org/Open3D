@@ -76,7 +76,7 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points,
                 "shapes.");
     }
 
-    if (dataset_points.GetDevice().GetType() == Device::DeviceType::CUDA) {
+    if (dataset_points.GetDevice().IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         dataset_points_ = dataset_points.Contiguous();
         points_row_splits_ = points_row_splits.Contiguous();
@@ -135,7 +135,7 @@ std::pair<Tensor, Tensor> KnnIndex::SearchKnn(const Tensor& query_points,
     dataset_points_, points_row_splits_, query_points_, queries_row_splits_, \
             knn, neighbors_index, neighbors_row_splits, neighbors_distance
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         const Dtype index_dtype = GetIndexDtype();
         DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {

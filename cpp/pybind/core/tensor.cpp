@@ -434,9 +434,9 @@ void pybind_core_tensor(py::module& m) {
                 return tensor.Append(values);
             },
             R"(Appends the `values` tensor, along the given axis and returns
-a copy of the original tensor. Both the tensors must have same data-type 
+a copy of the original tensor. Both the tensors must have same data-type
 device, and number of dimensions. All dimensions must be the same, except the
-dimension along the axis the tensors are to be appended. 
+dimension along the axis the tensors are to be appended.
 
 This is the similar to NumPy's semantics:
 - https://numpy.org/doc/stable/reference/generated/numpy.append.html
@@ -454,7 +454,7 @@ Example:
      [2 3],
      [4 5]]
     Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
- 
+
     >>> a.append(b)
     [0 1 2 3 4 5]
     Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
@@ -801,11 +801,14 @@ Ref:
         return tensor.GetStrides();
     });
     tensor.def_property_readonly("dtype", &Tensor::GetDtype);
-    tensor.def_property_readonly("device", &Tensor::GetDevice);
     tensor.def_property_readonly("blob", &Tensor::GetBlob);
     tensor.def_property_readonly("ndim", &Tensor::NumDims);
     tensor.def("num_elements", &Tensor::NumElements);
     tensor.def("__bool__", &Tensor::IsNonZero);  // Python 3.X.
+
+    tensor.def_property_readonly("device", &Tensor::GetDevice);
+    tensor.def_property_readonly("is_cpu", &Tensor::IsCPU);
+    tensor.def_property_readonly("is_cuda", &Tensor::IsCUDA);
 
     // Length and iterator.
     tensor.def("__len__", &Tensor::GetLength);

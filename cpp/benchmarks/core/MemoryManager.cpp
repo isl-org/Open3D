@@ -35,17 +35,17 @@ namespace core {
 
 enum class MemoryManagerBackend { Direct, Cached };
 
-std::shared_ptr<DeviceMemoryManager> MakeMemoryManager(
+std::shared_ptr<MemoryManagerDevice> MakeMemoryManager(
         const Device& device, const MemoryManagerBackend& backend) {
-    std::shared_ptr<DeviceMemoryManager> device_mm;
+    std::shared_ptr<MemoryManagerDevice> device_mm;
     switch (device.GetType()) {
         case Device::DeviceType::CPU:
-            device_mm = std::make_shared<CPUMemoryManager>();
+            device_mm = std::make_shared<MemoryManagerCPU>();
             break;
 
 #ifdef BUILD_CUDA_MODULE
         case Device::DeviceType::CUDA:
-            device_mm = std::make_shared<CUDAMemoryManager>();
+            device_mm = std::make_shared<MemoryManagerCUDA>();
             break;
 #endif
 
@@ -59,7 +59,7 @@ std::shared_ptr<DeviceMemoryManager> MakeMemoryManager(
             return device_mm;
 
         case MemoryManagerBackend::Cached:
-            return std::make_shared<CachedMemoryManager>(device_mm);
+            return std::make_shared<MemoryManagerCached>(device_mm);
 
         default:
             utility::LogError("Unimplemented backend");
@@ -71,7 +71,7 @@ void Malloc(benchmark::State& state,
             int size,
             const Device& device,
             const MemoryManagerBackend& backend) {
-    CachedMemoryManager::ReleaseCache(device);
+    MemoryManagerCached::ReleaseCache(device);
 
     auto device_mm = MakeMemoryManager(device, backend);
 
@@ -92,14 +92,14 @@ void Malloc(benchmark::State& state,
         state.ResumeTiming();
     }
 
-    CachedMemoryManager::ReleaseCache(device);
+    MemoryManagerCached::ReleaseCache(device);
 }
 
 void Free(benchmark::State& state,
           int size,
           const Device& device,
           const MemoryManagerBackend& backend) {
-    CachedMemoryManager::ReleaseCache(device);
+    MemoryManagerCached::ReleaseCache(device);
 
     auto device_mm = MakeMemoryManager(device, backend);
 
@@ -120,7 +120,7 @@ void Free(benchmark::State& state,
         cuda::Synchronize(device);
     }
 
-    CachedMemoryManager::ReleaseCache(device);
+    MemoryManagerCached::ReleaseCache(device);
 }
 
 #define ENUM_BM_SIZE(FN, DEVICE, DEVICE_NAME, BACKEND)                         \

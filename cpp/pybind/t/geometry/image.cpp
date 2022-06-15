@@ -103,7 +103,7 @@ void pybind_image(py::module &m) {
                                     map_shared_argument_docstrings);
     // Buffer protocol.
     image.def_buffer([](Image &I) -> py::buffer_info {
-        if (I.GetDevice().GetType() != core::Device::DeviceType::CPU) {
+        if (!I.GetDevice().IsCPU()) {
             utility::LogError(
                     "Cannot convert image buffer since it's not on CPU. "
                     "Convert to CPU image by calling .cpu() first.");

@@ -754,7 +754,7 @@ Tensor Tensor::Contiguous() const {
 std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
-    if (GetDevice().GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
+    if (GetDevice().IsCUDA() || !IsContiguous()) {
         Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
         rc << host_contiguous_tensor.ToString(false, "");
     } else {

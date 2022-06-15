@@ -53,7 +53,7 @@ static Tensor CastOptionalDtypeDevice(const Tensor& t,
 
 /// Convert Tensor class to py::array (Numpy array).
 py::array TensorToPyArray(const Tensor& tensor) {
-    if (tensor.GetDevice().GetType() != Device::DeviceType::CPU) {
+    if (!tensor.GetDevice().IsCPU()) {
         utility::LogError(
                 "Can only convert CPU Tensor to numpy. Copy Tensor to CPU "
                 "before converting to numpy.");

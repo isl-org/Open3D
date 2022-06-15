@@ -108,7 +108,7 @@ void AddMM(const Tensor& A,
     void* B_data = B_contiguous.To(dtype).GetDataPtr();
     void* C_data = output.GetDataPtr();
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         AddMMCUDA(B_data, A_data, C_data, n, k, m, alpha, beta, transB, transA,
                   ldb, lda, ldc, dtype);

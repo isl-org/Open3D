@@ -350,7 +350,7 @@ public:
             size_t nb_points, double search_radius) const;
 
     /// \brief Returns the device attribute of this PointCloud.
-    core::Device GetDevice() const { return device_; }
+    core::Device GetDevice() const override { return device_; }
 
     /// \brief Cluster PointCloud using the DBSCAN algorithm
     /// Ester et al., "A Density-Based Algorithm for Discovering Clusters

@@ -26,6 +26,7 @@
 
 #include "open3d/core/Dtype.h"
 
+#include "open3d/utility/Helper.h"
 #include "pybind/core/core.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
