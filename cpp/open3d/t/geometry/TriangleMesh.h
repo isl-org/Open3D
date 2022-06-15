@@ -440,7 +440,7 @@ public:
     TriangleMesh ClipPlane(const core::Tensor &point,
                            const core::Tensor &normal) const;
 
-    core::Device GetDevice() const { return device_; }
+    core::Device GetDevice() const override { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
     /// \param mesh_legacy Legacy Open3D TriangleMesh.

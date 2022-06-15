@@ -54,7 +54,7 @@ void Triu(const Tensor& A, Tensor& output, const int diagonal) {
     CheckInput(A, diagonal);
     core::Device device = A.GetDevice();
     output = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         TriuCUDA(A.Contiguous(), output, diagonal);
 #else
@@ -69,7 +69,7 @@ void Tril(const Tensor& A, Tensor& output, const int diagonal) {
     CheckInput(A, diagonal);
     core::Device device = A.GetDevice();
     output = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         TrilCUDA(A.Contiguous(), output, diagonal);
 #else
@@ -85,7 +85,7 @@ void Triul(const Tensor& A, Tensor& upper, Tensor& lower, const int diagonal) {
     core::Device device = A.GetDevice();
     upper = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     lower = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         TriulCUDA(A.Contiguous(), upper, lower, diagonal);
 #else

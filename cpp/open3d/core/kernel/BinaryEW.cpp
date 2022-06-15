@@ -68,10 +68,9 @@ void BinaryEW(const Tensor& lhs,
                 broadcasted_input_shape, dst.GetShape());
     }
 
-    Device::DeviceType device_type = lhs.GetDevice().GetType();
-    if (device_type == Device::DeviceType::CPU) {
+    if (lhs.IsCPU()) {
         BinaryEWCPU(lhs, rhs, dst, op_code);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    } else if (lhs.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         BinaryEWCUDA(lhs, rhs, dst, op_code);
 #else
