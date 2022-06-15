@@ -124,7 +124,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ConstructorBool) {
     EXPECT_EQ(t.GetDtype(), dtype);
 }
 
-TEST_P(TensorPermuteDevices, WithInitValue) {
+TEST_P(TensorPermuteDevicesWithSYCL, WithInitValue) {
     core::Device device = GetParam();
 
     std::vector<float> vals{0, 1, 2, 3, 4, 5};
