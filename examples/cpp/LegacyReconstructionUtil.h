@@ -37,6 +37,7 @@ namespace open3d {
 namespace examples {
 namespace legacy_reconstruction {
 
+// ============== Helper functions for file system ==============
 std::string PadZeroToNumber(int num, int size) {
     std::string s = std::to_string(num);
     while (s.size() < size) {
@@ -155,6 +156,13 @@ std::tuple<std::vector<std::string>, std::vector<std::string>> ReadRGBDFiles(
     return std::make_tuple(color_files, depth_files);
 }
 
+std::vector<std::string> ReadPlyFiles(const std::string& path) {
+    std::vector<std::string> ply_files;
+    utility::filesystem::ListFilesInDirectoryWithExtension(path, "ply",
+                                                           ply_files);
+    return ply_files;
+}
+
 std::tuple<std::string, std::string, float> ExtractRGBDFrames(
         const std::string& rgbd_video_file) {
     const std::string frames_folder =
@@ -172,6 +180,7 @@ std::tuple<std::string, std::string, float> ExtractRGBDFrames(
                            intrinsic["depth_scale"].asFloat());
 }
 
+// ============== Helper functions for json configuration ==============
 void SetDefaultValue(Json::Value& config,
                      const std::string& key,
                      int default_value) {
@@ -334,6 +343,26 @@ Json::Value DefaultDatasetLoader(const std::string& name) {
     return config;
 }
 
+// ============== Helper functions for drawing results ==============
+static const Eigen::Matrix4d flip_transformation = Eigen::Matrix4d({
+        {1, 0, 0, 0},
+        {0, -1, 0, 0},
+        {0, 0, -1, 0},
+        {0, 0, 0, 1},
+});
+
+void DrawRegistrationResult(const geometry::PointCloud& src,
+                            const geometry::PointCloud& dst,
+                            const Eigen::Matrix4f& transformation) {
+    auto transformed_src = std::make_shared<geometry::PointCloud>(src);
+    auto transformed_dst = std::make_shared<geometry::PointCloud>(dst);
+    transformed_src->PaintUniformColor(Eigen::Vector3d(1, 0.706, 0));
+    transformed_dst->PaintUniformColor(Eigen::Vector3d(0, 0.651, 0.929));
+    transformed_src->Transform(flip_transformation * transformation);
+    transformed_dst->Transform(flip_transformation);
+    visualization::DrawGeometries({transformed_src, transformed_dst});
+}
+
 /// \class MatchingResult
 /// \brief Result of matching with two fragments.
 ///
@@ -427,7 +456,20 @@ public:
 
         MakeCleanFolder(JoinPath(config_["path_dataset"].asString(),
                                  config_["folder_scene"].asString()));
-        MakePoseGraphForScene();
+
+        pipelines::registration::PoseGraph scene_pose_graph;
+        MakePoseGraphForScene(scene_pose_graph);
+
+        // Optimize pose graph for scene.
+        OptimizePoseGraph(
+                config_["voxel_size"].asDouble() * 1.4,
+                config_["preference_loop_closure_registration"].asDouble(),
+                scene_pose_graph);
+        io::WritePoseGraph(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_global_posegraph_optimized"]
+                                 .asString()),
+                scene_pose_graph);
     }
 
     /**
@@ -570,9 +612,17 @@ private:
                               pose_graph);
     }
 
-    void MakePoseGraphForScene() {
+    void MakePoseGraphForScene(
+            pipelines::registration::PoseGraph& scene_pose_graph) {
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+        MakeCleanFolder(JoinPath(config_["path_dataset"].asString(),
+                                 config_["folder_scene"].asString()));
+        const auto ply_files =
+                ReadPlyFiles(JoinPath(config_["path_dataset"].asString(),
+                                      config_["folder_fragment"].asString()));
+
         Eigen::Matrix4d odom = Eigen::Matrix4d::Identity();
-        pipelines::registration::PoseGraph scene_pose_graph;
         scene_pose_graph.nodes_.push_back(
                 pipelines::registration::PoseGraphNode(odom));
 
@@ -585,12 +635,56 @@ private:
 
         const size_t num_pairs = fragment_matching_results.size();
         if (config_["multi_threading"].asBool()) {
-            /* code */
+            std::vector<std::thread> thread_list;
+            for (int i = 0; i < num_pairs; i++) {
+                thread_list.push_back(std::thread(
+                        &ReconstructionPipeline::RegisterFragmentPair, this,
+                        fragment_matching_results[i].s_,
+                        fragment_matching_results[i].t_,
+                        std::ref(fragment_matching_results[i])));
+            }
+            for (auto& thread : thread_list) {
+                thread.join();
+            }
         } else {
             for (size_t i = 0; i < num_pairs; i++) {
-                /* code */
+                RegisterFragmentPair(ply_files, fragment_matching_results[i].s_,
+                                     fragment_matching_results[i].t_,
+                                     fragment_matching_results[i]);
             }
         }
+
+        for (size_t i = 0; i < num_pairs; i++) {
+            if (fragment_matching_results[i].success_) {
+                const int& t = fragment_matching_results[i].t_;
+                const int& s = fragment_matching_results[i].s_;
+                const Eigen::Matrix4d& pose =
+                        fragment_matching_results[i].transformation_;
+                const Eigen::Matrix6d info =
+                        fragment_matching_results[i].information_;
+                if (s + 1 == t) {
+                    odom = pose * odom;
+                    const Eigen::Matrix4d& odom_inv = odom.inverse();
+                    scene_pose_graph.nodes_.push_back(
+                            open3d::pipelines::registration::PoseGraphNode(
+                                    odom_inv));
+                    scene_pose_graph.edges_.push_back(
+                            open3d::pipelines::registration::PoseGraphEdge(
+                                    s, t, pose, info, false));
+                } else {
+                    scene_pose_graph.edges_.push_back(
+                            open3d::pipelines::registration::PoseGraphEdge(
+                                    s, t, pose, info, true));
+                }
+            }
+        }
+
+        io::WritePoseGraph(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_global_posegraph"].asString()),
+                scene_pose_graph);
+
+        return scene_pose_graph;
     }
 
     void OptimizePoseGraph(double max_correspondence_distance,
@@ -687,11 +781,6 @@ private:
         }
     }
 
-    void RefineFragmentPair(const std::vector<std::string>& pcd_files,
-                            int s,
-                            int t,
-                            MatchingResult& matched_result) {}
-
     void RegisterFragmentPair(const std::vector<std::string>& pcd_files,
                               int s,
                               int t,
@@ -749,6 +838,14 @@ private:
                 info = std::get<2>(result);
             }
         }
+
+        if (config_["debug_mode"].asBool()) {
+            DrawRegistrationResult(source_pcd, target_pcd, pose);
+            utility::LogInfo("Initial transformation:");
+            utility::LogInfo("{}", pose);
+            utility::LogInfo("Information matrix:");
+            utility::LogInfo("{}", info);
+        }
     }
 
     std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
@@ -767,11 +864,13 @@ private:
         const Eigen::Matrix6d info =
                 pipelines::registration::GetInformationMatrixFromPointClouds(
                         src_pcd, dst_pcd, distance_threshold, pose);
+
         if (info(5, 5) /
                     std::min(src_pcd.points_.size(), dst_pcd.points_.size()) <
             0.3) {
             return std::make_tuple(false, pose, Eigen::Matrix6d::Identity());
         }
+
         return std::make_tuple(true, pose, info);
     }
 
