@@ -58,22 +58,23 @@ public:
 
     bool operator!=(const Device& other) const;
 
+    /// For std map or set containers.
     bool operator<(const Device& other) const;
 
     /// Returns true iff device type is CPU.
-    bool IsCPU() const;
+    inline bool IsCPU() const { return device_type_ == DeviceType::CPU; }
 
     /// Returns true iff device type is CUDA.
-    bool IsCUDA() const;
+    inline bool IsCUDA() const { return device_type_ == DeviceType::CUDA; }
+
+    /// Returns type of the device, e.g. DeviceType::CPU, DeviceType::CUDA.
+    inline DeviceType GetType() const { return device_type_; }
+
+    /// Returns the device index (within the same device type).
+    inline int GetID() const { return device_id_; }
 
     /// Returns string representation of device, e.g. "CPU:0", "CUDA:0".
     std::string ToString() const;
-
-    /// Returns type of the device, e.g. DeviceType::CPU, DeviceType::CUDA.
-    DeviceType GetType() const;
-
-    /// Returns the device index (within the same device type).
-    int GetID() const;
 
     /// Returns true if the device is available.
     bool IsAvailable() const;

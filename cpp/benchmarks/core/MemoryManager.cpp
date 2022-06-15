@@ -42,27 +42,23 @@ std::shared_ptr<MemoryManagerDevice> MakeMemoryManager(
         case Device::DeviceType::CPU:
             device_mm = std::make_shared<MemoryManagerCPU>();
             break;
-
 #ifdef BUILD_CUDA_MODULE
         case Device::DeviceType::CUDA:
             device_mm = std::make_shared<MemoryManagerCUDA>();
             break;
 #endif
-
         default:
-            utility::LogError("Unimplemented device");
+            utility::LogError("Unimplemented device {}.", device.ToString());
             break;
     }
 
     switch (backend) {
         case MemoryManagerBackend::Direct:
             return device_mm;
-
         case MemoryManagerBackend::Cached:
             return std::make_shared<MemoryManagerCached>(device_mm);
-
         default:
-            utility::LogError("Unimplemented backend");
+            utility::LogError("Unimplemented backend.");
             break;
     }
 }

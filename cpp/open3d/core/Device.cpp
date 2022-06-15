@@ -37,7 +37,7 @@ namespace open3d {
 namespace core {
 
 static Device::DeviceType StringToDeviceType(const std::string& type_colon_id) {
-    std::vector<std::string> tokens =
+    const std::vector<std::string> tokens =
             utility::SplitString(type_colon_id, ":", true);
     if (tokens.size() == 2) {
         std::string device_type_lower = utility::ToLower(tokens[0]);
@@ -46,20 +46,29 @@ static Device::DeviceType StringToDeviceType(const std::string& type_colon_id) {
         } else if (device_type_lower == "cuda") {
             return Device::DeviceType::CUDA;
         } else {
-            utility::LogError("Invalid device string {}.", type_colon_id);
+            utility::LogError(
+                    "Invalid device string {}. Valid device strings are like "
+                    "\"CPU:0\" or \"CUDA:1\"",
+                    type_colon_id);
         }
     } else {
-        utility::LogError("Invalid device string {}.", type_colon_id);
+        utility::LogError(
+                "Invalid device string {}. Valid device strings are like "
+                "\"CPU:0\" or \"CUDA:1\"",
+                type_colon_id);
     }
 }
 
 static int StringToDeviceId(const std::string& type_colon_id) {
-    std::vector<std::string> tokens =
+    const std::vector<std::string> tokens =
             utility::SplitString(type_colon_id, ":", true);
     if (tokens.size() == 2) {
         return std::stoi(tokens[1]);
     } else {
-        utility::LogError("Invalid device string {}.", type_colon_id);
+        utility::LogError(
+                "Invalid device string {}. Valid device strings are like "
+                "\"CPU:0\" or \"CUDA:1\"",
+                type_colon_id);
     }
 }
 
@@ -92,10 +101,6 @@ bool Device::operator<(const Device& other) const {
     return ToString() < other.ToString();
 }
 
-bool Device::IsCPU() const { return device_type_ == DeviceType::CPU; }
-
-bool Device::IsCUDA() const { return device_type_ == DeviceType::CUDA; }
-
 std::string Device::ToString() const {
     std::string str = "";
     switch (device_type_) {
@@ -112,45 +117,27 @@ std::string Device::ToString() const {
     return str;
 }
 
-Device::DeviceType Device::GetType() const { return device_type_; }
-
-int Device::GetID() const { return device_id_; }
-
 bool Device::IsAvailable() const {
-    bool rc = false;
-
-    if (device_type_ == DeviceType::CPU && device_id_ == 0) {
-        // CPU is hard-coded to have device_id_ == 0
-        rc = true;
-    } else if (device_type_ == DeviceType::CUDA) {
-        rc = cuda::IsAvailable() && device_id_ >= 0 &&
-             device_id_ < cuda::DeviceCount();
+    std::vector<Device> devices = GetAvailableDevices();
+    for (const Device& device : devices) {
+        if (device == *this) {
+            return true;
+        }
     }
-
-    return rc;
+    return false;
 }
 
 std::vector<Device> Device::GetAvailableDevices() {
+    std::vector<Device> cpu_devices = GetAvailableCPUDevices();
+    std::vector<Device> cuda_devices = GetAvailableCUDADevices();
     std::vector<Device> devices;
-
-    // CPU.
-    devices.push_back(Device(DeviceType::CPU, 0));
-
-    // CUDA.
-    if (cuda::IsAvailable()) {
-        int device_count = cuda::DeviceCount();
-        for (int i = 0; i < device_count; i++) {
-            devices.push_back(Device(DeviceType::CUDA, i));
-        }
-    }
-
+    devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
+    devices.insert(devices.end(), cuda_devices.begin(), cuda_devices.end());
     return devices;
 }
 
 std::vector<Device> Device::GetAvailableCPUDevices() {
-    std::vector<Device> devices;
-    devices.push_back(Device(DeviceType::CPU, 0));
-    return devices;
+    return {Device(DeviceType::CPU, 0)};
 }
 
 std::vector<Device> Device::GetAvailableCUDADevices() {
@@ -165,8 +152,7 @@ std::vector<Device> Device::GetAvailableCUDADevices() {
 }
 
 void Device::PrintAvailableDevices() {
-    std::vector<Device> devices = GetAvailableDevices();
-    for (const auto& device : devices) {
+    for (const auto& device : GetAvailableDevices()) {
         utility::LogInfo("Device(\"{}\")", device.ToString());
     }
 }
