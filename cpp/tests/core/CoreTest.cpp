@@ -64,19 +64,11 @@ std::vector<core::Device> PermuteDevices::TestCases() {
 
 std::vector<core::Device> PermuteDevicesWithSYCL::TestCases() {
     std::vector<core::Device> devices = PermuteDevices::TestCases();
-
-    std::vector<core::Device> sycl_cpu_devices =
-            core::Device::GetAvailableSYCLCPUDevices();
-    std::vector<core::Device> sycl_gpu_devices =
-            core::Device::GetAvailableSYCLGPUDevices();
-
-    if (!sycl_cpu_devices.empty()) {
-        devices.push_back(sycl_cpu_devices[0]);
+    std::vector<core::Device> sycl_devices =
+            core::Device::GetAvailableSYCLDevices();
+    if (!sycl_devices.empty()) {
+        devices.push_back(sycl_devices[0]);
     }
-    if (!sycl_gpu_devices.empty()) {
-        devices.push_back(sycl_gpu_devices[0]);
-    }
-
     return devices;
 }
 
@@ -116,25 +108,17 @@ PermuteDevicePairsWithSYCL::TestCases() {
             core::Device::GetAvailableCPUDevices();
     std::vector<core::Device> cuda_devices =
             core::Device::GetAvailableCUDADevices();
-    std::vector<core::Device> sycl_cpu_devices =
-            core::Device::GetAvailableSYCLCPUDevices();
-    std::vector<core::Device> sycl_gpu_devices =
-            core::Device::GetAvailableSYCLGPUDevices();
+    std::vector<core::Device> sycl_devices =
+            core::Device::GetAvailableSYCLDevices();
 
     cpu_devices.resize(std::min(static_cast<size_t>(2), cpu_devices.size()));
     cuda_devices.resize(std::min(static_cast<size_t>(2), cuda_devices.size()));
-    sycl_cpu_devices.resize(
-            std::min(static_cast<size_t>(2), sycl_cpu_devices.size()));
-    sycl_gpu_devices.resize(
-            std::min(static_cast<size_t>(2), sycl_gpu_devices.size()));
+    sycl_devices.resize(std::min(static_cast<size_t>(2), sycl_devices.size()));
 
     std::vector<core::Device> devices;
     devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
     devices.insert(devices.end(), cuda_devices.begin(), cuda_devices.end());
-    devices.insert(devices.end(), sycl_cpu_devices.begin(),
-                   sycl_cpu_devices.end());
-    devices.insert(devices.end(), sycl_gpu_devices.begin(),
-                   sycl_gpu_devices.end());
+    devices.insert(devices.end(), sycl_devices.begin(), sycl_devices.end());
 
     // Print all devices for debugging
     for (const auto& device : devices) {

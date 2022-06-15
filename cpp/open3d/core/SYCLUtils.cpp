@@ -197,35 +197,22 @@ void PrintSYCLDevices(bool print_all) {
             utility::LogInfo("- sycl::accelerator_selector(): N/A");
         }
 
-        utility::LogInfo("# Open3D SYCL devices");
-        try {
-            const sycl::device &device = sycl::device(sycl::host_selector());
-            utility::LogInfo("- Device(\"SYCL_CPU:0\"): {}",
-                             SYCLDeviceToString(device));
-        } catch (const sycl::exception &e) {
-            utility::LogInfo("- Device(\"SYCL_CPU:0\"): N/A");
-        }
+        utility::LogInfo("# Open3D SYCL device");
         try {
             const sycl::device &device = sycl::device(sycl::gpu_selector());
-            utility::LogInfo("- Device(\"SYCL_GPU:0\"): {}",
+            utility::LogInfo("- Device(\"SYCL:0\"): {}",
                              SYCLDeviceToString(device));
         } catch (const sycl::exception &e) {
-            utility::LogInfo("- Device(\"SYCL_GPU:0\"): N/A");
+            utility::LogInfo("- Device(\"SYCL:0\"): N/A");
         }
     } else {
-        try {
-            const sycl::device &device = sycl::device(sycl::host_selector());
-            utility::LogInfo("- Device(\"SYCL_CPU:0\"): {}",
-                             SYCLDeviceToString(device));
-        } catch (const sycl::exception &e) {
-            utility::LogInfo("- Device(\"SYCL_CPU:0\"): N/A");
-        }
+        utility::LogInfo("# Open3D SYCL device");
         try {
             const sycl::device &device = sycl::device(sycl::gpu_selector());
-            utility::LogInfo("- Device(\"SYCL_GPU:0\"): {}",
+            utility::LogInfo("- Device(\"SYCL:0\"): {}",
                              SYCLDeviceToString(device));
         } catch (const sycl::exception &e) {
-            utility::LogInfo("- Device(\"SYCL_GPU:0\"): N/A");
+            utility::LogInfo("- Device(\"SYCL:0\"): N/A");
         }
     }
 
@@ -244,64 +231,21 @@ bool IsAvailable() {
 }
 
 bool IsDeviceAvailable(const Device &device) {
-#ifdef BUILD_SYCL_MODULE
-    bool rc = false;
-    if (device.GetType() == Device::DeviceType::SYCL_CPU) {
-        try {
-            const sycl::device &device = sycl::device(sycl::host_selector());
-            rc = true;
-        } catch (const sycl::exception &e) {
-            rc = false;
+    std::vector<Device> devices = GetAvailableSYCLDevices();
+    for (const Device &dev : devices) {
+        if (dev == device) {
+            return true;
         }
-        // SYCL_CPU must have id 0.
-        rc = rc && device.GetID() == 0;
-    } else if (device.GetType() == Device::DeviceType::SYCL_GPU) {
-        try {
-            const sycl::device &device = sycl::device(sycl::gpu_selector());
-            rc = true;
-        } catch (const sycl::exception &e) {
-            rc = false;
-        }
-        // TODO: Add support for multiple GPUs.
-        rc = rc && device.GetID() == 0;
-    } else {
-        utility::LogError("Unsupported device: {}.", device.ToString());
     }
-    return rc;
-#else
     return false;
-#endif
 }
 
 std::vector<Device> GetAvailableSYCLDevices() {
-    std::vector<Device> cpu_devices = GetAvailableSYCLCPUDevices();
-    std::vector<Device> gpu_devices = GetAvailableSYCLGPUDevices();
-    std::vector<Device> devices;
-    devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
-    devices.insert(devices.end(), gpu_devices.begin(), gpu_devices.end());
-    return devices;
-}
-
-std::vector<Device> GetAvailableSYCLCPUDevices() {
-#ifdef BUILD_SYCL_MODULE
-    std::vector<Device> devices;
-    try {
-        const sycl::device &device = sycl::device(sycl::host_selector());
-        devices.push_back(Device("SYCL_CPU:0"));
-    } catch (const sycl::exception &e) {
-    }
-    return devices;
-#else
-    return {};
-#endif
-}
-
-std::vector<Device> GetAvailableSYCLGPUDevices() {
 #ifdef BUILD_SYCL_MODULE
     std::vector<Device> devices;
     try {
         const sycl::device &device = sycl::device(sycl::gpu_selector());
-        devices.push_back(Device("SYCL_GPU:0"));
+        devices.push_back(Device("SYCL:0"));
     } catch (const sycl::exception &e) {
     }
     return devices;

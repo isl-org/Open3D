@@ -66,13 +66,7 @@ public:
                                   device.ToString());
             }
             try {
-                sycl::device sycl_device;
-                if (device.GetType() == Device::DeviceType::SYCL_CPU) {
-                    sycl_device = sycl::device(sycl::host_selector());
-                } else if (device.GetType() == Device::DeviceType::SYCL_GPU) {
-                    sycl_device = sycl::device(sycl::gpu_selector());
-                }
-                return sycl_device;
+                return sycl::device(sycl::gpu_selector());
             } catch (const sycl::exception& e) {
                 utility::LogError("Failed to create SYCL queue for device: {}.",
                                   device.ToString());
@@ -94,11 +88,7 @@ void* MemoryManagerSYCL::Malloc(size_t byte_size, const Device& device) {
 #ifdef ENABLE_SYCL_UNIFIED_SHARED_MEMORY
     return (void*)sycl::malloc_shared(byte_size, queue);
 #else
-    if (device.IsSYCLCPU()) {
-        return (void*)sycl::malloc_host(byte_size, queue);
-    } else {
-        return (void*)sycl::malloc_device(byte_size, queue);
-    }
+    return (void*)sycl::malloc_device(byte_size, queue);
 #endif
 }
 
@@ -120,21 +110,11 @@ void MemoryManagerSYCL::Memcpy(void* dst_ptr,
     if (src_device.IsCPU() && dst_device.IsCPU()) {
         utility::LogError("Wrong device {}->{}.", src_device.ToString(),
                           dst_device.ToString());
-    } else if (src_device.IsCPU() && dst_device.IsSYCLCPU()) {
+    } else if (src_device.IsCPU() && dst_device.IsSYCL()) {
         device_with_queue = dst_device;
-    } else if (src_device.IsCPU() && dst_device.IsSYCLGPU()) {
-        device_with_queue = dst_device;
-    } else if (src_device.IsSYCLCPU() && dst_device.IsCPU()) {
+    } else if (src_device.IsSYCL() && dst_device.IsCPU()) {
         device_with_queue = src_device;
-    } else if (src_device.IsSYCLCPU() && dst_device.IsSYCLCPU()) {
-        device_with_queue = src_device;
-    } else if (src_device.IsSYCLCPU() && dst_device.IsSYCLGPU()) {
-        device_with_queue = dst_device;
-    } else if (src_device.IsSYCLGPU() && dst_device.IsCPU()) {
-        device_with_queue = src_device;
-    } else if (src_device.IsSYCLGPU() && dst_device.IsSYCLCPU()) {
-        device_with_queue = src_device;
-    } else if (src_device.IsSYCLGPU() && dst_device.IsSYCLGPU()) {
+    } else if (src_device.IsSYCL() && dst_device.IsSYCL()) {
         device_with_queue = src_device;
     } else {
         utility::LogError("Wrong device {}->{}.", src_device.ToString(),

@@ -70,16 +70,14 @@ $ sycl-ls
 [host:host:0] SYCL host platform, SYCL host device
 ```
 
-Open3D can make use of the host and GPU SYCL devices.
-- `core::Device("SYCL_CPU:0")` maps to the device returned by
-  `sycl::host_selector()`.
-- `core::Device("SYCL_GPU:0")` maps the default SYCL GPU returned by
+Open3D is designed to make use of the SYCL GPU devices.
+- `core::Device("SYCL:0")` maps the default SYCL GPU returned by
   `sycl::gpu_selector()`.
-  - Currently we only support one SYCL GPU. Multi-GPU support will be added in
-    the future.
   - For Intel GPUs, the "level-zero GPU" (`ext_oneapi_level_zero:gpu:0` in the
     example above) backend will be used by default instead of the "OpenCL GPU"
     (`opencl:gpu:2` in the example above).
+  - Currently we only support one SYCL GPU. Multi-GPU support will be added in
+    the future.
 
 ## Known limitations/requirement
 

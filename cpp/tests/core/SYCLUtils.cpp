@@ -48,10 +48,7 @@ TEST(SYCLUtils, PrintSYCLDevices) {
 }
 
 TEST(SYCLUtils, SYCLMemoryModel) {
-    if (core::sycl_utils::GetAvailableSYCLCPUDevices().empty() ||
-        core::sycl_utils::GetAvailableSYCLGPUDevices().empty()) {
-        // This test is to demonstrate SYCL memory model. Skip if no SYCL_GPU
-        // is available.
+    if (!core::sycl_utils::IsAvailable()) {
         return;
     }
 
@@ -72,55 +69,32 @@ TEST(SYCLUtils, SYCLMemoryModel) {
 #ifdef ENABLE_SYCL_UNIFIED_SHARED_MEMORY
     utility::LogInfo("SYCLMemoryModel: unified shared memory");
 
-    // Can host access SYCL_CPU's memory directly? Yes.
-    core::Device sycl_cpu_device("SYCL_CPU:0");
-    int* sycl_cpu_ptr =
-            (int*)core::MemoryManager::Malloc(byte_size, sycl_cpu_device);
-    core::MemoryManager::Memcpy(sycl_cpu_ptr, sycl_cpu_device, host_ptr,
-                                host_device, byte_size);
+    // Can host access SYCL GPU's memory directly? Yes.
+    core::Device sycl_device("SYCL:0");
+    int* sycl_ptr = (int*)core::MemoryManager::Malloc(byte_size, sycl_device);
+    core::MemoryManager::Memcpy(sycl_ptr, sycl_device, host_ptr, host_device,
+                                byte_size);
     for (int i = 0; i < 4; i++) {
-        EXPECT_EQ(sycl_cpu_ptr[i], i);
-    }
-
-    // Can host access SYCL_GPU's memory directly? Yes.
-    core::Device sycl_gpu_device("SYCL_GPU:0");
-    int* sycl_gpu_ptr =
-            (int*)core::MemoryManager::Malloc(byte_size, sycl_gpu_device);
-    core::MemoryManager::Memcpy(sycl_gpu_ptr, sycl_gpu_device, host_ptr,
-                                host_device, byte_size);
-    for (int i = 0; i < 4; i++) {
-        EXPECT_EQ(sycl_gpu_ptr[i], i);
+        EXPECT_EQ(sycl_ptr[i], i);
     }
 
 #else
     utility::LogInfo("SYCLMemoryModel: device memory");
 
-    // Can host access SYCL_CPU's memory directly? Yes.
-    core::Device sycl_cpu_device("SYCL_CPU:0");
-    int* sycl_cpu_ptr =
-            (int*)core::MemoryManager::Malloc(byte_size, sycl_cpu_device);
-    core::MemoryManager::Memcpy(sycl_cpu_ptr, sycl_cpu_device, host_ptr,
-                                host_device, byte_size);
-    for (int i = 0; i < 4; i++) {
-        EXPECT_EQ(sycl_cpu_ptr[i], i);
-    }
-
-    // Can host access SYCL_GPU's memory directly? No.
-    core::Device sycl_gpu_device("SYCL_GPU:0");
-    int* sycl_gpu_ptr =
-            (int*)core::MemoryManager::Malloc(byte_size, sycl_gpu_device);
-    core::MemoryManager::Memcpy(sycl_gpu_ptr, sycl_gpu_device, host_ptr,
-                                host_device, byte_size);
+    // Can host access SYCL GPU's memory directly? No.
+    core::Device sycl_device("SYCL:0");
+    int* sycl_ptr = (int*)core::MemoryManager::Malloc(byte_size, sycl_device);
+    core::MemoryManager::Memcpy(sycl_ptr, sycl_device, host_ptr, host_device,
+                                byte_size);
     for (int i = 0; i < 4; i++) {
         // This will segfault.
-        // EXPECT_EQ(sycl_gpu_ptr[i], i);
+        // EXPECT_EQ(sycl_ptr[i], i);
     }
 #endif
 
     free(host_ptr);
     free(host_dst_ptr);
-    core::MemoryManager::Free(sycl_cpu_ptr, sycl_cpu_device);
-    core::MemoryManager::Free(sycl_gpu_ptr, sycl_gpu_device);
+    core::MemoryManager::Free(sycl_ptr, sycl_device);
 }
 
 }  // namespace tests

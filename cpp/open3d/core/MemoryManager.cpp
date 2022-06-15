@@ -76,7 +76,7 @@ void MemoryManager::Memcpy(void* dst_ptr,
     } else if (src_device.IsCUDA() && dst_device.IsCUDA()) {
         device_mm = GetMemoryManagerDevice(src_device);
     }
-    // SYCL_CPU or SYCL_GPU.
+    // SYCL.
     else if (src_device.IsCPU() && dst_device.IsSYCL()) {
         device_mm = GetMemoryManagerDevice(dst_device);
     } else if (src_device.IsSYCL() && dst_device.IsCPU()) {
@@ -132,8 +132,7 @@ std::shared_ptr<MemoryManagerDevice> MemoryManager::GetMemoryManagerDevice(
 #endif
 #endif
 #ifdef BUILD_SYCL_MODULE
-                    {Device::DeviceType::SYCL_CPU, sycl_memory_manager},
-                    {Device::DeviceType::SYCL_GPU, sycl_memory_manager},
+                    {Device::DeviceType::SYCL, sycl_memory_manager},
 #endif
             };
 

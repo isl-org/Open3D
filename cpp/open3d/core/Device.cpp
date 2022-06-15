@@ -46,10 +46,8 @@ static Device::DeviceType StringToDeviceType(const std::string& type_colon_id) {
             return Device::DeviceType::CPU;
         } else if (device_type_lower == "cuda") {
             return Device::DeviceType::CUDA;
-        } else if (device_type_lower == "sycl_cpu") {
-            return Device::DeviceType::SYCL_CPU;
-        } else if (device_type_lower == "sycl_gpu") {
-            return Device::DeviceType::SYCL_GPU;
+        } else if (device_type_lower == "sycl") {
+            return Device::DeviceType::SYCL;
         } else {
             utility::LogError("Invalid device string {}.", type_colon_id);
         }
@@ -73,9 +71,6 @@ Device::Device(DeviceType device_type, int device_id)
     // Sanity checks.
     if (device_type_ == DeviceType::CPU && device_id_ != 0) {
         utility::LogError("CPU has device_id {}, but it must be 0.",
-                          device_id_);
-    } else if (device_type_ == DeviceType::SYCL_CPU && device_id_ != 0) {
-        utility::LogError("SYCL_CPU has device_id {}, but it must be 0.",
                           device_id_);
     }
 }
@@ -109,22 +104,14 @@ std::string Device::ToString() const {
         case DeviceType::CUDA:
             str += "CUDA";
             break;
-        case DeviceType::SYCL_CPU:
-            str += "SYCL_CPU";
-            break;
-        case DeviceType::SYCL_GPU:
-            str += "SYCL_GPU";
+        case DeviceType::SYCL:
+            str += "SYCL";
             break;
         default:
             utility::LogError("Unsupported device type");
     }
     str += ":" + std::to_string(device_id_);
     return str;
-}
-
-std::string Device::GetDescription() const {
-    // TODO: compilation error if Device:::description_ is defined.
-    return "dummy description";
 }
 
 Device::DeviceType Device::GetType() const { return device_type_; }
@@ -146,33 +133,18 @@ bool Device::IsAvailable() const {
 }
 
 std::vector<Device> Device::GetAvailableDevices() {
+    std::vector<Device> cpu_devices = GetAvailableCPUDevices();
+    std::vector<Device> cuda_devices = GetAvailableCUDADevices();
+    std::vector<Device> sycl_devices = GetAvailableSYCLDevices();
     std::vector<Device> devices;
-
-    // CPU.
-    devices.push_back(Device(DeviceType::CPU, 0));
-
-    // CUDA.
-    if (cuda::IsAvailable()) {
-        int device_count = cuda::DeviceCount();
-        for (int i = 0; i < device_count; i++) {
-            devices.push_back(Device(DeviceType::CUDA, i));
-        }
-    }
-
-    // SYCL.
-    if (sycl_utils::IsAvailable()) {
-        for (const Device& device : sycl_utils::GetAvailableSYCLDevices()) {
-            devices.push_back(device);
-        }
-    }
-
+    devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
+    devices.insert(devices.end(), cuda_devices.begin(), cuda_devices.end());
+    devices.insert(devices.end(), sycl_devices.begin(), sycl_devices.end());
     return devices;
 }
 
 std::vector<Device> Device::GetAvailableCPUDevices() {
-    std::vector<Device> devices;
-    devices.push_back(Device(DeviceType::CPU, 0));
-    return devices;
+    return {Device(DeviceType::CPU, 0)};
 }
 
 std::vector<Device> Device::GetAvailableCUDADevices() {
@@ -190,24 +162,9 @@ std::vector<Device> Device::GetAvailableSYCLDevices() {
     return sycl_utils::GetAvailableSYCLDevices();
 }
 
-std::vector<Device> Device::GetAvailableSYCLCPUDevices() {
-    return sycl_utils::GetAvailableSYCLCPUDevices();
-}
-
-std::vector<Device> Device::GetAvailableSYCLGPUDevices() {
-    return sycl_utils::GetAvailableSYCLGPUDevices();
-}
-
 void Device::PrintAvailableDevices() {
-    std::vector<Device> devices = GetAvailableDevices();
-    for (const auto& device : devices) {
-        const std::string description = device.GetDescription();
-        if (description.empty()) {
-            utility::LogInfo("Device(\"{}\")", device.ToString());
-        } else {
-            utility::LogInfo("Device(\"{}\"): {}", device.ToString(),
-                             description);
-        }
+    for (const auto& device : GetAvailableDevices()) {
+        utility::LogInfo("Device(\"{}\")", device.ToString());
     }
 }
 
