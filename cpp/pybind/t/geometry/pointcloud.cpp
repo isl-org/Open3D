@@ -198,6 +198,18 @@ The attributes of the point cloud have different levels::
             },
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);
+    pointcloud.def(
+            "uniform_down_sample",
+            [](const PointCloud& pointcloud, const size_t every_k_points) {
+                return pointcloud.UniformDownSample(every_k_points);
+            },
+            "Downsamples a point cloud uniformly.", "every_k_points"_a);
+    pointcloud.def(
+            "random_down_sample",
+            [](const PointCloud& pointcloud, const double sampling_ratio) {
+                return pointcloud.RandomDownSample(sampling_ratio);
+            },
+            "Downsample a pointcloud randomly.", "sampling_ratio"_a);
     pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
                    "nb_points"_a, "search_radius"_a,
                    "Remove points that have less than nb_points neighbors in a "

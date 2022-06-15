@@ -314,6 +314,38 @@ PointCloud PointCloud::VoxelDownSample(
     return pcd_down;
 }
 
+PointCloud PointCloud::UniformDownSample(size_t every_k_points) const {
+    if (every_k_points == 0) {
+        utility::LogError(
+                "Illegal sample rate, every_k_points must be larger than 0.");
+    }
+
+    return SelectByIndex(
+            core::Tensor::Arange(0, GetPointPositions().GetLength(),
+                                 every_k_points, core::Int64, GetDevice()),
+            false, false);
+}
+
+PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
+    if (sampling_ratio < 0 || sampling_ratio > 1) {
+        utility::LogError(
+                "Illegal sampling_ratio {}, sampling_ratio must be between 0 "
+                "and 1.");
+    }
+
+    const int64_t length = GetPointPositions().GetLength();
+    std::vector<int64_t> indices(length);
+    std::iota(std::begin(indices), std::end(indices), 0);
+    std::random_device rd;
+    std::mt19937 prng(rd());
+    std::shuffle(indices.begin(), indices.end(), prng);
+    const int sample_size = sampling_ratio * length;
+    indices.resize(sample_size);
+    return SelectByIndex(
+            core::Tensor(indices, {sample_size}, core::Int64, GetDevice()),
+            false, false);
+}
+
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
         size_t nb_points, double search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {
