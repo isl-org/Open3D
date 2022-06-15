@@ -124,7 +124,7 @@ Image Image::To(core::Dtype dtype,
                 {GetRows(), GetCols(), GetChannels()}, dtype, GetDevice());
     }
     if (HAVE_IPPICV &&  // Check for IPP fast implementation.
-        data_.GetDevice().IsCPU() &&
+        data_.IsCPU() &&
         std::count(ipp_supported.begin(), ipp_supported.end(), GetDtype()) >
                 0 &&
         std::count(ipp_supported.begin(), ipp_supported.end(), dtype) > 0) {
@@ -155,11 +155,11 @@ Image Image::RGBToGray() const {
     Image dst_im;
     dst_im.data_ = core::Tensor::Empty({GetRows(), GetCols(), 1}, GetDtype(),
                                        GetDevice());
-    if (data_.GetDevice().IsCUDA() &&
+    if (data_.IsCUDA() &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::RGBToGray, data_, dst_im.data_);
-    } else if (HAVE_IPPICV && data_.GetDevice().IsCPU() &&
+    } else if (HAVE_IPPICV && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::RGBToGray, data_, dst_im.data_);
@@ -195,11 +195,11 @@ Image Image::Resize(float sampling_rate, InterpType interp_type) const {
              static_cast<int64_t>(GetCols() * sampling_rate), GetChannels()},
             GetDtype(), GetDevice());
 
-    if (data_.GetDevice().IsCUDA() &&
+    if (data_.IsCUDA() &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::Resize, data_, dst_im.data_, interp_type);
-    } else if (HAVE_IPPICV && data_.GetDevice().IsCPU() &&
+    } else if (HAVE_IPPICV && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::Resize, data_, dst_im.data_, interp_type);
@@ -232,11 +232,11 @@ Image Image::Dilate(int kernel_size) const {
 
     Image dst_im;
     dst_im.data_ = core::Tensor::EmptyLike(data_);
-    if (data_.GetDevice().IsCUDA() &&
+    if (data_.IsCUDA() &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::Dilate, data_, dst_im.data_, kernel_size);
-    } else if (HAVE_IPPICV && data_.GetDevice().IsCPU() &&
+    } else if (HAVE_IPPICV && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::Dilate, data_, dst_im.data_, kernel_size);
@@ -268,12 +268,12 @@ Image Image::FilterBilateral(int kernel_size,
 
     Image dst_im;
     dst_im.data_ = core::Tensor::EmptyLike(data_);
-    if (data_.GetDevice().IsCUDA() &&
+    if (data_.IsCUDA() &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::FilterBilateral, data_, dst_im.data_, kernel_size,
                   value_sigma, dist_sigma);
-    } else if (HAVE_IPPICV && data_.GetDevice().IsCPU() &&
+    } else if (HAVE_IPPICV && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterBilateral, data_, dst_im.data_, kernel_size,
@@ -301,11 +301,11 @@ Image Image::Filter(const core::Tensor &kernel) const {
 
     Image dst_im;
     dst_im.data_ = core::Tensor::EmptyLike(data_);
-    if (data_.GetDevice().IsCUDA() &&
+    if (data_.IsCUDA() &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::Filter, data_, dst_im.data_, kernel);
-    } else if (HAVE_IPPICV && data_.GetDevice().IsCPU() &&
+    } else if (HAVE_IPPICV && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::Filter, data_, dst_im.data_, kernel);
@@ -337,11 +337,11 @@ Image Image::FilterGaussian(int kernel_size, float sigma) const {
 
     Image dst_im;
     dst_im.data_ = core::Tensor::EmptyLike(data_);
-    if (data_.GetDevice().IsCUDA() &&
+    if (data_.IsCUDA() &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::FilterGaussian, data_, dst_im.data_, kernel_size, sigma);
-    } else if (HAVE_IPPICV && data_.GetDevice().IsCPU() &&
+    } else if (HAVE_IPPICV && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterGaussian, data_, dst_im.data_, kernel_size, sigma);
@@ -385,12 +385,12 @@ std::pair<Image, Image> Image::FilterSobel(int kernel_size) const {
                                         data_.GetDevice());
     }
 
-    if (data_.GetDevice().IsCUDA() &&
+    if (data_.IsCUDA() &&
         std::count(npp_supported.begin(), npp_supported.end(),
                    std::make_pair(GetDtype(), GetChannels())) > 0) {
         CUDA_CALL(npp::FilterSobel, data_, dst_im_dx.data_, dst_im_dy.data_,
                   kernel_size);
-    } else if (HAVE_IPPICV && data_.GetDevice().IsCPU() &&
+    } else if (HAVE_IPPICV && data_.IsCPU() &&
                std::count(ipp_supported.begin(), ipp_supported.end(),
                           std::make_pair(GetDtype(), GetChannels())) > 0) {
         IPP_CALL(ipp::FilterSobel, data_, dst_im_dx.data_, dst_im_dy.data_,

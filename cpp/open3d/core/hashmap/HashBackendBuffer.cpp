@@ -120,7 +120,7 @@ HashBackendBuffer::HeapTop &HashBackendBuffer::GetHeapTop() {
 }
 
 int HashBackendBuffer::GetHeapTopIndex() const {
-    if (heap_.GetDevice().IsCUDA()) {
+    if (heap_.IsCUDA()) {
         return heap_top_.cuda[0].Item<int>();
     }
     return heap_top_.cpu.load();

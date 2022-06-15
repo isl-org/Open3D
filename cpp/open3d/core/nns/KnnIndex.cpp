@@ -76,7 +76,7 @@ bool KnnIndex::SetTensorData(const Tensor& dataset_points,
                 "shapes.");
     }
 
-    if (dataset_points.GetDevice().IsCUDA()) {
+    if (dataset_points.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         dataset_points_ = dataset_points.Contiguous();
         points_row_splits_ = points_row_splits.Contiguous();

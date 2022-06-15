@@ -581,7 +581,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         }
 
         bool geometry_update_needed = n_vertices != vbuf->getVertexCount();
-        bool pcloud_is_gpu = points.GetDevice().IsCUDA();
+        bool pcloud_is_gpu = points.IsCUDA();
         t::geometry::PointCloud cpu_pcloud;
         if (pcloud_is_gpu) {
             cpu_pcloud = point_cloud.To(core::Device("CPU:0"));
