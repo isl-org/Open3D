@@ -119,23 +119,18 @@ Device::DeviceType Device::GetType() const { return device_type_; }
 int Device::GetID() const { return device_id_; }
 
 bool Device::IsAvailable() const {
-    bool rc = false;
-
-    if (device_type_ == DeviceType::CPU && device_id_ == 0) {
-        // CPU is hard-coded to have device_id_ == 0
-        rc = true;
-    } else if (device_type_ == DeviceType::CUDA) {
-        rc = cuda::IsAvailable() && device_id_ >= 0 &&
-             device_id_ < cuda::DeviceCount();
+    for (const Device& device : GetAvailableDevices()) {
+        if (*this == device) {
+            return true;
+        }
     }
-
-    return rc;
+    return false;
 }
 
 std::vector<Device> Device::GetAvailableDevices() {
-    std::vector<Device> cpu_devices = GetAvailableCPUDevices();
-    std::vector<Device> cuda_devices = GetAvailableCUDADevices();
-    std::vector<Device> sycl_devices = GetAvailableSYCLDevices();
+    const std::vector<Device> cpu_devices = GetAvailableCPUDevices();
+    const std::vector<Device> cuda_devices = GetAvailableCUDADevices();
+    const std::vector<Device> sycl_devices = GetAvailableSYCLDevices();
     std::vector<Device> devices;
     devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
     devices.insert(devices.end(), cuda_devices.begin(), cuda_devices.end());
