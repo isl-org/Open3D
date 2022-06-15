@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
@@ -37,7 +38,7 @@ namespace open3d {
 namespace core {
 
 static Device::DeviceType StringToDeviceType(const std::string& type_colon_id) {
-    const std::vector<std::string> tokens =
+    std::vector<std::string> tokens =
             utility::SplitString(type_colon_id, ":", true);
     if (tokens.size() == 2) {
         std::string device_type_lower = utility::ToLower(tokens[0]);
@@ -45,30 +46,25 @@ static Device::DeviceType StringToDeviceType(const std::string& type_colon_id) {
             return Device::DeviceType::CPU;
         } else if (device_type_lower == "cuda") {
             return Device::DeviceType::CUDA;
+        } else if (device_type_lower == "sycl_cpu") {
+            return Device::DeviceType::SYCL_CPU;
+        } else if (device_type_lower == "sycl_gpu") {
+            return Device::DeviceType::SYCL_GPU;
         } else {
-            utility::LogError(
-                    "Invalid device string {}. Valid device strings are like "
-                    "\"CPU:0\" or \"CUDA:1\"",
-                    type_colon_id);
+            utility::LogError("Invalid device string {}.", type_colon_id);
         }
     } else {
-        utility::LogError(
-                "Invalid device string {}. Valid device strings are like "
-                "\"CPU:0\" or \"CUDA:1\"",
-                type_colon_id);
+        utility::LogError("Invalid device string {}.", type_colon_id);
     }
 }
 
 static int StringToDeviceId(const std::string& type_colon_id) {
-    const std::vector<std::string> tokens =
+    std::vector<std::string> tokens =
             utility::SplitString(type_colon_id, ":", true);
     if (tokens.size() == 2) {
         return std::stoi(tokens[1]);
     } else {
-        utility::LogError(
-                "Invalid device string {}. Valid device strings are like "
-                "\"CPU:0\" or \"CUDA:1\"",
-                type_colon_id);
+        utility::LogError("Invalid device string {}.", type_colon_id);
     }
 }
 
@@ -77,6 +73,9 @@ Device::Device(DeviceType device_type, int device_id)
     // Sanity checks.
     if (device_type_ == DeviceType::CPU && device_id_ != 0) {
         utility::LogError("CPU has device_id {}, but it must be 0.",
+                          device_id_);
+    } else if (device_type_ == DeviceType::SYCL_CPU && device_id_ != 0) {
+        utility::LogError("SYCL_CPU has device_id {}, but it must be 0.",
                           device_id_);
     }
 }
@@ -110,6 +109,12 @@ std::string Device::ToString() const {
         case DeviceType::CUDA:
             str += "CUDA";
             break;
+        case DeviceType::SYCL_CPU:
+            str += "SYCL_CPU";
+            break;
+        case DeviceType::SYCL_GPU:
+            str += "SYCL_GPU";
+            break;
         default:
             utility::LogError("Unsupported device type");
     }
@@ -117,27 +122,57 @@ std::string Device::ToString() const {
     return str;
 }
 
+std::string Device::GetDescription() const {
+    // TODO: compilation error if Device:::description_ is defined.
+    return "dummy description";
+}
+
+Device::DeviceType Device::GetType() const { return device_type_; }
+
+int Device::GetID() const { return device_id_; }
+
 bool Device::IsAvailable() const {
-    std::vector<Device> devices = GetAvailableDevices();
-    for (const Device& device : devices) {
-        if (device == *this) {
-            return true;
-        }
+    bool rc = false;
+
+    if (device_type_ == DeviceType::CPU && device_id_ == 0) {
+        // CPU is hard-coded to have device_id_ == 0
+        rc = true;
+    } else if (device_type_ == DeviceType::CUDA) {
+        rc = cuda::IsAvailable() && device_id_ >= 0 &&
+             device_id_ < cuda::DeviceCount();
     }
-    return false;
+
+    return rc;
 }
 
 std::vector<Device> Device::GetAvailableDevices() {
-    std::vector<Device> cpu_devices = GetAvailableCPUDevices();
-    std::vector<Device> cuda_devices = GetAvailableCUDADevices();
     std::vector<Device> devices;
-    devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
-    devices.insert(devices.end(), cuda_devices.begin(), cuda_devices.end());
+
+    // CPU.
+    devices.push_back(Device(DeviceType::CPU, 0));
+
+    // CUDA.
+    if (cuda::IsAvailable()) {
+        int device_count = cuda::DeviceCount();
+        for (int i = 0; i < device_count; i++) {
+            devices.push_back(Device(DeviceType::CUDA, i));
+        }
+    }
+
+    // SYCL.
+    if (sycl_utils::IsAvailable()) {
+        for (const Device& device : sycl_utils::GetAvailableSYCLDevices()) {
+            devices.push_back(device);
+        }
+    }
+
     return devices;
 }
 
 std::vector<Device> Device::GetAvailableCPUDevices() {
-    return {Device(DeviceType::CPU, 0)};
+    std::vector<Device> devices;
+    devices.push_back(Device(DeviceType::CPU, 0));
+    return devices;
 }
 
 std::vector<Device> Device::GetAvailableCUDADevices() {
@@ -151,9 +186,28 @@ std::vector<Device> Device::GetAvailableCUDADevices() {
     return devices;
 }
 
+std::vector<Device> Device::GetAvailableSYCLDevices() {
+    return sycl_utils::GetAvailableSYCLDevices();
+}
+
+std::vector<Device> Device::GetAvailableSYCLCPUDevices() {
+    return sycl_utils::GetAvailableSYCLCPUDevices();
+}
+
+std::vector<Device> Device::GetAvailableSYCLGPUDevices() {
+    return sycl_utils::GetAvailableSYCLGPUDevices();
+}
+
 void Device::PrintAvailableDevices() {
-    for (const auto& device : GetAvailableDevices()) {
-        utility::LogInfo("Device(\"{}\")", device.ToString());
+    std::vector<Device> devices = GetAvailableDevices();
+    for (const auto& device : devices) {
+        const std::string description = device.GetDescription();
+        if (description.empty()) {
+            utility::LogInfo("Device(\"{}\")", device.ToString());
+        } else {
+            utility::LogInfo("Device(\"{}\"): {}", device.ToString(),
+                             description);
+        }
     }
 }
 

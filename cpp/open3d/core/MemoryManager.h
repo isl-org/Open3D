@@ -200,5 +200,28 @@ protected:
 };
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+/// Direct memory manager which performs allocations and deallocations on SYCL
+/// devices via {sycl::malloc_device, sycl::malloc_shared, sycl::malloc_host}
+/// and sycl::free.
+class MemoryManagerSYCL : public MemoryManagerDevice {
+public:
+    /// Allocates memory of \p byte_size bytes on device \p device and returns a
+    /// pointer to the beginning of the allocated memory block.
+    void* Malloc(size_t byte_size, const Device& device) override;
+
+    /// Frees previously allocated memory at address \p ptr on device \p device.
+    void Free(void* ptr, const Device& device) override;
+
+    /// Copies \p num_bytes bytes of memory at address \p src_ptr on device
+    /// \p src_device to address \p dst_ptr on device \p dst_device.
+    void Memcpy(void* dst_ptr,
+                const Device& dst_device,
+                const void* src_ptr,
+                const Device& src_device,
+                size_t num_bytes) override;
+};
+#endif
+
 }  // namespace core
 }  // namespace open3d

@@ -56,6 +56,31 @@ referring to "DPC++".
    pytest ../python/test/core/test_sycl_utils.py -s
    ```
 
+## Available SYCL devices
+
+After activating the SYCL environment, you may run `sycl-ls` to list available
+SYCL devices, for example:
+
+```bash
+$ sycl-ls
+[opencl:acc:0] Intel(R) FPGA Emulation Platform for OpenCL(TM)
+[opencl:cpu:1] Intel(R) OpenCL, 12th Gen Intel(R) Core(TM) i9-12900K
+[opencl:gpu:2] Intel(R) OpenCL HD Graphics, Intel(R) UHD Graphics 770
+[ext_oneapi_level_zero:gpu:0] Intel(R) Level-Zero, Intel(R) UHD Graphics 770
+[host:host:0] SYCL host platform, SYCL host device
+```
+
+Open3D can make use of the host and GPU SYCL devices.
+- `core::Device("SYCL_CPU:0")` maps to the device returned by
+  `sycl::host_selector()`.
+- `core::Device("SYCL_GPU:0")` maps the default SYCL GPU returned by
+  `sycl::gpu_selector()`.
+  - Currently we only support one SYCL GPU. Multi-GPU support will be added in
+    the future.
+  - For Intel GPUs, the "level-zero GPU" (`ext_oneapi_level_zero:gpu:0` in the
+    example above) backend will be used by default instead of the "OpenCL GPU"
+    (`opencl:gpu:2` in the example above).
+
 ## Known limitations/requirement
 
 - Limitations (not implemented yet)
