@@ -112,7 +112,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, Constructor) {
     EXPECT_ANY_THROW(core::Tensor({-1, -1}, dtype, device));
 }
 
-TEST_P(TensorPermuteDevices, ConstructorBool) {
+TEST_P(TensorPermuteDevicesWithSYCL, ConstructorBool) {
     core::Device device = GetParam();
 
     core::SizeVector shape{2, 3};
