@@ -9,7 +9,6 @@ target_sources(tgeometry_kernel PRIVATE
     TransformCPU.cpp
     VoxelBlockGrid.cpp
     VoxelBlockGridCPU.cpp
-    VtkUtils.cpp
 )
 
 if (BUILD_CUDA_MODULE)

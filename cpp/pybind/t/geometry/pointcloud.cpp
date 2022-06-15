@@ -182,10 +182,14 @@ The attributes of the point cloud have different levels::
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
 
-    pointcloud.def("select_points", &PointCloud::SelectPoints, "boolean_mask"_a,
-                   "invert"_a = false,
+    pointcloud.def("select_by_mask", &PointCloud::SelectByMask,
+                   "boolean_mask"_a, "invert"_a = false,
                    "Select points from input pointcloud, based on boolean mask "
                    "indices into output point cloud.");
+    pointcloud.def("select_by_index", &PointCloud::SelectByIndex, "indices"_a,
+                   "invert"_a = false, "remove_duplicates"_a = false,
+                   "Select points from input pointcloud, based on indices into "
+                   "output point cloud.");
     pointcloud.def(
             "voxel_down_sample",
             [](const PointCloud& pointcloud, const double voxel_size) {
@@ -310,7 +314,7 @@ Example:
                                     map_shared_argument_docstrings);
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image",
                                     map_shared_argument_docstrings);
-    docstring::ClassMethodDocInject(m, "PointCloud", "select_points");
+    docstring::ClassMethodDocInject(m, "PointCloud", "select_by_mask");
     docstring::ClassMethodDocInject(m, "PointCloud", "remove_radius_outliers");
 }
 
