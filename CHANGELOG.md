@@ -4,6 +4,7 @@
 * Fix undefined names: docstr and VisibleDeprecationWarning (PR #3844)
 * Corrected documentation for Tensor based PointClound, LineSet, TriangleMesh (PR #4685)
 * Corrected documentation for KDTree (typo in Notebook) (PR #4744)
+* Added Doppler channel in point cloud and Doppler ICP algorithm in registration pipeline (PR #1)
 
 ## 0.13
 
