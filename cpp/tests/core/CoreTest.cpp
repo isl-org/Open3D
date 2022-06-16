@@ -62,6 +62,16 @@ std::vector<core::Device> PermuteDevices::TestCases() {
     return devices;
 }
 
+std::vector<core::Device> PermuteDevicesWithSYCL::TestCases() {
+    std::vector<core::Device> devices = PermuteDevices::TestCases();
+    std::vector<core::Device> sycl_devices =
+            core::Device::GetAvailableSYCLDevices();
+    if (!sycl_devices.empty()) {
+        devices.push_back(sycl_devices[0]);
+    }
+    return devices;
+}
+
 std::vector<std::pair<core::Device, core::Device>>
 PermuteDevicePairs::TestCases() {
     std::vector<core::Device> cpu_devices =
@@ -75,6 +85,40 @@ PermuteDevicePairs::TestCases() {
     std::vector<core::Device> devices;
     devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
     devices.insert(devices.end(), cuda_devices.begin(), cuda_devices.end());
+
+    // Self-pairs and cross pairs (bidirectional).
+    std::vector<std::pair<core::Device, core::Device>> device_pairs;
+    for (size_t i = 0; i < devices.size(); i++) {
+        device_pairs.push_back({devices[i], devices[i]});
+    }
+    for (size_t i = 0; i < devices.size(); i++) {
+        for (size_t j = 0; j < devices.size(); j++) {
+            if (i != j) {
+                device_pairs.push_back({devices[i], devices[j]});
+            }
+        }
+    }
+
+    return device_pairs;
+}
+
+std::vector<std::pair<core::Device, core::Device>>
+PermuteDevicePairsWithSYCL::TestCases() {
+    std::vector<core::Device> cpu_devices =
+            core::Device::GetAvailableCPUDevices();
+    std::vector<core::Device> cuda_devices =
+            core::Device::GetAvailableCUDADevices();
+    std::vector<core::Device> sycl_devices =
+            core::Device::GetAvailableSYCLDevices();
+
+    cpu_devices.resize(std::min(static_cast<size_t>(2), cpu_devices.size()));
+    cuda_devices.resize(std::min(static_cast<size_t>(2), cuda_devices.size()));
+    sycl_devices.resize(std::min(static_cast<size_t>(2), sycl_devices.size()));
+
+    std::vector<core::Device> devices;
+    devices.insert(devices.end(), cpu_devices.begin(), cpu_devices.end());
+    devices.insert(devices.end(), cuda_devices.begin(), cuda_devices.end());
+    devices.insert(devices.end(), sycl_devices.begin(), sycl_devices.end());
 
     // Self-pairs and cross pairs (bidirectional).
     std::vector<std::pair<core::Device, core::Device>> device_pairs;

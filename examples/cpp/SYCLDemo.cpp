@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/TensorFunction.h"
+#include "open3d/core/SYCLUtils.h"
 
 int main() {
-    open3d::core::SYCLDemo();
+    open3d::core::sycl_utils::SYCLDemo();
     return 0;
 }

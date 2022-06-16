@@ -40,6 +40,7 @@ public:
     enum class DeviceType {
         CPU = 0,
         CUDA = 1,
+        SYCL = 2,  // SYCL gpu_selector().
     };
 
     /// Default constructor -> "CPU:0".
@@ -58,7 +59,6 @@ public:
 
     bool operator!=(const Device& other) const;
 
-    /// For std map or set containers.
     bool operator<(const Device& other) const;
 
     /// Returns true iff device type is CPU.
@@ -67,14 +67,20 @@ public:
     /// Returns true iff device type is CUDA.
     inline bool IsCUDA() const { return device_type_ == DeviceType::CUDA; }
 
-    /// Returns type of the device, e.g. DeviceType::CPU, DeviceType::CUDA.
-    inline DeviceType GetType() const { return device_type_; }
-
-    /// Returns the device index (within the same device type).
-    inline int GetID() const { return device_id_; }
+    /// Returns true iff device type is SYCL GPU.
+    inline bool IsSYCL() const { return device_type_ == DeviceType::SYCL; }
 
     /// Returns string representation of device, e.g. "CPU:0", "CUDA:0".
     std::string ToString() const;
+
+    /// Get device description.
+    std::string GetDescription() const;
+
+    /// Returns type of the device, e.g. DeviceType::CPU, DeviceType::CUDA.
+    DeviceType GetType() const;
+
+    /// Returns the device index (within the same device type).
+    int GetID() const;
 
     /// Returns true if the device is available.
     bool IsAvailable() const;
@@ -87,6 +93,9 @@ public:
 
     /// Returns a vector of available CUDA device.
     static std::vector<Device> GetAvailableCUDADevices();
+
+    /// Returns a vector of available SYCL device.
+    static std::vector<Device> GetAvailableSYCLDevices();
 
     /// Print all available devices.
     static void PrintAvailableDevices();
