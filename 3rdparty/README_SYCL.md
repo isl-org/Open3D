@@ -17,7 +17,8 @@ referring to "DPC++".
 ## Setup
 
 1. Install oneAPI for Linux: [install via apt-get](https://www.intel.com/content/www/us/en/develop/documentation/installation-guide-for-intel-oneapi-toolkits-linux/top/installation/install-using-package-managers/apt.html)
-2. Prepare environment
+2. Install Intel GPGPU driver: [install for Ubuntu 20.04](https://dgpu-docs.intel.com/installation-guides/ubuntu/ubuntu-focal.html)
+3. Prepare environment
    ```bash
    # Source environments
    source /opt/intel/oneapi/setvars.sh
@@ -27,19 +28,19 @@ referring to "DPC++".
    conda create -n sycl python=3.8
    conda activate sycl
    ```
-3. Check your environment
+4. Check your environment
    ```bash
    which icx        # /opt/intel/oneapi/compiler/<version>/linux/bin/icx
    which icpx       # /opt/intel/oneapi/compiler/<version>/linux/bin/icpx
    which python     # ${HOME}/.conda/envs/sycl/bin/python
    python --version # Python 3.8.12 :: Intel Corporation
    ```
-4. Config and build
+5. Config and build
    ```bash
    cmake -DBUILD_SYCL_MODULE=ON -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx ..
    make -j$(nproc)
    ```
-5. Run demos
+6. Run demos
    We provide several ways to run SYCL demos. This ensures the linking are
    correct and all run-time dependencies are satisfied.
    ```bash
