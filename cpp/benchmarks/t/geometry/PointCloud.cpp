@@ -104,6 +104,31 @@ void VoxelDownSample(benchmark::State& state,
     }
 }
 
+void LegacyUniformDownSample(benchmark::State& state, size_t k) {
+    auto pcd = open3d::io::CreatePointCloudFromFile(path);
+    for (auto _ : state) {
+        pcd->UniformDownSample(k);
+    }
+}
+
+void UniformDownSample(benchmark::State& state,
+                       const core::Device& device,
+                       size_t k) {
+    t::geometry::PointCloud pcd;
+    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
+    // remove_nan_points
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    // Warp up
+    pcd.UniformDownSample(k);
+
+    for (auto _ : state) {
+        pcd.UniformDownSample(k);
+        core::cuda::Synchronize(device);
+    }
+}
+
 void LegacyTransform(benchmark::State& state, const int no_use) {
     open3d::geometry::PointCloud pcd;
     open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
@@ -302,6 +327,19 @@ BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_32, 0.32)
         ->Unit(benchmark::kMillisecond);
 ENUM_VOXELDOWNSAMPLE_BACKEND()
 
+BENCHMARK_CAPTURE(LegacyUniformDownSample, Legacy_2, 2)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyUniformDownSample, Legacy_5, 5)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyUniformDownSample, Legacy_10, 10)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(UniformDownSample, CPU_2, core::Device("CPU:0"), 2)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(UniformDownSample, CPU_5, core::Device("CPU:0"), 5)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(UniformDownSample, CPU_10, core::Device("CPU:0"), 10)
+        ->Unit(benchmark::kMillisecond);
+
 BENCHMARK_CAPTURE(Transform, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
@@ -315,6 +353,12 @@ BENCHMARK_CAPTURE(SelectByIndex,
         ->Unit(benchmark::kMillisecond);
 
 #ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(UniformDownSample, CUDA_2, core::Device("CUDA:0"), 2)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(UniformDownSample, CUDA_5, core::Device("CUDA:0"), 5)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(UniformDownSample, CUDA_10, core::Device("CUDA:0"), 10)
+        ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(SelectByIndex, CUDA, false, core::Device("CUDA:0"))
