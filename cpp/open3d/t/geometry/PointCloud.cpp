@@ -320,10 +320,16 @@ PointCloud PointCloud::UniformDownSample(size_t every_k_points) const {
                 "Illegal sample rate, every_k_points must be larger than 0.");
     }
 
-    return SelectByIndex(
-            core::Tensor::Arange(0, GetPointPositions().GetLength(),
-                                 every_k_points, core::Int64, GetDevice()),
-            false, false);
+    const int64_t length = GetPointPositions().GetLength();
+
+    PointCloud pcd_down(GetDevice());
+    for (auto &kv : GetPointAttr()) {
+        pcd_down.SetPointAttr(
+                kv.first,
+                kv.second.Slice(0, 0, length, (int64_t)every_k_points));
+    }
+
+    return pcd_down;
 }
 
 PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
