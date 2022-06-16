@@ -256,7 +256,7 @@ void InitConfig(Json::Value& config) {
     SetDefaultValue(config, "template_refined_posegraph_optimized",
                     "scene/refined_registration_optimized.json");
     SetDefaultValue(config, "template_global_mesh", "scene/integrated.ply");
-    SetDefaultValue(config, "template_global_traj", "scene/trajectory.log");
+    SetDefaultValue(config, "template_global_traj", "scene/trajectory.json");
 
     if (utility::filesystem::GetFileExtensionInLowerCase(
                 config["path_dataset"].asString()) == "bag") {
@@ -353,11 +353,14 @@ static const Eigen::Matrix4d flip_transformation = Eigen::Matrix4d({
 
 void DrawRegistrationResult(const geometry::PointCloud& src,
                             const geometry::PointCloud& dst,
-                            const Eigen::Matrix4f& transformation) {
+                            const Eigen::Matrix4f& transformation,
+                            bool keep_color = false) {
     auto transformed_src = std::make_shared<geometry::PointCloud>(src);
     auto transformed_dst = std::make_shared<geometry::PointCloud>(dst);
-    transformed_src->PaintUniformColor(Eigen::Vector3d(1, 0.706, 0));
-    transformed_dst->PaintUniformColor(Eigen::Vector3d(0, 0.651, 0.929));
+    if (!keep_color) {
+        transformed_src->PaintUniformColor(Eigen::Vector3d(1, 0.706, 0));
+        transformed_dst->PaintUniformColor(Eigen::Vector3d(0, 0.651, 0.929));
+    }
     transformed_src->Transform(flip_transformation * transformation);
     transformed_dst->Transform(flip_transformation);
     visualization::DrawGeometries({transformed_src, transformed_dst});
@@ -470,18 +473,43 @@ public:
                          config_["template_global_posegraph_optimized"]
                                  .asString()),
                 scene_pose_graph);
+                
+        // Save global scene camera trajectory.
+        SaveSceneTrajectory(JoinPath(
+                config_["path_dataset"].asString(),
+                config_["template_global_posegraph_optimized"].asString()));
     }
 
     /**
      * @brief Refine fragments registration and re-compute global odometry.
      *
      */
-    void RefineFragments() {}
+    void RefineRegistration() {
+        utility::LogInfo("Refining rough registration of fragments.");
+        RefineFragments();
+        SaveSceneTrajectory(JoinPath(
+                config_["path_dataset"].asString(),
+                config_["template_refined_posegraph_optimized"].asString()));
+    }
 
     /**
      * @brief Integrate RGBD images with global odometry.
      */
-    void IntegrateScene() {}
+    void IntegrateScene() {
+        utility::LogInfo(
+                "integrate the whole RGBD sequence using estimated camera "
+                "pose.");
+
+        camera::PinholeCameraTrajectory camera_trajectory;
+        io::ReadIJsonConvertibleFromJSON(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_global_traj"].asString()),
+                camera_trajectory);
+
+        const auto rgbd_files =
+                ReadRGBDFiles(config_["path_dataset"].asString());
+        IntegrateSceneRGBDTSDF(rgbd_files, camera_trajectory);
+    }
 
     /**
      * @brief Run SLAC optimization or fragments.
@@ -494,6 +522,19 @@ public:
     void IntegrateSceneSLAC() {}
 
 private:
+    camera::PinholeCameraIntrinsic GetCameraIntrinsic() {
+        camera::PinholeCameraIntrinsic intrinsic;
+        if (config_.isMember("path_intrinsic")) {
+            io::ReadIJsonConvertible(config_["path_intrinsic"].asString(),
+                                     intrinsic);
+        } else {
+            intrinsic = camera::PinholeCameraIntrinsic(
+                    camera::PinholeCameraIntrinsicParameters::
+                            PrimeSenseDefault);
+        }
+        return intrinsic;
+    }
+
     geometry::RGBDImage ReadRGBDImage(const std::string& color_file,
                                       const std::string& depth_file,
                                       bool convert_rgb_to_intensity) {
@@ -505,22 +546,42 @@ private:
                 config_["depth_max"].asDouble(), convert_rgb_to_intensity);
     }
 
-    bool ReadFragmentData();
+    void SaveSceneTrajectory(const std::string& scene_pose_graph_file) {
+        const camera::PinholeCameraIntrinsic intrinsic = GetCameraIntrinsic();
+        pipelines::registration::PoseGraph scene_pose_graph;
+        io::ReadPoseGraph(scene_pose_graph_file, scene_pose_graph);
 
-    void ReadJsonPipelineConfig(const std::string& file_name);
+        camera::PinholeCameraTrajectory camera_trajectory;
+        for (size_t i = 0; i < scene_pose_graph.nodes_.size(); i++) {
+            pipelines::registration::PoseGraph fragment_pose_graph;
+            io::ReadPoseGraph(
+                    JoinPath(config_["path_dataset"].asString(),
+                             config_["template_fragment_posegraph_optimized"]
+                                             .asString() +
+                                     "fragment_optimized_" +
+                                     PadZeroToNumber(i, 3) + ".json"),
+                    fragment_pose_graph);
+            for (size_t j = 0; j < fragment_pose_graph.nodes_.size(); j++) {
+                const Eigen::Matrix4d odom =
+                        scene_pose_graph.nodes_[i].pose_ *
+                        fragment_pose_graph.nodes_[j].pose_;
+                camera::PinholeCameraParameters camera_parameters;
+                camera_parameters.intrinsic_ = intrinsic;
+                camera_parameters.extrinsic_ = odom;
+                camera_trajectory.parameters_.push_back(camera_parameters);
+            }
+        }
+
+        io::WriteIJsonConvertibleToJSON(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_global_traj"].asString()),
+                camera_trajectory);
+    }
 
     void ProcessSingleFragment(int fragment_id,
                                const std::vector<std::string>& color_files,
                                const std::vector<std::string>& depth_files) {
-        camera::PinholeCameraIntrinsic intrinsic;
-        if (config_.isMember("path_intrinsic")) {
-            io::ReadIJsonConvertible(config_["path_intrinsic"].asString(),
-                                     intrinsic);
-        } else {
-            intrinsic = camera::PinholeCameraIntrinsic(
-                    camera::PinholeCameraIntrinsicParameters::
-                            PrimeSenseDefault);
-        }
+        const camera::PinholeCameraIntrinsic intrinsic = GetCameraIntrinsic();
 
         const int sid = fragment_id * config_["n_frames_per_fragment"].asInt();
         const int eid = std::min(sid + config_["n_frames_per_fragment"].asInt(),
@@ -639,7 +700,7 @@ private:
             for (int i = 0; i < num_pairs; i++) {
                 thread_list.push_back(std::thread(
                         &ReconstructionPipeline::RegisterFragmentPair, this,
-                        fragment_matching_results[i].s_,
+                        ply_files, fragment_matching_results[i].s_,
                         fragment_matching_results[i].t_,
                         std::ref(fragment_matching_results[i])));
             }
@@ -666,15 +727,14 @@ private:
                     odom = pose * odom;
                     const Eigen::Matrix4d& odom_inv = odom.inverse();
                     scene_pose_graph.nodes_.push_back(
-                            open3d::pipelines::registration::PoseGraphNode(
-                                    odom_inv));
+                            pipelines::registration::PoseGraphNode(odom_inv));
                     scene_pose_graph.edges_.push_back(
-                            open3d::pipelines::registration::PoseGraphEdge(
+                            pipelines::registration::PoseGraphEdge(
                                     s, t, pose, info, false));
                 } else {
                     scene_pose_graph.edges_.push_back(
-                            open3d::pipelines::registration::PoseGraphEdge(
-                                    s, t, pose, info, true));
+                            pipelines::registration::PoseGraphEdge(s, t, pose,
+                                                                   info, true));
                 }
             }
         }
@@ -683,8 +743,6 @@ private:
                 JoinPath(config_["path_dataset"].asString(),
                          config_["template_global_posegraph"].asString()),
                 scene_pose_graph);
-
-        return scene_pose_graph;
     }
 
     void OptimizePoseGraph(double max_correspondence_distance,
@@ -704,7 +762,120 @@ private:
         utility::SetVerbosityLevel(utility::VerbosityLevel::Error);
     }
 
-    void RefineRegistration();
+    void RefineFragments() {
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+        const auto ply_files =
+                ReadPlyFiles(JoinPath(config_["path_dataset"].asString(),
+                                      config_["folder_fragment"].asString()));
+
+        pipelines::registration::PoseGraph scene_pose_graph;
+        io::ReadPoseGraph(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_global_posegraph_optimized"]
+                                 .asString()),
+                scene_pose_graph);
+
+        std::vector<MatchingResult> fragment_matching_results;
+
+        for (auto& edge : scene_pose_graph.edges_) {
+            const int s = edge.source_node_id_;
+            const int t = edge.target_node_id_;
+            MatchingResult mr(s, t);
+            mr.transformation_ = edge.transformation_;
+            fragment_matching_results.push_back(mr);
+        }
+
+        if (config_["multi_threading"].asBool()) {
+            std::vector<std::thread> thread_list;
+            for (size_t i = 0; i < fragment_matching_results.size(); i++) {
+                const int s = fragment_matching_results[i].s_;
+                const int t = fragment_matching_results[i].t_;
+                thread_list.push_back(
+                        std::thread(&ReconstructionPipeline::RefineFragmentPair,
+                                    this, ply_files, s, t,
+                                    std::ref(fragment_matching_results[i])));
+            }
+            for (auto& thread : thread_list) {
+                thread.join();
+            }
+        } else {
+            for (size_t i = 0; i < fragment_matching_results.size(); i++) {
+                const int s = fragment_matching_results[i].s_;
+                const int t = fragment_matching_results[i].t_;
+                RefineFragmentPair(ply_files, s, t,
+                                   fragment_matching_results[i]);
+            }
+        }
+
+        // Update scene pose graph.
+        scene_pose_graph.edges_.clear();
+        scene_pose_graph.nodes_.clear();
+        Eigen::Matrix4d odom = Eigen::Matrix4d::Identity();
+        scene_pose_graph.nodes_.push_back(
+                pipelines::registration::PoseGraphNode(odom));
+        for (auto& result : fragment_matching_results) {
+            const int s = result.s_;
+            const int t = result.t_;
+            const Eigen::Matrix4d& pose = result.transformation_;
+            const Eigen::Matrix6d& info = result.information_;
+
+            if (s + 1 == t) {
+                odom = pose * odom;
+                scene_pose_graph.nodes_.push_back(
+                        pipelines::registration::PoseGraphNode(odom.inverse()));
+                scene_pose_graph.edges_.push_back(
+                        pipelines::registration::PoseGraphEdge(s, t, pose, info,
+                                                               false));
+            } else {
+                scene_pose_graph.edges_.push_back(
+                        pipelines::registration::PoseGraphEdge(s, t, pose, info,
+                                                               true));
+            }
+        }
+
+        io::WritePoseGraph(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_refined_posegraph"].asString()),
+                scene_pose_graph);
+
+        OptimizePoseGraph(
+                config_["voxel_size"].asDouble() * 1.4,
+                config_["preference_loop_closure_registration"].asDouble(),
+                scene_pose_graph);
+
+        io::WritePoseGraph(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_refined_posegraph_optimized"]
+                                 .asString()),
+                scene_pose_graph);
+    }
+
+    void RefineFragmentPair(const std::vector<std::string>& pcd_files,
+                            int s,
+                            int t,
+                            MatchingResult& matched_result) {
+        geometry::PointCloud source_pcd, target_pcd;
+        io::ReadPointCloud(pcd_files[s], source_pcd);
+        io::ReadPointCloud(pcd_files[t], target_pcd);
+        const double voxel_size = config_["voxel_size"].asDouble();
+
+        // Preprocessing the fragments point clouds.
+        geometry::PointCloud source_pcd_down, target_pcd_down;
+        pipelines::registration::Feature source_features, target_features;
+        std::tie(source_pcd_down, source_features) =
+                PreProcessPointCloud(source_pcd, voxel_size);
+        std::tie(target_pcd_down, target_features) =
+                PreProcessPointCloud(target_pcd, voxel_size);
+
+        const auto& init_trans = matched_result.transformation_;
+        const auto result =
+                MultiScaleICP(source_pcd_down, target_pcd_down,
+                              {voxel_size, voxel_size / 2.0, voxel_size / 4.0},
+                              {50, 30, 15}, init_trans);
+        matched_result.transformation_ = std::get<0>(result);
+        matched_result.information_ = std::get<1>(result);
+    }
 
     void SLACOptimization();
 
@@ -746,13 +917,40 @@ private:
                 fragment_down, {false, true, false});
     }
 
-    void IntegrateSceneRGBDTSDF();
+    void IntegrateSceneRGBDTSDF(
+            const std::tuple<std::vector<std::string>,
+                             std::vector<std::string>>& rgbd_files,
+            const camera::PinholeCameraTrajectory& camera_trajectory) {
+        const camera::PinholeCameraIntrinsic intrinsic = GetCameraIntrinsic();
 
-    void IntegrateSceneRGBD();
+        pipelines::integration::ScalableTSDFVolume volume(
+                config_["tsdf_cubic_size"].asDouble() / 512.0, 0.04,
+                pipelines::integration::TSDFVolumeColorType::RGB8);
 
-    void SaveFragmentResults();
+        const auto color_files = std::get<0>(rgbd_files);
+        const auto depth_files = std::get<1>(rgbd_files);
+        const size_t num = color_files.size();
+        for (size_t i = 0; i < num; i++) {
+            utility::LogInfo("Scene :: Integrate rgbd frame {} | {}", i, num);
+            const geometry::RGBDImage rgbd =
+                    ReadRGBDImage(color_files[i], depth_files[i], false);
+            volume.Integrate(
+                    rgbd, intrinsic,
+                    camera_trajectory.parameters_[i].extrinsic_.inverse());
+        }
 
-    void SaveSceneResults();
+        const auto mesh = volume.ExtractTriangleMesh();
+        mesh->ComputeVertexNormals();
+
+        if (config_["debug_mode"].asBool()) {
+            visualization::DrawGeometries({mesh});
+        }
+
+        io::WriteTriangleMesh(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_global_mesh"].asString()),
+                *mesh, false, true);
+    }
 
     std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> RegisterRGBDPair(
             int s,
@@ -1021,6 +1219,11 @@ private:
                                 src, dst, voxel_size[i] * 1.4, current);
             }
         }
+
+        if (config_["debug_mode"]) {
+            DrawRegistrationResult(src, dst, current, true);
+        }
+
         return std::make_tuple(current, info);
     }
 };

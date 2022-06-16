@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
     }
     if (utility::ProgramOptionExists(argc, argv, "--refine")) {
         timer.Start();
-        pipeline.RefineFragments();
+        pipeline.RefineRegistration();
         timer.Stop();
         time_elapsed[2] = timer.GetDuration() / 1000.0;
     }
