@@ -110,11 +110,6 @@ void MemoryManager::MemcpyToHost(void* host_ptr,
 
 std::shared_ptr<MemoryManagerDevice> MemoryManager::GetMemoryManagerDevice(
         const Device& device) {
-#ifdef BUILD_SYCL_MODULE
-    static std::shared_ptr<MemoryManagerSYCL> sycl_memory_manager =
-            std::make_shared<MemoryManagerSYCL>();
-#endif
-
     static std::unordered_map<Device::DeviceType,
                               std::shared_ptr<MemoryManagerDevice>,
                               utility::hash_enum_class>
@@ -132,7 +127,8 @@ std::shared_ptr<MemoryManagerDevice> MemoryManager::GetMemoryManagerDevice(
 #endif
 #endif
 #ifdef BUILD_SYCL_MODULE
-                    {Device::DeviceType::SYCL, sycl_memory_manager},
+                    {Device::DeviceType::SYCL,
+                     std::make_shared<MemoryManagerSYCL>()},
 #endif
             };
 
