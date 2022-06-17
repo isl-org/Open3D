@@ -78,6 +78,7 @@ def custom_draw_geometry_with_camera_trajectory(pcd, camera_trajectory_path,
                 register_animation_callback(None)
             vis.destroy_window()
         return False
+
     vis = custom_draw_geometry_with_camera_trajectory.vis
     vis.create_window()
     vis.add_geometry(pcd)
@@ -97,6 +98,5 @@ if __name__ == "__main__":
 
     print("Customized visualization playing a camera trajectory. "
           "Press ctrl+z to terminate.")
-    custom_draw_geometry_with_camera_trajectory(pcd,
-                                  sample_data.camera_trajectory_path,
-                                  sample_data.render_option_path)
+    custom_draw_geometry_with_camera_trajectory(
+        pcd, sample_data.camera_trajectory_path, sample_data.render_option_path)
