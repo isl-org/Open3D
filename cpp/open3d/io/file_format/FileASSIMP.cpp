@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include <fstream>
+#include <iostream>
 #include <numeric>
 #include <vector>
 
@@ -102,7 +103,27 @@ void LoadTextures(const std::string& filename,
                 strpath = utility::filesystem::GetFileNameWithoutDirectory(
                         strpath);
             }
-            auto image = io::CreateImageFromFile(base_path + strpath);
+
+            // if texture filename is provided without extension, find the texture filename with extension from given directory:
+            std::string texture_path = base_path + strpath;
+            std::cout << "notentered\n";
+            if (!utility::filesystem::FileExists(texture_path)) {
+                std::cout << "entered";
+                std::string texture_dir = utility::filesystem::GetFileParentDirectory(base_path + strpath);
+                std::vector<std::string> texture_filenames; 
+                utility::filesystem::ListFilesInDirectory(texture_dir, texture_filenames);
+                for (auto candidate_texture_file : texture_filenames) {
+                    std::cout << candidate_texture_file << std::endl;
+                    std::cout << "search " << texture_path << std::endl;
+                    candidate_texture_file = utility::filesystem::GetFileNameWithoutDirectory(candidate_texture_file);
+                    candidate_texture_file = utility::filesystem::GetFileNameWithoutExtension(candidate_texture_file);
+                    if (candidate_texture_file == utility::filesystem::GetFileNameWithoutDirectory(texture_path)) { 
+                        texture_path = candidate_texture_file;
+                    }
+                }
+            }
+
+            auto image = io::CreateImageFromFile(texture_path);
             if (image->HasData()) {
                 img = image;
             }
