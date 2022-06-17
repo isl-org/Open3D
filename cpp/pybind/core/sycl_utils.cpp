@@ -24,28 +24,14 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <vtkPolyData.h>
-#include <vtkSmartPointer.h>
-
-#include "open3d/t/geometry/Geometry.h"
-#include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/geometry/TriangleMesh.h"
+#include "open3d/core/SYCLUtils.h"
+#include "open3d/utility/Optional.h"
+#include "pybind/core/core.h"
 
 namespace open3d {
-namespace t {
-namespace geometry {
-namespace kernel {
-namespace vtkutils {
+namespace core {
 
-/// Creates a vtkPolyData object from a point cloud or triangle mesh.
-vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
-        const Geometry& geometry);
+void pybind_sycl_utils(py::module& m) { m.def("sycl_demo", &SYCLDemo); }
 
-/// Creates a triangle mesh from a vtkPolyData object.
-TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polyData);
-
-}  // namespace vtkutils
-}  // namespace kernel
-}  // namespace geometry
-}  // namespace t
+}  // namespace core
 }  // namespace open3d

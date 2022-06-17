@@ -39,6 +39,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -192,7 +193,7 @@ public:
         SetPointAttr("normals", value);
     }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute key exist
     /// 2) attribute's length as points' length
     /// 3) attribute's length > 0
@@ -211,14 +212,14 @@ public:
     /// This is a convenience function.
     bool HasPointPositions() const { return HasPointAttr("positions"); }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as points' length
     /// 3) attribute "colors"'s length > 0
     /// This is a convenience function.
     bool HasPointColors() const { return HasPointAttr("colors"); }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as points' length
     /// 3) attribute "normals"'s length > 0
@@ -317,8 +318,20 @@ public:
     /// \param boolean_mask Boolean indexing tensor of shape {n,} containing
     /// true value for the indices that is to be selected.
     /// \param invert Set to `True` to invert the selection of indices.
-    PointCloud SelectPoints(const core::Tensor &boolean_mask,
+    PointCloud SelectByMask(const core::Tensor &boolean_mask,
                             bool invert = false) const;
+
+    /// \brief Select points from input pointcloud, based on indices list into
+    /// output point cloud.
+    ///
+    /// \param indices Int64 indexing tensor of shape {n,} containing
+    /// index value that is to be selected.
+    /// \param invert Set to `True` to invert the selection of indices, and also
+    /// ignore the duplicated indices.
+    /// \param remove_duplicates Set to `True` to remove the duplicated indices.
+    PointCloud SelectByIndex(const core::Tensor &indices,
+                             bool invert = false,
+                             bool remove_duplicates = false) const;
 
     /// \brief Downsamples a point cloud with a specified voxel size.
     /// \param voxel_size Voxel size. A positive number.
@@ -338,6 +351,38 @@ public:
 
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const { return device_; }
+
+    /// \brief Cluster PointCloud using the DBSCAN algorithm
+    /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
+    /// in Large Spatial Databases with Noise", 1996
+    /// This is a wrapper for a CPU implementation and a copy of the point cloud
+    /// data and resulting labels will be made.
+    ///
+    /// \param eps Density parameter that is used to find neighbouring points.
+    /// \param min_points Minimum number of points to form a cluster.
+    /// \param print_progress If `true` the progress is visualized in the
+    /// console.
+    /// \return A Tensor list of point labels on the same device as the point
+    /// cloud, -1 indicates noise according to the algorithm
+    core::Tensor ClusterDBSCAN(double eps,
+                               size_t min_points,
+                               bool print_progress = false) const;
+
+    /// Compute the convex hull of a point cloud using qhull.
+    ///
+    /// This runs on the CPU.
+    ///
+    /// \param joggle_inputs (default False). Handle precision problems by
+    /// randomly perturbing the input data. Set to True if perturbing the input
+    /// iis acceptable but you need convex simplicial output. If False,
+    /// neighboring facets may be merged in case of precision problems. See
+    /// [QHull docs](http://www.qhull.org/html/qh-impre.htm#joggle) for more
+    /// details.
+    ///
+    /// \return TriangleMesh representing the convexh hull. This contains an
+    /// extra vertex property "point_map" that contains the index of the
+    /// corresponding vertex in the original mesh.
+    TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
 
 public:
     /// \brief Function to estimate point normals. If the point cloud normals

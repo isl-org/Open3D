@@ -39,7 +39,7 @@ class Value;
 namespace open3d {
 namespace utility {
 
-/// \brief Parse string and conver to Json::value. Throws exception if the
+/// \brief Parse string and convert to Json::value. Throws exception if the
 /// conversion is invalid.
 ///
 /// \param json_str String containing json value.

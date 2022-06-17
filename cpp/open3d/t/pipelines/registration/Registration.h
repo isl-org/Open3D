@@ -140,7 +140,7 @@ RegistrationResult EvaluateRegistration(
 /// \param voxel_size The input pointclouds will be down-sampled to this
 /// `voxel_size` scale. If voxel_size < 0, original scale will be used.
 /// However it is highly recommended to down-sample the point-cloud for
-/// performance. By default origianl scale of the point-cloud will be used.
+/// performance. By default original scale of the point-cloud will be used.
 /// \param callback_after_iteration Optional lambda function, saves string to
 /// tensor map of attributes such as "iteration_index", "scale_index",
 /// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on CPU
@@ -161,7 +161,7 @@ ICP(const geometry::PointCloud &source,
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
 /// The vector of ICPConvergenceCriteria(relative fitness, relative rmse,
-/// max_iterations) contains the stoping condition for each voxel level.
+/// max_iterations) contains the stopping condition for each voxel level.
 /// The length of voxel_sizes vector, criteria vector,
 /// max_correspondence_distances vector must be same, and voxel_sizes must
 /// contain positive values in strictly decreasing order [Lower the voxel size,
@@ -197,7 +197,7 @@ RegistrationResult MultiScaleICP(
                 void(const std::unordered_map<std::string, core::Tensor> &)>
                 &callback_after_iteration = nullptr);
 
-/// \brief Computes `Information Matrix`, from the transfromation between source
+/// \brief Computes `Information Matrix`, from the transformation between source
 /// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},
 /// of dtype `Float64` on device `CPU:0`.
 ///

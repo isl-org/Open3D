@@ -53,7 +53,7 @@ void pybind_keypoint_methods(py::module &m) {
              {"salient_radius",
               "The radius of the spherical neighborhood used to detect "
               "keypoints."},
-             {"non_max_radius", "The non maxima supression radius"},
+             {"non_max_radius", "The non maxima suppression radius"},
              {"gamma_21",
               "The upper bound on the ratio between the second and the "
               "first "

@@ -98,7 +98,7 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
     const int num_tensors = tensors.size();
 
     if (num_tensors < 1) {
-        utility::LogError("Expected atleast 1 tensor, but got 0.");
+        utility::LogError("Expected at least 1 tensor, but got 0.");
     }
     if (num_tensors == 1) {
         std::vector<Tensor> split_tensors;

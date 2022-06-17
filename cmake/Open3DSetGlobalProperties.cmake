@@ -36,8 +36,8 @@ function(open3d_set_global_properties target)
     # - OPEN3D_CXX_STANDARD
     # - OPEN3D_CXX_COMPILER_ID
     # - OPEN3D_CXX_COMPILER_VERSION
-    # - OPEN3D_CUDA_COMPILER_ID       # Emtpy if not BUILD_CUDA_MODULE
-    # - OPEN3D_CUDA_COMPILER_VERSION  # Emtpy if not BUILD_CUDA_MODULE
+    # - OPEN3D_CUDA_COMPILER_ID       # Empty if not BUILD_CUDA_MODULE
+    # - OPEN3D_CUDA_COMPILER_VERSION  # Empty if not BUILD_CUDA_MODULE
     if (NOT CMAKE_CXX_STANDARD)
         message(FATAL_ERROR "CMAKE_CXX_STANDARD must be defined globally.")
     endif()
@@ -93,6 +93,9 @@ function(open3d_set_global_properties target)
     endif()
     if (BUILD_ISPC_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_ISPC_MODULE)
+    endif()
+    if (BUILD_SYCL_MODULE)
+        target_compile_definitions(${target} PRIVATE BUILD_SYCL_MODULE)
     endif()
     if (BUILD_GUI)
         target_compile_definitions(${target} PRIVATE BUILD_GUI)
@@ -169,6 +172,13 @@ function(open3d_set_global_properties target)
     else()
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=x86-64>)
     endif()
+
+    # Turn off fast math for IntelLLVM DPC++ compiler.
+    # Fast math does not work with some of our NaN handling logics.
+    target_compile_options(${target} PRIVATE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-ffp-contract=on>)
+    target_compile_options(${target} PRIVATE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>)
 
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c

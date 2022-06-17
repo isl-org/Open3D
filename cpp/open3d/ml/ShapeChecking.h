@@ -537,7 +537,7 @@ bool _CheckShape(const std::vector<DimValue>& shape,
 ///   The options CSOpt::IGNORE_FIRST_DIMS and CSOpt::IGNORE_LAST_DIMS allow to
 ///   ignore additional dimensions in the shape.
 ///
-///   The shape to be cheked may contain unknowns
+///   The shape to be checked may contain unknowns
 ///   Dim A("A");
 ///   Dim B("B");
 ///   status = CheckShape({30, UnknownValue()}, A, B); // VALID, A is 30 and B

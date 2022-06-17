@@ -586,6 +586,84 @@ RGBD dataset.
     auto rgbd_image = geometry::RGBDImage::CreateFromTUMFormat(
         *color_raw, *depth_raw, /*convert_rgb_to_intensity =*/ false);
 
+LoungeRGBDImages
+------------------
+
+Lounge RGBD dataset from Stanford containing ``color`` and ``depth`` 
+sequence of 3000 images, along with ``camera trajectory`` and ``reconstruction``.
+
+.. code-block:: python
+
+    dataset = o3d.data.LoungeRGBDImages()
+
+    rgbd_images = []
+    for i in range(len(dataset.depth_paths)):
+        color_raw = o3d.io.read_image(dataset.color_paths[i])
+        depth_raw = o3d.io.read_image(dataset.depth_paths[i])
+        rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
+                                                   color_raw, depth_raw)
+        rgbd_images.append(rgbd_image)
+
+    mesh = o3d.io.read_triangle_mesh(dataset.reconstruction_path)
+
+.. code-block:: cpp
+
+    data::LoungeRGBDImages dataset;
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
+    for(size_t i = 0; i < dataset.GetDepthPaths().size(); ++i) {
+        auto color_raw = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+
+        auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
+                *color_raw, *depth_raw,
+                /*depth_scale =*/1000.0,
+                /*depth_trunc =*/3.0,
+                /*convert_rgb_to_intensity =*/false);
+        rgbd_images.push_back(rgbd_image);
+    }
+
+    auto mesh = io::CreateTriangleMeshFromFile(dataset.GetReconstructionPath());
+
+BedroomRGBDImages
+------------------
+
+Bedroom RGBD dataset from Redwood containing ``color`` and ``depth`` 
+sequence of 21931 images, along with ``camera trajectory`` and ``reconstruction``.
+
+.. code-block:: python
+
+    dataset = o3d.data.BedroomRGBDImages()
+
+    rgbd_images = []
+    for i in range(len(dataset.depth_paths)):
+        color_raw = o3d.io.read_image(dataset.color_paths[i])
+        depth_raw = o3d.io.read_image(dataset.depth_paths[i])
+        rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
+                                                   color_raw, depth_raw)
+        rgbd_images.append(rgbd_image)
+
+    mesh = o3d.io.read_triangle_mesh(dataset.reconstruction_path)
+
+.. code-block:: cpp
+
+    data::BedroomRGBDImages dataset;
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> rgbd_images;
+    for(size_t i = 0; i < dataset.GetDepthPaths().size(); ++i) {
+        auto color_raw = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto depth_raw = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+
+        auto rgbd_image = geometry::RGBDImage::CreateFromColorAndDepth(
+                *color_raw, *depth_raw,
+                /*depth_scale =*/1000.0,
+                /*depth_trunc =*/3.0,
+                /*convert_rgb_to_intensity =*/false);
+        rgbd_images.push_back(rgbd_image);
+    }
+
+    auto mesh = io::CreateTriangleMeshFromFile(dataset.GetReconstructionPath());
+
 Demo
 ~~~~
 

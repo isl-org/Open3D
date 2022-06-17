@@ -100,7 +100,7 @@ class ContinuousConv(torch.nn.Module):
         interpolation: One of 'linear', 'linear_border', 'nearest_neighbor'.
             * 'linear' is trilinear interpolation with coordinate clamping.
             * 'linear_border' uses a zero border if outside the range.
-            * 'nearest_neighbor' uses the neares neighbor instead of interpolation.
+            * 'nearest_neighbor' uses the nearest neighbor instead of interpolation.
 
         normalize: If true then the result is normalized either by the number of
           points (neighbors_importance is null) or by the sum of the respective

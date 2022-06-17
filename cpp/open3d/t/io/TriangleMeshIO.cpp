@@ -71,8 +71,8 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
 // information.
 // 2. Add these properties to the legacy to tensor mesh and tensor to legacy
 // mesh conversion.
-// 3. Update the documention with information on how to access these additional
-// attributes from tensor based triangle mesh.
+// 3. Update the documentation with information on how to access these
+// additional attributes from tensor based triangle mesh.
 // 4. Implement read/write tensor triangle mesh with various file formats.
 // 5. Compare with legacy triangle mesh and add corresponding unit tests.
 

@@ -36,9 +36,6 @@ sys.path.append(pyexample_path)
 
 from open3d_example import *
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from make_fragments import read_rgbd_image
-
 
 def scalable_integrate_rgb_frames(path_dataset, intrinsic, config):
     poses = []

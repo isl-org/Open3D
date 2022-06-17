@@ -37,7 +37,7 @@ void PrintHelp() {
 
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > RealSenseDenseSLAMGUI [options]");
+    utility::LogInfo("    > OnlineSLAMRealSense [options]");
     utility::LogInfo("Basic options:");
     utility::LogInfo("    [-V]");
     utility::LogInfo("    [--use_bag_file /path/to/realsense_video_file.bag] If not provided, it will look for realsense sensor.");

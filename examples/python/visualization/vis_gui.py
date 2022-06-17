@@ -251,7 +251,7 @@ class AppWindow:
         self._settings_panel = gui.Vert(
             0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
 
-        # Create a collapsable vertical widget, which takes up enough vertical
+        # Create a collapsible vertical widget, which takes up enough vertical
         # space for all its children when open, but only enough for text when
         # closed. This is useful for property pages, so the user can hide sets
         # of properties they rarely use.
@@ -772,7 +772,7 @@ class AppWindow:
 
 
 def main():
-    # We need to initalize the application, which finds the necessary shaders
+    # We need to initialize the application, which finds the necessary shaders
     # for rendering and prepares the cross-platform window abstraction.
     gui.Application.instance.initialize()
 

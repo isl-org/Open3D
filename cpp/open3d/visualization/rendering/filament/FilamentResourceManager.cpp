@@ -728,7 +728,7 @@ void FilamentResourceManager::ReuseVertexBuffer(VertexBufferHandle vb) {
     if (found != vertex_buffers_.end()) {
         found->second.use_count += 1;
     } else {
-        utility::LogError("Reusing non-existant vertex buffer");
+        utility::LogError("Reusing non-existent vertex buffer");
     }
 }
 

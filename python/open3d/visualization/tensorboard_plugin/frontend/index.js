@@ -230,7 +230,7 @@ ground from the Open3D GUI settings for each widget."> Show ground </label>
     };
 
     /**
-     * Send message to Open3D server to toggle syncrhonized views for all
+     * Send message to Open3D server to toggle synchronized views for all
      * currently open run widgets. To synchronize run widgets opened after
      * wards, the user has to repeat this step.
      * @callback
@@ -1305,7 +1305,7 @@ Click to change">
                     'step-selector-div-' + windowUId,
                     message.current.step_limits[0],
                     message.current.step_limits[1], message.current.step);
-            // Init with miliseconds
+            // Init with milliseconds
             const wallTime = new Date(message.current.wall_time * 1000);
             document.getElementById('video_' + windowUId).title =
                     message.current.run + ' at ' + wallTime.toLocaleString();

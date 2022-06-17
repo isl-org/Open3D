@@ -27,6 +27,7 @@
 #include "open3d/core/TensorFunction.h"
 
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Timer.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

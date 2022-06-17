@@ -72,7 +72,6 @@ public:
            const Device& device = Device("CPU:0"))
         : Tensor(shape, dtype, device) {
         // Check number of elements
-
         if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
             utility::LogError(
                     "Tensor initialization values' size {} does not match the "
@@ -121,6 +120,42 @@ public:
           data_ptr_(data_ptr),
           dtype_(dtype),
           blob_(blob) {}
+
+    /// \brief Take ownership of data in std::vector<T>
+    ///
+    /// Create a Tensor from data "moved" from an std::vector<T>. This always
+    /// produces a Tensor on the CPU device.
+    ///
+    /// \param vec source for the data as an r-value reference. After the Tensor
+    /// is created this will not have access to or manage the data any more.
+    /// \param shape List of dimensions of data in buffer. e.g. `{640, 480, 3}`
+    /// for a 640x480 RGB image. A 1D {vec.size()} shape is assumed if not
+    /// specified.
+    template <typename T>
+    Tensor(std::vector<T>&& vec, const SizeVector& shape = {})
+        : shape_(shape), dtype_(Dtype::FromType<T>()) {
+        if (shape_.empty()) {
+            shape_ = {static_cast<int64_t>(vec.size())};
+        }
+
+        // Check number of elements.
+        if (static_cast<int64_t>(vec.size()) != shape_.NumElements()) {
+            utility::LogError(
+                    "Tensor initialization values' size {} does not match the "
+                    "shape {}",
+                    vec.size(), shape_.NumElements());
+        }
+        strides_ = shape_util::DefaultStrides(shape_);
+        auto sp_vec = std::make_shared<std::vector<T>>();
+        sp_vec->swap(vec);
+        data_ptr_ = static_cast<void*>(sp_vec->data());
+
+        // Create blob that owns the shared pointer to vec. The deleter function
+        // object just stores a shared pointer, ensuring that memory is freed
+        // only when the Tensor is destructed.
+        blob_ = std::make_shared<Blob>(Device("CPU:0"), data_ptr_,
+                                       [sp_vec](void*) { (void)sp_vec; });
+    }
 
     /// \brief Tensor wrapper constructor from raw host buffer.
     ///
@@ -537,15 +572,15 @@ public:
     /// Convert to constant rvalue.
     const Tensor AsRvalue() const { return *this; }
 
-    /// \brief Advanced indexing getter
+    /// \brief Advanced indexing getter. This will always allocate a new Tensor.
     ///
-    /// We use the Numpy advanced indexing symnatics, see:
+    /// We use the Numpy advanced indexing semantics, see:
     /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
     Tensor IndexGet(const std::vector<Tensor>& index_tensors) const;
 
     /// \brief Advanced indexing getter.
     ///
-    /// We use the Numpy advanced indexing symnatics, see:
+    /// We use the Numpy advanced indexing semantics, see:
     /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
     ///
     /// Note: Only support 1D index tensors.
@@ -678,7 +713,7 @@ public:
     /// \param dims \p dims can only contain a single dimension or all
     /// dimensions. If \p dims contains a single dimension, the index is along
     /// the specified dimension. If \p dims contains all dimensions, the index
-    /// is into the flattend tensor.
+    /// is into the flattened tensor.
     Tensor ArgMin(const SizeVector& dims) const;
 
     /// Returns maximum index of the tensor along the given \p dim. The returned
@@ -688,7 +723,7 @@ public:
     /// \param dims \p dims can only contain a single dimension or all
     /// dimensions. If \p dims contains a single dimension, the index is along
     /// the specified dimension. If \p dims contains all dimensions, the index
-    /// is into the flattend tensor.
+    /// is into the flattened tensor.
     Tensor ArgMax(const SizeVector& dims) const;
 
     /// Element-wise square root of a tensor, returns a new tensor.
@@ -984,7 +1019,7 @@ public:
     /// strides and etc.
     bool IsSame(const Tensor& other) const;
 
-    /// Retrive all values as an std::vector, for debugging and testing
+    /// Retrieve all values as an std::vector, for debugging and testing
     template <typename T>
     std::vector<T> ToFlatVector() const {
         AssertTemplateDtype<T>();
@@ -1262,7 +1297,7 @@ private:
     }
 
 protected:
-    /// SizeVector of the Tensor. shape_[i] is the legnth of dimension i.
+    /// SizeVector of the Tensor. shape_[i] is the length of dimension i.
     SizeVector shape_ = {0};
 
     /// Stride of a Tensor.

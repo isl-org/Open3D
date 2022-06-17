@@ -9,7 +9,7 @@ DEVELOPER_BUILD="${DEVELOPER_BUILD:-ON}"
 if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
     DEVELOPER_BUILD="ON"
 fi
-SHARED=${SHARED:-OFF}
+BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -24,7 +24,7 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 
 # Dependency versions:
 # CUDA
-if [[ $BUILD_TENSORFLOW_OPS == ON || $BUILD_PYTORCH_OPS == ON || \
+if [[ $BUILD_TENSORFLOW_OPS == ON || $BUILD_PYTORCH_OPS == ON ||
     $UBUNTU_VERSION != bionic ]]; then
     # CUDA version in sync with PyTorch and Tensorflow
     CUDA_VERSION=("11-0" "11.0")
@@ -56,6 +56,7 @@ PYTEST_VER="6.0.1"
 PYTEST_RANDOMLY_VER="3.8.0"
 SCIPY_VER="1.5.4"
 YAPF_VER="0.30.0"
+PROTOBUF_VER="3.19.0"
 
 OPEN3D_INSTALL_DIR=~/open3d_install
 OPEN3D_SOURCE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -105,6 +106,10 @@ install_python_dependencies() {
     fi
     if [ "$BUILD_TENSORFLOW_OPS" == "ON" ] || [ "$BUILD_PYTORCH_OPS" == "ON" ]; then
         python -m pip install -U yapf=="$YAPF_VER"
+        # Fix Protobuf compatibility issue
+        # https://stackoverflow.com/a/72493690/1255535
+        # https://github.com/protocolbuffers/protobuf/issues/10051
+        python -m pip install -U protobuf=="$PROTOBUF_VER"
     fi
     if [[ "purge-cache" =~ ^($options)$ ]]; then
         echo "Purge pip cache"
@@ -126,7 +131,7 @@ build_all() {
 
     cmakeOptions=(
         -DDEVELOPER_BUILD=$DEVELOPER_BUILD
-        -DBUILD_SHARED_LIBS="$SHARED"
+        -DBUILD_SHARED_LIBS="$BUILD_SHARED_LIBS"
         -DCMAKE_BUILD_TYPE=Release
         -DBUILD_LIBREALSENSE=ON
         -DBUILD_CUDA_MODULE="$BUILD_CUDA_MODULE"
@@ -148,7 +153,7 @@ build_all() {
     echo "Build & install Open3D..."
     make VERBOSE=1 -j"$NPROC"
     make VERBOSE=1 install -j"$NPROC"
-    if [[ "$SHARED" == "ON" ]]; then
+    if [[ "$BUILD_SHARED_LIBS" == "ON" ]]; then
         make package
     fi
     make VERBOSE=1 install-pip-package -j"$NPROC"
@@ -326,11 +331,22 @@ test_cpp_example() {
     cd open3d-cmake-find-package
     mkdir build
     cd build
+    echo Testing build with cmake
     cmake -DCMAKE_INSTALL_PREFIX=${OPEN3D_INSTALL_DIR} ..
     make -j"$NPROC" VERBOSE=1
     runExample="$1"
     if [ "$runExample" == ON ]; then
         ./Draw --skip-for-unit-test
+    fi
+    if [ $BUILD_SHARED_LIBS == ON ]; then
+        rm -r ./*
+        echo Testing build with pkg-config
+        export PKG_CONFIG_PATH=${OPEN3D_INSTALL_DIR}/lib/pkgconfig
+        echo Open3D build options: $(pkg-config --cflags --libs Open3D)
+        c++ ../Draw.cpp -o Draw $(pkg-config --cflags --libs Open3D)
+        if [ "$runExample" == ON ]; then
+            ./Draw --skip-for-unit-test
+        fi
     fi
     # Now I am in Open3D/open3d-cmake-find-package/build/
     cd ../../build

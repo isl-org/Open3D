@@ -41,11 +41,19 @@ sys.path.append(pyexample_path)
 from open3d_example import check_folder_structure
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from initialize_config import initialize_config
+from initialize_config import initialize_config, dataset_loader
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Reconstruction system")
-    parser.add_argument("config", help="path to the config file")
+    parser.add_argument("--config",
+                        help="path to the config file",
+                        default=None)
+    parser.add_argument("--default_dataset",
+                        help="(optional) default dataset to be used, only if "
+                        "config file is not provided. "
+                        "Options: [lounge, bedroom, jack_jack]",
+                        type=str,
+                        default="lounge")
     parser.add_argument("--make",
                         help="Step 1) make fragments from RGBD sequence.",
                         action="store_true")
@@ -66,7 +74,7 @@ if __name__ == "__main__":
         action="store_true")
     parser.add_argument(
         "--slac_integrate",
-        help="Step 6) (optional) integrate fragements using slac to make final "
+        help="Step 6) (optional) integrate fragments using slac to make final "
         "pointcloud / mesh.",
         action="store_true")
     parser.add_argument("--debug_mode",
@@ -90,12 +98,16 @@ if __name__ == "__main__":
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    # check folder structure
+    # load dataset and check folder structure
     if args.config is not None:
         with open(args.config) as json_file:
             config = json.load(json_file)
             initialize_config(config)
-            check_folder_structure(config["path_dataset"])
+            check_folder_structure(config['path_dataset'])
+    else:
+        # load deafult dataset.
+        config = dataset_loader(args.default_dataset)
+
     assert config is not None
 
     if args.debug_mode:

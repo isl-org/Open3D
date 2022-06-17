@@ -226,7 +226,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     // replacement shape does not, the index is out of bounds. This is because
     // there is no valid number to index an empty tensor.
     // Normally, out of bounds is detected in the advanded indexing kernel. We
-    // detecte here for more helpful error message.
+    // detected here for more helpful error message.
     auto contains_zero = [](const SizeVector& vals) -> bool {
         return std::any_of(vals.begin(), vals.end(),
                            [](int64_t val) { return val == 0; });

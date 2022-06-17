@@ -64,7 +64,7 @@ enum class RobustKernelMethod {
 /// The weight w(r) for a given residual `r` and a given loss function `p(r)` is
 /// computed as follow:
 ///     w(r) = (1 / r) * (dp(r) / dr) , for all r
-/// Therefore, the only impact of the choice on the kernel is thorugh its first
+/// Therefore, the only impact of the choice on the kernel is through its first
 /// order derivate.
 ///
 /// GeneralizedLoss Method is an implementation of the following paper:

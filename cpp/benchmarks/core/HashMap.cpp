@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include <numeric>
 #include <random>
 
 #include "open3d/core/AdvancedIndexing.h"

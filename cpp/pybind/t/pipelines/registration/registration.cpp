@@ -287,7 +287,7 @@ static const std::unordered_map<std::string, std::string>
                  "The input pointclouds will be down-sampled to this "
                  "`voxel_size` scale. If `voxel_size` < 0, original scale will "
                  "be used. However it is highly recommended to down-sample the "
-                 "point-cloud for performance. By default origianl scale of "
+                 "point-cloud for performance. By default original scale of "
                  "the point-cloud will be used."},
                 {"voxel_sizes",
                  "o3d.utility.DoubleVector of voxel sizes in strictly "

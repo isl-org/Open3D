@@ -61,22 +61,22 @@ Dataset::Dataset(const std::string& prefix, const std::string& data_root)
 
 SingleDownloadDataset::SingleDownloadDataset(
         const std::string& prefix,
-        const std::vector<std::string>& urls,
+        const std::vector<std::string>& url_mirrors,
         const std::string& md5,
         const bool no_extract,
         const std::string& data_root)
     : Dataset(prefix, data_root) {
     const std::string filename =
-            utility::filesystem::GetFileNameWithoutDirectory(urls[0]);
+            utility::filesystem::GetFileNameWithoutDirectory(url_mirrors[0]);
 
-    const bool is_extract_present =
+    const bool is_extract_folder_present =
             utility::filesystem::DirectoryExists(Dataset::GetExtractDir());
 
-    if (!is_extract_present) {
+    if (!is_extract_folder_present) {
         // `download_dir` is relative path from `${data_root}`.
         const std::string download_dir = "download/" + GetPrefix();
-        const std::string download_file_path =
-                utility::DownloadFromURL(urls, md5, download_dir, data_root_);
+        const std::string download_file_path = utility::DownloadFromURL(
+                url_mirrors, md5, download_dir, data_root_);
 
         // Extract / Copy data.
         if (!no_extract) {
@@ -86,6 +86,52 @@ SingleDownloadDataset::SingleDownloadDataset(
                     Dataset::GetExtractDir());
             utility::filesystem::Copy(download_file_path,
                                       Dataset::GetExtractDir());
+        }
+    }
+}
+
+MultiDownloadDataset::MultiDownloadDataset(
+        const std::string& prefix,
+        const std::vector<std::vector<std::string>>& url_mirrors_list,
+        const std::vector<std::string>& md5_list,
+        const bool no_extract,
+        const std::string& data_root)
+    : Dataset(prefix, data_root) {
+    std::vector<std::string> filenames;
+    for (auto& file_mirrors : url_mirrors_list) {
+        filenames.push_back(file_mirrors[0]);
+    }
+    const bool is_extract_folder_present =
+            utility::filesystem::DirectoryExists(Dataset::GetExtractDir());
+
+    if (!is_extract_folder_present) {
+        size_t number_of_files = url_mirrors_list.size();
+        if (md5_list.size() != number_of_files) {
+            utility::LogError(
+                    "md5_list and url_mirrors_list must be of same length.");
+        }
+
+        // `download_dir` is relative path from `${data_root}`.
+        const std::string download_dir = "download/" + GetPrefix();
+        std::vector<std::string> download_file_paths;
+        for (size_t i = 0; i < number_of_files; ++i) {
+            download_file_paths.push_back(
+                    utility::DownloadFromURL(url_mirrors_list[i], md5_list[i],
+                                             download_dir, data_root_));
+        }
+
+        // Extract / Copy data.
+        if (!no_extract) {
+            for (auto& download_file_path : download_file_paths) {
+                utility::Extract(download_file_path, Dataset::GetExtractDir());
+            }
+        } else {
+            utility::filesystem::MakeDirectoryHierarchy(
+                    Dataset::GetExtractDir());
+            for (auto& download_file_path : download_file_paths) {
+                utility::filesystem::Copy(download_file_path,
+                                          Dataset::GetExtractDir());
+            }
         }
     }
 }
@@ -688,6 +734,75 @@ std::string OfficePointClouds::GetPaths(size_t index) const {
                 index);
     }
     return paths_[index];
+}
+
+LoungeRGBDImages::LoungeRGBDImages(const std::string& data_root)
+    : SingleDownloadDataset(
+              "LoungeRGBDImages",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/LoungeRGBDImages.zip"},
+              "cdd307caef898519a8829ce1b6ab9f75",
+              /*no_extract =*/false,
+              data_root) {
+    color_paths_.reserve(3000);
+    depth_paths_.reserve(3000);
+    const std::string extract_dir = Dataset::GetExtractDir();
+    const size_t n_zero = 6;
+    for (int i = 1; i < 3000; ++i) {
+        std::string idx = std::to_string(i);
+        idx = std::string(n_zero - std::min(n_zero, idx.length()), '0') + idx;
+        color_paths_.push_back(extract_dir + "/color/" + idx + ".png");
+        depth_paths_.push_back(extract_dir + "/depth/" + idx + ".png");
+    }
+
+    trajectory_log_path_ = extract_dir + "/lounge_trajectory.log";
+    reconstruction_path_ = extract_dir + "/lounge.ply";
+}
+
+BedroomRGBDImages::BedroomRGBDImages(const std::string& data_root)
+    : MultiDownloadDataset(
+              "BedroomRGBDImages",
+              {{"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom01.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom02.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom03.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom04.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom05.zip"}},
+              {"2d1018ceeb72680f5d16b2f419da9bb1",
+               "5e6ffbccc0907dc5acc374aa76a79081",
+               "ebf13b89ec364b1788dd492c27b9b800",
+               "94c0e6c862a54588582b06520946fb15",
+               "54b927edb6fd61838025bc66ed767408"},
+              /*no_extract =*/false,
+              data_root) {
+    color_paths_.reserve(21931);
+    depth_paths_.reserve(21931);
+    const std::string extract_dir = Dataset::GetExtractDir();
+    const size_t n_zero = 6;
+    for (int i = 1; i < 21931; ++i) {
+        std::string idx = std::to_string(i);
+        idx = std::string(n_zero - std::min(n_zero, idx.length()), '0') + idx;
+        color_paths_.push_back(extract_dir + "/image/" + idx + ".jpg");
+        depth_paths_.push_back(extract_dir + "/depth/" + idx + ".png");
+    }
+
+    trajectory_log_path_ = extract_dir + "/bedroom.log";
+    reconstruction_path_ = extract_dir + "/bedroom.ply";
+}
+
+JackJackL515Bag::JackJackL515Bag(const std::string& data_root)
+    : SingleDownloadDataset(
+              "JackJackL515Bag",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/JackJackL515Bag.bag"},
+              "9f670dc92569b986b739c4179a659176",
+              /*no_extract =*/true,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/JackJackL515Bag.bag";
 }
 
 }  // namespace data

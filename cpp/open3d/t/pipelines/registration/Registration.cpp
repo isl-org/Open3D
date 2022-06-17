@@ -229,7 +229,7 @@ InitializePointCloudPyramidForMultiScaleICP(
         // `max_correspondence_distance * 2.0` or
         // `voxel_sizes[num_iterations - 1] * 4.0` is an approximation, for
         // `search_radius` in `EstimateColorGradients`. For more control /
-        // performance tunning, one may compute and save the `color_gradient`
+        // performance tuning, one may compute and save the `color_gradient`
         // attribute in the target pointcloud manually by calling the function
         // `EstimateColorGradients`, before passing it to the `ICP` function.
         if (voxel_sizes[num_iterations - 1] <= 0) {

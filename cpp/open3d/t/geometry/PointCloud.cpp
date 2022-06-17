@@ -26,10 +26,19 @@
 
 #include "open3d/t/geometry/PointCloud.h"
 
+#include <libqhullcpp/PointCoordinates.h>
+#include <libqhullcpp/Qhull.h>
+#include <libqhullcpp/QhullFacet.h>
+#include <libqhullcpp/QhullFacetList.h>
+#include <libqhullcpp/QhullVertexSet.h>
+
 #include <Eigen/Core>
+#include <algorithm>
 #include <limits>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/EigenConverter.h"
@@ -40,6 +49,7 @@
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
@@ -139,7 +149,7 @@ PointCloud PointCloud::Append(const PointCloud &other) const {
             attr_shape[0] = combined_length;
             if (other_attr_shape != attr_shape) {
                 utility::LogError(
-                        "Shape mismatch. Attribure {}, shape {}, is not "
+                        "Shape mismatch. Attribute {}, shape {}, is not "
                         "compatible with {}.",
                         kv.first, other_attr.GetShape(), kv.second.GetShape());
             }
@@ -214,7 +224,7 @@ PointCloud &PointCloud::Rotate(const core::Tensor &R,
     return *this;
 }
 
-PointCloud PointCloud::SelectPoints(const core::Tensor &boolean_mask,
+PointCloud PointCloud::SelectByMask(const core::Tensor &boolean_mask,
                                     bool invert /* = false */) const {
     const int64_t length = GetPointPositions().GetLength();
     core::AssertTensorDtype(boolean_mask, core::Dtype::Bool);
@@ -231,13 +241,47 @@ PointCloud PointCloud::SelectPoints(const core::Tensor &boolean_mask,
     PointCloud pcd(GetDevice());
     for (auto &kv : GetPointAttr()) {
         if (HasPointAttr(kv.first)) {
-            pcd.SetPointAttr(kv.first,
-                             kv.second.IndexGet({indices_local}).Clone());
+            pcd.SetPointAttr(kv.first, kv.second.IndexGet({indices_local}));
         }
     }
 
     utility::LogDebug("Pointcloud down sampled from {} points to {} points.",
                       length, pcd.GetPointPositions().GetLength());
+    return pcd;
+}
+
+PointCloud PointCloud::SelectByIndex(
+        const core::Tensor &indices,
+        bool invert /* = false */,
+        bool remove_duplicates /* = false */) const {
+    const int64_t length = GetPointPositions().GetLength();
+    core::AssertTensorDtype(indices, core::Int64);
+    core::AssertTensorDevice(indices, GetDevice());
+
+    PointCloud pcd(GetDevice());
+
+    if (!remove_duplicates && !invert) {
+        core::TensorKey key = core::TensorKey::IndexTensor(indices);
+        for (auto &kv : GetPointAttr()) {
+            if (HasPointAttr(kv.first)) {
+                pcd.SetPointAttr(kv.first, kv.second.GetItem(key));
+            }
+        }
+        utility::LogDebug(
+                "Pointcloud down sampled from {} points to {} points.", length,
+                pcd.GetPointPositions().GetLength());
+    } else {
+        // The indices may have duplicate index value and will result in
+        // identity point cloud attributes. We convert indices Tensor into mask
+        // Tensor and call SelectByMask to avoid this situation.
+        core::Tensor mask =
+                core::Tensor::Zeros({length}, core::Bool, GetDevice());
+        mask.SetItem(core::TensorKey::IndexTensor(indices),
+                     core::Tensor::Init<bool>(true, GetDevice()));
+
+        pcd = SelectByMask(mask, invert);
+    }
+
     return pcd;
 }
 
@@ -295,7 +339,7 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
 
     const core::Tensor valid =
             num_neighbors.Ge(static_cast<int64_t>(nb_points));
-    const PointCloud pcd = SelectPoints(valid);
+    const PointCloud pcd = SelectByMask(valid);
 
     return std::make_tuple(pcd, valid);
 }
@@ -328,7 +372,7 @@ void PointCloud::EstimateNormals(
     if (radius.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing covariances");
         // Computes and sets `covariances` attribute using Hybrid Search
-        // mehtod.
+        // method.
         if (device_type == core::Device::DeviceType::CPU) {
             kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
                     this->GetPointPositions().Contiguous(),
@@ -714,6 +758,88 @@ open3d::geometry::PointCloud PointCloud::ToLegacy() const {
                         GetPointNormals());
     }
     return pcd_legacy;
+}
+
+core::Tensor PointCloud::ClusterDBSCAN(double eps,
+                                       size_t min_points,
+                                       bool print_progress) const {
+    // Create a legacy point cloud with only points, no attributes to reduce
+    // copying.
+    PointCloud tpcd(GetPointPositions());
+    open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    std::vector<int> labels =
+            lpcd.ClusterDBSCAN(eps, min_points, print_progress);
+    return core::Tensor(std::move(labels));
+}
+
+TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
+    // QHull needs double dtype on the CPU.
+    static_assert(std::is_same<realT, double>::value,
+                  "Qhull realT is not double. Update code!");
+    using int_t = int32_t;
+    const auto int_dtype = core::Int32;
+    core::Tensor coordinates(
+            GetPointPositions().To(core::Float64).To(core::Device("CPU:0")));
+
+    orgQhull::Qhull qhull;
+    std::string options = "Qt";  // triangulated output
+    if (joggle_inputs) {
+        options = "QJ";  // joggle input to avoid precision problems
+    }
+    qhull.runQhull("", 3, coordinates.GetLength(),
+                   coordinates.GetDataPtr<double>(), options.c_str());
+    orgQhull::QhullFacetList facets = qhull.facetList();
+
+    core::Tensor vertices({qhull.vertexCount(), 3}, core::Float64),
+            triangles({qhull.facetCount(), 3}, int_dtype),
+            point_indices({qhull.vertexCount()}, int_dtype);
+    std::unordered_map<int_t, int_t> vertex_map;  // pcd -> conv hull
+    int_t tidx = 0, next_vtx = 0;
+    auto p_vertices = vertices.GetDataPtr<double>();
+    auto p_triangle = triangles.GetDataPtr<int_t>();
+    auto p_point_indices = point_indices.GetDataPtr<int_t>();
+    for (orgQhull::QhullFacetList::iterator it = facets.begin();
+         it != facets.end(); ++it) {
+        if (!(*it).isGood()) continue;
+
+        orgQhull::QhullVertexSet vSet = it->vertices();
+        int_t triangle_subscript = 0;
+        for (orgQhull::QhullVertexSet::iterator vIt = vSet.begin();
+             vIt != vSet.end(); ++vIt, ++triangle_subscript) {
+            orgQhull::QhullPoint p = (*vIt).point();
+            int_t vidx = p.id();
+
+            auto inserted = vertex_map.insert({vidx, next_vtx});
+            if (inserted.second) {
+                p_triangle[triangle_subscript] = next_vtx;  // hull vertex idx
+                double *coords = p.coordinates();
+                std::copy(coords, coords + 3, p_vertices);
+                p_vertices += 3;
+                p_point_indices[next_vtx++] = vidx;
+            } else {
+                p_triangle[triangle_subscript] =
+                        inserted.first->second;  // hull vertex idx
+            }
+        }
+        if ((*it).isTopOrient()) {
+            std::swap(p_triangle[0], p_triangle[1]);
+        }
+        tidx++;
+        p_triangle += 3;
+    }
+    if (tidx < triangles.GetShape(0)) {
+        triangles = triangles.Slice(0, 0, tidx);
+    }
+    if (next_vtx != vertices.GetShape(0)) {
+        utility::LogError(
+                "Qhull output has incorrect number of vertices {} instead of "
+                "reported {}",
+                next_vtx, vertices.GetShape(0));
+    }
+
+    TriangleMesh convex_hull(vertices, triangles);
+    convex_hull.SetVertexAttr("point_indices", point_indices);
+    return convex_hull;
 }
 
 }  // namespace geometry
