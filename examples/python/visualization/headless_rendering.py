@@ -76,15 +76,14 @@ def custom_draw_geometry_with_camera_trajectory(pcd, camera_trajectory_path,
         else:
             custom_draw_geometry_with_camera_trajectory.vis.\
                 register_animation_callback(None)
+            vis.destroy_window()
         return False
-
     vis = custom_draw_geometry_with_camera_trajectory.vis
     vis.create_window()
     vis.add_geometry(pcd)
     vis.get_render_option().load_from_json(render_option_path)
     vis.register_animation_callback(move_forward)
     vis.run()
-    vis.destroy_window()
 
 
 if __name__ == "__main__":
@@ -94,10 +93,10 @@ if __name__ == "__main__":
         exit(1)
 
     sample_data = o3d.data.DemoCustomVisualization()
-    pcd = o3d.io.read_point_cloud(sample_data.path,
-                                  sample_data.camera_trajectory_path,
-                                  sample_data.render_option_path)
+    pcd = o3d.io.read_point_cloud(sample_data.point_cloud_path)
 
     print("Customized visualization playing a camera trajectory. "
           "Press ctrl+z to terminate.")
-    custom_draw_geometry_with_camera_trajectory(pcd)
+    custom_draw_geometry_with_camera_trajectory(pcd,
+                                  sample_data.camera_trajectory_path,
+                                  sample_data.render_option_path)
