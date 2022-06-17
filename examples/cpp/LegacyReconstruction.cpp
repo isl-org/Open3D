@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
     config["device"] =
             utility::GetProgramOptionAsString(argc, argv, "--device", "CPU:0");
 
-    // Print configuation in console.
+    // Print configuration in console.
     utility::LogInfo("====================================");
     utility::LogInfo("Configuration");
     utility::LogInfo("====================================");

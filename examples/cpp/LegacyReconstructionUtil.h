@@ -256,7 +256,7 @@ void InitConfig(Json::Value& config) {
     SetDefaultValue(config, "template_refined_posegraph_optimized",
                     "scene/refined_registration_optimized.json");
     SetDefaultValue(config, "template_global_mesh", "scene/integrated.ply");
-    SetDefaultValue(config, "template_global_traj", "scene/trajectory.json");
+    SetDefaultValue(config, "template_global_traj", "scene/trajectory.log");
 
     if (utility::filesystem::GetFileExtensionInLowerCase(
                 config["path_dataset"].asString()) == "bag") {
@@ -473,7 +473,7 @@ public:
                          config_["template_global_posegraph_optimized"]
                                  .asString()),
                 scene_pose_graph);
-                
+
         // Save global scene camera trajectory.
         SaveSceneTrajectory(JoinPath(
                 config_["path_dataset"].asString(),
@@ -497,7 +497,7 @@ public:
      */
     void IntegrateScene() {
         utility::LogInfo(
-                "integrate the whole RGBD sequence using estimated camera "
+                "Integrate the whole RGBD sequence using estimated camera "
                 "pose.");
 
         camera::PinholeCameraTrajectory camera_trajectory;
@@ -514,7 +514,81 @@ public:
     /**
      * @brief Run SLAC optimization or fragments.
      */
-    void SLAC() {}
+    void SLAC() {
+        utility::LogInfo("Running SLAC optimization.");
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+        const auto ply_files =
+                ReadPlyFiles(JoinPath(config_["path_dataset"].asString(),
+                                      config_["folder_fragment"].asString()));
+        if (ply_files.size() == 0) {
+            utility::LogError(
+                    "No fragments found in {}, please make sure the "
+                    "reconstruction_system has finished running on the "
+                    "dataset ",
+                    JoinPath(config_["path_dataset"].asString(),
+                             config_["folder_fragment"].asString()));
+        }
+
+        pipelines::registration::PoseGraph scene_pose_graph;
+        io::WritePoseGraph(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_refined_posegraph_optimized"]
+                                 .asString()),
+                scene_pose_graph);
+
+        // SLAC optimizer parameters.
+        t::pipelines::slac::SLACOptimizerParams params;
+        params.max_iterations_ = config_["max_iterations"].asInt();
+        params.voxel_size_ = config_["voxel_size"].asFloat();
+        params.distance_threshold_ = config_["distance_threshold"].asFloat();
+        params.fitness_threshold_ = config_["fitness_threshold"].asFloat();
+        params.regularizer_weight_ = config_["regularizer_weight"].asFloat();
+        params.device_ = core::Device(config_["device"].asString());
+        params.slac_folder_ = JoinPath(config_["path_dataset"].asString(),
+                                       config_["folder_slac"].asString());
+
+        t::pipelines::slac::SLACDebugOption debug_option(false, 0);
+        pipelines::registration::PoseGraph update;
+        if (config_["method"].asString() == "rigid") {
+            update = t::pipelines::slac::RunRigidOptimizerForFragments(
+                    ply_files, scene_pose_graph, params, debug_option);
+        } else if (config_["method"].asString() == "slac") {
+            t::pipelines::slac::ControlGrid control_grid;
+            std::tie(update, control_grid) =
+                    t::pipelines::slac::RunSLACOptimizerForFragments(
+                            ply_files, scene_pose_graph, params, debug_option);
+            const auto hashmap = control_grid.GetHashMap();
+            const auto active_buf_indices =
+                    hashmap->GetActiveIndices().To(core::Int64);
+
+            const auto key_tensor =
+                    hashmap->GetKeyTensor().IndexGet({active_buf_indices});
+            key_tensor.Save(
+                    JoinPath(params.GetSubfolderName(), "ctr_grid_keys.npy"));
+
+            const auto value_tensor =
+                    hashmap->GetValueTensor().IndexGet({active_buf_indices});
+            value_tensor.Save(
+                    JoinPath(params.GetSubfolderName(), "ctr_grid_values.npy"));
+        } else {
+            utility::LogError(
+                    "Requested optimization method {}, is not implemented. "
+                    "Implemented methods includes slac and rigid.",
+                    config_["method"].asString());
+        }
+
+        // Write updated pose graph.
+        io::WritePoseGraph(JoinPath(config_["path_dataset"].asString(),
+                                    config_["template_optimized_posegraph_slac"]
+                                            .asString()),
+                           update);
+        
+        // Write trajectory for slac-integrate stage.
+        SaveSceneTrajectory(JoinPath(
+                config_["path_dataset"].asString(),
+                config_["template_optimized_posegraph_slac"].asString()));
+    }
 
     /**
      * @brief integrate scene using SLAC results.
@@ -572,7 +646,7 @@ private:
             }
         }
 
-        io::WriteIJsonConvertibleToJSON(
+        io::WritePinholeCameraTrajectory(
                 JoinPath(config_["path_dataset"].asString(),
                          config_["template_global_traj"].asString()),
                 camera_trajectory);
