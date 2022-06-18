@@ -353,7 +353,7 @@ static const Eigen::Matrix4d flip_transformation = Eigen::Matrix4d({
 
 void DrawRegistrationResult(const geometry::PointCloud& src,
                             const geometry::PointCloud& dst,
-                            const Eigen::Matrix4f& transformation,
+                            const Eigen::Matrix4d& transformation,
                             bool keep_color = false) {
     auto transformed_src = std::make_shared<geometry::PointCloud>(src);
     auto transformed_dst = std::make_shared<geometry::PointCloud>(dst);
@@ -386,19 +386,6 @@ public:
     bool success_;
     Eigen::Matrix4d transformation_;
     Eigen::Matrix6d information_;
-};
-
-class OdometryTrajectory {
-public:
-    OdometryTrajectory() {}
-    ~OdometryTrajectory() {}
-
-public:
-    bool WriteToJsonFile(const std::string& file_name);
-    bool ReadFromJsonFile(const std::string& file_name);
-
-public:
-    std::vector<Eigen::Matrix4d> odomtry_list_;
 };
 
 class ReconstructionPipeline {
@@ -475,9 +462,12 @@ public:
                 scene_pose_graph);
 
         // Save global scene camera trajectory.
-        SaveSceneTrajectory(JoinPath(
-                config_["path_dataset"].asString(),
-                config_["template_global_posegraph_optimized"].asString()));
+        SaveSceneTrajectory(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_global_posegraph_optimized"]
+                                 .asString()),
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_global_traj"].asString()));
     }
 
     /**
@@ -487,9 +477,12 @@ public:
     void RefineRegistration() {
         utility::LogInfo("Refining rough registration of fragments.");
         RefineFragments();
-        SaveSceneTrajectory(JoinPath(
-                config_["path_dataset"].asString(),
-                config_["template_refined_posegraph_optimized"].asString()));
+        SaveSceneTrajectory(
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_refined_posegraph_optimized"]
+                                 .asString()),
+                JoinPath(config_["path_dataset"].asString(),
+                         config_["template_global_traj"].asString()));
     }
 
     /**
@@ -579,21 +572,135 @@ public:
         }
 
         // Write updated pose graph.
-        io::WritePoseGraph(JoinPath(config_["path_dataset"].asString(),
+        io::WritePoseGraph(JoinPath(params.GetSubfolderName(),
                                     config_["template_optimized_posegraph_slac"]
                                             .asString()),
                            update);
-        
+
         // Write trajectory for slac-integrate stage.
-        SaveSceneTrajectory(JoinPath(
-                config_["path_dataset"].asString(),
-                config_["template_optimized_posegraph_slac"].asString()));
+        SaveSceneTrajectory(
+                JoinPath(params.GetSubfolderName(),
+                         config_["template_optimized_posegraph_slac"]
+                                 .asString()),
+                params.GetSubfolderName() + "/optimized_trajectory_" +
+                        config_["method"].asString() + ".log");
     }
 
     /**
      * @brief integrate scene using SLAC results.
      */
-    void IntegrateSceneSLAC() {}
+    void IntegrateSceneSLAC() {
+        utility::LogInfo("Running SLAC integration.");
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+        // Dataset path and slac subfolder path.
+        // Slac default subfolder for 0.050 voxel size: `dataset/slac/0.050/`.
+        const auto path_dataset = config_["path_dataset"].asString();
+        const auto path_slac =
+                JoinPath(path_dataset, config_["subfolder_slac"].asString());
+        const auto path_fragment =
+                JoinPath(path_dataset, config_["folder_fragment"].asString());
+
+        std::vector<std::string> color_files, depth_files;
+        std::tie(color_files, depth_files) = ReadRGBDFiles(path_dataset);
+        if (color_files.size() != depth_files.size()) {
+            utility::LogError(
+                    "Number of color {} and depth {} files do not match.",
+                    color_files.size(), depth_files.size());
+        }
+
+        pipelines::registration::PoseGraph scene_pose_graph;
+        io::ReadPoseGraph(
+                JoinPath(path_slac, config_["template_optimized_posegraph_slac"]
+                                            .asString()),
+                scene_pose_graph);
+
+        const core::Device device(config_["device"].asString());
+        const Eigen::Matrix3d& intrinsic =
+                GetCameraIntrinsic().intrinsic_matrix_;
+
+        const core::Tensor intrinsic_t = core::Tensor::Init<double>(
+                {{intrinsic(0, 0), 0, intrinsic(0, 2)},
+                 {0, intrinsic(1, 1), intrinsic(1, 2)},
+                 {0, 0, 1}},
+                device);
+
+        t::geometry::VoxelBlockGrid voxel_grid(
+                {"tsdf", "weight", "color"},
+                {core::Float32, core::Float32, core::Float32}, {{1}, {1}, {3}},
+                config_["tsdf_cubic_size"].asDouble() / 512.0, 16,
+                (int64_t)config_["block_count"].asInt(), device);
+
+        // Load control grid.
+        const auto ctr_grid_keys =
+                core::Tensor::Load(JoinPath(path_slac, "ctr_grid_keys.npy"));
+        const auto ctr_grid_values =
+                core::Tensor::Load(JoinPath(path_slac, "ctr_grid_values.npy"));
+
+        t::pipelines::slac::ControlGrid ctr_grid(
+                3.0 / 8, ctr_grid_keys.To(device), ctr_grid_values.To(device),
+                device);
+
+        int k = 0;
+        const float depth_scale = config_["depth_scale"].asFloat();
+        const float depth_max = config_["depth_max"].asFloat();
+
+        for (size_t i = 0; i < scene_pose_graph.nodes_.size(); ++i) {
+            pipelines::registration::PoseGraph fragment_pose_graph;
+            io::ReadPoseGraph(JoinPath(path_fragment,
+                                       "fragment_optimized_" +
+                                               PadZeroToNumber(i, 3) + ".json"),
+                              fragment_pose_graph);
+            for (size_t j = 0; j < fragment_pose_graph.nodes_.size(); ++j) {
+                const Eigen::Matrix4d& pose_local =
+                        fragment_pose_graph.nodes_[j].pose_;
+
+                core::Tensor extrinsic_local_t(pose_local.data(), {4, 4},
+                                               core::Float32, device);
+                extrinsic_local_t = extrinsic_local_t.T().Inverse();
+
+                const Eigen::Matrix4d pose =
+                        scene_pose_graph.nodes_[i].pose_ *
+                        fragment_pose_graph.nodes_[j].pose_;
+                core::Tensor extrinsic_t(pose.data(), {4, 4}, core::Float32,
+                                         device);
+                extrinsic_t = extrinsic_t.T().Inverse();
+
+                t::geometry::Image depth, color;
+                t::io::ReadImage(depth_files[k], depth);
+                t::io::ReadImage(color_files[k], color);
+                t::geometry::RGBDImage rgbd(depth, color);
+
+                utility::LogInfo("Deforming and integrating Frame {}",
+                                 PadZeroToNumber(k, 3));
+                const auto rgbd_projected = ctr_grid.Deform(
+                        rgbd, intrinsic_t, extrinsic_t, depth_scale, depth_max);
+
+                const auto frustum_block_coords =
+                        voxel_grid.GetUniqueBlockCoordinates(
+                                rgbd_projected.depth_, intrinsic_t, extrinsic_t,
+                                depth_scale, depth_max);
+                voxel_grid.Integrate(frustum_block_coords,
+                                     rgbd_projected.depth_,
+                                     rgbd_projected.color_, intrinsic_t,
+                                     extrinsic_t, depth_scale, depth_max);
+                k++;
+            }
+        }
+
+        if (config_["save_output_as"].asString() == "pointcloud") {
+            const auto pcd =
+                    voxel_grid.ExtractPointCloud().To(core::Device("CPU:0"));
+            t::io::WritePointCloud(
+                    JoinPath(path_slac, "output_slac_pointcloud.ply"), pcd);
+        } else {
+            const auto mesh =
+                    voxel_grid.ExtractTriangleMesh().To(core::Device("CPU:0"));
+            const auto mesh_legacy = mesh.ToLegacy();
+            io::WriteTriangleMesh(JoinPath(path_slac, "output_slac_mesh.ply"),
+                                  mesh_legacy);
+        }
+    }
 
 private:
     camera::PinholeCameraIntrinsic GetCameraIntrinsic() {
@@ -620,7 +727,8 @@ private:
                 config_["depth_max"].asDouble(), convert_rgb_to_intensity);
     }
 
-    void SaveSceneTrajectory(const std::string& scene_pose_graph_file) {
+    void SaveSceneTrajectory(const std::string& scene_pose_graph_file,
+                             const std::string& trajectory_file) {
         const camera::PinholeCameraIntrinsic intrinsic = GetCameraIntrinsic();
         pipelines::registration::PoseGraph scene_pose_graph;
         io::ReadPoseGraph(scene_pose_graph_file, scene_pose_graph);
@@ -646,10 +754,7 @@ private:
             }
         }
 
-        io::WritePinholeCameraTrajectory(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_global_traj"].asString()),
-                camera_trajectory);
+        io::WritePinholeCameraTrajectory(trajectory_file, camera_trajectory);
     }
 
     void ProcessSingleFragment(int fragment_id,
@@ -951,8 +1056,6 @@ private:
         matched_result.information_ = std::get<1>(result);
     }
 
-    void SLACOptimization();
-
     void IntegrateFragmentRGBD(
             int fragment_id,
             const std::vector<std::string>& color_files,
@@ -1113,10 +1216,6 @@ private:
 
         if (config_["debug_mode"].asBool()) {
             DrawRegistrationResult(source_pcd, target_pcd, pose);
-            utility::LogInfo("Initial transformation:");
-            utility::LogInfo("{}", pose);
-            utility::LogInfo("Information matrix:");
-            utility::LogInfo("{}", info);
         }
     }
 
