@@ -38,8 +38,7 @@ Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
     AssertTensorShape(stop, {});
     AssertTensorShape(step, {});
 
-    Device device = start.GetDevice();
-    Device::DeviceType device_type = device.GetType();
+    const Device device = start.GetDevice();
     AssertTensorDevice(stop, device);
     AssertTensorDevice(step, device);
 
@@ -81,9 +80,9 @@ Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
     // Output.
     Tensor dst = Tensor({num_elements}, dtype, device);
 
-    if (device_type == Device::DeviceType::CPU) {
+    if (device.IsCPU()) {
         ArangeCPU(start, stop, step, dst);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    } else if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         ArangeCUDA(start, stop, step, dst);
 #else

@@ -90,7 +90,7 @@ void ParallelForCUDA_(const Device& device, int64_t n, const func_t& func) {
 /// Run a function in parallel on CPU.
 template <typename func_t>
 void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
-    if (device.GetType() != Device::DeviceType::CPU) {
+    if (!device.IsCPU()) {
         utility::LogError("ParallelFor for CPU cannot run on device {}.",
                           device.ToString());
     }

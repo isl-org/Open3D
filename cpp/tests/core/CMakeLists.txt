@@ -1,5 +1,6 @@
 target_sources(tests PRIVATE
     Blob.cpp
+    CoreTest.cpp
     CUDAUtils.cpp
     Device.cpp
     EigenConverter.cpp

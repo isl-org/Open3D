@@ -52,9 +52,9 @@ void IndexGet(const Tensor& src,
         return;
     }
 
-    if (src.GetDevice().GetType() == Device::DeviceType::CPU) {
+    if (src.IsCPU()) {
         IndexGetCPU(src, dst, index_tensors, indexed_shape, indexed_strides);
-    } else if (src.GetDevice().GetType() == Device::DeviceType::CUDA) {
+    } else if (src.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         IndexGetCUDA(src, dst, index_tensors, indexed_shape, indexed_strides);
 #endif
@@ -72,10 +72,10 @@ void IndexSet(const Tensor& src,
     // however, src may be on a different device.
     Tensor src_same_device = src.To(dst.GetDevice());
 
-    if (dst.GetDevice().GetType() == Device::DeviceType::CPU) {
+    if (dst.IsCPU()) {
         IndexSetCPU(src_same_device, dst, index_tensors, indexed_shape,
                     indexed_strides);
-    } else if (dst.GetDevice().GetType() == Device::DeviceType::CUDA) {
+    } else if (dst.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         IndexSetCUDA(src_same_device, dst, index_tensors, indexed_shape,
                      indexed_strides);
