@@ -28,6 +28,7 @@ import os, sys
 import open3d as o3d
 import numpy as np
 import time
+from pathlib import Path
 
 from config import ConfigParser
 from split_fragments import split_fragments, load_fragments
@@ -35,7 +36,7 @@ from rgbd_odometry import rgbd_odometry, rgbd_loop_closure
 from pose_graph_optim import PoseGraphWrapper
 from integrate import integrate
 
-from common import load_intrinsic
+from common import load_intrinsic, get_default_dataset
 
 if __name__ == '__main__':
     parser = ConfigParser()
@@ -50,11 +51,18 @@ if __name__ == '__main__':
                'Default dataset may be selected from the following options: '
                '[lounge, jack_jack]',
                default='lounge')
-    parser.add('--path_npz', type=str, default='test.npz')
     parser.add('--split_fragments', action='store_true')
     parser.add('--fragment_odometry', action='store_true')
     parser.add('--fragment_integration', action='store_true')
     config = parser.get_config()
+
+    if config.path_dataset == '':
+        config = get_default_dataset(config)
+
+    if config.path_output == '':
+        config.path_output = Path(config.path_dataset) / "t_reconstruction" / "output"
+    else:
+        config.path_output = Path(config.path_output)
 
     if config.split_fragments:
         split_fragments(config)
@@ -105,7 +113,7 @@ if __name__ == '__main__':
                               config.edge_prune_threshold,
                               config.preference_loop_closure, 0)
             pose_graph.save(
-                os.path.join(config.path_dataset, 'fragments',
+                os.path.join(config.path_output, 'fragments',
                              'fragment_posegraph_{:03d}.json'.format(frag_id)))
         end = time.time()
         print(
@@ -120,7 +128,7 @@ if __name__ == '__main__':
         for frag_id, (depth_list,
                       color_list) in enumerate(zip(depth_lists, color_lists)):
             pose_graph = PoseGraphWrapper.load(
-                os.path.join(config.path_dataset, 'fragments',
+                os.path.join(config.path_output, 'fragments',
                              'fragment_posegraph_{:03d}.json'.format(frag_id)))
             extrinsics = pose_graph.export_extrinsics()
 
@@ -136,7 +144,7 @@ if __name__ == '__main__':
 
             # Float color does not load correctly in the t.io mode
             o3d.io.write_point_cloud(
-                os.path.join(config.path_dataset, 'fragments',
+                os.path.join(config.path_output, 'fragments',
                              'fragment_pcd_{:03d}.ply'.format(frag_id)),
                 pcd.to_legacy())
 

@@ -8,10 +8,18 @@ debug_mode: false
 
 # Path to input data.
 path_dataset: ''
+ # Relative to 'path_dataset'.
 depth_folder: depth
 color_folder: color
 path_intrinsic: ''
 path_color_intrinsic: ''
+
+# Path to output directory. Default: path_dataset/t_reconstruction/output/`
+path_output: ''
+# Relative to path_output.
+path_voxel_block_grid: 'voxel_block_grid.npz'
+path_mesh: 'reconstructed_mesh.ply'
+path_trajectory: 'camera_trajectory.log'
 
 # RGB-D input related parameters.
 depth_min: 0.1

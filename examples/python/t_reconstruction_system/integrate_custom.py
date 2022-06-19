@@ -35,23 +35,24 @@ import open3d as o3d
 import open3d.core as o3c
 import time
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 from config import ConfigParser
-from common import get_default_dataset, load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics, extract_rgbd_frames
+from common import get_default_dataset, load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics, extract_rgbd_frames, resolve_output_path
 
 from tqdm import tqdm
 
 
 def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
               config):
-    if os.path.exists(config.path_npz):
+    if os.path.exists(config.path_output / config.path_voxel_block_grid):
         print('Voxel block grid npz file {} found, trying to load...'.format(
-            config.path_npz))
-        vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_npz)
+            config.path_output / config.path_voxel_block_grid))
+        vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_output / config.path_voxel_block_grid)
         print('Loading finished.')
     else:
         print('Voxel block grid npz file {} not found, trying to integrate...'.
-              format(config.path_npz))
+              format(config.path_output / config.path_voxel_block_grid))
 
         n_files = len(depth_file_names)
         device = o3d.core.Device(config.device)
@@ -154,8 +155,8 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             o3d.core.cuda.synchronize()
             end = time.time()
 
-        print('Saving to {}...'.format(config.path_npz))
-        vbg.save(config.path_npz)
+        print('Saving to {}...'.format(config.path_output / config.path_voxel_block_grid))
+        vbg.save(config.path_output / config.path_voxel_block_grid)
         print('Saving finished')
 
     return vbg
@@ -176,15 +177,15 @@ if __name__ == '__main__':
                '[lounge, jack_jack]',
                default='lounge')
     parser.add('--integrate_color', action='store_true')
-    parser.add('--path_trajectory',
-               help='path to the trajectory .log or .json file.')
-    parser.add('--path_npz',
-               help='path to the npz file that stores voxel block grid.',
-               default='vbg.npz')
     config = parser.get_config()
 
     if config.path_dataset == '':
         config = get_default_dataset(config)
+
+    if config.path_output == '':
+        config.path_output = Path(config.path_dataset) / "t_reconstruction" / "output"
+    else:
+        config.path_output = Path(config.path_output)
 
     # Extract RGB-D frames and intrinsic from bag file.
     if config.path_dataset.endswith(".bag"):
@@ -201,7 +202,7 @@ if __name__ == '__main__':
         color_file_names = None
 
     intrinsic = load_intrinsic(config)
-    extrinsics = load_extrinsics(config.path_trajectory, config)
+    extrinsics = load_extrinsics(config.path_output / config.path_trajectory, config)
 
     vbg = integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
                     config)

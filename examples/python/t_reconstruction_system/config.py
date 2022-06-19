@@ -26,7 +26,7 @@
 
 import os
 import configargparse
-
+from pathlib import Path
 
 class ConfigParser(configargparse.ArgParser):
 
@@ -81,6 +81,21 @@ class ConfigParser(configargparse.ArgParser):
             'If the intrinsic matrix for color image is different,'
             'specify it by --path_color_intrinsic.'
             'By default PrimeSense intrinsics is used.')
+
+        # Path to output data.
+        output_parser = self.add_argument_group('output')
+        output_parser.add(
+            '--path_output', type=str,
+            help='Path to the output root folder, to store final and intermediate results. By default it\'s \"path_dataset/t_reconstruction/output/\"')
+        output_parser.add(
+            '--path_voxel_block_grid', type=str,
+            help='Path to the output voxel block grid npz, relative to path_output.')
+        output_parser.add(
+            '--path_mesh', type=str,
+            help='Path to the output reconstruction mesh, relative to path_output.')
+        output_parser.add(
+            '--path_trajectory', type=str,
+            help='Path to the output trajectory, relative to path_output.')
 
         # RGB-D input related parameters.
         input_parser.add(
