@@ -28,6 +28,7 @@ import os
 import configargparse
 from pathlib import Path
 
+
 class ConfigParser(configargparse.ArgParser):
 
     def __init__(self):

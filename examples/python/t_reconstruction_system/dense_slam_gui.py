@@ -43,6 +43,7 @@ import time
 from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_dataset, extract_rgbd_frames
 from pathlib import Path
 
+
 def set_enabled(widget, enable):
     widget.enabled = enable
     for child in widget.get_children():
@@ -275,7 +276,8 @@ class ReconstructionWindow:
         self.is_done = True
 
         if self.is_started:
-            output_npz_path = Path(config.path_output) / Path(config.path_voxel_block_grid)
+            output_npz_path = Path(config.path_output) / Path(
+                config.path_voxel_block_grid)
             print('Saving model voxel grid to {}...'.format(output_npz_path))
             self.model.voxel_grid.save(output_npz_path)
             print('Finished.')
@@ -476,7 +478,8 @@ if __name__ == '__main__':
         config = get_default_dataset(config)
 
     if config.path_output == '':
-        config.path_output = Path(config.path_dataset) / "t_reconstruction" / "output"
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
     else:
         config.path_output = Path(config.path_output)
 

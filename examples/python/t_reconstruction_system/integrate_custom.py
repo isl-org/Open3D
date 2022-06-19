@@ -48,7 +48,8 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
     if os.path.exists(config.path_output / config.path_voxel_block_grid):
         print('Voxel block grid npz file {} found, trying to load...'.format(
             config.path_output / config.path_voxel_block_grid))
-        vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_output / config.path_voxel_block_grid)
+        vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_output /
+                                                 config.path_voxel_block_grid)
         print('Loading finished.')
     else:
         print('Voxel block grid npz file {} not found, trying to integrate...'.
@@ -155,7 +156,8 @@ def integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
             o3d.core.cuda.synchronize()
             end = time.time()
 
-        print('Saving to {}...'.format(config.path_output / config.path_voxel_block_grid))
+        print('Saving to {}...'.format(config.path_output /
+                                       config.path_voxel_block_grid))
         vbg.save(config.path_output / config.path_voxel_block_grid)
         print('Saving finished')
 
@@ -183,7 +185,8 @@ if __name__ == '__main__':
         config = get_default_dataset(config)
 
     if config.path_output == '':
-        config.path_output = Path(config.path_dataset) / "t_reconstruction" / "output"
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
     else:
         config.path_output = Path(config.path_output)
 
@@ -202,7 +205,8 @@ if __name__ == '__main__':
         color_file_names = None
 
     intrinsic = load_intrinsic(config)
-    extrinsics = load_extrinsics(config.path_output / config.path_trajectory, config)
+    extrinsics = load_extrinsics(config.path_output / config.path_trajectory,
+                                 config)
 
     vbg = integrate(depth_file_names, color_file_names, intrinsic, extrinsics,
                     config)

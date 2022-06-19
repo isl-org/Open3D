@@ -60,7 +60,8 @@ if __name__ == '__main__':
         config = get_default_dataset(config)
 
     if config.path_output == '':
-        config.path_output = Path(config.path_dataset) / "t_reconstruction" / "output"
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
     else:
         config.path_output = Path(config.path_output)
 

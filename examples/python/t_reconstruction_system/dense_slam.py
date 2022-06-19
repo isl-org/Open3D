@@ -105,7 +105,8 @@ if __name__ == '__main__':
         config = get_default_dataset(config)
 
     if config.path_output == '':
-        config.path_output = Path(config.path_dataset) / "t_reconstruction" / "output"
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
     else:
         config.path_output = Path(config.path_output)
 
@@ -123,12 +124,15 @@ if __name__ == '__main__':
     if not os.path.exists(config.path_output / config.path_voxel_block_grid):
         volume, poses = slam(depth_file_names, color_file_names, intrinsic,
                              config)
-        print('Saving to {}...'.format(config.path_output / config.path_voxel_block_grid))
+        print('Saving to {}...'.format(config.path_output /
+                                       config.path_voxel_block_grid))
         volume.save(config.path_output / config.path_voxel_block_grid)
         save_poses(config.path_output / config.path_trajectory, poses)
         print('Saving finished')
     else:
-        volume = o3d.t.geometry.VoxelBlockGrid.load(path_voxel_block_grid)
+        volume = o3d.t.geometry.VoxelBlockGrid.load(
+            config.path_output / config.path_voxel_block_grid)
 
-    mesh = extract_trianglemesh(volume, config, config.path_output / config.path_mesh)
+    mesh = extract_trianglemesh(volume, config,
+                                config.path_output / config.path_mesh)
     o3d.visualization.draw([mesh])

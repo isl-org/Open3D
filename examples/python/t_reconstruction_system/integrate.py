@@ -40,6 +40,7 @@ from config import ConfigParser
 from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics, get_default_dataset
 from pathlib import Path
 
+
 def integrate(depth_file_names, color_file_names, depth_intrinsic,
               color_intrinsic, extrinsics, integrate_color, config):
 
@@ -104,10 +105,11 @@ if __name__ == '__main__':
         config = get_default_dataset(config)
 
     if config.path_output == '':
-        config.path_output = Path(config.path_dataset) / "t_reconstruction" / "output"
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
     else:
         config.path_output = Path(config.path_output)
-    
+
     if config.integrate_color:
         depth_file_names, color_file_names = load_rgbd_file_names(config)
     else:
@@ -117,7 +119,8 @@ if __name__ == '__main__':
     depth_intrinsic = load_intrinsic(config)
     color_intrinsic = load_intrinsic(config, 'color')
 
-    extrinsics = load_extrinsics(config.path_output / config.path_trajectory, config)
+    extrinsics = load_extrinsics(config.path_output / config.path_trajectory,
+                                 config)
     vbg = integrate(depth_file_names, color_file_names, depth_intrinsic,
                     color_intrinsic, extrinsics, config)
 

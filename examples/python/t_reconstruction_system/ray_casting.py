@@ -64,7 +64,8 @@ if __name__ == '__main__':
         config = get_default_dataset(config)
 
     if config.path_output == '':
-        config.path_output = Path(config.path_dataset) / "t_reconstruction" / "output"
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
     else:
         config.path_output = Path(config.path_output)
 
@@ -76,10 +77,12 @@ if __name__ == '__main__':
         config.path_dataset, config.path_intrinsic, config.depth_scale = extract_rgbd_frames(
             config.path_dataset)
 
-    vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_output / config.path_voxel_block_grid))
+    vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_output /
+                                             config.path_voxel_block_grid)
     depth_file_names = load_depth_file_names(config)
     intrinsic = load_intrinsic(config)
-    extrinsics = load_extrinsics(config.path_output / config.path_trajectory, config)
+    extrinsics = load_extrinsics(config.path_output / config.path_trajectory,
+                                 config)
     device = o3d.core.Device(config.device)
 
     for i, extrinsic in tqdm(enumerate(extrinsics)):
