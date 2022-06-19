@@ -4,8 +4,7 @@ name: Default reconstruction system config
 device: CUDA:0
 engine: tensor
 multiprocessing: false
-debug_mode: true
-path_output: 
+debug_mode: false
 
 # Path to input data.
 path_dataset: ''
@@ -22,26 +21,25 @@ depth_scale: 1000.0
 # RGB-D registation related parameters.
 fragment_size: 100
 odometry_method: hybrid
-odometry_scales: []
+# TODO: Add 'odometry_scales' option
 odometry_distance_thr: 0.07
-
 odometry_loop_interval: 10
 odometry_loop_weight: 0.1
 
 # Point-cloud fragments registration related parameters.
 icp_method: colored
+# TODO: Add 'icp_scales' option for multi-sclae icp.
 icp_voxelsize: 0.05
 icp_distance_thr: 0.07
 global_registration_method: ransac
 global_distance_thr: 0.07
 edge_prune_threshold: 0.25
 preference_loop_closure: 0.1
-registration_loop_weight: 0.1
 
 # TSDF integration related parameters.
 integration_mode: color
 voxel_size: 0.0058
 trunc_voxel_multiplier: 8.0
-block_count: 30000
 est_point_count: 4000000
+block_count: 30000
 surface_weight_thr: 3.0

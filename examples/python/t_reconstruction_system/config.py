@@ -102,14 +102,14 @@ class ConfigParser(configargparse.ArgParser):
             help='Method used in pose estimation between RGBD images.'
             'Frame2model only available for the tensor engine.')
         odometry_parser.add(
+            '--odometry_distance_thr', type=float,
+            help='Default distance threshold to filter outliers in odometry correspondences.')
+        odometry_parser.add(
             '--odometry_loop_interval', type=int,
             help='Intervals to check loop closures between RGBD images.')
         odometry_parser.add(
             '--odometry_loop_weight', type=float,
             help='Weight of loop closure edges when optimizing pose graphs for odometry.')
-        odometry_parser.add(
-            '--odometry_distance_thr', type=float,
-            help='Default distance threshold to filter outliers in odometry correspondences.')
 
         # Point-cloud fragments registration related parameters.
         registration_parser = self.add_argument_group('registration')
@@ -129,7 +129,13 @@ class ConfigParser(configargparse.ArgParser):
             choices=['fgr', 'ransac'],
             help='Method used in global registration of two fragment point clouds without an initial pose estimate.')
         registration_parser.add(
-            '--registration_loop_weight', type=float,
+            '--global_distance_thr', type=float,
+            help='Maximum correspondence points-pair distance.')
+        registration_parser.add(
+            '--edge_prune_threshold', type=float,
+            help='Edges with weight below threshold is pruned.')
+        registration_parser.add(
+            '--preference_loop_closure', type=float,
             help='Weight of loop closure edges when optimizing pose graphs for registration.')
 
         # TSDF integration related parameters.
