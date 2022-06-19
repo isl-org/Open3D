@@ -348,7 +348,7 @@ public:
     LineSet &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     /// \brief Returns the device attribute of this LineSet.
-    core::Device GetDevice() const { return device_; }
+    core::Device GetDevice() const override { return device_; }
 
     /// Create a LineSet from a legacy Open3D LineSet.
     /// \param lineset_legacy Legacy Open3D LineSet.

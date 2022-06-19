@@ -117,7 +117,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
         return true;                        \
     }
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         CALL_BUILD(float, BuildSpatialHashTableCUDA)
         CALL_BUILD(double, BuildSpatialHashTableCUDA)
@@ -183,7 +183,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
             hash_table_cell_splits_, Metric::L2, false, true, sort,     \
             neighbors_index, neighbors_row_splits, neighbors_distance
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
             FixedRadiusSearchCUDA<scalar_t, int_t>(RADIUS_PARAMETERS);
@@ -252,7 +252,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
             hash_table_cell_splits_, Metric::L2, neighbors_index,        \
             neighbors_count, neighbors_distance
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
             HybridSearchCUDA<scalar_t, int_t>(HYBRID_PARAMETERS);

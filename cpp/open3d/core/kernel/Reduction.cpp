@@ -88,10 +88,9 @@ void Reduction(const Tensor& src,
                           dst.GetDevice().ToString());
     }
 
-    Device::DeviceType device_type = src.GetDevice().GetType();
-    if (device_type == Device::DeviceType::CPU) {
+    if (src.IsCPU()) {
         ReductionCPU(src, dst, dims, keepdim, op_code);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    } else if (src.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         ReductionCUDA(src, dst, dims, keepdim, op_code);
 #else

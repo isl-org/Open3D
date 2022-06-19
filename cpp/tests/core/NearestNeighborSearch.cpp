@@ -199,7 +199,7 @@ TEST_P(NNSPermuteDevices, FixedRadiusSearch) {
     core::nns::NearestNeighborSearch nns32(dataset_points, core::Int32);
 
     // If radius <= 0.
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         EXPECT_THROW(nns32.FixedRadiusIndex(-1.0), std::runtime_error);
         EXPECT_THROW(nns32.FixedRadiusIndex(0.0), std::runtime_error);
     } else {
@@ -231,7 +231,7 @@ TEST_P(NNSPermuteDevices, FixedRadiusSearch) {
     core::nns::NearestNeighborSearch nns64(dataset_points, core::Int64);
 
     // If radius <= 0.
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         EXPECT_THROW(nns64.FixedRadiusIndex(-1.0), std::runtime_error);
         EXPECT_THROW(nns64.FixedRadiusIndex(0.0), std::runtime_error);
     } else {
