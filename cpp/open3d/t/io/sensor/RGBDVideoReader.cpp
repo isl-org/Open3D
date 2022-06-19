@@ -32,6 +32,7 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/t/io/sensor/realsense/RSBagReader.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace t {

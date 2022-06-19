@@ -200,6 +200,8 @@ void pybind_visualizer(py::module &m) {
                                     "name ") +
                             vis.GetWindowName();
                  })
+            .def("pick_points", &VisualizerWithVertexSelection::PickPoints,
+                 "Function to pick points")
             .def("get_picked_points",
                  &VisualizerWithVertexSelection::GetPickedPoints,
                  "Function to get picked points")

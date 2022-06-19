@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "open3d/core/Dtype.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "pybind/open3d_pybind.h"
 
@@ -45,6 +46,10 @@ public:
 
     bool IsEmpty() const override {
         PYBIND11_OVERLOAD_PURE(bool, GeometryBase, );
+    }
+
+    core::Device GetDevice() const override {
+        PYBIND11_OVERLOAD_PURE(core::Device, GeometryBase, );
     }
 };
 
