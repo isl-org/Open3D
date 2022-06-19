@@ -427,8 +427,7 @@ private:
 
         // The dataset might be too large for your memory. If that is the case,
         // one may directly read the pointcloud frame inside
-        if (end_index_ - start_index_ > 500 &&
-            device_.GetType() == core::Device::DeviceType::CUDA) {
+        if (end_index_ - start_index_ > 500 && device_.IsCUDA()) {
             utility::LogWarning(
                     "The range of data might exceed memory. "
                     "You might want to avoid pre-fetching the data to your "

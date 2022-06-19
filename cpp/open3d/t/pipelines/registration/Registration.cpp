@@ -143,8 +143,7 @@ static void AssertInputMultiScaleICP(
     core::AssertTensorDtype(target.GetPointPositions(), dtype);
     core::AssertTensorDevice(target.GetPointPositions(), device);
 
-    if (dtype == core::Float64 &&
-        device.GetType() == core::Device::DeviceType::CUDA) {
+    if (dtype == core::Float64 && device.IsCUDA()) {
         utility::LogDebug(
                 "Use Float32 pointcloud for best performance on CUDA device.");
     }

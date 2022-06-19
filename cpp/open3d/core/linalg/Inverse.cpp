@@ -55,7 +55,7 @@ void Inverse(const Tensor &A, Tensor &output) {
                 "Tensor shapes should not contain dimensions with zero.");
     }
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         Tensor ipiv = Tensor::Zeros({n}, core::Int32, device);
         void *ipiv_data = ipiv.GetDataPtr();

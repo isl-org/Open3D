@@ -1,0 +1,51 @@
+# Run this manually when this error occurs:
+# ```
+# ERROR: (gcloud.compute.scp) INVALID_ARGUMENT:
+# Login profile size exceeds 32 KiB. Delete profile values to make additional space.
+# ```
+#
+# Whenever we log in to GCloud via SSH, the public key will be persistently
+# stored unless we delete them. Typically, each CI job (e.g. CUDA, OpenBLAS ARM)
+# will clean up its own log in profile automatically by:
+# ```
+# gcloud compute os-login ssh-keys remove --key-file "${HOME}/.ssh/google_compute_engine.pub"
+# ```
+#
+# Sometimes due to CI error, the GCloud login profile may not be deleted so
+# they will accumulate. When the error of "Login profile size exceeds 32 KiB"
+# happens, run this workflow manually to clean up the login profiles.
+
+name: Clean GCloud Profiles
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - master
+  # pull_request:
+  #   types: [opened, reopened, synchronize]
+
+env:
+  GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
+  GCE_CLI_GHA_VERSION: '302.0.0' # Fixed to avoid dependency on API changes
+
+jobs:
+  clean-gcloud-profiles:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+    steps:
+      - name: GCloud CLI setup
+        uses: google-github-actions/setup-gcloud@v0.2.1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+      - name: Delete GCloud login profiles manually
+        run: |
+          gcloud compute os-login describe-profile
+          for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
+              echo "Removing ssh key"; \
+              gcloud compute os-login ssh-keys remove --key $i || true; \
+          done
+          gcloud compute os-login describe-profile

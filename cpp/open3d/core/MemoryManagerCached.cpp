@@ -88,7 +88,7 @@ struct RealBlock {
     void* ptr_ = nullptr;
     size_t byte_size_ = 0;
 
-    std::shared_ptr<DeviceMemoryManager> device_mm_;
+    std::shared_ptr<MemoryManagerDevice> device_mm_;
     std::set<std::shared_ptr<VirtualBlock>, PointerOrder<VirtualBlock>>
             v_blocks_;
 };
@@ -228,7 +228,7 @@ public:
     /// Acquires ownership of the new real allocated blocks.
     void Acquire(void* ptr,
                  size_t byte_size,
-                 const std::shared_ptr<DeviceMemoryManager>& device_mm) {
+                 const std::shared_ptr<MemoryManagerDevice>& device_mm) {
         std::lock_guard<std::recursive_mutex> lock(mutex_);
 
         auto r_block = std::make_shared<RealBlock>(ptr, byte_size);
@@ -245,7 +245,7 @@ public:
     /// Strategy:
     ///  - Best single fit: argmin_x { x.byte_size_ >= byte_size }.
     ///  - If not found, use next-best fit and repeat.
-    std::vector<std::pair<void*, std::shared_ptr<DeviceMemoryManager>>> Release(
+    std::vector<std::pair<void*, std::shared_ptr<MemoryManagerDevice>>> Release(
             size_t byte_size) {
         std::lock_guard<std::recursive_mutex> lock(mutex_);
 
@@ -259,7 +259,7 @@ public:
                 [this](const auto& r_block) { return IsReleasable(r_block); });
 
         // Determine greedy "minimal" subset
-        std::vector<std::pair<void*, std::shared_ptr<DeviceMemoryManager>>>
+        std::vector<std::pair<void*, std::shared_ptr<MemoryManagerDevice>>>
                 released_pointers;
         size_t released_size = 0;
         while (!releasable_real_blocks.empty() && released_size < byte_size) {
@@ -286,7 +286,7 @@ public:
     }
 
     /// Releases ownership of all unused real allocated blocks.
-    std::vector<std::pair<void*, std::shared_ptr<DeviceMemoryManager>>>
+    std::vector<std::pair<void*, std::shared_ptr<MemoryManagerDevice>>>
     ReleaseAll() {
         return Release(std::numeric_limits<size_t>::max());
     }
@@ -397,7 +397,7 @@ public:
 
     void* Malloc(size_t byte_size,
                  const Device& device,
-                 const std::shared_ptr<DeviceMemoryManager>& device_mm) {
+                 const std::shared_ptr<MemoryManagerDevice>& device_mm) {
         Init(device);
 
         size_t internal_byte_size = MemoryCache::AlignByteSize(byte_size);
@@ -489,17 +489,17 @@ private:
     std::recursive_mutex init_mutex_;
 };
 
-CachedMemoryManager::CachedMemoryManager(
-        const std::shared_ptr<DeviceMemoryManager>& device_mm)
+MemoryManagerCached::MemoryManagerCached(
+        const std::shared_ptr<MemoryManagerDevice>& device_mm)
     : device_mm_(device_mm) {
-    if (std::dynamic_pointer_cast<CachedMemoryManager>(device_mm_) != nullptr) {
+    if (std::dynamic_pointer_cast<MemoryManagerCached>(device_mm_) != nullptr) {
         utility::LogError(
-                "An instance of type CachedMemoryManager as the underlying "
+                "An instance of type MemoryManagerCached as the underlying "
                 "non-cached manager is forbidden.");
     }
 }
 
-void* CachedMemoryManager::Malloc(size_t byte_size, const Device& device) {
+void* MemoryManagerCached::Malloc(size_t byte_size, const Device& device) {
     if (byte_size == 0) {
         return nullptr;
     }
@@ -507,7 +507,7 @@ void* CachedMemoryManager::Malloc(size_t byte_size, const Device& device) {
     return Cacher::GetInstance().Malloc(byte_size, device, device_mm_);
 }
 
-void CachedMemoryManager::Free(void* ptr, const Device& device) {
+void MemoryManagerCached::Free(void* ptr, const Device& device) {
     if (ptr == nullptr) {
         return;
     }
@@ -515,7 +515,7 @@ void CachedMemoryManager::Free(void* ptr, const Device& device) {
     Cacher::GetInstance().Free(ptr, device);
 }
 
-void CachedMemoryManager::Memcpy(void* dst_ptr,
+void MemoryManagerCached::Memcpy(void* dst_ptr,
                                  const Device& dst_device,
                                  const void* src_ptr,
                                  const Device& src_device,
@@ -523,11 +523,11 @@ void CachedMemoryManager::Memcpy(void* dst_ptr,
     device_mm_->Memcpy(dst_ptr, dst_device, src_ptr, src_device, num_bytes);
 }
 
-void CachedMemoryManager::ReleaseCache(const Device& device) {
+void MemoryManagerCached::ReleaseCache(const Device& device) {
     Cacher::GetInstance().Clear(device);
 }
 
-void CachedMemoryManager::ReleaseCache() { Cacher::GetInstance().Clear(); }
+void MemoryManagerCached::ReleaseCache() { Cacher::GetInstance().Clear(); }
 
 }  // namespace core
 }  // namespace open3d

@@ -78,7 +78,7 @@ public:
 
     /// Allocates memory of size \p n.
     T* allocate(std::size_t n) {
-        if (GetDevice().GetType() != Device::DeviceType::CUDA) {
+        if (!GetDevice().IsCUDA()) {
             utility::LogError("Unsupported device.");
         }
 
@@ -89,7 +89,7 @@ public:
 
     /// Deallocates memory from pointer \p p of size \p n .
     void deallocate(T* p, std::size_t n) {
-        if (GetDevice().GetType() != Device::DeviceType::CUDA) {
+        if (!GetDevice().IsCUDA()) {
             utility::LogError("Unsupported device.");
         }
 
