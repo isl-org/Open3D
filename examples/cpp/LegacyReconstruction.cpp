@@ -53,9 +53,6 @@ void PrintHelp() {
     utility::LogInfo("    --slac");
     utility::LogInfo("    --slac_integrate");
     utility::LogInfo("    --debug_mode [turn on debug mode]");
-    utility::LogInfo("    --device [(optional) select processing device for slac and slac_integrate. example: CPU:0, CUDA:0]");
-    utility::LogInfo("Description:");
-    // clang-format on
     utility::LogInfo("");
 }
 
@@ -73,8 +70,11 @@ int main(int argc, char* argv[]) {
     Json::Value config;
     if (utility::ProgramOptionExists(argc, argv, "--config")) {
         try {
-            config = utility::StringToJson(utility::GetProgramOptionAsString(
-                    argc, argv, "--config", ""));
+            const std::string config_path = utility::GetProgramOptionAsString(
+                    argc, argv, "--config", "");
+            utility::LogInfo("Loading config file: {}", config_path);
+            const bool ret = ReadJsonFromFile(config_path, config);
+
         } catch (const std::exception& e) {
             utility::LogWarning("Failed to load config file: {}", e.what());
             return 1;
@@ -83,6 +83,7 @@ int main(int argc, char* argv[]) {
         const bool ret =
                 CheckFolderStructure(config["path_dataset"].asString());
         if (!ret) {
+            utility::LogWarning("Check folder structure failed.");
             return 1;
         }
     } else {
@@ -107,6 +108,7 @@ int main(int argc, char* argv[]) {
          ++it) {
         utility::LogInfo("{}: {}", it.key().asString(), it->asString());
     }
+    utility::LogInfo("====================================");
 
     // Init Reconstruction pipeline.
     ReconstructionPipeline pipeline(config);

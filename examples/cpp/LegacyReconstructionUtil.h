@@ -27,6 +27,7 @@
 #include <json/json.h>
 
 #include <atomic>
+#include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <thread>
@@ -124,6 +125,24 @@ void MakeCleanFolder(const std::string& path) {
         utility::filesystem::DeleteDirectory(path);
     }
     utility::filesystem::MakeDirectory(path);
+}
+
+bool ReadJsonFromFile(const std::string& path, Json::Value& json) {
+    std::ifstream ifs(path);
+    if (!ifs.is_open()) {
+        utility::LogWarning("Failed to open {}", path);
+        return false;
+    }
+
+    Json::CharReaderBuilder builder;
+    builder["collectComments"] = false;
+    Json::String errs;
+    bool is_parse_successful = parseFromStream(builder, ifs, &json, &errs);
+    if (!is_parse_successful) {
+        utility::LogWarning("Read JSON failed: {}.", errs);
+        return false;
+    }
+    return true;
 }
 
 std::tuple<std::string, std::string> GetRGBDFolders(
@@ -494,7 +513,7 @@ public:
                 "pose.");
 
         camera::PinholeCameraTrajectory camera_trajectory;
-        io::ReadIJsonConvertibleFromJSON(
+        io::ReadPinholeCameraTrajectory(
                 JoinPath(config_["path_dataset"].asString(),
                          config_["template_global_traj"].asString()),
                 camera_trajectory);
@@ -524,7 +543,7 @@ public:
         }
 
         pipelines::registration::PoseGraph scene_pose_graph;
-        io::WritePoseGraph(
+        io::ReadPoseGraph(
                 JoinPath(config_["path_dataset"].asString(),
                          config_["template_refined_posegraph_optimized"]
                                  .asString()),
@@ -656,23 +675,22 @@ public:
                         fragment_pose_graph.nodes_[j].pose_;
 
                 core::Tensor extrinsic_local_t(pose_local.data(), {4, 4},
-                                               core::Float32, device);
+                                               core::Float64, device);
                 extrinsic_local_t = extrinsic_local_t.T().Inverse();
 
                 const Eigen::Matrix4d pose =
                         scene_pose_graph.nodes_[i].pose_ *
                         fragment_pose_graph.nodes_[j].pose_;
-                core::Tensor extrinsic_t(pose.data(), {4, 4}, core::Float32,
+                core::Tensor extrinsic_t(pose.data(), {4, 4}, core::Float64,
                                          device);
-                extrinsic_t = extrinsic_t.T().Inverse();
+                extrinsic_t = extrinsic_t.T().Inverse().Contiguous();
 
                 t::geometry::Image depth, color;
                 t::io::ReadImage(depth_files[k], depth);
                 t::io::ReadImage(color_files[k], color);
-                t::geometry::RGBDImage rgbd(depth, color);
+                t::geometry::RGBDImage rgbd(color.To(device), depth.To(device));
 
-                utility::LogInfo("Deforming and integrating Frame {}",
-                                 PadZeroToNumber(k, 3));
+                utility::LogInfo("Deforming and integrating Frame {}", k);
                 const auto rgbd_projected = ctr_grid.Deform(
                         rgbd, intrinsic_t, extrinsic_t, depth_scale, depth_max);
 
@@ -705,7 +723,8 @@ public:
 private:
     camera::PinholeCameraIntrinsic GetCameraIntrinsic() {
         camera::PinholeCameraIntrinsic intrinsic;
-        if (config_.isMember("path_intrinsic")) {
+        if (config_.isMember("path_intrinsic") &&
+            config_["path_intrinsic"] != "") {
             io::ReadIJsonConvertible(config_["path_intrinsic"].asString(),
                                      intrinsic);
         } else {
@@ -777,8 +796,6 @@ private:
             const std::vector<std::string>& color_files,
             const std::vector<std::string>& depth_files,
             const camera::PinholeCameraIntrinsic& intrinsic) {
-        utility::SetVerbosityLevel(utility::VerbosityLevel::Error);
-
         pipelines::registration::PoseGraph pose_graph;
         Eigen::Matrix4d trans_odometry = Eigen::Matrix4d::Identity();
         pose_graph.nodes_.push_back(
@@ -861,6 +878,11 @@ private:
         const auto ply_files =
                 ReadPlyFiles(JoinPath(config_["path_dataset"].asString(),
                                       config_["folder_fragment"].asString()));
+        if (ply_files.size() == 0) {
+            utility::LogWarning("No ply files found.");
+            return;
+        }
+        n_fragments_ = ply_files.size();
 
         Eigen::Matrix4d odom = Eigen::Matrix4d::Identity();
         scene_pose_graph.nodes_.push_back(
@@ -875,16 +897,11 @@ private:
 
         const size_t num_pairs = fragment_matching_results.size();
         if (config_["multi_threading"].asBool()) {
-            std::vector<std::thread> thread_list;
-            for (int i = 0; i < num_pairs; i++) {
-                thread_list.push_back(std::thread(
-                        &ReconstructionPipeline::RegisterFragmentPair, this,
-                        ply_files, fragment_matching_results[i].s_,
-                        fragment_matching_results[i].t_,
-                        std::ref(fragment_matching_results[i])));
-            }
-            for (auto& thread : thread_list) {
-                thread.join();
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
+            for (int i = 0; i < (int)num_pairs; i++) {
+                RegisterFragmentPair(ply_files, fragment_matching_results[i].s_,
+                                     fragment_matching_results[i].t_,
+                                     fragment_matching_results[i]);
             }
         } else {
             for (size_t i = 0; i < num_pairs; i++) {
@@ -938,7 +955,7 @@ private:
                 pipelines::registration::
                         GlobalOptimizationConvergenceCriteria(),
                 option);
-        utility::SetVerbosityLevel(utility::VerbosityLevel::Error);
+        utility::SetVerbosityLevel(utility::VerbosityLevel::Info);
     }
 
     void RefineFragments() {
@@ -966,17 +983,12 @@ private:
         }
 
         if (config_["multi_threading"].asBool()) {
-            std::vector<std::thread> thread_list;
-            for (size_t i = 0; i < fragment_matching_results.size(); i++) {
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
+            for (int i = 0; i < (int)fragment_matching_results.size(); i++) {
                 const int s = fragment_matching_results[i].s_;
                 const int t = fragment_matching_results[i].t_;
-                thread_list.push_back(
-                        std::thread(&ReconstructionPipeline::RefineFragmentPair,
-                                    this, ply_files, s, t,
-                                    std::ref(fragment_matching_results[i])));
-            }
-            for (auto& thread : thread_list) {
-                thread.join();
+                RefineFragmentPair(ply_files, s, t,
+                                   fragment_matching_results[i]);
             }
         } else {
             for (size_t i = 0; i < fragment_matching_results.size(); i++) {
@@ -1065,7 +1077,8 @@ private:
         geometry::PointCloud fragment;
         const size_t graph_num = pose_graph.nodes_.size();
 
-#pragma omp parallel for sheduling(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int i = 0; i < int(graph_num); ++i) {
             const int i_abs =
                     fragment_id * config_["n_frames_per_fragment"].asInt() + i;
@@ -1194,12 +1207,15 @@ private:
                                               {voxel_size}, {50}, init_trans);
             pose = std::get<0>(result);
             info = std::get<1>(result);
+            matched_result.success_ = true;
+            matched_result.transformation_ = pose;
+            matched_result.information_ = info;
         } else {
             // Loop closure estimation.
             utility::LogInfo("Fragment loop closure {} and {}", s, t);
             const auto result = ComputeInitialRegistration(
-                    source_pcd, target_pcd, source_features, target_features,
-                    voxel_size * 1.4);
+                    source_pcd_down, target_pcd_down, source_features,
+                    target_features, voxel_size * 1.4);
             const bool success = std::get<0>(result);
             if (!success) {
                 utility::LogWarning(
@@ -1211,6 +1227,9 @@ private:
             } else {
                 pose = std::get<1>(result);
                 info = std::get<2>(result);
+                matched_result.success_ = true;
+                matched_result.transformation_ = pose;
+                matched_result.information_ = info;
             }
         }
 
@@ -1226,16 +1245,13 @@ private:
             const pipelines::registration::Feature& src_features,
             const pipelines::registration::Feature& dst_features,
             double distance_threshold) {
-        Eigen::Matrix4d pose;
-        bool ret;
-        std::tie(ret, pose) =
+        const auto result =
                 GlobalRegistration(src_pcd, dst_pcd, src_features, dst_features,
                                    distance_threshold);
-
+        const Eigen::Matrix4d pose = std::get<1>(result);
         const Eigen::Matrix6d info =
                 pipelines::registration::GetInformationMatrixFromPointClouds(
                         src_pcd, dst_pcd, distance_threshold, pose);
-
         if (info(5, 5) /
                     std::min(src_pcd.points_.size(), dst_pcd.points_.size()) <
             0.3) {
@@ -1272,10 +1288,13 @@ private:
 
         geometry::PointCloud src_pcd_down, dst_pcd_down;
         pipelines::registration::Feature src_features, dst_features;
+
+        // Increase the voxel size to accelerate the point cloud FPFH features
+        // extraction.
         std::tie(src_pcd_down, src_features) = PreProcessPointCloud(
-                *src_pcd, config_["voxel_size"].asDouble());
+                *src_pcd, config_["voxel_size"].asDouble() * 1.5);
         std::tie(dst_pcd_down, dst_features) = PreProcessPointCloud(
-                *dst_pcd, config_["voxel_size"].asDouble());
+                *dst_pcd, config_["voxel_size"].asDouble() * 1.5);
 
         const double distance_threshold =
                 config_["voxel_size"].asDouble() * 1.4;
@@ -1320,7 +1339,6 @@ private:
                             pipelines::registration::RANSACConvergenceCriteria(
                                     1000000, 0.999));
         }
-
         if (result.transformation_.isIdentity(1e-8)) {
             return std::make_tuple(false, Eigen::Matrix4d::Identity());
         }
@@ -1393,7 +1411,7 @@ private:
             }
         }
 
-        if (config_["debug_mode"]) {
+        if (config_["debug_mode"].asBool()) {
             DrawRegistrationResult(src, dst, current, true);
         }
 
