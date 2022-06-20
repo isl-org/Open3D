@@ -69,19 +69,19 @@ int main(int argc, char* argv[]) {
     // Load dataset.
     Json::Value config;
     if (utility::ProgramOptionExists(argc, argv, "--config")) {
+        bool ret;
         try {
             const std::string config_path = utility::GetProgramOptionAsString(
                     argc, argv, "--config", "");
             utility::LogInfo("Loading config file: {}", config_path);
-            const bool ret = ReadJsonFromFile(config_path, config);
+            ret = ReadJsonFromFile(config_path, config);
 
         } catch (const std::exception& e) {
             utility::LogWarning("Failed to load config file: {}", e.what());
             return 1;
         }
         InitConfig(config);
-        const bool ret =
-                CheckFolderStructure(config["path_dataset"].asString());
+        ret = CheckFolderStructure(config["path_dataset"].asString());
         if (!ret) {
             utility::LogWarning("Check folder structure failed.");
             return 1;

@@ -41,7 +41,7 @@ namespace legacy_reconstruction {
 // ============== Helper functions for file system ==============
 std::string PadZeroToNumber(int num, int size) {
     std::string s = std::to_string(num);
-    while (s.size() < size) {
+    while (s.size() < (size_t)size) {
         s = "0" + s;
     }
     return s;
@@ -1239,7 +1239,7 @@ private:
     }
 
     std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d>
-    ReconstructionPipeline::ComputeInitialRegistration(
+    ComputeInitialRegistration(
             const geometry::PointCloud& src_pcd,
             const geometry::PointCloud& dst_pcd,
             const pipelines::registration::Feature& src_features,
