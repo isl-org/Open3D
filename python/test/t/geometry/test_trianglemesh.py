@@ -24,14 +24,20 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
-from turtle import width
 import open3d as o3d
 import open3d.core as o3c
 import numpy as np
 import pytest
 
+import sys
+import os
 
-def test_clip_plane():
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+from open3d_test import list_devices
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_clip_plane(device):
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
     clipped_cube = cube.clip_plane(point=[0.5, 0, 0], normal=[1, 0, 0])
@@ -39,44 +45,37 @@ def test_clip_plane():
     assert clipped_cube.triangle['indices'].shape == (14, 3)
 
 
-def test_create_box():
-    # test with default parameters
+@pytest.mark.parametrize("device", list_devices())
+def test_create_box(device):
+    # Test with default parameters.
     box_default = o3d.t.geometry.TriangleMesh.create_box()
 
-    vertex_positions_default = o3c.Tensor(np.array([[0.0, 0.0, 0.0],
-                                                    [1.0, 0.0, 0.0],
-                                                    [0.0, 0.0, 1.0],
-                                                    [1.0, 0.0, 1.0],
-                                                    [0.0, 1.0, 0.0],
-                                                    [1.0, 1.0, 0.0],
-                                                    [0.0, 1.0, 1.0],
-                                                    [1.0, 1.0, 1.0]]),
-                                          dtype=o3c.Dtype.Float64,
-                                          device=o3c.Device("CPU:0"))
+    vertex_positions_default = o3c.Tensor(
+        [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0],
+         [0.0, 1.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+        o3c.float32, device)
 
-    triangle_indices = o3c.Tensor(np.array([[4, 7, 5], [4, 6, 7], [0, 2, 4],
-                                            [2, 6, 4], [0, 1, 2], [1, 3, 2],
-                                            [1, 5, 7], [1, 7, 3], [2, 3, 7],
-                                            [2, 7, 6], [0, 4, 1], [1, 4, 5]]),
-                                  dtype=o3c.Dtype.Int64,
-                                  device=o3c.Device("CPU:0"))
+    triangle_indices_default = o3c.Tensor(
+        [[4, 7, 5], [4, 6, 7], [0, 2, 4], [2, 6, 4], [0, 1, 2], [1, 3, 2],
+         [1, 5, 7], [1, 7, 3], [2, 3, 7], [2, 7, 6], [0, 4, 1], [1, 4, 5]],
+        o3c.int64, device)
 
     assert box_default.vertex['positions'].allclose(vertex_positions_default)
-    assert box_default.triangle['indices'].allclose(triangle_indices)
+    assert box_default.triangle['indices'].allclose(triangle_indices_default)
 
-    # test with custom parameters
-    box_custom = o3d.t.geometry.TriangleMesh.create_box(2, 4, 3)
+    # Test with custom parameters.
+    box_custom = o3d.t.geometry.TriangleMesh.create_box(2, 3, 4, o3c.float64,
+                                                        o3c.int32, device)
 
-    vertex_positions_custom = o3c.Tensor(np.array([[0.0, 0.0, 0.0],
-                                                   [2.0, 0.0, 0.0],
-                                                   [0.0, 0.0, 3.0],
-                                                   [2.0, 0.0, 3.0],
-                                                   [0.0, 4.0, 0.0],
-                                                   [2.0, 4.0, 0.0],
-                                                   [0.0, 4.0, 3.0],
-                                                   [2.0, 4.0, 3.0]]),
-                                         dtype=o3c.Dtype.Float64,
-                                         device=o3c.Device("CPU:0"))
+    vertex_positions_custom = o3c.Tensor(
+        [[0.0, 0.0, 0.0], [2.0, 0.0, 0.0], [0.0, 0.0, 4.0], [2.0, 0.0, 4.0],
+         [0.0, 3.0, 0.0], [2.0, 3.0, 0.0], [0.0, 3.0, 4.0], [2.0, 3.0, 4.0]],
+        o3c.float64, device)
+
+    triangle_indices_custom = o3c.Tensor(
+        [[4, 7, 5], [4, 6, 7], [0, 2, 4], [2, 6, 4], [0, 1, 2], [1, 3, 2],
+         [1, 5, 7], [1, 7, 3], [2, 3, 7], [2, 7, 6], [0, 4, 1], [1, 4, 5]],
+        o3c.int32, device)
 
     assert box_custom.vertex['positions'].allclose(vertex_positions_custom)
-    assert box_custom.triangle['indices'].allclose(triangle_indices)
+    assert box_custom.triangle['indices'].allclose(triangle_indices_custom)
