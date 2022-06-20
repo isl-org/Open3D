@@ -6,7 +6,7 @@
 * Corrected documentation for KDTree (typo in Notebook) (PR #4744)
 * Remove `setuptools` and `wheel` from requirements for end users (PR #5020)
 * Fix various typos (PR #5070)
-* Added Doppler channel in point cloud and Doppler ICP algorithm in registration pipeline (PR #1)
+* Added Doppler channel in point cloud and Doppler ICP algorithm in registration pipeline (PR #5220)
 
 ## 0.13
 
