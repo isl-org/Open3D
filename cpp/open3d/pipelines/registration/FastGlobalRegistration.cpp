@@ -217,6 +217,7 @@ static Eigen::Matrix4d OptimizePairwiseRegistration(
         JTJ.setZero();
         JTr.setZero();
         double r = 0.0, r2 = 0.0;
+        (void)r2;  // r2 is not used for now. Suppress clang warning.
 
         for (size_t c = 0; c < corres.size(); c++) {
             int ii = corres[c].first;
@@ -258,6 +259,7 @@ static Eigen::Matrix4d OptimizePairwiseRegistration(
             r2 += r * r * s[c2];
             r2 += (par * (1.0 - sqrt(s[c2])) * (1.0 - sqrt(s[c2])));
         }
+        (void)r2;  // Fix warning in Clang.
         bool success;
         Eigen::VectorXd result;
         std::tie(success, result) = utility::SolveLinearSystemPSD(-JTJ, JTr);

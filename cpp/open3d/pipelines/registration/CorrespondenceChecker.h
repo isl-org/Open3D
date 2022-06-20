@@ -62,8 +62,6 @@ public:
 public:
     /// \brief Function to check if two points can be aligned.
     ///
-    /// The two input point
-    /// clouds must have exact the same number of points.
     /// \param source Source point cloud.
     /// \param target Target point cloud.
     /// \param corres Correspondence set between source and target point cloud.
@@ -120,7 +118,7 @@ class CorrespondenceCheckerBasedOnDistance : public CorrespondenceChecker {
 public:
     /// \brief Default Constructor.
     ///
-    /// \param distance_threshold Distance threashold for the check.
+    /// \param distance_threshold Distance threshold for the check.
     CorrespondenceCheckerBasedOnDistance(double distance_threshold)
         : CorrespondenceChecker(true),
           distance_threshold_(distance_threshold) {}
@@ -133,7 +131,7 @@ public:
                const Eigen::Matrix4d &transformation) const override;
 
 public:
-    /// Distance threashold for the check.
+    /// Distance threshold for the check.
     double distance_threshold_;
 };
 

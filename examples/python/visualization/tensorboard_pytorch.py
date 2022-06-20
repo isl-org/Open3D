@@ -171,7 +171,6 @@ def demo_scene():
     """Write the demo_scene.py example showing rich PBR materials as a summary
     """
     import demo_scene
-    demo_scene.check_for_required_assets()
     geoms = demo_scene.create_scene()
     writer = SummaryWriter(os.path.join(BASE_LOGDIR, 'demo_scene'))
     for geom_data in geoms:

@@ -62,16 +62,16 @@ def integrate(depth_file_names, color_file_names, depth_intrinsic,
                 voxel_size=3.0 / 512,
                 block_resolution=16,
                 block_count=50000,
-                device=o3d.core.Device('CUDA:0'))
+                device=device)
         else:
-            vbg = o3d.t.geometry.VoxelBlockGrid(
-                attr_names=('tsdf', 'weight'),
-                attr_dtypes=(o3c.float32, o3c.float32),
-                attr_channels=((1), (1)),
-                voxel_size=3.0 / 512,
-                block_resolution=16,
-                block_count=50000,
-                device=o3d.core.Device('CUDA:0'))
+            vbg = o3d.t.geometry.VoxelBlockGrid(attr_names=('tsdf', 'weight'),
+                                                attr_dtypes=(o3c.float32,
+                                                             o3c.float32),
+                                                attr_channels=((1), (1)),
+                                                voxel_size=3.0 / 512,
+                                                block_resolution=16,
+                                                block_count=50000,
+                                                device=device)
 
         start = time.time()
         for i in range(n_files):
@@ -119,9 +119,7 @@ if __name__ == '__main__':
     config = parser.get_config()
 
     if config.path_dataset == '':
-        config.path_dataset = get_default_testdata()
-        config.path_trajectory = os.path.join(config.path_dataset,
-                                              'trajectory.log')
+        config = get_default_testdata(config)
 
     if config.integrate_color:
         depth_file_names, color_file_names = load_rgbd_file_names(config)

@@ -142,7 +142,7 @@ void pybind_visualizer(py::module &m) {
                PyVisualizer<VisualizerWithKeyCallback>,
                std::shared_ptr<VisualizerWithKeyCallback>>
             visualizer_key(m, "VisualizerWithKeyCallback", visualizer,
-                           "Visualizer with custom key callack capabilities.");
+                           "Visualizer with custom key callback capabilities.");
     py::detail::bind_default_constructor<VisualizerWithKeyCallback>(
             visualizer_key);
     visualizer_key
@@ -179,7 +179,10 @@ void pybind_visualizer(py::module &m) {
                             vis.GetWindowName();
                  })
             .def("get_picked_points", &VisualizerWithEditing::GetPickedPoints,
-                 "Function to get picked points");
+                 "Function to get picked points")
+            .def("get_cropped_geometry",
+                 &VisualizerWithEditing::GetCroppedGeometry,
+                 "Function to get cropped geometry");
 
     py::class_<VisualizerWithVertexSelection,
                PyVisualizer<VisualizerWithVertexSelection>,
@@ -197,12 +200,20 @@ void pybind_visualizer(py::module &m) {
                                     "name ") +
                             vis.GetWindowName();
                  })
+            .def("pick_points", &VisualizerWithVertexSelection::PickPoints,
+                 "Function to pick points")
             .def("get_picked_points",
                  &VisualizerWithVertexSelection::GetPickedPoints,
                  "Function to get picked points")
             .def("clear_picked_points",
                  &VisualizerWithVertexSelection::ClearPickedPoints,
                  "Function to clear picked points")
+            .def("add_picked_points",
+                 &VisualizerWithVertexSelection::AddPickedPoints,
+                 "Function to add picked points")
+            .def("remove_picked_points",
+                 &VisualizerWithVertexSelection::RemovePickedPoints,
+                 "Function to remove picked points")
             .def("register_selection_changed_callback",
                  &VisualizerWithVertexSelection::
                          RegisterSelectionChangedCallback,

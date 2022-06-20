@@ -61,7 +61,7 @@ def test_single_pair(s, t, color_files, depth_files, intrinsic, with_opencv,
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="mathching two RGBD images")
+    parser = argparse.ArgumentParser(description="matching two RGBD images")
     parser.add_argument("config", help="path to the config file")
     parser.add_argument("source_id", type=int, help="ID of source RGBD image")
     parser.add_argument("target_id", type=int, help="ID of target RGBD image")

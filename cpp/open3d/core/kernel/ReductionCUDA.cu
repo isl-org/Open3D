@@ -880,7 +880,7 @@ public:
     void Run(const func_t& reduce_func, scalar_t identity) {
         if (indexer_.NumWorkloads() == 0) {
             utility::LogError(
-                    "0-sized input should be handled outside of the reudction "
+                    "0-sized input should be handled outside of the reduction "
                     "engine.");
         }
         if (indexer_.NumInputs() != 1) {
@@ -1044,7 +1044,7 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::Min:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport Min.");
+                                "Zero-size Tensor does not support Min.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> scalar_t { return a < b ? a : b; },
@@ -1055,7 +1055,7 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::Max:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport Max.");
+                                "Zero-size Tensor does not support Max.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> scalar_t { return a > b ? a : b; },
@@ -1082,7 +1082,7 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::ArgMin:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport ArgMin.");
+                                "Zero-size Tensor does not support ArgMin.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> bool { return a < b; },
@@ -1093,7 +1093,7 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::ArgMax:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport ArgMax.");
+                                "Zero-size Tensor does not support ArgMax.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> bool { return a > b; },

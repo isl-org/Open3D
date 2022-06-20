@@ -15,7 +15,6 @@ The main function runs ``make_posegraph_for_scene`` and
 ``optimize_posegraph_for_scene``. The first function performs pairwise
 registration. The second function performs multiway registration.
 
-
 Preprocess point cloud
 ``````````````````````````````````````
 
@@ -32,7 +31,6 @@ distributed. Normals and FPFH feature are precomputed. See
 :ref:`/tutorial/pipelines/global_registration.ipynb#extract-geometric-feature`
 for more details.
 
-
 Compute initial registration
 ``````````````````````````````````````
 
@@ -48,7 +46,6 @@ RGBD odometry obtained from :ref:`reconstruction_system_make_fragments`.
 Otherwise, ``register_point_cloud_fpfh`` is called to perform global
 registration. Note that global registration is less reliable according to [Choi2015]_.
 
-
 .. _reconstruction_system_feature_matching:
 
 Pairwise global registration
@@ -61,7 +58,6 @@ Pairwise global registration
    :linenos:
 
 This function uses :ref:`/tutorial/pipelines/global_registration.ipynb#RANSAC` or :ref:`/tutorial/pipelines/global_registration.ipynb#fast-global-registration` for pairwise global registration.
-
 
 .. _reconstruction_system_compute_initial_registration:
 
@@ -127,7 +123,6 @@ The pose graph optimization outputs the following messages:
     Current_residual - new_residual < 1.000000e-06 * current_residual
     [GlobalOptimizationLM] total time : 0.001 sec.
     CompensateReferencePoseGraphNode : reference : 0
-
 
 There are 14 fragments and 52 valid matching pairs among the fragments. After
 23 iterations, 11 edges are detected to be false positives. After they are

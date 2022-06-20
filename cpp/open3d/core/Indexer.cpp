@@ -172,7 +172,8 @@ Indexer::Indexer(const std::vector<Tensor>& input_tensors,
                         output_tensors[i].GetShape());
             }
 
-            // For each reduction dim, set the corresponding ouput strides to 0.
+            // For each reduction dim, set the corresponding output strides to
+            // 0.
             ReductionRestride(outputs_[i], inputs_[0].ndims_, inputs_[0].shape_,
                               reduction_dims);
         }

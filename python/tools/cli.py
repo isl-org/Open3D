@@ -25,12 +25,10 @@
 # ----------------------------------------------------------------------------
 
 import argparse
-from nis import cat
 import os
 import runpy
 import sys
 from pathlib import Path
-from unicodedata import category
 
 import open3d as o3d
 import open3d.app as app
@@ -109,7 +107,7 @@ def _get_example_categories():
 
 
 def _get_examples_in_category(category):
-    """Get a set of example names in given cateogry."""
+    """Get a set of example names in given category."""
     examples_dict = _get_runnable_examples_dict()
     examples_dir = _get_examples_dir()
     category_path = os.path.join(examples_dir, category)

@@ -77,7 +77,7 @@ TEST_P(HashMapPermuteDevices, SimpleInit) {
     core::Device device = GetParam();
 
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {
@@ -107,7 +107,7 @@ TEST_P(HashMapPermuteDevices, SimpleInit) {
 TEST_P(HashMapPermuteDevices, Find) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {
@@ -151,7 +151,7 @@ TEST_P(HashMapPermuteDevices, Find) {
 TEST_P(HashMapPermuteDevices, Insert) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {
@@ -204,7 +204,7 @@ TEST_P(HashMapPermuteDevices, Insert) {
 TEST_P(HashMapPermuteDevices, Erase) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {
@@ -267,7 +267,7 @@ TEST_P(HashMapPermuteDevices, Erase) {
 TEST_P(HashMapPermuteDevices, Reserve) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {
@@ -321,7 +321,7 @@ TEST_P(HashMapPermuteDevices, Reserve) {
 TEST_P(HashMapPermuteDevices, Clear) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {
@@ -399,7 +399,7 @@ public:
 TEST_P(HashMapPermuteDevices, InsertComplexKeys) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {
@@ -458,7 +458,7 @@ TEST_P(HashMapPermuteDevices, InsertComplexKeys) {
 TEST_P(HashMapPermuteDevices, MultivalueInsertion) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {
@@ -531,7 +531,7 @@ TEST_P(HashMapPermuteDevices, MultivalueInsertion) {
 TEST_P(HashMapPermuteDevices, HashSet) {
     core::Device device = GetParam();
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         backends.push_back(core::HashBackendType::Slab);
         backends.push_back(core::HashBackendType::StdGPU);
     } else {

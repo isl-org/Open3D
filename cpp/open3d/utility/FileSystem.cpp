@@ -233,6 +233,10 @@ std::vector<std::string> GetPathComponents(const std::string &path) {
     return components;
 }
 
+std::string GetTempDirectoryPath() {
+    return fs::temp_directory_path().string();
+}
+
 bool ChangeWorkingDirectory(const std::string &directory) {
     return (chdir(directory.c_str()) == 0);
 }

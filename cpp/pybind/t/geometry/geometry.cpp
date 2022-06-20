@@ -39,9 +39,15 @@ void pybind_geometry_class(py::module& m) {
             geometry(m, "Geometry", "The base geometry class.");
 
     geometry.def("clear", &Geometry::Clear,
-                 "Clear all elements in the geometry.")
-            .def("is_empty", &Geometry::IsEmpty,
+                 "Clear all elements in the geometry.");
+    geometry.def("is_empty", &Geometry::IsEmpty,
                  "Returns ``True`` iff the geometry is empty.");
+    geometry.def_property_readonly("device", &Geometry::GetDevice,
+                                   "Returns the device of the geometry.");
+    geometry.def_property_readonly("is_cpu", &Geometry::IsCPU,
+                                   "Returns true if the geometry is on CPU.");
+    geometry.def_property_readonly("is_cuda", &Geometry::IsCUDA,
+                                   "Returns true if the geometry is on CUDA.");
     docstring::ClassMethodDocInject(m, "Geometry", "clear");
     docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
 }

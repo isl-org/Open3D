@@ -27,6 +27,7 @@
 #include "open3d/core/TensorFunction.h"
 
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Timer.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
@@ -123,7 +124,7 @@ TEST_P(TensorFunctionPermuteDevices, Concatenate) {
     // Taking the above case of [1, 2] to [2, 2] with different dtype and
     // device.
     EXPECT_ANY_THROW(core::Concatenate({a, b.To(core::Float64), c}));
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         EXPECT_ANY_THROW(
                 core::Concatenate({a, b.To(core::Device("CPU:0")), c}));
     }
@@ -223,7 +224,7 @@ TEST_P(TensorFunctionPermuteDevices, Append) {
     // Taking the above case of [1, 2] to [2, 2] with different dtype and
     // device.
     EXPECT_ANY_THROW(core::Append(self, other.To(core::Float64)));
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         EXPECT_ANY_THROW(core::Append(self, other.To(core::Device("CPU:0"))));
     }
 

@@ -67,12 +67,12 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromPointCloudWithinBounds(
         const Eigen::Vector3d &max_bound) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
-        utility::LogError("[VoxelGridFromPointCloud] voxel_size <= 0.");
+        utility::LogError("voxel_size <= 0.");
     }
 
     if (voxel_size * std::numeric_limits<int>::max() <
         (max_bound - min_bound).maxCoeff()) {
-        utility::LogError("[VoxelGridFromPointCloud] voxel_size is too small.");
+        utility::LogError("voxel_size is too small.");
     }
     output->voxel_size_ = voxel_size;
     output->origin_ = min_bound;
@@ -122,12 +122,12 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
         const Eigen::Vector3d &max_bound) {
     auto output = std::make_shared<VoxelGrid>();
     if (voxel_size <= 0.0) {
-        utility::LogError("[CreateFromTriangleMesh] voxel_size <= 0.");
+        utility::LogError("voxel_size <= 0.");
     }
 
     if (voxel_size * std::numeric_limits<int>::max() <
         (max_bound - min_bound).maxCoeff()) {
-        utility::LogError("[CreateFromTriangleMesh] voxel_size is too small.");
+        utility::LogError("voxel_size is too small.");
     }
     output->voxel_size_ = voxel_size;
     output->origin_ = min_bound;

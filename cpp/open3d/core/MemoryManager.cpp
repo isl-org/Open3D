@@ -39,7 +39,7 @@ namespace open3d {
 namespace core {
 
 void* MemoryManager::Malloc(size_t byte_size, const Device& device) {
-    void* ptr = GetDeviceMemoryManager(device)->Malloc(byte_size, device);
+    void* ptr = GetMemoryManagerDevice(device)->Malloc(byte_size, device);
     MemoryManagerStatistic::GetInstance().CountMalloc(ptr, byte_size, device);
     return ptr;
 }
@@ -48,7 +48,7 @@ void MemoryManager::Free(void* ptr, const Device& device) {
     // Update statistics before freeing the memory. This ensures a consistent
     // order in case a subsequent Malloc requires the currently freed memory.
     MemoryManagerStatistic::GetInstance().CountFree(ptr, device);
-    GetDeviceMemoryManager(device)->Free(ptr, device);
+    GetMemoryManagerDevice(device)->Free(ptr, device);
 }
 
 void MemoryManager::Memcpy(void* dst_ptr,
@@ -63,21 +63,18 @@ void MemoryManager::Memcpy(void* dst_ptr,
         utility::LogError("src_ptr and dst_ptr cannot be nullptr.");
     }
 
-    if ((dst_device.GetType() != Device::DeviceType::CPU &&
-         dst_device.GetType() != Device::DeviceType::CUDA) ||
-        (src_device.GetType() != Device::DeviceType::CPU &&
-         src_device.GetType() != Device::DeviceType::CUDA)) {
+    if ((!dst_device.IsCPU() && !dst_device.IsCUDA()) ||
+        (!src_device.IsCPU() && !src_device.IsCUDA())) {
         utility::LogError("MemoryManager::Memcpy: Unimplemented device.");
     }
 
-    std::shared_ptr<DeviceMemoryManager> device_mm;
-    if (dst_device.GetType() == Device::DeviceType::CPU &&
-        src_device.GetType() == Device::DeviceType::CPU) {
-        device_mm = GetDeviceMemoryManager(src_device);
-    } else if (src_device.GetType() == Device::DeviceType::CUDA) {
-        device_mm = GetDeviceMemoryManager(src_device);
+    std::shared_ptr<MemoryManagerDevice> device_mm;
+    if (dst_device.IsCPU() && src_device.IsCPU()) {
+        device_mm = GetMemoryManagerDevice(src_device);
+    } else if (src_device.IsCUDA()) {
+        device_mm = GetMemoryManagerDevice(src_device);
     } else {
-        device_mm = GetDeviceMemoryManager(dst_device);
+        device_mm = GetMemoryManagerDevice(dst_device);
     }
 
     device_mm->Memcpy(dst_ptr, dst_device, src_ptr, src_device, num_bytes);
@@ -99,22 +96,22 @@ void MemoryManager::MemcpyToHost(void* host_ptr,
     Memcpy(host_ptr, Device("CPU:0"), src_ptr, src_device, num_bytes);
 }
 
-std::shared_ptr<DeviceMemoryManager> MemoryManager::GetDeviceMemoryManager(
+std::shared_ptr<MemoryManagerDevice> MemoryManager::GetMemoryManagerDevice(
         const Device& device) {
     static std::unordered_map<Device::DeviceType,
-                              std::shared_ptr<DeviceMemoryManager>,
+                              std::shared_ptr<MemoryManagerDevice>,
                               utility::hash_enum_class>
             map_device_type_to_memory_manager = {
                     {Device::DeviceType::CPU,
-                     std::make_shared<CPUMemoryManager>()},
+                     std::make_shared<MemoryManagerCPU>()},
 #ifdef BUILD_CUDA_MODULE
 #ifdef BUILD_CACHED_CUDA_MANAGER
                     {Device::DeviceType::CUDA,
-                     std::make_shared<CachedMemoryManager>(
-                             std::make_shared<CUDAMemoryManager>())},
+                     std::make_shared<MemoryManagerCached>(
+                             std::make_shared<MemoryManagerCUDA>())},
 #else
                     {Device::DeviceType::CUDA,
-                     std::make_shared<CUDAMemoryManager>()},
+                     std::make_shared<MemoryManagerCUDA>()},
 #endif  // BUILD_CACHED_CUDA_MANAGER
 #endif  // BUILD_CUDA_MODULE
             };

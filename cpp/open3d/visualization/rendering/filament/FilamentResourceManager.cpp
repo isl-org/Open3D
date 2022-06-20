@@ -728,7 +728,7 @@ void FilamentResourceManager::ReuseVertexBuffer(VertexBufferHandle vb) {
     if (found != vertex_buffers_.end()) {
         found->second.use_count += 1;
     } else {
-        utility::LogError("Reusing non-existant vertex buffer");
+        utility::LogError("Reusing non-existent vertex buffer");
     }
 }
 
@@ -900,7 +900,7 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     const size_t image_bytes = image.GetRows() * image.GetCols() *
                                image.GetChannels() *
                                image.GetDtype().ByteSize();
-    if (image.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (image.IsCUDA()) {
         t::geometry::Image cpu_image = image.To(core::Device("CPU:0"));
         auto* image_data = malloc(image_bytes);
         memcpy(image_data, cpu_image.GetDataPtr(), image_bytes);

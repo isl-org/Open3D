@@ -67,23 +67,23 @@ void pybind_odometry_classes(py::module &m) {
     odometry_option
             .def(py::init(
                          [](std::vector<int> iteration_number_per_pyramid_level,
-                            double max_depth_diff, double min_depth,
-                            double max_depth) {
+                            double depth_diff_max, double depth_min,
+                            double depth_max) {
                              return new OdometryOption(
                                      iteration_number_per_pyramid_level,
-                                     max_depth_diff, min_depth, max_depth);
+                                     depth_diff_max, depth_min, depth_max);
                          }),
                  "iteration_number_per_pyramid_level"_a =
                          std::vector<int>{20, 10, 5},
-                 "max_depth_diff"_a = 0.03, "min_depth"_a = 0.0,
-                 "max_depth"_a = 4.0)
+                 "depth_diff_max"_a = 0.03, "depth_min"_a = 0.0,
+                 "depth_max"_a = 4.0)
             .def_readwrite("iteration_number_per_pyramid_level",
                            &OdometryOption::iteration_number_per_pyramid_level_,
                            "List(int): Iteration number per image pyramid "
                            "level, typically larger image in the pyramid have "
-                           "lower interation number to reduce computation "
+                           "lower iteration number to reduce computation "
                            "time.")
-            .def_readwrite("max_depth_diff", &OdometryOption::max_depth_diff_,
+            .def_readwrite("depth_diff_max", &OdometryOption::depth_diff_max_,
                            "Maximum depth difference to be considered as "
                            "correspondence. In depth image domain, if two "
                            "aligned pixels have a depth difference less than "
@@ -91,10 +91,10 @@ void pybind_odometry_classes(py::module &m) {
                            "correspondence. Larger value induce more "
                            "aggressive search, but it is prone to unstable "
                            "result.")
-            .def_readwrite("min_depth", &OdometryOption::min_depth_,
+            .def_readwrite("depth_min", &OdometryOption::depth_min_,
                            "Pixels that has smaller than specified depth "
                            "values are ignored.")
-            .def_readwrite("max_depth", &OdometryOption::max_depth_,
+            .def_readwrite("depth_max", &OdometryOption::depth_max_,
                            "Pixels that has larger than specified depth values "
                            "are ignored.")
             .def("__repr__", [](const OdometryOption &c) {
@@ -112,12 +112,12 @@ void pybind_odometry_classes(py::module &m) {
                           std::to_string(c.odo_init_) +*/
                        std::string("\niteration_number_per_pyramid_level = ") +
                        str_iteration_number_per_pyramid_level_ +
-                       std::string("\nmax_depth_diff = ") +
-                       std::to_string(c.max_depth_diff_) +
-                       std::string("\nmin_depth = ") +
-                       std::to_string(c.min_depth_) +
-                       std::string("\nmax_depth = ") +
-                       std::to_string(c.max_depth_);
+                       std::string("\ndepth_diff_max = ") +
+                       std::to_string(c.depth_diff_max_) +
+                       std::string("\ndepth_min = ") +
+                       std::to_string(c.depth_min_) +
+                       std::string("\ndepth_max = ") +
+                       std::to_string(c.depth_max_);
             });
 
     // open3d.odometry.RGBDOdometryJacobian
@@ -199,7 +199,7 @@ void pybind_odometry_methods(py::module &m) {
                      "RGBDOdometryJacobianFromHybridTerm()`` or "
                      "``RGBDOdometryJacobianFromColorTerm("
                      ").``"},
-                    {"option", "Odometry hyper parameteres."},
+                    {"option", "Odometry hyper parameters."},
             });
 }
 

@@ -754,7 +754,7 @@ Tensor Tensor::Contiguous() const {
 std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
-    if (GetDevice().GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
+    if (IsCUDA() || !IsContiguous()) {
         Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
         rc << host_contiguous_tensor.ToString(false, "");
     } else {
@@ -890,7 +890,7 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 
         if (index_tensor.IsNonZero()) {
             // E.g. np.array(5)[np.array(True)].
-            return *this;
+            return Clone();
         } else {
             // E.g. np.array(5)[np.array(False)].
             // The output tensor becomes 1D of 0 element.

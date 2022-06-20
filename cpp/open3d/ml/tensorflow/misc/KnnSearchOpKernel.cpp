@@ -34,22 +34,20 @@ using namespace tensorflow;
 
 namespace {
 
-template <class T>
+template <class T, class TIndex>
 class OutputAllocator {
 public:
     explicit OutputAllocator(tensorflow::OpKernelContext* context)
         : context(context) {}
 
-    void AllocIndices(int32_t** ptr, size_t num) {
+    void AllocIndices(TIndex** ptr, size_t num) {
         using namespace tensorflow;
         *ptr = nullptr;
         Tensor* tensor = 0;
         TensorShape shape({int64_t(num)});
         OP_REQUIRES_OK(context, context->allocate_output(0, shape, &tensor));
-        auto flat_tensor = tensor->flat<int32>();
-        static_assert(sizeof(int32) == sizeof(int32_t),
-                      "int32 and int32_t not compatible");
-        *ptr = (int32_t*)flat_tensor.data();
+        auto flat_tensor = tensor->flat<TIndex>();
+        *ptr = (TIndex*)flat_tensor.data();
     }
 
     void AllocDistances(T** ptr, size_t num) {
@@ -66,12 +64,12 @@ private:
     tensorflow::OpKernelContext* context;
 };
 
-template <class T>
+template <class T, class TIndex>
 class OutputAllocatorTmp {
 public:
     OutputAllocatorTmp() {}
 
-    void AllocIndices(int32_t** ptr, size_t num) {
+    void AllocIndices(TIndex** ptr, size_t num) {
         index.resize(num);
         *ptr = index.data();
     }
@@ -81,13 +79,13 @@ public:
         *ptr = distance.data();
     }
 
-    std::vector<int32_t> index;
+    std::vector<TIndex> index;
     std::vector<T> distance;
 };
 
 }  // namespace
 
-template <class T>
+template <class T, class TIndex>
 class KnnSearchOpKernelCPU : public KnnSearchOpKernel {
 public:
     explicit KnnSearchOpKernelCPU(OpKernelConstruction* construction)
@@ -102,13 +100,13 @@ public:
                 tensorflow::Tensor& query_neighbors_row_splits) {
         const int batch_size = points_row_splits.shape().dim_size(0) - 1;
         if (batch_size == 1) {
-            OutputAllocator<T> output_allocator(context);
+            OutputAllocator<T, TIndex> output_allocator(context);
 
             std::unique_ptr<NanoFlannIndexHolderBase> holder =
-                    impl::BuildKdTree<T>(points.shape().dim_size(0),
-                                         points.flat<T>().data(),
-                                         points.shape().dim_size(1), metric);
-            impl::KnnSearchCPU(
+                    impl::BuildKdTree<T, TIndex>(
+                            points.shape().dim_size(0), points.flat<T>().data(),
+                            points.shape().dim_size(1), metric);
+            impl::KnnSearchCPU<T, TIndex>(
                     holder.get(),
                     (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                     points.shape().dim_size(0), points.flat<T>().data(),
@@ -117,7 +115,8 @@ public:
                     output_allocator);
         } else {
             // run radius search for each batch item
-            std::vector<OutputAllocatorTmp<T>> output_allocators(batch_size);
+            std::vector<OutputAllocatorTmp<T, TIndex>> output_allocators(
+                    batch_size);
             int64_t last_neighbors_count = 0;
             for (int i = 0; i < batch_size; ++i) {
                 const T* const points_i =
@@ -136,13 +135,14 @@ public:
                                            .data() +
                                    queries_row_splits.flat<int64>()(i));
                 std::unique_ptr<NanoFlannIndexHolderBase> holder =
-                        impl::BuildKdTree<T>(num_points_i, points_i,
-                                             points.shape().dim_size(1),
-                                             metric);
-                impl::KnnSearchCPU(holder.get(), neighbors_row_splits_i,
-                                   num_points_i, points_i, num_queries_i,
-                                   queries_i, 3, k, metric, ignore_query_point,
-                                   return_distances, output_allocators[i]);
+                        impl::BuildKdTree<T, TIndex>(num_points_i, points_i,
+                                                     points.shape().dim_size(1),
+                                                     metric);
+                impl::KnnSearchCPU<T, TIndex>(
+                        holder.get(), neighbors_row_splits_i, num_points_i,
+                        points_i, num_queries_i, queries_i, 3, k, metric,
+                        ignore_query_point, return_distances,
+                        output_allocators[i]);
 
                 if (i > 0) {
                     for (size_t j = 0; j <= num_queries_i; ++j)
@@ -164,8 +164,8 @@ public:
             OP_REQUIRES_OK(context,
                            context->allocate_output(0, neighbors_index_shape,
                                                     &neighbors_index_tensor));
-            int32_t* neighbors_index_data_ptr =
-                    neighbors_index_tensor->flat<int32_t>().data();
+            TIndex* neighbors_index_data_ptr =
+                    neighbors_index_tensor->flat<TIndex>().data();
 
             Tensor* neighbors_distance_tensor;
             TensorShape neighbors_distance_shape({neighbors_distance_size});
@@ -194,11 +194,14 @@ public:
     }
 };
 
-#define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("Open3DKnnSearch")             \
-                                    .Device(DEVICE_CPU)         \
-                                    .TypeConstraint<type>("T"), \
-                            KnnSearchOpKernelCPU<type>);
-REG_KB(float)
-REG_KB(double)
+#define REG_KB(type, itype)                                                \
+    REGISTER_KERNEL_BUILDER(Name("Open3DKnnSearch")                        \
+                                    .Device(DEVICE_CPU)                    \
+                                    .TypeConstraint<type>("T")             \
+                                    .TypeConstraint<itype>("index_dtype"), \
+                            KnnSearchOpKernelCPU<type, itype>);
+REG_KB(float, int)
+REG_KB(float, long)
+REG_KB(double, int)
+REG_KB(double, long)
 #undef REG_KB

@@ -41,20 +41,19 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                                      const registration::RobustKernel &kernel) {
     const core::Device device = source_points.GetDevice();
 
-    // Pose {6,} tensor [ouput].
+    // Pose {6,} tensor [output].
     core::Tensor pose = core::Tensor::Empty({6}, core::Float64, device);
 
     float residual = 0;
     int inlier_count = 0;
 
-    const core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (source_points.IsCPU()) {
         ComputePosePointToPlaneCPU(
                 source_points.Contiguous(), target_points.Contiguous(),
                 target_normals.Contiguous(),
                 correspondence_indices.Contiguous(), pose, residual,
                 inlier_count, source_points.GetDtype(), device, kernel);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (source_points.IsCUDA()) {
         CUDA_CALL(ComputePosePointToPlaneCUDA, source_points.Contiguous(),
                   target_points.Contiguous(), target_normals.Contiguous(),
                   correspondence_indices.Contiguous(), pose, residual,
@@ -80,14 +79,13 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                                    const double &lambda_geometric) {
     const core::Device device = source_points.GetDevice();
 
-    // Pose {6,} tensor [ouput].
+    // Pose {6,} tensor [output].
     core::Tensor pose = core::Tensor::Empty({6}, core::Dtype::Float64, device);
 
     float residual = 0;
     int inlier_count = 0;
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (source_points.IsCPU()) {
         ComputePoseColoredICPCPU(
                 source_points.Contiguous(), source_colors.Contiguous(),
                 target_points.Contiguous(), target_normals.Contiguous(),
@@ -95,7 +93,7 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                 correspondence_indices.Contiguous(), pose, residual,
                 inlier_count, source_points.GetDtype(), device, kernel,
                 lambda_geometric);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (source_points.IsCUDA()) {
         CUDA_CALL(ComputePoseColoredICPCUDA, source_points.Contiguous(),
                   source_colors.Contiguous(), target_points.Contiguous(),
                   target_normals.Contiguous(), target_colors.Contiguous(),
@@ -124,16 +122,15 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
 
     int inlier_count = 0;
 
-    const core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (source_points.IsCPU()) {
         // Pointer to point cloud data - indexed according to correspondences.
         ComputeRtPointToPointCPU(
                 source_points.Contiguous(), target_points.Contiguous(),
                 correspondence_indices.Contiguous(), R, t, inlier_count,
                 source_points.GetDtype(), device);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (source_points.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
-        // TODO: Implement optimised CUDA reduction kernel.
+        // TODO: Implement optimized CUDA reduction kernel.
         core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
         // correpondence_set : (i, corres[i]).
 
@@ -196,12 +193,11 @@ core::Tensor ComputeInformationMatrix(
     core::Tensor information_matrix =
             core::Tensor::Empty({6, 6}, core::Float64, core::Device("CPU:0"));
 
-    const core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (target_points.IsCPU()) {
         ComputeInformationMatrixCPU(
                 target_points.Contiguous(), correspondence_indices.Contiguous(),
                 information_matrix, target_points.GetDtype(), device);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (target_points.IsCUDA()) {
         CUDA_CALL(ComputeInformationMatrixCUDA, target_points.Contiguous(),
                   correspondence_indices.Contiguous(), information_matrix,
                   target_points.GetDtype(), device);

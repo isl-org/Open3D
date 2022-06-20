@@ -54,7 +54,7 @@ Tensor NonZeroCPU(const Tensor& src) {
         non_zero_indices.resize(std::distance(non_zero_indices.begin(), it));
     });
 
-    // Transform flattend indices to indices in each dimension.
+    // Transform flattened indices to indices in each dimension.
     SizeVector shape = src.GetShape();
     const int64_t num_dims = src.NumDims();
     const size_t num_non_zeros = non_zero_indices.size();

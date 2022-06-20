@@ -33,7 +33,6 @@
 #include "open3d/data/Dataset.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/t/io/PointCloudIO.h"
-#include "open3d/utility/DataManager.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 
 namespace open3d {
@@ -105,6 +104,22 @@ void VoxelDownSample(benchmark::State& state,
     }
 }
 
+void LegacyTransform(benchmark::State& state, const int no_use) {
+    open3d::geometry::PointCloud pcd;
+    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
+    transformation.block<3, 1>(0, 3) = Eigen::Vector3d(1, 2, 3);
+
+    // Warm Up.
+    open3d::geometry::PointCloud pcd_transformed =
+            pcd.Transform(transformation);
+
+    for (auto _ : state) {
+        pcd_transformed = pcd.Transform(transformation);
+    }
+}
+
 void Transform(benchmark::State& state, const core::Device& device) {
     PointCloud pcd;
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
@@ -124,6 +139,43 @@ void Transform(benchmark::State& state, const core::Device& device) {
     for (auto _ : state) {
         pcd_transformed = pcd.Transform(transformation);
         core::cuda::Synchronize(device);
+    }
+}
+
+void SelectByIndex(benchmark::State& state,
+                   bool remove_duplicates,
+                   const core::Device& device) {
+    PointCloud pcd;
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    const int64_t num_points = pcd.GetPointPositions().GetLength();
+    core::Tensor indices =
+            core::Tensor::Arange(0, num_points, 1, core::Int64, device);
+
+    // Warm Up.
+    PointCloud pcd_selected =
+            pcd.SelectByIndex(indices, false, remove_duplicates);
+
+    for (auto _ : state) {
+        pcd_selected = pcd.SelectByIndex(indices);
+        core::cuda::Synchronize(device);
+    }
+}
+
+void LegacySelectByIndex(benchmark::State& state, const int no_use) {
+    open3d::geometry::PointCloud pcd;
+    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    const size_t num_points = pcd.points_.size();
+    std::vector<size_t> indices(num_points);
+    std::iota(indices.begin(), indices.end(), 0);
+
+    // Warm Up.
+    open3d::geometry::PointCloud pcd_selected = *pcd.SelectByIndex(indices);
+
+    for (auto _ : state) {
+        pcd_selected = *pcd.SelectByIndex(indices);
     }
 }
 
@@ -163,6 +215,38 @@ void LegacyEstimateNormals(
 
     for (auto _ : state) {
         pcd_down->EstimateNormals(search_param, true);
+    }
+}
+
+void RemoveRadiusOutliers(benchmark::State& state,
+                          const core::Device& device,
+                          const int nb_points,
+                          const double search_radius) {
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    pcd = pcd.To(device).VoxelDownSample(0.01);
+
+    // Warp up
+    pcd.RemoveRadiusOutliers(nb_points, search_radius);
+    for (auto _ : state) {
+        pcd.RemoveRadiusOutliers(nb_points, search_radius);
+    }
+}
+
+void LegacyRemoveRadiusOutliers(benchmark::State& state,
+                                const int nb_points,
+                                const double search_radius) {
+    open3d::geometry::PointCloud pcd;
+    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    auto pcd_down = pcd.VoxelDownSample(0.01);
+
+    // Warp up
+    pcd_down->RemoveRadiusOutliers(nb_points, search_radius);
+
+    for (auto _ : state) {
+        pcd_down->RemoveRadiusOutliers(nb_points, search_radius);
     }
 }
 
@@ -221,8 +305,24 @@ ENUM_VOXELDOWNSAMPLE_BACKEND()
 BENCHMARK_CAPTURE(Transform, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
+BENCHMARK_CAPTURE(SelectByIndex, CPU, false, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(SelectByIndex,
+                  CPU(remove duplicates),
+                  true,
+                  core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(SelectByIndex, CUDA, false, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(SelectByIndex,
+                  CUDA(remove duplicates),
+                  true,
+                  core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 
@@ -293,6 +393,9 @@ BENCHMARK_CAPTURE(EstimateNormals,
         ->Unit(benchmark::kMillisecond);
 #endif
 
+BENCHMARK_CAPTURE(LegacyTransform, CPU, 1)->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacySelectByIndex, CPU, 1)->Unit(benchmark::kMillisecond);
+
 BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   Legacy Hybrid[0.02 | 30 | 0.06],
                   0.02,
@@ -303,6 +406,18 @@ BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   Legacy KNN[0.02 | 30],
                   0.02,
                   open3d::geometry::KDTreeSearchParamKNN(30))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(
+        RemoveRadiusOutliers, CPU[50 | 0.05], core::Device("CPU:0"), 50, 0.03)
+        ->Unit(benchmark::kMillisecond);
+#ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(
+        RemoveRadiusOutliers, CUDA[50 | 0.05], core::Device("CUDA:0"), 50, 0.03)
+        ->Unit(benchmark::kMillisecond);
+#endif
+
+BENCHMARK_CAPTURE(LegacyRemoveRadiusOutliers, Legacy[50 | 0.05], 50, 0.03)
         ->Unit(benchmark::kMillisecond);
 
 }  // namespace geometry

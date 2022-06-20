@@ -156,13 +156,71 @@ The attributes of the triangle mesh have different levels::
     triangle_mesh.def("rotate", &TriangleMesh::Rotate, "R"_a, "center"_a,
                       "Rotate points and normals (if exist).");
 
+    triangle_mesh.def(
+            "compute_convex_hull", &TriangleMesh::ComputeConvexHull,
+            "joggle_inputs"_a = false,
+            R"(Compute the convex hull of a point cloud using qhull. This runs on the CPU.
+
+Args:
+    joggle_inputs (default False). Handle precision problems by
+    randomly perturbing the input data. Set to True if perturbing the input
+    iis acceptable but you need convex simplicial output. If False,
+    neighboring facets may be merged in case of precision problems. See
+    `QHull docs <http://www.qhull.org/html/qh-impre.htm#joggle`__ for more
+    details.
+
+Returns:
+    TriangleMesh representing the convexh hull. This contains an
+    extra vertex property "point_indices" that contains the index of the
+    corresponding vertex in the original mesh.
+
+Example:
+    We will load the Stanford Bunny dataset, compute and display it's convex hull::
+
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        hull = mesh.compute_convex_hull()
+        o3d.visualization.draw([{'name': 'bunny', 'geometry': mesh}, {'name': 'convex hull', 'geometry': hull}])
+)");
+
+    // creation
     triangle_mesh.def_static(
             "from_legacy", &TriangleMesh::FromLegacy, "mesh_legacy"_a,
             "vertex_dtype"_a = core::Float32, "triangle_dtype"_a = core::Int64,
             "device"_a = core::Device("CPU:0"),
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
+    // conversion
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
+
+    triangle_mesh.def("clip_plane", &TriangleMesh::ClipPlane, "point"_a,
+                      "normal"_a,
+                      R"(
+Returns a new triangle mesh clipped with the plane.
+
+This method clips the triangle mesh with the specified plane.
+Parts of the mesh on the positive side of the plane will be kept and triangles
+intersected by the plane will be cut.
+
+Args:
+    point (open3d.core.Tensor): A point on the plane.
+
+    normal (open3d.core.Tensor): The normal of the plane. The normal points to
+        the positive side of the plane for which the geometry will be kept.
+
+Returns:
+    New triangle mesh clipped with the plane.
+
+
+This example shows how to create a hemisphere from a sphere::
+
+    import open3d as o3d
+
+    sphere = o3d.t.geometry.TriangleMesh.from_legacy(o3d.geometry.TriangleMesh.create_sphere())
+    hemisphere = sphere.clip_plane(point=[0,0,0], normal=[1,0,0])
+
+    o3d.visualization.draw(hemisphere)
+)");
 }
 
 }  // namespace geometry

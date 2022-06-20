@@ -49,7 +49,7 @@ class RaggedTensor:
         * `ml3d.classes.RaggedTensor.from_row_splits`
 
         Raises:
-            ValueError: If internal = False. This method is intented for internal use.
+            ValueError: If internal = False. This method is intended for internal use.
 
         """
         if not internal:

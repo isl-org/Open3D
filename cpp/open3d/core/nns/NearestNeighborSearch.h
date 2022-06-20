@@ -47,9 +47,11 @@ public:
     ///
     /// \param dataset_points Dataset points for constructing search index. Must
     /// be 2D, with shape {n, d}.
-    NearestNeighborSearch(const Tensor &dataset_points)
-        : dataset_points_(dataset_points){};
-
+    // NearestNeighborSearch(const Tensor &dataset_points)
+    //     : dataset_points_(dataset_points){};
+    NearestNeighborSearch(const Tensor &dataset_points,
+                          const Dtype &index_dtype = core::Int32)
+        : dataset_points_(dataset_points), index_dtype_(index_dtype){};
     ~NearestNeighborSearch();
     NearestNeighborSearch(const NearestNeighborSearch &) = delete;
     NearestNeighborSearch &operator=(const NearestNeighborSearch &) = delete;
@@ -127,8 +129,8 @@ public:
     /// - counts: Counts of neighbour for each query points. [Tensor
     /// of shape {n}, with dtype Int32].
     std::tuple<Tensor, Tensor, Tensor> HybridSearch(const Tensor &query_points,
-                                                    double radius,
-                                                    int max_knn);
+                                                    const double radius,
+                                                    const int max_knn) const;
 
 private:
     bool SetIndex();
@@ -141,6 +143,7 @@ protected:
     std::unique_ptr<nns::FixedRadiusIndex> fixed_radius_index_;
     std::unique_ptr<nns::KnnIndex> knn_index_;
     const Tensor dataset_points_;
+    const Dtype index_dtype_;
 };
 }  // namespace nns
 }  // namespace core

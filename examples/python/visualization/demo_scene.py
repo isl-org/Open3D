@@ -32,53 +32,9 @@ import open3d as o3d
 import open3d.visualization as vis
 
 
-# Check for assets
-def check_for_required_assets():
-    '''
-    Check for demo scene assets and print usage if necessary
-    '''
-    if not os.path.exists("examples/test_data/demo_scene_assets"):
-        print("""This demo requires assets that appear to be missing.
-Please execute the follow commands:
-```
-cd examples/test_data
-wget https://github.com/isl-org/open3d_downloads/releases/download/o3d_demo_scene/demo_scene_assets.tgz
-tar xzvf demo_scene_assets.tgz
-cd ../..
-python examples/python/visualization/demo_scene.py
-```
-""")
-        exit(1)
-
-
-def create_material(directory, name):
-    '''
-    Convenience function for creating material and loading a set of associated shaders
-    '''
-    mat = vis.Material('defaultLit')
-    # Color, Roughness and Normal textures are always present
-    mat.texture_maps['albedo'] = o3d.t.io.read_image(
-        os.path.join(directory, name + '_Color.jpg'))
-    mat.texture_maps['roughness'] = o3d.t.io.read_image(
-        os.path.join(directory, name + '_Roughness.jpg'))
-    mat.texture_maps['normal'] = o3d.t.io.read_image(
-        os.path.join(directory, name + '_NormalDX.jpg'))
-    # Ambient occlusion and metal textures are not always available
-    # NOTE: Checking for their existence is not necessary but checking first
-    # avoids annoying warning output
-    ao_img_name = os.path.join(directory, name + '_AmbientOcclusion.jpg')
-    metallic_img_name = os.path.join(directory, name + '_Metalness.jpg')
-    if os.path.exists(ao_img_name):
-        mat.texture_maps['ambient_occlusion'] = o3d.t.io.read_image(ao_img_name)
-    if os.path.exists(metallic_img_name):
-        mat.texture_maps['metallic'] = o3d.t.io.read_image(metallic_img_name)
-        mat.scalar_properties['metallic'] = 1.0
-    return mat
-
-
 def convert_material_record(mat_record):
     mat = vis.Material('defaultLit')
-    # Convert scalar paremeters
+    # Convert scalar parameters
     mat.vector_properties['base_color'] = mat_record.base_color
     mat.scalar_properties['metallic'] = mat_record.base_metallic
     mat.scalar_properties['roughness'] = mat_record.base_roughness
@@ -129,8 +85,8 @@ def create_scene():
     a_ico = o3d.t.geometry.TriangleMesh.from_legacy(a_ico)
 
     # Load an OBJ model for our scene
-    helmet = o3d.io.read_triangle_model(
-        "examples/test_data/demo_scene_assets/FlightHelmet.gltf")
+    helmet_data = o3d.data.FlightHelmetModel()
+    helmet = o3d.io.read_triangle_model(helmet_data.path)
     helmet_parts = []
     for m in helmet.meshes:
         # m.mesh.paint_uniform_color((1.0, 0.75, 0.3))
@@ -148,31 +104,60 @@ def create_scene():
     ground_plane = o3d.t.geometry.TriangleMesh.from_legacy(ground_plane)
 
     # Material to make ground plane more interesting - a rough piece of glass
-    mat_ground = vis.Material("defaultLitSSR")
-    mat_ground.scalar_properties['roughness'] = 0.15
-    mat_ground.scalar_properties['reflectance'] = 0.72
-    mat_ground.scalar_properties['transmission'] = 0.6
-    mat_ground.scalar_properties['thickness'] = 0.3
-    mat_ground.scalar_properties['absorption_distance'] = 0.1
-    mat_ground.vector_properties['absorption_color'] = np.array(
+    ground_plane.material = vis.Material("defaultLitSSR")
+    ground_plane.material.scalar_properties['roughness'] = 0.15
+    ground_plane.material.scalar_properties['reflectance'] = 0.72
+    ground_plane.material.scalar_properties['transmission'] = 0.6
+    ground_plane.material.scalar_properties['thickness'] = 0.3
+    ground_plane.material.scalar_properties['absorption_distance'] = 0.1
+    ground_plane.material.vector_properties['absorption_color'] = np.array(
         [0.82, 0.98, 0.972, 1.0])
-    mat_ground.texture_maps['albedo'] = o3d.t.io.read_image(
-        "examples/test_data/demo_scene_assets/PaintedPlaster017_Color.jpg")
-    mat_ground.texture_maps['roughness'] = o3d.t.io.read_image(
-        "examples/test_data/demo_scene_assets/noiseTexture.png")
-    mat_ground.texture_maps['normal'] = o3d.t.io.read_image(
-        "examples/test_data/demo_scene_assets/PaintedPlaster017_NormalDX.jpg")
-    ground_plane.material = mat_ground
+    painted_plaster_texture_data = o3d.data.PaintedPlasterTexture()
+    ground_plane.material.texture_maps['albedo'] = o3d.t.io.read_image(
+        painted_plaster_texture_data.albedo_texture_path)
+    ground_plane.material.texture_maps['normal'] = o3d.t.io.read_image(
+        painted_plaster_texture_data.normal_texture_path)
+    ground_plane.material.texture_maps['roughness'] = o3d.t.io.read_image(
+        painted_plaster_texture_data.roughness_texture_path)
 
     # Load textures and create materials for each of our demo items
-    a_cube.material = create_material("examples/test_data/demo_scene_assets",
-                                      "WoodFloor050")
-    a_sphere.material = create_material("examples/test_data/demo_scene_assets",
-                                        "Tiles074")
-    a_ico.material = create_material("examples/test_data/demo_scene_assets",
-                                     "Terrazzo018")
-    a_cylinder.material = create_material(
-        "examples/test_data/demo_scene_assets", "Metal008")
+    wood_floor_texture_data = o3d.data.WoodFloorTexture()
+    a_cube.material = vis.Material('defaultLit')
+    a_cube.material.texture_maps['albedo'] = o3d.t.io.read_image(
+        wood_floor_texture_data.albedo_texture_path)
+    a_cube.material.texture_maps['normal'] = o3d.t.io.read_image(
+        wood_floor_texture_data.normal_texture_path)
+    a_cube.material.texture_maps['roughness'] = o3d.t.io.read_image(
+        wood_floor_texture_data.roughness_texture_path)
+
+    tiles_texture_data = o3d.data.TilesTexture()
+    a_sphere.material = vis.Material('defaultLit')
+    a_sphere.material.texture_maps['albedo'] = o3d.t.io.read_image(
+        tiles_texture_data.albedo_texture_path)
+    a_sphere.material.texture_maps['normal'] = o3d.t.io.read_image(
+        tiles_texture_data.normal_texture_path)
+    a_sphere.material.texture_maps['roughness'] = o3d.t.io.read_image(
+        tiles_texture_data.roughness_texture_path)
+
+    terrazzo_texture_data = o3d.data.TerrazzoTexture()
+    a_ico.material = vis.Material('defaultLit')
+    a_ico.material.texture_maps['albedo'] = o3d.t.io.read_image(
+        terrazzo_texture_data.albedo_texture_path)
+    a_ico.material.texture_maps['normal'] = o3d.t.io.read_image(
+        terrazzo_texture_data.normal_texture_path)
+    a_ico.material.texture_maps['roughness'] = o3d.t.io.read_image(
+        terrazzo_texture_data.roughness_texture_path)
+
+    metal_texture_data = o3d.data.MetalTexture()
+    a_cylinder.material = vis.Material('defaultLit')
+    a_cylinder.material.texture_maps['albedo'] = o3d.t.io.read_image(
+        metal_texture_data.albedo_texture_path)
+    a_cylinder.material.texture_maps['normal'] = o3d.t.io.read_image(
+        metal_texture_data.normal_texture_path)
+    a_cylinder.material.texture_maps['roughness'] = o3d.t.io.read_image(
+        metal_texture_data.roughness_texture_path)
+    a_cylinder.material.texture_maps['metallic'] = o3d.t.io.read_image(
+        metal_texture_data.metallic_texture_path)
 
     geoms = [{
         "name": "plane",
@@ -201,7 +186,6 @@ def create_scene():
 
 
 if __name__ == "__main__":
-    check_for_required_assets()
     geoms = create_scene()
     vis.draw(geoms,
              bg_color=(0.8, 0.9, 0.9, 1.0),

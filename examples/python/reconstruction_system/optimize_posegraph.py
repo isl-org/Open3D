@@ -57,7 +57,7 @@ def optimize_posegraph_for_fragment(path_dataset, fragment_id, config):
         path_dataset,
         config["template_fragment_posegraph_optimized"] % fragment_id)
     run_posegraph_optimization(pose_graph_name, pose_graph_optimized_name,
-            max_correspondence_distance = config["max_depth_diff"],
+            max_correspondence_distance = config["depth_diff_max"],
             preference_loop_closure = \
             config["preference_loop_closure_odometry"])
 

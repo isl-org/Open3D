@@ -154,7 +154,7 @@ static CorrespondenceSetPixelWise ComputeCorrespondence(
                         double d_t = *depth_t.PointerAt<float>(u_t, v_t);
                         if (!std::isnan(d_t) &&
                             std::abs(transformed_d_s - d_t) <=
-                                    option.max_depth_diff_) {
+                                    option.depth_diff_max_) {
                             AddElementToCorrespondenceMap(
                                     correspondence_map_private,
                                     depth_buffer_private, u_s, v_s, u_t, v_t,
@@ -195,8 +195,7 @@ static std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
         const geometry::Image &depth, const Eigen::Matrix3d &intrinsic_matrix) {
     auto image_xyz = std::make_shared<geometry::Image>();
     if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
-        utility::LogError(
-                "[ConvertDepthImageToXYZImage] Unsupported image format.");
+        utility::LogError("Unsupported image format.");
     }
     const double inv_fx = 1.0 / intrinsic_matrix(0, 0);
     const double inv_fy = 1.0 / intrinsic_matrix(1, 1);
@@ -291,9 +290,7 @@ static void NormalizeIntensity(
         const CorrespondenceSetPixelWise &correspondence) {
     if (image_s.width_ != image_t.width_ ||
         image_s.height_ != image_t.height_) {
-        utility::LogError(
-                "[NormalizeIntensity] Size of two input images should be "
-                "same");
+        utility::LogError("Size of two input images should be the same");
     }
     double mean_s = 0.0, mean_t = 0.0;
     for (size_t row = 0; row < correspondence.size(); row++) {
@@ -324,7 +321,7 @@ static std::shared_ptr<geometry::Image> PreprocessDepth(
     for (int y = 0; y < depth_processed->height_; y++) {
         for (int x = 0; x < depth_processed->width_; x++) {
             float *p = depth_processed->PointerAt<float>(x, y);
-            if ((*p < option.min_depth_ || *p > option.max_depth_ || *p <= 0))
+            if ((*p < option.depth_min_ || *p > option.depth_max_ || *p <= 0))
                 *p = std::numeric_limits<float>::quiet_NaN();
         }
     }

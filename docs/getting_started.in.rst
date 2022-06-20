@@ -120,7 +120,6 @@ Try it
 
 If everything works, congratulations, now Open3D has been successfully installed!
 
-
 Troubleshooting:
 ^^^^^^^^^^^^^^^^
 
@@ -130,7 +129,6 @@ help troubleshoot the issue:
 .. code-block:: bash
 
     python -W default -c "import open3d as o3d"
-
 
 Running Open3D tutorials
 ------------------------
@@ -143,7 +141,6 @@ all Python examples.
     ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction
     system. Please read ``util/install-deps-python.sh`` for installing these
     packages.
-
 
 .. _install_open3d_c++:
 
@@ -216,7 +213,6 @@ Extract the archive and move the contents to a local folder (such as
         ├── libOpen3D.so                  │       ├── ...
         ├── open3d_tf_ops.so              └── lib
         └── open3d_torch_ops.so               └── Open3D.lib
-
 
 Some files may be absent in the case of unsupported functionality. To use Open3D
 with your programs through `cmake`, add ``-D

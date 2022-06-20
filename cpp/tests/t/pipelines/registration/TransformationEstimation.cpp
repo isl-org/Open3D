@@ -130,7 +130,7 @@ TEST_P(TransformationEstimationPermuteDevices,
         t::pipelines::registration::TransformationEstimationPointToPoint
                 estimation_p2p;
 
-        // Get transfrom.
+        // Get transform.
         core::Tensor p2p_transform = estimation_p2p.ComputeTransformation(
                 source_pcd, target_pcd, corres);
         // Apply transform.
@@ -175,7 +175,7 @@ TEST_P(TransformationEstimationPermuteDevices,
         t::pipelines::registration::TransformationEstimationPointToPlane
                 estimation_p2plane;
 
-        // Get transfrom.
+        // Get transform.
         core::Tensor p2plane_transform =
                 estimation_p2plane.ComputeTransformation(source_pcd, target_pcd,
                                                          corres);

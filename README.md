@@ -44,8 +44,8 @@ For more, please visit the [Open3D documentation](http://www.open3d.org/docs).
 
 ## Python quick start
 
-Pre-built pip and conda packages support Ubuntu 18.04+, macOS 10.15+ and
-Windows 10 (64-bit) with Python 3.6-3.9.
+Pre-built pip packages support Ubuntu 18.04+, macOS 10.15+ and Windows 10+
+(64-bit) with Python 3.6-3.9.
 
 ```bash
 # Install

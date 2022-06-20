@@ -33,7 +33,7 @@
 
 using namespace open3d::core::nns;
 
-template <class T>
+template <class T, class TIndex>
 void RadiusSearchCPU(const torch::Tensor& points,
                      const torch::Tensor& queries,
                      const torch::Tensor& radii,
@@ -48,9 +48,9 @@ void RadiusSearchCPU(const torch::Tensor& points,
                      torch::Tensor& neighbors_distance) {
     const int batch_size = points_row_splits.size(0) - 1;
     // run radius search for each batch item
-    std::vector<NeighborSearchAllocator<T>> batch_output_allocators(
-            batch_size, NeighborSearchAllocator<T>(points.device().type(),
-                                                   points.device().index())
+    std::vector<NeighborSearchAllocator<T, TIndex>> batch_output_allocators(
+            batch_size, NeighborSearchAllocator<T, TIndex>(
+                                points.device().type(), points.device().index())
 
     );
     int64_t last_neighbors_count = 0;
@@ -72,9 +72,9 @@ void RadiusSearchCPU(const torch::Tensor& points,
                            queries_row_splits.data_ptr<int64_t>()[i]);
 
         std::unique_ptr<NanoFlannIndexHolderBase> holder =
-                impl::BuildKdTree<T>(num_points_i, points_i, 3, metric);
+                impl::BuildKdTree<T, TIndex>(num_points_i, points_i, 3, metric);
 
-        open3d::core::nns::impl::RadiusSearchCPU(
+        impl::RadiusSearchCPU<T, TIndex>(
                 holder.get(), neighbors_row_splits_i, num_points_i, points_i,
                 num_queries_i, queries_i, 3, radius_i, metric,
                 ignore_query_point, return_distances, normalize_distances,
@@ -95,8 +95,8 @@ void RadiusSearchCPU(const torch::Tensor& points,
         return;
     }
 
-    NeighborSearchAllocator<T> output_allocator(points.device().type(),
-                                                points.device().index());
+    NeighborSearchAllocator<T, TIndex> output_allocator(
+            points.device().type(), points.device().index());
 
     // combine results
     int64_t neighbors_index_size = 0;
@@ -105,7 +105,7 @@ void RadiusSearchCPU(const torch::Tensor& points,
         neighbors_index_size += a.NeighborsIndex().size(0);
         neighbors_distance_size += a.NeighborsDistance().size(0);
     }
-    int32_t* neighbors_index_data_ptr;
+    TIndex* neighbors_index_data_ptr;
     T* neighbors_distance_data_ptr;
     output_allocator.AllocIndices(&neighbors_index_data_ptr,
                                   neighbors_index_size);
@@ -132,8 +132,8 @@ void RadiusSearchCPU(const torch::Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-#define INSTANTIATE(T)                                                      \
-    template void RadiusSearchCPU<T>(                                       \
+#define INSTANTIATE(T, TIndex)                                              \
+    template void RadiusSearchCPU<T, TIndex>(                               \
             const torch::Tensor& points, const torch::Tensor& queries,      \
             const torch::Tensor& radii,                                     \
             const torch::Tensor& points_row_splits,                         \
@@ -143,5 +143,7 @@ void RadiusSearchCPU(const torch::Tensor& points,
             torch::Tensor& neighbors_row_splits,                            \
             torch::Tensor& neighbors_distance);
 
-INSTANTIATE(float)
-INSTANTIATE(double)
+INSTANTIATE(float, int32_t)
+INSTANTIATE(float, int64_t)
+INSTANTIATE(double, int32_t)
+INSTANTIATE(double, int64_t)

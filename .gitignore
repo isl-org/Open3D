@@ -1,5 +1,9 @@
 *.whl
 
+# Docker build artifacts (wheel, dev package, ccache)
+docker/*.tar.gz
+docker/*.tar.xz
+
 # Windows build temp cmake file
 CMakeSettings.json
 
@@ -21,7 +25,6 @@ build*/
 cmake-build-debug/
 cmake-build-release/
 util/pip_package/dist/
-util/conda_package/dist/
 doxygen/
 node_modules/
 
@@ -55,22 +58,12 @@ dist/
 compile_commands.json
 
 # Example resources
-examples/test_data/open3d_downloads
 examples/python/reconstruction_system/dataset/
-examples/test_data/fountain_small
-examples/test_data/Armadillo.ply
-examples/test_data/Bunny.ply
-examples/test_data/eagle.ply
-examples/test_data/voxelized.ply
 examples/python/geometry/voxel_grid_test.ply
 examples/python/benchmark/testdata/
+examples/python/benchmark/*.pkl
+examples/python/benchmark/*.png
 examples/python/misc/test.jpg
-examples/test_data/GraphOptimization/pose_graph_example_fragment_optimized.json
-examples/test_data/GraphOptimization/pose_graph_example_global_optimized.json
-examples/test_data/depth/
-examples/test_data/image/
-examples/test_data/sync.ply
-examples/test_data/sync.png
 examples/python/pipelines/multiway_registration.pcd
 examples/python/geometry/test.json
 examples/python/visualization/viewpoint.json
@@ -82,7 +75,6 @@ examples/python/geometry/copy_of_crate.png
 examples/python/geometry/copy_of_crate.obj
 
 # doc
-docs/test_data
 docs/tutorial/**/*.ipynb
 docs/tutorial/**/*.py
 docs/tutorial/**/*.jpg

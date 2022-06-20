@@ -31,7 +31,7 @@
 // These classes implement functors that can be passed to the neighbor search
 // functions.
 
-template <class T, class TIndex = int32_t>
+template <class T, class TIndex>
 class NeighborSearchAllocator {
 public:
     NeighborSearchAllocator(torch::DeviceType device_type, int device_idx)

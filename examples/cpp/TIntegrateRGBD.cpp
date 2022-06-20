@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
 
     if (color_filenames.size() != depth_filenames.size()) {
         utility::LogError(
-                "[TIntegrateRGBD] numbers of color and depth files mismatch. "
+                "The numbers of color and depth files mismatch. "
                 "Please provide folders with same number of images.");
     }
 

@@ -117,7 +117,7 @@ public:
 struct RealSenseValidConfigs {
     std::string serial;  ///< Device serial number.
     std::string name;    ///< Device name.
-    /// Mapping between configuraiton option name and a list of valid
+    /// Mapping between configuration option name and a list of valid
     /// values.
     std::unordered_map<std::string, std::set<std::string>> valid_configs;
 };

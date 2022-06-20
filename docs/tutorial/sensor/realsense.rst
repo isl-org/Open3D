@@ -112,10 +112,10 @@ The reconstruction result below was obtained with the ``L515_JackJack`` dataset
 with the configuration changes::
 
     "path_dataset": "/path/to/downloaded/L515_JackJack.bag"
-    "max_depth": 0.85,
+    "depth_max": 0.85,
     "tsdf_cubic_size": 0.75,
     "voxel_size": 0.025,
-    "max_depth_diff": 0.03
+    "depth_diff_max": 0.03
 
 .. raw:: html
 
@@ -251,7 +251,9 @@ during capture and performing it while reading the bad file instead.
 
 This is a complete C++ example that shows visualizing live capture and recording
 to a bag file. The recording can be paused / resumed with [SPACE]. Use [ESC] to
-stop capture and quit. You can use this example to capture your own dataset::
+stop capture and quit. You can download the 
+`rs_default_config.json <https://github.com/isl-org/open3d_downloads/releases/download/20220301-data/rs_default_config.json>`_ 
+and use this example to capture your own dataset::
 
         make RealSenseRecorder
         bin/examples/RealSenseRecorder --config ../examples/test_data/rs_default_config.json --record test_data.bag
