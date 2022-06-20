@@ -340,13 +340,15 @@ public:
                                const core::HashBackendType &backend =
                                        core::HashBackendType::Default) const;
 
-    /// \brief Downsamples a point cloud uniformly
+    /// \brief Downsamples a point cloud by selecting every kth index point and
+    /// its attributes.
     ///
     /// \param every_k_points Sample rate, the selected point indices are [0, k,
     /// 2k, …].
     PointCloud UniformDownSample(size_t every_k_points) const;
 
-    /// \brief Downsample a pointcloud randomly.
+    /// \brief Downsample a pointcloud by selecting random index point and its
+    /// attributes.
     ///
     /// \param sampling_ratio Sampling ratio, the ratio of sample to total
     /// number of points in the pointcloud.

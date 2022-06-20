@@ -767,7 +767,7 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
 TEST_P(PointCloudPermuteDevices, UniformDownSample) {
     core::Device device = GetParam();
 
-    // Value test
+    // Value test.
     t::geometry::PointCloud pcd_small(core::Tensor::Init<float>({{0, 0, 0},
                                                                  {1, 0, 0},
                                                                  {2, 0, 0},
@@ -786,7 +786,7 @@ TEST_P(PointCloudPermuteDevices, UniformDownSample) {
 TEST_P(PointCloudPermuteDevices, RandomDownSample) {
     core::Device device = GetParam();
 
-    // Value test
+    // Value test.
     t::geometry::PointCloud pcd_small(core::Tensor::Init<float>({{0, 0, 0},
                                                                  {1, 0, 0},
                                                                  {2, 0, 0},
