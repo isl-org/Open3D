@@ -12,6 +12,7 @@ target_sources(tgeometry PRIVATE
     TriangleMesh.cpp
     TriangleMeshFactory.cpp
     VoxelBlockGrid.cpp
+    VtkUtils.cpp
 )
 
 open3d_show_and_abort_on_warning(tgeometry)
