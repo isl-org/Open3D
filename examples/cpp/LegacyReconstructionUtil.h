@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <fmt/chrono.h>
 #include <json/json.h>
 
 #include <atomic>
@@ -34,72 +35,24 @@
 
 #include "open3d/Open3D.h"
 
+
 namespace open3d {
 namespace examples {
 namespace legacy_reconstruction {
 
 // ============== Helper functions for file system ==============
 std::string PadZeroToNumber(int num, int size) {
-    std::string s = std::to_string(num);
-    while (s.size() < (size_t)size) {
-        s = "0" + s;
-    }
-    return s;
+    return fmt::format("{0:0{1}}", num, size);
 }
 
-std::string ElapseTimeToHMS(double seconds) {
-    int h = seconds / 3600;
-    int m = (seconds - h * 3600) / 60;
-    int s = seconds - h * 3600 - m * 60;
-
-    std::string hs = std::to_string(h);
-    std::string ms = std::to_string(m);
-    std::string ss = std::to_string(s);
-
-    if (h < 10) {
-        hs = "0" + hs;
-    }
-    if (m < 10) {
-        ms = "0" + ms;
-    }
-    if (s < 10) {
-        ss = "0" + ss;
-    }
-    return hs + ":" + ms + ":" + ss;
+std::string DurationToHMS(const double& ms) {
+    std::chrono::system_clock::time_point t{
+            std::chrono::milliseconds{size_t(ms)}};
+    return fmt::format("{:%T}", t.time_since_epoch());
 }
 
 std::string FloatToString(float f, int precision = 3) {
-    std::stringstream oss;
-    oss << std::fixed << std::setprecision(precision) << f;
-    return oss.str();
-}
-
-std::string JoinPath(const std::string& path1, const std::string& path2) {
-    std::string path = path1;
-    if (path.back() != '/') {
-        path += "/";
-    }
-    path += path2;
-    return path;
-}
-
-std::string JoinPath(const std::vector<std::string>& paths) {
-    std::string path = paths[0];
-    for (size_t i = 1; i < paths.size(); i++) {
-        path = JoinPath(path, paths[i]);
-    }
-    return path;
-}
-
-std::string AddIfExist(const std::string& path,
-                       const std::vector<std::string>& folder_names) {
-    for (auto& folder_name : folder_names) {
-        const std::string folder_path = JoinPath(path, folder_name);
-        if (utility::filesystem::DirectoryExists(folder_path)) {
-            return folder_path;
-        }
-    }
-    utility::LogError("None of the folders {} found in {}", folder_names, path);
+    return fmt::format("{0:.{1}f}", f, precision);
 }
 
 bool CheckFolderStructure(const std::string& path_dataset) {
@@ -108,9 +61,14 @@ bool CheckFolderStructure(const std::string& path_dataset) {
                 "bag") {
         return true;
     }
-    const std::string path_color =
-            AddIfExist(path_dataset, {"color", "rgb", "image"});
-    const std::string path_depth = JoinPath(path_dataset, "depth");
+    const std::string path_color = utility::filesystem::AddIfExist(
+            path_dataset, {"color", "rgb", "image"});
+    if (path_color == path_dataset) {
+        utility::LogError("Can not find color folder in {}", path_dataset);
+    }
+
+    const std::string path_depth =
+            utility::filesystem::JoinPath(path_dataset, "depth");
     if (!utility::filesystem::DirectoryExists(path_color) ||
         !utility::filesystem::DirectoryExists(path_depth)) {
         utility::LogWarning("Folder structure of {} is not correct",
@@ -148,8 +106,9 @@ bool ReadJsonFromFile(const std::string& path, Json::Value& json) {
 std::tuple<std::string, std::string> GetRGBDFolders(
         const std::string& path_dataset) {
     return std::make_tuple(
-            AddIfExist(path_dataset, {"image/", "rgb/", "color/"}),
-            JoinPath(path_dataset, "depth/"));
+            utility::filesystem::AddIfExist(path_dataset,
+                                            {"image/", "rgb/", "color/"}),
+            utility::filesystem::JoinPath(path_dataset, "depth/"));
 }
 
 std::tuple<std::vector<std::string>, std::vector<std::string>> ReadRGBDFiles(
@@ -429,8 +388,9 @@ public:
      */
     void MakeFragments() {
         utility::LogInfo("Making fragments from RGBD sequence.");
-        MakeCleanFolder(JoinPath(config_["path_dataset"].asString(),
-                                 config_["folder_fragment"].asString()));
+        MakeCleanFolder(utility::filesystem::JoinPath(
+                config_["path_dataset"].asString(),
+                config_["folder_fragment"].asString()));
 
         std::vector<std::string> color_files, depth_files;
         std::tie(color_files, depth_files) =
@@ -463,8 +423,9 @@ public:
         utility::LogInfo("Registering fragments.");
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-        MakeCleanFolder(JoinPath(config_["path_dataset"].asString(),
-                                 config_["folder_scene"].asString()));
+        MakeCleanFolder(utility::filesystem::JoinPath(
+                config_["path_dataset"].asString(),
+                config_["folder_scene"].asString()));
 
         pipelines::registration::PoseGraph scene_pose_graph;
         MakePoseGraphForScene(scene_pose_graph);
@@ -475,18 +436,21 @@ public:
                 config_["preference_loop_closure_registration"].asDouble(),
                 scene_pose_graph);
         io::WritePoseGraph(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_global_posegraph_optimized"]
-                                 .asString()),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_global_posegraph_optimized"]
+                                .asString()),
                 scene_pose_graph);
 
         // Save global scene camera trajectory.
         SaveSceneTrajectory(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_global_posegraph_optimized"]
-                                 .asString()),
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_global_traj"].asString()));
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_global_posegraph_optimized"]
+                                .asString()),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_global_traj"].asString()));
     }
 
     /**
@@ -497,11 +461,13 @@ public:
         utility::LogInfo("Refining rough registration of fragments.");
         RefineFragments();
         SaveSceneTrajectory(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_refined_posegraph_optimized"]
-                                 .asString()),
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_global_traj"].asString()));
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_refined_posegraph_optimized"]
+                                .asString()),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_global_traj"].asString()));
     }
 
     /**
@@ -514,8 +480,9 @@ public:
 
         camera::PinholeCameraTrajectory camera_trajectory;
         io::ReadPinholeCameraTrajectory(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_global_traj"].asString()),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_global_traj"].asString()),
                 camera_trajectory);
 
         const auto rgbd_files =
@@ -530,23 +497,25 @@ public:
         utility::LogInfo("Running SLAC optimization.");
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-        const auto ply_files =
-                ReadPlyFiles(JoinPath(config_["path_dataset"].asString(),
-                                      config_["folder_fragment"].asString()));
+        const auto ply_files = ReadPlyFiles(utility::filesystem::JoinPath(
+                config_["path_dataset"].asString(),
+                config_["folder_fragment"].asString()));
         if (ply_files.size() == 0) {
             utility::LogError(
                     "No fragments found in {}, please make sure the "
                     "reconstruction_system has finished running on the "
                     "dataset ",
-                    JoinPath(config_["path_dataset"].asString(),
-                             config_["folder_fragment"].asString()));
+                    utility::filesystem::JoinPath(
+                            config_["path_dataset"].asString(),
+                            config_["folder_fragment"].asString()));
         }
 
         pipelines::registration::PoseGraph scene_pose_graph;
         io::ReadPoseGraph(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_refined_posegraph_optimized"]
-                                 .asString()),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_refined_posegraph_optimized"]
+                                .asString()),
                 scene_pose_graph);
 
         // SLAC optimizer parameters.
@@ -557,8 +526,9 @@ public:
         params.fitness_threshold_ = config_["fitness_threshold"].asFloat();
         params.regularizer_weight_ = config_["regularizer_weight"].asFloat();
         params.device_ = core::Device(config_["device"].asString());
-        params.slac_folder_ = JoinPath(config_["path_dataset"].asString(),
-                                       config_["folder_slac"].asString());
+        params.slac_folder_ = utility::filesystem::JoinPath(
+                config_["path_dataset"].asString(),
+                config_["folder_slac"].asString());
 
         t::pipelines::slac::SLACDebugOption debug_option(false, 0);
         pipelines::registration::PoseGraph update;
@@ -576,13 +546,13 @@ public:
 
             const auto key_tensor =
                     hashmap->GetKeyTensor().IndexGet({active_buf_indices});
-            key_tensor.Save(
-                    JoinPath(params.GetSubfolderName(), "ctr_grid_keys.npy"));
+            key_tensor.Save(utility::filesystem::JoinPath(
+                    params.GetSubfolderName(), "ctr_grid_keys.npy"));
 
             const auto value_tensor =
                     hashmap->GetValueTensor().IndexGet({active_buf_indices});
-            value_tensor.Save(
-                    JoinPath(params.GetSubfolderName(), "ctr_grid_values.npy"));
+            value_tensor.Save(utility::filesystem::JoinPath(
+                    params.GetSubfolderName(), "ctr_grid_values.npy"));
         } else {
             utility::LogError(
                     "Requested optimization method {}, is not implemented. "
@@ -591,18 +561,20 @@ public:
         }
 
         // Write updated pose graph.
-        io::WritePoseGraph(JoinPath(params.GetSubfolderName(),
-                                    config_["template_optimized_posegraph_slac"]
-                                            .asString()),
+        io::WritePoseGraph(utility::filesystem::JoinPath(
+                                   params.GetSubfolderName(),
+                                   config_["template_optimized_posegraph_slac"]
+                                           .asString()),
                            update);
 
         // Write trajectory for slac-integrate stage.
-        SaveSceneTrajectory(
-                JoinPath(params.GetSubfolderName(),
-                         config_["template_optimized_posegraph_slac"]
-                                 .asString()),
-                params.GetSubfolderName() + "/optimized_trajectory_" +
-                        config_["method"].asString() + ".log");
+        SaveSceneTrajectory(utility::filesystem::JoinPath(
+                                    params.GetSubfolderName(),
+                                    config_["template_optimized_posegraph_slac"]
+                                            .asString()),
+                            params.GetSubfolderName() +
+                                    "/optimized_trajectory_" +
+                                    config_["method"].asString() + ".log");
     }
 
     /**
@@ -615,10 +587,10 @@ public:
         // Dataset path and slac subfolder path.
         // Slac default subfolder for 0.050 voxel size: `dataset/slac/0.050/`.
         const auto path_dataset = config_["path_dataset"].asString();
-        const auto path_slac =
-                JoinPath(path_dataset, config_["subfolder_slac"].asString());
-        const auto path_fragment =
-                JoinPath(path_dataset, config_["folder_fragment"].asString());
+        const auto path_slac = utility::filesystem::JoinPath(
+                path_dataset, config_["subfolder_slac"].asString());
+        const auto path_fragment = utility::filesystem::JoinPath(
+                path_dataset, config_["folder_fragment"].asString());
 
         std::vector<std::string> color_files, depth_files;
         std::tie(color_files, depth_files) = ReadRGBDFiles(path_dataset);
@@ -630,8 +602,9 @@ public:
 
         pipelines::registration::PoseGraph scene_pose_graph;
         io::ReadPoseGraph(
-                JoinPath(path_slac, config_["template_optimized_posegraph_slac"]
-                                            .asString()),
+                utility::filesystem::JoinPath(
+                        path_slac, config_["template_optimized_posegraph_slac"]
+                                           .asString()),
                 scene_pose_graph);
 
         const core::Device device(config_["device"].asString());
@@ -651,10 +624,11 @@ public:
                 (int64_t)config_["block_count"].asInt(), device);
 
         // Load control grid.
-        const auto ctr_grid_keys =
-                core::Tensor::Load(JoinPath(path_slac, "ctr_grid_keys.npy"));
+        const auto ctr_grid_keys = core::Tensor::Load(
+                utility::filesystem::JoinPath(path_slac, "ctr_grid_keys.npy"));
         const auto ctr_grid_values =
-                core::Tensor::Load(JoinPath(path_slac, "ctr_grid_values.npy"));
+                core::Tensor::Load(utility::filesystem::JoinPath(
+                        path_slac, "ctr_grid_values.npy"));
 
         t::pipelines::slac::ControlGrid ctr_grid(
                 3.0 / 8, ctr_grid_keys.To(device), ctr_grid_values.To(device),
@@ -666,9 +640,10 @@ public:
 
         for (size_t i = 0; i < scene_pose_graph.nodes_.size(); ++i) {
             pipelines::registration::PoseGraph fragment_pose_graph;
-            io::ReadPoseGraph(JoinPath(path_fragment,
-                                       "fragment_optimized_" +
-                                               PadZeroToNumber(i, 3) + ".json"),
+            io::ReadPoseGraph(utility::filesystem::JoinPath(
+                                      path_fragment,
+                                      "fragment_optimized_" +
+                                              PadZeroToNumber(i, 3) + ".json"),
                               fragment_pose_graph);
             for (size_t j = 0; j < fragment_pose_graph.nodes_.size(); ++j) {
                 const Eigen::Matrix4d& pose_local =
@@ -710,12 +685,15 @@ public:
             const auto pcd =
                     voxel_grid.ExtractPointCloud().To(core::Device("CPU:0"));
             t::io::WritePointCloud(
-                    JoinPath(path_slac, "output_slac_pointcloud.ply"), pcd);
+                    utility::filesystem::JoinPath(path_slac,
+                                                  "output_slac_pointcloud.ply"),
+                    pcd);
         } else {
             const auto mesh =
                     voxel_grid.ExtractTriangleMesh().To(core::Device("CPU:0"));
             const auto mesh_legacy = mesh.ToLegacy();
-            io::WriteTriangleMesh(JoinPath(path_slac, "output_slac_mesh.ply"),
+            io::WriteTriangleMesh(utility::filesystem::JoinPath(
+                                          path_slac, "output_slac_mesh.ply"),
                                   mesh_legacy);
         }
     }
@@ -756,11 +734,12 @@ private:
         for (size_t i = 0; i < scene_pose_graph.nodes_.size(); i++) {
             pipelines::registration::PoseGraph fragment_pose_graph;
             io::ReadPoseGraph(
-                    JoinPath(config_["path_dataset"].asString(),
-                             config_["template_fragment_posegraph_optimized"]
-                                             .asString() +
-                                     "fragment_optimized_" +
-                                     PadZeroToNumber(i, 3) + ".json"),
+                    utility::filesystem::JoinPath(
+                            config_["path_dataset"].asString(),
+                            config_["template_fragment_posegraph_optimized"]
+                                            .asString() +
+                                    "fragment_optimized_" +
+                                    PadZeroToNumber(i, 3) + ".json"),
                     fragment_pose_graph);
             for (size_t j = 0; j < fragment_pose_graph.nodes_.size(); j++) {
                 const Eigen::Matrix4d odom =
@@ -844,10 +823,11 @@ private:
         }
 
         io::WritePoseGraph(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_fragment_posegraph"].asString() +
-                                 "fragment_" + PadZeroToNumber(fragment_id, 3) +
-                                 ".json"),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_fragment_posegraph"].asString() +
+                                "fragment_" + PadZeroToNumber(fragment_id, 3) +
+                                ".json"),
                 pose_graph);
 
         // Optimize pose graph.
@@ -858,11 +838,12 @@ private:
 
         // Write optimized pose graph.
         io::WritePoseGraph(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_fragment_posegraph_optimized"]
-                                         .asString() +
-                                 "fragment_optimized_" +
-                                 PadZeroToNumber(fragment_id, 3) + ".json"),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_fragment_posegraph_optimized"]
+                                        .asString() +
+                                "fragment_optimized_" +
+                                PadZeroToNumber(fragment_id, 3) + ".json"),
                 pose_graph);
 
         IntegrateFragmentRGBD(fragment_id, color_files, depth_files, intrinsic,
@@ -873,11 +854,12 @@ private:
             pipelines::registration::PoseGraph& scene_pose_graph) {
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-        MakeCleanFolder(JoinPath(config_["path_dataset"].asString(),
-                                 config_["folder_scene"].asString()));
-        const auto ply_files =
-                ReadPlyFiles(JoinPath(config_["path_dataset"].asString(),
-                                      config_["folder_fragment"].asString()));
+        MakeCleanFolder(utility::filesystem::JoinPath(
+                config_["path_dataset"].asString(),
+                config_["folder_scene"].asString()));
+        const auto ply_files = ReadPlyFiles(utility::filesystem::JoinPath(
+                config_["path_dataset"].asString(),
+                config_["folder_fragment"].asString()));
         if (ply_files.size() == 0) {
             utility::LogWarning("No ply files found.");
             return;
@@ -936,8 +918,9 @@ private:
         }
 
         io::WritePoseGraph(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_global_posegraph"].asString()),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_global_posegraph"].asString()),
                 scene_pose_graph);
     }
 
@@ -961,16 +944,16 @@ private:
     void RefineFragments() {
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-        const auto ply_files =
-                ReadPlyFiles(JoinPath(config_["path_dataset"].asString(),
-                                      config_["folder_fragment"].asString()));
+        const auto ply_files = ReadPlyFiles(utility::filesystem::JoinPath(
+                config_["path_dataset"].asString(),
+                config_["folder_fragment"].asString()));
 
         pipelines::registration::PoseGraph scene_pose_graph;
-        io::ReadPoseGraph(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_global_posegraph_optimized"]
-                                 .asString()),
-                scene_pose_graph);
+        io::ReadPoseGraph(utility::filesystem::JoinPath(
+                                  config_["path_dataset"].asString(),
+                                  config_["template_global_posegraph_optimized"]
+                                          .asString()),
+                          scene_pose_graph);
 
         std::vector<MatchingResult> fragment_matching_results;
 
@@ -1026,8 +1009,9 @@ private:
         }
 
         io::WritePoseGraph(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_refined_posegraph"].asString()),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_refined_posegraph"].asString()),
                 scene_pose_graph);
 
         OptimizePoseGraph(
@@ -1036,9 +1020,10 @@ private:
                 scene_pose_graph);
 
         io::WritePoseGraph(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_refined_posegraph_optimized"]
-                                 .asString()),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_refined_posegraph_optimized"]
+                                .asString()),
                 scene_pose_graph);
     }
 
@@ -1100,10 +1085,11 @@ private:
         const geometry::PointCloud fragment_down = *fragment.VoxelDownSample(
                 config_["tsdf_cubic_size"].asDouble() / 512.0);
         io::WritePointCloud(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_fragment_pointcloud"].asString() +
-                                 "fragment_" + PadZeroToNumber(fragment_id, 3) +
-                                 ".ply"),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_fragment_pointcloud"].asString() +
+                                "fragment_" + PadZeroToNumber(fragment_id, 3) +
+                                ".ply"),
                 fragment_down, {false, true, false});
     }
 
@@ -1137,8 +1123,9 @@ private:
         }
 
         io::WriteTriangleMesh(
-                JoinPath(config_["path_dataset"].asString(),
-                         config_["template_global_mesh"].asString()),
+                utility::filesystem::JoinPath(
+                        config_["path_dataset"].asString(),
+                        config_["template_global_mesh"].asString()),
                 *mesh, false, true);
     }
 
@@ -1194,11 +1181,12 @@ private:
             utility::LogInfo("Fragment odometry {} and {}", s, t);
             pipelines::registration::PoseGraph pose_graph_frag;
             io::ReadPoseGraph(
-                    JoinPath(config_["path_dataset"].asString(),
-                             config_["template_fragment_posegraph_optimized"]
-                                             .asString() +
-                                     "fragment_optimized_" +
-                                     PadZeroToNumber(s, 3) + ".json"),
+                    utility::filesystem::JoinPath(
+                            config_["path_dataset"].asString(),
+                            config_["template_fragment_posegraph_optimized"]
+                                            .asString() +
+                                    "fragment_optimized_" +
+                                    PadZeroToNumber(s, 3) + ".json"),
                     pose_graph_frag);
             const int n_nodes = pose_graph_frag.nodes_.size();
             const Eigen::Matrix4d init_trans =
