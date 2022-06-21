@@ -175,10 +175,10 @@ double TransformationEstimationForDopplerICP::ComputeRMSE(
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
     if (corres.empty() || !target.HasNormals()) return 0.0;
-    double err = 0.0, r;
+    double err = 0.0;
     for (const auto &c : corres) {
-        r = (source.points_[c[0]] - target.points_[c[1]])
-                    .dot(target.normals_[c[1]]);
+        const double r = (source.points_[c[0]] - target.points_[c[1]])
+                                 .dot(target.normals_[c[1]]);
         err += r * r;
     }
     return std::sqrt(err / (double)corres.size());
