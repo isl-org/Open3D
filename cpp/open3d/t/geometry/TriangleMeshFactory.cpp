@@ -37,7 +37,7 @@ TriangleMesh TriangleMesh::CreateBox(double width,
                                      core::Dtype float_dtype,
                                      core::Dtype int_dtype,
                                      const core::Device &device) {
-    // Check width, height, depth
+    // Check width, height, depth.
     if (width <= 0) {
         utility::LogError("width <= 0");
     }
@@ -89,7 +89,7 @@ TriangleMesh TriangleMesh::CreateBox(double width,
                           int_dtype.ToString());
     }
 
-    // Mesh
+    // Mesh.
     TriangleMesh mesh(vertex_positions, triangle_indices);
 
     return mesh;
