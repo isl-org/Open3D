@@ -64,7 +64,8 @@ void pybind_pointcloud(py::module &m) {
             .def("has_colors", &PointCloud::HasColors,
                  "Returns ``True`` if the point cloud contains point colors.")
             .def("has_dopplers", &PointCloud::HasDopplers,
-                 "Returns ``True`` if the point cloud contains Doppler velocities.")
+                 "Returns ``True`` if the point cloud contains Doppler "
+                 "velocities.")
             .def("has_covariances", &PointCloud::HasCovariances,
                  "Returns ``True`` if the point cloud contains covariances.")
             .def("normalize_normals", &PointCloud::NormalizeNormals,

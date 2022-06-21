@@ -43,9 +43,11 @@ def draw_registration_result(source, target, transformation):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('source', type=str,
+    parser.add_argument('source',
+                        type=str,
                         help='Path to source point cloud in XYZD format')
-    parser.add_argument('target', type=str,
+    parser.add_argument('target',
+                        type=str,
                         help='Path to target point cloud in XYZD format')
 
     args = parser.parse_args()
@@ -69,7 +71,11 @@ if __name__ == '__main__':
     max_corr_distance = 0.3  # meters
     init_transform = np.eye(4)
     result = o3d.pipelines.registration.registration_doppler_icp(
-        source, target, source_directions, max_corr_distance, init_transform,
+        source,
+        target,
+        source_directions,
+        max_corr_distance,
+        init_transform,
         o3d.pipelines.registration.TransformationEstimationForDopplerICP(
             lambda_doppler=0.01,
             reject_dynamic_outliers=False,
@@ -79,13 +85,12 @@ if __name__ == '__main__':
             doppler_robust_loss_min_iteration=2,
             geometric_kernel=o3d.pipelines.registration.TukeyLoss(k=0.5),
             doppler_kernel=o3d.pipelines.registration.TukeyLoss(k=0.5)),
-        o3d.pipelines.registration.ICPConvergenceCriteria(
-            relative_fitness=1e-6,
-            relative_rmse=1e-6,
-            max_iteration=50),
+        o3d.pipelines.registration.ICPConvergenceCriteria(relative_fitness=1e-6,
+                                                          relative_rmse=1e-6,
+                                                          max_iteration=50),
         period=0.1,  # seconds
         T_V_to_S=np.eye(4),  # vehicle-to-sensor extrinsic calibration
-        )
+    )
     print(result)
     print('Transformation is:')
     print(result.transformation, "\n")
