@@ -6,6 +6,7 @@
 * Corrected documentation for KDTree (typo in Notebook) (PR #4744)
 * Remove `setuptools` and `wheel` from requirements for end users (PR #5020)
 * Fix various typos (PR #5070)
+* Add Doppler ICP in tensor registration pipeline (PR #5237)
 
 ## 0.13
 
