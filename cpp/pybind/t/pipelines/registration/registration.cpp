@@ -107,7 +107,7 @@ void pybind_registration_classes(py::module &m) {
                            &RegistrationResult::transformation_,
                            "``4 x 4`` float64 tensor on CPU: The estimated "
                            "transformation matrix.")
-            .def_readwrite("correspondences_",
+            .def_readwrite("correspondence_set",
                            &RegistrationResult::correspondences_,
                            "Tensor of type Int64 containing indices of "
                            "corresponding target points, where the value is "
@@ -121,13 +121,23 @@ void pybind_registration_classes(py::module &m) {
                            "float: The overlapping area (# of inlier "
                            "correspondences "
                            "/ # of points in source). Higher is better.")
+            .def_readwrite(
+                    "converged", &RegistrationResult::converged_,
+                    "bool: Specifies whether the algorithm converged or not.")
+            .def_readwrite(
+                    "num_iterations", &RegistrationResult::num_iterations_,
+                    "int: Number of iterations the algorithm took to converge.")
             .def("__repr__", [](const RegistrationResult &rr) {
                 return fmt::format(
-                        "RegistrationResult[fitness_={:e}, "
-                        "inlier_rmse={:e}, correspondences={:d}]."
+                        "RegistrationResult["
+                        "converged={}"
+                        ", num_iteration={:d}"
+                        ", fitness_={:e}"
+                        ", inlier_rmse={:e}"
+                        ", correspondences={:d}]."
                         "\nAccess transformation to get result.",
-                        rr.fitness_, rr.inlier_rmse_,
-                        rr.fitness_ * rr.correspondences_.GetLength());
+                        rr.converged_, rr.num_iterations_, rr.fitness_,
+                        rr.inlier_rmse_, rr.correspondences_.GetLength());
             });
 
     // open3d.t.pipelines.registration.TransformationEstimation
@@ -251,6 +261,100 @@ void pybind_registration_classes(py::module &m) {
             .def_readwrite("kernel",
                            &TransformationEstimationForColoredICP::kernel_,
                            "Robust Kernel used in the Optimization");
+
+    // open3d.t.pipelines.registration.TransformationEstimationForDopplerICP
+    // TransformationEstimation
+    py::class_<
+            TransformationEstimationForDopplerICP,
+            PyTransformationEstimation<TransformationEstimationForDopplerICP>,
+            TransformationEstimation>
+            te_dop(m, "TransformationEstimationForDopplerICP",
+                   "Class to estimate a transformation between two point "
+                   "clouds using color information");
+    py::detail::bind_default_constructor<TransformationEstimationForDopplerICP>(
+            te_dop);
+    py::detail::bind_copy_functions<TransformationEstimationForDopplerICP>(
+            te_dop);
+    te_dop.def(py::init([](double lambda_doppler, bool reject_dynamic_outliers,
+                           double doppler_outlier_threshold,
+                           size_t outlier_rejection_min_iteration,
+                           size_t geometric_robust_loss_min_iteration,
+                           size_t doppler_robust_loss_min_iteration,
+                           RobustKernel &geometric_kernel,
+                           RobustKernel &doppler_kernel) {
+                   return new TransformationEstimationForDopplerICP(
+                           lambda_doppler, reject_dynamic_outliers,
+                           doppler_outlier_threshold,
+                           outlier_rejection_min_iteration,
+                           geometric_robust_loss_min_iteration,
+                           doppler_robust_loss_min_iteration, geometric_kernel,
+                           doppler_kernel);
+               }),
+               "lambda_doppler"_a, "reject_dynamic_outliers"_a,
+               "doppler_outlier_threshold"_a,
+               "outlier_rejection_min_iteration"_a,
+               "geometric_robust_loss_min_iteration"_a,
+               "doppler_robust_loss_min_iteration"_a, "goemetric_kernel"_a,
+               "doppler_kernel"_a)
+            .def(py::init([](const double lambda_doppler) {
+                     return new TransformationEstimationForDopplerICP(
+                             lambda_doppler);
+                 }),
+                 "lambda_doppler"_a)
+            .def("compute_transformation",
+                 py::overload_cast<const t::geometry::PointCloud &,
+                                   const t::geometry::PointCloud &,
+                                   const core::Tensor &, const core::Tensor &,
+                                   const core::Tensor &, const double,
+                                   const size_t>(
+                         &TransformationEstimationForDopplerICP::
+                                 ComputeTransformation,
+                         py::const_),
+                 "Compute transformation from source to target point cloud "
+                 "given correspondences")
+            .def("__repr__",
+                 [](const TransformationEstimationForDopplerICP &te) {
+                     return std::string(
+                                    "TransformationEstimationForDopplerICP "
+                                    "with lambda_doppler: ") +
+                            std::to_string(te.lambda_doppler_);
+                 })
+            .def_readwrite(
+                    "lambda_doppler",
+                    &TransformationEstimationForDopplerICP::lambda_doppler_,
+                    "lambda_doppler")
+            .def_readwrite("reject_dynamic_outliers",
+                           &TransformationEstimationForDopplerICP::
+                                   reject_dynamic_outliers_,
+                           "Performs dynamic point outlier rejection of "
+                           "correspondences")
+            .def_readwrite("doppler_outlier_threshold",
+                           &TransformationEstimationForDopplerICP::
+                                   doppler_outlier_threshold_,
+                           "doppler_outlier_threshold")
+            .def_readwrite("outlier_rejection_min_iteration",
+                           &TransformationEstimationForDopplerICP::
+                                   outlier_rejection_min_iteration_,
+                           "Number of iterations of ICP after which outlier "
+                           "rejection is enabled.")
+            .def_readwrite("geometric_robust_loss_min_iteration",
+                           &TransformationEstimationForDopplerICP::
+                                   geometric_robust_loss_min_iteration_,
+                           "Minimum iterations after which Robust Kernel is "
+                           "used for the Geometric error")
+            .def_readwrite("doppler_robust_loss_min_iteration",
+                           &TransformationEstimationForDopplerICP::
+                                   doppler_robust_loss_min_iteration_,
+                           "Minimum iterations after which Robust Kernel is "
+                           "used for the Doppler error")
+            .def_readwrite(
+                    "geometric_kernel",
+                    &TransformationEstimationForDopplerICP::geometric_kernel_,
+                    "Robust Kernel used in the Geometric Error Optimization")
+            .def_readwrite(
+                    "doppler_kernel",
+                    &TransformationEstimationForDopplerICP::doppler_kernel_,
+                    "Robust Kernel used in the Doppler Error Optimization");
 }
 
 // Registration functions have similar arguments, sharing arg docstrings.
@@ -278,11 +382,17 @@ static const std::unordered_map<std::string, std::string>
                  "o3d.utility.DoubleVector of maximum correspondence "
                  "points-pair distances for multi-scale icp."},
                 {"option", "Registration option"},
+                {"period",
+                 "Time period (in seconds) between the source and the target "
+                 "point clouds."},
                 {"source", "The source point cloud."},
                 {"target", "The target point cloud."},
                 {"transformation",
                  "The 4x4 transformation matrix of type Float64 "
                  "to transform ``source`` to ``target``"},
+                {"T_V_to_S",
+                 "The 4x4 transformation matrix to transform ``sensor`` to "
+                 "``vehicle`` frame."},
                 {"voxel_size",
                  "The input pointclouds will be down-sampled to this "
                  "`voxel_size` scale. If `voxel_size` < 0, original scale will "
@@ -326,6 +436,19 @@ void pybind_registration_methods(py::module &m) {
           "estimation_method"_a = TransformationEstimationPointToPoint(),
           "callback_after_iteration"_a = py::none());
     docstring::FunctionDocInject(m, "multi_scale_icp",
+                                 map_shared_argument_docstrings);
+
+    m.def("doppler_icp", &DopplerICP, py::call_guard<py::gil_scoped_release>(),
+          "Function for Doppler ICP registration", "source"_a, "target"_a,
+          "max_correspondence_distance"_a,
+          "init_source_to_target"_a =
+                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+          "estimation_method"_a = TransformationEstimationForDopplerICP(),
+          "criteria"_a = ICPConvergenceCriteria(), "period"_a = 0.1F,
+          "T_V_to_S"_a =
+                  core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+          "callback_after_iteration"_a = py::none());
+    docstring::FunctionDocInject(m, "doppler_icp",
                                  map_shared_argument_docstrings);
 
     m.def("get_information_matrix", &GetInformationMatrix,

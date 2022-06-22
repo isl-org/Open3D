@@ -317,6 +317,105 @@ core::Tensor TransformationEstimationForColoredICP::ComputeTransformation(
     return transform;
 }
 
+double TransformationEstimationForDopplerICP::ComputeRMSE(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    if (!target.HasPointNormals()) {
+        utility::LogError("Target pointcloud missing normals attribute.");
+    }
+
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+
+    core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
+    core::Tensor neighbour_indices =
+            correspondences.IndexGet({valid}).Reshape({-1});
+    core::Tensor source_points_indexed =
+            source.GetPointPositions().IndexGet({valid});
+    core::Tensor target_points_indexed =
+            target.GetPointPositions().IndexGet({neighbour_indices});
+    core::Tensor target_normals_indexed =
+            target.GetPointNormals().IndexGet({neighbour_indices});
+
+    core::Tensor error_t = (source_points_indexed - target_points_indexed)
+                                   .Mul_(target_normals_indexed);
+    error_t.Mul_(error_t);
+    double error = error_t.Sum({0, 1}).To(core::Float64).Item<double>();
+    return std::sqrt(error /
+                     static_cast<double>(neighbour_indices.GetLength()));
+}
+
+core::Tensor TransformationEstimationForDopplerICP::ComputeTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences) const {
+    utility::LogError(
+            "This method should not be called for DopplerICP. DopplerICP "
+            "requires the period, current transformation, and T_V_to_S "
+            "calibration.");
+    return core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
+}
+
+core::Tensor TransformationEstimationForDopplerICP::ComputeTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences,
+        const core::Tensor &current_transform,
+        const core::Tensor &T_V_to_S,
+        const double period,
+        const size_t iteration) const {
+    if (!source.HasPointPositions() || !target.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    if (!target.HasPointNormals()) {
+        utility::LogError("Target pointcloud missing normals attribute.");
+    }
+    if (!source.HasPointAttr("dopplers")) {
+        utility::LogError("Source pointcloud missing dopplers attribute.");
+    }
+    if (!source.HasPointAttr("directions")) {
+        utility::LogError("Source pointcloud missing directions attribute.");
+    }
+
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    const core::Dtype dtype = source.GetPointPositions().GetDtype();
+
+    core::AssertTensorDtype(target.GetPointPositions(), dtype);
+    core::AssertTensorDtype(target.GetPointNormals(), dtype);
+    core::AssertTensorDtype(source.GetPointAttr("dopplers"), dtype);
+    core::AssertTensorDtype(source.GetPointAttr("directions"), dtype);
+
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+
+    // Get pose {6} of type Float64 from correspondences indexed source
+    // and target point cloud.
+    core::Tensor pose = pipelines::kernel::ComputePoseDopplerICP(
+            source.GetPointPositions(), source.GetPointAttr("dopplers"),
+            source.GetPointAttr("directions"), target.GetPointPositions(),
+            target.GetPointNormals(), correspondences, current_transform,
+            T_V_to_S, period, iteration, this->reject_dynamic_outliers_,
+            this->doppler_outlier_threshold_,
+            this->outlier_rejection_min_iteration_,
+            this->geometric_robust_loss_min_iteration_,
+            this->doppler_robust_loss_min_iteration_, this->geometric_kernel_,
+            this->doppler_kernel_, this->lambda_doppler_);
+
+    // Get transformation {4,4} of type Float64 from pose {6}.
+    core::Tensor transform = pipelines::kernel::PoseToTransformation(pose);
+
+    return transform;
+}
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

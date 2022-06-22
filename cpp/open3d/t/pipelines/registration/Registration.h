@@ -110,6 +110,10 @@ public:
     /// For ICP: the overlapping area (# of inlier correspondences / # of points
     /// in target). Higher is better.
     double fitness_;
+    /// Specifies whether the algorithm converged or not.
+    bool converged_{false};
+    /// Number of iterations the algorithm took to converge.
+    size_t num_iterations_{0};
 };
 
 /// \brief Function for evaluating registration between point clouds.
@@ -197,7 +201,42 @@ RegistrationResult MultiScaleICP(
                 void(const std::unordered_map<std::string, core::Tensor> &)>
                 &callback_after_iteration = nullptr);
 
-/// \brief Computes `Information Matrix`, from the transformation between source
+/// \brief Functions for DopplerICP registration.
+///
+/// \param source The source point cloud. (Float32 or Float64 type).
+/// \param target The target point cloud. (Float32 or Float64 type).
+/// \param max_correspondence_distance Maximum correspondence points-pair
+/// distance.
+/// \param init_source_to_target Initial transformation estimation of type
+/// Float64 on CPU.
+/// \param estimation Estimation method.
+/// \param criteria Convergence criteria.
+/// \param period Time period (in seconds) between the source and the target
+/// point clouds. Default value: 0.1.
+/// \param T_V_to_S The 4x4 transformation matrix to transform sensor to vehicle
+/// frame. Defaults to identity transform.
+/// \param callback_after_iteration Optional lambda function, saves string to
+/// tensor map of attributes such as "iteration_index", "scale_index",
+/// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on CPU
+/// device, updated after each iteration.
+RegistrationResult DopplerICP(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const double max_correspondence_distance,
+        const core::Tensor &init_source_to_target =
+                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+        const TransformationEstimationForDopplerICP &estimation =
+                TransformationEstimationForDopplerICP(),
+        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
+        const double period = 0.1F,
+        const core::Tensor &T_V_to_S = core::Tensor::Eye(4,
+                                                         core::Float64,
+                                                         core::Device("CPU:0")),
+        const std::function<
+                void(const std::unordered_map<std::string, core::Tensor> &)>
+                &callback_after_iteration = nullptr);
+
+/// \brief Computes `Information Matrix`, from the transfromation between source
 /// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},
 /// of dtype `Float64` on device `CPU:0`.
 ///

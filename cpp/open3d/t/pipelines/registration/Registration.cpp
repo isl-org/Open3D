@@ -40,6 +40,13 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
+namespace {
+
+// Minimum time period (sec) between two sequential scans for Doppler ICP.
+constexpr double kMinTimePeriod = 1e-3;
+
+}  // namespace
+
 static RegistrationResult ComputeRegistrationResult(
         const geometry::PointCloud &source,
         const core::nns::NearestNeighborSearch &target_nns,
@@ -407,6 +414,165 @@ RegistrationResult MultiScaleICP(
         }
     }
     // ---- Iterating over different resolution scale END --------------------
+
+    result.num_iterations_ = iteration_count;
+
+    return result;
+}
+
+RegistrationResult DopplerICP(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const double max_correspondence_distance,
+        const core::Tensor &init_source_to_target,
+        const TransformationEstimationForDopplerICP &estimation,
+        const ICPConvergenceCriteria &criteria,
+        const double period,
+        const core::Tensor &T_V_to_S,
+        const std::function<
+                void(const std::unordered_map<std::string, core::Tensor> &)>
+                &callback_after_iteration) {
+    core::AssertTensorShape(init_source_to_target, {4, 4});
+    core::AssertTensorShape(T_V_to_S, {4, 4});
+
+    geometry::PointCloud source_copy = source;
+    core::AssertTensorDtypes(source_copy.GetPointPositions(),
+                             {core::Float64, core::Float32});
+
+    const core::Device device = source_copy.GetDevice();
+    const core::Dtype dtype = source_copy.GetPointPositions().GetDtype();
+
+    if (!target.HasPointPositions() || !source_copy.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    core::AssertTensorDtype(target.GetPointPositions(), dtype);
+    core::AssertTensorDevice(target.GetPointPositions(), device);
+
+    if (dtype == core::Float64 &&
+        device.GetType() == core::Device::DeviceType::CUDA) {
+        utility::LogDebug(
+                "Use Float32 pointcloud for best performance on CUDA device.");
+    }
+
+    if (estimation.GetTransformationEstimationType() !=
+        TransformationEstimationType::DopplerICP) {
+        utility::LogError(
+                "DopplerICP requires TransformationEstimationDopplerICP.");
+    }
+
+    if (!target.HasPointNormals()) {
+        utility::LogError(
+                "TransformationEstimationDopplerICP require pre-computed "
+                "normal vectors for target PointCloud.");
+    }
+    if (!source_copy.HasPointAttr("dopplers")) {
+        utility::LogError("Source pointcloud missing dopplers attribute.");
+    }
+    if (!source_copy.HasPointAttr("directions")) {
+        utility::LogError("Source pointcloud missing directions attribute.");
+    }
+
+    if (max_correspondence_distance <= 0.0) {
+        utility::LogError(
+                " Max correspondence distance must be greater than 0, but"
+                " got {} in scale: {}.",
+                max_correspondence_distance, 0);
+    }
+
+    if (std::abs(period) < kMinTimePeriod) {
+        utility::LogError("Time period too small.");
+    }
+
+    // Transformation tensor is always of shape {4,4}, type Float64 on CPU:0.
+    core::Tensor transformation =
+            init_source_to_target.To(core::Device("CPU:0"), core::Float64);
+    RegistrationResult result(transformation);
+
+    // Apply the initial transform on source pointcloud.
+    source_copy.Transform(transformation);
+
+    // Initialize Neighbor Search.
+    core::nns::NearestNeighborSearch target_nns(target.GetPointPositions());
+    bool check = target_nns.HybridIndex(max_correspondence_distance);
+    if (!check) {
+        utility::LogError("Index is not set.");
+    }
+
+    int iteration_count = 0;
+    for (iteration_count = 0; iteration_count < criteria.max_iteration_;
+         ++iteration_count) {
+        double prev_fitness = result.fitness_;
+        double prev_inlier_rmse = result.inlier_rmse_;
+
+        // Update the results and find correspondences.
+        result = ComputeRegistrationResult(
+                source_copy.GetPointPositions(), target_nns,
+                max_correspondence_distance, result.transformation_);
+
+        // No correspondences.
+        if (result.fitness_ <= std::numeric_limits<double>::min()) {
+            result.converged_ = false;
+            result.num_iterations_ = iteration_count;
+            return result;
+        }
+
+        // Computing Transform between source and target, given
+        // correspondences. ComputeTransformation returns {4,4} shaped
+        // Float64 transformation tensor on CPU device.
+        core::Tensor update =
+                estimation
+                        .ComputeTransformation(source_copy, target,
+                                               result.correspondences_,
+                                               result.transformation_, T_V_to_S,
+                                               period, iteration_count)
+                        .To(core::Float64);
+
+        // Multiply the transform to the cumulative transformation (update).
+        result.transformation_ = update.Matmul(result.transformation_);
+
+        // Apply the transform on source pointcloud.
+        source_copy.Transform(update);
+
+        utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}",
+                          iteration_count, result.fitness_,
+                          result.inlier_rmse_);
+
+        // Additional per-iteration results can recorded in this callback.
+        if (callback_after_iteration) {
+            const core::Device host("CPU:0");
+
+            std::unordered_map<std::string, core::Tensor> loss_attribute_map{
+                    {"iteration_index",
+                     core::Tensor::Init<int64_t>(iteration_count)},
+                    {"inlier_rmse",
+                     core::Tensor::Init<double>(result.inlier_rmse_)},
+                    {"fitness", core::Tensor::Init<double>(result.fitness_)},
+                    {"transformation", result.transformation_.To(host)}};
+            callback_after_iteration(loss_attribute_map);
+        }
+
+        // ICPConvergenceCriteria, to terminate iteration.
+        if (iteration_count != 0 &&
+            std::abs(prev_fitness - result.fitness_) <
+                    criteria.relative_fitness_ &&
+            std::abs(prev_inlier_rmse - result.inlier_rmse_) <
+                    criteria.relative_rmse_) {
+            // Calculate final `fitness` and `inlier_rmse` for the current
+            // `transformation` stored in `result`.
+            result = ComputeRegistrationResult(source_copy, target_nns,
+                                               max_correspondence_distance,
+                                               result.transformation_);
+            result.converged_ = true;
+            break;
+        }
+    }
+
+    result.num_iterations_ = iteration_count;
+
+    // No correspondences.
+    if (result.fitness_ <= std::numeric_limits<double>::epsilon()) {
+        result.converged_ = false;
+    }
 
     return result;
 }

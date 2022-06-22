@@ -51,6 +51,7 @@ enum class TransformationEstimationType {
     PointToPoint = 1,
     PointToPlane = 2,
     ColoredICP = 3,
+    DopplerICP = 4,
 };
 
 /// \class TransformationEstimation
@@ -284,6 +285,139 @@ public:
 private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::ColoredICP;
+};
+
+/// \class TransformationEstimationForDopplerICP
+///
+/// This is implementation of Doppler ICP.
+/// Reference: https://arxiv.org/abs/2201.11944
+///
+/// Class to estimate a transformation matrix tensor of shape {4, 4}, dtype
+/// Float64, on CPU device for DopplerICP method.
+class TransformationEstimationForDopplerICP : public TransformationEstimation {
+public:
+    ~TransformationEstimationForDopplerICP() override{};
+
+    /// \brief Constructor.
+    ///
+    /// \param lambda_doppler `λ ∈ [0, 1]` in the overall energy `(1−λ)EG +
+    /// λED`. Refer the documentation of DopplerICP for more information.
+    /// \param reject_dynamic_outliers Whether or not to reject dynamic point
+    /// outlier correspondences.
+    /// \param doppler_outlier_threshold Correspondences with Doppler error
+    /// greater than this threshold are rejected from optimization.
+    /// \param outlier_rejection_min_iteration Number of iterations of ICP after
+    /// which outlier rejection is enabled.
+    /// \param geometric_robust_loss_min_iteration Number of iterations of ICP
+    /// after which robust loss for geometric term kicks in.
+    /// \param doppler_robust_loss_min_iteration Number of iterations of ICP
+    /// after which robust loss for Doppler term kicks in.
+    /// \param geometric_kernel (optional) Any of the implemented statistical
+    /// robust kernel for outlier rejection for the geometric term.
+    /// \param doppler_kernel (optional) Any of the implemented statistical
+    /// robust kernel for outlier rejection for the Doppler term.
+    explicit TransformationEstimationForDopplerICP(
+            double lambda_doppler = 0.01,
+            bool reject_dynamic_outliers = false,
+            double doppler_outlier_threshold = 2.0,
+            size_t outlier_rejection_min_iteration = 2,
+            size_t geometric_robust_loss_min_iteration = 0,
+            size_t doppler_robust_loss_min_iteration = 2,
+            const RobustKernel &geometric_kernel =
+                    RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0),
+            const RobustKernel &doppler_kernel =
+                    RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0))
+        : lambda_doppler_(lambda_doppler),
+          reject_dynamic_outliers_(reject_dynamic_outliers),
+          doppler_outlier_threshold_(doppler_outlier_threshold),
+          outlier_rejection_min_iteration_(outlier_rejection_min_iteration),
+          geometric_robust_loss_min_iteration_(
+                  geometric_robust_loss_min_iteration),
+          doppler_robust_loss_min_iteration_(doppler_robust_loss_min_iteration),
+          geometric_kernel_(geometric_kernel),
+          doppler_kernel_(doppler_kernel) {
+        if (lambda_doppler_ < 0 || lambda_doppler_ > 1.0) {
+            lambda_doppler_ = 0.01;
+        }
+    }
+
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return type_;
+    };
+
+public:
+    /// \brief Computes RMSE (double) for DopplerICP method, between two
+    /// pointclouds, given correspondences.
+    ///
+    /// \param source Source pointcloud. (Float32 or Float64 type).
+    /// \param target Target pointcloud. (Float32 or Float64 type). It must
+    /// contain normals, directions, and Doppler of the same shape and dtype
+    /// as the positions.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       const core::Tensor &correspondences) const override;
+
+    /// \brief This method is only present to override the method in the base
+    /// class and must not be used. Use the other method below.
+    core::Tensor ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const core::Tensor &correspondences) const override;
+
+    /// \brief Estimates the transformation matrix for DopplerICP method,
+    /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
+    ///
+    /// \param source Source pointcloud. (Float32 or Float64 type).
+    /// \param target Target pointcloud. (Float32 or Float64 type). It must
+    /// contain normals, directions, and Doppler of the same shape and dtype
+    /// as the positions.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    /// \param current_transform The current pose estimate of ICP.
+    /// \param T_V_to_S The 4x4 transformation matrix to transform
+    /// sensor to vehicle frame.
+    /// \param period Time period (in seconds) between the source and the target
+    /// point clouds.
+    /// \param iteration current iteration number of the ICP algorithm.
+    /// \return transformation between source to target, a tensor of shape {4,
+    /// 4}, type Float64 on CPU device.
+    core::Tensor ComputeTransformation(const geometry::PointCloud &source,
+                                       const geometry::PointCloud &target,
+                                       const core::Tensor &correspondences,
+                                       const core::Tensor &current_transform,
+                                       const core::Tensor &T_V_to_S,
+                                       const double period,
+                                       const size_t iteration) const;
+
+public:
+    /// Factor that weighs the Doppler residual term in DICP objective.
+    double lambda_doppler_{0.01};
+    /// Whether or not to prune dynamic point outlier correspondences.
+    bool reject_dynamic_outliers_{false};
+    /// Correspondences with Doppler error greater than this threshold are
+    /// rejected from optimization.
+    double doppler_outlier_threshold_{2.0};
+    /// Number of iterations of ICP after which outlier rejection is enabled.
+    size_t outlier_rejection_min_iteration_{2};
+    /// Number of iterations of ICP after which robust loss kicks in.
+    size_t geometric_robust_loss_min_iteration_{0};
+    size_t doppler_robust_loss_min_iteration_{2};
+    /// RobustKernel for outlier rejection.
+    RobustKernel geometric_kernel_ =
+            RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0);
+    RobustKernel doppler_kernel_ =
+            RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0);
+
+private:
+    const TransformationEstimationType type_ =
+            TransformationEstimationType::DopplerICP;
 };
 
 }  // namespace registration
