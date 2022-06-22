@@ -428,7 +428,10 @@ public:
                 config_["folder_scene"].asString()));
 
         pipelines::registration::PoseGraph scene_pose_graph;
-        MakePoseGraphForScene(scene_pose_graph);
+        const bool ret = MakePoseGraphForScene(scene_pose_graph);
+        if (!ret) {
+            return;
+        }
 
         // Optimize pose graph for scene.
         OptimizePoseGraph(
@@ -850,7 +853,7 @@ private:
                               pose_graph);
     }
 
-    void MakePoseGraphForScene(
+    bool MakePoseGraphForScene(
             pipelines::registration::PoseGraph& scene_pose_graph) {
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
@@ -862,7 +865,7 @@ private:
                 config_["folder_fragment"].asString()));
         if (ply_files.size() == 0) {
             utility::LogWarning("No ply files found.");
-            return;
+            return false;
         }
         n_fragments_ = ply_files.size();
 
@@ -922,6 +925,7 @@ private:
                         config_["path_dataset"].asString(),
                         config_["template_global_posegraph"].asString()),
                 scene_pose_graph);
+        return true;
     }
 
     void OptimizePoseGraph(double max_correspondence_distance,
