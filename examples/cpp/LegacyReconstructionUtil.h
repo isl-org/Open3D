@@ -35,7 +35,6 @@
 
 #include "open3d/Open3D.h"
 
-
 namespace open3d {
 namespace examples {
 namespace legacy_reconstruction {
