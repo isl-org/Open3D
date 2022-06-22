@@ -29,6 +29,7 @@
 #include <vtkCleanPolyData.h>
 #include <vtkClipPolyData.h>
 #include <vtkPlane.h>
+#include <vtkQuadricDecimation.h>
 
 #include <Eigen/Core>
 #include <string>
@@ -310,6 +311,27 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     cleaner->Update();
     auto clipped_polydata = cleaner->GetOutput();
     return CreateTriangleMeshFromVtkPolyData(clipped_polydata);
+}
+
+TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
+        double target_reduction, bool preserve_volume) const {
+    using namespace vtkutils;
+    if (target_reduction >= 1.0 || target_reduction < 0) {
+        utility::LogError(
+                "target_reduction must be in the range [0,1) but is {}",
+                target_reduction);
+    }
+
+    auto polydata = CreateVtkPolyDataFromGeometry(*this);
+
+    vtkNew<vtkQuadricDecimation> decimate;
+    decimate->SetInputData(polydata);
+    decimate->SetTargetReduction(target_reduction);
+    decimate->SetVolumePreservation(preserve_volume);
+    decimate->Update();
+    auto decimated_polydata = decimate->GetOutput();
+
+    return CreateTriangleMeshFromVtkPolyData(decimated_polydata);
 }
 
 }  // namespace geometry

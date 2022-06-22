@@ -35,3 +35,16 @@ def test_clip_plane():
     clipped_cube = cube.clip_plane(point=[0.5, 0, 0], normal=[1, 0, 0])
     assert clipped_cube.vertex['positions'].shape == (12, 3)
     assert clipped_cube.triangle['indices'].shape == (14, 3)
+
+
+def test_simplify_quadric_decimation():
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
+        o3d.geometry.TriangleMesh.create_box().subdivide_midpoint(3))
+
+    # chose reduction factor such that we get 12 faces
+    target_reduction = 1 - (12 / cube.triangle['indices'].shape[0])
+    simplified = cube.simplify_quadric_decimation(
+        target_reduction=target_reduction)
+
+    assert simplified.vertex['positions'].shape == (8, 3)
+    assert simplified.triangle['indices'].shape == (12, 3)

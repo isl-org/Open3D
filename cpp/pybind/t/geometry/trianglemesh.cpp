@@ -195,8 +195,7 @@ Example:
 
     triangle_mesh.def("clip_plane", &TriangleMesh::ClipPlane, "point"_a,
                       "normal"_a,
-                      R"(
-Returns a new triangle mesh clipped with the plane.
+                      R"(Returns a new triangle mesh clipped with the plane.
 
 This method clips the triangle mesh with the specified plane.
 Parts of the mesh on the positive side of the plane will be kept and triangles
@@ -220,6 +219,33 @@ This example shows how to create a hemisphere from a sphere::
     hemisphere = sphere.clip_plane(point=[0,0,0], normal=[1,0,0])
 
     o3d.visualization.draw(hemisphere)
+)");
+
+    triangle_mesh.def(
+            "simplify_quadric_decimation",
+            &TriangleMesh::SimplifyQuadricDecimation, "target_reduction"_a,
+            "preserve_volume"_a = true,
+            R"(Function to simplify mesh using Quadric Error Metric Decimation by Garland and Heckbert.
+
+Args:
+    target_reduction (float): The factor of triangles to delete, i.e., setting
+        this to 0.9 will return a mesh with about 10% of the original triangle
+        count. It is not guaranteed that the target reduction factor will be
+        reached.
+    
+    preserve_volume (bool): If set to True this enables volume preservation
+        which reduces the error in triangle normal direction.
+    
+Returns:
+    Simplified TriangleMesh.
+
+Example:
+    This shows how to simplifify the Stanford Bunny mesh::
+
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        simplified = mesh.simplify_quadric_decimation(0.99)
+        o3d.visualization.draw([{'name': 'bunny', 'geometry': simplified}])
 )");
 }
 
