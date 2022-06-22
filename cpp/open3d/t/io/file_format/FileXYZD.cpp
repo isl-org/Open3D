@@ -69,7 +69,8 @@ bool ReadPointCloudFromXYZD(const std::string &filename,
         double x, y, z, doppler;
         const char *line_buffer;
         while ((line_buffer = file.ReadLine())) {
-            if (sscanf(line_buffer, "%lf %lf %lf %lf", &x, &y, &z, &doppler) == 4) {
+            if (sscanf(line_buffer, "%lf %lf %lf %lf", &x, &y, &z, &doppler) ==
+                4) {
                 points_ptr[3 * i + 0] = x;
                 points_ptr[3 * i + 1] = y;
                 points_ptr[3 * i + 2] = z;

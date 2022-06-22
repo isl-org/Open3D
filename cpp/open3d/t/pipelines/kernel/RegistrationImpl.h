@@ -391,7 +391,6 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDopplerICP(
         scalar_t *J_D,
         scalar_t &r_G,
         scalar_t &r_D) {
-    // Reference paper: https://arxiv.org/abs/2201.11944.
     if (correspondence_indices[workload_idx] == -1) {
         return false;
     }

@@ -289,8 +289,9 @@ private:
 
 /// \class TransformationEstimationForDopplerICP
 ///
-/// This is implementation of Doppler ICP.
-/// Reference: https://arxiv.org/abs/2201.11944
+/// This is the implementation of the following paper:
+/// B. Hexsel, H. Vhavle, Y. Chen,
+/// DICP: Doppler Iterative Closest Point Algorithm, RSS 2022.
 ///
 /// Class to estimate a transformation matrix tensor of shape {4, 4}, dtype
 /// Float64, on CPU device for DopplerICP method.
