@@ -79,3 +79,16 @@ def test_create_box(device):
 
     assert box_custom.vertex['positions'].allclose(vertex_positions_custom)
     assert box_custom.triangle['indices'].allclose(triangle_indices_custom)
+
+
+def test_simplify_quadric_decimation():
+    cube = o3d.t.geometry.TriangleMesh.from_legacy(
+        o3d.geometry.TriangleMesh.create_box().subdivide_midpoint(3))
+
+    # chose reduction factor such that we get 12 faces
+    target_reduction = 1 - (12 / cube.triangle['indices'].shape[0])
+    simplified = cube.simplify_quadric_decimation(
+        target_reduction=target_reduction)
+
+    assert simplified.vertex['positions'].shape == (8, 3)
+    assert simplified.triangle['indices'].shape == (12, 3)

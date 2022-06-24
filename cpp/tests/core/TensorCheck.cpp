@@ -26,6 +26,7 @@
 
 #include "open3d/core/TensorCheck.h"
 
+#include "open3d/utility/Helper.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 

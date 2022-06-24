@@ -1083,7 +1083,7 @@ TEST_P(TensorPermuteDevices, Append) {
     // Taking the above case of [1, 2] to [2, 2] with different dtype and
     // device.
     EXPECT_ANY_THROW(self.Append(other.To(core::Float64)));
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         EXPECT_ANY_THROW(self.Append(other.To(core::Device("CPU:0"))));
     }
 }
@@ -3453,7 +3453,7 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
 
 TEST_P(TensorPermuteDevices, TakeOwnership) {
     core::Device device = GetParam();
-    if (device.GetType() != core::Device::DeviceType::CPU) {
+    if (!device.IsCPU()) {
         GTEST_SKIP();
     }
     std::vector<int> values{1, 2, 3, 4, 5, 6};

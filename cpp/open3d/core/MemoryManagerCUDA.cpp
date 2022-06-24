@@ -33,11 +33,11 @@
 namespace open3d {
 namespace core {
 
-void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
+void* MemoryManagerCUDA::Malloc(size_t byte_size, const Device& device) {
     CUDAScopedDevice scoped_device(device);
 
     void* ptr;
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #if CUDART_VERSION >= 11020
         OPEN3D_CUDA_CHECK(cudaMallocAsync(static_cast<void**>(&ptr), byte_size,
                                           cuda::GetStream()));
@@ -45,15 +45,16 @@ void* CUDAMemoryManager::Malloc(size_t byte_size, const Device& device) {
         OPEN3D_CUDA_CHECK(cudaMalloc(static_cast<void**>(&ptr), byte_size));
 #endif
     } else {
-        utility::LogError("CUDAMemoryManager::Malloc: Unimplemented device.");
+        utility::LogError("Internal error: Unimplemented device {}.",
+                          device.ToString());
     }
     return ptr;
 }
 
-void CUDAMemoryManager::Free(void* ptr, const Device& device) {
+void MemoryManagerCUDA::Free(void* ptr, const Device& device) {
     CUDAScopedDevice scoped_device(device);
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         if (ptr && IsCUDAPointer(ptr, device)) {
 #if CUDART_VERSION >= 11020
             OPEN3D_CUDA_CHECK(cudaFreeAsync(ptr, cuda::GetStream()));
@@ -62,17 +63,17 @@ void CUDAMemoryManager::Free(void* ptr, const Device& device) {
 #endif
         }
     } else {
-        utility::LogError("CUDAMemoryManager::Free: Unimplemented device.");
+        utility::LogError("Internal error: Unimplemented device {}.",
+                          device.ToString());
     }
 }
 
-void CUDAMemoryManager::Memcpy(void* dst_ptr,
+void MemoryManagerCUDA::Memcpy(void* dst_ptr,
                                const Device& dst_device,
                                const void* src_ptr,
                                const Device& src_device,
                                size_t num_bytes) {
-    if (dst_device.GetType() == Device::DeviceType::CUDA &&
-        src_device.GetType() == Device::DeviceType::CPU) {
+    if (dst_device.IsCUDA() && src_device.IsCPU()) {
         if (!IsCUDAPointer(dst_ptr, dst_device)) {
             utility::LogError("dst_ptr is not a CUDA pointer.");
         }
@@ -80,8 +81,7 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
         OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
                                           cudaMemcpyHostToDevice,
                                           cuda::GetStream()));
-    } else if (dst_device.GetType() == Device::DeviceType::CPU &&
-               src_device.GetType() == Device::DeviceType::CUDA) {
+    } else if (dst_device.IsCPU() && src_device.IsCUDA()) {
         if (!IsCUDAPointer(src_ptr, src_device)) {
             utility::LogError("src_ptr is not a CUDA pointer.");
         }
@@ -89,8 +89,7 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
         OPEN3D_CUDA_CHECK(cudaMemcpyAsync(dst_ptr, src_ptr, num_bytes,
                                           cudaMemcpyDeviceToHost,
                                           cuda::GetStream()));
-    } else if (dst_device.GetType() == Device::DeviceType::CUDA &&
-               src_device.GetType() == Device::DeviceType::CUDA) {
+    } else if (dst_device.IsCUDA() && src_device.IsCUDA()) {
         if (!IsCUDAPointer(dst_ptr, dst_device)) {
             utility::LogError("dst_ptr is not a CUDA pointer.");
         }
@@ -129,7 +128,7 @@ void CUDAMemoryManager::Memcpy(void* dst_ptr,
     }
 }
 
-bool CUDAMemoryManager::IsCUDAPointer(const void* ptr, const Device& device) {
+bool MemoryManagerCUDA::IsCUDAPointer(const void* ptr, const Device& device) {
     CUDAScopedDevice scoped_device(device);
 
     cudaPointerAttributes attributes;
