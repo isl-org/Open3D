@@ -28,16 +28,16 @@
 #include <algorithm>
 #include <iostream>
 #include <iterator>
-#include <mutex>
 #include <numeric>
-#include <random>
 #include <unordered_set>
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Random.h"
 
-namespace {
+namespace open3d {
+namespace geometry {
 
 /// \class RandomSampler
 ///
@@ -45,43 +45,29 @@ namespace {
 template <typename T>
 class RandomSampler {
 public:
-    explicit RandomSampler(const size_t size,
-                           open3d::utility::optional<int> seed)
-        : size_(size) {
-        if (!seed.has_value()) {
-            std::random_device rd;
-            seed = rd();
-        }
-        rng_ = std::mt19937(seed.value());
-    }
+    explicit RandomSampler(const size_t total_size) : total_size_(total_size) {}
 
     std::vector<T> operator()(size_t sample_size) {
-        std::lock_guard<std::mutex> guard(mutex_);
-
-        std::vector<T> sample;
-        sample.reserve(sample_size);
+        std::vector<T> samples;
+        samples.reserve(sample_size);
 
         size_t valid_sample = 0;
         while (valid_sample < sample_size) {
-            const size_t idx = rng_() % size_;
-            if (std::find(sample.begin(), sample.end(), idx) == sample.end()) {
-                sample.push_back(idx);
+            const size_t idx = utility::random::RandUint32() % total_size_;
+            // Well, this is slow. But typically the sample_size is small.
+            if (std::find(samples.begin(), samples.end(), idx) ==
+                samples.end()) {
+                samples.push_back(idx);
                 valid_sample++;
             }
         }
 
-        return sample;
+        return samples;
     }
 
 private:
-    size_t size_;
-    std::mt19937 rng_;
-    std::mutex mutex_;
+    size_t total_size_;
 };
-}  // namespace
-
-namespace open3d {
-namespace geometry {
 
 /// \class RANSACResult
 ///
@@ -181,8 +167,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
         const double distance_threshold /* = 0.01 */,
         const int ransac_n /* = 3 */,
         const int num_iterations /* = 100 */,
-        const double probability /* = 0.99999999 */,
-        utility::optional<int> seed /* = utility::nullopt */) const {
+        const double probability /* = 0.99999999 */) const {
     if (probability <= 0 || probability > 1) {
         utility::LogError("Probability must be > 0 or <= 1.0");
     }
@@ -193,7 +178,7 @@ std::tuple<Eigen::Vector4d, std::vector<size_t>> PointCloud::SegmentPlane(
     Eigen::Vector4d best_plane_model = Eigen::Vector4d(0, 0, 0, 0);
 
     size_t num_points = points_.size();
-    RandomSampler<size_t> sampler(num_points, seed);
+    RandomSampler<size_t> sampler(num_points);
 
     // Return if ransac_n is less than the required plane model parameters.
     if (ransac_n < 3) {

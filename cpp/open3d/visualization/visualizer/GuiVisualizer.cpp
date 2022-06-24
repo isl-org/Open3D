@@ -26,8 +26,6 @@
 
 #include "open3d/visualization/visualizer/GuiVisualizer.h"
 
-#include <random>
-
 #include "open3d/Open3DConfig.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Image.h"
