@@ -67,25 +67,5 @@ TEST(Random, UniformRandIntGeneratorWithRandomSeed) {
     }
 }
 
-TEST(Random, DeviceIndependentRandomValue) {
-    const std::vector<int> expected_vals{10, 10, 6, 5, 2, 10, 8,  6,  10, 10,
-                                         9,  10, 8, 0, 2, 8,  10, 10, 2,  4};
-
-    utility::random::UniformIntGenerator rand_generator(0, 10);
-
-    std::vector<int> vals_without_seed;
-    for (int i = 0; i < 20; i++) {
-        vals_without_seed.push_back(rand_generator());
-    }
-    EXPECT_NE(vals_without_seed, expected_vals);
-
-    utility::random::Seed(314);
-    std::vector<int> vals_with_seed;
-    for (int i = 0; i < 20; i++) {
-        vals_with_seed.push_back(rand_generator());
-    }
-    EXPECT_EQ(vals_with_seed, expected_vals);
-}
-
 }  // namespace tests
 }  // namespace open3d
