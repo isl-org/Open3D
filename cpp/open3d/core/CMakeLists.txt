@@ -14,7 +14,6 @@ target_sources(core PRIVATE
     ShapeUtil.cpp
     SizeVector.cpp
     SmallVector.cpp
-    SYCLUtils.cpp
     Tensor.cpp
     TensorCheck.cpp
     TensorFunction.cpp
@@ -22,9 +21,18 @@ target_sources(core PRIVATE
     TensorList.cpp
 )
 
-open3d_sycl_target_sources(core PRIVATE VERBOSE
+# Compile regardless BUILD_SYCL_MODULE == ON or OFF.
+open3d_sycl_target_sources(core PRIVATE
     SYCLUtils.cpp
 )
+
+# Compile only when BUILD_SYCL_MODULE == ON.
+if (BUILD_SYCL_MODULE)
+    open3d_sycl_target_sources(core PRIVATE
+        MemoryManagerSYCL.cpp
+        SYCLContext.cpp
+    )
+endif()
 
 target_sources(core PRIVATE
     hashmap/CPU/CPUHashBackendBuffer.cpp
