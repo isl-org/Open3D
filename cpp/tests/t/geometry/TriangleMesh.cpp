@@ -455,8 +455,6 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
 
 TEST_P(TriangleMeshPermuteDevices, CreateBox) {
     core::Device device = GetParam();
-    core::Dtype float_dtype_custom = core::Float64;
-    core::Dtype int_dtype_custom = core::Int32;
 
     // Test with default parameters.
     t::geometry::TriangleMesh box_default =
@@ -494,6 +492,8 @@ TEST_P(TriangleMeshPermuteDevices, CreateBox) {
             triangle_indices_default));
 
     // Test with custom parameters.
+    core::Dtype float_dtype_custom = core::Float64;
+    core::Dtype int_dtype_custom = core::Int32;
     t::geometry::TriangleMesh box_custom = t::geometry::TriangleMesh::CreateBox(
             2, 3, 4, float_dtype_custom, int_dtype_custom, device);
 
