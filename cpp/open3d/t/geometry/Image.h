@@ -112,7 +112,7 @@ public:
     core::Dtype GetDtype() const { return data_.GetDtype(); }
 
     /// \brief Get device of the image.
-    core::Device GetDevice() const { return data_.GetDevice(); }
+    core::Device GetDevice() const override { return data_.GetDevice(); }
 
     /// \brief Get pixel(s) in the image.
     ///

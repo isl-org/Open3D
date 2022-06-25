@@ -29,7 +29,6 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <numeric>
-#include <random>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/KDTreeFlann.h"
@@ -39,6 +38,7 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
 #include "open3d/utility/ProgressBar.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace geometry {
@@ -471,9 +471,11 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
     }
     std::vector<size_t> indices(points_.size());
     std::iota(std::begin(indices), std::end(indices), (size_t)0);
-    std::random_device rd;
-    std::mt19937 prng(rd());
-    std::shuffle(indices.begin(), indices.end(), prng);
+    {
+        std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
+        std::shuffle(indices.begin(), indices.end(),
+                     *utility::random::GetEngine());
+    }
     indices.resize((int)(sampling_ratio * points_.size()));
     return SelectByIndex(indices);
 }

@@ -24,39 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/DeviceHashBackend.h"
+#include "open3d/utility/Random.h"
 
-#include "open3d/core/hashmap/HashMap.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/Logging.h"
+#include "tests/Tests.h"
 
 namespace open3d {
-namespace core {
+namespace tests {
 
-std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
-        int64_t init_capacity,
-        const Dtype& key_dtype,
-        const SizeVector& key_element_shape,
-        const std::vector<Dtype>& value_dtypes,
-        const std::vector<SizeVector>& value_element_shapes,
-        const Device& device,
-        const HashBackendType& backend) {
-    if (device.IsCPU()) {
-        return CreateCPUHashBackend(init_capacity, key_dtype, key_element_shape,
-                                    value_dtypes, value_element_shapes, device,
-                                    backend);
+TEST(Random, UniformRandIntGeneratorWithFixedSeed) {
+    utility::random::Seed(42);
+    std::array<int, 1024> values;
+    utility::random::UniformIntGenerator rand_generator(0, 9);
+    for (auto it = values.begin(); it != values.end(); ++it) {
+        *it = rand_generator();
     }
-#if defined(BUILD_CUDA_MODULE)
-    else if (device.IsCUDA()) {
-        return CreateCUDAHashBackend(init_capacity, key_dtype,
-                                     key_element_shape, value_dtypes,
-                                     value_element_shapes, device, backend);
-    }
-#endif
-    else {
-        utility::LogError("Unimplemented device");
+
+    for (int i = 0; i < 10; i++) {
+        utility::random::Seed(42);
+        std::array<int, 1024> new_values;
+        utility::random::UniformIntGenerator new_rand_generator(0, 9);
+        for (auto it = new_values.begin(); it != new_values.end(); ++it) {
+            *it = new_rand_generator();
+        }
+        EXPECT_TRUE(values == new_values);
     }
 }
 
-}  // namespace core
+TEST(Random, UniformRandIntGeneratorWithRandomSeed) {
+    std::array<int, 1024> values;
+    utility::random::UniformIntGenerator rand_generator(0, 9);
+    for (auto it = values.begin(); it != values.end(); ++it) {
+        *it = rand_generator();
+    }
+
+    for (int i = 0; i < 10; i++) {
+        std::array<int, 1024> new_values;
+        utility::random::UniformIntGenerator new_rand_generator(0, 9);
+        for (auto it = new_values.begin(); it != new_values.end(); ++it) {
+            *it = new_rand_generator();
+        }
+        EXPECT_FALSE(values == new_values);
+    }
+}
+
+}  // namespace tests
 }  // namespace open3d

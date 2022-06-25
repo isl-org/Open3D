@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashBackendBuffer.h"
@@ -37,7 +38,7 @@ class DeviceHashBackend;
 
 enum class HashBackendType { Slab, StdGPU, TBB, Default };
 
-class HashMap {
+class HashMap : public IsDevice {
 public:
     /// Initialize a hash map given a key and a value dtype and element shape.
     HashMap(int64_t init_capacity,
@@ -174,7 +175,7 @@ public:
     int64_t GetBucketCount() const;
 
     /// Get the device of the hash map.
-    Device GetDevice() const;
+    Device GetDevice() const override;
 
     /// Get the key tensor buffer to be used along with buf_indices and masks.
     /// Example:

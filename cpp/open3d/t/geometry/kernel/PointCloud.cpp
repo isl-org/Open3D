@@ -67,11 +67,10 @@ void Unproject(const core::Tensor& depth,
         core::AssertTensorDevice(image_colors.value(), device);
     }
 
-    const core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (depth.IsCPU()) {
         UnprojectCPU(depth, image_colors, points, colors, intrinsics_d,
                      extrinsics_d, depth_scale, depth_max, stride);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (depth.IsCUDA()) {
         CUDA_CALL(UnprojectCUDA, depth, image_colors, points, colors,
                   intrinsics_d, extrinsics_d, depth_scale, depth_max, stride);
     } else {
@@ -106,11 +105,10 @@ void Project(
         core::AssertTensorDevice(image_colors.value(), device);
     }
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (depth.IsCPU()) {
         ProjectCPU(depth, image_colors, points, colors, intrinsics_d,
                    extrinsics_d, depth_scale, depth_max);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (depth.IsCUDA()) {
         CUDA_CALL(ProjectCUDA, depth, image_colors, points, colors,
                   intrinsics_d, extrinsics_d, depth_scale, depth_max);
     } else {

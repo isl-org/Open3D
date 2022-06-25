@@ -24,39 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/hashmap/DeviceHashBackend.h"
+#include "open3d/utility/Random.h"
 
-#include "open3d/core/hashmap/HashMap.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/Logging.h"
+#include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace core {
+namespace utility {
 
-std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
-        int64_t init_capacity,
-        const Dtype& key_dtype,
-        const SizeVector& key_element_shape,
-        const std::vector<Dtype>& value_dtypes,
-        const std::vector<SizeVector>& value_element_shapes,
-        const Device& device,
-        const HashBackendType& backend) {
-    if (device.IsCPU()) {
-        return CreateCPUHashBackend(init_capacity, key_dtype, key_element_shape,
-                                    value_dtypes, value_element_shapes, device,
-                                    backend);
-    }
-#if defined(BUILD_CUDA_MODULE)
-    else if (device.IsCUDA()) {
-        return CreateCUDAHashBackend(init_capacity, key_dtype,
-                                     key_element_shape, value_dtypes,
-                                     value_element_shapes, device, backend);
-    }
-#endif
-    else {
-        utility::LogError("Unimplemented device");
-    }
+void pybind_random(py::module &m) {
+    py::module m_submodule = m.def_submodule("random");
+
+    m_submodule.def("seed", &random::Seed, "seed"_a,
+                    "Set Open3D global random seed.");
+
+    docstring::FunctionDocInject(m_submodule, "seed",
+                                 {{"seed", "Random seed value."}});
 }
 
-}  // namespace core
+}  // namespace utility
 }  // namespace open3d

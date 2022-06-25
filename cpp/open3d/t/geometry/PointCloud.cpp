@@ -390,7 +390,7 @@ void PointCloud::EstimateNormals(
 
     const core::Dtype dtype = this->GetPointPositions().GetDtype();
     const core::Device device = GetDevice();
-    const core::Device::DeviceType device_type = device.GetType();
+
     const bool has_normals = HasPointNormals();
 
     if (!has_normals) {
@@ -411,11 +411,11 @@ void PointCloud::EstimateNormals(
         utility::LogDebug("Using Hybrid Search for computing covariances");
         // Computes and sets `covariances` attribute using Hybrid Search
         // method.
-        if (device_type == core::Device::DeviceType::CPU) {
+        if (IsCPU()) {
             kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointAttr("covariances"), radius.value(), max_knn);
-        } else if (device_type == core::Device::DeviceType::CUDA) {
+        } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateCovariancesUsingHybridSearchCUDA,
                       this->GetPointPositions().Contiguous(),
@@ -427,11 +427,11 @@ void PointCloud::EstimateNormals(
     } else {
         utility::LogDebug("Using KNN Search for computing covariances");
         // Computes and sets `covariances` attribute using KNN Search method.
-        if (device_type == core::Device::DeviceType::CPU) {
+        if (IsCPU()) {
             kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointAttr("covariances"), max_knn);
-        } else if (device_type == core::Device::DeviceType::CUDA) {
+        } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), max_knn);
@@ -441,11 +441,11 @@ void PointCloud::EstimateNormals(
     }
 
     // Estimate `normal` of each point using its `covariance` matrix.
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (IsCPU()) {
         kernel::pointcloud::EstimateNormalsFromCovariancesCPU(
                 this->GetPointAttr("covariances"), this->GetPointNormals(),
                 has_normals);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (IsCUDA()) {
         CUDA_CALL(kernel::pointcloud::EstimateNormalsFromCovariancesCUDA,
                   this->GetPointAttr("covariances"), this->GetPointNormals(),
                   has_normals);
@@ -471,7 +471,6 @@ void PointCloud::EstimateColorGradients(
 
     const core::Dtype dtype = this->GetPointColors().GetDtype();
     const core::Device device = GetDevice();
-    const core::Device::DeviceType device_type = device.GetType();
 
     if (!this->HasPointAttr("color_gradients")) {
         this->SetPointAttr(
@@ -491,14 +490,14 @@ void PointCloud::EstimateColorGradients(
     // Compute and set `color_gradients` attribute.
     if (radius.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing color_gradients");
-        if (device_type == core::Device::DeviceType::CPU) {
+        if (IsCPU()) {
             kernel::pointcloud::EstimateColorGradientsUsingHybridSearchCPU(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointNormals().Contiguous(),
                     this->GetPointColors().Contiguous(),
                     this->GetPointAttr("color_gradients"), radius.value(),
                     max_knn);
-        } else if (device_type == core::Device::DeviceType::CUDA) {
+        } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateColorGradientsUsingHybridSearchCUDA,
                       this->GetPointPositions().Contiguous(),
@@ -511,13 +510,13 @@ void PointCloud::EstimateColorGradients(
         }
     } else {
         utility::LogDebug("Using KNN Search for computing color_gradients");
-        if (device_type == core::Device::DeviceType::CPU) {
+        if (IsCPU()) {
             kernel::pointcloud::EstimateColorGradientsUsingKNNSearchCPU(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointNormals().Contiguous(),
                     this->GetPointColors().Contiguous(),
                     this->GetPointAttr("color_gradients"), max_knn);
-        } else if (device_type == core::Device::DeviceType::CUDA) {
+        } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateColorGradientsUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
@@ -544,9 +543,7 @@ static PointCloud CreatePointCloudWithNormals(
     const float invalid_fill = NAN;
     // Filter defaults for depth processing
     const int bilateral_kernel_size =  // bilateral filter defaults for backends
-            depth_in.GetDevice().GetType() == core::Device::DeviceType::CUDA
-                    ? 3
-                    : 5;
+            depth_in.IsCUDA() ? 3 : 5;
     const float depth_diff_threshold = 0.14f;
     const float bilateral_value_sigma = 10.f;
     const float bilateral_distance_sigma = 10.f;

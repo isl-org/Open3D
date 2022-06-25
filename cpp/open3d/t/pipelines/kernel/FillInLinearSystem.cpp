@@ -66,12 +66,11 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
                 "Normals i should have the same device as the linear system.");
     }
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (AtA.IsCPU()) {
         FillInRigidAlignmentTermCPU(AtA, Atb, residual, Ti_ps, Tj_qs,
                                     Ri_normal_ps, i, j, threshold);
 
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (AtA.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         FillInRigidAlignmentTermCUDA(AtA, Atb, residual, Ti_ps, Tj_qs,
                                      Ri_normal_ps, i, j, threshold);
@@ -126,14 +125,13 @@ void FillInSLACAlignmentTerm(core::Tensor &AtA,
                 "Normals i should have the same device as the linear system.");
     }
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (AtA.IsCPU()) {
         FillInSLACAlignmentTermCPU(AtA, Atb, residual, Ti_ps, Tj_qs, normal_ps,
                                    Ri_normal_ps, RjT_Ri_normal_ps, cgrid_idx_ps,
                                    cgrid_idx_qs, cgrid_ratio_ps, cgrid_ratio_qs,
                                    i, j, n, threshold);
 
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (AtA.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         FillInSLACAlignmentTermCUDA(AtA, Atb, residual, Ti_ps, Tj_qs, normal_ps,
                                     Ri_normal_ps, RjT_Ri_normal_ps,
@@ -168,13 +166,12 @@ void FillInSLACRegularizerTerm(core::Tensor &AtA,
         utility::LogError("AtA should have the same device as Atb.");
     }
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (AtA.IsCPU()) {
         FillInSLACRegularizerTermCPU(AtA, Atb, residual, grid_idx, grid_nbs_idx,
                                      grid_nbs_mask, positions_init,
                                      positions_curr, weight, n, anchor_idx);
 
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (AtA.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         FillInSLACRegularizerTermCUDA(
                 AtA, Atb, residual, grid_idx, grid_nbs_idx, grid_nbs_mask,

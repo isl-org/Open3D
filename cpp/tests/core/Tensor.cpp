@@ -35,7 +35,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
+#include "open3d/utility/Random.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
@@ -1083,7 +1083,7 @@ TEST_P(TensorPermuteDevices, Append) {
     // Taking the above case of [1, 2] to [2, 2] with different dtype and
     // device.
     EXPECT_ANY_THROW(self.Append(other.To(core::Float64)));
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         EXPECT_ANY_THROW(self.Append(other.To(core::Device("CPU:0"))));
     }
 }
@@ -2009,7 +2009,7 @@ TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {
     int64_t max_size = *std::max_element(sizes.begin(), sizes.end());
     std::vector<int> vals(max_size);
     std::transform(vals.begin(), vals.end(), vals.begin(), [](int x) -> int {
-        return utility::UniformRandIntGenerator(0, 3)();
+        return utility::random::UniformIntGenerator(0, 3)();
     });
 
     for (int64_t size : sizes) {
@@ -3453,7 +3453,7 @@ TEST_P(TensorPermuteDevices, ConstIterator) {
 
 TEST_P(TensorPermuteDevices, TakeOwnership) {
     core::Device device = GetParam();
-    if (device.GetType() != core::Device::DeviceType::CPU) {
+    if (!device.IsCPU()) {
         GTEST_SKIP();
     }
     std::vector<int> values{1, 2, 3, 4, 5, 6};
