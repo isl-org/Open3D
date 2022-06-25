@@ -346,7 +346,8 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
         std::iota(std::begin(indices), std::end(indices), 0);
         {
             std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
-            std::shuffle(indices.begin(), indices.end(), *utility::random::GetEngine());
+            std::shuffle(indices.begin(), indices.end(),
+                         *utility::random::GetEngine());
         }
 
         const int sample_size = sampling_ratio * length;
