@@ -302,11 +302,13 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const Feature &target_feature,
         bool mutual_filter,
         double max_correspondence_distance,
-        const TransformationEstimation &estimation,
-        int ransac_n,
+        const TransformationEstimation
+                &estimation /* = TransformationEstimationPointToPoint(false)*/,
+        int ransac_n /* = 3*/,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
-                &checkers,
-        const RANSACConvergenceCriteria &criteria) {
+                &checkers /* = {}*/,
+        const RANSACConvergenceCriteria
+                &criteria /* = RANSACConvergenceCriteria()*/) {
     if (ransac_n < 3 || max_correspondence_distance <= 0.0) {
         return RegistrationResult();
     }
