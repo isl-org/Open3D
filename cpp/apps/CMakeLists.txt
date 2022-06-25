@@ -48,7 +48,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
 
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
     open3d_show_and_abort_on_warning(${TARGET_NAME})
-    open3d_set_global_properties(${TARGET_NAME})
+    open3d_set_global_properties(${TARGET_NAME}) 
     open3d_link_3rdparty_libraries(${TARGET_NAME})
 
     # Copy the resource files. This needs to be done as a post-build step
@@ -119,6 +119,46 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
     endif()
 endmacro()
 
+macro(open3d_add_app_cmd SRC_DIR APP_NAME)
+    set(APPS_DIR "${PROJECT_SOURCE_DIR}/cpp/apps")
+    set(SOURCE_DIR "${APPS_DIR}/${SRC_DIR}")
+    set(TARGET_NAME ${APP_NAME})
+
+    file(GLOB SOURCE_FILES "${SOURCE_DIR}/*.cpp")
+    file(GLOB HEADER_FILES "${SOURCE_DIR}/*.h")
+
+    if (APPLE)
+        add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+        set_target_properties(${TARGET_NAME} PROPERTIES
+                              MACOSX_BUNDLE TRUE
+                              MACOSX_BUNDLE_INFO_PLIST "${INFO_PLIST}"
+                              XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "" # disable
+                              OUTPUT_NAME ${APP_NAME}
+                             )
+    elseif (WIN32)
+        # MSVC started giving LNK:1114, error 5, which appears to be caused by
+        # the executable having the same name as the library. (Except that this
+        # was working before, so not sure what changed.)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../${APP_NAME}")
+        add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+    else()
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../${APP_NAME}")
+        add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
+        set_target_properties(${TARGET_NAME} PROPERTIES
+                              OUTPUT_NAME ${APP_NAME}
+                             )
+    endif()
+
+    target_link_libraries(${TARGET_NAME} PRIVATE Open3D::Open3D ${ARGN})
+    set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
+    
+    open3d_link_3rdparty_libraries(${TARGET_NAME})
+    open3d_show_and_abort_on_warning(${TARGET_NAME})
+    open3d_set_global_properties(${TARGET_NAME})
+endmacro()
+
 if (BUILD_GUI)
     open3d_add_app(Open3DViewer Open3D Open3DViewer)
 endif()
+
+open3d_add_app_cmd(OfflineReconstruction OfflineReconstruction)

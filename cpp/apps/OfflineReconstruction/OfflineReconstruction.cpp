@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "Config.h"
 #include "LegacyReconstructionUtil.h"
 #include "open3d/Open3D.h"
 
@@ -58,7 +59,7 @@ void PrintHelp() {
 
 int main(int argc, char* argv[]) {
     using namespace open3d;
-    using namespace open3d::examples::legacy_reconstruction;
+    using namespace open3d::apps::offline_reconstruction;
 
     if (argc < 2 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {

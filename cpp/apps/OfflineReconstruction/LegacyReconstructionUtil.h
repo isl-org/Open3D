@@ -24,324 +24,17 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <fmt/chrono.h>
+#pragma once
+
 #include <json/json.h>
 
-#include <atomic>
-#include <fstream>
-#include <iomanip>
-#include <sstream>
-#include <thread>
-
+#include "DebugUtil.h"
+#include "FileSystemUtil.h"
 #include "open3d/Open3D.h"
 
 namespace open3d {
-namespace examples {
-namespace legacy_reconstruction {
-
-// ============== Helper functions for file system ==============
-std::string PadZeroToNumber(int num, int size) {
-    return fmt::format("{0:0{1}}", num, size);
-}
-
-std::string DurationToHMS(const double& ms) {
-    std::chrono::system_clock::time_point t{
-            std::chrono::milliseconds{size_t(ms)}};
-    return fmt::format("{:%T}", t.time_since_epoch());
-}
-
-std::string FloatToString(float f, int precision = 3) {
-    return fmt::format("{0:.{1}f}", f, precision);
-}
-
-bool CheckFolderStructure(const std::string& path_dataset) {
-    if (utility::filesystem::FileExists(path_dataset) &&
-        utility::filesystem::GetFileExtensionInLowerCase(path_dataset) ==
-                "bag") {
-        return true;
-    }
-    const std::string path_color = utility::filesystem::AddIfExist(
-            path_dataset, {"color", "rgb", "image"});
-    if (path_color == path_dataset) {
-        utility::LogError("Can not find color folder in {}", path_dataset);
-    }
-
-    const std::string path_depth =
-            utility::filesystem::JoinPath(path_dataset, "depth");
-    if (!utility::filesystem::DirectoryExists(path_color) ||
-        !utility::filesystem::DirectoryExists(path_depth)) {
-        utility::LogWarning("Folder structure of {} is not correct",
-                            path_dataset);
-        return false;
-    }
-    return true;
-}
-
-void MakeCleanFolder(const std::string& path) {
-    if (utility::filesystem::DirectoryExists(path)) {
-        utility::filesystem::DeleteDirectory(path);
-    }
-    utility::filesystem::MakeDirectory(path);
-}
-
-bool ReadJsonFromFile(const std::string& path, Json::Value& json) {
-    std::ifstream ifs(path);
-    if (!ifs.is_open()) {
-        utility::LogWarning("Failed to open {}", path);
-        return false;
-    }
-
-    Json::CharReaderBuilder builder;
-    builder["collectComments"] = false;
-    Json::String errs;
-    bool is_parse_successful = parseFromStream(builder, ifs, &json, &errs);
-    if (!is_parse_successful) {
-        utility::LogWarning("Read JSON failed: {}.", errs);
-        return false;
-    }
-    return true;
-}
-
-std::tuple<std::string, std::string> GetRGBDFolders(
-        const std::string& path_dataset) {
-    return std::make_tuple(
-            utility::filesystem::AddIfExist(path_dataset,
-                                            {"image/", "rgb/", "color/"}),
-            utility::filesystem::JoinPath(path_dataset, "depth/"));
-}
-
-std::tuple<std::vector<std::string>, std::vector<std::string>> ReadRGBDFiles(
-        const std::string& path) {
-    std::string path_rgb, path_depth;
-    std::tie(path_rgb, path_depth) = GetRGBDFolders(path);
-
-    std::vector<std::string> color_files, depth_files;
-    utility::filesystem::ListFilesInDirectoryWithExtension(path_rgb, "png",
-                                                           color_files);
-    if (color_files.empty()) {
-        utility::filesystem::ListFilesInDirectoryWithExtension(path_rgb, "jpg",
-                                                               color_files);
-    }
-    utility::filesystem::ListFilesInDirectoryWithExtension(path_depth, "png",
-                                                           depth_files);
-
-    if (color_files.size() != depth_files.size()) {
-        utility::LogError(
-                "Number of color {} and depth {} images are not equal.",
-                color_files.size(), depth_files.size());
-    }
-    return std::make_tuple(color_files, depth_files);
-}
-
-std::vector<std::string> ReadPlyFiles(const std::string& path) {
-    std::vector<std::string> ply_files;
-    utility::filesystem::ListFilesInDirectoryWithExtension(path, "ply",
-                                                           ply_files);
-    return ply_files;
-}
-
-std::tuple<std::string, std::string, float> ExtractRGBDFrames(
-        const std::string& rgbd_video_file) {
-    const std::string frames_folder =
-            utility::filesystem::GetFileParentDirectory(rgbd_video_file);
-    const std::string path_intrinsic = frames_folder + "intrinsic.json";
-    if (!utility::filesystem::FileExists(path_intrinsic)) {
-        utility::LogError("Intrinsic file not found: {}", path_intrinsic);
-    } else {
-        auto rgbd_video = t::io::RGBDVideoReader::Create(rgbd_video_file);
-        rgbd_video->SaveFrames(frames_folder);
-    }
-
-    Json::Value intrinsic = utility::StringToJson(path_intrinsic);
-    return std::make_tuple(frames_folder, path_intrinsic,
-                           intrinsic["depth_scale"].asFloat());
-}
-
-// ============== Helper functions for json configuration ==============
-void SetDefaultValue(Json::Value& config,
-                     const std::string& key,
-                     int default_value) {
-    if (!config.isMember(key)) {
-        config[key] = default_value;
-    }
-}
-
-void SetDefaultValue(Json::Value& config,
-                     const std::string& key,
-                     float default_value) {
-    if (!config.isMember(key)) {
-        config[key] = default_value;
-    }
-}
-
-void SetDefaultValue(Json::Value& config,
-                     const std::string& key,
-                     const std::string& default_value) {
-    if (!config.isMember(key)) {
-        config[key] = default_value;
-    }
-}
-
-void InitConfig(Json::Value& config) {
-    // Set default parameters if not specified.
-    SetDefaultValue(config, "n_frames_per_fragment", 100);
-    SetDefaultValue(config, "n_keyframes_per_n_frame", 5);
-    SetDefaultValue(config, "depth_min", 0.3f);
-    SetDefaultValue(config, "depth_max", 3.0f);
-    SetDefaultValue(config, "voxel_size", 0.05f);
-    SetDefaultValue(config, "depth_diff_max", 0.07f);
-    SetDefaultValue(config, "depth_scale", 1000);
-    SetDefaultValue(config, "preference_loop_closure_odometry", 0.1f);
-    SetDefaultValue(config, "preference_loop_closure_registration", 5.0f);
-    SetDefaultValue(config, "tsdf_cubic_size", 3.0f);
-    SetDefaultValue(config, "icp_method", "color");
-    SetDefaultValue(config, "global_registration", "ransac");
-    SetDefaultValue(config, "multi_threading", true);
-
-    // `slac` and `slac_integrate` related parameters. `voxel_size` and
-    // `depth_min` parameters from previous section, are also used in `slac`
-    // and `slac_integrate`.
-    SetDefaultValue(config, "max_iterations", 5);
-    SetDefaultValue(config, "sdf_trunc", 0.04f);
-    SetDefaultValue(config, "block_count", 40000);
-    SetDefaultValue(config, "distance_threshold", 0.07f);
-    SetDefaultValue(config, "fitness_threshold", 0.3f);
-    SetDefaultValue(config, "regularizer_weight", 1);
-    SetDefaultValue(config, "method", "slac");
-    SetDefaultValue(config, "device", "CPU:0");
-    SetDefaultValue(config, "save_output_as", "pointcloud");
-    SetDefaultValue(config, "folder_slac", "slac/");
-    SetDefaultValue(config, "template_optimized_posegraph_slac",
-                    "optimized_posegraph_slac.json");
-
-    // Path related parameters.
-    SetDefaultValue(config, "folder_fragment", "fragments/");
-    SetDefaultValue(
-            config, "subfolder_slac",
-            "slac/" + FloatToString(config["voxel_size"].asFloat(), 3) + "/");
-    SetDefaultValue(config, "template_fragment_posegraph", "fragments/");
-    SetDefaultValue(config, "template_fragment_posegraph_optimized",
-                    "fragments/");
-    SetDefaultValue(config, "template_fragment_pointcloud", "fragments/");
-    SetDefaultValue(config, "folder_scene", "scene/");
-    SetDefaultValue(config, "template_global_posegraph",
-                    "scene/global_registration.json");
-    SetDefaultValue(config, "template_global_posegraph_optimized",
-                    "scene/global_registration_optimized.json");
-    SetDefaultValue(config, "template_refined_posegraph",
-                    "scene/refined_registration.json");
-    SetDefaultValue(config, "template_refined_posegraph_optimized",
-                    "scene/refined_registration_optimized.json");
-    SetDefaultValue(config, "template_global_mesh", "scene/integrated.ply");
-    SetDefaultValue(config, "template_global_traj", "scene/trajectory.log");
-
-    if (utility::filesystem::GetFileExtensionInLowerCase(
-                config["path_dataset"].asString()) == "bag") {
-        std::tie(config["path_dataset"], config["path_intrinsic"],
-                 config["depth_scale"]) =
-                ExtractRGBDFrames(config["path_dataset"].asString());
-    }
-}
-
-void LoungeDataLoader(Json::Value& config) {
-    utility::LogInfo("Loading Stanford Lounge RGB-D Dataset");
-
-    data::LoungeRGBDImages rgbd;
-
-    // Set dataset specific parameters.
-    config["path_dataset"] = rgbd.GetExtractDir();
-    config["path_intrinsic"] = "";
-    config["depth_max"] = 3.0f;
-    config["voxel_size"] = 0.05f;
-    config["depth_diff_max"] = 0.07f;
-    config["preference_loop_closure_odometry"] = 0.1f;
-    config["preference_loop_closure_registration"] = 5.0f;
-    config["tsdf_cubic_size"] = 3.0f;
-    config["icp_method"] = "color";
-    config["global_registration"] = "ransac";
-    config["multi_threading"] = true;
-}
-
-void BedroomDataLoader(Json::Value& config) {
-    utility::LogInfo("Loading Redwood Bedroom RGB-D Dataset");
-
-    data::BedroomRGBDImages rgbd;
-
-    // Set dataset specific parameters.
-    config["path_dataset"] = rgbd.GetExtractDir();
-    config["path_intrinsic"] = "";
-    config["depth_max"] = 3.0f;
-    config["voxel_size"] = 0.05f;
-    config["depth_diff_max"] = 0.07f;
-    config["preference_loop_closure_odometry"] = 0.1f;
-    config["preference_loop_closure_registration"] = 5.0f;
-    config["tsdf_cubic_size"] = 3.0f;
-    config["icp_method"] = "color";
-    config["global_registration"] = "ransac";
-    config["multi_threading"] = true;
-}
-
-void JackJackroomDataLoader(Json::Value& config) {
-    utility::LogInfo("Loading RealSense L515 Jack-Jack RGB-D Dataset");
-
-    data::JackJackL515Bag rgbd;
-
-    // Set dataset specific parameters.
-    config["path_dataset"] = rgbd.GetExtractDir();
-    config["path_intrinsic"] = "";
-    config["depth_max"] = 0.85f;
-    config["voxel_size"] = 0.025f;
-    config["depth_diff_max"] = 0.03f;
-    config["preference_loop_closure_odometry"] = 0.1f;
-    config["preference_loop_closure_registration"] = 5.0f;
-    config["tsdf_cubic_size"] = 0.75f;
-    config["icp_method"] = "color";
-    config["global_registration"] = "ransac";
-    config["multi_threading"] = true;
-}
-
-Json::Value DefaultDatasetLoader(const std::string& name) {
-    utility::LogInfo("Config file was not passed. Using deafult dataset: {}.",
-                     name);
-    Json::Value config;
-    if (name == "lounge") {
-        LoungeDataLoader(config);
-    } else if (name == "bedroom") {
-        BedroomDataLoader(config);
-    } else if (name == "jack_jack") {
-        JackJackroomDataLoader(config);
-    } else {
-        utility::LogError("Dataset {} is not supported.", name);
-    }
-
-    InitConfig(config);
-    utility::LogInfo("Loaded data from {}", config["path_dataset"].asString());
-
-    return config;
-}
-
-// ============== Helper functions for drawing results ==============
-static const Eigen::Matrix4d flip_transformation = Eigen::Matrix4d({
-        {1, 0, 0, 0},
-        {0, -1, 0, 0},
-        {0, 0, -1, 0},
-        {0, 0, 0, 1},
-});
-
-void DrawRegistrationResult(const geometry::PointCloud& src,
-                            const geometry::PointCloud& dst,
-                            const Eigen::Matrix4d& transformation,
-                            bool keep_color = false) {
-    auto transformed_src = std::make_shared<geometry::PointCloud>(src);
-    auto transformed_dst = std::make_shared<geometry::PointCloud>(dst);
-    if (!keep_color) {
-        transformed_src->PaintUniformColor(Eigen::Vector3d(1, 0.706, 0));
-        transformed_dst->PaintUniformColor(Eigen::Vector3d(0, 0.651, 0.929));
-    }
-    transformed_src->Transform(flip_transformation * transformation);
-    transformed_dst->Transform(flip_transformation);
-    visualization::DrawGeometries({transformed_src, transformed_dst});
-}
+namespace apps {
+namespace offline_reconstruction {
 
 /// \class MatchingResult
 /// \brief Result of matching with two fragments.
@@ -367,11 +60,10 @@ public:
 
 class ReconstructionPipeline {
 public:
-    /**
-     * @brief Construct a new Reconstruction Pipeline given config.
-     *
-     * @param config
-     */
+    /// \brief Construct a new Reconstruction Pipeline object
+    ///
+    /// \param config Json object that contains the configuration of the
+    /// pipeline.
     explicit ReconstructionPipeline(const Json::Value& config)
         : config_(config) {}
 
@@ -382,9 +74,8 @@ private:
     int n_fragments_;
 
 public:
-    /**
-     * @brief Make fragments from raw RGBD images.
-     */
+    /// \brief Make fragments from raw RGBD images.
+    ///
     void MakeFragments() {
         utility::LogInfo("Making fragments from RGBD sequence.");
         MakeCleanFolder(utility::filesystem::JoinPath(
@@ -415,9 +106,8 @@ public:
         }
     }
 
-    /**
-     * @brief Register fragments and compute global odometry.
-     */
+    /// \brief Register fragments and compute global odometry.
+    ///
     void RegisterFragments() {
         utility::LogInfo("Registering fragments.");
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
@@ -455,10 +145,8 @@ public:
                         config_["template_global_traj"].asString()));
     }
 
-    /**
-     * @brief Refine fragments registration and re-compute global odometry.
-     *
-     */
+    /// \brief Refine fragments registration and re-compute global odometry.
+    ///
     void RefineRegistration() {
         utility::LogInfo("Refining rough registration of fragments.");
         RefineFragments();
@@ -472,9 +160,8 @@ public:
                         config_["template_global_traj"].asString()));
     }
 
-    /**
-     * @brief Integrate RGBD images with global odometry.
-     */
+    /// \brief Integrate RGBD images with global odometry.
+    ///
     void IntegrateScene() {
         utility::LogInfo(
                 "Integrate the whole RGBD sequence using estimated camera "
@@ -492,9 +179,8 @@ public:
         IntegrateSceneRGBDTSDF(rgbd_files, camera_trajectory);
     }
 
-    /**
-     * @brief Run SLAC optimization or fragments.
-     */
+    /// \brief Run SLAC optimization or fragments.
+    ///
     void SLAC() {
         utility::LogInfo("Running SLAC optimization.");
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
@@ -579,9 +265,8 @@ public:
                                     config_["method"].asString() + ".log");
     }
 
-    /**
-     * @brief integrate scene using SLAC results.
-     */
+    /// \brief Integrate scene using SLAC results.
+    ///
     void IntegrateSceneSLAC() {
         utility::LogInfo("Running SLAC integration.");
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
@@ -1410,6 +1095,6 @@ private:
     }
 };
 
-}  // namespace legacy_reconstruction
-}  // namespace examples
+}  // namespace offline_reconstruction
+}  // namespace apps
 }  // namespace open3d
