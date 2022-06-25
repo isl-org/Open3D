@@ -113,6 +113,7 @@
 #include "open3d/utility/Parallel.h"
 #include "open3d/utility/ProgressBar.h"
 #include "open3d/utility/ProgressReporters.h"
+#include "open3d/utility/Random.h"
 #include "open3d/utility/Timer.h"
 #include "open3d/visualization/gui/Application.h"
 #include "open3d/visualization/gui/Button.h"

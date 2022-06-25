@@ -29,7 +29,6 @@
 #include <Eigen/Dense>
 #include <numeric>
 #include <queue>
-#include <random>
 #include <tuple>
 
 #include "open3d/geometry/BoundingVolume.h"
@@ -39,6 +38,7 @@
 #include "open3d/geometry/Qhull.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace geometry {
@@ -454,8 +454,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         std::vector<double> &triangle_areas,
         double surface_area,
-        bool use_triangle_normal,
-        int seed) {
+        bool use_triangle_normal) {
     if (surface_area <= 0) {
         utility::LogError("Invalid surface area {}, it must be > 0.",
                           surface_area);
@@ -471,12 +470,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     // sample point cloud
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
-    if (seed == -1) {
-        std::random_device rd;
-        seed = rd();
-    }
-    std::mt19937 mt(seed);
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    utility::random::UniformDoubleGenerator uniform_generator(0.0, 1.0);
     auto pcd = std::make_shared<PointCloud>();
     pcd->points_.resize(number_of_points);
     if (has_vert_normal || use_triangle_normal) {
@@ -492,8 +486,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         size_t n = size_t(std::round(triangle_areas[tidx] * number_of_points));
         while (point_idx < n) {
-            double r1 = dist(mt);
-            double r2 = dist(mt);
+            double r1 = uniform_generator();
+            double r2 = uniform_generator();
             double a = (1 - std::sqrt(r1));
             double b = std::sqrt(r1) * (1 - r2);
             double c = std::sqrt(r1) * r2;
@@ -524,9 +518,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
-        size_t number_of_points,
-        bool use_triangle_normal /* = false */,
-        int seed /* = -1 */) {
+        size_t number_of_points, bool use_triangle_normal /* = false */) {
     if (number_of_points <= 0) {
         utility::LogError("number_of_points <= 0");
     }
@@ -539,15 +531,14 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     double surface_area = GetSurfaceArea(triangle_areas);
 
     return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
-                                     surface_area, use_triangle_normal, seed);
+                                     surface_area, use_triangle_normal);
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         size_t number_of_points,
         double init_factor /* = 5 */,
         const std::shared_ptr<PointCloud> pcl_init /* = nullptr */,
-        bool use_triangle_normal /* = false */,
-        int seed /* = -1 */) {
+        bool use_triangle_normal /* = false */) {
     if (number_of_points <= 0) {
         utility::LogError("number_of_points <= 0");
     }
@@ -574,7 +565,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     if (pcl_init == nullptr) {
         pcl = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
                                         triangle_areas, surface_area,
-                                        use_triangle_normal, seed);
+                                        use_triangle_normal);
     } else {
         pcl = std::make_shared<PointCloud>();
         pcl->points_ = pcl_init->points_;
