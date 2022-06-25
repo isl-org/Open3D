@@ -54,6 +54,7 @@
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/pipelines/registration/Registration.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace t {
@@ -339,17 +340,23 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
                 "and 1.");
     }
 
-    const int64_t length = GetPointPositions().GetLength();
-    std::vector<int64_t> indices(length);
-    std::iota(std::begin(indices), std::end(indices), 0);
-    std::random_device rd;
-    std::mt19937 prng(rd());
-    std::shuffle(indices.begin(), indices.end(), prng);
-    const int sample_size = sampling_ratio * length;
-    indices.resize(sample_size);
-    return SelectByIndex(
-            core::Tensor(indices, {sample_size}, core::Int64, GetDevice()),
-            false, false);
+    if (IsCPU()) {
+        const int64_t length = GetPointPositions().GetLength();
+        std::vector<int64_t> indices(length);
+        std::iota(std::begin(indices), std::end(indices), 0);
+        {
+            std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
+            std::shuffle(indices.begin(), indices.end(), *utility::random::GetEngine());
+        }
+
+        const int sample_size = sampling_ratio * length;
+        indices.resize(sample_size);
+        return SelectByIndex(
+                core::Tensor(indices, {sample_size}, core::Int64, GetDevice()),
+                false, false);
+    } else {
+        utility::LogError("RandomDownSample is not supported on GPU.");
+    }
 }
 
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
