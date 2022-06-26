@@ -60,12 +60,39 @@ public:
 
     virtual ~AxisAlignedBoundingBox() override {}
 
-    AxisAlignedBoundingBox &Clear() override;
-    bool IsEmpty() const override;
+    /// \brief Returns the device attribute of this AxisAlignedBoundingBox.
+    core::Device GetDevice() const override { return device_; }
 
-    core::Tensor GetMinBound() const;
-    core::Tensor GetMaxBound() const;
-    core::Tensor GetCenter() const;
+    AxisAlignedBoundingBox &Clear() override;
+    
+    bool IsEmpty() const override { return Volume() <= 0; }
+
+    void SetMinBound(const core::Tensor &min_bound) {
+        core::AssertTensorDevice(min_bound, device_);
+        core::AssertTensorShape(min_bound, {3});
+        min_bound_ = min_bound;
+    }
+
+    void SetMaxBound(const core::Tensor &max_bound) {
+        core::AssertTensorDevice(max_bound, device_);
+        core::AssertTensorShape(max_bound, {3});
+        max_bound_ = max_bound;
+    }
+
+    void SetColor(const core::Tensor &color) {
+        core::AssertTensorDevice(color, device_);
+        core::AssertTensorShape(color, {3});
+        color_ = color;
+    }
+
+    core::Tensor &GetMinBound() { return min_bound_; }
+    core::Tensor &GetMaxBound() { return max_bound_; }
+    core::Tensor &GetColor() { return color_; }
+
+    const core::Tensor &GetMinBound() const { return min_bound_; }
+    const core::Tensor &GetMaxBound() const { return max_bound_; }
+    const core::Tensor &GetColor() const { return color_; }
+    core::Tensor GetCenter() const { return (min_bound_ + max_bound_) * 0.5; }
 
     AxisAlignedBoundingBox &Translate(const core::Tensor &translation,
                                       bool relative = true);
@@ -84,21 +111,21 @@ public:
     AxisAlignedBoundingBox &operator+=(const AxisAlignedBoundingBox &other);
 
     /// Get the extent/length of the bounding box in x, y, and z dimension.
-    core::Tensor GetExtent(double x) const;
+    core::Tensor GetExtent() const { return max_bound_ - min_bound_; }
 
     /// Returns the half extent of the bounding box.
-    core::Tensor GetHalfExtent(double y) const;
+    core::Tensor GetHalfExtent() const { return GetExtent() / 2; }
 
     /// Returns the maximum extent, i.e. the maximum of X, Y and Z axis'
     /// extents.
-    core::Tensor GetMaxExtent(double z) const;
+    double GetMaxExtent() const { return GetExtent().Max({0}).Item<double>(); }
 
-    double GetXPercentage() const;
-    double GetYPercentage() const;
-    double GetZPercentage() const;
+    double GetXPercentage(double x) const;
+    double GetYPercentage(double y) const;
+    double GetZPercentage(double z) const;
 
     /// Returns the volume of the bounding box.
-    double Volume() const;
+    double Volume() const { return GetExtent().Prod({0}).Item<double>(); }
 
     /// Returns the eight points that define the bounding box.
     core::Tensor GetBoxPoints() const;
@@ -118,7 +145,8 @@ public:
     /// than 3).
     static AxisAlignedBoundingBox CreateFromPoints(const core::Tensor &points);
 
-public:
+protected:
+    core::Device device_ = core::Device("CPU:0");
     core::Tensor min_bound_;
     core::Tensor max_bound_;
     core::Tensor color_;
