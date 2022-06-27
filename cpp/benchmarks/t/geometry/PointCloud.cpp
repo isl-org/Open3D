@@ -95,7 +95,7 @@ void VoxelDownSample(benchmark::State& state,
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    // Warp up
+    // Warm up.
     pcd.VoxelDownSample(voxel_size, backend);
 
     for (auto _ : state) {
@@ -120,7 +120,7 @@ void UniformDownSample(benchmark::State& state,
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    // Warp up
+    // Warm up.
     pcd.UniformDownSample(k);
 
     for (auto _ : state) {
@@ -219,7 +219,7 @@ void EstimateNormals(benchmark::State& state,
         pcd.RemovePointAttr("normals");
     }
 
-    // Warp up
+    // Warm up.
     pcd.EstimateNormals(max_nn, radius);
     for (auto _ : state) {
         pcd.EstimateNormals(max_nn, radius);
@@ -235,7 +235,7 @@ void LegacyEstimateNormals(
 
     auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
-    // Warp up
+    // Warm up.
     pcd_down->EstimateNormals(search_param, true);
 
     for (auto _ : state) {
@@ -252,7 +252,7 @@ void RemoveRadiusOutliers(benchmark::State& state,
 
     pcd = pcd.To(device).VoxelDownSample(0.01);
 
-    // Warp up
+    // Warm up.
     pcd.RemoveRadiusOutliers(nb_points, search_radius);
     for (auto _ : state) {
         pcd.RemoveRadiusOutliers(nb_points, search_radius);
@@ -267,7 +267,7 @@ void LegacyRemoveRadiusOutliers(benchmark::State& state,
 
     auto pcd_down = pcd.VoxelDownSample(0.01);
 
-    // Warp up
+    // Warm up.
     pcd_down->RemoveRadiusOutliers(nb_points, search_radius);
 
     for (auto _ : state) {
