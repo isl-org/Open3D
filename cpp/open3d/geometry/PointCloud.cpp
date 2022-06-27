@@ -177,18 +177,20 @@ PointCloud &PointCloud::RemoveDuplicatedPoints() {
             points_[k] = points_[i];
             if (has_normals) normals_[k] = normals_[i];
             if (has_colors) colors_[k] = colors_[i];
-            // estimate covariance later (copying covariances won't work)
             k++;
         }
     }
 
     points_.resize(k);
-    if (has_normals) normals_.resize(k);
     if (has_colors) colors_.resize(k);
-    if (has_covariances) {
+    if (has_covariances || has_normals) {
         covariances_.resize(k);
         covariances_ =
                 EstimatePerPointCovariances(*this, KDTreeSearchParamKNN());
+    }
+    if (has_normals) {
+        normals_.resize(k);
+        EstimateNormals();
     }
     utility::LogDebug("[RemoveDuplicatedPoints] {:d} points have been removed.",
                       (int)(old_points_num - k));
