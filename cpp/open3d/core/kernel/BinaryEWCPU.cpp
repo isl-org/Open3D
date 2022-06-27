@@ -71,6 +71,18 @@ static void LaunchBinaryEWKernel(const Indexer& indexer,
 }
 
 template <typename scalar_t>
+static void CPUMaxElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<scalar_t*>(dst) = std::max(*static_cast<const scalar_t*>(lhs),
+                                            *static_cast<const scalar_t*>(rhs));
+}
+
+template <typename scalar_t>
+static void CPUMinElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<scalar_t*>(dst) = std::min(*static_cast<const scalar_t*>(lhs),
+                                            *static_cast<const scalar_t*>(rhs));
+}
+
+template <typename scalar_t>
 static void CPUAddElementKernel(const void* lhs, const void* rhs, void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(lhs) +
                                    *static_cast<const scalar_t*>(rhs);
@@ -375,6 +387,14 @@ void BinaryEWCPU(const Tensor& lhs,
                     // tests, so use scalar version instead.
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             indexer, CPUDivElementKernel<scalar_t>);
+                    break;
+                case BinaryEWOpCode::Max:
+                    LaunchBinaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUMaxElementKernel<scalar_t>);
+                    break;
+                case BinaryEWOpCode::Min:
+                    LaunchBinaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUMinElementKernel<scalar_t>);
                     break;
                 default:
                     break;

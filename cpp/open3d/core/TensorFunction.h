@@ -110,6 +110,20 @@ Tensor Append(const Tensor& self,
               const Tensor& other,
               const utility::optional<int64_t>& axis = utility::nullopt);
 
+/// \brief Computes the element-wise maximum of input and other.
+/// The tensors must have same data type, device, and shape.
+///
+/// \param input The input tensor.
+/// \param other The second input tensor.
+Tensor Maximum(const Tensor& input, const Tensor& other);
+
+/// \brief Computes the element-wise minimum of input and other.
+/// The tensors must have same data type, device, and shape.
+///
+/// \param input The input tensor.
+/// \param other The second input tensor.
+Tensor Minimum(const Tensor& input, const Tensor& other);
+
 void SYCLDemo();
 
 }  // namespace core

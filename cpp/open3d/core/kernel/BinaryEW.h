@@ -41,6 +41,8 @@ enum class BinaryEWOpCode {
     Sub,
     Mul,
     Div,
+    Max,
+    Min,
     LogicalAnd,
     LogicalOr,
     LogicalXor,
@@ -86,6 +88,14 @@ inline void Mul(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
 
 inline void Div(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
     BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Div);
+}
+
+inline void Max(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
+    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Max);
+}
+
+inline void Min(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
+    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Min);
 }
 
 }  // namespace kernel

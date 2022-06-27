@@ -234,5 +234,73 @@ TEST_P(TensorFunctionPermuteDevices, Append) {
     EXPECT_TRUE(core::Append(self, other).AllClose(self.Append(other)));
 }
 
+TEST_P(TensorFunctionPermuteDevices, Maximum) {
+    core::Device device = GetParam();
+
+    core::Tensor input, other, output;
+
+    // 0-D Tensor.
+    input = core::Tensor::Init<float>(0, device);
+    other = core::Tensor::Init<float>(1, device);
+    output = core::Maximum(input, other);
+    EXPECT_TRUE(output.AllClose(other));
+
+    // 1-D Tensor.
+    input = core::Tensor::Init<float>({2, 1, 4, 3}, device);
+    other = core::Tensor::Init<float>({4, 5, 2, 7}, device);
+    output = core::Maximum(input, other);
+    EXPECT_TRUE(
+            output.AllClose(core::Tensor::Init<float>({4, 5, 4, 7}, device)));
+
+    // 2-D Tensor.
+    input = core::Tensor::Init<float>({{2, 1}, {4, 3}}, device);
+    other = core::Tensor::Init<float>({{4, 5}, {2, 7}}, device);
+    output = core::Maximum(input, other);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({{4, 5}, {4, 7}}, device)));
+
+    // Special case: 1-D Tensor contains NaN.
+    input = core::Tensor::Init<float>(
+            {2, std::numeric_limits<float>::quiet_NaN(), 4, 3}, device);
+    other = core::Tensor::Init<float>({4, 5, 2, 7}, device);
+    output = core::Maximum(input, other);
+    EXPECT_TRUE(
+            output.AllClose(core::Tensor::Init<float>({4, 5, 4, 7}, device)));
+}
+
+TEST_P(TensorFunctionPermuteDevices, Minimum) {
+    core::Device device = GetParam();
+
+    core::Tensor input, other, output;
+
+    // 0-D Tensor.
+    input = core::Tensor::Init<float>(0, device);
+    other = core::Tensor::Init<float>(1, device);
+    output = core::Minimum(input, other);
+    EXPECT_TRUE(output.AllClose(input));
+
+    // 1-D Tensor.
+    input = core::Tensor::Init<float>({2, 1, 4, 3}, device);
+    other = core::Tensor::Init<float>({4, 5, 2, 7}, device);
+    output = core::Minimum(input, other);
+    EXPECT_TRUE(
+            output.AllClose(core::Tensor::Init<float>({2, 1, 2, 3}, device)));
+
+    // 2-D Tensor.
+    input = core::Tensor::Init<float>({{2, 1}, {4, 3}}, device);
+    other = core::Tensor::Init<float>({{4, 5}, {2, 7}}, device);
+    output = core::Minimum(input, other);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({{2, 1}, {2, 3}}, device)));
+
+    // Special case: 1-D Tensor contains NaN.
+    input = core::Tensor::Init<float>(
+            {2, std::numeric_limits<float>::quiet_NaN(), 4, 3}, device);
+    other = core::Tensor::Init<float>({4, 5, 2, 7}, device);
+    output = core::Minimum(input, other);
+    EXPECT_TRUE(
+            output.AllClose(core::Tensor::Init<float>({2, 5, 2, 3}, device)));
+}
+
 }  // namespace tests
 }  // namespace open3d
