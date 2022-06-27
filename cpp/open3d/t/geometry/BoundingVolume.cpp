@@ -138,7 +138,8 @@ core::Tensor AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
         const core::Tensor &points) const {
     core::AssertTensorDevice(points, GetDevice());
     core::AssertTensorShape(points, {utility::nullopt, 3});
-    const core::Tensor mask_3d = (points <= min_bound_) && (points >= max_bound_);
+    // TODO should be implemented with kernal.
+    return core::Tensor::Ones({1}, core::Int64, GetDevice());
 }
 
 std::string AxisAlignedBoundingBox::GetPrintInfo() const {

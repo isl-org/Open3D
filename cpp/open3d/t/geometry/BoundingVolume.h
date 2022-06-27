@@ -28,6 +28,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/utility/Logging.h"
@@ -64,7 +65,7 @@ public:
     core::Device GetDevice() const override { return device_; }
 
     AxisAlignedBoundingBox &Clear() override;
-    
+
     bool IsEmpty() const override { return Volume() <= 0; }
 
     void SetMinBound(const core::Tensor &min_bound) {
@@ -138,6 +139,16 @@ public:
 
     /// Returns the 3D dimensions of the bounding box in string format.
     std::string GetPrintInfo() const;
+
+    /// Convert to a legacy Open3D AxisAlignedBoundingBox.
+    AxisAlignedBoundingBox ToLegacy() const;
+
+    /// Create an AxisAlignedBoundingBox from a legacy Open3D
+    /// AxisAlignedBoundingBox.
+    static AxisAlignedBoundingBox FromLegacy(
+            const geometry::AxisAlignedBoundingBox &box,
+            core::Dtype dtype = core::Float32,
+            const core::Device &device = core::Device("CPU:0"));
 
     /// Creates the AxisAlignedBoundingBox that encloses the set of points.
     ///
