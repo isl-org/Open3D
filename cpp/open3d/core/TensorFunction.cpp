@@ -143,9 +143,10 @@ Tensor Append(const Tensor& self,
 Tensor Maximum(const Tensor& input, const Tensor& other) {
     core::AssertTensorDevice(input, other.GetDevice());
     core::AssertTensorDtype(input, other.GetDtype());
-    core::AssertTensorShape(input, other.GetShape());
 
-    Tensor dst_tensor(input.GetShape(), input.GetDtype(), input.GetDevice());
+    Tensor dst_tensor(
+            shape_util::BroadcastedShape(input.GetShape(), other.GetShape()),
+            input.GetDtype(), input.GetDevice());
     kernel::BinaryEW(input, other, dst_tensor, kernel::BinaryEWOpCode::Max);
 
     return dst_tensor;
@@ -154,9 +155,10 @@ Tensor Maximum(const Tensor& input, const Tensor& other) {
 Tensor Minimum(const Tensor& input, const Tensor& other) {
     core::AssertTensorDevice(input, other.GetDevice());
     core::AssertTensorDtype(input, other.GetDtype());
-    core::AssertTensorShape(input, other.GetShape());
 
-    Tensor dst_tensor(input.GetShape(), input.GetDtype(), input.GetDevice());
+    Tensor dst_tensor(
+            shape_util::BroadcastedShape(input.GetShape(), other.GetShape()),
+            input.GetDtype(), input.GetDevice());
     kernel::BinaryEW(input, other, dst_tensor, kernel::BinaryEWOpCode::Min);
 
     return dst_tensor;
