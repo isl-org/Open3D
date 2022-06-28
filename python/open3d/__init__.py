@@ -34,57 +34,86 @@
 # https://github.com/dmlc/xgboost/issues/1715
 import os
 import sys
+
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 from ctypes import CDLL as _CDLL
 from ctypes.util import find_library as _find_library
 from pathlib import Path as _Path
-import warnings
+import logging
 
 from open3d._build_config import _build_config
+
+
+def _load_cdll(path):
+    """
+    Wrapper around ctypes.CDLL to take care of Windows compatibility.
+    """
+    path = _Path(path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Shared library file not found: {path}.")
+
+    if sys.platform == 'win32' and sys.version_info >= (3, 8):
+        # https://stackoverflow.com/a/64472088/1255535
+        return _CDLL(str(path), winmode=0)
+    else:
+        return _CDLL(str(path))
+
+
 if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
                                        _find_library('c++')):
     try:  # Preload libc++.so and libc++abi.so (required by filament)
-        _CDLL(str(next((_Path(__file__).parent).glob('*c++abi.*'))))
-        _CDLL(str(next((_Path(__file__).parent).glob('*c++.*'))))
+        _load_cdll(next((_Path(__file__).parent).glob('*c++abi.*')))
+        _load_cdll(next((_Path(__file__).parent).glob('*c++.*')))
     except StopIteration:  # Not found: check system paths while loading
         pass
 
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:
+    cpu_pybind_paths = list((_Path(__file__).parent / 'cpu').glob('pybind*'))
+    cuda_pybind_paths = list((_Path(__file__).parent / 'cuda').glob('pybind*'))
+    cpu_pybind_path = cpu_pybind_paths[0] if cpu_pybind_paths else None
+    cuda_pybind_path = cuda_pybind_paths[0] if cuda_pybind_paths else None
+
     # Load CPU pybind dll gracefully without introducing new python variable.
-    # Do this before loading the CUDA pybind dll to correctly resolve symbols
-    try:  # StopIteration if cpu version not available
-        _CDLL(str(next((_Path(__file__).parent / 'cpu').glob('pybind*'))))
-    except StopIteration:
-        warnings.warn(
-            "Open3D was built with CUDA support, but Open3D CPU Python "
-            "bindings were not found. Open3D will not work on systems without"
-            " CUDA devices.", ImportWarning)
-    try:
-        # Check CUDA availability without importing CUDA pybind symbols to
-        # prevent "symbol already registered" errors if first import fails.
-        _pybind_cuda = _CDLL(
-            str(next((_Path(__file__).parent / 'cuda').glob('pybind*'))))
-        if _pybind_cuda.open3d_core_cuda_device_count() > 0:
-            from open3d.cuda.pybind import (camera, data, geometry, io,
-                                            pipelines, utility, t)
-            from open3d.cuda import pybind
-            __DEVICE_API__ = 'cuda'
-        else:
-            warnings.warn(
-                "Open3D was built with CUDA support, but no suitable CUDA "
-                "devices found. If your system has CUDA devices, check your "
-                "CUDA drivers and runtime.", ImportWarning)
-    except OSError:
-        warnings.warn(
-            "Open3D was built with CUDA support, but CUDA libraries could "
-            "not be found! Check your CUDA installation. Falling back to the "
-            "CPU pybind library.", ImportWarning)
-    except StopIteration:
-        warnings.warn(
+    # Do this before loading the CUDA pybind dll to correctly resolve symbols.
+    if cpu_pybind_path and cpu_pybind_path.is_file():
+        try:
+            _load_cdll(cpu_pybind_path)
+        except BaseException as exception:
+            print(f"Unexpected error loading CPU pybind: {exception}")
+    else:
+        logging.warning(
+            "Open3D CPU Python bindings were not found and Open3D is built "
+            "with CUDA support. Open3D will not work on systems without "
+            "CUDA devices.")
+
+    if cuda_pybind_path and cuda_pybind_path.is_file():
+        try:
+            # Check CUDA availability without importing CUDA pybind symbols to
+            # prevent "symbol already registered" errors if first import fails.
+            _pybind_cuda = _load_cdll(cuda_pybind_path)
+            if _pybind_cuda.open3d_core_cuda_device_count() > 0:
+                from open3d.cuda.pybind import (camera, data, geometry, io,
+                                                pipelines, utility, t)
+                from open3d.cuda import pybind
+                __DEVICE_API__ = 'cuda'
+            else:
+                logging.warning(
+                    "Open3D was built with CUDA support, but no suitable CUDA "
+                    "devices found. If your system has CUDA devices, check your "
+                    "CUDA drivers and runtime.")
+        except OSError:
+            logging.warning(
+                "Open3D was built with CUDA support, but CUDA libraries could "
+                "not be found! Check your CUDA installation. Falling back to the "
+                "CPU pybind library.")
+        except BaseException as exception:
+            print(f"Unexpected error loading CUDA pybind: {exception}")
+    else:
+        logging.warning(
             "Open3D was built with CUDA support, but Open3D CUDA Python "
             "binding library not found! Falling back to the CPU Python "
-            "binding library.", ImportWarning)
+            "binding library.")
 
 if __DEVICE_API__ == 'cpu':
     from open3d.cpu.pybind import (camera, data, geometry, io, pipelines,
@@ -116,8 +145,7 @@ if _build_config["BUILD_JUPYTER_EXTENSION"]:
         except NameError:
             pass
     else:
-        warnings.warn("Open3D WebVisualizer is not supported on ARM for now.",
-                      RuntimeWarning)
+        logging.warning("Open3D WebVisualizer is not supported on ARM for now.")
 
 # OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
 # If set this will override the integrated Open3D-ML.
