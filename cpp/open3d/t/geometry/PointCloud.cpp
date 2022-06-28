@@ -340,24 +340,22 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
                 "and 1.");
     }
 
-    if (IsCPU()) {
-        const int64_t length = GetPointPositions().GetLength();
-        std::vector<int64_t> indices(length);
-        std::iota(std::begin(indices), std::end(indices), 0);
-        {
-            std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
-            std::shuffle(indices.begin(), indices.end(),
-                         *utility::random::GetEngine());
-        }
-
-        const int sample_size = sampling_ratio * length;
-        indices.resize(sample_size);
-        return SelectByIndex(
-                core::Tensor(indices, {sample_size}, core::Int64, GetDevice()),
-                false, false);
-    } else {
-        utility::LogError("RandomDownSample is not supported on GPU.");
+    const int64_t length = GetPointPositions().GetLength();
+    std::vector<int64_t> indices(length);
+    std::iota(std::begin(indices), std::end(indices), 0);
+    {
+        std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
+        std::shuffle(indices.begin(), indices.end(),
+                     *utility::random::GetEngine());
     }
+
+    const int sample_size = sampling_ratio * length;
+    indices.resize(sample_size);
+    // TODO: Generate random indices in GPU using CUDA rng maybe more efficient
+    // than copy indices data from CPU to GPU.
+    return SelectByIndex(
+            core::Tensor(indices, {sample_size}, core::Int64, GetDevice()),
+            false, false);
 }
 
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
