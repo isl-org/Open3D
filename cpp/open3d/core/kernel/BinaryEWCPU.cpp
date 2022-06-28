@@ -78,6 +78,8 @@ static void CPUMaxElementKernel(const void* lhs, const void* rhs, void* dst) {
 
 template <typename scalar_t>
 static void CPUMinElementKernel(const void* lhs, const void* rhs, void* dst) {
+    const scalar_t* lhs_ptr = static_cast<const scalar_t*>(lhs);
+    const scalar_t* rhs_ptr = static_cast<const scalar_t*>(rhs);
     *static_cast<scalar_t*>(dst) = std::min(*static_cast<const scalar_t*>(lhs),
                                             *static_cast<const scalar_t*>(rhs));
 }

@@ -104,12 +104,18 @@ Example:
             "self"_a, "values"_a, "axis"_a = py::none());
 
     m.def("maximum", &core::Maximum,
-          R"(Computes the element-wise maximum of input and other.
-The tensors must have same data type, device, and shape.)",
+          R"(Computes the element-wise maximum of input and other. The tensors 
+must have same data type and device.
+          
+If input.GetShape() != other.GetShape(), then they will be broadcasted to a
+common shape (which becomes the shape of the output).)",
           "input"_a, "other"_a);
     m.def("minimum", &core::Minimum,
-          R"(Computes the element-wise maximum of input and other.
-The tensors must have same data type, device, and shape.)",
+          R"(Computes the element-wise minimum of input and other. The tensors 
+must have same data type and device.
+          
+If input.GetShape() != other.GetShape(), then they will be broadcasted to a
+common shape (which becomes the shape of the output).)",
           "input"_a, "other"_a);
 }
 

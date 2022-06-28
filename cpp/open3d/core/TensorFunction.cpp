@@ -147,7 +147,7 @@ Tensor Maximum(const Tensor& input, const Tensor& other) {
     Tensor dst_tensor(
             shape_util::BroadcastedShape(input.GetShape(), other.GetShape()),
             input.GetDtype(), input.GetDevice());
-    kernel::BinaryEW(input, other, dst_tensor, kernel::BinaryEWOpCode::Max);
+    kernel::Max(input, other, dst_tensor);
 
     return dst_tensor;
 }
@@ -159,7 +159,7 @@ Tensor Minimum(const Tensor& input, const Tensor& other) {
     Tensor dst_tensor(
             shape_util::BroadcastedShape(input.GetShape(), other.GetShape()),
             input.GetDtype(), input.GetDevice());
-    kernel::BinaryEW(input, other, dst_tensor, kernel::BinaryEWOpCode::Min);
+    kernel::Min(input, other, dst_tensor);
 
     return dst_tensor;
 }
