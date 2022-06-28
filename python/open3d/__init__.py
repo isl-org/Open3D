@@ -76,7 +76,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
 
     # Load CPU pybind dll gracefully without introducing new python variable.
     # Do this before loading the CUDA pybind dll to correctly resolve symbols.
-    if cpu_pybind_path and cpu_pybind_path.is_file():
+    if cpu_pybind_path:
         try:
             _load_cdll(cpu_pybind_path)
         except BaseException as exception:
@@ -87,7 +87,7 @@ if _build_config["BUILD_CUDA_MODULE"]:
             "with CUDA support. Open3D will not work on systems without "
             "CUDA devices.")
 
-    if cuda_pybind_path and cuda_pybind_path.is_file():
+    if cuda_pybind_path:
         try:
             # Check CUDA availability without importing CUDA pybind symbols to
             # prevent "symbol already registered" errors if first import fails.
