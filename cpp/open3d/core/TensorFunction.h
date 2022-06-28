@@ -44,9 +44,9 @@ namespace core {
 ///
 /// Example:
 /// \code{.cpp}
-/// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
-/// Tensor b = Tensor::Init<int64_t>({4, 5});
-/// Tensor c = Tensor::Init<int64_t>({6, 7});
+/// Tensor a = Tensor::Init<int64_t>({{0, 1}, {2, 3}});
+/// Tensor b = Tensor::Init<int64_t>({{4, 5}});
+/// Tensor c = Tensor::Init<int64_t>({{6, 7}});
 /// Tensor output = core::Concatenate({a, b, c}, 0);
 /// // output:
 /// //  [[0 1],
@@ -84,8 +84,8 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
 ///
 /// Example:
 /// \code{.cpp}
-/// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
-/// Tensor b = Tensor::Init<int64_t>({4, 5});
+/// Tensor a = Tensor::Init<int64_t>({{0, 1}, {2, 3}});
+/// Tensor b = Tensor::Init<int64_t>({{4, 5}});
 /// Tensor t1 = core::Append(a, b, 0);
 /// // t1:
 /// //  [[0 1],
