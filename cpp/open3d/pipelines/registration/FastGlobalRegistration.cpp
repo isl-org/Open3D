@@ -32,8 +32,8 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/pipelines/registration/Registration.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace pipelines {
@@ -88,9 +88,7 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
 
-    unsigned int seed_val = option.seed_.has_value() ? option.seed_.value()
-                                                     : std::random_device{}();
-    utility::UniformRandIntGenerator rand_generator(0, ncorr - 1, seed_val);
+    utility::random::UniformIntGenerator rand_generator(0, ncorr - 1);
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
         rand0 = rand_generator();

@@ -15,6 +15,7 @@ target_sources(utility PRIVATE
     Logging.cpp
     Parallel.cpp
     ProgressBar.cpp
+    Random.cpp
     Timer.cpp
 )
 

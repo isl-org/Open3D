@@ -26,7 +26,6 @@
 
 #include <benchmark/benchmark.h>
 
-#include <random>
 #include <type_traits>
 
 #include "benchmarks/benchmark_utilities/Rand.h"
