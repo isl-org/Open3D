@@ -334,10 +334,25 @@ public:
                              bool remove_duplicates = false) const;
 
     /// \brief Downsamples a point cloud with a specified voxel size.
+    ///
     /// \param voxel_size Voxel size. A positive number.
     PointCloud VoxelDownSample(double voxel_size,
                                const core::HashBackendType &backend =
                                        core::HashBackendType::Default) const;
+
+    /// \brief Downsamples a point cloud by selecting every kth index point and
+    /// its attributes.
+    ///
+    /// \param every_k_points Sample rate, the selected point indices are [0, k,
+    /// 2k, …].
+    PointCloud UniformDownSample(size_t every_k_points) const;
+
+    /// \brief Downsample a pointcloud by selecting random index point and its
+    /// attributes.
+    ///
+    /// \param sampling_ratio Sampling ratio, the ratio of sample to total
+    /// number of points in the pointcloud.
+    PointCloud RandomDownSample(double sampling_ratio) const;
 
     /// \brief Remove points that have less than \p nb_points neighbors in a
     /// sphere of a given radius.
