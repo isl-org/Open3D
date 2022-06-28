@@ -26,6 +26,8 @@
 
 #include "open3d/t/geometry/BoundingVolume.h"
 
+#include "open3d/core/EigenConverter.h"
+
 namespace open3d {
 namespace t {
 namespace geometry {
@@ -45,6 +47,18 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Tensor &min_bound,
       }()) {
     min_bound_ = min_bound;
     max_bound_ = max_bound;
+}
+
+AxisAlignedBoundingBox AxisAlignedBoundingBox::To(const core::Device &device,
+                                                  bool copy = false) const {
+    if (!copy && GetDevice() == device) {
+        return *this;
+    }
+    AxisAlignedBoundingBox box(device);
+    box.SetMinBound(min_bound_.To(device, true));
+    box.SetMaxBound(max_bound_.To(device, true));
+    box.SetColor(color_.To(device, true));
+    return box;
 }
 
 AxisAlignedBoundingBox &AxisAlignedBoundingBox::Clear() {
@@ -160,6 +174,43 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const core::Tensor max_bound = points.Max({1});
         return AxisAlignedBoundingBox(min_bound, max_bound);
     }
+}
+
+open3d::geometry::AxisAlignedBoundingBox AxisAlignedBoundingBox::ToLegacy()
+        const {
+    open3d::geometry::AxisAlignedBoundingBox legacy_box;
+
+    AxisAlignedBoundingBox box_new;
+
+    // Make sure the box is in CPU.
+    box_new = To(core::Device("CPU:0"));
+
+    // TODO: The helper function for conversion between 1-D Tensor and
+    // Eigen::VectorXd could be implemented in `core/EigenConverter.cpp`.
+    legacy_box.min_bound_ = core::eigen_converter::TensorToEigenVector3dVector(
+            box_new.GetMinBound().Reshape({1, 3}))[0];
+    legacy_box.max_bound_ = core::eigen_converter::TensorToEigenVector3dVector(
+            max_bound_.Reshape({1, 3}))[0];
+    legacy_box.color_ = core::eigen_converter::TensorToEigenVector3dVector(
+            color_.Reshape({1, 3}))[0];
+    return legacy_box;
+}
+
+AxisAlignedBoundingBox AxisAlignedBoundingBox::FromLegacy(
+        const open3d::geometry::AxisAlignedBoundingBox &box,
+        core::Dtype dtype,
+        const core::Device &device) {
+    AxisAlignedBoundingBox t_box(device);
+    t_box.SetColor(core::eigen_converter::EigenMatrixToTensor(box.color_)
+                           .Flatten()
+                           .To(device));
+    t_box.SetMinBound(core::eigen_converter::EigenMatrixToTensor(box.min_bound_)
+                              .Flatten()
+                              .To(device));
+    t_box.SetMaxBound(core::eigen_converter::EigenMatrixToTensor(box.max_bound_)
+                              .Flatten()
+                              .To(device));
+    return t_box;
 }
 
 }  // namespace geometry

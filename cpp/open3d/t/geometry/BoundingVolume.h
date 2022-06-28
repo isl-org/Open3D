@@ -64,6 +64,19 @@ public:
     /// \brief Returns the device attribute of this AxisAlignedBoundingBox.
     core::Device GetDevice() const override { return device_; }
 
+    /// Transfer the AxisAlignedBoundingBox to a specified device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new AxisAlignedBoundingBox is always created; if
+    /// false, the copy is avoided when the original AxisAlignedBoundingBox is
+    /// already on the targeted device.
+    AxisAlignedBoundingBox To(const core::Device &device,
+                              bool copy = false) const;
+
+    /// Returns copy of the AxisAlignedBoundingBox on the same device.
+    AxisAlignedBoundingBox Clone() const {
+        return To(GetDevice(), /*copy=*/true);
+    }
+
     AxisAlignedBoundingBox &Clear() override;
 
     bool IsEmpty() const override { return Volume() <= 0; }
@@ -141,12 +154,12 @@ public:
     std::string GetPrintInfo() const;
 
     /// Convert to a legacy Open3D AxisAlignedBoundingBox.
-    AxisAlignedBoundingBox ToLegacy() const;
+    open3d::geometry::AxisAlignedBoundingBox ToLegacy() const;
 
     /// Create an AxisAlignedBoundingBox from a legacy Open3D
     /// AxisAlignedBoundingBox.
     static AxisAlignedBoundingBox FromLegacy(
-            const geometry::AxisAlignedBoundingBox &box,
+            const open3d::geometry::AxisAlignedBoundingBox &box,
             core::Dtype dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
