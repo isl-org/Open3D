@@ -368,6 +368,24 @@ public:
     /// Convenience function.
     bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
 
+    /// Create a box triangle mesh. One vertex of the box will be placed at
+    /// the origin and the box aligns with the positive x, y, and z axes.
+    /// \param width is x-directional length.
+    /// \param height is y-directional length.
+    /// \param depth is z-directional length.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateBox(
+            double width = 1.0,
+            double height = 1.0,
+            double depth = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
