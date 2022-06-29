@@ -259,13 +259,12 @@ TEST_P(TensorFunctionPermuteDevices, Maximum) {
     EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({{4, 5}, {4, 7}}, device)));
 
-    // Special case: 1-D Tensor contains NaN.
-    input = core::Tensor::Init<float>(
-            {2, std::numeric_limits<float>::quiet_NaN(), 4, 3}, device);
-    other = core::Tensor::Init<float>({4, 5, 2, 7}, device);
+    // Special case: Different input shape.
+    input = core::Tensor::Init<float>({2, 4, 3}, device);
+    other = core::Tensor::Init<float>({{4, 5, 2}, {3, 5, 1}}, device);
     output = core::Maximum(input, other);
-    EXPECT_TRUE(
-            output.AllClose(core::Tensor::Init<float>({4, 5, 4, 7}, device)));
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({{4, 5, 3}, {3, 5, 3}}, device)));
 }
 
 TEST_P(TensorFunctionPermuteDevices, Minimum) {
@@ -293,13 +292,12 @@ TEST_P(TensorFunctionPermuteDevices, Minimum) {
     EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({{2, 1}, {2, 3}}, device)));
 
-    // Special case: 1-D Tensor contains NaN.
-    input = core::Tensor::Init<float>(
-            {2, std::numeric_limits<float>::quiet_NaN(), 4, 3}, device);
-    other = core::Tensor::Init<float>({4, 5, 2, 7}, device);
+    // Special case: Different input shape.
+    input = core::Tensor::Init<float>({2, 4, 3}, device);
+    other = core::Tensor::Init<float>({{4, 5, 2}, {3, 5, 1}}, device);
     output = core::Minimum(input, other);
-    EXPECT_TRUE(
-            output.AllClose(core::Tensor::Init<float>({2, 5, 2, 3}, device)));
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<float>({{2, 4, 2}, {2, 4, 1}}, device)));
 }
 
 }  // namespace tests
