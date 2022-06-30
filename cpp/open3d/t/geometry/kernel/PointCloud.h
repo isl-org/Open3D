@@ -91,15 +91,15 @@ void ProjectCPU(
         float depth_max);
 
 void GetPointMaskWithinAABBCPU(const core::Tensor& points,
-                            const core::Tensor& min_bound,
-                            const core::Tensor& max_bound,
-                            core::Tensor& mask);
+                               const core::Tensor& min_bound,
+                               const core::Tensor& max_bound,
+                               core::Tensor& mask);
 
 void GetPointMaskWithinOBBCPU(const core::Tensor& points,
-                           const core::Tensor& center,
-                           const core::Tensor& rotation,
-                           const core::Tensor& extent,
-                           core::Tensor& mask);
+                              const core::Tensor& center,
+                              const core::Tensor& rotation,
+                              const core::Tensor& extent,
+                              core::Tensor& mask);
 
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
@@ -125,15 +125,15 @@ void ProjectCUDA(
         float depth_max);
 
 void GetPointMaskWithinAABBCUDA(const core::Tensor& points,
-                            const core::Tensor& min_bound,
-                            const core::Tensor& max_bound,
-                            core::Tensor& mask);
+                                const core::Tensor& min_bound,
+                                const core::Tensor& max_bound,
+                                core::Tensor& mask);
 
 void GetPointMaskWithinOBBCUDA(const core::Tensor& points,
-                           const core::Tensor& center,
-                           const core::Tensor& rotation,
-                           const core::Tensor& extent,
-                           core::Tensor& mask);
+                               const core::Tensor& center,
+                               const core::Tensor& rotation,
+                               const core::Tensor& extent,
+                               core::Tensor& mask);
 #endif
 
 void EstimateCovariancesUsingHybridSearchCPU(const core::Tensor& points,

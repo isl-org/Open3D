@@ -129,17 +129,18 @@ void GetPointMaskWithinAABB(const core::Tensor& points,
 
     const core::Device device = points.GetDevice();
 
-    // Make sure min_bound and max_bound are contiguous.
+    // Make sure points, min_bound and max_bound are contiguous.
     const core::Tensor min_bound_d =
             min_bound.To(device, core::Float32).Contiguous();
     const core::Tensor max_bound_d =
             max_bound.To(device, core::Float32).Contiguous();
+    const core::Tensor points_d = points.To(device, core::Float32).Contiguous();
 
     if (mask.IsCPU()) {
-        GetPointMaskWithinAABBCPU(points, min_bound_d, max_bound_d, mask);
+        GetPointMaskWithinAABBCPU(points_d, min_bound_d, max_bound_d, mask);
     } else if (mask.IsCUDA()) {
-        CUDA_CALL(GetPointMaskWithinAABBCUDA, points, min_bound_d, max_bound_d,
-                  mask);
+        CUDA_CALL(GetPointMaskWithinAABBCUDA, points_d, min_bound_d,
+                  max_bound_d, mask);
     } else {
         utility::LogError("Unimplemented device");
     }

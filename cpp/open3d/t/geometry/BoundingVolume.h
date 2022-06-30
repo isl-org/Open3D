@@ -99,19 +99,28 @@ public:
         color_ = color;
     }
 
-    core::Tensor &GetMinBound() { return min_bound_; }
-    core::Tensor &GetMaxBound() { return max_bound_; }
-    core::Tensor &GetColor() { return color_; }
+    const core::Tensor &GetMinBoundAttr() const { return min_bound_; }
+    const core::Tensor &GetMaxBoundAttr() const { return max_bound_; }
+    const core::Tensor &GetColorAttr() const { return color_; }
 
-    const core::Tensor &GetMinBound() const { return min_bound_; }
-    const core::Tensor &GetMaxBound() const { return max_bound_; }
-    const core::Tensor &GetColor() const { return color_; }
+    core::Tensor GetMinBound() const { return min_bound_; }
+    core::Tensor GetMaxBound() const { return max_bound_; }
+    core::Tensor GetColor() const { return color_; }
     core::Tensor GetCenter() const { return (min_bound_ + max_bound_) * 0.5; }
 
+    /// \brief Translate the axis-aligned box by the given translation.
+    ///
+    /// If relative is true, the translation is applied to the current min and
+    /// max bound. If relative is false, the translation is applied to make the
+    /// box's center at the given translation.
+    ///
+    /// \param translation Translation [Tensor of shape (3,)], should be in the
+    /// same device as the box.
+    /// \param relative Whether to perform relative translation.
     AxisAlignedBoundingBox &Translate(const core::Tensor &translation,
                                       bool relative = true);
 
-    /// \brief Scales the axis-aligned bounding boxes.
+    /// \brief Scale the axis-aligned box.
     /// If \f$mi\f$ is the min_bound and \f$ma\f$ is the max_bound of
     /// the axis aligned bounding box, and \f$s\f$ and \f$c\f$ are the
     /// provided scaling factor and center respectively, then the new
@@ -146,24 +155,24 @@ public:
 
     /// \brief Indices to points that are within the bounding box.
     ///
-    /// \param points A list of points A list of points (N x 3 tensor).
+    /// \param points A list of points (N x 3 tensor).
     core::Tensor GetPointIndicesWithinBoundingBox(
             const core::Tensor &points) const;
 
     /// Text description.
     std::string ToString() const;
 
-    /// Convert to a legacy Open3D AxisAlignedBoundingBox.
+    /// Convert to a legacy Open3D axis-aligned box.
     open3d::geometry::AxisAlignedBoundingBox ToLegacy() const;
 
     /// Create an AxisAlignedBoundingBox from a legacy Open3D
-    /// AxisAlignedBoundingBox.
+    /// axis-aligned box.
     static AxisAlignedBoundingBox FromLegacy(
             const open3d::geometry::AxisAlignedBoundingBox &box,
             core::Dtype dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
-    /// Creates the AxisAlignedBoundingBox that encloses the set of points.
+    /// Creates the axis-aligned box that encloses the set of points.
     ///
     /// \param points A list of points (N x 3 tensor, where N must be larger
     /// than 3).

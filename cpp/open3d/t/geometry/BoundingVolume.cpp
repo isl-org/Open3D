@@ -159,21 +159,24 @@ core::Tensor AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
     kernel::pointcloud::GetPointMaskWithinAABB(points, min_bound_, max_bound_,
                                                mask);
 
-    return mask.NonZero();
+    return mask.NonZero().Flatten();
 }
 
-std::string AxisAlignedBoundingBox::GetPrintInfo() const {
-    return fmt::format("[({:.4f}, {:.4f}, {:.4f}) - ({:.4f}, {:.4f}, {:.4f})]",
-                       min_bound_[0].Item<float>(), min_bound_[1].Item<float>(),
-                       min_bound_[2].Item<float>(), max_bound_[0].Item<float>(),
-                       max_bound_[1].Item<float>(),
-                       max_bound_[2].Item<float>());
+std::string AxisAlignedBoundingBox::ToString() const {
+    std::string str = fmt::format("AxisAlignedBoundingBox on {}\n",
+                                  GetDevice().ToString());
+    str += fmt::format("min_bound: {}\n", min_bound_.ToString());
+    str += fmt::format("max_bound: {}\n", max_bound_.ToString());
+    str += fmt::format("color: {}\n", color_.ToString());
+    return str;
 }
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const core::Tensor &points) {
     core::AssertTensorShape(points, {utility::nullopt, 3});
-    if (points.GetLength() == 0) {
+    if (points.GetLength() <= 0) {
+        utility::LogWarning(
+                "CreateFromPoints: the points number is less than 3.");
         return AxisAlignedBoundingBox(points.GetDevice());
     } else {
         const core::Tensor min_bound = points.Min({1});
