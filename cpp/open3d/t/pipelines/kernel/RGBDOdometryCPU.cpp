@@ -66,8 +66,8 @@ void ComputeOdometryInformationMatrixCPU(const core::Tensor& source_vertex_map,
 
 #ifdef _MSC_VER
     std::vector<float> zeros_21(21, 0.0);
-    A_1x29 = tbb::parallel_reduce(
-            tbb::blocked_range<int>(0, n), zeros_29,
+    A_1x21 = tbb::parallel_reduce(
+            tbb::blocked_range<int>(0, n), zeros_21,
             [&](tbb::blocked_range<int> r, std::vector<float> A_reduction) {
                 for (int workload_idx = r.begin(); workload_idx < r.end();
                      workload_idx++) {
