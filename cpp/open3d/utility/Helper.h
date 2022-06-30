@@ -55,22 +55,23 @@ struct hash_tuple {
 namespace {
 
 template <class T>
-inline void hash_combine(std::size_t& seed, T const& v) {
-    seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+inline void hash_combine(std::size_t& hash_seed, T const& v) {
+    hash_seed ^= std::hash<T>()(v) + 0x9e3779b9 + (hash_seed << 6) +
+                 (hash_seed >> 2);
 }
 
 template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
 struct HashValueImpl {
-    static void apply(size_t& seed, Tuple const& tuple) {
-        HashValueImpl<Tuple, Index - 1>::apply(seed, tuple);
-        hash_combine(seed, std::get<Index>(tuple));
+    static void apply(size_t& hash_seed, Tuple const& tuple) {
+        HashValueImpl<Tuple, Index - 1>::apply(hash_seed, tuple);
+        hash_combine(hash_seed, std::get<Index>(tuple));
     }
 };
 
 template <class Tuple>
 struct HashValueImpl<Tuple, 0> {
-    static void apply(size_t& seed, Tuple const& tuple) {
-        hash_combine(seed, std::get<0>(tuple));
+    static void apply(size_t& hash_seed, Tuple const& tuple) {
+        hash_combine(hash_seed, std::get<0>(tuple));
     }
 };
 
@@ -79,22 +80,22 @@ struct HashValueImpl<Tuple, 0> {
 template <typename... TT>
 struct hash_tuple<std::tuple<TT...>> {
     size_t operator()(std::tuple<TT...> const& tt) const {
-        size_t seed = 0;
-        HashValueImpl<std::tuple<TT...>>::apply(seed, tt);
-        return seed;
+        size_t hash_seed = 0;
+        HashValueImpl<std::tuple<TT...>>::apply(hash_seed, tt);
+        return hash_seed;
     }
 };
 
 template <typename T>
 struct hash_eigen {
     std::size_t operator()(T const& matrix) const {
-        size_t seed = 0;
+        size_t hash_seed = 0;
         for (int i = 0; i < (int)matrix.size(); i++) {
             auto elem = *(matrix.data() + i);
-            seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
-                    (seed << 6) + (seed >> 2);
+            hash_seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
+                         (hash_seed << 6) + (hash_seed >> 2);
         }
-        return seed;
+        return hash_seed;
     }
 };
 
@@ -177,24 +178,6 @@ inline int DivUp(int x, int y) {
     div_t tmp = std::div(x, y);
     return tmp.quot + (tmp.rem != 0 ? 1 : 0);
 }
-
-/// \class UniformRandIntGenerator
-///
-/// \brief Draw pseudo-random integers bounded by min and max (inclusive)
-/// from a uniform distribution
-class UniformRandIntGenerator {
-public:
-    UniformRandIntGenerator(
-            const int min,
-            const int max,
-            std::mt19937::result_type seed = std::random_device{}())
-        : distribution_(min, max), generator_(seed) {}
-    int operator()() { return distribution_(generator_); }
-
-protected:
-    std::uniform_int_distribution<int> distribution_;
-    std::mt19937 generator_;
-};
 
 /// Returns current time stamp.
 std::string GetCurrentTimeStamp();

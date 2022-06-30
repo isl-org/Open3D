@@ -24,18 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/utility/Random.h"
 
-#include "pybind/open3d_pybind.h"
+#include "tests/Tests.h"
 
 namespace open3d {
-namespace utility {
+namespace tests {
 
-void pybind_utility(py::module &m);
+TEST(Random, UniformRandIntGeneratorWithFixedSeed) {
+    utility::random::Seed(42);
+    std::array<int, 1024> values;
+    utility::random::UniformIntGenerator rand_generator(0, 9);
+    for (auto it = values.begin(); it != values.end(); ++it) {
+        *it = rand_generator();
+    }
 
-void pybind_eigen(py::module &m);
-void pybind_logging(py::module &m);
-void pybind_random(py::module &m);
+    for (int i = 0; i < 10; i++) {
+        utility::random::Seed(42);
+        std::array<int, 1024> new_values;
+        utility::random::UniformIntGenerator new_rand_generator(0, 9);
+        for (auto it = new_values.begin(); it != new_values.end(); ++it) {
+            *it = new_rand_generator();
+        }
+        EXPECT_TRUE(values == new_values);
+    }
+}
 
-}  // namespace utility
+TEST(Random, UniformRandIntGeneratorWithRandomSeed) {
+    std::array<int, 1024> values;
+    utility::random::UniformIntGenerator rand_generator(0, 9);
+    for (auto it = values.begin(); it != values.end(); ++it) {
+        *it = rand_generator();
+    }
+
+    for (int i = 0; i < 10; i++) {
+        std::array<int, 1024> new_values;
+        utility::random::UniformIntGenerator new_rand_generator(0, 9);
+        for (auto it = new_values.begin(); it != new_values.end(); ++it) {
+            *it = new_rand_generator();
+        }
+        EXPECT_FALSE(values == new_values);
+    }
+}
+
+}  // namespace tests
 }  // namespace open3d

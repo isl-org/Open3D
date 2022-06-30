@@ -474,6 +474,62 @@ public:
     /// corresponding vertex in the original mesh.
     TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
 
+    /// Function to simplify mesh using Quadric Error Metric Decimation by
+    /// Garland and Heckbert.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param target_reduction The factor of triangles to delete, i.e.,
+    /// setting this to 0.9 will return a mesh with about 10% of the original
+    /// triangle count.
+    /// It is not guaranteed that the target reduction factor will be reached.
+    /// \param preserve_volume If set to true this enables volume preservation
+    /// which reduces the error in triangle normal direction.
+    ///
+    /// \return Simplified TriangleMesh.
+    TriangleMesh SimplifyQuadricDecimation(double target_reduction,
+                                           bool preserve_volume = true) const;
+
+    /// Computes the mesh that encompasses the union of the volumes of two
+    /// meshes.
+    /// Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the union volume.
+    TriangleMesh BooleanUnion(const TriangleMesh &mesh,
+                              double tolerance = 1e-6) const;
+
+    /// Computes the mesh that encompasses the intersection of the volumes of
+    /// two meshes. Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the intersection volume.
+    TriangleMesh BooleanIntersection(const TriangleMesh &mesh,
+                                     double tolerance = 1e-6) const;
+
+    /// Computes the mesh that encompasses the volume after subtracting the
+    /// volume of the second operand. Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the difference volume.
+    TriangleMesh BooleanDifference(const TriangleMesh &mesh,
+                                   double tolerance = 1e-6) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;
