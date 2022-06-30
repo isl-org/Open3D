@@ -765,6 +765,42 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
             core::Tensor::Init<float>({{0, 0, 0}}, device)));
 }
 
+TEST_P(PointCloudPermuteDevices, UniformDownSample) {
+    core::Device device = GetParam();
+
+    // Value test.
+    t::geometry::PointCloud pcd_small(core::Tensor::Init<float>({{0, 0, 0},
+                                                                 {1, 0, 0},
+                                                                 {2, 0, 0},
+                                                                 {3, 0, 0},
+                                                                 {4, 0, 0},
+                                                                 {5, 0, 0},
+                                                                 {6, 0, 0},
+                                                                 {7, 0, 0}},
+                                                                device));
+    auto pcd_small_down = pcd_small.UniformDownSample(3);
+    EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{0, 0, 0}, {3, 0, 0}, {6, 0, 0}},
+                                      device)));
+}
+
+TEST_P(PointCloudPermuteDevices, RandomDownSample) {
+    core::Device device = GetParam();
+
+    // Value test.
+    t::geometry::PointCloud pcd_small(core::Tensor::Init<float>({{0, 0, 0},
+                                                                 {1, 0, 0},
+                                                                 {2, 0, 0},
+                                                                 {3, 0, 0},
+                                                                 {4, 0, 0},
+                                                                 {5, 0, 0},
+                                                                 {6, 0, 0},
+                                                                 {7, 0, 0}},
+                                                                device));
+    auto pcd_small_down = pcd_small.RandomDownSample(0.5);
+    EXPECT_TRUE(pcd_small_down.GetPointPositions().GetLength() == 4);
+}
+
 TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
     core::Device device = GetParam();
 

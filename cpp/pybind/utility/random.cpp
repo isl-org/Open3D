@@ -24,18 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/utility/Random.h"
 
+#include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
 namespace open3d {
 namespace utility {
 
-void pybind_utility(py::module &m);
+void pybind_random(py::module &m) {
+    py::module m_submodule = m.def_submodule("random");
 
-void pybind_eigen(py::module &m);
-void pybind_logging(py::module &m);
-void pybind_random(py::module &m);
+    m_submodule.def("seed", &random::Seed, "seed"_a,
+                    "Set Open3D global random seed.");
+
+    docstring::FunctionDocInject(m_submodule, "seed",
+                                 {{"seed", "Random seed value."}});
+}
 
 }  // namespace utility
 }  // namespace open3d
