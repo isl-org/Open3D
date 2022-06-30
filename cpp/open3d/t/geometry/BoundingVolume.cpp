@@ -27,6 +27,7 @@
 #include "open3d/t/geometry/BoundingVolume.h"
 
 #include "open3d/core/EigenConverter.h"
+#include "open3d/t/geometry/kernel/PointCloud.h"
 
 namespace open3d {
 namespace t {
@@ -50,7 +51,7 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Tensor &min_bound,
 }
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::To(const core::Device &device,
-                                                  bool copy = false) const {
+                                                  bool copy) const {
     if (!copy && GetDevice() == device) {
         return *this;
     }
@@ -98,7 +99,7 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::operator+=(
         min_bound_ = other.GetMinBound();
         max_bound_ = other.GetMaxBound();
     } else if (!other.IsEmpty()) {
-        // TODO should be implemented using tensor maximum.
+        // TODO should be implemented using tensor maximum (PR #5261).
     }
     return *this;
 }
@@ -152,8 +153,13 @@ core::Tensor AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
         const core::Tensor &points) const {
     core::AssertTensorDevice(points, GetDevice());
     core::AssertTensorShape(points, {utility::nullopt, 3});
-    // TODO should be implemented with kernal.
-    return core::Tensor::Ones({1}, core::Int64, GetDevice());
+
+    core::Tensor mask =
+            core::Tensor::Zeros({points.GetLength()}, core::Bool, GetDevice());
+    kernel::pointcloud::GetPointMaskWithinAABB(points, min_bound_, max_bound_,
+                                               mask);
+
+    return mask.NonZero();
 }
 
 std::string AxisAlignedBoundingBox::GetPrintInfo() const {

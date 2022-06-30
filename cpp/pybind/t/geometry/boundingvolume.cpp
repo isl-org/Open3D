@@ -24,8 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 
+#include <string>
+
+#include "open3d/core/CUDAUtils.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -33,39 +36,32 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
-void pybind_geometry_class(py::module& m) {
-    // open3d.t.geometry.Geometry
-    py::class_<Geometry, PyGeometry<Geometry>, std::shared_ptr<Geometry>>
-            geometry(m, "Geometry", "The base geometry class.");
+void pybind_boundingvolume(py::module& m) {
+    py::class_<AxisAlignedBoundingBox, PyGeometry<AxisAlignedBoundingBox>,
+               std::shared_ptr<AxisAlignedBoundingBox>, Geometry,
+               DrawableGeometry>
+            aabb(m, "AxisAlignedBoundingBox",
+                 "Class that defines an axis_aligned box "
+                 "that can be computed from 3D "
+                 "geometries, The axis aligned bounding "
+                 "box uses the coordinate axes for "
+                 "bounding box generation. This means that the bounding box is "
+                 "oriented along the coordinate axes.");
+    aabb.def(py::init<const core::Device&>(),
+             "device"_a = core::Device("CPU:0"),
+             "Construct an empty AxisAlignedBoundingBox on the provided "
+             "device.");
+    aabb.def(py::init<const core::Tensor&, const core::Tensor&>(),
+             "min_bound"_a, "max_bound"_a,
+             R"(Construct an AxisAlignedBoundingBox from min/max bound.
+The AxisAlignedBoundingBox will be created on the device of the given bound 
+tensor, which must be on the same device.)");
+    docstring::ClassMethodDocInject(
+            m, "AxisAlignedBoundingBox", "__init__",
+            {{"min_bound", "Lower bounds of the bounding box for all axes."},
+             {"max_bound", "Upper bounds of the bounding box for all axes."}});
 
-    geometry.def("clear", &Geometry::Clear,
-                 "Clear all elements in the geometry.");
-    geometry.def("is_empty", &Geometry::IsEmpty,
-                 "Returns ``True`` iff the geometry is empty.");
-    geometry.def_property_readonly("device", &Geometry::GetDevice,
-                                   "Returns the device of the geometry.");
-    geometry.def_property_readonly("is_cpu", &Geometry::IsCPU,
-                                   "Returns true if the geometry is on CPU.");
-    geometry.def_property_readonly("is_cuda", &Geometry::IsCUDA,
-                                   "Returns true if the geometry is on CUDA.");
-    docstring::ClassMethodDocInject(m, "Geometry", "clear");
-    docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
-}
-
-void pybind_geometry(py::module& m) {
-    py::module m_submodule = m.def_submodule(
-            "geometry", "Tensor-based geometry defining module.");
-
-    pybind_geometry_class(m_submodule);
-    pybind_drawable_geometry_class(m_submodule);
-    pybind_tensormap(m_submodule);
-    pybind_pointcloud(m_submodule);
-    pybind_lineset(m_submodule);
-    pybind_trianglemesh(m_submodule);
-    pybind_image(m_submodule);
-    pybind_boundingvolume(m_submodule);
-    pybind_voxel_block_grid(m_submodule);
-    pybind_raycasting_scene(m_submodule);
+    aabb.def("__repr__", &AxisAlignedBoundingBox::ToString);
 }
 
 }  // namespace geometry

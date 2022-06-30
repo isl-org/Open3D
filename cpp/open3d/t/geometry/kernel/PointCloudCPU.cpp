@@ -99,6 +99,31 @@ void ProjectCPU(
     });
 }
 
+void GetPointMaskWithinAABBCPU(const core::Tensor& points,
+                               const core::Tensor& min_bound,
+                               const core::Tensor& max_bound,
+                               core::Tensor& mask) {
+    const float* points_ptr = points.GetDataPtr<float>();
+    const int64_t n = points.GetLength();
+    const float* min_bound_ptr = min_bound.GetDataPtr<float>();
+    const float* max_bound_ptr = max_bound.GetDataPtr<float>();
+    bool* mask_ptr = mask.GetDataPtr<bool>();
+
+    core::ParallelFor(core::Device("CPU:0"), n, [&](int64_t workload_idx) {
+        const float x = points_ptr[3 * workload_idx + 0];
+        const float y = points_ptr[3 * workload_idx + 1];
+        const float z = points_ptr[3 * workload_idx + 2];
+
+        if (x >= min_bound_ptr[0] && x <= max_bound_ptr[0] &&
+            y >= min_bound_ptr[1] && y <= max_bound_ptr[1] &&
+            z >= min_bound_ptr[2] && z <= max_bound_ptr[2]) {
+            mask_ptr[workload_idx] = true;
+        } else {
+            mask_ptr[workload_idx] = false;
+        }
+    });
+}
+
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry

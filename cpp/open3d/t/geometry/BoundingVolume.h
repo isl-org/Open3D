@@ -144,14 +144,14 @@ public:
     /// Returns the eight points that define the bounding box.
     core::Tensor GetBoxPoints() const;
 
-    /// Return indices to points that are within the bounding box.
+    /// \brief Indices to points that are within the bounding box.
     ///
     /// \param points A list of points A list of points (N x 3 tensor).
     core::Tensor GetPointIndicesWithinBoundingBox(
             const core::Tensor &points) const;
 
-    /// Returns the 3D dimensions of the bounding box in string format.
-    std::string GetPrintInfo() const;
+    /// Text description.
+    std::string ToString() const;
 
     /// Convert to a legacy Open3D AxisAlignedBoundingBox.
     open3d::geometry::AxisAlignedBoundingBox ToLegacy() const;
