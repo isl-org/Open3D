@@ -39,13 +39,13 @@ TriangleMesh TriangleMesh::CreateBox(double width,
                                      const core::Device &device) {
     // Check width, height, depth.
     if (width <= 0) {
-        utility::LogError("width <= 0");
+        utility::LogError("width must be > 0, but got {}", width);
     }
     if (height <= 0) {
-        utility::LogError("height <= 0");
+        utility::LogError("height must be > 0, but got {}", height);
     }
     if (depth <= 0) {
-        utility::LogError("depth <= 0");
+        utility::LogError("depth must be > 0, but got {}", depth);
     }
 
     // Vertices.

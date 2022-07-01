@@ -47,7 +47,7 @@ def test_clip_plane():
 @pytest.mark.parametrize("device", list_devices())
 def test_create_box(device):
     # Test with default parameters.
-    box_default = o3d.t.geometry.TriangleMesh.create_box()
+    box_default = o3d.t.geometry.TriangleMesh.create_box(device=device)
 
     vertex_positions_default = o3c.Tensor(
         [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0],

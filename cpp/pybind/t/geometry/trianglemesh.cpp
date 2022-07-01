@@ -239,7 +239,7 @@ This example shows how to create a hemisphere from a sphere::
              {"depth", "z-directional length."},
              {"vertex_dtype", "Float_dtype, Float32 or Float64."},
              {"triangle_dtype", "Int_dtype, Int32 or Int64."},
-             {"device", "Device, CPU or GPU."}});
+             {"device", "Device of the create mesh."}});
 
     triangle_mesh.def(
             "simplify_quadric_decimation",
@@ -252,10 +252,10 @@ Args:
         this to 0.9 will return a mesh with about 10% of the original triangle
         count. It is not guaranteed that the target reduction factor will be
         reached.
-    
+
     preserve_volume (bool): If set to True this enables volume preservation
         which reduces the error in triangle normal direction.
-    
+
 Returns:
     Simplified TriangleMesh.
 
