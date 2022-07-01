@@ -265,6 +265,26 @@ TEST_P(TensorFunctionPermuteDevices, Maximum) {
     output = core::Maximum(input, other);
     EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({{4, 5, 3}, {3, 5, 3}}, device)));
+
+    // 1-D Tensor with int32 dtype.
+    input = core::Tensor::Init<int>({2, 1, 4, 3}, device);
+    other = core::Tensor::Init<int>({4, 5, 2, 7}, device);
+    output = core::Maximum(input, other);
+    EXPECT_TRUE(output.AllClose(core::Tensor::Init<int>({4, 5, 4, 7}, device)));
+
+    // 1-D Tensor with uint8 dtype.
+    input = core::Tensor::Init<uint8_t>({2, 1, 4, 3}, device);
+    other = core::Tensor::Init<uint8_t>({4, 5, 2, 7}, device);
+    output = core::Maximum(input, other);
+    EXPECT_TRUE(
+            output.AllClose(core::Tensor::Init<uint8_t>({4, 5, 4, 7}, device)));
+
+    // 1-D Tensor with bool dtype.
+    input = core::Tensor::Init<bool>({true, true, false, false}, device);
+    other = core::Tensor::Init<bool>({false, false, true, true}, device);
+    output = core::Maximum(input, other);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<bool>({true, true, true, true}, device)));
 }
 
 TEST_P(TensorFunctionPermuteDevices, Minimum) {
@@ -298,6 +318,26 @@ TEST_P(TensorFunctionPermuteDevices, Minimum) {
     output = core::Minimum(input, other);
     EXPECT_TRUE(output.AllClose(
             core::Tensor::Init<float>({{2, 4, 2}, {2, 4, 1}}, device)));
+
+    // 1-D Tensor with int32 dtype.
+    input = core::Tensor::Init<int>({2, 1, 4, 3}, device);
+    other = core::Tensor::Init<int>({4, 5, 2, 7}, device);
+    output = core::Maximum(input, other);
+    EXPECT_TRUE(output.AllClose(core::Tensor::Init<int>({2, 1, 2, 3}, device)));
+
+    // 1-D Tensor with uint8 dtype.
+    input = core::Tensor::Init<uint8_t>({2, 1, 4, 3}, device);
+    other = core::Tensor::Init<uint8_t>({4, 5, 2, 7}, device);
+    output = core::Maximum(input, other);
+    EXPECT_TRUE(
+            output.AllClose(core::Tensor::Init<uint8_t>({2, 1, 2, 3}, device)));
+
+    // 1-D Tensor with bool dtype.
+    input = core::Tensor::Init<bool>({true, true, false, false}, device);
+    other = core::Tensor::Init<bool>({false, false, true, true}, device);
+    output = core::Maximum(input, other);
+    EXPECT_TRUE(output.AllClose(
+            core::Tensor::Init<bool>({false, false, false, false}, device)));
 }
 
 }  // namespace tests

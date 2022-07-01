@@ -74,30 +74,6 @@ void BinaryEWCUDA(const Tensor& lhs,
                   BinaryEWOpCode op_code);
 #endif
 
-inline void Add(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
-    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Add);
-}
-
-inline void Sub(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
-    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Sub);
-}
-
-inline void Mul(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
-    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Mul);
-}
-
-inline void Div(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
-    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Div);
-}
-
-inline void Max(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
-    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Max);
-}
-
-inline void Min(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
-    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Min);
-}
-
 }  // namespace kernel
 }  // namespace core
 }  // namespace open3d

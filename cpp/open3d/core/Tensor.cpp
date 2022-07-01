@@ -1037,7 +1037,8 @@ Tensor Tensor::Add(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Add(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Add);
+
     return dst_tensor;
 }
 
@@ -1054,7 +1055,8 @@ Tensor Tensor::Add_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Add(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Add);
+
     return *this;
 }
 
@@ -1071,7 +1073,8 @@ Tensor Tensor::Sub(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Sub(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Sub);
+
     return dst_tensor;
 }
 
@@ -1088,7 +1091,8 @@ Tensor Tensor::Sub_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Sub(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Sub);
+
     return *this;
 }
 
@@ -1105,7 +1109,9 @@ Tensor Tensor::Mul(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Mul(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Mul);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Sub);
+
     return dst_tensor;
 }
 
@@ -1122,7 +1128,8 @@ Tensor Tensor::Mul_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Mul(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Mul);
+
     return *this;
 }
 
@@ -1139,7 +1146,8 @@ Tensor Tensor::Div(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Div(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Div);
+
     return dst_tensor;
 }
 
@@ -1156,7 +1164,7 @@ Tensor Tensor::Div_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Div(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Div);
     return *this;
 }
 
