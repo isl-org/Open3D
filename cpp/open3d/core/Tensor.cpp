@@ -1110,7 +1110,6 @@ Tensor Tensor::Mul(const Tensor& value) const {
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
     kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Mul);
-    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Sub);
 
     return dst_tensor;
 }
