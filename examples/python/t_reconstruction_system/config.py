@@ -26,6 +26,7 @@
 
 import os
 import configargparse
+from pathlib import Path
 
 
 class ConfigParser(configargparse.ArgParser):
@@ -37,7 +38,7 @@ class ConfigParser(configargparse.ArgParser):
                          conflict_handler='resolve')
 
         # yapf:disable
-        # Default arguments
+        # General parameters.
         self.add(
             '--name', type=str,
             help='Name of the config for the offline reconstruction system.')
@@ -54,7 +55,11 @@ class ConfigParser(configargparse.ArgParser):
         self.add(
             '--multiprocessing', action='store_true',
             help='Use multiprocessing in operations. Only available for the legacy engine.')
+        self.add(
+            '--debug_mode', action='store_true',
+            help='Enables debug informations for development.')
 
+        # Path to input data.
         input_parser = self.add_argument_group('input')
         input_parser.add(
             '--path_dataset', type=str,
@@ -77,6 +82,23 @@ class ConfigParser(configargparse.ArgParser):
             'If the intrinsic matrix for color image is different,'
             'specify it by --path_color_intrinsic.'
             'By default PrimeSense intrinsics is used.')
+
+        # Path to output data.
+        output_parser = self.add_argument_group('output')
+        output_parser.add(
+            '--path_output', type=str,
+            help='Path to the output root folder, to store final and intermediate results. By default it\'s \"path_dataset/t_reconstruction/output/\"')
+        output_parser.add(
+            '--path_voxel_block_grid', type=str,
+            help='Path to the output voxel block grid npz, relative to path_output.')
+        output_parser.add(
+            '--path_mesh', type=str,
+            help='Path to the output reconstruction mesh, relative to path_output.')
+        output_parser.add(
+            '--path_trajectory', type=str,
+            help='Path to the output trajectory, relative to path_output.')
+
+        # RGB-D input related parameters.
         input_parser.add(
             '--depth_min', type=float,
             help='Min clipping distance (in meter) for input depth data.')
@@ -88,6 +110,7 @@ class ConfigParser(configargparse.ArgParser):
             help='Scale factor to convert raw input depth data to meters.')
         input_parser.add('--fragment_size', type=int, help='Number of RGBD frames per fragment')
 
+        # RGB-D registation related parameters.
         odometry_parser = self.add_argument_group('odometry')
         odometry_parser.add(
             '--odometry_method', type=str,
@@ -95,15 +118,16 @@ class ConfigParser(configargparse.ArgParser):
             help='Method used in pose estimation between RGBD images.'
             'Frame2model only available for the tensor engine.')
         odometry_parser.add(
+            '--odometry_distance_thr', type=float,
+            help='Default distance threshold to filter outliers in odometry correspondences.')
+        odometry_parser.add(
             '--odometry_loop_interval', type=int,
             help='Intervals to check loop closures between RGBD images.')
         odometry_parser.add(
             '--odometry_loop_weight', type=float,
             help='Weight of loop closure edges when optimizing pose graphs for odometry.')
-        odometry_parser.add(
-            '--odometry_distance_thr', type=float,
-            help='Default distance threshold to filter outliers in odometry correspondences.')
 
+        # Point-cloud fragments registration related parameters.
         registration_parser = self.add_argument_group('registration')
         registration_parser.add(
             '--icp_method', type=str,
@@ -121,9 +145,16 @@ class ConfigParser(configargparse.ArgParser):
             choices=['fgr', 'ransac'],
             help='Method used in global registration of two fragment point clouds without an initial pose estimate.')
         registration_parser.add(
-            '--registration_loop_weight', type=float,
+            '--global_distance_thr', type=float,
+            help='Maximum correspondence points-pair distance.')
+        registration_parser.add(
+            '--edge_prune_threshold', type=float,
+            help='Edges with weight below threshold is pruned.')
+        registration_parser.add(
+            '--preference_loop_closure', type=float,
             help='Weight of loop closure edges when optimizing pose graphs for registration.')
 
+        # TSDF integration related parameters.
         integration_parser = self.add_argument_group('integration')
         integration_parser.add(
             '--integration_mode',type=str,

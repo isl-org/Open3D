@@ -41,6 +41,7 @@ import numpy as np
 import threading
 import time
 from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_dataset, extract_rgbd_frames
+from pathlib import Path
 
 
 def set_enabled(widget, enable):
@@ -275,17 +276,19 @@ class ReconstructionWindow:
         self.is_done = True
 
         if self.is_started:
-            print('Saving model to {}...'.format(config.path_npz))
-            self.model.voxel_grid.save(config.path_npz)
+            output_npz_path = Path(config.path_output) / Path(
+                config.path_voxel_block_grid)
+            print('Saving model voxel grid to {}...'.format(output_npz_path))
+            self.model.voxel_grid.save(output_npz_path)
             print('Finished.')
 
-            mesh_fname = '.'.join(config.path_npz.split('.')[:-1]) + '.ply'
+            mesh_fname = Path(config.path_output) / Path(config.path_mesh)
             print('Extracting and saving mesh to {}...'.format(mesh_fname))
             mesh = extract_trianglemesh(self.model.voxel_grid, config,
                                         mesh_fname)
             print('Finished.')
 
-            log_fname = '.'.join(config.path_npz.split('.')[:-1]) + '.log'
+            log_fname = Path(config.path_output) / Path(config.path_trajectory)
             print('Saving trajectory to {}...'.format(log_fname))
             save_poses(log_fname, self.poses)
             print('Finished.')
@@ -467,13 +470,18 @@ if __name__ == '__main__':
                'Default dataset may be selected from the following options: '
                '[lounge, bedroom, jack_jack]',
                default='lounge')
-    parser.add('--path_npz',
-               help='path to the npz file that stores voxel block grid.',
-               default='output.npz')
+
     config = parser.get_config()
 
+    # TODO check if the dataset and output path exists.
     if config.path_dataset == '':
         config = get_default_dataset(config)
+
+    if config.path_output == '':
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
+    else:
+        config.path_output = Path(config.path_output)
 
     # Extract RGB-D frames and intrinsic from bag file.
     if config.path_dataset.endswith(".bag"):

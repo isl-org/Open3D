@@ -105,7 +105,11 @@ class PoseGraphWrapper:
                                                  edge.uncertain)
         return dict_nodes, dict_edges
 
-    def solve_(self, dist_threshold=0.07, preference_loop_closure=0.1):
+    def solve_(self,
+               dist_threshold=0.07,
+               edge_prune_threshold=0.25,
+               preference_loop_closure=0.1,
+               reference_node=0):
         # Update from graph
         self.pose_graph = self._dicts2graph()
 
@@ -115,9 +119,9 @@ class PoseGraphWrapper:
         )
         option = o3d.pipelines.registration.GlobalOptimizationOption(
             max_correspondence_distance=dist_threshold,
-            edge_prune_threshold=0.25,
+            edge_prune_threshold=edge_prune_threshold,
             preference_loop_closure=preference_loop_closure,
-            reference_node=0)
+            reference_node=reference_node)
 
         # In-place optimization
         o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)

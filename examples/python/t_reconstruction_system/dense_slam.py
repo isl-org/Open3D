@@ -33,6 +33,7 @@ import os
 import numpy as np
 import open3d as o3d
 import time
+from pathlib import Path
 
 from config import ConfigParser
 from common import get_default_dataset, load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_testdata, extract_rgbd_frames
@@ -98,13 +99,16 @@ if __name__ == '__main__':
                'Default dataset may be selected from the following options: '
                '[lounge, bedroom, jack_jack]',
                default='lounge')
-    parser.add('--path_npz',
-               help='path to the npz file that stores voxel block grid.',
-               default='output.npz')
     config = parser.get_config()
 
     if config.path_dataset == '':
         config = get_default_dataset(config)
+
+    if config.path_output == '':
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
+    else:
+        config.path_output = Path(config.path_output)
 
     # Extract RGB-D frames and intrinsic from bag file.
     if config.path_dataset.endswith(".bag"):
@@ -117,15 +121,18 @@ if __name__ == '__main__':
     depth_file_names, color_file_names = load_rgbd_file_names(config)
     intrinsic = load_intrinsic(config)
 
-    if not os.path.exists(config.path_npz):
+    if not os.path.exists(config.path_output / config.path_voxel_block_grid):
         volume, poses = slam(depth_file_names, color_file_names, intrinsic,
                              config)
-        print('Saving to {}...'.format(config.path_npz))
-        volume.save(config.path_npz)
-        save_poses('output.log', poses)
+        print('Saving to {}...'.format(config.path_output /
+                                       config.path_voxel_block_grid))
+        volume.save(config.path_output / config.path_voxel_block_grid)
+        save_poses(config.path_output / config.path_trajectory, poses)
         print('Saving finished')
     else:
-        volume = o3d.t.geometry.VoxelBlockGrid.load(config.path_npz)
+        volume = o3d.t.geometry.VoxelBlockGrid.load(
+            config.path_output / config.path_voxel_block_grid)
 
-    mesh = extract_trianglemesh(volume, config, 'output.ply')
+    mesh = extract_trianglemesh(volume, config,
+                                config.path_output / config.path_mesh)
     o3d.visualization.draw([mesh])
