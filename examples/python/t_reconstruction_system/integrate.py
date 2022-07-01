@@ -38,6 +38,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from config import ConfigParser
 from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics, get_default_dataset
+from pathlib import Path
 
 
 def integrate(depth_file_names, color_file_names, depth_intrinsic,
@@ -53,7 +54,7 @@ def integrate(depth_file_names, color_file_names, depth_intrinsic,
             attr_channels=((1), (1), (3)),
             voxel_size=3.0 / 512,
             block_resolution=16,
-            block_count=50000,
+            block_count=30000,
             device=device)
     else:
         vbg = o3d.t.geometry.VoxelBlockGrid(attr_names=('tsdf', 'weight'),
@@ -62,7 +63,7 @@ def integrate(depth_file_names, color_file_names, depth_intrinsic,
                                             attr_channels=((1), (1)),
                                             voxel_size=3.0 / 512,
                                             block_resolution=16,
-                                            block_count=50000,
+                                            block_count=30000,
                                             device=device)
 
     start = time.time()
@@ -97,15 +98,17 @@ if __name__ == '__main__':
         'reference. It overrides the default config file, but will be '
         'overridden by other command line inputs.')
     parser.add('--integrate_color', action='store_true')
-    parser.add('--path_trajectory',
-               help='path to the trajectory .log or .json file.')
-    parser.add('--path_npz',
-               help='path to the npz file that stores voxel block grid.',
-               default='vbg.npz')
+
     config = parser.get_config()
 
     if config.path_dataset == '':
-        config = get_default_testdata(config)
+        config = get_default_dataset(config)
+
+    if config.path_output == '':
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
+    else:
+        config.path_output = Path(config.path_output)
 
     if config.integrate_color:
         depth_file_names, color_file_names = load_rgbd_file_names(config)
@@ -116,7 +119,8 @@ if __name__ == '__main__':
     depth_intrinsic = load_intrinsic(config)
     color_intrinsic = load_intrinsic(config, 'color')
 
-    extrinsics = load_extrinsics(config.path_trajectory, config)
+    extrinsics = load_extrinsics(config.path_output / config.path_trajectory,
+                                 config)
     vbg = integrate(depth_file_names, color_file_names, depth_intrinsic,
                     color_intrinsic, extrinsics, config)
 

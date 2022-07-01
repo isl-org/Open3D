@@ -38,9 +38,10 @@ import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 from config import ConfigParser
-from common import load_depth_file_names, load_intrinsic, load_extrinsics, get_default_dataset, extract_rgbd_frames
+from common import load_depth_file_names, load_intrinsic, load_extrinsics, get_default_dataset, extract_rgbd_frames, resolve_output_path
 import matplotlib.pyplot as plt
 import numpy as np
+from pathlib import Path
 
 if __name__ == '__main__':
     parser = ConfigParser()
@@ -56,15 +57,17 @@ if __name__ == '__main__':
                'Default dataset may be selected from the following options: '
                '[lounge, jack_jack]',
                default='lounge')
-    parser.add('--path_trajectory',
-               help='path to the trajectory .log or .json file.')
-    parser.add('--path_npz',
-               required=True,
-               help='path to the npz file that stores voxel block grid.')
+
     config = parser.get_config()
 
     if config.path_dataset == '':
         config = get_default_dataset(config)
+
+    if config.path_output == '':
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
+    else:
+        config.path_output = Path(config.path_output)
 
     # Extract RGB-D frames and intrinsic from bag file.
     if config.path_dataset.endswith(".bag"):
@@ -74,10 +77,12 @@ if __name__ == '__main__':
         config.path_dataset, config.path_intrinsic, config.depth_scale = extract_rgbd_frames(
             config.path_dataset)
 
-    vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_npz)
+    vbg = o3d.t.geometry.VoxelBlockGrid.load(config.path_output /
+                                             config.path_voxel_block_grid)
     depth_file_names = load_depth_file_names(config)
     intrinsic = load_intrinsic(config)
-    extrinsics = load_extrinsics(config.path_trajectory, config)
+    extrinsics = load_extrinsics(config.path_output / config.path_trajectory,
+                                 config)
     device = o3d.core.Device(config.device)
 
     for i, extrinsic in tqdm(enumerate(extrinsics)):

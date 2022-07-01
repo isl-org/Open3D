@@ -28,6 +28,7 @@ import os, sys
 import open3d as o3d
 import numpy as np
 import time
+from pathlib import Path
 
 from config import ConfigParser
 from split_fragments import split_fragments, load_fragments
@@ -35,7 +36,7 @@ from rgbd_odometry import rgbd_odometry, rgbd_loop_closure
 from pose_graph_optim import PoseGraphWrapper
 from integrate import integrate
 
-from common import load_intrinsic
+from common import load_intrinsic, get_default_dataset
 
 if __name__ == '__main__':
     parser = ConfigParser()
@@ -50,11 +51,19 @@ if __name__ == '__main__':
                'Default dataset may be selected from the following options: '
                '[lounge, jack_jack]',
                default='lounge')
-    parser.add('--path_npz', type=str, default='test.npz')
     parser.add('--split_fragments', action='store_true')
     parser.add('--fragment_odometry', action='store_true')
     parser.add('--fragment_integration', action='store_true')
     config = parser.get_config()
+
+    if config.path_dataset == '':
+        config = get_default_dataset(config)
+
+    if config.path_output == '':
+        config.path_output = Path(
+            config.path_dataset) / "t_reconstruction" / "output"
+    else:
+        config.path_output = Path(config.path_output)
 
     if config.split_fragments:
         split_fragments(config)
@@ -62,6 +71,8 @@ if __name__ == '__main__':
     if config.fragment_odometry:
         start = time.time()
         intrinsic = load_intrinsic(config)
+
+        # depth_lists is the list of list of depth in each fragment.
         depth_lists, color_lists = load_fragments(config)
 
         for frag_id, (depth_list,
@@ -71,6 +82,8 @@ if __name__ == '__main__':
             # Odometry: (i, i+1), trans(i, i+1), info(i, i+1)
             edges, trans, infos = rgbd_odometry(depth_list, color_list,
                                                 intrinsic, config)
+
+            # Frame of first node for each fragment is assumed to be the world frame itself.
             pose_i2w = np.eye(4)
             pose_graph.add_node(0, pose_i2w.copy())
 
@@ -97,9 +110,11 @@ if __name__ == '__main__':
                 pose_graph.add_edge(ki, kj, trans_i2j.copy(), info_i2j.copy(),
                                     True)
 
-            pose_graph.solve_()
+            pose_graph.solve_(config.global_distance_thr,
+                              config.edge_prune_threshold,
+                              config.preference_loop_closure, 0)
             pose_graph.save(
-                os.path.join(config.path_dataset, 'fragments',
+                os.path.join(config.path_output, 'fragments',
                              'fragment_posegraph_{:03d}.json'.format(frag_id)))
         end = time.time()
         print(
@@ -114,7 +129,7 @@ if __name__ == '__main__':
         for frag_id, (depth_list,
                       color_list) in enumerate(zip(depth_lists, color_lists)):
             pose_graph = PoseGraphWrapper.load(
-                os.path.join(config.path_dataset, 'fragments',
+                os.path.join(config.path_output, 'fragments',
                              'fragment_posegraph_{:03d}.json'.format(frag_id)))
             extrinsics = pose_graph.export_extrinsics()
 
@@ -130,7 +145,7 @@ if __name__ == '__main__':
 
             # Float color does not load correctly in the t.io mode
             o3d.io.write_point_cloud(
-                os.path.join(config.path_dataset, 'fragments',
+                os.path.join(config.path_output, 'fragments',
                              'fragment_pcd_{:03d}.ply'.format(frag_id)),
                 pcd.to_legacy())
 

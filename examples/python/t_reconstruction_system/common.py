@@ -93,6 +93,7 @@ def jack_jack_dataloader(config):
     return config
 
 
+# TODO : For default datasets check and initiate better parameter values.
 def get_default_dataset(config):
     print('Config file was not provided, falling back to default dataset.')
     if config.default_dataset == 'lounge':
@@ -102,10 +103,8 @@ def get_default_dataset(config):
     elif config.default_dataset == 'jack_jack':
         config = jack_jack_dataloader(config)
     else:
-        print(
-            "The requested dataset is not available. Available dataset options include lounge and jack_jack."
-        )
-        sys.exit(1)
+        raise Exception("The requested dataset is not available. Available "
+                        "dataset options include lounge and jack_jack.")
 
     print('Loaded data from {}'.format(config.path_dataset))
     return config
@@ -113,28 +112,24 @@ def get_default_dataset(config):
 
 def load_depth_file_names(config):
     if not os.path.exists(config.path_dataset):
-        print(
-            'Path \'{}\' not found.'.format(config.path_dataset),
-            'Please provide --path_dataset in the command line or the config file.'
-        )
-        return [], []
+        raise Exception(
+            'Path \'{}\' not found. Please provide path_dataset in the command '
+            'line or the config file, or use available default datasets by not '
+            'specifing the custom path_dataset.'.format(config.path_dataset))
 
     depth_folder = os.path.join(config.path_dataset, config.depth_folder)
 
     # Only 16-bit png depth is supported
     depth_file_names = glob.glob(os.path.join(depth_folder, '*.png'))
-    n_depth = len(depth_file_names)
-    if n_depth == 0:
-        print('Depth image not found in {}, abort!'.format(depth_folder))
-        return []
+    if len(depth_file_names) == 0:
+        raise Exception('Failed to find any depth image in {}, with extensions '
+                        '*.png, abort!'.format(depth_folder))
 
     return sorted(depth_file_names)
 
 
 def load_rgbd_file_names(config):
     depth_file_names = load_depth_file_names(config)
-    if len(depth_file_names) == 0:
-        return [], []
 
     color_folder = os.path.join(config.path_dataset, config.color_folder)
     extensions = ['*.png', '*.jpg']
@@ -144,10 +139,10 @@ def load_rgbd_file_names(config):
             return depth_file_names, sorted(color_file_names)
 
     depth_folder = os.path.join(config.path_dataset, config.depth_folder)
-    print('Found {} depth images in {}, but cannot find matched number of '
-          'color images in {} with extensions {}, abort!'.format(
-              len(depth_file_names), depth_folder, color_folder, extensions))
-    return [], []
+    raise Exception('Found {} depth images in {}, but cannot find matched '
+                    'number of color images in {} with extensions {}, '
+                    'abort!'.format(len(depth_file_names), depth_folder,
+                                    color_folder, extensions))
 
 
 def load_intrinsic(config, key='depth'):
@@ -165,7 +160,8 @@ def load_intrinsic(config, key='depth'):
         return o3d.core.Tensor(intrinsic.intrinsic_matrix,
                                o3d.core.Dtype.Float64)
     else:
-        print('Unsupported engine {}'.format(config.engine))
+        raise Exception('Unsupported engine {}. Supported engine include are '
+                        'legacy and tensor.'.format(config.engine))
 
 
 def load_extrinsics(path_trajectory, config):
@@ -240,19 +236,17 @@ def extract_pointcloud(volume, config, file_name=None):
 
 
 def extract_trianglemesh(volume, config, file_name=None):
-    if config.engine == 'legacy':
-        mesh = volume.extract_triangle_mesh()
-        mesh.compute_vertex_normals()
-        mesh.compute_triangle_normals()
-        if file_name is not None:
-            o3d.io.write_triangle_mesh(file_name, mesh)
+    mesh = volume.extract_triangle_mesh()
 
-    elif config.engine == 'tensor':
-        mesh = volume.extract_triangle_mesh(
-            weight_threshold=config.surface_weight_thr)
+    # TODO : Implement compute_vertex_normals and compute_triangle_normals,
+    # and modify this function to save as tensor-geometry when tensor engine is used.
+    if config.engine == 'tensor':
         mesh = mesh.to_legacy()
 
-        if file_name is not None:
-            o3d.io.write_triangle_mesh(file_name, mesh)
+    mesh.compute_vertex_normals()
+    mesh.compute_triangle_normals()
+
+    if file_name is not None:
+        o3d.io.write_triangle_mesh(file_name, mesh)
 
     return mesh
