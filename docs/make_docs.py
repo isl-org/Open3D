@@ -43,6 +43,7 @@ import nbconvert
 import ssl
 import certifi
 import urllib.request
+import multiprocessing
 
 
 def _create_or_clear_dir(dir_path):
@@ -385,11 +386,12 @@ class SphinxDocsBuilder:
     """
 
     def __init__(self, current_file_dir, html_output_dir, is_release,
-                 skip_notebooks):
+                 skip_notebooks, parallel):
         self.current_file_dir = current_file_dir
         self.html_output_dir = html_output_dir
         self.is_release = is_release
         self.skip_notebooks = skip_notebooks
+        self.parallel = parallel
 
     def run(self):
         """
@@ -407,6 +409,8 @@ class SphinxDocsBuilder:
                 shutil.copy(open3d_ml_doc, self.current_file_dir)
 
         build_dir = os.path.join(self.html_output_dir, "html")
+        nproc = multiprocessing.cpu_count() if self.parallel else 1
+        print(f"Building docs with {nproc} processes")
 
         if self.is_release:
             version_list = [
@@ -418,6 +422,8 @@ class SphinxDocsBuilder:
 
             cmd = [
                 "sphinx-build",
+                "-j",
+                str(nproc),
                 "-b",
                 "html",
                 "-D",
@@ -430,6 +436,8 @@ class SphinxDocsBuilder:
         else:
             cmd = [
                 "sphinx-build",
+                "-j",
+                str(nproc),
                 "-b",
                 "html",
                 ".",
@@ -493,14 +501,6 @@ class JupyterDocsBuilder:
         # Setting os.environ["CI"] will disable interactive (blocking) mode in
         # Jupyter notebooks
         os.environ["CI"] = "true"
-
-        # Copy test_data directory to the tutorial folder
-        test_data_in_dir = (Path(self.current_file_dir).parent / "examples" /
-                            "test_data")
-        test_data_out_dir = Path(self.current_file_dir) / "test_data"
-        if test_data_out_dir.exists():
-            shutil.rmtree(test_data_out_dir)
-        shutil.copytree(test_data_in_dir, test_data_out_dir)
 
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
@@ -574,7 +574,7 @@ class JupyterDocsBuilder:
                 with open(nb_path, "w", encoding="utf-8") as f:
                     nbformat.write(nb, f)
 
-        url = "https://github.com/isl-org/Open3D/files/7592880/t_icp_registration.zip"
+        url = "https://github.com/isl-org/Open3D/files/8243984/t_icp_registration.zip"
         output_file = "t_icp_registration.ipynb"
         output_file_path = os.path.join(
             self.current_file_dir,
@@ -639,6 +639,13 @@ if __name__ == "__main__":
         default=False,
         help="Show Open3D version number rather than git hash.",
     )
+    parser.add_argument(
+        "--parallel",
+        action="store_true",
+        default=False,
+        help="Enable parallel Sphinx build.",
+    )
+
     args = parser.parse_args()
 
     pwd = os.path.dirname(os.path.realpath(__file__))
@@ -680,7 +687,7 @@ if __name__ == "__main__":
         skip_notebooks = (args.execute_notebooks == "never" and
                           args.clean_notebooks)
         sdb = SphinxDocsBuilder(pwd, html_output_dir, args.is_release,
-                                skip_notebooks)
+                                skip_notebooks, args.parallel)
         sdb.run()
     else:
         print("Sphinx build disabled, use --sphinx to enable")

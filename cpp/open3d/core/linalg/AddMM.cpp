@@ -67,8 +67,9 @@ void AddMM(const Tensor& A,
     }
     if (output_shape[0] != A_shape[0] &&
         output_shape[1] != B_shape[B_shape.size() - 1]) {
-        utility::LogError("Tensor output must match A rows {} and B colums {}.",
-                          A_shape[0], B_shape[B_shape.size() - 1]);
+        utility::LogError(
+                "Tensor output must match A rows {} and B columns {}.",
+                A_shape[0], B_shape[B_shape.size() - 1]);
     }
 
     // Check the memory layout of tensors.
@@ -107,7 +108,7 @@ void AddMM(const Tensor& A,
     void* B_data = B_contiguous.To(dtype).GetDataPtr();
     void* C_data = output.GetDataPtr();
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         AddMMCUDA(B_data, A_data, C_data, n, k, m, alpha, beta, transB, transA,
                   ldb, lda, ldc, dtype);

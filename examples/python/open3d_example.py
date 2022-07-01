@@ -179,26 +179,6 @@ def unzip_data(path_zip, path_extract_to):
     print("Extracted to %s" % path_extract_to)
 
 
-def get_redwood_dataset():
-    # dataset from redwood-data.org
-    dataset_names = ["livingroom1", "livingroom2", "office1", "office2"]
-    pyexample_path = os.path.dirname(os.path.abspath(__file__))
-    dataset_path = os.path.join(os.path.dirname(pyexample_path), 'test_data',
-                                'benchmark_data')
-
-    # data preparation
-    for name in dataset_names:
-        # download and unzip dataset
-        if not os.path.exists(os.path.join(dataset_path, name)):
-            print("==================================")
-            file_downloader("https://github.com/isl-org/open3d_downloads/releases/download/redwood/%s-fragments-ply.zip" % \
-                    name)
-            unzip_data("%s-fragments-ply.zip" % name,
-                       "%s/%s" % (dataset_path, name))
-            os.remove("%s-fragments-ply.zip" % name)
-            print("")
-
-
 def sorted_alphanum(file_list_ordered):
     convert = lambda text: int(text) if text.isdigit() else text
     alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
@@ -225,6 +205,18 @@ def add_if_exists(path_dataset, folder_names):
             return path
     raise FileNotFoundError(
         f"None of the folders {folder_names} found in {path_dataset}")
+
+
+def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
+    color = o3d.io.read_image(color_file)
+    depth = o3d.io.read_image(depth_file)
+    rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
+        color,
+        depth,
+        depth_scale=config["depth_scale"],
+        depth_trunc=config["depth_max"],
+        convert_rgb_to_intensity=convert_rgb_to_intensity)
+    return rgbd_image
 
 
 def get_rgbd_folders(path_dataset):
@@ -295,29 +287,6 @@ def read_poses_from_log(traj_log):
             trans_arr.append(T_gt)
 
     return trans_arr
-
-
-def extract_rgbd_frames(rgbd_video_file):
-    """
-    Extract color and aligned depth frames and intrinsic calibration from an
-    RGBD video file (currently only RealSense bag files supported). Folder
-    structure is:
-        <directory of rgbd_video_file/<rgbd_video_file name without extension>/
-            {depth/00000.jpg,color/00000.png,intrinsic.json}
-    """
-    frames_folder = join(dirname(rgbd_video_file),
-                         basename(splitext(rgbd_video_file)[0]))
-    path_intrinsic = join(frames_folder, "intrinsic.json")
-    if isfile(path_intrinsic):
-        warn(f"Skipping frame extraction for {rgbd_video_file} since files are"
-             " present.")
-    else:
-        rgbd_video = o3d.t.io.RGBDVideoReader.create(rgbd_video_file)
-        rgbd_video.save_frames(frames_folder)
-    with open(path_intrinsic) as intr_file:
-        intr = json.load(intr_file)
-    depth_scale = intr["depth_scale"]
-    return frames_folder, path_intrinsic, depth_scale
 
 
 flip_transform = [[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]]

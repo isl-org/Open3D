@@ -33,7 +33,7 @@
 **  with minimal branching and elementary floating point operations,
 **  University of Wisconsin - Madison technical report TR1690, May 2011
 **
-** 	Implementated by: Kui Wu
+** 	Implemented by: Kui Wu
 **	kwu@cs.utah.edu
 **  Modified by: Wei Dong and Rishabh Singh
 **

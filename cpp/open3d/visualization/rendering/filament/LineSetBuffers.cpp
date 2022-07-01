@@ -386,7 +386,7 @@ TLineSetBuffersBuilder::TLineSetBuffersBuilder(
     : geometry_(geometry) {
     // Make sure geometry is on CPU
     auto pts = geometry.GetPointPositions();
-    if (pts.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (pts.IsCUDA()) {
         utility::LogWarning(
                 "GPU resident line sets are not currently supported for "
                 "visualization. Copying data to CPU.");
@@ -442,7 +442,7 @@ void TLineSetBuffersBuilder::ConstructThinLines(uint32_t& n_vertices,
     if (geometry_.HasLineColors()) {
         // NOTE: The following code naively duplicates vertex positions for each
         // line in case there are multiple different colored lines sharing a
-        // vertex. This could be made more intelligent to avoid uneccessary
+        // vertex. This could be made more intelligent to avoid unnecessary
         // duplication but as a practical matter there shouldn't be much if any
         // performance difference. This can be revisited in the future if
         // necessary.

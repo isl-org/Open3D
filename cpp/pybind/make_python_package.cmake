@@ -33,7 +33,7 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
 endforeach()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament)
-# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filname
+# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
     get_filename_component(SO_VER_NAME ${PYTHON_EXTRA_LIB_REAL} NAME)
@@ -135,19 +135,8 @@ if (BUILD_GUI)
 endif()
 
 # Add all examples to installation directory.
-# TODO: after downloader is implemented, refactor test data dir
 file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/examples/")
-file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
 file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
      DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
-file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/test_data/"
-     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data")
-
-# Remove a few unneeded files to save space.
-# TODO: after downloader is fully migrated remove this
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/open3d_downloads")
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/crate")
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/sword")
-file(REMOVE_RECURSE "${PYTHON_PACKAGE_DST_DIR}/open3d/test_data/monkey")

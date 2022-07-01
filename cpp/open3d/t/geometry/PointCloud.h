@@ -39,6 +39,7 @@
 #include "open3d/t/geometry/Image.h"
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -192,7 +193,7 @@ public:
         SetPointAttr("normals", value);
     }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute key exist
     /// 2) attribute's length as points' length
     /// 3) attribute's length > 0
@@ -211,14 +212,14 @@ public:
     /// This is a convenience function.
     bool HasPointPositions() const { return HasPointAttr("positions"); }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as points' length
     /// 3) attribute "colors"'s length > 0
     /// This is a convenience function.
     bool HasPointColors() const { return HasPointAttr("colors"); }
 
-    /// Returns true if all of the followings are true:
+    /// Returns true if all of the following are true:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as points' length
     /// 3) attribute "normals"'s length > 0
@@ -311,22 +312,100 @@ public:
     /// \return Rotated point cloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// \brief Select points from input pointcloud, based on boolean mask
+    /// indices into output point cloud.
+    ///
+    /// \param boolean_mask Boolean indexing tensor of shape {n,} containing
+    /// true value for the indices that is to be selected.
+    /// \param invert Set to `True` to invert the selection of indices.
+    PointCloud SelectByMask(const core::Tensor &boolean_mask,
+                            bool invert = false) const;
+
+    /// \brief Select points from input pointcloud, based on indices list into
+    /// output point cloud.
+    ///
+    /// \param indices Int64 indexing tensor of shape {n,} containing
+    /// index value that is to be selected.
+    /// \param invert Set to `True` to invert the selection of indices, and also
+    /// ignore the duplicated indices.
+    /// \param remove_duplicates Set to `True` to remove the duplicated indices.
+    PointCloud SelectByIndex(const core::Tensor &indices,
+                             bool invert = false,
+                             bool remove_duplicates = false) const;
+
     /// \brief Downsamples a point cloud with a specified voxel size.
+    ///
     /// \param voxel_size Voxel size. A positive number.
     PointCloud VoxelDownSample(double voxel_size,
                                const core::HashBackendType &backend =
                                        core::HashBackendType::Default) const;
 
+    /// \brief Downsamples a point cloud by selecting every kth index point and
+    /// its attributes.
+    ///
+    /// \param every_k_points Sample rate, the selected point indices are [0, k,
+    /// 2k, …].
+    PointCloud UniformDownSample(size_t every_k_points) const;
+
+    /// \brief Downsample a pointcloud by selecting random index point and its
+    /// attributes.
+    ///
+    /// \param sampling_ratio Sampling ratio, the ratio of sample to total
+    /// number of points in the pointcloud.
+    PointCloud RandomDownSample(double sampling_ratio) const;
+
+    /// \brief Remove points that have less than \p nb_points neighbors in a
+    /// sphere of a given radius.
+    ///
+    /// \param nb_points Number of neighbor points required within the radius.
+    /// \param search_radius Radius of the sphere.
+    /// \return tuple of filtered PointCloud and boolean indexing tensor
+    /// w.r.t. input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
+            size_t nb_points, double search_radius) const;
+
     /// \brief Returns the device attribute of this PointCloud.
-    core::Device GetDevice() const { return device_; }
+    core::Device GetDevice() const override { return device_; }
+
+    /// \brief Cluster PointCloud using the DBSCAN algorithm
+    /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
+    /// in Large Spatial Databases with Noise", 1996
+    /// This is a wrapper for a CPU implementation and a copy of the point cloud
+    /// data and resulting labels will be made.
+    ///
+    /// \param eps Density parameter that is used to find neighbouring points.
+    /// \param min_points Minimum number of points to form a cluster.
+    /// \param print_progress If `true` the progress is visualized in the
+    /// console.
+    /// \return A Tensor list of point labels on the same device as the point
+    /// cloud, -1 indicates noise according to the algorithm
+    core::Tensor ClusterDBSCAN(double eps,
+                               size_t min_points,
+                               bool print_progress = false) const;
+
+    /// Compute the convex hull of a point cloud using qhull.
+    ///
+    /// This runs on the CPU.
+    ///
+    /// \param joggle_inputs (default False). Handle precision problems by
+    /// randomly perturbing the input data. Set to True if perturbing the input
+    /// iis acceptable but you need convex simplicial output. If False,
+    /// neighboring facets may be merged in case of precision problems. See
+    /// [QHull docs](http://www.qhull.org/html/qh-impre.htm#joggle) for more
+    /// details.
+    ///
+    /// \return TriangleMesh representing the convexh hull. This contains an
+    /// extra vertex property "point_map" that contains the index of the
+    /// corresponding vertex in the original mesh.
+    TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
 
 public:
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.
     /// It uses KNN search if only max_nn parameter is provided, and
     /// HybridSearch if radius parameter is also provided.
-    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
-    /// \param radius [optional] NeighbourSearch radius parameter to use
+    /// \param max_nn Neighbor search max neighbors parameter [Default = 30].
+    /// \param radius [optional] Neighbor search radius parameter to use
     /// HybridSearch. [Recommended ~1.4x voxel size].
     void EstimateNormals(
             const int max_nn = 30,
@@ -336,8 +415,8 @@ public:
     /// then HybridSearch is used, otherwise KNN-Search is used.
     /// Reference: Park, Q.-Y. Zhou, and V. Koltun,
     /// Colored Point Cloud Registration Revisited, ICCV, 2017.
-    /// \param max_nn NeighbourSearch max neighbours parameter [Default = 30].
-    /// \param radius [optional] NeighbourSearch radius parameter to use
+    /// \param max_nn Neighbor search max neighbors parameter [Default = 30].
+    /// \param radius [optional] Neighbor search radius parameter to use
     /// HybridSearch. [Recommended ~1.4x voxel size].
     void EstimateColorGradients(
             const int max_nn = 30,

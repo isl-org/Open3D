@@ -289,7 +289,7 @@ public:
         triangle_attr_[key] = value;
     }
 
-    /// Set the vlaue of the "indices" attribute in triangle_attr_.
+    /// Set the value of the "indices" attribute in triangle_attr_.
     void SetTriangleIndices(const core::Tensor &value) {
         core::AssertTensorShape(value, {utility::nullopt, 3});
         SetTriangleAttr("indices", value);
@@ -309,7 +309,7 @@ public:
         SetTriangleAttr("colors", value);
     }
 
-    /// Returns true if all of the followings are true in vertex_attr_:
+    /// Returns true if all of the following are true in vertex_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as vertices' length
     /// 3) attribute's length > 0
@@ -324,21 +324,21 @@ public:
     /// 0. Convenience function.
     bool HasVertexPositions() const { return HasVertexAttr("positions"); }
 
-    /// Returns true if all of the followings are true in vertex_attr_:
+    /// Returns true if all of the following are true in vertex_attr_:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as vertices' length
     /// 3) attribute "colors"'s length > 0
     /// Convenience function.
     bool HasVertexColors() const { return HasVertexAttr("colors"); }
 
-    /// Returns true if all of the followings are true in vertex_attr_:
+    /// Returns true if all of the following are true in vertex_attr_:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as vertices' length
     /// 3) attribute "normals"'s length > 0
     /// Convenience function.
     bool HasVertexNormals() const { return HasVertexAttr("normals"); }
 
-    /// Returns true if all of the followings are true in triangle_attr_:
+    /// Returns true if all of the following are true in triangle_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as triangles' length
     /// 3) attribute's length > 0
@@ -354,19 +354,37 @@ public:
     /// Convenience function.
     bool HasTriangleIndices() const { return HasTriangleAttr("indices"); }
 
-    /// Returns true if all of the followings are true in triangle_attr_:
+    /// Returns true if all of the following are true in triangle_attr_:
     /// 1) attribute "normals" exist
     /// 2) attribute "normals"'s length as vertices' length
     /// 3) attribute "normals"'s length > 0
     /// Convenience function.
     bool HasTriangleNormals() const { return HasTriangleAttr("normals"); }
 
-    /// Returns true if all of the followings are true in triangle_attr_:
+    /// Returns true if all of the following are true in triangle_attr_:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as vertices' length
     /// 3) attribute "colors"'s length > 0
     /// Convenience function.
     bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
+
+    /// Create a box triangle mesh. One vertex of the box will be placed at
+    /// the origin and the box aligns with the positive x, y, and z axes.
+    /// \param width is x-directional length.
+    /// \param height is y-directional length.
+    /// \param depth is z-directional length.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateBox(
+            double width = 1.0,
+            double height = 1.0,
+            double depth = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
 
 public:
     /// Clear all data in the trianglemesh.
@@ -428,7 +446,19 @@ public:
     /// \return Rotated TriangleMesh
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
-    core::Device GetDevice() const { return device_; }
+    /// \brief Clip mesh with a plane.
+    /// This method clips the triangle mesh with the specified plane.
+    /// Parts of the mesh on the positive side of the plane will be kept and
+    /// triangles intersected by the plane will be cut.
+    /// \param point A point on the plane as [Tensor of dim {3}].
+    /// \param normal The normal of the plane as [Tensor of dim {3}]. The normal
+    /// points to the positive side of the plane for which the geometry will be
+    /// kept.
+    /// \return New triangle mesh clipped with the plane.
+    TriangleMesh ClipPlane(const core::Tensor &point,
+                           const core::Tensor &normal) const;
+
+    core::Device GetDevice() const override { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
     /// \param mesh_legacy Legacy Open3D TriangleMesh.
@@ -445,6 +475,78 @@ public:
 
     /// Convert to a legacy Open3D TriangleMesh.
     open3d::geometry::TriangleMesh ToLegacy() const;
+
+    /// Compute the convex hull of the triangle mesh using qhull.
+    ///
+    /// This runs on the CPU.
+    ///
+    /// \param joggle_inputs (default False). Handle precision problems by
+    /// randomly perturbing the input data. Set to True if perturbing the input
+    /// iis acceptable but you need convex simplicial output. If False,
+    /// neighboring facets may be merged in case of precision problems. See
+    /// [QHull docs](http://www.qhull.org/html/qh-impre.htm#joggle) for more
+    /// details.
+    ///
+    /// \return TriangleMesh representing the convexh hull. This contains an
+    /// extra vertex property "point_map" that contains the index of the
+    /// corresponding vertex in the original mesh.
+    TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
+
+    /// Function to simplify mesh using Quadric Error Metric Decimation by
+    /// Garland and Heckbert.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param target_reduction The factor of triangles to delete, i.e.,
+    /// setting this to 0.9 will return a mesh with about 10% of the original
+    /// triangle count.
+    /// It is not guaranteed that the target reduction factor will be reached.
+    /// \param preserve_volume If set to true this enables volume preservation
+    /// which reduces the error in triangle normal direction.
+    ///
+    /// \return Simplified TriangleMesh.
+    TriangleMesh SimplifyQuadricDecimation(double target_reduction,
+                                           bool preserve_volume = true) const;
+
+    /// Computes the mesh that encompasses the union of the volumes of two
+    /// meshes.
+    /// Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the union volume.
+    TriangleMesh BooleanUnion(const TriangleMesh &mesh,
+                              double tolerance = 1e-6) const;
+
+    /// Computes the mesh that encompasses the intersection of the volumes of
+    /// two meshes. Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the intersection volume.
+    TriangleMesh BooleanIntersection(const TriangleMesh &mesh,
+                                     double tolerance = 1e-6) const;
+
+    /// Computes the mesh that encompasses the volume after subtracting the
+    /// volume of the second operand. Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the difference volume.
+    TriangleMesh BooleanDifference(const TriangleMesh &mesh,
+                                   double tolerance = 1e-6) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

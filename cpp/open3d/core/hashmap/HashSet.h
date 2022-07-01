@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/HashBackendBuffer.h"
@@ -34,7 +35,7 @@
 namespace open3d {
 namespace core {
 
-class HashSet {
+class HashSet : public core::IsDevice {
 public:
     /// Initialize a hash set given a key dtype and element shape.
     HashSet(int64_t init_capacity,
@@ -124,7 +125,7 @@ public:
     int64_t GetBucketCount() const;
 
     /// Get the device of the hash set.
-    Device GetDevice() const;
+    Device GetDevice() const override;
 
     /// Get the key tensor buffer to be used along with buf_indices and masks.
     /// Example:

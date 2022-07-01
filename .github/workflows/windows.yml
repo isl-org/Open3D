@@ -39,25 +39,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        SHARED: [ON, OFF]
+        BUILD_SHARED_LIBS: [ON, OFF]
         STATIC_RUNTIME: [ON, OFF]
-        BUILD_CUDA: [ON, OFF]
+        BUILD_CUDA_MODULE: [ON, OFF]
         CONFIG: [Release, Debug]
         exclude:
-          - SHARED: ON
+          - BUILD_SHARED_LIBS: ON
             STATIC_RUNTIME: ON
         include:
-          - BUILD_CUDA: ON
+          - BUILD_CUDA_MODULE: ON
             CUDA_VERSION: 11.0.3
     env:
-      BUILD_WEBRTC: ${{ ( matrix.SHARED == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
+      BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
 
     steps:
       - name: Disk space used
         run: Get-PSDrive
 
       - name: Install CUDA
-        if: ${{ matrix.BUILD_CUDA == 'ON' }}
+        if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
           # Define variables
           $CUDA_VER_FULL = "${{ matrix.CUDA_VERSION }}"
@@ -110,13 +110,13 @@ jobs:
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
-            -DBUILD_SHARED_LIBS=${{ matrix.SHARED }} `
+            -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
             -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
             -DBUILD_COMMON_ISPC_ISAS=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=${{ env.BUILD_WEBRTC }} `
             -DBUILD_UNIT_TESTS=ON `
-            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA }} `
+            -DBUILD_CUDA_MODULE=${{ matrix.BUILD_CUDA_MODULE }} `
             ${{ env.SRC_DIR }}
 
       - name: Build
@@ -130,7 +130,7 @@ jobs:
 
       - name: Package
         working-directory: ${{ env.BUILD_DIR }}
-        if: ${{ matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         run: |
           $ErrorActionPreference = 'Stop'
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
@@ -144,7 +144,7 @@ jobs:
             $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload package
-        if: ${{ matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         uses: actions/upload-artifact@v2
         with:
           name: open3d-devel-windows
@@ -152,7 +152,7 @@ jobs:
           if-no-files-found: error
 
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' && matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
+        if: ${{ github.ref == 'refs/heads/master' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
         uses: google-github-actions/setup-gcloud@v0.2.1
         env:
@@ -164,7 +164,7 @@ jobs:
           export_default_credentials: true
 
       - name: Upload package to GCS bucket
-        if: ${{ github.ref == 'refs/heads/master' && matrix.SHARED == 'ON' && matrix.BUILD_CUDA == 'OFF' }}
+        if: ${{ github.ref == 'refs/heads/master' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         env:
           CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
         run: |
@@ -177,7 +177,7 @@ jobs:
           }
 
       - name: Run C++ unit tests
-        if: ${{ matrix.BUILD_CUDA == 'OFF' }}
+        if: ${{ matrix.BUILD_CUDA_MODULE == 'OFF' }}
         working-directory: ${{ env.BUILD_DIR }}
         run: |
           echo "Add --gtest_random_seed=SEED to the test command to repeat this test sequence."
@@ -207,8 +207,8 @@ jobs:
             idna==${{ env.IDNA_VER }}
           cmake --build . --config ${{ matrix.CONFIG }} --target install-pip-package
       - name: Import python package
-        # If SHARED == ON, Open3D.dll needs to be copied, which is not recommended for python.
-        if: ${{ matrix.SHARED == 'OFF' && matrix.BUILD_CUDA == 'OFF' }}
+        # If BUILD_SHARED_LIBS == ON, Open3D.dll needs to be copied, which is not recommended for python.
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         run: |
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"

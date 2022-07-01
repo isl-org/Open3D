@@ -53,7 +53,7 @@ namespace odometry {
 /// \param pinhole_camera_intrinsic Camera intrinsic parameters.
 /// \param odo_init Initial 4x4 motion matrix estimation.
 /// \param jacobian_method The odometry Jacobian method to use.
-/// \param option Odometry hyper parameteres.
+/// \param option Odometry hyper parameters.
 /// \return is_success, 4x4 motion matrix, 6x6 information matrix.
 std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
         const geometry::RGBDImage &source,

@@ -119,9 +119,7 @@ if __name__ == '__main__':
     config = parser.get_config()
 
     if config.path_dataset == '':
-        config.path_dataset = get_default_testdata()
-        config.path_trajectory = os.path.join(config.path_dataset,
-                                              'trajectory.log')
+        config = get_default_testdata(config)
 
     if config.integrate_color:
         depth_file_names, color_file_names = load_rgbd_file_names(config)

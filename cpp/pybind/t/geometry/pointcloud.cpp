@@ -31,6 +31,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/hashmap/HashMap.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -59,10 +60,10 @@ static const std::unordered_map<std::string, std::string>
                  "normals are requested, the depth map is first filtered to "
                  "ensure smooth normals."},
                 {"max_nn",
-                 "NeighbourSearch max neighbours parameter [default = 30]."},
+                 "Neighbor search max neighbors parameter [default = 30]."},
                 {"radius",
-                 "[optional] NeighbourSearch radius parameter to use "
-                 "HybridSearch. [Recommended ~1.4x voxel size]."}};
+                 "neighbors search radius parameter to use HybridSearch. "
+                 "[Recommended ~1.4x voxel size]."}};
 
 void pybind_pointcloud(py::module& m) {
     py::class_<PointCloud, PyGeometry<PointCloud>, std::shared_ptr<PointCloud>,
@@ -181,6 +182,14 @@ The attributes of the point cloud have different levels::
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
 
+    pointcloud.def("select_by_mask", &PointCloud::SelectByMask,
+                   "boolean_mask"_a, "invert"_a = false,
+                   "Select points from input pointcloud, based on boolean mask "
+                   "indices into output point cloud.");
+    pointcloud.def("select_by_index", &PointCloud::SelectByIndex, "indices"_a,
+                   "invert"_a = false, "remove_duplicates"_a = false,
+                   "Select points from input pointcloud, based on indices into "
+                   "output point cloud.");
     pointcloud.def(
             "voxel_down_sample",
             [](const PointCloud& pointcloud, const double voxel_size) {
@@ -189,6 +198,18 @@ The attributes of the point cloud have different levels::
             },
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);
+    pointcloud.def("uniform_down_sample", &PointCloud::UniformDownSample,
+                   "Downsamples a point cloud by selecting every kth index "
+                   "point and its attributes.",
+                   "every_k_points"_a);
+    pointcloud.def("random_down_sample", &PointCloud::RandomDownSample,
+                   "Downsample a pointcloud by selecting random index point "
+                   "and its attributes.",
+                   "sampling_ratio"_a);
+    pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
+                   "nb_points"_a, "search_radius"_a,
+                   "Remove points that have less than nb_points neighbors in a "
+                   "sphere of a given search radius.");
 
     pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
                    py::call_guard<py::gil_scoped_release>(),
@@ -206,6 +227,7 @@ The attributes of the point cloud have different levels::
                    "provided, then HybridSearch is used, otherwise KNN-Search "
                    "is used.");
 
+    // creation (static)
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,
             py::call_guard<py::gil_scoped_release>(), "depth"_a, "intrinsics"_a,
@@ -235,6 +257,8 @@ The attributes of the point cloud have different levels::
             "from_legacy", &PointCloud::FromLegacy, "pcd_legacy"_a,
             "dtype"_a = core::Float32, "device"_a = core::Device("CPU:0"),
             "Create a PointCloud from a legacy Open3D PointCloud.");
+
+    // processing
     pointcloud.def("project_to_depth_image", &PointCloud::ProjectToDepthImage,
                    "width"_a, "height"_a, "intrinsics"_a,
                    "extrinsics"_a = core::Tensor::Eye(4, core::Float32,
@@ -247,6 +271,41 @@ The attributes of the point cloud have different levels::
                                                       core::Device("CPU:0")),
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a colored point cloud to a RGBD image.");
+    pointcloud.def(
+            "cluster_dbscan", &PointCloud::ClusterDBSCAN,
+            "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
+            "'A Density-Based Algorithm for Discovering Clusters in Large "
+            "Spatial Databases with Noise', 1996. Returns a list of point "
+            "labels, -1 indicates noise according to the algorithm.",
+            "eps"_a, "min_points"_a, "print_progress"_a = false);
+    pointcloud.def(
+            "compute_convex_hull", &PointCloud::ComputeConvexHull,
+            "joggle_inputs"_a = false,
+            R"doc(Compute the convex hull of a triangle mesh using qhull. This runs on the CPU.
+
+Args:
+    joggle_inputs (default False). Handle precision problems by
+    randomly perturbing the input data. Set to True if perturbing the input
+    iis acceptable but you need convex simplicial output. If False,
+    neighboring facets may be merged in case of precision problems. See
+    `QHull docs <http://www.qhull.org/html/qh-impre.htm#joggle>`__ for more
+    details.
+
+Return:
+    TriangleMesh representing the convexh hull. This contains an
+    extra vertex property "point_indices" that contains the index of the
+    corresponding vertex in the original mesh.
+
+Example:
+    We will load the Eagle dataset, compute and display it's convex hull::
+
+        eagle = o3d.data.EaglePointCloud()
+        pcd = o3d.t.io.read_point_cloud(eagle.path)
+        hull = pcd.compute_convex_hull()
+        o3d.visualization.draw([{'name': 'eagle', 'geometry': pcd}, {'name': 'convex hull', 'geometry': hull}])
+    )doc");
+
+    // conversion
     pointcloud.def("to_legacy", &PointCloud::ToLegacy,
                    "Convert to a legacy Open3D PointCloud.");
 
@@ -256,6 +315,46 @@ The attributes of the point cloud have different levels::
                                     map_shared_argument_docstrings);
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image",
                                     map_shared_argument_docstrings);
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "select_by_mask",
+            {{"boolean_mask",
+              "Boolean indexing tensor of shape {n,} containing true value for "
+              "the indices that is to be selected.."},
+             {"invert", "Set to `True` to invert the selection of indices."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "select_by_index",
+            {{"indices",
+              "Int64 indexing tensor of shape {n,} containing index value that "
+              "is to be selected."},
+             {"invert",
+              "Set to `True` to invert the selection of indices, and also "
+              "ignore the duplicated indices."},
+             {"remove_duplicates",
+              "Set to `True` to remove the duplicated indices."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "voxel_down_sample",
+            {{"voxel_size", "Voxel size. A positive number."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "uniform_down_sample",
+            {{"every_k_points",
+              "Sample rate, the selected point indices are [0, k, 2k, …]."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "random_down_sample",
+            {{"sampling_ratio",
+              "Sampling ratio, the ratio of sample to total number of points "
+              "in the pointcloud."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "remove_radius_outliers",
+            {{"nb_points",
+              "Number of neighbor points required within the radius."},
+             {"search_radius", "Radius of the sphere."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "cluster_dbscan",
+            {{"eps",
+              "Density parameter that is used to find neighbouring points."},
+             {"min_points", "Minimum number of points to form a cluster."},
+             {"print_progress",
+              "If true the progress is visualized in the console."}});
 }
 
 }  // namespace geometry

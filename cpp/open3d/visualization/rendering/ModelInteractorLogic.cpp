@@ -141,7 +141,7 @@ void ModelInteractorLogic::UpdateBoundingBox(const Camera::Transform& t) {
     Eigen::Vector3d new_max = change * model_bounds_.GetMaxBound();
     // Call super's not our SetBoundingBox(): we also update the
     // center of rotation, because normally this call is not done during
-    // mouse movement, but rather, once to initalize the interactor.
+    // mouse movement, but rather, once to initialize the interactor.
     Super::SetBoundingBox(geometry::AxisAlignedBoundingBox(new_min, new_max));
 }
 

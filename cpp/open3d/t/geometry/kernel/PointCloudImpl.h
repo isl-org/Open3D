@@ -242,7 +242,7 @@ void EstimateCovariancesUsingHybridSearchCPU
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
-    core::nns::NearestNeighborSearch tree(points);
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
     bool check = tree.HybridIndex(radius);
     if (!check) {
         utility::LogError("Building FixedRadiusIndex failed.");
@@ -291,7 +291,7 @@ void EstimateCovariancesUsingKNNSearchCPU
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
-    core::nns::NearestNeighborSearch tree(points);
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
     bool check = tree.KnnIndex();
     if (!check) {
         utility::LogError("Building KNN-Index failed.");
@@ -305,7 +305,7 @@ void EstimateCovariancesUsingKNNSearchCPU
 
     if (nn_count < 3) {
         utility::LogError(
-                "Not enought neighbors to compute Covariances / Normals. Try "
+                "Not enough neighbors to compute Covariances / Normals. Try "
                 "increasing the max_nn parameter.");
     }
 
@@ -765,7 +765,7 @@ void EstimateColorGradientsUsingHybridSearchCPU
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
-    core::nns::NearestNeighborSearch tree(points);
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
 
     bool check = tree.HybridIndex(radius);
     if (!check) {
@@ -817,7 +817,7 @@ void EstimateColorGradientsUsingKNNSearchCPU
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
-    core::nns::NearestNeighborSearch tree(points);
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
 
     bool check = tree.KnnIndex();
     if (!check) {
@@ -832,7 +832,7 @@ void EstimateColorGradientsUsingKNNSearchCPU
 
     if (nn_count < 4) {
         utility::LogError(
-                "Not enought neighbors to compute Covariances / Normals. Try "
+                "Not enough neighbors to compute Covariances / Normals. Try "
                 "changing the search parameter.");
     }
 

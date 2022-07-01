@@ -186,8 +186,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
     Device src_device = src.GetDevice();
     Device dst_device = dst.GetDevice();
 
-    if (src_device.GetType() == Device::DeviceType::CUDA &&
-        dst_device.GetType() == Device::DeviceType::CUDA) {
+    if (src_device.IsCUDA() && dst_device.IsCUDA()) {
         if (src.IsContiguous() && dst.IsContiguous() &&
             src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
             // MemoryManager handles p2p and non-p2p device copy.
@@ -239,10 +238,8 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
         } else {
             dst.CopyFrom(src.Contiguous().To(dst_device));
         }
-    } else if (src_device.GetType() == Device::DeviceType::CPU &&
-                       dst_device.GetType() == Device::DeviceType::CUDA ||
-               src_device.GetType() == Device::DeviceType::CUDA &&
-                       dst_device.GetType() == Device::DeviceType::CPU) {
+    } else if (src_device.IsCPU() && dst_device.IsCUDA() ||
+               src_device.IsCUDA() && dst_device.IsCPU()) {
         Tensor src_conti = src.Contiguous();  // No op if already contiguous
         if (dst.IsContiguous() && src.GetShape() == dst.GetShape() &&
             src_dtype == dst_dtype) {
@@ -259,7 +256,7 @@ void CopyCUDA(const Tensor& src, Tensor& dst) {
 }
 
 void UnaryEWCUDA(const Tensor& src, Tensor& dst, UnaryEWOpCode op_code) {
-    // src and dst have been chaged to have the same shape, dtype, device.
+    // src and dst have been changed to have the same shape, dtype, device.
     Dtype src_dtype = src.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
     Device src_device = src.GetDevice();

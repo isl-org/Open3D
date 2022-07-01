@@ -33,7 +33,7 @@ namespace utility {
 
 /// \brief Compiler information.
 class CompilerInfo {
-    // Ths does not need to be a class. It is a class just for the sake of
+    // This does not need to be a class. It is a class just for the sake of
     // consistency with CPUInfo.
 public:
     static CompilerInfo& GetInstance();

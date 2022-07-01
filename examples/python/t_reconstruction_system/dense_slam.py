@@ -35,7 +35,7 @@ import open3d as o3d
 import time
 
 from config import ConfigParser
-from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_testdata
+from common import get_default_dataset, load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_testdata, extract_rgbd_frames
 
 
 def slam(depth_file_names, color_file_names, intrinsic, config):
@@ -93,13 +93,26 @@ if __name__ == '__main__':
         help='YAML config file path. Please refer to default_config.yml as a '
         'reference. It overrides the default config file, but will be '
         'overridden by other command line inputs.')
+    parser.add('--default_dataset',
+               help='Default dataset is used when config file is not provided. '
+               'Default dataset may be selected from the following options: '
+               '[lounge, bedroom, jack_jack]',
+               default='lounge')
     parser.add('--path_npz',
                help='path to the npz file that stores voxel block grid.',
                default='output.npz')
     config = parser.get_config()
 
     if config.path_dataset == '':
-        config.path_dataset = get_default_testdata()
+        config = get_default_dataset(config)
+
+    # Extract RGB-D frames and intrinsic from bag file.
+    if config.path_dataset.endswith(".bag"):
+        assert os.path.isfile(
+            config.path_dataset), (f"File {config.path_dataset} not found.")
+        print("Extracting frames from RGBD video file")
+        config.path_dataset, config.path_intrinsic, config.depth_scale = extract_rgbd_frames(
+            config.path_dataset)
 
     depth_file_names, color_file_names = load_rgbd_file_names(config)
     intrinsic = load_intrinsic(config)

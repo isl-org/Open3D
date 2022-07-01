@@ -93,7 +93,7 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
             // py::return_value_policy::copy is used as the safest option.
             // The goal is to make TensorMap works similarly as putting Tensors
             // into a python dict, i.e., {"a": Tensor(xx), "b": Tensor(XX)}.
-            // Accesing a value in the map will return a shallow copy of the
+            // Accessing a value in the map will return a shallow copy of the
             // tensor that shares the same underlying memory.
             //
             // - automatic          : works, different id
@@ -119,7 +119,7 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
     // Deleted the "__delitem__" function.
     // This will be implemented in `pybind_tensormap()`.
 
-    cl.def("__len__", &Map::size);
+    cl.def("__len__", [](const Map &m) -> size_t { return m.size(); });
 
     return cl;
 }

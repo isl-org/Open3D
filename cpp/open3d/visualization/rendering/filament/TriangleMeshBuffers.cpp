@@ -586,7 +586,7 @@ TMeshBuffersBuilder::TMeshBuffersBuilder(
     : geometry_(geometry) {
     // Make sure geometry is on GPU
     auto pts = geometry.GetVertexPositions();
-    if (pts.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (pts.IsCUDA()) {
         utility::LogWarning(
                 "GPU resident triangle meshes are not currently supported for "
                 "visualization. Copying data to CPU.");

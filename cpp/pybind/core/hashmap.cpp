@@ -206,6 +206,10 @@ void pybind_core_hashmap(py::module& m) {
             "on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
     docstring::ClassMethodDocInject(m, "HashMap", "cuda", argument_docs);
+
+    hashmap.def_property_readonly("device", &HashMap::GetDevice);
+    hashmap.def_property_readonly("is_cpu", &HashMap::IsCPU);
+    hashmap.def_property_readonly("is_cuda", &HashMap::IsCUDA);
 }
 
 void pybind_core_hashset(py::module& m) {
@@ -303,6 +307,10 @@ void pybind_core_hashset(py::module& m) {
             "on the specified CUDA device, no copy will be performed.",
             "device_id"_a = 0);
     docstring::ClassMethodDocInject(m, "HashSet", "cuda", argument_docs);
+
+    hashset.def_property_readonly("device", &HashSet::GetDevice);
+    hashset.def_property_readonly("is_cpu", &HashSet::IsCPU);
+    hashset.def_property_readonly("is_cuda", &HashSet::IsCUDA);
 }
 
 }  // namespace core

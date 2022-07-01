@@ -35,8 +35,9 @@
 // alters how the _STL_ASSERT macro is defined and causes the build to fail.
 //
 // see https://github.com/microsoft/onnxruntime/issues/9735
+//     https://github.com/microsoft/onnxruntime/pull/11495
 //
-#if defined(_MSC_VER) && defined(_DEBUG) && _MSC_VER >= 1930
+#if defined(_MSC_FULL_VER) && defined(_DEBUG) && _MSC_FULL_VER >= 192930145
 #include <corecrt.h>
 #endif
 

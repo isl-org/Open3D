@@ -30,6 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
+#include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
@@ -156,13 +157,211 @@ The attributes of the triangle mesh have different levels::
     triangle_mesh.def("rotate", &TriangleMesh::Rotate, "R"_a, "center"_a,
                       "Rotate points and normals (if exist).");
 
+    triangle_mesh.def(
+            "compute_convex_hull", &TriangleMesh::ComputeConvexHull,
+            "joggle_inputs"_a = false,
+            R"(Compute the convex hull of a point cloud using qhull. This runs on the CPU.
+
+Args:
+    joggle_inputs (default False). Handle precision problems by
+    randomly perturbing the input data. Set to True if perturbing the input
+    iis acceptable but you need convex simplicial output. If False,
+    neighboring facets may be merged in case of precision problems. See
+    `QHull docs <http://www.qhull.org/html/qh-impre.htm#joggle`__ for more
+    details.
+
+Returns:
+    TriangleMesh representing the convexh hull. This contains an
+    extra vertex property "point_indices" that contains the index of the
+    corresponding vertex in the original mesh.
+
+Example:
+    We will load the Stanford Bunny dataset, compute and display it's convex hull::
+
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        hull = mesh.compute_convex_hull()
+        o3d.visualization.draw([{'name': 'bunny', 'geometry': mesh}, {'name': 'convex hull', 'geometry': hull}])
+)");
+
+    // creation
     triangle_mesh.def_static(
             "from_legacy", &TriangleMesh::FromLegacy, "mesh_legacy"_a,
             "vertex_dtype"_a = core::Float32, "triangle_dtype"_a = core::Int64,
             "device"_a = core::Device("CPU:0"),
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
+    // conversion
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
+
+    triangle_mesh.def("clip_plane", &TriangleMesh::ClipPlane, "point"_a,
+                      "normal"_a,
+                      R"(Returns a new triangle mesh clipped with the plane.
+
+This method clips the triangle mesh with the specified plane.
+Parts of the mesh on the positive side of the plane will be kept and triangles
+intersected by the plane will be cut.
+
+Args:
+    point (open3d.core.Tensor): A point on the plane.
+
+    normal (open3d.core.Tensor): The normal of the plane. The normal points to
+        the positive side of the plane for which the geometry will be kept.
+
+Returns:
+    New triangle mesh clipped with the plane.
+
+
+This example shows how to create a hemisphere from a sphere::
+
+    import open3d as o3d
+
+    sphere = o3d.t.geometry.TriangleMesh.from_legacy(o3d.geometry.TriangleMesh.create_sphere())
+    hemisphere = sphere.clip_plane(point=[0,0,0], normal=[1,0,0])
+
+    o3d.visualization.draw(hemisphere)
+)");
+
+    // Triangle Mesh's creation APIs.
+    triangle_mesh.def_static(
+            "create_box", &TriangleMesh::CreateBox,
+            "Create a box triangle mesh. One vertex of the box"
+            "will be placed at the origin and the box aligns"
+            "with the positive x, y, and z axes."
+            "width"_a = 1.0,
+            "height"_a = 1.0, "depth"_a = 1.0, "float_dtype"_a = core::Float32,
+            "int_dtype"_a = core::Int64, "device"_a = core::Device("CPU:0"));
+
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_box",
+            {{"width", "x-directional length."},
+             {"height", "y-directional length."},
+             {"depth", "z-directional length."},
+             {"vertex_dtype", "Float_dtype, Float32 or Float64."},
+             {"triangle_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create mesh."}});
+
+    triangle_mesh.def(
+            "simplify_quadric_decimation",
+            &TriangleMesh::SimplifyQuadricDecimation, "target_reduction"_a,
+            "preserve_volume"_a = true,
+            R"(Function to simplify mesh using Quadric Error Metric Decimation by Garland and Heckbert.
+    
+This function always uses the CPU device.
+
+Args:
+    target_reduction (float): The factor of triangles to delete, i.e., setting
+        this to 0.9 will return a mesh with about 10% of the original triangle
+        count. It is not guaranteed that the target reduction factor will be
+        reached.
+
+    preserve_volume (bool): If set to True this enables volume preservation
+        which reduces the error in triangle normal direction.
+
+Returns:
+    Simplified TriangleMesh.
+
+Example:
+    This shows how to simplifify the Stanford Bunny mesh::
+
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        simplified = mesh.simplify_quadric_decimation(0.99)
+        o3d.visualization.draw([{'name': 'bunny', 'geometry': simplified}])
+)");
+
+    triangle_mesh.def(
+            "boolean_union", &TriangleMesh::BooleanUnion, "mesh"_a,
+            "tolerance"_a = 1e-6,
+            R"(Computes the mesh that encompasses the union of the volumes of two meshes.
+Both meshes should be manifold.
+
+This function always uses the CPU device.
+
+Args:
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+        boolean operation.
+
+    tolerance (float): Threshold which determines when point distances are
+        considered to be 0.
+
+Returns:
+    The mesh describing the union volume.
+
+Example:
+    This copmutes the union of a sphere and a cube::
+
+        box = o3d.geometry.TriangleMesh.create_box()
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
+        sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+
+        ans = box.boolean_union(sphere)
+
+        o3d.visualization.draw([{'name': 'union', 'geometry': ans}])
+)");
+
+    triangle_mesh.def(
+            "boolean_intersection", &TriangleMesh::BooleanIntersection,
+            "mesh"_a, "tolerance"_a = 1e-6,
+            R"(Computes the mesh that encompasses the intersection of the volumes of two meshes.
+Both meshes should be manifold.
+
+This function always uses the CPU device.
+
+Args:
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+        boolean operation.
+
+    tolerance (float): Threshold which determines when point distances are
+        considered to be 0.
+
+Returns:
+    The mesh describing the intersection volume.
+
+Example:
+    This copmutes the intersection of a sphere and a cube::
+
+        box = o3d.geometry.TriangleMesh.create_box()
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
+        sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+
+        ans = box.boolean_intersection(sphere)
+
+        o3d.visualization.draw([{'name': 'intersection', 'geometry': ans}])
+)");
+
+    triangle_mesh.def(
+            "boolean_difference", &TriangleMesh::BooleanDifference, "mesh"_a,
+            "tolerance"_a = 1e-6,
+            R"(Computes the mesh that encompasses the volume after subtracting the volume of the second operand.
+Both meshes should be manifold.
+
+This function always uses the CPU device.
+
+Args:
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+        boolean operation.
+
+    tolerance (float): Threshold which determines when point distances are
+        considered to be 0.
+
+Returns:
+    The mesh describing the difference volume.
+
+Example:
+    This subtracts the sphere from the cube volume::
+
+        box = o3d.geometry.TriangleMesh.create_box()
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
+        sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+
+        ans = box.boolean_difference(sphere)
+
+        o3d.visualization.draw([{'name': 'difference', 'geometry': ans}])
+)");
 }
 
 }  // namespace geometry

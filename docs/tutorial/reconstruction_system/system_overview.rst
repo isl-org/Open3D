@@ -32,38 +32,66 @@ the scene. This part uses :ref:`/tutorial/pipelines/rgbd_integration.ipynb`.
 Example dataset
 ``````````````````````````````````````
 
-We use `the SceneNN dataset <http://people.sutd.edu.sg/~saikit/projects/sceneNN/>`_
-to demonstrate the system in this tutorial. Alternatively, there are lots of
-excellent RGBD datasets such as `Redwood data <http://redwood-data.org/>`_,
-`TUM RGBD data <https://vision.in.tum.de/data/datasets/rgbd-dataset>`_,
-`ICL-NUIM data <https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html>`_, and
-`SUN3D data <http://sun3d.cs.princeton.edu/>`_.
-
-The tutorial uses sequence ``016`` from the SceneNN dataset. This is a
-`quick link <https://drive.google.com/open?id=11U8jEDYKvB5lXsK3L1rQcGTjp0YmRrzT>`_
-to download the RGBD sequence used in this tutorial. Alternatively, you can
-download the original dataset from
-`SceneNN oni file archive <https://drive.google.com/drive/folders/0B-aa7y5Ox4eZUmhJdmlYc3BQSG8>`_,
-and then extract the ``oni`` file into color and depth image sequence using
-`OniParser from the Redwood reconstruction system <http://redwood-data.org/indoor/tutorial.html>`_
-or other conversion tools. Some helper scripts can be found from
-``reconstruction_system/scripts``.
+We provide default datasets such as Lounge RGB-D dataset from Stanford, Bedroom RGB-D dataset from Redwood,
+Jack Jack RealSense L515 bag file dataset to demonstrate the system in this tutorial.
+Other than this, one may user any RGB-D data.
+There are lots of excellent RGBD datasets such as: 
+`Redwood data <http://redwood-data.org/>`_, `TUM RGBD data <https://vision.in.tum.de/data/datasets/rgbd-dataset>`_, 
+`ICL-NUIM data <https://www.doc.ic.ac.uk/~ahanda/VaFRIC/iclnuim.html>`_, 
+`the SceneNN dataset <http://people.sutd.edu.sg/~saikit/projects/sceneNN/>`_ and `SUN3D data <http://sun3d.cs.princeton.edu/>`_.
 
 .. _reconstruction_system_how_to_run_the_pipeline:
 
 Quick start
 ``````````````````````````````````````
-
-Put all color images in the ``image`` folder, and all depth images in the
-``depth`` folder. Run the following commands from the root folder.
+Getting the example code
 
 .. code-block:: sh
 
+    # Activate your conda enviroment, where you have installed open3d pip package.
+    # Clone the Open3D github repository and go to the example.
     cd examples/python/reconstruction_system/
-    python run_system.py [config_file] [--make] [--register] [--refine] [--integrate]
 
-``config_file`` has parameters and file paths. For example,
-``reconstruction_system/config/tutorial.json`` has the following script.
+    # Show CLI help for `run_system.py`
+    python dense_slam_gui.py --help
+
+Running the example with default dataset.
+
+.. code-block:: sh
+
+    # The following command, will download and use the default dataset,
+    # which is ``lounge`` dataset from stanford. 
+    # --make will make fragments from RGBD sequence.
+    # --register will register all fragments to detect loop closure.
+    # --refine flag will refine rough registrations.
+    # --integrate flag will integrate the whole RGBD sequence to make final mesh.
+    # [Optional] Use --slac and --slac_integrate flags to perform SLAC optimisation.
+    python run_system.py --make --register --refine --integrate
+
+Changing the default dataset.
+One may change the default dataset to other avaialble datasets. 
+Currently the following datasets are available:
+
+1. Lounge (keyword: ``lounge``) (Default)
+
+2. Bedroom (keyword: ``bedroom``)
+
+3. Jack Jack (keyword: ``jack_jack``)
+
+
+.. code-block:: sh
+
+    # Using jack_jack as the default dataset.
+    python run_system.py --default_dataset 'bedroom' --make --register --refine --integrate
+
+Running the example with custom dataset using config file.
+Manually download or store the data in a folder and store all the color images 
+in the ``image`` sub-folder, and all the depth images in the ``depth`` sub-folder. 
+Create a ``config.json`` file and set the ``path_dataset`` to the data directory.
+Override the parameters for which you want to change the default values.
+
+Example config file for offline reconstruction system has been provided in 
+``examples/python/reconstruction_system/config/tutorial.json``, which looks like the following:
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/config/tutorial.json
    :language: json
@@ -83,7 +111,6 @@ own dataset, use an appropriate camera intrinsic and visualize a depth image
     the system using every CPU cores. With this option, Mac users may encounter
     an unexpected program termination. To avoid this issue, set this flag to
     ``false``.
-
 
 Capture your own dataset
 ``````````````````````````````````````

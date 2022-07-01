@@ -45,7 +45,9 @@ namespace registration {
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
-static const int max_iterations = 30;
+static const int max_iterations = 10;
+
+static const double voxel_downsampling_factor = 0.02;
 
 // NNS parameter.
 static const double max_correspondence_distance = 0.05;
@@ -66,7 +68,7 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
         target = *target.VoxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                " VoxelDownsample: Impractical voxel size [< 0.001], skipping "
                 "downsampling.");
     }
 
@@ -77,9 +79,9 @@ static void BenchmarkICPLegacy(benchmark::State& state,
                                const TransformationEstimationType& type) {
     data::DemoICPPointClouds demo_icp_pointclouds;
     geometry::PointCloud source, target;
-    std::tie(source, target) = LoadPointCloud(
-            demo_icp_pointclouds.GetPaths(0), demo_icp_pointclouds.GetPaths(1),
-            /*voxel_downsampling_factor =*/0.02);
+    std::tie(source, target) = LoadPointCloud(demo_icp_pointclouds.GetPaths(0),
+                                              demo_icp_pointclouds.GetPaths(1),
+                                              voxel_downsampling_factor);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {

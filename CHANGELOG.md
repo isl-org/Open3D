@@ -4,6 +4,8 @@
 * Fix undefined names: docstr and VisibleDeprecationWarning (PR #3844)
 * Corrected documentation for Tensor based PointClound, LineSet, TriangleMesh (PR #4685)
 * Corrected documentation for KDTree (typo in Notebook) (PR #4744)
+* Remove `setuptools` and `wheel` from requirements for end users (PR #5020)
+* Fix various typos (PR #5070)
 
 ## 0.13
 

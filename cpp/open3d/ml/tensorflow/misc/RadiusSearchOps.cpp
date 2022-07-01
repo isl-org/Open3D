@@ -34,6 +34,7 @@ using namespace tensorflow;
 
 REGISTER_OP("Open3DRadiusSearch")
         .Attr("T: {float, double}")
+        .Attr("index_dtype: {int32, int64} = DT_INT32")
         .Attr("metric: {'L1', 'L2'} = 'L2'")
         .Attr("ignore_query_point: bool = false")
         .Attr("return_distances: bool = false")
@@ -43,7 +44,7 @@ REGISTER_OP("Open3DRadiusSearch")
         .Input("radii: T")
         .Input("points_row_splits: int64")
         .Input("queries_row_splits: int64")
-        .Output("neighbors_index: int32")
+        .Output("neighbors_index: index_dtype")
         .Output("neighbors_row_splits: int64")
         .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
@@ -90,7 +91,7 @@ REGISTER_OP("Open3DRadiusSearch")
             return Status::OK();
         })
         .Doc(R"doc(
-Computes the indices and distances of all neigbours within a radius.
+Computes the indices and distances of all neighbours within a radius.
 
 This op computes the neighborhood for each query point and returns the indices
 of the neighbors and optionally also the distances. Each query point has an

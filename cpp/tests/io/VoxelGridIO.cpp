@@ -27,6 +27,7 @@
 #include "open3d/io/VoxelGridIO.h"
 
 #include "open3d/geometry/VoxelGrid.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
 #include "tests/Tests.h"
 
@@ -44,13 +45,13 @@ TEST(VoxelGridIO, PLYWriteRead) {
                                              Eigen::Vector3d(0.4, 0.5, 0.6)));
 
     // Write to file
-    std::string file_name = utility::GetDataPathCommon("temp_voxel_grid.ply");
+    std::string file_name = utility::filesystem::GetTempDirectoryPath() +
+                            "/temp_voxel_grid.ply";
     EXPECT_TRUE(io::WriteVoxelGrid(file_name, *src_voxel_grid));
 
     // Read from file
     auto dst_voxel_grid = std::make_shared<geometry::VoxelGrid>();
     EXPECT_TRUE(io::ReadVoxelGrid(file_name, *dst_voxel_grid));
-    EXPECT_EQ(std::remove(file_name.c_str()), 0);
 
     // Check values, account for unit8 conversion lost
     EXPECT_EQ(src_voxel_grid->origin_, dst_voxel_grid->origin_);

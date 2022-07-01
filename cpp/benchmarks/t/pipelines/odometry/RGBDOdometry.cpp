@@ -36,7 +36,6 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
-#include "open3d/utility/DataManager.h"
 
 namespace open3d {
 namespace t {
@@ -56,8 +55,7 @@ static core::Tensor CreateIntrisicTensor() {
 
 static void ComputeOdometryResultPointToPlane(benchmark::State& state,
                                               const core::Device& device) {
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {
+    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
         return;
     }
 
@@ -118,8 +116,7 @@ static void RGBDOdometryMultiScale(
         benchmark::State& state,
         const core::Device& device,
         const t::pipelines::odometry::Method& method) {
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {
+    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
         return;
     }
 

@@ -1,0 +1,110 @@
+name: VTK Packages
+
+on:
+  # pull_request:
+    # branches: [ master ]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+
+  Linux:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: CMake configure
+        run: |
+          mkdir build
+          cd build
+          cmake ../3rdparty/vtk
+      - name: Build
+        run: |
+          cd build
+          make -j$(nproc)
+          cmake -E sha256sum vtk*.tar.gz > checksum_linux.txt
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vtk_linux
+          path: |
+            build/vtk*.tar.gz
+            build/checksum*.txt
+          if-no-files-found: error
+
+  Windows:
+    runs-on: windows-2019
+    env:
+      SRC_DIR: "D:\\a\\open3d\\open3d"
+      BUILD_DIR: "C:\\Open3D\\build"
+      NPROC: 2
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [dllrt, staticrt]
+        include:
+          - configuration: dllrt
+            STATIC_RUNTIME: OFF
+          - configuration: staticrt
+            STATIC_RUNTIME: ON
+
+    steps:
+      - name: Disk space used
+        run: Get-PSDrive
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Config
+        # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -Path ${{ env.BUILD_DIR }} -ItemType Directory
+          cd ${{ env.BUILD_DIR }}
+          cmake -G "Visual Studio 16 2019" -A x64 `
+            -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
+            -DSTATIC_WINDOWS_RUNTIME=${{ matrix.STATIC_RUNTIME }} `
+            "${{ env.SRC_DIR }}\3rdparty\vtk"
+          ls
+      - name: Build
+        working-directory: ${{ env.BUILD_DIR }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build . --parallel ${{ env.NPROC }} --config Release
+          ls
+          cmake --build . --parallel ${{ env.NPROC }} --config Debug
+          ls
+          cmake -E sha256sum vtk*.tar.gz > checksum_win_${{matrix.configuration}}.txt
+      - name: Upload package
+        uses: actions/upload-artifact@v2
+        with:
+          name: vtk_windows_${{matrix.configuration}}
+          path: |
+            ${{ env.BUILD_DIR }}/vtk*.tar.gz
+            ${{ env.BUILD_DIR }}/checksum*.txt
+          if-no-files-found: error
+
+  MacOS:
+    runs-on: macos-10.15
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: CMake configure
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.14 ../3rdparty/vtk
+      - name: Build
+        run: |
+          cd build
+          make -j2
+          cmake -E sha256sum vtk*.tar.gz > checksum_macos.txt
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vtk_macos
+          path: |
+            build/vtk*.tar.gz
+            build/checksum*.txt
+          if-no-files-found: error

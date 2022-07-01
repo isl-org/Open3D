@@ -184,7 +184,7 @@ Computes the convex hull of the point cloud.
 
 Args:
      joggle_inputs (bool): If True allows the algorithm to add random noise to
-          the points to work around degenerate inputs. This adds the 'QJ' 
+          the points to work around degenerate inputs. This adds the 'QJ'
           option to the qhull command.
 
 Returns:
@@ -209,7 +209,7 @@ Returns:
                  "Segments a plane in the point cloud using the RANSAC "
                  "algorithm.",
                  "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a,
-                 "seed"_a = py::none())
+                 "probability"_a = 0.99999999)
             .def_static(
                     "create_from_depth_image",
                     &PointCloud::CreateFromDepthImage,
@@ -319,7 +319,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             m, "PointCloud", "orient_normals_consistent_tangent_plane",
             {{"k",
               "Number of k nearest neighbors used in constructing the "
-              "Riemannian graph used to propogate normal orientation."}});
+              "Riemannian graph used to propagate normal orientation."}});
     docstring::ClassMethodDocInject(m, "PointCloud",
                                     "compute_point_cloud_distance",
                                     {{"target", "The target point cloud."}});
@@ -342,7 +342,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
             m, "PointCloud", "hidden_point_removal",
             {{"input", "The input point cloud."},
              {"camera_location",
-              "All points not visible from that location will be reomved"},
+              "All points not visible from that location will be removed"},
              {"radius", "The radius of the sperical projection"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "cluster_dbscan",
@@ -360,9 +360,8 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
               "Number of initial points to be considered inliers in each "
               "iteration."},
              {"num_iterations", "Number of iterations."},
-             {"seed",
-              "Seed value used in the random generator, set to None to use a "
-              "random seed value with each function call."}});
+             {"probability",
+              "Expected probability of finding the optimal plane."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "create_from_depth_image",
             {{"depth",

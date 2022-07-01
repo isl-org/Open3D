@@ -1,5 +1,6 @@
 target_sources(tests PRIVATE
     Blob.cpp
+    CoreTest.cpp
     CUDAUtils.cpp
     Device.cpp
     EigenConverter.cpp
@@ -32,5 +33,11 @@ if (BUILD_ISPC_MODULE)
     target_sources(tests PRIVATE
         Indexer.ispc
         ParallelFor.ispc
+    )
+endif()
+
+if (BUILD_SYCL_MODULE)
+    target_sources(tests PRIVATE
+        SYCLUtils.cpp
     )
 endif()
