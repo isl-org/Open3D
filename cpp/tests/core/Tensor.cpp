@@ -47,6 +47,12 @@ INSTANTIATE_TEST_SUITE_P(Tensor,
                          TensorPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
+class TensorPermuteDevicesWithSYCL : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Tensor,
+        TensorPermuteDevicesWithSYCL,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
+
 class TensorPermuteDevicePairs : public PermuteDevicePairs {};
 INSTANTIATE_TEST_SUITE_P(
         Tensor,
@@ -1566,7 +1572,7 @@ TEST_P(TensorPermuteDevices, AdvancedIndexing_IsIndexSplittedBySlice) {
             {idx, slice, slice, idx}));
 }
 
-TEST_P(TensorPermuteDevices, Add) {
+TEST_P(TensorPermuteDevicesWithSYCL, Add) {
     core::Device device = GetParam();
     core::Tensor a = core::Tensor::Init<float>({{0, 1, 2}, {3, 4, 5}}, device);
     core::Tensor b =

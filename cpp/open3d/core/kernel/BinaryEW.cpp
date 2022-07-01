@@ -68,7 +68,7 @@ void BinaryEW(const Tensor& lhs,
                 broadcasted_input_shape, dst.GetShape());
     }
 
-    if (lhs.IsCPU()) {
+    if (lhs.IsCPU() || lhs.IsSYCL()) {
         BinaryEWCPU(lhs, rhs, dst, op_code);
     } else if (lhs.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE

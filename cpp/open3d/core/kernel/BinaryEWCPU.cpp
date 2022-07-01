@@ -43,31 +43,59 @@ namespace core {
 namespace kernel {
 
 template <typename src_t, typename dst_t, typename element_func_t>
-static void LaunchBinaryEWKernel(const Indexer& indexer,
+static void LaunchBinaryEWKernel(const Device& device,
+                                 const Indexer& indexer,
                                  const element_func_t& element_func) {
-    ParallelFor(Device("CPU:0"), indexer.NumWorkloads(),
-                [&indexer, &element_func](int64_t i) {
-                    element_func(indexer.GetInputPtr<src_t>(0, i),
-                                 indexer.GetInputPtr<src_t>(1, i),
-                                 indexer.GetOutputPtr<dst_t>(i));
-                });
+    if (device.IsSYCL()) {
+        sycl::queue& queue =
+                sycl_utils::SYCLContext::GetInstance().GetDefaultQueue(device);
+
+        queue.submit([&](sycl::handler& h) {
+                 h.parallel_for(indexer.NumWorkloads(), [=](int64_t i) {
+                     *((float*)indexer.GetOutputPtr<dst_t>(i)) =
+                             *((float*)indexer.GetInputPtr<src_t>(0, i)) +
+                             *((float*)indexer.GetInputPtr<src_t>(1, i));
+                 });
+             }).wait();
+    } else {
+        ParallelFor(device, indexer.NumWorkloads(),
+                    [&indexer, &element_func](int64_t i) {
+                        element_func(indexer.GetInputPtr<src_t>(0, i),
+                                     indexer.GetInputPtr<src_t>(1, i),
+                                     indexer.GetOutputPtr<dst_t>(i));
+                    });
+    }
 }
 
 template <typename src_t,
           typename dst_t,
           typename element_func_t,
           typename vec_func_t>
-static void LaunchBinaryEWKernel(const Indexer& indexer,
+static void LaunchBinaryEWKernel(const Device& device,
+                                 const Indexer& indexer,
                                  const element_func_t& element_func,
                                  const vec_func_t& vec_func) {
-    ParallelFor(
-            Device("CPU:0"), indexer.NumWorkloads(),
-            [&indexer, &element_func](int64_t i) {
-                element_func(indexer.GetInputPtr<src_t>(0, i),
-                             indexer.GetInputPtr<src_t>(1, i),
-                             indexer.GetOutputPtr<dst_t>(i));
-            },
-            vec_func);
+    if (device.IsSYCL()) {
+        sycl::queue& queue =
+                sycl_utils::SYCLContext::GetInstance().GetDefaultQueue(device);
+
+        queue.submit([&](sycl::handler& h) {
+                 h.parallel_for(indexer.NumWorkloads(), [=](int64_t i) {
+                     *((float*)indexer.GetOutputPtr<dst_t>(i)) =
+                             *((float*)indexer.GetInputPtr<src_t>(0, i)) +
+                             *((float*)indexer.GetInputPtr<src_t>(1, i));
+                 });
+             }).wait();
+    } else {
+        ParallelFor(
+                device, indexer.NumWorkloads(),
+                [&indexer, &element_func](int64_t i) {
+                    element_func(indexer.GetInputPtr<src_t>(0, i),
+                                 indexer.GetInputPtr<src_t>(1, i),
+                                 indexer.GetOutputPtr<dst_t>(i));
+                },
+                vec_func);
+    }
 }
 
 template <typename scalar_t>
@@ -164,6 +192,8 @@ void BinaryEWCPU(const Tensor& lhs,
     Dtype src_dtype = lhs.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
 
+    Device device = lhs.GetDevice();
+
     if (s_boolean_binary_ew_op_codes.find(op_code) !=
         s_boolean_binary_ew_op_codes.end()) {
         if (dst_dtype == src_dtype) {
@@ -178,7 +208,7 @@ void BinaryEWCPU(const Tensor& lhs,
                 switch (op_code) {
                     case BinaryEWOpCode::LogicalAnd:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                                indexer,
+                                device, indexer,
                                 CPULogicalAndElementKernel<scalar_t, scalar_t>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalAndElementKernel,
@@ -186,7 +216,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::LogicalOr:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                                indexer,
+                                device, indexer,
                                 CPULogicalOrElementKernel<scalar_t, scalar_t>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalOrElementKernel,
@@ -194,7 +224,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::LogicalXor:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                                indexer,
+                                device, indexer,
                                 CPULogicalXorElementKernel<scalar_t, scalar_t>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalXorElementKernel,
@@ -202,21 +232,23 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::Gt:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                                indexer, CPUGtElementKernel<scalar_t, scalar_t>,
+                                device, indexer,
+                                CPUGtElementKernel<scalar_t, scalar_t>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalGtElementKernel,
                                         &ispc_indexer));
                         break;
                     case BinaryEWOpCode::Lt:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                                indexer, CPULtElementKernel<scalar_t, scalar_t>,
+                                device, indexer,
+                                CPULtElementKernel<scalar_t, scalar_t>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalLtElementKernel,
                                         &ispc_indexer));
                         break;
                     case BinaryEWOpCode::Ge:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                                indexer,
+                                device, indexer,
                                 CPUGeqElementKernel<scalar_t, scalar_t>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalGeqElementKernel,
@@ -224,7 +256,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::Le:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                                indexer,
+                                device, indexer,
                                 CPULeqElementKernel<scalar_t, scalar_t>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalLeqElementKernel,
@@ -232,14 +264,15 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::Eq:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                                indexer, CPUEqElementKernel<scalar_t, scalar_t>,
+                                device, indexer,
+                                CPUEqElementKernel<scalar_t, scalar_t>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalEqElementKernel,
                                         &ispc_indexer));
                         break;
                     case BinaryEWOpCode::Ne:
                         LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                                indexer,
+                                device, indexer,
                                 CPUNeqElementKernel<scalar_t, scalar_t>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t, CPULogicalNeqElementKernel,
@@ -260,7 +293,7 @@ void BinaryEWCPU(const Tensor& lhs,
                 switch (op_code) {
                     case BinaryEWOpCode::LogicalAnd:
                         LaunchBinaryEWKernel<scalar_t, bool>(
-                                indexer,
+                                device, indexer,
                                 CPULogicalAndElementKernel<scalar_t, bool>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
@@ -269,7 +302,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::LogicalOr:
                         LaunchBinaryEWKernel<scalar_t, bool>(
-                                indexer,
+                                device, indexer,
                                 CPULogicalOrElementKernel<scalar_t, bool>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
@@ -278,7 +311,7 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::LogicalXor:
                         LaunchBinaryEWKernel<scalar_t, bool>(
-                                indexer,
+                                device, indexer,
                                 CPULogicalXorElementKernel<scalar_t, bool>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
@@ -287,7 +320,8 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::Gt:
                         LaunchBinaryEWKernel<scalar_t, bool>(
-                                indexer, CPUGtElementKernel<scalar_t, bool>,
+                                device, indexer,
+                                CPUGtElementKernel<scalar_t, bool>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalGtElementKernel_bool,
@@ -295,7 +329,8 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::Lt:
                         LaunchBinaryEWKernel<scalar_t, bool>(
-                                indexer, CPULtElementKernel<scalar_t, bool>,
+                                device, indexer,
+                                CPULtElementKernel<scalar_t, bool>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalLtElementKernel_bool,
@@ -303,7 +338,8 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::Ge:
                         LaunchBinaryEWKernel<scalar_t, bool>(
-                                indexer, CPUGeqElementKernel<scalar_t, bool>,
+                                device, indexer,
+                                CPUGeqElementKernel<scalar_t, bool>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalGeqElementKernel_bool,
@@ -311,7 +347,8 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::Le:
                         LaunchBinaryEWKernel<scalar_t, bool>(
-                                indexer, CPULeqElementKernel<scalar_t, bool>,
+                                device, indexer,
+                                CPULeqElementKernel<scalar_t, bool>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalLeqElementKernel_bool,
@@ -319,7 +356,8 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::Eq:
                         LaunchBinaryEWKernel<scalar_t, bool>(
-                                indexer, CPUEqElementKernel<scalar_t, bool>,
+                                device, indexer,
+                                CPUEqElementKernel<scalar_t, bool>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalEqElementKernel_bool,
@@ -327,7 +365,8 @@ void BinaryEWCPU(const Tensor& lhs,
                         break;
                     case BinaryEWOpCode::Ne:
                         LaunchBinaryEWKernel<scalar_t, bool>(
-                                indexer, CPUNeqElementKernel<scalar_t, bool>,
+                                device, indexer,
+                                CPUNeqElementKernel<scalar_t, bool>,
                                 OPEN3D_TEMPLATE_VECTORIZED(
                                         scalar_t,
                                         CPULogicalNeqElementKernel_bool,
@@ -351,21 +390,21 @@ void BinaryEWCPU(const Tensor& lhs,
             switch (op_code) {
                 case BinaryEWOpCode::Add:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                            indexer, CPUAddElementKernel<scalar_t>,
+                            device, indexer, CPUAddElementKernel<scalar_t>,
                             OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUAddElementKernel,
                                                        &ispc_indexer));
                     break;
                 case BinaryEWOpCode::Sub:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                            indexer, CPUSubElementKernel<scalar_t>,
+                            device, indexer, CPUSubElementKernel<scalar_t>,
                             OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUSubElementKernel,
                                                        &ispc_indexer));
                     break;
                 case BinaryEWOpCode::Mul:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                            indexer, CPUMulElementKernel<scalar_t>,
+                            device, indexer, CPUMulElementKernel<scalar_t>,
                             OPEN3D_TEMPLATE_VECTORIZED(scalar_t,
                                                        CPUMulElementKernel,
                                                        &ispc_indexer));
@@ -374,7 +413,7 @@ void BinaryEWCPU(const Tensor& lhs,
                     // The vectorized Div kernel causes a crash in the Python
                     // tests, so use scalar version instead.
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
-                            indexer, CPUDivElementKernel<scalar_t>);
+                            device, indexer, CPUDivElementKernel<scalar_t>);
                     break;
                 default:
                     break;

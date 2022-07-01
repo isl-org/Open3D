@@ -210,6 +210,7 @@ void pybind_core_hashmap(py::module& m) {
     hashmap.def_property_readonly("device", &HashMap::GetDevice);
     hashmap.def_property_readonly("is_cpu", &HashMap::IsCPU);
     hashmap.def_property_readonly("is_cuda", &HashMap::IsCUDA);
+    hashmap.def_property_readonly("is_sycl", &HashMap::IsSYCL);
 }
 
 void pybind_core_hashset(py::module& m) {
@@ -311,6 +312,7 @@ void pybind_core_hashset(py::module& m) {
     hashset.def_property_readonly("device", &HashSet::GetDevice);
     hashset.def_property_readonly("is_cpu", &HashSet::IsCPU);
     hashset.def_property_readonly("is_cuda", &HashSet::IsCUDA);
+    hashset.def_property_readonly("is_sycl", &HashSet::IsSYCL);
 }
 
 }  // namespace core

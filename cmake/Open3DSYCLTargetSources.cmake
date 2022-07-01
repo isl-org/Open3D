@@ -30,8 +30,16 @@ function(open3d_sycl_target_sources target)
 
         if(BUILD_SYCL_MODULE)
             foreach(sycl_file IN LISTS arg_UNPARSED_ARGUMENTS)
+                # COMPILE_OPTIONS is a list, but COMPILE_FLAGS is a string
+                # https://stackoverflow.com/a/24303754/1255535
                 set_source_files_properties(${sycl_file} PROPERTIES
-                    COMPILE_OPTIONS -fsycl -fsycl-unnamed-lambda -fsycl-targets=spir64_x86_64)
+                    COMPILE_FLAGS "-fsycl -fsycl-unnamed-lambda"
+                )
+
+                # __OPEN3D_SYCLCC__ is analogous to __CUDACC__.
+                set_source_files_properties(${sycl_file} PROPERTIES
+                    COMPILE_DEFINITIONS __OPEN3D_SYCLCC__=1
+                )
                 if(arg_VERBOSE)
                     message(STATUS "open3d_sycl_target_sources(${target}): marked ${sycl_file} as SYCL code")
                 endif()

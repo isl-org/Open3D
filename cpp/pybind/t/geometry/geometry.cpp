@@ -48,6 +48,8 @@ void pybind_geometry_class(py::module& m) {
                                    "Returns true if the geometry is on CPU.");
     geometry.def_property_readonly("is_cuda", &Geometry::IsCUDA,
                                    "Returns true if the geometry is on CUDA.");
+    geometry.def_property_readonly("is_sycl", &Geometry::IsSYCL,
+                                   "Returns true if the geometry is on SYCL.");
     docstring::ClassMethodDocInject(m, "Geometry", "clear");
     docstring::ClassMethodDocInject(m, "Geometry", "is_empty");
 }

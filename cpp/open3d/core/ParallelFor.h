@@ -42,6 +42,12 @@
 #include "open3d/core/CUDAUtils.h"
 #endif
 
+#ifdef __OPEN3D_SYCLCC__
+#include <CL/sycl.hpp>
+
+#include "open3d/core/SYCLContext.h"
+#endif
+
 namespace open3d {
 namespace core {
 
@@ -87,10 +93,39 @@ void ParallelForCUDA_(const Device& device, int64_t n, const func_t& func) {
 
 #else
 
+#ifdef __OPEN3D_SYCLCC__
+// ParallelForCUDA_ and ParallelForCPU_ will never coexist in a file.
+// ParallelForSYCL_ and ParallelForCPU_ can coexist.
+template <typename func_t>
+void ParallelForSYCL_(const Device& device, int64_t n, const func_t& func) {
+    if (!device.IsSYCL()) {
+        utility::LogError("ParallelFor for SYCL cannot run on device {}.",
+                          device.ToString());
+    }
+    if (n == 0) {
+        return;
+    }
+
+    sycl::queue& queue =
+            sycl_utils::SYCLContext::GetInstance().GetDefaultQueue(device);
+
+    queue.submit([&](sycl::handler& h) {
+             //  h.parallel_for(n, [=](int64_t i) { func(i); });
+         }).wait();
+}
+#endif
+
 /// Run a function in parallel on CPU.
 template <typename func_t>
 void ParallelForCPU_(const Device& device, int64_t n, const func_t& func) {
-    if (!device.IsCPU()) {
+    if (device.IsSYCL()) {
+        utility::LogError(
+                "It seems like you're trying to run a CPU kernel on a SYCL "
+                "device. This file is not SYCL enabled. If you're trying to "
+                "run SYCL kernel on a SYCL device, you need to compile "
+                "with BUILD_SYCL_MODULE=ON, and add the source file with "
+                "open3d_sycl_target_sources(xxx) instead of target_sources().");
+    } else if (!device.IsCPU()) {
         utility::LogError("ParallelFor for CPU cannot run on device {}.",
                           device.ToString());
     }
@@ -123,7 +158,19 @@ void ParallelFor(const Device& device, int64_t n, const func_t& func) {
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
 #else
-    ParallelForCPU_(device, n, func);
+    if (device.IsSYCL()) {
+#ifdef __OPEN3D_SYCLCC__
+        ParallelForSYCL_(device, n, func);
+#else
+        utility::LogError(
+                "This file is not SYCL enabled. You need to compile with "
+                "BUILD_SYCL_MODULE=ON, and add the source file with "
+                "open3d_sycl_target_sources(xxx) instead of target_sources().");
+#endif
+    } else {
+        ParallelForCPU_(device, n, func);
+    }
+
 #endif
 }
 
@@ -196,7 +243,18 @@ void ParallelFor(const Device& device,
 #ifdef __CUDACC__
     ParallelForCUDA_(device, n, func);
 #else
-    ParallelForCPU_(device, n, func);
+    if (device.IsSYCL()) {
+#ifdef __OPEN3D_SYCLCC__
+        ParallelForSYCL_(device, n, func);
+#else
+        utility::LogError(
+                "This file is not SYCL enabled. You need to compile with "
+                "BUILD_SYCL_MODULE=ON, and add the source file with "
+                "open3d_sycl_target_sources(xxx) instead of target_sources().");
+#endif
+    } else {
+        ParallelForCPU_(device, n, func);
+    }
 #endif
 
 #endif

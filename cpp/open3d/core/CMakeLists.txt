@@ -44,7 +44,7 @@ target_sources(core PRIVATE
     kernel/Arange.cpp
     kernel/ArangeCPU.cpp
     kernel/BinaryEW.cpp
-    kernel/BinaryEWCPU.cpp
+    # kernel/BinaryEWCPU.cpp
     kernel/IndexGetSet.cpp
     kernel/IndexGetSetCPU.cpp
     kernel/Kernel.cpp
@@ -77,6 +77,10 @@ target_sources(core PRIVATE
     nns/NanoFlannIndex.cpp
     nns/NearestNeighborSearch.cpp
     nns/NNSIndex.cpp
+)
+
+open3d_sycl_target_sources(core PRIVATE
+    kernel/BinaryEWCPU.cpp
 )
 
 if (BUILD_CUDA_MODULE)

@@ -809,6 +809,7 @@ Ref:
     tensor.def_property_readonly("device", &Tensor::GetDevice);
     tensor.def_property_readonly("is_cpu", &Tensor::IsCPU);
     tensor.def_property_readonly("is_cuda", &Tensor::IsCUDA);
+    tensor.def_property_readonly("is_sycl", &Tensor::IsSYCL);
 
     // Length and iterator.
     tensor.def("__len__", &Tensor::GetLength);

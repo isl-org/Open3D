@@ -57,7 +57,7 @@ bool SYCLContext::IsDeviceAvailable(const Device &device) {
 }
 std::vector<Device> SYCLContext::GetAvailableSYCLDevices() { return devices_; }
 
-sycl::queue SYCLContext::GetDefaultQueue(const Device &device) {
+sycl::queue &SYCLContext::GetDefaultQueue(const Device &device) {
     return device_to_default_queue_.at(device);
 }
 

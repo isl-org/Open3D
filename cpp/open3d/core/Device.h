@@ -121,6 +121,10 @@ public:
     inline bool IsCUDA() const {
         return GetDevice().GetType() == Device::DeviceType::CUDA;
     }
+
+    inline bool IsSYCL() const {
+        return GetDevice().GetType() == Device::DeviceType::SYCL;
+    }
 };
 
 }  // namespace core

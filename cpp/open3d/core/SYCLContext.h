@@ -64,7 +64,7 @@ public:
     std::vector<Device> GetAvailableSYCLDevices();
 
     /// Get the default SYCL queue given an Open3D device.
-    sycl::queue GetDefaultQueue(const Device& device);
+    sycl::queue& GetDefaultQueue(const Device& device);
 
 private:
     SYCLContext();
