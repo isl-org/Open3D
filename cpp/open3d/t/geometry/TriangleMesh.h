@@ -368,6 +368,13 @@ public:
     /// Convenience function.
     bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
 
+    static TriangleMesh CreateSphere(
+            double adius = 1.0,
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {

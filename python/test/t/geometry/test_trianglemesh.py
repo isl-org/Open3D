@@ -70,3 +70,7 @@ def test_boolean_operations():
     ans = box.boolean_difference(sphere)
     assert ans.vertex['positions'].shape == (160, 3)
     assert ans.triangle['indices'].shape == (244, 3)
+
+
+def test_create_sphere():
+    pass

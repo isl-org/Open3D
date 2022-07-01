@@ -453,5 +453,9 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
                                   Pointwise(FloatEq(), {1.0, 1.1})}));
 }
 
+TEST_P(TriangleMeshPermuteDevices, CreateSphere) {
+    //
+}
+
 }  // namespace tests
 }  // namespace open3d

@@ -30,6 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
+#include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
@@ -226,7 +227,7 @@ This example shows how to create a hemisphere from a sphere::
             &TriangleMesh::SimplifyQuadricDecimation, "target_reduction"_a,
             "preserve_volume"_a = true,
             R"(Function to simplify mesh using Quadric Error Metric Decimation by Garland and Heckbert.
-    
+
 This function always uses the CPU device.
 
 Args:
@@ -234,10 +235,10 @@ Args:
         this to 0.9 will return a mesh with about 10% of the original triangle
         count. It is not guaranteed that the target reduction factor will be
         reached.
-    
+
     preserve_volume (bool): If set to True this enables volume preservation
         which reduces the error in triangle normal direction.
-    
+
 Returns:
     Simplified TriangleMesh.
 
@@ -259,7 +260,7 @@ Both meshes should be manifold.
 This function always uses the CPU device.
 
 Args:
-    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the
         boolean operation.
 
     tolerance (float): Threshold which determines when point distances are
@@ -290,7 +291,7 @@ Both meshes should be manifold.
 This function always uses the CPU device.
 
 Args:
-    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the
         boolean operation.
 
     tolerance (float): Threshold which determines when point distances are
@@ -321,7 +322,7 @@ Both meshes should be manifold.
 This function always uses the CPU device.
 
 Args:
-    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the
         boolean operation.
 
     tolerance (float): Threshold which determines when point distances are
@@ -342,6 +343,19 @@ Example:
 
         o3d.visualization.draw([{'name': 'difference', 'geometry': ans}])
 )");
+
+    triangle_mesh.def_static("create_sphere", &TriangleMesh::CreateSphere,
+                             "Create a sphere mesh centered at (0, 0, 0).",
+                             "radius"_a = 1.0, "resolution"_a = 20);
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_sphere",
+            {{"radius", "Defines radius of the sphere."},
+             {"resolution",
+              "Defines the resolution of the sphere. The longitudes will be "
+              "split into resolution segments (i.e. there are resolution + 1 "
+              "latitude lines including the north and south pole). The "
+              "latitudes will be split into 2 * resolution segments (i.e. "
+              "there are 2 * resolution longitude lines."}});
 }
 
 }  // namespace geometry

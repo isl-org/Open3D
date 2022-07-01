@@ -40,6 +40,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
@@ -335,7 +336,6 @@ TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
     return CreateTriangleMeshFromVtkPolyData(decimated_polydata);
 }
 
-namespace {
 TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
                               const TriangleMesh &mesh_B,
                               double tolerance,
@@ -360,7 +360,6 @@ TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
 
     return CreateTriangleMeshFromVtkPolyData(out_polydata);
 }
-}  // namespace
 
 TriangleMesh TriangleMesh::BooleanUnion(const TriangleMesh &mesh,
                                         double tolerance) const {
@@ -379,6 +378,19 @@ TriangleMesh TriangleMesh::BooleanDifference(const TriangleMesh &mesh,
                                              double tolerance) const {
     return BooleanOperation(*this, mesh, tolerance,
                             vtkBooleanOperationPolyDataFilter::VTK_DIFFERENCE);
+}
+
+// TODO: move this to TriangleMeshFactory.
+TriangleMesh TriangleMesh::CreateSphere(double radius,
+                                        int resolution,
+                                        core::Dtype float_dtype,
+                                        core::Dtype int_dtype,
+                                        const core::Device &device) {
+    std::shared_ptr<open3d::geometry::TriangleMesh> legacy_mesh =
+            open3d::geometry::TriangleMesh::CreateSphere(radius, resolution);
+    TriangleMesh mesh = TriangleMesh::FromLegacy(*legacy_mesh, float_dtype,
+                                                 int_dtype, device);
+    return mesh;
 }
 
 }  // namespace geometry
