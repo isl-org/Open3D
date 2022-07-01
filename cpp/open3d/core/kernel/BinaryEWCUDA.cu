@@ -297,12 +297,12 @@ void BinaryEWCUDA(const Tensor& lhs,
                         "same type as the input.");
             }
         });
-    } else if (op_code == BinaryEWOpCode::Max ||
-               op_code == BinaryEWOpCode::Min) {
+    } else if (op_code == BinaryEWOpCode::Maximum ||
+               op_code == BinaryEWOpCode::Minimum) {
         Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
             switch (op_code) {
-                case BinaryEWOpCode::Max:
+                case BinaryEWOpCode::Maximum:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             src_device, indexer,
                             [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
@@ -310,7 +310,7 @@ void BinaryEWCUDA(const Tensor& lhs,
                                 CUDAMaxElementKernel<scalar_t>(lhs, rhs, dst);
                             });
                     break;
-                case BinaryEWOpCode::Min:
+                case BinaryEWOpCode::Minimum:
                     LaunchBinaryEWKernel<scalar_t, scalar_t>(
                             src_device, indexer,
                             [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
