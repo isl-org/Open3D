@@ -44,10 +44,20 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Tensor &min_bound,
                                                const core::Tensor &max_bound)
     : AxisAlignedBoundingBox([&]() {
           core::AssertTensorDevice(min_bound, max_bound.GetDevice());
+          core::AssertTensorDtype(min_bound, max_bound.GetDtype());
+          core::AssertTensorShape(min_bound, {3});
+          core::AssertTensorShape(max_bound, {3});
           return min_bound.GetDevice();
       }()) {
+    if (min_bound.GetDtype() == core::Bool) {
+        utility::LogError("min_bound and max_bound can not be bool.");
+    }
+
     min_bound_ = min_bound;
     max_bound_ = max_bound;
+
+    // Check if the bounding box is valid.
+    CheckValid(true);
 }
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::To(const core::Device &device,
@@ -67,6 +77,38 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::Clear() {
     max_bound_ = core::Tensor::Zeros({3}, core::Float32, GetDevice());
     color_ = core::Tensor::Ones({3}, core::Float32, GetDevice());
     return *this;
+}
+
+void AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound) {
+    core::AssertTensorDevice(min_bound, device_);
+    core::AssertTensorShape(min_bound, {3});
+    const core::Tensor tmp = min_bound.Clone();
+    min_bound_ = min_bound.To(min_bound_.GetDevice());
+
+    // If fail to pass the valid check, the min_bound_ will be set to the
+    // original value.
+    if (!CheckValid(false)) {
+        min_bound_ = tmp;
+    }
+}
+
+void AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound) {
+    core::AssertTensorDevice(max_bound, device_);
+    core::AssertTensorShape(max_bound, {3});
+    const core::Tensor tmp = max_bound.Clone();
+    max_bound_ = max_bound.To(max_bound_.GetDevice());
+
+    // If fail to pass the valid check, the max_bound_ will be set to the
+    // original value.
+    if (!CheckValid(false)) {
+        max_bound_ = tmp;
+    }
+}
+
+void AxisAlignedBoundingBox::SetColor(const core::Tensor &color) {
+    core::AssertTensorDevice(color, device_);
+    core::AssertTensorShape(color, {3});
+    color_ = color.To(color_.GetDevice());
 }
 
 AxisAlignedBoundingBox &AxisAlignedBoundingBox::Translate(
@@ -163,20 +205,16 @@ core::Tensor AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
 }
 
 std::string AxisAlignedBoundingBox::ToString() const {
-    std::string str = fmt::format("AxisAlignedBoundingBox on {}\n",
-                                  GetDevice().ToString());
-    str += fmt::format("min_bound: {}\n", min_bound_.ToString());
-    str += fmt::format("max_bound: {}\n", max_bound_.ToString());
-    str += fmt::format("color: {}\n", color_.ToString());
-    return str;
+    const core::Dtype dtype = min_bound_.GetDtype();
+    return fmt::format("AxisAlignedBoundingBox[{}, {}]", dtype.ToString(),
+                       device_.ToString());
 }
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const core::Tensor &points) {
     core::AssertTensorShape(points, {utility::nullopt, 3});
     if (points.GetLength() <= 0) {
-        utility::LogWarning(
-                "CreateFromPoints: the points number is less than 3.");
+        utility::LogWarning("The points number is less than 3.");
         return AxisAlignedBoundingBox(points.GetDevice());
     } else {
         const core::Tensor min_bound = points.Min({1});
@@ -220,6 +258,22 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::FromLegacy(
                               .Flatten()
                               .To(device));
     return t_box;
+}
+
+bool AxisAlignedBoundingBox::CheckValid(bool exception) const {
+    if (Volume() < 0) {
+        if (exception) {
+            utility::LogError(
+                    "Invalid axis-aligned bounding box. Please make sure all "
+                    "the elements in max bound are larger than min bound.");
+        } else {
+            utility::LogWarning(
+                    "Invalid axis-aligned bounding box. Please make sure all "
+                    "the elements in max bound are larger than min bound.");
+            return false;
+        }
+    }
+    return true;
 }
 
 }  // namespace geometry

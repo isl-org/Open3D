@@ -334,6 +334,10 @@ TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
     return CreateTriangleMeshFromVtkPolyData(decimated_polydata);
 }
 
+AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetVertexPositions());
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

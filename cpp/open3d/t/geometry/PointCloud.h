@@ -40,6 +40,7 @@
 #include "open3d/t/geometry/RGBDImage.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -520,6 +521,9 @@ public:
                     core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f);
+
+    /// Create an axis-aligned bounding box from attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

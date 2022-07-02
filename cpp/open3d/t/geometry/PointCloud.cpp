@@ -56,6 +56,7 @@
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/utility/Random.h"
 
+
 namespace open3d {
 namespace t {
 namespace geometry {
@@ -881,6 +882,10 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
     TriangleMesh convex_hull(vertices, triangles);
     convex_hull.SetVertexAttr("point_indices", point_indices);
     return convex_hull;
+}
+
+AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
 }  // namespace geometry

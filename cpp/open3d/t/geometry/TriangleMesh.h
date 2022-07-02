@@ -32,6 +32,7 @@
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 
 namespace open3d {
 namespace t {
@@ -486,6 +487,9 @@ public:
     /// \return Simplified TriangleMesh.
     TriangleMesh SimplifyQuadricDecimation(double target_reduction,
                                            bool preserve_volume = true) const;
+
+    /// Create an axis-aligned bounding box from vertex attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

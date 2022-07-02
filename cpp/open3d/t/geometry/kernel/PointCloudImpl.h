@@ -169,7 +169,7 @@ void GetPointMaskWithinAABBCPU
     bool* mask_ptr = mask.GetDataPtr<bool>();
 
     core::ParallelFor(points.GetDevice(), n,
-                      [&] OPEN3D_DEVICE(int64_t workload_idx) {
+                      [=] OPEN3D_DEVICE(int64_t workload_idx) {
                           const float x = points_ptr[3 * workload_idx + 0];
                           const float y = points_ptr[3 * workload_idx + 1];
                           const float z = points_ptr[3 * workload_idx + 2];

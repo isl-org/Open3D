@@ -79,7 +79,7 @@ public:
 
     AxisAlignedBoundingBox &Clear() override;
 
-    bool IsEmpty() const override { return Volume() <= 0; }
+    bool IsEmpty() const override { return Volume() == 0; }
 
     void SetMinBound(const core::Tensor &min_bound) {
         core::AssertTensorDevice(min_bound, device_);
@@ -99,10 +99,7 @@ public:
         color_ = color;
     }
 
-    const core::Tensor &GetMinBoundAttr() const { return min_bound_; }
-    const core::Tensor &GetMaxBoundAttr() const { return max_bound_; }
-    const core::Tensor &GetColorAttr() const { return color_; }
-
+public:
     core::Tensor GetMinBound() const { return min_bound_; }
     core::Tensor GetMaxBound() const { return max_bound_; }
     core::Tensor GetColor() const { return color_; }
@@ -177,6 +174,15 @@ public:
     /// \param points A list of points (N x 3 tensor, where N must be larger
     /// than 3).
     static AxisAlignedBoundingBox CreateFromPoints(const core::Tensor &points);
+
+private:
+    /// \brief Check the validity of the bounding box using "Volume".
+    /// The exception is set to true in constructor if the bounding box, and is
+    /// set to false in SetMinBound and SetMaxBound.
+    ///
+    /// \param exception Whether to throw an exception if the bounding box is
+    /// not valid.
+    bool CheckValid(bool exception = false) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

@@ -61,28 +61,6 @@ tensor, which must be on the same device.)");
             {{"min_bound", "Lower bounds of the bounding box for all axes."},
              {"max_bound", "Upper bounds of the bounding box for all axes."}});
 
-    // AxisAlignedBoundingBox's attributes: min_bound, max_bound and color.
-    // def_property_readonly is sufficient, since the returned Tensor can be
-    // editable in Python. We don't want the Tensor to be replaced by another
-    // Tensor in Python.
-    aabb.def_property_readonly(
-            "min_bound",
-            py::overload_cast<>(&AxisAlignedBoundingBox::GetMinBoundAttr,
-                                py::const_),
-            "1-D Tensor constains the lower bounds of the bounding box for all "
-            "axes.");
-    aabb.def_property_readonly(
-            "max_bound",
-            py::overload_cast<>(&AxisAlignedBoundingBox::GetMaxBoundAttr,
-                                py::const_),
-            "1-D Tensor constains the upper bounds of the bounding box for all "
-            "axes.");
-    aabb.def_property_readonly(
-            "color",
-            py::overload_cast<>(&AxisAlignedBoundingBox::GetColorAttr,
-                                py::const_),
-            "1-D Tensor constains the color of the bounding box.");
-
     aabb.def("__repr__", &AxisAlignedBoundingBox::ToString);
     aabb.def("__add__", [](const AxisAlignedBoundingBox& self,
                            const AxisAlignedBoundingBox& other) {
@@ -113,6 +91,12 @@ tensor, which must be on the same device.)");
             "will be performed.",
             "device_id"_a = 0);
 
+    aabb.def("set_min_bound", &AxisAlignedBoundingBox::SetMinBound,
+             "Set the lower bound of the axis-aligned box.", "min_bound"_a);
+    aabb.def("set_max_bound", &AxisAlignedBoundingBox::SetMaxBound,
+             "Set the upper bound of the axis-aligned box.", "max_bound"_a);
+    aabb.def("set_color", &AxisAlignedBoundingBox::SetColor,
+             "Set the color of the axis-aligned box.", "color"_a);
     aabb.def("get_min_bound", &AxisAlignedBoundingBox::GetMinBound,
              "Returns the min bound for box coordinates.");
     aabb.def("get_max_bound", &AxisAlignedBoundingBox::GetMaxBound,
