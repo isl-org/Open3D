@@ -453,5 +453,79 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
                                   Pointwise(FloatEq(), {1.0, 1.1})}));
 }
 
+TEST_P(TriangleMeshPermuteDevices, CreateBox) {
+    core::Device device = GetParam();
+    core::Dtype float_dtype_custom = core::Float64;
+    core::Dtype int_dtype_custom = core::Int32;
+
+    // Test with default parameters.
+    t::geometry::TriangleMesh box_default =
+            t::geometry::TriangleMesh::CreateBox();
+
+    core::Tensor vertex_positions_default =
+            core::Tensor::Init<float>({{0.0, 0.0, 0.0},
+                                       {1.0, 0.0, 0.0},
+                                       {0.0, 0.0, 1.0},
+                                       {1.0, 0.0, 1.0},
+                                       {0.0, 1.0, 0.0},
+                                       {1.0, 1.0, 0.0},
+                                       {0.0, 1.0, 1.0},
+                                       {1.0, 1.0, 1.0}});
+
+    core::Tensor triangle_indices_default =
+            core::Tensor::Init<int64_t>({{4, 7, 5},
+                                         {4, 6, 7},
+                                         {0, 2, 4},
+                                         {2, 6, 4},
+                                         {0, 1, 2},
+                                         {1, 3, 2},
+                                         {1, 5, 7},
+                                         {1, 7, 3},
+                                         {2, 3, 7},
+                                         {2, 7, 6},
+                                         {0, 4, 1},
+                                         {1, 4, 5}});
+
+    EXPECT_TRUE(box_default.GetVertexPositions().AllClose(
+            vertex_positions_default));
+    EXPECT_TRUE(box_default.GetTriangleIndices().AllClose(
+            triangle_indices_default));
+
+    // Test with custom parameters.
+    t::geometry::TriangleMesh box_custom = t::geometry::TriangleMesh::CreateBox(
+            2, 3, 4, float_dtype_custom, int_dtype_custom, device);
+
+    core::Tensor vertex_positions_custom =
+            core::Tensor::Init<double>({{0.0, 0.0, 0.0},
+                                        {2.0, 0.0, 0.0},
+                                        {0.0, 0.0, 4.0},
+                                        {2.0, 0.0, 4.0},
+                                        {0.0, 3.0, 0.0},
+                                        {2.0, 3.0, 0.0},
+                                        {0.0, 3.0, 4.0},
+                                        {2.0, 3.0, 4.0}},
+                                       device);
+
+    core::Tensor triangle_indices_custom =
+            core::Tensor::Init<int32_t>({{4, 7, 5},
+                                         {4, 6, 7},
+                                         {0, 2, 4},
+                                         {2, 6, 4},
+                                         {0, 1, 2},
+                                         {1, 3, 2},
+                                         {1, 5, 7},
+                                         {1, 7, 3},
+                                         {2, 3, 7},
+                                         {2, 7, 6},
+                                         {0, 4, 1},
+                                         {1, 4, 5}},
+                                        device);
+
+    EXPECT_TRUE(
+            box_custom.GetVertexPositions().AllClose(vertex_positions_custom));
+    EXPECT_TRUE(
+            box_custom.GetTriangleIndices().AllClose(triangle_indices_custom));
+}
+
 }  // namespace tests
 }  // namespace open3d

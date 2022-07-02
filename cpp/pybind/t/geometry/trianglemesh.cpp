@@ -30,6 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
+#include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
@@ -221,21 +222,42 @@ This example shows how to create a hemisphere from a sphere::
     o3d.visualization.draw(hemisphere)
 )");
 
+    // Triangle Mesh's creation APIs.
+    triangle_mesh.def_static(
+            "create_box", &TriangleMesh::CreateBox,
+            "Create a box triangle mesh. One vertex of the box"
+            "will be placed at the origin and the box aligns"
+            "with the positive x, y, and z axes."
+            "width"_a = 1.0,
+            "height"_a = 1.0, "depth"_a = 1.0, "float_dtype"_a = core::Float32,
+            "int_dtype"_a = core::Int64, "device"_a = core::Device("CPU:0"));
+
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_box",
+            {{"width", "x-directional length."},
+             {"height", "y-directional length."},
+             {"depth", "z-directional length."},
+             {"vertex_dtype", "Float_dtype, Float32 or Float64."},
+             {"triangle_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create mesh."}});
+
     triangle_mesh.def(
             "simplify_quadric_decimation",
             &TriangleMesh::SimplifyQuadricDecimation, "target_reduction"_a,
             "preserve_volume"_a = true,
             R"(Function to simplify mesh using Quadric Error Metric Decimation by Garland and Heckbert.
+    
+This function always uses the CPU device.
 
 Args:
     target_reduction (float): The factor of triangles to delete, i.e., setting
         this to 0.9 will return a mesh with about 10% of the original triangle
         count. It is not guaranteed that the target reduction factor will be
         reached.
-    
+
     preserve_volume (bool): If set to True this enables volume preservation
         which reduces the error in triangle normal direction.
-    
+
 Returns:
     Simplified TriangleMesh.
 
@@ -246,6 +268,99 @@ Example:
         mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
         simplified = mesh.simplify_quadric_decimation(0.99)
         o3d.visualization.draw([{'name': 'bunny', 'geometry': simplified}])
+)");
+
+    triangle_mesh.def(
+            "boolean_union", &TriangleMesh::BooleanUnion, "mesh"_a,
+            "tolerance"_a = 1e-6,
+            R"(Computes the mesh that encompasses the union of the volumes of two meshes.
+Both meshes should be manifold.
+
+This function always uses the CPU device.
+
+Args:
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+        boolean operation.
+
+    tolerance (float): Threshold which determines when point distances are
+        considered to be 0.
+
+Returns:
+    The mesh describing the union volume.
+
+Example:
+    This copmutes the union of a sphere and a cube::
+
+        box = o3d.geometry.TriangleMesh.create_box()
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
+        sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+
+        ans = box.boolean_union(sphere)
+
+        o3d.visualization.draw([{'name': 'union', 'geometry': ans}])
+)");
+
+    triangle_mesh.def(
+            "boolean_intersection", &TriangleMesh::BooleanIntersection,
+            "mesh"_a, "tolerance"_a = 1e-6,
+            R"(Computes the mesh that encompasses the intersection of the volumes of two meshes.
+Both meshes should be manifold.
+
+This function always uses the CPU device.
+
+Args:
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+        boolean operation.
+
+    tolerance (float): Threshold which determines when point distances are
+        considered to be 0.
+
+Returns:
+    The mesh describing the intersection volume.
+
+Example:
+    This copmutes the intersection of a sphere and a cube::
+
+        box = o3d.geometry.TriangleMesh.create_box()
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
+        sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+
+        ans = box.boolean_intersection(sphere)
+
+        o3d.visualization.draw([{'name': 'intersection', 'geometry': ans}])
+)");
+
+    triangle_mesh.def(
+            "boolean_difference", &TriangleMesh::BooleanDifference, "mesh"_a,
+            "tolerance"_a = 1e-6,
+            R"(Computes the mesh that encompasses the volume after subtracting the volume of the second operand.
+Both meshes should be manifold.
+
+This function always uses the CPU device.
+
+Args:
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+        boolean operation.
+
+    tolerance (float): Threshold which determines when point distances are
+        considered to be 0.
+
+Returns:
+    The mesh describing the difference volume.
+
+Example:
+    This subtracts the sphere from the cube volume::
+
+        box = o3d.geometry.TriangleMesh.create_box()
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
+        sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+
+        ans = box.boolean_difference(sphere)
+
+        o3d.visualization.draw([{'name': 'difference', 'geometry': ans}])
 )");
 }
 

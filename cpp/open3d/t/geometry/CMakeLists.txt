@@ -11,6 +11,7 @@ target_sources(tgeometry PRIVATE
     RGBDImage.cpp
     TensorMap.cpp
     TriangleMesh.cpp
+    TriangleMeshFactory.cpp
     VoxelBlockGrid.cpp
     VtkUtils.cpp
 )
