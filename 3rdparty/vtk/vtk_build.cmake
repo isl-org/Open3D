@@ -11,6 +11,8 @@ set(VTK_VERSION 9.1)
 set(VTK_LIBRARIES
     vtkFiltersGeneral-${VTK_VERSION}${VTK_LIB_SUFFIX}
     # vtkCommonComputationalGeometry-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkFiltersSources-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkFiltersModeling-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkFiltersCore-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkCommonExecutionModel-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkCommonDataModel-${VTK_VERSION}${VTK_LIB_SUFFIX}
@@ -82,7 +84,7 @@ if(BUILD_VTK_FROM_SOURCE)
             -DVTK_MODULE_ENABLE_VTK_FiltersHybrid=DONT_WANT
             -DVTK_MODULE_ENABLE_VTK_FiltersHyperTree=DONT_WANT
             -DVTK_MODULE_ENABLE_VTK_FiltersImaging=DONT_WANT
-            -DVTK_MODULE_ENABLE_VTK_FiltersModeling=DONT_WANT
+            -DVTK_MODULE_ENABLE_VTK_FiltersModeling=WANT
             -DVTK_MODULE_ENABLE_VTK_FiltersOpenTURNS=DONT_WANT
             -DVTK_MODULE_ENABLE_VTK_FiltersParallel=DONT_WANT
             -DVTK_MODULE_ENABLE_VTK_FiltersParallelDIY2=DONT_WANT
