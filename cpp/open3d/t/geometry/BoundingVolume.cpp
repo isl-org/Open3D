@@ -82,7 +82,7 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::Clear() {
 void AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound) {
     core::AssertTensorDevice(min_bound, device_);
     core::AssertTensorShape(min_bound, {3});
-    const core::Tensor tmp = min_bound.Clone();
+    const core::Tensor tmp = min_bound_.Clone();
     min_bound_ = min_bound.To(min_bound_.GetDtype());
 
     // If fail to pass the valid check, the min_bound_ will be set to the
@@ -95,7 +95,7 @@ void AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound) {
 void AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound) {
     core::AssertTensorDevice(max_bound, device_);
     core::AssertTensorShape(max_bound, {3});
-    const core::Tensor tmp = max_bound.Clone();
+    const core::Tensor tmp = max_bound_.Clone();
     max_bound_ = max_bound.To(max_bound_.GetDtype());
 
     // If fail to pass the valid check, the max_bound_ will be set to the
@@ -108,7 +108,7 @@ void AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound) {
 void AxisAlignedBoundingBox::SetColor(const core::Tensor &color) {
     core::AssertTensorDevice(color, device_);
     core::AssertTensorShape(color, {3});
-    color_ = color.To(color_.GetDevice());
+    color_ = color.To(color_.GetDtype());
 }
 
 AxisAlignedBoundingBox &AxisAlignedBoundingBox::Translate(
@@ -130,8 +130,9 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::Scale(
         double scale, const core::Tensor &center) {
     core::AssertTensorDevice(center, GetDevice());
     core::AssertTensorShape(center, {3});
-    min_bound_ = center + scale * (min_bound_ - center);
-    max_bound_ = center + scale * (max_bound_ - center);
+    const core::Tensor center_d = center.To(core::Float32);
+    min_bound_ = center + scale * (min_bound_ - center_d);
+    max_bound_ = center + scale * (max_bound_ - center_d);
     return *this;
 }
 
@@ -210,14 +211,14 @@ std::string AxisAlignedBoundingBox::ToString() const {
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const core::Tensor &points) {
     core::AssertTensorShape(points, {utility::nullopt, 3});
-    core::AssertTensorDtypes(points, {core::Float32, core::Float64});
-    if (points.GetLength() <= 0) {
+    if (points.GetLength() <= 3) {
         utility::LogWarning("The points number is less than 3.");
         return AxisAlignedBoundingBox(points.GetDevice());
     } else {
-        const core::Tensor min_bound = points.Min({1});
-        const core::Tensor max_bound = points.Max({1});
-        return AxisAlignedBoundingBox(min_bound, max_bound);
+        const core::Tensor min_bound = points.Min({0});
+        const core::Tensor max_bound = points.Max({0});
+        return AxisAlignedBoundingBox(min_bound.To(core::Float32),
+                                      max_bound.To(core::Float32));
     }
 }
 
@@ -249,10 +250,10 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::FromLegacy(
     t_box.SetColor(core::eigen_converter::EigenMatrixToTensor(box.color_)
                            .Flatten()
                            .To(device));
-    t_box.SetMinBound(core::eigen_converter::EigenMatrixToTensor(box.min_bound_)
+    t_box.SetMaxBound(core::eigen_converter::EigenMatrixToTensor(box.max_bound_)
                               .Flatten()
                               .To(device));
-    t_box.SetMaxBound(core::eigen_converter::EigenMatrixToTensor(box.max_bound_)
+    t_box.SetMinBound(core::eigen_converter::EigenMatrixToTensor(box.min_bound_)
                               .Flatten()
                               .To(device));
     return t_box;

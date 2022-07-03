@@ -71,12 +71,13 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, ConstructorNoArg) {
     EXPECT_EQ(aabb.GetDevice(), core::Device("CPU:0"));
 
     // ToString
-    EXPECT_EQ(aabb.ToString(), "AxisAlignedBoundingBox[Float32,  CPU:0]");
+    EXPECT_EQ(aabb.ToString(), "AxisAlignedBoundingBox[Float32, CPU:0]");
 }
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, Constructor) {
     core::Device device = GetParam();
-    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, 1}, device);
+
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -1}, device);
     core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);
 
     // Attempt to construct with invalid min/max bound.
@@ -122,6 +123,7 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevicePairs, CopyDevice) {
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, Clone_Clear_IsEmpty) {
     core::Device device = GetParam();
+
     core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, 1}, device);
     core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);
 
@@ -145,7 +147,202 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, Clone_Clear_IsEmpty) {
             core::Tensor::Init<float>({1, 1, 1}, device)));
 
     // IsEmpty.
-    EXPECT_EQ(aabb.IsEmpty(), true);
+    EXPECT_TRUE(aabb.IsEmpty());
+}
+
+TEST_P(AxisAlignedBoundingBoxPermuteDevices, Setters) {
+    core::Device device = GetParam();
+
+    t::geometry::AxisAlignedBoundingBox aabb(device);
+
+    // SetMinBound.
+    aabb.SetMinBound(core::Tensor::Init<float>({-1, -1, -1}, device));
+    EXPECT_TRUE(aabb.GetMinBound().AllClose(
+            core::Tensor::Init<float>({-1, -1, -1}, device)));
+
+    // SetMaxBound.
+    aabb.SetMaxBound(core::Tensor::Init<float>({1, 1, 1}, device));
+    EXPECT_TRUE(aabb.GetMaxBound().AllClose(
+            core::Tensor::Init<float>({1, 1, 1}, device)));
+
+    // SetColor.
+    aabb.SetColor(core::Tensor::Init<float>({0, 0, 0}, device));
+    EXPECT_TRUE(aabb.GetColor().AllClose(
+            core::Tensor::Init<float>({0, 0, 0}, device)));
+}
+
+TEST_P(AxisAlignedBoundingBoxPermuteDevices, GetProperties) {
+    core::Device device = GetParam();
+
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -2}, device);
+    core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 2}, device);
+
+    t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
+
+    // GetCenter.
+    EXPECT_TRUE(aabb.GetCenter().AllClose(
+            core::Tensor::Init<float>({0, 0, 0}, device)));
+
+    // GetExtent.
+    EXPECT_TRUE(aabb.GetExtent().AllClose(
+            core::Tensor::Init<float>({2, 2, 4}, device)));
+
+    // GetHalfExtent.
+    EXPECT_TRUE(aabb.GetHalfExtent().AllClose(
+            core::Tensor::Init<float>({1, 1, 2}, device)));
+
+    // GetMaxExtent.
+    EXPECT_EQ(aabb.GetMaxExtent(), 4);
+
+    // Volume.
+    EXPECT_EQ(aabb.Volume(), 16);
+
+    // GetXPercentage.
+    EXPECT_EQ(aabb.GetXPercentage(0), 0.5);
+
+    // GetYPercentage.
+    EXPECT_EQ(aabb.GetYPercentage(0), 0.5);
+
+    // GetZPercentage.
+    EXPECT_EQ(aabb.GetZPercentage(0), 0.5);
+}
+
+TEST_P(AxisAlignedBoundingBoxPermuteDevices, Translate) {
+    core::Device device = GetParam();
+
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -2}, device);
+    core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 2}, device);
+
+    t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
+
+    aabb.Translate(core::Tensor::Init<float>({1, 1, 1}, device), true);
+
+    EXPECT_TRUE(aabb.GetMinBound().AllClose(
+            core::Tensor::Init<float>({0, 0, -1}, device)));
+    EXPECT_TRUE(aabb.GetMaxBound().AllClose(
+            core::Tensor::Init<float>({2, 2, 3}, device)));
+
+    aabb.Translate(core::Tensor::Init<float>({1, 1, 1}, device), false);
+
+    EXPECT_TRUE(aabb.GetMinBound().AllClose(
+            core::Tensor::Init<float>({0, 0, -1}, device)));
+    EXPECT_TRUE(aabb.GetMaxBound().AllClose(
+            core::Tensor::Init<float>({2, 2, 3}, device)));
+}
+
+TEST_P(AxisAlignedBoundingBoxPermuteDevices, Scale) {
+    core::Device device = GetParam();
+
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -2}, device);
+    core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 2}, device);
+
+    t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
+
+    aabb.Scale(0.5, aabb.GetCenter());
+
+    EXPECT_TRUE(aabb.GetMinBound().AllClose(
+            core::Tensor::Init<float>({-0.5, -0.5, -1}, device)));
+    EXPECT_TRUE(aabb.GetMaxBound().AllClose(
+            core::Tensor::Init<float>({0.5, 0.5, 1}, device)));
+
+    aabb.Scale(2.0, aabb.GetCenter());
+
+    EXPECT_TRUE(aabb.GetMinBound().AllClose(
+            core::Tensor::Init<float>({-1, -1, -2}, device)));
+    EXPECT_TRUE(aabb.GetMaxBound().AllClose(
+            core::Tensor::Init<float>({1, 1, 2}, device)));
+}
+
+TEST_P(AxisAlignedBoundingBoxPermuteDevices, Operator) {
+    core::Device device = GetParam();
+
+    t::geometry::AxisAlignedBoundingBox aabb1(device);
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -2}, device);
+    core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 2}, device);
+    t::geometry::AxisAlignedBoundingBox aabb2(min_bound, max_bound);
+
+    aabb1 += aabb2;
+
+    EXPECT_TRUE(aabb1.GetMinBound().AllClose(
+            core::Tensor::Init<float>({-1, -1, -2}, device)));
+    EXPECT_TRUE(aabb1.GetMaxBound().AllClose(
+            core::Tensor::Init<float>({1, 1, 2}, device)));
+}
+
+TEST_P(AxisAlignedBoundingBoxPermuteDevices, GetBoxPoints) {
+    core::Device device = GetParam();
+
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -1}, device);
+    core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);
+    t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
+
+    auto box_points = aabb.GetBoxPoints();
+
+    EXPECT_TRUE(box_points.AllClose(core::Tensor::Init<float>({{-1, -1, -1},
+                                                               {1, -1, -1},
+                                                               {-1, 1, -1},
+                                                               {-1, -1, 1},
+                                                               {1, 1, 1},
+                                                               {-1, 1, 1},
+                                                               {1, -1, 1},
+                                                               {1, 1, -1}},
+                                                              device)));
+}
+
+TEST_P(AxisAlignedBoundingBoxPermuteDevices, GetPointIndicesWithinBoundingBox) {
+    core::Device device = GetParam();
+
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -1}, device);
+    core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);
+    t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
+
+    core::Tensor points = core::Tensor::Init<float>({{0.1, 0.3, 0.9},
+                                                     {0.9, 0.2, 0.4},
+                                                     {0.3, 0.6, 0.8},
+                                                     {0.2, 0.4, 0.2}},
+                                                    device);
+
+    core::Tensor indices = aabb.GetPointIndicesWithinBoundingBox(points);
+
+    EXPECT_TRUE(indices.AllClose(
+            core::Tensor::Init<int64_t>({0, 1, 2, 3}, device)));
+}
+
+TEST_P(AxisAlignedBoundingBoxPermuteDevices, LegacyConversion) {
+    core::Device device = GetParam();
+
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -1}, device);
+    core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);
+    t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
+
+    auto legacy_aabb = aabb.ToLegacy();
+    ExpectEQ(legacy_aabb.min_bound_, Eigen::Vector3d(-1, -1, -1));
+    ExpectEQ(legacy_aabb.max_bound_, Eigen::Vector3d(1, 1, 1));
+    ExpectEQ(legacy_aabb.color_, Eigen::Vector3d(1, 1, 1));
+
+    auto aabb_new =
+            t::geometry::AxisAlignedBoundingBox::FromLegacy(legacy_aabb);
+    EXPECT_TRUE(aabb.GetMinBound().AllClose(
+            core::Tensor::Init<float>({-1, -1, -1}, device)));
+    EXPECT_TRUE(aabb.GetMaxBound().AllClose(
+            core::Tensor::Init<float>({1, 1, 1}, device)));
+}
+
+TEST_P(AxisAlignedBoundingBoxPermuteDevices, CreateFromPoints) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<float>({{0.1, 0.3, 0.9},
+                                                     {0.9, 0.2, 0.4},
+                                                     {0.3, 0.6, 0.8},
+                                                     {0.2, 0.4, 0.2}},
+                                                    device);
+    t::geometry::AxisAlignedBoundingBox aabb =
+            t::geometry::AxisAlignedBoundingBox::CreateFromPoints(points);
+
+    EXPECT_TRUE(aabb.GetMinBound().AllClose(
+            core::Tensor::Init<float>({0.1, 0.2, 0.2}, device)));
+    EXPECT_TRUE(aabb.GetMaxBound().AllClose(
+            core::Tensor::Init<float>({0.9, 0.6, 0.9}, device)));
 }
 
 }  // namespace tests
