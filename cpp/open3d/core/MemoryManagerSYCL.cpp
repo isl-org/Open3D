@@ -41,7 +41,7 @@ namespace sy = cl::sycl;
 
 void* MemoryManagerSYCL::Malloc(size_t byte_size, const Device& device) {
     const sy::queue& queue =
-            sycl_utils::SYCLContext::GetInstance().GetDefaultQueue(device);
+            sycl::SYCLContext::GetInstance().GetDefaultQueue(device);
 
 #ifdef ENABLE_SYCL_UNIFIED_SHARED_MEMORY
     return static_cast<void*>(sy::malloc_shared(byte_size, queue));
@@ -53,7 +53,7 @@ void* MemoryManagerSYCL::Malloc(size_t byte_size, const Device& device) {
 void MemoryManagerSYCL::Free(void* ptr, const Device& device) {
     if (ptr) {
         const sy::queue& queue =
-                sycl_utils::SYCLContext::GetInstance().GetDefaultQueue(device);
+                sycl::SYCLContext::GetInstance().GetDefaultQueue(device);
         sy::free(ptr, queue);
     }
 }
@@ -81,8 +81,8 @@ void MemoryManagerSYCL::Memcpy(void* dst_ptr,
                           dst_device.ToString());
     }
 
-    sy::queue queue = sycl_utils::SYCLContext::GetInstance().GetDefaultQueue(
-            device_with_queue);
+    sy::queue queue =
+            sycl::SYCLContext::GetInstance().GetDefaultQueue(device_with_queue);
     queue.memcpy(dst_ptr, src_ptr, num_bytes).wait_and_throw();
 }
 

@@ -36,7 +36,7 @@
 
 namespace open3d {
 namespace core {
-namespace sycl_utils {
+namespace sycl {
 
 SYCLContext &SYCLContext::GetInstance() {
     static thread_local SYCLContext instance;
@@ -95,6 +95,6 @@ SYCLContext::SYCLContext() {
     }
 }
 
-}  // namespace sycl_utils
+}  // namespace sycl
 }  // namespace core
 }  // namespace open3d

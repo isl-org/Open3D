@@ -40,7 +40,7 @@
 
 namespace open3d {
 namespace core {
-namespace sycl_utils {
+namespace sycl {
 
 namespace sy = cl::sycl;
 
@@ -79,6 +79,6 @@ private:
     std::unordered_map<Device, sy::device> device_to_sycl_device_;
 };
 
-}  // namespace sycl_utils
+}  // namespace sycl
 }  // namespace core
 }  // namespace open3d

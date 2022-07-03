@@ -48,7 +48,7 @@
 
 namespace open3d {
 namespace core {
-namespace sycl_utils {
+namespace sycl {
 
 #ifdef BUILD_SYCL_MODULE
 namespace sy = cl::sycl;
@@ -246,6 +246,6 @@ std::vector<Device> GetAvailableSYCLDevices() {
 #endif
 }
 
-}  // namespace sycl_utils
+}  // namespace sycl
 }  // namespace core
 }  // namespace open3d

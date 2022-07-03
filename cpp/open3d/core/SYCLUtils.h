@@ -38,7 +38,7 @@
 
 namespace open3d {
 namespace core {
-namespace sycl_utils {
+namespace sycl {
 
 /// Runs simple SYCL test program for sanity checks.
 /// \return Retuns 0 if successful.
@@ -59,6 +59,6 @@ bool IsDeviceAvailable(const Device& device);
 /// Return a list of available SYCL devices.
 std::vector<Device> GetAvailableSYCLDevices();
 
-}  // namespace sycl_utils
+}  // namespace sycl
 }  // namespace core
 }  // namespace open3d

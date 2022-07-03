@@ -27,6 +27,6 @@
 #include "open3d/core/SYCLUtils.h"
 
 int main() {
-    open3d::core::sycl_utils::SYCLDemo();
+    open3d::core::sycl::SYCLDemo();
     return 0;
 }
