@@ -27,6 +27,7 @@
 #include "open3d/t/geometry/BoundingVolume.h"
 
 #include "open3d/core/EigenConverter.h"
+#include "open3d/core/TensorFunction.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 
 namespace open3d {
@@ -44,7 +45,6 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Tensor &min_bound,
                                                const core::Tensor &max_bound)
     : AxisAlignedBoundingBox([&]() {
           core::AssertTensorDevice(min_bound, max_bound.GetDevice());
-          core::AssertTensorDtype(min_bound, max_bound.GetDtype());
           core::AssertTensorShape(min_bound, {3});
           core::AssertTensorShape(max_bound, {3});
           return min_bound.GetDevice();
@@ -53,8 +53,8 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Tensor &min_bound,
         utility::LogError("min_bound and max_bound can not be bool.");
     }
 
-    min_bound_ = min_bound;
-    max_bound_ = max_bound;
+    min_bound_ = min_bound.To(core::Float32);
+    max_bound_ = max_bound.To(core::Float32);
 
     // Check if the bounding box is valid.
     CheckValid(true);
@@ -66,8 +66,8 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::To(const core::Device &device,
         return *this;
     }
     AxisAlignedBoundingBox box(device);
-    box.SetMinBound(min_bound_.To(device, true));
     box.SetMaxBound(max_bound_.To(device, true));
+    box.SetMinBound(min_bound_.To(device, true));
     box.SetColor(color_.To(device, true));
     return box;
 }
@@ -83,7 +83,7 @@ void AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound) {
     core::AssertTensorDevice(min_bound, device_);
     core::AssertTensorShape(min_bound, {3});
     const core::Tensor tmp = min_bound.Clone();
-    min_bound_ = min_bound.To(min_bound_.GetDevice());
+    min_bound_ = min_bound.To(min_bound_.GetDtype());
 
     // If fail to pass the valid check, the min_bound_ will be set to the
     // original value.
@@ -96,7 +96,7 @@ void AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound) {
     core::AssertTensorDevice(max_bound, device_);
     core::AssertTensorShape(max_bound, {3});
     const core::Tensor tmp = max_bound.Clone();
-    max_bound_ = max_bound.To(max_bound_.GetDevice());
+    max_bound_ = max_bound.To(max_bound_.GetDtype());
 
     // If fail to pass the valid check, the max_bound_ will be set to the
     // original value.
@@ -141,53 +141,50 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::operator+=(
         min_bound_ = other.GetMinBound();
         max_bound_ = other.GetMaxBound();
     } else if (!other.IsEmpty()) {
-        // TODO should be implemented using tensor maximum (PR #5261).
+        min_bound_ = core::Minimum(min_bound_, other.GetMinBound());
+        max_bound_ = core::Maximum(max_bound_, other.GetMaxBound());
     }
     return *this;
 }
 
 double AxisAlignedBoundingBox::GetXPercentage(double x) const {
-    const double x_min = min_bound_[0].Item<double>();
-    const double x_max = max_bound_[0].Item<double>();
+    const double x_min = min_bound_[0].To(core::Float64).Item<double>();
+    const double x_max = max_bound_[0].To(core::Float64).Item<double>();
     return (x - x_min) / (x_max - x_min);
 }
 
 double AxisAlignedBoundingBox::GetYPercentage(double y) const {
-    const double y_min = min_bound_[1].Item<double>();
-    const double y_max = max_bound_[1].Item<double>();
+    const double y_min = min_bound_[1].To(core::Float64).Item<double>();
+    const double y_max = max_bound_[1].To(core::Float64).Item<double>();
     return (y - y_min) / (y_max - y_min);
 }
 
 double AxisAlignedBoundingBox::GetZPercentage(double z) const {
-    const double z_min = min_bound_[2].Item<double>();
-    const double z_max = max_bound_[2].Item<double>();
+    const double z_min = min_bound_[2].To(core::Float64).Item<double>();
+    const double z_max = max_bound_[2].To(core::Float64).Item<double>();
     return (z - z_min) / (z_max - z_min);
 }
 
 core::Tensor AxisAlignedBoundingBox::GetBoxPoints() const {
-    const core::Tensor extent = GetExtent();
+    const core::Tensor extent = GetExtent().To(core::Float32);
     core::Tensor points =
             core::Tensor::Zeros({8, 3}, core::Float32, GetDevice());
+    const float *extent_data = extent.GetDataPtr<float>();
+
     points[0] = min_bound_;
-    points[1] =
-            min_bound_ + core::Tensor::Init<float>(
-                                 {extent[0].Item<float>(), 0, 0}, GetDevice());
-    points[2] =
-            min_bound_ + core::Tensor::Init<float>(
-                                 {0, extent[1].Item<float>(), 0}, GetDevice());
-    points[3] =
-            min_bound_ + core::Tensor::Init<float>(
-                                 {0, 0, extent[2].Item<float>()}, GetDevice());
+    points[1] = min_bound_ +
+                core::Tensor::Init<float>({extent_data[0], 0, 0}, GetDevice());
+    points[2] = min_bound_ +
+                core::Tensor::Init<float>({0, extent_data[1], 0}, GetDevice());
+    points[3] = min_bound_ +
+                core::Tensor::Init<float>({0, 0, extent_data[2]}, GetDevice());
     points[4] = max_bound_;
-    points[5] =
-            max_bound_ + core::Tensor::Init<float>(
-                                 {-extent[0].Item<float>(), 0, 0}, GetDevice());
-    points[6] =
-            max_bound_ + core::Tensor::Init<float>(
-                                 {0, -extent[1].Item<float>(), 0}, GetDevice());
-    points[7] =
-            max_bound_ + core::Tensor::Init<float>(
-                                 {0, 0, -extent[2].Item<float>()}, GetDevice());
+    points[5] = max_bound_ +
+                core::Tensor::Init<float>({-extent_data[0], 0, 0}, GetDevice());
+    points[6] = max_bound_ +
+                core::Tensor::Init<float>({0, -extent_data[1], 0}, GetDevice());
+    points[7] = max_bound_ +
+                core::Tensor::Init<float>({0, 0, -extent_data[2]}, GetDevice());
     return points;
 }
 
@@ -213,6 +210,7 @@ std::string AxisAlignedBoundingBox::ToString() const {
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
         const core::Tensor &points) {
     core::AssertTensorShape(points, {utility::nullopt, 3});
+    core::AssertTensorDtypes(points, {core::Float32, core::Float64});
     if (points.GetLength() <= 0) {
         utility::LogWarning("The points number is less than 3.");
         return AxisAlignedBoundingBox(points.GetDevice());

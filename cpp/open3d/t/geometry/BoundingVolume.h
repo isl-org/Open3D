@@ -38,12 +38,28 @@ namespace t {
 namespace geometry {
 
 /// \class AxisAlignedBoundingBox
+/// \brief A bounding box that is aligned along the coordinate axes and defined
+/// by the min_bound and max_bound.
 ///
-/// \brief A bounding box that is aligned along the coordinate axes.
+/// - (min_bound, max_bound): Lower and upper bounds of the bounding box for all
+/// axes.
+///     - Usage
+///         - AxisAlignedBoundingBox::GetMinBound()
+///         - AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound)
+///         - AxisAlignedBoundingBox::GetMaxBound()
+///         - AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound)
+///     - Value tensor must have shape {3}.
+///     - Value tensor must have the same data type and device.
+///     - Value tensor is float32 by default.
+///     - Value tensor can only be float32.
+///     - The device of the tensor determines the device of the box.
 ///
-///  The AxisAlignedBoundingBox uses the coordinate axes for bounding box
-///  generation. This means that the bounding box is oriented along the
-///  coordinate axes.
+/// - color: Color of the bounding box.
+///     - Usage
+///         - AxisAlignedBoundingBox::GetColor()
+///         - AxisAlignedBoundingBox::SetColor(const core::Tensor &color)
+///     - Value tensor must have shape {3}.
+///     - Value tensor has the type of float32.
 class AxisAlignedBoundingBox : public Geometry, public DrawableGeometry {
 public:
     /// \brief Construct an empty AxisAlignedBoundingBox on the provided device.
@@ -52,8 +68,8 @@ public:
     /// \brief Construct an AxisAlignedBoundingBox from min/max bound.
     ///
     /// The AxisAlignedBoundingBox will be created on the device of the given
-    /// bound tensor, which must be on the same device.
-    ///
+    /// bound tensor, which must be on the same device and have the same data
+    /// type.
     /// \param min_bound Lower bounds of the bounding box for all axes.
     /// \param max_bound Upper bounds of the bounding box for all axes.
     AxisAlignedBoundingBox(const core::Tensor &min_bound,
@@ -81,23 +97,24 @@ public:
 
     bool IsEmpty() const override { return Volume() == 0; }
 
-    void SetMinBound(const core::Tensor &min_bound) {
-        core::AssertTensorDevice(min_bound, device_);
-        core::AssertTensorShape(min_bound, {3});
-        min_bound_ = min_bound;
-    }
+    /// \brief Set the min bound of the box.
+    /// If the data type of the given tensor differs from the data type of the
+    /// original tensor, it will be converted into the same data type.
+    /// If the min bound makes the box invalid, it will not be set to the box.
+    /// \param min_bound Tensor with {3} shape.
+    void SetMinBound(const core::Tensor &min_bound);
 
-    void SetMaxBound(const core::Tensor &max_bound) {
-        core::AssertTensorDevice(max_bound, device_);
-        core::AssertTensorShape(max_bound, {3});
-        max_bound_ = max_bound;
-    }
+    /// \brief Set the max boundof the box.
+    /// If the data type of the given tensor differs from the data type of the
+    /// original tensor, it will be converted into the same data type.
+    /// If the max bound makes the box invalid, it will not be set to the box.
+    /// \param min_bound Tensor with {3} shape.
+    void SetMaxBound(const core::Tensor &max_bound);
 
-    void SetColor(const core::Tensor &color) {
-        core::AssertTensorDevice(color, device_);
-        core::AssertTensorShape(color, {3});
-        color_ = color;
-    }
+    /// \brief Set the color the box.
+    /// The data type of the given tensor will be always converted into float32.
+    /// \param min_bound Tensor with {3} shape.
+    void SetColor(const core::Tensor &color);
 
 public:
     core::Tensor GetMinBound() const { return min_bound_; }
@@ -128,6 +145,9 @@ public:
     /// \param center Center used for the scaling operation.
     AxisAlignedBoundingBox &Scale(double scale, const core::Tensor &center);
 
+    /// \brief Add operation for axis-aligned bounding box.
+    /// The device of ohter box must be the same as the device of the current
+    /// box.
     AxisAlignedBoundingBox &operator+=(const AxisAlignedBoundingBox &other);
 
     /// Get the extent/length of the bounding box in x, y, and z dimension.
@@ -138,16 +158,21 @@ public:
 
     /// Returns the maximum extent, i.e. the maximum of X, Y and Z axis'
     /// extents.
-    double GetMaxExtent() const { return GetExtent().Max({0}).Item<double>(); }
+    double GetMaxExtent() const {
+        return GetExtent().Max({0}).To(core::Float64).Item<double>();
+    }
 
     double GetXPercentage(double x) const;
     double GetYPercentage(double y) const;
     double GetZPercentage(double z) const;
 
     /// Returns the volume of the bounding box.
-    double Volume() const { return GetExtent().Prod({0}).Item<double>(); }
+    double Volume() const {
+        return GetExtent().Prod({0}).To(core::Float64).Item<double>();
+    }
 
-    /// Returns the eight points that define the bounding box.
+    /// Returns the eight points that define the bounding box. The Return tensor
+    /// has shape {8, 3} and data type of float32.
     core::Tensor GetBoxPoints() const;
 
     /// \brief Indices to points that are within the bounding box.
@@ -170,9 +195,8 @@ public:
             const core::Device &device = core::Device("CPU:0"));
 
     /// Creates the axis-aligned box that encloses the set of points.
-    ///
-    /// \param points A list of points (N x 3 tensor, where N must be larger
-    /// than 3).
+    /// \param points A list of points with data type of float32 or float64 (N x
+    /// 3 tensor, where N must be larger than 3).
     static AxisAlignedBoundingBox CreateFromPoints(const core::Tensor &points);
 
 private:

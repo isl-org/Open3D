@@ -32,6 +32,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/BoundingVolume.h"
+#include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
 
@@ -101,24 +102,50 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevicePairs, CopyDevice) {
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
 
-    core::Dtype dtype = core::Float32;
+    const core::Dtype dtype = core::Float32;
 
-    core::Tensor points = core::Tensor::Ones({2, 3}, dtype, src_device);
-    core::Tensor colors = core::Tensor::Ones({2, 3}, dtype, src_device) * 2;
-    core::Tensor labels = core::Tensor::Ones({2, 3}, dtype, src_device) * 3;
+    core::Tensor min_bound = core::Tensor::Ones({3}, dtype, src_device);
+    core::Tensor max_bound = core::Tensor::Ones({3}, dtype, src_device) * 2;
+    core::Tensor color = core::Tensor::Ones({3}, dtype, src_device);
 
-    t::geometry::PointCloud pcd(src_device);
-
-    pcd.SetPointPositions(points);
-    pcd.SetPointColors(colors);
-    pcd.SetPointAttr("labels", labels);
+    t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
+    aabb.SetColor(color);
 
     // Copy is created on the dst_device.
-    t::geometry::PointCloud pcd_copy = pcd.To(dst_device, /*copy=*/true);
+    t::geometry::AxisAlignedBoundingBox aabb_copy =
+            aabb.To(dst_device, /*copy=*/true);
 
-    EXPECT_EQ(pcd_copy.GetDevice(), dst_device);
-    EXPECT_EQ(pcd_copy.GetPointPositions().GetDtype(),
-              pcd.GetPointPositions().GetDtype());
+    EXPECT_EQ(aabb_copy.GetDevice(), dst_device);
+    EXPECT_EQ(aabb_copy.GetMinBound().GetDtype(),
+              aabb.GetMinBound().GetDtype());
+}
+
+TEST_P(AxisAlignedBoundingBoxPermuteDevices, Clone_Clear_IsEmpty) {
+    core::Device device = GetParam();
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, 1}, device);
+    core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);
+
+    t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
+
+    // Clone.
+    auto aabb_clone = aabb.Clone();
+    EXPECT_EQ(aabb_clone.GetDevice(), device);
+    EXPECT_TRUE(aabb_clone.GetMinBound().AllClose(min_bound));
+    EXPECT_TRUE(aabb_clone.GetMaxBound().AllClose(max_bound));
+    EXPECT_TRUE(aabb_clone.GetColor().AllClose(
+            core::Tensor::Init<float>({1, 1, 1}, device)));
+
+    // Clear.
+    aabb.Clear();
+    EXPECT_TRUE(aabb.GetMinBound().AllClose(
+            core::Tensor::Init<float>({0, 0, 0}, device)));
+    EXPECT_TRUE(aabb.GetMaxBound().AllClose(
+            core::Tensor::Init<float>({0, 0, 0}, device)));
+    EXPECT_TRUE(aabb.GetColor().AllClose(
+            core::Tensor::Init<float>({1, 1, 1}, device)));
+
+    // IsEmpty.
+    EXPECT_EQ(aabb.IsEmpty(), true);
 }
 
 }  // namespace tests

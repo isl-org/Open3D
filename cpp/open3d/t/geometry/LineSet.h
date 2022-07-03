@@ -31,10 +31,10 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/LineSet.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
-#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {

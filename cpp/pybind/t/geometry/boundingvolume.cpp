@@ -41,12 +41,27 @@ void pybind_boundingvolume(py::module& m) {
                std::shared_ptr<AxisAlignedBoundingBox>, Geometry,
                DrawableGeometry>
             aabb(m, "AxisAlignedBoundingBox",
-                 "Class that defines an axis_aligned box "
-                 "that can be computed from 3D "
-                 "geometries, The axis aligned bounding "
-                 "box uses the coordinate axes for "
-                 "bounding box generation. This means that the bounding box is "
-                 "oriented along the coordinate axes.");
+                 R"(A bounding box that is aligned along the coordinate axes
+and defined by the min_bound and max_bound."
+- (min_bound, max_bound): Lower and upper bounds of the bounding box for all
+axes.
+    - Usage
+        - AxisAlignedBoundingBox::GetMinBound()
+        - AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound)
+        - AxisAlignedBoundingBox::GetMaxBound()
+        - AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound)
+    - Value tensor must have shape {3}.
+    - Value tensor must have the same data type and device.
+    - Value tensor is float32 by default.
+    - Value tensor can only be float32.
+    - The device of the tensor determines the device of the box.
+
+- color: Color of the bounding box.
+    - Usage
+        - AxisAlignedBoundingBox::GetColor()
+        - AxisAlignedBoundingBox::SetColor(const core::Tensor &color)
+    - Value tensor must have shape {3}.
+    - Value tensor has the type of float32.)");
     aabb.def(py::init<const core::Device&>(),
              "device"_a = core::Device("CPU:0"),
              "Construct an empty axis-aligned box on the provided "
@@ -55,18 +70,22 @@ void pybind_boundingvolume(py::module& m) {
              "min_bound"_a, "max_bound"_a,
              R"(Construct an  axis-aligned box from min/max bound.
 The axis-aligned box will be created on the device of the given bound 
-tensor, which must be on the same device.)");
+tensor, which must be on the same device and have the same data type.)");
     docstring::ClassMethodDocInject(
             m, "AxisAlignedBoundingBox", "__init__",
             {{"min_bound", "Lower bounds of the bounding box for all axes."},
              {"max_bound", "Upper bounds of the bounding box for all axes."}});
 
     aabb.def("__repr__", &AxisAlignedBoundingBox::ToString);
-    aabb.def("__add__", [](const AxisAlignedBoundingBox& self,
-                           const AxisAlignedBoundingBox& other) {
-        AxisAlignedBoundingBox result = self.Clone();
-        return result += other;
-    });
+    aabb.def(
+            "__add__",
+            [](const AxisAlignedBoundingBox& self,
+               const AxisAlignedBoundingBox& other) {
+                AxisAlignedBoundingBox result = self.Clone();
+                return result += other;
+            },
+            R"(Add operation for axis-aligned bounding box.
+The device of ohter box must be the same as the device of the current box.)");
 
     // Device transfers.
     aabb.def("to", &AxisAlignedBoundingBox::To,
@@ -130,7 +149,8 @@ center respectively, then the new min_bound and max_bound are given by
     aabb.def("volume", &AxisAlignedBoundingBox::Volume,
              "Returns the volume of the bounding box.");
     aabb.def("get_box_points", &AxisAlignedBoundingBox::GetBoxPoints,
-             "Returns the eight points that define the bounding box.");
+             "Returns the eight points that define the bounding box. The "
+             "Return tensor has shape {8, 3} and data type of float32.");
     aabb.def("get_point_indices_within_bounding_box",
              &AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox,
              "Indices to points that are within the bounding box.", "points"_a);
@@ -162,11 +182,11 @@ center respectively, then the new min_bound and max_bound are given by
             m, "AxisAlignedBoundingBox",
             "get_point_indices_within_bounding_box",
             {{"points", "A list of points (N x 3 tensor)."}});
-    docstring::ClassMethodDocInject(m, "AxisAlignedBoundingBox",
-                                    "create_from_points",
-                                    {{"points",
-                                      "A list of points (N x 3 tensor, where N "
-                                      "must be larger than 3."}});
+    docstring::ClassMethodDocInject(
+            m, "AxisAlignedBoundingBox", "create_from_points",
+            {{"points",
+              "A list of points with data type of float32 or float64 (N x 3 "
+              "tensor, where N must be larger than 3)."}});
 }
 
 }  // namespace geometry

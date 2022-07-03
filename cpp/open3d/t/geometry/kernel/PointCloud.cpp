@@ -129,11 +129,9 @@ void GetPointMaskWithinAABB(const core::Tensor& points,
 
     const core::Device device = points.GetDevice();
 
-    // Make sure points, min_bound and max_bound are contiguous.
-    const core::Tensor min_bound_d =
-            min_bound.To(device, core::Float32).Contiguous();
-    const core::Tensor max_bound_d =
-            max_bound.To(device, core::Float32).Contiguous();
+    // Convert points, min_bound and max_bound into float32 and contiguous.
+    const core::Tensor min_bound_d = min_bound.Contiguous();
+    const core::Tensor max_bound_d = max_bound.Contiguous();
     const core::Tensor points_d = points.To(device, core::Float32).Contiguous();
 
     if (mask.IsCPU()) {

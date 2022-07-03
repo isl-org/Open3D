@@ -362,6 +362,11 @@ Example:
 
         o3d.visualization.draw([{'name': 'difference', 'geometry': ans}])
 )");
+
+    triangle_mesh.def("get_axis_aligned_bounding_box",
+                      &TriangleMesh::GetAxisAlignedBoundingBox,
+                      "Create an axis-aligned bounding box from vertex "
+                      "attribute 'positions'.");
 }
 
 }  // namespace geometry
