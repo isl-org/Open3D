@@ -367,7 +367,7 @@ public:
     /// Convert to a legacy Open3D LineSet.
     open3d::geometry::LineSet ToLegacy() const;
 
-    /// Create an axis-aligned bounding box from attribute "positions".
+    /// Create an axis-aligned bounding box from point attribute "positions".
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
 protected:
