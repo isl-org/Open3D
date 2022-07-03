@@ -35,7 +35,7 @@
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
+#include "open3d/utility/Random.h"
 #include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
@@ -2009,7 +2009,7 @@ TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {
     int64_t max_size = *std::max_element(sizes.begin(), sizes.end());
     std::vector<int> vals(max_size);
     std::transform(vals.begin(), vals.end(), vals.begin(), [](int x) -> int {
-        return utility::UniformRandIntGenerator(0, 3)();
+        return utility::random::UniformIntGenerator(0, 3)();
     });
 
     for (int64_t size : sizes) {

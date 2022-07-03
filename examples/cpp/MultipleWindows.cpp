@@ -27,7 +27,6 @@
 #include <atomic>
 #include <chrono>
 #include <mutex>
-#include <random>
 #include <thread>
 
 #include "open3d/Open3D.h"
@@ -132,9 +131,7 @@ private:
                 });
 
         Eigen::Vector3d magnitude = 0.005 * extent;
-        auto seed = std::random_device()();
-        std::mt19937 gen_algo(seed);
-        std::uniform_real_distribution<> random(-0.5, 0.5);
+        utility::random::UniformDoubleGenerator uniform_gen(-0.5, 0.5);
 
         while (main_vis_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -143,9 +140,9 @@ private:
             {
                 std::lock_guard<std::mutex> lock(cloud_lock_);
                 for (size_t i = 0; i < cloud_->points_.size(); ++i) {
-                    Eigen::Vector3d perturb(magnitude[0] * random(gen_algo),
-                                            magnitude[1] * random(gen_algo),
-                                            magnitude[2] * random(gen_algo));
+                    Eigen::Vector3d perturb(magnitude[0] * uniform_gen(),
+                                            magnitude[1] * uniform_gen(),
+                                            magnitude[2] * uniform_gen());
                     cloud_->points_[i] += perturb;
                 }
             }

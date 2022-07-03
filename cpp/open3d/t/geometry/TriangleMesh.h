@@ -368,6 +368,24 @@ public:
     /// Convenience function.
     bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
 
+    /// Create a box triangle mesh. One vertex of the box will be placed at
+    /// the origin and the box aligns with the positive x, y, and z axes.
+    /// \param width is x-directional length.
+    /// \param height is y-directional length.
+    /// \param depth is z-directional length.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateBox(
+            double width = 1.0,
+            double height = 1.0,
+            double depth = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
@@ -476,6 +494,9 @@ public:
 
     /// Function to simplify mesh using Quadric Error Metric Decimation by
     /// Garland and Heckbert.
+    ///
+    /// This function always uses the CPU device.
+    ///
     /// \param target_reduction The factor of triangles to delete, i.e.,
     /// setting this to 0.9 will return a mesh with about 10% of the original
     /// triangle count.
@@ -486,6 +507,46 @@ public:
     /// \return Simplified TriangleMesh.
     TriangleMesh SimplifyQuadricDecimation(double target_reduction,
                                            bool preserve_volume = true) const;
+
+    /// Computes the mesh that encompasses the union of the volumes of two
+    /// meshes.
+    /// Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the union volume.
+    TriangleMesh BooleanUnion(const TriangleMesh &mesh,
+                              double tolerance = 1e-6) const;
+
+    /// Computes the mesh that encompasses the intersection of the volumes of
+    /// two meshes. Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the intersection volume.
+    TriangleMesh BooleanIntersection(const TriangleMesh &mesh,
+                                     double tolerance = 1e-6) const;
+
+    /// Computes the mesh that encompasses the volume after subtracting the
+    /// volume of the second operand. Both meshes should be manifold.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param mesh This is the second operand for the boolean operation.
+    /// \param tolerance Threshold which determines when point distances are
+    /// considered to be 0.
+    ///
+    /// \return The mesh describing the difference volume.
+    TriangleMesh BooleanDifference(const TriangleMesh &mesh,
+                                   double tolerance = 1e-6) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

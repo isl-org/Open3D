@@ -10,6 +10,7 @@ target_sources(tests PRIVATE
     Preprocessor.cpp
     ProgressBar.cpp
     Timer.cpp
+    Random.cpp
 )
 
 if (BUILD_ISPC_MODULE)

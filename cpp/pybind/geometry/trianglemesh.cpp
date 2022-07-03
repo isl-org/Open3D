@@ -240,8 +240,7 @@ void pybind_trianglemesh(py::module &m) {
             .def("sample_points_uniformly",
                  &TriangleMesh::SamplePointsUniformly,
                  "Function to uniformly sample points from the mesh.",
-                 "number_of_points"_a = 100, "use_triangle_normal"_a = false,
-                 "seed"_a = -1)
+                 "number_of_points"_a = 100, "use_triangle_normal"_a = false)
             .def("sample_points_poisson_disk",
                  &TriangleMesh::SamplePointsPoissonDisk,
                  "Function to sample points from the mesh, where each point "
@@ -251,7 +250,7 @@ void pybind_trianglemesh(py::module &m) {
                  "noise). Method is based on Yuksel, \"Sample Elimination for "
                  "Generating Poisson Disk Sample Sets\", EUROGRAPHICS, 2015.",
                  "number_of_points"_a, "init_factor"_a = 5, "pcl"_a = nullptr,
-                 "use_triangle_normal"_a = false, "seed"_a = -1)
+                 "use_triangle_normal"_a = false)
             .def("subdivide_midpoint", &TriangleMesh::SubdivideMidpoint,
                  "Function subdivide mesh using midpoint algorithm.",
                  "number_of_iterations"_a = 1)
@@ -268,8 +267,7 @@ void pybind_trianglemesh(py::module &m) {
             .def("simplify_quadric_decimation",
                  &TriangleMesh::SimplifyQuadricDecimation,
                  "Function to simplify mesh using Quadric Error Metric "
-                 "Decimation by "
-                 "Garland and Heckbert",
+                 "Decimation by Garland and Heckbert",
                  "target_number_of_triangles"_a,
                  "maximum_error"_a = std::numeric_limits<double>::infinity(),
                  "boundary_weight"_a = 1.0)
@@ -279,7 +277,7 @@ void pybind_trianglemesh(py::module &m) {
                  &TriangleMesh::ClusterConnectedTriangles,
                  "Function that clusters connected triangles, i.e., triangles "
                  "that are connected via edges are assigned the same cluster "
-                 "index.  This function returns an array that contains the "
+                 "index. This function returns an array that contains the "
                  "cluster index per triangle, a second array contains the "
                  "number of triangles per cluster, and a third vector contains "
                  "the surface area per cluster.")
@@ -569,10 +567,7 @@ void pybind_trianglemesh(py::module &m) {
               "If True assigns the triangle normals instead of the "
               "interpolated vertex normals to the returned points. The "
               "triangle normals will be computed and added to the mesh if "
-              "necessary."},
-             {"seed",
-              "Seed value used in the random generator, set to -1 to use a "
-              "random seed value with each function call."}});
+              "necessary."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "sample_points_poisson_disk",
             {{"number_of_points", "Number of points that should be sampled."},
@@ -586,10 +581,7 @@ void pybind_trianglemesh(py::module &m) {
               "If True assigns the triangle normals instead of the "
               "interpolated vertex normals to the returned points. The "
               "triangle normals will be computed and added to the mesh if "
-              "necessary."},
-             {"seed",
-              "Seed value used in the random generator, set to -1 to use a "
-              "random seed value with each function call."}});
+              "necessary."}});
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "subdivide_midpoint",
             {{"number_of_iterations",

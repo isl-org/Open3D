@@ -24,56 +24,48 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/utility/Random.h"
 
-#include <unordered_set>
-
-#include "open3d/core/Tensor.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/Logging.h"
+#include "tests/Tests.h"
 
 namespace open3d {
-namespace core {
-namespace kernel {
+namespace tests {
 
-enum class BinaryEWOpCode {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Maximum,
-    Minimum,
-    LogicalAnd,
-    LogicalOr,
-    LogicalXor,
-    Gt,
-    Lt,
-    Ge,
-    Le,
-    Eq,
-    Ne,
-};
+TEST(Random, UniformRandIntGeneratorWithFixedSeed) {
+    utility::random::Seed(42);
+    std::array<int, 1024> values;
+    utility::random::UniformIntGenerator rand_generator(0, 9);
+    for (auto it = values.begin(); it != values.end(); ++it) {
+        *it = rand_generator();
+    }
 
-extern const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class>
-        s_boolean_binary_ew_op_codes;
+    for (int i = 0; i < 10; i++) {
+        utility::random::Seed(42);
+        std::array<int, 1024> new_values;
+        utility::random::UniformIntGenerator new_rand_generator(0, 9);
+        for (auto it = new_values.begin(); it != new_values.end(); ++it) {
+            *it = new_rand_generator();
+        }
+        EXPECT_TRUE(values == new_values);
+    }
+}
 
-void BinaryEW(const Tensor& lhs,
-              const Tensor& rhs,
-              Tensor& dst,
-              BinaryEWOpCode op_code);
+TEST(Random, UniformRandIntGeneratorWithRandomSeed) {
+    std::array<int, 1024> values;
+    utility::random::UniformIntGenerator rand_generator(0, 9);
+    for (auto it = values.begin(); it != values.end(); ++it) {
+        *it = rand_generator();
+    }
 
-void BinaryEWCPU(const Tensor& lhs,
-                 const Tensor& rhs,
-                 Tensor& dst,
-                 BinaryEWOpCode op_code);
+    for (int i = 0; i < 10; i++) {
+        std::array<int, 1024> new_values;
+        utility::random::UniformIntGenerator new_rand_generator(0, 9);
+        for (auto it = new_values.begin(); it != new_values.end(); ++it) {
+            *it = new_rand_generator();
+        }
+        EXPECT_FALSE(values == new_values);
+    }
+}
 
-#ifdef BUILD_CUDA_MODULE
-void BinaryEWCUDA(const Tensor& lhs,
-                  const Tensor& rhs,
-                  Tensor& dst,
-                  BinaryEWOpCode op_code);
-#endif
-
-}  // namespace kernel
-}  // namespace core
+}  // namespace tests
 }  // namespace open3d
