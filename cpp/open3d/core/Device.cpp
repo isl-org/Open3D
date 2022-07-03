@@ -123,10 +123,6 @@ std::string Device::ToString() const {
     return str;
 }
 
-Device::DeviceType Device::GetType() const { return device_type_; }
-
-int Device::GetID() const { return device_id_; }
-
 bool Device::IsAvailable() const {
     for (const Device& device : GetAvailableDevices()) {
         if (device == *this) {

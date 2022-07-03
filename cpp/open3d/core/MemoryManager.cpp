@@ -86,7 +86,8 @@ void MemoryManager::Memcpy(void* dst_ptr,
     }
     // Not supporting other combinations at the moment, e.g. SYCL->CUDA.
     else {
-        utility::LogError("Unsupported device type.");
+        utility::LogError("Unsupported device type from {} to {}.",
+                          src_device.ToString(), dst_device.ToString());
     }
 
     device_mm->Memcpy(dst_ptr, dst_device, src_ptr, src_device, num_bytes);

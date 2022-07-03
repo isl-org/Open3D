@@ -277,6 +277,9 @@ endif()
 if(BUILD_SYCL_MODULE AND BUILD_PYTORCH_OPS)
     message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires BUILD_PYTORCH_OPS=OFF")
 endif()
+if(BUILD_SYCL_MODULE AND BUILD_CUDA_MODULE)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE and BUILD_SYCL_MODULE cannot be on at the same time for now.")
+endif()
 
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.

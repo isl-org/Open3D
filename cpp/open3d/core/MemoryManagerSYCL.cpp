@@ -64,8 +64,10 @@ void MemoryManagerSYCL::Memcpy(void* dst_ptr,
     Device device_with_queue;
 
     if (src_device.IsCPU() && dst_device.IsCPU()) {
-        utility::LogError("Wrong device {}->{}.", src_device.ToString(),
-                          dst_device.ToString());
+        utility::LogError(
+                "Internal error: trying to transfer {}->{}, should not reach "
+                "this function.",
+                src_device.ToString(), dst_device.ToString());
     } else if (src_device.IsCPU() && dst_device.IsSYCL()) {
         device_with_queue = dst_device;
     } else if (src_device.IsSYCL() && dst_device.IsCPU()) {

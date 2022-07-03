@@ -37,7 +37,7 @@ referring to "DPC++".
    ```
 5. Config and build
    ```bash
-   cmake -DBUILD_SYCL_MODULE=ON -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx ..
+   cmake -DBUILD_SYCL_MODULE=ON -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DBUILD_UNIT_TESTS=ON ..
    make -j$(nproc)
    ```
 6. Run demos

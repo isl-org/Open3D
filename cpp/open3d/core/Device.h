@@ -73,14 +73,11 @@ public:
     /// Returns string representation of device, e.g. "CPU:0", "CUDA:0".
     std::string ToString() const;
 
-    /// Get device description.
-    std::string GetDescription() const;
-
     /// Returns type of the device, e.g. DeviceType::CPU, DeviceType::CUDA.
-    DeviceType GetType() const;
+    inline DeviceType GetType() const { return device_type_; }
 
     /// Returns the device index (within the same device type).
-    int GetID() const;
+    inline int GetID() const { return device_id_; }
 
     /// Returns true if the device is available.
     bool IsAvailable() const;
