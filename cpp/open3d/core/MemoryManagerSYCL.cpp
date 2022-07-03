@@ -37,22 +37,24 @@
 namespace open3d {
 namespace core {
 
+namespace sy = cl::sycl;
+
 void* MemoryManagerSYCL::Malloc(size_t byte_size, const Device& device) {
-    const sycl::queue& queue =
+    const sy::queue& queue =
             sycl_utils::SYCLContext::GetInstance().GetDefaultQueue(device);
 
 #ifdef ENABLE_SYCL_UNIFIED_SHARED_MEMORY
-    return static_cast<void*>(sycl::malloc_shared(byte_size, queue));
+    return static_cast<void*>(sy::malloc_shared(byte_size, queue));
 #else
-    return static_cast<void*>(sycl::malloc_device(byte_size, queue));
+    return static_cast<void*>(sy::malloc_device(byte_size, queue));
 #endif
 }
 
 void MemoryManagerSYCL::Free(void* ptr, const Device& device) {
     if (ptr) {
-        const sycl::queue& queue =
+        const sy::queue& queue =
                 sycl_utils::SYCLContext::GetInstance().GetDefaultQueue(device);
-        sycl::free(ptr, queue);
+        sy::free(ptr, queue);
     }
 }
 
@@ -79,7 +81,7 @@ void MemoryManagerSYCL::Memcpy(void* dst_ptr,
                           dst_device.ToString());
     }
 
-    sycl::queue queue = sycl_utils::SYCLContext::GetInstance().GetDefaultQueue(
+    sy::queue queue = sycl_utils::SYCLContext::GetInstance().GetDefaultQueue(
             device_with_queue);
     queue.memcpy(dst_ptr, src_ptr, num_bytes).wait_and_throw();
 }

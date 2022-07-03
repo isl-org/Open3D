@@ -42,7 +42,7 @@ namespace open3d {
 namespace core {
 namespace sycl_utils {
 
-using namespace sycl;
+namespace sy = cl::sycl;
 
 /// Singleton SYCL context manager. It maintains:
 /// - A default queue for each SYCL device
@@ -64,7 +64,7 @@ public:
     std::vector<Device> GetAvailableSYCLDevices();
 
     /// Get the default SYCL queue given an Open3D device.
-    sycl::queue GetDefaultQueue(const Device& device);
+    sy::queue GetDefaultQueue(const Device& device);
 
 private:
     SYCLContext();
@@ -73,10 +73,10 @@ private:
     std::vector<Device> devices_;
 
     /// Maps core::Device to the corresponding default SYCL queue.
-    std::unordered_map<Device, sycl::queue> device_to_default_queue_;
+    std::unordered_map<Device, sy::queue> device_to_default_queue_;
 
-    /// Maps core::Device to sycl::device. Internal use only for now.
-    std::unordered_map<Device, sycl::device> device_to_sycl_device_;
+    /// Maps core::Device to sy::device. Internal use only for now.
+    std::unordered_map<Device, sy::device> device_to_sycl_device_;
 };
 
 }  // namespace sycl_utils

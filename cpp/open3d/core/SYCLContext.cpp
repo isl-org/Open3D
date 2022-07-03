@@ -57,7 +57,7 @@ bool SYCLContext::IsDeviceAvailable(const Device &device) {
 }
 std::vector<Device> SYCLContext::GetAvailableSYCLDevices() { return devices_; }
 
-sycl::queue SYCLContext::GetDefaultQueue(const Device &device) {
+sy::queue SYCLContext::GetDefaultQueue(const Device &device) {
     return device_to_default_queue_.at(device);
 }
 
@@ -65,12 +65,12 @@ SYCLContext::SYCLContext() {
     // SYCL GPU.
     // TODO: Currently we only support one GPU device.
     try {
-        const sycl::device &sycl_device = sycl::device(sycl::gpu_selector());
+        const sy::device &sycl_device = sy::device(sy::gpu_selector());
         const Device open3d_device = Device("SYCL:0");
         devices_.push_back(open3d_device);
         device_to_sycl_device_[open3d_device] = sycl_device;
-        device_to_default_queue_[open3d_device] = sycl::queue(sycl_device);
-    } catch (const sycl::exception &e) {
+        device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
+    } catch (const sy::exception &e) {
     }
 
     if (devices_.size() == 0) {
@@ -78,16 +78,15 @@ SYCLContext::SYCLContext() {
         // This could happen if the Intel GPGPU driver is not installed or if
         // your CPU does not have integrated GPU.
         try {
-            const sycl::device &sycl_device =
-                    sycl::device(sycl::host_selector());
+            const sy::device &sycl_device = sy::device(sy::host_selector());
             const Device open3d_device = Device("SYCL:0");
             utility::LogWarning(
                     "SYCL GPU device is not available, falling back to SYCL "
                     "host device.");
             devices_.push_back(open3d_device);
             device_to_sycl_device_[open3d_device] = sycl_device;
-            device_to_default_queue_[open3d_device] = sycl::queue(sycl_device);
-        } catch (const sycl::exception &e) {
+            device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
+        } catch (const sy::exception &e) {
         }
     }
 
