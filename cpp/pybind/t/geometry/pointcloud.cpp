@@ -198,6 +198,14 @@ The attributes of the point cloud have different levels::
             },
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);
+    pointcloud.def("uniform_down_sample", &PointCloud::UniformDownSample,
+                   "Downsamples a point cloud by selecting every kth index "
+                   "point and its attributes.",
+                   "every_k_points"_a);
+    pointcloud.def("random_down_sample", &PointCloud::RandomDownSample,
+                   "Downsample a pointcloud by selecting random index point "
+                   "and its attributes.",
+                   "sampling_ratio"_a);
     pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
                    "nb_points"_a, "search_radius"_a,
                    "Remove points that have less than nb_points neighbors in a "
@@ -270,13 +278,6 @@ The attributes of the point cloud have different levels::
             "Spatial Databases with Noise', 1996. Returns a list of point "
             "labels, -1 indicates noise according to the algorithm.",
             "eps"_a, "min_points"_a, "print_progress"_a = false);
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "cluster_dbscan",
-            {{"eps",
-              "Density parameter that is used to find neighbouring points."},
-             {"min_points", "Minimum number of points to form a cluster."},
-             {"print_progress",
-              "If true the progress is visualized in the console."}});
     pointcloud.def(
             "compute_convex_hull", &PointCloud::ComputeConvexHull,
             "joggle_inputs"_a = false,
@@ -314,8 +315,46 @@ Example:
                                     map_shared_argument_docstrings);
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image",
                                     map_shared_argument_docstrings);
-    docstring::ClassMethodDocInject(m, "PointCloud", "select_by_mask");
-    docstring::ClassMethodDocInject(m, "PointCloud", "remove_radius_outliers");
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "select_by_mask",
+            {{"boolean_mask",
+              "Boolean indexing tensor of shape {n,} containing true value for "
+              "the indices that is to be selected.."},
+             {"invert", "Set to `True` to invert the selection of indices."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "select_by_index",
+            {{"indices",
+              "Int64 indexing tensor of shape {n,} containing index value that "
+              "is to be selected."},
+             {"invert",
+              "Set to `True` to invert the selection of indices, and also "
+              "ignore the duplicated indices."},
+             {"remove_duplicates",
+              "Set to `True` to remove the duplicated indices."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "voxel_down_sample",
+            {{"voxel_size", "Voxel size. A positive number."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "uniform_down_sample",
+            {{"every_k_points",
+              "Sample rate, the selected point indices are [0, k, 2k, …]."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "random_down_sample",
+            {{"sampling_ratio",
+              "Sampling ratio, the ratio of sample to total number of points "
+              "in the pointcloud."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "remove_radius_outliers",
+            {{"nb_points",
+              "Number of neighbor points required within the radius."},
+             {"search_radius", "Radius of the sphere."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "cluster_dbscan",
+            {{"eps",
+              "Density parameter that is used to find neighbouring points."},
+             {"min_points", "Minimum number of points to form a cluster."},
+             {"print_progress",
+              "If true the progress is visualized in the console."}});
 }
 
 }  // namespace geometry

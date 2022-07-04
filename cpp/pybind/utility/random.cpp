@@ -24,56 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/utility/Random.h"
 
-#include <unordered_set>
-
-#include "open3d/core/Tensor.h"
-#include "open3d/utility/Helper.h"
-#include "open3d/utility/Logging.h"
+#include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace core {
-namespace kernel {
+namespace utility {
 
-enum class BinaryEWOpCode {
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Maximum,
-    Minimum,
-    LogicalAnd,
-    LogicalOr,
-    LogicalXor,
-    Gt,
-    Lt,
-    Ge,
-    Le,
-    Eq,
-    Ne,
-};
+void pybind_random(py::module &m) {
+    py::module m_submodule = m.def_submodule("random");
 
-extern const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class>
-        s_boolean_binary_ew_op_codes;
+    m_submodule.def("seed", &random::Seed, "seed"_a,
+                    "Set Open3D global random seed.");
 
-void BinaryEW(const Tensor& lhs,
-              const Tensor& rhs,
-              Tensor& dst,
-              BinaryEWOpCode op_code);
+    docstring::FunctionDocInject(m_submodule, "seed",
+                                 {{"seed", "Random seed value."}});
+}
 
-void BinaryEWCPU(const Tensor& lhs,
-                 const Tensor& rhs,
-                 Tensor& dst,
-                 BinaryEWOpCode op_code);
-
-#ifdef BUILD_CUDA_MODULE
-void BinaryEWCUDA(const Tensor& lhs,
-                  const Tensor& rhs,
-                  Tensor& dst,
-                  BinaryEWOpCode op_code);
-#endif
-
-}  // namespace kernel
-}  // namespace core
+}  // namespace utility
 }  // namespace open3d
