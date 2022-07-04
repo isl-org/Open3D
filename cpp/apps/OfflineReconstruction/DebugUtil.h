@@ -26,7 +26,7 @@
 
 #pragma once
 
-#include "open3D/Open3D.h"
+#include "open3d/Open3D.h"
 
 namespace open3d {
 namespace apps {
