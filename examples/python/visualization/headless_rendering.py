@@ -29,8 +29,9 @@ import open3d as o3d
 import numpy as np
 import matplotlib.pyplot as plt
 
-pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-test_data_path = os.path.join(os.path.dirname(pyexample_path), 'test_data')
+results_path = os.path.join(os.path.expanduser('~'), "open3d_data",
+                            'example_results',
+                            'visualization_headless_rendering')
 
 
 def custom_draw_geometry_with_camera_trajectory(pcd, camera_trajectory_path,
@@ -40,12 +41,15 @@ def custom_draw_geometry_with_camera_trajectory(pcd, camera_trajectory_path,
         o3d.io.read_pinhole_camera_trajectory(camera_trajectory_path)
     custom_draw_geometry_with_camera_trajectory.vis = o3d.visualization.Visualizer(
     )
-    image_path = os.path.join(test_data_path, 'image')
+    image_path = os.path.join(results_path, 'image')
     if not os.path.exists(image_path):
         os.makedirs(image_path)
-    depth_path = os.path.join(test_data_path, 'depth')
+    depth_path = os.path.join(results_path, 'depth')
     if not os.path.exists(depth_path):
         os.makedirs(depth_path)
+
+    print("Saving color images in " + image_path)
+    print("Saving depth images in " + depth_path)
 
     def move_forward(vis):
         # This function is called within the o3d.visualization.Visualizer::run() loop
@@ -59,24 +63,26 @@ def custom_draw_geometry_with_camera_trajectory(pcd, camera_trajectory_path,
         glb = custom_draw_geometry_with_camera_trajectory
         if glb.index >= 0:
             print("Capture image {:05d}".format(glb.index))
-            depth = vis.capture_depth_float_buffer(False)
-            image = vis.capture_screen_float_buffer(False)
+            depth = vis.capture_depth_float_buffer()
+            image = vis.capture_screen_float_buffer()
             plt.imsave(os.path.join(depth_path, "{:05d}.png".format(glb.index)),
                        np.asarray(depth),
                        dpi=1)
             plt.imsave(os.path.join(image_path, "{:05d}.png".format(glb.index)),
                        np.asarray(image),
                        dpi=1)
-            #vis.capture_depth_image("depth/{:05d}.png".format(glb.index), False)
-            #vis.capture_screen_image("image/{:05d}.png".format(glb.index), False)
+            # vis.capture_depth_image(
+            #     os.path.join(depth_path, "{:05d}.png".format(glb.index)), False)
+            # vis.capture_screen_image(
+            #     os.path.join(image_path, "{:05d}.png".format(glb.index)), False)
         glb.index = glb.index + 1
         if glb.index < len(glb.trajectory.parameters):
             ctr.convert_from_pinhole_camera_parameters(
                 glb.trajectory.parameters[glb.index])
         else:
-            custom_draw_geometry_with_camera_trajectory.vis.\
-                register_animation_callback(None)
-            vis.destroy_window()
+            custom_draw_geometry_with_camera_trajectory.vis.destroy_window()
+
+        # Return false as we don't need to call UpdateGeometry()
         return False
 
     vis = custom_draw_geometry_with_camera_trajectory.vis
