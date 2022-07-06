@@ -35,12 +35,12 @@
 namespace open3d {
 namespace tests {
 
-class MemoryManagerPermuteDevices : public PermuteDevices {};
+class MemoryManagerPermuteDevices : public PermuteDevicesWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(MemoryManager,
                          MemoryManagerPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class MemoryManagerPermuteDevicePairs : public PermuteDevicePairs {};
+class MemoryManagerPermuteDevicePairs : public PermuteDevicePairsWithSYCL {};
 INSTANTIATE_TEST_SUITE_P(
         MemoryManager,
         MemoryManagerPermuteDevicePairs,

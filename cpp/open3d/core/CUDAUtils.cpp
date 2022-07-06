@@ -43,7 +43,6 @@ int DeviceCount() {
         int num_devices;
         OPEN3D_CUDA_CHECK(cudaGetDeviceCount(&num_devices));
         return num_devices;
-
     }
     // This function is also used to detect CUDA support in our Python code.
     // Thus, catch any errors if no GPU is available.
@@ -59,7 +58,7 @@ bool IsAvailable() { return cuda::DeviceCount() > 0; }
 
 void ReleaseCache() {
 #ifdef BUILD_CUDA_MODULE
-#ifdef BUILD_CACHED_CUDA_MANAGER
+#ifdef ENABLE_CACHED_CUDA_MANAGER
     // Release cache from all devices. Since only memory from MemoryManagerCUDA
     // is cached at the moment, this works as expected. In the future, the logic
     // could become more fine-grained.
