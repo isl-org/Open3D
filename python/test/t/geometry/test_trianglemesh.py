@@ -47,7 +47,7 @@ def test_clip_plane():
 @pytest.mark.parametrize("device", list_devices())
 def test_create_box(device):
     # Test with default parameters.
-    box_default = o3d.t.geometry.TriangleMesh.create_box()
+    box_default = o3d.t.geometry.TriangleMesh.create_box(device=device)
 
     vertex_positions_default = o3c.Tensor(
         [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 1.0],
@@ -91,3 +91,25 @@ def test_simplify_quadric_decimation():
 
     assert simplified.vertex['positions'].shape == (8, 3)
     assert simplified.triangle['indices'].shape == (12, 3)
+
+
+def test_boolean_operations():
+    box = o3d.geometry.TriangleMesh.create_box()
+    box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+    sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
+    sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+    # check input sphere
+    assert sphere.vertex['positions'].shape == (762, 3)
+    assert sphere.triangle['indices'].shape == (1520, 3)
+
+    ans = box.boolean_union(sphere)
+    assert ans.vertex['positions'].shape == (730, 3)
+    assert ans.triangle['indices'].shape == (1384, 3)
+
+    ans = box.boolean_intersection(sphere)
+    assert ans.vertex['positions'].shape == (154, 3)
+    assert ans.triangle['indices'].shape == (232, 3)
+
+    ans = box.boolean_difference(sphere)
+    assert ans.vertex['positions'].shape == (160, 3)
+    assert ans.triangle['indices'].shape == (244, 3)

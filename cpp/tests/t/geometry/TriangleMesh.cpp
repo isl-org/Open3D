@@ -470,8 +470,7 @@ TEST_P(TriangleMeshPermuteDevices, CreateBox) {
                                        {0.0, 1.0, 0.0},
                                        {1.0, 1.0, 0.0},
                                        {0.0, 1.0, 1.0},
-                                       {1.0, 1.0, 1.0}},
-                                      device);
+                                       {1.0, 1.0, 1.0}});
 
     core::Tensor triangle_indices_default =
             core::Tensor::Init<int64_t>({{4, 7, 5},
@@ -485,8 +484,7 @@ TEST_P(TriangleMeshPermuteDevices, CreateBox) {
                                          {2, 3, 7},
                                          {2, 7, 6},
                                          {0, 4, 1},
-                                         {1, 4, 5}},
-                                        device);
+                                         {1, 4, 5}});
 
     EXPECT_TRUE(box_default.GetVertexPositions().AllClose(
             vertex_positions_default));

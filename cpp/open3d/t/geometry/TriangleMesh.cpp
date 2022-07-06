@@ -26,6 +26,7 @@
 
 #include "open3d/t/geometry/TriangleMesh.h"
 
+#include <vtkBooleanOperationPolyDataFilter.h>
 #include <vtkCleanPolyData.h>
 #include <vtkClipPolyData.h>
 #include <vtkPlane.h>
@@ -332,6 +333,52 @@ TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
     auto decimated_polydata = decimate->GetOutput();
 
     return CreateTriangleMeshFromVtkPolyData(decimated_polydata);
+}
+
+namespace {
+TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
+                              const TriangleMesh &mesh_B,
+                              double tolerance,
+                              int op) {
+    using namespace vtkutils;
+    // clean meshes before passing them to the boolean operation
+    auto polydata_A = CreateVtkPolyDataFromGeometry(mesh_A);
+    vtkNew<vtkCleanPolyData> cleaner_A;
+    cleaner_A->SetInputData(polydata_A);
+
+    auto polydata_B = CreateVtkPolyDataFromGeometry(mesh_B);
+    vtkNew<vtkCleanPolyData> cleaner_B;
+    cleaner_B->SetInputData(polydata_B);
+
+    vtkNew<vtkBooleanOperationPolyDataFilter> boolean_filter;
+    boolean_filter->SetOperation(op);
+    boolean_filter->SetTolerance(tolerance);
+    boolean_filter->SetInputConnection(0, cleaner_A->GetOutputPort());
+    boolean_filter->SetInputConnection(1, cleaner_B->GetOutputPort());
+    boolean_filter->Update();
+    auto out_polydata = boolean_filter->GetOutput();
+
+    return CreateTriangleMeshFromVtkPolyData(out_polydata);
+}
+}  // namespace
+
+TriangleMesh TriangleMesh::BooleanUnion(const TriangleMesh &mesh,
+                                        double tolerance) const {
+    return BooleanOperation(*this, mesh, tolerance,
+                            vtkBooleanOperationPolyDataFilter::VTK_UNION);
+}
+
+TriangleMesh TriangleMesh::BooleanIntersection(const TriangleMesh &mesh,
+                                               double tolerance) const {
+    return BooleanOperation(
+            *this, mesh, tolerance,
+            vtkBooleanOperationPolyDataFilter::VTK_INTERSECTION);
+}
+
+TriangleMesh TriangleMesh::BooleanDifference(const TriangleMesh &mesh,
+                                             double tolerance) const {
+    return BooleanOperation(*this, mesh, tolerance,
+                            vtkBooleanOperationPolyDataFilter::VTK_DIFFERENCE);
 }
 
 }  // namespace geometry
