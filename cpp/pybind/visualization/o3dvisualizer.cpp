@@ -259,11 +259,18 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("remove_geometry", &O3DVisualizer::RemoveGeometry,
                  "remove_geometry(name): removes the geometry with the "
                  "name.")
+            .def("update_geometry",
+                 py::overload_cast<const std::string&,
+                                   std::shared_ptr<t::geometry::Geometry>,
+                                   uint32_t>(
+                         &O3DVisualizer::UpdateGeometry),
+                 "name"_a, "geometry"_a, "update_flags"_a,
+                 "Updates a Tensor-based update_geometry: geometry(name, geometry, "
+                 "update_flags=1). 'name' must be unique.")
             .def("update_geometry", &O3DVisualizer::UpdateGeometry,
-                 "update_geometry(name, tpoint_cloud, update_flags): updates "
+                 "update_geometry(name, tgeometry, update_flags): updates "
                  "the attributes of the named geometry specified by "
-                 "update_flags with tpoint_cloud. Note: Currently this "
-                 "function only works with T Geometry Point Clouds.")
+                 "update_flags with tpoint_cloud or ttriangle_mesh.")
             .def("show_geometry", &O3DVisualizer::ShowGeometry,
                  "Checks or unchecks the named geometry in the list. Note that "
                  "even if show_geometry(name, True) is called, the object may "
