@@ -262,10 +262,10 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("update_geometry",
                  py::overload_cast<const std::string&,
                                    std::shared_ptr<t::geometry::Geometry>,
-                                   uint32_t>(
-                         &O3DVisualizer::UpdateGeometry),
+                                   uint32_t>(&O3DVisualizer::UpdateGeometry),
                  "name"_a, "geometry"_a, "update_flags"_a,
-                 "Updates a Tensor-based update_geometry: geometry(name, geometry, "
+                 "Updates a Tensor-based update_geometry: geometry(name, "
+                 "geometry, "
                  "update_flags=1). 'name' must be unique.")
             .def("update_geometry", &O3DVisualizer::UpdateGeometry,
                  "update_geometry(name, tgeometry, update_flags): updates "

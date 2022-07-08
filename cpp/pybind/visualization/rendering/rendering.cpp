@@ -533,8 +533,8 @@ void pybind_rendering_classes(py::module &m) {
                  "Returns True if a geometry with the provided name exists in "
                  "the scene.")
             .def("update_geometry",
-                 (void (Scene::*)(
-                         const std::string &, const t::geometry::Geometry &, uint32_t)) &
+                 (void (Scene::*)(const std::string &,
+                                  const t::geometry::Geometry &, uint32_t)) &
                          Scene::UpdateGeometry,
                  "name"_a, "geometry"_a, "update_flags"_a = 1,
                  "Updates the flagged arrays from the tgeometry.PointCloud "

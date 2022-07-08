@@ -564,18 +564,30 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         auto vbuf_ptr = resource_mgr_.GetVertexBuffer(g->vb).lock();
         auto vbuf = vbuf_ptr.get();
 
-        bool is_cloud    = (int)geometry.GetGeometryType() == (int)geometry::Geometry::GeometryType::PointCloud;
-        auto point_cloud = *static_cast<const t::geometry::PointCloud  *>(&geometry);
-        auto tri_mesh    = *static_cast<const t::geometry::TriangleMesh*>(&geometry);
+        bool is_cloud = (int)geometry.GetGeometryType() ==
+                        (int)geometry::Geometry::GeometryType::PointCloud;
+        auto point_cloud =
+                *static_cast<const t::geometry::PointCloud*>(&geometry);
+        auto tri_mesh =
+                *static_cast<const t::geometry::TriangleMesh*>(&geometry);
 
-        bool hasPointColors  = (is_cloud ? point_cloud.HasPointColors () : tri_mesh.HasVertexColors ());
-        bool hasPointNormals = (is_cloud ? point_cloud.HasPointNormals() : tri_mesh.HasVertexNormals());
+        bool hasPointColors = (is_cloud ? point_cloud.HasPointColors()
+                                        : tri_mesh.HasVertexColors());
+        bool hasPointNormals = (is_cloud ? point_cloud.HasPointNormals()
+                                         : tri_mesh.HasVertexNormals());
 
         open3d::core::Tensor points, colors, normals;
-                               points  = is_cloud ? point_cloud.GetPointPositions() : tri_mesh.GetVertexPositions();
-        if (hasPointColors ) { colors  = is_cloud ? point_cloud.GetPointColors   () : tri_mesh.GetVertexColors   (); }
-        if (hasPointNormals) { normals = is_cloud ? point_cloud.GetPointNormals  () : tri_mesh.GetVertexNormals  (); }
-        
+        points = is_cloud ? point_cloud.GetPointPositions()
+                          : tri_mesh.GetVertexPositions();
+        if (hasPointColors) {
+            colors = is_cloud ? point_cloud.GetPointColors()
+                              : tri_mesh.GetVertexColors();
+        }
+        if (hasPointNormals) {
+            normals = is_cloud ? point_cloud.GetPointNormals()
+                               : tri_mesh.GetVertexNormals();
+        }
+
         const size_t n_vertices = points.GetLength();
 
         // NOTE: number of points in the updated point cloud must be the
@@ -604,9 +616,12 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
                 cpu_trimesh = tri_mesh.To(core::Device("CPU:0"));
             }
 
-            cpu_points  = is_cloud ? cpu_pcloud.GetPointPositions() : cpu_trimesh.GetVertexPositions();
-            cpu_colors  = is_cloud ? cpu_pcloud.GetPointColors()    : cpu_trimesh.GetVertexColors();
-            cpu_normals = is_cloud ? cpu_pcloud.GetPointNormals()   : cpu_trimesh.GetVertexNormals();
+            cpu_points = is_cloud ? cpu_pcloud.GetPointPositions()
+                                  : cpu_trimesh.GetVertexPositions();
+            cpu_colors = is_cloud ? cpu_pcloud.GetPointColors()
+                                  : cpu_trimesh.GetVertexColors();
+            cpu_normals = is_cloud ? cpu_pcloud.GetPointNormals()
+                                   : cpu_trimesh.GetVertexNormals();
         }
 
         // Update the each of the attribute requested
@@ -615,8 +630,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             if (pcloud_is_gpu) {
                 auto vertex_data =
                         static_cast<float*>(malloc(vertex_array_size));
-                memcpy(vertex_data, cpu_points.GetDataPtr(),
-                       vertex_array_size);
+                memcpy(vertex_data, cpu_points.GetDataPtr(), vertex_array_size);
                 filament::VertexBuffer::BufferDescriptor pts_descriptor(
                         vertex_data, vertex_array_size, DeallocateBuffer);
                 vbuf->setBufferAt(engine_, 0, std::move(pts_descriptor));
@@ -631,15 +645,13 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             const size_t color_array_size = n_vertices * 3 * sizeof(float);
             if (pcloud_is_gpu) {
                 auto color_data = static_cast<float*>(malloc(color_array_size));
-                memcpy(color_data, cpu_colors.GetDataPtr(),
-                       color_array_size);
+                memcpy(color_data, cpu_colors.GetDataPtr(), color_array_size);
                 filament::VertexBuffer::BufferDescriptor color_descriptor(
                         color_data, color_array_size, DeallocateBuffer);
                 vbuf->setBufferAt(engine_, 1, std::move(color_descriptor));
             } else {
                 filament::VertexBuffer::BufferDescriptor color_descriptor(
-                        colors.GetDataPtr(),
-                        color_array_size);
+                        colors.GetDataPtr(), color_array_size);
                 vbuf->setBufferAt(engine_, 1, std::move(color_descriptor));
             }
         }
@@ -669,23 +681,29 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
             delete orientation;
         }
 
-        bool has_uvs     = (is_cloud ? point_cloud.HasPointAttr("uv")                     : tri_mesh.HasVertexAttr("uv"));
-        bool has_scalars = (is_cloud ? point_cloud.HasPointAttr("__visualization_scalar") : tri_mesh.HasVertexAttr("__visualization_scalar"));
+        bool has_uvs = (is_cloud ? point_cloud.HasPointAttr("uv")
+                                 : tri_mesh.HasVertexAttr("uv"));
+        bool has_scalars =
+                (is_cloud ? point_cloud.HasPointAttr("__visualization_scalar")
+                          : tri_mesh.HasVertexAttr("__visualization_scalar"));
 
         if (update_flags & kUpdateUv0Flag) {
             const size_t uv_array_size = n_vertices * 2 * sizeof(float);
             if (has_uvs) {
-                auto& uvs = (is_cloud ? point_cloud.GetPointAttr("uv") : tri_mesh.GetVertexAttr("uv"));
+                auto& uvs = (is_cloud ? point_cloud.GetPointAttr("uv")
+                                      : tri_mesh.GetVertexAttr("uv"));
                 filament::VertexBuffer::BufferDescriptor uv_descriptor(
-                        uvs.GetDataPtr(),
-                        uv_array_size);
+                        uvs.GetDataPtr(), uv_array_size);
                 vbuf->setBufferAt(engine_, 3, std::move(uv_descriptor));
             } else if (has_scalars) {
                 // Update in PointCloudBuffers.cpp, too:
                 //     TPointCloudBuffersBuilder::ConstructBuffers
                 float* uv_array = static_cast<float*>(malloc(uv_array_size));
                 memset(uv_array, 0, uv_array_size);
-                auto& scalars = (is_cloud ? point_cloud.GetPointAttr("__visualization_scalar") : tri_mesh.GetVertexAttr("__visualization_scalar"));
+                auto& scalars = (is_cloud ? point_cloud.GetPointAttr(
+                                                    "__visualization_scalar")
+                                          : tri_mesh.GetVertexAttr(
+                                                    "__visualization_scalar"));
                 auto vis_scalars = scalars.Contiguous();
                 const float* src =
                         static_cast<const float*>(vis_scalars.GetDataPtr());
@@ -703,13 +721,15 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         if (geometry_update_needed) {
             auto& renderable_mgr = engine_.getRenderableManager();
             auto inst = renderable_mgr.getInstance(g->filament_entity);
-            if(is_cloud){
+            if (is_cloud) {
                 renderable_mgr.setGeometryAt(
-                        inst, 0, filament::RenderableManager::PrimitiveType::POINTS,
-                        0, n_vertices);
+                        inst, 0,
+                        filament::RenderableManager::PrimitiveType::POINTS, 0,
+                        n_vertices);
             } else {
                 renderable_mgr.setGeometryAt(
-                        inst, 0, filament::RenderableManager::PrimitiveType::TRIANGLES, 
+                        inst, 0,
+                        filament::RenderableManager::PrimitiveType::TRIANGLES,
                         0, n_vertices);
             }
         }
