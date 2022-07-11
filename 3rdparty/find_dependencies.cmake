@@ -1049,7 +1049,7 @@ if(NOT USE_SYSTEM_FMT)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_fmt)
 else()
-    list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_fmt)
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_fmt)
 endif()
 
 # Pybind11
