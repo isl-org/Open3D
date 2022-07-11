@@ -447,7 +447,7 @@ public:
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     /// Normalize both triangle normals and vertex normals to length 1.
-    TriangleMesh &NormalizeNormals();    
+    TriangleMesh &NormalizeNormals();
 
     /// \brief Function to compute triangle normals, usually called before
     /// rendering.

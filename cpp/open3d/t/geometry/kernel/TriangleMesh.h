@@ -51,7 +51,7 @@ void ComputeTriangleNormalsCUDA(const core::Tensor& vertices,
                                 core::Tensor& normals);
 
 void ComputeVertexNormalsCUDA(const core::Tensor& triangle_normals,
-                             core::Tensor& vertex_normals);
+                              core::Tensor& vertex_normals);
 #endif
 
 }  // namespace trianglemesh

@@ -461,8 +461,7 @@ TEST_P(TriangleMeshPermuteDevices, ComputeTriangleNormals) {
     Rand(vertices, dmin, dmax, 0);
 
     for (size_t i = 0; i < size; i++)
-        triangles.push_back(
-                Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
+        triangles.push_back(Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
 
     t::geometry::TriangleMesh t_mesh(
             core::eigen_converter::EigenVector3dVectorToTensor(
