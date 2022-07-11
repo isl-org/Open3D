@@ -82,20 +82,29 @@ odometry::OdometryResult Model::TrackFrameToModel(const Frame& input_frame,
                                                   const Frame& raycast_frame,
                                                   float depth_scale,
                                                   float depth_max,
-                                                  float depth_diff) {
+                                                  float depth_diff,
+                                                  const odometry::Method method,
+                                                  const std::vector<odometry::OdometryConvergenceCriteria>& criteria) {
     const static core::Tensor identity =
             core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
 
-    // TODO: more customized / optimized
     return odometry::RGBDOdometryMultiScale(
             t::geometry::RGBDImage(input_frame.GetDataAsImage("color"),
                                    input_frame.GetDataAsImage("depth")),
             t::geometry::RGBDImage(raycast_frame.GetDataAsImage("color"),
                                    raycast_frame.GetDataAsImage("depth")),
             raycast_frame.GetIntrinsics(), identity, depth_scale, depth_max,
-            std::vector<odometry::OdometryConvergenceCriteria>{6, 3, 1},
-            odometry::Method::PointToPlane,
+            criteria,
+            method,
             odometry::OdometryLossParams(depth_diff));
+}
+
+odometry::OdometryResult Model::TrackFrameToModel(const Frame& input_frame,
+                                                  const Frame& raycast_frame,
+                                                  float depth_scale,
+                                                  float depth_max,
+                                                  float depth_diff) {
+    return TrackFrameToModel(input_frame, raycast_frame, depth_scale, depth_max, depth_diff, odometry::Method::PointToPlane);
 }
 
 void Model::Integrate(const Frame& input_frame,
