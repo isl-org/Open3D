@@ -95,11 +95,21 @@ void pybind_slam_model(py::module &m) {
     docstring::ClassMethodDocInject(m, "Model", "synthesize_model_frame",
                                     map_shared_argument_docstrings);
 
-    model.def("track_frame_to_model", &Model::TrackFrameToModel,
-              py::call_guard<py::gil_scoped_release>(),
-              "Track input frame against raycasted frame from model.",
-              "input_frame"_a, "model_frame"_a, "depth_scale"_a = 1000.0,
-              "depth_max"_a = 3.0, "depth_diff"_a = 0.07);
+    model.def(
+            "track_frame_to_model",
+            py::overload_cast<
+                    const open3d::t::pipelines::slam::Frame &,
+                    const open3d::t::pipelines::slam::Frame &, float, float,
+                    float, const odometry::Method,
+                    const std::vector<odometry::OdometryConvergenceCriteria> &>(
+                    &Model::TrackFrameToModel),
+            py::call_guard<py::gil_scoped_release>(),
+            "Track input frame against raycasted frame from model.",
+            "input_frame"_a, "model_frame"_a, "depth_scale"_a = 1000.0,
+            "depth_max"_a = 3.0, "depth_diff"_a = 0.07,
+            "method"_a = odometry::Method::PointToPlane,
+            "criteria"_a = (std::vector<odometry::OdometryConvergenceCriteria>){
+                    6, 3, 1});
     docstring::ClassMethodDocInject(m, "Model", "track_frame_to_model",
                                     map_shared_argument_docstrings);
 
