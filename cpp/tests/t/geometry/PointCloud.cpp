@@ -259,6 +259,39 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
               std::vector<float>({2, 2, 1}));
 }
 
+TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0}},
+                                                     device);
+    core::Tensor normals = core::Tensor::Init<double>({{2, 2, 2},
+                                                       {1, 1, 1},
+                                                       {-1, -1, -1},
+                                                       {0, 0, 1},
+                                                       {0, 1, 0},
+                                                       {1, 0, 0},
+                                                       {0, 0, 0}},
+                                                      device);
+    t::geometry::PointCloud pcd(points);
+    pcd.SetPointNormals(normals);
+    pcd.NormalizeNormals();
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{0.57735, 0.57735, 0.57735},
+                                        {0.57735, 0.57735, 0.57735},
+                                        {-0.57735, -0.57735, -0.57735},
+                                        {0, 0, 1},
+                                        {0, 1, 0},
+                                        {1, 0, 0},
+                                        {0, 0, 0}},
+                                       device)));
+}
+
 TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     core::Device device = GetParam();
 

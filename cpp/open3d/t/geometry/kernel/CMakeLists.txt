@@ -5,6 +5,8 @@ target_sources(tgeometry_kernel PRIVATE
     ImageCPU.cpp
     PointCloud.cpp
     PointCloudCPU.cpp
+    TriangleMesh.cpp
+    TriangleMeshCPU.cpp
     Transform.cpp
     TransformCPU.cpp
     VoxelBlockGrid.cpp

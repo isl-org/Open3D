@@ -388,6 +388,26 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
     return std::make_tuple(pcd, valid);
 }
 
+PointCloud &PointCloud::NormalizeNormals() {
+    if (!HasPointNormals()) {
+        utility::LogWarning("PointCloud has no normals.");
+        return *this;
+    } else {
+        SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    core::Tensor &normals = GetPointNormals();
+    if (IsCPU()) {
+        kernel::pointcloud::NormalizeNormalsCPU(normals);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::NormalizeNormalsCUDA, normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    return *this;
+}
+
 void PointCloud::EstimateNormals(
         const int max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {

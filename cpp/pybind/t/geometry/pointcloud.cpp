@@ -211,6 +211,8 @@ The attributes of the point cloud have different levels::
                    "Remove points that have less than nb_points neighbors in a "
                    "sphere of a given search radius.");
 
+    pointcloud.def("normalize_normals", &PointCloud::NormalizeNormals,
+                   "Normalize point normals to length 1.");
     pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
                    py::call_guard<py::gil_scoped_release>(),
                    py::arg("max_nn") = 30, py::arg("radius") = py::none(),

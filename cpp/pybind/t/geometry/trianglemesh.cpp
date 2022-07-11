@@ -158,6 +158,15 @@ The attributes of the triangle mesh have different levels::
                       "Rotate points and normals (if exist).");
 
     triangle_mesh.def(
+            "normalize_normals", &TriangleMesh::NormalizeNormals,
+            "Normalize both triangle normals and vertex normals to length 1.");
+
+    triangle_mesh.def("compute_triangle_normals",
+                      &TriangleMesh::ComputeTriangleNormals,
+                      "Function to compute triangle normals, usually called "
+                      "before rendering.");
+
+    triangle_mesh.def(
             "compute_convex_hull", &TriangleMesh::ComputeConvexHull,
             "joggle_inputs"_a = false,
             R"(Compute the convex hull of a point cloud using qhull. This runs on the CPU.

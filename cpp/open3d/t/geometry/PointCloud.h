@@ -400,6 +400,9 @@ public:
     TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
 
 public:
+    /// Normalize point normals to length 1.
+    PointCloud &NormalizeNormals();
+
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.
     /// It uses KNN search if only max_nn parameter is provided, and
