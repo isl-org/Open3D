@@ -167,16 +167,16 @@ Tensor Minimum(const Tensor& input, const Tensor& other) {
 std::tuple<Tensor, Tensor> RemoveNonFinite(const Tensor& input,
                                            const SizeVector& dim,
                                            bool remove_nan,
-                                           bool remove_inf) {
+                                           bool remove_infinite) {
     core::Tensor finite_filter_mask;
-    if (remove_nan && remove_inf) {
+    if (remove_nan && remove_infinite) {
         finite_filter_mask = input.IsFinite().All(dim, false);
     } else if (remove_nan) {
         finite_filter_mask = input.IsNan().LogicalNot().All(dim, false);
-    } else if (remove_inf) {
+    } else if (remove_infinite) {
         finite_filter_mask = input.IsInf().LogicalNot().All(dim, false);
     } else {
-        finite_filter_mask = core::Tensor::Full(input.GetShape(), true,
+        finite_filter_mask = core::Tensor::Full({input.GetLength()}, true,
                                                 core::Bool, input.GetDevice());
     }
     return std::make_tuple(input.IndexGet({finite_filter_mask}),

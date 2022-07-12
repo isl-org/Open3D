@@ -130,10 +130,16 @@ Tensor Maximum(const Tensor& input, const Tensor& other);
 /// \param other The second input tensor.
 Tensor Minimum(const Tensor& input, const Tensor& other);
 
+/// \brief Removes elements corresponding to non-finite value, along the \p dim.
+///
+/// \param input The input tensor.
+/// \param dim dimension along which to remove non-finite values.
+/// \param remove_nan Remove NaN values from the PointCloud.
+/// \param remove_infinite Remove infinite values from the PointCloud.
 std::tuple<Tensor, Tensor> RemoveNonFinite(const Tensor& input,
                                            const SizeVector& dim,
                                            bool remove_nan = true,
-                                           bool remove_inf = true);
+                                           bool remove_infinite = true);
 
 }  // namespace core
 }  // namespace open3d

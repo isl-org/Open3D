@@ -384,19 +384,16 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
 
     const core::Tensor valid =
             num_neighbors.Ge(static_cast<int64_t>(nb_points));
-    const PointCloud pcd = SelectByMask(valid);
-
-    return std::make_tuple(pcd, valid);
+    return std::make_tuple(SelectByMask(valid), valid);
 }
 
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
         bool remove_nan, bool remove_inf) const {
-    core::Tensor finite_indices, filtered_positions;
-    std::tie(finite_indices, filtered_positions) = core::RemoveNonFinite(
+    core::Tensor filtered_positions, finite_indices;
+    std::tie(filtered_positions, finite_indices) = core::RemoveNonFinite(
             this->GetPointPositions(), {1}, remove_nan, remove_inf);
-    
-    return std::make_tuple(SelectByIndex(finite_indices, false),
-                           finite_indices);
+    utility::LogDebug("Removing non-finite points.");
+    return std::make_tuple(SelectByMask(finite_indices), finite_indices);
 }
 
 void PointCloud::EstimateNormals(
