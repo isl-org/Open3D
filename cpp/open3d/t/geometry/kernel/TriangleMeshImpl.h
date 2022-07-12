@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <cmath>
-
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -42,10 +40,7 @@ namespace kernel {
 namespace trianglemesh {
 
 #ifndef __CUDACC__
-using std::abs;
-using std::max;
-using std::min;
-using std::sqrt;
+using std::isnan;
 #endif
 
 #if defined(__CUDACC__)
