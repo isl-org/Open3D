@@ -30,7 +30,6 @@ Open3D: A Modern Library for 3D Data Processing
     arm
     docker
 
-
 .. toctree::
     :maxdepth: 2
     :caption: Tutorial
@@ -46,7 +45,6 @@ Open3D: A Modern Library for 3D Data Processing
     tutorial/sensor/index
     tutorial/reference
 
-
 .. toctree::
     :maxdepth: 1
     :caption: Contribute
@@ -54,7 +52,6 @@ Open3D: A Modern Library for 3D Data Processing
     contribute/contribute
     contribute/contribution_recipes
     contribute/styleguide
-
 
 .. toctree::
     :maxdepth: 1

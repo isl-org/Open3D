@@ -15,7 +15,6 @@ The first function performs pairwise registration on the pairs detected by
 :ref:`reconstruction_system_register_fragments`. The second function performs
 multiway registration.
 
-
 Fine-grained registration
 ``````````````````````````````````````
 
@@ -28,7 +27,6 @@ Fine-grained registration
 Two options are given for the fine-grained registration. The ``color`` option is
 recommended since it uses color information to prevent drift. See [Park2017]_
 for details.
-
 
 Multiway registration
 ``````````````````````````````````````
@@ -84,7 +82,6 @@ The pose graph optimization outputs the following messages:
     Delta.norm() < 1.000000e-06 * (x.norm() + 1.000000e-06)
     [GlobalOptimizationLM] total time : 0.000 sec.
     CompensateReferencePoseGraphNode : reference : 0
-
 
 There are 14 fragments and 52 valid matching pairs between fragments. After 23
 iterations, 11 edges are detected to be false positives. After they are pruned,

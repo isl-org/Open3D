@@ -54,7 +54,6 @@ Dos
 | [DO] Avoid “premature optimization” that may hinder code readability                                        |
 +-------------------------------------------------------------------------------------------------------------+
 
-
 Don’ts
 ------
 
@@ -68,12 +67,10 @@ Don’ts
 | [DON'T]  Do not create a massive pull request with dozens of commits and files                                          |
 +-------------------------------------------------------------------------------------------------------------------------+
 
-
 .. _review_contribution:
 
 Code reviews
 ============
-
 
 You want to contribute to Open3D by reviewing code. Your mission is to help developers comply with Open3D standards. If you are new to this, make sure you have a good understanding of code review. (See this `excellent introduction <https://google.github.io/eng-practices/review/reviewer/>`_.) Follow the procedure below.
 
@@ -101,7 +98,6 @@ Recommended procedure
 
 Congratulations, you have improved Open3D with your review. You are now part of Open3D!
 
-
 Dos
 ---
 
@@ -123,7 +119,6 @@ Don’ts
 +-----------------------------------------------------------------------------------------------------------------------------------+
 | [DON’T] Do not approve just to be nice. Do not compromise on quality. Do not compromise the :ref:`principles` of Open3D           |
 +-----------------------------------------------------------------------------------------------------------------------------------+
-
 
 .. _report_contribution:
 
@@ -171,9 +166,7 @@ Don’ts
 | [DON’T] Do not open a new issue without double-checking whether there is already an existing issue that deals with the same problem   |
 +---------------------------------------------------------------------------------------------------------------------------------------+
 
-
 .. _documentation_contribution:
-
 
 Documentation
 =============
@@ -208,7 +201,7 @@ Case 1: When documenting C++ code
         /// \return The sum of \p a and \p b.
         /// \example
         ///
-        ///     c = add(5, 4);  
+        ///     c = add(5, 4);
         int add(int a, int b) { return a + b; }
 
         /// \brief Computes subtraction.
@@ -225,7 +218,6 @@ Case 1: When documenting C++ code
     };
 
 * Add in-line comments to cpp files to explain complex or non-intuitive parts of your algorithm.
-
 
 Case 2: When documenting Python bindings
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -256,12 +248,10 @@ Case 2: When documenting Python bindings
                                     {{"a", "LHS operand for subtraction."},
                                      {"b", "RHS operand for subtraction."}});
 
-
 Case 3: When documenting pure Python code (no bindings)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Use standard docstring syntax (`Google style <https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings>`__) as explained `here <https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html>`_ and `there <https://www.python.org/dev/peps/pep-0257/>`_.
-
 
 Case 4: When adding a Python tutorial
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
