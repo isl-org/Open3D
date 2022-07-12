@@ -130,5 +130,10 @@ Tensor Maximum(const Tensor& input, const Tensor& other);
 /// \param other The second input tensor.
 Tensor Minimum(const Tensor& input, const Tensor& other);
 
+std::tuple<Tensor, Tensor> RemoveNonFinite(const Tensor& input,
+                                           const SizeVector& dim,
+                                           bool remove_nan = true,
+                                           bool remove_inf = true);
+
 }  // namespace core
 }  // namespace open3d

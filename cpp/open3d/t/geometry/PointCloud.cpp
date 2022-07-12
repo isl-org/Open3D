@@ -45,6 +45,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorFunction.h"
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
@@ -386,6 +387,16 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
     const PointCloud pcd = SelectByMask(valid);
 
     return std::make_tuple(pcd, valid);
+}
+
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
+        bool remove_nan, bool remove_inf) const {
+    core::Tensor finite_indices, filtered_positions;
+    std::tie(finite_indices, filtered_positions) = core::RemoveNonFinite(
+            this->GetPointPositions(), {1}, remove_nan, remove_inf);
+    
+    return std::make_tuple(SelectByIndex(finite_indices, false),
+                           finite_indices);
 }
 
 void PointCloud::EstimateNormals(

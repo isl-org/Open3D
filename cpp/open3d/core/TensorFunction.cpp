@@ -164,5 +164,24 @@ Tensor Minimum(const Tensor& input, const Tensor& other) {
     return dst_tensor;
 }
 
+std::tuple<Tensor, Tensor> RemoveNonFinite(const Tensor& input,
+                                           const SizeVector& dim,
+                                           bool remove_nan,
+                                           bool remove_inf) {
+    core::Tensor finite_filter_mask;
+    if (remove_nan && remove_inf) {
+        finite_filter_mask = input.IsFinite().All(dim, false);
+    } else if (remove_nan) {
+        finite_filter_mask = input.IsNan().LogicalNot().All(dim, false);
+    } else if (remove_inf) {
+        finite_filter_mask = input.IsInf().LogicalNot().All(dim, false);
+    } else {
+        finite_filter_mask = core::Tensor::Full(input.GetShape(), true,
+                                                core::Bool, input.GetDevice());
+    }
+    return std::make_tuple(input.IndexGet({finite_filter_mask}),
+                           finite_filter_mask);
+}
+
 }  // namespace core
 }  // namespace open3d

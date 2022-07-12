@@ -364,6 +364,9 @@ public:
     std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
 
+    std::tuple<PointCloud, core::Tensor> RemoveNonFinitePoints(
+            bool remove_nan = true, bool remove_inf = true) const;
+
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const override { return device_; }
 
