@@ -956,7 +956,7 @@ public:
     /// Returns true if all elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
     /// the reduction is applied to all dimensions.
-    Tensor All(const SizeVector& dims, bool keepdim) const;
+    Tensor All(const SizeVector& dims, bool keepdim = true) const;
 
     /// Returns true if any elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
@@ -966,7 +966,7 @@ public:
     /// Returns true if any elements in the tensor are true. Only works for
     /// boolean tensors. This function does not take reduction dimensions, and
     /// the reduction is applied to all dimensions.
-    Tensor Any(const SizeVector& dims, bool keepdim) const;
+    Tensor Any(const SizeVector& dims, bool keepdim = true) const;
 
     /// Returns true if the two tensors are element-wise equal.
     ///

@@ -872,10 +872,18 @@ Ref:
             "for boolean tensors. This function does not take reduction "
             "dimensions, and the reduction is applied to all dimensions.");
     tensor.def(
+            "all", &Tensor::All, "dim"_a, "keepdim"_a = true,
+            "Returns true if all elements in the tensor are true. Only works "
+            "for boolean tensors.");
+    tensor.def(
             "any", &Tensor::Any,
             "Returns true if any elements in the tensor are true. Only works "
             "for boolean tensors. This function does not take reduction "
             "dimensions, and the reduction is applied to all dimensions.");
+    tensor.def(
+            "any", &Tensor::Any, "dim"_a, "keepdim"_a = true,
+            "Returns true if any elements in the tensor are true. Only works "
+            "for boolean tensors.");
 
     // Reduction ops.
     BIND_REDUCTION_OP(sum, Sum);
