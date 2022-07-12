@@ -193,6 +193,8 @@
             },                                                                 \
             "dim"_a = py::none(), "keepdim"_a = false);
 
+// TODO (rishabh): add this behavior to the cpp implementation. Refer to the
+// Tensor::Any and Tensor::All ops.
 #define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)              \
     tensor.def(                                                      \
             #py_name,                                                \
@@ -867,21 +869,13 @@ Ref:
               "int64 Tensors, each containing the indices of the non-zero "
               "elements in each dimension."}});
     tensor.def(
-            "all", &Tensor::All,
-            "Returns true if all elements in the tensor are true. Only works "
-            "for boolean tensors. This function does not take reduction "
-            "dimensions, and the reduction is applied to all dimensions.");
-    tensor.def(
-            "all", &Tensor::All, "dim"_a, "keepdim"_a = true,
+            "all", &Tensor::All, py::call_guard<py::gil_scoped_release>(),
+            py::arg("dim") = py::none(), py::arg("keepdim") = false,
             "Returns true if all elements in the tensor are true. Only works "
             "for boolean tensors.");
     tensor.def(
-            "any", &Tensor::Any,
-            "Returns true if any elements in the tensor are true. Only works "
-            "for boolean tensors. This function does not take reduction "
-            "dimensions, and the reduction is applied to all dimensions.");
-    tensor.def(
-            "any", &Tensor::Any, "dim"_a, "keepdim"_a = true,
+            "any", &Tensor::Any, py::call_guard<py::gil_scoped_release>(),
+            py::arg("dim") = py::none(), py::arg("keepdim") = false,
             "Returns true if any elements in the tensor are true. Only works "
             "for boolean tensors.");
 
