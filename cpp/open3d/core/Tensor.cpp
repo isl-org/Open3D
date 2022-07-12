@@ -1711,11 +1711,23 @@ bool Tensor::All() const {
     return dst.Item<bool>();
 }
 
+Tensor Tensor::All(const SizeVector& dims, bool keepdim) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, keepdim, kernel::ReductionOpCode::All);
+}
+
 bool Tensor::Any() const {
     Tensor dst({}, dtype_, GetDevice());
     kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
                       kernel::ReductionOpCode::Any);
     return dst.Item<bool>();
+}
+
+Tensor Tensor::Any(const SizeVector& dims, bool keepdim) const {
+    Tensor dst(shape_util::ReductionShape(shape_, dims, keepdim), dtype_,
+               GetDevice());
+    kernel::Reduction(*this, dst, dims, keepdim, kernel::ReductionOpCode::Any);
 }
 
 DLManagedTensor* Tensor::ToDLPack() const {
