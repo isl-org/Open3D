@@ -160,11 +160,16 @@ The attributes of the triangle mesh have different levels::
     triangle_mesh.def(
             "normalize_normals", &TriangleMesh::NormalizeNormals,
             "Normalize both triangle normals and vertex normals to length 1.");
-
     triangle_mesh.def("compute_triangle_normals",
                       &TriangleMesh::ComputeTriangleNormals,
                       "Function to compute triangle normals, usually called "
-                      "before rendering.");
+                      "before rendering.",
+                      "normalized"_a = true);
+    triangle_mesh.def("compute_vertex_normals",
+                      &TriangleMesh::ComputeVertexNormals,
+                      "Function to compute vertex normals, usually called "
+                      "before rendering.",
+                      "normalized"_a = true);
 
     triangle_mesh.def(
             "compute_convex_hull", &TriangleMesh::ComputeConvexHull,

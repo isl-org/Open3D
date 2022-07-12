@@ -246,6 +246,43 @@ TriangleMesh &TriangleMesh::ComputeTriangleNormals(bool normalized) {
     return *this;
 }
 
+TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized) {
+    if (IsEmpty()) {
+        utility::LogWarning("TriangleMesh is empty.");
+        return *this;
+    }
+
+    if (!HasTriangleIndices()) {
+        utility::LogWarning("TriangleMesh has no triangle indices.");
+        return *this;
+    }
+
+    ComputeTriangleNormals(false);
+
+    const int64_t vertex_num = GetVertexPositions().GetLength();
+    const core::Dtype dtype = GetVertexPositions().GetDtype();
+    core::Tensor vertex_normals({vertex_num, 3}, dtype, GetDevice());
+    SetTriangleNormals(GetTriangleNormals().Contiguous());
+    SetTriangleIndices(GetTriangleIndices().Contiguous());
+
+    if (IsCPU()) {
+        kernel::trianglemesh::ComputeVertexNormalsCPU(
+                GetTriangleIndices(), GetTriangleNormals(), vertex_normals);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::trianglemesh::ComputeVertexNormalsCUDA,
+                  GetTriangleIndices(), GetTriangleNormals(), vertex_normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    SetVertexNormals(vertex_normals);
+    if (normalized) {
+        NormalizeNormals();
+    }
+
+    return *this;
+}
+
 geometry::TriangleMesh TriangleMesh::FromLegacy(
         const open3d::geometry::TriangleMesh &mesh_legacy,
         core::Dtype float_dtype,

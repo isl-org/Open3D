@@ -40,7 +40,8 @@ void ComputeTriangleNormalsCPU(const core::Tensor& vertices,
                                const core::Tensor& triangles,
                                core::Tensor& normals);
 
-void ComputeVertexNormalsCPU(const core::Tensor& triangle_normals,
+void ComputeVertexNormalsCPU(const core::Tensor& triangles,
+                             const core::Tensor& triangle_normals,
                              core::Tensor& vertex_normals);
 
 #ifdef BUILD_CUDA_MODULE
@@ -50,7 +51,8 @@ void ComputeTriangleNormalsCUDA(const core::Tensor& vertices,
                                 const core::Tensor& triangles,
                                 core::Tensor& normals);
 
-void ComputeVertexNormalsCUDA(const core::Tensor& triangle_normals,
+void ComputeVertexNormalsCUDA(const core::Tensor& triangles,
+                              const core::Tensor& triangle_normals,
                               core::Tensor& vertex_normals);
 #endif
 
