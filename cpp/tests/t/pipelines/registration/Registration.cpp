@@ -343,7 +343,12 @@ TEST_P(RegistrationPermuteDevices, ICPColored) {
         open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
 
         // Initial transformation input for tensor implementation.
-        core::Tensor initial_transform_t = core::Tensor::Eye(4, dtype, device);
+        core::Tensor initial_transform_t =
+                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
+                                            {-0.139, 0.967, -0.215, 0.7},
+                                            {0.487, 0.255, 0.835, -1.4},
+                                            {0.0, 0.0, 0.0, 1.0}},
+                                           core::Device("CPU:0"));
 
         // Initial transformation input for legacy implementation.
         Eigen::Matrix4d initial_transform_l =
