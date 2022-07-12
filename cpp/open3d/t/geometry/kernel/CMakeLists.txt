@@ -18,6 +18,7 @@ if (BUILD_CUDA_MODULE)
         ImageCUDA.cu
         NPPImage.cpp
         PointCloudCUDA.cu
+        TriangleMeshCUDA.cu
         TransformCUDA.cu
         VoxelBlockGridCUDA.cu
     )
