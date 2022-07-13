@@ -388,6 +388,18 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
     return std::make_tuple(pcd, valid);
 }
 
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveDuplicatedPoints(
+        double floating_precision) const {
+    core::Tensor points_voxeld = GetPointPositions() / floating_precision;
+    core::Tensor points_voxeli = points_voxeld.To(core::Int64);
+    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
+                                        {3}, device_);
+    core::Tensor buf_indices, masks;
+    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
+
+    return std::make_tuple(SelectByMask(masks), masks);
+}
+
 void PointCloud::EstimateNormals(
         const int max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {

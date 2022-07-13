@@ -364,6 +364,18 @@ public:
     std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
 
+    /// \brief Remove duplicated points and there associated attributes.
+    ///
+    /// \param floating_precision Floating precision. Default is 1e-5, i.e.
+    /// [1.00001, 1.00001, 1.00001] and [1.00001, 1.00002, 1.00002] must be
+    /// treated as different positions, however the floating precision is not
+    /// very accurate on GPU, therefore use higher floating precision than
+    /// required (higher floating_precision refers to lower value).
+    /// \return tuple of filtered PointCloud and boolean indexing tensor w.r.t.
+    /// input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveDuplicatedPoints(
+            double floating_precision = 1e-5) const;
+
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const override { return device_; }
 
