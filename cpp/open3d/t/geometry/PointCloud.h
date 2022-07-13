@@ -364,6 +364,12 @@ public:
     std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
 
+    /// \brief Assigns uniform color to the point cloud.
+    ///
+    /// \param color  RGB color for the point cloud. {3,} shaped Tensor.
+    /// Floating color values are clipped between 0.0 and 1.0.
+    PointCloud PaintUniformColor(const core::Tensor &color) const;
+
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const override { return device_; }
 

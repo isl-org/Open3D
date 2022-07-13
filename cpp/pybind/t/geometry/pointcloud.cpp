@@ -210,6 +210,8 @@ The attributes of the point cloud have different levels::
                    "nb_points"_a, "search_radius"_a,
                    "Remove points that have less than nb_points neighbors in a "
                    "sphere of a given search radius.");
+    pointcloud.def("paint_uniform_color", &PointCloud::PaintUniformColor,
+                   "color"_a, "Assigns uniform color to the point cloud.");
 
     pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
                    py::call_guard<py::gil_scoped_release>(),
@@ -348,6 +350,12 @@ Example:
             {{"nb_points",
               "Number of neighbor points required within the radius."},
              {"search_radius", "Radius of the sphere."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "paint_uniform_color",
+            {{"color",
+              "Color of the pointcloud. Floating color values are clipped "
+              "between 0.0 and 1.0."}});
+
     docstring::ClassMethodDocInject(
             m, "PointCloud", "cluster_dbscan",
             {{"eps",
