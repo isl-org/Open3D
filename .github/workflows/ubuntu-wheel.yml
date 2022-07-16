@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        python_version: [3.6, 3.7, 3.8, 3.9, 3.10]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
@@ -34,6 +34,8 @@ jobs:
             python_version: 3.8
           - is_master: false
             python_version: 3.9
+          - is_master: false
+            python_version: 3.6
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
@@ -57,6 +59,8 @@ jobs:
             docker/docker_build.sh cuda_wheel_py38_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py39_dev
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+            docker/docker_build.sh cuda_wheel_py310_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.6" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py36
           elif [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
@@ -65,6 +69,8 @@ jobs:
             docker/docker_build.sh cuda_wheel_py38
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
             docker/docker_build.sh cuda_wheel_py39
+          elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
+            docker/docker_build.sh cuda_wheel_py310
           fi
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
@@ -107,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        python_version: [3.6, 3.7, 3.8, 3.9, 3.10]
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
@@ -117,6 +123,8 @@ jobs:
             python_version: 3.8
           - is_master: false
             python_version: 3.9
+          - is_master: false
+            python_version: 3.6
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
