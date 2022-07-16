@@ -49,7 +49,7 @@ jobs:
       # `docker/docker_build.sh xxx` command to execute locally.
       - name: Docker build
         run: |
-          elif [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
+          if [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py37_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
             docker/docker_build.sh cuda_wheel_py38_dev

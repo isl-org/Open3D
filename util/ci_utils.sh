@@ -40,8 +40,8 @@ else
     GCC_MAX_VER=7
 fi
 # ML
-TENSORFLOW_VER="2.9.1"
-TENSORBOARD_VER="2.9.1"
+TENSORFLOW_VER="2.8.2"
+TENSORBOARD_VER="2.8.0"
 TORCH_CPU_GLNX_VER="1.12.0+cpu"
 TORCH_CUDA_GLNX_VER="1.12.0+cu113"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
@@ -50,11 +50,11 @@ TORCH_MACOS_VER="1.12.0"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="21.1.1"
-WHEEL_VER="0.35.1"
+WHEEL_VER="0.37.1"
 STOOLS_VER="50.3.2"
 PYTEST_VER="6.0.1"
 PYTEST_RANDOMLY_VER="3.8.0"
-SCIPY_VER="1.5.4"
+SCIPY_VER="1.7.3"
 YAPF_VER="0.30.0"
 PROTOBUF_VER="3.19.0"
 
@@ -375,10 +375,6 @@ install_docs_dependencies() {
     python -m pip install -U -q "wheel==$WHEEL_VER" \
         "pip==$PIP_VER"
     python -m pip install -U -q "yapf==$YAPF_VER"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
-    echo
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
@@ -389,6 +385,10 @@ install_docs_dependencies() {
     else
         echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
     fi
+    echo
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
 }
 
 # Build documentation
