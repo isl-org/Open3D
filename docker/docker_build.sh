@@ -131,7 +131,7 @@ openblas_export_env() {
         export PYTHON_VERSION=3.9
         export DOCKER_TAG=${DOCKER_TAG}-py39
     elif [[ "py310" =~ ^($options)$ ]]; then
-        export PYTHON_VERSION=3.9
+        export PYTHON_VERSION=3.10
         export DOCKER_TAG=${DOCKER_TAG}-py310
     else
         echo "Invalid python version."
@@ -272,7 +272,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:11.3.1-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-2-bionic
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -287,7 +287,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:11.3.1-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
@@ -302,7 +302,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:11.3.1-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-3-ml-shared-bionic
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
@@ -317,7 +317,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:11.3.1-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -332,7 +332,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:11.3.1-cudnn8-devel-ubuntu18.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-4-shared-bionic
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=OFF
@@ -347,7 +347,7 @@ ci_build() {
     export BASE_IMAGE=nvidia/cuda:11.3.1-cudnn8-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-5-ml-focal
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=ON
     export BUILD_TENSORFLOW_OPS=ON
@@ -362,7 +362,7 @@ cpu-static_export_env() {
     export BASE_IMAGE=ubuntu:18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -377,7 +377,7 @@ cpu-shared_export_env() {
     export BASE_IMAGE=ubuntu:18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -392,7 +392,7 @@ cpu-shared-ml_export_env() {
     export BASE_IMAGE=ubuntu:18.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
@@ -407,7 +407,7 @@ cpu-shared-release_export_env() {
     export BASE_IMAGE=ubuntu:18.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -422,7 +422,7 @@ cpu-shared-ml-release_export_env() {
     export BASE_IMAGE=ubuntu:18.04
     export DEVELOPER_BUILD=OFF
     export CCACHE_TAR_NAME=open3d-ci-cpu
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=ON
@@ -439,7 +439,7 @@ sycl-shared_export_env() {
     export BASE_IMAGE=intel/oneapi-basekit:2022.2-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=ON
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
@@ -456,7 +456,7 @@ sycl-static_export_env() {
     export BASE_IMAGE=intel/oneapi-basekit:2022.2-devel-ubuntu20.04
     export DEVELOPER_BUILD=ON
     export CCACHE_TAR_NAME=open3d-ci-sycl
-    export PYTHON_VERSION=3.6
+    export PYTHON_VERSION=3.7
     export BUILD_SHARED_LIBS=OFF
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
