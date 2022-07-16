@@ -24,16 +24,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.7, 3.8, 3.9, 3.10]
+        python_version: ['3.7', '3.8', '3.9', '3.10']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python_version: 3.7
+            python_version: '3.7'
           - is_master: false
-            python_version: 3.8
+            python_version: '3.8'
           - is_master: false
-            python_version: 3.9
+            python_version: '3.9'
     env:
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
       PYTHON_VERSION: ${{ matrix.python_version }}
@@ -107,16 +107,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.7, 3.8, 3.9, 3.10]
+        python_version: ['3.7', '3.8', '3.9', '3.10']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python_version: 3.7
+            python_version: '3.7'
           - is_master: false
-            python_version: 3.8
+            python_version: '3.8'
           - is_master: false
-            python_version: 3.9
+            python_version: '3.9'
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:

@@ -1,4 +1,4 @@
 pytest==6.0.1
 pytest-randomly==3.8.0
 scipy==1.7.3
-tensorboard>=2.5.0
+tensorboard==2.9.1
