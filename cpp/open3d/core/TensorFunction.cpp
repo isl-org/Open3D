@@ -26,6 +26,8 @@
 
 #include "open3d/core/TensorFunction.h"
 
+#include "open3d/core/Indexer.h"
+#include "open3d/core/Transform.h"
 #include "open3d/core/kernel/Kernel.h"
 
 namespace open3d {
@@ -162,6 +164,27 @@ Tensor Minimum(const Tensor& input, const Tensor& other) {
     kernel::BinaryEW(input, other, dst_tensor, kernel::BinaryEWOpCode::Minimum);
 
     return dst_tensor;
+}
+
+void TransformTest() {
+    core::Tensor a =
+            core::Tensor::Full({5}, 2.0, core::Float32, core::Device("CPU:0"));
+    core::Tensor b =
+            core::Tensor::Full({5}, 2.0, core::Float32, core::Device("CPU:0"));
+    core::Tensor c =
+            core::Tensor::Full({5}, 2.0, core::Float32, core::Device("CPU:0"));
+
+    std::vector<core::Tensor> t = {a, b};
+
+    core::Indexer indexer(t, c);
+    // auto func = [=] OPEN3D_HOST_DEVICE(int64_t i) {
+    //     *indexer.GetOutputPtr<float>(i) = *indexer.GetInputPtr<float>(0, i) +
+    //                                       *indexer.GetInputPtr<float>(1, i);
+    // };
+
+    core::Transform(a.GetDevice(), indexer.NumWorkloads());
+
+    std::cout << c.ToString() << std::endl;
 }
 
 }  // namespace core

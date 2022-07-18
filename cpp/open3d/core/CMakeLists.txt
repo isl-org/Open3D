@@ -35,6 +35,8 @@ if (BUILD_SYCL_MODULE)
 endif()
 
 target_sources(core PRIVATE
+    Transform.cpp
+    TransformCPU.cpp
     hashmap/CPU/CPUHashBackendBuffer.cpp
     hashmap/CPU/CreateCPUHashBackend.cpp
     hashmap/DeviceHashBackend.cpp
@@ -84,6 +86,7 @@ if (BUILD_CUDA_MODULE)
         MemoryManagerCUDA.cpp
     )
     target_sources(core PRIVATE
+        TransformCUDA.cu
         hashmap/CUDA/CreateCUDAHashBackend.cu
         hashmap/CUDA/CUDAHashBackendBuffer.cu
         hashmap/CUDA/SlabNodeManager.cu

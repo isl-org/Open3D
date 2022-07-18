@@ -130,5 +130,7 @@ Tensor Maximum(const Tensor& input, const Tensor& other);
 /// \param other The second input tensor.
 Tensor Minimum(const Tensor& input, const Tensor& other);
 
+void TransformTest();
+
 }  // namespace core
 }  // namespace open3d
