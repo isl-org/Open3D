@@ -949,14 +949,14 @@ public:
     bool IsNonZero() const;
 
     /// Returns true if all elements in the tensor are true. Only works for
-    /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is applied to all dimensions.
-    bool All() const;
+    /// boolean tensors.
+    Tensor All(const utility::optional<SizeVector>& dims = utility::nullopt,
+               bool keepdim = false) const;
 
     /// Returns true if any elements in the tensor are true. Only works for
-    /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is applied to all dimensions.
-    bool Any() const;
+    /// boolean tensors.
+    Tensor Any(const utility::optional<SizeVector>& dims = utility::nullopt,
+               bool keepdim = false) const;
 
     /// Returns true if the two tensors are element-wise equal.
     ///

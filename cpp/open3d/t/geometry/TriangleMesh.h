@@ -559,6 +559,16 @@ public:
     TriangleMesh BooleanDifference(const TriangleMesh &mesh,
                                    double tolerance = 1e-6) const;
 
+    /// Fill holes by triangulating boundary edges.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param hole_size This is the approximate threshold for filling holes.
+    /// The value describes the maximum radius of holes to be filled.
+    ///
+    /// \return New mesh after filling holes.
+    TriangleMesh FillHoles(double hole_size = 1e6) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;
