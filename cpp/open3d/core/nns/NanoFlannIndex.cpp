@@ -132,7 +132,7 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
     // Check if the radii has negative values.
     Tensor below_zero = radii.Le(0);
-    if (below_zero.Any()) {
+    if (below_zero.Any().Item<bool>()) {
         utility::LogError("radius should be larger than 0.");
     }
 
