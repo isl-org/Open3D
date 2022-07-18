@@ -2761,6 +2761,69 @@ TEST_P(TensorPermuteDevices, NonZeroNumpy) {
     EXPECT_EQ(results[1].GetShape(), core::SizeVector{3});
 }
 
+TEST_P(TensorPermuteDevices, All) {
+    core::Device device = GetParam();
+    core::Tensor t = core::Tensor::Init<bool>(
+            {{false, true}, {true, false}, {true, false}, {true, true}},
+            device);
+
+    // Default. Output is a scalar boolean tensor with value true if all
+    // elements are true.
+    EXPECT_TRUE(t.All().AllClose(core::Tensor::Init<bool>(false, device)));
+
+    // Along axis 0.
+    EXPECT_TRUE(t.All(core::SizeVector({0}), false)
+                        .AllClose(core::Tensor::Init<bool>({false, false},
+                                                           device)));
+    EXPECT_TRUE(t.All(core::SizeVector({0}), true)
+                        .AllClose(core::Tensor::Init<bool>({{false, false}},
+                                                           device)));
+    // // Along axis 1.
+    EXPECT_TRUE(t.All(core::SizeVector({1}), false)
+                        .AllClose(core::Tensor::Init<bool>(
+                                {false, false, false, true}, device)));
+    EXPECT_TRUE(t.All(core::SizeVector({1}), true)
+                        .AllClose(core::Tensor::Init<bool>(
+                                {{false}, {false}, {false}, {true}}, device)));
+
+    // Supports only Bool tensor.
+    EXPECT_ANY_THROW(t.To(core::Int32).All());
+    // Out of dim.
+    EXPECT_ANY_THROW(t.All(core::SizeVector({2})));
+}
+
+TEST_P(TensorPermuteDevices, Any) {
+    core::Device device = GetParam();
+    core::Tensor t = core::Tensor::Init<bool>(
+            {{false, true}, {true, false}, {true, false}, {true, true}},
+            device);
+
+    // Default. Output is a scalar boolean tensor with value true if any
+    // elements is true.
+    EXPECT_TRUE(t.Any().AllClose(core::Tensor::Init<bool>(true, device)));
+
+    // Along axis 0.
+    EXPECT_TRUE(
+            t.Any(core::SizeVector({0}), false)
+                    .AllClose(core::Tensor::Init<bool>({true, true}, device)));
+    EXPECT_TRUE(t.Any(core::SizeVector({0}), true)
+                        .AllClose(core::Tensor::Init<bool>({{true, true}},
+                                                           device)));
+
+    // Along axis 1.
+    EXPECT_TRUE(t.Any(core::SizeVector({1}), false)
+                        .AllClose(core::Tensor::Init<bool>(
+                                {true, true, true, true}, device)));
+    EXPECT_TRUE(t.Any(core::SizeVector({1}), true)
+                        .AllClose(core::Tensor::Init<bool>(
+                                {{true}, {true}, {true}, {true}}, device)));
+
+    // Supports only Bool tensor.
+    EXPECT_ANY_THROW(t.To(core::Int32).Any());
+    // Out of dim.
+    EXPECT_ANY_THROW(t.Any(core::SizeVector({2})));
+}
+
 TEST_P(TensorPermuteDevices, CreationEmpty) {
     core::Device device = GetParam();
 

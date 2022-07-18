@@ -1704,18 +1704,42 @@ bool Tensor::IsNonZero() const {
     return rc;
 }
 
-bool Tensor::All() const {
-    Tensor dst({}, dtype_, GetDevice());
-    kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
-                      kernel::ReductionOpCode::All);
-    return dst.Item<bool>();
+Tensor Tensor::All(const utility::optional<SizeVector>& dims,
+                   bool keepdim) const {
+    AssertTensorDtype(*this, core::Bool);
+
+    Tensor dst;
+    if (dims.has_value()) {
+        dst = Tensor(shape_util::ReductionShape(shape_, dims.value(), keepdim),
+                     dtype_, GetDevice());
+        kernel::Reduction(*this, dst, dims.value(), keepdim,
+                          kernel::ReductionOpCode::All);
+    } else {
+        dst = Tensor({}, dtype_, GetDevice());
+        kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
+                          kernel::ReductionOpCode::All);
+    }
+
+    return dst;
 }
 
-bool Tensor::Any() const {
-    Tensor dst({}, dtype_, GetDevice());
-    kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
-                      kernel::ReductionOpCode::Any);
-    return dst.Item<bool>();
+Tensor Tensor::Any(const utility::optional<SizeVector>& dims,
+                   bool keepdim) const {
+    AssertTensorDtype(*this, core::Bool);
+
+    Tensor dst;
+    if (dims.has_value()) {
+        dst = Tensor(shape_util::ReductionShape(shape_, dims.value(), keepdim),
+                     dtype_, GetDevice());
+        kernel::Reduction(*this, dst, dims.value(), keepdim,
+                          kernel::ReductionOpCode::Any);
+    } else {
+        dst = Tensor({}, dtype_, GetDevice());
+        kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
+                          kernel::ReductionOpCode::Any);
+    }
+
+    return dst;
 }
 
 DLManagedTensor* Tensor::ToDLPack() const {
@@ -1781,12 +1805,12 @@ bool Tensor::AllEqual(const Tensor& other) const {
     if (shape_ != other.shape_) {
         return false;
     }
-    return (*this == other).All();
+    return (*this == other).All().Item<bool>();
 }
 
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
     // TODO: support nan;
-    return IsClose(other, rtol, atol).All();
+    return IsClose(other, rtol, atol).All().Item<bool>();
 }
 
 Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
