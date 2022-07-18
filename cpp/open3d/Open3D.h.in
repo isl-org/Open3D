@@ -148,6 +148,7 @@
 #include "open3d/visualization/visualizer/ViewControlWithEditing.h"
 #include "open3d/visualization/visualizer/Visualizer.h"
 #include "open3d/visualization/visualizer/VisualizerWithCustomAnimation.h"
+#include "open3d/visualization/visualizer/VisualizerWithEditAndKeyCallback.h"
 #include "open3d/visualization/visualizer/VisualizerWithEditing.h"
 #include "open3d/visualization/visualizer/VisualizerWithKeyCallback.h"
 #include "open3d/visualization/visualizer/VisualizerWithVertexSelection.h"
