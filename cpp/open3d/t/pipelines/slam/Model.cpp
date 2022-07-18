@@ -60,12 +60,26 @@ void Model::SynthesizeModelFrame(Frame& raycast_frame,
                                  float depth_max,
                                  float trunc_voxel_multiplier,
                                  bool enable_color) {
+    SynthesizeModelFrame(raycast_frame, depth_scale, depth_min, depth_max,
+                         trunc_voxel_multiplier, enable_color, -1);
+}
+
+void Model::SynthesizeModelFrame(Frame& raycast_frame,
+                                 float depth_scale,
+                                 float depth_min,
+                                 float depth_max,
+                                 float trunc_voxel_multiplier,
+                                 bool enable_color,
+                                 float weight_threshold) {
+    if (weight_threshold < 0) {
+        weight_threshold = std::min(frame_id_ * 1.0f, 3.0f);
+    }
     auto result = voxel_grid_.RayCast(
             frustum_block_coords_, raycast_frame.GetIntrinsics(),
             t::geometry::InverseTransformation(GetCurrentFramePose()),
             raycast_frame.GetWidth(), raycast_frame.GetHeight(),
             {"depth", "color"}, depth_scale, depth_min, depth_max,
-            std::min(frame_id_ * 1.0f, 3.0f), trunc_voxel_multiplier);
+            weight_threshold, trunc_voxel_multiplier);
     raycast_frame.SetData("depth", result["depth"]);
     if (enable_color) {
         raycast_frame.SetData("color", result["color"]);

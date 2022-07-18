@@ -86,12 +86,15 @@ void pybind_slam_model(py::module &m) {
     model.def("get_current_frame_pose", &Model::GetCurrentFramePose);
     model.def("update_frame_pose", &Model::UpdateFramePose);
 
-    model.def("synthesize_model_frame", &Model::SynthesizeModelFrame,
-              py::call_guard<py::gil_scoped_release>(),
-              "Synthesize frame from the volumetric model using ray casting.",
-              "model_frame"_a, "depth_scale"_a = 1000.0, "depth_min"_a = 0.1,
-              "depth_max"_a = 3.0, "trunc_voxel_multiplier"_a = 8.0,
-              "enable_color"_a = false);
+    model.def(
+            "synthesize_model_frame",
+            py::overload_cast<Frame &, float, float, float, float, bool, float>(
+                    &Model::SynthesizeModelFrame),
+            py::call_guard<py::gil_scoped_release>(),
+            "Synthesize frame from the volumetric model using ray casting.",
+            "model_frame"_a, "depth_scale"_a = 1000.0, "depth_min"_a = 0.1,
+            "depth_max"_a = 3.0, "trunc_voxel_multiplier"_a = 8.0,
+            "enable_color"_a = false, "weight_threshold"_a = -1.0);
     docstring::ClassMethodDocInject(m, "Model", "synthesize_model_frame",
                                     map_shared_argument_docstrings);
 
