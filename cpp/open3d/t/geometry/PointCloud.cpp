@@ -484,6 +484,80 @@ void PointCloud::EstimateNormals(
     RemovePointAttr("covariances");
 }
 
+void PointCloud::OrientNormalsToAlignWithDirection(
+        const core::Tensor &orientation_reference) {
+    core::AssertTensorDevice(orientation_reference, GetDevice());
+    core::AssertTensorShape(orientation_reference, {3});
+
+    if (!HasPointNormals()) {
+        utility::LogError(
+                "No normals in the PointCloud. Call EstimateNormals() first.");
+    }
+
+    core::Tensor reference =
+            orientation_reference.To(GetPointPositions().GetDtype());
+    const core::Tensor reference_norm =
+            reference.Mul(reference).Sum({0}).Sqrt();
+    reference =
+            reference_norm.IsNonZero() ? reference.Div(reference_norm) : reference;
+
+    core::Tensor &normals = GetPointNormals();
+    const core::Tensor mat = normals.Matmul(reference).Flatten();
+    // Don't compute Sqrt() to save time.
+    const core::Tensor normals_norm = normals.Mul(normals).Sum({1});
+    const core::Tensor less_0 = mat.Le(0);
+    const core::Tensor equal_0 = normals_norm.Eq(0);
+
+    normals.IndexSet({less_0}, normals.IndexGet({less_0}).Mul(-1));
+    normals.IndexSet({equal_0}, reference);
+}
+
+void PointCloud::OrientNormalsTowardsCameraLocation(
+        const core::Tensor &camera_location) {
+    core::AssertTensorDevice(camera_location, GetDevice());
+    core::AssertTensorShape(camera_location, {3});
+
+    if (!HasPointNormals()) {
+        utility::LogError(
+                "No normals in the PointCloud. Call EstimateNormals() first.");
+    }
+
+    core::Tensor reference =
+            camera_location.To(GetPointPositions().GetDtype()) -
+            GetPointPositions();
+
+    core::Tensor &normals = GetPointNormals();
+    const core::Tensor mat = normals.Mul(reference).Sum({1});
+    // Don't compute Sqrt() to save time.
+    const core::Tensor normals_norm = normals.Mul(normals).Sum({1});
+    const core::Tensor less_0 = mat.Le(0);
+    const core::Tensor equal_0 = normals_norm.Eq(0);
+
+    normals.IndexSet({less_0}, normals.IndexGet({less_0}).Mul(-1));
+
+    core::Tensor reference_assign_to_0 = reference.IndexGet({equal_0});
+    // Normalize reference vector which will be assigned to normals.
+    const core::Tensor reference_assign_to_0_norm =
+            reference_assign_to_0.Mul(reference_assign_to_0).Sum({1}).Sqrt();
+    reference_assign_to_0 /= reference_assign_to_0_norm.Reshape({-1, 1});
+    // Set to (0, 0, 1) if the reference vector norm is 0.
+    reference_assign_to_0.IndexSet(
+            {reference_assign_to_0_norm.Eq(0)},
+            core::Tensor::Init<double>({0, 0, 1}, GetDevice()));
+    normals.IndexSet({equal_0}, reference_assign_to_0);
+}
+
+void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
+    PointCloud tpcd(GetPointPositions());
+    tpcd.SetPointNormals(GetPointNormals());
+
+    open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    lpcd.OrientNormalsConsistentTangentPlane(k);
+
+    SetPointNormals(core::eigen_converter::EigenVector3dVectorToTensor(
+            lpcd.normals_, GetPointPositions().GetDtype(), GetDevice()));
+}
+
 void PointCloud::EstimateColorGradients(
         const int max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {

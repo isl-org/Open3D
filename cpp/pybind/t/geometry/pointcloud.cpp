@@ -221,6 +221,19 @@ The attributes of the point cloud have different levels::
                    "with respect to the same. It uses KNN search if only "
                    "max_nn parameter is provided, and HybridSearch if radius "
                    "parameter is also provided.");
+    pointcloud.def("orient_normals_to_align_with_direction",
+                   &PointCloud::OrientNormalsToAlignWithDirection,
+                   "Function to orient the normals of a point cloud.",
+                   "orientation_reference"_a);
+    pointcloud.def("orient_normals_towards_camera_location",
+                   &PointCloud::OrientNormalsTowardsCameraLocation,
+                   "Function to orient the normals of a point cloud.",
+                   "camera_location"_a);
+    pointcloud.def("orient_normals_consistent_tangent_plane",
+                   &PointCloud::OrientNormalsConsistentTangentPlane,
+                   "Function to orient the normals with respect to consistent "
+                   "tangent planes.",
+                   "k"_a);
     pointcloud.def("estimate_color_gradients",
                    &PointCloud::EstimateColorGradients,
                    py::call_guard<py::gil_scoped_release>(),
@@ -357,6 +370,19 @@ Example:
              {"min_points", "Minimum number of points to form a cluster."},
              {"print_progress",
               "If true the progress is visualized in the console."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_to_align_with_direction",
+            {{"orientation_reference",
+              "Normals are oriented with respect to orientation_reference."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_towards_camera_location",
+            {{"camera_location",
+              "Normals are oriented with towards the camera_location."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_consistent_tangent_plane",
+            {{"k",
+              "Number of k nearest neighbors used in constructing the "
+              "Riemannian graph used to propagate normal orientation."}});
 }
 
 }  // namespace geometry

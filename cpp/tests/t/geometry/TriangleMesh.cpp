@@ -532,7 +532,7 @@ TEST_P(TriangleMeshPermuteDevices, ComputeVertexNormals) {
                     ref, core::Dtype::Float64, device);
     t_mesh.ComputeVertexNormals();
 
-    EXPECT_TRUE(t_mesh.GetVertexNormals().AllClose(ref_tensor));
+    EXPECT_TRUE(t_mesh.GetVertexNormals().AllClose(ref_tensor, 1e-6, 1e-2));
 }
 
 TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
