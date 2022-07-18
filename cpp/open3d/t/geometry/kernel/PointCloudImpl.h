@@ -231,37 +231,6 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
 }
 
 #if defined(__CUDACC__)
-void NormalizeNormalsCUDA
-#else
-void NormalizeNormalsCPU
-#endif
-        (core::Tensor& normals) {
-    const core::Dtype dtype = normals.GetDtype();
-    const int64_t n = normals.GetLength();
-
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        scalar_t* ptr = normals.GetDataPtr<scalar_t>();
-
-        core::ParallelFor(normals.GetDevice(), n,
-                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                              int64_t idx = 3 * workload_idx;
-                              scalar_t x = ptr[idx];
-                              scalar_t y = ptr[idx + 1];
-                              scalar_t z = ptr[idx + 2];
-                              scalar_t norm = sqrt(x * x + y * y + z * z);
-                              if (norm > 0) {
-                                  x /= norm;
-                                  y /= norm;
-                                  z /= norm;
-                              }
-                              ptr[idx] = x;
-                              ptr[idx + 1] = y;
-                              ptr[idx + 2] = z;
-                          });
-    });
-}
-
-#if defined(__CUDACC__)
 void EstimateCovariancesUsingHybridSearchCUDA
 #else
 void EstimateCovariancesUsingHybridSearchCPU

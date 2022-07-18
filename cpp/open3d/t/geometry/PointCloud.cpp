@@ -420,13 +420,13 @@ PointCloud &PointCloud::NormalizeNormals() {
     }
 
     core::Tensor &normals = GetPointNormals();
-    if (IsCPU()) {
-        kernel::pointcloud::NormalizeNormalsCPU(normals);
-    } else if (IsCUDA()) {
-        CUDA_CALL(kernel::pointcloud::NormalizeNormalsCUDA, normals);
-    } else {
-        utility::LogError("Unimplemented device");
-    }
+    const core::Tensor normals_norm = normals.Mul(normals).Sum({1}).Sqrt();
+    normals /= normals_norm.Reshape({-1, 1});
+
+    // Keep the normals to (0, 0, 0) if they are original (0, 0, 0).
+    normals.IndexSet({normals_norm.Eq(0)},
+                     core::Tensor::Zeros({3}, GetPointPositions().GetDtype(),
+                                         GetDevice()));
 
     return *this;
 }
@@ -521,8 +521,8 @@ void PointCloud::OrientNormalsToAlignWithDirection(
             orientation_reference.To(GetPointPositions().GetDtype());
     const core::Tensor reference_norm =
             reference.Mul(reference).Sum({0}).Sqrt();
-    reference =
-            reference_norm.IsNonZero() ? reference.Div(reference_norm) : reference;
+    reference = reference_norm.IsNonZero() ? reference.Div(reference_norm)
+                                           : reference;
 
     core::Tensor &normals = GetPointNormals();
     const core::Tensor mat = normals.Matmul(reference).Flatten();
@@ -564,9 +564,10 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
             reference_assign_to_0.Mul(reference_assign_to_0).Sum({1}).Sqrt();
     reference_assign_to_0 /= reference_assign_to_0_norm.Reshape({-1, 1});
     // Set to (0, 0, 1) if the reference vector norm is 0.
-    reference_assign_to_0.IndexSet(
-            {reference_assign_to_0_norm.Eq(0)},
-            core::Tensor::Init<double>({0, 0, 1}, GetDevice()));
+    core::Tensor n = core::Tensor::Init<double>({0, 0, 1}, GetDevice())
+                             .To(GetPointPositions().GetDtype());
+
+    reference_assign_to_0.IndexSet({reference_assign_to_0_norm.Eq(0)}, n);
     normals.IndexSet({equal_0}, reference_assign_to_0);
 }
 
