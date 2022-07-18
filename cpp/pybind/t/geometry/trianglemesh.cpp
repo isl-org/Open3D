@@ -223,23 +223,190 @@ This example shows how to create a hemisphere from a sphere::
 )");
 
     // Triangle Mesh's creation APIs.
-    triangle_mesh.def_static(
-            "create_box", &TriangleMesh::CreateBox,
-            "Create a box triangle mesh. One vertex of the box"
-            "will be placed at the origin and the box aligns"
-            "with the positive x, y, and z axes."
-            "width"_a = 1.0,
-            "height"_a = 1.0, "depth"_a = 1.0, "float_dtype"_a = core::Float32,
-            "int_dtype"_a = core::Int64, "device"_a = core::Device("CPU:0"));
+    triangle_mesh
+            .def_static("create_box", &TriangleMesh::CreateBox,
+                        "Create a box triangle mesh. One vertex of the box"
+                        "will be placed at the origin and the box aligns"
+                        "with the positive x, y, and z axes."
+                        "width"_a = 1.0,
+                        "height"_a = 1.0, "depth"_a = 1.0,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_sphere", &TriangleMesh::CreateSphere,
+                        "Create a sphere mesh centered at (0, 0, 0).",
+                        "radius"_a = 1.0, "resolution"_a = 20,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_tetrahedron", &TriangleMesh::CreateTetrahedron,
+                        "Create a tetrahedron mesh centered at (0, 0, 0).",
+                        "radius"_a = 1.0, "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_octahedron", &TriangleMesh::CreateOctahedron,
+                        "Create a octahedron mesh centered at (0, 0, 0).",
+                        "radius"_a = 1.0, "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_icosahedron", &TriangleMesh::CreateIcosahedron,
+                        "Create a icosahedron mesh centered at (0, 0, 0).",
+                        "radius"_a = 1.0, "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_cylinder", &TriangleMesh::CreateCylinder,
+                        "Create a cylinder mesh.", "radius"_a = 1.0,
+                        "height"_a = 2.0, "resolution"_a = 20, "split"_a = 4,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_cone", &TriangleMesh::CreateCone,
+                        "Create a cone mesh.", "radius"_a = 1.0,
+                        "height"_a = 2.0, "resolution"_a = 20, "split"_a = 1,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_torus", &TriangleMesh::CreateTorus,
+                        "Create a torus mesh.", "torus_radius"_a = 1.0,
+                        "tube_radius"_a = 0.5, "radial_resolution"_a = 30,
+                        "tubular_resolution"_a = 20,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_arrow", &TriangleMesh::CreateArrow,
+                        "Create a arrow mesh.", "cylinder_radius"_a = 1.0,
+                        "cone_radius"_a = 1.5, "cylinder_height"_a = 5.0,
+                        "cone_height"_a = 4.0, "resolution"_a = 20,
+                        "cylinder_split"_a = 4, "cone_split"_a = 1,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_coordinate_frame",
+                        &TriangleMesh::CreateCoordinateFrame,
+                        "Create a coordinate frame mesh.", "size"_a = 1.0,
+                        "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0),
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_mobius", &TriangleMesh::CreateMobius,
+                        "Create a Mobius strip.", "length_split"_a = 70,
+                        "width_split"_a = 15, "twists"_a = 1, "raidus"_a = 1,
+                        "flatness"_a = 1, "width"_a = 1, "scale"_a = 1,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"));
 
     docstring::ClassMethodDocInject(
             m, "TriangleMesh", "create_box",
             {{"width", "x-directional length."},
              {"height", "y-directional length."},
              {"depth", "z-directional length."},
-             {"vertex_dtype", "Float_dtype, Float32 or Float64."},
-             {"triangle_dtype", "Int_dtype, Int32 or Int64."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
              {"device", "Device of the create mesh."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_sphere",
+            {{"radius", "The radius of the sphere."},
+             {"resolution", "The resolution of the sphere."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create sphere."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_tetrahedron",
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create tetrahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_octahedron",
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_icosahedron",
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_cylinder",
+            {{"radius", "The radius of the cylinder."},
+             {"height",
+              "The height of the cylinder.The axis of the cylinder will be "
+              "from (0, 0, -height/2) to (0, 0, height/2)."},
+             {"resolution",
+              " The circle will be split into ``resolution`` segments"},
+             {"split", "The ``height`` will be split into ``split`` segments."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_cone",
+            {{"radius", "The radius of the cone."},
+             {"height",
+              "The height of the cone. The axis of the cone will be from (0, "
+              "0, 0) to (0, 0, height)."},
+             {"resolution",
+              "The circle will be split into ``resolution`` segments"},
+             {"split", "The ``height`` will be split into ``split`` segments."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_torus",
+            {{"torus_radius",
+              "The radius from the center of the torus to the center of the "
+              "tube."},
+             {"tube_radius", "The radius of the torus tube."},
+             {"radial_resolution",
+              "The number of segments along the radial direction."},
+             {"tubular_resolution",
+              "The number of segments along the tubular direction."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_arrow",
+            {{"cylinder_radius", "The radius of the cylinder."},
+             {"cone_radius", "The radius of the cone."},
+             {"cylinder_height",
+              "The height of the cylinder. The cylinder is from (0, 0, 0) to "
+              "(0, 0, cylinder_height)"},
+             {"cone_height",
+              "The height of the cone. The axis of the cone will be from (0, "
+              "0, cylinder_height) to (0, 0, cylinder_height + cone_height)"},
+             {"resolution",
+              "The cone will be split into ``resolution`` segments."},
+             {"cylinder_split",
+              "The ``cylinder_height`` will be split into ``cylinder_split`` "
+              "segments."},
+             {"cone_split",
+              "The ``cone_height`` will be split into ``cone_split`` "
+              "segments."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_coordinate_frame",
+            {{"size", "The size of the coordinate frame."},
+             {"origin", "The origin of the coordinate frame."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_mobius",
+            {{"length_split", "The number of segments along the Mobius strip."},
+             {"width_split",
+              "The number of segments along the width of the Mobius strip."},
+             {"twists", "Number of twists of the Mobius strip."},
+             {"radius", "The radius of the Mobius strip."},
+             {"flatness", "Controls the flatness/height of the Mobius strip."},
+             {"width", "Width of the Mobius strip."},
+             {"scale", "Scale the complete Mobius strip."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
 
     triangle_mesh.def(
             "simplify_quadric_decimation",
