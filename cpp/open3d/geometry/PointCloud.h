@@ -118,9 +118,7 @@ public:
     }
 
     /// \brief Remove all points from the point cloud that have a nan entry, or
-    /// infinite entries.
-    ///
-    /// Also removes the corresponding normals and color entries.
+    /// infinite value. It also removes the corresponding attributes.
     ///
     /// \param remove_nan Remove NaN values from the PointCloud.
     /// \param remove_infinite Remove infinite values from the PointCloud.
