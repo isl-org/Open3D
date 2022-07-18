@@ -215,16 +215,16 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
             k++;
         }
     }
-    
+
     points_.resize(k);
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
     if (has_covariance) covariances_.resize(k);
-    
+
     utility::LogDebug(
             "[RemoveNonFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
-    
+
     return *this;
 }
 
@@ -252,7 +252,7 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
     utility::LogDebug(
             "Pointcloud down sampled from {:d} points to {:d} points.",
             (int)points_.size(), (int)output->points_.size());
-    
+
     return output;
 }
 
