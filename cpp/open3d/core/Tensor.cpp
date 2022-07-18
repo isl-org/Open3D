@@ -1706,6 +1706,8 @@ bool Tensor::IsNonZero() const {
 
 Tensor Tensor::All(const utility::optional<SizeVector>& dims,
                    bool keepdim) const {
+    AssertTensorDtype(*this, core::Bool);
+
     Tensor dst;
     if (dims.has_value()) {
         dst = Tensor(shape_util::ReductionShape(shape_, dims.value(), keepdim),
@@ -1723,6 +1725,8 @@ Tensor Tensor::All(const utility::optional<SizeVector>& dims,
 
 Tensor Tensor::Any(const utility::optional<SizeVector>& dims,
                    bool keepdim) const {
+    AssertTensorDtype(*this, core::Bool);
+
     Tensor dst;
     if (dims.has_value()) {
         dst = Tensor(shape_util::ReductionShape(shape_, dims.value(), keepdim),
