@@ -529,6 +529,28 @@ Example:
 
         o3d.visualization.draw([{'name': 'difference', 'geometry': ans}])
 )");
+
+    triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
+                      "hole_size"_a = 1e6,
+                      R"(Fill holes by triangulating boundary edges.
+
+This function always uses the CPU device.
+
+Args:
+    hole_size (float): This is the approximate threshold for filling holes.
+        The value describes the maximum radius of holes to be filled.
+
+Returns:
+    New mesh after filling holes.
+
+Example:
+    Fill holes at the bottom of the Stanford Bunny mesh::
+
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        filled = mesh.fill_holes()
+        o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
+)");
 }
 
 }  // namespace geometry

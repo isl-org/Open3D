@@ -330,3 +330,12 @@ def test_boolean_operations():
     ans = box.boolean_difference(sphere)
     assert ans.vertex['positions'].shape == (160, 3)
     assert ans.triangle['indices'].shape == (244, 3)
+
+
+def test_hole_filling():
+    sphere = o3d.geometry.TriangleMesh.create_sphere(1.0)
+    sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+    clipped = sphere.clip_plane([0.8, 0, 0], [1, 0, 0])
+    assert not clipped.to_legacy().is_watertight()
+    filled = clipped.fill_holes()
+    assert filled.to_legacy().is_watertight()

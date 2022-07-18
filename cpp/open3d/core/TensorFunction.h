@@ -110,7 +110,25 @@ Tensor Append(const Tensor& self,
               const Tensor& other,
               const utility::optional<int64_t>& axis = utility::nullopt);
 
-void SYCLDemo();
+/// \brief Computes the element-wise maximum of input and other. The tensors
+/// must have same data type and device.
+///
+/// If input.GetShape() != other.GetShape(), then they will be broadcasted to a
+/// common shape (which becomes the shape of the output).
+///
+/// \param input The input tensor.
+/// \param other The second input tensor.
+Tensor Maximum(const Tensor& input, const Tensor& other);
+
+/// \brief Computes the element-wise minimum of input and other. The tensors
+/// must have same data type and device.
+///
+/// If input.GetShape() != other.GetShape(), then they will be broadcasted to a
+/// common shape (which becomes the shape of the output).
+///
+/// \param input The input tensor.
+/// \param other The second input tensor.
+Tensor Minimum(const Tensor& input, const Tensor& other);
 
 }  // namespace core
 }  // namespace open3d
