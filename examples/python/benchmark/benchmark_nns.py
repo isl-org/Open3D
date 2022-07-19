@@ -234,9 +234,35 @@ if __name__ == "__main__":
             pickle.dump(results, f)
 
     results = []
-    for method in methods:
+    # stat_methods = methods
+    stat_methods = ["Open3D-Knn(CUDA:0)", "Open3D-Knn(CPU:0)", "PyTorchCluster-Knn(cuda)", "PyTorchCluster-Knn(cpu)"]
+    for method in stat_methods:
         with open(os.path.join(OUT_DIR, f"{method}.pkl"), "rb") as f:
             data = pickle.load(f)
             results.append(data)
 
     print_table_simple(methods, results)
+
+    # save plots
+    for k in neighbors:
+        fig = plt.figure()
+        plt.title(f"# neighbors = {k}")
+        plt.xlabel(f"# points")
+        plt.ylabel(f"Latency (sec)")
+        
+        latency = {}
+        for method, result in zip(stat_methods, results):
+            if method not in latency.keys():
+                latency[method] = []
+            for data in result.values():
+                if data['k'] == k:
+                    t = np.median(data['setup']) + np.median(data['search'])
+                    latency[method].append(t)
+
+        plt.plot(neighbors, latency["Open3D-Knn(CUDA:0)"], marker="o", color="r", label="Open3D (CUDA)")
+        plt.plot(neighbors, latency["Open3D-Knn(CPU:0)"], marker="o", color="b", label="Open3D (CPU)")
+        plt.plot(neighbors, latency["PyTorchCluster-Knn(cuda)"], marker="^", color="r", label="PyTorch Cluster (CUDA)")
+        plt.plot(neighbors, latency["PyTorchCluster-Knn(cpu)"], marker="^", color="b", label="PyTorch Cluster (CPU)")
+        plt.legend()
+        plt.show()
+        plt.savefig(os.path.join(OUT_DIR, f"o3d_vs_tc_k={k}.png"))
