@@ -175,8 +175,8 @@ if __name__ == "__main__":
 
     # collects runtimes for all examples
     results = OrderedDict()
-    datasets = prepare_benchmark_data(num_points=[1e3, 1e4, 1e5, 1e6, 1e7])
-    neighbors = [16, 32, 64, 128, 256]
+    datasets = prepare_benchmark_data(num_points=[1e3, 1e4, 1e5, 1e6])
+    neighbors = [16, 32, 64, 128]
 
     # prepare method
     methods = [
@@ -198,22 +198,32 @@ if __name__ == "__main__":
                 radii = compute_avg_radii(points, queries, neighbors)
             print(f"\n{example_name} | {len(points)} points", end="")
 
-            if hasattr(method, "prepare_data"):
-                points, queries = method.prepare_data(points, queries)
-
             for k, radius in zip(neighbors, radii):
+                points, queries = example['points'], example['queries']
                 example_results = {'k': k, 'num_points': len(points)}
                 search_args = {'k': k, 'radius': radius}
+
+                if hasattr(method, "prepare_data"):
+                    points, queries = method.prepare_data(points, queries)
+
+                example_results["setup"] = measure_time(
+                    lambda: method.setup(points, queries, radius)
+                )
                 setup_results = method.setup(points, queries, radius)
 
                 if 'index' in setup_results.keys():
-                    fn = lambda: method.search(setup_results['index'], setup_results['queries'], search_args)
+                    search_fn = lambda: method.search(setup_results['index'], setup_results['queries'], search_args)
                 else:
-                    fn = lambda: method.search(setup_results['points'], setup_results['queries'], search_args)
+                    search_fn = lambda: method.search(setup_results['points'], setup_results['queries'], search_args)
 
-                time = measure_time(fn)
+                time = measure_time(search_fn)
                 example_results["search"] = time
                 results[f"{example_name} n={len(points)} k={k}"] = example_results
+
+                for v in setup_results.values():
+                    del v
+                o3d.core.cuda.release_cache()
+                torch.cuda.empty_cache()
 
         # save results
         with open(os.path.join(OUT_DIR, f"{method}.pkl"), "wb") as f:

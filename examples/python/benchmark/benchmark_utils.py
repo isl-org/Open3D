@@ -127,11 +127,11 @@ def print_table(methods, results):
 
 def print_table_simple(methods, results):
     print("\n>>> Results:")
-    headers = [''] + [f'{n}_search' for n in methods]
+    headers = [''] + [f'{n}_total' for n in methods]
     rows = []
 
     for x in results[0]:
-        r = [x] + list(map(np.median, [r[x]['search'] for r in results]))
+        r = [x] + list(map(np.median, [r[x]['setup'] + r[x]['search'] for r in results]))
         rows.append(r)
 
     print(tabulate.tabulate(rows, headers=headers))
