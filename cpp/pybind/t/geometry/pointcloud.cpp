@@ -284,7 +284,7 @@ The attributes of the point cloud have different levels::
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a colored point cloud to a RGBD image.");
     pointcloud.def(
-            "hidden_points_removal", &PointCloud::HiddenPointRemoval,
+            "hidden_point_removal", &PointCloud::HiddenPointRemoval,
             "camera_location"_a, "radius"_a,
             "Removes hidden points from a point cloud and returns a mesh "
             "of the remaining points. Based on Katz et al. 'Direct "
