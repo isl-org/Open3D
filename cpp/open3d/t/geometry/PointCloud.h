@@ -354,6 +354,15 @@ public:
     /// number of points in the pointcloud.
     PointCloud RandomDownSample(double sampling_ratio) const;
 
+    /// \brief Downsample a pointcloud into output pointcloud with a set of
+    /// points has farthest distance.
+    ///
+    /// The sampling is performed by selecting the farthest point from previous
+    /// selected points iteratively.
+    ///
+    /// \param num_samples Number of points to be sampled.
+    PointCloud FarthestPointDownSample(size_t num_samples) const;
+
     /// \brief Remove points that have less than \p nb_points neighbors in a
     /// sphere of a given radius.
     ///
@@ -377,6 +386,19 @@ public:
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const override { return device_; }
 
+    /// \brief This is an implementation of the Hidden Point Removal operator
+    /// described in Katz et. al. 'Direct Visibility of Point Sets', 2007.
+    ///
+    /// Additional information about the choice of radius
+    /// for noisy point clouds can be found in Mehra et. al. 'Visibility of
+    /// Noisy Point Cloud Data', 2010.
+    ///
+    /// \param camera_location All points not visible from that location will be
+    /// removed.
+    /// \param radius The radius of the spherical projection.
+    std::tuple<TriangleMesh, core::Tensor> HiddenPointRemoval(
+            const core::Tensor &camera_location, double radius) const;
+
     /// \brief Cluster PointCloud using the DBSCAN algorithm
     /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
     /// in Large Spatial Databases with Noise", 1996
@@ -392,6 +414,22 @@ public:
     core::Tensor ClusterDBSCAN(double eps,
                                size_t min_points,
                                bool print_progress = false) const;
+
+    /// \brief Segment PointCloud plane using the RANSAC algorithm.
+    ///
+    /// \param distance_threshold Max distance a point can be from the plane
+    /// model, and still be considered an inlier.
+    /// \param ransac_n Number of initial points to be considered inliers in
+    /// each iteration.
+    /// \param num_iterations Maximum number of iterations.
+    /// \param probability Expected probability of finding the optimal plane.
+    /// \return Returns the plane model ax + by + cz + d = 0 and the indices of
+    /// the plane inliers.
+    std::tuple<core::Tensor, core::Tensor> SegmentPlane(
+            const double distance_threshold = 0.01,
+            const int ransac_n = 3,
+            const int num_iterations = 100,
+            const double probability = 0.99999999) const;
 
     /// Compute the convex hull of a point cloud using qhull.
     ///

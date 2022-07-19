@@ -359,6 +359,14 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
             false, false);
 }
 
+PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
+    // We want the sampled points has the attributes of the original point
+    // cloud, so full copy is needed.
+    const open3d::geometry::PointCloud lpcd = ToLegacy();
+    return FromLegacy(*lpcd.FarthestPointDownSample(num_samples),
+                      GetPointPositions().GetDtype(), GetDevice());
+}
+
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
         size_t nb_points, double search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {
@@ -824,6 +832,31 @@ open3d::geometry::PointCloud PointCloud::ToLegacy() const {
     return pcd_legacy;
 }
 
+std::tuple<TriangleMesh, core::Tensor> PointCloud::HiddenPointRemoval(
+        const core::Tensor &camera_location, double radius) const {
+    core::AssertTensorShape(camera_location, {3});
+    core::AssertTensorDevice(camera_location, GetDevice());
+
+    // The HiddenPointRemoval only need positions attribute.
+    PointCloud tpcd(GetPointPositions());
+    const open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    const Eigen::Vector3d camera_location_eigen =
+            core::eigen_converter::TensorToEigenMatrixXd(
+                    camera_location.Reshape({3, 1}));
+
+    std::shared_ptr<open3d::geometry::TriangleMesh> lmesh;
+    std::vector<size_t> pt_map;
+    std::tie(lmesh, pt_map) =
+            lpcd.HiddenPointRemoval(camera_location_eigen, radius);
+
+    return std::make_tuple(
+            TriangleMesh::FromLegacy(*lmesh, GetPointPositions().GetDtype(),
+                                     core::Int64, GetDevice()),
+            core::Tensor(pt_map, {(int64_t)pt_map.size()}, core::UInt64,
+                         GetDevice())
+                    .To(core::Int64));
+}
+
 core::Tensor PointCloud::ClusterDBSCAN(double eps,
                                        size_t min_points,
                                        bool print_progress) const {
@@ -834,6 +867,25 @@ core::Tensor PointCloud::ClusterDBSCAN(double eps,
     std::vector<int> labels =
             lpcd.ClusterDBSCAN(eps, min_points, print_progress);
     return core::Tensor(std::move(labels));
+}
+
+std::tuple<core::Tensor, core::Tensor> PointCloud::SegmentPlane(
+        const double distance_threshold,
+        const int ransac_n,
+        const int num_iterations,
+        const double probability) const {
+    // The RANSAC plane fitting only need positions attribute.
+    PointCloud tpcd(GetPointPositions());
+    const open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    std::vector<size_t> inliers;
+    Eigen::Vector4d plane;
+    std::tie(plane, inliers) = lpcd.SegmentPlane(distance_threshold, ransac_n,
+                                                 num_iterations, probability);
+    return std::make_tuple(
+            core::eigen_converter::EigenMatrixToTensor(plane).Flatten(),
+            core::Tensor(inliers, {(int64_t)inliers.size()}, core::UInt64,
+                         GetDevice())
+                    .To(core::Int64));
 }
 
 TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {

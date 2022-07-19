@@ -803,6 +803,30 @@ TEST_P(PointCloudPermuteDevices, RandomDownSample) {
     EXPECT_TRUE(pcd_small_down.GetPointPositions().GetLength() == 4);
 }
 
+TEST_P(PointCloudPermuteDevices, FarthestPointDownSample) {
+    core::Device device = GetParam();
+    if (!device.IsCPU()) {
+        GTEST_SKIP();
+    }
+
+    // Value test.
+    t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<float>({{0, 2.0, 0},
+                                       {1.0, 1.5, 0},
+                                       {0, 1.0, 0},
+                                       {1.0, 1.0, 0},
+                                       {0, 0, 1.0},
+                                       {1.0, 0, 1.0},
+                                       {0, 1.0, 1.0},
+                                       {1.0, 1.0, 1.5}},
+                                      device));
+    auto pcd_small_down = pcd_small.FarthestPointDownSample(4);
+    EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(
+            core::Tensor::Init<float>(
+                    {{0, 2.0, 0}, {1.0, 1.0, 0}, {1.0, 0, 1.0}, {0, 1.0, 1.0}},
+                    device)));
+}
+
 TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
     core::Device device = GetParam();
 
@@ -871,6 +895,27 @@ TEST_P(PointCloudPermuteDevices, RemoveNonFinitePoints) {
             {true, true, true, true, true, true}, device)));
 }
 
+TEST_P(PointCloudPermuteDevices, HiddenPointRemoval) {
+    core::Device device = GetParam();
+    if (!device.IsCPU()) {
+        GTEST_SKIP();
+    }
+    t::geometry::PointCloud pcd;
+    data::PLYPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
+    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
+
+    // Hard-coded test
+    t::geometry::TriangleMesh mesh;
+    core::Tensor pt_map;
+    std::tie(mesh, pt_map) = pcd.HiddenPointRemoval(
+            core::Tensor::Init<double>({0, 0, 5}, device), 5 * 100);
+
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
+            pcd.SelectByIndex(pt_map).GetPointPositions()));
+    EXPECT_EQ(mesh.GetVertexPositions().GetLength(), 24581);
+}
+
 TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
     core::Device device = GetParam();
     if (!device.IsCPU()) {
@@ -892,6 +937,30 @@ TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
     EXPECT_EQ(cluster_set.size(), 11);
     int cluster_sum = cluster.Sum({0}).Item<int>();
     EXPECT_EQ(cluster_sum, 398580);
+}
+
+TEST_P(PointCloudPermuteDevices, SegmentPlane) {
+    core::Device device = GetParam();
+    if (!device.IsCPU()) {
+        GTEST_SKIP();
+    }
+    t::geometry::PointCloud pcd;
+    data::PCDPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
+    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 113662);
+
+    // Hard-coded test
+    core::Tensor plane_model;
+    core::Tensor inliers;
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 1000);
+    EXPECT_TRUE(plane_model.AllClose(
+            core::Tensor::Init<double>({-0.06, -0.10, 0.99, -1.06}, device),
+            0.1, 0.1));
+
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 10, 1000);
+    EXPECT_TRUE(plane_model.AllClose(
+            core::Tensor::Init<double>({-0.06, -0.10, 0.99, -1.06}, device),
+            0.1, 0.1));
 }
 
 TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {

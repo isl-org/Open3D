@@ -206,6 +206,13 @@ The attributes of the point cloud have different levels::
                    "Downsample a pointcloud by selecting random index point "
                    "and its attributes.",
                    "sampling_ratio"_a);
+    pointcloud.def("farthest_point_down_sample",
+                   &PointCloud::FarthestPointDownSample,
+                   "Downsample a pointcloud into output pointcloud with a set "
+                   "of points has farthest distance.The sampling is performed "
+                   "by selecting the farthest point from previous selected "
+                   "points iteratively",
+                   "num_samples"_a);
     pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
                    "nb_points"_a, "search_radius"_a,
                    "Remove points that have less than nb_points neighbors in a "
@@ -277,12 +284,26 @@ The attributes of the point cloud have different levels::
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a colored point cloud to a RGBD image.");
     pointcloud.def(
+            "hidden_points_removal", &PointCloud::HiddenPointRemoval,
+            "camera_location"_a, "radius"_a,
+            "Removes hidden points from a point cloud and returns a mesh "
+            "of the remaining points. Based on Katz et al. 'Direct "
+            "Visibility of Point Sets', 2007. Additional information "
+            "about the choice of radius for noisy point clouds can be "
+            "found in Mehra et. al. 'Visibility of Noisy Point Cloud "
+            "Data', 2010.");
+    pointcloud.def(
             "cluster_dbscan", &PointCloud::ClusterDBSCAN,
             "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
             "'A Density-Based Algorithm for Discovering Clusters in Large "
             "Spatial Databases with Noise', 1996. Returns a list of point "
             "labels, -1 indicates noise according to the algorithm.",
             "eps"_a, "min_points"_a, "print_progress"_a = false);
+    pointcloud.def("segment_plane", &PointCloud::SegmentPlane,
+                   "Segments a plane in the point cloud using the RANSAC "
+                   "algorithm.",
+                   "distance_threshold"_a = 0.01, "ransac_n"_a = 3,
+                   "num_iterations"_a = 100, "probability"_a = 0.99999999);
     pointcloud.def(
             "compute_convex_hull", &PointCloud::ComputeConvexHull,
             "joggle_inputs"_a = false,
@@ -349,10 +370,19 @@ Example:
               "Sampling ratio, the ratio of sample to total number of points "
               "in the pointcloud."}});
     docstring::ClassMethodDocInject(
+            m, "PointCloud", "farthest_point_down_sample",
+            {{"num_samples", "Number of points to be sampled."}});
+    docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_radius_outliers",
             {{"nb_points",
               "Number of neighbor points required within the radius."},
              {"search_radius", "Radius of the sphere."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "hidden_point_removal",
+            {{"input", "The input point cloud."},
+             {"camera_location",
+              "All points not visible from that location will be removed"},
+             {"radius", "The radius of the sperical projection"}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "cluster_dbscan",
             {{"eps",
@@ -360,6 +390,17 @@ Example:
              {"min_points", "Minimum number of points to form a cluster."},
              {"print_progress",
               "If true the progress is visualized in the console."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "segment_plane",
+            {{"distance_threshold",
+              "Max distance a point can be from the plane model, and still be "
+              "considered an inlier."},
+             {"ransac_n",
+              "Number of initial points to be considered inliers in each "
+              "iteration."},
+             {"num_iterations", "Number of iterations."},
+             {"probability",
+              "Expected probability of finding the optimal plane."}});
 }
 
 }  // namespace geometry
