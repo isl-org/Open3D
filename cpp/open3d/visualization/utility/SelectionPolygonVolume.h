@@ -64,13 +64,14 @@ public:
     std::shared_ptr<geometry::TriangleMesh> CropTriangleMesh(
             const geometry::TriangleMesh &input) const;
 
+    std::vector<size_t> CropInPolygon(
+            const std::vector<Eigen::Vector3d> &input) const;
 private:
     std::shared_ptr<geometry::PointCloud> CropPointCloudInPolygon(
             const geometry::PointCloud &input) const;
     std::shared_ptr<geometry::TriangleMesh> CropTriangleMeshInPolygon(
             const geometry::TriangleMesh &input) const;
-    std::vector<size_t> CropInPolygon(
-            const std::vector<Eigen::Vector3d> &input) const;
+    // std::vector<size_t> CropInPolygon(const std::vector<Eigen::Vector3d> &input) const;
 
 public:
     /// One of `{x, y, z}`.
