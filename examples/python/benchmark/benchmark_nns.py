@@ -132,25 +132,26 @@ def compute_avg_radii(points, queries, neighbors):
     return avg_radii
 
 
-def prepare_benchmark_data(num_points, dim=3, num_queries=10):
+def prepare_benchmark_data(num_points, dimensions, num_queries=10):
     # setup dataset examples
     datasets = OrderedDict()
 
     # random dataset
-    for num_points_ in num_points:
-        N = int(num_points_)
-        npy_file = os.path.join(OUT_DIR, f"random_{N}.npy")
+    for D in dimensions:
+        for num_points_ in num_points:
+            N = int(num_points_)
+            npy_file = os.path.join(OUT_DIR, f"random_D={D}_N={N}.npy")
 
-        if not os.path.exists(npy_file):
-            print(f"Generating a random dataset, random_{N}.npy...")
-            points = np.random.randn(N, dim)
-            np.save(npy_file, points)
+            if not os.path.exists(npy_file):
+                print(f"Generating a random dataset, random_D={D}_N={N}.npy...")
+                points = np.random.randn(N, D)
+                np.save(npy_file, points)
 
-        print(f"Loading the random dataset, random_{N}.npy...")
-        points = np.load(npy_file)
-        queries = points.copy()[::num_queries]
-        filename = os.path.basename(npy_file)
-        datasets[filename] = {'points': points, 'queries': queries}
+            print(f"Loading the random dataset, random_D={D}_N={N}.npy...")
+            points = np.load(npy_file)
+            queries = points.copy()[::num_queries]
+            filename = os.path.basename(npy_file)
+            datasets[filename] = {'points': points, 'queries': queries}
 
     return datasets
 
@@ -175,7 +176,10 @@ if __name__ == "__main__":
 
     # collects runtimes for all examples
     results = OrderedDict()
-    datasets = prepare_benchmark_data(num_points=[1e2, 1e3, 1e4, 1e5, 1e6])
+    datasets = prepare_benchmark_data(
+        num_points=[1e2, 1e3, 1e4, 1e5, 1e6],
+        dimensions=[3, 4, 8, 16, 32]
+    )
     neighbors = [8, 16, 32, 64, 100]
 
     # prepare method
