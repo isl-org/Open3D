@@ -112,8 +112,8 @@ class PyTorchCluster:
     def search(self, points, queries, search_args):
         if self.search_type == "knn":
             out = torch_cluster.knn(points, queries, search_args["k"])
-        elif self.search_type == "hybrid":
-            out = torch_cluster.radius(points, queries, search_args["radius"], max_num_neighbors=search_args["k"]) # if # points > max, randomly pick the points.
+        elif self.search_type == "radius":
+            out = torch_cluster.radius(points, queries, search_args["radius"], max_num_neighbors=256) # if # points > max, randomly pick the points.
         else:
             raise ValueError(f"{self.search_type} is not supported.")
         return out
