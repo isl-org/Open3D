@@ -35,7 +35,7 @@ from collections import OrderedDict
 import numpy as np
 import open3d as o3d
 import torch
-from torch_cluster import knn_graph, radius_graph
+import torch_cluster
 from scipy.spatial import cKDTree
 import matplotlib.pyplot as plt
 
@@ -48,7 +48,7 @@ if not os.path.isdir(OUT_DIR):
 
 
 # Define NNS methods
-class NNS:
+class Open3D:
 
     def __init__(self, device, search_type, index_type):
         self.device = device
@@ -58,9 +58,14 @@ class NNS:
             "long": o3d.core.Dtype.Int64
         }[index_type]
 
+    def prepare_data(self, points, queries):
+        points = o3d.core.Tensor(points, dtype=o3d.core.Dtype.Float32)
+        queries = o3d.core.Tensor(queries, dtype=o3d.core.Dtype.Float32)
+        return points, queries
+
     def setup(self, points, queries, radius):
-        points_dev = points.to(self.device)
-        queries_dev = queries.to(self.device)
+        points_dev = points.contiguous().to(self.device)
+        queries_dev = queries.contiguous().to(self.device)
         index = o3d.core.nns.NearestNeighborSearch(points_dev, self.index_type)
         if self.search_type == "knn":
             index.knn_index()
@@ -70,7 +75,7 @@ class NNS:
             index.hybrid_index(radius)
         else:
             raise ValueError(f"{self.search_type} is not supported.")
-        return index, queries_dev
+        return {'index': index, 'queries': queries_dev}
 
     def search(self, index, queries, search_args):
         if self.search_type == "knn":
@@ -85,7 +90,36 @@ class NNS:
         return out
 
     def __str__(self):
-        return f"{self.search_type.capitalize()}({self.device}, {self.index_type})"
+        return f"{self.__class__.__name__}-{self.search_type.capitalize()}({self.device})"
+
+
+class PyTorchCluster:
+
+    def __init__(self, device, search_type):
+        self.device = device
+        self.search_type = search_type
+
+    def prepare_data(self, points, queries):
+        points = torch.from_numpy(points).float()
+        queries = torch.from_numpy(queries).float()
+        return points, queries
+
+    def setup(self, points, queries, radius):
+        points_dev = points.contiguous().to(self.device)
+        queries_dev = queries.contiguous().to(self.device)
+        return {'points': points_dev, 'queries': queries_dev}
+
+    def search(self, points, queries, search_args):
+        if self.search_type == "knn":
+            out = torch_cluster.knn(points, queries, search_args["k"])
+        elif self.search_type == "hybrid":
+            out = torch_cluster.radius(points, queries, search_args["radius"], max_num_neighbors=search_args["k"]) # if # points > max, randomly pick the points.
+        else:
+            raise ValueError(f"{self.search_type} is not supported.")
+        return out
+
+    def __str__(self):
+        return f"{self.__class__.__name__}-{self.search_type.capitalize()}({self.device})"
 
 
 def compute_avg_radii(points, queries, neighbors):
@@ -113,9 +147,8 @@ def prepare_benchmark_data(num_points=[1e4, 1e5, 1e6], num_queries=10):
             np.save(npy_file, points)
 
         print(f"Loading the random dataset, random_{N}.npy...")
-        points = queries = o3d.core.Tensor(np.load(npy_file),
-                                           dtype=o3d.core.Dtype.Float32)
-        queries = queries[::num_queries]
+        points = np.load(npy_file)
+        queries = points.copy()[::num_queries]
         filename = os.path.basename(npy_file)
         datasets[filename] = {'points': points, 'queries': queries}
 
@@ -146,7 +179,10 @@ if __name__ == "__main__":
     neighbors = [3, 4, 5]
 
     # prepare method
-    methods = [NNS(device, args.search_type, args.index_type)]
+    methods = [
+        Open3D(device, args.search_type, args.index_type),
+        PyTorchCluster(torch.device('cuda' if args.use_gpu else 'cpu'), args.search_type),
+    ]
 
     # run benchmark
     for method in methods:
@@ -162,19 +198,20 @@ if __name__ == "__main__":
                 radii = compute_avg_radii(points, queries, neighbors)
             print(f"\n{example_name} | {len(points)} points", end="")
 
+            if hasattr(method, "prepare_data"):
+                points, queries = method.prepare_data(points, queries)
+
             for k, radius in zip(neighbors, radii):
-                points = points.contiguous().to(device)
-                queries = points.contiguous().to(device)
-
                 example_results = {'k': k, 'num_points': len(points)}
+                search_args = {'k': k, 'radius': radius}
+                setup_results = method.setup(points, queries, radius)
 
-                if hasattr(method, "prepare_data"):
-                    points, queries = method.prepare_data(points, queries)
+                if 'index' in setup_results.keys():
+                    fn = lambda: method.search(setup_results['index'], setup_results['queries'], search_args)
+                else:
+                    fn = lambda: method.search(setup_results['points'], setup_results['queries'], search_args)
 
-                index, queries = method.setup(points, queries, radius)
-                time = measure_time(
-                    lambda: method.search(index, queries, dict(k=k, radius=radius))
-                )
+                time = measure_time(fn)
                 example_results["search"] = time
                 results[f"{example_name} n={len(points)} k={k}"] = example_results
 
