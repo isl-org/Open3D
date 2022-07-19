@@ -132,7 +132,7 @@ def compute_avg_radii(points, queries, neighbors):
     return avg_radii
 
 
-def prepare_benchmark_data(num_points=[1e4, 1e5, 1e6], num_queries=10):
+def prepare_benchmark_data(num_points, num_queries=10):
     # setup dataset examples
     datasets = OrderedDict()
 
@@ -163,7 +163,7 @@ if __name__ == "__main__":
                         choices=["knn", "radius", "hybrid"])
     parser.add_argument("-it", "--index_type",
                         type=str,
-                        default="int",
+                        default="long",
                         choices=["int", "long"])
     parser.add_argument("-x", "--x_axis", type=str, default="num_points", choices=["num_points", "k"])
     parser.add_argument("-o", "--overwrite", action="store_true")
@@ -175,8 +175,8 @@ if __name__ == "__main__":
 
     # collects runtimes for all examples
     results = OrderedDict()
-    datasets = prepare_benchmark_data()
-    neighbors = [3, 4, 5]
+    datasets = prepare_benchmark_data(num_points=[1e3, 1e4, 1e5, 1e6, 1e7, 1e8])
+    neighbors = [8, 16, 32, 64, 128, 256]
 
     # prepare method
     methods = [
