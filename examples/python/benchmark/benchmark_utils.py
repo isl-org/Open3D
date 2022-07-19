@@ -131,7 +131,10 @@ def print_table_simple(methods, results):
     rows = []
 
     for x in results[0]:
-        r = [x] + list(map(np.median, [r[x]['setup'] + r[x]['search'] for r in results]))
+        setup_times = list(map(np.median, [r[x]['setup'] for r in results]))
+        search_times = list(map(np.median, [r[x]['search'] for r in results]))
+        times = [setup_time + search_time for setup_time, search_time in zip(setup_times, search_times)]
+        r = [x] + times
         rows.append(r)
 
     print(tabulate.tabulate(rows, headers=headers))
