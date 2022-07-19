@@ -34,21 +34,29 @@ from collections import OrderedDict
 
 import numpy as np
 import open3d as o3d
+import torch
+from torch_cluster import knn_graph, radius_graph
 from scipy.spatial import cKDTree
-import nvidia_smi
 import matplotlib.pyplot as plt
 
-from benchmark_utils import measure_memory, print_system_info, print_table_memory
+from benchmark_utils import measure_time, print_table_simple
+
+
+OUT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_data")
+if not os.path.isdir(OUT_DIR):
+    os.makedirs(OUT_DIR)
 
 
 # Define NNS methods
 class NNS:
 
     def __init__(self, device, search_type, index_type):
-        assert index_type in ["int", "long"]
         self.device = device
         self.search_type = search_type
-        self.index_type = o3d.core.Int32 if index_type == "int" else o3d.core.Int64
+        self.index_type = {
+            "int": o3d.core.Dtype.Int32,
+            "long": o3d.core.Dtype.Int64
+        }[index_type]
 
     def setup(self, points, queries, radius):
         points_dev = points.to(self.device)
@@ -66,18 +74,18 @@ class NNS:
 
     def search(self, index, queries, search_args):
         if self.search_type == "knn":
-            out = index.knn_search(queries, search_args["knn"])
+            out = index.knn_search(queries, search_args["k"])
         elif self.search_type == "radius":
             out = index.fixed_radius_search(queries, search_args["radius"])
         elif self.search_type == "hybrid":
             out = index.hybrid_search(queries, search_args["radius"],
-                                      search_args["knn"])
+                                      search_args["k"])
         else:
             raise ValueError(f"{self.search_type} is not supported.")
         return out
 
     def __str__(self):
-        return f"{self.search_type.capitalize()}({self.device}, {self.index_type})_memory"
+        return f"{self.search_type.capitalize()}({self.device}, {self.index_type})"
 
 
 def compute_avg_radii(points, queries, neighbors):
@@ -90,83 +98,61 @@ def compute_avg_radii(points, queries, neighbors):
     return avg_radii
 
 
-def prepare_benchmark_data():
+def prepare_benchmark_data(num_points=[1e4, 1e5, 1e6], num_queries=10):
     # setup dataset examples
     datasets = OrderedDict()
 
     # random dataset
-    out_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                           "testdata")
-
-    if not os.path.isdir(out_dir):
-        os.makedirs(out_dir)
-
-    log10_ns = [4, 5, 6, 7]
-
-    for log10_n in log10_ns:
-        print("==================================")
-        npy_file = os.path.join(out_dir, f"random_1e{log10_n}.npy")
+    for num_points_ in num_points:
+        N = int(num_points_)
+        npy_file = os.path.join(OUT_DIR, f"random_{N}.npy")
 
         if not os.path.exists(npy_file):
-            print(f"generating a random dataset, random_1e{log10_n}.npy...")
-            N = int(np.power(10, log10_n))
+            print(f"Generating a random dataset, random_{N}.npy...")
             points = np.random.randn(N, 3)
             np.save(npy_file, points)
 
-        print(f"loading the random dataset, random_1e{log10_n}.npy...")
+        print(f"Loading the random dataset, random_{N}.npy...")
         points = queries = o3d.core.Tensor(np.load(npy_file),
-                                           dtype=o3d.core.Float32)
-        queries = queries[::10]
+                                           dtype=o3d.core.Dtype.Float32)
+        queries = queries[::num_queries]
         filename = os.path.basename(npy_file)
         datasets[filename] = {'points': points, 'queries': queries}
-        print("")
+
     return datasets
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--search_type",
+    parser.add_argument("-st", "--search_type",
                         type=str,
                         default="knn",
-                        choices=["knn", "radius", "hybrid", "all"])
-    parser.add_argument("--overwrite", action="store_true")
-    parser.add_argument("--gpu_idx", type=int, default=3)
+                        choices=["knn", "radius", "hybrid"])
+    parser.add_argument("-it", "--index_type",
+                        type=str,
+                        default="int",
+                        choices=["int", "long"])
+    parser.add_argument("-x", "--x_axis", type=str, default="num_points", choices=["num_points", "k"])
+    parser.add_argument("-o", "--overwrite", action="store_true")
+    parser.add_argument("--use_gpu", action="store_true")
     args = parser.parse_args()
 
     # devices
-    nvidia_smi.nvmlInit()
-    handle = nvidia_smi.nvmlDeviceGetHandleByIndex(args.gpu_idx)
-    o3d_cpu_dev = o3d.core.Device()
-    o3d_cuda_dev = o3d.core.Device(o3d.core.Device.CUDA, 0)
+    device = o3d.core.Device(o3d.core.Device.CUDA, 0) if args.use_gpu else o3d.core.Device()
 
     # collects runtimes for all examples
     results = OrderedDict()
-
     datasets = prepare_benchmark_data()
+    neighbors = [3, 4, 5]
 
-    # prepare methods
-    if args.search_type == "all":
-        methods = [
-            NNS(o3d_cuda_dev, "knn", "int"),
-            NNS(o3d_cuda_dev, "knn", "long"),
-            NNS(o3d_cuda_dev, "radius", "int"),
-            NNS(o3d_cuda_dev, "radius", "long"),
-            NNS(o3d_cuda_dev, "hybrid", "int"),
-            NNS(o3d_cuda_dev, "hybrid", "long"),
-        ]
-    else:
-        methods = [
-            NNS(o3d_cuda_dev, args.search_type, "int"),
-            NNS(o3d_cuda_dev, args.search_type, "long"),
-        ]
-    neighbors = [int(2**p) for p in range(12)]
+    # prepare method
+    methods = [NNS(device, args.search_type, args.index_type)]
 
     # run benchmark
     for method in methods:
-        if not args.overwrite and os.path.exists(f"{method}.pkl"):
-            print(f"skip {method}")
+        if not args.overwrite and os.path.exists(os.path.join(OUT_DIR, f"{method}.pkl")):
+            print(f"Skip {method}...")
             continue
-        print(method)
 
         for example_name, example in datasets.items():
             points, queries = example['points'], example['queries']
@@ -174,110 +160,32 @@ if __name__ == "__main__":
                 radii = neighbors
             else:
                 radii = compute_avg_radii(points, queries, neighbors)
-            print(f"{example_name} {points.shape[0]}")
+            print(f"\n{example_name} | {len(points)} points", end="")
 
-            for (knn, radius) in zip(neighbors, radii):
-                points, queries = example['points'], example['queries']
-                points = points.contiguous().to(o3d_cuda_dev)
-                queries = queries.contiguous().to(o3d_cuda_dev)
+            for k, radius in zip(neighbors, radii):
+                points = points.contiguous().to(device)
+                queries = points.contiguous().to(device)
 
-                example_results = {'k': knn, 'num_points': points.shape[0]}
+                example_results = {'k': k, 'num_points': len(points)}
 
                 if hasattr(method, "prepare_data"):
                     points, queries = method.prepare_data(points, queries)
 
                 index, queries = method.setup(points, queries, radius)
-                memory = measure_memory(
-                    lambda: method.search(index, queries,
-                                          dict(knn=knn, radius=radius)), handle)
-                example_results['memory'] = memory
+                time = measure_time(
+                    lambda: method.search(index, queries, dict(k=k, radius=radius))
+                )
+                example_results["search"] = time
+                results[f"{example_name} n={len(points)} k={k}"] = example_results
 
-                results[
-                    f'{example_name} n={points.shape[0]} k={knn}'] = example_results
-
-                del index
-                del points
-                del queries
-                o3d.core.cuda.release_cache()
-
-        with open(f"{method}.pkl", 'wb') as f:
+        # save results
+        with open(os.path.join(OUT_DIR, f"{method}.pkl"), "wb") as f:
             pickle.dump(results, f)
 
     results = []
     for method in methods:
-        with open(f"{method}.pkl", "rb") as f:
-            print(f"{method}.pkl")
+        with open(os.path.join(OUT_DIR, f"{method}.pkl"), "rb") as f:
             data = pickle.load(f)
             results.append(data)
 
-    print_system_info()
-    print_table_memory(methods, results)
-
-    fig = plt.figure(figsize=(10, 10))
-    ax1 = fig.add_subplot(2, 2, 1)
-    ax2 = fig.add_subplot(2, 2, 2)
-    ax3 = fig.add_subplot(2, 2, 3)
-    ax4 = fig.add_subplot(2, 2, 4)
-    dtypes = ["int32", "int64"]
-    colors = ["b", "r"]
-    lines = ["^", "o"]
-    for idx, result in enumerate(results):  # int, long
-        ks = [[], [], [], []]  # num_points
-        ms = [[], [], [], []]
-        for value in result.values():
-            if value['num_points'] == int(np.power(10, 4)):
-                ks[0].append(value['k'])
-                ms[0].append(value['memory'])
-            elif value['num_points'] == int(np.power(10, 5)):
-                ks[1].append(value['k'])
-                ms[1].append(value['memory'])
-            elif value['num_points'] == int(np.power(10, 6)):
-                ks[2].append(value['k'])
-                ms[2].append(value['memory'])
-            elif value['num_points'] == int(np.power(10, 7)):
-                ks[3].append(value['k'])
-                ms[3].append(value['memory'])
-            else:
-                raise ValueError
-        ax1.plot(ks[0],
-                 ms[0],
-                 marker=lines[idx],
-                 color=colors[idx],
-                 label=dtypes[idx])
-        ax2.plot(ks[1],
-                 ms[1],
-                 marker=lines[idx],
-                 color=colors[idx],
-                 label=dtypes[idx])
-        ax3.plot(ks[2],
-                 ms[2],
-                 marker=lines[idx],
-                 color=colors[idx],
-                 label=dtypes[idx])
-        ax4.plot(ks[3],
-                 ms[3],
-                 marker=lines[idx],
-                 color=colors[idx],
-                 label=dtypes[idx])
-    ax1.set_title(f"{args.search_type}: N={int(np.power(10, 4))}")
-    ax1.set_xlabel("K")
-    ax1.set_ylabel("Memory (GB)")
-    ax1.legend()
-
-    ax2.set_title(f"{args.search_type}: N={int(np.power(10, 5))}")
-    ax2.set_xlabel("K")
-    ax2.set_ylabel("Memory (GB)")
-    ax2.legend()
-
-    ax3.set_title(f"{args.search_type}: N={int(np.power(10, 6))}")
-    ax3.set_xlabel("K")
-    ax3.set_ylabel("Memory (GB)")
-    ax3.legend()
-
-    ax4.set_title(f"{args.search_type}: N={int(np.power(10, 7))}")
-    ax4.set_xlabel("K")
-    ax4.set_ylabel("Memory (GB)")
-    ax4.legend()
-
-    plt.show()
-    plt.savefig("memory.png")
+    print_table_simple(methods, results)

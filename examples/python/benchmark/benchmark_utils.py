@@ -30,7 +30,7 @@ import subprocess
 
 import numpy as np
 import tabulate
-import nvidia_smi
+import nvidia_smi # pip install nvidia-ml-py3
 
 
 def get_processor_name():
@@ -126,6 +126,7 @@ def print_table(methods, results):
 
 
 def print_table_simple(methods, results):
+    print("\n>>> Results:")
     headers = [''] + [f'{n}_search' for n in methods]
     rows = []
 
