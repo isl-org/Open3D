@@ -175,8 +175,8 @@ if __name__ == "__main__":
 
     # collects runtimes for all examples
     results = OrderedDict()
-    datasets = prepare_benchmark_data(num_points=[1e3, 1e4, 1e5, 1e6, 1e7, 1e8])
-    neighbors = [8, 16, 32, 64, 128, 256]
+    datasets = prepare_benchmark_data(num_points=[1e3, 1e4, 1e5, 1e6, 1e7])
+    neighbors = [16, 32, 64, 128, 256]
 
     # prepare method
     methods = [
