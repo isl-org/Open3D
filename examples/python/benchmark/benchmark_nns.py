@@ -132,7 +132,7 @@ def compute_avg_radii(points, queries, neighbors):
     return avg_radii
 
 
-def prepare_benchmark_data(num_points, num_queries=10):
+def prepare_benchmark_data(num_points, dim=3, num_queries=10):
     # setup dataset examples
     datasets = OrderedDict()
 
@@ -143,7 +143,7 @@ def prepare_benchmark_data(num_points, num_queries=10):
 
         if not os.path.exists(npy_file):
             print(f"Generating a random dataset, random_{N}.npy...")
-            points = np.random.randn(N, 3)
+            points = np.random.randn(N, dim)
             np.save(npy_file, points)
 
         print(f"Loading the random dataset, random_{N}.npy...")
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     # collects runtimes for all examples
     results = OrderedDict()
     datasets = prepare_benchmark_data(num_points=[1e3, 1e4, 1e5, 1e6])
-    neighbors = [16, 32, 64, 128]
+    neighbors = [16, 32, 64, 100]
 
     # prepare method
     methods = [
