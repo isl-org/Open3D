@@ -177,10 +177,10 @@ if __name__ == "__main__":
     # collects runtimes for all examples
     results = OrderedDict()
     datasets = prepare_benchmark_data(
-        num_points=[1e2, 1e3, 1e4, 1e5, 1e6],
+        num_points=[1e2, 1e3, 1e4, 1e5],
         dimensions=[3] # TODO(chrockey): higher dimension
     )
-    neighbors = [8, 16, 32, 64, 100]
+    neighbors = [8, 16, 32, 64]
 
     # prepare method
     methods = [
