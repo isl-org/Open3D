@@ -531,7 +531,6 @@ TEST_P(TriangleMeshPermuteDevices, ComputeVertexNormals) {
             core::eigen_converter::EigenVector3dVectorToTensor(
                     ref, core::Dtype::Float64, device);
     t_mesh.ComputeVertexNormals();
-
     EXPECT_TRUE(t_mesh.GetVertexNormals().AllClose(ref_tensor));
 }
 
