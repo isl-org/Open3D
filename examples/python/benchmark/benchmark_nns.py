@@ -138,8 +138,7 @@ def prepare_benchmark_data(num_points, dimensions, num_queries=10):
 
     # random dataset
     for D in dimensions:
-        for num_points_ in num_points:
-            N = int(num_points_)
+        for N in num_points:
             npy_file = os.path.join(OUT_DIR, f"random_D={D}_N={N}.npy")
 
             if not os.path.exists(npy_file):
@@ -176,8 +175,9 @@ if __name__ == "__main__":
 
     # collects runtimes for all examples
     results = OrderedDict()
+    num_points = [int(1e2), int(1e3), int(1e4), int(1e5)]
     datasets = prepare_benchmark_data(
-        num_points=[1e2, 1e3, 1e4, 1e5],
+        num_points=num_points,
         dimensions=[3] # TODO(chrockey): higher dimension
     )
     neighbors = [8, 16, 32, 64]
@@ -244,10 +244,11 @@ if __name__ == "__main__":
     print_table_simple(methods, results)
 
     # save plots
+    log_num_points = [np.log10(x) for x in num_points]
     for k in neighbors:
         fig = plt.figure()
         plt.title(f"# neighbors = {k}")
-        plt.xlabel(f"# points")
+        plt.xlabel(f"log (# points)")
         plt.ylabel(f"Latency (sec)")
         
         latency = {}
@@ -259,10 +260,10 @@ if __name__ == "__main__":
                     t = np.median(data['setup']) + np.median(data['search'])
                     latency[method].append(t)
 
-        plt.plot(neighbors, latency["Open3D-Knn(CUDA:0)"], marker="o", color="r", label="Open3D (CUDA)")
-        plt.plot(neighbors, latency["Open3D-Knn(CPU:0)"], marker="o", color="b", label="Open3D (CPU)")
-        plt.plot(neighbors, latency["PyTorchCluster-Knn(cuda)"], marker="^", color="r", label="PyTorch Cluster (CUDA)")
-        plt.plot(neighbors, latency["PyTorchCluster-Knn(cpu)"], marker="^", color="b", label="PyTorch Cluster (CPU)")
+        plt.plot(log_num_points, latency["Open3D-Knn(CUDA:0)"], marker="o", color="r", label="Open3D (CUDA)")
+        plt.plot(log_num_points, latency["Open3D-Knn(CPU:0)"], marker="o", color="b", label="Open3D (CPU)")
+        plt.plot(log_num_points, latency["PyTorchCluster-Knn(cuda)"], marker="^", color="r", label="PyTorch Cluster (CUDA)")
+        plt.plot(log_num_points, latency["PyTorchCluster-Knn(cpu)"], marker="^", color="b", label="PyTorch Cluster (CPU)")
         plt.legend()
         plt.show()
         plt.savefig(os.path.join(OUT_DIR, f"o3d_vs_tc_k={k}.png"))
