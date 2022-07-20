@@ -33,7 +33,7 @@ RUN apt-get update && apt-get install -y \
 # Minimal dependencies for building
 RUN apt-get update && apt-get install -y \
     build-essential \
-    clang-7 \
+    clang \
     git \
  && rm -rf /var/lib/apt/lists/*
 
@@ -47,15 +47,15 @@ ENV PATH="/usr/lib/ccache:${PATH}"
 RUN mkdir -p /usr/lib/ccache \
  && ln -sf $(which ccache) /usr/lib/ccache/gcc \
  && ln -sf $(which ccache) /usr/lib/ccache/g++ \
- && ln -sf $(which ccache) /usr/lib/ccache/clang-7
+ && ln -sf $(which ccache) /usr/lib/ccache/clang
 RUN echo ${PATH} \
  && ls -alh /usr/lib/ccache \
  && echo "gcc=$(which gcc)" \
  && gcc --version \
  && echo "g++=$(which g++)" \
  && g++ --version \
- && echo "clang-7=$(which clang-7)" \
- && clang-7 --version
+ && echo "clang=$(which clang)" \
+ && clang --version
 
 # Uncomment this line to always fetch the latest ccache
 # ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
