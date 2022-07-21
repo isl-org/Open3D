@@ -140,6 +140,9 @@ public:
     /// Getter for vertex_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetVertexAttr() const { return vertex_attr_; }
 
+    /// Getter for vertex_attr_ TensorMap.
+    TensorMap &GetVertexAttr() { return vertex_attr_; }
+
     /// Get vertex attributes in vertex_attr_. Throws exception if the attribute
     /// does not exist.
     ///
@@ -162,6 +165,9 @@ public:
 
     /// Getter for triangle_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetTriangleAttr() const { return triangle_attr_; }
+
+    /// Getter for triangle_attr_ TensorMap.
+    TensorMap &GetTriangleAttr() { return triangle_attr_; }
 
     /// Get triangle attributes in triangle_attr_. Throws exception if the
     /// attribute does not exist.

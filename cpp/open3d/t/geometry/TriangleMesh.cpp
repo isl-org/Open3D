@@ -324,12 +324,22 @@ TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
                 target_reduction);
     }
 
-    auto polydata = CreateVtkPolyDataFromGeometry(*this);
+    // exclude triangle attributes because they will not be preserved
+    auto polydata =
+            CreateVtkPolyDataFromGeometry(*this, false, {"*"}, {}, {}, {});
 
     vtkNew<vtkQuadricDecimation> decimate;
     decimate->SetInputData(polydata);
     decimate->SetTargetReduction(target_reduction);
     decimate->SetVolumePreservation(preserve_volume);
+    // AttributeErrorMetric needs to be activated to preserve vertex attributes
+    decimate->AttributeErrorMetricOn();
+    // Don't use attributed to keep the function simple
+    decimate->ScalarsAttributeOff();
+    decimate->NormalsAttributeOff();
+    decimate->VectorsAttributeOff();
+    decimate->TCoordsAttributeOff();
+    decimate->TensorsAttributeOff();
     decimate->Update();
     auto decimated_polydata = decimate->GetOutput();
 
@@ -342,12 +352,16 @@ TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
                               double tolerance,
                               int op) {
     using namespace vtkutils;
+    // exclude triangle attributes because they will not be preserved
+    auto polydata_A =
+            CreateVtkPolyDataFromGeometry(mesh_A, false, {"*"}, {}, {}, {});
+    auto polydata_B =
+            CreateVtkPolyDataFromGeometry(mesh_B, false, {"*"}, {}, {}, {});
+
     // clean meshes before passing them to the boolean operation
-    auto polydata_A = CreateVtkPolyDataFromGeometry(mesh_A);
     vtkNew<vtkCleanPolyData> cleaner_A;
     cleaner_A->SetInputData(polydata_A);
 
-    auto polydata_B = CreateVtkPolyDataFromGeometry(mesh_B);
     vtkNew<vtkCleanPolyData> cleaner_B;
     cleaner_B->SetInputData(polydata_B);
 
@@ -384,7 +398,10 @@ TriangleMesh TriangleMesh::BooleanDifference(const TriangleMesh &mesh,
 
 TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     using namespace vtkutils;
-    auto polydata = CreateVtkPolyDataFromGeometry(*this);
+    // do not include triangle attributes because they will not be preserved by
+    // the hole filling algorithm
+    auto polydata =
+            CreateVtkPolyDataFromGeometry(*this, false, {"*"}, {}, {}, {});
     vtkNew<vtkFillHolesFilter> fill_holes;
     fill_holes->SetInputData(polydata);
     fill_holes->SetHoleSize(hole_size);
