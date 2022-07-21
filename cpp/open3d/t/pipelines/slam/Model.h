@@ -159,6 +159,8 @@ public:
 public:
     /// Maintained volumetric map.
     t::geometry::VoxelBlockGrid voxel_grid_;
+
+    /// Active block coordinates from prior integration
     core::Tensor frustum_block_coords_;
 
     /// T_frame_to_model, maintained tracking state in a (4, 4), Float64 Tensor
