@@ -544,7 +544,16 @@ void VoxelBlockGrid::Save(const std::string &file_name) const {
         t::io::WriteNpz(file_name, output);
     }
 }
+VoxelBlockGrid VoxelBlockGrid::To(const core::Device &device, bool copy) const {
+    if (!copy && block_hashmap_->GetDevice() == device) {
+        return *this;
+    }
 
+    auto device_hashmap =
+            std::make_shared<core::HashMap>(this->block_hashmap_->To(device));
+    return VoxelBlockGrid(voxel_size_, block_resolution_, device_hashmap,
+                          name_attr_map_);
+}
 VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {
     std::unordered_map<std::string, core::Tensor> tensor_map =
             t::io::ReadNpz(file_name);

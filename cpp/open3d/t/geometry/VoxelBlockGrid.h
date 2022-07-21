@@ -237,8 +237,20 @@ public:
     /// Load a voxel block grid from a .npz file.
     static VoxelBlockGrid Load(const std::string &file_name);
 
+    /// Convert the hash map to another device.
+    VoxelBlockGrid To(const core::Device &device, bool copy = false) const;
+
 private:
     void AssertInitialized() const;
+
+    VoxelBlockGrid(float voxelSize,
+                   int64_t blockResolution,
+                   const std::shared_ptr<core::HashMap> &blockHashmap,
+                   const std::unordered_map<std::string, int> &nameAttrMap)
+        : voxel_size_(voxelSize),
+          block_resolution_(blockResolution),
+          block_hashmap_(blockHashmap),
+          name_attr_map_(nameAttrMap) {}
 
     float voxel_size_ = -1;
     int64_t block_resolution_ = -1;
