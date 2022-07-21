@@ -40,18 +40,11 @@ if [ "$(uname -m)" == "aarch64" ]; then
     # Ubuntu 18.04 ARM64's libc++-dev and libc++abi-dev are version 6, but we need 7+.
     source /etc/lsb-release
     if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
-        deps=("${deps[@]/libc++-dev/}")
-        deps=("${deps[@]/libc++abi-dev/}")
-        deps+=("libc++-7-dev")
-        deps+=("libc++abi-7-dev")
+        deps=("${deps[@]/libc++-dev/libc++-7-dev}")
+        deps=("${deps[@]/libc++abi-dev/libc++abi-7-dev}")
     fi
 fi
 
-# Join deps into a single string (https://stackoverflow.com/a/9429887/1255535)
-# We specify all deps to apt-get at once to better detect conflicts.
-deps_str=$(
-    IFS=" "
-    echo "${deps[*]}"
-)
+echo "apt-get install ${deps[*]}"
 $SUDO apt-get update
-$SUDO apt-get install "${APT_CONFIRM}" ${deps_str}
+$SUDO apt-get install ${APT_CONFIRM} ${deps[*]}
