@@ -29,6 +29,7 @@
 #include <vtkBooleanOperationPolyDataFilter.h>
 #include <vtkCleanPolyData.h>
 #include <vtkClipPolyData.h>
+#include <vtkFillHolesFilter.h>
 #include <vtkPlane.h>
 #include <vtkQuadricDecimation.h>
 
@@ -383,6 +384,17 @@ TriangleMesh TriangleMesh::BooleanDifference(const TriangleMesh &mesh,
 
 AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetVertexPositions());
+}
+
+TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
+    using namespace vtkutils;
+    auto polydata = CreateVtkPolyDataFromGeometry(*this);
+    vtkNew<vtkFillHolesFilter> fill_holes;
+    fill_holes->SetInputData(polydata);
+    fill_holes->SetHoleSize(hole_size);
+    fill_holes->Update();
+    auto result = fill_holes->GetOutput();
+    return CreateTriangleMeshFromVtkPolyData(result);
 }
 
 }  // namespace geometry

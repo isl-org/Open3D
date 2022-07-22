@@ -45,6 +45,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorFunction.h"
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
@@ -383,9 +384,31 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
 
     const core::Tensor valid =
             num_neighbors.Ge(static_cast<int64_t>(nb_points));
-    const PointCloud pcd = SelectByMask(valid);
+    return std::make_tuple(SelectByMask(valid), valid);
+}
 
-    return std::make_tuple(pcd, valid);
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
+        bool remove_nan, bool remove_inf) const {
+    core::Tensor finite_indices_mask;
+    const core::SizeVector dim = {1};
+    if (remove_nan && remove_inf) {
+        finite_indices_mask =
+                this->GetPointPositions().IsFinite().All(dim, false);
+    } else if (remove_nan) {
+        finite_indices_mask =
+                this->GetPointPositions().IsNan().LogicalNot().All(dim, false);
+    } else if (remove_inf) {
+        finite_indices_mask =
+                this->GetPointPositions().IsInf().LogicalNot().All(dim, false);
+    } else {
+        finite_indices_mask = core::Tensor::Full(
+                {this->GetPointPositions().GetLength()}, true, core::Bool,
+                this->GetPointPositions().GetDevice());
+    }
+
+    utility::LogDebug("Removing non-finite points.");
+    return std::make_tuple(SelectByMask(finite_indices_mask),
+                           finite_indices_mask);
 }
 
 void PointCloud::EstimateNormals(

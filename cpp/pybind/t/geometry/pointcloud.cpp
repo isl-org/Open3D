@@ -210,6 +210,11 @@ The attributes of the point cloud have different levels::
                    "nb_points"_a, "search_radius"_a,
                    "Remove points that have less than nb_points neighbors in a "
                    "sphere of a given search radius.");
+    pointcloud.def(
+            "remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
+            "remove_nan"_a = true, "remove_infinite"_a = true,
+            "Remove all points from the point cloud that have a nan entry, or "
+            "infinite value. It also removes the corresponding attributes.");
 
     pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
                    py::call_guard<py::gil_scoped_release>(),

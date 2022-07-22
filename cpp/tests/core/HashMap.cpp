@@ -99,7 +99,7 @@ TEST_P(HashMapPermuteDevices, SimpleInit) {
         core::Tensor buf_indices, masks;
         hashmap.Insert(keys, values, buf_indices, masks);
 
-        EXPECT_TRUE(masks.All());
+        EXPECT_TRUE(masks.All().Item<bool>());
         EXPECT_EQ(hashmap.Size(), 5);
     }
 }
