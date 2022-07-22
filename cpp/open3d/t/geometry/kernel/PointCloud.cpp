@@ -126,8 +126,6 @@ void GetPointMaskWithinAABB(const core::Tensor& points,
     // Mask must be a bool tensor.
     core::AssertTensorDtype(mask, core::Bool);
 
-    const core::Device device = points.GetDevice();
-
     // Convert points, min_bound and max_bound into contiguous Tensor.
     const core::Tensor min_bound_d = min_bound.Contiguous();
     const core::Tensor max_bound_d = max_bound.Contiguous();
