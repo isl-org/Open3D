@@ -751,7 +751,7 @@ public:
 
     /// Create an axis-aligned bounding box from vertex attribute "positions".
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
-    
+
     /// Fill holes by triangulating boundary edges.
     ///
     /// This function always uses the CPU device.
