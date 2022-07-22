@@ -58,10 +58,10 @@ int DtypeToVtkType(const core::Dtype& dtype);
 vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
         const Geometry& geometry,
         bool copy = false,
-        std::unordered_set<std::string> point_attr_include = {"*"},
-        std::unordered_set<std::string> point_attr_exclude = {},
-        std::unordered_set<std::string> triangle_attr_include = {"*"},
-        std::unordered_set<std::string> triangle_attr_exclude = {});
+        const std::unordered_set<std::string>& point_attr_include = {"*"},
+        const std::unordered_set<std::string>& point_attr_exclude = {},
+        const std::unordered_set<std::string>& triangle_attr_include = {"*"},
+        const std::unordered_set<std::string>& triangle_attr_exclude = {});
 
 /// Creates a triangle mesh from a vtkPolyData object.
 /// The returned TriangleMesh may directly use the memory of the data arrays in

@@ -345,10 +345,10 @@ static void AddTensorMapToVtkFieldData(
 vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
         const Geometry& geometry,
         bool copy,
-        std::unordered_set<std::string> point_attr_include,
-        std::unordered_set<std::string> point_attr_exclude,
-        std::unordered_set<std::string> triangle_attr_include,
-        std::unordered_set<std::string> triangle_attr_exclude) {
+        const std::unordered_set<std::string>& point_attr_include,
+        const std::unordered_set<std::string>& point_attr_exclude,
+        const std::unordered_set<std::string>& triangle_attr_include,
+        const std::unordered_set<std::string>& triangle_attr_exclude) {
     vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
 
     if (geometry.GetGeometryType() == Geometry::GeometryType::PointCloud) {
@@ -401,6 +401,11 @@ TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
 
     core::Tensor triangles =
             CreateTensorFromVtkCellArray(polydata->GetPolys(), copy);
+    // Some algorithms return an empty tensor with shape (0,0).
+    // Fix the last dim here.
+    if (triangles.GetShape() == core::SizeVector{0, 0}) {
+        triangles = triangles.Reshape({0, 3});
+    }
     TriangleMesh mesh(vertices, triangles);
 
     AddVtkFieldDataToTensorMap(mesh.GetVertexAttr(), polydata->GetPointData(),

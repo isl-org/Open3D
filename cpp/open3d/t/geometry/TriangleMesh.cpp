@@ -324,22 +324,13 @@ TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
                 target_reduction);
     }
 
-    // exclude triangle attributes because they will not be preserved
-    auto polydata =
-            CreateVtkPolyDataFromGeometry(*this, false, {"*"}, {}, {}, {});
+    // exclude attributes because they will not be preserved
+    auto polydata = CreateVtkPolyDataFromGeometry(*this, false, {}, {}, {}, {});
 
     vtkNew<vtkQuadricDecimation> decimate;
     decimate->SetInputData(polydata);
     decimate->SetTargetReduction(target_reduction);
     decimate->SetVolumePreservation(preserve_volume);
-    // AttributeErrorMetric needs to be activated to preserve vertex attributes
-    decimate->AttributeErrorMetricOn();
-    // Don't use attributed to keep the function simple
-    decimate->ScalarsAttributeOff();
-    decimate->NormalsAttributeOff();
-    decimate->VectorsAttributeOff();
-    decimate->TCoordsAttributeOff();
-    decimate->TensorsAttributeOff();
     decimate->Update();
     auto decimated_polydata = decimate->GetOutput();
 
