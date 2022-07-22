@@ -21,28 +21,24 @@ __usage_docker_build="USAGE:
 
 OPTION:
     # OpenBLAS AMD64 (Dockerfile.openblas)
-    openblas-amd64-py36-dev     : OpenBLAS AMD64 3.6 wheel, developer mode
     openblas-amd64-py37-dev     : OpenBLAS AMD64 3.7 wheel, developer mode
     openblas-amd64-py38-dev     : OpenBLAS AMD64 3.8 wheel, developer mode
     openblas-amd64-py39-dev     : OpenBLAS AMD64 3.9 wheel, developer mode
-    openblas-amd64-py310-dev     : OpenBLAS AMD64 3.10 wheel, developer mode
-    openblas-amd64-py36         : OpenBLAS AMD64 3.6 wheel, release mode
+    openblas-amd64-py310-dev    : OpenBLAS AMD64 3.10 wheel, developer mode
     openblas-amd64-py37         : OpenBLAS AMD64 3.7 wheel, release mode
     openblas-amd64-py38         : OpenBLAS AMD64 3.8 wheel, release mode
     openblas-amd64-py39         : OpenBLAS AMD64 3.9 wheel, release mode
-    openblas-amd64-py310         : OpenBLAS AMD64 3.10 wheel, release mode
+    openblas-amd64-py310        : OpenBLAS AMD64 3.10 wheel, release mode
 
     # OpenBLAS ARM64 (Dockerfile.openblas)
-    openblas-arm64-py36-dev     : OpenBLAS ARM64 3.6 wheel, developer mode
     openblas-arm64-py37-dev     : OpenBLAS ARM64 3.7 wheel, developer mode
     openblas-arm64-py38-dev     : OpenBLAS ARM64 3.8 wheel, developer mode
     openblas-arm64-py39-dev     : OpenBLAS ARM64 3.9 wheel, developer mode
-    openblas-arm64-py310-dev     : OpenBLAS ARM64 3.10 wheel, developer mode
-    openblas-arm64-py36         : OpenBLAS ARM64 3.6 wheel, release mode
+    openblas-arm64-py310-dev    : OpenBLAS ARM64 3.10 wheel, developer mode
     openblas-arm64-py37         : OpenBLAS ARM64 3.7 wheel, release mode
     openblas-arm64-py38         : OpenBLAS ARM64 3.8 wheel, release mode
     openblas-arm64-py39         : OpenBLAS ARM64 3.9 wheel, release mode
-    openblas-arm64-py310         : OpenBLAS ARM64 3.10 wheel, release mode
+    openblas-arm64-py310        : OpenBLAS ARM64 3.10 wheel, release mode
 
     # Ubuntu CPU CI (Dockerfile.ci)
     cpu-static                  : Ubuntu CPU static
@@ -64,16 +60,14 @@ OPTION:
     5-ml-focal                 : CUDA CI, 5-ml-focal, developer mode
 
     # CUDA wheels (Dockerfile.wheel)
-    cuda_wheel_py36_dev        : CUDA Python 3.6 wheel, developer mode
     cuda_wheel_py37_dev        : CUDA Python 3.7 wheel, developer mode
     cuda_wheel_py38_dev        : CUDA Python 3.8 wheel, developer mode
     cuda_wheel_py39_dev        : CUDA Python 3.9 wheel, developer mode
-    cuda_wheel_py310_dev        : CUDA Python 3.10 wheel, developer mode
-    cuda_wheel_py36            : CUDA Python 3.6 wheel, release mode
+    cuda_wheel_py310_dev       : CUDA Python 3.10 wheel, developer mode
     cuda_wheel_py37            : CUDA Python 3.7 wheel, release mode
     cuda_wheel_py38            : CUDA Python 3.8 wheel, release mode
     cuda_wheel_py39            : CUDA Python 3.9 wheel, release mode
-    cuda_wheel_py310            : CUDA Python 3.10 wheel, release mode
+    cuda_wheel_py310           : CUDA Python 3.10 wheel, release mode
 "
 
 HOST_OPEN3D_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. >/dev/null 2>&1 && pwd)"
@@ -118,10 +112,7 @@ openblas_export_env() {
 		print_usage_and_exit_docker_build
 	fi
 
-	if [[ "py36" =~ ^($options)$ ]]; then
-		export PYTHON_VERSION=3.6
-		export DOCKER_TAG=${DOCKER_TAG}-py36
-	elif [[ "py37" =~ ^($options)$ ]]; then
+	if [[ "py37" =~ ^($options)$ ]]; then
 		export PYTHON_VERSION=3.7
 		export DOCKER_TAG=${DOCKER_TAG}-py37
 	elif [[ "py38" =~ ^($options)$ ]]; then
@@ -184,9 +175,7 @@ cuda_wheel_build() {
 
 	options="$(echo "$@" | tr ' ' '|')"
 	echo "[cuda_wheel_build()] options: ${options}"
-	if [[ "py36" =~ ^($options)$ ]]; then
-		PYTHON_VERSION=3.6
-	elif [[ "py37" =~ ^($options)$ ]]; then
+	if [[ "py37" =~ ^($options)$ ]]; then
 		PYTHON_VERSION=3.7
 	elif [[ "py38" =~ ^($options)$ ]]; then
 		PYTHON_VERSION=3.8
@@ -473,10 +462,6 @@ function main() {
 	echo "[$(basename $0)] building $1"
 	case "$1" in
 	# OpenBLAS AMD64
-	openblas-amd64-py36-dev)
-		openblas_export_env amd64 py36 dev
-		openblas_build
-		;;
 	openblas-amd64-py37-dev)
 		openblas_export_env amd64 py37 dev
 		openblas_build
@@ -491,10 +476,6 @@ function main() {
 		;;
 	openblas-amd64-py310-dev)
 		openblas_export_env amd64 py310 dev
-		openblas_build
-		;;
-	openblas-amd64-py36)
-		openblas_export_env amd64 py36
 		openblas_build
 		;;
 	openblas-amd64-py37)
@@ -515,10 +496,6 @@ function main() {
 		;;
 
 	# OpenBLAS ARM64
-	openblas-arm64-py36-dev)
-		openblas_export_env arm64 py36 dev
-		openblas_build
-		;;
 	openblas-arm64-py37-dev)
 		openblas_export_env arm64 py37 dev
 		openblas_build
@@ -533,10 +510,6 @@ function main() {
 		;;
 	openblas-arm64-py310-dev)
 		openblas_export_env arm64 py310 dev
-		openblas_build
-		;;
-	openblas-arm64-py36)
-		openblas_export_env arm64 py36
 		openblas_build
 		;;
 	openblas-arm64-py37)
@@ -589,9 +562,6 @@ function main() {
 		;;
 
 	# CUDA wheels
-	cuda_wheel_py36_dev)
-		cuda_wheel_build py36 dev
-		;;
 	cuda_wheel_py37_dev)
 		cuda_wheel_build py37 dev
 		;;
@@ -603,9 +573,6 @@ function main() {
 		;;
 	cuda_wheel_py310_dev)
 		cuda_wheel_build py310 dev
-		;;
-	cuda_wheel_py36)
-		cuda_wheel_build py36
 		;;
 	cuda_wheel_py37)
 		cuda_wheel_build py37

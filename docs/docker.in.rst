@@ -100,17 +100,17 @@ building Open3D or if you have different versions of Open3D dependencies
 installed, you can build Open3D from source in docker without interfering with
 your system. This may be the case for older OS such as Ubuntu 16.04 or CentOS 7.
 We provide docker build scripts and dockerfiles to build Python wheels in
-various configurations. You can choose between different versions of Python
-(3.7-3.9), hardware architectures (AMD64, ARM64, CUDA) and developer vs release
-modes. Some sample configuration options available are shown below.
+various configurations. You can choose between different versions of Python,
+hardware architectures (AMD64, ARM64, CUDA) and developer vs release modes. Some
+sample configuration options available are shown below.
 
 .. code-block:: bash
 
     cd docker
 
-    ./docker_build.sh cuda_wheel_py38_dev  # Python 3.8, AMD64, CUDA with MKL, developer mode
-    ./docker_build.sh openblas-amd64-py36  # Python 3.6, AMD64 with OpenBLAS instead of MKL, release mode
-    ./docker_build.sh openblas-arm64-py37  # Python 3.7, ARM64 with OpenBLAS, release mode
+    ./docker_build.sh cuda_wheel_py38_dev   # Python 3.8, AMD64, CUDA with MKL, developer mode
+    ./docker_build.sh openblas-amd64-py310  # Python 3.10, AMD64 with OpenBLAS instead of MKL, release mode
+    ./docker_build.sh openblas-arm64-py37   # Python 3.7, ARM64 with OpenBLAS, release mode
 
 Run ``./docker_build.sh`` without arguments to get a list of all available build
 configurations.
