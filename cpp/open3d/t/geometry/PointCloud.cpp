@@ -849,12 +849,14 @@ std::tuple<TriangleMesh, core::Tensor> PointCloud::HiddenPointRemoval(
     std::tie(lmesh, pt_map) =
             lpcd.HiddenPointRemoval(camera_location_eigen, radius);
 
+    // Convert pt_map into Int64 Tensor.
+    std::vector<int64_t> indices(pt_map.begin(), pt_map.end());
+
     return std::make_tuple(
             TriangleMesh::FromLegacy(*lmesh, GetPointPositions().GetDtype(),
                                      core::Int64, GetDevice()),
-            core::Tensor(pt_map, {(int64_t)pt_map.size()}, core::UInt64,
-                         GetDevice())
-                    .To(core::Int64));
+            core::Tensor(indices, {(int64_t)indices.size()}, core::Int64,
+                         GetDevice()));
 }
 
 core::Tensor PointCloud::ClusterDBSCAN(double eps,
@@ -881,11 +883,14 @@ std::tuple<core::Tensor, core::Tensor> PointCloud::SegmentPlane(
     Eigen::Vector4d plane;
     std::tie(plane, inliers) = lpcd.SegmentPlane(distance_threshold, ransac_n,
                                                  num_iterations, probability);
+
+    // Convert inliers into Int64 Tensor.
+    std::vector<int64_t> indices(inliers.begin(), inliers.end());
+
     return std::make_tuple(
             core::eigen_converter::EigenMatrixToTensor(plane).Flatten(),
-            core::Tensor(inliers, {(int64_t)inliers.size()}, core::UInt64,
-                         GetDevice())
-                    .To(core::Int64));
+            core::Tensor(indices, {(int64_t)indices.size()}, core::Int64,
+                         GetDevice()));
 }
 
 TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
