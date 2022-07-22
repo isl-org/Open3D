@@ -1,1 +1,2 @@
 numpy>=1.18.0
+configargparse
