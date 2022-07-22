@@ -196,9 +196,13 @@ public:
 
     /// Create an AxisAlignedBoundingBox from a legacy Open3D
     /// axis-aligned box.
+    ///
+    /// \param dtype The data type of the box for min_bound max_bound and color.
+    /// The default is float32. \param device The device of the box. The default
+    /// is CPU:0.
     static AxisAlignedBoundingBox FromLegacy(
             const open3d::geometry::AxisAlignedBoundingBox &box,
-            core::Dtype dtype = core::Float32,
+            const core::Dtype &dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Creates the axis-aligned box that encloses the set of points.

@@ -37,6 +37,7 @@ namespace geometry {
 AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Device &device)
     : Geometry(Geometry::GeometryType::AxisAlignedBoundingBox, 3),
       device_(device),
+      dtype_(core::Float32),
       min_bound_(core::Tensor::Zeros({3}, dtype_, device)),
       max_bound_(core::Tensor::Zeros({3}, dtype_, device)),
       color_(core::Tensor::Ones({3}, dtype_, device)) {}
@@ -44,14 +45,18 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Device &device)
 AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Tensor &min_bound,
                                                const core::Tensor &max_bound)
     : AxisAlignedBoundingBox([&]() {
-          core::AssertTensorDevice(min_bound, max_bound.GetDevice());
-          core::AssertTensorDtype(min_bound, max_bound.GetDtype());
+          core::AssertTensorDevice(max_bound, min_bound.GetDevice());
+          core::AssertTensorDtype(max_bound, min_bound.GetDtype());
           core::AssertTensorShape(min_bound, {3});
           core::AssertTensorShape(max_bound, {3});
           return min_bound.GetDevice();
       }()) {
+    device_ = min_bound.GetDevice();
+    dtype_ = min_bound.GetDtype();
+
     min_bound_ = min_bound;
     max_bound_ = max_bound;
+    color_ = core::Tensor::Ones({3}, dtype_, device_);
 
     // Check if the bounding box is valid.
     if (Volume() < 0) {
@@ -86,13 +91,12 @@ void AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound) {
     const core::Tensor tmp = min_bound_.Clone();
     min_bound_ = min_bound.To(min_bound_.GetDtype());
 
-    // If fail to pass the valid check, the min_bound_ will be set to the
+    // If the volume is invalid, the min_bound_ will be set to the
     // original value.
-    if (Volume() > 0) {
+    if (Volume() < 0) {
         utility::LogWarning(
                 "Invalid axis-aligned bounding box. Please make sure all "
                 "the elements in min bound are smaller than min bound.");
-
         min_bound_ = tmp;
     }
 }
@@ -105,13 +109,12 @@ void AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound) {
     const core::Tensor tmp = max_bound_.Clone();
     max_bound_ = max_bound;
 
-    // If fail to pass the valid check, the max_bound_ will be set to the
+    // If the volume is invalid, the max_bound_ will be set to the
     // original value.
-    if (Volume() > 0) {
+    if (Volume() < 0) {
         utility::LogWarning(
                 "Invalid axis-aligned bounding box. Please make sure all "
                 "the elements in max bound are larger than min bound.");
-
         max_bound_ = tmp;
     }
 }
@@ -165,8 +168,8 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::operator+=(
         const AxisAlignedBoundingBox &other) {
     if (other.GetDtype() != GetDtype()) {
         utility::LogError(
-                "The dtype of the other bounding box is {}, but the dtype of "
-                "this bounding box is {}.",
+                "The data-type of the other bounding box is {}, but the "
+                "data-type of this bounding box is {}.",
                 other.GetDtype().ToString(), GetDtype().ToString());
     }
 
@@ -199,28 +202,14 @@ double AxisAlignedBoundingBox::GetZPercentage(double z) const {
 }
 
 core::Tensor AxisAlignedBoundingBox::GetBoxPoints() const {
-    core::Tensor points =
-            core::Tensor::Zeros({8, 3}, core::Float32, GetDevice());
+    const core::Tensor extent_3x3 =
+            core::Tensor::Eye(3, GetDtype(), GetDevice())
+                    .Mul(GetExtent().Reshape({3, 1}));
 
-    const core::Tensor extent = GetExtent().To(core::Float32);
-    const float *extent_data = extent.GetDataPtr<float>();
-
-    points[0] = min_bound_;
-    points[1] = min_bound_ +
-                core::Tensor::Init<float>({extent_data[0], 0, 0}, GetDevice());
-    points[2] = min_bound_ +
-                core::Tensor::Init<float>({0, extent_data[1], 0}, GetDevice());
-    points[3] = min_bound_ +
-                core::Tensor::Init<float>({0, 0, extent_data[2]}, GetDevice());
-    points[4] = max_bound_;
-    points[5] = max_bound_ +
-                core::Tensor::Init<float>({-extent_data[0], 0, 0}, GetDevice());
-    points[6] = max_bound_ +
-                core::Tensor::Init<float>({0, -extent_data[1], 0}, GetDevice());
-    points[7] = max_bound_ +
-                core::Tensor::Init<float>({0, 0, -extent_data[2]}, GetDevice());
-
-    return points.To(GetDtype());
+    return core::Concatenate({min_bound_.Reshape({1, 3}),
+                              min_bound_.Reshape({1, 3}) + extent_3x3,
+                              max_bound_.Reshape({1, 3}),
+                              max_bound_.Reshape({1, 3}) - extent_3x3});
 }
 
 core::Tensor AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
@@ -277,18 +266,26 @@ open3d::geometry::AxisAlignedBoundingBox AxisAlignedBoundingBox::ToLegacy()
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::FromLegacy(
         const open3d::geometry::AxisAlignedBoundingBox &box,
-        core::Dtype dtype,
+        const core::Dtype &dtype,
         const core::Device &device) {
-    AxisAlignedBoundingBox t_box(device);
+    if (dtype != core::Float32 && dtype != core::Float64) {
+        utility::LogError(
+                "Got data-type {}, but the supported data-type of the bounding "
+                "box are Float32 and Float64.",
+                dtype.ToString());
+    }
+
+    AxisAlignedBoundingBox t_box(
+            core::eigen_converter::EigenMatrixToTensor(box.min_bound_)
+                    .Flatten()
+                    .To(device, dtype),
+            core::eigen_converter::EigenMatrixToTensor(box.max_bound_)
+                    .Flatten()
+                    .To(device, dtype));
+
     t_box.SetColor(core::eigen_converter::EigenMatrixToTensor(box.color_)
                            .Flatten()
-                           .To(device));
-    t_box.SetMaxBound(core::eigen_converter::EigenMatrixToTensor(box.max_bound_)
-                              .Flatten()
-                              .To(device));
-    t_box.SetMinBound(core::eigen_converter::EigenMatrixToTensor(box.min_bound_)
-                              .Flatten()
-                              .To(device));
+                           .To(device, dtype));
     return t_box;
 }
 

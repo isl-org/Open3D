@@ -124,17 +124,15 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevicePairs, CopyDevice) {
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, Clone_Clear_IsEmpty) {
     core::Device device = GetParam();
 
-    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, 1}, device);
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -1}, device);
     core::Tensor max_bound = core::Tensor::Init<float>({1, 1, 1}, device);
 
     t::geometry::AxisAlignedBoundingBox aabb(min_bound, max_bound);
 
-    // Clone.
-    auto aabb_clone = aabb.Clone();
-    EXPECT_EQ(aabb_clone.GetDevice(), device);
-    EXPECT_TRUE(aabb_clone.GetMinBound().AllClose(min_bound));
-    EXPECT_TRUE(aabb_clone.GetMaxBound().AllClose(max_bound));
-    EXPECT_TRUE(aabb_clone.GetColor().AllClose(
+    EXPECT_EQ(aabb.GetDevice(), device);
+    EXPECT_TRUE(aabb.GetMinBound().AllClose(min_bound));
+    EXPECT_TRUE(aabb.GetMaxBound().AllClose(max_bound));
+    EXPECT_TRUE(aabb.GetColor().AllClose(
             core::Tensor::Init<float>({1, 1, 1}, device)));
 
     // Clear.
@@ -155,20 +153,21 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, Setters) {
 
     t::geometry::AxisAlignedBoundingBox aabb(device);
 
+    core::Tensor min_bound = core::Tensor::Init<float>({-1, -1, -1}, device);
+    core::Tensor max_bound = core::Tensor::Init<float>({1.0, 1.0, 1.0}, device);
+    core::Tensor color = core::Tensor::Init<float>({0.0, 0.0, 0.0}, device);
+
     // SetMinBound.
-    aabb.SetMinBound(core::Tensor::Init<float>({-1, -1, -1}, device));
-    EXPECT_TRUE(aabb.GetMinBound().AllClose(
-            core::Tensor::Init<float>({-1, -1, -1}, device)));
+    aabb.SetMinBound(min_bound);
+    EXPECT_TRUE(aabb.GetMinBound().AllClose(min_bound));
 
     // SetMaxBound.
-    aabb.SetMaxBound(core::Tensor::Init<float>({1, 1, 1}, device));
-    EXPECT_TRUE(aabb.GetMaxBound().AllClose(
-            core::Tensor::Init<float>({1, 1, 1}, device)));
+    aabb.SetMaxBound(max_bound);
+    EXPECT_TRUE(aabb.GetMaxBound().AllClose(max_bound));
 
     // SetColor.
-    aabb.SetColor(core::Tensor::Init<float>({0, 0, 0}, device));
-    EXPECT_TRUE(aabb.GetColor().AllClose(
-            core::Tensor::Init<float>({0, 0, 0}, device)));
+    aabb.SetColor(color);
+    EXPECT_TRUE(aabb.GetColor().AllClose(color));
 }
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, GetProperties) {
@@ -320,12 +319,14 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, LegacyConversion) {
     ExpectEQ(legacy_aabb.max_bound_, Eigen::Vector3d(1, 1, 1));
     ExpectEQ(legacy_aabb.color_, Eigen::Vector3d(1, 1, 1));
 
-    auto aabb_new =
-            t::geometry::AxisAlignedBoundingBox::FromLegacy(legacy_aabb);
-    EXPECT_TRUE(aabb.GetMinBound().AllClose(
-            core::Tensor::Init<float>({-1, -1, -1}, device)));
-    EXPECT_TRUE(aabb.GetMaxBound().AllClose(
-            core::Tensor::Init<float>({1, 1, 1}, device)));
+    // In Legacy, the data-type is eigen-double, so the created aabb is of type
+    // Float64.
+    auto aabb_new = t::geometry::AxisAlignedBoundingBox::FromLegacy(
+            legacy_aabb, core::Float64, device);
+    EXPECT_TRUE(aabb_new.GetMinBound().AllClose(
+            core::Tensor::Init<double>({-1, -1, -1}, device)));
+    EXPECT_TRUE(aabb_new.GetMaxBound().AllClose(
+            core::Tensor::Init<double>({1, 1, 1}, device)));
 }
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, CreateFromPoints) {
