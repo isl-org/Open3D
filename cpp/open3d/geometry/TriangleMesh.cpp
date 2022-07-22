@@ -1673,7 +1673,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectByIndex(
             (int)vertices_.size(), (int)triangles_.size(),
             (int)output->vertices_.size(), (int)output->triangles_.size());
     return output;
-}  // namespace geometry
+}
 
 std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
         const AxisAlignedBoundingBox &bbox) const {
