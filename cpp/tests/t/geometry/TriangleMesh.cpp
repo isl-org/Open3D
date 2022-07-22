@@ -348,190 +348,55 @@ TEST_P(TriangleMeshPermuteDevices, Rotate) {
 TEST_P(TriangleMeshPermuteDevices, NormalizeNormals) {
     core::Device device = GetParam();
 
-    std::vector<Eigen::Vector3d> ref_vertex_normals = {
-            {0.692861, 0.323767, 0.644296}, {0.650010, 0.742869, 0.160101},
-            {0.379563, 0.870761, 0.312581}, {0.575046, 0.493479, 0.652534},
-            {0.320665, 0.448241, 0.834418}, {0.691127, 0.480526, 0.539850},
-            {0.227557, 0.973437, 0.025284}, {0.281666, 0.156994, 0.946582},
-            {0.341869, 0.894118, 0.289273}, {0.103335, 0.972118, 0.210498},
-            {0.441745, 0.723783, 0.530094}, {0.336903, 0.727710, 0.597441},
-            {0.434917, 0.862876, 0.257471}, {0.636619, 0.435239, 0.636619},
-            {0.393717, 0.876213, 0.277918}, {0.275051, 0.633543, 0.723167},
-            {0.061340, 0.873191, 0.483503}, {0.118504, 0.276510, 0.953677},
-            {0.930383, 0.360677, 0.065578}, {0.042660, 0.989719, 0.136513},
-            {0.175031, 0.720545, 0.670953}, {0.816905, 0.253392, 0.518130},
-            {0.377967, 0.767871, 0.517219}, {0.782281, 0.621223, 0.046017},
-            {0.314385, 0.671253, 0.671253}};
+    std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
+            open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
+    t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
+            *mesh, core::Float64, core::Int64, device);
 
-    std::vector<Eigen::Vector3d> ref_triangle_normals = {
-            {0.331843, 0.660368, 0.673642},  {0.920309, 0.198342, 0.337182},
-            {0.778098, 0.279317, 0.562624},  {0.547237, 0.723619, 0.420604},
-            {0.360898, 0.671826, 0.646841},  {0.657733, 0.738934, 0.146163},
-            {0.92945, 0.0241415, 0.368159},  {0.160811, 0.969595, 0.18446},
-            {0.922633, 0.298499, 0.244226},  {0.874092, 0.189272, 0.44737},
-            {0.776061, 0.568382, 0.273261},  {0.663812, 0.544981, 0.5122},
-            {0.763905, 0.22794, 0.603732},   {0.518555, 0.758483, 0.394721},
-            {0.892885, 0.283206, 0.350074},  {0.657978, 0.751058, 0.054564},
-            {0.872328, 0.483025, 0.0756979}, {0.170605, 0.588415, 0.790356},
-            {0.982336, 0.178607, 0.0558146}, {0.881626, 0.121604, 0.456013},
-            {0.616413, 0.573987, 0.539049},  {0.372896, 0.762489, 0.528733},
-            {0.669715, 0.451103, 0.589905},  {0.771164, 0.0571233, 0.634068},
-            {0.620625, 0.620625, 0.479217}};
-
-    const core::Tensor ref_vertex_normals_tensor =
-            core::eigen_converter::EigenVector3dVectorToTensor(
-                    ref_vertex_normals, core::Dtype::Float64, device);
-    const core::Tensor ref_triangle_normals_tensor =
-            core::eigen_converter::EigenVector3dVectorToTensor(
-                    ref_triangle_normals, core::Dtype::Float64, device);
-
-    size_t size = 25;
-    std::vector<Eigen::Vector3d> vertex_normals, triangle_normals, vertices;
-    std::vector<Eigen::Vector3i> triangles;
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(10.0, 10.0, 10.0);
-    vertex_normals.resize(size);
-    triangle_normals.resize(size);
-    vertices.resize(size);
-    Rand(vertex_normals, dmin, dmax, 0);
-    Rand(triangle_normals, dmin, dmax, 1);
-    Rand(vertices, dmin, dmax, 2);
-    for (size_t i = 0; i < size; i++)
-        triangles.push_back(Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
-
-    t::geometry::TriangleMesh t_mesh(
-            core::eigen_converter::EigenVector3dVectorToTensor(
-                    vertices, core::Dtype::Float64, device),
-            core::eigen_converter::EigenVector3iVectorToTensor(
-                    triangles, core::Dtype::Int64, device));
-    t_mesh.SetVertexNormals(core::eigen_converter::EigenVector3dVectorToTensor(
-            vertex_normals, core::Dtype::Float64, device));
-    t_mesh.SetTriangleNormals(
-            core::eigen_converter::EigenVector3dVectorToTensor(
-                    triangle_normals, core::Dtype::Float64, device));
-
+    mesh->ComputeVertexNormals(false);
+    mesh->NormalizeNormals();
+    t_mesh.ComputeVertexNormals(false);
     t_mesh.NormalizeNormals();
 
-    EXPECT_TRUE(t_mesh.GetVertexNormals().AllClose(ref_vertex_normals_tensor));
-    EXPECT_TRUE(
-            t_mesh.GetTriangleNormals().AllClose(ref_triangle_normals_tensor));
+    EXPECT_TRUE(t_mesh.GetVertexNormals().AllClose(
+            core::eigen_converter::EigenVector3dVectorToTensor(
+                    mesh->vertex_normals_, core::Dtype::Float64, device)));
+    EXPECT_TRUE(t_mesh.GetTriangleNormals().AllClose(
+            core::eigen_converter::EigenVector3dVectorToTensor(
+                    mesh->triangle_normals_, core::Dtype::Float64, device)));
 }
 
 TEST_P(TriangleMeshPermuteDevices, ComputeTriangleNormals) {
     core::Device device = GetParam();
 
-    std::vector<Eigen::Vector3d> ref = {{-0.119231, 0.738792, 0.663303},
-                                        {-0.115181, 0.730934, 0.672658},
-                                        {-0.589738, -0.764139, -0.261344},
-                                        {-0.330250, 0.897644, -0.291839},
-                                        {-0.164192, 0.976753, 0.137819},
-                                        {-0.475702, 0.727947, 0.493762},
-                                        {0.990884, -0.017339, -0.133596},
-                                        {0.991673, 0.091418, -0.090700},
-                                        {0.722410, 0.154580, -0.673965},
-                                        {0.598552, -0.312929, -0.737435},
-                                        {0.712875, -0.628251, -0.311624},
-                                        {0.233815, -0.638800, -0.732984},
-                                        {0.494773, -0.472428, -0.729391},
-                                        {0.583861, 0.796905, 0.155075},
-                                        {-0.277650, -0.948722, -0.151119},
-                                        {-0.791337, 0.093176, 0.604238},
-                                        {0.569287, 0.158108, 0.806793},
-                                        {0.115315, 0.914284, 0.388314},
-                                        {0.105421, 0.835841, -0.538754},
-                                        {0.473326, 0.691900, -0.545195},
-                                        {0.719515, 0.684421, -0.117757},
-                                        {-0.713642, -0.691534, -0.111785},
-                                        {-0.085377, -0.916925, 0.389820},
-                                        {0.787892, 0.611808, -0.070127},
-                                        {0.788022, 0.488544, 0.374628}};
+    std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
+            open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
+    t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
+            *mesh, core::Float64, core::Int64, device);
 
-    size_t size = 25;
-
-    std::vector<Eigen::Vector3d> vertices;
-    std::vector<Eigen::Vector3i> triangles;
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(10.0, 10.0, 10.0);
-
-    Eigen::Vector3i imin(0, 0, 0);
-    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
-
-    vertices.resize(size);
-    Rand(vertices, dmin, dmax, 0);
-
-    for (size_t i = 0; i < size; i++)
-        triangles.push_back(Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
-
-    t::geometry::TriangleMesh t_mesh(
-            core::eigen_converter::EigenVector3dVectorToTensor(
-                    vertices, core::Dtype::Float64, device),
-            core::eigen_converter::EigenVector3iVectorToTensor(
-                    triangles, core::Dtype::Int64, device));
-
-    const core::Tensor ref_tensor =
-            core::eigen_converter::EigenVector3dVectorToTensor(
-                    ref, core::Dtype::Float64, device);
+    mesh->ComputeTriangleNormals();
     t_mesh.ComputeTriangleNormals();
-
-    EXPECT_TRUE(t_mesh.GetTriangleNormals().AllClose(ref_tensor));
+    EXPECT_TRUE(t_mesh.GetTriangleNormals().AllClose(
+            core::eigen_converter::EigenVector3dVectorToTensor(
+                    mesh->triangle_normals_, core::Dtype::Float64, device)));
 }
 
 TEST_P(TriangleMeshPermuteDevices, ComputeVertexNormals) {
     core::Device device = GetParam();
 
-    std::vector<Eigen::Vector3d> ref = {{0.635868, 0.698804, 0.327636},
-                                        {0.327685, 0.717012, 0.615237},
-                                        {-0.346072, 0.615418, 0.708163},
-                                        {-0.690485, 0.663544, 0.287993},
-                                        {-0.406664, 0.913428, -0.0165494},
-                                        {-0.356568, 0.888296, 0.289466},
-                                        {-0.276491, 0.894931, 0.350216},
-                                        {0.262855, 0.848183, 0.459883},
-                                        {0.933461, 0.108347, -0.341923},
-                                        {0.891804, 0.0506666, -0.449577},
-                                        {0.735392, -0.110383, -0.668592},
-                                        {0.469090, -0.564602, -0.679102},
-                                        {0.418223, -0.628547, -0.655757},
-                                        {0.819226, 0.168537, -0.548145},
-                                        {0.963613, 0.103044, -0.246642},
-                                        {-0.506244, 0.320837, 0.800488},
-                                        {0.122226, -0.0580307, 0.990804},
-                                        {0.175502, 0.533543, 0.827364},
-                                        {0.384132, 0.892338, 0.237015},
-                                        {0.273664, 0.896739, -0.347804},
-                                        {0.36153, 0.784805, -0.503366},
-                                        {0.4297, 0.646636, -0.630253},
-                                        {-0.264834, -0.96397, -0.0250043},
-                                        {0.940214, -0.336158, -0.0547315},
-                                        {0.86265, 0.449603, 0.231714}};
+    std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
+            open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
+    t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
+            *mesh, core::Float64, core::Int64, device);
 
-    size_t size = 25;
+    mesh->ComputeVertexNormals(false);
+    t_mesh.ComputeVertexNormals(false);
 
-    std::vector<Eigen::Vector3d> vertices;
-    std::vector<Eigen::Vector3i> triangles;
-    Eigen::Vector3d dmin(0.0, 0.0, 0.0);
-    Eigen::Vector3d dmax(10.0, 10.0, 10.0);
-
-    Eigen::Vector3i imin(0, 0, 0);
-    Eigen::Vector3i imax(size - 1, size - 1, size - 1);
-
-    vertices.resize(size);
-    Rand(vertices, dmin, dmax, 0);
-
-    for (size_t i = 0; i < size; i++)
-        triangles.push_back(Eigen::Vector3i(i, (i + 1) % size, (i + 2) % size));
-
-    t::geometry::TriangleMesh t_mesh(
+    Print(mesh->vertex_normals_);
+    utility::LogInfo(": {}", t_mesh.GetVertexNormals().ToString());
+    EXPECT_TRUE(t_mesh.GetVertexNormals().AllClose(
             core::eigen_converter::EigenVector3dVectorToTensor(
-                    vertices, core::Dtype::Float64, device),
-            core::eigen_converter::EigenVector3iVectorToTensor(
-                    triangles, core::Dtype::Int64, device));
-
-    const core::Tensor ref_tensor =
-            core::eigen_converter::EigenVector3dVectorToTensor(
-                    ref, core::Dtype::Float64, device);
-    t_mesh.ComputeVertexNormals();
-    EXPECT_TRUE(t_mesh.GetVertexNormals().AllClose(ref_tensor));
+                    mesh->vertex_normals_, core::Dtype::Float64, device)));
 }
 
 TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
