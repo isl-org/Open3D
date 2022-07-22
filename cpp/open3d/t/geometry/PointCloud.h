@@ -359,10 +359,20 @@ public:
     ///
     /// \param nb_points Number of neighbor points required within the radius.
     /// \param search_radius Radius of the sphere.
-    /// \return tuple of filtered PointCloud and boolean indexing tensor
-    /// w.r.t. input point cloud.
+    /// \return tuple of filtered point cloud and boolean mask tensor for
+    /// selected values w.r.t. input point cloud.
     std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
+
+    /// \brief Remove all points from the point cloud that have a nan entry, or
+    /// infinite value. It also removes the corresponding attributes.
+    ///
+    /// \param remove_nan Remove NaN values from the PointCloud.
+    /// \param remove_infinite Remove infinite values from the PointCloud.
+    /// \return tuple of filtered point cloud and boolean mask tensor for
+    /// selected values w.r.t. input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveNonFinitePoints(
+            bool remove_nan = true, bool remove_infinite = true) const;
 
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const override { return device_; }

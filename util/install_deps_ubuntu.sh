@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Install Open3D build dependencies from Ubuntu repositories
-# CUDA (v10.1) and CUDNN (v7.6.5) are optional dependencies and are not
-# installed here
 # Use: install_deps_ubuntu.sh [ assume-yes ]
 
 set -ev
@@ -13,30 +10,41 @@ else
     APT_CONFIRM=""
 fi
 
-dependencies=(
-    # Open3D deps
+deps=(
+    # Open3D
     xorg-dev
     libglu1-mesa-dev
     python3-dev
-    # Filament build-from-source deps
+    # Filament build-from-source
     libsdl2-dev
-    libc++-7-dev
-    libc++abi-7-dev
+    libc++-dev
+    libc++abi-dev
     ninja-build
     libxi-dev
-    # OpenBLAS build-from-source deps
-    gfortran
-    # ML deps
+    # ML
     libtbb-dev
-    # Headless rendering deps
+    # Headless rendering
     libosmesa6-dev
-    # RealSense deps
+    # RealSense
     libudev-dev
     autoconf
     libtool
 )
 
+# Ubuntu ARM64
+if [ "$(uname -m)" == "aarch64" ]; then
+    # For LAPACK
+    deps+=("gfortran")
+
+    # For compiling Filament from source
+    # Ubuntu 18.04 ARM64's libc++-dev and libc++abi-dev are version 6, but we need 7+.
+    source /etc/lsb-release
+    if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
+        deps=("${deps[@]/libc++-dev/libc++-7-dev}")
+        deps=("${deps[@]/libc++abi-dev/libc++abi-7-dev}")
+    fi
+fi
+
+echo "apt-get install ${deps[*]}"
 $SUDO apt-get update
-for package in "${dependencies[@]}"; do
-    $SUDO apt-get install "$APT_CONFIRM" "$package"
-done
+$SUDO apt-get install ${APT_CONFIRM} ${deps[*]}
