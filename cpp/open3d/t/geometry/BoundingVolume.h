@@ -210,15 +210,6 @@ public:
     /// 3 tensor, where N must be larger than 3).
     static AxisAlignedBoundingBox CreateFromPoints(const core::Tensor &points);
 
-private:
-    /// \brief Check the validity of the bounding box using "Volume".
-    /// The exception is set to true in constructor if the bounding box, and is
-    /// set to false in SetMinBound and SetMaxBound.
-    ///
-    /// \param exception Whether to throw an exception if the bounding box is
-    /// not valid.
-    bool CheckValid(bool exception = false) const;
-
 protected:
     core::Device device_ = core::Device("CPU:0");
     core::Dtype dtype_ = core::Float32;

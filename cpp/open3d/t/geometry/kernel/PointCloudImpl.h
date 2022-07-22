@@ -162,26 +162,29 @@ void GetPointMaskWithinAABBCPU
          const core::Tensor& min_bound,
          const core::Tensor& max_bound,
          core::Tensor& mask) {
-    const float* points_ptr = points.GetDataPtr<float>();
-    const int64_t n = points.GetLength();
-    const float* min_bound_ptr = min_bound.GetDataPtr<float>();
-    const float* max_bound_ptr = max_bound.GetDataPtr<float>();
-    bool* mask_ptr = mask.GetDataPtr<bool>();
 
-    core::ParallelFor(points.GetDevice(), n,
-                      [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                          const float x = points_ptr[3 * workload_idx + 0];
-                          const float y = points_ptr[3 * workload_idx + 1];
-                          const float z = points_ptr[3 * workload_idx + 2];
+    DISPATCH_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const int64_t n = points.GetLength();
+        const scalar_t* min_bound_ptr = min_bound.GetDataPtr<scalar_t>();
+        const scalar_t* max_bound_ptr = max_bound.GetDataPtr<scalar_t>();
+        bool* mask_ptr = mask.GetDataPtr<bool>();
 
-                          if (x >= min_bound_ptr[0] && x <= max_bound_ptr[0] &&
-                              y >= min_bound_ptr[1] && y <= max_bound_ptr[1] &&
-                              z >= min_bound_ptr[2] && z <= max_bound_ptr[2]) {
-                              mask_ptr[workload_idx] = true;
-                          } else {
-                              mask_ptr[workload_idx] = false;
-                          }
-                      });
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    const scalar_t x = points_ptr[3 * workload_idx + 0];
+                    const scalar_t y = points_ptr[3 * workload_idx + 1];
+                    const scalar_t z = points_ptr[3 * workload_idx + 2];
+
+                    if (x >= min_bound_ptr[0] && x <= max_bound_ptr[0] &&
+                        y >= min_bound_ptr[1] && y <= max_bound_ptr[1] &&
+                        z >= min_bound_ptr[2] && z <= max_bound_ptr[2]) {
+                        mask_ptr[workload_idx] = true;
+                    } else {
+                        mask_ptr[workload_idx] = false;
+                    }
+                });
+    });
 }
 
 // This is a `two-pass` estimate method for covariance which is numerically more

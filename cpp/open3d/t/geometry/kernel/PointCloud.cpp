@@ -122,17 +122,16 @@ void GetPointMaskWithinAABB(const core::Tensor& points,
                             core::Tensor& mask) {
     core::AssertTensorShape(min_bound, {3});
     core::AssertTensorShape(max_bound, {3});
-    const int64_t num_points = points.GetLength();
-    core::AssertTensorShape(mask, {num_points});
+    core::AssertTensorShape(mask, {points.GetLength()});
     // Mask must be a bool tensor.
     core::AssertTensorDtype(mask, core::Bool);
 
     const core::Device device = points.GetDevice();
 
-    // Convert points, min_bound and max_bound into float32 and contiguous.
+    // Convert points, min_bound and max_bound into contiguous Tensor.
     const core::Tensor min_bound_d = min_bound.Contiguous();
     const core::Tensor max_bound_d = max_bound.Contiguous();
-    const core::Tensor points_d = points.To(device, core::Float32).Contiguous();
+    const core::Tensor points_d = points.Contiguous();
 
     if (mask.IsCPU()) {
         GetPointMaskWithinAABBCPU(points_d, min_bound_d, max_bound_d, mask);
