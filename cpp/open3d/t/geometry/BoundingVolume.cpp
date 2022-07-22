@@ -37,27 +37,28 @@ namespace geometry {
 AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Device &device)
     : Geometry(Geometry::GeometryType::AxisAlignedBoundingBox, 3),
       device_(device),
-      min_bound_(core::Tensor::Zeros({3}, core::Float32, device)),
-      max_bound_(core::Tensor::Zeros({3}, core::Float32, device)),
-      color_(core::Tensor::Ones({3}, core::Float32, device)) {}
+      min_bound_(core::Tensor::Zeros({3}, dtype_, device)),
+      max_bound_(core::Tensor::Zeros({3}, dtype_, device)),
+      color_(core::Tensor::Ones({3}, dtype_, device)) {}
 
 AxisAlignedBoundingBox::AxisAlignedBoundingBox(const core::Tensor &min_bound,
                                                const core::Tensor &max_bound)
     : AxisAlignedBoundingBox([&]() {
           core::AssertTensorDevice(min_bound, max_bound.GetDevice());
+          core::AssertTensorDtype(min_bound, max_bound.GetDtype());
           core::AssertTensorShape(min_bound, {3});
           core::AssertTensorShape(max_bound, {3});
           return min_bound.GetDevice();
       }()) {
-    if (min_bound.GetDtype() == core::Bool) {
-        utility::LogError("min_bound and max_bound can not be bool.");
-    }
-
-    min_bound_ = min_bound.To(core::Float32);
-    max_bound_ = max_bound.To(core::Float32);
+    min_bound_ = min_bound;
+    max_bound_ = max_bound;
 
     // Check if the bounding box is valid.
-    CheckValid(true);
+    if (Volume() < 0) {
+        utility::LogError(
+                "Invalid axis-aligned bounding box. Please make sure all "
+                "the elements in max bound are larger than min bound.");
+    }
 }
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::To(const core::Device &device,
@@ -73,9 +74,9 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::To(const core::Device &device,
 }
 
 AxisAlignedBoundingBox &AxisAlignedBoundingBox::Clear() {
-    min_bound_ = core::Tensor::Zeros({3}, core::Float32, GetDevice());
-    max_bound_ = core::Tensor::Zeros({3}, core::Float32, GetDevice());
-    color_ = core::Tensor::Ones({3}, core::Float32, GetDevice());
+    min_bound_ = core::Tensor::Zeros({3}, GetDtype(), GetDevice());
+    max_bound_ = core::Tensor::Zeros({3}, GetDtype(), GetDevice());
+    color_ = core::Tensor::Ones({3}, GetDtype(), GetDevice());
     return *this;
 }
 
@@ -87,7 +88,11 @@ void AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound) {
 
     // If fail to pass the valid check, the min_bound_ will be set to the
     // original value.
-    if (!CheckValid(false)) {
+    if (Volume() > 0) {
+        utility::LogWarning(
+                "Invalid axis-aligned bounding box. Please make sure all "
+                "the elements in min bound are smaller than min bound.");
+
         min_bound_ = tmp;
     }
 }
@@ -95,26 +100,44 @@ void AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound) {
 void AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound) {
     core::AssertTensorDevice(max_bound, device_);
     core::AssertTensorShape(max_bound, {3});
+    core::AssertTensorDtype(max_bound, GetDtype());
+
     const core::Tensor tmp = max_bound_.Clone();
-    max_bound_ = max_bound.To(max_bound_.GetDtype());
+    max_bound_ = max_bound;
 
     // If fail to pass the valid check, the max_bound_ will be set to the
     // original value.
-    if (!CheckValid(false)) {
+    if (Volume() > 0) {
+        utility::LogWarning(
+                "Invalid axis-aligned bounding box. Please make sure all "
+                "the elements in max bound are larger than min bound.");
+
         max_bound_ = tmp;
     }
 }
 
 void AxisAlignedBoundingBox::SetColor(const core::Tensor &color) {
-    core::AssertTensorDevice(color, device_);
+    core::AssertTensorDevice(color, GetDevice());
     core::AssertTensorShape(color, {3});
-    color_ = color.To(color_.GetDtype());
+    core::AssertTensorDtype(color, GetDtype());
+    if (color.Max({0}).To(core::Float64).Item<double>() > 1.0 ||
+        color.Min({0}).To(core::Float64).Item<double>() < 0.0) {
+        utility::LogError(
+                "The color must be in the range [0, 1], but for range [{}, "
+                "{}].",
+                color.Min({0}).To(core::Float64).Item<double>(),
+                color.Max({0}).To(core::Float64).Item<double>());
+    }
+
+    color_ = color;
 }
 
 AxisAlignedBoundingBox &AxisAlignedBoundingBox::Translate(
         const core::Tensor &translation, bool relative) {
     core::AssertTensorDevice(translation, GetDevice());
     core::AssertTensorShape(translation, {3});
+    core::AssertTensorDtype(translation, GetDtype());
+
     if (relative) {
         min_bound_ += translation;
         max_bound_ += translation;
@@ -130,14 +153,23 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::Scale(
         double scale, const core::Tensor &center) {
     core::AssertTensorDevice(center, GetDevice());
     core::AssertTensorShape(center, {3});
-    const core::Tensor center_d = center.To(core::Float32);
-    min_bound_ = center + scale * (min_bound_ - center_d);
-    max_bound_ = center + scale * (max_bound_ - center_d);
+    core::AssertTensorDtype(center, min_bound_.GetDtype());
+
+    min_bound_ = center + scale * (min_bound_ - center);
+    max_bound_ = center + scale * (max_bound_ - center);
+
     return *this;
 }
 
 AxisAlignedBoundingBox &AxisAlignedBoundingBox::operator+=(
         const AxisAlignedBoundingBox &other) {
+    if (other.GetDtype() != GetDtype()) {
+        utility::LogError(
+                "The dtype of the other bounding box is {}, but the dtype of "
+                "this bounding box is {}.",
+                other.GetDtype().ToString(), GetDtype().ToString());
+    }
+
     if (IsEmpty()) {
         min_bound_ = other.GetMinBound();
         max_bound_ = other.GetMaxBound();
@@ -167,9 +199,10 @@ double AxisAlignedBoundingBox::GetZPercentage(double z) const {
 }
 
 core::Tensor AxisAlignedBoundingBox::GetBoxPoints() const {
-    const core::Tensor extent = GetExtent().To(core::Float32);
     core::Tensor points =
             core::Tensor::Zeros({8, 3}, core::Float32, GetDevice());
+
+    const core::Tensor extent = GetExtent().To(core::Float32);
     const float *extent_data = extent.GetDataPtr<float>();
 
     points[0] = min_bound_;
@@ -186,7 +219,8 @@ core::Tensor AxisAlignedBoundingBox::GetBoxPoints() const {
                 core::Tensor::Init<float>({0, -extent_data[1], 0}, GetDevice());
     points[7] = max_bound_ +
                 core::Tensor::Init<float>({0, 0, -extent_data[2]}, GetDevice());
-    return points;
+
+    return points.To(GetDtype());
 }
 
 core::Tensor AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
@@ -203,9 +237,8 @@ core::Tensor AxisAlignedBoundingBox::GetPointIndicesWithinBoundingBox(
 }
 
 std::string AxisAlignedBoundingBox::ToString() const {
-    const core::Dtype dtype = min_bound_.GetDtype();
-    return fmt::format("AxisAlignedBoundingBox[{}, {}]", dtype.ToString(),
-                       device_.ToString());
+    return fmt::format("AxisAlignedBoundingBox[{}, {}]", GetDtype().ToString(),
+                       GetDevice().ToString());
 }
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::CreateFromPoints(
@@ -257,22 +290,6 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::FromLegacy(
                               .Flatten()
                               .To(device));
     return t_box;
-}
-
-bool AxisAlignedBoundingBox::CheckValid(bool exception) const {
-    if (Volume() < 0) {
-        if (exception) {
-            utility::LogError(
-                    "Invalid axis-aligned bounding box. Please make sure all "
-                    "the elements in max bound are larger than min bound.");
-        } else {
-            utility::LogWarning(
-                    "Invalid axis-aligned bounding box. Please make sure all "
-                    "the elements in max bound are larger than min bound.");
-            return false;
-        }
-    }
-    return true;
 }
 
 }  // namespace geometry

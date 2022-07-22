@@ -48,10 +48,9 @@ namespace geometry {
 ///         - AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound)
 ///         - AxisAlignedBoundingBox::GetMaxBound()
 ///         - AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound)
-///     - Value tensor must have shape {3}.
+///     - Value tensor must have shape {3,}.
 ///     - Value tensor must have the same data type and device.
-///     - Value tensor is float32 by default.
-///     - Value tensor can only be float32.
+///     - Value tensor can only be float32 (default) or float64.
 ///     - The device of the tensor determines the device of the box.
 ///
 /// - color: Color of the bounding box.
@@ -59,7 +58,8 @@ namespace geometry {
 ///         - AxisAlignedBoundingBox::GetColor()
 ///         - AxisAlignedBoundingBox::SetColor(const core::Tensor &color)
 ///     - Value tensor must have shape {3}.
-///     - Value tensor has the type of float32.
+///     - Value tensor can only be float32 (default) or float64.
+///     - Value tensor can only be range [0.0, 1.0].
 class AxisAlignedBoundingBox : public Geometry, public DrawableGeometry {
 public:
     /// \brief Construct an empty AxisAlignedBoundingBox on the provided device.
@@ -70,8 +70,10 @@ public:
     /// The AxisAlignedBoundingBox will be created on the device of the given
     /// bound tensor, which must be on the same device and have the same data
     /// type.
-    /// \param min_bound Lower bounds of the bounding box for all axes.
-    /// \param max_bound Upper bounds of the bounding box for all axes.
+    /// \param min_bound Lower bounds of the bounding box for all axes. Tensor
+    /// of shape {3}, and type float32 or float64.
+    /// \param max_bound Upper bounds of the bounding box for all axes. Tensor
+    /// of shape {3}, and type float32 or float64.
     AxisAlignedBoundingBox(const core::Tensor &min_bound,
                            const core::Tensor &max_bound);
 
@@ -79,6 +81,9 @@ public:
 
     /// \brief Returns the device attribute of this AxisAlignedBoundingBox.
     core::Device GetDevice() const override { return device_; }
+
+    /// \brief Returns the data type attribute of this AxisAlignedBoundingBox.
+    core::Dtype GetDtype() const { return dtype_; }
 
     /// Transfer the AxisAlignedBoundingBox to a specified device.
     /// \param device The targeted device to convert to.
@@ -101,19 +106,20 @@ public:
     /// If the data type of the given tensor differs from the data type of the
     /// original tensor, it will be converted into the same data type.
     /// If the min bound makes the box invalid, it will not be set to the box.
-    /// \param min_bound Tensor with {3} shape.
+    /// \param min_bound Tensor with {3} shape, and type float32 or float64.
     void SetMinBound(const core::Tensor &min_bound);
 
     /// \brief Set the max boundof the box.
     /// If the data type of the given tensor differs from the data type of the
     /// original tensor, it will be converted into the same data type.
     /// If the max bound makes the box invalid, it will not be set to the box.
-    /// \param min_bound Tensor with {3} shape.
+    /// \param min_bound Tensor with {3} shape, and type float32 or float64.
     void SetMaxBound(const core::Tensor &max_bound);
 
     /// \brief Set the color the box.
     /// The data type of the given tensor will be always converted into float32.
-    /// \param min_bound Tensor with {3} shape.
+    /// \param min_bound Tensor with {3} shape, and type float32 or float64,
+    /// with values in range [0.0, 1.0].
     void SetColor(const core::Tensor &color);
 
 public:
@@ -128,8 +134,8 @@ public:
     /// max bound. If relative is false, the translation is applied to make the
     /// box's center at the given translation.
     ///
-    /// \param translation Translation [Tensor of shape (3,)], should be in the
-    /// same device as the box.
+    /// \param translation Translation tensor of shape (3,), type float32 or
+    /// float64, device same as the box.
     /// \param relative Whether to perform relative translation.
     AxisAlignedBoundingBox &Translate(const core::Tensor &translation,
                                       bool relative = true);
@@ -142,7 +148,8 @@ public:
     /// and \f$ma = c + s (ma - c)\f$.
     ///
     /// \param scale The scale parameter.
-    /// \param center Center used for the scaling operation.
+    /// \param center Center used for the scaling operation. Tensor of shape
+    /// (3,), type float32 or float64, device same as the box.
     AxisAlignedBoundingBox &Scale(double scale, const core::Tensor &center);
 
     /// \brief Add operation for axis-aligned bounding box.
@@ -210,6 +217,7 @@ private:
 
 protected:
     core::Device device_ = core::Device("CPU:0");
+    core::Dtype dtype_ = core::Float32;
     core::Tensor min_bound_;
     core::Tensor max_bound_;
     core::Tensor color_;
