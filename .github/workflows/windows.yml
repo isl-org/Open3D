@@ -376,7 +376,7 @@ jobs:
 
           deactivate
 
-      - name: Run Python unit tests (benchmarks)
+      - name: Run Python unit tests
         run: |
           $ErrorActionPreference = 'Stop'
           open3d_test_venv\Scripts\Activate.ps1
