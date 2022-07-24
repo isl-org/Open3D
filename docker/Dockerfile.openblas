@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get update && apt-get install -y \
     build-essential \
     clang-7 \
-    git  \
+    git \
  && rm -rf /var/lib/apt/lists/*
 
 # Install ccache after build-essential (gcc, g++).
@@ -122,7 +122,7 @@ RUN pyenv global $(pyenv versions | grep ${PYTHON_VERSION})
 COPY ./python/requirements*.txt /root/Open3D/python/
 RUN which python \
  && python --version \
- && python -m pip install -r /root/Open3D/python/requirements.txt \
+ && python -m pip install -U -r /root/Open3D/python/requirements.txt \
   -r /root/Open3D/python/requirements_build.txt \
   -r /root/Open3D/python/requirements_test.txt
 
@@ -131,6 +131,7 @@ RUN which python \
 COPY . /root/Open3D
 WORKDIR /root/Open3D
 
+# Build
 RUN mkdir build \
  && cd build \
  && cmake \
