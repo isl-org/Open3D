@@ -415,6 +415,29 @@ TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
     return mesh;
 }
 
+LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata, bool copy) {
+    if (!polydata->GetPoints()) {
+        return LineSet();
+    }
+    core::Tensor vertices = CreateTensorFromVtkDataArray(
+            polydata->GetPoints()->GetData(), copy);
+
+    core::Tensor lines =
+            CreateTensorFromVtkCellArray(polydata->GetLines(), copy);
+    // // Some algorithms return an empty tensor with shape (0,0).
+    // // Fix the last dim here.
+    if (lines.GetShape() == core::SizeVector{0, 0}) {
+        lines = lines.Reshape({0, 2});
+    }
+    LineSet lineset(vertices, lines);
+
+    AddVtkFieldDataToTensorMap(lineset.GetPointAttr(), polydata->GetPointData(),
+                               copy);
+    AddVtkFieldDataToTensorMap(lineset.GetLineAttr(), polydata->GetCellData(),
+                               copy);
+    return lineset;
+}
+
 }  // namespace vtkutils
 }  // namespace geometry
 }  // namespace t
