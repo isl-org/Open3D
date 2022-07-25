@@ -31,10 +31,10 @@
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
 #include <vtkFloatArray.h>
+#include <vtkLinearExtrusionFilter.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkRotationalExtrusionFilter.h>
-#include <vtkLinearExtrusionFilter.h>
 #include <vtkTriangleFilter.h>
 
 namespace open3d {
@@ -372,8 +372,7 @@ vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
                                    copy, point_attr_include,
                                    point_attr_exclude);
 
-    } else if (geometry.GetGeometryType() ==
-               Geometry::GeometryType::LineSet) {
+    } else if (geometry.GetGeometryType() == Geometry::GeometryType::LineSet) {
         auto lineset = static_cast<const LineSet&>(geometry);
         polydata->SetPoints(
                 CreateVtkPointsFromTensor(lineset.GetPointPositions(), copy));
@@ -383,9 +382,9 @@ vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
         AddTensorMapToVtkFieldData(polydata->GetPointData(),
                                    lineset.GetPointAttr(), copy,
                                    point_attr_include, point_attr_exclude);
-        AddTensorMapToVtkFieldData(
-                polydata->GetCellData(), lineset.GetLineAttr(), copy,
-                face_attr_include, face_attr_exclude);
+        AddTensorMapToVtkFieldData(polydata->GetCellData(),
+                                   lineset.GetLineAttr(), copy,
+                                   face_attr_include, face_attr_exclude);
     } else if (geometry.GetGeometryType() ==
                Geometry::GeometryType::TriangleMesh) {
         auto mesh = static_cast<const TriangleMesh&>(geometry);
@@ -397,9 +396,9 @@ vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
         AddTensorMapToVtkFieldData(polydata->GetPointData(),
                                    mesh.GetVertexAttr(), copy,
                                    point_attr_include, point_attr_exclude);
-        AddTensorMapToVtkFieldData(
-                polydata->GetCellData(), mesh.GetTriangleAttr(), copy,
-                face_attr_include, face_attr_exclude);
+        AddTensorMapToVtkFieldData(polydata->GetCellData(),
+                                   mesh.GetTriangleAttr(), copy,
+                                   face_attr_include, face_attr_exclude);
     } else {
         utility::LogError("Unsupported geometry type {}",
                           geometry.GetGeometryType());
@@ -455,8 +454,13 @@ LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata, bool copy) {
     return lineset;
 }
 
-static vtkSmartPointer<vtkPolyData> ExtrudeRotationPolyData(const Geometry& geometry,
-    const double angle, const core::Tensor& axis, int resolution, double translation, bool capping) {
+static vtkSmartPointer<vtkPolyData> ExtrudeRotationPolyData(
+        const Geometry& geometry,
+        const double angle,
+        const core::Tensor& axis,
+        int resolution,
+        double translation,
+        bool capping) {
     core::AssertTensorShape(axis, {3});
     // allow int types for convenience
     core::AssertTensorDtypes(
@@ -480,20 +484,33 @@ static vtkSmartPointer<vtkPolyData> ExtrudeRotationPolyData(const Geometry& geom
     return swept_polydata;
 }
 
-TriangleMesh ExtrudeRotationTriangleMesh( const Geometry& geometry,
-    const double angle, const core::Tensor& axis, int resolution, double translation, bool capping) {
-    auto polydata = ExtrudeRotationPolyData(geometry, angle, axis, resolution, translation, capping);
+TriangleMesh ExtrudeRotationTriangleMesh(const Geometry& geometry,
+                                         const double angle,
+                                         const core::Tensor& axis,
+                                         int resolution,
+                                         double translation,
+                                         bool capping) {
+    auto polydata = ExtrudeRotationPolyData(geometry, angle, axis, resolution,
+                                            translation, capping);
     return CreateTriangleMeshFromVtkPolyData(polydata);
 }
 
-LineSet ExtrudeRotationLineSet( const PointCloud& pointcloud,
-    const double angle, const core::Tensor& axis, int resolution, double translation, bool capping) {
-    auto polydata = ExtrudeRotationPolyData(pointcloud, angle, axis, resolution, translation, capping);
+LineSet ExtrudeRotationLineSet(const PointCloud& pointcloud,
+                               const double angle,
+                               const core::Tensor& axis,
+                               int resolution,
+                               double translation,
+                               bool capping) {
+    auto polydata = ExtrudeRotationPolyData(pointcloud, angle, axis, resolution,
+                                            translation, capping);
     return CreateLineSetFromVtkPolyData(polydata);
 }
 
-static vtkSmartPointer<vtkPolyData> ExtrudeLinearPolyData(const Geometry& geometry,
-    const core::Tensor& vector, double scale, bool capping) {
+static vtkSmartPointer<vtkPolyData> ExtrudeLinearPolyData(
+        const Geometry& geometry,
+        const core::Tensor& vector,
+        double scale,
+        bool capping) {
     core::AssertTensorShape(vector, {3});
     // allow int types for convenience
     core::AssertTensorDtypes(
@@ -516,19 +533,21 @@ static vtkSmartPointer<vtkPolyData> ExtrudeLinearPolyData(const Geometry& geomet
     return swept_polydata;
 }
 
-TriangleMesh ExtrudeLinearTriangleMesh( const Geometry& geometry,
-    const core::Tensor& vector, double scale, bool capping) {
+TriangleMesh ExtrudeLinearTriangleMesh(const Geometry& geometry,
+                                       const core::Tensor& vector,
+                                       double scale,
+                                       bool capping) {
     auto polydata = ExtrudeLinearPolyData(geometry, vector, scale, capping);
     return CreateTriangleMeshFromVtkPolyData(polydata);
 }
 
-LineSet ExtrudeLinearLineSet( const PointCloud& pointcloud,
-    const core::Tensor& vector, double scale, bool capping) {
+LineSet ExtrudeLinearLineSet(const PointCloud& pointcloud,
+                             const core::Tensor& vector,
+                             double scale,
+                             bool capping) {
     auto polydata = ExtrudeLinearPolyData(pointcloud, vector, scale, capping);
     return CreateLineSetFromVtkPolyData(polydata);
 }
-
-
 
 }  // namespace vtkutils
 }  // namespace geometry

@@ -28,14 +28,17 @@ import open3d as o3d
 
 
 def test_extrude_rotation():
-    line = o3d.t.geometry.LineSet([[0.7,0,0],[1,0,0]], [[0,1]])
-    ans = line.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
+    line = o3d.t.geometry.LineSet([[0.7, 0, 0], [1, 0, 0]], [[0, 1]])
+    ans = line.extrude_rotation(3 * 360, [0, 1, 0],
+                                resolution=3 * 16,
+                                translation=2)
     assert ans.vertex['positions'].shape == (98, 3)
     assert ans.triangle['indices'].shape == (96, 3)
 
 
 def test_extrude_linear():
-    lines = o3d.t.geometry.LineSet([[1.0,0.0,0.0],[0,0,0],[0,0,1]], [[0,1],[1,2]])
-    ans = lines.extrude_linear([0,1,0])
+    lines = o3d.t.geometry.LineSet([[1.0, 0.0, 0.0], [0, 0, 0], [0, 0, 1]],
+                                   [[0, 1], [1, 2]])
+    ans = lines.extrude_linear([0, 1, 0])
     assert ans.vertex['positions'].shape == (6, 3)
     assert ans.triangle['indices'].shape == (4, 3)

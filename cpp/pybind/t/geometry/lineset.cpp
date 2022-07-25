@@ -25,11 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/LineSet.h"
-#include "open3d/t/geometry/TriangleMesh.h"
 
 #include <string>
 #include <unordered_map>
 
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -217,8 +217,10 @@ transformation as :math:`P = R(P) + t`)");
     line_set.def("to_legacy", &LineSet::ToLegacy,
                  "Convert to a legacy Open3D LineSet.");
 
-    line_set.def("extrude_rotation", &LineSet::ExtrudeRotation, "angle"_a, "axis"_a, "resolution"_a=16, "translation"_a=0.0, "capping"_a=true,
-    R"(Sweeps the line set rotationally about an axis.
+    line_set.def("extrude_rotation", &LineSet::ExtrudeRotation, "angle"_a,
+                 "axis"_a, "resolution"_a = 16, "translation"_a = 0.0,
+                 "capping"_a = true,
+                 R"(Sweeps the line set rotationally about an axis.
 
 Args:
     angle (float): The rotation angle in degree.
@@ -246,8 +248,9 @@ Example:
 
 )");
 
-    line_set.def("extrude_linear", &LineSet::ExtrudeLinear, "vector"_a, "scale"_a=1.0, "capping"_a=true,
-    R"(Sweeps the line set along a direction vector.
+    line_set.def("extrude_linear", &LineSet::ExtrudeLinear, "vector"_a,
+                 "scale"_a = 1.0, "capping"_a = true,
+                 R"(Sweeps the line set along a direction vector.
 
 Args:
     
@@ -269,7 +272,6 @@ Example:
         o3d.visualization.draw([{'name': 'L', 'geometry': mesh}])
 
 )");
-
 }
 
 }  // namespace geometry

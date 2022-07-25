@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 
 #include <string>
@@ -32,6 +31,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/hashmap/HashMap.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
@@ -362,8 +362,10 @@ Example:
              {"print_progress",
               "If true the progress is visualized in the console."}});
 
-    pointcloud.def("extrude_rotation", &PointCloud::ExtrudeRotation, "angle"_a, "axis"_a, "resolution"_a=16, "translation"_a=0.0, "capping"_a=true,
-    R"(Sweeps the point set rotationally about an axis.
+    pointcloud.def("extrude_rotation", &PointCloud::ExtrudeRotation, "angle"_a,
+                   "axis"_a, "resolution"_a = 16, "translation"_a = 0.0,
+                   "capping"_a = true,
+                   R"(Sweeps the point set rotationally about an axis.
 
 Args:
     angle (float): The rotation angle in degree.
@@ -391,8 +393,9 @@ Example:
 
 )");
 
-    pointcloud.def("extrude_linear", &PointCloud::ExtrudeLinear, "vector"_a, "scale"_a=1.0, "capping"_a=true,
-    R"(Sweeps the point cloud along a direction vector.
+    pointcloud.def("extrude_linear", &PointCloud::ExtrudeLinear, "vector"_a,
+                   "scale"_a = 1.0, "capping"_a = true,
+                   R"(Sweeps the point cloud along a direction vector.
 
 Args:
     
@@ -415,8 +418,6 @@ Example:
 
 
 )");
-
-
 }
 
 }  // namespace geometry

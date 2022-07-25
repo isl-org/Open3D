@@ -585,9 +585,10 @@ Example:
         o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
 )");
 
-
-    triangle_mesh.def("extrude_rotation", &TriangleMesh::ExtrudeRotation, "angle"_a, "axis"_a, "resolution"_a=16, "translation"_a=0.0, "capping"_a=true,
-    R"(Sweeps the triangle mesh rotationally about an axis.
+    triangle_mesh.def("extrude_rotation", &TriangleMesh::ExtrudeRotation,
+                      "angle"_a, "axis"_a, "resolution"_a = 16,
+                      "translation"_a = 0.0, "capping"_a = true,
+                      R"(Sweeps the triangle mesh rotationally about an axis.
 
 Args:
     angle (float): The rotation angle in degree.
@@ -615,8 +616,9 @@ Example:
 
 )");
 
-    triangle_mesh.def("extrude_linear", &TriangleMesh::ExtrudeLinear, "vector"_a, "scale"_a=1.0, "capping"_a=true,
-    R"(Sweeps the line set along a direction vector.
+    triangle_mesh.def("extrude_linear", &TriangleMesh::ExtrudeLinear,
+                      "vector"_a, "scale"_a = 1.0, "capping"_a = true,
+                      R"(Sweeps the line set along a direction vector.
 
 Args:
     
@@ -638,8 +640,6 @@ Example:
         o3d.visualization.draw([{'name': 'wedge', 'geometry': wedge}])
 
 )");
-
-
 }
 
 }  // namespace geometry

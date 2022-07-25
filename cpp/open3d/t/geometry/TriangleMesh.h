@@ -787,15 +787,20 @@ public:
     /// \param translation The translation along the rotation axis.
     /// \param capping If true adds caps to the mesh.
     /// \return A triangle mesh with the result of the sweep operation.
-    TriangleMesh ExtrudeRotation(double angle, const core::Tensor& axis, int resolution=16, double translation=0.0, bool capping=true) const;
+    TriangleMesh ExtrudeRotation(double angle,
+                                 const core::Tensor &axis,
+                                 int resolution = 16,
+                                 double translation = 0.0,
+                                 bool capping = true) const;
 
     /// Sweeps the triangle mesh along a direction vector.
     /// \param vector The direction vector.
-    /// \param scale Scalar factor which essentially scales the direction vector.
-    /// \param capping If true adds caps to the mesh.
-    /// \return A triangle mesh with the result of the sweep operation.
-    TriangleMesh ExtrudeLinear( const core::Tensor& vector, double scale=1.0, bool capping=true) const;
-
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A triangle
+    /// mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeLinear(const core::Tensor &vector,
+                               double scale = 1.0,
+                               bool capping = true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-
 #include "open3d/t/geometry/LineSet.h"
 
 #include <string>
@@ -206,13 +205,19 @@ open3d::geometry::LineSet LineSet::ToLegacy() const {
     return lineset_legacy;
 }
 
-
-TriangleMesh LineSet::ExtrudeRotation(double angle, const core::Tensor& axis, int resolution, double translation, bool capping) const{
+TriangleMesh LineSet::ExtrudeRotation(double angle,
+                                      const core::Tensor &axis,
+                                      int resolution,
+                                      double translation,
+                                      bool capping) const {
     using namespace vtkutils;
-    return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution, translation, capping);
+    return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution,
+                                       translation, capping);
 }
-    
-TriangleMesh LineSet::ExtrudeLinear( const core::Tensor& vector, double scale, bool capping) const {
+
+TriangleMesh LineSet::ExtrudeLinear(const core::Tensor &vector,
+                                    double scale,
+                                    bool capping) const {
     using namespace vtkutils;
     return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
 }

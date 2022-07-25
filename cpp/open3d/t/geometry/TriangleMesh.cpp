@@ -439,12 +439,19 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     return CreateTriangleMeshFromVtkPolyData(result);
 }
 
-TriangleMesh TriangleMesh::ExtrudeRotation(double angle, const core::Tensor& axis, int resolution, double translation, bool capping) const{
+TriangleMesh TriangleMesh::ExtrudeRotation(double angle,
+                                           const core::Tensor &axis,
+                                           int resolution,
+                                           double translation,
+                                           bool capping) const {
     using namespace vtkutils;
-    return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution, translation, capping);
+    return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution,
+                                       translation, capping);
 }
 
-TriangleMesh TriangleMesh::ExtrudeLinear( const core::Tensor& vector, double scale, bool capping) const {
+TriangleMesh TriangleMesh::ExtrudeLinear(const core::Tensor &vector,
+                                         double scale,
+                                         bool capping) const {
     using namespace vtkutils;
     return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
 }

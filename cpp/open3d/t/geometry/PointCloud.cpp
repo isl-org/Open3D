@@ -907,12 +907,19 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
     return convex_hull;
 }
 
-LineSet PointCloud::ExtrudeRotation(double angle, const core::Tensor& axis, int resolution, double translation, bool capping) const{
+LineSet PointCloud::ExtrudeRotation(double angle,
+                                    const core::Tensor &axis,
+                                    int resolution,
+                                    double translation,
+                                    bool capping) const {
     using namespace vtkutils;
-    return ExtrudeRotationLineSet(*this, angle, axis, resolution, translation, capping);
+    return ExtrudeRotationLineSet(*this, angle, axis, resolution, translation,
+                                  capping);
 }
 
-LineSet PointCloud::ExtrudeLinear( const core::Tensor& vector, double scale, bool capping) const {
+LineSet PointCloud::ExtrudeLinear(const core::Tensor &vector,
+                                  double scale,
+                                  bool capping) const {
     using namespace vtkutils;
     return ExtrudeLinearLineSet(*this, vector, scale, capping);
 }

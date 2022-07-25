@@ -187,14 +187,16 @@ def test_member_functions(device):
 
 
 def test_extrude_rotation():
-    pcd = o3d.t.geometry.PointCloud([[1.0,0,0]])
-    ans = pcd.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
+    pcd = o3d.t.geometry.PointCloud([[1.0, 0, 0]])
+    ans = pcd.extrude_rotation(3 * 360, [0, 1, 0],
+                               resolution=3 * 16,
+                               translation=2)
     assert ans.point['positions'].shape == (49, 3)
     assert ans.line['indices'].shape == (48, 2)
 
 
 def test_extrude_linear():
-    pcd = o3d.t.geometry.PointCloud([[1.0,0,0]])
-    ans = pcd.extrude_linear([0,0,1])
+    pcd = o3d.t.geometry.PointCloud([[1.0, 0, 0]])
+    ans = pcd.extrude_linear([0, 0, 1])
     assert ans.point['positions'].shape == (2, 3)
     assert ans.line['indices'].shape == (1, 2)
