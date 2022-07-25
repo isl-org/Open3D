@@ -71,6 +71,18 @@ static void LaunchBinaryEWKernel(const Indexer& indexer,
 }
 
 template <typename scalar_t>
+static void CPUMaxElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<scalar_t*>(dst) = std::max(*static_cast<const scalar_t*>(lhs),
+                                            *static_cast<const scalar_t*>(rhs));
+}
+
+template <typename scalar_t>
+static void CPUMinElementKernel(const void* lhs, const void* rhs, void* dst) {
+    *static_cast<scalar_t*>(dst) = std::min(*static_cast<const scalar_t*>(lhs),
+                                            *static_cast<const scalar_t*>(rhs));
+}
+
+template <typename scalar_t>
 static void CPUAddElementKernel(const void* lhs, const void* rhs, void* dst) {
     *static_cast<scalar_t*>(dst) = *static_cast<const scalar_t*>(lhs) +
                                    *static_cast<const scalar_t*>(rhs);
@@ -342,6 +354,23 @@ void BinaryEWCPU(const Tensor& lhs,
                     "Boolean op's output type must be boolean or the "
                     "same type as the input.");
         }
+    } else if (op_code == BinaryEWOpCode::Maximum ||
+               op_code == BinaryEWOpCode::Minimum) {
+        Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+            switch (op_code) {
+                case BinaryEWOpCode::Maximum:
+                    LaunchBinaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUMaxElementKernel<scalar_t>);
+                    break;
+                case BinaryEWOpCode::Minimum:
+                    LaunchBinaryEWKernel<scalar_t, scalar_t>(
+                            indexer, CPUMinElementKernel<scalar_t>);
+                    break;
+                default:
+                    break;
+            }
+        });
     } else {
         Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
 #ifdef BUILD_ISPC_MODULE

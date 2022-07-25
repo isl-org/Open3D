@@ -184,7 +184,7 @@ Computes the convex hull of the point cloud.
 
 Args:
      joggle_inputs (bool): If True allows the algorithm to add random noise to
-          the points to work around degenerate inputs. This adds the 'QJ' 
+          the points to work around degenerate inputs. This adds the 'QJ'
           option to the qhull command.
 
 Returns:
@@ -209,7 +209,7 @@ Returns:
                  "Segments a plane in the point cloud using the RANSAC "
                  "algorithm.",
                  "distance_threshold"_a, "ransac_n"_a, "num_iterations"_a,
-                 "probability"_a = 0.99999999, "seed"_a = py::none())
+                 "probability"_a = 0.99999999)
             .def_static(
                     "create_from_depth_image",
                     &PointCloud::CreateFromDepthImage,
@@ -361,10 +361,7 @@ camera. Given depth value d at (u, v) image coordinate, the corresponding 3d poi
               "iteration."},
              {"num_iterations", "Number of iterations."},
              {"probability",
-              "Expected probability of finding the optimal plane."},
-             {"seed",
-              "Seed value used in the random generator, set to None to use a "
-              "random seed value with each function call."}});
+              "Expected probability of finding the optimal plane."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "create_from_depth_image",
             {{"depth",

@@ -118,9 +118,7 @@ public:
     }
 
     /// \brief Remove all points from the point cloud that have a nan entry, or
-    /// infinite entries.
-    ///
-    /// Also removes the corresponding normals and color entries.
+    /// infinite value. It also removes the corresponding attributes.
     ///
     /// \param remove_nan Remove NaN values from the PointCloud.
     /// \param remove_infinite Remove infinite values from the PointCloud.
@@ -355,17 +353,13 @@ public:
     /// each iteration.
     /// \param num_iterations Maximum number of iterations.
     /// \param probability Expected probability of finding the optimal plane.
-    /// \param seed Sets the seed value used in the random
-    /// generator, set to nullopt to use a random seed value with each function
-    /// call.
     /// \return Returns the plane model ax + by + cz + d = 0 and the indices of
     /// the plane inliers.
     std::tuple<Eigen::Vector4d, std::vector<size_t>> SegmentPlane(
             const double distance_threshold = 0.01,
             const int ransac_n = 3,
             const int num_iterations = 100,
-            const double probability = 0.99999999,
-            utility::optional<int> seed = utility::nullopt) const;
+            const double probability = 0.99999999) const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.

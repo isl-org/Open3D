@@ -28,6 +28,8 @@
 
 #include <gmock/gmock.h>
 
+#include <limits>
+
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
@@ -765,6 +767,42 @@ TEST_P(PointCloudPermuteDevices, VoxelDownSample) {
             core::Tensor::Init<float>({{0, 0, 0}}, device)));
 }
 
+TEST_P(PointCloudPermuteDevices, UniformDownSample) {
+    core::Device device = GetParam();
+
+    // Value test.
+    t::geometry::PointCloud pcd_small(core::Tensor::Init<float>({{0, 0, 0},
+                                                                 {1, 0, 0},
+                                                                 {2, 0, 0},
+                                                                 {3, 0, 0},
+                                                                 {4, 0, 0},
+                                                                 {5, 0, 0},
+                                                                 {6, 0, 0},
+                                                                 {7, 0, 0}},
+                                                                device));
+    auto pcd_small_down = pcd_small.UniformDownSample(3);
+    EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{0, 0, 0}, {3, 0, 0}, {6, 0, 0}},
+                                      device)));
+}
+
+TEST_P(PointCloudPermuteDevices, RandomDownSample) {
+    core::Device device = GetParam();
+
+    // Value test.
+    t::geometry::PointCloud pcd_small(core::Tensor::Init<float>({{0, 0, 0},
+                                                                 {1, 0, 0},
+                                                                 {2, 0, 0},
+                                                                 {3, 0, 0},
+                                                                 {4, 0, 0},
+                                                                 {5, 0, 0},
+                                                                 {6, 0, 0},
+                                                                 {7, 0, 0}},
+                                                                device));
+    auto pcd_small_down = pcd_small.RandomDownSample(0.5);
+    EXPECT_TRUE(pcd_small_down.GetPointPositions().GetLength() == 4);
+}
+
 TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
     core::Device device = GetParam();
 
@@ -788,6 +826,49 @@ TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
                                        {1.2, 1.2, 1.2},
                                        {1.3, 1.3, 1.3}},
                                       device)));
+}
+
+TEST_P(PointCloudPermuteDevices, RemoveNonFinitePoints) {
+    core::Device device = GetParam();
+
+    const t::geometry::PointCloud pcd_small(core::Tensor::Init<float>(
+            {{std::numeric_limits<float>::infinity(), 1.0, 1.0},
+             {1.1, 1.1, 1.1},
+             {-std::numeric_limits<float>::infinity(), 1.2, 1.2},
+             {1.3, 1.3, 1.3},
+             {std::numeric_limits<float>::quiet_NaN(), 5.0, 5.0},
+             {5.1, 5.1, 5.1}},
+            device));
+
+    t::geometry::PointCloud output_pcd;
+    core::Tensor selected_boolean_mask;
+    // Remove NaN and Inf.
+    std::tie(output_pcd, selected_boolean_mask) =
+            pcd_small.RemoveNonFinitePoints(true, true);
+    EXPECT_TRUE(
+            output_pcd.GetPointPositions().AllClose(core::Tensor::Init<float>(
+                    {{1.1, 1.1, 1.1}, {1.3, 1.3, 1.3}, {5.1, 5.1, 5.1}},
+                    device)));
+    EXPECT_TRUE(selected_boolean_mask.AllClose(core::Tensor::Init<bool>(
+            {false, true, false, true, false, true}, device)));
+
+    // 2. Remove NaN only.
+    std::tie(output_pcd, selected_boolean_mask) =
+            pcd_small.RemoveNonFinitePoints(true, false);
+    EXPECT_TRUE(selected_boolean_mask.AllClose(core::Tensor::Init<bool>(
+            {true, true, true, true, false, true}, device)));
+
+    // 3. Remove Inf only.
+    std::tie(output_pcd, selected_boolean_mask) =
+            pcd_small.RemoveNonFinitePoints(false, true);
+    EXPECT_TRUE(selected_boolean_mask.AllClose(core::Tensor::Init<bool>(
+            {false, true, false, true, true, true}, device)));
+
+    // 4. Return original pcd.
+    std::tie(output_pcd, selected_boolean_mask) =
+            pcd_small.RemoveNonFinitePoints(false, false);
+    EXPECT_TRUE(selected_boolean_mask.AllClose(core::Tensor::Init<bool>(
+            {true, true, true, true, true, true}, device)));
 }
 
 TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {

@@ -24,14 +24,23 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/SYCLUtils.h"
-#include "open3d/utility/Optional.h"
-#include "pybind/core/core.h"
+#include "open3d/utility/Random.h"
+
+#include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 
 namespace open3d {
-namespace core {
+namespace utility {
 
-void pybind_sycl_utils(py::module& m) { m.def("sycl_demo", &sycl::SYCLDemo); }
+void pybind_random(py::module &m) {
+    py::module m_submodule = m.def_submodule("random");
 
-}  // namespace core
+    m_submodule.def("seed", &random::Seed, "seed"_a,
+                    "Set Open3D global random seed.");
+
+    docstring::FunctionDocInject(m_submodule, "seed",
+                                 {{"seed", "Random seed value."}});
+}
+
+}  // namespace utility
 }  // namespace open3d

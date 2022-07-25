@@ -45,6 +45,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/core/TensorFunction.h"
 #include "open3d/core/hashmap/HashSet.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
@@ -54,6 +55,7 @@
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/pipelines/registration/Registration.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace t {
@@ -314,6 +316,49 @@ PointCloud PointCloud::VoxelDownSample(
     return pcd_down;
 }
 
+PointCloud PointCloud::UniformDownSample(size_t every_k_points) const {
+    if (every_k_points == 0) {
+        utility::LogError(
+                "Illegal sample rate, every_k_points must be larger than 0.");
+    }
+
+    const int64_t length = GetPointPositions().GetLength();
+
+    PointCloud pcd_down(GetDevice());
+    for (auto &kv : GetPointAttr()) {
+        pcd_down.SetPointAttr(
+                kv.first,
+                kv.second.Slice(0, 0, length, (int64_t)every_k_points));
+    }
+
+    return pcd_down;
+}
+
+PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
+    if (sampling_ratio < 0 || sampling_ratio > 1) {
+        utility::LogError(
+                "Illegal sampling_ratio {}, sampling_ratio must be between 0 "
+                "and 1.");
+    }
+
+    const int64_t length = GetPointPositions().GetLength();
+    std::vector<int64_t> indices(length);
+    std::iota(std::begin(indices), std::end(indices), 0);
+    {
+        std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
+        std::shuffle(indices.begin(), indices.end(),
+                     *utility::random::GetEngine());
+    }
+
+    const int sample_size = sampling_ratio * length;
+    indices.resize(sample_size);
+    // TODO: Generate random indices in GPU using CUDA rng maybe more efficient
+    // than copy indices data from CPU to GPU.
+    return SelectByIndex(
+            core::Tensor(indices, {sample_size}, core::Int64, GetDevice()),
+            false, false);
+}
+
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
         size_t nb_points, double search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {
@@ -339,9 +384,31 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
 
     const core::Tensor valid =
             num_neighbors.Ge(static_cast<int64_t>(nb_points));
-    const PointCloud pcd = SelectByMask(valid);
+    return std::make_tuple(SelectByMask(valid), valid);
+}
 
-    return std::make_tuple(pcd, valid);
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
+        bool remove_nan, bool remove_inf) const {
+    core::Tensor finite_indices_mask;
+    const core::SizeVector dim = {1};
+    if (remove_nan && remove_inf) {
+        finite_indices_mask =
+                this->GetPointPositions().IsFinite().All(dim, false);
+    } else if (remove_nan) {
+        finite_indices_mask =
+                this->GetPointPositions().IsNan().LogicalNot().All(dim, false);
+    } else if (remove_inf) {
+        finite_indices_mask =
+                this->GetPointPositions().IsInf().LogicalNot().All(dim, false);
+    } else {
+        finite_indices_mask = core::Tensor::Full(
+                {this->GetPointPositions().GetLength()}, true, core::Bool,
+                this->GetPointPositions().GetDevice());
+    }
+
+    utility::LogDebug("Removing non-finite points.");
+    return std::make_tuple(SelectByMask(finite_indices_mask),
+                           finite_indices_mask);
 }
 
 void PointCloud::EstimateNormals(

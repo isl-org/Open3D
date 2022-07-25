@@ -1047,7 +1047,7 @@ void ReductionCUDA(const Tensor& src,
                                 "Zero-size Tensor does not support Min.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> scalar_t { return a < b ? a : b; },
+                                       -> scalar_t { return min(a, b); },
                                static_cast<scalar_t>(
                                        std::numeric_limits<scalar_t>::max()));
                     }
@@ -1058,7 +1058,7 @@ void ReductionCUDA(const Tensor& src,
                                 "Zero-size Tensor does not support Max.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> scalar_t { return a > b ? a : b; },
+                                       -> scalar_t { return max(a, b); },
                                static_cast<scalar_t>(std::numeric_limits<
                                                      scalar_t>::lowest()));
                     }

@@ -34,7 +34,7 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get update && apt-get install -y \
     build-essential \
     clang-7 \
-    git  \
+    git \
  && rm -rf /var/lib/apt/lists/*
 
 # Install ccache after build-essential (gcc, g++).
@@ -116,11 +116,6 @@ COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
 RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
  && rm -rf /var/lib/apt/lists/*
 
-# Open3D repo
-# Always keep /root/Open3D as the WORKDIR
-COPY . /root/Open3D
-WORKDIR /root/Open3D
-
 # Build Python wheel
 RUN pyenv install $(pyenv install --list | sort -r --version-sort | grep -m1 "^ *${PYTHON_VERSION}\.")
 RUN pyenv local $(pyenv versions | grep ${PYTHON_VERSION})
@@ -133,6 +128,12 @@ RUN which python \
     yapf=="0.30.0" \
     pytest=="6.0.1"
 
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
+COPY . /root/Open3D
+WORKDIR /root/Open3D
+
+# Build
 RUN mkdir build \
  && cd build \
  && cmake \
