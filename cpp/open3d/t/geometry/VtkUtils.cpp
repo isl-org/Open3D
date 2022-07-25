@@ -34,6 +34,7 @@
 #include <vtkPointData.h>
 #include <vtkPoints.h>
 #include <vtkRotationalExtrusionFilter.h>
+#include <vtkLinearExtrusionFilter.h>
 #include <vtkTriangleFilter.h>
 
 namespace open3d {
@@ -488,6 +489,42 @@ TriangleMesh ExtrudeRotationTriangleMesh( const Geometry& geometry,
 LineSet ExtrudeRotationLineSet( const PointCloud& pointcloud,
     const double angle, const core::Tensor& axis, int resolution, double translation, bool capping) {
     auto polydata = ExtrudeRotationPolyData(pointcloud, angle, axis, resolution, translation, capping);
+    return CreateLineSetFromVtkPolyData(polydata);
+}
+
+static vtkSmartPointer<vtkPolyData> ExtrudeLinearPolyData(const Geometry& geometry,
+    const core::Tensor& vector, double scale, bool capping) {
+    core::AssertTensorShape(vector, {3});
+    // allow int types for convenience
+    core::AssertTensorDtypes(
+            vector, {core::Float32, core::Float64, core::Int32, core::Int64});
+    auto vector_ = vector.To(core::Device(), core::Float64).Contiguous();
+
+    auto polydata = CreateVtkPolyDataFromGeometry(geometry);
+
+    vtkNew<vtkLinearExtrusionFilter> extrude;
+    extrude->SetInputData(polydata);
+    extrude->SetExtrusionTypeToVectorExtrusion();
+    extrude->SetVector(vector_.GetDataPtr<double>());
+    extrude->SetScaleFactor(scale);
+    extrude->SetCapping(capping);
+
+    vtkNew<vtkTriangleFilter> triangulate;
+    triangulate->SetInputConnection(extrude->GetOutputPort());
+    triangulate->Update();
+    vtkSmartPointer<vtkPolyData> swept_polydata = triangulate->GetOutput();
+    return swept_polydata;
+}
+
+TriangleMesh ExtrudeLinearTriangleMesh( const Geometry& geometry,
+    const core::Tensor& vector, double scale, bool capping) {
+    auto polydata = ExtrudeLinearPolyData(geometry, vector, scale, capping);
+    return CreateTriangleMeshFromVtkPolyData(polydata);
+}
+
+LineSet ExtrudeLinearLineSet( const PointCloud& pointcloud,
+    const core::Tensor& vector, double scale, bool capping) {
+    auto polydata = ExtrudeLinearPolyData(pointcloud, vector, scale, capping);
     return CreateLineSetFromVtkPolyData(polydata);
 }
 

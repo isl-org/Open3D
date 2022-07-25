@@ -246,6 +246,30 @@ Example:
 
 )");
 
+    line_set.def("extrude_linear", &LineSet::ExtrudeLinear, "vector"_a, "scale"_a=1.0, "capping"_a=true,
+    R"(Sweeps the line set along a direction vector.
+
+Args:
+    
+    vector (open3d.core.Tensor): The direction vector.
+    
+    scale (float): Scalar factor which essentially scales the direction vector.
+
+Returns:
+    A triangle mesh with the result of the sweep operation.
+
+
+Example:
+
+    This code generates an L-shaped mesh::
+        import open3d as o3d
+
+        lines = o3d.t.geometry.LineSet([[1.0,0.0,0.0],[0,0,0],[0,0,1]], [[0,1],[1,2]])
+        mesh = lines.extrude_linear([0,1,0])
+        o3d.visualization.draw([{'name': 'L', 'geometry': mesh}])
+
+)");
+
 }
 
 }  // namespace geometry

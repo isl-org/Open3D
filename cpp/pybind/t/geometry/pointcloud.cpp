@@ -391,6 +391,31 @@ Example:
 
 )");
 
+    pointcloud.def("extrude_linear", &PointCloud::ExtrudeLinear, "vector"_a, "scale"_a=1.0, "capping"_a=true,
+    R"(Sweeps the point cloud along a direction vector.
+
+Args:
+    
+    vector (open3d.core.Tensor): The direction vector.
+    
+    scale (float): Scalar factor which essentially scales the direction vector.
+
+Returns:
+    A line set with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a set of straight lines from a point cloud::
+        import open3d as o3d
+        import numpy as np
+        pcd = o3d.t.geometry.PointCloud(np.random.rand(10,3))
+        lines = pcd.extrude_linear([0,1,0])
+        o3d.visualization.draw([{'name': 'lines', 'geometry': lines}])
+
+
+)");
+
 
 }
 

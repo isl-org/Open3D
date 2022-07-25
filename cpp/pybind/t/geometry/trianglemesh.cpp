@@ -614,6 +614,32 @@ Example:
         o3d.visualization.draw([{'name': 'spring', 'geometry': spring}])
 
 )");
+
+    triangle_mesh.def("extrude_linear", &TriangleMesh::ExtrudeLinear, "vector"_a, "scale"_a=1.0, "capping"_a=true,
+    R"(Sweeps the line set along a direction vector.
+
+Args:
+    
+    vector (open3d.core.Tensor): The direction vector.
+    
+    scale (float): Scalar factor which essentially scales the direction vector.
+
+Returns:
+    A triangle mesh with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a wedge from a triangle::
+        import open3d as o3d
+
+        triangle = o3d.t.geometry.TriangleMesh([[1.0,1.0,0.0], [0,1,0], [1,0,0]], [[0,1,2]])
+        wedge = triangle.extrude_linear([0,0,1])
+        o3d.visualization.draw([{'name': 'wedge', 'geometry': wedge}])
+
+)");
+
+
 }
 
 }  // namespace geometry

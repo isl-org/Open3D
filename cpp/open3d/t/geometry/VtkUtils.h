@@ -108,6 +108,22 @@ TriangleMesh ExtrudeRotationTriangleMesh(const Geometry& geometry, double angle,
 /// \return A line set with the result of the sweep operation.
 LineSet ExtrudeRotationLineSet(const PointCloud& pointcloud, double angle, const core::Tensor& axis, int resolution=16, double translation=0.0, bool capping=true);
 
+/// Sweeps the geometry along a direction vector.
+/// \param geometry Open3D geometry object, e.g., a TriangleMesh.
+/// \param vector The direction vector.
+/// \param scale Scalar factor which essentially scales the direction vector.
+/// \param capping If true adds caps to the mesh.
+/// \return A triangle mesh with the result of the sweep operation.
+TriangleMesh ExtrudeLinearTriangleMesh( const Geometry& geometry, const core::Tensor& vector, double scale, bool capping);
+
+/// Sweeps the geometry along a direction vector.
+/// \param pointcloud A point cloud.
+/// \param vector The direction vector.
+/// \param scale Scalar factor which essentially scales the direction vector.
+/// \param capping If true adds caps to the mesh.
+/// \return A triangle mesh with the result of the sweep operation.
+LineSet ExtrudeLinearLineSet( const PointCloud& pointcloud, const core::Tensor& vector, double scale, bool capping);
+
 }  // namespace vtkutils
 }  // namespace geometry
 }  // namespace t

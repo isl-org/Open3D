@@ -912,6 +912,11 @@ LineSet PointCloud::ExtrudeRotation(double angle, const core::Tensor& axis, int 
     return ExtrudeRotationLineSet(*this, angle, axis, resolution, translation, capping);
 }
 
+LineSet PointCloud::ExtrudeLinear( const core::Tensor& vector, double scale, bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeLinearLineSet(*this, vector, scale, capping);
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
