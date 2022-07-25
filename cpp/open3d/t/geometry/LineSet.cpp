@@ -24,6 +24,9 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <vtkRotationalExtrusionFilter.h>
+#include <vtkTriangleFilter.h>
+
 #include "open3d/t/geometry/LineSet.h"
 
 #include <string>
@@ -34,6 +37,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 
 namespace open3d {
@@ -202,6 +206,12 @@ open3d::geometry::LineSet LineSet::ToLegacy() const {
                         GetLineColors());
     }
     return lineset_legacy;
+}
+
+
+TriangleMesh LineSet::ExtrudeRotation(double angle, const core::Tensor& axis, int resolution, double translation, bool capping) const{
+    using namespace vtkutils;
+    return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution, translation, capping);
 }
 
 }  // namespace geometry

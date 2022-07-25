@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/LineSet.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 
 #include <string>
 #include <unordered_map>
@@ -215,6 +216,36 @@ transformation as :math:`P = R(P) + t`)");
             });
     line_set.def("to_legacy", &LineSet::ToLegacy,
                  "Convert to a legacy Open3D LineSet.");
+
+    line_set.def("extrude_rotation", &LineSet::ExtrudeRotation, "angle"_a, "axis"_a, "resolution"_a=16, "translation"_a=0.0, "capping"_a=true,
+    R"(Sweeps the line set rotationally about an axis.
+
+Args:
+    angle (float): The rotation angle in degree.
+    
+    axis (open3d.core.Tensor): The rotation axis.
+    
+    resolution (int): The resolution defines the number of intermediate sweeps
+        about the rotation axis.
+
+    translation (float): The translation along the rotation axis. 
+
+Returns:
+    A triangle mesh with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a spring from a single line::
+
+        import open3d as o3d
+        
+        line = o3d.t.geometry.LineSet([[0.7,0,0],[1,0,0]], [[0,1]])
+        spring = line.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
+        o3d.visualization.draw([{'name': 'spring', 'geometry': spring}])
+
+)");
+
 }
 
 }  // namespace geometry

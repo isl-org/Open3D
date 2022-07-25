@@ -51,6 +51,7 @@
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
@@ -904,6 +905,11 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
     TriangleMesh convex_hull(vertices, triangles);
     convex_hull.SetVertexAttr("point_indices", point_indices);
     return convex_hull;
+}
+
+LineSet PointCloud::ExtrudeRotation(double angle, const core::Tensor& axis, int resolution, double translation, bool capping) const{
+    using namespace vtkutils;
+    return ExtrudeRotationLineSet(*this, angle, axis, resolution, translation, capping);
 }
 
 }  // namespace geometry

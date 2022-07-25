@@ -779,6 +779,16 @@ public:
     /// \return New mesh after filling holes.
     TriangleMesh FillHoles(double hole_size = 1e6) const;
 
+    /// Sweeps the triangle mesh rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A triangle mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeRotation(double angle, const core::Tensor& axis, int resolution=16, double translation=0.0, bool capping=true) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;

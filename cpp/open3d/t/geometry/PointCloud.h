@@ -46,6 +46,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+class LineSet;
+
 /// \class PointCloud
 /// \brief A point cloud contains a list of 3D points.
 ///
@@ -533,6 +535,16 @@ public:
                     core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f);
+
+    /// Sweeps the point cloud rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A line set with the result of the sweep operation.
+    LineSet ExtrudeRotation(double angle, const core::Tensor& axis, int resolution=16, double translation=0.0, bool capping=true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

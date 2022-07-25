@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 
 #include <string>
@@ -360,6 +361,37 @@ Example:
              {"min_points", "Minimum number of points to form a cluster."},
              {"print_progress",
               "If true the progress is visualized in the console."}});
+
+    pointcloud.def("extrude_rotation", &PointCloud::ExtrudeRotation, "angle"_a, "axis"_a, "resolution"_a=16, "translation"_a=0.0, "capping"_a=true,
+    R"(Sweeps the point set rotationally about an axis.
+
+Args:
+    angle (float): The rotation angle in degree.
+    
+    axis (open3d.core.Tensor): The rotation axis.
+    
+    resolution (int): The resolution defines the number of intermediate sweeps
+        about the rotation axis.
+
+    translation (float): The translation along the rotation axis. 
+
+Returns:
+    A line set with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a number of helices from a point cloud::
+
+        import open3d as o3d
+        import numpy as np
+        pcd = o3d.t.geometry.PointCloud(np.random.rand(10,3))
+        helices = pcd.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
+        o3d.visualization.draw([{'name': 'helices', 'geometry': helices}])
+
+)");
+
+
 }
 
 }  // namespace geometry

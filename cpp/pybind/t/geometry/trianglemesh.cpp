@@ -584,6 +584,36 @@ Example:
         filled = mesh.fill_holes()
         o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
 )");
+
+
+    triangle_mesh.def("extrude_rotation", &TriangleMesh::ExtrudeRotation, "angle"_a, "axis"_a, "resolution"_a=16, "translation"_a=0.0, "capping"_a=true,
+    R"(Sweeps the triangle mesh rotationally about an axis.
+
+Args:
+    angle (float): The rotation angle in degree.
+    
+    axis (open3d.core.Tensor): The rotation axis.
+    
+    resolution (int): The resolution defines the number of intermediate sweeps
+        about the rotation axis.
+
+    translation (float): The translation along the rotation axis. 
+
+Returns:
+    A triangle mesh with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a spring with a triangle cross-section::
+
+        import open3d as o3d
+        
+        mesh = o3d.t.geometry.TriangleMesh([[1,1,0], [0.7,1,0], [1,0.7,0]], [[0,1,2]])
+        spring = mesh.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
+        o3d.visualization.draw([{'name': 'spring', 'geometry': spring}])
+
+)");
 }
 
 }  // namespace geometry

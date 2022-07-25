@@ -439,6 +439,11 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     return CreateTriangleMeshFromVtkPolyData(result);
 }
 
+TriangleMesh TriangleMesh::ExtrudeRotation(double angle, const core::Tensor& axis, int resolution, double translation, bool capping) const{
+    using namespace vtkutils;
+    return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution, translation, capping);
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
