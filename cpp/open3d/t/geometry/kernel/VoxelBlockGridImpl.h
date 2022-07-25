@@ -340,7 +340,9 @@ void EstimateRangeCPU
 
     // Every 6 channels: (v_min, u_min, v_max, u_max, z_min, z_max)
     const int fragment_size = 16;
-    const int frag_buffer_size = 65535;
+    // Rough heuristic; should tend to overallocate
+    const int frag_buffer_size =
+            h_down * w_down / (fragment_size * fragment_size) / voxel_size;
 
     // TODO(wei): explicit buffer
     core::Tensor fragment_buffer = core::Tensor(
@@ -418,10 +420,10 @@ void EstimateRangeCPU
                         ceilf(float(u_max - u_min + 1) / float(fragment_size));
 
                 int frag_count = frag_v_count * frag_u_count;
-                int frag_count_start = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                int frag_count_start = OPEN3D_ATOMIC_ADD(count_ptr, frag_count);
                 int frag_count_end = frag_count_start + frag_count;
                 if (frag_count_end >= frag_buffer_size) {
-                    printf("Fragment count exceeding buffer size, abort!\n");
+                    return;
                 }
 
                 int offset = 0;
@@ -451,6 +453,17 @@ void EstimateRangeCPU
 #else
     int frag_count = (*count_ptr).load();
 #endif
+
+    if (frag_count >= frag_buffer_size) {
+        utility::LogWarning(
+                "Could not generate full range map; allocated {} fragments but "
+                "needed {}",
+                frag_buffer_size, frag_count);
+        frag_count = frag_buffer_size - 1;
+    } else {
+        utility::LogInfo("EstimateRange Allocated {} fragments and needed {}",
+                         frag_buffer_size, frag_count);
+    }
 
     // Pass 0.5: Fill in range map to prepare for atomic min/max
     core::ParallelFor(block_keys.GetDevice(), h_down * w_down,

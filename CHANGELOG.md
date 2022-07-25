@@ -6,6 +6,7 @@
 * Corrected documentation for KDTree (typo in Notebook) (PR #4744)
 * Remove `setuptools` and `wheel` from requirements for end users (PR #5020)
 * Fix various typos (PR #5070)
+* Fix for depth estimation for VoxelBlockGrid
 
 ## 0.13
 
