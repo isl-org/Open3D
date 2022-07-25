@@ -68,8 +68,8 @@ static const std::unordered_map<std::string, std::string>
                 {"width", "Width of an image frame."},
                 {"intrinsics", "Intrinsic matrix stored in a 3x3 Tensor."},
                 {"trunc_voxel_multiplier",
-                 "Truncation distance multiplier in "
-                 "voxel size for signed distance. For instance, "
+                 "Truncation distance multiplier in voxel size for signed "
+                 "distance. For instance, "
                  "--trunc_voxel_multiplier=8 with --voxel_size=0.006(m) "
                  "creates a truncation distance of 0.048(m)."}};
 
@@ -90,27 +90,17 @@ void pybind_slam_model(py::module &m) {
     model.def("get_current_frame_pose", &Model::GetCurrentFramePose);
     model.def("update_frame_pose", &Model::UpdateFramePose);
 
-    model.def(
-            "synthesize_model_frame",
-            py::overload_cast<Frame &, float, float, float, float, bool, float>(
-                    &Model::SynthesizeModelFrame),
-            py::call_guard<py::gil_scoped_release>(),
-            "Synthesize frame from the volumetric model using ray casting.",
-            "model_frame"_a, "depth_scale"_a = 1000.0, "depth_min"_a = 0.1,
-            "depth_max"_a = 3.0, "trunc_voxel_multiplier"_a = 8.0,
-            "enable_color"_a = false, "weight_threshold"_a = -1.0);
+    model.def("synthesize_model_frame",
+              py::call_guard<py::gil_scoped_release>(),
+              "Synthesize frame from the volumetric model using ray casting.",
+              "model_frame"_a, "depth_scale"_a = 1000.0, "depth_min"_a = 0.1,
+              "depth_max"_a = 3.0, "trunc_voxel_multiplier"_a = 8.0,
+              "enable_color"_a = false, "weight_threshold"_a = -1.0);
     docstring::ClassMethodDocInject(m, "Model", "synthesize_model_frame",
                                     map_shared_argument_docstrings);
 
     model.def(
-            "track_frame_to_model",
-            py::overload_cast<
-                    const open3d::t::pipelines::slam::Frame &,
-                    const open3d::t::pipelines::slam::Frame &, float, float,
-                    float, const odometry::Method,
-                    const std::vector<odometry::OdometryConvergenceCriteria> &>(
-                    &Model::TrackFrameToModel),
-            py::call_guard<py::gil_scoped_release>(),
+            "track_frame_to_model", py::call_guard<py::gil_scoped_release>(),
             "Track input frame against raycasted frame from model.",
             "input_frame"_a, "model_frame"_a, "depth_scale"_a = 1000.0,
             "depth_max"_a = 3.0, "depth_diff"_a = 0.07,

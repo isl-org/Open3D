@@ -221,8 +221,8 @@ void pybind_voxel_block_grid(py::module& m) {
                 return voxelBlockGrid.To(core::Device("CUDA", device_id));
             },
             "Transfer the voxel block grid to a CUDA device. If the voxel "
-            "block grid is "
-            "already on the specified CUDA device, no copy will be performed.",
+            "block grid is already on the specified CUDA device, no copy "
+            "will be performed.",
             "device_id"_a = 0);
 
     vbg.def("save", &VoxelBlockGrid::Save,
@@ -231,6 +231,7 @@ void pybind_voxel_block_grid(py::module& m) {
     vbg.def_static("load", &VoxelBlockGrid::Load,
                    "Load a voxel block grid from a npz file.", "file_name"_a);
 }
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
