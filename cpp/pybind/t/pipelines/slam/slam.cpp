@@ -90,7 +90,7 @@ void pybind_slam_model(py::module &m) {
     model.def("get_current_frame_pose", &Model::GetCurrentFramePose);
     model.def("update_frame_pose", &Model::UpdateFramePose);
 
-    model.def("synthesize_model_frame",
+    model.def("synthesize_model_frame", &Model::SynthesizeModelFrame,
               py::call_guard<py::gil_scoped_release>(),
               "Synthesize frame from the volumetric model using ray casting.",
               "model_frame"_a, "depth_scale"_a = 1000.0, "depth_min"_a = 0.1,
@@ -100,7 +100,8 @@ void pybind_slam_model(py::module &m) {
                                     map_shared_argument_docstrings);
 
     model.def(
-            "track_frame_to_model", py::call_guard<py::gil_scoped_release>(),
+            "track_frame_to_model", &Model::TrackFrameToModel,
+            py::call_guard<py::gil_scoped_release>(),
             "Track input frame against raycasted frame from model.",
             "input_frame"_a, "model_frame"_a, "depth_scale"_a = 1000.0,
             "depth_max"_a = 3.0, "depth_diff"_a = 0.07,

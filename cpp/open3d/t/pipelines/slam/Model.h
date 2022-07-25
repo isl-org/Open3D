@@ -52,7 +52,7 @@ public:
                                                          core::Device("CPU:0")),
           const core::Device& device = core::Device("CUDA:0"));
 
-    core::Tensor GetCurrentFramePose() { return T_frame_to_world_; }
+    core::Tensor GetCurrentFramePose() const { return T_frame_to_world_; }
     void UpdateFramePose(int frame_id, const core::Tensor& T_frame_to_world) {
         if (frame_id != frame_id_ + 1) {
             utility::LogWarning("Skipped {} frames in update T!",
