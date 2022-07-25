@@ -327,7 +327,8 @@ void EstimateRangeCPU
          int64_t block_resolution,
          float voxel_size,
          float depth_min,
-         float depth_max) {
+         float depth_max,
+         core::Tensor& fragment_buffer) {
 
     // TODO(wei): reserve it in a reusable buffer
 
@@ -340,13 +341,17 @@ void EstimateRangeCPU
 
     // Every 6 channels: (v_min, u_min, v_max, u_max, z_min, z_max)
     const int fragment_size = 16;
-    // Rough heuristic; should tend to overallocate
-    const int frag_buffer_size =
-            h_down * w_down / (fragment_size * fragment_size) / voxel_size;
 
-    // TODO(wei): explicit buffer
-    core::Tensor fragment_buffer = core::Tensor(
-            {frag_buffer_size, 6}, core::Float32, block_keys.GetDevice());
+    if (fragment_buffer.GetDataPtr() == 0 ||
+        fragment_buffer.NumElements() == 0) {
+        // Rough heuristic; should tend to overallocate
+        const int reserve_frag_buffer_size =
+                h_down * w_down / (fragment_size * fragment_size) / voxel_size;
+        fragment_buffer = core::Tensor({reserve_frag_buffer_size, 6},
+                                       core::Float32, block_keys.GetDevice());
+    }
+
+    const int frag_buffer_size = fragment_buffer.NumElements() / 6;
 
     NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
     NDArrayIndexer block_keys_indexer(block_keys, 1);
@@ -449,12 +454,13 @@ void EstimateRangeCPU
                 }
             });
 #if defined(__CUDACC__)
-    int frag_count = count[0].Item<int>();
+    int needed_frag_count = count[0].Item<int>();
 #else
-    int frag_count = (*count_ptr).load();
+    int needed_frag_count = (*count_ptr).load();
 #endif
 
-    if (frag_count >= frag_buffer_size) {
+    int frag_count = needed_frag_count;
+    if (frag_count > frag_buffer_size) {
         utility::LogWarning(
                 "Could not generate full range map; allocated {} fragments but "
                 "needed {}",
@@ -510,9 +516,15 @@ void EstimateRangeCPU
                 }
 #endif
             });
+
 #if defined(__CUDACC__)
     core::cuda::Synchronize();
 #endif
+
+    if (needed_frag_count != frag_count) {
+        fragment_buffer = core::Tensor({needed_frag_count, 6}, core::Float32,
+                                       block_keys.GetDevice());
+    }
 }
 
 struct MiniVecCache {

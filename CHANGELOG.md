@@ -7,6 +7,7 @@
 * Remove `setuptools` and `wheel` from requirements for end users (PR #5020)
 * Fix various typos (PR #5070)
 * Fix for depth estimation for VoxelBlockGrid
+* Reserve fragment buffer for VoxelBlockGrid operations
 
 ## 0.13
 
