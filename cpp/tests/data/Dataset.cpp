@@ -41,12 +41,15 @@ TEST(Dataset, DatasetBase) {
               utility::filesystem::GetHomeDirectory() + "/open3d_data");
 
     data::Dataset ds_custom("some_prefix", "/my/custom/data_root");
+
     EXPECT_EQ(ds_custom.GetPrefix(), "some_prefix");
     EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
     EXPECT_EQ(ds_custom.GetDownloadDir(),
               "/my/custom/data_root/download/some_prefix");
     EXPECT_EQ(ds_custom.GetExtractDir(),
               "/my/custom/data_root/extract/some_prefix");
+    EXPECT_EQ(ds_custom.GetOutputDir(),
+              "/my/custom/data_root/output/some_prefix");
 }
 
 TEST(Dataset, SingleDownloadDataset) {

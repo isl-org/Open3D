@@ -100,6 +100,12 @@ public:
     const std::string GetExtractDir() const {
         return GetDataRoot() + "/extract/" + GetPrefix();
     }
+    /// \brief Get absolute path to output directory to store results related to
+    /// that dataset. i.e.
+    /// ${data_root}/${output_prefix}/${prefix}
+    const std::string GetOutputDir() const {
+        return GetDataRoot() + "/output/" + GetPrefix();
+    }
 
 protected:
     /// Open3D data root.
