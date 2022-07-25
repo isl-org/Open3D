@@ -38,8 +38,7 @@ static const std::unordered_map<std::string, std::string>
                 {"voxel_size", "The voxel size of the volume in meters."},
                 {"block_resolution",
                  "Resolution of local dense voxel blocks. By default 16 "
-                 "is "
-                 "used to create 16^3 voxel blocks."},
+                 "is used to create 16^3 voxel blocks."},
                 {"block_count",
                  "Number of estimate blocks per scene with the block "
                  "resolution set to 16 and the 6mm voxel resolution. "
@@ -67,7 +66,12 @@ static const std::unordered_map<std::string, std::string>
                  "Weight threshold to filter outlier voxel blocks."},
                 {"height", "Height of an image frame."},
                 {"width", "Width of an image frame."},
-                {"intrinsics", "Intrinsic matrix stored in a 3x3 Tensor."}};
+                {"intrinsics", "Intrinsic matrix stored in a 3x3 Tensor."},
+                {"trunc_voxel_multiplier",
+                 "Truncation distance multiplier in "
+                 "voxel size for signed distance. For instance, "
+                 "--trunc_voxel_multiplier=8 with --voxel_size=0.006(m) "
+                 "creates a truncation distance of 0.048(m)."}};
 
 void pybind_slam_model(py::module &m) {
     py::class_<Model> model(m, "Model", "Volumetric model for Dense SLAM.");
