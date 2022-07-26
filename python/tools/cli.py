@@ -202,17 +202,22 @@ def _example(parser, args):
 
 
 def _draw(parser, args):
+    original_args = sys.argv[:]
+
     if args.filename == None:
         parser.print_help()
     elif not os.path.isfile(args.filename):
-        print(f"Error: could not find file: {args.filename}")
-        parser.print_help()
-        parser.exit(2)
+        if args.filename.startswith("data/") and (args.filename[5:] in dir(o3d.data)):
+            dataset = getattr(o3d.data, args.filename[5:])()
+            sys.argv[2] = dataset.path
+        else:
+            print(f"Error: could not find file: {args.filename}")
+            parser.print_help()
+            parser.exit(2)
 
-    removed_arg = sys.argv[1]
     sys.argv.pop(1)
     app.main()
-    sys.argv.insert(1, removed_arg)
+    sys.argv = original_args[:]
     return 0
 
 
@@ -299,6 +304,7 @@ def main():
         "Load and visualize a 3D model. Example usage:\n"
         "  open3d draw                                            # Start a blank Open3D viewer\n"
         "  open3d draw path/to/model_file                         # Visualize a 3D model file\n"
+        "  open3d draw data/DatasetName                           # Visualize open3d datasets\n"
     )
     parser_draw = subparsers.add_parser(
         "draw",
