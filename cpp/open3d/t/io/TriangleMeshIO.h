@@ -63,6 +63,11 @@ bool WriteTriangleMesh(const std::string &filename,
                        bool write_triangle_uvs = true,
                        bool print_progress = false);
 
+bool ReadTriangleMeshUsingASSIMP(
+        const std::string &filename,
+        geometry::TriangleMesh &mesh,
+        const open3d::io::ReadTriangleMeshOptions &params);
+
 }  // namespace io
 }  // namespace t
 }  // namespace open3d
