@@ -303,16 +303,14 @@ static void AddVtkFieldDataToTensorMap(TensorMap& tmap,
 /// \param tmap The source TensorMap.
 /// \param copy If true always create a copy for attribute arrays.
 /// \param include A set of keys to select which attributes should be added.
-///                The special key "*" includes all attributes.
 /// \param exclude A set of keys for which attributes will not be added to the
-/// vtkFieldData.
+/// vtkFieldData. The exclusion set has precedence over the included keys.
 static void AddTensorMapToVtkFieldData(
         vtkFieldData* field_data,
         TensorMap& tmap,
         bool copy,
-        std::unordered_set<std::string> include = {"*"},
+        std::unordered_set<std::string> include,
         std::unordered_set<std::string> exclude = {}) {
-    bool include_all = include.count("*");
     for (auto key_tensor : tmap) {
         // we only want attributes and ignore the primary key here
         if (key_tensor.first == tmap.GetPrimaryKey()) {
@@ -328,7 +326,7 @@ static void AddTensorMapToVtkFieldData(
             continue;
         }
 
-        if ((include_all || include.count(key_tensor.first)) &&
+        if (include.count(key_tensor.first) &&
             !exclude.count(key_tensor.first)) {
             auto array = CreateVtkDataArrayFromTensor(key_tensor.second, copy);
             array->SetName(key_tensor.first.c_str());
@@ -344,11 +342,11 @@ static void AddTensorMapToVtkFieldData(
 
 vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
         const Geometry& geometry,
-        bool copy,
         const std::unordered_set<std::string>& point_attr_include,
+        const std::unordered_set<std::string>& face_attr_include,
         const std::unordered_set<std::string>& point_attr_exclude,
-        const std::unordered_set<std::string>& triangle_attr_include,
-        const std::unordered_set<std::string>& triangle_attr_exclude) {
+        const std::unordered_set<std::string>& face_attr_exclude,
+        bool copy) {
     vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
 
     if (geometry.GetGeometryType() == Geometry::GeometryType::PointCloud) {
@@ -380,9 +378,9 @@ vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
         AddTensorMapToVtkFieldData(polydata->GetPointData(),
                                    mesh.GetVertexAttr(), copy,
                                    point_attr_include, point_attr_exclude);
-        AddTensorMapToVtkFieldData(
-                polydata->GetCellData(), mesh.GetTriangleAttr(), copy,
-                triangle_attr_include, triangle_attr_exclude);
+        AddTensorMapToVtkFieldData(polydata->GetCellData(),
+                                   mesh.GetTriangleAttr(), copy,
+                                   face_attr_include, face_attr_exclude);
     } else {
         utility::LogError("Unsupported geometry type {}",
                           geometry.GetGeometryType());
