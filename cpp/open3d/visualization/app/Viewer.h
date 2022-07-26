@@ -36,7 +36,7 @@ namespace app {
 /// \param argc (argument count) is the number of arguments in \p argv .
 /// \param argv (argument vector) is the array of arguments stored as character
 /// arrays. It contains the path of the calling program (which should be in the
-/// same directory as the gui resoruces folder) as the first argument. The
+/// same directory as the gui resources folder) as the first argument. The
 /// optional second argument is the path of the geometry file to be visualized
 void RunViewer(int argc, const char *argv[]);
 

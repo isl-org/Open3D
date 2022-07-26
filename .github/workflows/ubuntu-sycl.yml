@@ -1,0 +1,57 @@
+name: Ubuntu SYCL
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  NPROC: 2
+  GCE_CLI_GHA_VERSION: "302.0.0"
+
+jobs:
+  ubuntu-sycl:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        BUILD_SHARED_LIBS: [ON, OFF]
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
+      - name: Docker build
+        run: |
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
+            docker/docker_build.sh sycl-shared
+          else
+            docker/docker_build.sh sycl-static
+          fi
+      - name: Docker test
+        run: |
+          if [ "${{ matrix.BUILD_SHARED_LIBS }}" = "ON" ]; then
+            docker/docker_test.sh sycl-shared
+          else
+            docker/docker_test.sh sycl-static
+          fi
+      - name: GCloud CLI setup
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: google-github-actions/setup-gcloud@v0.2.1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
+          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+          export_default_credentials: true
+      - name: Upload ccache to GCS
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-sycl.tar.gz gs://open3d-ci-cache/ || true

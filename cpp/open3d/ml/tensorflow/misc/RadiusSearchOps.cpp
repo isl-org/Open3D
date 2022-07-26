@@ -91,7 +91,7 @@ REGISTER_OP("Open3DRadiusSearch")
             return Status::OK();
         })
         .Doc(R"doc(
-Computes the indices and distances of all neigbours within a radius.
+Computes the indices and distances of all neighbours within a radius.
 
 This op computes the neighborhood for each query point and returns the indices
 of the neighbors and optionally also the distances. Each query point has an

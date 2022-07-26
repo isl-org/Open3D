@@ -148,7 +148,7 @@ TEST_P(TensorListPermuteDevices, FromTensor) {
     core::Dtype dtype = core::Float32;
     core::Tensor t = core::Tensor::Ones({3, 4, 5}, dtype, device);
 
-    // Copyied tensor.
+    // Copied tensor.
     core::TensorList tl = core::TensorList::FromTensor(t);
     EXPECT_EQ(tl.GetElementShape(), core::SizeVector({4, 5}));
     EXPECT_EQ(tl.GetSize(), 3);
@@ -300,7 +300,7 @@ TEST_P(TensorListPermuteDevices, Resize) {
     EXPECT_EQ(tl.GetReservedSize(), 3);
     EXPECT_ANY_THROW(tl.Resize(5));
 
-    // Inplace TensorList does not suport resize.
+    // Inplace TensorList does not support resize.
     core::TensorList tl_inplace = core::TensorList::FromTensor(t, true);
     EXPECT_ANY_THROW(tl_inplace.Resize(2));
 }
@@ -313,7 +313,7 @@ TEST_P(TensorListPermuteDevices, PushBack) {
     core::Tensor t1 = core::Tensor::Ones({2, 3}, dtype, device) * 1;
     core::Tensor t2 = core::Tensor::Ones({2, 3}, dtype, device) * 2;
 
-    // Start from emtpy tensor list
+    // Start from empty tensor list
     core::TensorList tl({2, 3}, core::Float32, device);
     EXPECT_EQ(tl.GetSize(), 0);
     EXPECT_EQ(tl.GetReservedSize(), 1);
@@ -336,7 +336,7 @@ TEST_P(TensorListPermuteDevices, PushBack) {
     EXPECT_TRUE(tl[2].AllClose(t2));
     EXPECT_FALSE(tl[2].IsSame(t2));
 
-    // Inplace TensorList does not suport push back.
+    // Inplace TensorList does not support push back.
     core::TensorList tl_inplace = core::TensorList::FromTensor(
             core::Tensor::Ones({3, 2, 3}, dtype, device), true);
     EXPECT_ANY_THROW(tl_inplace.PushBack(t0));

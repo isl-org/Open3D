@@ -193,6 +193,8 @@
             },                                                                 \
             "dim"_a = py::none(), "keepdim"_a = false);
 
+// TODO (rishabh): add this behavior to the cpp implementation. Refer to the
+// Tensor::Any and Tensor::All ops.
 #define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)              \
     tensor.def(                                                      \
             #py_name,                                                \
@@ -434,9 +436,9 @@ void pybind_core_tensor(py::module& m) {
                 return tensor.Append(values);
             },
             R"(Appends the `values` tensor, along the given axis and returns
-a copy of the original tensor. Both the tensors must have same data-type 
+a copy of the original tensor. Both the tensors must have same data-type
 device, and number of dimensions. All dimensions must be the same, except the
-dimension along the axis the tensors are to be appended. 
+dimension along the axis the tensors are to be appended.
 
 This is the similar to NumPy's semantics:
 - https://numpy.org/doc/stable/reference/generated/numpy.append.html
@@ -454,7 +456,7 @@ Example:
      [2 3],
      [4 5]]
     Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
- 
+
     >>> a.append(b)
     [0 1 2 3 4 5]
     Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
@@ -774,7 +776,7 @@ Ref:
     BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__ixor__, LogicalXor_, NON_CONST_ARG);
     BIND_BINARY_R_OP_ALL_DTYPES(__rxor__, LogicalXor);
 
-    // BinaryEW: comparsion ops.
+    // BinaryEW: comparison ops.
     BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(gt, Gt, CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(gt_, Gt_, NON_CONST_ARG);
     BIND_BINARY_OP_ALL_DTYPES_WITH_SCALAR(__gt__, Gt, CONST_ARG);
@@ -801,11 +803,14 @@ Ref:
         return tensor.GetStrides();
     });
     tensor.def_property_readonly("dtype", &Tensor::GetDtype);
-    tensor.def_property_readonly("device", &Tensor::GetDevice);
     tensor.def_property_readonly("blob", &Tensor::GetBlob);
     tensor.def_property_readonly("ndim", &Tensor::NumDims);
     tensor.def("num_elements", &Tensor::NumElements);
     tensor.def("__bool__", &Tensor::IsNonZero);  // Python 3.X.
+
+    tensor.def_property_readonly("device", &Tensor::GetDevice);
+    tensor.def_property_readonly("is_cpu", &Tensor::IsCPU);
+    tensor.def_property_readonly("is_cuda", &Tensor::IsCUDA);
 
     // Length and iterator.
     tensor.def("__len__", &Tensor::GetLength);
@@ -864,15 +869,15 @@ Ref:
               "int64 Tensors, each containing the indices of the non-zero "
               "elements in each dimension."}});
     tensor.def(
-            "all", &Tensor::All,
+            "all", &Tensor::All, py::call_guard<py::gil_scoped_release>(),
+            py::arg("dim") = py::none(), py::arg("keepdim") = false,
             "Returns true if all elements in the tensor are true. Only works "
-            "for boolean tensors. This function does not take reduction "
-            "dimensions, and the reduction is applied to all dimensions.");
+            "for boolean tensors.");
     tensor.def(
-            "any", &Tensor::Any,
+            "any", &Tensor::Any, py::call_guard<py::gil_scoped_release>(),
+            py::arg("dim") = py::none(), py::arg("keepdim") = false,
             "Returns true if any elements in the tensor are true. Only works "
-            "for boolean tensors. This function does not take reduction "
-            "dimensions, and the reduction is applied to all dimensions.");
+            "for boolean tensors.");
 
     // Reduction ops.
     BIND_REDUCTION_OP(sum, Sum);

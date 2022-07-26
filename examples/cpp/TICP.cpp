@@ -30,7 +30,6 @@
 #include <iomanip>
 #include <iostream>
 #include <mutex>
-#include <random>
 #include <sstream>
 #include <thread>
 
@@ -134,7 +133,7 @@ public:
         AddChild(widget3d_);
 
         // ----------------- VISUALIZER -----------------
-        // Intialize visualizer.
+        // Initialize visualizer.
         {
             // lock to protect `source_` and `target_`
             // before modifying the value, ensuring the
@@ -168,7 +167,7 @@ public:
             // Getting bounding box and center to
             // setup camera view.
             auto bbox = this->widget3d_->GetScene()->GetBoundingBox();
-            auto center = bbox.GetCenter().cast<float>();
+            Eigen::Vector3f center = bbox.GetCenter().cast<float>();
             this->widget3d_->SetupCamera(18, bbox, center);
             this->widget3d_->LookAt(center, center - Eigen::Vector3f{-10, 5, 8},
                                     {0.0f, -1.0f, 0.0f});
@@ -238,7 +237,7 @@ private:
     // For Visualization.
     // The members of this structure can be protected by the mutex lock,
     // to avoid the case, when we are trying to modify the values,
-    // while visualizer is tring to access it.
+    // while visualizer is trying to access it.
     struct {
         std::mutex lock_;
         t::geometry::PointCloud source_;

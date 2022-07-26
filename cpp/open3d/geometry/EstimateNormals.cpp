@@ -384,8 +384,8 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
                 "No normals in the PointCloud. Call EstimateNormals() first.");
     }
 
-    // Create Riemannian graph (Euclidian MST + kNN)
-    // Euclidian MST is subgraph of Delaunay triangulation
+    // Create Riemannian graph (Euclidean MST + kNN)
+    // Euclidean MST is subgraph of Delaunay triangulation
     std::shared_ptr<TetraMesh> delaunay_mesh;
     std::vector<size_t> pt_map;
     std::tie(delaunay_mesh, pt_map) = TetraMesh::CreateFromPointCloud(*this);

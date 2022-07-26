@@ -101,7 +101,7 @@ class ExampleWindow:
         # add to the top-level (vertical) layout
         layout.add_child(fileedit_layout)
 
-        # Create a collapsable vertical widget, which takes up enough vertical
+        # Create a collapsible vertical widget, which takes up enough vertical
         # space for all its children when open, but only enough for text when
         # closed. This is useful for property pages, so the user can hide sets
         # of properties they rarely use. All layouts take a spacing parameter,
@@ -476,7 +476,7 @@ class MessageBox:
 
 
 def main():
-    # We need to initalize the application, which finds the necessary shaders for
+    # We need to initialize the application, which finds the necessary shaders for
     # rendering and prepares the cross-platform window abstraction.
     gui.Application.instance.initialize()
 

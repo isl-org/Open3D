@@ -169,7 +169,7 @@ void FillColumnTranspose(
 /// Multiplies each column with a scalar in-place.
 ///
 /// \param col_major_matrix    Matrix with shape [rows, cols] in column major
-///        storage oder.
+///        storage order.
 ///
 /// \param vector    A vector with shape [cols].
 ///
@@ -185,7 +185,7 @@ void MultiplyColumns(const cudaStream_t& stream,
 /// \param out_ptr    Output pointer
 ///
 /// \param col_major_matrix    Matrix with shape [rows, cols] in column major
-///        storage oder.
+///        storage order.
 ///
 /// \param vector    A vector with shape [cols].
 ///

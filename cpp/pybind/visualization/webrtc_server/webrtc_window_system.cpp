@@ -53,7 +53,7 @@ static void pybind_webrtc_server_functions(py::module &m) {
     m.def(
             "disable_http_handshake",
             []() { WebRTCWindowSystem::GetInstance()->DisableHttpHandshake(); },
-            "Disables the HTTP handshake server. In Jupyter environemnt, "
+            "Disables the HTTP handshake server. In Jupyter environment, "
             "WebRTC handshake is performed by call_http_api() with "
             "Jupyter's own COMMS interface, thus the HTTP server shall "
             "be turned off.");

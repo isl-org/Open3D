@@ -112,7 +112,7 @@ void ImageCapturer::OnCaptureResult(
     }
 }
 
-// Overide rtc::VideoSourceInterface<webrtc::VideoFrame>.
+// Override rtc::VideoSourceInterface<webrtc::VideoFrame>.
 void ImageCapturer::AddOrUpdateSink(
         rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
         const rtc::VideoSinkWants& wants) {

@@ -59,7 +59,7 @@ static HINSTANCE LoadK4ADllHandle(const std::string& lib_name) {
     // To use custom library path for K4a, set environment variable K4A_LIB_DIR
     // Exammple:
     // set K4A_LIB_DIR=C:\Program Files\Azure Kinect SDK v1.2.0\sdk\windows-desktop\amd64\release\bin
-    // Note that double qoutes and "\\" are not needed
+    // Note that double quotes and "\\" are not needed
     std::string env_lib_dir = "";
     char const* temp = std::getenv("K4A_LIB_DIR");
     if (temp != nullptr) {

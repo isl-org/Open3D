@@ -65,36 +65,6 @@ TEST(Helper, StringEndsWith) {
     EXPECT_FALSE(utility::StringEndsWith("", "c"));
 }
 
-TEST(Helper, UniformRandIntGeneratorWithFixedSeed) {
-    std::array<int, 1024> values;
-    utility::UniformRandIntGenerator rand_generator(0, 9, 42);
-    for (auto it = values.begin(); it != values.end(); ++it)
-        *it = rand_generator();
-
-    for (int i = 0; i < 10; i++) {
-        std::array<int, 1024> new_values;
-        utility::UniformRandIntGenerator new_rand_generator(0, 9, 42);
-        for (auto it = new_values.begin(); it != new_values.end(); ++it)
-            *it = new_rand_generator();
-        EXPECT_TRUE(values == new_values);
-    }
-}
-
-TEST(Helper, UniformRandIntGeneratorWithRandomSeed) {
-    std::array<int, 1024> values;
-    utility::UniformRandIntGenerator rand_generator(0, 9);
-    for (auto it = values.begin(); it != values.end(); ++it)
-        *it = rand_generator();
-
-    for (int i = 0; i < 10; i++) {
-        std::array<int, 1024> new_values;
-        utility::UniformRandIntGenerator new_rand_generator(0, 9);
-        for (auto it = new_values.begin(); it != new_values.end(); ++it)
-            *it = new_rand_generator();
-        EXPECT_FALSE(values == new_values);
-    }
-}
-
 TEST(Helper, CHAR_BIT_constant) {
 #ifdef BUILD_ISPC_MODULE
     int32_t value;

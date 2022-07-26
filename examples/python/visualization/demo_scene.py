@@ -34,7 +34,7 @@ import open3d.visualization as vis
 
 def convert_material_record(mat_record):
     mat = vis.Material('defaultLit')
-    # Convert scalar paremeters
+    # Convert scalar parameters
     mat.vector_properties['base_color'] = mat_record.base_color
     mat.scalar_properties['metallic'] = mat_record.base_metallic
     mat.scalar_properties['roughness'] = mat_record.base_roughness

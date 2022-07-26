@@ -30,6 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
+#include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
 namespace open3d {
@@ -156,13 +157,400 @@ The attributes of the triangle mesh have different levels::
     triangle_mesh.def("rotate", &TriangleMesh::Rotate, "R"_a, "center"_a,
                       "Rotate points and normals (if exist).");
 
+    triangle_mesh.def(
+            "compute_convex_hull", &TriangleMesh::ComputeConvexHull,
+            "joggle_inputs"_a = false,
+            R"(Compute the convex hull of a point cloud using qhull. This runs on the CPU.
+
+Args:
+    joggle_inputs (default False). Handle precision problems by
+    randomly perturbing the input data. Set to True if perturbing the input
+    iis acceptable but you need convex simplicial output. If False,
+    neighboring facets may be merged in case of precision problems. See
+    `QHull docs <http://www.qhull.org/html/qh-impre.htm#joggle`__ for more
+    details.
+
+Returns:
+    TriangleMesh representing the convexh hull. This contains an
+    extra vertex property "point_indices" that contains the index of the
+    corresponding vertex in the original mesh.
+
+Example:
+    We will load the Stanford Bunny dataset, compute and display it's convex hull::
+
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        hull = mesh.compute_convex_hull()
+        o3d.visualization.draw([{'name': 'bunny', 'geometry': mesh}, {'name': 'convex hull', 'geometry': hull}])
+)");
+
+    // creation
     triangle_mesh.def_static(
             "from_legacy", &TriangleMesh::FromLegacy, "mesh_legacy"_a,
             "vertex_dtype"_a = core::Float32, "triangle_dtype"_a = core::Int64,
             "device"_a = core::Device("CPU:0"),
             "Create a TriangleMesh from a legacy Open3D TriangleMesh.");
+    // conversion
     triangle_mesh.def("to_legacy", &TriangleMesh::ToLegacy,
                       "Convert to a legacy Open3D TriangleMesh.");
+
+    triangle_mesh.def("clip_plane", &TriangleMesh::ClipPlane, "point"_a,
+                      "normal"_a,
+                      R"(Returns a new triangle mesh clipped with the plane.
+
+This method clips the triangle mesh with the specified plane.
+Parts of the mesh on the positive side of the plane will be kept and triangles
+intersected by the plane will be cut.
+
+Args:
+    point (open3d.core.Tensor): A point on the plane.
+
+    normal (open3d.core.Tensor): The normal of the plane. The normal points to
+        the positive side of the plane for which the geometry will be kept.
+
+Returns:
+    New triangle mesh clipped with the plane.
+
+
+This example shows how to create a hemisphere from a sphere::
+
+    import open3d as o3d
+
+    sphere = o3d.t.geometry.TriangleMesh.from_legacy(o3d.geometry.TriangleMesh.create_sphere())
+    hemisphere = sphere.clip_plane(point=[0,0,0], normal=[1,0,0])
+
+    o3d.visualization.draw(hemisphere)
+)");
+
+    // Triangle Mesh's creation APIs.
+    triangle_mesh
+            .def_static("create_box", &TriangleMesh::CreateBox,
+                        "Create a box triangle mesh. One vertex of the box"
+                        "will be placed at the origin and the box aligns"
+                        "with the positive x, y, and z axes."
+                        "width"_a = 1.0,
+                        "height"_a = 1.0, "depth"_a = 1.0,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_sphere", &TriangleMesh::CreateSphere,
+                        "Create a sphere mesh centered at (0, 0, 0).",
+                        "radius"_a = 1.0, "resolution"_a = 20,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_tetrahedron", &TriangleMesh::CreateTetrahedron,
+                        "Create a tetrahedron mesh centered at (0, 0, 0).",
+                        "radius"_a = 1.0, "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_octahedron", &TriangleMesh::CreateOctahedron,
+                        "Create a octahedron mesh centered at (0, 0, 0).",
+                        "radius"_a = 1.0, "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_icosahedron", &TriangleMesh::CreateIcosahedron,
+                        "Create a icosahedron mesh centered at (0, 0, 0).",
+                        "radius"_a = 1.0, "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_cylinder", &TriangleMesh::CreateCylinder,
+                        "Create a cylinder mesh.", "radius"_a = 1.0,
+                        "height"_a = 2.0, "resolution"_a = 20, "split"_a = 4,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_cone", &TriangleMesh::CreateCone,
+                        "Create a cone mesh.", "radius"_a = 1.0,
+                        "height"_a = 2.0, "resolution"_a = 20, "split"_a = 1,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_torus", &TriangleMesh::CreateTorus,
+                        "Create a torus mesh.", "torus_radius"_a = 1.0,
+                        "tube_radius"_a = 0.5, "radial_resolution"_a = 30,
+                        "tubular_resolution"_a = 20,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_arrow", &TriangleMesh::CreateArrow,
+                        "Create a arrow mesh.", "cylinder_radius"_a = 1.0,
+                        "cone_radius"_a = 1.5, "cylinder_height"_a = 5.0,
+                        "cone_height"_a = 4.0, "resolution"_a = 20,
+                        "cylinder_split"_a = 4, "cone_split"_a = 1,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_coordinate_frame",
+                        &TriangleMesh::CreateCoordinateFrame,
+                        "Create a coordinate frame mesh.", "size"_a = 1.0,
+                        "origin"_a = Eigen::Vector3d(0.0, 0.0, 0.0),
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"))
+            .def_static("create_mobius", &TriangleMesh::CreateMobius,
+                        "Create a Mobius strip.", "length_split"_a = 70,
+                        "width_split"_a = 15, "twists"_a = 1, "raidus"_a = 1,
+                        "flatness"_a = 1, "width"_a = 1, "scale"_a = 1,
+                        "float_dtype"_a = core::Float32,
+                        "int_dtype"_a = core::Int64,
+                        "device"_a = core::Device("CPU:0"));
+
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_box",
+            {{"width", "x-directional length."},
+             {"height", "y-directional length."},
+             {"depth", "z-directional length."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create mesh."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_sphere",
+            {{"radius", "The radius of the sphere."},
+             {"resolution", "The resolution of the sphere."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create sphere."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_tetrahedron",
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create tetrahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_octahedron",
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_icosahedron",
+            {{"radius", "Distance from centroid to mesh vetices."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_cylinder",
+            {{"radius", "The radius of the cylinder."},
+             {"height",
+              "The height of the cylinder.The axis of the cylinder will be "
+              "from (0, 0, -height/2) to (0, 0, height/2)."},
+             {"resolution",
+              " The circle will be split into ``resolution`` segments"},
+             {"split", "The ``height`` will be split into ``split`` segments."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_cone",
+            {{"radius", "The radius of the cone."},
+             {"height",
+              "The height of the cone. The axis of the cone will be from (0, "
+              "0, 0) to (0, 0, height)."},
+             {"resolution",
+              "The circle will be split into ``resolution`` segments"},
+             {"split", "The ``height`` will be split into ``split`` segments."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_torus",
+            {{"torus_radius",
+              "The radius from the center of the torus to the center of the "
+              "tube."},
+             {"tube_radius", "The radius of the torus tube."},
+             {"radial_resolution",
+              "The number of segments along the radial direction."},
+             {"tubular_resolution",
+              "The number of segments along the tubular direction."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_arrow",
+            {{"cylinder_radius", "The radius of the cylinder."},
+             {"cone_radius", "The radius of the cone."},
+             {"cylinder_height",
+              "The height of the cylinder. The cylinder is from (0, 0, 0) to "
+              "(0, 0, cylinder_height)"},
+             {"cone_height",
+              "The height of the cone. The axis of the cone will be from (0, "
+              "0, cylinder_height) to (0, 0, cylinder_height + cone_height)"},
+             {"resolution",
+              "The cone will be split into ``resolution`` segments."},
+             {"cylinder_split",
+              "The ``cylinder_height`` will be split into ``cylinder_split`` "
+              "segments."},
+             {"cone_split",
+              "The ``cone_height`` will be split into ``cone_split`` "
+              "segments."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_coordinate_frame",
+            {{"size", "The size of the coordinate frame."},
+             {"origin", "The origin of the coordinate frame."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+    docstring::ClassMethodDocInject(
+            m, "TriangleMesh", "create_mobius",
+            {{"length_split", "The number of segments along the Mobius strip."},
+             {"width_split",
+              "The number of segments along the width of the Mobius strip."},
+             {"twists", "Number of twists of the Mobius strip."},
+             {"radius", "The radius of the Mobius strip."},
+             {"flatness", "Controls the flatness/height of the Mobius strip."},
+             {"width", "Width of the Mobius strip."},
+             {"scale", "Scale the complete Mobius strip."},
+             {"float_dtype", "Float_dtype, Float32 or Float64."},
+             {"int_dtype", "Int_dtype, Int32 or Int64."},
+             {"device", "Device of the create octahedron."}});
+
+    triangle_mesh.def(
+            "simplify_quadric_decimation",
+            &TriangleMesh::SimplifyQuadricDecimation, "target_reduction"_a,
+            "preserve_volume"_a = true,
+            R"(Function to simplify mesh using Quadric Error Metric Decimation by Garland and Heckbert.
+    
+This function always uses the CPU device.
+
+Args:
+    target_reduction (float): The factor of triangles to delete, i.e., setting
+        this to 0.9 will return a mesh with about 10% of the original triangle
+        count. It is not guaranteed that the target reduction factor will be
+        reached.
+
+    preserve_volume (bool): If set to True this enables volume preservation
+        which reduces the error in triangle normal direction.
+
+Returns:
+    Simplified TriangleMesh.
+
+Example:
+    This shows how to simplifify the Stanford Bunny mesh::
+
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        simplified = mesh.simplify_quadric_decimation(0.99)
+        o3d.visualization.draw([{'name': 'bunny', 'geometry': simplified}])
+)");
+
+    triangle_mesh.def(
+            "boolean_union", &TriangleMesh::BooleanUnion, "mesh"_a,
+            "tolerance"_a = 1e-6,
+            R"(Computes the mesh that encompasses the union of the volumes of two meshes.
+Both meshes should be manifold.
+
+This function always uses the CPU device.
+
+Args:
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+        boolean operation.
+
+    tolerance (float): Threshold which determines when point distances are
+        considered to be 0.
+
+Returns:
+    The mesh describing the union volume.
+
+Example:
+    This copmutes the union of a sphere and a cube::
+
+        box = o3d.geometry.TriangleMesh.create_box()
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
+        sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+
+        ans = box.boolean_union(sphere)
+
+        o3d.visualization.draw([{'name': 'union', 'geometry': ans}])
+)");
+
+    triangle_mesh.def(
+            "boolean_intersection", &TriangleMesh::BooleanIntersection,
+            "mesh"_a, "tolerance"_a = 1e-6,
+            R"(Computes the mesh that encompasses the intersection of the volumes of two meshes.
+Both meshes should be manifold.
+
+This function always uses the CPU device.
+
+Args:
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+        boolean operation.
+
+    tolerance (float): Threshold which determines when point distances are
+        considered to be 0.
+
+Returns:
+    The mesh describing the intersection volume.
+
+Example:
+    This copmutes the intersection of a sphere and a cube::
+
+        box = o3d.geometry.TriangleMesh.create_box()
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
+        sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+
+        ans = box.boolean_intersection(sphere)
+
+        o3d.visualization.draw([{'name': 'intersection', 'geometry': ans}])
+)");
+
+    triangle_mesh.def(
+            "boolean_difference", &TriangleMesh::BooleanDifference, "mesh"_a,
+            "tolerance"_a = 1e-6,
+            R"(Computes the mesh that encompasses the volume after subtracting the volume of the second operand.
+Both meshes should be manifold.
+
+This function always uses the CPU device.
+
+Args:
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+        boolean operation.
+
+    tolerance (float): Threshold which determines when point distances are
+        considered to be 0.
+
+Returns:
+    The mesh describing the difference volume.
+
+Example:
+    This subtracts the sphere from the cube volume::
+
+        box = o3d.geometry.TriangleMesh.create_box()
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
+        sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
+
+        ans = box.boolean_difference(sphere)
+
+        o3d.visualization.draw([{'name': 'difference', 'geometry': ans}])
+)");
+
+    triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
+                      "hole_size"_a = 1e6,
+                      R"(Fill holes by triangulating boundary edges.
+
+This function always uses the CPU device.
+
+Args:
+    hole_size (float): This is the approximate threshold for filling holes.
+        The value describes the maximum radius of holes to be filled.
+
+Returns:
+    New mesh after filling holes.
+
+Example:
+    Fill holes at the bottom of the Stanford Bunny mesh::
+
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        filled = mesh.fill_holes()
+        o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
+)");
 }
 
 }  // namespace geometry

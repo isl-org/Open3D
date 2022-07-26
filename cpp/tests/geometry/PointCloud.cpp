@@ -152,7 +152,7 @@ TEST(PointCloud, GetOrientedBoundingBox) {
     geometry::PointCloud pcd;
     geometry::OrientedBoundingBox obb;
 
-    // Emtpy (GetOrientedBoundingBox requires >=4 points)
+    // Empty (GetOrientedBoundingBox requires >=4 points)
     pcd = geometry::PointCloud();
     EXPECT_ANY_THROW(pcd.GetOrientedBoundingBox());
 
@@ -504,12 +504,12 @@ TEST(PointCloud, HasNormals) {
     pcd.normals_.resize(5);
     EXPECT_FALSE(pcd.HasNormals());
 
-    // False if not consistant
+    // False if not consistent
     pcd.points_.resize(4);
     pcd.normals_.resize(5);
     EXPECT_FALSE(pcd.HasNormals());
 
-    // True if non-zero and consistant
+    // True if non-zero and consistent
     pcd.points_.resize(5);
     pcd.normals_.resize(5);
     EXPECT_TRUE(pcd.HasNormals());
@@ -524,12 +524,12 @@ TEST(PointCloud, HasColors) {
     pcd.colors_.resize(5);
     EXPECT_FALSE(pcd.HasColors());
 
-    // False if not consistant
+    // False if not consistent
     pcd.points_.resize(4);
     pcd.colors_.resize(5);
     EXPECT_FALSE(pcd.HasColors());
 
-    // True if non-zero and consistant
+    // True if non-zero and consistent
     pcd.points_.resize(5);
     pcd.colors_.resize(5);
     EXPECT_TRUE(pcd.HasColors());
@@ -544,12 +544,12 @@ TEST(PointCloud, HasCovariances) {
     pcd.covariances_.resize(5);
     EXPECT_FALSE(pcd.HasCovariances());
 
-    // False if not consistant
+    // False if not consistent
     pcd.points_.resize(4);
     pcd.covariances_.resize(5);
     EXPECT_FALSE(pcd.HasCovariances());
 
-    // True if non-zero and consistant
+    // True if non-zero and consistent
     pcd.points_.resize(5);
     pcd.covariances_.resize(5);
     EXPECT_TRUE(pcd.HasCovariances());
@@ -1268,8 +1268,6 @@ TEST(PointCloud, SegmentPlane) {
     Eigen::Vector4d plane_model;
     std::vector<size_t> inliers;
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 1000);
-
-    // TODO: seed the ransac
     ExpectEQ(plane_model, Eigen::Vector4d(-0.06, -0.10, 0.99, -1.06), 0.1);
 
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 10, 1000);

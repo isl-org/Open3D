@@ -56,7 +56,7 @@ void MacTransformIntoApp() {
     // So, we come to the Deep Magic. ApplicationServices contains some
     // functions that were part of Carbon, and expanded on them. Most have been
     // deprecated and moved into NSRunnableApplication, but TransformProcessType
-    // does not appear to have been. Documention is limited to the Processes.h
+    // does not appear to have been. Documentation is limited to the Processes.h
     // header file and various digitally-dusty archival tomes. One particularly
     // salient archive is
     // http://svn.python.org/projects/external/tk-8.5.11.0/macosx/tkMacOSXInit.c

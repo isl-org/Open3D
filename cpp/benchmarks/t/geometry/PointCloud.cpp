@@ -95,12 +95,53 @@ void VoxelDownSample(benchmark::State& state,
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
     pcd = pcd.To(device);
 
-    // Warp up
+    // Warm up.
     pcd.VoxelDownSample(voxel_size, backend);
 
     for (auto _ : state) {
         pcd.VoxelDownSample(voxel_size, backend);
         core::cuda::Synchronize(device);
+    }
+}
+
+void LegacyUniformDownSample(benchmark::State& state, size_t k) {
+    auto pcd = open3d::io::CreatePointCloudFromFile(path);
+    for (auto _ : state) {
+        pcd->UniformDownSample(k);
+    }
+}
+
+void UniformDownSample(benchmark::State& state,
+                       const core::Device& device,
+                       size_t k) {
+    t::geometry::PointCloud pcd;
+    // t::io::CreatePointCloudFromFile lacks support of remove_inf_points and
+    // remove_nan_points
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    // Warm up.
+    pcd.UniformDownSample(k);
+
+    for (auto _ : state) {
+        pcd.UniformDownSample(k);
+        core::cuda::Synchronize(device);
+    }
+}
+
+void LegacyTransform(benchmark::State& state, const int no_use) {
+    open3d::geometry::PointCloud pcd;
+    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
+    transformation.block<3, 1>(0, 3) = Eigen::Vector3d(1, 2, 3);
+
+    // Warm Up.
+    open3d::geometry::PointCloud pcd_transformed =
+            pcd.Transform(transformation);
+
+    for (auto _ : state) {
+        pcd_transformed = pcd.Transform(transformation);
     }
 }
 
@@ -126,6 +167,43 @@ void Transform(benchmark::State& state, const core::Device& device) {
     }
 }
 
+void SelectByIndex(benchmark::State& state,
+                   bool remove_duplicates,
+                   const core::Device& device) {
+    PointCloud pcd;
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+
+    const int64_t num_points = pcd.GetPointPositions().GetLength();
+    core::Tensor indices =
+            core::Tensor::Arange(0, num_points, 1, core::Int64, device);
+
+    // Warm Up.
+    PointCloud pcd_selected =
+            pcd.SelectByIndex(indices, false, remove_duplicates);
+
+    for (auto _ : state) {
+        pcd_selected = pcd.SelectByIndex(indices);
+        core::cuda::Synchronize(device);
+    }
+}
+
+void LegacySelectByIndex(benchmark::State& state, const int no_use) {
+    open3d::geometry::PointCloud pcd;
+    open3d::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+
+    const size_t num_points = pcd.points_.size();
+    std::vector<size_t> indices(num_points);
+    std::iota(indices.begin(), indices.end(), 0);
+
+    // Warm Up.
+    open3d::geometry::PointCloud pcd_selected = *pcd.SelectByIndex(indices);
+
+    for (auto _ : state) {
+        pcd_selected = *pcd.SelectByIndex(indices);
+    }
+}
+
 void EstimateNormals(benchmark::State& state,
                      const core::Device& device,
                      const core::Dtype& dtype,
@@ -141,7 +219,7 @@ void EstimateNormals(benchmark::State& state,
         pcd.RemovePointAttr("normals");
     }
 
-    // Warp up
+    // Warm up.
     pcd.EstimateNormals(max_nn, radius);
     for (auto _ : state) {
         pcd.EstimateNormals(max_nn, radius);
@@ -157,7 +235,7 @@ void LegacyEstimateNormals(
 
     auto pcd_down = pcd.VoxelDownSample(voxel_size);
 
-    // Warp up
+    // Warm up.
     pcd_down->EstimateNormals(search_param, true);
 
     for (auto _ : state) {
@@ -174,7 +252,7 @@ void RemoveRadiusOutliers(benchmark::State& state,
 
     pcd = pcd.To(device).VoxelDownSample(0.01);
 
-    // Warp up
+    // Warm up.
     pcd.RemoveRadiusOutliers(nb_points, search_radius);
     for (auto _ : state) {
         pcd.RemoveRadiusOutliers(nb_points, search_radius);
@@ -189,7 +267,7 @@ void LegacyRemoveRadiusOutliers(benchmark::State& state,
 
     auto pcd_down = pcd.VoxelDownSample(0.01);
 
-    // Warp up
+    // Warm up.
     pcd_down->RemoveRadiusOutliers(nb_points, search_radius);
 
     for (auto _ : state) {
@@ -249,11 +327,46 @@ BENCHMARK_CAPTURE(LegacyVoxelDownSample, Legacy_0_32, 0.32)
         ->Unit(benchmark::kMillisecond);
 ENUM_VOXELDOWNSAMPLE_BACKEND()
 
+BENCHMARK_CAPTURE(LegacyUniformDownSample, Legacy_2, 2)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyUniformDownSample, Legacy_5, 5)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacyUniformDownSample, Legacy_10, 10)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(UniformDownSample, CPU_2, core::Device("CPU:0"), 2)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(UniformDownSample, CPU_5, core::Device("CPU:0"), 5)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(UniformDownSample, CPU_10, core::Device("CPU:0"), 10)
+        ->Unit(benchmark::kMillisecond);
+
 BENCHMARK_CAPTURE(Transform, CPU, core::Device("CPU:0"))
         ->Unit(benchmark::kMillisecond);
 
+BENCHMARK_CAPTURE(SelectByIndex, CPU, false, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(SelectByIndex,
+                  CPU(remove duplicates),
+                  true,
+                  core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+
 #ifdef BUILD_CUDA_MODULE
+BENCHMARK_CAPTURE(UniformDownSample, CUDA_2, core::Device("CUDA:0"), 2)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(UniformDownSample, CUDA_5, core::Device("CUDA:0"), 5)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(UniformDownSample, CUDA_10, core::Device("CUDA:0"), 10)
+        ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(Transform, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(SelectByIndex, CUDA, false, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(SelectByIndex,
+                  CUDA(remove duplicates),
+                  true,
+                  core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 #endif
 
@@ -323,6 +436,9 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   utility::nullopt)
         ->Unit(benchmark::kMillisecond);
 #endif
+
+BENCHMARK_CAPTURE(LegacyTransform, CPU, 1)->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(LegacySelectByIndex, CPU, 1)->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   Legacy Hybrid[0.02 | 30 | 0.06],

@@ -74,7 +74,7 @@ void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
     void *A_data = A_copy.GetDataPtr();
     void *B_data = B_copy.GetDataPtr();
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         LeastSquaresCUDA(A_data, B_data, m, n, k, dtype, device);
 #else

@@ -118,7 +118,7 @@ class CorrespondenceCheckerBasedOnDistance : public CorrespondenceChecker {
 public:
     /// \brief Default Constructor.
     ///
-    /// \param distance_threshold Distance threashold for the check.
+    /// \param distance_threshold Distance threshold for the check.
     CorrespondenceCheckerBasedOnDistance(double distance_threshold)
         : CorrespondenceChecker(true),
           distance_threshold_(distance_threshold) {}
@@ -131,7 +131,7 @@ public:
                const Eigen::Matrix4d &transformation) const override;
 
 public:
-    /// Distance threashold for the check.
+    /// Distance threshold for the check.
     double distance_threshold_;
 };
 
