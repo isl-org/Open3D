@@ -467,7 +467,7 @@ void EstimateRangeCPU
                 frag_buffer_size, frag_count);
         frag_count = frag_buffer_size - 1;
     } else {
-        utility::LogInfo("EstimateRange Allocated {} fragments and needed {}",
+        utility::LogDebug("EstimateRange Allocated {} fragments and needed {}",
                          frag_buffer_size, frag_count);
     }
 
@@ -522,6 +522,10 @@ void EstimateRangeCPU
 #endif
 
     if (needed_frag_count != frag_count) {
+        utility::LogInfo(
+                "Reallocating {} fragments for EstimateRange (was {})",
+                needed_frag_count, frag_count);
+
         fragment_buffer = core::Tensor({needed_frag_count, 6}, core::Float32,
                                        block_keys.GetDevice());
     }
