@@ -415,7 +415,9 @@ This example shows how to create a hemisphere from a sphere::
                              R"(Create a triangle mesh from a text string.
     
 Args:
-    text (str): The text for generating the mesh. ASCII characters 32-126 are supported (includes alphanumeric characters and punctuation). In addition the line feed '\n' is supported to start a new line. 
+    text (str): The text for generating the mesh. ASCII characters 32-126 are 
+        supported (includes alphanumeric characters and punctuation). In 
+        addition the line feed '\n' is supported to start a new line. 
 
     depth (float): The depth of the generated mesh. If depth is 0 then a flat mesh will be generated.
 
