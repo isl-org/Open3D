@@ -403,46 +403,34 @@ TEST_P(PointCloudPermuteDevices, OrientNormalsTowardsCameraLocation) {
 TEST_P(PointCloudPermuteDevices, OrientNormalsConsistentTangentPlane) {
     core::Device device = GetParam();
 
-    core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
-                                                      {0, 0, 1},
-                                                      {0, 1, 0},
-                                                      {0, 1, 1},
-                                                      {1, 0, 0},
-                                                      {1, 0, 1},
-                                                      {1, 1, 0},
-                                                      {1, 1, 1},
-                                                      {0.5, 0.5, -0.25},
-                                                      {0.5, 0.5, 1.25},
-                                                      {0.5, -0.25, 0.5},
-                                                      {0.5, 1.25, 0.5},
-                                                      {-0.25, 0.5, 0.5},
-                                                      {1.25, 0.5, 0.5}},
-                                                     device);
+    open3d::geometry::PointCloud pcd({
+            {0, 0, 0},
+            {0, 0, 1},
+            {0, 1, 0},
+            {0, 1, 1},
+            {1, 0, 0},
+            {1, 0, 1},
+            {1, 1, 0},
+            {1, 1, 1},
+            {0.5, 0.5, -0.25},
+            {0.5, 0.5, 1.25},
+            {0.5, -0.25, 0.5},
+            {0.5, 1.25, 0.5},
+            {-0.25, 0.5, 0.5},
+            {1.25, 0.5, 0.5},
+    });
+
     // Hard-coded test.
-    t::geometry::PointCloud pcd(points);
-    pcd.EstimateNormals(4);
+    pcd.EstimateNormals(geometry::KDTreeSearchParamKNN(/*knn=*/4));
     double a = 0.57735;
     double b = 0.0927618;
     double c = 0.991358;
-    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
-            core::Tensor::Init<double>({{a, a, a},
-                                        {-a, -a, a},
-                                        {a, -a, a},
-                                        {-a, a, a},
-                                        {-a, a, a},
-                                        {a, -a, a},
-                                        {-a, -a, a},
-                                        {a, a, a},
-                                        {b, -b, -c},
-                                        {-b, b, -c},
-                                        {-b, c, b},
-                                        {b, c, -b},
-                                        {c, b, b},
-                                        {c, b, b}},
-                                       device)));
 
-    pcd.OrientNormalsConsistentTangentPlane(4);
-    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
+    t::geometry::PointCloud t_pcd =
+            t::geometry::PointCloud::FromLegacy(pcd, core::Float64, device);
+
+    t_pcd.OrientNormalsConsistentTangentPlane(4);
+    EXPECT_TRUE(t_pcd.GetPointNormals().AllClose(
             core::Tensor::Init<double>({{-a, -a, -a},
                                         {-a, -a, a},
                                         {-a, a, -a},
@@ -451,12 +439,12 @@ TEST_P(PointCloudPermuteDevices, OrientNormalsConsistentTangentPlane) {
                                         {a, -a, a},
                                         {a, a, -a},
                                         {a, a, a},
-                                        {b, -b, -c},
-                                        {b, -b, c},
-                                        {b, -c, -b},
-                                        {b, c, -b},
+                                        {-b, -b, -c},
+                                        {-b, -b, c},
+                                        {-b, -c, -b},
+                                        {-b, c, -b},
                                         {-c, -b, -b},
-                                        {c, b, b}},
+                                        {c, -b, -b}},
                                        device)));
 }
 
