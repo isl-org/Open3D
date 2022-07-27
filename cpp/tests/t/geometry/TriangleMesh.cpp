@@ -353,14 +353,11 @@ TEST_P(TriangleMeshPermuteDevices, NormalizeNormals) {
     t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
             *mesh, core::Float64, core::Int64, device);
 
-    mesh->ComputeVertexNormals(false);
+    mesh->ComputeTriangleNormals(false);
     mesh->NormalizeNormals();
-    t_mesh.ComputeVertexNormals(false);
+    t_mesh.ComputeTriangleNormals(false);
     t_mesh.NormalizeNormals();
 
-    EXPECT_TRUE(t_mesh.GetVertexNormals().AllClose(
-            core::eigen_converter::EigenVector3dVectorToTensor(
-                    mesh->vertex_normals_, core::Dtype::Float64, device)));
     EXPECT_TRUE(t_mesh.GetTriangleNormals().AllClose(
             core::eigen_converter::EigenVector3dVectorToTensor(
                     mesh->triangle_normals_, core::Dtype::Float64, device)));
@@ -389,11 +386,9 @@ TEST_P(TriangleMeshPermuteDevices, ComputeVertexNormals) {
     t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
             *mesh, core::Float64, core::Int64, device);
 
-    mesh->ComputeVertexNormals(false);
-    t_mesh.ComputeVertexNormals(false);
+    mesh->ComputeVertexNormals();
+    t_mesh.ComputeVertexNormals();
 
-    Print(mesh->vertex_normals_);
-    utility::LogInfo(": {}", t_mesh.GetVertexNormals().ToString());
     EXPECT_TRUE(t_mesh.GetVertexNormals().AllClose(
             core::eigen_converter::EigenVector3dVectorToTensor(
                     mesh->vertex_normals_, core::Dtype::Float64, device)));

@@ -54,6 +54,7 @@ void ComputeVertexNormalsCPU(const core::Tensor& triangles,
             scalar_t n1 = triangle_normals_ptr[idx];
             scalar_t n2 = triangle_normals_ptr[idx + 1];
             scalar_t n3 = triangle_normals_ptr[idx + 2];
+
             vertex_normals_ptr[3 * triangle_id1] += n1;
             vertex_normals_ptr[3 * triangle_id1 + 1] += n2;
             vertex_normals_ptr[3 * triangle_id1 + 2] += n3;
