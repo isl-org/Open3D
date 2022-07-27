@@ -575,6 +575,17 @@ Args:
 Returns:
     A dictionary of textures.
 
+Example:
+    We generate a texture storing the xyz coordinates for each texel::
+        import open3d as o3d
+        from matplotlib import pyplot as plt
+
+        box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+
+        textures = box.bake_vertex_attr_textures(128, {'positions'})
+        plt.imshow(textures['positions'].numpy())
+
 )");
 
     triangle_mesh.def("bake_triangle_attr_textures",
@@ -599,6 +610,19 @@ Args:
 Returns:
     A dictionary of textures.
 
+Example:
+    We generate a texture storing the index of the triangle to which the texel 
+    belongs to::
+        import open3d as o3d
+        import numpy as np
+        from matplotlib import pyplot as plt
+
+        box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        box.triangle['index'] = np.arange(box.triangle['indices'].shape[0])
+
+        textures = box.bake_triangle_attr_textures(128, {'index'})
+        plt.imshow(textures['index'].numpy())
 )");
 }
 

@@ -422,7 +422,8 @@ core::Tensor BakeAttribute(int size,
                      attr.GetShapeRef().end());
     core::SizeVector components_shape(attr.GetShapeRef().begin() + 1,
                                       attr.GetShapeRef().end());
-    const int num_components = components_shape.NumElements();
+    const int num_components =
+            components_shape.NumElements();  // is 1 for empty shape
     core::Tensor tex = core::Tensor::Empty(tex_shape, attr.GetDtype());
 
     const float threshold = (margin / size) * (margin / size);
@@ -483,6 +484,7 @@ void ComputePrimitiveInfoTexture(int size,
                                  const core::Tensor &texture_uvs) {
     const int64_t num_triangles = texture_uvs.GetLength();
 
+    // Generate vertices for each triangle using (u,v,0) as position.
     core::Tensor vertices({num_triangles * 3, 3}, core::Float32);
     {
         const float *uv_ptr = texture_uvs.GetDataPtr<float>();
@@ -504,6 +506,7 @@ void ComputePrimitiveInfoTexture(int size,
 
     RaycastingScene scene;
     scene.AddTriangles(vertices, triangle_indices);
+
     core::Tensor query_points =
             core::Tensor::Empty({size, size, 3}, core::Float32);
     float *ptr = query_points.GetDataPtr<float>();
