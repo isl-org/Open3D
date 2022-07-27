@@ -50,18 +50,18 @@ axes.
         - AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound)
         - AxisAlignedBoundingBox::GetMaxBound()
         - AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound)
-    - Value tensor must have shape {3}.
+    - Value tensor must have shape {3,}.
     - Value tensor must have the same data type and device.
-    - Value tensor is float32 by default.
-    - Value tensor can only be float32.
+    - Value tensor can only be float32 (default) or float64.
     - The device of the tensor determines the device of the box.
 
 - color: Color of the bounding box.
     - Usage
         - AxisAlignedBoundingBox::GetColor()
         - AxisAlignedBoundingBox::SetColor(const core::Tensor &color)
-    - Value tensor must have shape {3}.
-    - Value tensor has the type of float32.)");
+    - Value tensor must have shape {3,}.
+    - Value tensor can only be float32 (default) or float64.
+    - Value tensor can only be range [0.0, 1.0].)");
     aabb.def(py::init<const core::Device&>(),
              "device"_a = core::Device("CPU:0"),
              "Construct an empty axis-aligned box on the provided "
@@ -73,8 +73,12 @@ The axis-aligned box will be created on the device of the given bound
 tensor, which must be on the same device and have the same data type.)");
     docstring::ClassMethodDocInject(
             m, "AxisAlignedBoundingBox", "__init__",
-            {{"min_bound", "Lower bounds of the bounding box for all axes."},
-             {"max_bound", "Upper bounds of the bounding box for all axes."}});
+            {{"min_bound",
+              "Lower bounds of the bounding box for all axes. Tensor with {3,} "
+              "shape, and type float32 or float64"},
+             {"max_bound",
+              "Upper bounds of the bounding box for all axes. Tensor with {3,} "
+              "shape, and type float32 or float64"}});
 
     aabb.def("__repr__", &AxisAlignedBoundingBox::ToString);
     aabb.def(
@@ -168,20 +172,35 @@ center respectively, then the new min_bound and max_bound are given by
             "points"_a);
 
     docstring::ClassMethodDocInject(
+            m, "AxisAlignedBoundingBox", "set_min_bound",
+            {{"min_bound",
+              "Tensor with {3,} shape, and type float32 or float64."}});
+    docstring::ClassMethodDocInject(
+            m, "AxisAlignedBoundingBox", "set_max_bound",
+            {{"max_bound",
+              "Tensor with {3,} shape, and type float32 or float64."}});
+    docstring::ClassMethodDocInject(
+            m, "AxisAlignedBoundingBox", "set_color",
+            {{"color",
+              "Tensor with {3,} shape, and type float32 or float64, with "
+              "values in range [0.0, 1.0]."}});
+    docstring::ClassMethodDocInject(
             m, "AxisAlignedBoundingBox", "translate",
             {{"translation",
-              "Transformation [Tensor of shape (4,4)].  Should be on "
-              "the same "
-              "device as the box."},
+              "Translation tensor of shape (3,), type float32 or float64, "
+              "device same as the box."},
              {"relative", "Whether to perform relative translation."}});
     docstring::ClassMethodDocInject(
             m, "AxisAlignedBoundingBox", "scale",
             {{"scale", "The scale parameter."},
-             {"center", "Center used for the scaling operation."}});
+             {"center",
+              "Center used for the scaling operation. Tensor with {3,} shape, "
+              "and type float32 or float64"}});
     docstring::ClassMethodDocInject(
             m, "AxisAlignedBoundingBox",
             "get_point_indices_within_bounding_box",
-            {{"points", "A list of points (N x 3 tensor)."}});
+            {{"points",
+              "Tensor with {N, 3} shape, and type float32 or float64."}});
     docstring::ClassMethodDocInject(
             m, "AxisAlignedBoundingBox", "create_from_points",
             {{"points",

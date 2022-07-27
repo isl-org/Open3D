@@ -57,7 +57,7 @@ namespace geometry {
 ///     - Usage
 ///         - AxisAlignedBoundingBox::GetColor()
 ///         - AxisAlignedBoundingBox::SetColor(const core::Tensor &color)
-///     - Value tensor must have shape {3}.
+///     - Value tensor must have shape {3,}.
 ///     - Value tensor can only be float32 (default) or float64.
 ///     - Value tensor can only be range [0.0, 1.0].
 class AxisAlignedBoundingBox : public Geometry, public DrawableGeometry {
@@ -71,9 +71,9 @@ public:
     /// bound tensor, which must be on the same device and have the same data
     /// type.
     /// \param min_bound Lower bounds of the bounding box for all axes. Tensor
-    /// of shape {3}, and type float32 or float64.
+    /// of shape {3,}, and type float32 or float64.
     /// \param max_bound Upper bounds of the bounding box for all axes. Tensor
-    /// of shape {3}, and type float32 or float64.
+    /// of shape {3,}, and type float32 or float64.
     AxisAlignedBoundingBox(const core::Tensor &min_bound,
                            const core::Tensor &max_bound);
 
@@ -106,26 +106,29 @@ public:
     /// If the data type of the given tensor differs from the data type of the
     /// original tensor, it will be converted into the same data type.
     /// If the min bound makes the box invalid, it will not be set to the box.
-    /// \param min_bound Tensor with {3} shape, and type float32 or float64.
+    /// \param min_bound Tensor with {3,} shape, and type float32 or float64.
     void SetMinBound(const core::Tensor &min_bound);
 
     /// \brief Set the max boundof the box.
     /// If the data type of the given tensor differs from the data type of the
     /// original tensor, it will be converted into the same data type.
     /// If the max bound makes the box invalid, it will not be set to the box.
-    /// \param min_bound Tensor with {3} shape, and type float32 or float64.
+    /// \param min_bound Tensor with {3,} shape, and type float32 or float64.
     void SetMaxBound(const core::Tensor &max_bound);
 
-    /// \brief Set the color the box.
-    /// The data type of the given tensor will be always converted into float32.
-    /// \param min_bound Tensor with {3} shape, and type float32 or float64,
+    /// \brief Set the color of the box.
+    ///
+    /// \param color Tensor with {3,} shape, and type float32 or float64,
     /// with values in range [0.0, 1.0].
     void SetColor(const core::Tensor &color);
 
 public:
     core::Tensor GetMinBound() const { return min_bound_; }
+
     core::Tensor GetMaxBound() const { return max_bound_; }
+
     core::Tensor GetColor() const { return color_; }
+
     core::Tensor GetCenter() const { return (min_bound_ + max_bound_) * 0.5; }
 
     /// \brief Translate the axis-aligned box by the given translation.
@@ -149,7 +152,7 @@ public:
     ///
     /// \param scale The scale parameter.
     /// \param center Center used for the scaling operation. Tensor of shape
-    /// (3,), type float32 or float64, device same as the box.
+    /// {3,}, type float32 or float64, device same as the box.
     AxisAlignedBoundingBox &Scale(double scale, const core::Tensor &center);
 
     /// \brief Add operation for axis-aligned bounding box.
@@ -170,7 +173,9 @@ public:
     }
 
     double GetXPercentage(double x) const;
+
     double GetYPercentage(double y) const;
+
     double GetZPercentage(double z) const;
 
     /// Returns the volume of the bounding box.
@@ -184,7 +189,7 @@ public:
 
     /// \brief Indices to points that are within the bounding box.
     ///
-    /// \param points A list of points (N x 3 tensor).
+    /// \param points Tensor with {N, 3} shape, and type float32 or float64.
     core::Tensor GetPointIndicesWithinBoundingBox(
             const core::Tensor &points) const;
 
