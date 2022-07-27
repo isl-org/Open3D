@@ -64,7 +64,8 @@ TEST_P(VtkUtilsTest, PointCloudToVtkPolyData) {
 
     auto pcd = PointCloud(
             core::Tensor::Init<float>({{0, 0, 0}, {1, 1, 1}, {2, 2, 2}}));
-    auto polydata = vtkutils::CreateVtkPolyDataFromGeometry(pcd, copy);
+    auto polydata =
+            vtkutils::CreateVtkPolyDataFromGeometry(pcd, {}, {}, {}, {}, copy);
 
     auto tensor = pcd.GetPointPositions();
     auto data_array = polydata->GetPoints()->GetData();
@@ -86,7 +87,8 @@ TEST_P(VtkUtilsTest, TriangleMeshToVtkPolyData) {
 
     auto legacy_box = geometry::TriangleMesh::CreateBox();
     auto box = TriangleMesh::FromLegacy(*legacy_box);
-    auto polydata = vtkutils::CreateVtkPolyDataFromGeometry(box, copy);
+    auto polydata =
+            vtkutils::CreateVtkPolyDataFromGeometry(box, {}, {}, {}, {}, copy);
 
     auto tensor = box.GetVertexPositions();
     auto data_array = polydata->GetPoints()->GetData();
