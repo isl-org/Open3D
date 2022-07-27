@@ -334,7 +334,8 @@ LineSet TriangleMesh::SlicePlane(const core::Tensor &point,
     auto point_ = point.To(core::Device(), core::Float64).Contiguous();
     auto normal_ = normal.To(core::Device(), core::Float64).Contiguous();
 
-    auto polydata = CreateVtkPolyDataFromGeometry(*this);
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            *this, GetVertexAttr().GetKeySet(), {}, {}, {}, false);
 
     vtkNew<vtkPlane> clipPlane;
     clipPlane->SetNormal(normal_.GetDataPtr<double>());
