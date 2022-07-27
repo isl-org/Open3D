@@ -551,6 +551,55 @@ Example:
         filled = mesh.fill_holes()
         o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
 )");
+
+    triangle_mesh.def("bake_vertex_attr_textures",
+                      &TriangleMesh::BakeVertexAttrTextures, "size"_a,
+                      "vertex_attr"_a, "margin"_a = 2., "fill"_a = 0.,
+                      R"(Bake vertex attributes into textures.
+
+This function assumes a triangle attribute with name 'texture_uvs'.
+Only float type attributes can be baked to textures.
+
+Args:
+    size (int): The width and height of the texture in pixels. Only square 
+        textures are supported.
+
+    vertex_attr (set): The vertex attributes for which textures should be 
+        generated.
+
+    margin (float): The margin in pixels. The recommended value is 2. The margin
+        are additional pixels around the UV islands to avoid discontinuities.
+
+    fill (float): The value used for filling texels outside the UV islands.
+
+Returns:
+    A dictionary of textures.
+
+)");
+
+    triangle_mesh.def("bake_triangle_attr_textures",
+                      &TriangleMesh::BakeTriangleAttrTextures, "size"_a,
+                      "triangle_attr"_a, "margin"_a = 2., "fill"_a = 0.,
+                      R"(Bake triangle attributes into textures.
+
+This function assumes a triangle attribute with name 'texture_uvs'.
+
+Args:
+    size (int): The width and height of the texture in pixels. Only square 
+        textures are supported.
+
+    triangle_attr (set): The vertex attributes for which textures should be 
+        generated.
+
+    margin (float): The margin in pixels. The recommended value is 2. The margin
+        are additional pixels around the UV islands to avoid discontinuities.
+
+    fill (float): The value used for filling texels outside the UV islands.
+
+Returns:
+    A dictionary of textures.
+
+)");
 }
 
 }  // namespace geometry

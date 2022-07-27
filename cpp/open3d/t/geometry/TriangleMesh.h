@@ -758,6 +758,53 @@ public:
     /// \return New mesh after filling holes.
     TriangleMesh FillHoles(double hole_size = 1e6) const;
 
+    /// Bake vertex attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    /// Only float type attributes can be baked to textures.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeVertexAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &vertex_attr = {},
+            double margin = 2.,
+            double fill = 0.) const;
+
+    /// Bake triangle attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeTriangleAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &triangle_attr = {},
+            double margin = 2.,
+            double fill = 0.) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;
