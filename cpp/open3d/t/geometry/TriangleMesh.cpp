@@ -302,7 +302,9 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     auto point_ = point.To(core::Device(), core::Float64).Contiguous();
     auto normal_ = normal.To(core::Device(), core::Float64).Contiguous();
 
-    auto polydata = CreateVtkPolyDataFromGeometry(*this);
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            *this, GetVertexAttr().GetKeySet(), GetTriangleAttr().GetKeySet(),
+            {}, {}, false);
 
     vtkNew<vtkPlane> clipPlane;
     clipPlane->SetNormal(normal_.GetDataPtr<double>());
@@ -363,7 +365,7 @@ TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
     }
 
     // exclude attributes because they will not be preserved
-    auto polydata = CreateVtkPolyDataFromGeometry(*this, false, {}, {}, {}, {});
+    auto polydata = CreateVtkPolyDataFromGeometry(*this, {}, {}, {}, {}, false);
 
     vtkNew<vtkQuadricDecimation> decimate;
     decimate->SetInputData(polydata);
@@ -382,10 +384,10 @@ TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
                               int op) {
     using namespace vtkutils;
     // exclude triangle attributes because they will not be preserved
-    auto polydata_A =
-            CreateVtkPolyDataFromGeometry(mesh_A, false, {"*"}, {}, {}, {});
-    auto polydata_B =
-            CreateVtkPolyDataFromGeometry(mesh_B, false, {"*"}, {}, {}, {});
+    auto polydata_A = CreateVtkPolyDataFromGeometry(
+            mesh_A, mesh_A.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
+    auto polydata_B = CreateVtkPolyDataFromGeometry(
+            mesh_B, mesh_B.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
 
     // clean meshes before passing them to the boolean operation
     vtkNew<vtkCleanPolyData> cleaner_A;
@@ -429,8 +431,8 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     using namespace vtkutils;
     // do not include triangle attributes because they will not be preserved by
     // the hole filling algorithm
-    auto polydata =
-            CreateVtkPolyDataFromGeometry(*this, false, {"*"}, {}, {}, {});
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            *this, GetVertexAttr().GetKeySet(), {}, {}, {}, false);
     vtkNew<vtkFillHolesFilter> fill_holes;
     fill_holes->SetInputData(polydata);
     fill_holes->SetHoleSize(hole_size);
