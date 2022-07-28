@@ -265,7 +265,9 @@ TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized) {
 
     const int64_t vertex_num = GetVertexPositions().GetLength();
     const core::Dtype dtype = GetVertexPositions().GetDtype();
-    core::Tensor vertex_normals({vertex_num, 3}, dtype, GetDevice());
+    core::Tensor vertex_normals =
+            core::Tensor::Zeros({vertex_num, 3}, dtype, GetDevice());
+
     SetTriangleNormals(GetTriangleNormals().Contiguous());
     SetTriangleIndices(GetTriangleIndices().Contiguous());
 
