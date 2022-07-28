@@ -46,11 +46,11 @@ if _verp(_torch.__version__).release[:2] != _o3d_torch_version.release[:2]:
 # attribute that we test here. Print a warning if the attribute is missing.
 if (_build_config["BUILD_CUDA_MODULE"] and
         not hasattr(_torch, "_TORCH_NVCC_FLAGS") and
-        _verp(_torch.__version__) < _verp("1.10.0")):
+        _verp(_torch.__version__) < _verp("1.9.0")):
     print("""
 --------------------------------------------------------------------------------
 
- Using the Open3D PyTorch ops with CUDA 11 and PyTorch version < 1.10 may have
+ Using the Open3D PyTorch ops with CUDA 11 and PyTorch version < 1.9 may have
  stability issues!
 
  We recommend to compile PyTorch from source with compile flags
