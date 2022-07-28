@@ -551,6 +551,50 @@ Example:
         filled = mesh.fill_holes()
         o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
 )");
+
+    triangle_mesh.def(
+            "compute_uvatlas", &TriangleMesh::ComputeUVAtlas, "size"_a = 512,
+            "gutter"_a = 1.f, "max_stretch"_a = 1.f / 6,
+            R"(Creates an UV atlas and adds it as triangle attr 'texture_uvs' to the mesh.
+    
+Input meshes must be manifold for this method to work.
+
+The algorithm is based on:
+Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using Spectral 
+             Analysis", Eurographics Symposium on Geometry Processing (2004)
+
+Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
+
+This function always uses the CPU device.
+
+Args:
+    size (int): The target size of the texture (size x size). The uv coordinates
+        will still be in the range [0..1] but parameters like gutter use pixels
+        as units.
+    
+    gutter (float): This is the space around the uv islands in pixels.
+    
+    max_stretch (float): The maximum amount of stretching allowed. The parameter
+        range is [0..1] with 0 meaning no stretch allowed.
+
+Returns:
+    None. This function modifies the mesh in-place.
+
+
+Example:
+
+    This code creates a uv map for the Stanford Bunny mesh::
+
+        import open3d as o3d
+
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        mesh.compute_uvatlas()
+
+        # print the shape of the generated uvs
+        print(mesh.triangle['texture_uvs'].shape)    
+
+)");
 }
 
 }  // namespace geometry
