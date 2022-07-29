@@ -31,6 +31,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/LineSet.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
@@ -365,6 +366,9 @@ public:
 
     /// Convert to a legacy Open3D LineSet.
     open3d::geometry::LineSet ToLegacy() const;
+
+    /// Create an axis-aligned bounding box from point attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");
