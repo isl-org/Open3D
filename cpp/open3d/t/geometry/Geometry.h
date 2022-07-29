@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <string>
 
 #include "open3d/core/Device.h"
@@ -109,6 +111,8 @@ private:
     int dimension_;
     std::string name_;
 };
+
+using fmt::enums::format_as;
 
 }  // namespace geometry
 }  // namespace t
