@@ -70,16 +70,11 @@ void pybind_data_classes(py::module& m) {
             .def_property_readonly(
                     "extract_dir", &Dataset::GetExtractDir,
                     "Get absolute path to extract directory. i.e. "
-                    "${data_root}/${extract_prefix}/${prefix}")
-            .def_property_readonly(
-                    "output_dir", &Dataset::GetOutputDir,
-                    "Get absolute path to extract directory. i.e. "
-                    "${data_root}/${output_prefix}/${prefix}");
+                    "${data_root}/${extract_prefix}/${prefix}");
     docstring::ClassMethodDocInject(m, "Dataset", "data_root");
     docstring::ClassMethodDocInject(m, "Dataset", "prefix");
     docstring::ClassMethodDocInject(m, "Dataset", "download_dir");
     docstring::ClassMethodDocInject(m, "Dataset", "extract_dir");
-    docstring::ClassMethodDocInject(m, "Dataset", "output_dir");
 
     // open3d.data.SingleDownloadDataset
     py::class_<SingleDownloadDataset,

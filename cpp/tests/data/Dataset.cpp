@@ -48,8 +48,6 @@ TEST(Dataset, DatasetBase) {
               "/my/custom/data_root/download/some_prefix");
     EXPECT_EQ(ds_custom.GetExtractDir(),
               "/my/custom/data_root/extract/some_prefix");
-    EXPECT_EQ(ds_custom.GetOutputDir(),
-              "/my/custom/data_root/output/some_prefix");
 }
 
 TEST(Dataset, SingleDownloadDataset) {

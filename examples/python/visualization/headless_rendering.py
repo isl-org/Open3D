@@ -104,9 +104,8 @@ if __name__ == "__main__":
 
     sample_data = o3d.data.DemoCustomVisualization()
     pcd = o3d.io.read_point_cloud(sample_data.point_cloud_path)
-    output_dir = os.path.join(sample_data.output_dir, 'HeadlessRenderingOutput')
     print("Customized visualization playing a camera trajectory. "
           "Press ctrl+z to terminate.")
     custom_draw_geometry_with_camera_trajectory(
         pcd, sample_data.camera_trajectory_path, sample_data.render_option_path,
-        output_dir)
+        'HeadlessRenderingOutput')

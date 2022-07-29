@@ -41,7 +41,6 @@ def test_dataset_base():
     assert ds_custom.prefix == "some_prefix"
     assert ds_custom.download_dir == "/my/custom/data_root/download/some_prefix"
     assert ds_custom.extract_dir == "/my/custom/data_root/extract/some_prefix"
-    assert ds_custom.output_dir == "/my/custom/data_root/output/some_prefix"
 
 
 def get_test_data_dirs(prefix):
