@@ -28,6 +28,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "open3d/core/Tensor.h"
 
@@ -113,6 +114,15 @@ public:
 
     /// Returns the primary key of the TensorMap.
     std::string GetPrimaryKey() const { return primary_key_; }
+
+    /// Returns a set with all keys.
+    std::unordered_set<std::string> GetKeySet() const {
+        std::unordered_set<std::string> keys;
+        for (const auto& item : *this) {
+            keys.insert(item.first);
+        }
+        return keys;
+    }
 
     /// Returns true if all tensors in the map have the same size.
     bool IsSizeSynchronized() const;
