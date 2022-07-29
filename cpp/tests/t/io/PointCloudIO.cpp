@@ -58,6 +58,7 @@ struct TensorCtorData {
 
 enum class IsAscii : bool { BINARY = false, ASCII = true };
 enum class Compressed : bool { UNCOMPRESSED = false, COMPRESSED = true };
+
 struct ReadWritePCArgs {
     std::string filename;
     IsAscii write_ascii;
@@ -69,6 +70,8 @@ struct ReadWritePCArgs {
 
 const std::unordered_map<std::string, TensorCtorData> pc_data_1{
         {"positions", {{0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1}, {5, 3}}},
+        {"normals", {{-1, -1, 0, 1, -1, -1, 0, 1, 1, -1, -1, -1, 0, 1, 0}, {-1, 1}}},
+        {"colors", {{1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1}, {1, 1}}},
         {"intensities", {{0, 0.5, 0.5, 0.5, 1}, {5, 1}}}};
 
 // Bad data.
@@ -86,6 +89,18 @@ const std::vector<ReadWritePCArgs> pcArgs({
          IsAscii::ASCII,
          Compressed::UNCOMPRESSED,
          {{"positions", 1e-5}, {"intensities", 1e-5}}},  // 1
+        {"test.xyz",
+         IsAscii::ASCII,
+         Compressed::UNCOMPRESSED,
+         {{"positions", 1e-5}}},                         // 2
+        {"test.xyzn",
+         IsAscii::ASCII,
+         Compressed::UNCOMPRESSED,
+         {{"positions", 1e-5}, {"normals", 1e-5}}},      // 3
+        {"test.xyzrgb",
+         IsAscii::ASCII,
+         Compressed::UNCOMPRESSED,
+         {{"positions", 1e-5}, {"colors", 1e-5}}},       // 4
 });
 
 class ReadWriteTPC : public testing::TestWithParam<ReadWritePCArgs> {};
