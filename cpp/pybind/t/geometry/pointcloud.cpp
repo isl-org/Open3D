@@ -334,6 +334,13 @@ Example:
     // conversion
     pointcloud.def("to_legacy", &PointCloud::ToLegacy,
                    "Convert to a legacy Open3D PointCloud.");
+    pointcloud.def(
+            "get_axis_aligned_bounding_box",
+            &PointCloud::GetAxisAlignedBoundingBox,
+            "Create an axis-aligned bounding box from attribute 'positions'.");
+    pointcloud.def("crop", &PointCloud::Crop,
+                   "Function to crop pointcloud into output pointcloud.",
+                   "aabb"_a, "invert"_a = false);
 
     docstring::ClassMethodDocInject(m, "PointCloud", "estimate_normals",
                                     map_shared_argument_docstrings);
@@ -401,6 +408,12 @@ Example:
              {"num_iterations", "Number of iterations."},
              {"probability",
               "Expected probability of finding the optimal plane."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "crop",
+            {{"aabb", "AxisAlignedBoundingBox to crop points."},
+             {"invert",
+              "Crop the points outside of the bounding box or inside of the "
+              "bounding box."}});
 }
 
 }  // namespace geometry
