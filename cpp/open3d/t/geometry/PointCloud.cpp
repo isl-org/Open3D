@@ -868,7 +868,8 @@ core::Tensor PointCloud::ClusterDBSCAN(double eps,
     open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
     std::vector<int> labels =
             lpcd.ClusterDBSCAN(eps, min_points, print_progress);
-    return core::Tensor(std::move(labels));
+    return core::Tensor(labels, {(int64_t)labels.size()}, core::Int32,
+                        GetDevice());
 }
 
 std::tuple<core::Tensor, core::Tensor> PointCloud::SegmentPlane(
@@ -960,7 +961,7 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
 
     TriangleMesh convex_hull(vertices, triangles);
     convex_hull.SetVertexAttr("point_indices", point_indices);
-    return convex_hull;
+    return convex_hull.To(GetPointPositions().GetDevice());
 }
 
 }  // namespace geometry

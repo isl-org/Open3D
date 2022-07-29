@@ -805,9 +805,6 @@ TEST_P(PointCloudPermuteDevices, RandomDownSample) {
 
 TEST_P(PointCloudPermuteDevices, FarthestPointDownSample) {
     core::Device device = GetParam();
-    if (!device.IsCPU()) {
-        GTEST_SKIP();
-    }
 
     // Value test.
     t::geometry::PointCloud pcd_small(
@@ -897,15 +894,14 @@ TEST_P(PointCloudPermuteDevices, RemoveNonFinitePoints) {
 
 TEST_P(PointCloudPermuteDevices, HiddenPointRemoval) {
     core::Device device = GetParam();
-    if (!device.IsCPU()) {
-        GTEST_SKIP();
-    }
+
     t::geometry::PointCloud pcd;
     data::PLYPointCloud pointcloud_ply;
     t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
 
     // Hard-coded test
+    pcd = pcd.To(device);
     t::geometry::TriangleMesh mesh;
     core::Tensor pt_map;
     std::tie(mesh, pt_map) = pcd.HiddenPointRemoval(
@@ -918,17 +914,17 @@ TEST_P(PointCloudPermuteDevices, HiddenPointRemoval) {
 
 TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
     core::Device device = GetParam();
-    if (!device.IsCPU()) {
-        GTEST_SKIP();
-    }
+
     t::geometry::PointCloud pcd;
     data::PLYPointCloud pointcloud_ply;
     t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
 
     // Hard-coded test
+    pcd = pcd.To(device);
     core::Tensor cluster = pcd.ClusterDBSCAN(0.02, 10, false);
 
+    cluster = cluster.To(core::Device("CPU:0"));
     EXPECT_EQ(cluster.GetDtype(), core::Int32);
     EXPECT_EQ(cluster.GetLength(), 196133);
     std::unordered_set<int> cluster_set(
@@ -941,15 +937,14 @@ TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
 
 TEST_P(PointCloudPermuteDevices, SegmentPlane) {
     core::Device device = GetParam();
-    if (!device.IsCPU()) {
-        GTEST_SKIP();
-    }
+
     t::geometry::PointCloud pcd;
     data::PCDPointCloud pointcloud_ply;
     t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 113662);
 
     // Hard-coded test
+    pcd = pcd.To(device);
     core::Tensor plane_model;
     core::Tensor inliers;
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 1000);
@@ -965,33 +960,32 @@ TEST_P(PointCloudPermuteDevices, SegmentPlane) {
 
 TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
     core::Device device = GetParam();
-    if (!device.IsCPU()) {
-        GTEST_SKIP();
-    }
-    t::geometry::PointCloud pcd;
-    t::geometry::TriangleMesh mesh;
+
+    t::geometry::PointCloud pcd(device);
+    t::geometry::TriangleMesh mesh(device);
 
     // Needs at least 4 points
-    pcd.SetPointPositions(core::Tensor({0, 3}, core::Float32));
+    pcd.SetPointPositions(core::Tensor({0, 3}, core::Float32, device));
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
-    pcd.SetPointPositions(core::Tensor::Init<float>({{0, 0, 0}}));
-    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
-    pcd.SetPointPositions(core::Tensor::Init<float>({{0, 0, 0}, {0, 0, 1}}));
+    pcd.SetPointPositions(core::Tensor::Init<float>({{0, 0, 0}}, device));
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
     pcd.SetPointPositions(
-            core::Tensor::Init<float>({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}}));
+            core::Tensor::Init<float>({{0, 0, 0}, {0, 0, 1}}, device));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    pcd.SetPointPositions(core::Tensor::Init<float>(
+            {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}}, device));
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
 
     // Degenerate input
     pcd.SetPointPositions(core::Tensor::Init<float>(
-            {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}));
+            {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}, device));
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
     // Allow adding random noise to fix the degenerate input
     EXPECT_NO_THROW(pcd.ComputeConvexHull(true));
 
     // Hard-coded test
     pcd.SetPointPositions(core::Tensor::Init<double>(
-            {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}}));
+            {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, device));
     mesh = pcd.ComputeConvexHull();
     auto point_indices = mesh.GetVertexAttr("point_indices");
     EXPECT_EQ(point_indices.GetDtype(), core::Int32);
@@ -1009,7 +1003,8 @@ TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
                                                       {1, 0, 0},
                                                       {1, 0, 1},
                                                       {1, 1, 0},
-                                                      {1, 1, 1}}));
+                                                      {1, 1, 1}},
+                                                     device));
     mesh = pcd.ComputeConvexHull();
     point_indices = mesh.GetVertexAttr("point_indices");
     EXPECT_EQ(point_indices.ToFlatVector<int>(),
