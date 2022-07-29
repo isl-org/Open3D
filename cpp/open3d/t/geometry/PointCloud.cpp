@@ -388,12 +388,22 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
     return std::make_tuple(pcd, valid);
 }
 
-std::tuple<PointCloud, core::Tensor> PointCloud::RemoveDuplicatedPoints(
-        double floating_precision) const {
-    core::Tensor points_voxeld = GetPointPositions() / floating_precision;
-    core::Tensor points_voxeli = points_voxeld.To(core::Int64);
-    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
-                                        {3}, device_);
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveDuplicatedPoints()
+        const {
+    core::Tensor points_voxeli;
+    const core::Dtype dtype = GetPointPositions().GetDtype();
+    if (dtype.ByteSize() == 4) {
+        points_voxeli = GetPointPositions().ReinterpretCast(core::Int32);
+    } else if (dtype.ByteSize() == 8) {
+        points_voxeli = GetPointPositions().ReinterpretCast(core::Int64);
+    } else {
+        utility::LogError(
+                "Unsupported point position data-type. Only support "
+                "Int32, Int64, Float32 and Float64.");
+    }
+
+    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(),
+                                        points_voxeli.GetDtype(), {3}, device_);
     core::Tensor buf_indices, masks;
     points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
 

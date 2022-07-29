@@ -225,6 +225,9 @@ public:
         return *this;
     }
 
+    /// Tensor reinterpret cast operator.
+    Tensor ReinterpretCast(const core::Dtype& dtype) const;
+
     /// Assign an object to a tensor. The tensor being assigned to must be a
     /// scalar tensor of shape {}. The element byte size of the tensor must be
     /// the same as the size of the object. The object must be a POD.

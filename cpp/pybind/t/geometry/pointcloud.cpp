@@ -212,7 +212,6 @@ The attributes of the point cloud have different levels::
                    "sphere of a given search radius.");
     pointcloud.def("remove_duplicated_points",
                    &PointCloud::RemoveDuplicatedPoints,
-                   "floating_precision"_a = 1e-5,
                    "Remove duplicated points and there associated attributes.");
 
     pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
@@ -352,14 +351,6 @@ Example:
             {{"nb_points",
               "Number of neighbor points required within the radius."},
              {"search_radius", "Radius of the sphere."}});
-    docstring::ClassMethodDocInject(
-            m, "PointCloud", "remove_duplicated_points",
-            {{"floating_precision",
-              "Floating precision. Default is 1e-5, i.e. [1.00001, 1.00001, "
-              "1.00001] and [1.00001, 1.00002, 1.00002] must be treated as "
-              "different positions, however the floating precision is not very "
-              "accurate on GPU, therefore use higher floating precision than "
-              "required (higher floating_precision refers to lower value)."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "cluster_dbscan",
             {{"eps",

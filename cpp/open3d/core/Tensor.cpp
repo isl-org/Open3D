@@ -371,6 +371,15 @@ Tensor& Tensor::operator=(Tensor&& other) && {
     return *this;
 }
 
+Tensor Tensor::ReinterpretCast(const core::Dtype& dtype) const {
+    if (dtype_.ByteSize() != dtype.ByteSize()) {
+        utility::LogError(
+                "Cannot reinterpret cast between data-types of different "
+                "sizes.");
+    }
+    return Tensor(shape_, strides_, data_ptr_, dtype, blob_);
+}
+
 Tensor Tensor::Empty(const SizeVector& shape,
                      Dtype dtype,
                      const Device& device) {

@@ -833,11 +833,9 @@ TEST_P(PointCloudPermuteDevices, RemoveDuplicatedPoints) {
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},
                                        {1.0, 1.0, 1.0},
                                        {1.1, 1.1, 1.1},
+                                       {1.1, 1.1, 1.1},
                                        {1.2, 1.2, 1.2},
-                                       {1.3, 1.3, 1.3},
-                                       {5.0, 5.0, 5.0},
-                                       {5.1, 5.1, 5.1},
-                                       {5.1, 5.1, 5.1}},
+                                       {1.3, 1.3, 1.3}},
                                       device));
 
     t::geometry::PointCloud output_pcd;
@@ -849,9 +847,7 @@ TEST_P(PointCloudPermuteDevices, RemoveDuplicatedPoints) {
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},
                                        {1.1, 1.1, 1.1},
                                        {1.2, 1.2, 1.2},
-                                       {1.3, 1.3, 1.3},
-                                       {5.0, 5.0, 5.0},
-                                       {5.1, 5.1, 5.1}},
+                                       {1.3, 1.3, 1.3}},
                                       device)));
 }
 
