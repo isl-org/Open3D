@@ -322,8 +322,8 @@ Example:
         pcd = pcd.select_by_index(pt_map)
         o3d.visualization.draw([pcd], point_size=5))");
     pointcloud.def(
-            "cluster_dbscan", &PointCloud::ClusterDBSCAN,
-            "eps"_a, "min_points"_a, "print_progress"_a = false,
+            "cluster_dbscan", &PointCloud::ClusterDBSCAN, "eps"_a,
+            "min_points"_a, "print_progress"_a = false,
             R"(Cluster PointCloud using the DBSCAN algorithm  Ester et al.,'A 
 Density-Based Algorithm for Discovering Clusters in Large Spatial Databases 
 with Noise', 1996. This is a wrapper for a CPU implementation and a copy of the 
@@ -354,10 +354,11 @@ Example:
         colors[labels < 0] = 0
         pcd.point['colors'] = colors
         o3d.visualization.draw([pcd]))");
-    pointcloud.def("segment_plane", &PointCloud::SegmentPlane,
-                   "distance_threshold"_a = 0.01, "ransac_n"_a = 3,
-                   "num_iterations"_a = 100, "probability"_a = 0.99999999,
-                   R"(Segments a plane in the point cloud using the RANSAC algorithm. 
+    pointcloud.def(
+            "segment_plane", &PointCloud::SegmentPlane,
+            "distance_threshold"_a = 0.01, "ransac_n"_a = 3,
+            "num_iterations"_a = 100, "probability"_a = 0.99999999,
+            R"(Segments a plane in the point cloud using the RANSAC algorithm. 
 This is a wrapper for a CPU implementation and a copy of the point cloud data and 
 resulting plane model and inlier indiecs will be made.
 
