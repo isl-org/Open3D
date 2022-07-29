@@ -855,8 +855,7 @@ std::tuple<TriangleMesh, core::Tensor> PointCloud::HiddenPointRemoval(
     return std::make_tuple(
             TriangleMesh::FromLegacy(*lmesh, GetPointPositions().GetDtype(),
                                      core::Int64, GetDevice()),
-            core::Tensor(indices, {(int64_t)indices.size()}, core::Int64,
-                         GetDevice()));
+            core::Tensor(std::move(indices)).To(GetDevice()));
 }
 
 core::Tensor PointCloud::ClusterDBSCAN(double eps,
@@ -868,8 +867,7 @@ core::Tensor PointCloud::ClusterDBSCAN(double eps,
     open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
     std::vector<int> labels =
             lpcd.ClusterDBSCAN(eps, min_points, print_progress);
-    return core::Tensor(labels, {(int64_t)labels.size()}, core::Int32,
-                        GetDevice());
+    return core::Tensor(std::move(labels)).To(GetDevice());
 }
 
 std::tuple<core::Tensor, core::Tensor> PointCloud::SegmentPlane(
@@ -889,9 +887,9 @@ std::tuple<core::Tensor, core::Tensor> PointCloud::SegmentPlane(
     std::vector<int64_t> indices(inliers.begin(), inliers.end());
 
     return std::make_tuple(
-            core::eigen_converter::EigenMatrixToTensor(plane).Flatten(),
-            core::Tensor(indices, {(int64_t)indices.size()}, core::Int64,
-                         GetDevice()));
+            core::eigen_converter::EigenMatrixToTensor(plane).Flatten().To(
+                    GetDevice()),
+            core::Tensor(std::move(indices)).To(GetDevice()));
 }
 
 TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {

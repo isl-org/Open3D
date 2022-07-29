@@ -397,9 +397,14 @@ public:
     /// for noisy point clouds can be found in Mehra et. al. 'Visibility of
     /// Noisy Point Cloud Data', 2010.
     ///
+    /// This is a wrapper for a CPU implementation and a copy of the point cloud
+    /// data and resulting visible triangle mesh and indiecs will be made.
+    ///
     /// \param camera_location All points not visible from that location will be
     /// removed.
     /// \param radius The radius of the spherical projection.
+    /// \return Tuple of visible triangle mesh and indices of visible points on
+    /// the same device as the point cloud.
     std::tuple<TriangleMesh, core::Tensor> HiddenPointRemoval(
             const core::Tensor &camera_location, double radius) const;
 
@@ -414,12 +419,14 @@ public:
     /// \param print_progress If `true` the progress is visualized in the
     /// console.
     /// \return A Tensor list of point labels on the same device as the point
-    /// cloud, -1 indicates noise according to the algorithm
+    /// cloud, -1 indicates noise according to the algorithm.
     core::Tensor ClusterDBSCAN(double eps,
                                size_t min_points,
                                bool print_progress = false) const;
 
     /// \brief Segment PointCloud plane using the RANSAC algorithm.
+    /// This is a wrapper for a CPU implementation and a copy of the point cloud
+    /// data and resulting plane model and inlier indiecs will be made.
     ///
     /// \param distance_threshold Max distance a point can be from the plane
     /// model, and still be considered an inlier.
@@ -427,8 +434,8 @@ public:
     /// each iteration.
     /// \param num_iterations Maximum number of iterations.
     /// \param probability Expected probability of finding the optimal plane.
-    /// \return Returns the plane model ax + by + cz + d = 0 and the indices of
-    /// the plane inliers.
+    /// \return Tuple of the plane model ax + by + cz + d = 0 and the indices of
+    /// the plane inliers on the same device as the point cloud.
     std::tuple<core::Tensor, core::Tensor> SegmentPlane(
             const double distance_threshold = 0.01,
             const int ransac_n = 3,
