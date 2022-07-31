@@ -56,6 +56,8 @@ enum class UnaryOpCode {
     LogicalNot,
 };
 
+using fmt::enums::format_as;
+
 std::function<Tensor(const Tensor&)> MakeOperation(UnaryOpCode op) {
     switch (op) {
         case UnaryOpCode::Sqrt:
