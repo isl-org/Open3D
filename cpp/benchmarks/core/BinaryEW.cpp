@@ -53,6 +53,7 @@ enum class BinaryOpCode {
     Eq,
     Neq,
 };
+using fmt::enums::format_as;
 
 static std::function<Tensor(const Tensor&, const Tensor&)> MakeOperation(
         BinaryOpCode op) {
