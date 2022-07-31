@@ -49,7 +49,7 @@ namespace geometry {
 class RaycastingScene {
 public:
     /// \brief Default Constructor.
-    RaycastingScene(int64_t build_threads = 0);
+    RaycastingScene(int64_t nthreads = 0);
 
     ~RaycastingScene();
 
