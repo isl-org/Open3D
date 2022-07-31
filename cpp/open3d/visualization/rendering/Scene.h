@@ -43,7 +43,6 @@ class Image;
 namespace t {
 namespace geometry {
 class Geometry;
-class PointCloud;
 }  // namespace geometry
 }  // namespace t
 
@@ -104,7 +103,7 @@ public:
                              const TriangleMeshModel& model) = 0;
     virtual bool HasGeometry(const std::string& object_name) const = 0;
     virtual void UpdateGeometry(const std::string& object_name,
-                                const t::geometry::PointCloud& point_cloud,
+                                const t::geometry::Geometry& geometry,
                                 uint32_t update_flags) = 0;
     virtual void RemoveGeometry(const std::string& object_name) = 0;
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;

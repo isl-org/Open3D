@@ -125,7 +125,7 @@ public:
                      const TriangleMeshModel& model) override;
     bool HasGeometry(const std::string& object_name) const override;
     void UpdateGeometry(const std::string& object_name,
-                        const t::geometry::PointCloud& point_cloud,
+                        const t::geometry::Geometry& geometry,
                         uint32_t update_flags) override;
     void RemoveGeometry(const std::string& object_name) override;
     void ShowGeometry(const std::string& object_name, bool show) override;
