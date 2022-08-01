@@ -418,13 +418,9 @@ Args:
     text (str): The text for generating the mesh. ASCII characters 32-126 are 
         supported (includes alphanumeric characters and punctuation). In 
         addition the line feed '\n' is supported to start a new line. 
-
     depth (float): The depth of the generated mesh. If depth is 0 then a flat mesh will be generated.
-
     float_dtype (o3d.core.Dtype): Float type for the vertices. Either Float32 or Float64.
-    
     int_dtype (o3d.core.Dtype): Int type for the triangle indices. Either Int32 or Int64.
-    
     device (o3d.core.Device): The device for the returned mesh.
 
 Returns:

@@ -595,11 +595,12 @@ public:
     /// Create a text triangle mesh.
     /// \param text The text for generating the mesh. ASCII characters 32-126
     /// are supported (includes alphanumeric characters and punctuation). In
-    /// addition the line feed '\n' is supported to start a new line. \param
-    /// depth The depth of the generated mesh. If depth is 0 then a flat mesh
-    /// will be generated. \param int_dtype Int32 or Int64, used to store index
-    /// values, e.g. triangles. \param device The device where the resulting
-    /// TriangleMesh resides in.
+    /// addition the line feed '\n' is supported to start a new line.
+    /// \param depth The depth of the generated mesh. If depth is 0 then a flat
+    /// mesh will be generated.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
     static TriangleMesh CreateText(
             const std::string &text,
             double depth = 0.0,
