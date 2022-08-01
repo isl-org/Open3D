@@ -15,7 +15,7 @@
 # This will build libGL.so.1.5.0 in the docker container and copy the result
 # back to the current directory.
 
-MESA_VER=22.0  # latest tag on 2022-03-10
+MESA_VER=22.1.4  # latest tag on 2022-08-01
 [ "$EUID" -ne 0 ] && SUDO="sudo" || SUDO="command"
 
 echo "Enable source repositories and get build dependencies."
@@ -34,13 +34,15 @@ $SUDO sed -i '/deb-src/s/^/# /' /etc/apt/sources.list
 
 echo "Get Mesa source code version $MESA_VER"
 wget -c \
-https://gitlab.freedesktop.org/mesa/mesa/-/archive/${MESA_VER}/mesa-${MESA_VER}.tar.bz2 \
--O - | tar -xj
+https://archive.mesa3d.org/mesa-${MESA_VER}.tar.xz \
+-O - | tar -xJ
 pushd mesa-${MESA_VER}
 echo Configure...
 meson build/ \
-    `# X11 SW rendering` \
-    -Dglx=xlib -Dgallium-drivers=swrast -Dplatforms=x11 \
+    `# SW rendering` \
+    -Dglx=dri -Dgallium-drivers=swrast -Dplatforms=x11 \
+    `# Enable EGL` \
+    -Degl=enabled -Degl-native-platform=surfaceless \
     `# Disable HW drivers` \
     -Ddri3=false -Ddri-drivers= -Dvulkan-drivers= \
     -Dlmsensors=disabled \
@@ -54,5 +56,7 @@ echo Build...
 ninja -C build/
 echo "Copy libGL.so out"
 [ -d /host_dir ] && OUT_DIR="/host_dir" || OUT_DIR=".."
-cp build/src/gallium/targets/libgl-xlib/libGL.so.1.5.0 $OUT_DIR
+cp build/src/glx/libGL.so.1.2.0 $OUT_DIR
+cp build/src/egl/libEGL.so.1.0.0 $OUT_DIR
+cp build/src/gallium/targets/dri/*.so $OUT_DIR
 popd
