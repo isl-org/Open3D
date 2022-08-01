@@ -304,6 +304,12 @@ def test_create_mobius(device):
     assert mobius_custom.triangle['indices'].allclose(triangle_indices_custom)
 
 
+def test_create_text():
+    mesh = o3d.t.geometry.TriangleMesh.create_text('Open3D', depth=1)
+    assert mesh.vertex['positions'].shape == (624, 3)
+    assert mesh.triangle['indices'].shape == (936, 3)
+
+
 def test_simplify_quadric_decimation():
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box().subdivide_midpoint(3))

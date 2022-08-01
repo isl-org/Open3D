@@ -204,6 +204,10 @@ open3d::geometry::LineSet LineSet::ToLegacy() const {
     return lineset_legacy;
 }
 
+AxisAlignedBoundingBox LineSet::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

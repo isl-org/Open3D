@@ -34,6 +34,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/hashmap/HashMap.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
@@ -533,6 +534,17 @@ public:
                     core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f);
+
+    /// Create an axis-aligned bounding box from attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// \brief Function to crop pointcloud into output pointcloud.
+    ///
+    /// \param aabb AxisAlignedBoundingBox to crop points.
+    /// \param invert Crop the points outside of the bounding box or inside of
+    /// the bounding box.
+    PointCloud Crop(const AxisAlignedBoundingBox &aabb,
+                    bool invert = false) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");
