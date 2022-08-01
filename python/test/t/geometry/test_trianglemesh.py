@@ -46,7 +46,6 @@ def test_clip_plane():
 
 def test_slice_plane():
     box = o3d.t.geometry.TriangleMesh.create_box()
-    box.vertex['positions']
     slices = box.slice_plane([0, 0.5, 0], [1, 1, 1], [-0.1, 0, 0.1])
     assert slices.point['positions'].shape == (9, 3)
     assert slices.line['indices'].shape == (9, 2)
