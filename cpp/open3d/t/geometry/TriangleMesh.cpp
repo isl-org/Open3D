@@ -319,9 +319,10 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     return CreateTriangleMeshFromVtkPolyData(clipped_polydata);
 }
 
-LineSet TriangleMesh::SlicePlane(const core::Tensor &point,
-                                 const core::Tensor &normal,
-                                 const std::list<double> contour_values) const {
+LineSet TriangleMesh::SlicePlane(
+        const core::Tensor &point,
+        const core::Tensor &normal,
+        const std::initializer_list<double> contour_values) const {
     using namespace vtkutils;
     core::AssertTensorShape(point, {3});
     core::AssertTensorShape(normal, {3});

@@ -81,6 +81,7 @@ struct VtkToTensorType<long long> {
     typedef int64_t TensorType;
 };
 
+namespace {
 struct CreateTensorFromVtkDataArrayWorker {
     bool copy;
     vtkDataArray* data_array;
@@ -121,6 +122,7 @@ struct CreateTensorFromVtkDataArrayWorker {
         }
     }
 };
+}  // namespace
 
 /// Creates a tensor from a vtkDataArray.
 /// The returned Tensor may directly use the memory of the array if device (CPU)
@@ -193,6 +195,7 @@ static vtkSmartPointer<vtkPoints> CreateVtkPointsFromTensor(
     return pts;
 }
 
+namespace {
 // Helper for creating the offset array from Common/DataModel/vtkCellArray.cxx
 struct GenerateOffsetsImpl {
     vtkIdType CellSize;
@@ -208,6 +211,7 @@ struct GenerateOffsetsImpl {
                                    this->ConnectivityArraySize);
     }
 };
+}  // namespace
 
 /// Creates a vtkCellArray from a Tensor.
 /// The returned array may directly use the memory of the tensor and the tensor
@@ -413,7 +417,8 @@ TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
     return mesh;
 }
 
-LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata, bool copy) {
+OPEN3D_LOCAL LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata,
+                                                  bool copy) {
     if (!polydata->GetPoints()) {
         return LineSet();
     }

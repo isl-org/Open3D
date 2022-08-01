@@ -233,11 +233,9 @@ values with respect to a plane.
 
 Args:
     point (open3d.core.Tensor): A point on the plane.
-
     normal (open3d.core.Tensor): The normal of the plane.
-
     contour_values (list): A list of contour values at which slices will be
-        generated.
+        generated. The value describes the signed distance to the plane.
 
 Returns:
     LineSet with he extracted contours.
