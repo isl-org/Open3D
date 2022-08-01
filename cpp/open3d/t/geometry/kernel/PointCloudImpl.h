@@ -34,6 +34,7 @@
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/linalg/kernel/Matrix.h"
 #include "open3d/core/linalg/kernel/SVD3x3.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/Utility.h"
@@ -163,7 +164,7 @@ void GetPointMaskWithinAABBCPU
          const core::Tensor& max_bound,
          core::Tensor& mask) {
 
-    DISPATCH_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
         const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
         const int64_t n = points.GetLength();
         const scalar_t* min_bound_ptr = min_bound.GetDataPtr<scalar_t>();
@@ -179,6 +180,59 @@ void GetPointMaskWithinAABBCPU
                     if (x >= min_bound_ptr[0] && x <= max_bound_ptr[0] &&
                         y >= min_bound_ptr[1] && y <= max_bound_ptr[1] &&
                         z >= min_bound_ptr[2] && z <= max_bound_ptr[2]) {
+                        mask_ptr[workload_idx] = true;
+                    } else {
+                        mask_ptr[workload_idx] = false;
+                    }
+                });
+    });
+}
+
+#if defined(__CUDACC__)
+void GetPointMaskWithinOBBCUDA
+#else
+void GetPointMaskWithinOBBCPU
+#endif
+        (const core::Tensor& points,
+         const core::Tensor& center,
+         const core::Tensor& rotation,
+         const core::Tensor& extent,
+         core::Tensor& mask) {
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const int64_t n = points.GetLength();
+        const scalar_t* center_ptr = center.GetDataPtr<scalar_t>();
+        const scalar_t* rotation_ptr = rotation.GetDataPtr<scalar_t>();
+        const scalar_t* extent_ptr = extent.GetDataPtr<scalar_t>();
+        bool* mask_ptr = mask.GetDataPtr<bool>();
+
+        scalar_t dx[3], dy[3], dz[3], half_extent[3];
+        dx[0] = rotation_ptr[0];
+        dx[1] = rotation_ptr[3];
+        dx[2] = rotation_ptr[6];
+        dy[0] = rotation_ptr[1];
+        dy[1] = rotation_ptr[4];
+        dy[2] = rotation_ptr[7];
+        dz[0] = rotation_ptr[2];
+        dz[1] = rotation_ptr[5];
+        dz[2] = rotation_ptr[8];
+        half_extent[0] = extent_ptr[0] / 2;
+        half_extent[1] = extent_ptr[1] / 2;
+        half_extent[2] = extent_ptr[2] / 2;
+
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    scalar_t d[3];
+                    d[0] = points_ptr[3 * workload_idx + 0] - center_ptr[0];
+                    d[1] = points_ptr[3 * workload_idx + 1] - center_ptr[1];
+                    d[2] = points_ptr[3 * workload_idx + 2] - center_ptr[2];
+                    if (abs(core::linalg::kernel::dot_3x1(d, dx)) <=
+                                half_extent[0] &&
+                        abs(core::linalg::kernel::dot_3x1(d, dy)) <=
+                                half_extent[1] &&
+                        abs(core::linalg::kernel::dot_3x1(d, dz)) <=
+                                half_extent[2]) {
                         mask_ptr[workload_idx] = true;
                     } else {
                         mask_ptr[workload_idx] = false;
