@@ -30,7 +30,7 @@ jobs:
           maximize_ubuntu_github_actions_build_space
       - name: Docker build
         run: |
-          docker/docker_build.sh openblas-amd64-py36-dev
+          docker/docker_build.sh openblas-amd64-py310-dev
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@v0.2.1
         with:
@@ -43,7 +43,7 @@ jobs:
           gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-amd64.tar.gz gs://open3d-ci-cache/ || true
       - name: Docker test
         run: |
-          docker/docker_test.sh openblas-amd64-py36-dev
+          docker/docker_test.sh openblas-amd64-py310-dev
 
   # With forked repo, the GitHub secret is not available.
   skip-arm64-check-on-fork:
@@ -72,8 +72,8 @@ jobs:
     env:
       # Export everything from matrix to be easily used.
       # Docker tag and ccache names must be consistent with docker_build.sh
-      CI_CONFIG          : openblas-arm64-py36-dev
-      GCE_INSTANCE_PREFIX: open3d-ci-openblas-arm64-py36-dev
+      CI_CONFIG          : openblas-arm64-py310-dev
+      GCE_INSTANCE_PREFIX: open3d-ci-openblas-arm64-py310-dev
       CCACHE_TAR_NAME    : open3d-ci-openblas-arm64
     steps:
       - name: Checkout source code
