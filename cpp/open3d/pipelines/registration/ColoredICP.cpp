@@ -118,10 +118,9 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
         const CorrespondenceSet &corres) const {
-    if (corres.empty()) {
-        utility::LogError(
-                "No correspondences found between source and target "
-                "pointcloud.");
+    if (corres.empty() || !target.HasCovariances() ||
+        !source.HasCovariances()) {
+        return Eigen::Matrix4d::Identity();
     }
     if (!target.HasNormals()) {
         utility::LogError(
