@@ -387,7 +387,7 @@ def test_bake_triangle_attr_textures():
     box = o3d.t.geometry.TriangleMesh.from_legacy(box)
     box.triangle['index'] = np.arange(box.triangle['indices'].shape[0])
     # shift the uvs to avoid pixel centers exactly at triangle boundaries.
-    box.triangle['texture_uvs'] += 0.01
+    box.triangle['texture_uvs'][:, :, 0] += 0.01
 
     textures = box.bake_triangle_attr_textures(8, {'index'},
                                                margin=0.1,

@@ -789,6 +789,8 @@ public:
     /// This function assumes a triangle attribute with name 'texture_uvs'.
     /// Only float type attributes can be baked to textures.
     ///
+    /// This function always uses the CPU device.
+    ///
     /// \param size The width and height of the texture in pixels. Only square
     /// textures are supported.
     ///
@@ -800,17 +802,25 @@ public:
     /// discontinuities.
     ///
     /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
     ///
     /// \return A dictionary of textures.
     std::unordered_map<std::string, core::Tensor> BakeVertexAttrTextures(
             int size,
             const std::unordered_set<std::string> &vertex_attr = {},
             double margin = 2.,
-            double fill = 0.) const;
+            double fill = 0.,
+            bool update_material = true);
 
     /// Bake triangle attributes into textures.
     ///
     /// This function assumes a triangle attribute with name 'texture_uvs'.
+    ///
+    /// This function always uses the CPU device.
     ///
     /// \param size The width and height of the texture in pixels. Only square
     /// textures are supported.
@@ -824,12 +834,18 @@ public:
     ///
     /// \param fill The value used for filling texels outside the UV islands.
     ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
     /// \return A dictionary of textures.
     std::unordered_map<std::string, core::Tensor> BakeTriangleAttrTextures(
             int size,
             const std::unordered_set<std::string> &triangle_attr = {},
             double margin = 2.,
-            double fill = 0.) const;
+            double fill = 0.,
+            bool update_material = true);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

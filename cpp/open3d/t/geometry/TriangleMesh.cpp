@@ -417,6 +417,8 @@ namespace {
 /// If false bake triangle attributes.
 ///
 /// \param size The texture size.
+/// \param margin The margin in pixels.
+/// \param attr The vertex or triangle attribute tensor.
 /// \param triangle_indices The triangle_indices of the TriangleMesh.
 /// \param primitive_ids The primitive ids from ComputePrimitiveInfoTexture().
 /// \param primitive_uvs The primitive uvs from ComputePrimitiveInfoTexture().
@@ -548,13 +550,31 @@ void ComputePrimitiveInfoTexture(int size,
     primitive_ids = ans["primitive_ids"];
     primitive_uvs = ans["primitive_uvs"];
 }
+void UpdateMaterialTextures(
+        std::unordered_map<std::string, core::Tensor> &textures,
+        visualization::rendering::Material &material) {
+    for (auto &tex : textures) {
+        core::SizeVector element_shape(tex.second.GetShapeRef().begin() + 2,
+                                       tex.second.GetShapeRef().end());
+        core::SizeVector shape(tex.second.GetShapeRef().begin(),
+                               tex.second.GetShapeRef().begin() + 2);
+        if (tex.second.NumDims() > 2) {
+            shape.push_back(element_shape.NumElements());
+        }
+
+        core::Tensor img_data = tex.second.Reshape(shape);
+        material.SetTextureMap(tex.first, Image(img_data));
+    }
+}
+
 }  // namespace
 std::unordered_map<std::string, core::Tensor>
 TriangleMesh::BakeVertexAttrTextures(
         int size,
         const std::unordered_set<std::string> &vertex_attr,
         double margin,
-        double fill) const {
+        double fill,
+        bool update_material) {
     if (!vertex_attr.size()) {
         return std::unordered_map<std::string, core::Tensor>();
     }
@@ -588,39 +608,10 @@ TriangleMesh::BakeVertexAttrTextures(
               0);
 
     core::Tensor primitive_ids, primitive_uvs, sqrdistance;
-    {
-        RaycastingScene scene;
-        scene.AddTriangles(vertices, triangle_indices);
-        core::Tensor query_points =
-                core::Tensor::Empty({size, size, 3}, core::Float32);
-        float *ptr = query_points.GetDataPtr<float>();
-        for (int i = 0; i < size; ++i) {
-            float v = 1 - (i + 0.5f) / size;
-            for (int j = 0; j < size; ++j) {
-                float u = (j + 0.5f) / size;
-                ptr[i * size * 3 + j * 3 + 0] = u;
-                ptr[i * size * 3 + j * 3 + 1] = v;
-                ptr[i * size * 3 + j * 3 + 2] = 0;
-            }
-        }
-
-        auto ans = scene.ComputeClosestPoints(query_points);
-
-        Eigen::Map<Eigen::MatrixXf> query_points_map(
-                query_points.GetDataPtr<float>(), 3, size * size);
-        Eigen::Map<Eigen::MatrixXf> closest_points_map(
-                ans["points"].GetDataPtr<float>(), 3, size * size);
-        sqrdistance = core::Tensor::Empty({size, size}, core::Float32);
-        Eigen::Map<Eigen::VectorXf> sqrdistance_map(
-                sqrdistance.GetDataPtr<float>(), size * size);
-        sqrdistance_map =
-                (closest_points_map - query_points_map).colwise().squaredNorm();
-        primitive_ids = ans["primitive_ids"];
-        primitive_uvs = ans["primitive_uvs"];
-    }
+    ComputePrimitiveInfoTexture(size, primitive_ids, primitive_uvs, sqrdistance,
+                                texture_uvs);
 
     std::unordered_map<std::string, core::Tensor> result;
-
     for (auto attr : vertex_attr) {
         if (!vertex_attr_.Contains(attr)) {
             utility::LogError("Cannot find vertex attribute '{}'", attr);
@@ -636,6 +627,9 @@ TriangleMesh::BakeVertexAttrTextures(
                     result[attr] = tex;
                 });
     }
+    if (update_material) {
+        UpdateMaterialTextures(result, this->GetMaterial());
+    }
 
     return result;
 }
@@ -645,7 +639,8 @@ TriangleMesh::BakeTriangleAttrTextures(
         int size,
         const std::unordered_set<std::string> &triangle_attr,
         double margin,
-        double fill) const {
+        double fill,
+        bool update_material) {
     if (!triangle_attr.size()) {
         return std::unordered_map<std::string, core::Tensor>();
     }
@@ -686,6 +681,9 @@ TriangleMesh::BakeTriangleAttrTextures(
             }
             result[attr] = tex;
         });
+    }
+    if (update_material) {
+        UpdateMaterialTextures(result, this->GetMaterial());
     }
 
     return result;

@@ -587,10 +587,13 @@ Example:
     triangle_mesh.def("bake_vertex_attr_textures",
                       &TriangleMesh::BakeVertexAttrTextures, "size"_a,
                       "vertex_attr"_a, "margin"_a = 2., "fill"_a = 0.,
+                      "update_material"_a = true,
                       R"(Bake vertex attributes into textures.
 
 This function assumes a triangle attribute with name 'texture_uvs'.
 Only float type attributes can be baked to textures.
+
+This function always uses the CPU device.
 
 Args:
     size (int): The width and height of the texture in pixels. Only square 
@@ -603,6 +606,11 @@ Args:
         are additional pixels around the UV islands to avoid discontinuities.
 
     fill (float): The value used for filling texels outside the UV islands.
+
+    update_material (bool): If true updates the material of the mesh.
+        Baking a vertex attribute with the name 'albedo' will become the albedo
+        texture in the material. Existing textures in the material will be
+        overwritten.
 
 Returns:
     A dictionary of textures.
@@ -623,9 +631,12 @@ Example:
     triangle_mesh.def("bake_triangle_attr_textures",
                       &TriangleMesh::BakeTriangleAttrTextures, "size"_a,
                       "triangle_attr"_a, "margin"_a = 2., "fill"_a = 0.,
+                      "update_material"_a = true,
                       R"(Bake triangle attributes into textures.
 
 This function assumes a triangle attribute with name 'texture_uvs'.
+
+This function always uses the CPU device.
 
 Args:
     size (int): The width and height of the texture in pixels. Only square 
@@ -638,6 +649,11 @@ Args:
         are additional pixels around the UV islands to avoid discontinuities.
 
     fill (float): The value used for filling texels outside the UV islands.
+
+    update_material (bool): If true updates the material of the mesh.
+        Baking a vertex attribute with the name 'albedo' will become the albedo
+        texture in the material. Existing textures in the material will be
+        overwritten.
 
 Returns:
     A dictionary of textures.
