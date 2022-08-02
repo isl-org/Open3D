@@ -219,6 +219,9 @@ transformation as :math:`P = R(P) + t`)");
                  &LineSet::GetAxisAlignedBoundingBox,
                  "Create an axis-aligned bounding box from point attribute "
                  "'positions'.");
+    line_set.def("get_oriented_bounding_box", &LineSet::GetOrientedBoundingBox,
+                 "Create an oriented bounding box from point attribute "
+                 "'positions'.");
 }
 
 }  // namespace geometry

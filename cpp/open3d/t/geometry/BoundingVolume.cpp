@@ -156,13 +156,18 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::Translate(
 }
 
 AxisAlignedBoundingBox &AxisAlignedBoundingBox::Scale(
-        double scale, const core::Tensor &center) {
-    core::AssertTensorDevice(center, GetDevice());
-    core::AssertTensorShape(center, {3});
-    core::AssertTensorDtype(center, min_bound_.GetDtype());
-
-    min_bound_ = center + scale * (min_bound_ - center);
-    max_bound_ = center + scale * (max_bound_ - center);
+        double scale, const utility::optional<core::Tensor> &center) {
+    core::Tensor center_d;
+    if (!center.has_value()) {
+        center_d = GetCenter();
+    } else {
+        center_d = center.value();
+        core::AssertTensorDevice(center_d, GetDevice());
+        core::AssertTensorShape(center_d, {3});
+        core::AssertTensorDtype(center_d, min_bound_.GetDtype());
+    }
+    min_bound_ = center_d + scale * (min_bound_ - center_d);
+    max_bound_ = center_d + scale * (max_bound_ - center_d);
 
     return *this;
 }
@@ -261,6 +266,10 @@ open3d::geometry::AxisAlignedBoundingBox AxisAlignedBoundingBox::ToLegacy()
     legacy_box.color_ = core::eigen_converter::TensorToEigenVector3dVector(
             GetColor().Reshape({1, 3}))[0];
     return legacy_box;
+}
+
+OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
 }
 
 AxisAlignedBoundingBox AxisAlignedBoundingBox::FromLegacy(
@@ -465,7 +474,7 @@ OrientedBoundingBox &OrientedBoundingBox::Translate(
 
 OrientedBoundingBox &OrientedBoundingBox::Rotate(
         const core::Tensor &rotation,
-        const utility::optional<core::Tensor> center) {
+        const utility::optional<core::Tensor> &center) {
     core::AssertTensorDevice(rotation, GetDevice());
     core::AssertTensorShape(rotation, {3, 3});
     core::AssertTensorDtype(rotation, GetDtype());
@@ -505,7 +514,7 @@ OrientedBoundingBox &OrientedBoundingBox::Transform(
 }
 
 OrientedBoundingBox &OrientedBoundingBox::Scale(
-        const double scale, const utility::optional<core::Tensor> center) {
+        const double scale, const utility::optional<core::Tensor> &center) {
     extent_ *= scale;
     if (center.has_value()) {
         core::AssertTensorDevice(center.value(), GetDevice());

@@ -317,6 +317,9 @@ Example:
             "get_axis_aligned_bounding_box",
             &PointCloud::GetAxisAlignedBoundingBox,
             "Create an axis-aligned bounding box from attribute 'positions'.");
+    pointcloud.def(
+            "get_oriented_bounding_box", &PointCloud::GetOrientedBoundingBox,
+            "Create an oriented bounding box from attribute 'positions'.");
     pointcloud.def("crop", &PointCloud::Crop,
                    "Function to crop pointcloud into output pointcloud.",
                    "aabb"_a, "invert"_a = false);

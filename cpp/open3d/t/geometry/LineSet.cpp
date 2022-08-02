@@ -208,6 +208,10 @@ AxisAlignedBoundingBox LineSet::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
+OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

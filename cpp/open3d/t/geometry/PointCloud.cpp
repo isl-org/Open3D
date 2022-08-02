@@ -910,6 +910,10 @@ AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
+OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
 PointCloud PointCloud::Crop(const AxisAlignedBoundingBox &aabb,
                             bool invert) const {
     core::AssertTensorDevice(GetPointPositions(), aabb.GetDevice());

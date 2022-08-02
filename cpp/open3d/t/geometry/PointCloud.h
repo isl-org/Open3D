@@ -538,6 +538,9 @@ public:
     /// Create an axis-aligned bounding box from attribute "positions".
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
+    /// Create an oriented bounding box from attribute "positions".
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+
     /// \brief Function to crop pointcloud into output pointcloud.
     ///
     /// \param aabb AxisAlignedBoundingBox to crop points.

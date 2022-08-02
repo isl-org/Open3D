@@ -393,6 +393,10 @@ AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetVertexPositions());
 }
 
+OrientedBoundingBox TriangleMesh::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(GetVertexPositions());
+}
+
 TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     using namespace vtkutils;
     // do not include triangle attributes because they will not be preserved by

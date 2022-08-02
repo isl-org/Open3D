@@ -370,6 +370,9 @@ public:
     /// Create an axis-aligned bounding box from point attribute "positions".
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
+    /// Create an oriented bounding box from point attribute "positions".
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap point_attr_;

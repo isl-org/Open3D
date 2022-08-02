@@ -155,11 +155,14 @@ public:
     /// provided scaling factor and center respectively, then the new
     /// min_bound and max_bound are given by \f$mi = c + s (mi - c)\f$
     /// and \f$ma = c + s (ma - c)\f$.
+    /// The scaling center will be the box center if it is not specified.
     ///
     /// \param scale The scale parameter.
     /// \param center Center used for the scaling operation. Tensor of shape
     /// {3,}, type float32 or float64, device same as the box.
-    AxisAlignedBoundingBox &Scale(double scale, const core::Tensor &center);
+    AxisAlignedBoundingBox &Scale(
+            double scale,
+            const utility::optional<core::Tensor> &center = utility::nullopt);
 
     /// \brief Add operation for axis-aligned bounding box.
     /// The device of ohter box must be the same as the device of the current
@@ -205,15 +208,16 @@ public:
     /// Convert to a legacy Open3D axis-aligned box.
     open3d::geometry::AxisAlignedBoundingBox ToLegacy() const;
 
-    /// Convert to a oriented box.
+    /// Convert to an oriented box.
     OrientedBoundingBox GetOrientedBoundingBox() const;
 
     /// Create an AxisAlignedBoundingBox from a legacy Open3D
     /// axis-aligned box.
     ///
-    /// \param dtype The data type of the box for min_bound max_bound and color.
-    /// The default is float32. \param device The device of the box. The default
-    /// is CPU:0.
+    /// \param box Legacy AxisAlignedBoundingBox.
+    /// \param dtype The data type of the box for min_bound, max_bound and
+    /// color. The default is float32.
+    /// \param device The device of the box. The default is CPU:0.
     static AxisAlignedBoundingBox FromLegacy(
             const open3d::geometry::AxisAlignedBoundingBox &box,
             const core::Dtype &dtype = core::Float32,
@@ -360,7 +364,7 @@ public:
     /// center of the box as rotation center.
     OrientedBoundingBox &Rotate(
             const core::Tensor &rotation,
-            const utility::optional<core::Tensor> center = utility::nullopt);
+            const utility::optional<core::Tensor> &center = utility::nullopt);
 
     /// \brief Transform the oriented box by the given transformation matrix.
     ///
@@ -381,7 +385,7 @@ public:
     /// {3,}, type float32 or float64, device same as the box.
     OrientedBoundingBox &Scale(
             double scale,
-            const utility::optional<core::Tensor> center = utility::nullopt);
+            const utility::optional<core::Tensor> &center = utility::nullopt);
 
     /// Returns the volume of the bounding box.
     double Volume() const {
@@ -427,7 +431,7 @@ public:
     /// Convert to an axis-aligned box.
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
-    /// Returns an oriented bounding box from the AxisAlignedBoundingBox.
+    /// Create an oriented bounding box from the AxisAlignedBoundingBox.
     ///
     /// \param aabb AxisAlignedBoundingBox object from which
     /// OrientedBoundingBox is created.
@@ -435,19 +439,19 @@ public:
     static OrientedBoundingBox CreateFromAxisAlignedBoundingBox(
             const AxisAlignedBoundingBox &aabb);
 
-    /// Create an AxisAlignedBoundingBox from a legacy Open3D
-    /// axis-aligned box.
+    /// Create an OrientedBoundingBox from a legacy Open3D oriented box.
     ///
+    /// \param box Legacy OrientedBoundingBox.
     /// \param dtype The data type of the box for min_bound max_bound and color.
-    /// The default is float32. \param device The device of the box. The default
-    /// is CPU:0.
+    /// The default is float32.
+    /// \param device The device of the box. The default is CPU:0.
     static OrientedBoundingBox FromLegacy(
             const open3d::geometry::OrientedBoundingBox &box,
             const core::Dtype &dtype = core::Float32,
             const core::Device &device = core::Device("CPU:0"));
 
     /// Creates an oriented bounding box using a PCA.
-    /// Note, that this is only an approximation to the minimum oriented
+    /// Note that this is only an approximation to the minimum oriented
     /// bounding box that could be computed for example with O'Rourke's
     /// algorithm (cf. http://cs.smith.edu/~jorourke/Papers/MinVolBox.pdf,
     /// https://www.geometrictools.com/Documentation/MinimumVolumeBox.pdf)
