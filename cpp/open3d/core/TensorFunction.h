@@ -130,7 +130,5 @@ Tensor Maximum(const Tensor& input, const Tensor& other);
 /// \param other The second input tensor.
 Tensor Minimum(const Tensor& input, const Tensor& other);
 
-void SYCLDemo();
-
 }  // namespace core
 }  // namespace open3d

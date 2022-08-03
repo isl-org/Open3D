@@ -29,6 +29,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
@@ -140,6 +141,9 @@ public:
     /// Getter for vertex_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetVertexAttr() const { return vertex_attr_; }
 
+    /// Getter for vertex_attr_ TensorMap.
+    TensorMap &GetVertexAttr() { return vertex_attr_; }
+
     /// Get vertex attributes in vertex_attr_. Throws exception if the attribute
     /// does not exist.
     ///
@@ -162,6 +166,9 @@ public:
 
     /// Getter for triangle_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetTriangleAttr() const { return triangle_attr_; }
+
+    /// Getter for triangle_attr_ TensorMap.
+    TensorMap &GetTriangleAttr() { return triangle_attr_; }
 
     /// Get triangle attributes in triangle_attr_. Throws exception if the
     /// attribute does not exist.
@@ -386,6 +393,222 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a sphere triangle mesh. The sphere with radius will be centered
+    /// at (0, 0, 0). Its axis is aligned with z-axis.
+    /// \param radius defines the radius of the sphere.
+    /// \param resolution defines the resolution of the sphere. The longitudes
+    /// will be split into resolution segments (i.e. there are resolution + 1
+    /// latitude lines including the north and south pole). The latitudes will
+    /// be split into `2 * resolution segments (i.e. there are 2 * resolution
+    /// longitude lines.)
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateSphere(
+            double radius = 1.0,
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a tetrahedron triangle mesh. The centroid of the mesh will be
+    /// placed at (0, 0, 0) and the vertices have a distance of radius to the
+    /// center.
+    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateTetrahedron(
+            double radius = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a octahedron triangle mesh. The centroid of the mesh will be
+    /// placed at (0, 0, 0) and the vertices have a distance of radius to the
+    /// center.
+    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateOctahedron(
+            double radius = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a icosahedron triangle mesh. The centroid of the mesh will be
+    /// placed at (0, 0, 0) and the vertices have a distance of radius to the
+    /// center.
+    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateIcosahedron(
+            double radius = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a cylinder triangle mesh.
+    /// \param radius defines the radius of the cylinder.
+    /// \param height defines the height of the cylinder. The axis of the
+    /// cylinder will be from (0, 0, -height/2) to (0, 0, height/2).
+    /// \param resolution defines the resolution of the cylinder. The circle
+    /// will be split into resolution segments
+    /// \param split defines the number of segments along the height direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateCylinder(
+            double radius = 1.0,
+            double height = 2.0,
+            int resolution = 20,
+            int split = 4,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a cone triangle mesh.
+    /// \param radius defines the radius of the cone.
+    /// \param height defines the height of the cone. The axis of the
+    /// cone will be from (0, 0, 0) to (0, 0, height).
+    /// \param resolution defines the resolution of the cone. The circle
+    /// will be split into resolution segments.
+    /// \param split defines the number of segments along the height direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateCone(
+            double radius = 1.0,
+            double height = 2.0,
+            int resolution = 20,
+            int split = 1,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a torus triangle mesh.
+    /// \param torus_radius defines the radius from the center of the
+    /// torus to the center of the tube.
+    /// \param tube_radius defines the radius of the torus tube.
+    /// \param radial_resolution defines the number of segments along the
+    /// radial direction.
+    /// \param tubular_resolution defines the number of segments along
+    /// the tubular direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateTorus(
+            double torus_radius = 1.0,
+            double tube_radius = 0.5,
+            int radial_resolution = 30,
+            int tubular_resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a arrow triangle mesh.
+    /// \param cylinder_radius defines the radius of the cylinder.
+    /// \param cone_radius defines the radius of the cone.
+    /// \param cylinder_height defines the height of the cylinder. The axis of
+    /// cylinder is from (0, 0, 0) to (0, 0, cylinder_height).
+    /// \param cone_height defines the height of the cone. The axis of the
+    /// cone will be from (0, 0, cylinder_height) to (0, 0, cylinder_height +
+    /// cone_height). \param resolution defines the resolution of the cone. The
+    /// circle will be split into resolution segments. \param cylinder_split
+    /// defines the number of segments along the cylinder_height direction.
+    /// \param cone_split defines the number of segments along
+    /// the cone_height direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateArrow(
+            double cylinder_radius = 1.0,
+            double cone_radius = 1.5,
+            double cylinder_height = 5.0,
+            double cone_height = 4.0,
+            int resolution = 20,
+            int cylinder_split = 4,
+            int cone_split = 1,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a coordinate frame mesh.
+    /// \param size defines the size of the coordinate frame.
+    /// \param origin defines the origin of the coordinate frame.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateCoordinateFrame(
+            double size = 1.0,
+            const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0),
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a Mobius strip.
+    /// \param length_split defines the number of segments along the Mobius
+    /// strip.
+    /// \param width_split defines the number of segments along the width
+    /// of the Mobius strip.
+    /// \param twists defines the number of twists of the strip.
+    /// \param radius defines the radius of the Mobius strip.
+    /// \param flatness controls the height of the strip.
+    /// \param width controls the width of the Mobius strip.
+    /// \param scale is used to scale the entire Mobius strip.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateMobius(
+            int length_split = 70,
+            int width_split = 15,
+            int twists = 1,
+            double radius = 1,
+            double flatness = 1,
+            double width = 1,
+            double scale = 1,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a text triangle mesh.
+    /// \param text The text for generating the mesh. ASCII characters 32-126
+    /// are supported (includes alphanumeric characters and punctuation). In
+    /// addition the line feed '\n' is supported to start a new line.
+    /// \param depth The depth of the generated mesh. If depth is 0 then a flat
+    /// mesh will be generated.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateText(
+            const std::string &text,
+            double depth = 0.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
@@ -547,6 +770,19 @@ public:
     /// \return The mesh describing the difference volume.
     TriangleMesh BooleanDifference(const TriangleMesh &mesh,
                                    double tolerance = 1e-6) const;
+
+    /// Create an axis-aligned bounding box from vertex attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// Fill holes by triangulating boundary edges.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param hole_size This is the approximate threshold for filling holes.
+    /// The value describes the maximum radius of holes to be filled.
+    ///
+    /// \return New mesh after filling holes.
+    TriangleMesh FillHoles(double hole_size = 1e6) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

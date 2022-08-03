@@ -1185,8 +1185,24 @@ if(BUILD_GUI)
                 endif()
                 # If the default version is not sufficient, look for some specific versions
                 if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
-                    find_program(CLANG_VERSIONED_CC NAMES clang-12 clang-11 clang-10 clang-9 clang-8 clang-7)
-                    find_program(CLANG_VERSIONED_CXX NAMES clang++-12 clang++11 clang++-10 clang++-9 clang++-8 clang++-7)
+                    find_program(CLANG_VERSIONED_CC NAMES
+                                 clang-14
+                                 clang-13
+                                 clang-12
+                                 clang-11
+                                 clang-10
+                                 clang-9
+                                 clang-8
+                                 clang-7)
+                    find_program(CLANG_VERSIONED_CXX NAMES
+                                 clang-14
+                                 clang-13
+                                 clang++-12
+                                 clang++11
+                                 clang++-10
+                                 clang++-9
+                                 clang++-8
+                                 clang++-7)
                     if (CLANG_VERSIONED_CC AND CLANG_VERSIONED_CXX)
                         set(FILAMENT_C_COMPILER "${CLANG_VERSIONED_CC}")
                         set(FILAMENT_CXX_COMPILER "${CLANG_VERSIONED_CXX}")
@@ -1243,8 +1259,15 @@ if(BUILD_GUI)
             # Find CLANG_LIBDIR if it is not defined. Mutiple paths will be searched.
             if (NOT CLANG_LIBDIR)
                 find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
-                            llvm-12/lib llvm-11/lib llvm-10/lib llvm-9/lib llvm-8/lib llvm-7/lib
-                            REQUIRED)
+                             llvm-14/lib
+                             llvm-13/lib
+                             llvm-12/lib
+                             llvm-11/lib
+                             llvm-10/lib
+                             llvm-9/lib
+                             llvm-8/lib
+                             llvm-7/lib
+                             REQUIRED)
                 get_filename_component(CLANG_LIBDIR ${CPPABI_LIBRARY} DIRECTORY)
             endif()
             # Find clang libraries at the exact path ${CLANG_LIBDIR}.

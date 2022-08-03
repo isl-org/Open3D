@@ -59,10 +59,10 @@ For example:
 cd docker
 
 # Build Docker.
-./docker_build.sh openblas-amd64-py36-dev
+./docker_build.sh openblas-amd64-py38-dev
 
 # Test Docker.
-./docker_test.sh openblas-amd64-py36-dev
+./docker_test.sh openblas-amd64-py38-dev
 ```
 
 See `./docker_build.sh` and `./docker_test.sh` for all available options.
