@@ -1066,6 +1066,29 @@ TEST(PointCloud, ComputePointCloudToPointCloudDistance) {
              std::vector<double>({1, 2, 3}));
 }
 
+TEST(PointCloud, RemoveDuplicatedPoints) {
+    geometry::PointCloud pc({{0, 0, 0}, {1, 3, 0}, {1, 3, 0}, {2, 2, 0}});
+    std::vector<Eigen::Vector3d> normals = {{1.0, 2.0, 3.0},
+                                            {4.0, 5.0, 6.0},
+                                            {7.0, 8.0, 9.0},
+                                            {10.0, 11.0, 12.0}};
+    std::vector<Eigen::Vector3d> colors = {
+            {0.5, 0.5, 0.5}, {0.6, 0.6, 0.6}, {0.7, 0.7, 0.7}, {0.8, 0.8, 0.8}};
+    pc.normals_ = normals;
+    pc.colors_ = colors;
+
+    std::vector<Eigen::Vector3d> ref_points = {{0, 0, 0}, {1, 3, 0}, {2, 2, 0}};
+    std::vector<Eigen::Vector3d> ref_normals = {
+            {1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {10.0, 11.0, 12.0}};
+    std::vector<Eigen::Vector3d> ref_colors = {
+            {0.5, 0.5, 0.5}, {0.6, 0.6, 0.6}, {0.8, 0.8, 0.8}};
+
+    pc.RemoveDuplicatedPoints();
+    ExpectEQ(ref_points, pc.points_);
+    ExpectEQ(ref_normals, pc.normals_);
+    ExpectEQ(ref_colors, pc.colors_);
+}
+
 // TODO(Nacho): Add covariances unit tests
 TEST(PointCloud, DISABLED_EstimatePerPointCovariances) { NotImplemented(); }
 TEST(PointCloud, DISABLED_EstimateCovariances) { NotImplemented(); }
