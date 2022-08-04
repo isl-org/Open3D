@@ -19,19 +19,23 @@ support for OpenGL 4.1 or higher. This is not available in certain situations:
 
 Open3D supports CPU or software rendering in such situations. Note that this
 usually produces slower and less responsive rendering, so a GPU is recommended.
-Currently, this is available only for Linux.
+Currently, this is available only for Linux. There are two separate ways to
+use CPU rendering depending on whether interactive or headless rendering is
+desired. Both methods are described below.
 
-Python
-------
+Headless CPU Rendering
+----------------------
 
-For Python code, you can enable CPU rendering for a process by setting the
-environment variable ``OPEN3D_CPU_RENDERING=true`` before importing Open3D. Here
-are the different ways to do that:
+For Python code, you can enable CPU rendering for headless rendering when using
+the :class: `.OffscreenRenderer` for a process by setting the environment
+variable ``OPEN3D_CPU_RENDERING=true`` before importing Open3D. Here are the
+different ways to do that:
 
 .. code:: bash
 
     # from the command line
-    OPEN3D_CPU_RENDERING=true python examples/python/visualization/vis_gui.py
+    OPEN3D_CPU_RENDERING=true python
+    examples/python/visualization/render_to_image.py
 
 .. code:: python
 
@@ -49,10 +53,14 @@ are the different ways to do that:
     Python interpreter or Jupyter kernel will crash when visualization functions are
     used.
 
-C++
----
+.. note:: This method will **not** work for interactive rendering scripts such
+   as ``examples/python/visualization/draw.py``. For interactive rendering see
+   the next section.
 
-For C++ code, the method for enabling CPU rendering depends on your system:
+Interactive CPU Rendering
+-------------------------
+
+The method for enabling interactive CPU rendering depends on your system:
 
 1.  **You use Mesa drivers v20.2 or higher.** This is the case for all
     Intel GPUs and some AMD and Nvidia GPUs. You should be running a recent Linux
@@ -65,6 +73,12 @@ For C++ code, the method for enabling CPU rendering depends on your system:
     .. code:: bash
 
         LIBGL_ALWAYS_SOFTWARE=true Open3D
+
+    Or for Python code:
+
+    .. code:: bash
+
+        LIBGL_ALWAYS_SOFTWARE=true python examples/python/visualization/draw.py
 
 .. note:: Mesa drivers must be in use for this method to work; just having
    them installed is not sufficient. You can check the drivers in use with the
@@ -88,3 +102,10 @@ For C++ code, the method for enabling CPU rendering depends on your system:
     .. code:: bash
 
         LD_PRELOAD=$HOME/.local/lib/libGL.so.1.5.0 Open3D
+
+    Or with Python code:
+
+    .. code:: bash
+
+        LD_PRELOAD=$HOME/.local/lib/libGL.so.1.5.0 python
+        examples/python/visualization/draw.py
