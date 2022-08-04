@@ -120,7 +120,7 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
         const CorrespondenceSet &corres) const {
     if (corres.empty() || !target.HasCovariances() ||
         !source.HasCovariances()) {
-        utility::LogDebug("No correspondences found between source and target "
+        utility::LogWarning("No correspondences found between source and target "
                 "pointcloud. Returning Identity");
         return Eigen::Matrix4d::Identity();
     }
