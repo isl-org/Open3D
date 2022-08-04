@@ -603,9 +603,7 @@ Args:
     size (int): The target size of the texture (size x size). The uv coordinates
         will still be in the range [0..1] but parameters like gutter use pixels
         as units.
-    
     gutter (float): This is the space around the uv islands in pixels.
-    
     max_stretch (float): The maximum amount of stretching allowed. The parameter
         range is [0..1] with 0 meaning no stretch allowed.
 

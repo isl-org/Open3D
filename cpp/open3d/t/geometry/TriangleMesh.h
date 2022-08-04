@@ -799,9 +799,7 @@ public:
     /// \param size The target size of the texture (size x size). The uv
     /// coordinates will still be in the range [0..1] but parameters like gutter
     /// use pixels as units.
-    ///
     /// \param gutter This is the space around the uv islands in pixels.
-    ///
     /// \param max_stretch The maximum amount of stretching allowed. The
     /// parameter range is [0..1] with 0 meaning no stretch allowed.
     void ComputeUVAtlas(size_t size = 512,
