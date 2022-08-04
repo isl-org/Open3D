@@ -17,33 +17,33 @@ env:
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
-  openblas-amd64:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v2
-      - name: Maximize build space
-        run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
-      - name: Docker build
-        run: |
-          docker/docker_build.sh openblas-amd64-py310-dev
-      - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
-      - name: Upload ccache to GCS
-        run: |
-          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-amd64.tar.gz gs://open3d-ci-cache/ || true
-      - name: Docker test
-        run: |
-          docker/docker_test.sh openblas-amd64-py310-dev
+  # openblas-amd64:
+  #   runs-on: ubuntu-20.04
+  #   strategy:
+  #     fail-fast: false
+  #   steps:
+  #     - name: Checkout source code
+  #       uses: actions/checkout@v2
+  #     - name: Maximize build space
+  #       run: |
+  #         source util/ci_utils.sh
+  #         maximize_ubuntu_github_actions_build_space
+  #     - name: Docker build
+  #       run: |
+  #         docker/docker_build.sh openblas-amd64-py310-dev
+  #     - name: GCloud CLI setup
+  #       uses: google-github-actions/setup-gcloud@v0.2.1
+  #       with:
+  #         version: ${{ env.GCE_CLI_GHA_VERSION }}
+  #         service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
+  #         project_id: ${{ secrets.GCE_DOCS_PROJECT }}
+  #         export_default_credentials: true
+  #     - name: Upload ccache to GCS
+  #       run: |
+  #         gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-amd64.tar.gz gs://open3d-ci-cache/ || true
+  #     - name: Docker test
+  #       run: |
+  #         docker/docker_test.sh openblas-amd64-py310-dev
 
   # With forked repo, the GitHub secret is not available.
   skip-arm64-check-on-fork:
@@ -95,29 +95,18 @@ jobs:
           gcloud compute images list
           gcloud container images list
           INSTANCE_NAME="${GCE_INSTANCE_PREFIX}-${GITHUB_SHA::8}"
-          INSTANCE_ZONES=(us-west1-a
-                          us-west1-b
-                          us-central1-a
+          INSTANCE_ZONES=(us-central1-a
                           us-central1-b
                           us-central1-f
-                          us-east1-c
-                          us-east1-d
-                          us-east4-b
-                          southamerica-east1-c
-                          europe-west2-b
-                          europe-west3-b
-                          europe-west4-b
-                          europe-west4-c
-                          europe-west2-a
                           asia-southeast1-b
                           asia-southeast1-c
-                          australia-southeast1-a)
-          # GCE only supports GPU on n1-standard (2020/07)
+                          europe-west4-a
+                          europe-west4-b)
           ZONE_ID=0
           until ((ZONE_ID >= ${#INSTANCE_ZONES[@]})) ||
             gcloud compute instances create "$INSTANCE_NAME" \
               --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
-              --machine-type=e2-highcpu-32 \
+              --machine-type=t2a-standard-8 \
               --boot-disk-size="128GB" \
               --boot-disk-type="pd-ssd" \
               --image-project="ubuntu-os-cloud" \
