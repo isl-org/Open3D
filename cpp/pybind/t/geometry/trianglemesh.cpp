@@ -224,8 +224,16 @@ This example shows how to create a hemisphere from a sphere::
 )");
 
     triangle_mesh.def(
-            "slice_plane", &TriangleMesh::SlicePlane, "point"_a, "normal"_a,
-            "contour_values"_a = std::list<double>{0.0},
+            "slice_plane",
+            // Accept anything for contour_values that pybind can convert to
+            // std::list. This also avoids o3d.utility.DoubleVector.
+            [](const TriangleMesh& self, const core::Tensor& point,
+               const core::Tensor& normal, std::list<double> contour_values) {
+                std::vector<double> cv(contour_values.begin(),
+                                       contour_values.end());
+                return self.SlicePlane(point, normal, cv);
+            },
+            "point"_a, "normal"_a, "contour_values"_a = std::list<double>{0.0},
             R"(Returns a line set with the contour slices defined by the plane and values.
 
 This method generates slices as LineSet from the mesh at specific contour 

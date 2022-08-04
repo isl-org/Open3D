@@ -695,8 +695,7 @@ public:
     /// \return LineSet with the extracted contours.
     LineSet SlicePlane(const core::Tensor &point,
                        const core::Tensor &normal,
-                       const std::initializer_list<double> contour_values = {
-                               0.0}) const;
+                       const std::vector<double> contour_values = {0.0}) const;
 
     core::Device GetDevice() const override { return device_; }
 
