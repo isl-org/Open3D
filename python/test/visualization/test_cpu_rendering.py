@@ -25,26 +25,23 @@
 # ----------------------------------------------------------------------------
 
 import os
-import sys
 from multiprocessing import Process
 import pytest
-
-gui_testable = sys.platform.startswith('linux') and 'DISPLAY' in os.environ
 
 
 def draw_box():
     import open3d as o3d
+    import open3d.visualization.rendering as rendering
+    render = rendering.OffscreenRenderer(640, 480)
     cube_red = o3d.geometry.TriangleMesh.create_box(1, 2, 4)
     cube_red.compute_vertex_normals()
     cube_red.paint_uniform_color((1.0, 0.0, 0.0))
-    o3d.visualization.draw(cube_red, non_blocking_and_return_uid=True)
-    for _ in range(5):  # Actual rendering
-        o3d.visualization.gui.Application.instance.run_one_tick()
-    o3d.visualization.gui.Application.instance.quit()
+    default_mat = rendering.MaterialRecord()
+    render.scene.add_geometry("box", cube_red, default_mat)
+    render.setup_camera(60.0, [0, 0, 0], [0, 10, 0], [0, 0, 1])
+    _ = render.render_to_image()
 
 
-@pytest.mark.skipif(not gui_testable,
-                    reason="Cannot run GUI tests without Linux and X11.")
 def test_draw_cpu():
     """Test CPU rendering in a separate process."""
     os.environ['OPEN3D_CPU_RENDERING'] = 'true'
