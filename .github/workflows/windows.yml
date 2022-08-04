@@ -56,7 +56,6 @@ jobs:
         run: Get-PSDrive
 
       - name: Setup Windows SDK
-        - uses: actions/checkout@v3
         - uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.7
           with:
             sdk-version: 19041
