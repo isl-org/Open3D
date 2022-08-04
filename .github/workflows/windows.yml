@@ -20,11 +20,11 @@ concurrency:
 
 env:
   PIP_VER: "21.1.1"
-  WHEEL_VER: "0.35.1"
+  WHEEL_VER: "0.37.1"
   STOOLS_VER: "50.3.2"
-  PYTEST_VER: "6.0.1"
+  PYTEST_VER: "7.1.2"
   PYTEST_RANDOMLY_VER: "3.8.0"
-  SCIPY_VER: "1.5.4"
+  SCIPY_VER: "1.7.3"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
   TENSORBOARD_VER: "2.5"
@@ -95,7 +95,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.7
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
@@ -222,16 +222,16 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        python_version: ['3.7', '3.8', '3.9', '3.10']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python_version: 3.7
+            python_version: '3.7'
           - is_master: false
-            python_version: 3.8
+            python_version: '3.8'
           - is_master: false
-            python_version: 3.9
+            python_version: '3.9'
 
     steps:
       - name: Checkout source code
@@ -324,16 +324,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        python_version: ['3.7', '3.8', '3.9', '3.10']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python_version: 3.7
+            python_version: '3.7'
           - is_master: false
-            python_version: 3.8
+            python_version: '3.8'
           - is_master: false
-            python_version: 3.9
+            python_version: '3.9'
 
     steps:
       - name: Checkout source code
@@ -378,7 +378,7 @@ jobs:
 
           deactivate
 
-      - name: Run Python unit tests (benchmarks)
+      - name: Run Python unit tests
         run: |
           $ErrorActionPreference = 'Stop'
           open3d_test_venv\Scripts\Activate.ps1

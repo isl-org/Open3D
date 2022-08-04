@@ -72,7 +72,7 @@ jobs:
           ls
           cmake --build . --parallel ${{ env.NPROC }} --config Debug
           ls
-          cmake -E sha256sum vtk*.tar.gz > checksum_win_${{matrix.configuration}}.txt
+          cmake -E sha256sum (get-item vtk*.tar.gz).Name > checksum_win_${{matrix.configuration}}.txt
       - name: Upload package
         uses: actions/upload-artifact@v2
         with:

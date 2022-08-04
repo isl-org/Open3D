@@ -11,6 +11,8 @@ set(VTK_VERSION 9.1)
 set(VTK_LIBRARIES
     vtkFiltersGeneral-${VTK_VERSION}${VTK_LIB_SUFFIX}
     # vtkCommonComputationalGeometry-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkFiltersSources-${VTK_VERSION}${VTK_LIB_SUFFIX}
+    vtkFiltersModeling-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkFiltersCore-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkCommonExecutionModel-${VTK_VERSION}${VTK_LIB_SUFFIX}
     vtkCommonDataModel-${VTK_VERSION}${VTK_LIB_SUFFIX}
@@ -82,7 +84,7 @@ if(BUILD_VTK_FROM_SOURCE)
             -DVTK_MODULE_ENABLE_VTK_FiltersHybrid=DONT_WANT
             -DVTK_MODULE_ENABLE_VTK_FiltersHyperTree=DONT_WANT
             -DVTK_MODULE_ENABLE_VTK_FiltersImaging=DONT_WANT
-            -DVTK_MODULE_ENABLE_VTK_FiltersModeling=DONT_WANT
+            -DVTK_MODULE_ENABLE_VTK_FiltersModeling=WANT
             -DVTK_MODULE_ENABLE_VTK_FiltersOpenTURNS=DONT_WANT
             -DVTK_MODULE_ENABLE_VTK_FiltersParallel=DONT_WANT
             -DVTK_MODULE_ENABLE_VTK_FiltersParallelDIY2=DONT_WANT
@@ -298,25 +300,25 @@ else() #### download prebuilt vtk
         message(FATAL "No precompiled vtk for platform. Enable BUILD_VTK_FROM_SOURCE")
     elseif(APPLE)
         set(VTK_URL
-            https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_macos_10.15.tar.gz
+            https://github.com/isl-org/open3d_downloads/releases/download/vtk/vtk_${VTK_VERSION}_macos_10.15.tar.gz
         )
-        set(VTK_SHA256 eb81112dc62ea7ab39ca11d899399247311867db4b53a367f3efb4f5535e582b)
+        set(VTK_SHA256 a93579d1f135abb9e0ebfe774f46c22cfd7e88ee61cb1aba16ef83a5402ed918)
     elseif(UNIX)
         set(VTK_URL
-            https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_linux_x86_64.tar.gz
+            https://github.com/isl-org/open3d_downloads/releases/download/vtk/vtk_${VTK_VERSION}_linux_x86_64.tar.gz
         )
-        set(VTK_SHA256 ab388f476e202aa0c2d1349c2047cf680d95253c044792830b8b80a0285c4afb)
+        set(VTK_SHA256 28e36654ed18aa9f668a0486a6c3d26a0ca6cf6a593dbd15be4736b40880a82b)
     elseif(WIN32)
         if (STATIC_WINDOWS_RUNTIME)
             set(VTK_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_win_staticrt.tar.gz
+                https://github.com/isl-org/open3d_downloads/releases/download/vtk/vtk_${VTK_VERSION}_win_staticrt.tar.gz
             )
-            set(VTK_SHA256 5c445a3015bc48ce74381306e7f35f4e3f330f987bde73dfb95d4c0486143b85)
+            set(VTK_SHA256 4a6e2d00652dc86a3bea774060eaad643424800fe2cf369d325ebaaa49693c95)
         else()
             set(VTK_URL
-                https://github.com/isl-org/open3d_downloads/releases/download/vtk${VTK_VERSION}/vtk_${VTK_VERSION}_win.tar.gz
+                https://github.com/isl-org/open3d_downloads/releases/download/vtk/vtk_${VTK_VERSION}_win.tar.gz
             )
-            set(VTK_SHA256 f24d96b6f45a15c9dada87443f892328cbf9d8017d756b6e8c5f83e9f34ec99d)
+            set(VTK_SHA256 6ee09115d23ec18d6d01d1e4c89fa236ec69406d8ba8cc1b8ec37c4123b93caa)
         endif()
     else()
         message(FATAL "Unsupported platform")

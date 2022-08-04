@@ -215,6 +215,10 @@ transformation as :math:`P = R(P) + t`)");
             });
     line_set.def("to_legacy", &LineSet::ToLegacy,
                  "Convert to a legacy Open3D LineSet.");
+    line_set.def("get_axis_aligned_bounding_box",
+                 &LineSet::GetAxisAlignedBoundingBox,
+                 "Create an axis-aligned bounding box from point attribute "
+                 "'positions'.");
 }
 
 }  // namespace geometry

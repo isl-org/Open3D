@@ -34,6 +34,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/hashmap/HashMap.h"
 #include "open3d/geometry/PointCloud.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/Image.h"
@@ -123,6 +124,9 @@ public:
 
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
+
+    /// Getter for point_attr_ TensorMap.
+    TensorMap &GetPointAttr() { return point_attr_; }
 
     /// Get attributes. Throws exception if the attribute does not exist.
     ///
@@ -359,10 +363,20 @@ public:
     ///
     /// \param nb_points Number of neighbor points required within the radius.
     /// \param search_radius Radius of the sphere.
-    /// \return tuple of filtered PointCloud and boolean indexing tensor
-    /// w.r.t. input point cloud.
+    /// \return tuple of filtered point cloud and boolean mask tensor for
+    /// selected values w.r.t. input point cloud.
     std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
+
+    /// \brief Remove all points from the point cloud that have a nan entry, or
+    /// infinite value. It also removes the corresponding attributes.
+    ///
+    /// \param remove_nan Remove NaN values from the PointCloud.
+    /// \param remove_infinite Remove infinite values from the PointCloud.
+    /// \return tuple of filtered point cloud and boolean mask tensor for
+    /// selected values w.r.t. input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveNonFinitePoints(
+            bool remove_nan = true, bool remove_infinite = true) const;
 
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const override { return device_; }
@@ -520,6 +534,17 @@ public:
                     core::Tensor::Eye(4, core::Float32, core::Device("CPU:0")),
             float depth_scale = 1000.0f,
             float depth_max = 3.0f);
+
+    /// Create an axis-aligned bounding box from attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// \brief Function to crop pointcloud into output pointcloud.
+    ///
+    /// \param aabb AxisAlignedBoundingBox to crop points.
+    /// \param invert Crop the points outside of the bounding box or inside of
+    /// the bounding box.
+    PointCloud Crop(const AxisAlignedBoundingBox &aabb,
+                    bool invert = false) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");
