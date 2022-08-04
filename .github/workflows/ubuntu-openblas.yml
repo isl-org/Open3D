@@ -108,9 +108,8 @@ jobs:
               --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
               --machine-type=t2a-standard-8 \
               --boot-disk-size="128GB" \
-              --boot-disk-type="pd-ssd" \
               --image-project="ubuntu-os-cloud" \
-              --image-family="ubuntu-2004-lts" \
+              --image-family="ubuntu-2004-lts-arm64" \
               --metadata-from-file=startup-script=./util/gcloud_auto_clean.sh \
               --scopes="storage-full,compute-rw" \
               --service-account="$GCE_GPU_CI_SA"; do
@@ -131,12 +130,6 @@ jobs:
                     && tar -xvzf Open3D.tar.gz \
                     && ls -alh \
                     && ls -alh Open3D"
-      - name: VM install QEMU dependencies
-        run: |
-          gcloud compute ssh "${INSTANCE_NAME}" \
-            --zone "${GCE_ZONE}" \
-            --command "sudo apt-get update \
-                    && sudo apt-get --yes install qemu binfmt-support qemu-user-static"
       - name: VM install docker
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
