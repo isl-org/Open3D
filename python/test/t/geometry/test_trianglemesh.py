@@ -339,3 +339,9 @@ def test_hole_filling():
     assert not clipped.to_legacy().is_watertight()
     filled = clipped.fill_holes()
     assert filled.to_legacy().is_watertight()
+
+
+def test_uvatlas():
+    box = o3d.t.geometry.TriangleMesh.create_box()
+    box.compute_uvatlas()
+    assert box.triangle['texture_uvs'].shape == (12, 3, 2)
