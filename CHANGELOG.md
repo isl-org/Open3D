@@ -8,6 +8,7 @@
 * Fix various typos (PR #5070)
 * Fix for depth estimation for VoxelBlockGrid
 * Reserve fragment buffer for VoxelBlockGrid operations
+* Fix raycasting scene: Allow setting of number of threads that are used for building a raycasting scene
 
 ## 0.13
 
