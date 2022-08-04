@@ -1295,15 +1295,15 @@ if(BUILD_GUI AND UNIX AND NOT APPLE)
     FetchContent_Declare(
         download_mesa_libgl
         PREFIX mesa
-        URL https://github.com/isl-org/open3d_downloads/releases/download/mesa-libgl/mesa_libGL_22.0.tar.xz
-        URL_HASH SHA256=680dd244fff9a74e7c99ce940aaaa52c548e78794fa6d944d6879bb432d46286
+        URL https://github.com/isl-org/open3d_downloads/releases/download/mesa-libgl/mesa_libGL_22.1.4.tar.bz2
+        URL_HASH SHA256=0c941b244b781b6631b712d663bd62e1472a588b47f4efc74324ecafadc1b383
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mesa"
         )
     FetchContent_MakeAvailable(download_mesa_libgl)
-    find_library(MESA_CPU_GL_LIBRARY NAMES "libGL.so.1.5.0"
-        PATHS "${download_mesa_libgl_SOURCE_DIR}" NO_DEFAULT_PATH
-        DOC "Mesa CPU rendering OpenGL library" REQUIRED
-        )
+
+    set(MESA_CPU_GL_LIBRARY "${download_mesa_libgl_SOURCE_DIR}/libGL.so.1.2.0" "${download_mesa_libgl_SOURCE_DIR}/libEGL.so.1.0.0"
+        "${download_mesa_libgl_SOURCE_DIR}/libgallium_dri.so" "${download_mesa_libgl_SOURCE_DIR}/kms_swrast_dri.so"
+        "${download_mesa_libgl_SOURCE_DIR}/swrast_dri.so")
     message(STATUS "MESA_CPU_GL_LIBRARY: ${MESA_CPU_GL_LIBRARY}")
 endif()
 
