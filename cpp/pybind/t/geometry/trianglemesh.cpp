@@ -408,6 +408,33 @@ This example shows how to create a hemisphere from a sphere::
              {"int_dtype", "Int_dtype, Int32 or Int64."},
              {"device", "Device of the create octahedron."}});
 
+    triangle_mesh.def_static("create_text", &TriangleMesh::CreateText, "text"_a,
+                             "depth"_a = 0.0, "float_dtype"_a = core::Float32,
+                             "int_dtype"_a = core::Int64,
+                             "device"_a = core::Device("CPU:0"),
+                             R"(Create a triangle mesh from a text string.
+    
+Args:
+    text (str): The text for generating the mesh. ASCII characters 32-126 are 
+        supported (includes alphanumeric characters and punctuation). In 
+        addition the line feed '\n' is supported to start a new line. 
+    depth (float): The depth of the generated mesh. If depth is 0 then a flat mesh will be generated.
+    float_dtype (o3d.core.Dtype): Float type for the vertices. Either Float32 or Float64.
+    int_dtype (o3d.core.Dtype): Int type for the triangle indices. Either Int32 or Int64.
+    device (o3d.core.Device): The device for the returned mesh.
+
+Returns:
+    Text as triangle mesh.
+
+Example:
+    This shows how to simplifify the Stanford Bunny mesh::
+
+        import open3d as o3d
+
+        mesh = o3d.t.geometry.TriangleMesh.create_text('Open3D', depth=1)
+        o3d.visualization.draw([{'name': 'text', 'geometry': mesh}])
+)");
+
     triangle_mesh.def(
             "simplify_quadric_decimation",
             &TriangleMesh::SimplifyQuadricDecimation, "target_reduction"_a,
@@ -529,6 +556,11 @@ Example:
 
         o3d.visualization.draw([{'name': 'difference', 'geometry': ans}])
 )");
+
+    triangle_mesh.def("get_axis_aligned_bounding_box",
+                      &TriangleMesh::GetAxisAlignedBoundingBox,
+                      "Create an axis-aligned bounding box from vertex "
+                      "attribute 'positions'.");
 
     triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
                       "hole_size"_a = 1e6,
