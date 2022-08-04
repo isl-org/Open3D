@@ -113,10 +113,7 @@ ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
 # Open3D C++ dependencies
 # Done before copying the full Open3D directory for better Docker caching
 COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
-RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes
-
-# Visualization test dependencies
-RUN apt-get install -y xvfb \
+RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
  && rm -rf /var/lib/apt/lists/*
 
 # Open3D repo
