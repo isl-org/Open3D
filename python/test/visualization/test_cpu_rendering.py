@@ -24,12 +24,13 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import platform
 import os
 from multiprocessing import Process
 import pytest
 
 
-def draw_box():
+def draw_box_offscreen():
     import open3d as o3d
     import open3d.visualization.rendering as rendering
     render = rendering.OffscreenRenderer(640, 480)
@@ -42,10 +43,13 @@ def draw_box():
     _ = render.render_to_image()
 
 
+@pytest.mark.skipif(
+    not (platform.system() == "Linux" and platform.machine() == "x86_64"),
+    reason="Offscreen CPU rendering is only supported on x86_64 Linux")
 def test_draw_cpu():
     """Test CPU rendering in a separate process."""
-    os.environ['OPEN3D_CPU_RENDERING'] = 'true'
-    proc = Process(target=draw_box)
+    os.environ["OPEN3D_CPU_RENDERING"] = "true"
+    proc = Process(target=draw_box_offscreen)
     proc.start()
     proc.join(timeout=3)  # Wait for process to complete
     if proc.exitcode is None:
