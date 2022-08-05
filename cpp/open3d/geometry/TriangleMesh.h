@@ -752,7 +752,7 @@ protected:
             const std::vector<Eigen::Vector3d> &prev_vertices,
             const std::vector<Eigen::Vector3d> &prev_vertex_normals,
             const std::vector<Eigen::Vector3d> &prev_vertex_colors,
-            const std::vector<std::unordered_set<int>> &adjacency_list,
+        //     const std::vector<std::unordered_set<int>> &adjacency_list,
             double lambda_filter,
             bool filter_vertex,
             bool filter_normal,
