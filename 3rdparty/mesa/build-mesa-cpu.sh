@@ -45,7 +45,7 @@ meson build/ \
     -Degl=enabled -Degl-native-platform=surfaceless \
     `# Disable HW drivers` \
     -Ddri3=false -Ddri-drivers= -Dvulkan-drivers= \
-    -Dlmsensors=disabled \
+    -Dgbm=disabled -Dlmsensors=disabled \
     `# Optimization, remove debug info` \
     -Dbuildtype=release -Doptimization=3 -Db_lto=true -Dstrip=true \
     `# Security hardening` \
