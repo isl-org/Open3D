@@ -70,25 +70,25 @@ bool ReadFileTXT(const std::string &filename,
     while ((line_buffer = file.ReadLine())) {
         if (num_elements_per_line == 3 &&
             (sscanf(line_buffer, "%lf %lf %lf", &x, &y, &z) == 3)) {
-            pcd_buffer_ptr[3 * i + 0] = x;
-            pcd_buffer_ptr[3 * i + 1] = y;
-            pcd_buffer_ptr[3 * i + 2] = z;
+            pcd_buffer_ptr[num_elements_per_line * i + 0] = x;
+            pcd_buffer_ptr[num_elements_per_line * i + 1] = y;
+            pcd_buffer_ptr[num_elements_per_line * i + 2] = z;
         } else if (num_elements_per_line == 4 &&
                    (sscanf(line_buffer, "%lf %lf %lf %lf", &x, &y, &z, &attr) ==
                     4)) {
-            pcd_buffer_ptr[3 * i + 0] = x;
-            pcd_buffer_ptr[3 * i + 1] = y;
-            pcd_buffer_ptr[3 * i + 2] = z;
-            pcd_buffer_ptr[3 * i + 3] = attr;
+            pcd_buffer_ptr[num_elements_per_line * i + 0] = x;
+            pcd_buffer_ptr[num_elements_per_line * i + 1] = y;
+            pcd_buffer_ptr[num_elements_per_line * i + 2] = z;
+            pcd_buffer_ptr[num_elements_per_line * i + 3] = attr;
         } else if (num_elements_per_line == 6 &&
                    (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf", &x, &y, &z,
                            &attr_x, &attr_y, &attr_z) == 6)) {
-            pcd_buffer_ptr[3 * i + 0] = x;
-            pcd_buffer_ptr[3 * i + 1] = y;
-            pcd_buffer_ptr[3 * i + 2] = z;
-            pcd_buffer_ptr[3 * i + 3] = attr_x;
-            pcd_buffer_ptr[3 * i + 4] = attr_y;
-            pcd_buffer_ptr[3 * i + 5] = attr_z;
+            pcd_buffer_ptr[num_elements_per_line * i + 0] = x;
+            pcd_buffer_ptr[num_elements_per_line * i + 1] = y;
+            pcd_buffer_ptr[num_elements_per_line * i + 2] = z;
+            pcd_buffer_ptr[num_elements_per_line * i + 3] = attr_x;
+            pcd_buffer_ptr[num_elements_per_line * i + 4] = attr_y;
+            pcd_buffer_ptr[num_elements_per_line * i + 5] = attr_z;
         } else {
             utility::LogWarning("Read TXT failed at line: {}", line_buffer);
             return false;
