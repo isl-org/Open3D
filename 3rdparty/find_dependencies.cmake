@@ -1319,7 +1319,7 @@ if(BUILD_GUI AND UNIX AND NOT APPLE)
         download_mesa_libgl
         PREFIX mesa
         URL https://github.com/isl-org/open3d_downloads/releases/download/mesa-libgl/mesa_libGL_22.1.4.tar.bz2
-        URL_HASH SHA256=0c941b244b781b6631b712d663bd62e1472a588b47f4efc74324ecafadc1b383
+        URL_HASH SHA256=5732bfb70e8fcc747018820bc8fd31cd1867ebae5aa09baf65482b42c134d45a
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/mesa"
         )
     FetchContent_MakeAvailable(download_mesa_libgl)
