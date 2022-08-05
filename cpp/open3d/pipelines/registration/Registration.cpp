@@ -39,7 +39,7 @@ namespace registration {
 
 static RegistrationResult GetRegistrationResultAndCorrespondences(
         const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
+        // const geometry::PointCloud &target,
         const geometry::KDTreeFlann &target_kdtree,
         double max_correspondence_distance,
         const Eigen::Matrix4d &transformation) {
@@ -121,7 +121,9 @@ RegistrationResult EvaluateRegistration(
         pcd.Transform(transformation);
     }
     return GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
+            pcd, 
+            // target, 
+            kdtree, max_correspondence_distance, transformation);
 }
 
 RegistrationResult RegistrationICP(
@@ -164,7 +166,9 @@ RegistrationResult RegistrationICP(
     }
     RegistrationResult result;
     result = GetRegistrationResultAndCorrespondences(
-            pcd, target, kdtree, max_correspondence_distance, transformation);
+            pcd, 
+            // target, 
+            kdtree, max_correspondence_distance, transformation);
     for (int i = 0; i < criteria.max_iteration_; i++) {
         utility::LogDebug("ICP Iteration #{:d}: Fitness {:.4f}, RMSE {:.4f}", i,
                           result.fitness_, result.inlier_rmse_);
@@ -174,8 +178,9 @@ RegistrationResult RegistrationICP(
         pcd.Transform(update);
         RegistrationResult backup = result;
         result = GetRegistrationResultAndCorrespondences(
-                pcd, target, kdtree, max_correspondence_distance,
-                transformation);
+                pcd, 
+                // target, 
+                kdtree, max_correspondence_distance, transformation);
         if (std::abs(backup.fitness_ - result.fitness_) <
                     criteria.relative_fitness_ &&
             std::abs(backup.inlier_rmse_ - result.inlier_rmse_) <
@@ -241,8 +246,9 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 geometry::PointCloud pcd = source;
                 pcd.Transform(transformation);
                 auto result = GetRegistrationResultAndCorrespondences(
-                        pcd, target, kdtree, max_correspondence_distance,
-                        transformation);
+                        pcd, 
+                        // target, 
+                        kdtree, max_correspondence_distance, transformation);
 
                 if (result.IsBetterRANSACThan(best_result_local)) {
                     best_result_local = result;
@@ -384,8 +390,9 @@ Eigen::Matrix6d GetInformationMatrixFromPointClouds(
     RegistrationResult result;
     geometry::KDTreeFlann target_kdtree(target);
     result = GetRegistrationResultAndCorrespondences(
-            pcd, target, target_kdtree, max_correspondence_distance,
-            transformation);
+            pcd, 
+            // target, 
+            target_kdtree, max_correspondence_distance, transformation);
 
     // write q^*
     // see http://redwood-data.org/indoor/registration.html
