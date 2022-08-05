@@ -36,19 +36,22 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class>
-        s_boolean_binary_ew_op_codes{
-                BinaryEWOpCode::LogicalAnd, BinaryEWOpCode::LogicalOr,
-                BinaryEWOpCode::LogicalXor, BinaryEWOpCode::Gt,
-                BinaryEWOpCode::Lt,         BinaryEWOpCode::Ge,
-                BinaryEWOpCode::Le,         BinaryEWOpCode::Eq,
-                BinaryEWOpCode::Ne,
-        };
+bool IsBinaryEWBoolean(const BinaryEWOpCode& op_code) {
+    const static std::unordered_set<BinaryEWOpCode, utility::hash_enum_class>
+            s_boolean_ops{
+                    BinaryEWOpCode::LogicalAnd, BinaryEWOpCode::LogicalOr,
+                    BinaryEWOpCode::LogicalXor, BinaryEWOpCode::Gt,
+                    BinaryEWOpCode::Lt,         BinaryEWOpCode::Ge,
+                    BinaryEWOpCode::Le,         BinaryEWOpCode::Eq,
+                    BinaryEWOpCode::Ne,
+            };
+    return s_boolean_ops.find(op_code) != s_boolean_ops.end();
+}
 
 void BinaryEW(const Tensor& lhs,
               const Tensor& rhs,
               Tensor& dst,
-              BinaryEWOpCode op_code) {
+              const BinaryEWOpCode& op_code) {
     // lhs, rhs and dst must be on the same device.
     for (auto device :
          std::vector<Device>({rhs.GetDevice(), dst.GetDevice()})) {
@@ -75,6 +78,12 @@ void BinaryEW(const Tensor& lhs,
         BinaryEWCUDA(lhs, rhs, dst, op_code);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else if (lhs.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        BinaryEWSYCL(lhs, rhs, dst, op_code);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
 #endif
     } else {
         utility::LogError("BinaryEW: Unimplemented device");

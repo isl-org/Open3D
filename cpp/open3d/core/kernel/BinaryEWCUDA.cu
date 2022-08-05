@@ -264,7 +264,7 @@ void LaunchBoolBinaryEWCUDAKernel(const Tensor& lhs,
 void BinaryEWCUDA(const Tensor& lhs,
                   const Tensor& rhs,
                   Tensor& dst,
-                  BinaryEWOpCode op_code) {
+                  const BinaryEWOpCode& op_code) {
     // It has been checked that
     // - lhs, rhs, dst are all in the same CUDA device
     // - lhs, rhs have the same dtype, dst also has the same dtype or is boolean
@@ -274,8 +274,7 @@ void BinaryEWCUDA(const Tensor& lhs,
 
     CUDAScopedDevice scoped_device(src_device);
 
-    if (s_boolean_binary_ew_op_codes.find(op_code) !=
-        s_boolean_binary_ew_op_codes.end()) {
+    if (IsBinaryEWBoolean(op_code)) {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
             if (dst_dtype == src_dtype) {
                 // Inplace boolean op's output type is the same as the

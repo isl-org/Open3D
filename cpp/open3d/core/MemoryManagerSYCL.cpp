@@ -24,7 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <CL/sycl.hpp>
 #include <cstdlib>
 #include <unordered_map>
 
@@ -36,8 +35,6 @@
 
 namespace open3d {
 namespace core {
-
-namespace sy = cl::sycl;
 
 void* MemoryManagerSYCL::Malloc(size_t byte_size, const Device& device) {
     const sy::queue& queue =

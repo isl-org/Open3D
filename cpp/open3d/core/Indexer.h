@@ -30,6 +30,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dtype.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
@@ -53,7 +54,7 @@ class Indexer;
 class IndexerIterator;
 
 // Maximum number of dimensions of TensorRef.
-static constexpr int64_t MAX_DIMS = 10;
+static constexpr int64_t MAX_DIMS = 8;
 
 // Maximum number of inputs of an op.
 // MAX_INPUTS shall be >= MAX_DIMS to support advanced indexing.
@@ -421,8 +422,8 @@ public:
     /// \param input_idx Input tensor index.
     /// \param workload_idx The index of the compute workload, similar to
     /// thread_id, if a thread only processes one workload.
-    OPEN3D_HOST_DEVICE char* GetInputPtr(int64_t input_idx,
-                                         int64_t workload_idx) const {
+    OPEN3D_SYCL_EXTERNAL OPEN3D_HOST_DEVICE char* GetInputPtr(
+            int64_t input_idx, int64_t workload_idx) const {
         if (input_idx < 0 || input_idx >= num_inputs_) {
             return nullptr;
         }
@@ -439,8 +440,8 @@ public:
     /// Note: Assumes that sizeof(T) matches the input's dtype size, but does
     /// not check this constraint for performance reasons.
     template <typename T>
-    OPEN3D_HOST_DEVICE T* GetInputPtr(int64_t input_idx,
-                                      int64_t workload_idx) const {
+    OPEN3D_SYCL_EXTERNAL OPEN3D_HOST_DEVICE T* GetInputPtr(
+            int64_t input_idx, int64_t workload_idx) const {
         if (input_idx < 0 || input_idx >= num_inputs_) {
             return nullptr;
         }
@@ -453,7 +454,8 @@ public:
     ///
     /// \param workload_idx The index of the compute workload, similar to
     /// thread_id, if a thread only processes one workload.
-    OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
+    OPEN3D_SYCL_EXTERNAL OPEN3D_HOST_DEVICE char* GetOutputPtr(
+            int64_t workload_idx) const {
         return GetWorkloadDataPtr(outputs_[0], outputs_contiguous_[0],
                                   workload_idx);
     }
@@ -466,7 +468,8 @@ public:
     /// Note: Assumes that sizeof(T) matches the output's dtype size, but does
     /// not check this constraint for performance reasons.
     template <typename T>
-    OPEN3D_HOST_DEVICE T* GetOutputPtr(int64_t workload_idx) const {
+    OPEN3D_SYCL_EXTERNAL OPEN3D_HOST_DEVICE T* GetOutputPtr(
+            int64_t workload_idx) const {
         return GetWorkloadDataPtr<T>(outputs_[0], outputs_contiguous_[0],
                                      workload_idx);
     }
@@ -476,8 +479,8 @@ public:
     /// \param output_idx Output tensor index.
     /// \param workload_idx The index of the compute workload, similar to
     /// thread_id, if a thread only processes one workload.
-    OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t output_idx,
-                                          int64_t workload_idx) const {
+    OPEN3D_SYCL_EXTERNAL OPEN3D_HOST_DEVICE char* GetOutputPtr(
+            int64_t output_idx, int64_t workload_idx) const {
         return GetWorkloadDataPtr(outputs_[output_idx],
                                   outputs_contiguous_[output_idx],
                                   workload_idx);
@@ -489,8 +492,8 @@ public:
     /// \param workload_idx The index of the compute workload, similar to
     /// thread_id, if a thread only processes one workload.
     template <typename T>
-    OPEN3D_HOST_DEVICE T* GetOutputPtr(int64_t output_idx,
-                                       int64_t workload_idx) const {
+    OPEN3D_SYCL_EXTERNAL OPEN3D_HOST_DEVICE T* GetOutputPtr(
+            int64_t output_idx, int64_t workload_idx) const {
         return GetWorkloadDataPtr<T>(outputs_[output_idx],
                                      outputs_contiguous_[output_idx],
                                      workload_idx);

@@ -62,7 +62,7 @@ namespace open3d {
 template <typename scalar_t, typename T>
 OPEN3D_HOST_DEVICE bool IsClose(const scalar_t &x,
                                 const T &y,
-                                const double rtol = 1e-4) {
+                                const float rtol = 1e-4) {
     return ((x > (1.0 - rtol) * y) && (x < (1.0 + rtol) * y));
 }
 

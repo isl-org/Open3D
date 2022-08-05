@@ -57,21 +57,30 @@ enum class BinaryEWOpCode {
 extern const std::unordered_set<BinaryEWOpCode, utility::hash_enum_class>
         s_boolean_binary_ew_op_codes;
 
+bool IsBinaryEWBoolean(const BinaryEWOpCode& op_code);
+
 void BinaryEW(const Tensor& lhs,
               const Tensor& rhs,
               Tensor& dst,
-              BinaryEWOpCode op_code);
+              const BinaryEWOpCode& op_code);
 
 void BinaryEWCPU(const Tensor& lhs,
                  const Tensor& rhs,
                  Tensor& dst,
-                 BinaryEWOpCode op_code);
+                 const BinaryEWOpCode& op_code);
 
 #ifdef BUILD_CUDA_MODULE
 void BinaryEWCUDA(const Tensor& lhs,
                   const Tensor& rhs,
                   Tensor& dst,
-                  BinaryEWOpCode op_code);
+                  const BinaryEWOpCode& op_code);
+#endif
+
+#ifdef BUILD_SYCL_MODULE
+void BinaryEWSYCL(const Tensor& lhs,
+                  const Tensor& rhs,
+                  Tensor& dst,
+                  const BinaryEWOpCode& op_code);
 #endif
 
 }  // namespace kernel

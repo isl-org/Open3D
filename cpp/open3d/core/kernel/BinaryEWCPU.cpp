@@ -172,16 +172,16 @@ static void CPUNeqElementKernel(const void* lhs, const void* rhs, void* dst) {
 void BinaryEWCPU(const Tensor& lhs,
                  const Tensor& rhs,
                  Tensor& dst,
-                 BinaryEWOpCode op_code) {
+                 const BinaryEWOpCode& op_code) {
     Dtype src_dtype = lhs.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
 
-    if (s_boolean_binary_ew_op_codes.find(op_code) !=
-        s_boolean_binary_ew_op_codes.end()) {
+    if (IsBinaryEWBoolean(op_code)) {
         if (dst_dtype == src_dtype) {
-            // Inplace boolean op's output type is the same as the
-            // input. e.g. np.logical_and(a, b, out=a), where a, b are
-            // floats.
+            // - dst_dtype == src_dtype: Inplace boolean op's output type is the
+            //   same as the input. e.g. np.logical_and(a, b, out=a), where a, b
+            //   are floats.
+            // - dst_dtype == core::Bool: lhs, rhs, dst are all boolean.
             Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
 #ifdef BUILD_ISPC_MODULE
             ispc::Indexer ispc_indexer = indexer.ToISPC();

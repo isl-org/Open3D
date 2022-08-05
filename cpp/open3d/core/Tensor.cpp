@@ -754,7 +754,7 @@ Tensor Tensor::Contiguous() const {
 std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
-    if (IsCUDA() || !IsContiguous()) {
+    if (!IsCPU() || !IsContiguous()) {
         Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
         rc << host_contiguous_tensor.ToString(false, "");
     } else {
@@ -1297,7 +1297,7 @@ Tensor Tensor::Abs_() {
 }
 
 Tensor Tensor::IsNan() const {
-    if (dtype_ == core::Float32 || dtype_ == core::Float64) {
+    if (dtype_.IsFloat()) {
         Tensor dst_tensor(shape_, core::Bool, GetDevice());
         kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsNan);
         return dst_tensor;
@@ -1307,7 +1307,7 @@ Tensor Tensor::IsNan() const {
 }
 
 Tensor Tensor::IsInf() const {
-    if (dtype_ == core::Float32 || dtype_ == core::Float64) {
+    if (dtype_.IsFloat()) {
         Tensor dst_tensor(shape_, core::Bool, GetDevice());
         kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsInf);
         return dst_tensor;
@@ -1317,7 +1317,7 @@ Tensor Tensor::IsInf() const {
 }
 
 Tensor Tensor::IsFinite() const {
-    if (dtype_ == core::Float32 || dtype_ == core::Float64) {
+    if (dtype_.IsFloat()) {
         Tensor dst_tensor(shape_, core::Bool, GetDevice());
         kernel::UnaryEW(*this, dst_tensor, kernel::UnaryEWOpCode::IsFinite);
         return dst_tensor;
@@ -1808,18 +1808,25 @@ bool Tensor::AllEqual(const Tensor& other) const {
     return (*this == other).All().Item<bool>();
 }
 
-bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
+bool Tensor::AllClose(const Tensor& other, float rtol, float atol) const {
     // TODO: support nan;
     return IsClose(other, rtol, atol).All().Item<bool>();
 }
 
-Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {
+Tensor Tensor::IsClose(const Tensor& other, float rtol, float atol) const {
     AssertTensorDevice(other, GetDevice());
     AssertTensorDtype(other, GetDtype());
     AssertTensorShape(other, GetShape());
 
-    Tensor lhs = this->To(core::Float64);
-    Tensor rhs = other.To(core::Float64);
+    Tensor lhs, rhs;
+    if (IsSYCL()) {
+        lhs = this->To(core::Float32);
+        rhs = other.To(core::Float32);
+    } else {
+        lhs = this->To(core::Float64);
+        rhs = other.To(core::Float64);
+    }
+
     Tensor actual_error = (lhs - rhs).Abs();
     Tensor max_error = atol + rtol * rhs.Abs();
     return actual_error <= max_error;

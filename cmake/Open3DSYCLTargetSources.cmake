@@ -7,6 +7,13 @@
 # Note: this is not a perfect forwarding to target_sources(), as it only support
 # limited set of arguments. See the example usage below.
 #
+# This is different from CUDA. When BUILD_CUDA_MODULE is ON, all source files
+# will have CUDA include directories and link with CUDA libraries. However,
+# if BUILD_SYCL_MODULE is ON, only the source files that are added with
+# open3d_sycl_target_sources() will have SYCL include directories and link with
+# SYCL libraries. One advantage of this is to speed up recompilation, as ccache
+# cannot cache SYCL compileations for now.
+#
 # Example usage:
 #   open3d_sycl_target_sources(core PRIVATE a.cpp b.cpp)
 #   open3d_sycl_target_sources(core PUBLIC a.cpp b.cpp)
@@ -30,8 +37,23 @@ function(open3d_sycl_target_sources target)
 
         if(BUILD_SYCL_MODULE)
             foreach(sycl_file IN LISTS arg_UNPARSED_ARGUMENTS)
+                # COMPILE_OPTIONS is a list, COMPILE_FLAGS is a string.
+                # https://stackoverflow.com/a/24303754/1255535
+                if(ENABLE_SYCL_AOT_ADL)
+                    set_source_files_properties(${sycl_file} PROPERTIES
+                        COMPILE_FLAGS "-fsycl -fsycl-unnamed-lambda -fsycl-targets=spir64_gen"
+                    )
+                else()
+                    set_source_files_properties(${sycl_file} PROPERTIES
+                        COMPILE_FLAGS "-fsycl -fsycl-unnamed-lambda"
+                    )
+                endif()
+
+                # __OPEN3D_SYCLCC__ is analogous to __CUDACC__.
+                # BUILD_SYCL_MODULE is analogous to BUILD_CUDA_MODULE.
                 set_source_files_properties(${sycl_file} PROPERTIES
-                    COMPILE_OPTIONS -fsycl -fsycl-unnamed-lambda -fsycl-targets=spir64_x86_64)
+                    COMPILE_DEFINITIONS __OPEN3D_SYCLCC__=1
+                )
                 if(arg_VERBOSE)
                     message(STATUS "open3d_sycl_target_sources(${target}): marked ${sycl_file} as SYCL code")
                 endif()

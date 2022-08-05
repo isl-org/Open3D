@@ -78,6 +78,16 @@ public:
 
     DtypeCode GetDtypeCode() const { return dtype_code_; }
 
+    bool IsInt() const {
+        return dtype_code_ == DtypeCode::Int || dtype_code_ == DtypeCode::UInt;
+    }
+
+    bool IsUInt() const { return dtype_code_ == DtypeCode::UInt; }
+
+    bool IsFloat() const { return dtype_code_ == DtypeCode::Float; }
+
+    bool IsBool() const { return dtype_code_ == DtypeCode::Bool; }
+
     bool IsObject() const { return dtype_code_ == DtypeCode::Object; }
 
     std::string ToString() const { return name_; }

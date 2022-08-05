@@ -19,22 +19,6 @@ target_sources(core PRIVATE
     TensorFunction.cpp
     TensorKey.cpp
     TensorList.cpp
-)
-
-# Compile regardless BUILD_SYCL_MODULE == ON or OFF.
-open3d_sycl_target_sources(core PRIVATE
-    SYCLUtils.cpp
-)
-
-# Compile only when BUILD_SYCL_MODULE == ON.
-if (BUILD_SYCL_MODULE)
-    open3d_sycl_target_sources(core PRIVATE
-        MemoryManagerSYCL.cpp
-        SYCLContext.cpp
-    )
-endif()
-
-target_sources(core PRIVATE
     hashmap/CPU/CPUHashBackendBuffer.cpp
     hashmap/CPU/CreateCPUHashBackend.cpp
     hashmap/DeviceHashBackend.cpp
@@ -79,11 +63,23 @@ target_sources(core PRIVATE
     nns/NNSIndex.cpp
 )
 
+open3d_sycl_target_sources(core PRIVATE
+    SYCLUtils.cpp
+
+)
+
+if (BUILD_SYCL_MODULE)
+    open3d_sycl_target_sources(core PRIVATE
+        MemoryManagerSYCL.cpp
+        SYCLContext.cpp
+        kernel/UnaryEWSYCL.cpp
+        kernel/BinaryEWSYCL.cpp
+    )
+endif()
+
 if (BUILD_CUDA_MODULE)
     target_sources(core PRIVATE
         MemoryManagerCUDA.cpp
-    )
-    target_sources(core PRIVATE
         hashmap/CUDA/CreateCUDAHashBackend.cu
         hashmap/CUDA/CUDAHashBackendBuffer.cu
         hashmap/CUDA/SlabNodeManager.cu

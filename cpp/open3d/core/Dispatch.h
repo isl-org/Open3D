@@ -83,6 +83,51 @@
         }                                                \
     }()
 
+#define DISPATCH_DTYPE_TO_TEMPLATE_SYCL(DTYPE, ...)      \
+    [&] {                                                \
+        if (DTYPE == open3d::core::Float32) {            \
+            using scalar_t = float;                      \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Int8) {        \
+            using scalar_t = int8_t;                     \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Int16) {       \
+            using scalar_t = int16_t;                    \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Int32) {       \
+            using scalar_t = int32_t;                    \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Int64) {       \
+            using scalar_t = int64_t;                    \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::UInt8) {       \
+            using scalar_t = uint8_t;                    \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::UInt16) {      \
+            using scalar_t = uint16_t;                   \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::UInt32) {      \
+            using scalar_t = uint32_t;                   \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::UInt64) {      \
+            using scalar_t = uint64_t;                   \
+            return __VA_ARGS__();                        \
+        } else {                                         \
+            utility::LogError("Unsupported data type."); \
+        }                                                \
+    }()
+
+#define DISPATCH_BOOL_OR_TYPE(DTYPE, alt_type, ...) \
+    [&] {                                           \
+        if (DTYPE == open3d::core::Bool) {          \
+            using scalar_t = bool;                  \
+            return __VA_ARGS__();                   \
+        } else {                                    \
+            using scalar_t = alt_type;              \
+            return __VA_ARGS__();                   \
+        }                                           \
+    }()
+
 #define DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(DTYPE, ...)    \
     [&] {                                                   \
         if (DTYPE == open3d::core::Bool) {                  \
@@ -91,6 +136,16 @@
         } else {                                            \
             DISPATCH_DTYPE_TO_TEMPLATE(DTYPE, __VA_ARGS__); \
         }                                                   \
+    }()
+
+#define DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(DTYPE, ...)    \
+    [&] {                                                        \
+        if (DTYPE == open3d::core::Bool) {                       \
+            using scalar_t = bool;                               \
+            return __VA_ARGS__();                                \
+        } else {                                                 \
+            DISPATCH_DTYPE_TO_TEMPLATE_SYCL(DTYPE, __VA_ARGS__); \
+        }                                                        \
     }()
 
 #define DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(DTYPE, ...)     \

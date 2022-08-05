@@ -32,6 +32,18 @@
 
 #pragma once
 
+// __OPEN3D_SYCLCC__ is different from BUILD_SYCL_MODULE. When BUILD_SYCL_MODULE
+// is ON, only files added with open3d_sycl_target_sources will be having SYCL
+// include directories and link with SYCL libraries. For more details, see
+// cmake/Open3DSYCLTargetSources.cmake.
+#if defined(BUILD_SYCL_MODULE) && defined(__OPEN3D_SYCLCC__)
+#include <CL/sycl.hpp>
+namespace sy = cl::sycl;
+#define OPEN3D_SYCL_EXTERNAL SYCL_EXTERNAL
+#else
+#define OPEN3D_SYCL_EXTERNAL
+#endif
+
 #include <vector>
 
 #include "open3d/core/Device.h"
@@ -39,6 +51,11 @@
 namespace open3d {
 namespace core {
 namespace sycl {
+
+#if defined(BUILD_SYCL_MODULE) && defined(__OPEN3D_SYCLCC__)
+/// Get the default SYCL queue given an Open3D device.
+sy::queue& GetDefaultQueue(const Device& device);
+#endif
 
 /// Runs simple SYCL test program for sanity checks.
 /// \return Retuns 0 if successful.
