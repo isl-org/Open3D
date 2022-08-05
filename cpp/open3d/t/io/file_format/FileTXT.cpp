@@ -78,31 +78,30 @@ bool ReadPointCloudFromTXT(const std::string &filename,
         double *pcd_buffer_ptr = pcd_buffer.GetDataPtr<double>();
 
         int i = 0;
-        double line_attributes[num_attributes];
+        double *line_attr_ptr =
+                (double *)malloc(num_attributes * sizeof(double));
         const char *line_buffer;
 
         // Read TXT to buffer.
         while ((line_buffer = file.ReadLine())) {
             if (num_attributes == 3 &&
-                (sscanf(line_buffer, "%lf %lf %lf", &line_attributes[0],
-                        &line_attributes[1], &line_attributes[2]) == 3)) {
-                std::memcpy(&pcd_buffer_ptr[num_attributes * i],
-                            line_attributes, num_attributes * sizeof(double));
+                (sscanf(line_buffer, "%lf %lf %lf", &line_attr_ptr[0],
+                        &line_attr_ptr[1], &line_attr_ptr[2]) == 3)) {
+                std::memcpy(&pcd_buffer_ptr[num_attributes * i], line_attr_ptr,
+                            num_attributes * sizeof(double));
             } else if (num_attributes == 4 &&
                        (sscanf(line_buffer, "%lf %lf %lf %lf",
-                               &line_attributes[0], &line_attributes[1],
-                               &line_attributes[2],
-                               &line_attributes[3]) == 4)) {
-                std::memcpy(&pcd_buffer_ptr[num_attributes * i],
-                            line_attributes, num_attributes * sizeof(double));
+                               &line_attr_ptr[0], &line_attr_ptr[1],
+                               &line_attr_ptr[2], &line_attr_ptr[3]) == 4)) {
+                std::memcpy(&pcd_buffer_ptr[num_attributes * i], line_attr_ptr,
+                            num_attributes * sizeof(double));
             } else if (num_attributes == 6 &&
                        (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf",
-                               &line_attributes[0], &line_attributes[1],
-                               &line_attributes[2], &line_attributes[3],
-                               &line_attributes[4],
-                               &line_attributes[5]) == 6)) {
-                std::memcpy(&pcd_buffer_ptr[num_attributes * i],
-                            line_attributes, num_attributes * sizeof(double));
+                               &line_attr_ptr[0], &line_attr_ptr[1],
+                               &line_attr_ptr[2], &line_attr_ptr[3],
+                               &line_attr_ptr[4], &line_attr_ptr[5]) == 6)) {
+                std::memcpy(&pcd_buffer_ptr[num_attributes * i], line_attr_ptr,
+                            num_attributes * sizeof(double));
             } else {
                 utility::LogWarning("Read TXT failed at line: {}", line_buffer);
                 return false;
