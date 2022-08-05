@@ -157,7 +157,7 @@ bool WriteFileTXT(const std::string &filename,
                   const std::vector<std::string> &line_template,
                   const open3d::io::WritePointCloudOption &params) {
     utility::filesystem::CFile file;
-    if (!file.Open(filename, "r")) {
+    if (!file.Open(filename, "w")) {
         utility::LogWarning("Write TXT failed: unable to open file: {}",
                             filename);
         return false;
