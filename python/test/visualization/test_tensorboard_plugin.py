@@ -24,13 +24,16 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 import os
-import sys
 from time import sleep
 import subprocess as sp
 import webbrowser
 import shutil
 import numpy as np
 import pytest
+try:
+    import tensorflow as tf  # noqa
+except (ImportError, ModuleNotFoundError):
+    pytest.importorskip("torch")
 pytest.importorskip("tensorboard")
 vis = pytest.importorskip("open3d.ml.vis")
 try:

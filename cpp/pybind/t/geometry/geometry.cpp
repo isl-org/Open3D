@@ -63,6 +63,7 @@ void pybind_geometry(py::module& m) {
     pybind_lineset(m_submodule);
     pybind_trianglemesh(m_submodule);
     pybind_image(m_submodule);
+    pybind_boundingvolume(m_submodule);
     pybind_voxel_block_grid(m_submodule);
     pybind_raycasting_scene(m_submodule);
 }
