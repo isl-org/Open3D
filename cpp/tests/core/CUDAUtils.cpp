@@ -78,8 +78,7 @@ void CheckScopedStreamAutomatically() {
     ASSERT_EQ(core::cuda::GetDevice(), current_device);
 
     {
-        core::CUDAScopedStream scoped_stream(
-                core::CUDAScopedStream::CreateNewStream);
+        core::CUDAScopedStream scoped_stream();
 
         ASSERT_NE(core::cuda::GetStream(), core::cuda::GetDefaultStream());
         ASSERT_EQ(core::cuda::GetDevice(), current_device);

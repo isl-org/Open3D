@@ -153,18 +153,19 @@ private:
 /// }
 /// ```
 class CUDAScopedStream {
-private:
-    struct CreateNewStreamTag {
-        CreateNewStreamTag(const CreateNewStreamTag&) = delete;
-        CreateNewStreamTag& operator=(const CreateNewStreamTag&) = delete;
-        CreateNewStreamTag(CreateNewStreamTag&&) = delete;
-        CreateNewStreamTag& operator=(CreateNewStreamTag&&) = delete;
-    };
+// private:
+//     struct CreateNewStreamTag {
+//         CreateNewStreamTag(const CreateNewStreamTag&) = delete;
+//         CreateNewStreamTag& operator=(const CreateNewStreamTag&) = delete;
+//         CreateNewStreamTag(CreateNewStreamTag&&) = delete;
+//         CreateNewStreamTag& operator=(CreateNewStreamTag&&) = delete;
+//     };
 
 public:
-    constexpr static CreateNewStreamTag CreateNewStream = {};
+    // constexpr static CreateNewStreamTag CreateNewStream = {};
 
-    explicit CUDAScopedStream(const CreateNewStreamTag&);
+    // explicit CUDAScopedStream(const CreateNewStreamTag&);
+    explicit CUDAScopedStream();
 
     explicit CUDAScopedStream(cudaStream_t stream);
 

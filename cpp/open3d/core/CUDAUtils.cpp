@@ -187,10 +187,16 @@ CUDAScopedDevice::CUDAScopedDevice(const Device& device)
 
 CUDAScopedDevice::~CUDAScopedDevice() { cuda::SetDevice(prev_device_id_); }
 
-constexpr CUDAScopedStream::CreateNewStreamTag
-        CUDAScopedStream::CreateNewStream;
+// constexpr CUDAScopedStream::CreateNewStreamTag
+//         CUDAScopedStream::CreateNewStream;
 
-CUDAScopedStream::CUDAScopedStream(const CreateNewStreamTag&)
+// CUDAScopedStream::CUDAScopedStream(const CreateNewStreamTag&)
+//     : prev_stream_(cuda::GetStream()), owns_new_stream_(true) {
+//     OPEN3D_CUDA_CHECK(cudaStreamCreate(&new_stream_));
+//     cuda::SetStream(new_stream_);
+// }
+
+CUDAScopedStream::CUDAScopedStream()
     : prev_stream_(cuda::GetStream()), owns_new_stream_(true) {
     OPEN3D_CUDA_CHECK(cudaStreamCreate(&new_stream_));
     cuda::SetStream(new_stream_);
