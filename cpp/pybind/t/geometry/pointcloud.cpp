@@ -320,9 +320,18 @@ Example:
     pointcloud.def(
             "get_oriented_bounding_box", &PointCloud::GetOrientedBoundingBox,
             "Create an oriented bounding box from attribute 'positions'.");
-    pointcloud.def("crop", &PointCloud::Crop,
+    pointcloud.def("crop",
+                   (PointCloud(PointCloud::*)(const AxisAlignedBoundingBox&,
+                                              bool) const) &
+                           PointCloud::Crop,
                    "Function to crop pointcloud into output pointcloud.",
                    "aabb"_a, "invert"_a = false);
+    pointcloud.def("crop",
+                   (PointCloud(PointCloud::*)(const OrientedBoundingBox&, bool)
+                            const) &
+                           PointCloud::Crop,
+                   "Function to crop pointcloud into output pointcloud.",
+                   "obb"_a, "invert"_a = false);
 
     docstring::ClassMethodDocInject(m, "PointCloud", "estimate_normals",
                                     map_shared_argument_docstrings);
@@ -373,6 +382,12 @@ Example:
     docstring::ClassMethodDocInject(
             m, "PointCloud", "crop",
             {{"aabb", "AxisAlignedBoundingBox to crop points."},
+             {"invert",
+              "Crop the points outside of the bounding box or inside of the "
+              "bounding box."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "crop",
+            {{"obb", "OrientedBoundingBox to crop points."},
              {"invert",
               "Crop the points outside of the bounding box or inside of the "
               "bounding box."}});

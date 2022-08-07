@@ -549,6 +549,13 @@ public:
     PointCloud Crop(const AxisAlignedBoundingBox &aabb,
                     bool invert = false) const;
 
+    /// \brief Function to crop pointcloud into output pointcloud.
+    ///
+    /// \param obb OrientedBoundingBox to crop points.
+    /// \param invert Crop the points outside of the bounding box or inside of
+    /// the bounding box.
+    PointCloud Crop(const OrientedBoundingBox &obb, bool invert = false) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap point_attr_;

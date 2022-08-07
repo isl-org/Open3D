@@ -24,14 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/BoundingVolume.h"
-
 #include <gmock/gmock.h>
 
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/BoundingVolume.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"
@@ -50,17 +49,6 @@ INSTANTIATE_TEST_SUITE_P(
         AxisAlignedBoundingBoxPermuteDevicePairs,
         testing::ValuesIn(
                 AxisAlignedBoundingBoxPermuteDevicePairs::TestCases()));
-
-class OrientedBoundingBoxPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(OrientedBoundingBox,
-                         OrientedBoundingBoxPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
-
-class OrientedBoundingBoxPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        OrientedBoundingBox,
-        OrientedBoundingBoxPermuteDevicePairs,
-        testing::ValuesIn(OrientedBoundingBoxPermuteDevicePairs::TestCases()));
 
 TEST_P(AxisAlignedBoundingBoxPermuteDevices, ConstructorNoArg) {
     t::geometry::AxisAlignedBoundingBox aabb;
@@ -355,26 +343,6 @@ TEST_P(AxisAlignedBoundingBoxPermuteDevices, CreateFromPoints) {
             core::Tensor::Init<float>({0.1, 0.2, 0.2}, device)));
     EXPECT_TRUE(aabb.GetMaxBound().AllClose(
             core::Tensor::Init<float>({0.9, 0.6, 0.9}, device)));
-}
-
-TEST_P(OrientedBoundingBoxPermuteDevices, GetPointIndicesWithinBoundingBox) {
-    core::Device device = GetParam();
-
-    core::Tensor center = core::Tensor::Init<float>({0.5, 0.5, 0.5}, device);
-    core::Tensor rotation = core::Tensor::Eye(3, core::Float32, device);
-    core::Tensor extent = core::Tensor::Init<float>({0.5, 0.5, 0.5}, device);
-    t::geometry::OrientedBoundingBox obb(center, rotation, extent);
-
-    core::Tensor points = core::Tensor::Init<float>({{0.1, 0.3, 0.9},
-                                                     {0.9, 0.2, 0.4},
-                                                     {0.3, 0.6, 0.8},
-                                                     {0.2, 0.4, 0.2}},
-                                                    device);
-
-    core::Tensor indices = obb.GetPointIndicesWithinBoundingBox(points);
-
-    EXPECT_TRUE(indices.AllClose(
-            core::Tensor::Init<int64_t>({0, 1, 2, 3}, device)));
 }
 
 }  // namespace tests

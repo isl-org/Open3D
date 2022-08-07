@@ -330,8 +330,8 @@ OrientedBoundingBox::OrientedBoundingBox(const core::Tensor &center,
 
     // Check if the bounding box is valid by checking the volume and the
     // orthogonality of rotation.
-    if (Volume() < 0 || !rotation_.T().Mul(rotation_).AllClose(
-                                core::Tensor::Eye(3, dtype_, device_))) {
+    if (Volume() < 0 ||
+        !rotation_.T().AllClose(rotation_.Inverse(), 1e-5, 1e-5)) {
         utility::LogError(
                 "Invalid oriented bounding box. Please make sure the values of "
                 "extent are all positive and the rotation matrix is "
@@ -387,14 +387,13 @@ void OrientedBoundingBox::SetRotation(const core::Tensor &rotation) {
     core::AssertTensorShape(rotation, {3, 3});
     core::AssertTensorDtype(rotation, GetDtype());
 
-    if (!rotation_.T().Mul(rotation_).AllClose(
-                core::Tensor::Eye(3, dtype_, device_))) {
-        utility::LogError(
+    if (!rotation_.T().AllClose(rotation_.Inverse(), 1e-5, 1e-5)) {
+        utility::LogWarning(
                 "Invalid oriented bounding box. Please make sure the rotation "
                 "matrix is orthogonal.");
+    } else {
+        rotation_ = rotation;
     }
-
-    rotation_ = rotation;
 }
 
 void OrientedBoundingBox::SetColor(const core::Tensor &color) {
@@ -479,20 +478,20 @@ OrientedBoundingBox &OrientedBoundingBox::Rotate(
     core::AssertTensorShape(rotation, {3, 3});
     core::AssertTensorDtype(rotation, GetDtype());
 
-    if (!rotation.T().Mul(rotation).AllClose(
-                core::Tensor::Eye(3, dtype_, device_))) {
+    if (!rotation_.T().AllClose(rotation_.Inverse(), 1e-5, 1e-5)) {
         utility::LogWarning(
                 "Invalid rotation matrix. Please make sure the rotation "
                 "matrix is orthogonal.");
         return *this;
     }
 
-    rotation_ = rotation * rotation_;
+    rotation_ = rotation.Matmul(rotation_);
     if (center.has_value()) {
         core::AssertTensorDevice(center.value(), GetDevice());
         core::AssertTensorShape(center.value(), {3});
         core::AssertTensorDtype(center.value(), GetDtype());
-        center_ = rotation * (center_ - center.value()) + center.value();
+        center_ = rotation.Matmul(center_ - center.value()).Flatten() +
+                  center.value();
     }
 
     return *this;

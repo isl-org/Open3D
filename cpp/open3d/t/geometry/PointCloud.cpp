@@ -928,6 +928,19 @@ PointCloud PointCloud::Crop(const AxisAlignedBoundingBox &aabb,
             aabb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
 }
 
+PointCloud PointCloud::Crop(const OrientedBoundingBox &obb, bool invert) const {
+    core::AssertTensorDevice(GetPointPositions(), obb.GetDevice());
+    if (obb.IsEmpty()) {
+        utility::LogWarning(
+                "Bounding box is empty. Returning empty point cloud if "
+                "invert is false, or the original point cloud if "
+                "invert is true.");
+        return invert ? Clone() : PointCloud(GetDevice());
+    }
+    return SelectByIndex(
+            obb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
