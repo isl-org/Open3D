@@ -221,10 +221,10 @@ void GetPointMaskWithinOBBCPU
                     d[2] = points_ptr[3 * workload_idx + 2] - center_ptr[2];
                     if (abs(core::linalg::kernel::dot_3x1(d, rotation_ptr)) <=
                                 half_extent[0] &&
-                        abs(core::linalg::kernel::dot_3x1(d, rotation_ptr + 3)) <=
-                                half_extent[1] &&
-                        abs(core::linalg::kernel::dot_3x1(d, rotation_ptr + 6)) <=
-                                half_extent[2]) {
+                        abs(core::linalg::kernel::dot_3x1(
+                                d, rotation_ptr + 3)) <= half_extent[1] &&
+                        abs(core::linalg::kernel::dot_3x1(
+                                d, rotation_ptr + 6)) <= half_extent[2]) {
                         mask_ptr[workload_idx] = true;
                     } else {
                         mask_ptr[workload_idx] = false;
