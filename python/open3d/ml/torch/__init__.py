@@ -26,16 +26,16 @@
 """Torch specific machine learning functions."""
 import os as _os
 import sys as _sys
+from packaging.version import parse as _verp
 import torch as _torch
 from open3d import _build_config
 
 if not _build_config["Pytorch_VERSION"]:
     raise Exception('Open3D was not built with PyTorch support!')
-
-_o3d_torch_version = _build_config["Pytorch_VERSION"].split('.')
-if _torch.__version__.split('.')[:2] != _o3d_torch_version[:2]:
-    _o3d_torch_version[2] = '*'  # Any patch level is OK
-    match_torch_ver = '.'.join(_o3d_torch_version)
+_o3d_torch_version = _verp(_build_config["Pytorch_VERSION"])
+# Check match with PyTorch version, any patch level is OK
+if _verp(_torch.__version__).release[:2] != _o3d_torch_version.release[:2]:
+    match_torch_ver = '.'.join(_o3d_torch_version.release[:2] + ('*',))
     raise Exception('Version mismatch: Open3D needs PyTorch version {}, but '
                     'version {} is installed!'.format(match_torch_ver,
                                                       _torch.__version__))
@@ -44,12 +44,14 @@ if _torch.__version__.split('.')[:2] != _o3d_torch_version[:2]:
 # https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2
 # have been compiled with '-Xcompiler -fno-gnu-unique' and have an additional
 # attribute that we test here. Print a warning if the attribute is missing.
-if _build_config["BUILD_CUDA_MODULE"] and not hasattr(_torch,
-                                                      "_TORCH_NVCC_FLAGS"):
+if (_build_config["BUILD_CUDA_MODULE"] and
+        not hasattr(_torch, "_TORCH_NVCC_FLAGS") and
+        _verp(_torch.__version__) < _verp("1.9.0")):
     print("""
 --------------------------------------------------------------------------------
 
- Using the Open3D PyTorch ops with CUDA 11 may have stability issues!
+ Using the Open3D PyTorch ops with CUDA 11 and PyTorch version < 1.9 may have
+ stability issues!
 
  We recommend to compile PyTorch from source with compile flags
    '-Xcompiler -fno-gnu-unique'

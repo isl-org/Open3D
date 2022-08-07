@@ -46,8 +46,26 @@ int DtypeToVtkType(const core::Dtype& dtype);
 /// kept alive until the returned vtkPolyData object is deleted.
 /// \param geometry Open3D geometry object, e.g., a TriangleMesh.
 /// \param copy If true always create a copy of the data.
+/// \param point_attr_include A set of keys to select which point/vertex
+///  attributes should be added. Note that the primary key may be included and
+///  will silently be ignored.
+/// \param face_attr_include A set of keys to select
+///  which face attributes should be added. Note that the primary key may be
+///  included and will silently be ignored.
+/// \param point_attr_exclude A set of keys for which point/vertex attributes
+///  will not be added to the vtkPolyData. The exclusion set has precedence over
+///  the included keys.
+/// \param face_attr_exclude A set of keys for which face attributes will not be
+/// added
+///  to the vtkPolyData. The exclusion set has precedence over the included
+///  keys.
 vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
-        const Geometry& geometry, bool copy = false);
+        const Geometry& geometry,
+        const std::unordered_set<std::string>& point_attr_include,
+        const std::unordered_set<std::string>& face_attr_include,
+        const std::unordered_set<std::string>& point_attr_exclude = {},
+        const std::unordered_set<std::string>& face_attr_exclude = {},
+        bool copy = false);
 
 /// Creates a triangle mesh from a vtkPolyData object.
 /// The returned TriangleMesh may directly use the memory of the data arrays in

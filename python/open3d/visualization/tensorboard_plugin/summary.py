@@ -710,11 +710,14 @@ def add_3d(name,
 
         With PyTorch:
 
+        (Note that the `import summary` is needed to make `add_3d()` available,
+        even though `summary` is not used.)
+
         .. code::
 
             from torch.utils.tensorboard import SummaryWriter
             import open3d as o3d
-            from open3d.visualization.tensorboard_plugin import summary
+            from open3d.visualization.tensorboard_plugin import summary  # noqa
             from open3d.visualization.tensorboard_plugin.util import to_dict_batch
             writer = SummaryWriter("demo_logs/")
             cube = o3d.geometry.TriangleMesh.create_box(1, 2, 4)

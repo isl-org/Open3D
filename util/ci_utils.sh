@@ -27,9 +27,9 @@ LOW_MEM_USAGE=${LOW_MEM_USAGE:-OFF}
 if [[ $BUILD_TENSORFLOW_OPS == ON || $BUILD_PYTORCH_OPS == ON ||
     $UBUNTU_VERSION != bionic ]]; then
     # CUDA version in sync with PyTorch and Tensorflow
-    CUDA_VERSION=("11-0" "11.0")
+    CUDA_VERSION=("11-6" "11.6")
     CUDNN_MAJOR_VERSION=8
-    CUDNN_VERSION="8.0.5.39-1+cuda11.0"
+    CUDNN_VERSION="8.4.1.50_cuda11.6"
     GCC_MAX_VER=9
 else
     # Without MLOps, ensure Open3D works with the lowest supported CUDA version
@@ -40,21 +40,21 @@ else
     GCC_MAX_VER=7
 fi
 # ML
-TENSORFLOW_VER="2.5.2"
-TENSORBOARD_VER="2.5"
-TORCH_CPU_GLNX_VER="1.8.2+cpu"
-# TORCH_CUDA_GLNX_VER="1.8.2+cu111"
+TENSORFLOW_VER="2.8.2"
+TENSORBOARD_VER="2.8.0"
+TORCH_CPU_GLNX_VER="1.12.0+cpu"
+TORCH_CUDA_GLNX_VER="1.12.0+cu116"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
-TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.2/torch-1.8.2-${PYTHON_VER}-linux_x86_64.whl"
-TORCH_MACOS_VER="1.8.2"
-TORCH_REPO_URL="https://download.pytorch.org/whl/lts/1.8/torch_lts.html"
+# TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.2/torch-1.8.2-${PYTHON_VER}-linux_x86_64.whl"
+TORCH_MACOS_VER="1.12.0"
+TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="21.1.1"
-WHEEL_VER="0.35.1"
+WHEEL_VER="0.37.1"
 STOOLS_VER="50.3.2"
-PYTEST_VER="6.0.1"
+PYTEST_VER="7.1.2"
 PYTEST_RANDOMLY_VER="3.8.0"
-SCIPY_VER="1.5.4"
+SCIPY_VER="1.7.3"
 YAPF_VER="0.30.0"
 PROTOBUF_VER="3.19.0"
 
@@ -74,7 +74,7 @@ install_python_dependencies() {
     if [[ "with-cuda" =~ ^($options)$ ]]; then
         TF_ARCH_NAME=tensorflow-gpu
         TF_ARCH_DISABLE_NAME=tensorflow-cpu
-        TORCH_GLNX="$TORCH_CUDA_GLNX_URL"
+        TORCH_GLNX="torch==$TORCH_CUDA_GLNX_VER"
     else
         TF_ARCH_NAME=tensorflow-cpu
         TF_ARCH_DISABLE_NAME=tensorflow-gpu
@@ -375,10 +375,6 @@ install_docs_dependencies() {
     python -m pip install -U -q "wheel==$WHEEL_VER" \
         "pip==$PIP_VER"
     python -m pip install -U -q "yapf==$YAPF_VER"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
-    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
-    echo
     if [[ -d "$1" ]]; then
         OPEN3D_ML_ROOT="$1"
         echo Installing Open3D-ML dependencies from "${OPEN3D_ML_ROOT}"
@@ -389,6 +385,10 @@ install_docs_dependencies() {
     else
         echo OPEN3D_ML_ROOT="$OPEN3D_ML_ROOT" not specified or invalid. Skipping ML dependencies.
     fi
+    echo
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
 }
 
 # Build documentation
