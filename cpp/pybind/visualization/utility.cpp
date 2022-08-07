@@ -59,10 +59,10 @@ void pybind_visualization_utility(py::module &m) {
                         return s.CropTriangleMesh(input);
                     },
                     "input"_a, "Function to crop crop triangle mesh.")
-	    .def(
+            .def(
                     "crop_in_polygon",
                     [](const SelectionPolygonVolume &s,
-                       const std::vector<Eigen::Vector3d> &input) {
+                       const geometry::PointCloud &input) {
                         return s.CropInPolygon(input);
                     },
                     "input"_a, "Function to crop 3d point clouds.")
