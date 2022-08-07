@@ -292,8 +292,10 @@ static void AddVtkFieldDataToTensorMap(TensorMap& tmap,
                                        bool copy) {
     for (int i = 0; i < field_data->GetNumberOfArrays(); ++i) {
         auto array = field_data->GetArray(i);
-        std::string array_name = array->GetName();
-        tmap[array_name] = CreateTensorFromVtkDataArray(array, copy);
+        char* array_name = array->GetName();
+        if (array_name) {
+            tmap[array_name] = CreateTensorFromVtkDataArray(array, copy);
+        }
     }
 }
 
