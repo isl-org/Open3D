@@ -273,15 +273,15 @@ must be on the same device and have the same data type.)");
             "Returns copy of the oriented box on the same device.");
     obb.def(
             "cpu",
-            [](const OrientedBoundingBox& aabb) {
-                return aabb.To(core::Device("CPU:0"));
+            [](const OrientedBoundingBox& obb) {
+                return obb.To(core::Device("CPU:0"));
             },
             "Transfer the oriented box to CPU. If the oriented box is "
             "already on CPU, no copy will be performed.");
     obb.def(
             "cuda",
-            [](const OrientedBoundingBox& aabb, int device_id) {
-                return aabb.To(core::Device("CUDA", device_id));
+            [](const OrientedBoundingBox& obb, int device_id) {
+                return obb.To(core::Device("CUDA", device_id));
             },
             "Transfer the oriented box to a CUDA device. If the oriented box "
             "is already on the specified CUDA device, no copy will be "
