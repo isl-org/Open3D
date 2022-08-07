@@ -274,15 +274,17 @@ TEST_P(OrientedBoundingBoxPermuteDevices, GetPointIndicesWithinBoundingBox) {
     t::geometry::OrientedBoundingBox obb(center, rotation, extent);
 
     core::Tensor points = core::Tensor::Init<float>({{0.1, 0.3, 0.9},
+                                                     {-0.2, 0.2, 0.5},
                                                      {0.9, 0.2, 0.4},
                                                      {0.3, 0.6, 0.8},
-                                                     {0.2, 0.4, 0.2}},
+                                                     {0.2, 0.4, 0.2},
+                                                     {1.2, 0.3, 0.5}},
                                                     device);
 
     core::Tensor indices = obb.GetPointIndicesWithinBoundingBox(points);
 
     EXPECT_TRUE(indices.AllClose(
-            core::Tensor::Init<int64_t>({0, 1, 2, 3}, device)));
+            core::Tensor::Init<int64_t>({0, 2, 3, 4}, device)));
 }
 
 TEST_P(OrientedBoundingBoxPermuteDevices, LegacyConversion) {

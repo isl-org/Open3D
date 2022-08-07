@@ -203,20 +203,12 @@ void GetPointMaskWithinOBBCPU
         const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
         const int64_t n = points.GetLength();
         const scalar_t* center_ptr = center.GetDataPtr<scalar_t>();
-        const scalar_t* rotation_ptr = rotation.GetDataPtr<scalar_t>();
+        const scalar_t* rotation_ptr =
+                rotation.Transpose(0, 1).GetDataPtr<scalar_t>();
         const scalar_t* extent_ptr = extent.GetDataPtr<scalar_t>();
         bool* mask_ptr = mask.GetDataPtr<bool>();
 
-        scalar_t dx[3], dy[3], dz[3], half_extent[3];
-        dx[0] = rotation_ptr[0];
-        dx[1] = rotation_ptr[3];
-        dx[2] = rotation_ptr[6];
-        dy[0] = rotation_ptr[1];
-        dy[1] = rotation_ptr[4];
-        dy[2] = rotation_ptr[7];
-        dz[0] = rotation_ptr[2];
-        dz[1] = rotation_ptr[5];
-        dz[2] = rotation_ptr[8];
+        scalar_t half_extent[3];
         half_extent[0] = extent_ptr[0] / 2;
         half_extent[1] = extent_ptr[1] / 2;
         half_extent[2] = extent_ptr[2] / 2;
@@ -227,11 +219,11 @@ void GetPointMaskWithinOBBCPU
                     d[0] = points_ptr[3 * workload_idx + 0] - center_ptr[0];
                     d[1] = points_ptr[3 * workload_idx + 1] - center_ptr[1];
                     d[2] = points_ptr[3 * workload_idx + 2] - center_ptr[2];
-                    if (abs(core::linalg::kernel::dot_3x1(d, dx)) <=
+                    if (abs(core::linalg::kernel::dot_3x1(d, rotation_ptr)) <=
                                 half_extent[0] &&
-                        abs(core::linalg::kernel::dot_3x1(d, dy)) <=
+                        abs(core::linalg::kernel::dot_3x1(d, rotation_ptr + 3)) <=
                                 half_extent[1] &&
-                        abs(core::linalg::kernel::dot_3x1(d, dz)) <=
+                        abs(core::linalg::kernel::dot_3x1(d, rotation_ptr + 6)) <=
                                 half_extent[2]) {
                         mask_ptr[workload_idx] = true;
                     } else {
