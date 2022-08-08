@@ -38,3 +38,5 @@ from ._external_visualizer import *
 
 if "@BUILD_GUI@" == "ON":
     from .draw import draw
+    from .draw import draw_plotly
+    from .draw import draw_plotly_server
