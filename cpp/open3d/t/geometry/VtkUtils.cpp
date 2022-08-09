@@ -84,6 +84,7 @@ struct VtkToTensorType<long long> {
     typedef int64_t TensorType;
 };
 
+namespace {
 struct CreateTensorFromVtkDataArrayWorker {
     bool copy;
     vtkDataArray* data_array;
@@ -124,6 +125,7 @@ struct CreateTensorFromVtkDataArrayWorker {
         }
     }
 };
+}  // namespace
 
 /// Creates a tensor from a vtkDataArray.
 /// The returned Tensor may directly use the memory of the array if device (CPU)
@@ -196,6 +198,7 @@ static vtkSmartPointer<vtkPoints> CreateVtkPointsFromTensor(
     return pts;
 }
 
+namespace {
 // Helper for creating the offset array from Common/DataModel/vtkCellArray.cxx
 struct GenerateOffsetsImpl {
     vtkIdType CellSize;
@@ -211,6 +214,7 @@ struct GenerateOffsetsImpl {
                                    this->ConnectivityArraySize);
     }
 };
+}  // namespace
 
 /// Creates a vtkCellArray from a Tensor.
 /// The returned array may directly use the memory of the tensor and the tensor
@@ -295,8 +299,10 @@ static void AddVtkFieldDataToTensorMap(TensorMap& tmap,
                                        bool copy) {
     for (int i = 0; i < field_data->GetNumberOfArrays(); ++i) {
         auto array = field_data->GetArray(i);
-        std::string array_name = array->GetName();
-        tmap[array_name] = CreateTensorFromVtkDataArray(array, copy);
+        char* array_name = array->GetName();
+        if (array_name) {
+            tmap[array_name] = CreateTensorFromVtkDataArray(array, copy);
+        }
     }
 }
 
@@ -306,16 +312,14 @@ static void AddVtkFieldDataToTensorMap(TensorMap& tmap,
 /// \param tmap The source TensorMap.
 /// \param copy If true always create a copy for attribute arrays.
 /// \param include A set of keys to select which attributes should be added.
-///                The special key "*" includes all attributes.
 /// \param exclude A set of keys for which attributes will not be added to the
-/// vtkFieldData.
+/// vtkFieldData. The exclusion set has precedence over the included keys.
 static void AddTensorMapToVtkFieldData(
         vtkFieldData* field_data,
         TensorMap& tmap,
         bool copy,
-        std::unordered_set<std::string> include = {"*"},
+        std::unordered_set<std::string> include,
         std::unordered_set<std::string> exclude = {}) {
-    bool include_all = include.count("*");
     for (auto key_tensor : tmap) {
         // we only want attributes and ignore the primary key here
         if (key_tensor.first == tmap.GetPrimaryKey()) {
@@ -331,7 +335,7 @@ static void AddTensorMapToVtkFieldData(
             continue;
         }
 
-        if ((include_all || include.count(key_tensor.first)) &&
+        if (include.count(key_tensor.first) &&
             !exclude.count(key_tensor.first)) {
             auto array = CreateVtkDataArrayFromTensor(key_tensor.second, copy);
             array->SetName(key_tensor.first.c_str());
@@ -347,11 +351,11 @@ static void AddTensorMapToVtkFieldData(
 
 vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
         const Geometry& geometry,
-        bool copy,
         const std::unordered_set<std::string>& point_attr_include,
-        const std::unordered_set<std::string>& point_attr_exclude,
         const std::unordered_set<std::string>& face_attr_include,
-        const std::unordered_set<std::string>& face_attr_exclude) {
+        const std::unordered_set<std::string>& point_attr_exclude,
+        const std::unordered_set<std::string>& face_attr_exclude,
+        bool copy) {
     vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
 
     if (geometry.GetGeometryType() == Geometry::GeometryType::PointCloud) {
@@ -431,7 +435,8 @@ TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
     return mesh;
 }
 
-LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata, bool copy) {
+OPEN3D_LOCAL LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata,
+                                                  bool copy) {
     if (!polydata->GetPoints()) {
         return LineSet();
     }
@@ -467,7 +472,8 @@ static vtkSmartPointer<vtkPolyData> ExtrudeRotationPolyData(
             axis, {core::Float32, core::Float64, core::Int32, core::Int64});
     auto axis_ = axis.To(core::Device(), core::Float64).Contiguous();
 
-    auto polydata = CreateVtkPolyDataFromGeometry(geometry);
+    auto polydata =
+            CreateVtkPolyDataFromGeometry(geometry, {}, {}, {}, {}, false);
 
     vtkNew<vtkRotationalExtrusionFilter> extrude;
     extrude->SetInputData(polydata);
@@ -484,23 +490,23 @@ static vtkSmartPointer<vtkPolyData> ExtrudeRotationPolyData(
     return swept_polydata;
 }
 
-TriangleMesh ExtrudeRotationTriangleMesh(const Geometry& geometry,
-                                         const double angle,
-                                         const core::Tensor& axis,
-                                         int resolution,
-                                         double translation,
-                                         bool capping) {
+OPEN3D_LOCAL TriangleMesh ExtrudeRotationTriangleMesh(const Geometry& geometry,
+                                                      const double angle,
+                                                      const core::Tensor& axis,
+                                                      int resolution,
+                                                      double translation,
+                                                      bool capping) {
     auto polydata = ExtrudeRotationPolyData(geometry, angle, axis, resolution,
                                             translation, capping);
     return CreateTriangleMeshFromVtkPolyData(polydata);
 }
 
-LineSet ExtrudeRotationLineSet(const PointCloud& pointcloud,
-                               const double angle,
-                               const core::Tensor& axis,
-                               int resolution,
-                               double translation,
-                               bool capping) {
+OPEN3D_LOCAL LineSet ExtrudeRotationLineSet(const PointCloud& pointcloud,
+                                            const double angle,
+                                            const core::Tensor& axis,
+                                            int resolution,
+                                            double translation,
+                                            bool capping) {
     auto polydata = ExtrudeRotationPolyData(pointcloud, angle, axis, resolution,
                                             translation, capping);
     return CreateLineSetFromVtkPolyData(polydata);
@@ -517,7 +523,8 @@ static vtkSmartPointer<vtkPolyData> ExtrudeLinearPolyData(
             vector, {core::Float32, core::Float64, core::Int32, core::Int64});
     auto vector_ = vector.To(core::Device(), core::Float64).Contiguous();
 
-    auto polydata = CreateVtkPolyDataFromGeometry(geometry);
+    auto polydata =
+            CreateVtkPolyDataFromGeometry(geometry, {}, {}, {}, {}, false);
 
     vtkNew<vtkLinearExtrusionFilter> extrude;
     extrude->SetInputData(polydata);
@@ -533,18 +540,18 @@ static vtkSmartPointer<vtkPolyData> ExtrudeLinearPolyData(
     return swept_polydata;
 }
 
-TriangleMesh ExtrudeLinearTriangleMesh(const Geometry& geometry,
-                                       const core::Tensor& vector,
-                                       double scale,
-                                       bool capping) {
+OPEN3D_LOCAL TriangleMesh ExtrudeLinearTriangleMesh(const Geometry& geometry,
+                                                    const core::Tensor& vector,
+                                                    double scale,
+                                                    bool capping) {
     auto polydata = ExtrudeLinearPolyData(geometry, vector, scale, capping);
     return CreateTriangleMeshFromVtkPolyData(polydata);
 }
 
-LineSet ExtrudeLinearLineSet(const PointCloud& pointcloud,
-                             const core::Tensor& vector,
-                             double scale,
-                             bool capping) {
+OPEN3D_LOCAL LineSet ExtrudeLinearLineSet(const PointCloud& pointcloud,
+                                          const core::Tensor& vector,
+                                          double scale,
+                                          bool capping) {
     auto polydata = ExtrudeLinearPolyData(pointcloud, vector, scale, capping);
     return CreateLineSetFromVtkPolyData(polydata);
 }

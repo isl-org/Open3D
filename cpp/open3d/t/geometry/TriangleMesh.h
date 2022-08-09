@@ -31,6 +31,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
@@ -596,6 +597,22 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a text triangle mesh.
+    /// \param text The text for generating the mesh. ASCII characters 32-126
+    /// are supported (includes alphanumeric characters and punctuation). In
+    /// addition the line feed '\n' is supported to start a new line.
+    /// \param depth The depth of the generated mesh. If depth is 0 then a flat
+    /// mesh will be generated.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateText(
+            const std::string &text,
+            double depth = 0.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
@@ -674,10 +691,11 @@ public:
     /// \param point A point on the plane as [Tensor of dim {3}].
     /// \param normal The normal of the plane as [Tensor of dim {3}].
     /// \param contour_values Contour values at which slices will be generated.
+    /// The value describes the signed distance to the plane.
     /// \return LineSet with the extracted contours.
     LineSet SlicePlane(const core::Tensor &point,
                        const core::Tensor &normal,
-                       const std::list<double> contour_values = {0.0}) const;
+                       const std::vector<double> contour_values = {0.0}) const;
 
     core::Device GetDevice() const override { return device_; }
 
@@ -768,6 +786,9 @@ public:
     /// \return The mesh describing the difference volume.
     TriangleMesh BooleanDifference(const TriangleMesh &mesh,
                                    double tolerance = 1e-6) const;
+
+    /// Create an axis-aligned bounding box from vertex attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
     /// Fill holes by triangulating boundary edges.
     ///

@@ -205,6 +205,10 @@ open3d::geometry::LineSet LineSet::ToLegacy() const {
     return lineset_legacy;
 }
 
+AxisAlignedBoundingBox LineSet::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
 TriangleMesh LineSet::ExtrudeRotation(double angle,
                                       const core::Tensor &axis,
                                       int resolution,

@@ -412,6 +412,23 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
                            finite_indices_mask);
 }
 
+PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {
+    core::AssertTensorShape(color, {3});
+    core::Tensor clipped_color = color.To(GetDevice());
+    if (color.GetDtype() == core::Float32 ||
+        color.GetDtype() == core::Float64) {
+        clipped_color = clipped_color.Clip(0.0f, 1.0f);
+    }
+    core::Tensor pcd_colors =
+            core::Tensor::Empty({GetPointPositions().GetLength(), 3},
+                                clipped_color.GetDtype(), GetDevice());
+    pcd_colors.AsRvalue() = clipped_color;
+    PointCloud pcd(this->Clone());
+    pcd.SetPointColors(pcd_colors);
+
+    return pcd;
+}
+
 void PointCloud::EstimateNormals(
         const int max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
@@ -905,6 +922,24 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
     TriangleMesh convex_hull(vertices, triangles);
     convex_hull.SetVertexAttr("point_indices", point_indices);
     return convex_hull;
+}
+
+PointCloud PointCloud::Crop(const AxisAlignedBoundingBox &aabb,
+                            bool invert) const {
+    core::AssertTensorDevice(GetPointPositions(), aabb.GetDevice());
+    if (aabb.IsEmpty()) {
+        utility::LogWarning(
+                "Bounding box is empty. Returning empty point cloud if "
+                "invert is false, or the original point cloud if "
+                "invert is true.");
+        return invert ? Clone() : PointCloud(GetDevice());
+    }
+    return SelectByIndex(
+            aabb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
+}
+
+AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
 LineSet PointCloud::ExtrudeRotation(double angle,
