@@ -14,7 +14,7 @@ target_sources(tio PRIVATE
     file_format/FilePLY.cpp
     file_format/FilePNG.cpp
     file_format/FilePTS.cpp
-    file_format/FileXYZI.cpp
+    file_format/FileTXT.cpp
 )
 
 target_sources(tio PRIVATE

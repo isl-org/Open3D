@@ -69,13 +69,13 @@ bool WritePointCloudToNPZ(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params);
 
-bool ReadPointCloudFromXYZI(const std::string &filename,
-                            geometry::PointCloud &pointcloud,
-                            const ReadPointCloudOption &params);
+bool ReadPointCloudFromTXT(const std::string &filename,
+                           geometry::PointCloud &pointcloud,
+                           const ReadPointCloudOption &params);
 
-bool WritePointCloudToXYZI(const std::string &filename,
-                           const geometry::PointCloud &pointcloud,
-                           const WritePointCloudOption &params);
+bool WritePointCloudToTXT(const std::string &filename,
+                          const geometry::PointCloud &pointcloud,
+                          const WritePointCloudOption &params);
 
 bool ReadPointCloudFromPCD(const std::string &filename,
                            geometry::PointCloud &pointcloud,
