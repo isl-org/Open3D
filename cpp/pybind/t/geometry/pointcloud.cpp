@@ -215,6 +215,8 @@ The attributes of the point cloud have different levels::
             "remove_nan"_a = true, "remove_infinite"_a = true,
             "Remove all points from the point cloud that have a nan entry, or "
             "infinite value. It also removes the corresponding attributes.");
+    pointcloud.def("paint_uniform_color", &PointCloud::PaintUniformColor,
+                   "color"_a, "Assigns uniform color to the point cloud.");
 
     pointcloud.def("normalize_normals", &PointCloud::NormalizeNormals,
                    "Normalize point normals to length 1.");
@@ -375,6 +377,12 @@ Example:
             {{"nb_points",
               "Number of neighbor points required within the radius."},
              {"search_radius", "Radius of the sphere."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "paint_uniform_color",
+            {{"color",
+              "Color of the pointcloud. Floating color values are clipped "
+              "between 0.0 and 1.0."}});
+
     docstring::ClassMethodDocInject(
             m, "PointCloud", "cluster_dbscan",
             {{"eps",

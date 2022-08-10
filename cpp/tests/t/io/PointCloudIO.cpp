@@ -69,7 +69,11 @@ struct ReadWritePCArgs {
 
 const std::unordered_map<std::string, TensorCtorData> pc_data_1{
         {"positions", {{0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1}, {5, 3}}},
-        {"intensities", {{0, 0.5, 0.5, 0.5, 1}, {5, 1}}}};
+        {"intensities", {{0, 0.5, 0.5, 0.5, 1}, {5, 1}}},
+        {"colors",
+         {{0.5, 0.3, 0.2, 0, 1, 0.5, 0.6, 0, 1, 1, 0.5, 0.7, 0.3, 0, 0.5},
+          {5, 3}}},
+};
 
 // Bad data.
 const std::unordered_map<std::string, TensorCtorData> pc_data_bad{
@@ -82,10 +86,14 @@ const std::vector<ReadWritePCArgs> pcArgs({
          IsAscii::ASCII,
          Compressed::UNCOMPRESSED,
          {{"positions", 1e-5}, {"intensities", 1e-5}}},  // 0
+        {"test.xyzrgb",
+         IsAscii::ASCII,
+         Compressed::UNCOMPRESSED,
+         {{"positions", 1e-5}, {"colors", 1e-5}}},  // 1
         {"test.ply",
          IsAscii::ASCII,
          Compressed::UNCOMPRESSED,
-         {{"positions", 1e-5}, {"intensities", 1e-5}}},  // 1
+         {{"positions", 1e-5}, {"intensities", 1e-5}, {"colors", 1e-5}}},  // 2
 });
 
 class ReadWriteTPC : public testing::TestWithParam<ReadWritePCArgs> {};
