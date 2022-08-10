@@ -73,7 +73,12 @@ The following shows how to create a scene and compute ray intersections::
 )doc");
 
     // Constructors.
-    raycasting_scene.def(py::init<>());
+    raycasting_scene.def(py::init<int64_t>(), "nthreads"_a = 0, R"doc(
+Create a RaycastingScene.
+
+Args:
+    nthreads (int): The number of threads to use for building the scene. Set to 0 for automatic.
+)doc");
 
     raycasting_scene.def(
             "add_triangles",

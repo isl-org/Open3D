@@ -158,6 +158,41 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
     return distances;
 }
 
+PointCloud &PointCloud::RemoveDuplicatedPoints() {
+    const bool has_normals = HasNormals();
+    const bool has_colors = HasColors();
+    const bool has_covariances = HasCovariances();
+    const size_t old_points_num = points_.size();
+    size_t k = 0;
+
+    typedef std::tuple<double, double, double> Coordinate3;
+    std::unordered_map<Coordinate3, size_t, utility::hash_tuple<Coordinate3>>
+            point_to_old_index;
+
+    for (size_t i = 0; i < old_points_num; i++) {
+        Coordinate3 coord =
+                std::make_tuple(points_[i](0), points_[i](1), points_[i](2));
+        if (point_to_old_index.find(coord) == point_to_old_index.end()) {
+            point_to_old_index[coord] = i;
+            points_[k] = points_[i];
+            if (has_normals) normals_[k] = normals_[i];
+            if (has_covariances) covariances_[k] = covariances_[i];
+            if (has_colors) colors_[k] = colors_[i];
+            k++;
+        }
+    }
+
+    points_.resize(k);
+    if (has_normals) normals_.resize(k);
+    if (has_covariances) covariances_.resize(k);
+    if (has_colors) colors_.resize(k);
+
+    utility::LogDebug("[RemoveDuplicatedPoints] {:d} points have been removed.",
+                      (int)(old_points_num - k));
+
+    return *this;
+}
+
 PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
                                               bool remove_infinite) {
     bool has_normal = HasNormals();
@@ -180,13 +215,16 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
             k++;
         }
     }
+
     points_.resize(k);
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
     if (has_covariance) covariances_.resize(k);
+
     utility::LogDebug(
             "[RemoveNonFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
+
     return *this;
 }
 
@@ -210,9 +248,11 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
             if (has_covariance) output->covariances_.push_back(covariances_[i]);
         }
     }
+
     utility::LogDebug(
             "Pointcloud down sampled from {:d} points to {:d} points.",
             (int)points_.size(), (int)output->points_.size());
+
     return output;
 }
 

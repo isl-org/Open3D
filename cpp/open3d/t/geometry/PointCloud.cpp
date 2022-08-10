@@ -419,6 +419,23 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
                            finite_indices_mask);
 }
 
+PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {
+    core::AssertTensorShape(color, {3});
+    core::Tensor clipped_color = color.To(GetDevice());
+    if (color.GetDtype() == core::Float32 ||
+        color.GetDtype() == core::Float64) {
+        clipped_color = clipped_color.Clip(0.0f, 1.0f);
+    }
+    core::Tensor pcd_colors =
+            core::Tensor::Empty({GetPointPositions().GetLength(), 3},
+                                clipped_color.GetDtype(), GetDevice());
+    pcd_colors.AsRvalue() = clipped_color;
+    PointCloud pcd(this->Clone());
+    pcd.SetPointColors(pcd_colors);
+
+    return pcd;
+}
+
 void PointCloud::EstimateNormals(
         const int max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {

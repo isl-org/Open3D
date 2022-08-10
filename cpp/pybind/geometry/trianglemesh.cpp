@@ -84,7 +84,7 @@ void pybind_trianglemesh(py::module &m) {
                  "list is needed")
             .def("remove_duplicated_vertices",
                  &TriangleMesh::RemoveDuplicatedVertices,
-                 "Function that removes duplicated verties, i.e., vertices "
+                 "Function that removes duplicated vertices, i.e., vertices "
                  "that have identical coordinates.")
             .def("remove_duplicated_triangles",
                  &TriangleMesh::RemoveDuplicatedTriangles,

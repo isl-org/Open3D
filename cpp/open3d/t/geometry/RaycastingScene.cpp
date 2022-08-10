@@ -469,8 +469,14 @@ struct RaycastingScene::Impl {
     }
 };
 
-RaycastingScene::RaycastingScene() : impl_(new RaycastingScene::Impl()) {
-    impl_->device_ = rtcNewDevice(NULL);
+RaycastingScene::RaycastingScene(int64_t nthreads)
+    : impl_(new RaycastingScene::Impl()) {
+    if (nthreads > 0) {
+        std::string config("threads=" + std::to_string(nthreads));
+        impl_->device_ = rtcNewDevice(config.c_str());
+    } else {
+        impl_->device_ = rtcNewDevice(NULL);
+    }
     rtcSetDeviceErrorFunction(impl_->device_, ErrorFunction, NULL);
 
     impl_->scene_ = rtcNewScene(impl_->device_);
