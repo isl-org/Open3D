@@ -30,6 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -222,6 +223,44 @@ This example shows how to create a hemisphere from a sphere::
     o3d.visualization.draw(hemisphere)
 )");
 
+    triangle_mesh.def(
+            "slice_plane",
+            // Accept anything for contour_values that pybind can convert to
+            // std::list. This also avoids o3d.utility.DoubleVector.
+            [](const TriangleMesh& self, const core::Tensor& point,
+               const core::Tensor& normal, std::list<double> contour_values) {
+                std::vector<double> cv(contour_values.begin(),
+                                       contour_values.end());
+                return self.SlicePlane(point, normal, cv);
+            },
+            "point"_a, "normal"_a, "contour_values"_a = std::list<double>{0.0},
+            R"(Returns a line set with the contour slices defined by the plane and values.
+
+This method generates slices as LineSet from the mesh at specific contour 
+values with respect to a plane.
+
+Args:
+    point (open3d.core.Tensor): A point on the plane.
+    normal (open3d.core.Tensor): The normal of the plane.
+    contour_values (list): A list of contour values at which slices will be
+        generated. The value describes the signed distance to the plane.
+
+Returns:
+    LineSet with he extracted contours.
+
+
+This example shows how to create a hemisphere from a sphere::
+
+    import open3d as o3d
+    import numpy as np
+
+    bunny = o3d.data.BunnyMesh()
+    mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+    contours = mesh.slice_plane([0,0,0], [0,1,0], np.linspace(0,0.2))
+    o3d.visualization.draw([{'name': 'bunny', 'geometry': contours}])
+
+)");
+
     // Triangle Mesh's creation APIs.
     triangle_mesh
             .def_static("create_box", &TriangleMesh::CreateBox,
@@ -408,6 +447,33 @@ This example shows how to create a hemisphere from a sphere::
              {"int_dtype", "Int_dtype, Int32 or Int64."},
              {"device", "Device of the create octahedron."}});
 
+    triangle_mesh.def_static("create_text", &TriangleMesh::CreateText, "text"_a,
+                             "depth"_a = 0.0, "float_dtype"_a = core::Float32,
+                             "int_dtype"_a = core::Int64,
+                             "device"_a = core::Device("CPU:0"),
+                             R"(Create a triangle mesh from a text string.
+    
+Args:
+    text (str): The text for generating the mesh. ASCII characters 32-126 are 
+        supported (includes alphanumeric characters and punctuation). In 
+        addition the line feed '\n' is supported to start a new line. 
+    depth (float): The depth of the generated mesh. If depth is 0 then a flat mesh will be generated.
+    float_dtype (o3d.core.Dtype): Float type for the vertices. Either Float32 or Float64.
+    int_dtype (o3d.core.Dtype): Int type for the triangle indices. Either Int32 or Int64.
+    device (o3d.core.Device): The device for the returned mesh.
+
+Returns:
+    Text as triangle mesh.
+
+Example:
+    This shows how to simplifify the Stanford Bunny mesh::
+
+        import open3d as o3d
+
+        mesh = o3d.t.geometry.TriangleMesh.create_text('Open3D', depth=1)
+        o3d.visualization.draw([{'name': 'text', 'geometry': mesh}])
+)");
+
     triangle_mesh.def(
             "simplify_quadric_decimation",
             &TriangleMesh::SimplifyQuadricDecimation, "target_reduction"_a,
@@ -529,6 +595,11 @@ Example:
 
         o3d.visualization.draw([{'name': 'difference', 'geometry': ans}])
 )");
+
+    triangle_mesh.def("get_axis_aligned_bounding_box",
+                      &TriangleMesh::GetAxisAlignedBoundingBox,
+                      "Create an axis-aligned bounding box from vertex "
+                      "attribute 'positions'.");
 
     triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
                       "hole_size"_a = 1e6,

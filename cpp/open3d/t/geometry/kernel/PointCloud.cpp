@@ -116,6 +116,31 @@ void Project(
     }
 }
 
+void GetPointMaskWithinAABB(const core::Tensor& points,
+                            const core::Tensor& min_bound,
+                            const core::Tensor& max_bound,
+                            core::Tensor& mask) {
+    core::AssertTensorShape(min_bound, {3});
+    core::AssertTensorShape(max_bound, {3});
+    core::AssertTensorShape(mask, {points.GetLength()});
+    // Mask must be a bool tensor.
+    core::AssertTensorDtype(mask, core::Bool);
+
+    // Convert points, min_bound and max_bound into contiguous Tensor.
+    const core::Tensor min_bound_d = min_bound.Contiguous();
+    const core::Tensor max_bound_d = max_bound.Contiguous();
+    const core::Tensor points_d = points.Contiguous();
+
+    if (mask.IsCPU()) {
+        GetPointMaskWithinAABBCPU(points_d, min_bound_d, max_bound_d, mask);
+    } else if (mask.IsCUDA()) {
+        CUDA_CALL(GetPointMaskWithinAABBCUDA, points_d, min_bound_d,
+                  max_bound_d, mask);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
 }  // namespace pointcloud
 }  // namespace kernel
 }  // namespace geometry
