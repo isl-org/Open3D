@@ -128,7 +128,7 @@ struct FileDialog::Impl {
     std::shared_ptr<Combobox> dirtree_;
     std::shared_ptr<ListView> filelist_;
     std::shared_ptr<Combobox> filter_;
-    std::unordered_map<int, std::unordered_set<std::string>>
+    std::unordered_map<int, std::unordered_set<std::string> >
             filter_idx_2_filter;
     std::shared_ptr<Horiz> filter_row_;
     std::shared_ptr<Button> ok_;
