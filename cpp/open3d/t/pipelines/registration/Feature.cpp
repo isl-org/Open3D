@@ -37,36 +37,54 @@ namespace registration {
 
 core::Tensor ComputeFPFHFeature(
         const geometry::PointCloud &input,
-        const int max_nn = 100,
+        const utility::optional<int> max_nn = 100,
         const utility::optional<double> radius = utility::nullopt) {
     core::AssertTensorDtypes(input.GetPointPositions(),
                              {core::Float64, core::Float32});
-    if (max_nn <= 1) {
-        utility::LogError("max_nn must be greater than 1.");
+    if (max_nn.value() <= 3) {
+        utility::LogError("max_nn must be greater than 3.");
     }
     if (radius.value() <= 0) {
         utility::LogError("radius must be greater than 0.");
     }
 
+    if (!input.HasPointNormals()) {
+        utility::LogError("Failed because input point cloud has no normal.");
+    }
+
+    const int64_t num_points = input.GetPointPositions().GetLength();
+    const core::Dtype dtype = input.GetPointPositions().GetDtype();
+    const core::Device device = input.GetPointPositions().GetDevice();
+
     // Compute nearest neighbors and squared distances.
-    core::Tensor indices, distance2;
+    core::Tensor indices, distance2, counts;
     core::nns::NearestNeighborSearch tree(input.GetPointPositions(),
                                           core::Int32);
-    if (radius.has_value()) {
+    if (radius.has_value() && max_nn.has_value()) {
         bool check = tree.HybridIndex(radius.value());
         if (!check) {
             utility::LogError("Building HybridIndex failed.");
         }
-        core::Tensor counts;
         std::tie(indices, distance2, counts) = tree.HybridSearch(
-                input.GetPointPositions(), radius.value(), max_nn);
-    } else {
+                input.GetPointPositions(), radius.value(), max_nn.value());
+    } else if (!radius.has_value() && max_nn.has_value()) {
         bool check = tree.KnnIndex();
         if (!check) {
             utility::LogError("Building KnnIndex failed.");
         }
-        std::tie(indices, distance2) = tree.KnnSearch(
-                input.GetPointPositions(), max_nn);
+        std::tie(indices, distance2) =
+                tree.KnnSearch(input.GetPointPositions(), max_nn.value());
+
+        // Make counts full with max_nn.
+        counts =
+                core::Tensor::Full({num_points}, max_nn.value(), dtype, device);
+    } else if (radius.has_value() && !max_nn.has_value()) {
+        bool check = tree.FixedRadiusIndex(radius.value());
+        if (!check) {
+            utility::LogError("Building RadiusIndex failed.");
+        }
+        std::tie(indices, distance2, counts) = tree.FixedRadiusSearch(
+                input.GetPointPositions(), radius.value());
     }
 
     const core::Device device = input.GetDevice();
@@ -74,7 +92,6 @@ core::Tensor ComputeFPFHFeature(
     const int64_t size = input.GetPointPositions().GetLength();
 
     core::Tensor fpfh = core::Tensor::Zeros({size, 33}, dtype, device);
-
 }
 
 }  // namespace registration

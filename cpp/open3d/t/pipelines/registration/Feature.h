@@ -41,14 +41,15 @@ namespace registration {
 /// Function to compute FPFH feature for a point cloud.
 ///
 /// \param input The Input point cloud.
-/// \param max_nn Neighbor search max neighbors parameter [Default = 100].
+/// \param max_nn [optional] Neighbor search max neighbors parameter [Default =
+/// 100].
 /// \param radius [optional] Neighbor search radius parameter to use
 /// HybridSearch. [Recommended ~5x voxel size].
 /// \return A Tensor of FPFH feature of the input point cloud with shape {N,
 /// 33}, data type and device same as input.
 core::Tensor ComputeFPFHFeature(
         const geometry::PointCloud &input,
-        const int max_nn = 100,
+        const utility::optional<int> max_nn = 100,
         const utility::optional<double> radius = utility::nullopt);
 
 }  // namespace registration

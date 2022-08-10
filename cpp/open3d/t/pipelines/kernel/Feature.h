@@ -35,20 +35,20 @@ namespace kernel {
 void ComputeSPFHFeature(const core::Tensor &points,
                         const core::Tensor &normals,
                         const core::Tensor &indices,
-                        const core::Tensor &distance2,
+                        const core::Tensor &counts,
                         core::Tensor &spfhs);
 
 void ComputeSPFHFeatureCPU(const core::Tensor &points,
                            const core::Tensor &normals,
                            const core::Tensor &indices,
-                           const core::Tensor &distance2,
+                           const core::Tensor &counts,
                            core::Tensor &spfhs);
 
 #ifdef BUILD_CUDA_MODULE
 void ComputeSPFHFeatureCUDA(const core::Tensor &points,
                             const core::Tensor &normals,
                             const core::Tensor &indices,
-                            const core::Tensor &distance2,
+                            const core::Tensor &counts,
                             core::Tensor &spfhs);
 #endif
 

@@ -33,6 +33,11 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
+#ifndef __CUDACC__
+using std::max;
+using std::min;
+#endif
+
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE void ComputePairFeature(const scalar_t *p1,
                                            const scalar_t *n1,
@@ -43,6 +48,15 @@ OPEN3D_HOST_DEVICE void ComputePairFeature(const scalar_t *p1,
     dp2p1[0] = p2[0] - p1[0];
     dp2p1[1] = p2[1] - p1[1];
     dp2p1[2] = p2[2] - p1[2];
+    feature[3] = sqrt(dp2p1[0] * dp2p1[0] + dp2p1[1] * dp2p1[1] +
+                      dp2p1[2] * dp2p1[2]);
+    if (feature[3] == 0) {
+        feature[0] = 0;
+        feature[1] = 0;
+        feature[2] = 0;
+        feature[3] = 0;
+        return;
+    }
 
     const scalar_t angle1 =
             core::linalg::kernel::dot_3x1(n1, dp2p1) / feature[3];
@@ -88,6 +102,34 @@ OPEN3D_HOST_DEVICE void ComputePairFeature(const scalar_t *p1,
                        core::linalg::kernel::dot_3x1(n1_copy, n2_copy));
 }
 
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE void UpdateSPFHFeature(const scalar_t *feature,
+                                          int64_t idx,
+                                          scalar_t hist_incr,
+                                          scalar_t *spfh) {
+    int h_index =
+            static_cast<int>(floor(11 * (feature[0] + M_PI) / (2.0 * M_PI)));
+    h_index = max(0, h_index);
+    if (h_index >= 11) {
+        h_index = 10;
+    }
+    spfh[idx * 33 + h_index] += hist_incr;
+
+    h_index = static_cast<int>(floor(11 * (feature[1] + 1.0) * 0.5));
+    h_index = max(0, h_index);
+    if (h_index >= 11) {
+        h_index = 10;
+    }
+    spfh[idx * 33 + h_index + 11] += hist_incr;
+
+    h_index = static_cast<int>(floor(11 * (feature[2] + 1.0) * 0.5));
+    h_index = max(0, h_index);
+    if (h_index >= 11) {
+        h_index = 10;
+    }
+    spfh[idx * 33 + h_index + 22] += hist_incr;
+}
+
 #if defined(__CUDACC__)
 void ComputeSPFHFeatureCUDA
 #else
@@ -96,7 +138,7 @@ void ComputeSPFHFeatureCPU
         (const core::Tensor &points,
          const core::Tensor &normals,
          const core::Tensor &indices,
-         const core::Tensor &distance2,
+         const core::Tensor &counts,
          core::Tensor &spfhs) {
     const core::Dtype dtype = points.GetDtype();
     const int64_t n = points.GetLength();
@@ -106,13 +148,12 @@ void ComputeSPFHFeatureCPU
         const scalar_t *points_ptr = points.GetDataPtr<scalar_t>();
         const scalar_t *normals_ptr = normals.GetDataPtr<scalar_t>();
         const int32_t *indices_ptr = indices.GetDataPtr<int32_t>();
-        const scalar_t *distance2_ptr = distance2.GetDataPtr<scalar_t>();
+        const int64_t *counts_ptr = counts.GetDataPtr<int64_t>();
         scalar_t *spfhs_ptr = spfhs.GetDataPtr<scalar_t>();
 
         core::ParallelFor(points.GetDevice(), n,
                           [=] OPEN3D_DEVICE(int64_t workload_idx) {
                               int64_t idx = 3 * workload_idx;
-                              
                           });
     });
 }
