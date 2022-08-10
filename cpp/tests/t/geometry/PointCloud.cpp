@@ -910,145 +910,144 @@ TEST_P(PointCloudPermuteDevices, HiddenPointRemoval) {
     EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
             pcd.SelectByIndex(pt_map).GetPointPositions()));
     EXPECT_EQ(mesh.GetVertexPositions().GetLength(), 24581);
+}
 
-    TEST_P(PointCloudPermuteDevices, PaintUniformColor) {
-        core::Device device = GetParam();
+TEST_P(PointCloudPermuteDevices, PaintUniformColor) {
+    core::Device device = GetParam();
 
-        const t::geometry::PointCloud pcd_small(
-                core::Tensor::Init<double>({{1.0, 1.0, 1.0},
-                                            {1.1, 1.1, 1.1},
-                                            {1.2, 1.2, 1.2},
-                                            {5.1, 5.1, 5.1}},
-                                           device));
+    const t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<double>({{1.0, 1.0, 1.0},
+                                        {1.1, 1.1, 1.1},
+                                        {1.2, 1.2, 1.2},
+                                        {5.1, 5.1, 5.1}},
+                                       device));
 
-        const core::Tensor color =
-                core::Tensor::Init<float>({0.5, 2.3, -1.3}, device);
+    const core::Tensor color =
+            core::Tensor::Init<float>({0.5, 2.3, -1.3}, device);
 
-        t::geometry::PointCloud output_pcd = pcd_small.PaintUniformColor(color);
+    t::geometry::PointCloud output_pcd = pcd_small.PaintUniformColor(color);
 
-        EXPECT_TRUE(output_pcd.GetPointColors().AllClose(
-                core::Tensor::Init<float>({{0.5, 1.0, 0.0},
-                                           {0.5, 1.0, 0.0},
-                                           {0.5, 1.0, 0.0},
-                                           {0.5, 1.0, 0.0}},
-                                          device)));
-    }
+    EXPECT_TRUE(output_pcd.GetPointColors().AllClose(
+            core::Tensor::Init<float>({{0.5, 1.0, 0.0},
+                                       {0.5, 1.0, 0.0},
+                                       {0.5, 1.0, 0.0},
+                                       {0.5, 1.0, 0.0}},
+                                      device)));
+}
 
-    TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
-        core::Device device = GetParam();
+TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
+    core::Device device = GetParam();
 
-        t::geometry::PointCloud pcd;
-        data::PLYPointCloud pointcloud_ply;
-        t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
-        EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
+    t::geometry::PointCloud pcd;
+    data::PLYPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
+    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
 
-        // Hard-coded test
-        pcd = pcd.To(device);
-        core::Tensor cluster = pcd.ClusterDBSCAN(0.02, 10, false);
+    // Hard-coded test
+    pcd = pcd.To(device);
+    core::Tensor cluster = pcd.ClusterDBSCAN(0.02, 10, false);
 
-        cluster = cluster.To(core::Device("CPU:0"));
-        EXPECT_EQ(cluster.GetDtype(), core::Int32);
-        EXPECT_EQ(cluster.GetLength(), 196133);
-        std::unordered_set<int> cluster_set(
-                cluster.GetDataPtr<int>(),
-                cluster.GetDataPtr<int>() + cluster.GetLength());
-        EXPECT_EQ(cluster_set.size(), 11);
-        int cluster_sum = cluster.Sum({0}).Item<int>();
-        EXPECT_EQ(cluster_sum, 398580);
-    }
+    cluster = cluster.To(core::Device("CPU:0"));
+    EXPECT_EQ(cluster.GetDtype(), core::Int32);
+    EXPECT_EQ(cluster.GetLength(), 196133);
+    std::unordered_set<int> cluster_set(
+            cluster.GetDataPtr<int>(),
+            cluster.GetDataPtr<int>() + cluster.GetLength());
+    EXPECT_EQ(cluster_set.size(), 11);
+    int cluster_sum = cluster.Sum({0}).Item<int>();
+    EXPECT_EQ(cluster_sum, 398580);
+}
 
-    TEST_P(PointCloudPermuteDevices, SegmentPlane) {
-        core::Device device = GetParam();
+TEST_P(PointCloudPermuteDevices, SegmentPlane) {
+    core::Device device = GetParam();
 
-        t::geometry::PointCloud pcd;
-        data::PCDPointCloud pointcloud_ply;
-        t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
-        EXPECT_EQ(pcd.GetPointPositions().GetLength(), 113662);
+    t::geometry::PointCloud pcd;
+    data::PCDPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
+    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 113662);
 
-        // Hard-coded test
-        pcd = pcd.To(device);
-        core::Tensor plane_model;
-        core::Tensor inliers;
-        std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 1000);
-        EXPECT_TRUE(plane_model.AllClose(
-                core::Tensor::Init<double>({-0.06, -0.10, 0.99, -1.06}, device),
-                0.1, 0.1));
+    // Hard-coded test
+    pcd = pcd.To(device);
+    core::Tensor plane_model;
+    core::Tensor inliers;
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 1000);
+    EXPECT_TRUE(plane_model.AllClose(
+            core::Tensor::Init<double>({-0.06, -0.10, 0.99, -1.06}, device),
+            0.1, 0.1));
 
-        std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 10, 1000);
-        EXPECT_TRUE(plane_model.AllClose(
-                core::Tensor::Init<double>({-0.06, -0.10, 0.99, -1.06}, device),
-                0.1, 0.1));
-    }
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 10, 1000);
+    EXPECT_TRUE(plane_model.AllClose(
+            core::Tensor::Init<double>({-0.06, -0.10, 0.99, -1.06}, device),
+            0.1, 0.1));
+}
 
-    TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
-        core::Device device = GetParam();
+TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
+    core::Device device = GetParam();
 
-        t::geometry::PointCloud pcd(device);
-        t::geometry::TriangleMesh mesh(device);
+    t::geometry::PointCloud pcd(device);
+    t::geometry::TriangleMesh mesh(device);
 
-        // Needs at least 4 points
-        pcd.SetPointPositions(core::Tensor({0, 3}, core::Float32, device));
-        EXPECT_ANY_THROW(pcd.ComputeConvexHull());
-        pcd.SetPointPositions(core::Tensor::Init<float>({{0, 0, 0}}, device));
-        EXPECT_ANY_THROW(pcd.ComputeConvexHull());
-        pcd.SetPointPositions(
-                core::Tensor::Init<float>({{0, 0, 0}, {0, 0, 1}}, device));
-        EXPECT_ANY_THROW(pcd.ComputeConvexHull());
-        pcd.SetPointPositions(core::Tensor::Init<float>(
-                {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}}, device));
-        EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    // Needs at least 4 points
+    pcd.SetPointPositions(core::Tensor({0, 3}, core::Float32, device));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    pcd.SetPointPositions(core::Tensor::Init<float>({{0, 0, 0}}, device));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    pcd.SetPointPositions(
+            core::Tensor::Init<float>({{0, 0, 0}, {0, 0, 1}}, device));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    pcd.SetPointPositions(core::Tensor::Init<float>(
+            {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}}, device));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
 
-        // Degenerate input
-        pcd.SetPointPositions(core::Tensor::Init<float>(
-                {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}, device));
-        EXPECT_ANY_THROW(pcd.ComputeConvexHull());
-        // Allow adding random noise to fix the degenerate input
-        EXPECT_NO_THROW(pcd.ComputeConvexHull(true));
+    // Degenerate input
+    pcd.SetPointPositions(core::Tensor::Init<float>(
+            {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}, device));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    // Allow adding random noise to fix the degenerate input
+    EXPECT_NO_THROW(pcd.ComputeConvexHull(true));
 
-        // Hard-coded test
-        pcd.SetPointPositions(core::Tensor::Init<double>(
-                {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, device));
-        mesh = pcd.ComputeConvexHull();
-        auto point_indices = mesh.GetVertexAttr("point_indices");
-        EXPECT_EQ(point_indices.GetDtype(), core::Int32);
-        EXPECT_EQ(point_indices.ToFlatVector<int>(),
-                  std::vector<int>({2, 3, 0, 1}));
-        EXPECT_TRUE(mesh.GetVertexPositions().AllEqual(
-                pcd.GetPointPositions().IndexGet(
-                        {point_indices.To(core::Int64)})));
+    // Hard-coded test
+    pcd.SetPointPositions(core::Tensor::Init<double>(
+            {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, device));
+    mesh = pcd.ComputeConvexHull();
+    auto point_indices = mesh.GetVertexAttr("point_indices");
+    EXPECT_EQ(point_indices.GetDtype(), core::Int32);
+    EXPECT_EQ(point_indices.ToFlatVector<int>(),
+              std::vector<int>({2, 3, 0, 1}));
+    EXPECT_TRUE(mesh.GetVertexPositions().AllEqual(
+            pcd.GetPointPositions().IndexGet({point_indices.To(core::Int64)})));
 
-        // Hard-coded test
-        pcd.SetPointPositions(core::Tensor::Init<double>({{0.5, 0.5, 0.5},
-                                                          {0, 0, 0},
-                                                          {0, 0, 1},
-                                                          {0, 1, 0},
-                                                          {0, 1, 1},
-                                                          {1, 0, 0},
-                                                          {1, 0, 1},
-                                                          {1, 1, 0},
-                                                          {1, 1, 1}},
-                                                         device));
-        mesh = pcd.ComputeConvexHull();
-        point_indices = mesh.GetVertexAttr("point_indices");
-        EXPECT_EQ(point_indices.ToFlatVector<int>(),
-                  std::vector<int>({7, 3, 1, 5, 6, 2, 8, 4}));
-        EXPECT_TRUE(mesh.GetVertexPositions().AllEqual(
-                pcd.GetPointPositions().IndexGet(
-                        {point_indices.To(core::Int64)})));
-        ExpectEQ(mesh.GetTriangleIndices().ToFlatVector<int>(),
-                 std::vector<int>{1, 0, 2,  //
-                                  0, 3, 2,  //
-                                  3, 4, 2,  //
-                                  4, 5, 2,  //
-                                  0, 4, 3,  //
-                                  4, 0, 6,  //
-                                  7, 1, 2,  //
-                                  5, 7, 2,  //
-                                  7, 0, 1,  //
-                                  0, 7, 6,  //
-                                  4, 7, 5,  //
-                                  7, 4, 6});
-    }
+    // Hard-coded test
+    pcd.SetPointPositions(core::Tensor::Init<double>({{0.5, 0.5, 0.5},
+                                                      {0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0},
+                                                      {1, 1, 1}},
+                                                     device));
+    mesh = pcd.ComputeConvexHull();
+    point_indices = mesh.GetVertexAttr("point_indices");
+    EXPECT_EQ(point_indices.ToFlatVector<int>(),
+              std::vector<int>({7, 3, 1, 5, 6, 2, 8, 4}));
+    EXPECT_TRUE(mesh.GetVertexPositions().AllEqual(
+            pcd.GetPointPositions().IndexGet({point_indices.To(core::Int64)})));
+    ExpectEQ(mesh.GetTriangleIndices().ToFlatVector<int>(),
+             std::vector<int>{1, 0, 2,  //
+                              0, 3, 2,  //
+                              3, 4, 2,  //
+                              4, 5, 2,  //
+                              0, 4, 3,  //
+                              4, 0, 6,  //
+                              7, 1, 2,  //
+                              5, 7, 2,  //
+                              7, 0, 1,  //
+                              0, 7, 6,  //
+                              4, 7, 5,  //
+                              7, 4, 6});
+}
 
 }  // namespace tests
-}  // namespace tests
+}  // namespace open3d
