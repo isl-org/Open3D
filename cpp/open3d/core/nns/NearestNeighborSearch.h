@@ -99,9 +99,8 @@ public:
     /// same as index_dtype_.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
     /// with query_points. The distances are squared L2 distances.
-    /// - num_neighbors: Tensor of shape {n+1,}, with dtype same as
-    /// index_dtype_. The Tensor is a prefix sum of the number of neighbors for
-    /// each query point.
+    /// - num_neighbors: Tensor of shape {n+1,}, with dtype Int64. The Tensor is
+    /// a prefix sum of the number of neighbors for each query point.
     std::tuple<Tensor, Tensor, Tensor> FixedRadiusSearch(
             const Tensor &query_points, double radius, bool sort = true);
 
@@ -115,9 +114,8 @@ public:
     /// same as index_dtype_.
     /// - distances: Tensor of shape {total_number_of_neighbors,}, same dtype
     /// with query_points. The distances are squared L2 distances.
-    /// - num_neighbors: Tensor of shape {n+1,}, with dtype same as
-    /// index_dtype_. The Tensor is a prefix sum of the number of neighbors for
-    /// each query point.
+    /// - num_neighbors: Tensor of shape {n+1,}, with dtype Int64. The Tensor is
+    /// a prefix sum of the number of neighbors for each query point.
     std::tuple<Tensor, Tensor, Tensor> MultiRadiusSearch(
             const Tensor &query_points, const Tensor &radii);
 

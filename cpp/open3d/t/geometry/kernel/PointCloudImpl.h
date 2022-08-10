@@ -338,7 +338,7 @@ void EstimateCovariancesUsingRadiusSearchCPU
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
         const int32_t* neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
-        const int32_t* neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
+        const int64_t* neighbour_counts_ptr = counts.GetDataPtr<int64_t>();
         scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
@@ -972,7 +972,7 @@ void EstimateColorGradientsUsingRadiusSearchCPU
         auto normals_ptr = normals.GetDataPtr<scalar_t>();
         auto colors_ptr = colors.GetDataPtr<scalar_t>();
         auto neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
-        auto neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
+        auto neighbour_counts_ptr = counts.GetDataPtr<int64_t>();
         auto color_gradients_ptr = color_gradients.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
