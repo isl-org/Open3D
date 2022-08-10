@@ -51,7 +51,7 @@ public:
     PyOffscreenRenderer(int width,
                         int height,
                         const std::string &resource_path) {
-        gui::InitializeForPython(resource_path);
+        gui::InitializeForPython(resource_path, true);
         width_ = width;
         height_ = height;
         // NOTE: OffscreenRenderer now always uses headless so that a window
@@ -66,6 +66,8 @@ public:
     ~PyOffscreenRenderer() {
         delete scene_;
         delete renderer_;
+        // Destroy Filament Engine here so OffscreenRenderer can be reused
+        EngineInstance::DestroyInstance();
     }
 
     Open3DScene *GetScene() { return scene_; }
