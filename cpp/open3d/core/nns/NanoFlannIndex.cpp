@@ -136,9 +136,9 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         utility::LogError("radius should be larger than 0.");
     }
 
-    Tensor indices, distances;
-    Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
+    Tensor indices, distances, neighbors_row_splits;
     DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+        neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
         const Tensor query_contiguous = query_points.Contiguous();
         NeighborSearchAllocator<scalar_t, int_t> output_allocator(device);
 
@@ -154,8 +154,10 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
                 /* normalize_distances */ false, sort, output_allocator);
         indices = output_allocator.NeighborsIndex();
         distances = output_allocator.NeighborsDistance();
+        return std::make_tuple(
+                indices, distances,
+                neighbors_row_splits.To(Dtype::FromType<int_t>()));
     });
-    return std::make_tuple(indices, distances, neighbors_row_splits);
 };
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(

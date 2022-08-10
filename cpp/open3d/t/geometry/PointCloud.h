@@ -422,24 +422,32 @@ public:
 public:
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.
-    /// It uses KNN search if only max_nn parameter is provided, and
-    /// HybridSearch if radius parameter is also provided.
-    /// \param max_nn Neighbor search max neighbors parameter [Default = 30].
-    /// \param radius [optional] Neighbor search radius parameter to use
-    /// HybridSearch. [Recommended ~1.4x voxel size].
+    /// It uses KNN search if only max_nn parameter is provided, Radius search
+    /// if only radius is provided and HybridSearch if radius parameter is also
+    /// provided.
+    ///
+    /// \param max_nn [optional] Neighbor search max neighbors parameter
+    /// [Default = 30].
+    /// \param radius [optional] Neighbor search radius parameter. [Recommended
+    /// ~1.4x voxel size].
     void EstimateNormals(
-            const int max_nn = 30,
+            const utility::optional<int> max_nn = 30,
             const utility::optional<double> radius = utility::nullopt);
 
     /// \brief Function to compute point color gradients. If radius is provided,
     /// then HybridSearch is used, otherwise KNN-Search is used.
     /// Reference: Park, Q.-Y. Zhou, and V. Koltun,
     /// Colored Point Cloud Registration Revisited, ICCV, 2017.
-    /// \param max_nn Neighbor search max neighbors parameter [Default = 30].
+    /// It uses KNN search if only max_nn parameter is provided, Radius search
+    /// if only radius is provided and HybridSearch if radius parameter is also
+    /// provided.
+    ///
+    /// \param max_nn [optional] Neighbor search max neighbors parameter
+    /// [Default = 30].
     /// \param radius [optional] Neighbor search radius parameter to use
     /// HybridSearch. [Recommended ~1.4x voxel size].
     void EstimateColorGradients(
-            const int max_nn = 30,
+            const utility::optional<int> max_nn = 30,
             const utility::optional<double> radius = utility::nullopt);
 
 public:
