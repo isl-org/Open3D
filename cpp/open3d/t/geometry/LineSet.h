@@ -31,6 +31,7 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/LineSet.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
@@ -138,6 +139,9 @@ public:
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
 
+    /// Getter for point_attr_ TensorMap.
+    TensorMap &GetPointAttr() { return point_attr_; }
+
     /// Get point attributes in point_attr_. Throws exception if the attribute
     /// does not exist.
     ///
@@ -152,6 +156,9 @@ public:
 
     /// Getter for line_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetLineAttr() const { return line_attr_; }
+
+    /// Getter for line_attr_ TensorMap.
+    TensorMap &GetLineAttr() { return line_attr_; }
 
     /// Get line attributes in line_attr_. Throws exception if the
     /// attribute does not exist.
@@ -365,6 +372,9 @@ public:
 
     /// Convert to a legacy Open3D LineSet.
     open3d::geometry::LineSet ToLegacy() const;
+
+    /// Create an axis-aligned bounding box from point attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

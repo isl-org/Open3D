@@ -256,16 +256,17 @@ pipelines from Open3D-ML in the python package, set ``BUNDLE_OPEN3D_ML=ON`` and
 Open3D-ML from GitHub during the build with
 ``OPEN3D_ML_ROOT=https://github.com/isl-org/Open3D-ML.git``.
 
-.. warning:: Compiling PyTorch ops with CUDA 11 may have stability issues. See
-    `Open3D issue #3324 <https://github.com/isl-org/Open3D/issues/3324>`_ and
-    `PyTorch issue #52663 <https://github.com/pytorch/pytorch/issues/52663>`_ for
-    more information on this problem.
+.. warning:: Compiling PyTorch ops with CUDA 11 and PyTorch < 1.9 may have
+    stability issues. See `Open3D issue #3324 <https://github.com/isl-org/Open3D/issues/3324>`_
+    and `PyTorch issue #52663 <https://github.com/pytorch/pytorch/issues/52663>`_
+    for more information on this problem. Official PyTorch wheels 1.9 and later
+    do not have this problem.
 
     We recommend to compile Pytorch from source
-    with compile flags ``-Xcompiler -fno-gnu-unique`` or use the `PyTorch
+    with compile flags ``-Xcompiler -fno-gnu-unique`` or use the `PyTorch 1.8.2
     wheels from Open3D.
     <https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2>`_
-    To reproduce the Open3D PyTorch wheels see the builder repository `here.
+    To reproduce the Open3D PyTorch 1.8.2 wheels see the builder repository `here.
     <https://github.com/isl-org/pytorch_builder>`_
 
 The following example shows the command for building the ops with GPU support
