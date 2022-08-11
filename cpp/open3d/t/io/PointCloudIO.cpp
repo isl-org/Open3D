@@ -47,7 +47,10 @@ static const std::unordered_map<
                            const open3d::io::ReadPointCloudOption &)>>
         file_extension_to_pointcloud_read_function{
                 {"npz", ReadPointCloudFromNPZ},
-                {"xyzi", ReadPointCloudFromXYZI},
+                {"xyz", ReadPointCloudFromTXT},
+                {"xyzi", ReadPointCloudFromTXT},
+                {"xyzn", ReadPointCloudFromTXT},
+                {"xyzrgb", ReadPointCloudFromTXT},
                 {"pcd", ReadPointCloudFromPCD},
                 {"ply", ReadPointCloudFromPLY},
                 {"pts", ReadPointCloudFromPTS},
@@ -59,8 +62,13 @@ static const std::unordered_map<
                            const geometry::PointCloud &,
                            const open3d::io::WritePointCloudOption &)>>
         file_extension_to_pointcloud_write_function{
-                {"npz", WritePointCloudToNPZ}, {"xyzi", WritePointCloudToXYZI},
-                {"pcd", WritePointCloudToPCD}, {"ply", WritePointCloudToPLY},
+                {"npz", WritePointCloudToNPZ},
+                {"xyz", WritePointCloudToTXT},
+                {"xyzi", WritePointCloudToTXT},
+                {"xyzn", WritePointCloudToTXT},
+                {"xyzrgb", WritePointCloudToTXT},
+                {"pcd", WritePointCloudToPCD},
+                {"ply", WritePointCloudToPLY},
                 {"pts", WritePointCloudToPTS},
         };
 

@@ -896,6 +896,29 @@ TEST_P(PointCloudPermuteDevices, RemoveNonFinitePoints) {
             {true, true, true, true, true, true}, device)));
 }
 
+TEST_P(PointCloudPermuteDevices, PaintUniformColor) {
+    core::Device device = GetParam();
+
+    const t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<double>({{1.0, 1.0, 1.0},
+                                        {1.1, 1.1, 1.1},
+                                        {1.2, 1.2, 1.2},
+                                        {5.1, 5.1, 5.1}},
+                                       device));
+
+    const core::Tensor color =
+            core::Tensor::Init<float>({0.5, 2.3, -1.3}, device);
+
+    t::geometry::PointCloud output_pcd = pcd_small.PaintUniformColor(color);
+
+    EXPECT_TRUE(output_pcd.GetPointColors().AllClose(
+            core::Tensor::Init<float>({{0.5, 1.0, 0.0},
+                                       {0.5, 1.0, 0.0},
+                                       {0.5, 1.0, 0.0},
+                                       {0.5, 1.0, 0.0}},
+                                      device)));
+}
+
 TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
     core::Device device = GetParam();
     if (!device.IsCPU()) {

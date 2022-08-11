@@ -31,7 +31,7 @@ docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
 
 ### ARM64 Docker
 
-You can build and run ARM64 docker. This works on a ARM64 host including Apple
+You can build and run ARM64 docker. This works on an ARM64 host including Apple
 Silicon. However, if your host is x86-64, you will need to install QEMU:
 
 ```bash
