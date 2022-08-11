@@ -41,7 +41,6 @@ static const std::unordered_map<
                            geometry::TriangleMesh &,
                            const open3d::io::ReadTriangleMeshOptions &)>>
         file_extension_to_trianglemesh_read_function{
-                {"ply", ReadTriangleMeshUsingASSIMP},
                 {"stl", ReadTriangleMeshUsingASSIMP},
                 {"obj", ReadTriangleMeshUsingASSIMP},
                 {"gltf", ReadTriangleMeshUsingASSIMP},
