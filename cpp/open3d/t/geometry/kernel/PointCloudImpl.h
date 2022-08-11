@@ -204,7 +204,7 @@ void GetPointMaskWithinOBBCPU
         const int64_t n = points.GetLength();
         const scalar_t* center_ptr = center.GetDataPtr<scalar_t>();
         const scalar_t* rotation_ptr =
-                rotation.Transpose(0, 1).GetDataPtr<scalar_t>();
+                rotation.Transpose(0, 1).Contiguous().GetDataPtr<scalar_t>();
         const scalar_t* extent_ptr = extent.GetDataPtr<scalar_t>();
         bool* mask_ptr = mask.GetDataPtr<bool>();
 
