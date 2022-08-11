@@ -5,6 +5,7 @@ open3d_ispc_add_library(tgeometry OBJECT)
 target_sources(tgeometry PRIVATE
     Image.cpp
     LineSet.cpp
+    BoundingVolume.cpp
     PointCloud.cpp
     RaycastingScene.cpp
     RGBDImage.cpp

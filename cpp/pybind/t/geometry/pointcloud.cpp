@@ -215,6 +215,8 @@ The attributes of the point cloud have different levels::
             "remove_nan"_a = true, "remove_infinite"_a = true,
             "Remove all points from the point cloud that have a nan entry, or "
             "infinite value. It also removes the corresponding attributes.");
+    pointcloud.def("paint_uniform_color", &PointCloud::PaintUniformColor,
+                   "color"_a, "Assigns uniform color to the point cloud.");
 
     pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
                    py::call_guard<py::gil_scoped_release>(),
@@ -313,6 +315,13 @@ Example:
     // conversion
     pointcloud.def("to_legacy", &PointCloud::ToLegacy,
                    "Convert to a legacy Open3D PointCloud.");
+    pointcloud.def(
+            "get_axis_aligned_bounding_box",
+            &PointCloud::GetAxisAlignedBoundingBox,
+            "Create an axis-aligned bounding box from attribute 'positions'.");
+    pointcloud.def("crop", &PointCloud::Crop,
+                   "Function to crop pointcloud into output pointcloud.",
+                   "aabb"_a, "invert"_a = false);
 
     docstring::ClassMethodDocInject(m, "PointCloud", "estimate_normals",
                                     map_shared_argument_docstrings);
@@ -354,12 +363,24 @@ Example:
               "Number of neighbor points required within the radius."},
              {"search_radius", "Radius of the sphere."}});
     docstring::ClassMethodDocInject(
+            m, "PointCloud", "paint_uniform_color",
+            {{"color",
+              "Color of the pointcloud. Floating color values are clipped "
+              "between 0.0 and 1.0."}});
+
+    docstring::ClassMethodDocInject(
             m, "PointCloud", "cluster_dbscan",
             {{"eps",
               "Density parameter that is used to find neighbouring points."},
              {"min_points", "Minimum number of points to form a cluster."},
              {"print_progress",
               "If true the progress is visualized in the console."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "crop",
+            {{"aabb", "AxisAlignedBoundingBox to crop points."},
+             {"invert",
+              "Crop the points outside of the bounding box or inside of the "
+              "bounding box."}});
 }
 
 }  // namespace geometry

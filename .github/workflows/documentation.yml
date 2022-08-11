@@ -58,7 +58,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.7
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@v0.2.1
         with:
