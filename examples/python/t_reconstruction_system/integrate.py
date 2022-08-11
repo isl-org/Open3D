@@ -37,7 +37,7 @@ import time
 import matplotlib.pyplot as plt
 
 from config import ConfigParser
-from common import load_rgbd_file_names, load_depth_file_names, save_poses, load_intrinsic, load_extrinsics, get_default_testdata
+from common import load_rgbd_file_names, load_depth_file_names, load_intrinsic, load_extrinsics, get_default_dataset
 
 
 def integrate(depth_file_names, color_file_names, depth_intrinsic,
@@ -110,6 +110,11 @@ if __name__ == '__main__':
         help='YAML config file path. Please refer to default_config.yml as a '
         'reference. It overrides the default config file, but will be '
         'overridden by other command line inputs.')
+    parser.add('--default_dataset',
+               help='Default dataset is used when config file is not provided. '
+               'Default dataset may be selected from the following options: '
+               '[lounge, jack_jack]',
+               default='lounge')
     parser.add('--integrate_color', action='store_true')
     parser.add('--path_trajectory',
                help='path to the trajectory .log or .json file.')
@@ -119,7 +124,7 @@ if __name__ == '__main__':
     config = parser.get_config()
 
     if config.path_dataset == '':
-        config = get_default_testdata(config)
+        config = get_default_dataset(config)
 
     if config.integrate_color:
         depth_file_names, color_file_names = load_rgbd_file_names(config)

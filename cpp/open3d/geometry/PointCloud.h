@@ -117,30 +117,34 @@ public:
         return *this;
     }
 
-    /// \brief Remove all points from the point cloud that have a nan entry, or
-    /// infinite entries.
-    ///
-    /// Also removes the corresponding normals and color entries.
+    /// \brief Removes all points from the point cloud that have a nan entry, or
+    /// infinite entries. It also removes the corresponding attributes
+    /// associated with the non-finite point such as normals, covariances and
+    /// color entries. It doesn't re-computes these attributes after removing
+    /// non-finite points.
     ///
     /// \param remove_nan Remove NaN values from the PointCloud.
     /// \param remove_infinite Remove infinite values from the PointCloud.
     PointCloud &RemoveNonFinitePoints(bool remove_nan = true,
                                       bool remove_infinite = true);
 
-    /// \brief Function to select points from \p input pointcloud into
-    /// \p output pointcloud.
-    ///
-    /// Points with indices in \p indices are selected.
+    /// \brief Removes duplicated points, i.e., points that have identical
+    /// coordinates. It also removes the corresponding attributes associated
+    /// with the non-finite point such as normals, covariances and color
+    /// entries. It doesn't re-computes these attributes after removing
+    /// duplicated points.
+    PointCloud &RemoveDuplicatedPoints();
+
+    /// \brief Selects points from \p input pointcloud, with indices in \p
+    /// indices, and returns a new point-cloud with selected points.
     ///
     /// \param indices Indices of points to be selected.
     /// \param invert Set to `True` to invert the selection of indices.
     std::shared_ptr<PointCloud> SelectByIndex(
             const std::vector<size_t> &indices, bool invert = false) const;
 
-    /// \brief Function to downsample input pointcloud into output pointcloud
-    /// with a voxel.
-    ///
-    /// Normals and colors are averaged if they exist.
+    /// \brief Downsample input pointcloud with a voxel, and return a new
+    /// point-cloud. Normals, covariances and colors are averaged if they exist.
     ///
     /// \param voxel_size Defines the resolution of the voxel grid,
     /// smaller value leads to denser output point cloud.

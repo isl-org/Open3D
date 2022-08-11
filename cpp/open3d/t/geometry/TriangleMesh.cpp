@@ -29,6 +29,7 @@
 #include <vtkBooleanOperationPolyDataFilter.h>
 #include <vtkCleanPolyData.h>
 #include <vtkClipPolyData.h>
+#include <vtkCutter.h>
 #include <vtkFillHolesFilter.h>
 #include <vtkPlane.h>
 #include <vtkQuadricDecimation.h>
@@ -41,6 +42,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
@@ -300,7 +302,9 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     auto point_ = point.To(core::Device(), core::Float64).Contiguous();
     auto normal_ = normal.To(core::Device(), core::Float64).Contiguous();
 
-    auto polydata = CreateVtkPolyDataFromGeometry(*this);
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            *this, GetVertexAttr().GetKeySet(), GetTriangleAttr().GetKeySet(),
+            {}, {}, false);
 
     vtkNew<vtkPlane> clipPlane;
     clipPlane->SetNormal(normal_.GetDataPtr<double>());
@@ -315,6 +319,44 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     return CreateTriangleMeshFromVtkPolyData(clipped_polydata);
 }
 
+LineSet TriangleMesh::SlicePlane(
+        const core::Tensor &point,
+        const core::Tensor &normal,
+        const std::vector<double> contour_values) const {
+    using namespace vtkutils;
+    core::AssertTensorShape(point, {3});
+    core::AssertTensorShape(normal, {3});
+    // allow int types for convenience
+    core::AssertTensorDtypes(
+            point, {core::Float32, core::Float64, core::Int32, core::Int64});
+    core::AssertTensorDtypes(
+            normal, {core::Float32, core::Float64, core::Int32, core::Int64});
+
+    auto point_ = point.To(core::Device(), core::Float64).Contiguous();
+    auto normal_ = normal.To(core::Device(), core::Float64).Contiguous();
+
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            *this, GetVertexAttr().GetKeySet(), {}, {}, {}, false);
+
+    vtkNew<vtkPlane> clipPlane;
+    clipPlane->SetNormal(normal_.GetDataPtr<double>());
+    clipPlane->SetOrigin(point_.GetDataPtr<double>());
+
+    vtkNew<vtkCutter> cutter;
+    cutter->SetInputData(polydata);
+    cutter->SetCutFunction(clipPlane);
+    cutter->GenerateTrianglesOff();
+    cutter->SetNumberOfContours(contour_values.size());
+    int i = 0;
+    for (double value : contour_values) {
+        cutter->SetValue(i++, value);
+    }
+    cutter->Update();
+    auto slices_polydata = cutter->GetOutput();
+
+    return CreateLineSetFromVtkPolyData(slices_polydata);
+}
+
 TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
         double target_reduction, bool preserve_volume) const {
     using namespace vtkutils;
@@ -324,7 +366,8 @@ TriangleMesh TriangleMesh::SimplifyQuadricDecimation(
                 target_reduction);
     }
 
-    auto polydata = CreateVtkPolyDataFromGeometry(*this);
+    // exclude attributes because they will not be preserved
+    auto polydata = CreateVtkPolyDataFromGeometry(*this, {}, {}, {}, {}, false);
 
     vtkNew<vtkQuadricDecimation> decimate;
     decimate->SetInputData(polydata);
@@ -342,12 +385,16 @@ TriangleMesh BooleanOperation(const TriangleMesh &mesh_A,
                               double tolerance,
                               int op) {
     using namespace vtkutils;
+    // exclude triangle attributes because they will not be preserved
+    auto polydata_A = CreateVtkPolyDataFromGeometry(
+            mesh_A, mesh_A.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
+    auto polydata_B = CreateVtkPolyDataFromGeometry(
+            mesh_B, mesh_B.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
+
     // clean meshes before passing them to the boolean operation
-    auto polydata_A = CreateVtkPolyDataFromGeometry(mesh_A);
     vtkNew<vtkCleanPolyData> cleaner_A;
     cleaner_A->SetInputData(polydata_A);
 
-    auto polydata_B = CreateVtkPolyDataFromGeometry(mesh_B);
     vtkNew<vtkCleanPolyData> cleaner_B;
     cleaner_B->SetInputData(polydata_B);
 
@@ -382,9 +429,16 @@ TriangleMesh TriangleMesh::BooleanDifference(const TriangleMesh &mesh,
                             vtkBooleanOperationPolyDataFilter::VTK_DIFFERENCE);
 }
 
+AxisAlignedBoundingBox TriangleMesh::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetVertexPositions());
+}
+
 TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     using namespace vtkutils;
-    auto polydata = CreateVtkPolyDataFromGeometry(*this);
+    // do not include triangle attributes because they will not be preserved by
+    // the hole filling algorithm
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            *this, GetVertexAttr().GetKeySet(), {}, {}, {}, false);
     vtkNew<vtkFillHolesFilter> fill_holes;
     fill_holes->SetInputData(polydata);
     fill_holes->SetHoleSize(hole_size);
