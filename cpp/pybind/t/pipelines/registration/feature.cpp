@@ -38,6 +38,7 @@ namespace registration {
 
 void pybind_feature(py::module &m) {
     m.def("compute_fpfh_feature", &ComputeFPFHFeature,
+          py::call_guard<py::gil_scoped_release>(),
           R"(Function to compute FPFH feature for a point cloud.
 It uses KNN search (Not recommended to use on GPU) if only max_nn parameter
 is provided, Radius search (Not recommended to use on GPU) if only radius
