@@ -49,6 +49,13 @@ if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
     except StopIteration:  # Not found: check system paths while loading
         pass
 
+# Enable CPU rendering based on env vars
+if _build_config["BUILD_GUI"] and sys.platform.startswith('linux') and (
+        os.getenv('OPEN3D_CPU_RENDERING', default='') == 'true'):
+    os.environ['LIBGL_DRIVERS_PATH'] = str(_Path(__file__).parent)
+    _CDLL(_Path(__file__).parent / 'libEGL.so.1')
+    _CDLL(_Path(__file__).parent / 'libGL.so.1')
+
 __DEVICE_API__ = 'cpu'
 if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
