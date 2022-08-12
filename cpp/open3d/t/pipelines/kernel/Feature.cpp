@@ -33,19 +33,21 @@ namespace t {
 namespace pipelines {
 namespace kernel {
 
-void ComputeSPFHFeature(const core::Tensor &points,
+void ComputeFPFHFeature(const core::Tensor &points,
                         const core::Tensor &normals,
                         const core::Tensor &indices,
                         const core::Tensor &distance2,
-                        core::Tensor &spfhs) {
-    core::AssertTensorShape(spfhs, {points.GetLength(), 33});
+                        const core::Tensor &counts,
+                        core::Tensor &fpfhs) {
+    core::AssertTensorShape(fpfhs, {points.GetLength(), 33});
     const core::Tensor points_d = points.Contiguous();
     const core::Tensor normals_d = normals.Contiguous();
     if (points_d.IsCPU()) {
-        ComputeSPFHFeatureCPU(points_d, normals_d, indices, distance2, spfhs);
+        ComputeFPFHFeatureCPU(points_d, normals_d, indices, distance2, counts,
+                              fpfhs);
     } else {
-        CUDA_CALL(ComputeSPFHFeatureCUDA, normals_d, points_d, indices,
-                  distance2, spfhs);
+        CUDA_CALL(ComputeFPFHFeatureCUDA, points_d, normals_d, indices,
+                  distance2, counts, fpfhs);
     }
 }
 

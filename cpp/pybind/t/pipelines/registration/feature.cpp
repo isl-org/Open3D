@@ -24,18 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/t/pipelines/registration/Feature.h"
 
-#include "pybind/open3d_pybind.h"
+#include "open3d/t/geometry/PointCloud.h"
+#include "open3d/utility/Logging.h"
+#include "pybind/docstring.h"
+#include "pybind/t/pipelines/registration/registration.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace registration {
 
-void pybind_feature(py::module &m);
-void pybind_registration(py::module &m);
-void pybind_robust_kernels(py::module &m);
+void pybind_feature(py::module &m) {
+    m.def("compute_fpfh_feature", &ComputeFPFHFeature,
+          R"(Function to compute FPFH feature for a point cloud.
+It uses KNN search if only max_nn parameter is provided, Radius search if only 
+radius parameter is provided, and Hybrid search if both are provided.)",
+          py::arg("input"), py::arg("max_nn") = 100,
+          py::arg("radius") = py::none());
+    docstring::FunctionDocInject(
+            m, "compute_fpfh_feature",
+            {{"input",
+              "The input point cloud with data type float32 ot float64."},
+             {"max_nn",
+              "[optional] Neighbor search max neighbors parameter. [Default = "
+              "100]"},
+             {"radius",
+              "[optional] Neighbor search radius parameter. [Recommended ~5x "
+              "voxel size]"}});
+}
 
 }  // namespace registration
 }  // namespace pipelines

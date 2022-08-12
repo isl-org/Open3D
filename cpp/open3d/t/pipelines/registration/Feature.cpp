@@ -28,6 +28,7 @@
 
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/pipelines/kernel/Feature.h"
 
 namespace open3d {
 namespace t {
@@ -35,10 +36,9 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-core::Tensor ComputeFPFHFeature(
-        const geometry::PointCloud &input,
-        const utility::optional<int> max_nn = 100,
-        const utility::optional<double> radius = utility::nullopt) {
+core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
+                                const utility::optional<int> max_nn,
+                                const utility::optional<double> radius) {
     core::AssertTensorDtypes(input.GetPointPositions(),
                              {core::Float64, core::Float32});
     if (max_nn.value() <= 3) {
@@ -87,11 +87,13 @@ core::Tensor ComputeFPFHFeature(
                 input.GetPointPositions(), radius.value());
     }
 
-    const core::Device device = input.GetDevice();
-    const core::Dtype dtype = input.GetPointPositions().GetDtype();
     const int64_t size = input.GetPointPositions().GetLength();
 
     core::Tensor fpfh = core::Tensor::Zeros({size, 33}, dtype, device);
+    pipelines::kernel::ComputeFPFHFeature(input.GetPointPositions(),
+                                          input.GetPointNormals(), indices,
+                                          distance2, counts, fpfh);
+    return fpfh;
 }
 
 }  // namespace registration
