@@ -198,38 +198,37 @@ void GetPointMaskWithinOBBCPU
          const core::Tensor& rotation,
          const core::Tensor& extent,
          core::Tensor& mask) {
+    const core::Tensor half_extent = extent.Div(2);
+    // Since we will extract 3 rotation axis from matrix and use it inside
+    // kernel, the transpose is needed.
+    const core::Tensor rotation_t = rotation.Transpose(0, 1).Contiguous();
+    const core::Tensor pd = points - center;
+    const int64_t n = points.GetLength();
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
-        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
-        const int64_t n = points.GetLength();
-        const scalar_t* center_ptr = center.GetDataPtr<scalar_t>();
-        const scalar_t* rotation_ptr =
-                rotation.Transpose(0, 1).Contiguous().GetDataPtr<scalar_t>();
-        const scalar_t* extent_ptr = extent.GetDataPtr<scalar_t>();
+        const scalar_t* pd_ptr = pd.GetDataPtr<scalar_t>();
+        // const scalar_t* center_ptr = center.GetDataPtr<scalar_t>();
+        const scalar_t* rotation_ptr = rotation_t.GetDataPtr<scalar_t>();
+        const scalar_t* half_extent_ptr = half_extent.GetDataPtr<scalar_t>();
         bool* mask_ptr = mask.GetDataPtr<bool>();
 
-        scalar_t half_extent[3];
-        half_extent[0] = extent_ptr[0] / 2;
-        half_extent[1] = extent_ptr[1] / 2;
-        half_extent[2] = extent_ptr[2] / 2;
-
-        core::ParallelFor(
-                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    scalar_t d[3];
-                    d[0] = points_ptr[3 * workload_idx + 0] - center_ptr[0];
-                    d[1] = points_ptr[3 * workload_idx + 1] - center_ptr[1];
-                    d[2] = points_ptr[3 * workload_idx + 2] - center_ptr[2];
-                    if (abs(core::linalg::kernel::dot_3x1(d, rotation_ptr)) <=
-                                half_extent[0] &&
-                        abs(core::linalg::kernel::dot_3x1(
-                                d, rotation_ptr + 3)) <= half_extent[1] &&
-                        abs(core::linalg::kernel::dot_3x1(
-                                d, rotation_ptr + 6)) <= half_extent[2]) {
-                        mask_ptr[workload_idx] = true;
-                    } else {
-                        mask_ptr[workload_idx] = false;
-                    }
-                });
+        core::ParallelFor(points.GetDevice(), n,
+                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                              int64_t idx = 3 * workload_idx;
+                              if (abs(core::linalg::kernel::dot_3x1(
+                                          pd_ptr + idx, rotation_ptr)) <=
+                                          half_extent_ptr[0] &&
+                                  abs(core::linalg::kernel::dot_3x1(
+                                          pd_ptr + idx, rotation_ptr + 3)) <=
+                                          half_extent_ptr[1] &&
+                                  abs(core::linalg::kernel::dot_3x1(
+                                          pd_ptr + idx, rotation_ptr + 6)) <=
+                                          half_extent_ptr[2]) {
+                                  mask_ptr[workload_idx] = true;
+                              } else {
+                                  mask_ptr[workload_idx] = false;
+                              }
+                          });
     });
 }
 
