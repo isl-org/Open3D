@@ -422,9 +422,10 @@ public:
 public:
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.
-    /// It uses KNN search if only max_nn parameter is provided, Radius search
-    /// if only radius is provided and HybridSearch if radius parameter is also
-    /// provided.
+    /// It uses KNN search (Not recommended to use on GPU) if only max_nn
+    /// parameter is provided, Radius search (Not recommended to use on GPU) if
+    /// only radius is provided and Hybrid Search (Recommended) if radius
+    /// parameter is also provided.
     ///
     /// \param max_nn [optional] Neighbor search max neighbors parameter
     /// [Default = 30].
@@ -438,9 +439,10 @@ public:
     /// then HybridSearch is used, otherwise KNN-Search is used.
     /// Reference: Park, Q.-Y. Zhou, and V. Koltun,
     /// Colored Point Cloud Registration Revisited, ICCV, 2017.
-    /// It uses KNN search if only max_nn parameter is provided, Radius search
-    /// if only radius is provided and HybridSearch if radius parameter is also
-    /// provided.
+    /// It uses KNN search (Not recommended to use on GPU) if only max_nn
+    /// parameter is provided, Radius search (Not recommended to use on GPU) if
+    /// only radius is provided and Hybrid Search (Recommended) if radius
+    /// parameter is also provided.
     ///
     /// \param max_nn [optional] Neighbor search max neighbors parameter
     /// [Default = 30].
