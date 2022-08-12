@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <list>
+
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/TriangleMesh.h"
@@ -37,6 +39,8 @@
 namespace open3d {
 namespace t {
 namespace geometry {
+
+class LineSet;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -680,6 +684,18 @@ public:
     /// \return New triangle mesh clipped with the plane.
     TriangleMesh ClipPlane(const core::Tensor &point,
                            const core::Tensor &normal) const;
+
+    /// \brief Extract contour slices given a plane.
+    /// This method extracts slices as LineSet from the mesh at specific
+    /// contour values defined by the specified plane.
+    /// \param point A point on the plane as [Tensor of dim {3}].
+    /// \param normal The normal of the plane as [Tensor of dim {3}].
+    /// \param contour_values Contour values at which slices will be generated.
+    /// The value describes the signed distance to the plane.
+    /// \return LineSet with the extracted contours.
+    LineSet SlicePlane(const core::Tensor &point,
+                       const core::Tensor &normal,
+                       const std::vector<double> contour_values = {0.0}) const;
 
     core::Device GetDevice() const override { return device_; }
 

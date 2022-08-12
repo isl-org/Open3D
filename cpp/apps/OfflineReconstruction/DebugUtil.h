@@ -26,61 +26,34 @@
 
 #pragma once
 
-#include <string>
+#include "open3d/Open3D.h"
 
 namespace open3d {
-namespace utility {
+namespace apps {
+namespace offline_reconstruction {
 
-class Timer {
-public:
-    Timer();
-    ~Timer();
+static const Eigen::Matrix4d flip_transformation = Eigen::Matrix4d({
+        {1, 0, 0, 0},
+        {0, -1, 0, 0},
+        {0, 0, -1, 0},
+        {0, 0, 0, 1},
+});
 
-public:
-    static double GetSystemTimeInMilliseconds();
+void DrawRegistrationResult(const geometry::PointCloud& src,
+                            const geometry::PointCloud& dst,
+                            const Eigen::Matrix4d& transformation,
+                            bool keep_color = false) {
+    auto transformed_src = std::make_shared<geometry::PointCloud>(src);
+    auto transformed_dst = std::make_shared<geometry::PointCloud>(dst);
+    if (!keep_color) {
+        transformed_src->PaintUniformColor(Eigen::Vector3d(1, 0.706, 0));
+        transformed_dst->PaintUniformColor(Eigen::Vector3d(0, 0.651, 0.929));
+    }
+    transformed_src->Transform(flip_transformation * transformation);
+    transformed_dst->Transform(flip_transformation);
+    visualization::DrawGeometries({transformed_src, transformed_dst});
+}
 
-public:
-    void Start();
-    void Stop();
-    void Print(const std::string &timer_info) const;
-    double GetDurationInSecond() const;
-    double GetDurationInMillisecond() const;
-    std::tuple<int, int, double> GetDurationInHMS() const;
-
-private:
-    double start_time_in_milliseconds_;
-    double end_time_in_milliseconds_;
-};
-
-class ScopeTimer : public Timer {
-public:
-    ScopeTimer(const std::string &scope_timer_info = "");
-    ~ScopeTimer();
-
-private:
-    std::string scope_timer_info_;
-};
-
-class FPSTimer : public Timer {
-public:
-    FPSTimer(const std::string &fps_timer_info = "",
-             int expectation = -1,
-             double time_to_print = 3000.0,
-             int events_to_print = 100);
-
-    /// Function to signal an event
-    /// It automatically prints FPS information when duration is more than
-    /// time_to_print_, or event has been signaled events_to_print_ times.
-    void Signal();
-
-private:
-    std::string fps_timer_info_;
-    int expectation_;
-    double time_to_print_;
-    int events_to_print_;
-    int event_fragment_count_;
-    int event_total_count_;
-};
-
-}  // namespace utility
+}  // namespace offline_reconstruction
+}  // namespace apps
 }  // namespace open3d
