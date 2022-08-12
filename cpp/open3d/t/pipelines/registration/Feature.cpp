@@ -47,9 +47,8 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
     if (radius.value() <= 0) {
         utility::LogError("radius must be greater than 0.");
     }
-
     if (!input.HasPointNormals()) {
-        utility::LogError("Failed because input point cloud has no normal.");
+        utility::LogError("The input point cloud has no normal.");
     }
 
     const int64_t num_points = input.GetPointPositions().GetLength();
@@ -95,6 +94,8 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
         utility::LogDebug(
                 "Use RadiusSearch [radius: {}] for computing FPFH feature.",
                 radius.value());
+    } else {
+        utility::LogError("Both max_nn and radius are none.");
     }
 
     const int64_t size = input.GetPointPositions().GetLength();
