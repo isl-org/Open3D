@@ -67,6 +67,10 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
         }
         std::tie(indices, distance2, counts) = tree.HybridSearch(
                 input.GetPointPositions(), radius.value(), max_nn.value());
+        utility::LogDebug(
+                "Use HybridSearch [max_nn: {} | radius {}] for computing FPFH "
+                "feature.",
+                max_nn.value(), radius.value());
     } else if (!radius.has_value() && max_nn.has_value()) {
         bool check = tree.KnnIndex();
         if (!check) {
@@ -78,6 +82,9 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
         // Make counts full with max_nn.
         counts =
                 core::Tensor::Full({num_points}, max_nn.value(), dtype, device);
+        utility::LogDebug(
+                "Use KNNSearch  [max_nn: {}] for computing FPFH feature.",
+                max_nn.value());
     } else if (radius.has_value() && !max_nn.has_value()) {
         bool check = tree.FixedRadiusIndex(radius.value());
         if (!check) {
@@ -85,6 +92,9 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
         }
         std::tie(indices, distance2, counts) = tree.FixedRadiusSearch(
                 input.GetPointPositions(), radius.value());
+        utility::LogDebug(
+                "Use RadiusSearch [radius: {}] for computing FPFH feature.",
+                radius.value());
     }
 
     const int64_t size = input.GetPointPositions().GetLength();

@@ -27,6 +27,7 @@
 #pragma once
 
 #include "open3d/core/Tensor.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 namespace t {
@@ -39,14 +40,15 @@ namespace pipelines {
 namespace registration {
 
 /// Function to compute FPFH feature for a point cloud.
-/// It uses KNN search if only max_nn parameter is provided, Radius search if
-/// only radius parameter is provided, and Hybrid search if both are provided.
+/// It uses KNN search (Not recommended to use on GPU) if only max_nn parameter
+/// is provided, Radius search (Not recommended to use on GPU) if only radius
+/// parameter is provided, and Hybrid search (Recommended) if both are provided.
 ///
-/// \param input The input point cloud with data type float32 ot float64.
+/// \param input The input point cloud with data type float32 or float64.
 /// \param max_nn [optional] Neighbor search max neighbors parameter. [Default =
 /// 100].
 /// \param radius [optional] Neighbor search radius parameter. [Recommended ~5x
-/// voxel size]. 
+/// voxel size].
 /// \return A Tensor of FPFH feature of the input point cloud with
 /// shape {N, 33}, data type and device same as input.
 core::Tensor ComputeFPFHFeature(

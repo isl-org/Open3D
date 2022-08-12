@@ -118,18 +118,9 @@ OPEN3D_HOST_DEVICE void UpdateSPFHFeature(const scalar_t *feature,
     int h_index3 = static_cast<int>(floor(11 * (feature[2] + 1.0) * 0.5));
     h_index3 = h_index3 >= 11 ? 10 : max(0, h_index3);
 
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
-    atomicAdd(&spfh[idx * 33 + h_index1], hist_incr);
-    atomicAdd(&spfh[idx * 33 + 11 + h_index2], hist_incr);
-    atomicAdd(&spfh[idx * 33 + 22 + h_index3], hist_incr);
-#else
-#pragma omp critical(UpdateSPFHFeature)
-    {
-        spfh[idx * 33 + h_index1] += hist_incr;
-        spfh[idx * 33 + h_index2 + 11] += hist_incr;
-        spfh[idx * 33 + h_index3 + 22] += hist_incr;
-    }
-#endif
+    spfh[idx * 33 + h_index1] += hist_incr;
+    spfh[idx * 33 + h_index2 + 11] += hist_incr;
+    spfh[idx * 33 + h_index3 + 22] += hist_incr;
 }
 
 #if defined(__CUDACC__)
@@ -216,7 +207,7 @@ void ComputeFPFHFeatureCPU
                                              : counts_ptr[workload_idx];
 
                     if (indice_size > 1) {
-                        scalar_t sum[3] = {0};
+                        scalar_t sum[3] = {0.0, 0.0, 0.0};
                         for (int i = 1; i < indice_size; i++) {
                             const int idx =
                                     is_radius_search
@@ -224,43 +215,22 @@ void ComputeFPFHFeatureCPU
                                             : workload_idx * nn_size + i;
                             const scalar_t dist = distance2_ptr[idx];
                             if (dist == 0.0) continue;
-#if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
+
                             for (int j = 0; j < 33; j++) {
                                 const scalar_t val =
                                         spfhs_ptr[indices_ptr[idx] * 33 + j] /
                                         dist;
                                 sum[j / 11] += val;
-                                atomicAdd(&fpfhs_ptr[workload_idx * 33 + j],
-                                          val);
-                            }
-
-                            for (int j = 0; j < 3; j++)
-                                sum[j] = sum[j] != 0.0 ? 100.0 / sum[j] : 0.0;
-
-                            for (int j = 0; j < 33; j++) {
-                                atomicAdd(&fpfhs_ptr[workload_idx * 33 + j],
-                                          sum[j / 11]);
-                                atomicAdd(&fpfhs_ptr[workload_idx * 33 + j],
-                                          spfhs_ptr[workload_idx * 33 + j]);
-                            }
-#else
-#pragma omp critical(ComputeFPFHFeatureCPU)
-        {
-                            for (int j = 0; j < 33; j++) {
-                                const scalar_t val =
-                                        spfhs_ptr[indices_ptr[idx] * 33 + j] / dist;
-                                sum[j / 11] += val;
                                 fpfhs_ptr[workload_idx * 33 + j] += val;
                             }
-                            for (int j = 0; j < 3; j++)
-                                sum[j] = sum[j] != 0.0 ? 100.0 / sum[j] : 0.0;   
-                            for (int j = 0; j < 33; j++) {
-                                fpfhs_ptr[workload_idx * 33 + j] *= sum[j / 11];
-                                fpfhs_ptr[workload_idx * 33 + j] +=
-                                        spfhs_ptr[workload_idx * 33 + j];
-                            }        
-        }
-#endif
+                        }
+                        for (int j = 0; j < 3; j++) {
+                            sum[j] = sum[j] != 0.0 ? 100.0 / sum[j] : 0.0;
+                        }
+                        for (int j = 0; j < 33; j++) {
+                            fpfhs_ptr[workload_idx * 33 + j] *= sum[j / 11];
+                            fpfhs_ptr[workload_idx * 33 + j] +=
+                                    spfhs_ptr[workload_idx * 33 + j];
                         }
                     }
                 });
