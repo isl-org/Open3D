@@ -319,7 +319,7 @@ def draw_plotly(geometry_list,
                 lookat=None,
                 up=None,
                 zoom=1.0):
- 
+
     fig = get_plotly_fig(geometry_list, window_name, width, height,
                          mesh_show_wireframe, point_sample_factor, front,
                          lookat, up, zoom)
