@@ -29,6 +29,7 @@
 #include <vtkBooleanOperationPolyDataFilter.h>
 #include <vtkCleanPolyData.h>
 #include <vtkClipPolyData.h>
+#include <vtkCutter.h>
 #include <vtkFillHolesFilter.h>
 #include <vtkPlane.h>
 #include <vtkQuadricDecimation.h>
@@ -41,6 +42,7 @@
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
@@ -315,6 +317,44 @@ TriangleMesh TriangleMesh::ClipPlane(const core::Tensor &point,
     cleaner->Update();
     auto clipped_polydata = cleaner->GetOutput();
     return CreateTriangleMeshFromVtkPolyData(clipped_polydata);
+}
+
+LineSet TriangleMesh::SlicePlane(
+        const core::Tensor &point,
+        const core::Tensor &normal,
+        const std::vector<double> contour_values) const {
+    using namespace vtkutils;
+    core::AssertTensorShape(point, {3});
+    core::AssertTensorShape(normal, {3});
+    // allow int types for convenience
+    core::AssertTensorDtypes(
+            point, {core::Float32, core::Float64, core::Int32, core::Int64});
+    core::AssertTensorDtypes(
+            normal, {core::Float32, core::Float64, core::Int32, core::Int64});
+
+    auto point_ = point.To(core::Device(), core::Float64).Contiguous();
+    auto normal_ = normal.To(core::Device(), core::Float64).Contiguous();
+
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            *this, GetVertexAttr().GetKeySet(), {}, {}, {}, false);
+
+    vtkNew<vtkPlane> clipPlane;
+    clipPlane->SetNormal(normal_.GetDataPtr<double>());
+    clipPlane->SetOrigin(point_.GetDataPtr<double>());
+
+    vtkNew<vtkCutter> cutter;
+    cutter->SetInputData(polydata);
+    cutter->SetCutFunction(clipPlane);
+    cutter->GenerateTrianglesOff();
+    cutter->SetNumberOfContours(contour_values.size());
+    int i = 0;
+    for (double value : contour_values) {
+        cutter->SetValue(i++, value);
+    }
+    cutter->Update();
+    auto slices_polydata = cutter->GetOutput();
+
+    return CreateLineSetFromVtkPolyData(slices_polydata);
 }
 
 TriangleMesh TriangleMesh::SimplifyQuadricDecimation(

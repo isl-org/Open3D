@@ -224,6 +224,13 @@ void FormatSettingsFromImage(TextureSettings& settings,
     // Map of (bytes_per_channel << 4 | num_channles) -> internal format
     static std::unordered_map<unsigned int, filament::Texture::InternalFormat>
             format_map = {
+                    {(4 << 4 | 1), filament::Texture::InternalFormat::R32F},
+                    {(4 << 4 | 2), filament::Texture::InternalFormat::RG32F},
+                    {(4 << 4 | 3), filament::Texture::InternalFormat::RGB32F},
+                    {(4 << 4 | 4), filament::Texture::InternalFormat::RGBA32F},
+                    {(2 << 4 | 1), filament::Texture::InternalFormat::R16UI},
+                    {(2 << 4 | 2), filament::Texture::InternalFormat::RG16UI},
+                    {(2 << 4 | 3), filament::Texture::InternalFormat::RGB16UI},
                     {(1 << 4 | 1), filament::Texture::InternalFormat::R8},
                     {(1 << 4 | 2), filament::Texture::InternalFormat::RG8},
                     {(1 << 4 | 3), filament::Texture::InternalFormat::RGB8},

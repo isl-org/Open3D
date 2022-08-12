@@ -142,8 +142,7 @@ def local_refinement(source, target, transformation_init, config):
             source, target,
             [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
             config, transformation_init)
-    if config["debug_mode"]:
-        draw_registration_result_original_color(source, target, transformation)
+
     return (transformation, information)
 
 

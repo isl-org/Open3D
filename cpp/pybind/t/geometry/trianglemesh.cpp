@@ -30,6 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -220,6 +221,44 @@ This example shows how to create a hemisphere from a sphere::
     hemisphere = sphere.clip_plane(point=[0,0,0], normal=[1,0,0])
 
     o3d.visualization.draw(hemisphere)
+)");
+
+    triangle_mesh.def(
+            "slice_plane",
+            // Accept anything for contour_values that pybind can convert to
+            // std::list. This also avoids o3d.utility.DoubleVector.
+            [](const TriangleMesh& self, const core::Tensor& point,
+               const core::Tensor& normal, std::list<double> contour_values) {
+                std::vector<double> cv(contour_values.begin(),
+                                       contour_values.end());
+                return self.SlicePlane(point, normal, cv);
+            },
+            "point"_a, "normal"_a, "contour_values"_a = std::list<double>{0.0},
+            R"(Returns a line set with the contour slices defined by the plane and values.
+
+This method generates slices as LineSet from the mesh at specific contour 
+values with respect to a plane.
+
+Args:
+    point (open3d.core.Tensor): A point on the plane.
+    normal (open3d.core.Tensor): The normal of the plane.
+    contour_values (list): A list of contour values at which slices will be
+        generated. The value describes the signed distance to the plane.
+
+Returns:
+    LineSet with he extracted contours.
+
+
+This example shows how to create a hemisphere from a sphere::
+
+    import open3d as o3d
+    import numpy as np
+
+    bunny = o3d.data.BunnyMesh()
+    mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+    contours = mesh.slice_plane([0,0,0], [0,1,0], np.linspace(0,0.2))
+    o3d.visualization.draw([{'name': 'bunny', 'geometry': contours}])
+
 )");
 
     // Triangle Mesh's creation APIs.

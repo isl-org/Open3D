@@ -28,6 +28,7 @@
 #include <vtkSmartPointer.h>
 
 #include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 
@@ -77,6 +78,16 @@ vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
 /// \param copy If true always create a copy of the data.
 TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
                                                bool copy = false);
+
+/// Creates a LineSet a vtkPolyData object.
+/// The returned LineSet may directly use the memory of the data arrays in
+/// the vtkPolyData object.
+/// The returned LineSet will hold references to the arrays and it is not
+/// necessary to keep other references to the vtkPolyData object or its arrays
+/// alive.
+/// \param polydata Input polyData object.
+/// \param copy If true always create a copy of the data.
+LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata, bool copy = false);
 
 }  // namespace vtkutils
 }  // namespace geometry
