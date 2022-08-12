@@ -47,7 +47,7 @@ void CopySYCLOld(const Tensor& src, Tensor& dst) {
     SizeVector shape = src.GetShape();
     Dtype src_dtype = src.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
-    sy::queue& Q = sycl::GetDefaultQueue(src.GetDevice());
+    sy::queue& queue = sycl::GetDefaultQueue(src.GetDevice());
 
     if (src.IsContiguous() && dst.IsContiguous() &&
         src.GetShape() == dst.GetShape() && src_dtype == dst_dtype) {
@@ -60,12 +60,12 @@ void CopySYCLOld(const Tensor& src, Tensor& dst) {
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(dst_dtype, [&]() {
             scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
             scalar_t* dst_ptr = static_cast<scalar_t*>(dst.GetDataPtr());
-            Q.submit([&](sy::handler& h) {
-                 h.parallel_for(num_workloads,
-                                [dst_ptr, scalar_element](int64_t i) {
-                                    dst_ptr[i] = scalar_element;
-                                });
-             }).wait();
+            queue.submit([&](sy::handler& h) {
+                     h.parallel_for(num_workloads,
+                                    [dst_ptr, scalar_element](int64_t i) {
+                                        dst_ptr[i] = scalar_element;
+                                    });
+                 }).wait();
         });
     } else {
         Indexer indexer({src}, dst, DtypePolicy::NONE);
@@ -73,32 +73,33 @@ void CopySYCLOld(const Tensor& src, Tensor& dst) {
 
         if (src.GetDtype().IsObject()) {
             int64_t object_byte_size = src.GetDtype().ByteSize();
-            Q.submit([&](sy::handler& h) {
-                 h.parallel_for(num_workloads, [indexer,
-                                                object_byte_size](int64_t i) {
-                     const char* src_bytes = static_cast<const char*>(
-                             indexer.GetInputPtr(0, i));
-                     char* dst_bytes =
-                             static_cast<char*>(indexer.GetOutputPtr(i));
-                     for (int64_t j = 0; j < object_byte_size; j++) {
-                         dst_bytes[j] = src_bytes[j];
-                     }
-                 });
-             }).wait();
+            queue.submit([&](sy::handler& h) {
+                     h.parallel_for(num_workloads, [indexer, object_byte_size](
+                                                           int64_t i) {
+                         const char* src_bytes = static_cast<const char*>(
+                                 indexer.GetInputPtr(0, i));
+                         char* dst_bytes =
+                                 static_cast<char*>(indexer.GetOutputPtr(i));
+                         for (int64_t j = 0; j < object_byte_size; j++) {
+                             dst_bytes[j] = src_bytes[j];
+                         }
+                     });
+                 }).wait();
         } else {
             // Type-cast is handled here.
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(src_dtype, [&]() {
                 using src_t = scalar_t;
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(dst_dtype, [&]() {
                     using dst_t = scalar_t;
-                    Q.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             dst_t* dst = indexer.GetOutputPtr<dst_t>(i);
-                             const src_t* src =
-                                     indexer.GetInputPtr<src_t>(0, i);
-                             *dst = static_cast<dst_t>(*src);
-                         });
-                     }).wait();
+                    queue.submit([&](sy::handler& h) {
+                             h.parallel_for(num_workloads, [indexer](
+                                                                   int64_t i) {
+                                 dst_t* dst = indexer.GetOutputPtr<dst_t>(i);
+                                 const src_t* src =
+                                         indexer.GetInputPtr<src_t>(0, i);
+                                 *dst = static_cast<dst_t>(*src);
+                             });
+                         }).wait();
                 });
             });
         }
@@ -125,51 +126,54 @@ void CopySYCL(const Tensor& src, Tensor& dst) {
                                   src_dtype.ByteSize() * shape.NumElements());
         } else if (dst.NumElements() > 1 && dst.IsContiguous() &&
                    src.NumElements() == 1 && !src_dtype.IsObject()) {
-            sy::queue& Q = sycl::GetDefaultQueue(dst.GetDevice());
+            sy::queue& queue = sycl::GetDefaultQueue(dst.GetDevice());
             const int64_t num_workloads = dst.NumElements();
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(dst_dtype, [&]() {
                 scalar_t scalar_element = src.To(dst_dtype).Item<scalar_t>();
                 scalar_t* dst_ptr = static_cast<scalar_t*>(dst.GetDataPtr());
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads,
-                                    [dst_ptr, scalar_element](int64_t i) {
-                                        dst_ptr[i] = scalar_element;
-                                    });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads,
+                                        [dst_ptr, scalar_element](int64_t i) {
+                                            dst_ptr[i] = scalar_element;
+                                        });
+                     }).wait();
             });
         } else if (src_device == dst_device) {
-            sy::queue& Q = sycl::GetDefaultQueue(src.GetDevice());
+            sy::queue& queue = sycl::GetDefaultQueue(src.GetDevice());
             Indexer indexer({src}, dst, DtypePolicy::NONE);
             const int64_t num_workloads = indexer.NumWorkloads();
             if (src.GetDtype().IsObject()) {
                 int64_t object_byte_size = src.GetDtype().ByteSize();
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer, object_byte_size](
-                                                           int64_t i) {
-                         const char* src_bytes = static_cast<const char*>(
-                                 indexer.GetInputPtr(0, i));
-                         char* dst_bytes =
-                                 static_cast<char*>(indexer.GetOutputPtr(i));
-                         for (int64_t j = 0; j < object_byte_size; j++) {
-                             dst_bytes[j] = src_bytes[j];
-                         }
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer,
+                                                        object_byte_size](
+                                                               int64_t i) {
+                             const char* src_bytes = static_cast<const char*>(
+                                     indexer.GetInputPtr(0, i));
+                             char* dst_bytes = static_cast<char*>(
+                                     indexer.GetOutputPtr(i));
+                             for (int64_t j = 0; j < object_byte_size; j++) {
+                                 dst_bytes[j] = src_bytes[j];
+                             }
+                         });
+                     }).wait();
             } else {
                 // Type-cast is handled here.
                 DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(src_dtype, [&]() {
                     using src_t = scalar_t;
                     DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(dst_dtype, [&]() {
                         using dst_t = scalar_t;
-                        Q.submit([&](sy::handler& h) {
-                             h.parallel_for(num_workloads, [indexer](
-                                                                   int64_t i) {
-                                 dst_t* dst = indexer.GetOutputPtr<dst_t>(i);
-                                 const src_t* src =
-                                         indexer.GetInputPtr<src_t>(0, i);
-                                 *dst = static_cast<dst_t>(*src);
-                             });
-                         }).wait();
+                        queue.submit([&](sy::handler& h) {
+                                 h.parallel_for(
+                                         num_workloads, [indexer](int64_t i) {
+                                             dst_t* dst = indexer.GetOutputPtr<
+                                                     dst_t>(i);
+                                             const src_t* src =
+                                                     indexer.GetInputPtr<src_t>(
+                                                             0, i);
+                                             *dst = static_cast<dst_t>(*src);
+                                         });
+                             }).wait();
                     });
                 });
             }
@@ -198,7 +202,7 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, const UnaryEWOpCode& op_code) {
     // src and dst have been changed to have the same shape, device
     Dtype src_dtype = src.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
-    sy::queue& Q = sycl::GetDefaultQueue(src.GetDevice());
+    sy::queue& queue = sycl::GetDefaultQueue(src.GetDevice());
 
     auto assert_dtype_is_float32 = [](Dtype dtype) -> void {
         if (dtype != core::Float32) {
@@ -212,27 +216,28 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, const UnaryEWOpCode& op_code) {
             Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
             const int64_t num_workloads = indexer.NumWorkloads();
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(src_dtype, [&]() {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = static_cast<scalar_t>(!static_cast<bool>(*src));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = static_cast<scalar_t>(
+                                     !static_cast<bool>(*src));
+                         });
+                     }).wait();
             });
         } else if (dst_dtype == core::Bool) {
             Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
             const int64_t num_workloads = indexer.NumWorkloads();
             DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(src_dtype, [&]() {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         bool* dst = indexer.GetOutputPtr<bool>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = !static_cast<bool>(*src);
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             bool* dst = indexer.GetOutputPtr<bool>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = !static_cast<bool>(*src);
+                         });
+                     }).wait();
             });
         } else {
             utility::LogError(
@@ -247,29 +252,32 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, const UnaryEWOpCode& op_code) {
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME_OUTPUT_BOOL);
         const int64_t num_workloads = indexer.NumWorkloads();
         if (op_code == UnaryEWOpCode::IsNan) {
-            Q.submit([&](sy::handler& h) {
-                 h.parallel_for(num_workloads, [indexer](int64_t i) {
-                     bool* dst = indexer.GetOutputPtr<bool>(i);
-                     const scalar_t* src = indexer.GetInputPtr<scalar_t>(0, i);
-                     *dst = std::isnan(*src);
-                 });
-             }).wait();
+            queue.submit([&](sy::handler& h) {
+                     h.parallel_for(num_workloads, [indexer](int64_t i) {
+                         bool* dst = indexer.GetOutputPtr<bool>(i);
+                         const scalar_t* src =
+                                 indexer.GetInputPtr<scalar_t>(0, i);
+                         *dst = std::isnan(*src);
+                     });
+                 }).wait();
         } else if (op_code == UnaryEWOpCode::IsInf) {
-            Q.submit([&](sy::handler& h) {
-                 h.parallel_for(num_workloads, [indexer](int64_t i) {
-                     bool* dst = indexer.GetOutputPtr<bool>(i);
-                     const scalar_t* src = indexer.GetInputPtr<scalar_t>(0, i);
-                     *dst = std::isinf(*src);
-                 });
-             }).wait();
+            queue.submit([&](sy::handler& h) {
+                     h.parallel_for(num_workloads, [indexer](int64_t i) {
+                         bool* dst = indexer.GetOutputPtr<bool>(i);
+                         const scalar_t* src =
+                                 indexer.GetInputPtr<scalar_t>(0, i);
+                         *dst = std::isinf(*src);
+                     });
+                 }).wait();
         } else if (op_code == UnaryEWOpCode::IsFinite) {
-            Q.submit([&](sy::handler& h) {
-                 h.parallel_for(num_workloads, [indexer](int64_t i) {
-                     bool* dst = indexer.GetOutputPtr<bool>(i);
-                     const scalar_t* src = indexer.GetInputPtr<scalar_t>(0, i);
-                     *dst = std::isfinite(*src);
-                 });
-             }).wait();
+            queue.submit([&](sy::handler& h) {
+                     h.parallel_for(num_workloads, [indexer](int64_t i) {
+                         bool* dst = indexer.GetOutputPtr<bool>(i);
+                         const scalar_t* src =
+                                 indexer.GetInputPtr<scalar_t>(0, i);
+                         *dst = std::isfinite(*src);
+                     });
+                 }).wait();
         }
     } else {
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME);
@@ -278,98 +286,98 @@ void UnaryEWSYCL(const Tensor& src, Tensor& dst, const UnaryEWOpCode& op_code) {
         DISPATCH_DTYPE_TO_TEMPLATE_SYCL(src_dtype, [&]() {
             if (op_code == UnaryEWOpCode::Sqrt) {
                 assert_dtype_is_float32(src_dtype);
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = std::sqrt(static_cast<float>(*src));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = std::sqrt(static_cast<float>(*src));
+                         });
+                     }).wait();
             } else if (op_code == UnaryEWOpCode::Sin) {
                 assert_dtype_is_float32(src_dtype);
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = std::sin(static_cast<float>(*src));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = std::sin(static_cast<float>(*src));
+                         });
+                     }).wait();
             } else if (op_code == UnaryEWOpCode::Cos) {
                 assert_dtype_is_float32(src_dtype);
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = std::cos(static_cast<float>(*src));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = std::cos(static_cast<float>(*src));
+                         });
+                     }).wait();
             } else if (op_code == UnaryEWOpCode::Neg) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = -(*src);
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = -(*src);
+                         });
+                     }).wait();
             } else if (op_code == UnaryEWOpCode::Exp) {
                 assert_dtype_is_float32(src_dtype);
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = std::exp(static_cast<float>(*src));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = std::exp(static_cast<float>(*src));
+                         });
+                     }).wait();
             } else if (op_code == UnaryEWOpCode::Abs) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = std::abs(static_cast<float>(*src));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = std::abs(static_cast<float>(*src));
+                         });
+                     }).wait();
             } else if (op_code == UnaryEWOpCode::Floor) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = std::floor(static_cast<float>(*src));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = std::floor(static_cast<float>(*src));
+                         });
+                     }).wait();
             } else if (op_code == UnaryEWOpCode::Ceil) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = std::ceil(static_cast<float>(*src));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = std::ceil(static_cast<float>(*src));
+                         });
+                     }).wait();
             } else if (op_code == UnaryEWOpCode::Round) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = std::round(static_cast<float>(*src));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = std::round(static_cast<float>(*src));
+                         });
+                     }).wait();
             } else if (op_code == UnaryEWOpCode::Trunc) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
-                         const scalar_t* src =
-                                 indexer.GetInputPtr<scalar_t>(0, i);
-                         *dst = std::trunc(static_cast<float>(*src));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             scalar_t* dst = indexer.GetOutputPtr<scalar_t>(i);
+                             const scalar_t* src =
+                                     indexer.GetInputPtr<scalar_t>(0, i);
+                             *dst = std::trunc(static_cast<float>(*src));
+                         });
+                     }).wait();
             } else {
                 utility::LogError("Unimplemented op_code for UnaryEWCPU");
             }

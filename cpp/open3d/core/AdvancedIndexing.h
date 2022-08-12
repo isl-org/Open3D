@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "open3d/core/Indexer.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
 
@@ -182,21 +183,23 @@ public:
         element_byte_size_ = src.GetDtype().ByteSize();
     }
 
-    inline OPEN3D_HOST_DEVICE char* GetInputPtr(int64_t workload_idx) const {
+    OPEN3D_SYCL_EXTERNAL OPEN3D_HOST_DEVICE char* GetInputPtr(
+            int64_t workload_idx) const {
         char* ptr = indexer_.GetInputPtr(0, workload_idx);
         ptr += GetIndexedOffset(workload_idx) * element_byte_size_ *
                (mode_ == AdvancedIndexerMode::GET);
         return ptr;
     }
 
-    inline OPEN3D_HOST_DEVICE char* GetOutputPtr(int64_t workload_idx) const {
+    OPEN3D_SYCL_EXTERNAL OPEN3D_HOST_DEVICE char* GetOutputPtr(
+            int64_t workload_idx) const {
         char* ptr = indexer_.GetOutputPtr(workload_idx);
         ptr += GetIndexedOffset(workload_idx) * element_byte_size_ *
                (mode_ == AdvancedIndexerMode::SET);
         return ptr;
     }
 
-    inline OPEN3D_HOST_DEVICE int64_t
+    OPEN3D_SYCL_EXTERNAL OPEN3D_HOST_DEVICE int64_t
     GetIndexedOffset(int64_t workload_idx) const {
         int64_t offset = 0;
         for (int64_t i = 0; i < num_indices_; ++i) {
@@ -211,6 +214,8 @@ public:
     }
 
     int64_t NumWorkloads() const { return indexer_.NumWorkloads(); }
+
+    int64_t ElementByteSize() const { return element_byte_size_; }
 
 protected:
     Indexer indexer_;

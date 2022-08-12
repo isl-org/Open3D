@@ -31,7 +31,15 @@
 namespace open3d {
 namespace core {
 
-void pybind_sycl_utils(py::module& m) { m.def("sycl_demo", &sycl::SYCLDemo); }
+void pybind_sycl_utils(py::module& m) {
+    py::module m_sycl = m.def_submodule("sycl");
+
+    m_sycl.def("is_available", sycl::IsAvailable,
+               "Returns true if Open3D is compiled with SYCL support and at "
+               "least one compatible SYCL device is detected.");
+
+    m_sycl.def("sycl_demo", &sycl::SYCLDemo, "Runs SYCL demo program.");
+}
 
 }  // namespace core
 }  // namespace open3d

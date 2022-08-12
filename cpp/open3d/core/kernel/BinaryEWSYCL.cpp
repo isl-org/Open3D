@@ -54,7 +54,7 @@ void BinaryEWSYCL(const Tensor& lhs,
     Dtype src_dtype = lhs.GetDtype();
     Dtype dst_dtype = dst.GetDtype();
 
-    sy::queue& Q = sycl::GetDefaultQueue(lhs.GetDevice());
+    sy::queue& queue = sycl::GetDefaultQueue(lhs.GetDevice());
 
     if (IsBinaryEWBoolean(op_code)) {
         Indexer indexer;
@@ -79,77 +79,86 @@ void BinaryEWSYCL(const Tensor& lhs,
             DISPATCH_BOOL_OR_TYPE(dst_dtype, src_t, [&]() {
                 using dst_t = scalar_t;
                 if (op_code == BinaryEWOpCode::LogicalAnd) {
-                    Q.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<dst_t>(i) =
-                                     *indexer.GetInputPtr<src_t>(0, i) &&
-                                     *indexer.GetInputPtr<src_t>(1, i);
-                         });
-                     }).wait();
+                    queue.submit([&](sy::handler& h) {
+                             h.parallel_for(num_workloads, [indexer](
+                                                                   int64_t i) {
+                                 *indexer.GetOutputPtr<dst_t>(i) =
+                                         *indexer.GetInputPtr<src_t>(0, i) &&
+                                         *indexer.GetInputPtr<src_t>(1, i);
+                             });
+                         }).wait();
                 } else if (op_code == BinaryEWOpCode::LogicalOr) {
-                    Q.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<dst_t>(i) =
-                                     *indexer.GetInputPtr<src_t>(0, i) ||
-                                     *indexer.GetInputPtr<src_t>(1, i);
-                         });
-                     }).wait();
+                    queue.submit([&](sy::handler& h) {
+                             h.parallel_for(num_workloads, [indexer](
+                                                                   int64_t i) {
+                                 *indexer.GetOutputPtr<dst_t>(i) =
+                                         *indexer.GetInputPtr<src_t>(0, i) ||
+                                         *indexer.GetInputPtr<src_t>(1, i);
+                             });
+                         }).wait();
                 } else if (op_code == BinaryEWOpCode::LogicalXor) {
-                    Q.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<dst_t>(i) =
-                                     *indexer.GetInputPtr<src_t>(0, i) !=
-                                     *indexer.GetInputPtr<src_t>(1, i);
-                         });
-                     }).wait();
+                    queue.submit([&](sy::handler& h) {
+                             h.parallel_for(num_workloads, [indexer](
+                                                                   int64_t i) {
+                                 *indexer.GetOutputPtr<dst_t>(i) =
+                                         *indexer.GetInputPtr<src_t>(0, i) !=
+                                         *indexer.GetInputPtr<src_t>(1, i);
+                             });
+                         }).wait();
                 } else if (op_code == BinaryEWOpCode::Gt) {
-                    Q.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<dst_t>(i) =
-                                     *indexer.GetInputPtr<src_t>(0, i) >
-                                     *indexer.GetInputPtr<src_t>(1, i);
-                         });
-                     }).wait();
+                    queue.submit([&](sy::handler& h) {
+                             h.parallel_for(num_workloads, [indexer](
+                                                                   int64_t i) {
+                                 *indexer.GetOutputPtr<dst_t>(i) =
+                                         *indexer.GetInputPtr<src_t>(0, i) >
+                                         *indexer.GetInputPtr<src_t>(1, i);
+                             });
+                         }).wait();
                 } else if (op_code == BinaryEWOpCode::Lt) {
-                    Q.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<dst_t>(i) =
-                                     *indexer.GetInputPtr<src_t>(0, i) <
-                                     *indexer.GetInputPtr<src_t>(1, i);
-                         });
-                     }).wait();
+                    queue.submit([&](sy::handler& h) {
+                             h.parallel_for(num_workloads, [indexer](
+                                                                   int64_t i) {
+                                 *indexer.GetOutputPtr<dst_t>(i) =
+                                         *indexer.GetInputPtr<src_t>(0, i) <
+                                         *indexer.GetInputPtr<src_t>(1, i);
+                             });
+                         }).wait();
                 } else if (op_code == BinaryEWOpCode::Ge) {
-                    Q.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<dst_t>(i) =
-                                     *indexer.GetInputPtr<src_t>(0, i) >=
-                                     *indexer.GetInputPtr<src_t>(1, i);
-                         });
-                     }).wait();
+                    queue.submit([&](sy::handler& h) {
+                             h.parallel_for(num_workloads, [indexer](
+                                                                   int64_t i) {
+                                 *indexer.GetOutputPtr<dst_t>(i) =
+                                         *indexer.GetInputPtr<src_t>(0, i) >=
+                                         *indexer.GetInputPtr<src_t>(1, i);
+                             });
+                         }).wait();
                 } else if (op_code == BinaryEWOpCode::Le) {
-                    Q.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<dst_t>(i) =
-                                     *indexer.GetInputPtr<src_t>(0, i) <=
-                                     *indexer.GetInputPtr<src_t>(1, i);
-                         });
-                     }).wait();
+                    queue.submit([&](sy::handler& h) {
+                             h.parallel_for(num_workloads, [indexer](
+                                                                   int64_t i) {
+                                 *indexer.GetOutputPtr<dst_t>(i) =
+                                         *indexer.GetInputPtr<src_t>(0, i) <=
+                                         *indexer.GetInputPtr<src_t>(1, i);
+                             });
+                         }).wait();
                 } else if (op_code == BinaryEWOpCode::Eq) {
-                    Q.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<dst_t>(i) =
-                                     *indexer.GetInputPtr<src_t>(0, i) ==
-                                     *indexer.GetInputPtr<src_t>(1, i);
-                         });
-                     }).wait();
+                    queue.submit([&](sy::handler& h) {
+                             h.parallel_for(num_workloads, [indexer](
+                                                                   int64_t i) {
+                                 *indexer.GetOutputPtr<dst_t>(i) =
+                                         *indexer.GetInputPtr<src_t>(0, i) ==
+                                         *indexer.GetInputPtr<src_t>(1, i);
+                             });
+                         }).wait();
                 } else if (op_code == BinaryEWOpCode::Ne) {
-                    Q.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<dst_t>(i) =
-                                     *indexer.GetInputPtr<src_t>(0, i) !=
-                                     *indexer.GetInputPtr<src_t>(1, i);
-                         });
-                     }).wait();
+                    queue.submit([&](sy::handler& h) {
+                             h.parallel_for(num_workloads, [indexer](
+                                                                   int64_t i) {
+                                 *indexer.GetOutputPtr<dst_t>(i) =
+                                         *indexer.GetInputPtr<src_t>(0, i) !=
+                                         *indexer.GetInputPtr<src_t>(1, i);
+                             });
+                         }).wait();
                 } else {
                     utility::LogError("Unsupported BinaryEWOpCode {}.",
                                       op_code);
@@ -162,21 +171,21 @@ void BinaryEWSYCL(const Tensor& lhs,
         const int64_t num_workloads = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(src_dtype, [&]() {
             if (op_code == BinaryEWOpCode::Maximum) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         *indexer.GetOutputPtr<scalar_t>(i) =
-                                 std::max(*indexer.GetInputPtr<scalar_t>(0, i),
-                                          *indexer.GetInputPtr<scalar_t>(1, i));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             *indexer.GetOutputPtr<scalar_t>(i) = std::max(
+                                     *indexer.GetInputPtr<scalar_t>(0, i),
+                                     *indexer.GetInputPtr<scalar_t>(1, i));
+                         });
+                     }).wait();
             } else if (op_code == BinaryEWOpCode::Minimum) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         *indexer.GetOutputPtr<scalar_t>(i) =
-                                 std::min(*indexer.GetInputPtr<scalar_t>(0, i),
-                                          *indexer.GetInputPtr<scalar_t>(1, i));
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             *indexer.GetOutputPtr<scalar_t>(i) = std::min(
+                                     *indexer.GetInputPtr<scalar_t>(0, i),
+                                     *indexer.GetInputPtr<scalar_t>(1, i));
+                         });
+                     }).wait();
             } else {
                 utility::LogError("Unsupported BinaryEWOpCode {}.", op_code);
             }
@@ -186,37 +195,37 @@ void BinaryEWSYCL(const Tensor& lhs,
         const int64_t num_workloads = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE_SYCL(src_dtype, [&]() {
             if (op_code == BinaryEWOpCode::Add) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         *indexer.GetOutputPtr<scalar_t>(i) =
-                                 *indexer.GetInputPtr<scalar_t>(0, i) +
-                                 *indexer.GetInputPtr<scalar_t>(1, i);
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             *indexer.GetOutputPtr<scalar_t>(i) =
+                                     *indexer.GetInputPtr<scalar_t>(0, i) +
+                                     *indexer.GetInputPtr<scalar_t>(1, i);
+                         });
+                     }).wait();
             } else if (op_code == BinaryEWOpCode::Sub) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         *indexer.GetOutputPtr<scalar_t>(i) =
-                                 *indexer.GetInputPtr<scalar_t>(0, i) -
-                                 *indexer.GetInputPtr<scalar_t>(1, i);
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             *indexer.GetOutputPtr<scalar_t>(i) =
+                                     *indexer.GetInputPtr<scalar_t>(0, i) -
+                                     *indexer.GetInputPtr<scalar_t>(1, i);
+                         });
+                     }).wait();
             } else if (op_code == BinaryEWOpCode::Mul) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         *indexer.GetOutputPtr<scalar_t>(i) =
-                                 *indexer.GetInputPtr<scalar_t>(0, i) *
-                                 *indexer.GetInputPtr<scalar_t>(1, i);
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             *indexer.GetOutputPtr<scalar_t>(i) =
+                                     *indexer.GetInputPtr<scalar_t>(0, i) *
+                                     *indexer.GetInputPtr<scalar_t>(1, i);
+                         });
+                     }).wait();
             } else if (op_code == BinaryEWOpCode::Div) {
-                Q.submit([&](sy::handler& h) {
-                     h.parallel_for(num_workloads, [indexer](int64_t i) {
-                         *indexer.GetOutputPtr<scalar_t>(i) =
-                                 *indexer.GetInputPtr<scalar_t>(0, i) /
-                                 *indexer.GetInputPtr<scalar_t>(1, i);
-                     });
-                 }).wait();
+                queue.submit([&](sy::handler& h) {
+                         h.parallel_for(num_workloads, [indexer](int64_t i) {
+                             *indexer.GetOutputPtr<scalar_t>(i) =
+                                     *indexer.GetInputPtr<scalar_t>(0, i) /
+                                     *indexer.GetInputPtr<scalar_t>(1, i);
+                         });
+                     }).wait();
             } else {
                 utility::LogError("Unsupported BinaryEWOpCode {}.", op_code);
             }

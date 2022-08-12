@@ -58,6 +58,10 @@ void IndexGet(const Tensor& src,
 #ifdef BUILD_CUDA_MODULE
         IndexGetCUDA(src, dst, index_tensors, indexed_shape, indexed_strides);
 #endif
+    } else if (src.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        IndexGetSYCL(src, dst, index_tensors, indexed_shape, indexed_strides);
+#endif
     } else {
         utility::LogError("IndexGet: Unimplemented device");
     }
@@ -78,6 +82,11 @@ void IndexSet(const Tensor& src,
     } else if (dst.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         IndexSetCUDA(src_same_device, dst, index_tensors, indexed_shape,
+                     indexed_strides);
+#endif
+    } else if (dst.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        IndexSetSYCL(src_same_device, dst, index_tensors, indexed_shape,
                      indexed_strides);
 #endif
     } else {

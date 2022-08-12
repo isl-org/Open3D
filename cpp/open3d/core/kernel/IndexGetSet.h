@@ -39,7 +39,19 @@ void IndexGet(const Tensor& src,
               const SizeVector& indexed_shape,
               const SizeVector& indexed_strides);
 
+void IndexSet(const Tensor& src,
+              Tensor& dst,
+              const std::vector<Tensor>& index_tensors,
+              const SizeVector& indexed_shape,
+              const SizeVector& indexed_strides);
+
 void IndexGetCPU(const Tensor& src,
+                 Tensor& dst,
+                 const std::vector<Tensor>& index_tensors,
+                 const SizeVector& indexed_shape,
+                 const SizeVector& indexed_strides);
+
+void IndexSetCPU(const Tensor& src,
                  Tensor& dst,
                  const std::vector<Tensor>& index_tensors,
                  const SizeVector& indexed_shape,
@@ -51,22 +63,22 @@ void IndexGetCUDA(const Tensor& src,
                   const std::vector<Tensor>& index_tensors,
                   const SizeVector& indexed_shape,
                   const SizeVector& indexed_strides);
+
+void IndexSetCUDA(const Tensor& src,
+                  Tensor& dst,
+                  const std::vector<Tensor>& index_tensors,
+                  const SizeVector& indexed_shape,
+                  const SizeVector& indexed_strides);
 #endif
 
-void IndexSet(const Tensor& src,
-              Tensor& dst,
-              const std::vector<Tensor>& index_tensors,
-              const SizeVector& indexed_shape,
-              const SizeVector& indexed_strides);
+#ifdef BUILD_SYCL_MODULE
+void IndexGetSYCL(const Tensor& src,
+                  Tensor& dst,
+                  const std::vector<Tensor>& index_tensors,
+                  const SizeVector& indexed_shape,
+                  const SizeVector& indexed_strides);
 
-void IndexSetCPU(const Tensor& src,
-                 Tensor& dst,
-                 const std::vector<Tensor>& index_tensors,
-                 const SizeVector& indexed_shape,
-                 const SizeVector& indexed_strides);
-
-#ifdef BUILD_CUDA_MODULE
-void IndexSetCUDA(const Tensor& src,
+void IndexSetSYCL(const Tensor& src,
                   Tensor& dst,
                   const std::vector<Tensor>& index_tensors,
                   const SizeVector& indexed_shape,

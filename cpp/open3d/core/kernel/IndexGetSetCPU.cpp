@@ -57,14 +57,7 @@ static void CPUCopyObjectElementKernel(const void* src,
     memcpy(dst_bytes, src_bytes, object_byte_size);
 }
 
-void IndexGetCPU(const Tensor& src,
-                 Tensor& dst,
-                 const std::vector<Tensor>& index_tensors,
-                 const SizeVector& indexed_shape,
-                 const SizeVector& indexed_strides) {
-    Dtype dtype = src.GetDtype();
-    AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
-                       AdvancedIndexer::AdvancedIndexerMode::GET);
+static void RunIndexGetSetCPU(const AdvancedIndexer& ai, const Dtype& dtype) {
     if (dtype.IsObject()) {
         int64_t object_byte_size = dtype.ByteSize();
         LaunchAdvancedIndexerKernel(ai, [&](const void* src, void* dst) {
@@ -77,24 +70,24 @@ void IndexGetCPU(const Tensor& src,
     }
 }
 
+void IndexGetCPU(const Tensor& src,
+                 Tensor& dst,
+                 const std::vector<Tensor>& index_tensors,
+                 const SizeVector& indexed_shape,
+                 const SizeVector& indexed_strides) {
+    AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
+                       AdvancedIndexer::AdvancedIndexerMode::GET);
+    RunIndexGetSetCPU(ai, src.GetDtype());
+}
+
 void IndexSetCPU(const Tensor& src,
                  Tensor& dst,
                  const std::vector<Tensor>& index_tensors,
                  const SizeVector& indexed_shape,
                  const SizeVector& indexed_strides) {
-    Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
-    if (dtype.IsObject()) {
-        int64_t object_byte_size = dtype.ByteSize();
-        LaunchAdvancedIndexerKernel(ai, [&](const void* src, void* dst) {
-            CPUCopyObjectElementKernel(src, dst, object_byte_size);
-        });
-    } else {
-        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
-            LaunchAdvancedIndexerKernel(ai, CPUCopyElementKernel<scalar_t>);
-        });
-    }
+    RunIndexGetSetCPU(ai, src.GetDtype());
 }
 
 }  // namespace kernel

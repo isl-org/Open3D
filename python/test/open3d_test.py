@@ -52,10 +52,14 @@ def list_devices():
     - returns [Device("CPU:0")].
     """
     import open3d as o3d
+
+    devices = [o3d.core.Device("CPU:0")]
     if o3d.core.cuda.device_count() > 0:
-        return [o3d.core.Device("CPU:0"), o3d.core.Device("CUDA:0")]
-    else:
-        return [o3d.core.Device("CPU:0")]
+        devices.append(o3d.core.Device("CUDA:0"))
+    if o3d.core.sycl.is_available():
+        devices.append(o3d.core.Device("SYCL:0"))
+
+    return devices
 
 
 def list_devices_with_torch():

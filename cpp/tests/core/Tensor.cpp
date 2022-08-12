@@ -304,7 +304,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, FillSlice) {
     EXPECT_EQ(t.ToFlatVector<float>(), std::vector<float>({1, 0, 1, 1, 0, 1}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexSetFillFancy) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexSetFillFancy) {
     core::Device dst_device;
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -849,7 +849,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, Slice) {
     EXPECT_EQ(t_5.ToFlatVector<float>(), std::vector<float>({12, 16}));
 }
 
-TEST_P(TensorPermuteDevices, GetItem) {
+TEST_P(TensorPermuteDevicesWithSYCL, GetItem) {
     core::Device device = GetParam();
 
     core::Tensor t = core::Tensor::Init<float>(
@@ -868,7 +868,7 @@ TEST_P(TensorPermuteDevices, GetItem) {
               std::vector<float>({12, 14, 16, 18, 20, 22}));
 }
 
-TEST_P(TensorPermuteDevices, GetItemAdvancedIndexing) {
+TEST_P(TensorPermuteDevicesWithSYCL, GetItemAdvancedIndexing) {
     core::Device device = GetParam();
     core::Tensor t = core::Tensor::Init<float>(
             {0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
@@ -884,7 +884,7 @@ TEST_P(TensorPermuteDevices, GetItemAdvancedIndexing) {
               std::vector<float>({0, 1, 1, 2, 3, 5, 8, 13, 21}));
 }
 
-TEST_P(TensorPermuteDevices, GetItemAdvancedIndexingMixed) {
+TEST_P(TensorPermuteDevicesWithSYCL, GetItemAdvancedIndexingMixed) {
     core::Device device = GetParam();
 
     core::Tensor t = core::Tensor::Init<float>(
@@ -904,7 +904,7 @@ TEST_P(TensorPermuteDevices, GetItemAdvancedIndexingMixed) {
     EXPECT_EQ(t_1.ToFlatVector<float>(), std::vector<float>({13, 17, 14, 18}));
 }
 
-TEST_P(TensorPermuteDevices, SetItemAdvancedIndexing) {
+TEST_P(TensorPermuteDevicesWithSYCL, SetItemAdvancedIndexing) {
     core::Device device = GetParam();
 
     core::Tensor t = core::Tensor::Init<float>(
@@ -924,7 +924,7 @@ TEST_P(TensorPermuteDevices, SetItemAdvancedIndexing) {
                                   16, 17,  18, 19,  20, 21, 22, 23}));
 }
 
-TEST_P(TensorPermuteDevices, SetItemAdvancedIndexingMixed) {
+TEST_P(TensorPermuteDevicesWithSYCL, SetItemAdvancedIndexingMixed) {
     core::Device device = GetParam();
 
     core::Tensor t = core::Tensor::Init<float>(
@@ -947,7 +947,7 @@ TEST_P(TensorPermuteDevices, SetItemAdvancedIndexingMixed) {
                                   16, 200, 400, 19, 20, 21,  22,  23}));
 }
 
-TEST_P(TensorPermuteDevices, SliceAssign) {
+TEST_P(TensorPermuteDevicesWithSYCL, SliceAssign) {
     core::Device device = GetParam();
 
     core::Tensor dst = core::Tensor::Init<float>(
@@ -1228,7 +1228,8 @@ TEST_P(TensorPermuteDevicePairs, IndexGet2DBroadcastedIndex) {
                                   28, 29, 30, 31, 40, 41, 42, 43}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGet2DBroadcastedIndexSplitBySlice) {
+TEST_P(TensorPermuteDevicePairsWithSYCL,
+       IndexGet2DBroadcastedIndexSplitBySlice) {
     core::Device idx_device;
     core::Device src_device;
     std::tie(idx_device, src_device) = GetParam();
@@ -1259,7 +1260,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGet2DBroadcastedIndexSplitBySlice) {
                                   16, 20, 40, 44, 17, 21, 41, 45}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGetAssignToBroadcast) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexGetAssignToBroadcast) {
     core::Device dst_device;
     core::Device src_device;
     std::tie(dst_device, src_device) = GetParam();
@@ -1289,7 +1290,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGetAssignToBroadcast) {
             std::vector<float>({5, 10, 17, 22, 5, 10, 17, 22, 5, 10, 17, 22}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGetSeparateBySlice) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexGetSeparateBySlice) {
     core::Device idx_device;
     core::Device src_device;
     std::tie(idx_device, src_device) = GetParam();
@@ -1313,7 +1314,7 @@ TEST_P(TensorPermuteDevicePairs, IndexGetSeparateBySlice) {
               std::vector<float>({0, 4, 8, 13, 17, 21}));
 }
 
-TEST_P(TensorPermuteDevicePairs, IndexGetSliceEnd) {
+TEST_P(TensorPermuteDevicePairsWithSYCL, IndexGetSliceEnd) {
     core::Device idx_device;
     core::Device src_device;
     std::tie(idx_device, src_device) = GetParam();
@@ -1555,7 +1556,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ShallowCopyConstructor) {
     EXPECT_EQ(t.GetDataPtr(), FirstTensorDataPtr({t}));
 }
 
-TEST_P(TensorPermuteDevices, AdvancedIndexing_IsIndexSplittedBySlice) {
+TEST_P(TensorPermuteDevicesWithSYCL, AdvancedIndexing_IsIndexSplittedBySlice) {
     core::Device device = GetParam();
 
     core::Tensor idx = core::Tensor::Init<int64_t>({1, 2}, device);

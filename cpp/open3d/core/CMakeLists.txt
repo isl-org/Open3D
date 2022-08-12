@@ -74,6 +74,7 @@ if (BUILD_SYCL_MODULE)
         SYCLContext.cpp
         kernel/UnaryEWSYCL.cpp
         kernel/BinaryEWSYCL.cpp
+        kernel/IndexGetSetSYCL.cpp
     )
 endif()
 
