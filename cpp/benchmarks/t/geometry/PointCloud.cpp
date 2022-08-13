@@ -516,6 +516,12 @@ BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   open3d::geometry::KDTreeSearchParamKNN(30))
         ->Unit(benchmark::kMillisecond);
 
+BENCHMARK_CAPTURE(LegacyEstimateNormals,
+                  Legacy Radius[0.02 | 0.06],
+                  0.02,
+                  open3d::geometry::KDTreeSearchParamRadius(0.06))
+        ->Unit(benchmark::kMillisecond);
+
 BENCHMARK_CAPTURE(
         RemoveRadiusOutliers, CPU[50 | 0.05], core::Device("CPU:0"), 50, 0.03)
         ->Unit(benchmark::kMillisecond);
