@@ -81,6 +81,7 @@ struct VtkToTensorType<long long> {
     typedef int64_t TensorType;
 };
 
+namespace {
 struct CreateTensorFromVtkDataArrayWorker {
     bool copy;
     vtkDataArray* data_array;
@@ -121,6 +122,7 @@ struct CreateTensorFromVtkDataArrayWorker {
         }
     }
 };
+}  // namespace
 
 /// Creates a tensor from a vtkDataArray.
 /// The returned Tensor may directly use the memory of the array if device (CPU)
@@ -193,6 +195,7 @@ static vtkSmartPointer<vtkPoints> CreateVtkPointsFromTensor(
     return pts;
 }
 
+namespace {
 // Helper for creating the offset array from Common/DataModel/vtkCellArray.cxx
 struct GenerateOffsetsImpl {
     vtkIdType CellSize;
@@ -208,6 +211,7 @@ struct GenerateOffsetsImpl {
                                    this->ConnectivityArraySize);
     }
 };
+}  // namespace
 
 /// Creates a vtkCellArray from a Tensor.
 /// The returned array may directly use the memory of the tensor and the tensor
@@ -413,6 +417,30 @@ TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
     AddVtkFieldDataToTensorMap(mesh.GetTriangleAttr(), polydata->GetCellData(),
                                copy);
     return mesh;
+}
+
+OPEN3D_LOCAL LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata,
+                                                  bool copy) {
+    if (!polydata->GetPoints()) {
+        return LineSet();
+    }
+    core::Tensor vertices = CreateTensorFromVtkDataArray(
+            polydata->GetPoints()->GetData(), copy);
+
+    core::Tensor lines =
+            CreateTensorFromVtkCellArray(polydata->GetLines(), copy);
+    // // Some algorithms return an empty tensor with shape (0,0).
+    // // Fix the last dim here.
+    if (lines.GetShape() == core::SizeVector{0, 0}) {
+        lines = lines.Reshape({0, 2});
+    }
+    LineSet lineset(vertices, lines);
+
+    AddVtkFieldDataToTensorMap(lineset.GetPointAttr(), polydata->GetPointData(),
+                               copy);
+    AddVtkFieldDataToTensorMap(lineset.GetLineAttr(), polydata->GetCellData(),
+                               copy);
+    return lineset;
 }
 
 }  // namespace vtkutils
