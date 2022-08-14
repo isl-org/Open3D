@@ -68,6 +68,11 @@ void GetPointMaskWithinOBB(const core::Tensor& points,
                            const core::Tensor& extent,
                            core::Tensor& mask);
 
+void ComputeISSKeypoints(const core::Tensor& points,
+                         double radius1,
+                         double radius2,
+                         core::Tensor& mask);
+
 void UnprojectCPU(
         const core::Tensor& depth,
         utility::optional<std::reference_wrapper<const core::Tensor>>
@@ -100,6 +105,11 @@ void GetPointMaskWithinOBBCPU(const core::Tensor& points,
                               const core::Tensor& rotation,
                               const core::Tensor& extent,
                               core::Tensor& mask);
+
+void ComputeISSKeypointsCPU(const core::Tensor& points,
+                            double radius1,
+                            double radius2,
+                            core::Tensor& mask);
 
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
@@ -134,6 +144,11 @@ void GetPointMaskWithinOBBCUDA(const core::Tensor& points,
                                const core::Tensor& rotation,
                                const core::Tensor& extent,
                                core::Tensor& mask);
+
+void ComputeISSKeypointsCUDA(const core::Tensor& points,
+                             double radius1,
+                             double radius2,
+                             core::Tensor& mask);
 #endif
 
 void EstimateCovariancesUsingHybridSearchCPU(const core::Tensor& points,
@@ -144,6 +159,10 @@ void EstimateCovariancesUsingHybridSearchCPU(const core::Tensor& points,
 void EstimateCovariancesUsingKNNSearchCPU(const core::Tensor& points,
                                           core::Tensor& covariances,
                                           const int64_t& max_nn);
+
+void EstimateCovariancesUsingRadiusSearchCPU(const core::Tensor& points,
+                                             core::Tensor& covariances,
+                                             const double& radius);
 
 void EstimateNormalsFromCovariancesCPU(const core::Tensor& covariances,
                                        core::Tensor& normals,
@@ -171,6 +190,10 @@ void EstimateCovariancesUsingHybridSearchCUDA(const core::Tensor& points,
 void EstimateCovariancesUsingKNNSearchCUDA(const core::Tensor& points,
                                            core::Tensor& covariances,
                                            const int64_t& max_nn);
+
+void EstimateCovariancesUsingRadiusSearchCUDA(const core::Tensor& points,
+                                              core::Tensor& covariances,
+                                              const double& radius);
 
 void EstimateNormalsFromCovariancesCUDA(const core::Tensor& covariances,
                                         core::Tensor& normals,

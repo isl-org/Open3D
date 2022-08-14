@@ -187,6 +187,47 @@ void GetPointMaskWithinAABBCPU
     });
 }
 
+#if defined(__CUDACC__)
+void ComputeISSKeypointsCUDA
+#else
+void ComputeISSKeypointsCPU
+#endif
+        (const core::Tensor& points,
+         double radius1,
+         double radius2,
+         core::Tensor& mask) {
+    // Compute covariance matrix for each point with its nearest neighbors
+    // within radius1.
+    core::Tensor covariances = core::Tensor::Empty(
+            {points.GetLength(), 9}, points.GetDtype(), points.GetDevice());
+    EstimateCovariancesUsingRadiusSearchCPU(points, covariances, radius1);
+
+    // Search nearest neighbors using radius2.
+    core::nns::NearestNeighborSearch nns(points, core::Int32);
+    bool check;
+
+    check = nns.FixedRadiusIndex(radius2);
+    if (!check) {
+        utility::LogError("Building FixedRadiusIndex failed.");
+    }
+    core::Tensor indices, distances2, counts;
+    std::tie(indices, distances2, counts) =
+            nns.FixedRadiusSearch(points, radius2);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        bool* mask_ptr = mask.GetDataPtr<bool>();
+        const scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(points.GetDevice(), points.GetLength(),
+                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                              scalar_t U[9];
+                              scalar_t V[9];
+                              scalar_t S[3];
+                              svd3x3<scalar_t>(covariances + 9 * workload_idx, U, S, V);
+                          });
+    });
+}
+
 // This is a `two-pass` estimate method for covariance which is numerically more
 // robust than the `textbook` method generally used for covariance computation.
 template <typename scalar_t>
@@ -301,6 +342,55 @@ void EstimateCovariancesUsingHybridSearchCPU
                             neighbour_counts_ptr[workload_idx];
                     // Covariance is of shape {3, 3}, so it has an
                     // offset factor of 9 x workload_idx.
+                    const int32_t covariances_offset = 9 * workload_idx;
+
+                    EstimatePointWiseRobustNormalizedCovarianceKernel(
+                            points_ptr,
+                            neighbour_indices_ptr + neighbour_offset,
+                            neighbour_count,
+                            covariances_ptr + covariances_offset);
+                });
+    });
+
+    core::cuda::Synchronize(points.GetDevice());
+}
+
+#if defined(__CUDACC__)
+void EstimateCovariancesUsingRadiusSearchCUDA
+#else
+void EstimateCovariancesUsingRadiusSearchCPU
+#endif
+        (const core::Tensor& points,
+         core::Tensor& covariances,
+         const double& radius) {
+    core::Dtype dtype = points.GetDtype();
+    int64_t n = points.GetLength();
+
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
+    bool check = tree.FixedRadiusIndex(radius);
+    if (!check) {
+        utility::LogError("Building Radius-Index failed.");
+    }
+
+    core::Tensor indices, distance, counts;
+    std::tie(indices, distance, counts) =
+            tree.FixedRadiusSearch(points, radius);
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const int32_t* neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
+        const int32_t* neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
+        scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    const int32_t neighbour_offset =
+                            neighbour_counts_ptr[workload_idx];
+                    const int32_t neighbour_count =
+                            (neighbour_counts_ptr[workload_idx + 1] -
+                             neighbour_counts_ptr[workload_idx]);
+                    // Covariance is of shape {3, 3}, so it has an offset factor
+                    // of 9 x workload_idx.
                     const int32_t covariances_offset = 9 * workload_idx;
 
                     EstimatePointWiseRobustNormalizedCovarianceKernel(
