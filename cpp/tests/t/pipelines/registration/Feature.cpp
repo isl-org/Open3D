@@ -47,17 +47,16 @@ INSTANTIATE_TEST_SUITE_P(Feature,
 TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
     core::Device device = GetParam();
 
-    t::geometry::PointCloud pcd;
+    open3d::geometry::PointCloud pcd_legacy;
     data::BunnyMesh byunny;
-    t::io::ReadPointCloud(byunny.GetPath(), pcd);
+    open3d::io::ReadPointCloud(byunny.GetPath(), pcd_legacy);
 
-    pcd.EstimateNormals();
-
-    const geometry::PointCloud legacy = pcd.ToLegacy();
-    pcd = pcd.To(device);
+    pcd_legacy.EstimateNormals();
+    // Convert to float64 to avoid precision loss.
+    const auto pcd = t::geometry::PointCloud::FromLegacy(pcd_legacy, core::Float64, device);
 
     const auto fpfh = pipelines::registration::ComputeFPFHFeature(
-            legacy, geometry::KDTreeSearchParamHybrid(0.01, 100));
+            pcd_legacy, geometry::KDTreeSearchParamHybrid(0.01, 100));
     const auto fpfh_t =
             t::pipelines::registration::ComputeFPFHFeature(pcd, 100, 0.01);
 
