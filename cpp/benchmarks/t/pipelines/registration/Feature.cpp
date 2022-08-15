@@ -77,20 +77,20 @@ void ComputeFPFHFeature(benchmark::State& state,
 }
 
 BENCHMARK_CAPTURE(LegacyComputeFPFHFeature,
-                  Legacy Hybrid[0.01 | 100],
+                  Legacy Hybrid[0.02 | 100],
                   100,
-                  0.01)
+                  0.02)
         ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(ComputeFPFHFeature,
-                  CPU F32 Hybrid[0.01 | 100],
+                  CPU F32 Hybrid[0.02 | 100],
                   core::Device("CPU:0"),
                   core::Float32,
                   100,
-                  0.01)
+                  0.02)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(ComputeFPFHFeature,
-                  CPU F64 Hybrid[0.01 | 100],
+                  CPU F64 Hybrid[0.02 | 100],
                   core::Device("CPU:0"),
                   core::Float64,
                   100,
@@ -99,14 +99,14 @@ BENCHMARK_CAPTURE(ComputeFPFHFeature,
 
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(ComputeFPFHFeature,
-                  CUDA F32 Hybrid[0.01 | 100],
+                  CUDA F32 Hybrid[0.02 | 100],
                   core::Device("CUDA:0"),
                   core::Float32,
                   100,
                   0.02)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(ComputeFPFHFeature,
-                  CUDA F64 Hybrid[0.01 | 100],
+                  CUDA F64 Hybrid[0.02 | 100],
                   core::Device("CUDA:0"),
                   core::Float64,
                   100,
