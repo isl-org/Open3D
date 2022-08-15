@@ -71,6 +71,8 @@ void GetPointMaskWithinOBB(const core::Tensor& points,
 void ComputeISSKeypoints(const core::Tensor& points,
                          double radius1,
                          double radius2,
+                         double gamma_21,
+                         double gamma_32,
                          core::Tensor& mask);
 
 void UnprojectCPU(
@@ -109,6 +111,8 @@ void GetPointMaskWithinOBBCPU(const core::Tensor& points,
 void ComputeISSKeypointsCPU(const core::Tensor& points,
                             double radius1,
                             double radius2,
+                            double gamma_21,
+                            double gamma_32,
                             core::Tensor& mask);
 
 #ifdef BUILD_CUDA_MODULE
@@ -148,6 +152,8 @@ void GetPointMaskWithinOBBCUDA(const core::Tensor& points,
 void ComputeISSKeypointsCUDA(const core::Tensor& points,
                              double radius1,
                              double radius2,
+                             double gamma_21,
+                             double gamma_32,
                              core::Tensor& mask);
 #endif
 

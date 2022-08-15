@@ -195,12 +195,40 @@ void ComputeISSKeypointsCPU
         (const core::Tensor& points,
          double radius1,
          double radius2,
+         double gamma_21,
+         double gamma_32,
          core::Tensor& mask) {
     // Compute covariance matrix for each point with its nearest neighbors
     // within radius1.
     core::Tensor covariances = core::Tensor::Empty(
             {points.GetLength(), 9}, points.GetDtype(), points.GetDevice());
     EstimateCovariancesUsingRadiusSearchCPU(points, covariances, radius1);
+
+    core::Tensor third_eigen_values = core::Tensor::Zeros(
+            {points.GetLength()}, points.GetDtype(), points.GetDevice());
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        bool* mask_ptr = mask.GetDataPtr<bool>();
+        const scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
+        scalar_t* third_eigen_values_ptr =
+                third_eigen_values.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(
+                points.GetDevice(), points.GetLength(),
+                [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    scalar_t U[9];
+                    scalar_t V[9];
+                    scalar_t S[3];
+                    const scalar_t* A_3X3 = covariances_ptr + 9 * workload_idx;
+                    core::linalg::kernel::svd3x3<scalar_t>(A_3X3, U, S, V);
+                    if ((S[1] / S[0]) < gamma_21 && (S[2] / S[1]) < gamma_32) {
+                        third_eigen_values_ptr[workload_idx] = S[2];
+                    }
+                });
+    });
+
+    // Only use points with third eigen value larger than 0 as keypoints.
+    const core::Tensor kp_mask = third_eigen_values.Ge(0.0);
 
     // Search nearest neighbors using radius2.
     core::nns::NearestNeighborSearch nns(points, core::Int32);
@@ -212,19 +240,19 @@ void ComputeISSKeypointsCPU
     }
     core::Tensor indices, distances2, counts;
     std::tie(indices, distances2, counts) =
-            nns.FixedRadiusSearch(points, radius2);
+            nns.FixedRadiusSearch(points.IndexGet({kp_mask}), radius2);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
-        bool* mask_ptr = mask.GetDataPtr<bool>();
-        const scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
+        const bool* kp_mask_ptr = kp_mask.GetDataPtr<bool>();
+        const scalar_t* third_eigen_values_ptr =
+                third_eigen_values.GetDataPtr<scalar_t>();
+        const int32_t* indices_ptr = indices.GetDataPtr<int32_t>();
 
-        core::ParallelFor(points.GetDevice(), points.GetLength(),
-                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                              scalar_t U[9];
-                              scalar_t V[9];
-                              scalar_t S[3];
-                              svd3x3<scalar_t>(covariances + 9 * workload_idx, U, S, V);
-                          });
+        core::ParallelFor(
+                points.GetDevice(), points.GetLength(),
+                [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+                });
     });
 }
 
