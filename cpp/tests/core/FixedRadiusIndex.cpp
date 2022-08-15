@@ -220,16 +220,17 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
                                              gt_distances.end());
 
     for (size_t i = 0; i < gt_neighbors_row_splits_32.size() - 1; i++) {
-        int32_t size_i =
-                gt_neighbors_row_splits_32[i + 1] - gt_neighbors_row_splits_32[i];
+        int32_t size_i = gt_neighbors_row_splits_32[i + 1] -
+                         gt_neighbors_row_splits_32[i];
 
         // Sort predicted indices and distances
         std::vector<size_t> p_i = FindPermutation<int32_t>(
-                indices_vector32.data() + gt_neighbors_row_splits_32[i], size_i);
-        ApplyPermutation(indices_vector32.data() + gt_neighbors_row_splits_32[i],
-                         p_i);
-        ApplyPermutation(distances_vector32.data() + gt_neighbors_row_splits_32[i],
-                         p_i);
+                indices_vector32.data() + gt_neighbors_row_splits_32[i],
+                size_i);
+        ApplyPermutation(
+                indices_vector32.data() + gt_neighbors_row_splits_32[i], p_i);
+        ApplyPermutation(
+                distances_vector32.data() + gt_neighbors_row_splits_32[i], p_i);
 
         // Sort gt indices and distances
         std::vector<size_t> gt_p_i = FindPermutation<int32_t>(
@@ -282,16 +283,17 @@ TEST(FixedRadiusIndex, SearchRadiusBatch) {
                                              gt_distances.end());
 
     for (size_t i = 0; i < gt_neighbors_row_splits_64.size() - 1; i++) {
-        int64_t size_i =
-                gt_neighbors_row_splits_64[i + 1] - gt_neighbors_row_splits_64[i];
+        int64_t size_i = gt_neighbors_row_splits_64[i + 1] -
+                         gt_neighbors_row_splits_64[i];
 
         // Sort predicted indices and distances
         std::vector<size_t> p_i = FindPermutation<int64_t>(
-                indices_vector64.data() + gt_neighbors_row_splits_64[i], size_i);
-        ApplyPermutation(indices_vector64.data() + gt_neighbors_row_splits_64[i],
-                         p_i);
-        ApplyPermutation(distances_vector64.data() + gt_neighbors_row_splits_64[i],
-                         p_i);
+                indices_vector64.data() + gt_neighbors_row_splits_64[i],
+                size_i);
+        ApplyPermutation(
+                indices_vector64.data() + gt_neighbors_row_splits_64[i], p_i);
+        ApplyPermutation(
+                distances_vector64.data() + gt_neighbors_row_splits_64[i], p_i);
 
         // Sort gt indices and distances
         std::vector<size_t> gt_p_i = FindPermutation<int64_t>(
