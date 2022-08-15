@@ -53,7 +53,8 @@ TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
 
     pcd_legacy.EstimateNormals();
     // Convert to float64 to avoid precision loss.
-    const auto pcd = t::geometry::PointCloud::FromLegacy(pcd_legacy, core::Float64, device);
+    const auto pcd = t::geometry::PointCloud::FromLegacy(pcd_legacy,
+                                                         core::Float64, device);
 
     const auto fpfh = pipelines::registration::ComputeFPFHFeature(
             pcd_legacy, geometry::KDTreeSearchParamHybrid(0.01, 100));
