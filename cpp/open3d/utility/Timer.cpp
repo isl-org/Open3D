@@ -52,8 +52,20 @@ void Timer::Stop() {
     end_time_in_milliseconds_ = GetSystemTimeInMilliseconds();
 }
 
-double Timer::GetDuration() const {
+double Timer::GetDurationInMillisecond() const {
     return end_time_in_milliseconds_ - start_time_in_milliseconds_;
+}
+
+double Timer::GetDurationInSecond() const {
+    return (end_time_in_milliseconds_ - start_time_in_milliseconds_) / 1000.0;
+}
+
+std::tuple<int, int, double> Timer::GetDurationInHMS() const {
+    double duration = GetDurationInSecond();
+    int hours = static_cast<int>(duration / 3600.0);
+    int minutes = static_cast<int>((duration - hours * 3600.0) / 60.0);
+    double seconds = duration - hours * 3600.0 - minutes * 60.0;
+    return std::make_tuple(hours, minutes, seconds);
 }
 
 void Timer::Print(const std::string &timer_info) const {
@@ -88,16 +100,18 @@ void FPSTimer::Signal() {
     event_fragment_count_++;
     event_total_count_++;
     Stop();
-    if (GetDuration() >= time_to_print_ ||
+    if (GetDurationInMillisecond() >= time_to_print_ ||
         event_fragment_count_ >= events_to_print_) {
         // print and reset
         if (expectation_ == -1) {
             LogInfo("{} at {:.2f} fps.", fps_timer_info_,
-                    double(event_fragment_count_ + 1) / GetDuration() * 1000.0);
+                    double(event_fragment_count_ + 1) /
+                            GetDurationInMillisecond() * 1000.0);
         } else {
             LogInfo("{} at {:.2f} fps (progress {:.2f}%).",
                     fps_timer_info_.c_str(),
-                    double(event_fragment_count_ + 1) / GetDuration() * 1000.0,
+                    double(event_fragment_count_ + 1) /
+                            GetDurationInMillisecond() * 1000.0,
                     (double)event_total_count_ * 100.0 / (double)expectation_);
         }
         Start();

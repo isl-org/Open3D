@@ -41,6 +41,7 @@ TEST(Dataset, DatasetBase) {
               utility::filesystem::GetHomeDirectory() + "/open3d_data");
 
     data::Dataset ds_custom("some_prefix", "/my/custom/data_root");
+
     EXPECT_EQ(ds_custom.GetPrefix(), "some_prefix");
     EXPECT_EQ(ds_custom.GetDataRoot(), "/my/custom/data_root");
     EXPECT_EQ(ds_custom.GetDownloadDir(),
