@@ -569,14 +569,14 @@ void GlobalOptimizationGaussNewton::OptimizePoseGraph(
                 ": {:.3f} "
                 "sec.",
                 iter, current_residual, valid_edges_num,
-                timer_iter.GetDuration() / 1000.0);
+                timer_iter.GetDurationInSecond());
         stop = stop || CheckResidual(current_residual, criteria) ||
                CheckMaxIteration(iter, criteria);
     }  // end for
     timer_overall.Stop();
     utility::LogDebug(
             "[GlobalOptimizationGaussNewton] total time : {:.3f} sec.",
-            timer_overall.GetDuration() / 1000.0);
+            timer_overall.GetDurationInSecond());
 }
 
 void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
@@ -686,14 +686,14 @@ void GlobalOptimizationLevenbergMarquardt::OptimizePoseGraph(
                     "time : "
                     "{:.3f} sec.",
                     iter, current_residual, valid_edges_num,
-                    timer_iter.GetDuration() / 1000.0);
+                    timer_iter.GetDurationInSecond());
         }
         stop = stop || CheckResidual(current_residual, criteria) ||
                CheckMaxIteration(iter, criteria);
     }  // end for
     timer_overall.Stop();
     utility::LogDebug("[GlobalOptimizationLM] total time : {:.3f} sec.",
-                      timer_overall.GetDuration() / 1000.0);
+                      timer_overall.GetDurationInSecond());
 }
 
 void GlobalOptimization(PoseGraph &pose_graph,
