@@ -40,9 +40,13 @@ function(open3d_sycl_target_sources target)
                 # COMPILE_OPTIONS is a list, COMPILE_FLAGS is a string.
                 # https://stackoverflow.com/a/24303754/1255535
                 if(ENABLE_SYCL_AOT_ADL)
-                    # For DG2, check https://threadreaderapp.com/thread/1551610300306280451.html.
                     set_source_files_properties(${sycl_file} PROPERTIES
                         COMPILE_FLAGS "-fsycl -fsycl-unnamed-lambda -fsycl-targets=spir64_gen"
+                    )
+                elseif(ENABLE_SYCL_AOT_DG2)
+                    # https://threadreaderapp.com/thread/1551610300306280451.html.
+                    set_source_files_properties(${sycl_file} PROPERTIES
+                        COMPILE_FLAGS "-fsycl -fsycl-unnamed-lambda -fsycl-targets=spir64_gen -Xsycl-target-backend=spir64_gen \"-device dg2\""
                     )
                 else()
                     set_source_files_properties(${sycl_file} PROPERTIES

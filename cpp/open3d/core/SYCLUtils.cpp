@@ -59,7 +59,7 @@ sy::queue &GetDefaultQueue(const Device &device) {
 }
 #endif
 
-int SYCLDemo() {
+int SYCLDemoTensor() {
 #ifdef BUILD_SYCL_MODULE
     int n = 4;
 
@@ -76,7 +76,7 @@ int SYCLDemo() {
 #endif
 }
 
-int SYCLDemoOld() {
+int SYCLDemo() {
 #ifdef BUILD_SYCL_MODULE
     int n = 4;
     int num_bytes = n * sizeof(int);

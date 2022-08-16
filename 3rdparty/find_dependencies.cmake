@@ -1382,6 +1382,9 @@ if(BUILD_SYCL_MODULE)
     if(ENABLE_SYCL_AOT_ADL)
         target_link_options(3rdparty_sycl INTERFACE
             $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=spir64_gen -Xs "-device adls">)
+    elseif(ENABLE_SYCL_AOT_DG2)
+        target_link_options(3rdparty_sycl INTERFACE
+            $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl -fsycl-targets=spir64_gen -Xs "-device dg2">)
     else()
         target_link_options(3rdparty_sycl INTERFACE
             $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<LINK_LANGUAGE:ISPC>>>:-fsycl>)
