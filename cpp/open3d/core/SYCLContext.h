@@ -64,6 +64,9 @@ public:
     /// Get the default SYCL queue given an Open3D device.
     sy::queue& GetDefaultQueue(const Device& device);
 
+    /// Get the corresponding SYCL device given an Open3D device.
+    sy::device& GetSYCLDevice(const Device& device);
+
 private:
     SYCLContext();
 

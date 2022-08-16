@@ -183,63 +183,57 @@ void PrintSYCLDevices(bool print_all) {
             sy::backend backend = platform.get_backend();
             const std::vector<sy::device> &devices = platform.get_devices();
             for (const sy::device &device : devices) {
-                utility::LogInfo("- {}", SYCLDeviceToString(device));
+                utility::LogInfo("  - {}", SYCLDeviceToString(device));
             }
         }
 
         utility::LogInfo("# Default SYCL selectors");
         try {
             const sy::device &device = sy::device(sy::default_selector());
-            utility::LogInfo("- sycl::default_selector()    : {}",
+            utility::LogInfo("  - sycl::default_selector()    : {}",
                              SYCLDeviceToString(device));
         } catch (const sy::exception &e) {
-            utility::LogInfo("- sycl::default_selector()    : N/A");
+            utility::LogInfo("  - sycl::default_selector()    : N/A");
         }
         try {
             const sy::device &device = sy::device(sy::host_selector());
-            utility::LogInfo("- sycl::host_selector()       : {}",
+            utility::LogInfo("  - sycl::host_selector()       : {}",
                              SYCLDeviceToString(device));
         } catch (const sy::exception &e) {
-            utility::LogInfo("- sycl::host_selector()       : N/A");
+            utility::LogInfo("  - sycl::host_selector()       : N/A");
         }
         try {
             const sy::device &device = sy::device(sy::cpu_selector());
-            utility::LogInfo("- sycl::cpu_selector()        : {}",
+            utility::LogInfo("  - sycl::cpu_selector()        : {}",
                              SYCLDeviceToString(device));
         } catch (const sy::exception &e) {
-            utility::LogInfo("- sycl::cpu_selector()        : N/A");
+            utility::LogInfo("  - sycl::cpu_selector()        : N/A");
         }
         try {
             const sy::device &device = sy::device(sy::gpu_selector());
-            utility::LogInfo("- sycl::gpu_selector()        : {}",
+            utility::LogInfo("  - sycl::gpu_selector()        : {}",
                              SYCLDeviceToString(device));
         } catch (const sy::exception &e) {
-            utility::LogInfo("- sycl::gpu_selector()        : N/A");
+            utility::LogInfo("  - sycl::gpu_selector()        : N/A");
         }
         try {
             const sy::device &device = sy::device(sy::accelerator_selector());
-            utility::LogInfo("- sycl::accelerator_selector(): {}",
+            utility::LogInfo("  - sycl::accelerator_selector(): {}",
                              SYCLDeviceToString(device));
         } catch (const sy::exception &e) {
-            utility::LogInfo("- sycl::accelerator_selector(): N/A");
+            utility::LogInfo("  - sycl::accelerator_selector(): N/A");
         }
+    }
 
-        utility::LogInfo("# Open3D SYCL device");
-        try {
-            const sy::device &device = sy::device(sy::gpu_selector());
-            utility::LogInfo("- Device(\"SYCL:0\"): {}",
-                             SYCLDeviceToString(device));
-        } catch (const sy::exception &e) {
-            utility::LogInfo("- Device(\"SYCL:0\"): N/A");
-        }
+    utility::LogInfo("# Open3D SYCL devices");
+    if (GetAvailableSYCLDevices().empty()) {
+        utility::LogInfo("  - N/A");
     } else {
-        utility::LogInfo("# Open3D SYCL device");
-        try {
-            const sy::device &device = sy::device(sy::gpu_selector());
-            utility::LogInfo("- Device(\"SYCL:0\"): {}",
-                             SYCLDeviceToString(device));
-        } catch (const sy::exception &e) {
-            utility::LogInfo("- Device(\"SYCL:0\"): N/A");
+        for (const Device &device : GetAvailableSYCLDevices()) {
+            const sy::device &sycl_device =
+                    SYCLContext::GetInstance().GetSYCLDevice(device);
+            utility::LogInfo("  - {}: {}", device.ToString(),
+                             SYCLDeviceToString(sycl_device));
         }
     }
 

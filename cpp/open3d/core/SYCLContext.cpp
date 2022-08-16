@@ -66,12 +66,44 @@ sy::queue &SYCLContext::GetDefaultQueue(const Device &device) {
     return device_to_default_queue_.at(device);
 }
 
+sy::device &SYCLContext::GetSYCLDevice(const Device &device) {
+    if (device_to_sycl_device_.find(device) == device_to_sycl_device_.end()) {
+        utility::LogError("SYCL GetSYCLDevice failed for device {}.",
+                          device.ToString());
+    }
+    return device_to_sycl_device_.at(device);
+}
+
+class DG2Selector : public sy::device_selector {
+public:
+    int operator()(const sy::device &dev) const override {
+        const std::string expected_name = "Intel(R) Graphics [0x5693]";
+        const std::string dev_name = dev.get_info<sy::info::device::name>();
+        if (dev_name == expected_name) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
+};
+
 SYCLContext::SYCLContext() {
-    // SYCL GPU.
+    // Discrete GPU.
+    // Intel(R) Graphics [0x5693]
+    try {
+        const sy::device &sycl_device = sy::device(DG2Selector());
+        const Device open3d_device = Device("SYCL", devices_.size());
+        devices_.push_back(open3d_device);
+        device_to_sycl_device_[open3d_device] = sycl_device;
+        device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
+    } catch (const sy::exception &e) {
+    }
+
+    // Integrated GPU.
     // TODO: Currently we only support one GPU device.
     try {
         const sy::device &sycl_device = sy::device(sy::gpu_selector());
-        const Device open3d_device = Device("SYCL:0");
+        const Device open3d_device = Device("SYCL", devices_.size());
         devices_.push_back(open3d_device);
         device_to_sycl_device_[open3d_device] = sycl_device;
         device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
