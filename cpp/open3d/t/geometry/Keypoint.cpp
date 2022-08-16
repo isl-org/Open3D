@@ -67,10 +67,8 @@ std::tuple<PointCloud, core::Tensor> ComputeISSKeypoints(
                 core::Tensor({0}, core::Bool, input.GetDevice()));
     }
 
-    double salient_radius_d = salient_radius.value();
-    double non_max_radius_d = non_max_radius.value();
-    if (!salient_radius.has_value() || !non_max_radius.has_value() ||
-        salient_radius.value() <= 0.0 || non_max_radius.value() <= 0.0) {
+    double salient_radius_d, non_max_radius_d;
+    if (!salient_radius.has_value() || !non_max_radius.has_value()) {
         const double resolution = ComputePointCloudResolution(input);
         salient_radius_d = 6 * resolution;
         non_max_radius_d = 4 * resolution;
@@ -78,6 +76,9 @@ std::tuple<PointCloud, core::Tensor> ComputeISSKeypoints(
                 "Computed salient_radius = {}, non_max_radius = {} from input "
                 "pointcloud",
                 salient_radius_d, non_max_radius_d);
+    } else {
+        salient_radius_d = salient_radius.value();
+        non_max_radius_d = non_max_radius.value();
     }
 
     core::Tensor keypoints_mask =

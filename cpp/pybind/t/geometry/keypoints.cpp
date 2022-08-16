@@ -41,8 +41,8 @@ void pybind_keypoint_methods(py::module &m) {
           "cloud. This implements the keypoint detection modules "
           "proposed in Yu Zhong, 'Intrinsic Shape Signatures: A Shape "
           "Descriptor for 3D Object Recognition', 2009.",
-          "input"_a, "salient_radius"_a = utility::nullopt,
-          "non_max_radius"_a = utility::nullopt, "gamma_21"_a = 0.975,
+          "input"_a, "salient_radius"_a = py::none(),
+          "non_max_radius"_a = py::none(), "gamma_21"_a = 0.975,
           "gamma_32"_a = 0.975, "min_neighbors"_a = 5);
 
     docstring::FunctionDocInject(
