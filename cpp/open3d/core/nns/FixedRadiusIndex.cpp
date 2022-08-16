@@ -200,7 +200,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
     }
 
     return std::make_tuple(neighbors_index, neighbors_distance,
-                           neighbors_row_splits);
+                           neighbors_row_splits.To(index_dtype));
 };
 
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(

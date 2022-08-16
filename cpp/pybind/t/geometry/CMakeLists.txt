@@ -9,4 +9,5 @@ target_sources(pybind PRIVATE
     tensormap.cpp
     trianglemesh.cpp
     voxel_block_grid.cpp
+    keypoints.cpp
 )

@@ -26,13 +26,16 @@
 
 #include "open3d/t/geometry/Keypoint.h"
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
+#include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
+namespace keypoint {
 
 double ComputePointCloudResolution(const PointCloud& points) {
     core::nns::NearestNeighborSearch nns(points.GetPointPositions(),
@@ -61,12 +64,13 @@ std::tuple<PointCloud, core::Tensor> ComputeISSKeypoints(
         utility::LogDebug("Input PointCloud is empty!");
         return std::make_tuple(
                 PointCloud(input.GetDevice()),
-                core::Tensor({0}, core::Int64, input.GetDevice()));
+                core::Tensor({0}, core::Bool, input.GetDevice()));
     }
 
     double salient_radius_d = salient_radius.value();
     double non_max_radius_d = non_max_radius.value();
-    if (!salient_radius.has_value() || !non_max_radius.has_value()) {
+    if (!salient_radius.has_value() || !non_max_radius.has_value() ||
+        salient_radius.value() <= 0.0 || non_max_radius.value() <= 0.0) {
         const double resolution = ComputePointCloudResolution(input);
         salient_radius_d = 6 * resolution;
         non_max_radius_d = 4 * resolution;
@@ -79,10 +83,22 @@ std::tuple<PointCloud, core::Tensor> ComputeISSKeypoints(
     core::Tensor keypoints_mask =
             core::Tensor::Zeros({input.GetPointPositions().GetLength()},
                                 core::Bool, input.GetDevice());
+    if (input.GetDevice().IsCPU()) {
+        kernel::pointcloud::ComputeISSKeypointsCPU(
+                input.GetPointPositions(), salient_radius_d, non_max_radius_d,
+                gamma_21, gamma_32, min_neighbors, keypoints_mask);
+    } else if (input.GetDevice().IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::ComputeISSKeypointsCUDA,
+                  input.GetPointPositions(), salient_radius_d, non_max_radius_d,
+                  gamma_21, gamma_32, min_neighbors, keypoints_mask);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
 
     return std::make_tuple(input.SelectByMask(keypoints_mask), keypoints_mask);
 }
 
+}  // namespace keypoint
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

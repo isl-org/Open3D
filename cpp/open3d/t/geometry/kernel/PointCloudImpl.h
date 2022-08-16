@@ -187,6 +187,19 @@ void GetPointMaskWithinAABBCPU
     });
 }
 
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE bool IsLocalMaxima(int query_idx,
+                                      int counts,
+                                      const int32_t* indices,
+                                      const scalar_t* third_eigen_values) {
+    for (int i = 0; i < counts; i++) {
+        if (third_eigen_values[query_idx] < third_eigen_values[indices[i]]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 #if defined(__CUDACC__)
 void ComputeISSKeypointsCUDA
 #else
@@ -197,18 +210,22 @@ void ComputeISSKeypointsCPU
          double radius2,
          double gamma_21,
          double gamma_32,
+         int min_neighbors,
          core::Tensor& mask) {
     // Compute covariance matrix for each point with its nearest neighbors
     // within radius1.
     core::Tensor covariances = core::Tensor::Empty(
             {points.GetLength(), 9}, points.GetDtype(), points.GetDevice());
-    EstimateCovariancesUsingRadiusSearchCPU(points, covariances, radius1);
+    if (points.GetDevice().IsCUDA()) {
+        EstimateCovariancesUsingRadiusSearchCUDA(points, covariances, radius1);
+    } else {
+        EstimateCovariancesUsingRadiusSearchCPU(points, covariances, radius1);
+    }
 
     core::Tensor third_eigen_values = core::Tensor::Zeros(
             {points.GetLength()}, points.GetDtype(), points.GetDevice());
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
-        bool* mask_ptr = mask.GetDataPtr<bool>();
         const scalar_t* covariances_ptr = covariances.GetDataPtr<scalar_t>();
         scalar_t* third_eigen_values_ptr =
                 third_eigen_values.GetDataPtr<scalar_t>();
@@ -247,11 +264,23 @@ void ComputeISSKeypointsCPU
         const scalar_t* third_eigen_values_ptr =
                 third_eigen_values.GetDataPtr<scalar_t>();
         const int32_t* indices_ptr = indices.GetDataPtr<int32_t>();
+        const int32_t* counts_ptr = counts.GetDataPtr<int32_t>();
+        bool* mask_ptr = mask.GetDataPtr<bool>();
 
         core::ParallelFor(
                 points.GetDevice(), points.GetLength(),
                 [=] OPEN3D_DEVICE(int64_t workload_idx) {
-
+                    if (kp_mask_ptr[workload_idx]) {
+                        const int32_t nn = counts_ptr[workload_idx + 1] -
+                                           counts_ptr[workload_idx];
+                        if (nn >= min_neighbors &&
+                            IsLocalMaxima(
+                                    workload_idx, nn,
+                                    indices_ptr + counts_ptr[workload_idx],
+                                    third_eigen_values_ptr)) {
+                            mask_ptr[workload_idx] = true;
+                        }
+                    }
                 });
     });
 }

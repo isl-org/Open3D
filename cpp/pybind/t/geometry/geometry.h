@@ -65,6 +65,7 @@ void pybind_image(py::module& m);
 void pybind_boundingvolume(py::module& m);
 void pybind_voxel_block_grid(py::module& m);
 void pybind_raycasting_scene(py::module& m);
+void pybind_keypoint(py::module &m);
 
 }  // namespace geometry
 }  // namespace t

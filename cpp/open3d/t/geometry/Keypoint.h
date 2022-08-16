@@ -33,6 +33,7 @@
 namespace open3d {
 namespace t {
 namespace geometry {
+namespace keypoint {
 
 /// \brief Function that computes the ISS Keypoints from an input point
 /// cloud. This implements the keypoint detection module proposed in Yu
@@ -63,6 +64,7 @@ std::tuple<PointCloud, core::Tensor> ComputeISSKeypoints(
         double gamma_32 = 0.975,
         int min_neighbors = 5);
 
+}  // namespace keypoint
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d
