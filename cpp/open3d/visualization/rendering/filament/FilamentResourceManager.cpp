@@ -878,6 +878,11 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     auto texture_settings = GetSettingsFromImage(*image, srgb);
     auto levels = maxLevelCount(texture_settings.texel_width,
                                 texture_settings.texel_height);
+    bool mipmappable =
+            (texture_settings.image_type != filament::Texture::Type::FLOAT);
+    if (!mipmappable) {
+        levels = 1;
+    }
 
     Texture::PixelBufferDescriptor pb(
             image->data_.data(), image->data_.size(),
@@ -892,7 +897,9 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
                            .build(engine_);
 
     texture->setImage(engine_, 0, std::move(pb));
-    texture->generateMipmaps(engine_);
+    if (mipmappable) {
+        texture->generateMipmaps(engine_);
+    }
     return texture;
 }
 
@@ -903,6 +910,11 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     auto texture_settings = GetSettingsFromImage(image, srgb);
     auto levels = maxLevelCount(texture_settings.texel_width,
                                 texture_settings.texel_height);
+    // Float textures cannot be mipmapped
+    bool mipmappable = (image.GetDtype() != core::Dtype::Float32);
+    if (mipmappable) {
+        levels = 1;
+    }
 
     const size_t image_bytes = image.GetRows() * image.GetCols() *
                                image.GetChannels() *
@@ -922,7 +934,9 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
                                .sampler(Texture::Sampler::SAMPLER_2D)
                                .build(engine_);
         texture->setImage(engine_, 0, std::move(pb));
-        texture->generateMipmaps(engine_);
+        if (mipmappable) {
+            texture->generateMipmaps(engine_);
+        }
         return texture;
     } else {
         Texture::PixelBufferDescriptor pb(image.GetDataPtr(), image_bytes,
@@ -936,7 +950,9 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
                                .sampler(Texture::Sampler::SAMPLER_2D)
                                .build(engine_);
         texture->setImage(engine_, 0, std::move(pb));
-        texture->generateMipmaps(engine_);
+        if (mipmappable) {
+            texture->generateMipmaps(engine_);
+        }
         return texture;
     }
 }
