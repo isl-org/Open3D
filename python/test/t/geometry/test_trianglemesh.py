@@ -44,6 +44,13 @@ def test_clip_plane():
     assert clipped_cube.triangle['indices'].shape == (14, 3)
 
 
+def test_slice_plane():
+    box = o3d.t.geometry.TriangleMesh.create_box()
+    slices = box.slice_plane([0, 0.5, 0], [1, 1, 1], [-0.1, 0, 0.1])
+    assert slices.point['positions'].shape == (9, 3)
+    assert slices.line['indices'].shape == (9, 2)
+
+
 @pytest.mark.parametrize("device", list_devices())
 def test_create_box(device):
     # Test with default parameters.

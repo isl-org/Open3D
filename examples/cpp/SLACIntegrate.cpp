@@ -190,7 +190,7 @@ int main(int argc, char* argv[]) {
 
             ++k;
             utility::LogInfo("{}: Deformation + Integration takes {}", k,
-                             timer.GetDuration());
+                             timer.GetDurationInMillisecond());
         }
     }
 

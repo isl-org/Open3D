@@ -24,40 +24,36 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/utility/Optional.h"
-#include "pybind/core/core.h"
+#pragma once
+
+#include "open3d/Open3D.h"
 
 namespace open3d {
-namespace core {
+namespace apps {
+namespace offline_reconstruction {
 
-void pybind_cuda_utils(py::module& m) {
-    py::module m_cuda = m.def_submodule("cuda");
+static const Eigen::Matrix4d flip_transformation = Eigen::Matrix4d({
+        {1, 0, 0, 0},
+        {0, -1, 0, 0},
+        {0, 0, -1, 0},
+        {0, 0, 0, 1},
+});
 
-    m_cuda.def("device_count", cuda::DeviceCount,
-               "Returns the number of available CUDA devices. Returns 0 if "
-               "Open3D is not compiled with CUDA support.");
-    m_cuda.def("is_available", cuda::IsAvailable,
-               "Returns true if Open3D is compiled with CUDA support and at "
-               "least one compatible CUDA device is detected.");
-    m_cuda.def("release_cache", cuda::ReleaseCache,
-               "Releases CUDA memory manager cache. This is typically used for "
-               "debugging.");
-    m_cuda.def(
-            "synchronize",
-            [](const utility::optional<Device>& device) {
-                if (device.has_value()) {
-                    cuda::Synchronize(device.value());
-                } else {
-                    cuda::Synchronize();
-                }
-            },
-            "Synchronizes CUDA devices. If no device is specified, all CUDA "
-            "devices will be synchronized. No effect if the specified device "
-            "is not a CUDA device. No effect if Open3D is not compiled with "
-            "CUDA support.",
-            "device"_a = py::none());
+void DrawRegistrationResult(const geometry::PointCloud& src,
+                            const geometry::PointCloud& dst,
+                            const Eigen::Matrix4d& transformation,
+                            bool keep_color = false) {
+    auto transformed_src = std::make_shared<geometry::PointCloud>(src);
+    auto transformed_dst = std::make_shared<geometry::PointCloud>(dst);
+    if (!keep_color) {
+        transformed_src->PaintUniformColor(Eigen::Vector3d(1, 0.706, 0));
+        transformed_dst->PaintUniformColor(Eigen::Vector3d(0, 0.651, 0.929));
+    }
+    transformed_src->Transform(flip_transformation * transformation);
+    transformed_dst->Transform(flip_transformation);
+    visualization::DrawGeometries({transformed_src, transformed_dst});
 }
 
-}  // namespace core
+}  // namespace offline_reconstruction
+}  // namespace apps
 }  // namespace open3d
