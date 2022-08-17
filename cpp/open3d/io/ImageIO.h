@@ -52,7 +52,7 @@ bool ReadImage(const std::string &filename, geometry::Image &image);
 /// The general entrance for reading an Image from memory
 /// The function calls read functions based on format of image.
 /// \return return true if the read function is successful, false otherwise.
-bool ReadImageFromMemroy(const std::string &image_format,
+bool ReadImageFromMemory(const std::string &image_format,
                          const unsigned char *image_data_ptr,
                          size_t image_data_size,
                          geometry::Image &image);

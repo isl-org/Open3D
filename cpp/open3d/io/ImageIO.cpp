@@ -107,11 +107,11 @@ std::shared_ptr<geometry::Image> CreateImageFromMemory(
         const unsigned char *image_data_ptr,
         size_t image_data_size) {
     auto image = std::make_shared<geometry::Image>();
-    ReadImageFromMemroy(image_format, image_data_ptr, image_data_size, *image);
+    ReadImageFromMemory(image_format, image_data_ptr, image_data_size, *image);
     return image;
 }
 
-bool ReadImageFromMemroy(const std::string &image_format,
+bool ReadImageFromMemory(const std::string &image_format,
                          const unsigned char *image_data_ptr,
                          size_t image_data_size,
                          geometry::Image &image) {
