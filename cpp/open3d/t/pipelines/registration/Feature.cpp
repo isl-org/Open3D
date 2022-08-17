@@ -41,10 +41,10 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
                                 const utility::optional<double> radius) {
     core::AssertTensorDtypes(input.GetPointPositions(),
                              {core::Float64, core::Float32});
-    if (max_nn.value() <= 3) {
+    if (max_nn.has_value() && max_nn.value() <= 3) {
         utility::LogError("max_nn must be greater than 3.");
     }
-    if (radius.value() <= 0) {
+    if (radius.has_value() && radius.value() <= 0) {
         utility::LogError("radius must be greater than 0.");
     }
     if (!input.HasPointNormals()) {
@@ -78,9 +78,11 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
         std::tie(indices, distance2) =
                 tree.KnnSearch(input.GetPointPositions(), max_nn.value());
 
-        // Make counts full with max_nn.
-        counts =
-                core::Tensor::Full({num_points}, max_nn.value(), dtype, device);
+        // Make counts full with min(max_nn, num_points).
+        const int fill_value =
+                max_nn.value() > num_points ? num_points : max_nn.value();
+        counts = core::Tensor::Full({num_points}, fill_value, core::Int32,
+                                    device);
         utility::LogDebug(
                 "Use KNNSearch  [max_nn: {}] for computing FPFH feature.",
                 max_nn.value());

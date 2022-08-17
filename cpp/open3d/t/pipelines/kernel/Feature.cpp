@@ -42,12 +42,13 @@ void ComputeFPFHFeature(const core::Tensor &points,
     core::AssertTensorShape(fpfhs, {points.GetLength(), 33});
     const core::Tensor points_d = points.Contiguous();
     const core::Tensor normals_d = normals.Contiguous();
+    const core::Tensor counts_d = counts.To(core::Int32);
     if (points_d.IsCPU()) {
-        ComputeFPFHFeatureCPU(points_d, normals_d, indices, distance2, counts,
+        ComputeFPFHFeatureCPU(points_d, normals_d, indices, distance2, counts_d,
                               fpfhs);
     } else {
         CUDA_CALL(ComputeFPFHFeatureCUDA, points_d, normals_d, indices,
-                  distance2, counts, fpfhs);
+                  distance2, counts_d, fpfhs);
     }
 }
 

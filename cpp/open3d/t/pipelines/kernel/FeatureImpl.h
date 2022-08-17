@@ -155,8 +155,7 @@ void ComputeFPFHFeatureCPU
         const scalar_t *normals_ptr = normals.GetDataPtr<scalar_t>();
         const int32_t *indices_ptr = indices.GetDataPtr<int32_t>();
         const scalar_t *distance2_ptr = distance2.GetDataPtr<scalar_t>();
-        const int32_t *counts_ptr =
-                counts.To(core::Int32).GetDataPtr<int32_t>();
+        const int32_t *counts_ptr = counts.GetDataPtr<int32_t>();
         scalar_t *spfhs_ptr = spfhs.GetDataPtr<scalar_t>();
         scalar_t *fpfhs_ptr = fpfhs.GetDataPtr<scalar_t>();
 
@@ -168,8 +167,8 @@ void ComputeFPFHFeatureCPU
                     const scalar_t *normal = normals_ptr + idx;
 
                     const int indice_size =
-                            is_radius_search ? counts_ptr[workload_idx + 1] -
-                                                       counts_ptr[workload_idx]
+                            is_radius_search ? (counts_ptr[workload_idx + 1] -
+                                                counts_ptr[workload_idx])
                                              : counts_ptr[workload_idx];
 
                     if (indice_size > 1) {
@@ -202,8 +201,8 @@ void ComputeFPFHFeatureCPU
         core::ParallelFor(
                 points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     const int indice_size =
-                            is_radius_search ? counts_ptr[workload_idx + 1] -
-                                                       counts_ptr[workload_idx]
+                            is_radius_search ? (counts_ptr[workload_idx + 1] -
+                                                counts_ptr[workload_idx])
                                              : counts_ptr[workload_idx];
 
                     if (indice_size > 1) {
