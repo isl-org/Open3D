@@ -5,14 +5,14 @@ from typing import Any
 class TensorMap(dict):
 
     def __init__(self):
-        super(TensorMap, self).__init__()
+        super().__init__()
 
     def __setattr__(self, key: str, value: Any) -> None:
         print(f"setattr {key} {value}")
-        super(TensorMap, self)[key] = value
+        super()[key] = value
 
     def __getattr__(self, key: str) -> None:
-        d = super(TensorMap, self)
+        d = super()
         if key in d:
             return d[key]
         else:
