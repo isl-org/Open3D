@@ -169,8 +169,9 @@ void pybind_tensormap(py::module &m) {
         const std::string primary_key = m.GetPrimaryKey();
 
         if (m.empty()) {
-            return fmt::format("TensorMap(primary_key={}) with no attribute",
-                               primary_key);
+            return fmt::format(
+                    "TensorMap(primary_key=\"{}\") with no attribute",
+                    primary_key);
         }
 
         size_t max_key_len = 0;
@@ -187,7 +188,7 @@ void pybind_tensormap(py::module &m) {
                             max_key_len);
 
         std::stringstream ss;
-        ss << fmt::format("TensorMap(primary_key={}) with {} attributes:",
+        ss << fmt::format("TensorMap(primary_key=\"{}\") with {} attributes:",
                           primary_key, m.size())
            << std::endl;
         for (const std::string &key : keys) {
