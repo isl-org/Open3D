@@ -175,11 +175,16 @@ void pybind_tensormap(py::module &m) {
         }
 
         size_t max_key_len = 0;
+        bool has_primary_key = false;
         std::vector<std::string> keys;
         keys.reserve(m.size());
         for (const auto &kv : m) {
-            keys.push_back(kv.first);
-            max_key_len = std::max(max_key_len, kv.first.size());
+            const std::string key = kv.first;
+            keys.push_back(key);
+            max_key_len = std::max(max_key_len, key.size());
+            if (key == primary_key) {
+                has_primary_key = true;
+            }
         }
         std::sort(keys.begin(), keys.end());
 
@@ -188,8 +193,8 @@ void pybind_tensormap(py::module &m) {
                             max_key_len);
 
         std::stringstream ss;
-        ss << fmt::format("TensorMap(primary_key=\"{}\") with {} attributes:",
-                          primary_key, m.size())
+        ss << fmt::format("TensorMap(primary_key=\"{}\") with {} attribute{}:",
+                          primary_key, m.size(), m.size() > 1 ? "s" : "")
            << std::endl;
         for (const std::string &key : keys) {
             const core::Tensor &val = m.at(key);
@@ -202,9 +207,18 @@ void pybind_tensormap(py::module &m) {
             ss << std::endl;
         }
 
+        const std::string example_key = has_primary_key ? primary_key : keys[0];
         ss << fmt::format("  (Use . to access attributes, e.g., tensor_map.{})",
-                          primary_key);
+                          example_key);
         return ss.str();
+    });
+
+    tm.def("__dir__", [](TensorMap &m) {
+        auto keys = py::list();
+        for (const auto &kv : m) {
+            keys.append(kv.first);
+        }
+        return keys;
     });
 }
 
