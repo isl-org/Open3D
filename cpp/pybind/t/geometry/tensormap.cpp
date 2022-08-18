@@ -192,8 +192,8 @@ void pybind_tensormap(py::module &m) {
             ss << std::endl;
         }
 
-        ss << "Use . to access attributes, e.g., "
-           << fmt::format("tensor_map.{}", m.GetPrimaryKey());
+        ss << fmt::format("  (Use . to access attributes, e.g., tensor_map.{})",
+                          m.GetPrimaryKey());
         return ss.str();
     });
 }
