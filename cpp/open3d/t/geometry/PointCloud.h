@@ -464,6 +464,21 @@ public:
     /// corresponding vertex in the original mesh.
     TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
 
+    /// \brief Compute the boundary points of a point cloud.
+    /// The implementation is inspired by the PCL implementation. Reference:
+    /// https://pointclouds.org/documentation/classpcl_1_1_boundary_estimation.html
+    ///
+    /// \param max_nn [optional] Neighbor search max neighbors parameter
+    /// [Default = 30].
+    /// \param radius [optional] Neighbor search radius parameter.
+    /// \param angle_threshold Angle threshold to decide if a point is on the
+    /// boundary.
+    /// \return Tensor of boundary points and its boolean mask tensor.
+    std::tuple<PointCloud, core::Tensor> ComputeBoundaryPoints(
+            const utility::optional<int> max_nn = 30,
+            const utility::optional<double> radius = utility::nullopt,
+            double angle_threshold = 90.0);
+
 public:
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.

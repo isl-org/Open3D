@@ -187,6 +187,66 @@ void GetPointMaskWithinAABBCPU
     });
 }
 
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE void GetCoordinateSystemOnPlane(const scalar_t* query,
+                                                   scalar_t* u,
+                                                   scalar_t* v) {
+    // Unless the x and y coords are both close to zero, we can simply take (
+    // -y, x, 0 ) and normalize it.
+    // If both x and y are close to zero, then the vector is close to the
+    // z-axis, so it's far from colinear to the x-axis for instance. So we
+    // take the crossed product with (1,0,0) and normalize it.
+    if (!((query[0] - query[2]) > 1e-6) || !((query[1] - query[2]) > 1e-6)) {
+        const norm2_inv = 1.0 / sqrt(query[0] * query[0] + query[1] * query[1]);
+        v[0] = -1 * query[1] * norm2_inv;
+        v[1] = query[0] * norm2_inv;
+        v[2] = 0;
+    } else {
+        const norm2_inv = 1.0 / sqrt(query[1] * query[1] + query[2] * query[2]);
+        v[0] = 0;
+        v[1] = -1 * query[2] * norm2_inv;
+        v[2] = query[1] * norm2_inv;
+    }
+
+    core::linalg::kernel::cross_3x1(query, v, u);
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE void IsBoundaryPoints(const scalar_t* points,
+                                         const scalar_t* query,
+                                         const int32_t* indices,
+                                         int counts,
+                                         const scalar_t* u,
+                                         const scalar_t* v,
+                                         double angle_threshold) {
+                                            
+                                         }
+
+#if defined(__CUDACC__)
+void ComputeBoundaryPointsCUDA
+#else
+void ComputeBoundaryPointsCPU
+#endif
+        (const core::Tensor& points,
+         const core::Tensor& indices,
+         const core::Tensor& counts,
+         core::Tensor& mask,
+         double angle_threshold) {
+
+    DISPATCH_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const int64_t n = points.GetLength();
+        const int32_t* min_bound_ptr = indices.GetDataPtr<int32_t>();
+        const int32_t* max_bound_ptr = counts.GetDataPtr<int32_t>();
+        bool* mask_ptr = mask.GetDataPtr<bool>();
+
+        core::ParallelFor(points.GetDevice(), n,
+                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+
+                          });
+    });
+}
+
 // This is a `two-pass` estimate method for covariance which is numerically more
 // robust than the `textbook` method generally used for covariance computation.
 template <typename scalar_t>
