@@ -110,12 +110,64 @@ public:
     /// \return The number of elements deleted. [0 if key was not present].
     std::size_t Erase(const std::string key) {
         if (key == primary_key_) {
-            utility::LogError("Primary key: {} cannot be deleted.",
+            utility::LogError("Primary key \"{}\" cannot be deleted.",
                               primary_key_);
         } else if (!Contains(key)) {
-            utility::LogWarning("Key: {} is not present.", key);
+            utility::LogWarning("Key \"{}\" is not present.", key);
         }
         return this->erase(key);
+    }
+
+    std::pair<iterator, bool> insert(const value_type& value) {
+        if (GetReservedKeys().count(value.first)) {
+            utility::LogError("Key \"{}\" is reserved.", value.first);
+        }
+        return std::unordered_map<std::string, core::Tensor>::insert(value);
+    }
+
+    template <class P>
+    std::pair<iterator, bool> insert(P&& value) {
+        if (GetReservedKeys().count(value.first)) {
+            utility::LogError("Key \"{}\" is reserved.", value.first);
+        }
+        return std::unordered_map<std::string, core::Tensor>::insert(
+                std::forward<P>(value));
+    }
+
+    iterator insert(const_iterator hint, const value_type& value) {
+        if (GetReservedKeys().count(value.first)) {
+            utility::LogError("Key \"{}\" is reserved.", value.first);
+        }
+        return std::unordered_map<std::string, core::Tensor>::insert(hint,
+                                                                     value);
+    }
+
+    template <class P>
+    iterator insert(const_iterator hint, P&& value) {
+        if (GetReservedKeys().count(value.first)) {
+            utility::LogError("Key \"{}\" is reserved.", value.first);
+        }
+        return std::unordered_map<std::string, core::Tensor>::insert(
+                hint, std::forward<P>(value));
+    }
+
+    template <class InputIt>
+    void insert(InputIt first, InputIt last) {
+        for (auto it = first; it != last; ++it) {
+            if (GetReservedKeys().count(it->first)) {
+                utility::LogError("Key \"{}\" is reserved.", it->first);
+            }
+        }
+        std::unordered_map<std::string, core::Tensor>::insert(first, last);
+    }
+
+    void insert(std::initializer_list<value_type> ilist) {
+        for (auto it = ilist.begin(); it != ilist.end(); ++it) {
+            if (GetReservedKeys().count(it->first)) {
+                utility::LogError("Key \"{}\" is reserved.", it->first);
+            }
+        }
+        std::unordered_map<std::string, core::Tensor>::insert(ilist);
     }
 
     TensorMap& operator=(const TensorMap&) = default;
