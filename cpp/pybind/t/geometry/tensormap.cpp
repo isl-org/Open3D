@@ -152,6 +152,39 @@ void pybind_tensormap(py::module &m) {
     tm.def("get_primary_key", &TensorMap::GetPrimaryKey);
     tm.def("is_size_synchronized", &TensorMap::IsSizeSynchronized);
     tm.def("assert_size_synchronized", &TensorMap::AssertSizeSynchronized);
+
+    tm.def("__setattr__", [](TensorMap &m, const std::string &k,
+                             const core::Tensor &v) { m[k] = v; });
+    tm.def("__getattr__",
+           [](TensorMap &m, const std::string &k) -> core::Tensor {
+               auto it = m.find(k);
+               if (it == m.end()) {
+                   throw py::key_error(
+                           fmt::format("Key {} not found in TensorMap", k));
+               }
+               return it->second;
+           });
+
+    tm.def("__str__", [](const TensorMap &m) {
+        std::stringstream ss;
+        ss << fmt::format("TensorMap: primary_key={}\n", m.GetPrimaryKey());
+
+        std::vector<std::string> keys;
+        keys.reserve(m.size());
+        for (const auto &kv : m) {
+            keys.push_back(kv.first);
+        }
+        std::sort(keys.begin(), keys.end());
+
+        for (const std::string &key : keys) {
+            const core::Tensor &val = m.at(key);
+            ss << fmt::format("- {}: shape={}, dtype={}, device={}\n", key,
+                              val.GetShape().ToString(),
+                              val.GetDtype().ToString(),
+                              val.GetDevice().ToString());
+        }
+        return ss.str();
+    });
 }
 
 }  // namespace geometry
