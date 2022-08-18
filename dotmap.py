@@ -50,5 +50,8 @@ if __name__ == "__main__":
         print(f"Error: {e}")
     print(pcd.point)
 
-    import ipdb
-    ipdb.set_trace()
+    print("\n[Using string as key should be avoided]")
+    try:
+        print(pcd.point["positions"])
+    except RuntimeError as e:
+        print(f"Error: {e}")
