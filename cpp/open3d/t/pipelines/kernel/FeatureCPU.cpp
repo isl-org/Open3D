@@ -24,20 +24,4 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "pybind/open3d_pybind.h"
-
-namespace open3d {
-namespace t {
-namespace pipelines {
-namespace registration {
-
-void pybind_feature(py::module &m);
-void pybind_registration(py::module &m);
-void pybind_robust_kernels(py::module &m);
-
-}  // namespace registration
-}  // namespace pipelines
-}  // namespace t
-}  // namespace open3d
+#include "open3d/t/pipelines/kernel/FeatureImpl.h"

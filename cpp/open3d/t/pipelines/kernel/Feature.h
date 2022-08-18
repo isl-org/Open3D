@@ -24,20 +24,38 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
-
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
-namespace registration {
+namespace kernel {
 
-void pybind_feature(py::module &m);
-void pybind_registration(py::module &m);
-void pybind_robust_kernels(py::module &m);
+void ComputeFPFHFeature(const core::Tensor &points,
+                        const core::Tensor &normals,
+                        const core::Tensor &indices,
+                        const core::Tensor &distance2,
+                        const core::Tensor &counts,
+                        core::Tensor &fpfhs);
 
-}  // namespace registration
+void ComputeFPFHFeatureCPU(const core::Tensor &points,
+                           const core::Tensor &normals,
+                           const core::Tensor &indices,
+                           const core::Tensor &distance2,
+                           const core::Tensor &counts,
+                           core::Tensor &fpfhs);
+
+#ifdef BUILD_CUDA_MODULE
+void ComputeFPFHFeatureCUDA(const core::Tensor &points,
+                            const core::Tensor &normals,
+                            const core::Tensor &indices,
+                            const core::Tensor &distance2,
+                            const core::Tensor &counts,
+                            core::Tensor &fpfhs);
+#endif
+
+}  // namespace kernel
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d
