@@ -40,34 +40,34 @@ def test_tensormap(device):
     dtype = o3c.float32
 
     # Constructor.
-    tl = o3d.t.geometry.TensorMap("positions")
+    tm = o3d.t.geometry.TensorMap("positions")
 
     # Get primary key().
-    assert tl.get_primary_key() == "positions"
+    assert tm.primary_key == "positions"
 
     # Map member access, assignment and "contains" check. This should be the
     # preferred way to construct a TensorMap with values in python.
     points = o3c.Tensor.ones((0, 3), dtype, device)
     colors = o3c.Tensor.ones((0, 3), dtype, device)
-    tl = o3d.t.geometry.TensorMap("positions")
-    assert "positions" not in tl
-    tl["positions"] = points
-    assert "positions" in tl
-    assert "colors" not in tl
-    tl["colors"] = colors
-    assert "colors" in tl
+    tm = o3d.t.geometry.TensorMap("positions")
+    assert "positions" not in tm
+    tm["positions"] = points
+    assert "positions" in tm
+    assert "colors" not in tm
+    tm["colors"] = colors
+    assert "colors" in tm
 
-    # Constructor with tl values.
-    tl = o3d.t.geometry.TensorMap("positions", {
+    # Constructor with tm values.
+    tm = o3d.t.geometry.TensorMap("positions", {
         "positions": points,
         "colors": colors
     })
-    assert "positions" in tl
-    assert "colors" in tl
+    assert "positions" in tm
+    assert "colors" in tm
 
     # __delitem__ operator.
     with pytest.raises(RuntimeError) as excinfo:
-        del tl["positions"]
+        del tm["positions"]
         assert 'cannot be deleted' in str(excinfo.value)
 
 

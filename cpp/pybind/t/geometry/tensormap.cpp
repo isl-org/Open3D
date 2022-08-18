@@ -149,7 +149,7 @@ void pybind_tensormap(py::module &m) {
 
     // Member functions. Some C++ functions are ignored since the
     // functionalities are already covered in the generic dictionary interface.
-    tm.def("get_primary_key", &TensorMap::GetPrimaryKey);
+    tm.def_property_readonly("primary_key", &TensorMap::GetPrimaryKey);
     tm.def("is_size_synchronized", &TensorMap::IsSizeSynchronized);
     tm.def("assert_size_synchronized", &TensorMap::AssertSizeSynchronized);
 
@@ -166,6 +166,13 @@ void pybind_tensormap(py::module &m) {
            });
 
     tm.def("__str__", [](const TensorMap &m) {
+        const std::string primary_key = m.GetPrimaryKey();
+
+        if (m.empty()) {
+            return fmt::format("TensorMap(primary_key={}) with no attribute",
+                               primary_key);
+        }
+
         size_t max_key_len = 0;
         std::vector<std::string> keys;
         keys.reserve(m.size());
@@ -180,20 +187,22 @@ void pybind_tensormap(py::module &m) {
                             max_key_len);
 
         std::stringstream ss;
-        ss << "TensorMap object with attributes:" << std::endl;
+        ss << fmt::format("TensorMap(primary_key={}) with {} attributes:",
+                          primary_key, m.size())
+           << std::endl;
         for (const std::string &key : keys) {
             const core::Tensor &val = m.at(key);
             ss << fmt::format(tensor_format_str, key, val.GetShape().ToString(),
                               val.GetDtype().ToString(),
                               val.GetDevice().ToString());
-            if (key == m.GetPrimaryKey()) {
-                ss << " (primary key)";
+            if (key == primary_key) {
+                ss << " (primary)";
             }
             ss << std::endl;
         }
 
         ss << fmt::format("  (Use . to access attributes, e.g., tensor_map.{})",
-                          m.GetPrimaryKey());
+                          primary_key);
         return ss.str();
     });
 }
