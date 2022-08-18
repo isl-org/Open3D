@@ -176,7 +176,8 @@ void pybind_tensormap(py::module &m) {
         std::sort(keys.begin(), keys.end());
 
         const std::string tensor_format_str =
-                fmt::format("  - {{:<{}}}: {{}}, {{}}, {{}}", max_key_len);
+                fmt::format("  - {{:<{}}}: shape={{}}, dtype={{}}, device={{}}",
+                            max_key_len);
 
         std::stringstream ss;
         ss << fmt::format("TensorMap (primary_key: {})\n", m.GetPrimaryKey());
