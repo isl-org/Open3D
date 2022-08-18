@@ -3,20 +3,16 @@ from typing import Any
 
 
 class TensorMap(dict):
-    pass
-
-
-class TensorMapWrapper(TensorMap):
 
     def __init__(self):
-        super(TensorMapWrapper, self).__init__()
+        super(TensorMap, self).__init__()
 
     def __setattr__(self, key: str, value: Any) -> None:
         print(f"setattr {key} {value}")
-        super(TensorMapWrapper, self)[key] = value
+        super(TensorMap, self)[key] = value
 
     def __getattr__(self, key: str) -> None:
-        d = super(TensorMapWrapper, self)
+        d = super(TensorMap, self)
         if key in d:
             return d[key]
         else:
