@@ -166,22 +166,29 @@ void pybind_tensormap(py::module &m) {
            });
 
     tm.def("__str__", [](const TensorMap &m) {
-        std::stringstream ss;
-        ss << fmt::format("TensorMap: primary_key={}\n", m.GetPrimaryKey());
-
+        size_t max_key_len = 0;
         std::vector<std::string> keys;
         keys.reserve(m.size());
         for (const auto &kv : m) {
             keys.push_back(kv.first);
+            max_key_len = std::max(max_key_len, kv.first.size());
         }
         std::sort(keys.begin(), keys.end());
 
+        const std::string tensor_format_str =
+                fmt::format("  - {{:<{}}}: {{}}, {{}}, {{}}", max_key_len);
+
+        std::stringstream ss;
+        ss << fmt::format("TensorMap (primary_key: {})\n", m.GetPrimaryKey());
         for (const std::string &key : keys) {
             const core::Tensor &val = m.at(key);
-            ss << fmt::format("- {}: shape={}, dtype={}, device={}\n", key,
-                              val.GetShape().ToString(),
+
+            ss << fmt::format(tensor_format_str, key, val.GetShape().ToString(),
                               val.GetDtype().ToString(),
                               val.GetDevice().ToString());
+            if (&key != &keys.back()) {
+                ss << "\n";
+            }
         }
         return ss.str();
     });
