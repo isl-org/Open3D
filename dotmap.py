@@ -8,17 +8,15 @@ class TensorMap(dict):
         super().__init__()
 
     def __setattr__(self, key: str, value: Any) -> None:
-        print(f"setattr {key} {value}")
-        super()[key] = value
+        sup = super()
+        sup.__setitem__(key, value)
 
     def __getattr__(self, key: str) -> None:
-        d = super()
-        if key in d:
-            return d[key]
+        sup = super()
+        if sup.__contains__(key):
+            return sup.__getitem__(key)
         else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{key}'"
-            ) from None
+            return None
 
 
 if __name__ == "__main__":
