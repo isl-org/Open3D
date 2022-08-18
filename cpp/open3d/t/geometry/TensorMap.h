@@ -52,7 +52,10 @@ public:
     /// Create empty TensorMap and set primary key.
     explicit TensorMap(const std::string& primary_key)
         : std::unordered_map<std::string, core::Tensor>(),
-          primary_key_(primary_key) {}
+          primary_key_(primary_key) {
+        AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
+    }
 
     /// A primary key is always required. This constructor can be marked as
     /// delete in C++, but it is needed for pybind to bind as a generic python
@@ -66,17 +69,22 @@ public:
         : std::unordered_map<std::string, core::Tensor>(first, last),
           primary_key_(primary_key) {
         AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
     }
 
     TensorMap(const std::string& primary_key,
               const std::unordered_map<std::string, core::Tensor>& tensor_map)
-        : TensorMap(primary_key, tensor_map.begin(), tensor_map.end()) {}
+        : TensorMap(primary_key, tensor_map.begin(), tensor_map.end()) {
+        AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
+    }
 
     TensorMap(const std::string& primary_key,
               std::initializer_list<value_type> init)
         : std::unordered_map<std::string, core::Tensor>(init),
           primary_key_(primary_key) {
         AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
     }
 
     /// Copy constructor performs a "shallow" copy of the Tensors.
@@ -84,6 +92,7 @@ public:
         : std::unordered_map<std::string, core::Tensor>(other),
           primary_key_(other.primary_key_) {
         AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
     }
 
     /// Move constructor performs a "shallow" copy of the Tensors.
@@ -91,6 +100,7 @@ public:
         : std::unordered_map<std::string, core::Tensor>(other),
           primary_key_(other.primary_key_) {
         AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
     }
 
     /// \brief Erase elements for the TensorMap by key value, if the key
@@ -153,6 +163,10 @@ private:
     /// Asserts that the map indeed contains the primary_key. This is typically
     /// called in constructors.
     void AssertPrimaryKeyInMapOrEmpty() const;
+
+    /// Asserts that there are no reserved keys in the map. This is typically
+    /// called in constructors or in modifying functions.
+    void AssertNoReservedKeys() const;
 
     /// Returns the size (length) of the primary key's tensor.
     int64_t GetPrimarySize() const { return at(primary_key_).GetLength(); }

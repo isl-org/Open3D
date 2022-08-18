@@ -55,6 +55,16 @@ void TensorMap::AssertPrimaryKeyInMapOrEmpty() const {
     }
 }
 
+void TensorMap::AssertNoReservedKeys() const {
+    const std::unordered_set<std::string>& reserved_keys = GetReservedKeys();
+    for (const auto& kv : *this) {
+        if (reserved_keys.count(kv.first)) {
+            utility::LogError("TensorMap contains reserved key \"{}\".",
+                              kv.first);
+        }
+    }
+}
+
 void TensorMap::AssertSizeSynchronized() const {
     if (!IsSizeSynchronized()) {
         const int64_t primary_size = GetPrimarySize();
