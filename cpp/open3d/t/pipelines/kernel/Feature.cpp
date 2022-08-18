@@ -24,20 +24,35 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#pragma once
+#include "open3d/t/pipelines/kernel/Feature.h"
 
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/TensorCheck.h"
 
 namespace open3d {
 namespace t {
 namespace pipelines {
-namespace registration {
+namespace kernel {
 
-void pybind_feature(py::module &m);
-void pybind_registration(py::module &m);
-void pybind_robust_kernels(py::module &m);
+void ComputeFPFHFeature(const core::Tensor &points,
+                        const core::Tensor &normals,
+                        const core::Tensor &indices,
+                        const core::Tensor &distance2,
+                        const core::Tensor &counts,
+                        core::Tensor &fpfhs) {
+    core::AssertTensorShape(fpfhs, {points.GetLength(), 33});
+    const core::Tensor points_d = points.Contiguous();
+    const core::Tensor normals_d = normals.Contiguous();
+    const core::Tensor counts_d = counts.To(core::Int32);
+    if (points_d.IsCPU()) {
+        ComputeFPFHFeatureCPU(points_d, normals_d, indices, distance2, counts_d,
+                              fpfhs);
+    } else {
+        CUDA_CALL(ComputeFPFHFeatureCUDA, points_d, normals_d, indices,
+                  distance2, counts_d, fpfhs);
+    }
+}
 
-}  // namespace registration
+}  // namespace kernel
 }  // namespace pipelines
 }  // namespace t
 }  // namespace open3d
