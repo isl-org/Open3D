@@ -225,21 +225,25 @@ The attributes of the point cloud have different levels::
     pointcloud.def("paint_uniform_color", &PointCloud::PaintUniformColor,
                    "color"_a, "Assigns uniform color to the point cloud.");
 
-    pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
-                   py::call_guard<py::gil_scoped_release>(),
-                   py::arg("max_nn") = 30, py::arg("radius") = py::none(),
-                   "Function to estimate point normals. If the pointcloud "
-                   "normals exists, the estimated normals are oriented "
-                   "with respect to the same. It uses KNN search if only "
-                   "max_nn parameter is provided, and HybridSearch if radius "
-                   "parameter is also provided.");
-    pointcloud.def("estimate_color_gradients",
-                   &PointCloud::EstimateColorGradients,
-                   py::call_guard<py::gil_scoped_release>(),
-                   py::arg("max_nn") = 30, py::arg("radius") = py::none(),
-                   "Function to estimate point color gradients. If radius is "
-                   "provided, then HybridSearch is used, otherwise KNN-Search "
-                   "is used.");
+    pointcloud.def(
+            "estimate_normals", &PointCloud::EstimateNormals,
+            py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
+            py::arg("radius") = py::none(),
+            "Function to estimate point normals. If the point cloud normals "
+            "exist, the estimated normals are oriented with respect to the "
+            "same. It uses KNN search (Not recommended to use on GPU) if only "
+            "max_nn parameter is provided, Radius search (Not recommended to "
+            "use on GPU) if only radius is provided and Hybrid Search "
+            "(Recommended) if radius parameter is also provided.");
+    pointcloud.def(
+            "estimate_color_gradients", &PointCloud::EstimateColorGradients,
+            py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
+            py::arg("radius") = py::none(),
+            "Function to estimate point color gradients. It uses KNN search "
+            "(Not recommended to use on GPU) if only max_nn parameter is "
+            "provided, Radius search (Not recommended to use on GPU) if only "
+            "radius is provided and Hybrid Search (Recommended) if radius "
+            "parameter is also provided.");
 
     // creation (static)
     pointcloud.def_static(
