@@ -51,6 +51,9 @@ bool ReadImage(const std::string &filename, geometry::Image &image);
 
 /// The general entrance for reading an Image from memory
 /// The function calls read functions based on format of image.
+/// \param image_format the format of image, "png" or "jpg".
+/// \param image_data_ptr the pointer to image data in memory.
+/// \param image_data_size the size of image data in memory.
 /// \return return true if the read function is successful, false otherwise.
 bool ReadImageFromMemory(const std::string &image_format,
                          const unsigned char *image_data_ptr,
@@ -87,6 +90,10 @@ bool WriteImageToJPG(const std::string &filename,
 
 /// The general entrance for reading an Image from memory
 bool ReadPNGFromMemory(const unsigned char *image_data_ptr,
+                       size_t image_data_size,
+                       geometry::Image &image);
+
+bool ReadJPGFromMemory(const unsigned char *image_data_ptr,
                        size_t image_data_size,
                        geometry::Image &image);
 

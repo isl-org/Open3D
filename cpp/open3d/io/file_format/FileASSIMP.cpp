@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <png.h>
-
 #include <fstream>
 #include <numeric>
 #include <vector>
@@ -93,7 +91,6 @@ void LoadTextures(const std::string& filename,
             aiString path;
             mat->GetTexture(type, 0, &path);
             // If the texture is an embedded texture, use `GetEmbeddedTexture`.
-            // To do: support .jpg
             if (auto texture = scene->GetEmbeddedTexture(path.C_Str())) {
                 if (texture->CheckFormat("png")) {
                     auto image = io::CreateImageFromMemory(
@@ -104,7 +101,18 @@ void LoadTextures(const std::string& filename,
                     if (image->HasData()) {
                         img = image;
                     }
-                } else {
+                } else if (texture->CheckFormat("jpg")) {
+                    auto image = io::CreateImageFromMemory(
+                            "jpg",
+                            reinterpret_cast<const unsigned char*>(
+                                    texture->pcData),
+                            texture->mWidth);
+                    if (image->HasData()) {
+                        img = image;
+                    }
+                }
+
+                else {
                     utility::LogWarning(
                             "This format of image is not supported.");
                 }
