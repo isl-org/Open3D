@@ -139,6 +139,9 @@ public:
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
 
+    /// Getter for point_attr_ TensorMap.
+    TensorMap &GetPointAttr() { return point_attr_; }
+
     /// Get point attributes in point_attr_. Throws exception if the attribute
     /// does not exist.
     ///
@@ -153,6 +156,9 @@ public:
 
     /// Getter for line_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetLineAttr() const { return line_attr_; }
+
+    /// Getter for line_attr_ TensorMap.
+    TensorMap &GetLineAttr() { return line_attr_; }
 
     /// Get line attributes in line_attr_. Throws exception if the
     /// attribute does not exist.

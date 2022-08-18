@@ -43,7 +43,9 @@ public:
     void Start();
     void Stop();
     void Print(const std::string &timer_info) const;
-    double GetDuration() const;
+    double GetDurationInSecond() const;
+    double GetDurationInMillisecond() const;
+    std::tuple<int, int, double> GetDurationInHMS() const;
 
 private:
     double start_time_in_milliseconds_;

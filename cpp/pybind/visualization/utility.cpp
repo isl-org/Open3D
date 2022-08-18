@@ -59,6 +59,13 @@ void pybind_visualization_utility(py::module &m) {
                         return s.CropTriangleMesh(input);
                     },
                     "input"_a, "Function to crop crop triangle mesh.")
+            .def(
+                    "crop_in_polygon",
+                    [](const SelectionPolygonVolume &s,
+                       const geometry::PointCloud &input) {
+                        return s.CropInPolygon(input);
+                    },
+                    "input"_a, "Function to crop 3d point clouds.")
             .def("__repr__",
                  [](const SelectionPolygonVolume &s) {
                      return std::string(
@@ -84,6 +91,9 @@ void pybind_visualization_utility(py::module &m) {
     docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
                                     "crop_triangle_mesh",
                                     {{"input", "The input triangle mesh."}});
+    docstring::ClassMethodDocInject(m, "SelectionPolygonVolume",
+                                    "crop_in_polygon",
+                                    {{"input", "The input point cloud xyz."}});
 }
 
 // Visualization util functions have similar arguments, sharing arg docstrings
