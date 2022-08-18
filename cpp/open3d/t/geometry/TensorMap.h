@@ -143,6 +143,12 @@ public:
     /// Same as C++20's std::unordered_map::contains().
     bool Contains(const std::string& key) const { return count(key) != 0; }
 
+    /// Get reserved keys for the map. A map cannot contain any of these keys.
+    static std::unordered_set<std::string> GetReservedKeys();
+
+    /// Print the TensorMap to string.
+    std::string ToString() const;
+
 private:
     /// Asserts that the map indeed contains the primary_key. This is typically
     /// called in constructors.

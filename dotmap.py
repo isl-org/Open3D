@@ -2,6 +2,11 @@ import numpy as np
 import open3d as o3d
 import open3d.core as o3c
 
+
+class WrongType():
+    pass
+
+
 if __name__ == "__main__":
     pcd = o3d.t.geometry.PointCloud()
     print(pcd.point)
@@ -14,6 +19,18 @@ if __name__ == "__main__":
     pcd.point.positions = np.ones((2, 3), np.float32)
     print(pcd.point)
 
+    print("\n[Set existing attribute with wrong type]")
+    try:
+        pcd.point.positions = WrongType()
+    except TypeError as e:
+        print(f"Error: {e}")
+
+    print("\n[Set new attribute with wrong type]")
+    try:
+        pcd.point.normals = WrongType()
+    except TypeError as e:
+        print(f"Error: {e}")
+
     print("\n[Get existing attribute]")
     print("colors:\n", pcd.point.colors)
 
@@ -23,8 +40,15 @@ if __name__ == "__main__":
     except KeyError as e:
         print(f"Error: {e}")
 
-    print("\n[Call other functions and attributes]")
+    print("\n[Get built-in functions or attributes]")
     print(f"primary_key: {pcd.point.primary_key}")
+
+    print("\n[Set built-in functions or attributes]")
+    try:
+        pcd.point.primary_key = o3c.Tensor.ones((2, 3), o3c.float32)
+    except KeyError as e:
+        print(f"Error: {e}")
+    print(pcd.point)
 
     import ipdb
     ipdb.set_trace()

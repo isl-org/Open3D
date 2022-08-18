@@ -153,65 +153,27 @@ void pybind_tensormap(py::module &m) {
     tm.def("is_size_synchronized", &TensorMap::IsSizeSynchronized);
     tm.def("assert_size_synchronized", &TensorMap::AssertSizeSynchronized);
 
-    tm.def("__setattr__", [](TensorMap &m, const std::string &k,
-                             const core::Tensor &v) { m[k] = v; });
+    tm.def("__setattr__",
+           [](TensorMap &m, const std::string &key, const core::Tensor &val) {
+               if (!TensorMap::GetReservedKeys().count(key)) {
+                   m[key] = val;
+               } else {
+                   throw py::key_error(fmt::format(
+                           "Cannot assign to reserved key \"{}\"", key));
+               }
+           });
     tm.def("__getattr__",
-           [](TensorMap &m, const std::string &k) -> core::Tensor {
-               auto it = m.find(k);
+           [](TensorMap &m, const std::string &key) -> core::Tensor {
+               auto it = m.find(key);
                if (it == m.end()) {
                    throw py::key_error(
-                           fmt::format("Key {} not found in TensorMap", k));
+                           fmt::format("Key {} not found in TensorMap", key));
                }
                return it->second;
            });
 
-    tm.def("__str__", [](const TensorMap &m) {
-        const std::string primary_key = m.GetPrimaryKey();
-
-        if (m.empty()) {
-            return fmt::format(
-                    "TensorMap(primary_key=\"{}\") with no attribute",
-                    primary_key);
-        }
-
-        size_t max_key_len = 0;
-        bool has_primary_key = false;
-        std::vector<std::string> keys;
-        keys.reserve(m.size());
-        for (const auto &kv : m) {
-            const std::string key = kv.first;
-            keys.push_back(key);
-            max_key_len = std::max(max_key_len, key.size());
-            if (key == primary_key) {
-                has_primary_key = true;
-            }
-        }
-        std::sort(keys.begin(), keys.end());
-
-        const std::string tensor_format_str =
-                fmt::format("  - {{:<{}}}: shape={{}}, dtype={{}}, device={{}}",
-                            max_key_len);
-
-        std::stringstream ss;
-        ss << fmt::format("TensorMap(primary_key=\"{}\") with {} attribute{}:",
-                          primary_key, m.size(), m.size() > 1 ? "s" : "")
-           << std::endl;
-        for (const std::string &key : keys) {
-            const core::Tensor &val = m.at(key);
-            ss << fmt::format(tensor_format_str, key, val.GetShape().ToString(),
-                              val.GetDtype().ToString(),
-                              val.GetDevice().ToString());
-            if (key == primary_key) {
-                ss << " (primary)";
-            }
-            ss << std::endl;
-        }
-
-        const std::string example_key = has_primary_key ? primary_key : keys[0];
-        ss << fmt::format("  (Use . to access attributes, e.g., tensor_map.{})",
-                          example_key);
-        return ss.str();
-    });
+    tm.def("__str__", &TensorMap::ToString);
+    tm.def("__repr__", &TensorMap::ToString);
 
     tm.def("__dir__", [](TensorMap &m) {
         auto keys = py::list();
