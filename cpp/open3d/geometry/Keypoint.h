@@ -31,6 +31,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 namespace open3d {
 namespace geometry {
@@ -57,12 +58,13 @@ namespace keypoint {
 /// \param min_neighbors Minimum number of neighbors that has to be found to
 /// consider a keypoint.
 /// \authors Ignacio Vizzo and Cyrill Stachniss, University of Bonn.
-std::shared_ptr<PointCloud> ComputeISSKeypoints(const PointCloud &input,
-                                                double salient_radius = 0.0,
-                                                double non_max_radius = 0.0,
-                                                double gamma_21 = 0.975,
-                                                double gamma_32 = 0.975,
-                                                int min_neighbors = 5);
+std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
+ComputeISSKeypoints(const PointCloud &input,
+                    double salient_radius = 0.0,
+                    double non_max_radius = 0.0,
+                    double gamma_21 = 0.975,
+                    double gamma_32 = 0.975,
+                    int min_neighbors = 5);
 
 }  // namespace keypoint
 }  // namespace geometry

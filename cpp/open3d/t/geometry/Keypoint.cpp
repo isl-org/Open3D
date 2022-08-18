@@ -64,7 +64,7 @@ std::tuple<PointCloud, core::Tensor> ComputeISSKeypoints(
         utility::LogDebug("Input PointCloud is empty!");
         return std::make_tuple(
                 PointCloud(input.GetDevice()),
-                core::Tensor({0}, core::Bool, input.GetDevice()));
+                core::Tensor({0}, core::Int64, input.GetDevice()));
     }
 
     double salient_radius_d, non_max_radius_d;
@@ -97,6 +97,76 @@ std::tuple<PointCloud, core::Tensor> ComputeISSKeypoints(
     }
 
     return std::make_tuple(input.SelectByMask(keypoints_mask), keypoints_mask);
+}
+
+std::tuple<PointCloud, core::Tensor> ComputeBoundaryPoints(
+        const PointCloud& input,
+        const utility::optional<int> max_nn,
+        const utility::optional<double> radius,
+        double angle_threshold) {
+    core::AssertTensorDtypes(input.GetPointPositions(),
+                             {core::Float32, core::Float64});
+    if (!input.HasPointPositions()) {
+        utility::LogDebug("Input PointCloud is empty.");
+        return std::make_tuple(
+                PointCloud(input.GetDevice()),
+                core::Tensor({0}, core::Int64, input.GetDevice()));
+    }
+    if (!input.HasPointNormals()) {
+        utility::LogError("Input PointCloud has no normals.");
+    }
+
+    const int64_t num_points = input.GetPointPositions().GetLength();
+    const core::Dtype dtype = input.GetPointPositions().GetDtype();
+    const core::Device device = input.GetPointPositions().GetDevice();
+
+    // Compute nearest neighbors and squared distances.
+    core::Tensor indices, distance2, counts;
+    core::nns::NearestNeighborSearch tree(input.GetPointPositions(),
+                                          core::Int32);
+    if (radius.has_value() && max_nn.has_value()) {
+        bool check = tree.HybridIndex(radius.value());
+        if (!check) {
+            utility::LogError("Building HybridIndex failed.");
+        }
+        std::tie(indices, distance2, counts) = tree.HybridSearch(
+                input.GetPointPositions(), radius.value(), max_nn.value());
+        utility::LogDebug(
+                "Use HybridSearch [max_nn: {} | radius {}] for computing "
+                "boundary points.",
+                max_nn.value(), radius.value());
+    } else if (!radius.has_value() && max_nn.has_value()) {
+        bool check = tree.KnnIndex();
+        if (!check) {
+            utility::LogError("Building KnnIndex failed.");
+        }
+        std::tie(indices, distance2) =
+                tree.KnnSearch(input.GetPointPositions(), max_nn.value());
+
+        // Make counts full with min(max_nn, num_points).
+        const int fill_value =
+                max_nn.value() > num_points ? num_points : max_nn.value();
+        counts = core::Tensor::Full({num_points}, fill_value, core::Int32,
+                                    device);
+        utility::LogDebug(
+                "Use KNNSearch [max_nn: {}] for computing boundary points.",
+                max_nn.value());
+    } else if (radius.has_value() && !max_nn.has_value()) {
+        bool check = tree.FixedRadiusIndex(radius.value());
+        if (!check) {
+            utility::LogError("Building RadiusIndex failed.");
+        }
+        std::tie(indices, distance2, counts) = tree.FixedRadiusSearch(
+                input.GetPointPositions(), radius.value());
+        utility::LogDebug(
+                "Use RadiusSearch [radius: {}] for computing boundary points.",
+                radius.value());
+    } else {
+        utility::LogError("Both max_nn and radius are none.");
+    }
+
+    core::Tensor mask = core::Tensor::Zeros({num_points}, core::Bool, device);
+    return std::make_tuple(input.SelectByMask(mask), mask.NonZero().Flatten());
 }
 
 }  // namespace keypoint

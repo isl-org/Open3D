@@ -75,16 +75,17 @@ double ComputeModelResolution(const std::vector<Eigen::Vector3d>& points,
 
 namespace geometry {
 namespace keypoint {
-std::shared_ptr<PointCloud> ComputeISSKeypoints(
-        const PointCloud& input,
-        double salient_radius /* = 0.0 */,
-        double non_max_radius /* = 0.0 */,
-        double gamma_21 /* = 0.975 */,
-        double gamma_32 /* = 0.975 */,
-        int min_neighbors /*= 5 */) {
+std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
+ComputeISSKeypoints(const PointCloud& input,
+                    double salient_radius /* = 0.0 */,
+                    double non_max_radius /* = 0.0 */,
+                    double gamma_21 /* = 0.975 */,
+                    double gamma_32 /* = 0.975 */,
+                    int min_neighbors /*= 5 */) {
     if (input.points_.empty()) {
         utility::LogWarning("[ComputeISSKeypoints] Input PointCloud is empty!");
-        return std::make_shared<PointCloud>();
+        return std::make_tuple(std::make_shared<PointCloud>(),
+                               std::vector<size_t>());
     }
     const auto& points = input.points_;
     KDTreeFlann kdtree(input);
@@ -144,7 +145,7 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
 
     utility::LogDebug("[ComputeISSKeypoints] Extracted {} keypoints",
                       kp_indices.size());
-    return input.SelectByIndex(kp_indices);
+    return std::make_tuple(input.SelectByIndex(kp_indices), kp_indices);
 }
 
 }  // namespace keypoint

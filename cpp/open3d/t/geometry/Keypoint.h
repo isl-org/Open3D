@@ -54,7 +54,7 @@ namespace keypoint {
 /// second eigenvalue
 /// \param min_neighbors Minimum number of neighbors that has to be found to
 /// consider a keypoint.
-/// \return The computed ISS Keypoints and its boolean mask tensor of the input
+/// \return The computed ISS Keypoints and its indexing tensor of the input
 /// PointCloud.
 std::tuple<PointCloud, core::Tensor> ComputeISSKeypoints(
         const PointCloud &input,
@@ -63,6 +63,12 @@ std::tuple<PointCloud, core::Tensor> ComputeISSKeypoints(
         double gamma_21 = 0.975,
         double gamma_32 = 0.975,
         int min_neighbors = 5);
+
+std::tuple<PointCloud, core::Tensor> ComputeBoundaryPoints(
+        const PointCloud &input,
+        const utility::optional<int> max_nn = 30,
+        const utility::optional<double> radius = utility::nullopt,
+        double angle_threshold = 90.0);
 
 }  // namespace keypoint
 }  // namespace geometry

@@ -215,13 +215,13 @@ void ComputeISSKeypointsCPU
     // Compute covariance matrix for each point with its nearest neighbors
     // within radius1.
     core::Tensor covariances = core::Tensor::Empty(
-            {points.GetLength(), 9}, points.GetDtype(), points.GetDevice());
+            {points.GetLength(), 3, 3}, points.GetDtype(), points.GetDevice());
     if (points.GetDevice().IsCUDA()) {
         EstimateCovariancesUsingRadiusSearchCUDA(points, covariances, radius1);
     } else {
         EstimateCovariancesUsingRadiusSearchCPU(points, covariances, radius1);
     }
-
+    
     core::Tensor third_eigen_values = core::Tensor::Zeros(
             {points.GetLength()}, points.GetDtype(), points.GetDevice());
 
@@ -233,9 +233,7 @@ void ComputeISSKeypointsCPU
         core::ParallelFor(
                 points.GetDevice(), points.GetLength(),
                 [=] OPEN3D_DEVICE(int64_t workload_idx) {
-                    scalar_t U[9];
-                    scalar_t V[9];
-                    scalar_t S[3];
+                    scalar_t U[9], S[3], V[9];
                     const scalar_t* A_3X3 = covariances_ptr + 9 * workload_idx;
                     core::linalg::kernel::svd3x3<scalar_t>(A_3X3, U, S, V);
                     if ((S[1] / S[0]) < gamma_21 && (S[2] / S[1]) < gamma_32) {
@@ -250,7 +248,6 @@ void ComputeISSKeypointsCPU
     // Search nearest neighbors using radius2.
     core::nns::NearestNeighborSearch nns(points, core::Int32);
     bool check;
-
     check = nns.FixedRadiusIndex(radius2);
     if (!check) {
         utility::LogError("Building FixedRadiusIndex failed.");
