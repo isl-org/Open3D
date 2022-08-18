@@ -180,17 +180,20 @@ void pybind_tensormap(py::module &m) {
                             max_key_len);
 
         std::stringstream ss;
-        ss << fmt::format("TensorMap (primary_key: {})\n", m.GetPrimaryKey());
+        ss << "TensorMap object with attributes:" << std::endl;
         for (const std::string &key : keys) {
             const core::Tensor &val = m.at(key);
-
             ss << fmt::format(tensor_format_str, key, val.GetShape().ToString(),
                               val.GetDtype().ToString(),
                               val.GetDevice().ToString());
-            if (&key != &keys.back()) {
-                ss << "\n";
+            if (key == m.GetPrimaryKey()) {
+                ss << " (primary key)";
             }
+            ss << std::endl;
         }
+
+        ss << "Use . to access attributes, e.g., "
+           << fmt::format("tensor_map.{}", m.GetPrimaryKey());
         return ss.str();
     });
 }
