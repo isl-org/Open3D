@@ -99,8 +99,7 @@ bool ReadPointCloud(const std::string &filename,
         success =
                 open3d::io::ReadPointCloud(filename, legacy_pointcloud, params);
         if (!success) return false;
-        pointcloud = geometry::PointCloud::FromLegacy(legacy_pointcloud,
-                                                      core::Float64);
+        pointcloud = geometry::PointCloud::FromLegacy(legacy_pointcloud);
     } else {
         success = map_itr->second(filename, pointcloud, params);
         if (params.remove_nan_points || params.remove_infinite_points) {
