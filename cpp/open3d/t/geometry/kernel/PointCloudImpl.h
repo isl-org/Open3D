@@ -947,8 +947,7 @@ void EstimateColorGradientsUsingHybridSearchCPU
 
     bool check = tree.HybridIndex(radius);
     if (!check) {
-        utility::LogError(
-                "NearestNeighborSearch::FixedRadiusIndex Index is not set.");
+        utility::LogError("NearestNeighborSearch::HybridIndex is not set.");
     }
 
     core::Tensor indices, distance, counts;
@@ -1030,6 +1029,61 @@ void EstimateColorGradientsUsingKNNSearchCPU
                             points_ptr, normals_ptr, colors_ptr, idx_offset,
                             neighbour_indices_ptr + neighbour_offset, nn_count,
                             color_gradients_ptr);
+                });
+    });
+
+    core::cuda::Synchronize(points.GetDevice());
+}
+
+#if defined(__CUDACC__)
+void EstimateColorGradientsUsingRadiusSearchCUDA
+#else
+void EstimateColorGradientsUsingRadiusSearchCPU
+#endif
+        (const core::Tensor& points,
+         const core::Tensor& normals,
+         const core::Tensor& colors,
+         core::Tensor& color_gradients,
+         const double& radius) {
+    core::Dtype dtype = points.GetDtype();
+    int64_t n = points.GetLength();
+
+    core::nns::NearestNeighborSearch tree(points, core::Int32);
+
+    bool check = tree.FixedRadiusIndex(radius);
+    if (!check) {
+        utility::LogError("RadiusIndex is not set.");
+    }
+
+    core::Tensor indices, distance, counts;
+    std::tie(indices, distance, counts) =
+            tree.FixedRadiusSearch(points, radius);
+
+    indices = indices.To(core::Int32).Contiguous();
+    counts = counts.Contiguous();
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        auto points_ptr = points.GetDataPtr<scalar_t>();
+        auto normals_ptr = normals.GetDataPtr<scalar_t>();
+        auto colors_ptr = colors.GetDataPtr<scalar_t>();
+        auto neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
+        auto neighbour_counts_ptr = counts.GetDataPtr<int32_t>();
+        auto color_gradients_ptr = color_gradients.GetDataPtr<scalar_t>();
+
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    int32_t neighbour_offset =
+                            neighbour_counts_ptr[workload_idx];
+                    // Count of valid correspondences per point.
+                    const int32_t neighbour_count =
+                            (neighbour_counts_ptr[workload_idx + 1] -
+                             neighbour_counts_ptr[workload_idx]);
+                    int32_t idx_offset = 3 * workload_idx;
+
+                    EstimatePointWiseColorGradientKernel(
+                            points_ptr, normals_ptr, colors_ptr, idx_offset,
+                            neighbour_indices_ptr + neighbour_offset,
+                            neighbour_count, color_gradients_ptr);
                 });
     });
 

@@ -155,8 +155,9 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         indices = output_allocator.NeighborsIndex();
         distances = output_allocator.NeighborsDistance();
     });
+
     return std::make_tuple(indices, distances,
-                           neighbors_row_splits.To(index_dtype));
+                           neighbors_row_splits.To(index_dtype_));
 };
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(

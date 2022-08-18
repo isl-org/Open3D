@@ -182,6 +182,12 @@ void EstimateColorGradientsUsingKNNSearchCPU(const core::Tensor& points,
                                              core::Tensor& color_gradient,
                                              const int64_t& max_nn);
 
+void EstimateColorGradientsUsingRadiusSearchCPU(const core::Tensor& points,
+                                                const core::Tensor& normals,
+                                                const core::Tensor& colors,
+                                                core::Tensor& color_gradient,
+                                                const double& radius);
+
 #ifdef BUILD_CUDA_MODULE
 void EstimateCovariancesUsingHybridSearchCUDA(const core::Tensor& points,
                                               core::Tensor& covariances,
@@ -212,6 +218,12 @@ void EstimateColorGradientsUsingKNNSearchCUDA(const core::Tensor& points,
                                               const core::Tensor& colors,
                                               core::Tensor& color_gradient,
                                               const int64_t& max_nn);
+
+void EstimateColorGradientsUsingRadiusSearchCUDA(const core::Tensor& points,
+                                                 const core::Tensor& normals,
+                                                 const core::Tensor& colors,
+                                                 core::Tensor& color_gradient,
+                                                 const double& radius);
 #endif
 
 }  // namespace pointcloud
