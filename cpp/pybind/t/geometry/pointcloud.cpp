@@ -140,13 +140,12 @@ The attributes of the point cloud have different levels::
     pointcloud.def("clone", &PointCloud::Clone,
                    "Returns a copy of the point cloud on the same device.");
 
-    pointcloud.def(
-            "cpu",
-            [](const PointCloud& pointcloud) {
-                return pointcloud.To(core::Device("CPU:0"));
-            },
-            "Transfer the point cloud to CPU. If the point cloud is "
-            "already on CPU, no copy will be performed.");
+    pointcloud.def("cpu",
+                   [](const PointCloud& pointcloud) {
+                       return pointcloud.To(core::Device("CPU:0"));
+                   },
+                   "Transfer the point cloud to CPU. If the point cloud is "
+                   "already on CPU, no copy will be performed.");
     pointcloud.def(
             "cuda",
             [](const PointCloud& pointcloud, int device_id) {
@@ -190,14 +189,13 @@ The attributes of the point cloud have different levels::
                    "invert"_a = false, "remove_duplicates"_a = false,
                    "Select points from input pointcloud, based on indices into "
                    "output point cloud.");
-    pointcloud.def(
-            "voxel_down_sample",
-            [](const PointCloud& pointcloud, const double voxel_size) {
-                return pointcloud.VoxelDownSample(
-                        voxel_size, core::HashBackendType::Default);
-            },
-            "Downsamples a point cloud with a specified voxel size.",
-            "voxel_size"_a);
+    pointcloud.def("voxel_down_sample",
+                   [](const PointCloud& pointcloud, const double voxel_size) {
+                       return pointcloud.VoxelDownSample(
+                               voxel_size, core::HashBackendType::Default);
+                   },
+                   "Downsamples a point cloud with a specified voxel size.",
+                   "voxel_size"_a);
     pointcloud.def("uniform_down_sample", &PointCloud::UniformDownSample,
                    "Downsamples a point cloud by selecting every kth index "
                    "point and its attributes.",
@@ -417,6 +415,9 @@ Example:
         hull = pcd.compute_convex_hull()
         o3d.visualization.draw([{'name': 'eagle', 'geometry': pcd}, {'name': 'convex hull', 'geometry': hull}])
     )doc");
+    pointcloud.def("compute_boundary_points",
+                   &PointCloud::ComputeBoundaryPoints, "max_nn"_a = 30,
+                   "radius"_a = py::none(), "angle_threshold"_a = 90.0);
 
     // conversion
     pointcloud.def("to_legacy", &PointCloud::ToLegacy,

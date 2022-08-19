@@ -27,6 +27,8 @@
 #include <atomic>
 #include <vector>
 
+#include <thrust/device_vector.h>
+#include <thrust/sort.h>
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -196,13 +198,16 @@ OPEN3D_HOST_DEVICE void GetCoordinateSystemOnPlane(const scalar_t* query,
     // If both x and y are close to zero, then the vector is close to the
     // z-axis, so it's far from colinear to the x-axis for instance. So we
     // take the crossed product with (1,0,0) and normalize it.
-    if (!((query[0] - query[2]) > 1e-6) || !((query[1] - query[2]) > 1e-6)) {
-        const norm2_inv = 1.0 / sqrt(query[0] * query[0] + query[1] * query[1]);
+    if (!(abs(query[0] - query[2]) < 1e-6) ||
+        !(abs(query[1] - query[2]) < 1e-6)) {
+        const scalar_t norm2_inv =
+                1.0 / sqrt(query[0] * query[0] + query[1] * query[1]);
         v[0] = -1 * query[1] * norm2_inv;
         v[1] = query[0] * norm2_inv;
         v[2] = 0;
     } else {
-        const norm2_inv = 1.0 / sqrt(query[1] * query[1] + query[2] * query[2]);
+        const scalar_t norm2_inv =
+                1.0 / sqrt(query[1] * query[1] + query[2] * query[2]);
         v[0] = 0;
         v[1] = -1 * query[2] * norm2_inv;
         v[2] = query[1] * norm2_inv;
@@ -212,15 +217,84 @@ OPEN3D_HOST_DEVICE void GetCoordinateSystemOnPlane(const scalar_t* query,
 }
 
 template <typename scalar_t>
-OPEN3D_HOST_DEVICE void IsBoundaryPoints(const scalar_t* points,
-                                         const scalar_t* query,
-                                         const int32_t* indices,
+inline OPEN3D_HOST_DEVICE void Swap(scalar_t* x, scalar_t* y) {
+    scalar_t tmp = *x;
+    *x = *y;
+    *y = tmp;
+}
+
+template <typename scalar_t>
+inline OPEN3D_HOST_DEVICE void Heapify(scalar_t* arr, int n, int root) {
+    // int child = root * 2 + 1;
+
+    // while (child < n) {
+    //     if (child + 1 < n && arr[child + 1] > arr[child]) {
+    //         child++;
+    //     }
+    //     if (arr[root] > arr[child]) {
+    //         return;
+    //     }
+    //     Swap<scalar_t>(&arr[root], &arr[child]);
+    //     root = child;
+    //     child = root * 2 + 1;
+    // }
+
+    int largest = root;
+ 
+    // left = 2*i + 1
+    int l = 2 * root + 1;
+ 
+    // right = 2*i + 2
+    int r = 2 * root + 2;
+ 
+    // If left child is larger than root
+    if (l < n && arr[l] > arr[largest])
+        largest = l;
+ 
+    // If right child is larger than largest
+    // so far
+    if (r < n && arr[r] > arr[largest])
+        largest = r;
+ 
+    // If largest is not root
+    if (largest != root) {
+        Swap<scalar_t>(&arr[root], &arr[largest]);
+ 
+        // Recursively heapify the affected
+        // sub-tree
+        Heapify<scalar_t>(arr, n, largest);
+    }
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE void HeapSort(scalar_t* arr, int n) {
+    for (int i = n / 2 - 1; i >= 0; i--)
+        Heapify(arr, n, i);
+
+    for (int i = n - 1; i > 0; i--) {
+        Swap<scalar_t>(&arr[0], &arr[i]);
+        Heapify<scalar_t>(arr, 0, i);
+    }
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE bool IsBoundaryPoints(const scalar_t* angles,
                                          int counts,
-                                         const scalar_t* u,
-                                         const scalar_t* v,
                                          double angle_threshold) {
-                                            
-                                         }
+    scalar_t diff;
+    scalar_t max_diff = 0;
+    // Compute the maximal angle difference between two consecutive angles.
+    for (int i = 0; i < counts - 1; i++) {
+        diff = angles[i + 1] - angles[i];
+        max_diff = max(max_diff, diff);
+    }
+
+    // Get the angle difference between the last and the first.
+    diff = 2 * M_PI - angles[counts - 1] + angles[0];
+    max_diff = max(max_diff, diff);
+
+    return max_diff > angle_threshold * M_PI / 180.0 ? true : false;
+}
 
 #if defined(__CUDACC__)
 void ComputeBoundaryPointsCUDA
@@ -228,22 +302,64 @@ void ComputeBoundaryPointsCUDA
 void ComputeBoundaryPointsCPU
 #endif
         (const core::Tensor& points,
+         const core::Tensor& normals,
          const core::Tensor& indices,
          const core::Tensor& counts,
          core::Tensor& mask,
          double angle_threshold) {
 
-    DISPATCH_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+    const int nn_size = indices.GetShape()[1];
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
         const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
+        const scalar_t* normals_ptr = normals.GetDataPtr<scalar_t>();
         const int64_t n = points.GetLength();
-        const int32_t* min_bound_ptr = indices.GetDataPtr<int32_t>();
-        const int32_t* max_bound_ptr = counts.GetDataPtr<int32_t>();
+        const int32_t* indices_ptr = indices.GetDataPtr<int32_t>();
+        const int32_t* counts_ptr = counts.GetDataPtr<int32_t>();
         bool* mask_ptr = mask.GetDataPtr<bool>();
 
-        core::ParallelFor(points.GetDevice(), n,
-                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+        core::Tensor angles = core::Tensor::Empty(
+                indices.GetShape(), points.GetDtype(), points.GetDevice());
+        scalar_t* angles_ptr = angles.GetDataPtr<scalar_t>();
 
-                          });
+        core::ParallelFor(
+                points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                    scalar_t u[3], v[3];
+                    GetCoordinateSystemOnPlane(normals_ptr + 3 * workload_idx,
+                                               u, v);
+
+                    // Ignore the point itself.
+                    int indices_size = counts_ptr[workload_idx] - 1;
+                    if (indices_size > 0) {
+                        const scalar_t* query = points_ptr + 3 * workload_idx;
+                        for (int i = 1; i < indices_size + 1; i++) {
+                            const int idx = workload_idx * nn_size + i;
+
+                            const scalar_t* point_ref =
+                                    points_ptr + 3 * indices_ptr[idx];
+                            const scalar_t delta[3] = {point_ref[0] - query[0],
+                                                       point_ref[1] - query[1],
+                                                       point_ref[2] - query[2]};
+                            angles_ptr[idx] = atan2(
+                                    core::linalg::kernel::dot_3x1(v, delta),
+                                    core::linalg::kernel::dot_3x1(u, delta));
+                        }
+
+                        // Sort the angles in acending order.
+                        HeapSort<scalar_t>(
+                                angles_ptr + workload_idx * nn_size + 1,
+                                indices_size);
+                        // for (int i = 0; i < indices_size + 1; i++) {
+                        //     printf("%f ",
+                        //            angles_ptr[workload_idx * nn_size + i]);
+                        // }
+                        // printf("\n");
+
+                        mask_ptr[workload_idx] = IsBoundaryPoints<scalar_t>(
+                                angles_ptr + workload_idx * nn_size + 1,
+                                indices_size, angle_threshold);
+                    }
+                });
     });
 }
 
@@ -298,7 +414,8 @@ OPEN3D_HOST_DEVICE void EstimatePointWiseRobustNormalizedCovarianceKernel(
     }
 
     // Using Bessel's correction (dividing by (n - 1) instead of n).
-    // Refer: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+    // Refer:
+    // https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
     const double normalization_factor = static_cast<double>(indices_count - 1);
     for (int i = 0; i < 6; ++i) {
         cumulants[i] /= normalization_factor;
@@ -408,8 +525,8 @@ void EstimateCovariancesUsingRadiusSearchCPU
                     const int32_t neighbour_count =
                             (neighbour_counts_ptr[workload_idx + 1] -
                              neighbour_counts_ptr[workload_idx]);
-                    // Covariance is of shape {3, 3}, so it has an offset factor
-                    // of 9 x workload_idx.
+                    // Covariance is of shape {3, 3}, so it has an offset
+                    // factor of 9 x workload_idx.
                     const int32_t covariances_offset = 9 * workload_idx;
 
                     EstimatePointWiseRobustNormalizedCovarianceKernel(
@@ -448,7 +565,8 @@ void EstimateCovariancesUsingKNNSearchCPU
 
     if (nn_count < 3) {
         utility::LogError(
-                "Not enough neighbors to compute Covariances / Normals. Try "
+                "Not enough neighbors to compute Covariances / Normals. "
+                "Try "
                 "increasing the max_nn parameter.");
     }
 
@@ -461,8 +579,8 @@ void EstimateCovariancesUsingKNNSearchCPU
                 points.GetDevice(), n, [=] OPEN3D_DEVICE(int64_t workload_idx) {
                     // NNS [KNN Search].
                     const int32_t neighbour_offset = nn_count * workload_idx;
-                    // Covariance is of shape {3, 3}, so it has an offset factor
-                    // of 9 x workload_idx.
+                    // Covariance is of shape {3, 3}, so it has an offset
+                    // factor of 9 x workload_idx.
                     const int32_t covariances_offset = 9 * workload_idx;
 
                     EstimatePointWiseRobustNormalizedCovarianceKernel(
@@ -974,7 +1092,8 @@ void EstimateColorGradientsUsingKNNSearchCPU
 
     if (nn_count < 4) {
         utility::LogError(
-                "Not enough neighbors to compute Covariances / Normals. Try "
+                "Not enough neighbors to compute Covariances / Normals. "
+                "Try "
                 "changing the search parameter.");
     }
 

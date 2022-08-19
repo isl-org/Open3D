@@ -437,9 +437,7 @@ PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {
 }
 
 std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
-        const utility::optional<int> max_nn,
-        const utility::optional<double> radius,
-        double angle_threshold) {
+        int max_nn, double radius, double angle_threshold) const {
     core::AssertTensorDtypes(this->GetPointPositions(),
                              {core::Float32, core::Float64});
     if (!HasPointNormals()) {
@@ -451,53 +449,35 @@ std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
     const core::Device device = GetDevice();
     const int64_t num_points = GetPointPositions().GetLength();
 
+    const core::Tensor points_d = GetPointPositions().Contiguous();
+    const core::Tensor normals_d = GetPointNormals().Contiguous();
+
     // Compute nearest neighbors.
     core::Tensor indices, distance2, counts;
-    core::nns::NearestNeighborSearch tree(GetPointPositions().Contiguous(),
-                                          core::Int32);
-    if (radius.has_value() && max_nn.has_value()) {
-        bool check = tree.HybridIndex(radius.value());
-        if (!check) {
-            utility::LogError("Building HybridIndex failed.");
-        }
-        std::tie(indices, distance2, counts) =
-                tree.HybridSearch(GetPointPositions().Contiguous(),
-                                  radius.value(), max_nn.value());
-        utility::LogDebug(
-                "Use HybridSearch [max_nn: {} | radius {}] for computing "
-                "boundary points.",
-                max_nn.value(), radius.value());
-    } else if (!radius.has_value() && max_nn.has_value()) {
-        bool check = tree.KnnIndex();
-        if (!check) {
-            utility::LogError("Building KnnIndex failed.");
-        }
-        std::tie(indices, distance2) = tree.KnnSearch(
-                GetPointPositions().Contiguous(), max_nn.value());
+    core::nns::NearestNeighborSearch tree(points_d, core::Int32);
 
-        // Make counts full with min(max_nn, num_points).
-        const int fill_value =
-                max_nn.value() > num_points ? num_points : max_nn.value();
-        counts = core::Tensor::Full({num_points}, fill_value, core::Int32,
-                                    device);
-        utility::LogDebug(
-                "Use KNNSearch  [max_nn: {}] for computing boundary points.",
-                max_nn.value());
-    } else if (radius.has_value() && !max_nn.has_value()) {
-        bool check = tree.FixedRadiusIndex(radius.value());
-        if (!check) {
-            utility::LogError("Building RadiusIndex failed.");
-        }
-        std::tie(indices, distance2, counts) = tree.FixedRadiusSearch(
-                GetPointPositions().Contiguous(), radius.value());
-        utility::LogDebug(
-                "Use RadiusSearch [radius: {}] for computing boundary points.",
-                radius.value());
-    } else {
-        utility::LogError("Both max_nn and radius are none.");
+    bool check = tree.HybridIndex(radius);
+    if (!check) {
+        utility::LogError("Building HybridIndex failed.");
     }
+    std::tie(indices, distance2, counts) =
+            tree.HybridSearch(points_d, radius, max_nn);
+    utility::LogDebug(
+            "Use HybridSearch [max_nn: {} | radius {}] for computing "
+            "boundary points.",
+            max_nn, radius);
 
     core::Tensor mask = core::Tensor::Zeros({num_points}, core::Bool, device);
+    if (IsCPU()) {
+        kernel::pointcloud::ComputeBoundaryPointsCPU(
+                points_d, normals_d, indices, counts, mask, angle_threshold);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::ComputeBoundaryPointsCUDA, points_d,
+                  normals_d, indices, counts, mask, angle_threshold);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
     return std::make_tuple(SelectByMask(mask), mask);
 }
 

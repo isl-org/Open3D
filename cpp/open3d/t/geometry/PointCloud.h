@@ -475,9 +475,9 @@ public:
     /// boundary.
     /// \return Tensor of boundary points and its boolean mask tensor.
     std::tuple<PointCloud, core::Tensor> ComputeBoundaryPoints(
-            const utility::optional<int> max_nn = 30,
-            const utility::optional<double> radius = utility::nullopt,
-            double angle_threshold = 90.0);
+            int max_nn = 30,
+            double radius = 0.01,
+            double angle_threshold = 90.0) const;
 
 public:
     /// \brief Function to estimate point normals. If the point cloud normals
