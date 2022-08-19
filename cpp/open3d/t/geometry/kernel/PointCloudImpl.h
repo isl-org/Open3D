@@ -24,11 +24,12 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <thrust/device_vector.h>
+#include <thrust/sort.h>
+
 #include <atomic>
 #include <vector>
 
-#include <thrust/device_vector.h>
-#include <thrust/sort.h>
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Dtype.h"
@@ -225,55 +226,27 @@ inline OPEN3D_HOST_DEVICE void Swap(scalar_t* x, scalar_t* y) {
 
 template <typename scalar_t>
 inline OPEN3D_HOST_DEVICE void Heapify(scalar_t* arr, int n, int root) {
-    // int child = root * 2 + 1;
-
-    // while (child < n) {
-    //     if (child + 1 < n && arr[child + 1] > arr[child]) {
-    //         child++;
-    //     }
-    //     if (arr[root] > arr[child]) {
-    //         return;
-    //     }
-    //     Swap<scalar_t>(&arr[root], &arr[child]);
-    //     root = child;
-    //     child = root * 2 + 1;
-    // }
-
     int largest = root;
- 
-    // left = 2*i + 1
     int l = 2 * root + 1;
- 
-    // right = 2*i + 2
     int r = 2 * root + 2;
- 
-    // If left child is larger than root
-    if (l < n && arr[l] > arr[largest])
-        largest = l;
- 
-    // If right child is larger than largest
-    // so far
-    if (r < n && arr[r] > arr[largest])
-        largest = r;
- 
-    // If largest is not root
+
+    if (l < n && arr[l] > arr[largest]) largest = l;
+
+    if (r < n && arr[r] > arr[largest]) largest = r;
+
     if (largest != root) {
         Swap<scalar_t>(&arr[root], &arr[largest]);
- 
-        // Recursively heapify the affected
-        // sub-tree
         Heapify<scalar_t>(arr, n, largest);
     }
 }
 
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE void HeapSort(scalar_t* arr, int n) {
-    for (int i = n / 2 - 1; i >= 0; i--)
-        Heapify(arr, n, i);
+    for (int i = n / 2 - 1; i >= 0; i--) Heapify(arr, n, i);
 
     for (int i = n - 1; i > 0; i--) {
         Swap<scalar_t>(&arr[0], &arr[i]);
-        Heapify<scalar_t>(arr, 0, i);
+        Heapify<scalar_t>(arr, i, 0);
     }
 }
 
@@ -318,8 +291,8 @@ void ComputeBoundaryPointsCPU
         const int32_t* counts_ptr = counts.GetDataPtr<int32_t>();
         bool* mask_ptr = mask.GetDataPtr<bool>();
 
-        core::Tensor angles = core::Tensor::Empty(
-                indices.GetShape(), points.GetDtype(), points.GetDevice());
+        core::Tensor angles = core::Tensor::Full(
+                indices.GetShape(), -10, points.GetDtype(), points.GetDevice());
         scalar_t* angles_ptr = angles.GetDataPtr<scalar_t>();
 
         core::ParallelFor(
@@ -340,20 +313,17 @@ void ComputeBoundaryPointsCPU
                             const scalar_t delta[3] = {point_ref[0] - query[0],
                                                        point_ref[1] - query[1],
                                                        point_ref[2] - query[2]};
-                            angles_ptr[idx] = atan2(
+                            const scalar_t angle = atan2(
                                     core::linalg::kernel::dot_3x1(v, delta),
                                     core::linalg::kernel::dot_3x1(u, delta));
+
+                            angles_ptr[idx] = angle;
                         }
 
-                        // Sort the angles in acending order.
+                        // // Sort the angles in acending order.
                         HeapSort<scalar_t>(
                                 angles_ptr + workload_idx * nn_size + 1,
                                 indices_size);
-                        // for (int i = 0; i < indices_size + 1; i++) {
-                        //     printf("%f ",
-                        //            angles_ptr[workload_idx * nn_size + i]);
-                        // }
-                        // printf("\n");
 
                         mask_ptr[workload_idx] = IsBoundaryPoints<scalar_t>(
                                 angles_ptr + workload_idx * nn_size + 1,

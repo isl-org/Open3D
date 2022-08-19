@@ -468,15 +468,15 @@ public:
     /// The implementation is inspired by the PCL implementation. Reference:
     /// https://pointclouds.org/documentation/classpcl_1_1_boundary_estimation.html
     ///
-    /// \param max_nn [optional] Neighbor search max neighbors parameter
+    /// \param radius Neighbor search radius parameter.
+    /// \param max_nn Neighbor search max neighbors parameter
     /// [Default = 30].
-    /// \param radius [optional] Neighbor search radius parameter.
     /// \param angle_threshold Angle threshold to decide if a point is on the
-    /// boundary.
+    /// boundary [Default = 90.0].
     /// \return Tensor of boundary points and its boolean mask tensor.
     std::tuple<PointCloud, core::Tensor> ComputeBoundaryPoints(
+            double radius,
             int max_nn = 30,
-            double radius = 0.01,
             double angle_threshold = 90.0) const;
 
 public:

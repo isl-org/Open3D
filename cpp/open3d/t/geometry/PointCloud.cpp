@@ -437,7 +437,7 @@ PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {
 }
 
 std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
-        int max_nn, double radius, double angle_threshold) const {
+        double radius, int max_nn, double angle_threshold) const {
     core::AssertTensorDtypes(this->GetPointPositions(),
                              {core::Float32, core::Float64});
     if (!HasPointNormals()) {
