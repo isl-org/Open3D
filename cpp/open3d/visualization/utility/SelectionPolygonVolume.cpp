@@ -124,6 +124,11 @@ SelectionPolygonVolume::CropTriangleMeshInPolygon(
 }
 
 std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
+        const geometry::PointCloud &input) const {
+    return CropInPolygon(input.points_);
+}
+
+std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
         const std::vector<Eigen::Vector3d> &input) const {
     std::vector<size_t> output_index;
     int u, v, w;

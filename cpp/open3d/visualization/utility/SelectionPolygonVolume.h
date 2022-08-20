@@ -63,6 +63,10 @@ public:
     /// \param input The input triangle mesh.
     std::shared_ptr<geometry::TriangleMesh> CropTriangleMesh(
             const geometry::TriangleMesh &input) const;
+    /// Function to crop point cloud with polygon boundaries
+    ///
+    /// \param input The input point Cloud.
+    std::vector<size_t> CropInPolygon(const geometry::PointCloud &input) const;
 
 private:
     std::shared_ptr<geometry::PointCloud> CropPointCloudInPolygon(

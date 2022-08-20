@@ -328,6 +328,10 @@ TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     // Estimate normals using KNN Search.
     pcd.EstimateNormals(4);
     EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+
+    // Estimate normals using Radius Search.
+    pcd.EstimateNormals(utility::nullopt, 1.1);
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
 }
 
 TEST_P(PointCloudPermuteDevices, OrientNormalsToAlignWithDirection) {

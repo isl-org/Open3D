@@ -277,7 +277,7 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
 
             ++k;
             utility::LogDebug("{}: Deformation + Integration takes {}", k,
-                              timer.GetDuration());
+                              timer.GetDurationInMillisecond());
         }
     }
 
