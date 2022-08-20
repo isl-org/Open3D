@@ -728,6 +728,44 @@ TEST(Dataset, FlightHelmetModel) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
+TEST(Dataset, AvocadoModel) {
+    const std::string prefix = "AvocadoModel";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::AvocadoModel dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetPath(), extract_dir + "/AvocadoModel.glb");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, DamagedHelmetModel) {
+    const std::string prefix = "DamagedHelmetModel";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::DamagedHelmetModel dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetPath(), extract_dir + "/DamagedHelmetModel.glb");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
 TEST(Dataset, MetalTexture) {
     const std::string prefix = "MetalTexture";
     const std::string data_root =
