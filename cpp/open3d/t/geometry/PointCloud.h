@@ -489,7 +489,7 @@ public:
     /// orientation_reference.
     void OrientNormalsToAlignWithDirection(
             const core::Tensor &orientation_reference =
-                    core::Tensor::Init<double>({0, 0, 1},
+                    core::Tensor::Init<float>({0, 0, 1},
                                                core::Device("CPU:0")));
 
     /// \brief Function to orient the normals of a point cloud.
@@ -498,7 +498,7 @@ public:
     /// camera_location.
     void OrientNormalsTowardsCameraLocation(
             const core::Tensor &camera_location = core::Tensor::Zeros(
-                    {3}, core::Float64, core::Device("CPU:0")));
+                    {3}, core::Float32, core::Device("CPU:0")));
 
     /// \brief Function to consistently orient estimated normals based on
     /// consistent tangent planes as described in Hoppe et al., "Surface

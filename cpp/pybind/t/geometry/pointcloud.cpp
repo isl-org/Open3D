@@ -240,11 +240,13 @@ The attributes of the point cloud have different levels::
     pointcloud.def("orient_normals_to_align_with_direction",
                    &PointCloud::OrientNormalsToAlignWithDirection,
                    "Function to orient the normals of a point cloud.",
-                   "orientation_reference"_a);
+                   "orientation_reference"_a = core::Tensor::Init<float>({0, 0, 1},
+                                               core::Device("CPU:0")));
     pointcloud.def("orient_normals_towards_camera_location",
                    &PointCloud::OrientNormalsTowardsCameraLocation,
                    "Function to orient the normals of a point cloud.",
-                   "camera_location"_a);
+                   "camera_location"_a = core::Tensor::Zeros(
+                    {3}, core::Float32, core::Device("CPU:0")));
     pointcloud.def("orient_normals_consistent_tangent_plane",
                    &PointCloud::OrientNormalsConsistentTangentPlane,
                    "Function to orient the normals with respect to consistent "
