@@ -13,6 +13,7 @@ fi
 deps=(
     # Open3D
     xorg-dev
+    libxcb-shm0
     libglu1-mesa-dev
     python3-dev
     # Filament build-from-source

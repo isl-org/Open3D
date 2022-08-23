@@ -27,6 +27,7 @@ env:
   SCIPY_VER: "1.7.3"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
+  TENSORBOARD_VER: "2.5"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -362,7 +363,8 @@ jobs:
             setuptools==${{ env.STOOLS_VER }}
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
           python -m pip install -U pytest-randomly==${{ env.PYTEST_RANDOMLY_VER }}
-          python -m pip install -U scipy==${{ env.SCIPY_VER }}
+          python -m pip install -U scipy==${{ env.SCIPY_VER }} `
+            tensorboard==${{ env.TENSORBOARD_VER }}
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
             $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
