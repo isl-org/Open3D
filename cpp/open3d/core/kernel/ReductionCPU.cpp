@@ -111,10 +111,8 @@ private:
                                             func_t element_kernel) {
         for (int64_t workload_idx = 0; workload_idx < indexer.NumWorkloads();
              ++workload_idx) {
-            scalar_t* src = reinterpret_cast<scalar_t*>(
-                    indexer.GetInputPtr(0, workload_idx));
-            scalar_t* dst = reinterpret_cast<scalar_t*>(
-                    indexer.GetOutputPtr(workload_idx));
+            scalar_t* src = indexer.GetInputPtr<scalar_t>(0, workload_idx);
+            scalar_t* dst = indexer.GetOutputPtr<scalar_t>(workload_idx);
             *dst = element_kernel(*src, *dst);
         }
     }

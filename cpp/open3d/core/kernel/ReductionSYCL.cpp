@@ -61,13 +61,11 @@ void ReductionSYCL(const Tensor& src,
                                       workload_idx < num_workloads;
                                       workload_idx++) {
                                      scalar_t* src =
-                                             reinterpret_cast<scalar_t*>(
-                                                     indexer.GetInputPtr(
-                                                             0, workload_idx));
+                                             indexer.GetInputPtr<scalar_t>(
+                                                     0, workload_idx);
                                      scalar_t* dst =
-                                             reinterpret_cast<scalar_t*>(
-                                                     indexer.GetOutputPtr(
-                                                             workload_idx));
+                                             indexer.GetOutputPtr<scalar_t>(
+                                                     workload_idx);
                                      *dst = (*src) + (*dst);
                                  }
                              });
