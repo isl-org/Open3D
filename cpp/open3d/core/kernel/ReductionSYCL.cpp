@@ -243,7 +243,7 @@ void ReductionSYCL(const Tensor& src,
     if (s_regular_reduce_ops.count(op_code)) {
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         SYCLReductionEngine re(indexer);
-        DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_SYCL(src.GetDtype(), [&]() {
             scalar_t identity;
             switch (op_code) {
                 case ReductionOpCode::Sum:
