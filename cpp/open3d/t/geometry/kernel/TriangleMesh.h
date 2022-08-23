@@ -34,6 +34,8 @@ namespace geometry {
 namespace kernel {
 namespace trianglemesh {
 
+void NormalizeNormalsCPU(core::Tensor& normals);
+
 void ComputeTriangleNormalsCPU(const core::Tensor& vertices,
                                const core::Tensor& triangles,
                                core::Tensor& normals);
@@ -43,6 +45,8 @@ void ComputeVertexNormalsCPU(const core::Tensor& triangles,
                              core::Tensor& vertex_normals);
 
 #ifdef BUILD_CUDA_MODULE
+void NormalizeNormalsCUDA(core::Tensor& normals);
+
 void ComputeTriangleNormalsCUDA(const core::Tensor& vertices,
                                 const core::Tensor& triangles,
                                 core::Tensor& normals);

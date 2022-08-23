@@ -180,19 +180,17 @@ TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
 }
 
 TriangleMesh &TriangleMesh::NormalizeNormals() {
-    const core::Dtype dtype = GetVertexPositions().GetDtype();
     if (HasVertexNormals()) {
         SetVertexNormals(GetVertexNormals().Contiguous());
         core::Tensor &vertex_normals = GetVertexNormals();
-        const core::Tensor vertex_normals_norm =
-                vertex_normals.Mul(vertex_normals).Sum({1}).Sqrt();
-        vertex_normals /= vertex_normals_norm.Reshape({-1, 1});
-        const core::Tensor n =
-                core::Tensor::Init<double>({0, 0, 1}, GetDevice()).To(dtype);
-
-        vertex_normals.IndexSet({vertex_normals.IsFinite().LogicalNot().All(
-                                        core::SizeVector({1}))},
-                                n);
+        if (IsCPU()) {
+            kernel::trianglemesh::NormalizeNormalsCPU(vertex_normals);
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::trianglemesh::NormalizeNormalsCUDA,
+                      vertex_normals);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
     } else {
         utility::LogWarning("TriangleMesh has no vertex normals.");
     }
@@ -200,15 +198,14 @@ TriangleMesh &TriangleMesh::NormalizeNormals() {
     if (HasTriangleNormals()) {
         SetTriangleNormals(GetTriangleNormals().Contiguous());
         core::Tensor &triangle_normals = GetTriangleNormals();
-        const core::Tensor triangle_normals_norm =
-                triangle_normals.Mul(triangle_normals).Sum({1}).Sqrt();
-        triangle_normals /= triangle_normals_norm.Reshape({-1, 1});
-        const core::Tensor n =
-                core::Tensor::Init<double>({0, 0, 1}, GetDevice()).To(dtype);
-
-        triangle_normals.IndexSet({triangle_normals.IsFinite().LogicalNot().All(
-                                          core::SizeVector({1}))},
-                                  n);
+        if (IsCPU()) {
+            kernel::trianglemesh::NormalizeNormalsCPU(triangle_normals);
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::trianglemesh::NormalizeNormalsCUDA,
+                      triangle_normals);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
     } else {
         utility::LogWarning("TriangleMesh has no triangle normals.");
     }

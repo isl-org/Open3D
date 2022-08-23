@@ -490,7 +490,7 @@ public:
     void OrientNormalsToAlignWithDirection(
             const core::Tensor &orientation_reference =
                     core::Tensor::Init<float>({0, 0, 1},
-                                               core::Device("CPU:0")));
+                                              core::Device("CPU:0")));
 
     /// \brief Function to orient the normals of a point cloud.
     ///

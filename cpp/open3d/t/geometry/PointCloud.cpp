@@ -428,13 +428,13 @@ PointCloud &PointCloud::NormalizeNormals() {
     }
 
     core::Tensor &normals = GetPointNormals();
-    const core::Tensor normals_norm = normals.Mul(normals).Sum({1}).Sqrt();
-    normals /= normals_norm.Reshape({-1, 1});
-
-    // Keep the normals to (0, 0, 0) if they are original (0, 0, 0).
-    normals.IndexSet({normals_norm.Eq(0)},
-                     core::Tensor::Zeros({3}, GetPointPositions().GetDtype(),
-                                         GetDevice()));
+    if (IsCPU()) {
+        kernel::pointcloud::NormalizeNormalsCPU(normals);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::NormalizeNormalsCUDA, normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
 
     return *this;
 }
@@ -558,24 +558,23 @@ void PointCloud::OrientNormalsToAlignWithDirection(
     if (!HasPointNormals()) {
         utility::LogError(
                 "No normals in the PointCloud. Call EstimateNormals() first.");
+    } else {
+        SetPointNormals(GetPointNormals().Contiguous());
     }
 
     core::Tensor reference =
             orientation_reference.To(GetPointPositions().GetDtype());
-    const core::Tensor reference_norm =
-            reference.Mul(reference).Sum({0}).Sqrt();
-    reference = reference_norm.IsNonZero() ? reference.Div(reference_norm)
-                                           : reference;
 
     core::Tensor &normals = GetPointNormals();
-    const core::Tensor mat = normals.Matmul(reference).Flatten();
-    // Don't compute Sqrt() to save time.
-    const core::Tensor normals_norm = normals.Mul(normals).Sum({1});
-    const core::Tensor less_0 = mat.Le(0);
-    const core::Tensor equal_0 = normals_norm.Eq(0);
-
-    normals.IndexSet({less_0}, normals.IndexGet({less_0}).Mul(-1));
-    normals.IndexSet({equal_0}, reference);
+    if (IsCPU()) {
+        kernel::pointcloud::OrientNormalsToAlignWithDirectionCPU(normals,
+                                                                 reference);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::OrientNormalsToAlignWithDirectionCUDA,
+                  normals, reference);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
 }
 
 void PointCloud::OrientNormalsTowardsCameraLocation(
@@ -586,32 +585,22 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
     if (!HasPointNormals()) {
         utility::LogError(
                 "No normals in the PointCloud. Call EstimateNormals() first.");
+    } else {
+        SetPointNormals(GetPointNormals().Contiguous());
     }
 
-    core::Tensor reference =
-            camera_location.To(GetPointPositions().GetDtype()) -
-            GetPointPositions();
+    core::Tensor reference = camera_location.To(GetPointPositions().GetDtype());
 
     core::Tensor &normals = GetPointNormals();
-    const core::Tensor mat = normals.Mul(reference).Sum({1});
-    // Don't compute Sqrt() to save time.
-    const core::Tensor normals_norm = normals.Mul(normals).Sum({1});
-    const core::Tensor less_0 = mat.Le(0);
-    const core::Tensor equal_0 = normals_norm.Eq(0);
-
-    normals.IndexSet({less_0}, normals.IndexGet({less_0}).Mul(-1));
-
-    core::Tensor reference_assign_to_0 = reference.IndexGet({equal_0});
-    // Normalize reference vector which will be assigned to normals.
-    const core::Tensor reference_assign_to_0_norm =
-            reference_assign_to_0.Mul(reference_assign_to_0).Sum({1}).Sqrt();
-    reference_assign_to_0 /= reference_assign_to_0_norm.Reshape({-1, 1});
-    // Set to (0, 0, 1) if the reference vector norm is 0.
-    core::Tensor n = core::Tensor::Init<double>({0, 0, 1}, GetDevice())
-                             .To(GetPointPositions().GetDtype());
-
-    reference_assign_to_0.IndexSet({reference_assign_to_0_norm.Eq(0)}, n);
-    normals.IndexSet({equal_0}, reference_assign_to_0);
+    if (IsCPU()) {
+        kernel::pointcloud::OrientNormalsTowardsCameraLocationCPU(
+                GetPointPositions().Contiguous(), normals, reference);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::OrientNormalsTowardsCameraLocationCUDA,
+                  GetPointPositions().Contiguous(), normals, reference);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
 }
 
 void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {

@@ -101,6 +101,15 @@ void GetPointMaskWithinOBBCPU(const core::Tensor& points,
                               const core::Tensor& extent,
                               core::Tensor& mask);
 
+void NormalizeNormalsCPU(core::Tensor& normals);
+
+void OrientNormalsToAlignWithDirectionCPU(core::Tensor& normals,
+                                          const core::Tensor& direction);
+
+void OrientNormalsTowardsCameraLocationCPU(const core::Tensor& points,
+                                           core::Tensor& normals,
+                                           const core::Tensor& camera);
+
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
         const core::Tensor& depth,
@@ -134,6 +143,15 @@ void GetPointMaskWithinOBBCUDA(const core::Tensor& points,
                                const core::Tensor& rotation,
                                const core::Tensor& extent,
                                core::Tensor& mask);
+
+void NormalizeNormalsCUDA(core::Tensor& normals);
+
+void OrientNormalsToAlignWithDirectionCUDA(core::Tensor& normals,
+                                           const core::Tensor& direction);
+
+void OrientNormalsTowardsCameraLocationCUDA(const core::Tensor& points,
+                                            core::Tensor& normals,
+                                            const core::Tensor& camera);
 #endif
 
 void EstimateCovariancesUsingHybridSearchCPU(const core::Tensor& points,
