@@ -70,11 +70,12 @@ open3d_sycl_target_sources(core PRIVATE
 
 if (BUILD_SYCL_MODULE)
     open3d_sycl_target_sources(core PRIVATE
-        MemoryManagerSYCL.cpp
-        SYCLContext.cpp
-        kernel/UnaryEWSYCL.cpp
         kernel/BinaryEWSYCL.cpp
         kernel/IndexGetSetSYCL.cpp
+        kernel/ReductionSYCL.cpp
+        kernel/UnaryEWSYCL.cpp
+        MemoryManagerSYCL.cpp
+        SYCLContext.cpp
     )
 endif()
 

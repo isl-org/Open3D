@@ -86,6 +86,14 @@ void ReductionCUDA(const Tensor& src,
                    ReductionOpCode op_code);
 #endif
 
+#ifdef BUILD_SYCL_MODULE
+void ReductionSYCL(const Tensor& src,
+                   Tensor& dst,
+                   const SizeVector& dims,
+                   bool keepdim,
+                   ReductionOpCode op_code);
+#endif
+
 }  // namespace kernel
 }  // namespace core
 }  // namespace open3d

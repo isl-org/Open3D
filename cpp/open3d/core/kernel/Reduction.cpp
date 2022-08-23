@@ -96,6 +96,12 @@ void Reduction(const Tensor& src,
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
+    } else if (src.IsSYCL()) {
+#ifdef BUILD_SYCL_MODULE
+        ReductionSYCL(src, dst, dims, keepdim, op_code);
+#else
+        utility::LogError("Not compiled with SYCL, but SYCL device is used.");
+#endif
     } else {
         utility::LogError("Unimplemented device.");
     }
