@@ -359,6 +359,14 @@ PointCloud PointCloud::RandomDownSample(double sampling_ratio) const {
             false, false);
 }
 
+PointCloud PointCloud::FarthestPointDownSample(size_t num_samples) const {
+    // We want the sampled points has the attributes of the original point
+    // cloud, so full copy is needed.
+    const open3d::geometry::PointCloud lpcd = ToLegacy();
+    return FromLegacy(*lpcd.FarthestPointDownSample(num_samples),
+                      GetPointPositions().GetDtype(), GetDevice());
+}
+
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
         size_t nb_points, double search_radius) const {
     if (nb_points < 1 || search_radius <= 0) {
@@ -411,8 +419,25 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
                            finite_indices_mask);
 }
 
+PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {
+    core::AssertTensorShape(color, {3});
+    core::Tensor clipped_color = color.To(GetDevice());
+    if (color.GetDtype() == core::Float32 ||
+        color.GetDtype() == core::Float64) {
+        clipped_color = clipped_color.Clip(0.0f, 1.0f);
+    }
+    core::Tensor pcd_colors =
+            core::Tensor::Empty({GetPointPositions().GetLength(), 3},
+                                clipped_color.GetDtype(), GetDevice());
+    pcd_colors.AsRvalue() = clipped_color;
+    PointCloud pcd(this->Clone());
+    pcd.SetPointColors(pcd_colors);
+
+    return pcd;
+}
+
 void PointCloud::EstimateNormals(
-        const int max_knn /* = 30*/,
+        const utility::optional<int> max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
     core::AssertTensorDtypes(this->GetPointPositions(),
                              {core::Float32, core::Float64});
@@ -436,37 +461,55 @@ void PointCloud::EstimateNormals(
             core::Tensor::Empty({GetPointPositions().GetLength(), 3, 3}, dtype,
                                 device));
 
-    if (radius.has_value()) {
+    if (radius.has_value() && max_knn.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing covariances");
         // Computes and sets `covariances` attribute using Hybrid Search
         // method.
         if (IsCPU()) {
             kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
                     this->GetPointPositions().Contiguous(),
-                    this->GetPointAttr("covariances"), radius.value(), max_knn);
+                    this->GetPointAttr("covariances"), radius.value(),
+                    max_knn.value());
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateCovariancesUsingHybridSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), radius.value(),
-                      max_knn);
+                      max_knn.value());
         } else {
             utility::LogError("Unimplemented device");
         }
-    } else {
+    } else if (max_knn.has_value() && !radius.has_value()) {
         utility::LogDebug("Using KNN Search for computing covariances");
         // Computes and sets `covariances` attribute using KNN Search method.
         if (IsCPU()) {
             kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
                     this->GetPointPositions().Contiguous(),
-                    this->GetPointAttr("covariances"), max_knn);
+                    this->GetPointAttr("covariances"), max_knn.value());
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
-                      this->GetPointAttr("covariances"), max_knn);
+                      this->GetPointAttr("covariances"), max_knn.value());
         } else {
             utility::LogError("Unimplemented device");
         }
+    } else if (!max_knn.has_value() && radius.has_value()) {
+        utility::LogDebug("Using Radius Search for computing covariances");
+        // Computes and sets `covariances` attribute using KNN Search method.
+        if (IsCPU()) {
+            kernel::pointcloud::EstimateCovariancesUsingRadiusSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), radius.value());
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateCovariancesUsingRadiusSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointAttr("covariances"), radius.value());
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogError("Both max_nn and radius are none.");
     }
 
     // Estimate `normal` of each point using its `covariance` matrix.
@@ -488,7 +531,7 @@ void PointCloud::EstimateNormals(
 }
 
 void PointCloud::EstimateColorGradients(
-        const int max_knn /* = 30*/,
+        const utility::optional<int> max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
     if (!HasPointColors() || !HasPointNormals()) {
         utility::LogError(
@@ -517,7 +560,7 @@ void PointCloud::EstimateColorGradients(
     }
 
     // Compute and set `color_gradients` attribute.
-    if (radius.has_value()) {
+    if (radius.has_value() && max_knn.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing color_gradients");
         if (IsCPU()) {
             kernel::pointcloud::EstimateColorGradientsUsingHybridSearchCPU(
@@ -525,7 +568,7 @@ void PointCloud::EstimateColorGradients(
                     this->GetPointNormals().Contiguous(),
                     this->GetPointColors().Contiguous(),
                     this->GetPointAttr("color_gradients"), radius.value(),
-                    max_knn);
+                    max_knn.value());
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateColorGradientsUsingHybridSearchCUDA,
@@ -533,28 +576,48 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), radius.value(),
-                      max_knn);
+                      max_knn.value());
         } else {
             utility::LogError("Unimplemented device");
         }
-    } else {
+    } else if (max_knn.has_value() && !radius.has_value()) {
         utility::LogDebug("Using KNN Search for computing color_gradients");
         if (IsCPU()) {
             kernel::pointcloud::EstimateColorGradientsUsingKNNSearchCPU(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointNormals().Contiguous(),
                     this->GetPointColors().Contiguous(),
-                    this->GetPointAttr("color_gradients"), max_knn);
+                    this->GetPointAttr("color_gradients"), max_knn.value());
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateColorGradientsUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
-                      this->GetPointAttr("color_gradients"), max_knn);
+                      this->GetPointAttr("color_gradients"), max_knn.value());
         } else {
             utility::LogError("Unimplemented device");
         }
+    } else if (!max_knn.has_value() && radius.has_value()) {
+        utility::LogDebug("Using Radius Search for computing color_gradients");
+        if (IsCPU()) {
+            kernel::pointcloud::EstimateColorGradientsUsingRadiusSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), radius.value());
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateColorGradientsUsingRadiusSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointNormals().Contiguous(),
+                      this->GetPointColors().Contiguous(),
+                      this->GetPointAttr("color_gradients"), radius.value());
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogError("Both max_nn and radius are none.");
     }
 }
 
@@ -824,6 +887,32 @@ open3d::geometry::PointCloud PointCloud::ToLegacy() const {
     return pcd_legacy;
 }
 
+std::tuple<TriangleMesh, core::Tensor> PointCloud::HiddenPointRemoval(
+        const core::Tensor &camera_location, double radius) const {
+    core::AssertTensorShape(camera_location, {3});
+    core::AssertTensorDevice(camera_location, GetDevice());
+
+    // The HiddenPointRemoval only need positions attribute.
+    PointCloud tpcd(GetPointPositions());
+    const open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    const Eigen::Vector3d camera_location_eigen =
+            core::eigen_converter::TensorToEigenMatrixXd(
+                    camera_location.Reshape({3, 1}));
+
+    std::shared_ptr<open3d::geometry::TriangleMesh> lmesh;
+    std::vector<size_t> pt_map;
+    std::tie(lmesh, pt_map) =
+            lpcd.HiddenPointRemoval(camera_location_eigen, radius);
+
+    // Convert pt_map into Int64 Tensor.
+    std::vector<int64_t> indices(pt_map.begin(), pt_map.end());
+
+    return std::make_tuple(
+            TriangleMesh::FromLegacy(*lmesh, GetPointPositions().GetDtype(),
+                                     core::Int64, GetDevice()),
+            core::Tensor(std::move(indices)).To(GetDevice()));
+}
+
 core::Tensor PointCloud::ClusterDBSCAN(double eps,
                                        size_t min_points,
                                        bool print_progress) const {
@@ -833,7 +922,29 @@ core::Tensor PointCloud::ClusterDBSCAN(double eps,
     open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
     std::vector<int> labels =
             lpcd.ClusterDBSCAN(eps, min_points, print_progress);
-    return core::Tensor(std::move(labels));
+    return core::Tensor(std::move(labels)).To(GetDevice());
+}
+
+std::tuple<core::Tensor, core::Tensor> PointCloud::SegmentPlane(
+        const double distance_threshold,
+        const int ransac_n,
+        const int num_iterations,
+        const double probability) const {
+    // The RANSAC plane fitting only need positions attribute.
+    PointCloud tpcd(GetPointPositions());
+    const open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    std::vector<size_t> inliers;
+    Eigen::Vector4d plane;
+    std::tie(plane, inliers) = lpcd.SegmentPlane(distance_threshold, ransac_n,
+                                                 num_iterations, probability);
+
+    // Convert inliers into Int64 Tensor.
+    std::vector<int64_t> indices(inliers.begin(), inliers.end());
+
+    return std::make_tuple(
+            core::eigen_converter::EigenMatrixToTensor(plane).Flatten().To(
+                    GetDevice()),
+            core::Tensor(std::move(indices)).To(GetDevice()));
 }
 
 TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
@@ -903,7 +1014,7 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
 
     TriangleMesh convex_hull(vertices, triangles);
     convex_hull.SetVertexAttr("point_indices", point_indices);
-    return convex_hull;
+    return convex_hull.To(GetPointPositions().GetDevice());
 }
 
 AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {

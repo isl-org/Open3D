@@ -40,7 +40,7 @@ class Open3DScene;
 
 namespace gui {
 
-void InitializeForPython(std::string resource_path = "");
+void InitializeForPython(std::string resource_path = "", bool headless = false);
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
         rendering::Open3DScene *scene, int width, int height);
 std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(

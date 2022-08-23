@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <list>
+
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/TriangleMesh.h"
@@ -37,6 +39,8 @@
 namespace open3d {
 namespace t {
 namespace geometry {
+
+class LineSet;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -681,6 +685,18 @@ public:
     TriangleMesh ClipPlane(const core::Tensor &point,
                            const core::Tensor &normal) const;
 
+    /// \brief Extract contour slices given a plane.
+    /// This method extracts slices as LineSet from the mesh at specific
+    /// contour values defined by the specified plane.
+    /// \param point A point on the plane as [Tensor of dim {3}].
+    /// \param normal The normal of the plane as [Tensor of dim {3}].
+    /// \param contour_values Contour values at which slices will be generated.
+    /// The value describes the signed distance to the plane.
+    /// \return LineSet with the extracted contours.
+    LineSet SlicePlane(const core::Tensor &point,
+                       const core::Tensor &normal,
+                       const std::vector<double> contour_values = {0.0}) const;
+
     core::Device GetDevice() const override { return device_; }
 
     /// Create a TriangleMesh from a legacy Open3D TriangleMesh.
@@ -805,6 +821,69 @@ public:
     void ComputeUVAtlas(size_t size = 512,
                         float gutter = 1.0f,
                         float max_stretch = 1.f / 6);
+
+    /// Bake vertex attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    /// Only float type attributes can be baked to textures.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeVertexAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &vertex_attr = {},
+            double margin = 2.,
+            double fill = 0.,
+            bool update_material = true);
+
+    /// Bake triangle attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeTriangleAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &triangle_attr = {},
+            double margin = 2.,
+            double fill = 0.,
+            bool update_material = true);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

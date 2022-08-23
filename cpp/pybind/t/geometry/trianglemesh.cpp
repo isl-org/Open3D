@@ -30,6 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -220,6 +221,44 @@ This example shows how to create a hemisphere from a sphere::
     hemisphere = sphere.clip_plane(point=[0,0,0], normal=[1,0,0])
 
     o3d.visualization.draw(hemisphere)
+)");
+
+    triangle_mesh.def(
+            "slice_plane",
+            // Accept anything for contour_values that pybind can convert to
+            // std::list. This also avoids o3d.utility.DoubleVector.
+            [](const TriangleMesh& self, const core::Tensor& point,
+               const core::Tensor& normal, std::list<double> contour_values) {
+                std::vector<double> cv(contour_values.begin(),
+                                       contour_values.end());
+                return self.SlicePlane(point, normal, cv);
+            },
+            "point"_a, "normal"_a, "contour_values"_a = std::list<double>{0.0},
+            R"(Returns a line set with the contour slices defined by the plane and values.
+
+This method generates slices as LineSet from the mesh at specific contour 
+values with respect to a plane.
+
+Args:
+    point (open3d.core.Tensor): A point on the plane.
+    normal (open3d.core.Tensor): The normal of the plane.
+    contour_values (list): A list of contour values at which slices will be
+        generated. The value describes the signed distance to the plane.
+
+Returns:
+    LineSet with he extracted contours.
+
+
+This example shows how to create a hemisphere from a sphere::
+
+    import open3d as o3d
+    import numpy as np
+
+    bunny = o3d.data.BunnyMesh()
+    mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+    contours = mesh.slice_plane([0,0,0], [0,1,0], np.linspace(0,0.2))
+    o3d.visualization.draw([{'name': 'bunny', 'geometry': contours}])
+
 )");
 
     // Triangle Mesh's creation APIs.
@@ -590,15 +629,11 @@ Example:
             R"(Creates an UV atlas and adds it as triangle attr 'texture_uvs' to the mesh.
     
 Input meshes must be manifold for this method to work.
-
 The algorithm is based on:
 Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using Spectral 
              Analysis", Eurographics Symposium on Geometry Processing (2004)
-
 Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
-
 This function always uses the CPU device.
-
 Args:
     size (int): The target size of the texture (size x size). The uv coordinates
         will still be in the range [0..1] but parameters like gutter use pixels
@@ -606,24 +641,125 @@ Args:
     gutter (float): This is the space around the uv islands in pixels.
     max_stretch (float): The maximum amount of stretching allowed. The parameter
         range is [0..1] with 0 meaning no stretch allowed.
-
 Returns:
     None. This function modifies the mesh in-place.
-
-
 Example:
-
     This code creates a uv map for the Stanford Bunny mesh::
-
         import open3d as o3d
-
         bunny = o3d.data.BunnyMesh()
         mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
         mesh.compute_uvatlas()
-
         # print the shape of the generated uvs
         print(mesh.triangle['texture_uvs'].shape)    
+)");
 
+    triangle_mesh.def("bake_vertex_attr_textures",
+                      &TriangleMesh::BakeVertexAttrTextures, "size"_a,
+                      "vertex_attr"_a, "margin"_a = 2., "fill"_a = 0.,
+                      "update_material"_a = true,
+                      R"(Bake vertex attributes into textures.
+
+This function assumes a triangle attribute with name 'texture_uvs'.
+Only float type attributes can be baked to textures.
+
+This function always uses the CPU device.
+
+Args:
+    size (int): The width and height of the texture in pixels. Only square 
+        textures are supported.
+
+    vertex_attr (set): The vertex attributes for which textures should be 
+        generated.
+
+    margin (float): The margin in pixels. The recommended value is 2. The margin
+        are additional pixels around the UV islands to avoid discontinuities.
+
+    fill (float): The value used for filling texels outside the UV islands.
+
+    update_material (bool): If true updates the material of the mesh.
+        Baking a vertex attribute with the name 'albedo' will become the albedo
+        texture in the material. Existing textures in the material will be
+        overwritten.
+
+Returns:
+    A dictionary of tensors that store the baked textures.
+
+Example:
+    We generate a texture storing the xyz coordinates for each texel::
+        import open3d as o3d
+        from matplotlib import pyplot as plt
+
+        box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        box.vertex['albedo'] = box.vertex['positions']
+
+        # Initialize material and bake the 'albedo' vertex attribute to a 
+        # texture. The texture will be automatically added to the material of
+        # the object.
+        box.material.set_default_properties()
+        texture_tensors = box.bake_vertex_attr_textures(128, {'albedo'})
+
+        # Shows the textured cube.
+        o3d.visualization.draw([box])
+        
+        # Plot the tensor with the texture.
+        plt.imshow(texture_tensors['albedo'].numpy())
+
+)");
+
+    triangle_mesh.def("bake_triangle_attr_textures",
+                      &TriangleMesh::BakeTriangleAttrTextures, "size"_a,
+                      "triangle_attr"_a, "margin"_a = 2., "fill"_a = 0.,
+                      "update_material"_a = true,
+                      R"(Bake triangle attributes into textures.
+
+This function assumes a triangle attribute with name 'texture_uvs'.
+
+This function always uses the CPU device.
+
+Args:
+    size (int): The width and height of the texture in pixels. Only square 
+        textures are supported.
+
+    triangle_attr (set): The vertex attributes for which textures should be 
+        generated.
+
+    margin (float): The margin in pixels. The recommended value is 2. The margin
+        are additional pixels around the UV islands to avoid discontinuities.
+
+    fill (float): The value used for filling texels outside the UV islands.
+
+    update_material (bool): If true updates the material of the mesh.
+        Baking a vertex attribute with the name 'albedo' will become the albedo
+        texture in the material. Existing textures in the material will be
+        overwritten.
+
+Returns:
+    A dictionary of tensors that store the baked textures.
+
+Example:
+    We generate a texture visualizing the index of the triangle to which the 
+    texel belongs to::
+        import open3d as o3d
+        from matplotlib import pyplot as plt
+
+        box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        # Creates a triangle attribute 'albedo' which is the triangle index 
+        # multiplied by (255//12).
+        box.triangle['albedo'] = (255//12)*np.arange(box.triangle['indices'].shape[0], dtype=np.uint8)
+
+        # Initialize material and bake the 'albedo' triangle attribute to a 
+        # texture. The texture will be automatically added to the material of
+        # the object.
+        box.material.set_default_properties()
+        texture_tensors = box.bake_triangle_attr_textures(128, {'albedo'})
+
+        # Shows the textured cube.
+        o3d.visualization.draw([box])
+
+        # Plot the tensor with the texture.
+        plt.imshow(texture_tensors['albedo'].numpy())
 )");
 }
 

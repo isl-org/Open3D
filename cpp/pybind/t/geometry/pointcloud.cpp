@@ -206,6 +206,13 @@ The attributes of the point cloud have different levels::
                    "Downsample a pointcloud by selecting random index point "
                    "and its attributes.",
                    "sampling_ratio"_a);
+    pointcloud.def("farthest_point_down_sample",
+                   &PointCloud::FarthestPointDownSample,
+                   "Downsample a pointcloud into output pointcloud with a set "
+                   "of points has farthest distance.The sampling is performed "
+                   "by selecting the farthest point from previous selected "
+                   "points iteratively",
+                   "num_samples"_a);
     pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
                    "nb_points"_a, "search_radius"_a,
                    "Remove points that have less than nb_points neighbors in a "
@@ -215,22 +222,28 @@ The attributes of the point cloud have different levels::
             "remove_nan"_a = true, "remove_infinite"_a = true,
             "Remove all points from the point cloud that have a nan entry, or "
             "infinite value. It also removes the corresponding attributes.");
+    pointcloud.def("paint_uniform_color", &PointCloud::PaintUniformColor,
+                   "color"_a, "Assigns uniform color to the point cloud.");
 
-    pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
-                   py::call_guard<py::gil_scoped_release>(),
-                   py::arg("max_nn") = 30, py::arg("radius") = py::none(),
-                   "Function to estimate point normals. If the pointcloud "
-                   "normals exists, the estimated normals are oriented "
-                   "with respect to the same. It uses KNN search if only "
-                   "max_nn parameter is provided, and HybridSearch if radius "
-                   "parameter is also provided.");
-    pointcloud.def("estimate_color_gradients",
-                   &PointCloud::EstimateColorGradients,
-                   py::call_guard<py::gil_scoped_release>(),
-                   py::arg("max_nn") = 30, py::arg("radius") = py::none(),
-                   "Function to estimate point color gradients. If radius is "
-                   "provided, then HybridSearch is used, otherwise KNN-Search "
-                   "is used.");
+    pointcloud.def(
+            "estimate_normals", &PointCloud::EstimateNormals,
+            py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
+            py::arg("radius") = py::none(),
+            "Function to estimate point normals. If the point cloud normals "
+            "exist, the estimated normals are oriented with respect to the "
+            "same. It uses KNN search (Not recommended to use on GPU) if only "
+            "max_nn parameter is provided, Radius search (Not recommended to "
+            "use on GPU) if only radius is provided and Hybrid Search "
+            "(Recommended) if radius parameter is also provided.");
+    pointcloud.def(
+            "estimate_color_gradients", &PointCloud::EstimateColorGradients,
+            py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
+            py::arg("radius") = py::none(),
+            "Function to estimate point color gradients. It uses KNN search "
+            "(Not recommended to use on GPU) if only max_nn parameter is "
+            "provided, Radius search (Not recommended to use on GPU) if only "
+            "radius is provided and Hybrid Search (Recommended) if radius "
+            "parameter is also provided.");
 
     // creation (static)
     pointcloud.def_static(
@@ -277,12 +290,107 @@ The attributes of the point cloud have different levels::
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a colored point cloud to a RGBD image.");
     pointcloud.def(
-            "cluster_dbscan", &PointCloud::ClusterDBSCAN,
-            "Cluster PointCloud using the DBSCAN algorithm  Ester et al., "
-            "'A Density-Based Algorithm for Discovering Clusters in Large "
-            "Spatial Databases with Noise', 1996. Returns a list of point "
-            "labels, -1 indicates noise according to the algorithm.",
-            "eps"_a, "min_points"_a, "print_progress"_a = false);
+            "hidden_point_removal", &PointCloud::HiddenPointRemoval,
+            "camera_location"_a, "radius"_a,
+            R"(Removes hidden points from a point cloud and returns a mesh of 
+the remaining points. Based on Katz et al. 'Direct Visibility of Point Sets', 
+2007. Additional information about the choice of radius for noisy point clouds 
+can be found in Mehra et. al. 'Visibility of Noisy Point Cloud Data', 2010.
+This is a wrapper for a CPU implementation and a copy of the point cloud data 
+and resulting visible triangle mesh and indiecs will be made.
+
+Args:
+    camera_location. All points not visible from that location will be removed.
+    radius. The radius of the spherical projection.
+
+Return:
+    Tuple of visible triangle mesh and indices of visible points on the same 
+    device as the point cloud.
+
+Example:
+    We use armadillo mesh to compute the visible points from given camera::
+
+        # Convert mesh to a point cloud and estimate dimensions.
+        armadillo_data = o3d.data.ArmadilloMesh()
+        pcd = o3d.io.read_triangle_mesh(
+        armadillo_data.path).sample_points_poisson_disk(5000)
+
+        diameter = np.linalg.norm(
+                np.asarray(pcd.get_max_bound()) - np.asarray(pcd.get_min_bound()))
+
+        # Define parameters used for hidden_point_removal.
+        camera = o3d.core.Tensor([0, 0, diameter], o3d.core.float32)
+        radius = diameter * 100
+
+        # Get all points that are visible from given view point.
+        pcd = o3d.t.geometry.PointCloud.from_legacy(pcd)
+        _, pt_map = pcd.hidden_point_removal(camera, radius)
+        pcd = pcd.select_by_index(pt_map)
+        o3d.visualization.draw([pcd], point_size=5))");
+    pointcloud.def(
+            "cluster_dbscan", &PointCloud::ClusterDBSCAN, "eps"_a,
+            "min_points"_a, "print_progress"_a = false,
+            R"(Cluster PointCloud using the DBSCAN algorithm  Ester et al.,'A 
+Density-Based Algorithm for Discovering Clusters in Large Spatial Databases 
+with Noise', 1996. This is a wrapper for a CPU implementation and a copy of the 
+point cloud data and resulting labels will be made.
+
+Args:
+    eps. Density parameter that is used to find neighbouring points.
+    min_points. Minimum number of points to form a cluster.
+    print_progress (default False). If 'True' the progress is visualized in the console.
+
+Return:
+    A Tensor list of point labels on the same device as the point cloud, -1 
+    indicates noise according to the algorithm.
+
+Example:
+    We use Redwood dataset for demonstration::
+
+        import matplotlib.pyplot as plt
+
+        sample_ply_data = o3d.data.PLYPointCloud()
+        pcd = o3d.t.io.read_point_cloud(sample_ply_data.path)  
+        labels = pcd.cluster_dbscan(eps=0.02, min_points=10, print_progress=True)
+
+        max_label = labels.max().item()
+        colors = plt.get_cmap("tab20")(
+                labels.numpy() / (max_label if max_label > 0 else 1))
+        colors = o3d.core.Tensor(colors[:, :3], o3d.core.float32)
+        colors[labels < 0] = 0
+        pcd.point['colors'] = colors
+        o3d.visualization.draw([pcd]))");
+    pointcloud.def(
+            "segment_plane", &PointCloud::SegmentPlane,
+            "distance_threshold"_a = 0.01, "ransac_n"_a = 3,
+            "num_iterations"_a = 100, "probability"_a = 0.99999999,
+            R"(Segments a plane in the point cloud using the RANSAC algorithm. 
+This is a wrapper for a CPU implementation and a copy of the point cloud data and 
+resulting plane model and inlier indiecs will be made.
+
+Args:
+    distance_threshold (default 0.01). Max distance a point can be from the plane
+    model, and still be considered an inlier.
+    ransac_n (default 3). Number of initial points to be considered inliers in each iteration.
+    num_iterations (default 100). Maximum number of iterations.
+    probability (default 0.99999999). Expected probability of finding the optimal plane.
+
+Return:
+    Tuple of the plane model ax + by + cz + d = 0 and the indices of
+    the plane inliers on the same device as the point cloud.
+
+Example:
+    We use Redwood dataset to compute its plane model and inliers::
+        
+        sample_pcd_data = o3d.data.PCDPointCloud()
+        pcd = o3d.t.io.read_point_cloud(sample_pcd_data.path)
+        plane_model, inliers = pcd.segment_plane(distance_threshold=0.01,
+                                                 ransac_n=3,
+                                                 num_iterations=1000)
+        inlier_cloud = pcd.select_by_index(inliers)
+        inlier_cloud.paint_uniform_color([1.0, 0, 0])
+        outlier_cloud = pcd.select_by_index(inliers, invert=True)
+        o3d.visualization.draw([inlier_cloud, outlier_cloud]))");
     pointcloud.def(
             "compute_convex_hull", &PointCloud::ComputeConvexHull,
             "joggle_inputs"_a = false,
@@ -356,17 +464,18 @@ Example:
               "Sampling ratio, the ratio of sample to total number of points "
               "in the pointcloud."}});
     docstring::ClassMethodDocInject(
+            m, "PointCloud", "farthest_point_down_sample",
+            {{"num_samples", "Number of points to be sampled."}});
+    docstring::ClassMethodDocInject(
             m, "PointCloud", "remove_radius_outliers",
             {{"nb_points",
               "Number of neighbor points required within the radius."},
              {"search_radius", "Radius of the sphere."}});
     docstring::ClassMethodDocInject(
-            m, "PointCloud", "cluster_dbscan",
-            {{"eps",
-              "Density parameter that is used to find neighbouring points."},
-             {"min_points", "Minimum number of points to form a cluster."},
-             {"print_progress",
-              "If true the progress is visualized in the console."}});
+            m, "PointCloud", "paint_uniform_color",
+            {{"color",
+              "Color of the pointcloud. Floating color values are clipped "
+              "between 0.0 and 1.0."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "crop",
             {{"aabb", "AxisAlignedBoundingBox to crop points."},
