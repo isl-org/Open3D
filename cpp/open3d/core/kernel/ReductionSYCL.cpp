@@ -240,7 +240,7 @@ void ReductionSYCL(const Tensor& src,
                    const SizeVector& dims,
                    bool keepdim,
                    ReductionOpCode op_code) {
-    if (s_regular_reduce_ops.find(op_code) != s_regular_reduce_ops.end()) {
+    if (s_regular_reduce_ops.count(op_code)) {
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         SYCLReductionEngine re(indexer);
         DISPATCH_DTYPE_TO_TEMPLATE(src.GetDtype(), [&]() {
@@ -281,7 +281,8 @@ void ReductionSYCL(const Tensor& src,
                     break;
             }
         });
-    } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
+    } else if (s_arg_reduce_ops.count(op_code)) {
+        utility::LogError("To be implemented.");
         if (dst.GetDtype() != core::Int64) {
             utility::LogError("Arg-reduction must have int64 output dtype.");
         }
@@ -318,8 +319,8 @@ void ReductionSYCL(const Tensor& src,
                     break;
             }
         });
-    } else if (s_boolean_reduce_ops.find(op_code) !=
-               s_boolean_reduce_ops.end()) {
+    } else if (s_boolean_reduce_ops.count(op_code)) {
+        utility::LogError("To be implemented.");
         if (src.GetDtype() != core::Bool) {
             utility::LogError(
                     "Boolean reduction only supports boolean input tensor.");
