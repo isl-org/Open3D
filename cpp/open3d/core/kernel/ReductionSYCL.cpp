@@ -28,6 +28,7 @@
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Indexer.h"
+#include "open3d/core/SYCLUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/kernel/Reduction.h"
 #include "open3d/utility/Logging.h"
