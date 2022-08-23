@@ -352,3 +352,51 @@ def test_hole_filling():
     assert not clipped.to_legacy().is_watertight()
     filled = clipped.fill_holes()
     assert filled.to_legacy().is_watertight()
+
+
+def test_bake_vertex_attr_textures():
+    desired = np.array([
+        [[0., 0., 0.], [0., 0., 0.], [1., 0.25, 0.75], [1., 0.75, 0.75],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        [[0., 0., 0.], [0., 0., 0.], [1., 0.25, 0.25], [1., 0.75, 0.25],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        [[0.75, 0., 0.75], [0.75, 0., 0.25], [0.75, 0.25, 0.], [0.75, 0.75, 0.],
+         [0.75, 1., 0.25], [0.75, 1., 0.75], [0., 0., 0.], [0., 0., 0.]],
+        [[0.25, 0., 0.75], [0.25, 0., 0.25], [0.25, 0.25, 0.], [0.25, 0.75, 0.],
+         [0.25, 1., 0.25], [0.25, 1., 0.75], [0., 0., 0.], [0., 0., 0.]],
+        [[0., 0., 0.], [0., 0., 0.], [0., 0.25, 0.25], [0., 0.75, 0.25],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        [[0., 0., 0.], [0., 0., 0.], [0., 0.25, 0.75], [0., 0.75, 0.75],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        [[0., 0., 0.], [0., 0., 0.], [0.25, 0.25, 1.], [0.25, 0.75, 1.],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        [[0., 0., 0.], [0., 0., 0.], [0.75, 0.25, 1.], [0.75, 0.75, 1.],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
+    ],
+                       dtype=np.float32)
+
+    box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+    box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+    textures = box.bake_vertex_attr_textures(8, {'positions'}, margin=0.1)
+
+    np.testing.assert_allclose(textures['positions'].numpy(), desired)
+
+
+def test_bake_triangle_attr_textures():
+    desired = np.array(
+        [[-1, -1, 7, 7, -1, -1, -1, -1], [-1, -1, 7, 6, -1, -1, -1, -1],
+         [5, 5, 10, 11, 0, 0, -1, -1], [5, 4, 10, 10, 0, 1, -1, -1],
+         [-1, -1, 2, 2, -1, -1, -1, -1], [-1, -1, 2, 3, -1, -1, -1, -1],
+         [-1, -1, 8, 9, -1, -1, -1, -1], [-1, -1, 8, 8, -1, -1, -1, -1]],
+        dtype=np.int64)
+
+    box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+    box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+    box.triangle['index'] = np.arange(box.triangle['indices'].shape[0])
+    # shift the uvs to avoid pixel centers exactly at triangle boundaries.
+    box.triangle['texture_uvs'][:, :, 0] += 0.01
+
+    textures = box.bake_triangle_attr_textures(8, {'index'},
+                                               margin=0.1,
+                                               fill=-1)
+    np.testing.assert_equal(textures['index'].numpy(), desired)

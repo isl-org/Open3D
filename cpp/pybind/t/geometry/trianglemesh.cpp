@@ -622,6 +622,115 @@ Example:
         filled = mesh.fill_holes()
         o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
 )");
+
+    triangle_mesh.def("bake_vertex_attr_textures",
+                      &TriangleMesh::BakeVertexAttrTextures, "size"_a,
+                      "vertex_attr"_a, "margin"_a = 2., "fill"_a = 0.,
+                      "update_material"_a = true,
+                      R"(Bake vertex attributes into textures.
+
+This function assumes a triangle attribute with name 'texture_uvs'.
+Only float type attributes can be baked to textures.
+
+This function always uses the CPU device.
+
+Args:
+    size (int): The width and height of the texture in pixels. Only square 
+        textures are supported.
+
+    vertex_attr (set): The vertex attributes for which textures should be 
+        generated.
+
+    margin (float): The margin in pixels. The recommended value is 2. The margin
+        are additional pixels around the UV islands to avoid discontinuities.
+
+    fill (float): The value used for filling texels outside the UV islands.
+
+    update_material (bool): If true updates the material of the mesh.
+        Baking a vertex attribute with the name 'albedo' will become the albedo
+        texture in the material. Existing textures in the material will be
+        overwritten.
+
+Returns:
+    A dictionary of tensors that store the baked textures.
+
+Example:
+    We generate a texture storing the xyz coordinates for each texel::
+        import open3d as o3d
+        from matplotlib import pyplot as plt
+
+        box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        box.vertex['albedo'] = box.vertex['positions']
+
+        # Initialize material and bake the 'albedo' vertex attribute to a 
+        # texture. The texture will be automatically added to the material of
+        # the object.
+        box.material.set_default_properties()
+        texture_tensors = box.bake_vertex_attr_textures(128, {'albedo'})
+
+        # Shows the textured cube.
+        o3d.visualization.draw([box])
+        
+        # Plot the tensor with the texture.
+        plt.imshow(texture_tensors['albedo'].numpy())
+
+)");
+
+    triangle_mesh.def("bake_triangle_attr_textures",
+                      &TriangleMesh::BakeTriangleAttrTextures, "size"_a,
+                      "triangle_attr"_a, "margin"_a = 2., "fill"_a = 0.,
+                      "update_material"_a = true,
+                      R"(Bake triangle attributes into textures.
+
+This function assumes a triangle attribute with name 'texture_uvs'.
+
+This function always uses the CPU device.
+
+Args:
+    size (int): The width and height of the texture in pixels. Only square 
+        textures are supported.
+
+    triangle_attr (set): The vertex attributes for which textures should be 
+        generated.
+
+    margin (float): The margin in pixels. The recommended value is 2. The margin
+        are additional pixels around the UV islands to avoid discontinuities.
+
+    fill (float): The value used for filling texels outside the UV islands.
+
+    update_material (bool): If true updates the material of the mesh.
+        Baking a vertex attribute with the name 'albedo' will become the albedo
+        texture in the material. Existing textures in the material will be
+        overwritten.
+
+Returns:
+    A dictionary of tensors that store the baked textures.
+
+Example:
+    We generate a texture visualizing the index of the triangle to which the 
+    texel belongs to::
+        import open3d as o3d
+        from matplotlib import pyplot as plt
+
+        box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        # Creates a triangle attribute 'albedo' which is the triangle index 
+        # multiplied by (255//12).
+        box.triangle['albedo'] = (255//12)*np.arange(box.triangle['indices'].shape[0], dtype=np.uint8)
+
+        # Initialize material and bake the 'albedo' triangle attribute to a 
+        # texture. The texture will be automatically added to the material of
+        # the object.
+        box.material.set_default_properties()
+        texture_tensors = box.bake_triangle_attr_textures(128, {'albedo'})
+
+        # Shows the textured cube.
+        o3d.visualization.draw([box])
+
+        # Plot the tensor with the texture.
+        plt.imshow(texture_tensors['albedo'].numpy())
+)");
 }
 
 }  // namespace geometry
