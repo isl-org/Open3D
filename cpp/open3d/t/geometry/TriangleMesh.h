@@ -800,6 +800,92 @@ public:
     /// \return New mesh after filling holes.
     TriangleMesh FillHoles(double hole_size = 1e6) const;
 
+    /// Bake vertex attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    /// Only float type attributes can be baked to textures.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeVertexAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &vertex_attr = {},
+            double margin = 2.,
+            double fill = 0.,
+            bool update_material = true);
+
+    /// Bake triangle attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeTriangleAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &triangle_attr = {},
+            double margin = 2.,
+            double fill = 0.,
+            bool update_material = true);
+
+    /// Sweeps the triangle mesh rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A triangle mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeRotation(double angle,
+                                 const core::Tensor &axis,
+                                 int resolution = 16,
+                                 double translation = 0.0,
+                                 bool capping = true) const;
+
+    /// Sweeps the triangle mesh along a direction vector.
+    /// \param vector The direction vector.
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A triangle
+    /// mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeLinear(const core::Tensor &vector,
+                               double scale = 1.0,
+                               bool capping = true) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;

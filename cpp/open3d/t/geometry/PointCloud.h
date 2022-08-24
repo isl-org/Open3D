@@ -47,6 +47,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+class LineSet;
+
 /// \class PointCloud
 /// \brief A point cloud contains a list of 3D points.
 ///
@@ -464,6 +466,21 @@ public:
     /// corresponding vertex in the original mesh.
     TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
 
+    /// \brief Compute the boundary points of a point cloud.
+    /// The implementation is inspired by the PCL implementation. Reference:
+    /// https://pointclouds.org/documentation/classpcl_1_1_boundary_estimation.html
+    ///
+    /// \param radius Neighbor search radius parameter.
+    /// \param max_nn Neighbor search max neighbors parameter
+    /// [Default = 30].
+    /// \param angle_threshold Angle threshold to decide if a point is on the
+    /// boundary [Default = 90.0].
+    /// \return Tensor of boundary points and its boolean mask tensor.
+    std::tuple<PointCloud, core::Tensor> ComputeBoundaryPoints(
+            double radius,
+            int max_nn = 30,
+            double angle_threshold = 90.0) const;
+
 public:
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.
@@ -606,6 +623,29 @@ public:
     /// the bounding box.
     PointCloud Crop(const AxisAlignedBoundingBox &aabb,
                     bool invert = false) const;
+
+    /// Sweeps the point cloud rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A line set with the result of the sweep operation.
+    LineSet ExtrudeRotation(double angle,
+                            const core::Tensor &axis,
+                            int resolution = 16,
+                            double translation = 0.0,
+                            bool capping = true) const;
+
+    /// Sweeps the point cloud along a direction vector.
+    /// \param vector The direction vector.
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A line set
+    /// with the result of the sweep operation.
+    LineSet ExtrudeLinear(const core::Tensor &vector,
+                          double scale = 1.0,
+                          bool capping = true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");
