@@ -82,44 +82,16 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
             A.setZero();
             b.setZero();
             for (size_t i = 1; i < nn; i++) {
-                Eigen::Vector3d A_old;
-                Eigen::Vector3d A_new;
-                {
-                    int P_adj_idx = point_idx[i];
-                    Eigen::Vector3d vt_adj = output->points_[P_adj_idx];
-                    Eigen::Vector3d vt_proj =
-                            vt_adj - (vt_adj - vt).dot(nt) * nt;
-                    double it_adj = (output->colors_[P_adj_idx](0) +
-                                     output->colors_[P_adj_idx](1) +
-                                     output->colors_[P_adj_idx](2)) /
-                                    3.0;
-                    A(i - 1, 0) = (vt_proj(0) - vt(0));
-                    A(i - 1, 1) = (vt_proj(1) - vt(1));
-                    A(i - 1, 2) = (vt_proj(2) - vt(2));
-                    b(i - 1, 0) = (it_adj - it);
-                    A_old = Eigen::Vector3d(A(i - 1, 0), A(i - 1, 1),
-                                            A(i - 1, 2));
-                }
-                {
-                    int P_adj_idx = point_idx[i];
-                    const Eigen::Vector3d &vt_adj = output->points_[P_adj_idx];
-                    double it_adj = (output->colors_[P_adj_idx](0) +
-                                     output->colors_[P_adj_idx](1) +
-                                     output->colors_[P_adj_idx](2)) /
-                                    3.0;
-                    A(i - 1, 0) = (vt_adj(0) - vt(0));
-                    A(i - 1, 1) = (vt_adj(1) - vt(1));
-                    A(i - 1, 2) = (vt_adj(2) - vt(2));
-                    b(i - 1, 0) = (it_adj - it);
-                    A_new = Eigen::Vector3d(A(i - 1, 0), A(i - 1, 1),
-                                            A(i - 1, 2));
-                }
-
-                if ((A_old - A_new).norm() > 1e-2) {
-                    utility::LogWarning("A_old != A_new");
-                    utility::LogWarning("A_old: {}", A_old);
-                    utility::LogWarning("A_new: {}", A_new);
-                }
+                int P_adj_idx = point_idx[i];
+                const Eigen::Vector3d &vt_adj = output->points_[P_adj_idx];
+                double it_adj = (output->colors_[P_adj_idx](0) +
+                                 output->colors_[P_adj_idx](1) +
+                                 output->colors_[P_adj_idx](2)) /
+                                3.0;
+                A(i - 1, 0) = (vt_adj(0) - vt(0));
+                A(i - 1, 1) = (vt_adj(1) - vt(1));
+                A(i - 1, 2) = (vt_adj(2) - vt(2));
+                b(i - 1, 0) = (it_adj - it);
             }
             // adds orthogonal constraint
             A(nn - 1, 0) = (nn - 1) * nt(0);
