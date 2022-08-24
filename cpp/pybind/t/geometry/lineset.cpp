@@ -29,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -215,10 +216,67 @@ transformation as :math:`P = R(P) + t`)");
             });
     line_set.def("to_legacy", &LineSet::ToLegacy,
                  "Convert to a legacy Open3D LineSet.");
+
     line_set.def("get_axis_aligned_bounding_box",
                  &LineSet::GetAxisAlignedBoundingBox,
                  "Create an axis-aligned bounding box from point attribute "
                  "'positions'.");
+
+    line_set.def("extrude_rotation", &LineSet::ExtrudeRotation, "angle"_a,
+                 "axis"_a, "resolution"_a = 16, "translation"_a = 0.0,
+                 "capping"_a = true,
+                 R"(Sweeps the line set rotationally about an axis.
+
+Args:
+    angle (float): The rotation angle in degree.
+
+    axis (open3d.core.Tensor): The rotation axis.
+
+    resolution (int): The resolution defines the number of intermediate sweeps
+        about the rotation axis.
+
+    translation (float): The translation along the rotation axis.
+
+Returns:
+    A triangle mesh with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a spring from a single line::
+
+        import open3d as o3d
+
+        line = o3d.t.geometry.LineSet([[0.7,0,0],[1,0,0]], [[0,1]])
+        spring = line.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
+        o3d.visualization.draw([{'name': 'spring', 'geometry': spring}])
+
+)");
+
+    line_set.def("extrude_linear", &LineSet::ExtrudeLinear, "vector"_a,
+                 "scale"_a = 1.0, "capping"_a = true,
+                 R"(Sweeps the line set along a direction vector.
+
+Args:
+
+    vector (open3d.core.Tensor): The direction vector.
+
+    scale (float): Scalar factor which essentially scales the direction vector.
+
+Returns:
+    A triangle mesh with the result of the sweep operation.
+
+
+Example:
+
+    This code generates an L-shaped mesh::
+        import open3d as o3d
+
+        lines = o3d.t.geometry.LineSet([[1.0,0.0,0.0],[0,0,0],[0,0,1]], [[0,1],[1,2]])
+        mesh = lines.extrude_linear([0,1,0])
+        o3d.visualization.draw([{'name': 'L', 'geometry': mesh}])
+
+)");
 }
 
 }  // namespace geometry

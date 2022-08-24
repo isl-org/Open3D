@@ -204,8 +204,7 @@ void pybind_voxel_block_grid(py::module& m) {
             "weight_threshold"_a = 3.0f, "estimated_vertex_number"_a = -1);
 
     vbg.def("save", &VoxelBlockGrid::Save,
-            "Save the voxel block grid to a npz file."
-            "file_name"_a);
+            "Save the voxel block grid to a npz file.", "file_name"_a);
     vbg.def_static("load", &VoxelBlockGrid::Load,
                    "Load a voxel block grid from a npz file.", "file_name"_a);
 }

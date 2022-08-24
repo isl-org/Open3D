@@ -645,7 +645,7 @@ protected:
 
             if (idx % fps_interval_len == 0) {
                 timer.Stop();
-                time_interval = timer.GetDuration();
+                time_interval = timer.GetDurationInMillisecond();
                 timer.Start();
             }
             std::string fps_str =

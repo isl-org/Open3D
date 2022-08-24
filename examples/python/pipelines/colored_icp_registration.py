@@ -44,7 +44,8 @@ target = o3d.io.read_point_cloud(ply_data.paths[1])
 if __name__ == "__main__":
     # Draw initial alignment.
     current_transformation = np.identity(4)
-    draw_registration_result(source, target, current_transformation)
+    # draw_registration_result(source, target, current_transformation)
+    print(current_transformation)
 
     # Colored pointcloud registration.
     # This is implementation of following paper:
@@ -77,4 +78,5 @@ if __name__ == "__main__":
                 relative_fitness=1e-6, relative_rmse=1e-6, max_iteration=iter))
         current_transformation = result_icp.transformation
         print(result_icp, "\n")
-    draw_registration_result(source, target, result_icp.transformation)
+    # draw_registration_result(source, target, result_icp.transformation)
+    print(current_transformation)
