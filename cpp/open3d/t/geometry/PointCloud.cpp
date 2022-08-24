@@ -436,6 +436,51 @@ PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {
     return pcd;
 }
 
+std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
+        double radius, int max_nn, double angle_threshold) const {
+    core::AssertTensorDtypes(this->GetPointPositions(),
+                             {core::Float32, core::Float64});
+    if (!HasPointNormals()) {
+        utility::LogError(
+                "PointCloud must have normals attribute to compute boundary "
+                "points.");
+    }
+
+    const core::Device device = GetDevice();
+    const int64_t num_points = GetPointPositions().GetLength();
+
+    const core::Tensor points_d = GetPointPositions().Contiguous();
+    const core::Tensor normals_d = GetPointNormals().Contiguous();
+
+    // Compute nearest neighbors.
+    core::Tensor indices, distance2, counts;
+    core::nns::NearestNeighborSearch tree(points_d, core::Int32);
+
+    bool check = tree.HybridIndex(radius);
+    if (!check) {
+        utility::LogError("Building HybridIndex failed.");
+    }
+    std::tie(indices, distance2, counts) =
+            tree.HybridSearch(points_d, radius, max_nn);
+    utility::LogDebug(
+            "Use HybridSearch [max_nn: {} | radius {}] for computing "
+            "boundary points.",
+            max_nn, radius);
+
+    core::Tensor mask = core::Tensor::Zeros({num_points}, core::Bool, device);
+    if (IsCPU()) {
+        kernel::pointcloud::ComputeBoundaryPointsCPU(
+                points_d, normals_d, indices, counts, mask, angle_threshold);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::ComputeBoundaryPointsCUDA, points_d,
+                  normals_d, indices, counts, mask, angle_threshold);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    return std::make_tuple(SelectByMask(mask), mask);
+}
+
 void PointCloud::EstimateNormals(
         const utility::optional<int> max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
