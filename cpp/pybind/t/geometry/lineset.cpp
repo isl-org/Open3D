@@ -229,13 +229,13 @@ transformation as :math:`P = R(P) + t`)");
 
 Args:
     angle (float): The rotation angle in degree.
-    
+
     axis (open3d.core.Tensor): The rotation axis.
-    
+
     resolution (int): The resolution defines the number of intermediate sweeps
         about the rotation axis.
 
-    translation (float): The translation along the rotation axis. 
+    translation (float): The translation along the rotation axis.
 
 Returns:
     A triangle mesh with the result of the sweep operation.
@@ -246,7 +246,7 @@ Example:
     This code generates a spring from a single line::
 
         import open3d as o3d
-        
+
         line = o3d.t.geometry.LineSet([[0.7,0,0],[1,0,0]], [[0,1]])
         spring = line.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
         o3d.visualization.draw([{'name': 'spring', 'geometry': spring}])
@@ -258,9 +258,9 @@ Example:
                  R"(Sweeps the line set along a direction vector.
 
 Args:
-    
+
     vector (open3d.core.Tensor): The direction vector.
-    
+
     scale (float): Scalar factor which essentially scales the direction vector.
 
 Returns:
