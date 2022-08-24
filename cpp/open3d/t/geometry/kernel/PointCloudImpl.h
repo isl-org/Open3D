@@ -227,10 +227,12 @@ inline OPEN3D_HOST_DEVICE void Heapify(scalar_t* arr, int n, int root) {
     int l = 2 * root + 1;
     int r = 2 * root + 2;
 
-    if (l < n && arr[l] > arr[largest]) largest = l;
-
-    if (r < n && arr[r] > arr[largest]) largest = r;
-
+    if (l < n && arr[l] > arr[largest]) {
+        largest = l;
+    }
+    if (r < n && arr[r] > arr[largest]) {
+        largest = r;
+    }
     if (largest != root) {
         Swap<scalar_t>(&arr[root], &arr[largest]);
         Heapify<scalar_t>(arr, n, largest);
@@ -317,7 +319,7 @@ void ComputeBoundaryPointsCPU
                             angles_ptr[idx] = angle;
                         }
 
-                        // // Sort the angles in acending order.
+                        // Sort the angles in ascending order.
                         HeapSort<scalar_t>(
                                 angles_ptr + workload_idx * nn_size + 1,
                                 indices_size);
