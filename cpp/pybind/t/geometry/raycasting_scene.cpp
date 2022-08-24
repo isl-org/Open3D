@@ -225,6 +225,14 @@ Returns:
         A tensor with the primitive IDs, which corresponds to the triangle
         index. The shape is {..}.
 
+    primitive_uvs 
+        A tensor with the barycentric coordinates of the closest points within 
+        the triangles. The shape is {.., 2}.
+
+    primitive_normals 
+        A tensor with the normals of the closest triangle . The shape is 
+        {.., 3}.
+
 )doc");
 
     raycasting_scene.def("compute_distance", &RaycastingScene::ComputeDistance,

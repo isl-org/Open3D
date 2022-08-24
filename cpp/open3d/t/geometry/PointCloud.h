@@ -464,27 +464,52 @@ public:
     /// corresponding vertex in the original mesh.
     TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
 
+    /// \brief Compute the boundary points of a point cloud.
+    /// The implementation is inspired by the PCL implementation. Reference:
+    /// https://pointclouds.org/documentation/classpcl_1_1_boundary_estimation.html
+    ///
+    /// \param radius Neighbor search radius parameter.
+    /// \param max_nn Neighbor search max neighbors parameter
+    /// [Default = 30].
+    /// \param angle_threshold Angle threshold to decide if a point is on the
+    /// boundary [Default = 90.0].
+    /// \return Tensor of boundary points and its boolean mask tensor.
+    std::tuple<PointCloud, core::Tensor> ComputeBoundaryPoints(
+            double radius,
+            int max_nn = 30,
+            double angle_threshold = 90.0) const;
+
 public:
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.
-    /// It uses KNN search if only max_nn parameter is provided, and
-    /// HybridSearch if radius parameter is also provided.
-    /// \param max_nn Neighbor search max neighbors parameter [Default = 30].
-    /// \param radius [optional] Neighbor search radius parameter to use
-    /// HybridSearch. [Recommended ~1.4x voxel size].
+    /// It uses KNN search (Not recommended to use on GPU) if only max_nn
+    /// parameter is provided, Radius search (Not recommended to use on GPU) if
+    /// only radius is provided and Hybrid Search (Recommended) if radius
+    /// parameter is also provided.
+    ///
+    /// \param max_nn [optional] Neighbor search max neighbors parameter
+    /// [Default = 30].
+    /// \param radius [optional] Neighbor search radius parameter. [Recommended
+    /// ~1.4x voxel size].
     void EstimateNormals(
-            const int max_nn = 30,
+            const utility::optional<int> max_nn = 30,
             const utility::optional<double> radius = utility::nullopt);
 
     /// \brief Function to compute point color gradients. If radius is provided,
     /// then HybridSearch is used, otherwise KNN-Search is used.
     /// Reference: Park, Q.-Y. Zhou, and V. Koltun,
     /// Colored Point Cloud Registration Revisited, ICCV, 2017.
-    /// \param max_nn Neighbor search max neighbors parameter [Default = 30].
+    /// It uses KNN search (Not recommended to use on GPU) if only max_nn
+    /// parameter is provided, Radius search (Not recommended to use on GPU) if
+    /// only radius is provided and Hybrid Search (Recommended) if radius
+    /// parameter is also provided.
+    ///
+    /// \param max_nn [optional] Neighbor search max neighbors parameter
+    /// [Default = 30].
     /// \param radius [optional] Neighbor search radius parameter to use
     /// HybridSearch. [Recommended ~1.4x voxel size].
     void EstimateColorGradients(
-            const int max_nn = 30,
+            const utility::optional<int> max_nn = 30,
             const utility::optional<double> radius = utility::nullopt);
 
 public:
