@@ -77,34 +77,34 @@ bool ReadPointCloudFromTXT(const std::string &filename,
             return false;
         }
 
-        core::Tensor pcd_buffer({num_points, num_attrs}, core::Float64);
-        double *pcd_buffer_ptr = pcd_buffer.GetDataPtr<double>();
+        core::Tensor pcd_buffer({num_points, num_attrs}, core::Float32);
+        float *pcd_buffer_ptr = pcd_buffer.GetDataPtr<float>();
 
         int i = 0;
-        std::vector<double> line_attrs(num_attrs);
-        double *line_attr_ptr = line_attrs.data();
+        std::vector<float> line_attrs(num_attrs);
+        float *line_attr_ptr = line_attrs.data();
         const char *line_buffer;
 
         // Read TXT to buffer.
         while ((line_buffer = file.ReadLine())) {
             if (num_attrs == 3 &&
-                (sscanf(line_buffer, "%lf %lf %lf", &line_attr_ptr[0],
+                (sscanf(line_buffer, "%f %f %f", &line_attr_ptr[0],
                         &line_attr_ptr[1], &line_attr_ptr[2]) == 3)) {
                 std::memcpy(&pcd_buffer_ptr[num_attrs * i], line_attr_ptr,
-                            num_attrs * sizeof(double));
+                            num_attrs * sizeof(float));
             } else if (num_attrs == 4 &&
-                       (sscanf(line_buffer, "%lf %lf %lf %lf",
-                               &line_attr_ptr[0], &line_attr_ptr[1],
-                               &line_attr_ptr[2], &line_attr_ptr[3]) == 4)) {
+                       (sscanf(line_buffer, "%f %f %f %f", &line_attr_ptr[0],
+                               &line_attr_ptr[1], &line_attr_ptr[2],
+                               &line_attr_ptr[3]) == 4)) {
                 std::memcpy(&pcd_buffer_ptr[num_attrs * i], line_attr_ptr,
-                            num_attrs * sizeof(double));
+                            num_attrs * sizeof(float));
             } else if (num_attrs == 6 &&
-                       (sscanf(line_buffer, "%lf %lf %lf %lf %lf %lf",
+                       (sscanf(line_buffer, "%f %f %f %f %f %f",
                                &line_attr_ptr[0], &line_attr_ptr[1],
                                &line_attr_ptr[2], &line_attr_ptr[3],
                                &line_attr_ptr[4], &line_attr_ptr[5]) == 6)) {
                 std::memcpy(&pcd_buffer_ptr[num_attrs * i], line_attr_ptr,
-                            num_attrs * sizeof(double));
+                            num_attrs * sizeof(float));
             } else {
                 utility::LogWarning("Read TXT failed at line: {}", line_buffer);
                 return false;
@@ -192,8 +192,8 @@ bool WritePointCloudToTXT(const std::string &filename,
             return false;
         }
 
-        const double *points_ptr = points.GetDataPtr<double>();
-        const double *attr_ptr = nullptr;
+        const float *points_ptr = points.GetDataPtr<float>();
+        const float *attr_ptr = nullptr;
 
         if (format_txt == "xyz") {
             for (int i = 0; i < num_points; i++) {
@@ -211,7 +211,7 @@ bool WritePointCloudToTXT(const std::string &filename,
             }
         } else if (format_txt == "xyzi") {
             attr_ptr =
-                    pointcloud.GetPointAttr("intensities").GetDataPtr<double>();
+                    pointcloud.GetPointAttr("intensities").GetDataPtr<float>();
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(), "%.10f %.10f %.10f %.10f\n",
                             points_ptr[3 * i + 0], points_ptr[3 * i + 1],
@@ -226,7 +226,7 @@ bool WritePointCloudToTXT(const std::string &filename,
                 }
             }
         } else if (format_txt == "xyzn") {
-            attr_ptr = pointcloud.GetPointAttr("normals").GetDataPtr<double>();
+            attr_ptr = pointcloud.GetPointAttr("normals").GetDataPtr<float>();
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(),
                             "%.10f %.10f %.10f %.10f %.10f %.10f\n",
@@ -243,7 +243,7 @@ bool WritePointCloudToTXT(const std::string &filename,
                 }
             }
         } else if (format_txt == "xyzrgb") {
-            attr_ptr = pointcloud.GetPointAttr("colors").GetDataPtr<double>();
+            attr_ptr = pointcloud.GetPointAttr("colors").GetDataPtr<float>();
             for (int i = 0; i < num_points; i++) {
                 if (fprintf(file.GetFILE(),
                             "%.10f %.10f %.10f %.10f %.10f %.10f\n",

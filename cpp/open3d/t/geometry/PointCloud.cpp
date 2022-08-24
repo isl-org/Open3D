@@ -436,8 +436,53 @@ PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {
     return pcd;
 }
 
+std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(
+        double radius, int max_nn, double angle_threshold) const {
+    core::AssertTensorDtypes(this->GetPointPositions(),
+                             {core::Float32, core::Float64});
+    if (!HasPointNormals()) {
+        utility::LogError(
+                "PointCloud must have normals attribute to compute boundary "
+                "points.");
+    }
+
+    const core::Device device = GetDevice();
+    const int64_t num_points = GetPointPositions().GetLength();
+
+    const core::Tensor points_d = GetPointPositions().Contiguous();
+    const core::Tensor normals_d = GetPointNormals().Contiguous();
+
+    // Compute nearest neighbors.
+    core::Tensor indices, distance2, counts;
+    core::nns::NearestNeighborSearch tree(points_d, core::Int32);
+
+    bool check = tree.HybridIndex(radius);
+    if (!check) {
+        utility::LogError("Building HybridIndex failed.");
+    }
+    std::tie(indices, distance2, counts) =
+            tree.HybridSearch(points_d, radius, max_nn);
+    utility::LogDebug(
+            "Use HybridSearch [max_nn: {} | radius {}] for computing "
+            "boundary points.",
+            max_nn, radius);
+
+    core::Tensor mask = core::Tensor::Zeros({num_points}, core::Bool, device);
+    if (IsCPU()) {
+        kernel::pointcloud::ComputeBoundaryPointsCPU(
+                points_d, normals_d, indices, counts, mask, angle_threshold);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::ComputeBoundaryPointsCUDA, points_d,
+                  normals_d, indices, counts, mask, angle_threshold);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    return std::make_tuple(SelectByMask(mask), mask);
+}
+
 void PointCloud::EstimateNormals(
-        const int max_knn /* = 30*/,
+        const utility::optional<int> max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
     core::AssertTensorDtypes(this->GetPointPositions(),
                              {core::Float32, core::Float64});
@@ -461,37 +506,55 @@ void PointCloud::EstimateNormals(
             core::Tensor::Empty({GetPointPositions().GetLength(), 3, 3}, dtype,
                                 device));
 
-    if (radius.has_value()) {
+    if (radius.has_value() && max_knn.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing covariances");
         // Computes and sets `covariances` attribute using Hybrid Search
         // method.
         if (IsCPU()) {
             kernel::pointcloud::EstimateCovariancesUsingHybridSearchCPU(
                     this->GetPointPositions().Contiguous(),
-                    this->GetPointAttr("covariances"), radius.value(), max_knn);
+                    this->GetPointAttr("covariances"), radius.value(),
+                    max_knn.value());
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateCovariancesUsingHybridSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointAttr("covariances"), radius.value(),
-                      max_knn);
+                      max_knn.value());
         } else {
             utility::LogError("Unimplemented device");
         }
-    } else {
+    } else if (max_knn.has_value() && !radius.has_value()) {
         utility::LogDebug("Using KNN Search for computing covariances");
         // Computes and sets `covariances` attribute using KNN Search method.
         if (IsCPU()) {
             kernel::pointcloud::EstimateCovariancesUsingKNNSearchCPU(
                     this->GetPointPositions().Contiguous(),
-                    this->GetPointAttr("covariances"), max_knn);
+                    this->GetPointAttr("covariances"), max_knn.value());
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::EstimateCovariancesUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
-                      this->GetPointAttr("covariances"), max_knn);
+                      this->GetPointAttr("covariances"), max_knn.value());
         } else {
             utility::LogError("Unimplemented device");
         }
+    } else if (!max_knn.has_value() && radius.has_value()) {
+        utility::LogDebug("Using Radius Search for computing covariances");
+        // Computes and sets `covariances` attribute using KNN Search method.
+        if (IsCPU()) {
+            kernel::pointcloud::EstimateCovariancesUsingRadiusSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointAttr("covariances"), radius.value());
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateCovariancesUsingRadiusSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointAttr("covariances"), radius.value());
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogError("Both max_nn and radius are none.");
     }
 
     // Estimate `normal` of each point using its `covariance` matrix.
@@ -513,7 +576,7 @@ void PointCloud::EstimateNormals(
 }
 
 void PointCloud::EstimateColorGradients(
-        const int max_knn /* = 30*/,
+        const utility::optional<int> max_knn /* = 30*/,
         const utility::optional<double> radius /*= utility::nullopt*/) {
     if (!HasPointColors() || !HasPointNormals()) {
         utility::LogError(
@@ -542,7 +605,7 @@ void PointCloud::EstimateColorGradients(
     }
 
     // Compute and set `color_gradients` attribute.
-    if (radius.has_value()) {
+    if (radius.has_value() && max_knn.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing color_gradients");
         if (IsCPU()) {
             kernel::pointcloud::EstimateColorGradientsUsingHybridSearchCPU(
@@ -550,7 +613,7 @@ void PointCloud::EstimateColorGradients(
                     this->GetPointNormals().Contiguous(),
                     this->GetPointColors().Contiguous(),
                     this->GetPointAttr("color_gradients"), radius.value(),
-                    max_knn);
+                    max_knn.value());
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateColorGradientsUsingHybridSearchCUDA,
@@ -558,28 +621,48 @@ void PointCloud::EstimateColorGradients(
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
                       this->GetPointAttr("color_gradients"), radius.value(),
-                      max_knn);
+                      max_knn.value());
         } else {
             utility::LogError("Unimplemented device");
         }
-    } else {
+    } else if (max_knn.has_value() && !radius.has_value()) {
         utility::LogDebug("Using KNN Search for computing color_gradients");
         if (IsCPU()) {
             kernel::pointcloud::EstimateColorGradientsUsingKNNSearchCPU(
                     this->GetPointPositions().Contiguous(),
                     this->GetPointNormals().Contiguous(),
                     this->GetPointColors().Contiguous(),
-                    this->GetPointAttr("color_gradients"), max_knn);
+                    this->GetPointAttr("color_gradients"), max_knn.value());
         } else if (IsCUDA()) {
             CUDA_CALL(kernel::pointcloud::
                               EstimateColorGradientsUsingKNNSearchCUDA,
                       this->GetPointPositions().Contiguous(),
                       this->GetPointNormals().Contiguous(),
                       this->GetPointColors().Contiguous(),
-                      this->GetPointAttr("color_gradients"), max_knn);
+                      this->GetPointAttr("color_gradients"), max_knn.value());
         } else {
             utility::LogError("Unimplemented device");
         }
+    } else if (!max_knn.has_value() && radius.has_value()) {
+        utility::LogDebug("Using Radius Search for computing color_gradients");
+        if (IsCPU()) {
+            kernel::pointcloud::EstimateColorGradientsUsingRadiusSearchCPU(
+                    this->GetPointPositions().Contiguous(),
+                    this->GetPointNormals().Contiguous(),
+                    this->GetPointColors().Contiguous(),
+                    this->GetPointAttr("color_gradients"), radius.value());
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::pointcloud::
+                              EstimateColorGradientsUsingRadiusSearchCUDA,
+                      this->GetPointPositions().Contiguous(),
+                      this->GetPointNormals().Contiguous(),
+                      this->GetPointColors().Contiguous(),
+                      this->GetPointAttr("color_gradients"), radius.value());
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogError("Both max_nn and radius are none.");
     }
 }
 
