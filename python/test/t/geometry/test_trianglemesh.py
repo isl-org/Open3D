@@ -400,3 +400,21 @@ def test_bake_triangle_attr_textures():
                                                margin=0.1,
                                                fill=-1)
     np.testing.assert_equal(textures['index'].numpy(), desired)
+
+
+def test_extrude_rotation():
+    mesh = o3d.t.geometry.TriangleMesh([[1, 1, 0], [0.7, 1, 0], [1, 0.7, 0]],
+                                       [[0, 1, 2]])
+    ans = mesh.extrude_rotation(3 * 360, [0, 1, 0],
+                                resolution=3 * 16,
+                                translation=2)
+    assert ans.vertex['positions'].shape == (147, 3)
+    assert ans.triangle['indices'].shape == (290, 3)
+
+
+def test_extrude_linear():
+    triangle = o3d.t.geometry.TriangleMesh(
+        [[1.0, 1.0, 0.0], [0, 1, 0], [1, 0, 0]], [[0, 1, 2]])
+    ans = triangle.extrude_linear([0, 0, 1])
+    assert ans.vertex['positions'].shape == (6, 3)
+    assert ans.triangle['indices'].shape == (8, 3)

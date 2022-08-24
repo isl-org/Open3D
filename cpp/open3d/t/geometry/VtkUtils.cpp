@@ -31,8 +31,11 @@
 #include <vtkCellData.h>
 #include <vtkDoubleArray.h>
 #include <vtkFloatArray.h>
+#include <vtkLinearExtrusionFilter.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
+#include <vtkRotationalExtrusionFilter.h>
+#include <vtkTriangleFilter.h>
 
 namespace open3d {
 namespace t {
@@ -373,6 +376,19 @@ vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
                                    copy, point_attr_include,
                                    point_attr_exclude);
 
+    } else if (geometry.GetGeometryType() == Geometry::GeometryType::LineSet) {
+        auto lineset = static_cast<const LineSet&>(geometry);
+        polydata->SetPoints(
+                CreateVtkPointsFromTensor(lineset.GetPointPositions(), copy));
+        polydata->SetLines(
+                CreateVtkCellArrayFromTensor(lineset.GetLineIndices(), copy));
+
+        AddTensorMapToVtkFieldData(polydata->GetPointData(),
+                                   lineset.GetPointAttr(), copy,
+                                   point_attr_include, point_attr_exclude);
+        AddTensorMapToVtkFieldData(polydata->GetCellData(),
+                                   lineset.GetLineAttr(), copy,
+                                   face_attr_include, face_attr_exclude);
     } else if (geometry.GetGeometryType() ==
                Geometry::GeometryType::TriangleMesh) {
         auto mesh = static_cast<const TriangleMesh&>(geometry);
@@ -429,8 +445,8 @@ OPEN3D_LOCAL LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata,
 
     core::Tensor lines =
             CreateTensorFromVtkCellArray(polydata->GetLines(), copy);
-    // // Some algorithms return an empty tensor with shape (0,0).
-    // // Fix the last dim here.
+    // Some algorithms return an empty tensor with shape (0,0).
+    // Fix the last dim here.
     if (lines.GetShape() == core::SizeVector{0, 0}) {
         lines = lines.Reshape({0, 2});
     }
@@ -441,6 +457,103 @@ OPEN3D_LOCAL LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata,
     AddVtkFieldDataToTensorMap(lineset.GetLineAttr(), polydata->GetCellData(),
                                copy);
     return lineset;
+}
+
+static vtkSmartPointer<vtkPolyData> ExtrudeRotationPolyData(
+        const Geometry& geometry,
+        const double angle,
+        const core::Tensor& axis,
+        int resolution,
+        double translation,
+        bool capping) {
+    core::AssertTensorShape(axis, {3});
+    // allow int types for convenience
+    core::AssertTensorDtypes(
+            axis, {core::Float32, core::Float64, core::Int32, core::Int64});
+    auto axis_ = axis.To(core::Device(), core::Float64).Contiguous();
+
+    auto polydata =
+            CreateVtkPolyDataFromGeometry(geometry, {}, {}, {}, {}, false);
+
+    vtkNew<vtkRotationalExtrusionFilter> extrude;
+    extrude->SetInputData(polydata);
+    extrude->SetAngle(angle);
+    extrude->SetRotationAxis(axis_.GetDataPtr<double>());
+    extrude->SetResolution(resolution);
+    extrude->SetTranslation(translation);
+    extrude->SetCapping(capping);
+
+    vtkNew<vtkTriangleFilter> triangulate;
+    triangulate->SetInputConnection(extrude->GetOutputPort());
+    triangulate->Update();
+    vtkSmartPointer<vtkPolyData> swept_polydata = triangulate->GetOutput();
+    return swept_polydata;
+}
+
+OPEN3D_LOCAL TriangleMesh ExtrudeRotationTriangleMesh(const Geometry& geometry,
+                                                      const double angle,
+                                                      const core::Tensor& axis,
+                                                      int resolution,
+                                                      double translation,
+                                                      bool capping) {
+    auto polydata = ExtrudeRotationPolyData(geometry, angle, axis, resolution,
+                                            translation, capping);
+    return CreateTriangleMeshFromVtkPolyData(polydata);
+}
+
+OPEN3D_LOCAL LineSet ExtrudeRotationLineSet(const PointCloud& pointcloud,
+                                            const double angle,
+                                            const core::Tensor& axis,
+                                            int resolution,
+                                            double translation,
+                                            bool capping) {
+    auto polydata = ExtrudeRotationPolyData(pointcloud, angle, axis, resolution,
+                                            translation, capping);
+    return CreateLineSetFromVtkPolyData(polydata);
+}
+
+static vtkSmartPointer<vtkPolyData> ExtrudeLinearPolyData(
+        const Geometry& geometry,
+        const core::Tensor& vector,
+        double scale,
+        bool capping) {
+    core::AssertTensorShape(vector, {3});
+    // allow int types for convenience
+    core::AssertTensorDtypes(
+            vector, {core::Float32, core::Float64, core::Int32, core::Int64});
+    auto vector_ = vector.To(core::Device(), core::Float64).Contiguous();
+
+    auto polydata =
+            CreateVtkPolyDataFromGeometry(geometry, {}, {}, {}, {}, false);
+
+    vtkNew<vtkLinearExtrusionFilter> extrude;
+    extrude->SetInputData(polydata);
+    extrude->SetExtrusionTypeToVectorExtrusion();
+    extrude->SetVector(vector_.GetDataPtr<double>());
+    extrude->SetScaleFactor(scale);
+    extrude->SetCapping(capping);
+
+    vtkNew<vtkTriangleFilter> triangulate;
+    triangulate->SetInputConnection(extrude->GetOutputPort());
+    triangulate->Update();
+    vtkSmartPointer<vtkPolyData> swept_polydata = triangulate->GetOutput();
+    return swept_polydata;
+}
+
+OPEN3D_LOCAL TriangleMesh ExtrudeLinearTriangleMesh(const Geometry& geometry,
+                                                    const core::Tensor& vector,
+                                                    double scale,
+                                                    bool capping) {
+    auto polydata = ExtrudeLinearPolyData(geometry, vector, scale, capping);
+    return CreateTriangleMeshFromVtkPolyData(polydata);
+}
+
+OPEN3D_LOCAL LineSet ExtrudeLinearLineSet(const PointCloud& pointcloud,
+                                          const core::Tensor& vector,
+                                          double scale,
+                                          bool capping) {
+    auto polydata = ExtrudeLinearPolyData(pointcloud, vector, scale, capping);
+    return CreateLineSetFromVtkPolyData(polydata);
 }
 
 }  // namespace vtkutils

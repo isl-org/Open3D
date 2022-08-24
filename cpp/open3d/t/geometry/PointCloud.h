@@ -47,6 +47,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+class LineSet;
+
 /// \class PointCloud
 /// \brief A point cloud contains a list of 3D points.
 ///
@@ -621,6 +623,29 @@ public:
     /// the bounding box.
     PointCloud Crop(const AxisAlignedBoundingBox &aabb,
                     bool invert = false) const;
+
+    /// Sweeps the point cloud rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A line set with the result of the sweep operation.
+    LineSet ExtrudeRotation(double angle,
+                            const core::Tensor &axis,
+                            int resolution = 16,
+                            double translation = 0.0,
+                            bool capping = true) const;
+
+    /// Sweeps the point cloud along a direction vector.
+    /// \param vector The direction vector.
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A line set
+    /// with the result of the sweep operation.
+    LineSet ExtrudeLinear(const core::Tensor &vector,
+                          double scale = 1.0,
+                          bool capping = true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

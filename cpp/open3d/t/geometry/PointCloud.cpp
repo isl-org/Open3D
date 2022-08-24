@@ -51,6 +51,7 @@
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
@@ -1062,10 +1063,6 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
     return convex_hull.To(GetPointPositions().GetDevice());
 }
 
-AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
-    return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
-}
-
 PointCloud PointCloud::Crop(const AxisAlignedBoundingBox &aabb,
                             bool invert) const {
     core::AssertTensorDevice(GetPointPositions(), aabb.GetDevice());
@@ -1078,6 +1075,27 @@ PointCloud PointCloud::Crop(const AxisAlignedBoundingBox &aabb,
     }
     return SelectByIndex(
             aabb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
+}
+
+AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
+LineSet PointCloud::ExtrudeRotation(double angle,
+                                    const core::Tensor &axis,
+                                    int resolution,
+                                    double translation,
+                                    bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeRotationLineSet(*this, angle, axis, resolution, translation,
+                                  capping);
+}
+
+LineSet PointCloud::ExtrudeLinear(const core::Tensor &vector,
+                                  double scale,
+                                  bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeLinearLineSet(*this, vector, scale, capping);
 }
 
 }  // namespace geometry
