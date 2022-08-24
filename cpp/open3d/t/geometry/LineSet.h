@@ -41,6 +41,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+class TriangleMesh;
+
 /// \class LineSet
 /// \brief A LineSet contains points and lines joining them and optionally
 /// attributes on the points and lines.
@@ -375,6 +377,29 @@ public:
 
     /// Create an axis-aligned bounding box from point attribute "positions".
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// Sweeps the line set rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A triangle mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeRotation(double angle,
+                                 const core::Tensor &axis,
+                                 int resolution = 16,
+                                 double translation = 0.0,
+                                 bool capping = true) const;
+
+    /// Sweeps the line set along a direction vector.
+    /// \param vector The direction vector.
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A triangle
+    /// mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeLinear(const core::Tensor &vector,
+                               double scale = 1.0,
+                               bool capping = true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

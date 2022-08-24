@@ -110,6 +110,13 @@ void OrientNormalsTowardsCameraLocationCPU(const core::Tensor& points,
                                            core::Tensor& normals,
                                            const core::Tensor& camera);
 
+void ComputeBoundaryPointsCPU(const core::Tensor& points,
+                              const core::Tensor& normals,
+                              const core::Tensor& indices,
+                              const core::Tensor& counts,
+                              core::Tensor& mask,
+                              double angle_threshold);
+
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
         const core::Tensor& depth,
@@ -152,6 +159,13 @@ void OrientNormalsToAlignWithDirectionCUDA(core::Tensor& normals,
 void OrientNormalsTowardsCameraLocationCUDA(const core::Tensor& points,
                                             core::Tensor& normals,
                                             const core::Tensor& camera);
+
+void ComputeBoundaryPointsCUDA(const core::Tensor& points,
+                               const core::Tensor& normals,
+                               const core::Tensor& indices,
+                               const core::Tensor& counts,
+                               core::Tensor& mask,
+                               double angle_threshold);
 #endif
 
 void EstimateCovariancesUsingHybridSearchCPU(const core::Tensor& points,
