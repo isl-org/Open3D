@@ -56,5 +56,7 @@ if __name__ == "__main__":
     except RuntimeError as e:
         print(f"Error: {e}")
 
+    del pcd.point.colors
+
     import ipdb
     ipdb.set_trace()
