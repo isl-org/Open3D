@@ -208,7 +208,7 @@ void EstimateNormals(benchmark::State& state,
                      const core::Device& device,
                      const core::Dtype& dtype,
                      const double voxel_size,
-                     const int max_nn,
+                     const utility::optional<int> max_nn,
                      const utility::optional<double> radius) {
     t::geometry::PointCloud pcd;
     t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
@@ -256,6 +256,27 @@ void RemoveRadiusOutliers(benchmark::State& state,
     pcd.RemoveRadiusOutliers(nb_points, search_radius);
     for (auto _ : state) {
         pcd.RemoveRadiusOutliers(nb_points, search_radius);
+    }
+}
+
+void ComputeBoundaryPoints(benchmark::State& state,
+                           const core::Device& device,
+                           const core::Dtype& dtype,
+                           const int max_nn,
+                           const double radius) {
+    data::DemoCropPointCloud pointcloud_ply;
+    const std::string path = pointcloud_ply.GetPointCloudPath();
+    t::geometry::PointCloud pcd;
+    t::io::ReadPointCloud(path, pcd, {"auto", false, false, false});
+    pcd = pcd.To(device);
+    pcd.SetPointPositions(pcd.GetPointPositions().To(dtype));
+    pcd.SetPointNormals(pcd.GetPointNormals().To(dtype));
+
+    // Warm up.
+    pcd.ComputeBoundaryPoints(radius, max_nn);
+
+    for (auto _ : state) {
+        pcd.ComputeBoundaryPoints(radius, max_nn);
     }
 }
 
@@ -434,6 +455,22 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   30,
                   utility::nullopt)
         ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CPU F32 Radius[0.02 | 0.06],
+                  core::Device("CPU:0"),
+                  core::Float32,
+                  0.02,
+                  utility::nullopt,
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CPU F64 Radius[0.02 | 0.06],
+                  core::Device("CPU:0"),
+                  core::Float64,
+                  0.02,
+                  utility::nullopt,
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(EstimateNormals,
                   CUDA F32 Hybrid[0.02 | 30 | 0.06],
@@ -467,6 +504,22 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   30,
                   utility::nullopt)
         ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA F32 Radius[0.02 | 0.06],
+                  core::Device("CUDA:0"),
+                  core::Float32,
+                  0.02,
+                  utility::nullopt,
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(EstimateNormals,
+                  CUDA F64 Radius[0.02 | 0.06],
+                  core::Device("CUDA:0"),
+                  core::Float64,
+                  0.02,
+                  utility::nullopt,
+                  0.06)
+        ->Unit(benchmark::kMillisecond);
 #endif
 
 BENCHMARK_CAPTURE(LegacyTransform, CPU, 1)->Unit(benchmark::kMillisecond);
@@ -484,16 +537,50 @@ BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   open3d::geometry::KDTreeSearchParamKNN(30))
         ->Unit(benchmark::kMillisecond);
 
+BENCHMARK_CAPTURE(LegacyEstimateNormals,
+                  Legacy Radius[0.02 | 0.06],
+                  0.02,
+                  open3d::geometry::KDTreeSearchParamRadius(0.06))
+        ->Unit(benchmark::kMillisecond);
+
 BENCHMARK_CAPTURE(
         RemoveRadiusOutliers, CPU[50 | 0.05], core::Device("CPU:0"), 50, 0.03)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(CropByAxisAlignedBox, CPU, core::Device("CPU:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(ComputeBoundaryPoints,
+                  CPU Float32,
+                  core::Device("CPU:0"),
+                  core::Float32,
+                  30,
+                  0.02)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(ComputeBoundaryPoints,
+                  CPU Float64,
+                  core::Device("CPU:0"),
+                  core::Float64,
+                  30,
+                  0.02)
         ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(
         RemoveRadiusOutliers, CUDA[50 | 0.05], core::Device("CUDA:0"), 50, 0.03)
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(CropByAxisAlignedBox, CPU, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(ComputeBoundaryPoints,
+                  CUDA Float32,
+                  core::Device("CUDA:0"),
+                  core::Float32,
+                  30,
+                  0.02)
+        ->Unit(benchmark::kMillisecond);
+BENCHMARK_CAPTURE(ComputeBoundaryPoints,
+                  CUDA Float64,
+                  core::Device("CUDA:0"),
+                  core::Float64,
+                  30,
+                  0.02)
         ->Unit(benchmark::kMillisecond);
 #endif
 

@@ -38,6 +38,7 @@ jobs:
       BUILD_TENSORFLOW_OPS: ${{ matrix.MLOPS }}
       BUILD_PYTORCH_OPS: ${{ matrix.MLOPS }}
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+      OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
