@@ -460,7 +460,7 @@ void EstimateRangeCPU
 #endif
 
     int frag_count = needed_frag_count;
-    if (frag_count > frag_buffer_size) {
+    if (frag_count >= frag_buffer_size) {
         utility::LogWarning(
                 "Could not generate full range map; allocated {} fragments but "
                 "needed {}",
