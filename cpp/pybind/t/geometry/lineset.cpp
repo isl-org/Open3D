@@ -87,8 +87,8 @@ The attributes of the line set have different levels::
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the line set. The are no restrictions on the shape or
     # dtype, e.g.,
-    pcd.point.labels = o3d.core.Tensor(...)
-    pcd.line.features = o3d.core.Tensor(...)
+    lineset.point.labels = o3d.core.Tensor(...)
+    lineset.line.features = o3d.core.Tensor(...)
 )");
 
     // Constructors.
