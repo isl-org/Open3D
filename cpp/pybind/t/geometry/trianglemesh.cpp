@@ -60,41 +60,41 @@ The attributes of the triangle mesh have different levels::
     # Use mesh.triangle to access the triangles' attributes
     mesh = o3d.t.geometry.TriangleMesh(device)
 
-    # Default attribute: vertex["positions"], triangle["indices"]
+    # Default attribute: vertex.positions, triangle.indices
     # These attributes is created by default and is required by all triangle
     # meshes. The shape of both must be (N, 3). The device of "positions"
     # determines the device of the triangle mesh.
-    mesh.vertex["positions"] = o3d.core.Tensor([[0, 0, 0],
+    mesh.vertex.positions = o3d.core.Tensor([[0, 0, 0],
                                                 [0, 0, 1],
                                                 [0, 1, 0],
                                                 [0, 1, 1]], dtype_f, device)
-    mesh.triangle["indices"] = o3d.core.Tensor([[0, 1, 2],
+    mesh.triangle.indices = o3d.core.Tensor([[0, 1, 2],
                                                 [0, 2, 3]]], dtype_i, device)
 
-    # Common attributes: vertex["colors"]  , vertex["normals"]
-    #                    triangle["colors"], triangle["normals"]
+    # Common attributes: vertex.colors  , vertex.normals
+    #                    triangle.colors, triangle.normals
     # Common attributes are used in built-in triangle mesh operations. The
     # spellings must be correct. For example, if "normal" is used instead of
     # "normals", some internal operations that expects "normals" will not work.
     # "normals" and "colors" must have shape (N, 3) and must be on the same
     # device as the triangle mesh.
-    mesh.vertex["normals"] = o3d.core.Tensor([[0, 0, 1],
+    mesh.vertex.normals = o3d.core.Tensor([[0, 0, 1],
                                               [0, 1, 0],
                                               [1, 0, 0],
                                               [1, 1, 1]], dtype_f, device)
-    mesh.vertex["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
+    mesh.vertex.colors = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                              [0.1, 0.1, 0.1],
                                              [0.2, 0.2, 0.2],
                                              [0.3, 0.3, 0.3]], dtype_f, device)
-    mesh.triangle["normals"] = o3d.core.Tensor(...)
-    mesh.triangle["colors"] = o3d.core.Tensor(...)
+    mesh.triangle.normals = o3d.core.Tensor(...)
+    mesh.triangle.colors = o3d.core.Tensor(...)
 
     # User-defined attributes
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the triangle mesh. The are no restrictions on the shape and
     # dtype, e.g.,
-    pcd.vertex["labels"] = o3d.core.Tensor(...)
-    pcd.triangle["features"] = o3d.core.Tensor(...)
+    pcd.vertex.labels = o3d.core.Tensor(...)
+    pcd.triangle.features = o3d.core.Tensor(...)
 )");
 
     // Constructors.
@@ -661,7 +661,7 @@ Example:
 
         box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
         box = o3d.t.geometry.TriangleMesh.from_legacy(box)
-        box.vertex['albedo'] = box.vertex['positions']
+        box.vertex['albedo'] = box.vertex.positions
 
         # Initialize material and bake the 'albedo' vertex attribute to a 
         # texture. The texture will be automatically added to the material of
@@ -717,7 +717,7 @@ Example:
         box = o3d.t.geometry.TriangleMesh.from_legacy(box)
         # Creates a triangle attribute 'albedo' which is the triangle index 
         # multiplied by (255//12).
-        box.triangle['albedo'] = (255//12)*np.arange(box.triangle['indices'].shape[0], dtype=np.uint8)
+        box.triangle['albedo'] = (255//12)*np.arange(box.triangle.indices.shape[0], dtype=np.uint8)
 
         # Initialize material and bake the 'albedo' triangle attribute to a 
         # texture. The texture will be automatically added to the material of

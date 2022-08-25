@@ -83,12 +83,39 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
             [](Map &m) { return py::make_iterator(m.begin(), m.end()); },
             py::keep_alive<0, 1>());
 
-    cl.def("__getitem__", [](Map &m, const KeyType &k) {
-        py::pybind11_fail("Please use the . attribute to access TensorMap.");
-    });
+    cl.def(
+            "__getitem__",
+            [](Map &m, const KeyType &k) -> MappedType & {
+                auto it = m.find(k);
+                if (it == m.end())
+                    throw py::key_error(
+                            fmt::format("Key {} not found in TensorMap", k));
+                return it->second;
+            },
+            // py::return_value_policy::copy is used as the safest option.
+            // The goal is to make TensorMap works similarly as putting Tensors
+            // into a python dict, i.e., {"a": Tensor(xx), "b": Tensor(XX)}.
+            // Accessing a value in the map will return a shallow copy of the
+            // tensor that shares the same underlying memory.
+            //
+            // - automatic          : works, different id
+            // - automatic_reference: works, different id
+            // - take_ownership     : doesn't work, segfault
+            // - copy               : works, different id
+            // - move               : doesn't work, blob is null
+            // - reference          : doesn't work, when a key is deleted, the
+            //                        alias becomes invalid
+            // - reference_internal : doesn't work, value in map overwritten
+            //                        when assigning to alias
+            py::return_value_policy::copy);
 
-    cl.def("__setitem__", [](Map &m, const KeyType &k, const MappedType &v) {
-        py::pybind11_fail("Please use the . attribute to access TensorMap.");
+    cl.def("__setitem__", [] (Map &m, const KeyType &k, const MappedType &v) {
+        if (!TensorMap::GetReservedKeys().count(k)) {
+            m[k] = v;   
+        } else {
+                throw py::key_error(fmt::format(
+                        "Cannot assign to reserved key \"{}\"", k));
+        }
     });
 
     cl.def("__contains__", [](Map &m, const KeyType &k) -> bool {

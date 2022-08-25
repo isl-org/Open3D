@@ -71,7 +71,7 @@ def test_tensormap(device):
 
     # __delitem__ operator.
     with pytest.raises(RuntimeError) as excinfo:
-        del tm['positions']
+        del tm.positions
         assert 'cannot be deleted' in str(excinfo.value)
 
     # Test setter.
@@ -168,7 +168,7 @@ def test_tensormap_modify(device):
     tm.a = o3c.Tensor([100], device=device)
     a_alias = tm.a
     assert len(tm) == 1
-    del tm['a']
+    del tm.a
     assert len(tm) == 0
     np.testing.assert_equal(a_alias.cpu().numpy(), [100])
     a_alias[:] = 200

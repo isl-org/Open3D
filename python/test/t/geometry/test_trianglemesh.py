@@ -386,9 +386,9 @@ def test_bake_triangle_attr_textures():
 
     box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
     box = o3d.t.geometry.TriangleMesh.from_legacy(box)
-    box.triangle['index'] = np.arange(box.triangle['indices'].shape[0])
+    box.triangle.index = np.arange(box.triangle.indices.shape[0])
     # shift the uvs to avoid pixel centers exactly at triangle boundaries.
-    box.triangle['texture_uvs'][:, :, 0] += 0.01
+    box.triangle.texture_uvs[:, :, 0] += 0.01
 
     textures = box.bake_triangle_attr_textures(8, {'index'},
                                                margin=0.1,
@@ -402,13 +402,13 @@ def test_extrude_rotation():
     ans = mesh.extrude_rotation(3 * 360, [0, 1, 0],
                                 resolution=3 * 16,
                                 translation=2)
-    assert ans.vertex['positions'].shape == (147, 3)
-    assert ans.triangle['indices'].shape == (290, 3)
+    assert ans.vertex.positions.shape == (147, 3)
+    assert ans.triangle.indices.shape == (290, 3)
 
 
 def test_extrude_linear():
     triangle = o3d.t.geometry.TriangleMesh(
         [[1.0, 1.0, 0.0], [0, 1, 0], [1, 0, 0]], [[0, 1, 2]])
     ans = triangle.extrude_linear([0, 0, 1])
-    assert ans.vertex['positions'].shape == (6, 3)
-    assert ans.triangle['indices'].shape == (8, 3)
+    assert ans.vertex.positions.shape == (6, 3)
+    assert ans.triangle.indices.shape == (8, 3)

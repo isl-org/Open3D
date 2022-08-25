@@ -40,8 +40,8 @@ if __name__ == "__main__":
     scene = o3d.t.geometry.RaycastingScene()
     scene.add_triangles(mesh)
 
-    min_bound = mesh.vertex['positions'].min(0).numpy()
-    max_bound = mesh.vertex['positions'].max(0).numpy()
+    min_bound = mesh.vertex.positions.min(0).numpy()
+    max_bound = mesh.vertex.positions.max(0).numpy()
 
     xyz_range = np.linspace(min_bound, max_bound, num=64)
 
