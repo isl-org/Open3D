@@ -95,12 +95,11 @@ bool ReadPointCloud(const std::string &filename,
     bool success = false;
     auto map_itr = file_extension_to_pointcloud_read_function.find(format);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-        open3d::geometry::PointCloud legacy_pointcloud;
-        success =
-                open3d::io::ReadPointCloud(filename, legacy_pointcloud, params);
-        if (!success) return false;
-        pointcloud = geometry::PointCloud::FromLegacy(legacy_pointcloud,
-                                                      core::Float64);
+        utility::LogWarning(
+                "Read geometry::PointCloud failed: unknown file extension for "
+                "{} (format: {}).",
+                filename, params.format);
+        return false;
     } else {
         success = map_itr->second(filename, pointcloud, params);
         if (params.remove_nan_points || params.remove_infinite_points) {
