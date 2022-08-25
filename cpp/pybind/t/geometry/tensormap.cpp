@@ -109,12 +109,12 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
             //                        when assigning to alias
             py::return_value_policy::copy);
 
-    cl.def("__setitem__", [] (Map &m, const KeyType &k, const MappedType &v) {
+    cl.def("__setitem__", [](Map &m, const KeyType &k, const MappedType &v) {
         if (!TensorMap::GetReservedKeys().count(k)) {
-            m[k] = v;   
+            m[k] = v;
         } else {
-                throw py::key_error(fmt::format(
-                        "Cannot assign to reserved key \"{}\"", k));
+            throw py::key_error(
+                    fmt::format("Cannot assign to reserved key \"{}\"", k));
         }
     });
 

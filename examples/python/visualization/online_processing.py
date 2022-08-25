@@ -221,8 +221,8 @@ class PipelineModel:
         now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = f"{self.rgbd_metadata.serial_number}_pcd_{now}.ply"
         # Convert colors to uint8 for compatibility
-        self.pcd_frame.point.colors = (self.pcd_frame.point.colors *
-                                          255).to(o3d.core.Dtype.UInt8)
+        self.pcd_frame.point.colors = (self.pcd_frame.point.colors * 255).to(
+            o3d.core.Dtype.UInt8)
         self.executor.submit(o3d.t.io.write_point_cloud,
                              filename,
                              self.pcd_frame,
