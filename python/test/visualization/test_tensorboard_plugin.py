@@ -153,7 +153,7 @@ def test_tensorflow_summary(geometry_data, tmp_path):
     cube_custom_prop = geometry_data['cube_custom_prop']
     cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
         'material_ls']
-    colors = geometry_data.colors
+    colors = geometry_data['colors']
     cube_labels = geometry_data['cube_labels']
     label_to_names = geometry_data['label_to_names']
     max_outputs = geometry_data['max_outputs']
@@ -259,7 +259,7 @@ def test_pytorch_summary(geometry_data, tmp_path):
     cube_custom_prop = geometry_data['cube_custom_prop']
     cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
         'material_ls']
-    colors = geometry_data.colors
+    colors = geometry_data['colors']
     cube_labels = geometry_data['cube_labels']
     label_to_names = geometry_data['label_to_names']
     max_outputs = geometry_data['max_outputs']
@@ -387,7 +387,7 @@ def test_plugin_data_reader(geometry_data, logdir):
     cube_custom_prop = geometry_data['cube_custom_prop']
     cube_ls, material_ls = geometry_data['cube_ls'], geometry_data[
         'material_ls']
-    colors = geometry_data.colors
+    colors = geometry_data['colors']
     max_outputs = geometry_data['max_outputs']
     cube_labels = geometry_data['cube_labels']
     label_to_names_ref = geometry_data['label_to_names']
