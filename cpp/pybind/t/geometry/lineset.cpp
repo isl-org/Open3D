@@ -59,26 +59,26 @@ The attributes of the line set have different levels::
     # Use lineset.line to access the line attributes
     lineset = o3d.t.geometry.LineSet()
 
-    # Default attribute: point["positions"], line["indices"]
+    # Default attribute: point.positions, line.indices
     # These attributes is created by default and are required by all line
     # sets. The shape must be (N, 3) and (N, 2) respectively. The device of
     # "positions" determines the device of the line set.
-    lineset.point["positions"] = o3d.core.Tensor([[0, 0, 0],
+    lineset.point.positions = o3d.core.Tensor([[0, 0, 0],
                                                   [0, 0, 1],
                                                   [0, 1, 0],
                                                   [0, 1, 1]], dtype_f, device)
-    lineset.line["indices"] = o3d.core.Tensor([[0, 1],
+    lineset.line.indices = o3d.core.Tensor([[0, 1],
                                                [1, 2],
                                                [2, 3],
                                                [3, 0]], dtype_i, device)
 
-    # Common attributes: line["colors"]
+    # Common attributes: line.colors
     # Common attributes are used in built-in line set operations. The
     # spellings must be correct. For example, if "color" is used instead of
     # "color", some internal operations that expects "colors" will not work.
     # "colors" must have shape (N, 3) and must be on the same device as the
     # line set.
-    lineset.line["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
+    lineset.line.colors = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                               [0.1, 0.1, 0.1],
                                               [0.2, 0.2, 0.2],
                                               [0.3, 0.3, 0.3]], dtype_f, device)
@@ -87,8 +87,8 @@ The attributes of the line set have different levels::
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the line set. The are no restrictions on the shape or
     # dtype, e.g.,
-    pcd.point["labels"] = o3d.core.Tensor(...)
-    pcd.line["features"] = o3d.core.Tensor(...)
+    lineset.point.labels = o3d.core.Tensor(...)
+    lineset.line.features = o3d.core.Tensor(...)
 )");
 
     // Constructors.
