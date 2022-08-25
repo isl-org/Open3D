@@ -101,6 +101,13 @@ void GetPointMaskWithinOBBCPU(const core::Tensor& points,
                               const core::Tensor& extent,
                               core::Tensor& mask);
 
+void ComputeBoundaryPointsCPU(const core::Tensor& points,
+                              const core::Tensor& normals,
+                              const core::Tensor& indices,
+                              const core::Tensor& counts,
+                              core::Tensor& mask,
+                              double angle_threshold);
+
 #ifdef BUILD_CUDA_MODULE
 void UnprojectCUDA(
         const core::Tensor& depth,
@@ -134,6 +141,13 @@ void GetPointMaskWithinOBBCUDA(const core::Tensor& points,
                                const core::Tensor& rotation,
                                const core::Tensor& extent,
                                core::Tensor& mask);
+
+void ComputeBoundaryPointsCUDA(const core::Tensor& points,
+                               const core::Tensor& normals,
+                               const core::Tensor& indices,
+                               const core::Tensor& counts,
+                               core::Tensor& mask,
+                               double angle_threshold);
 #endif
 
 void EstimateCovariancesUsingHybridSearchCPU(const core::Tensor& points,

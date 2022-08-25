@@ -146,6 +146,7 @@ void pybind_tensormap(py::module &m) {
                            "Cannot assign to reserved key \"{}\"", key));
                }
            });
+
     tm.def("__getattr__",
            [](TensorMap &m, const std::string &key) -> core::Tensor {
                auto it = m.find(key);
@@ -156,7 +157,17 @@ void pybind_tensormap(py::module &m) {
                return it->second;
            });
 
+    tm.def("__delattr__", [](TensorMap &m, const std::string &key) {
+        auto it = m.find(key);
+        if (it == m.end()) {
+            throw py::key_error(
+                    fmt::format("Key {} not found in TensorMap", key));
+        }
+        return m.Erase(key);
+    });
+
     tm.def("__str__", &TensorMap::ToString);
+
     tm.def("__repr__", &TensorMap::ToString);
 
     tm.def("__dir__", [](TensorMap &m) {

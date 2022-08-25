@@ -52,7 +52,7 @@ INSTANTIATE_TEST_SUITE_P(PointCloudIO,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
 struct TensorCtorData {
-    std::vector<double> values;
+    std::vector<float> values;
     core::SizeVector size;
 };
 
@@ -62,7 +62,7 @@ struct ReadWritePCArgs {
     std::string filename;
     IsAscii write_ascii;
     Compressed compressed;
-    std::unordered_map<std::string, double> attributes_rel_tols;
+    std::unordered_map<std::string, float> attributes_rel_tols;
 };
 
 }  // namespace
@@ -102,7 +102,7 @@ INSTANTIATE_TEST_SUITE_P(ReadWritePC, ReadWriteTPC, testing::ValuesIn(pcArgs));
 TEST_P(ReadWriteTPC, Basic) {
     ReadWritePCArgs args = GetParam();
     core::Device device("CPU:0");
-    core::Dtype dtype = core::Float64;
+    core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pc1(device);
 
     for (const auto &attr_tensor : pc_data_1) {
@@ -126,7 +126,7 @@ TEST_P(ReadWriteTPC, Basic) {
 
     for (const auto &attribute_rel_tol : args.attributes_rel_tols) {
         const std::string &attribute = attribute_rel_tol.first;
-        const double rel_tol = attribute_rel_tol.second;
+        const float rel_tol = attribute_rel_tol.second;
         SCOPED_TRACE(attribute);
         EXPECT_TRUE(pc1.GetPointAttr(attribute).AllClose(
                 pc2.GetPointAttr(attribute), rel_tol));
@@ -150,7 +150,7 @@ TEST_P(ReadWriteTPC, Basic) {
 TEST_P(ReadWriteTPC, WriteBadData) {
     ReadWritePCArgs args = GetParam();
     core::Device device("CPU:0");
-    core::Dtype dtype = core::Float64;
+    core::Dtype dtype = core::Float32;
     t::geometry::PointCloud pc1(device);
 
     for (const auto &attr_tensor : pc_data_bad) {
@@ -250,11 +250,11 @@ TEST(TPointCloudIO, ReadWritePTS) {
     EXPECT_EQ(pcd.GetPointAttr("intensities").GetLength(), 10);
     EXPECT_EQ(pcd.GetPointColors().GetDtype(), core::UInt8);
     EXPECT_TRUE(pcd.GetPointPositions()[0].AllClose(
-            core::Tensor::Init<double>({4.24644, -6.42662, -50.2146})));
+            core::Tensor::Init<float>({4.24644, -6.42662, -50.2146})));
     EXPECT_TRUE(pcd.GetPointColors()[0].AllClose(
             core::Tensor::Init<uint8_t>({66, 50, 83})));
     EXPECT_TRUE(pcd.GetPointAttr("intensities")[0].AllClose(
-            core::Tensor::Init<double>({10})));
+            core::Tensor::Init<float>({10})));
 
     // Write pointcloud and match it after read.
     const std::string tmp_path = utility::filesystem::GetTempDirectoryPath();
@@ -310,7 +310,7 @@ TEST(TPointCloudIO, WritePTSColorConversion1) {
     t::geometry::PointCloud pcd, pcd_read;
     std::string file_name = utility::filesystem::GetTempDirectoryPath() +
                             "/test_color_conversion.pts";
-    pcd.SetPointPositions(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
+    pcd.SetPointPositions(core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}));
     pcd.SetPointColors(
             core::Tensor::Init<float>({{-1, 0.25, 0.4}, {0, 4, 0.1}}));
     EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
@@ -325,7 +325,7 @@ TEST(TPointCloudIO, WritePTSColorConversion2) {
     t::geometry::PointCloud pcd, pcd_read;
     std::string file_name = utility::filesystem::GetTempDirectoryPath() +
                             "/test_color_conversion.pts";
-    pcd.SetPointPositions(core::Tensor::Init<double>({{1, 2, 3}, {4, 5, 6}}));
+    pcd.SetPointPositions(core::Tensor::Init<float>({{1, 2, 3}, {4, 5, 6}}));
     pcd.SetPointColors(core::Tensor::Init<bool>({{1, 0, 0}, {1, 0, 1}}));
     EXPECT_TRUE(t::io::WritePointCloud(file_name, pcd));
     EXPECT_TRUE(t::io::ReadPointCloud(file_name, pcd_read,

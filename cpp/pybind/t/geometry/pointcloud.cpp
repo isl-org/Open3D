@@ -31,6 +31,7 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/hashmap/HashMap.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
@@ -292,11 +293,11 @@ The attributes of the point cloud have different levels::
     pointcloud.def(
             "hidden_point_removal", &PointCloud::HiddenPointRemoval,
             "camera_location"_a, "radius"_a,
-            R"(Removes hidden points from a point cloud and returns a mesh of 
-the remaining points. Based on Katz et al. 'Direct Visibility of Point Sets', 
-2007. Additional information about the choice of radius for noisy point clouds 
+            R"(Removes hidden points from a point cloud and returns a mesh of
+the remaining points. Based on Katz et al. 'Direct Visibility of Point Sets',
+2007. Additional information about the choice of radius for noisy point clouds
 can be found in Mehra et. al. 'Visibility of Noisy Point Cloud Data', 2010.
-This is a wrapper for a CPU implementation and a copy of the point cloud data 
+This is a wrapper for a CPU implementation and a copy of the point cloud data
 and resulting visible triangle mesh and indiecs will be made.
 
 Args:
@@ -304,7 +305,7 @@ Args:
     radius. The radius of the spherical projection.
 
 Return:
-    Tuple of visible triangle mesh and indices of visible points on the same 
+    Tuple of visible triangle mesh and indices of visible points on the same
     device as the point cloud.
 
 Example:
@@ -330,9 +331,9 @@ Example:
     pointcloud.def(
             "cluster_dbscan", &PointCloud::ClusterDBSCAN, "eps"_a,
             "min_points"_a, "print_progress"_a = false,
-            R"(Cluster PointCloud using the DBSCAN algorithm  Ester et al.,'A 
-Density-Based Algorithm for Discovering Clusters in Large Spatial Databases 
-with Noise', 1996. This is a wrapper for a CPU implementation and a copy of the 
+            R"(Cluster PointCloud using the DBSCAN algorithm  Ester et al.,'A
+Density-Based Algorithm for Discovering Clusters in Large Spatial Databases
+with Noise', 1996. This is a wrapper for a CPU implementation and a copy of the
 point cloud data and resulting labels will be made.
 
 Args:
@@ -341,7 +342,7 @@ Args:
     print_progress (default False). If 'True' the progress is visualized in the console.
 
 Return:
-    A Tensor list of point labels on the same device as the point cloud, -1 
+    A Tensor list of point labels on the same device as the point cloud, -1
     indicates noise according to the algorithm.
 
 Example:
@@ -350,7 +351,7 @@ Example:
         import matplotlib.pyplot as plt
 
         sample_ply_data = o3d.data.PLYPointCloud()
-        pcd = o3d.t.io.read_point_cloud(sample_ply_data.path)  
+        pcd = o3d.t.io.read_point_cloud(sample_ply_data.path)
         labels = pcd.cluster_dbscan(eps=0.02, min_points=10, print_progress=True)
 
         max_label = labels.max().item()
@@ -364,8 +365,8 @@ Example:
             "segment_plane", &PointCloud::SegmentPlane,
             "distance_threshold"_a = 0.01, "ransac_n"_a = 3,
             "num_iterations"_a = 100, "probability"_a = 0.99999999,
-            R"(Segments a plane in the point cloud using the RANSAC algorithm. 
-This is a wrapper for a CPU implementation and a copy of the point cloud data and 
+            R"(Segments a plane in the point cloud using the RANSAC algorithm.
+This is a wrapper for a CPU implementation and a copy of the point cloud data and
 resulting plane model and inlier indiecs will be made.
 
 Args:
@@ -381,7 +382,7 @@ Return:
 
 Example:
     We use Redwood dataset to compute its plane model and inliers::
-        
+
         sample_pcd_data = o3d.data.PCDPointCloud()
         pcd = o3d.t.io.read_point_cloud(sample_pcd_data.path)
         plane_model, inliers = pcd.segment_plane(distance_threshold=0.01,
@@ -416,6 +417,30 @@ Example:
         pcd = o3d.t.io.read_point_cloud(eagle.path)
         hull = pcd.compute_convex_hull()
         o3d.visualization.draw([{'name': 'eagle', 'geometry': pcd}, {'name': 'convex hull', 'geometry': hull}])
+    )doc");
+    pointcloud.def("compute_boundary_points",
+                   &PointCloud::ComputeBoundaryPoints, "radius"_a,
+                   "max_nn"_a = 30, "angle_threshold"_a = 90.0,
+                   R"doc(Compute the boundary points of a point cloud.
+The implementation is inspired by the PCL implementation. Reference:
+https://pointclouds.org/documentation/classpcl_1_1_boundary_estimation.html
+
+Args:
+    radius. Neighbor search radius parameter.
+    max_nn (default 30). Maximum number of neighbors to search.
+    angle_threshold (default 90.0). Angle threshold to decide if a point is on the boundary.
+
+Return:
+    Tensor of boundary points and its boolean mask tensor.
+
+Example:
+    We will load the DemoCropPointCloud dataset, compute its boundary points::
+
+        ply_point_cloud = o3d.data.DemoCropPointCloud()
+        pcd = o3d.t.io.read_point_cloud(ply_point_cloud.point_cloud_path)
+        boundaries, mask = pcd.compute_boundary_points(radius, max_nn)
+        boundaries.paint_uniform_color([1.0, 0.0, 0.0])
+        o3d.visualization.draw([pcd, boundaries])
     )doc");
 
     // conversion
@@ -482,6 +507,63 @@ Example:
              {"invert",
               "Crop the points outside of the bounding box or inside of the "
               "bounding box."}});
+
+    pointcloud.def("extrude_rotation", &PointCloud::ExtrudeRotation, "angle"_a,
+                   "axis"_a, "resolution"_a = 16, "translation"_a = 0.0,
+                   "capping"_a = true,
+                   R"(Sweeps the point set rotationally about an axis.
+
+Args:
+    angle (float): The rotation angle in degree.
+    
+    axis (open3d.core.Tensor): The rotation axis.
+    
+    resolution (int): The resolution defines the number of intermediate sweeps
+        about the rotation axis.
+
+    translation (float): The translation along the rotation axis. 
+
+Returns:
+    A line set with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a number of helices from a point cloud::
+
+        import open3d as o3d
+        import numpy as np
+        pcd = o3d.t.geometry.PointCloud(np.random.rand(10,3))
+        helices = pcd.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
+        o3d.visualization.draw([{'name': 'helices', 'geometry': helices}])
+
+)");
+
+    pointcloud.def("extrude_linear", &PointCloud::ExtrudeLinear, "vector"_a,
+                   "scale"_a = 1.0, "capping"_a = true,
+                   R"(Sweeps the point cloud along a direction vector.
+
+Args:
+    
+    vector (open3d.core.Tensor): The direction vector.
+    
+    scale (float): Scalar factor which essentially scales the direction vector.
+
+Returns:
+    A line set with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a set of straight lines from a point cloud::
+        import open3d as o3d
+        import numpy as np
+        pcd = o3d.t.geometry.PointCloud(np.random.rand(10,3))
+        lines = pcd.extrude_linear([0,1,0])
+        o3d.visualization.draw([{'name': 'lines', 'geometry': lines}])
+
+
+)");
 }
 
 }  // namespace geometry
