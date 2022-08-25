@@ -55,3 +55,6 @@ if __name__ == "__main__":
         print(pcd.point["positions"])
     except RuntimeError as e:
         print(f"Error: {e}")
+
+    import ipdb
+    ipdb.set_trace()
