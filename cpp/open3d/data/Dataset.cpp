@@ -582,6 +582,28 @@ FlightHelmetModel::FlightHelmetModel(const std::string& data_root)
                            "OcclusionRoughMetal.png"}};
 }
 
+AvocadoModel::AvocadoModel(const std::string& data_root)
+    : SingleDownloadDataset(
+              "AvocadoModel",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/AvocadoModel.glb"},
+              "829f96a0a3a7d5556e0a263ea0699217",
+              /*no_extract =*/true,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/AvocadoModel.glb";
+}
+
+DamagedHelmetModel::DamagedHelmetModel(const std::string& data_root)
+    : SingleDownloadDataset(
+              "DamagedHelmetModel",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/DamagedHelmetModel.glb"},
+              "a3af6ad5a8329f22ba08b7f16e4a97d8",
+              /*no_extract =*/true,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/DamagedHelmetModel.glb";
+}
+
 MetalTexture::MetalTexture(const std::string& data_root)
     : SingleDownloadDataset(
               "MetalTexture",
