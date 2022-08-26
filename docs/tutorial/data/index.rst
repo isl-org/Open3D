@@ -242,6 +242,38 @@ The flight helmet gltf model with PRB texture.
     visualization::rendering::TriangleMeshModel model;
     io::ReadTriangleModel(dataset.GetPath(), model);
 
+AvocadoModel
+------------
+
+The Avocado glb model with PNG format embedded textures.
+
+.. code-block:: python
+
+    dataset = o3d.data.AvocadoModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::AvocadoModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
+DamagedHelmetModel
+------------------
+
+The damaged helmet glb model with JPG format embedded textures.
+
+.. code-block:: python
+
+    dataset = o3d.data.DamagedHelmetModel()
+    model = o3d.io.read_triangle_model(dataset.path)
+
+.. code-block:: cpp
+
+    data::DamagedHelmetModel dataset;
+    visualization::rendering::TriangleMeshModel model;
+    io::ReadTriangleModel(dataset.GetPath(), model);
+
 Texture material images
 ~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -9,6 +9,7 @@ target_sources(tpipelines PRIVATE
 target_sources(tpipelines PRIVATE
     registration/Registration.cpp
     registration/TransformationEstimation.cpp
+    registration/Feature.cpp
 )
 
 target_sources(tpipelines PRIVATE

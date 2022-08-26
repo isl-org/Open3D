@@ -345,7 +345,7 @@ private:
             // --------------------------------------------------------------
 
             time_total.Stop();
-            total_time_i += time_total.GetDuration();
+            total_time_i += time_total.GetDurationInMillisecond();
         }
         // ------------------------------------------------------------------
         utility::LogInfo(" Total Average FPS: {}", 1000 * i / total_time_i);

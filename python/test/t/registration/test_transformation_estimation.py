@@ -62,9 +62,9 @@ def get_pcds_and_correspondences(dtype, device):
     source_t = o3d.t.geometry.PointCloud(device)
     target_t = o3d.t.geometry.PointCloud(device)
 
-    source_t.point["positions"] = source_points
-    target_t.point["positions"] = target_points
-    target_t.point["normals"] = target_normals
+    source_t.point.positions = source_points
+    target_t.point.positions = target_points
+    target_t.point.normals = target_normals
 
     correspondences = o3c.Tensor([10, 1, 1, 3, 2, 5, 9, 7, 5, 8, 7, 7, 5, 8],
                                  o3c.int64, device)

@@ -8,6 +8,8 @@ target_sources(tpipelines_kernel PRIVATE
     RGBDOdometry.cpp
     RGBDOdometryCPU.cpp
     TransformationConverter.cpp
+    Feature.cpp
+    FeatureCPU.cpp
 )
 
 if (BUILD_CUDA_MODULE)
@@ -16,6 +18,7 @@ if (BUILD_CUDA_MODULE)
         FillInLinearSystemCUDA.cu
         RGBDOdometryCUDA.cu
         TransformationConverter.cu
+        FeatureCUDA.cu
     )
 endif()
 

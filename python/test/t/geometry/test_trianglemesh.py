@@ -40,15 +40,15 @@ def test_clip_plane():
     cube = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.geometry.TriangleMesh.create_box())
     clipped_cube = cube.clip_plane(point=[0.5, 0, 0], normal=[1, 0, 0])
-    assert clipped_cube.vertex['positions'].shape == (12, 3)
-    assert clipped_cube.triangle['indices'].shape == (14, 3)
+    assert clipped_cube.vertex.positions.shape == (12, 3)
+    assert clipped_cube.triangle.indices.shape == (14, 3)
 
 
 def test_slice_plane():
     box = o3d.t.geometry.TriangleMesh.create_box()
     slices = box.slice_plane([0, 0.5, 0], [1, 1, 1], [-0.1, 0, 0.1])
-    assert slices.point['positions'].shape == (9, 3)
-    assert slices.line['indices'].shape == (9, 2)
+    assert slices.point.positions.shape == (9, 3)
+    assert slices.line.indices.shape == (9, 2)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -66,8 +66,8 @@ def test_create_box(device):
          [1, 5, 7], [1, 7, 3], [2, 3, 7], [2, 7, 6], [0, 4, 1], [1, 4, 5]],
         o3c.int64, device)
 
-    assert box_default.vertex['positions'].allclose(vertex_positions_default)
-    assert box_default.triangle['indices'].allclose(triangle_indices_default)
+    assert box_default.vertex.positions.allclose(vertex_positions_default)
+    assert box_default.triangle.indices.allclose(triangle_indices_default)
 
     # Test with custom parameters.
     box_custom = o3d.t.geometry.TriangleMesh.create_box(2, 3, 4, o3c.float64,
@@ -83,8 +83,8 @@ def test_create_box(device):
          [1, 5, 7], [1, 7, 3], [2, 3, 7], [2, 7, 6], [0, 4, 1], [1, 4, 5]],
         o3c.int32, device)
 
-    assert box_custom.vertex['positions'].allclose(vertex_positions_custom)
-    assert box_custom.triangle['indices'].allclose(triangle_indices_custom)
+    assert box_custom.vertex.positions.allclose(vertex_positions_custom)
+    assert box_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -108,8 +108,8 @@ def test_create_sphere(device):
          [11, 6, 5], [11, 12, 6], [12, 7, 6], [12, 13, 7], [13, 2, 7],
          [13, 8, 2]], o3c.int32, device)
 
-    assert sphere_custom.vertex['positions'].allclose(vertex_positions_custom)
-    assert sphere_custom.triangle['indices'].allclose(triangle_indices_custom)
+    assert sphere_custom.vertex.positions.allclose(vertex_positions_custom)
+    assert sphere_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -125,10 +125,8 @@ def test_create_tetrahedron(device):
     triangle_indices_custom = o3c.Tensor(
         [[0, 2, 1], [0, 3, 2], [0, 1, 3], [1, 2, 3]], o3c.int32, device)
 
-    assert tetrahedron_custom.vertex['positions'].allclose(
-        vertex_positions_custom)
-    assert tetrahedron_custom.triangle['indices'].allclose(
-        triangle_indices_custom)
+    assert tetrahedron_custom.vertex.positions.allclose(vertex_positions_custom)
+    assert tetrahedron_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -145,10 +143,8 @@ def test_create_octahedron(device):
         [[0, 1, 2], [1, 3, 2], [3, 4, 2], [4, 0, 2], [0, 5, 1], [1, 5, 3],
          [3, 5, 4], [4, 5, 0]], o3c.int32, device)
 
-    assert octahedron_custom.vertex['positions'].allclose(
-        vertex_positions_custom)
-    assert octahedron_custom.triangle['indices'].allclose(
-        triangle_indices_custom)
+    assert octahedron_custom.vertex.positions.allclose(vertex_positions_custom)
+    assert octahedron_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -170,10 +166,8 @@ def test_create_icosahedron(device):
          [3, 6, 2], [3, 2, 7], [2, 6, 10], [2, 10, 9], [2, 9, 7], [3, 11, 6],
          [3, 8, 11], [3, 7, 8]], o3c.int32, device)
 
-    assert icosahedron_custom.vertex['positions'].allclose(
-        vertex_positions_custom)
-    assert icosahedron_custom.triangle['indices'].allclose(
-        triangle_indices_custom)
+    assert icosahedron_custom.vertex.positions.allclose(vertex_positions_custom)
+    assert icosahedron_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -197,8 +191,8 @@ def test_create_cylinder(device):
          [11, 9, 8], [11, 12, 9], [12, 10, 9], [12, 13, 10], [13, 8, 10],
          [13, 11, 8]], o3c.int32, device)
 
-    assert cylinder_custom.vertex['positions'].allclose(vertex_positions_custom)
-    assert cylinder_custom.triangle['indices'].allclose(triangle_indices_custom)
+    assert cylinder_custom.vertex.positions.allclose(vertex_positions_custom)
+    assert cylinder_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -217,8 +211,8 @@ def test_create_cone(device):
          [6, 2, 3], [6, 5, 2], [7, 3, 4], [7, 6, 3], [5, 4, 2], [5, 7, 4]],
         o3c.int32, device)
 
-    assert cone_custom.vertex['positions'].allclose(vertex_positions_custom)
-    assert cone_custom.triangle['indices'].allclose(triangle_indices_custom)
+    assert cone_custom.vertex.positions.allclose(vertex_positions_custom)
+    assert cone_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -247,8 +241,8 @@ def test_create_torus(device):
          [17, 15, 14], [14, 15, 12], [0, 1, 15], [15, 1, 16], [1, 2, 16],
          [16, 2, 17], [2, 0, 17], [17, 0, 15]], o3c.int32, device)
 
-    assert torus_custom.vertex['positions'].allclose(vertex_positions_custom)
-    assert torus_custom.triangle['indices'].allclose(triangle_indices_custom)
+    assert torus_custom.vertex.positions.allclose(vertex_positions_custom)
+    assert torus_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -271,8 +265,8 @@ def test_create_arrow(device):
          [10, 14, 13], [11, 13, 14], [10, 15, 14], [11, 14, 15], [10, 12, 15],
          [11, 15, 12]], o3c.int32, device)
 
-    assert arrow_custom.vertex['positions'].allclose(vertex_positions_custom)
-    assert arrow_custom.triangle['indices'].allclose(triangle_indices_custom)
+    assert arrow_custom.vertex.positions.allclose(vertex_positions_custom)
+    assert arrow_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
 @pytest.mark.parametrize("device", list_devices())
@@ -300,14 +294,14 @@ def test_create_mobius(device):
          [16, 19, 17], [16, 18, 19], [18, 19, 1], [1, 19, 0]], o3c.int32,
         device)
 
-    assert mobius_custom.vertex['positions'].allclose(vertex_positions_custom)
-    assert mobius_custom.triangle['indices'].allclose(triangle_indices_custom)
+    assert mobius_custom.vertex.positions.allclose(vertex_positions_custom)
+    assert mobius_custom.triangle.indices.allclose(triangle_indices_custom)
 
 
 def test_create_text():
     mesh = o3d.t.geometry.TriangleMesh.create_text('Open3D', depth=1)
-    assert mesh.vertex['positions'].shape == (624, 3)
-    assert mesh.triangle['indices'].shape == (936, 3)
+    assert mesh.vertex.positions.shape == (624, 3)
+    assert mesh.triangle.indices.shape == (936, 3)
 
 
 def test_simplify_quadric_decimation():
@@ -315,12 +309,12 @@ def test_simplify_quadric_decimation():
         o3d.geometry.TriangleMesh.create_box().subdivide_midpoint(3))
 
     # Chose reduction factor such that we get 12 faces.
-    target_reduction = 1 - (12 / cube.triangle['indices'].shape[0])
+    target_reduction = 1 - (12 / cube.triangle.indices.shape[0])
     simplified = cube.simplify_quadric_decimation(
         target_reduction=target_reduction)
 
-    assert simplified.vertex['positions'].shape == (8, 3)
-    assert simplified.triangle['indices'].shape == (12, 3)
+    assert simplified.vertex.positions.shape == (8, 3)
+    assert simplified.triangle.indices.shape == (12, 3)
 
 
 def test_boolean_operations():
@@ -329,20 +323,20 @@ def test_boolean_operations():
     sphere = o3d.geometry.TriangleMesh.create_sphere(0.8)
     sphere = o3d.t.geometry.TriangleMesh.from_legacy(sphere)
     # check input sphere
-    assert sphere.vertex['positions'].shape == (762, 3)
-    assert sphere.triangle['indices'].shape == (1520, 3)
+    assert sphere.vertex.positions.shape == (762, 3)
+    assert sphere.triangle.indices.shape == (1520, 3)
 
     ans = box.boolean_union(sphere)
-    assert ans.vertex['positions'].shape == (730, 3)
-    assert ans.triangle['indices'].shape == (1384, 3)
+    assert ans.vertex.positions.shape == (730, 3)
+    assert ans.triangle.indices.shape == (1384, 3)
 
     ans = box.boolean_intersection(sphere)
-    assert ans.vertex['positions'].shape == (154, 3)
-    assert ans.triangle['indices'].shape == (232, 3)
+    assert ans.vertex.positions.shape == (154, 3)
+    assert ans.triangle.indices.shape == (232, 3)
 
     ans = box.boolean_difference(sphere)
-    assert ans.vertex['positions'].shape == (160, 3)
-    assert ans.triangle['indices'].shape == (244, 3)
+    assert ans.vertex.positions.shape == (160, 3)
+    assert ans.triangle.indices.shape == (244, 3)
 
 
 def test_hole_filling():
@@ -352,3 +346,69 @@ def test_hole_filling():
     assert not clipped.to_legacy().is_watertight()
     filled = clipped.fill_holes()
     assert filled.to_legacy().is_watertight()
+
+
+def test_bake_vertex_attr_textures():
+    desired = np.array([
+        [[0., 0., 0.], [0., 0., 0.], [1., 0.25, 0.75], [1., 0.75, 0.75],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        [[0., 0., 0.], [0., 0., 0.], [1., 0.25, 0.25], [1., 0.75, 0.25],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        [[0.75, 0., 0.75], [0.75, 0., 0.25], [0.75, 0.25, 0.], [0.75, 0.75, 0.],
+         [0.75, 1., 0.25], [0.75, 1., 0.75], [0., 0., 0.], [0., 0., 0.]],
+        [[0.25, 0., 0.75], [0.25, 0., 0.25], [0.25, 0.25, 0.], [0.25, 0.75, 0.],
+         [0.25, 1., 0.25], [0.25, 1., 0.75], [0., 0., 0.], [0., 0., 0.]],
+        [[0., 0., 0.], [0., 0., 0.], [0., 0.25, 0.25], [0., 0.75, 0.25],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        [[0., 0., 0.], [0., 0., 0.], [0., 0.25, 0.75], [0., 0.75, 0.75],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        [[0., 0., 0.], [0., 0., 0.], [0.25, 0.25, 1.], [0.25, 0.75, 1.],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]],
+        [[0., 0., 0.], [0., 0., 0.], [0.75, 0.25, 1.], [0.75, 0.75, 1.],
+         [0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
+    ],
+                       dtype=np.float32)
+
+    box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+    box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+    textures = box.bake_vertex_attr_textures(8, {'positions'}, margin=0.1)
+
+    np.testing.assert_allclose(textures['positions'].numpy(), desired)
+
+
+def test_bake_triangle_attr_textures():
+    desired = np.array(
+        [[-1, -1, 7, 7, -1, -1, -1, -1], [-1, -1, 7, 6, -1, -1, -1, -1],
+         [5, 5, 10, 11, 0, 0, -1, -1], [5, 4, 10, 10, 0, 1, -1, -1],
+         [-1, -1, 2, 2, -1, -1, -1, -1], [-1, -1, 2, 3, -1, -1, -1, -1],
+         [-1, -1, 8, 9, -1, -1, -1, -1], [-1, -1, 8, 8, -1, -1, -1, -1]],
+        dtype=np.int64)
+
+    box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+    box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+    box.triangle.index = np.arange(box.triangle.indices.shape[0])
+    # shift the uvs to avoid pixel centers exactly at triangle boundaries.
+    box.triangle.texture_uvs[:, :, 0] += 0.01
+
+    textures = box.bake_triangle_attr_textures(8, {'index'},
+                                               margin=0.1,
+                                               fill=-1)
+    np.testing.assert_equal(textures['index'].numpy(), desired)
+
+
+def test_extrude_rotation():
+    mesh = o3d.t.geometry.TriangleMesh([[1, 1, 0], [0.7, 1, 0], [1, 0.7, 0]],
+                                       [[0, 1, 2]])
+    ans = mesh.extrude_rotation(3 * 360, [0, 1, 0],
+                                resolution=3 * 16,
+                                translation=2)
+    assert ans.vertex.positions.shape == (147, 3)
+    assert ans.triangle.indices.shape == (290, 3)
+
+
+def test_extrude_linear():
+    triangle = o3d.t.geometry.TriangleMesh(
+        [[1.0, 1.0, 0.0], [0, 1, 0], [1, 0, 0]], [[0, 1, 2]])
+    ans = triangle.extrude_linear([0, 0, 1])
+    assert ans.vertex.positions.shape == (6, 3)
+    assert ans.triangle.indices.shape == (8, 3)

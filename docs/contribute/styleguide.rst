@@ -14,7 +14,8 @@ Install dependencies
    conda activate <your-virtual-env>
 
    # The version of the style checker is critical.
-   pip install -U clang-format==10.0.1.1 yapf==0.30.0 nbformat==5.1.3
+   # cd to the root of the Open3D folder first.
+   pip install -r python/requirements_style.txt
 
 Check or apply style
 --------------------

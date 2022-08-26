@@ -167,7 +167,7 @@ TEST(NanoFlannIndex, SearchRadius) {
     core::SizeVector shape{2};
     gt_indices = core::Tensor::Init<int32_t>({1, 4}, device);
     gt_distances = core::Tensor::Init<double>({0.00626358, 0.00747938}, device);
-    gt_neighbors_row_splits = core::Tensor::Init<int64_t>({0, 2}, device);
+    gt_neighbors_row_splits = core::Tensor::Init<int32_t>({0, 2}, device);
     core::Tensor radii = core::Tensor::Init<double>({0.1});
 
     std::tie(indices, distances, neighbors_row_splits) =
