@@ -36,7 +36,7 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo(">    CameraPoseTrajectory [trajectory_file] [pcds_dir]");
+    utility::LogInfo(">    CameraPoseTrajectory [trajectory_file]");
     // clang-format on
     utility::LogInfo("");
 }
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 
     if (argc == 1 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
-        argc != 3) {
+        argc != 2) {
         PrintHelp();
         return 1;
     }
@@ -62,12 +62,13 @@ int main(int argc, char *argv[]) {
 
     camera::PinholeCameraTrajectory trajectory;
     io::ReadPinholeCameraTrajectory(argv[1], trajectory);
+
+    data::DemoICPPointClouds sample_icp_data;
     std::vector<std::shared_ptr<const geometry::Geometry>> pcds;
-    for (size_t i = 0; i < trajectory.parameters_.size(); i++) {
-        std::string buffer =
-                fmt::format("{}cloud_bin_{:d}.pcd", argv[2], (int)i);
-        if (utility::filesystem::FileExists(buffer.c_str())) {
-            auto pcd = io::CreatePointCloudFromFile(buffer.c_str());
+    for (size_t i = 0; i < 3; i++) {
+        if (utility::filesystem::FileExists(sample_icp_data.GetPaths()[i])) {
+            auto pcd =
+                    io::CreatePointCloudFromFile(sample_icp_data.GetPaths()[i]);
             pcd->Transform(trajectory.parameters_[i].extrinsic_);
             pcd->colors_.clear();
             if ((int)i < NUM_OF_COLOR_PALETTE) {

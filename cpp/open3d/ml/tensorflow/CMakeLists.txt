@@ -120,6 +120,7 @@ if (BUILD_CUDA_MODULE)
 endif()
 
 open3d_show_and_abort_on_warning(open3d_tf_ops)
+open3d_enable_strip(open3d_tf_ops)
 # do not use open3d_set_global_properties(open3d_tf_ops) here because some
 # options are not compatible for tf op libraries
 
@@ -176,3 +177,24 @@ install(TARGETS open3d_tf_ops EXPORT Open3DTFOps
     LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
 )
 install(EXPORT Open3DTFOps NAMESPACE ${PROJECT_NAME}:: DESTINATION ${Open3D_INSTALL_CMAKE_DIR})
+
+if (BUILD_SHARED_LIBS AND UNIX)
+    file(CONFIGURE OUTPUT open3d_tf_ops.pc.in
+             CONTENT [=[
+prefix=${pcfiledir}/../..
+libdir=${prefix}/lib
+includedir=${prefix}/include/
+
+Name: Open3D TensorFlow Ops
+Description: @PROJECT_DESCRIPTION@ This library contains 3D ML Ops for use with Tensorflow.
+URL: @PROJECT_HOMEPAGE_URL@
+Version: @PROJECT_VERSION@
+Requires: Open3D = @PROJECT_VERSION@
+Cflags:
+Libs: -lopen3d_tf_ops]=]  @ONLY NEWLINE_STYLE LF)
+    file(GENERATE OUTPUT open3d_tf_ops.pc INPUT
+        "${CMAKE_CURRENT_BINARY_DIR}/open3d_tf_ops.pc.in"
+        TARGET open3d_tf_ops)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/open3d_tf_ops.pc"
+        DESTINATION "${Open3D_INSTALL_LIB_DIR}/pkgconfig")
+endif()

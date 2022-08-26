@@ -58,7 +58,9 @@ Qhull::ComputeConvexHull(const std::vector<Eigen::Vector3d>& points,
     orgQhull::Qhull qhull;
     std::string options = "Qt";
     if (joggle_inputs) {
-        options += " QJ";
+        // joggle ('QJ') produces simplicial output (i.e., triangles in 2-D).
+        // Unless merging is requested, option 'Qt' has no effect
+        options = "QJ";
     }
     qhull.runQhull(qhull_points.comment().c_str(), qhull_points.dimension(),
                    qhull_points.count(), qhull_points.coordinates(),
@@ -129,9 +131,7 @@ Qhull::ComputeDelaunayTetrahedralization(
     std::vector<size_t> pt_map;
 
     if (points.size() < 4) {
-        utility::LogError(
-                "[ComputeDelaunayTriangulation3D] not enough points to create "
-                "a tetrahedral mesh.");
+        utility::LogError("Not enough points to create a tetrahedral mesh.");
     }
 
     // qhull cannot deal with this case

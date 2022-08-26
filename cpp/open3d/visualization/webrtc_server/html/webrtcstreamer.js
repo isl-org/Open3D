@@ -281,6 +281,22 @@ let WebRtcStreamer = (function() {
                 };
                 this.sendJsonData(open3dMouseEvent);
             }, false);
+            this.videoElt.addEventListener('dblclick', (event) => {
+                event.preventDefault();
+                var open3dMouseEvent = {
+                    window_uid: windowUID,
+                    class_name: 'MouseEvent',
+                    type: 'BUTTON_DOWN',
+                    x: event.offsetX,
+                    y: event.offsetY,
+                    modifiers: WebRtcStreamer._getModifiers(event),
+                    button: {
+                        button: o3dmouseButtons[event.button],
+                        count: 2,
+                    },
+                };
+                this.sendJsonData(open3dMouseEvent);
+            }, false);
             this.videoElt.addEventListener('touchstart', (event) => {
                 event.preventDefault();
                 var rect = event.target.getBoundingClientRect();

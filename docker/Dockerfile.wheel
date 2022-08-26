@@ -1,13 +1,13 @@
 # FROM must be called before other ARGS except for ARG BASE_IMAGE
-ARG BASE_IMAGE=nvidia/cuda:11.0.3-cudnn8-devel-ubuntu18.04
+ARG BASE_IMAGE=nvidia/cuda:11.6.2-cudnn8-devel-ubuntu18.04
 FROM ${BASE_IMAGE}
 
 # Customizable build arguments from cuda.yml
-ARG DEVELOPER_BUILD=ON
-ARG CCACHE_TAR_NAME=open3d-ubuntu-1804-cuda-ci-ccache
-ARG CMAKE_VERSION=cmake-3.19.7-Linux-x86_64
-ARG CCACHE_VERSION=4.3
-ARG PYTHON_VERSION=3.6
+ARG DEVELOPER_BUILD
+ARG CCACHE_TAR_NAME
+ARG CMAKE_VERSION
+ARG CCACHE_VERSION
+ARG PYTHON_VERSION
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
@@ -24,6 +24,15 @@ ENV SUDO=command
 
 # Miniconda requires bash as the default shell.
 SHELL ["/bin/bash", "-c"]
+
+# Fix Nvidia repo key rotation issue
+# https://forums.developer.nvidia.com/t/notice-cuda-linux-repository-key-rotation/212771
+# https://forums.developer.nvidia.com/t/18-04-cuda-docker-image-is-broken/212892/10
+# https://code.visualstudio.com/remote/advancedcontainers/reduce-docker-warnings#:~:text=Warning%3A%20apt%2Dkey%20output%20should,not%20running%20from%20a%20terminal.
+RUN export APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn \
+ && apt-key del 7fa2af80 \
+ && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub \
+ && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/7fa2af80.pub
 
 # Dependencies: basic
 RUN apt-get update && apt-get install -y \
@@ -64,7 +73,7 @@ RUN CCACHE_DIR=$(ccache -p | grep cache_dir | grep -oE "[^ ]+$") \
  && cd ${CCACHE_DIR_PARENT} \
  && (wget -q https://storage.googleapis.com/open3d-ci-cache/${CCACHE_TAR_NAME}.tar.gz || true) \
  && if [ -f ${CCACHE_TAR_NAME}.tar.gz ]; then tar -xf ${CCACHE_TAR_NAME}.tar.gz; fi
-# We need to set ccache size explicitly with -M, otherwise the defualt size is
+# We need to set ccache size explicitly with -M, otherwise the default size is
 # *not* determined by ccache's default, but the downloaded ccache file's config.
 RUN ccache -M 5G \
  && ccache -s
@@ -95,9 +104,10 @@ RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
 # Open3D Python dependencies
 COPY ./util/ci_utils.sh /root/Open3D/util/
 COPY ./python/requirements.txt /root/Open3D/python/
-COPY ./python/requirements_jupyter.txt /root/Open3D/python/
+COPY ./python/requirements_jupyter_build.txt /root/Open3D/python/
+COPY ./python/requirements_jupyter_install.txt /root/Open3D/python/
 RUN source /root/Open3D/util/ci_utils.sh \
- && install_python_dependencies with-conda with-cuda with-jupyter
+ && install_python_dependencies with-cuda with-jupyter
 
 # Open3D Jupyter dependencies
 RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
@@ -114,11 +124,11 @@ WORKDIR /root/Open3D
 
 # Build python wheel
 RUN export NPROC=$(nproc) \
- && export SHARED=OFF \
+ && export BUILD_SHARED_LIBS=OFF \
  && export BUILD_TENSORFLOW_OPS=ON \
  && export BUILD_PYTORCH_OPS=ON \
  && source /root/Open3D/util/ci_utils.sh \
- && build_pip_conda_package build_azure_kinect build_jupyter
+ && build_pip_package build_azure_kinect build_jupyter
 
 # Compress ccache folder, move to / directory
 RUN ccache -s \

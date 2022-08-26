@@ -26,21 +26,89 @@
 
 # examples/python/reconstruction_system/common.py
 
-import os
-import numpy as np
 import open3d as o3d
+
+import os
+import sys
+import json
+import numpy as np
 import glob
+from os.path import isfile, join, splitext, dirname, basename
+from warnings import warn
 
 
-def get_default_testdata():
-    example_path = os.path.abspath(
-        os.path.join(__file__, os.path.pardir, os.path.pardir, os.path.pardir))
+def extract_rgbd_frames(rgbd_video_file):
+    """
+    Extract color and aligned depth frames and intrinsic calibration from an
+    RGBD video file (currently only RealSense bag files supported). Folder
+    structure is:
+        <directory of rgbd_video_file/<rgbd_video_file name without extension>/
+            {depth/00000.jpg,color/00000.png,intrinsic.json}
+    """
+    frames_folder = join(dirname(rgbd_video_file),
+                         basename(splitext(rgbd_video_file)[0]))
+    path_intrinsic = join(frames_folder, "intrinsic.json")
+    if isfile(path_intrinsic):
+        warn(f"Skipping frame extraction for {rgbd_video_file} since files are"
+             " present.")
+    else:
+        rgbd_video = o3d.t.io.RGBDVideoReader.create(rgbd_video_file)
+        rgbd_video.save_frames(frames_folder)
+    with open(path_intrinsic) as intr_file:
+        intr = json.load(intr_file)
+    depth_scale = intr["depth_scale"]
+    return frames_folder, path_intrinsic, depth_scale
 
-    path_dataset = os.path.join(example_path, 'test_data', 'RGBD')
-    print('Dataset not found, falling back to test examples {}'.format(
-        path_dataset))
 
-    return path_dataset
+def lounge_dataloader(config):
+    # Get the dataset.
+    lounge_rgbd = o3d.data.LoungeRGBDImages()
+    # Override default config parameters with dataset specific parameters.
+    config.path_dataset = lounge_rgbd.extract_dir
+    config.path_trajectory = lounge_rgbd.trajectory_log_path
+    config.depth_folder = "depth"
+    config.color_folder = "color"
+    return config
+
+
+def bedroom_dataloader(config):
+    # Get the dataset.
+    bedroom_rgbd = o3d.data.BedroomRGBDImages()
+    # Override default config parameters with dataset specific parameters.
+    config.path_dataset = bedroom_rgbd.extract_dir
+    config.path_trajectory = bedroom_rgbd.trajectory_log_path
+    config.depth_folder = "depth"
+    config.color_folder = "image"
+    return config
+
+
+def jack_jack_dataloader(config):
+    # Get the dataset.
+    jackjack_rgbd = o3d.data.JackJackL515Bag()
+    # Override default config parameters with dataset specific parameters.
+    print("Extracting frames from RGBD video file")
+    config.path_dataset = jackjack_rgbd.path
+    config.depth_folder = "depth"
+    config.color_folder = "color"
+    return config
+
+
+def get_default_dataset(config):
+    print('Config file was not provided, falling back to default dataset.')
+    if config.default_dataset == 'lounge':
+        config = lounge_dataloader(config)
+    elif config.default_dataset == 'bedroom':
+        config = bedroom_dataloader(config)
+    elif config.default_dataset == 'jack_jack':
+        config = jack_jack_dataloader(config)
+    else:
+        print(
+            "The requested dataset is not available. Available dataset options include lounge and jack_jack."
+        )
+        sys.exit(1)
+
+    print('Loaded data from {}'.format(config.path_dataset))
+    return config
 
 
 def load_depth_file_names(config):

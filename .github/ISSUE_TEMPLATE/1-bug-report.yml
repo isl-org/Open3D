@@ -45,18 +45,18 @@ body:
       import open3d as o3d
       import numpy as np
 
-      source = o3d.t.io.read_point_cloud("../../test_data/ICP/cloud_bin_0.pcd")
-      target = o3d.t.io.read_point_cloud("../../test_data/ICP/cloud_bin_1.pcd")
+      source = o3d.t.io.read_point_cloud("cloud_bin_0.pcd")
+      target = o3d.t.io.read_point_cloud("cloud_bin_1.pcd")
 
       # For Colored-ICP `colors` attribute must be of the same dtype as
       # `positions` and `normals` attribute.
-      source.point["colors"] = source.point["colors"].to(
+      source.point.colors = source.point.colors.to(
           o3d.core.Dtype.Float32) / 255.0
-      target.point["colors"] = target.point["colors"].to(
+      target.point.colors = target.point.colors.to(
           o3d.core.Dtype.Float32) / 255.0
 
       # Initial guess transform between the two point-cloud.
-      # ICP algortihm requires a good initial allignment to converge efficiently.
+      # ICP algorithm requires a good initial alignment to converge efficiently.
       current_transformation = np.identity(4)
 
       draw([source.transform(current_transformation), target])

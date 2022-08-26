@@ -13,6 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
   GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
@@ -29,7 +30,7 @@ jobs:
           maximize_ubuntu_github_actions_build_space
       - name: Docker build
         run: |
-          docker/docker_build.sh openblas-amd64-py36-dev
+          docker/docker_build.sh openblas-amd64-py310-dev
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@v0.2.1
         with:
@@ -37,53 +38,116 @@ jobs:
           service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
-      - name: Upload ccache to GCS
-        run: |
-          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-amd64.tar.gz gs://open3d-ci-cache/ || true
       - name: Docker test
         run: |
-          docker/docker_test.sh openblas-amd64-py36-dev
+          docker/docker_test.sh openblas-amd64-py310-dev
 
-  # How to resolve GitHub Actions ARM64 build timeout.
-  #
-  # When there are large amount of code change (e.g. changed some headers that
-  # causes re-compilation of many files), the GitHub Actions build could timeout
-  # due to excessive ccache misses. The solution is to build the branch manually
-  # and update the ccache artifacts on the Google Cloud bucket. Run:
-  #
-  # ```bash
-  # docker/docker_build.sh openblas-arm64-py36-dev
-  # gsutil cp open3d-ci-openblas-arm64.tar.gz gs://open3d-ci-cache/
-  # ```
+  # With forked repo, the GitHub secret is not available.
+  skip-arm64-check-on-fork:
+    runs-on: ubuntu-20.04
+    name: Skip job for forks
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - name: Skip check
+        id: check
+        run: |
+          if [ "${GITHUB_REPOSITORY}" == "isl-org/Open3D" ] && [ -n "${GCE_GPU_CI_SA}" ] ; then
+            echo "Secrets available: performing GCE test"
+            echo "::set-output name=skip::no"
+          else
+            echo "Secrets not available: skipping GCE test"
+            echo "::set-output name=skip::yes"
+          fi
+
   openblas-arm64:
     runs-on: ubuntu-20.04
+    needs: [skip-arm64-check-on-fork]
+    if: needs.skip-arm64-check-on-fork.outputs.skip == 'no'
     strategy:
       fail-fast: false
+    env:
+      # Export everything from matrix to be easily used.
+      # Docker tag must be consistent with docker_build.sh
+      CI_CONFIG          : openblas-arm64-py310-dev
+      GCE_INSTANCE_PREFIX: open3d-ci-openblas-arm64-py310-dev
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-      - name: Maximize build space
+      - name: Package code
         run: |
-          source util/ci_utils.sh
-          maximize_ubuntu_github_actions_build_space
-      # https://www.stereolabs.com/docs/docker/building-arm-container-on-x86/
-      - name: Install QEMU dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get --yes install qemu binfmt-support qemu-user-static
-      - name: Docker build
-        run: |
-          docker/docker_build.sh openblas-arm64-py36-dev
+          # GITHUB_WORKSPACE: /home/runner/work/Open3D/Open3D
+          cd "${GITHUB_WORKSPACE}/.."
+          tar -czvf Open3D.tar.gz Open3D
+          ls -alh
       - name: GCloud CLI setup
         uses: google-github-actions/setup-gcloud@v0.2.1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
-      - name: Upload ccache to GCS
+          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
+          project_id: ${{ secrets.GCE_PROJECT }}
+      - name: VM create
         run: |
-          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-arm64.tar.gz gs://open3d-ci-cache/ || true
-      - name: Docker test
+          gcloud compute images list
+          gcloud container images list
+          INSTANCE_NAME="${GCE_INSTANCE_PREFIX}-${GITHUB_SHA::8}"
+          INSTANCE_ZONES=(us-central1-a
+                          us-central1-b
+                          us-central1-f
+                          asia-southeast1-b
+                          asia-southeast1-c
+                          europe-west4-a
+                          europe-west4-b)
+          ZONE_ID=0
+          until ((ZONE_ID >= ${#INSTANCE_ZONES[@]})) ||
+            gcloud compute instances create "$INSTANCE_NAME" \
+              --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
+              --machine-type=t2a-standard-4 \
+              --boot-disk-size="128GB" \
+              --image-project="ubuntu-os-cloud" \
+              --image-family="ubuntu-2004-lts-arm64" \
+              --metadata-from-file=startup-script=./util/gcloud_auto_clean.sh \
+              --scopes="storage-full,compute-rw" \
+              --service-account="$GCE_GPU_CI_SA"; do
+              ((ZONE_ID = ZONE_ID + 1))
+          done
+          sleep 90
+          echo "GCE_ZONE=${INSTANCE_ZONES[$ZONE_ID]}" >> "${GITHUB_ENV}"
+          echo "INSTANCE_NAME=${INSTANCE_NAME}" >> "${GITHUB_ENV}"
+          exit $((ZONE_ID >= ${#INSTANCE_ZONES[@]})) # 0 => success
+      - name: VM copy code
         run: |
-          docker/docker_test.sh openblas-arm64-py36-dev
+          gcloud compute scp \
+            "${GITHUB_WORKSPACE}/../Open3D.tar.gz" "${INSTANCE_NAME}":~ \
+            --zone "${GCE_ZONE}"
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone "${GCE_ZONE}" \
+            --command "ls -alh \
+                    && tar -xvzf Open3D.tar.gz \
+                    && ls -alh \
+                    && ls -alh Open3D"
+      - name: VM install docker
+        run: |
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="sudo apt update \
+                    && curl -fsSL https://get.docker.com -o get-docker.sh \
+                    && sudo sh get-docker.sh"
+      - name: VM build docker
+        run: |
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="sudo docker run --rm arm64v8/ubuntu:20.04 uname -p \
+                    && sudo Open3D/docker/docker_build.sh ${CI_CONFIG}"
+      - name: VM run docker
+        run: |
+          gcloud compute ssh "${INSTANCE_NAME}" \
+            --zone="${GCE_ZONE}" \
+            --command="sudo Open3D/docker/docker_test.sh ${CI_CONFIG}"
+      - name: VM delete
+        if: always()
+        run: |
+          gcloud compute instances delete "${INSTANCE_NAME}" --zone "${GCE_ZONE}"
+          ls -alh "${HOME}/.ssh"
+          gcloud compute os-login describe-profile
+          gcloud compute os-login ssh-keys remove --key-file "${HOME}/.ssh/google_compute_engine.pub"

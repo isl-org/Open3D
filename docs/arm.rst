@@ -67,10 +67,10 @@ commands:
 
     cd docker
 
-    ./docker_build.sh openblas-arm64-py36  # Python 3.6
-    ./docker_build.sh openblas-arm64-py37  # Python 3.7
-    ./docker_build.sh openblas-arm64-py38  # Python 3.8
-    ./docker_build.sh openblas-arm64-py39  # Python 3.9
+    ./docker_build.sh openblas-arm64-py37   # Python 3.7
+    ./docker_build.sh openblas-arm64-py38   # Python 3.8
+    ./docker_build.sh openblas-arm64-py39   # Python 3.9
+    ./docker_build.sh openblas-arm64-py310  # Python 3.10
 
 After running ``docker_build.sh``, you shall see a ``.whl`` file generated the
 current directly on the host. Then simply install the ``.whl`` file by:
@@ -95,7 +95,6 @@ Qemu:
     sudo apt-get --yes install qemu binfmt-support qemu-user-static
 
 and follow the same steps as above.
-
 
 Building Open3D directly
 ------------------------
@@ -124,7 +123,6 @@ Install dependencies
 
     # Check cmake version, you should have 3.19+
     cmake --version
-
 
 If the Open3D build system complains about ``CMake xxx or higher is required``,
 refer to one of the following options:
@@ -159,7 +157,6 @@ Build
     python -c "import open3d; print(open3d.__version__)"
     python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw_geometries([c])"
     python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw(c)"
-
 
 Compiling Open3D on ARM64 macOS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

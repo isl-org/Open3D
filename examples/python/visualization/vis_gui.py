@@ -251,7 +251,7 @@ class AppWindow:
         self._settings_panel = gui.Vert(
             0, gui.Margins(0.25 * em, 0.25 * em, 0.25 * em, 0.25 * em))
 
-        # Create a collapsable vertical widget, which takes up enough vertical
+        # Create a collapsible vertical widget, which takes up enough vertical
         # space for all its children when open, but only enough for text when
         # closed. This is useful for property pages, so the user can hide sets
         # of properties they rarely use.
@@ -727,25 +727,9 @@ class AppWindow:
 
         mesh = None
         if geometry_type & o3d.io.CONTAINS_TRIANGLES:
-            mesh = o3d.io.read_triangle_mesh(path)
-        if mesh is not None:
-            if len(mesh.triangles) == 0:
-                print(
-                    "[WARNING] Contains 0 triangles, will read as point cloud")
-                mesh = None
-            else:
-                mesh.compute_vertex_normals()
-                if len(mesh.vertex_colors) == 0:
-                    mesh.paint_uniform_color([1, 1, 1])
-                geometry = mesh
-            # Make sure the mesh has texture coordinates
-            if not mesh.has_triangle_uvs():
-                uv = np.array([[0.0, 0.0]] * (3 * len(mesh.triangles)))
-                mesh.triangle_uvs = o3d.utility.Vector2dVector(uv)
-        else:
+            mesh = o3d.io.read_triangle_model(path)
+        if mesh is None:
             print("[Info]", path, "appears to be a point cloud")
-
-        if geometry is None:
             cloud = None
             try:
                 cloud = o3d.io.read_point_cloud(path)
@@ -760,11 +744,16 @@ class AppWindow:
             else:
                 print("[WARNING] Failed to read points", path)
 
-        if geometry is not None:
+        if geometry is not None or mesh is not None:
             try:
-                self._scene.scene.add_geometry("__model__", geometry,
-                                               self.settings.material)
-                bounds = geometry.get_axis_aligned_bounding_box()
+                if mesh is not None:
+                    # Triangle model
+                    self._scene.scene.add_model("__model__", mesh)
+                else:
+                    # Point cloud
+                    self._scene.scene.add_geometry("__model__", geometry,
+                                                   self.settings.material)
+                bounds = self._scene.scene.bounding_box
                 self._scene.setup_camera(60, bounds, bounds.get_center())
             except Exception as e:
                 print(e)
@@ -783,7 +772,7 @@ class AppWindow:
 
 
 def main():
-    # We need to initalize the application, which finds the necessary shaders
+    # We need to initialize the application, which finds the necessary shaders
     # for rendering and prepares the cross-platform window abstraction.
     gui.Application.instance.initialize()
 

@@ -9,7 +9,7 @@ macro(open3d_add_example EXAMPLE_CPP_NAME)
     # Don't use open3d_link_3rdparty_libraries(${EXAMPLE_CPP_NAME}).
     # Unlike benchmarks, examples are intended as standalone apps that link
     # the main Open3D library, while the benchmarks executable needs 3rd-party
-    # libraries since it measures the internal componets of Open3D.
+    # libraries since it measures the internal components of Open3D.
     open3d_show_and_abort_on_warning(${EXAMPLE_CPP_NAME})
     open3d_set_global_properties(${EXAMPLE_CPP_NAME})
 
@@ -62,22 +62,28 @@ open3d_add_example(TOdometryRGBD)
 open3d_add_example(TriangleMesh)
 if (TARGET Open3D::3rdparty_openmp)
     open3d_add_example(TrimMeshBasedOnPointCloud Open3D::3rdparty_openmp)
-else()
+else ()
     open3d_add_example(TrimMeshBasedOnPointCloud)
 endif()
 open3d_add_example(ViewDistances)
 open3d_add_example(ViewPCDMatch)
 open3d_add_example(Visualizer)
-open3d_add_example(DenseSLAM)
 open3d_add_example(Voxelization)
+if(BUILD_SYCL_MODULE)
+    open3d_add_example(SYCLDemo)
+endif()
 
 if (BUILD_GUI)
     open3d_add_example(Draw)
     open3d_add_example(MultipleWindows       Open3D::3rdparty_threads)
     open3d_add_example(OffscreenRendering)
-    open3d_add_example(TICPOdometry          Open3D::3rdparty_threads)
-    open3d_add_example(TICPReconstruction    Open3D::3rdparty_threads)
-    open3d_add_example(DenseSLAMGUI          Open3D::3rdparty_threads)
+    open3d_add_example(TICPSequential        Open3D::3rdparty_threads)
+    open3d_add_example(TICP                  Open3D::3rdparty_threads)
+    open3d_add_example(OfflineSLAM           Open3D::3rdparty_threads)
+    open3d_add_example(OnlineSLAMRGBD        Open3D::3rdparty_threads)
+    if (BUILD_LIBREALSENSE)
+        open3d_add_example(OnlineSLAMRealSense Open3D::3rdparty_librealsense Open3D::3rdparty_threads)
+    endif()
 endif()
 
 if(BUILD_WEBRTC)

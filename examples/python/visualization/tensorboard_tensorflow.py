@@ -158,10 +158,10 @@ def with_material(model_dir=MODEL_DIR):
     model = o3d.t.geometry.TriangleMesh.from_legacy(
         o3d.io.read_triangle_mesh(model_path))
     summary_3d = {
-        "vertex_positions": model.vertex["positions"],
-        "vertex_normals": model.vertex["normals"],
+        "vertex_positions": model.vertex.positions,
+        "vertex_normals": model.vertex.normals,
         "triangle_texture_uvs": model.triangle["texture_uvs"],
-        "triangle_indices": model.triangle["indices"],
+        "triangle_indices": model.triangle.indices,
         "material_name": "defaultLit"
     }
     names_to_o3dprop = {"ao": "ambient_occlusion"}
@@ -186,7 +186,6 @@ def demo_scene():
     """Write the demo_scene.py example showing rich PBR materials as a summary.
     """
     import demo_scene
-    demo_scene.check_for_required_assets()
     geoms = demo_scene.create_scene()
     logdir = os.path.join(BASE_LOGDIR, 'demo_scene')
     writer = tf.summary.create_file_writer(logdir)

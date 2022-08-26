@@ -124,6 +124,80 @@ void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
     }
 }
 
+namespace {
+
+using namespace embree;
+// Adapted from common/math/closest_point.h
+inline Vec3fa closestPointTriangle(Vec3fa const& p,
+                                   Vec3fa const& a,
+                                   Vec3fa const& b,
+                                   Vec3fa const& c,
+                                   float& tex_u,
+                                   float& tex_v) {
+    const Vec3fa ab = b - a;
+    const Vec3fa ac = c - a;
+    const Vec3fa ap = p - a;
+
+    const float d1 = dot(ab, ap);
+    const float d2 = dot(ac, ap);
+    if (d1 <= 0.f && d2 <= 0.f) {
+        tex_u = 0;
+        tex_v = 0;
+        return a;
+    }
+
+    const Vec3fa bp = p - b;
+    const float d3 = dot(ab, bp);
+    const float d4 = dot(ac, bp);
+    if (d3 >= 0.f && d4 <= d3) {
+        tex_u = 1;
+        tex_v = 0;
+        return b;
+    }
+
+    const Vec3fa cp = p - c;
+    const float d5 = dot(ab, cp);
+    const float d6 = dot(ac, cp);
+    if (d6 >= 0.f && d5 <= d6) {
+        tex_u = 0;
+        tex_v = 1;
+        return c;
+    }
+
+    const float vc = d1 * d4 - d3 * d2;
+    if (vc <= 0.f && d1 >= 0.f && d3 <= 0.f) {
+        const float v = d1 / (d1 - d3);
+        tex_u = v;
+        tex_v = 0;
+        return a + v * ab;
+    }
+
+    const float vb = d5 * d2 - d1 * d6;
+    if (vb <= 0.f && d2 >= 0.f && d6 <= 0.f) {
+        const float v = d2 / (d2 - d6);
+        tex_u = 0;
+        tex_v = v;
+        return a + v * ac;
+    }
+
+    const float va = d3 * d6 - d5 * d4;
+    if (va <= 0.f && (d4 - d3) >= 0.f && (d5 - d6) >= 0.f) {
+        const float v = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+        tex_u = 1 - v;
+        tex_v = v;
+        return b + v * (c - b);
+    }
+
+    const float denom = 1.f / (va + vb + vc);
+    const float v = vb * denom;
+    const float w = vc * denom;
+    tex_u = v;
+    tex_v = w;
+    return a + v * ab + w * ac;
+}
+
+}  // namespace
+
 struct ClosestPointResult {
     ClosestPointResult()
         : primID(RTC_INVALID_GEOMETRY_ID),
@@ -133,6 +207,8 @@ struct ClosestPointResult {
     embree::Vec3f p;
     unsigned int primID;
     unsigned int geomID;
+    embree::Vec2f uv;
+    embree::Vec3f n;
     std::vector<std::tuple<RTCGeometryType, const void*, const void*>>*
             geometry_ptrs_ptr;
 };
@@ -170,9 +246,9 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
                   vertex_positions[3 * triangle_indices[3 * primID + 2] + 1],
                   vertex_positions[3 * triangle_indices[3 * primID + 2] + 2]);
 
-        // Determine distance to closest point on triangle (implemented in
-        // common/math/closest_point.h).
-        const Vec3fa p = closestPointTriangle(q, v0, v1, v2);
+        // Determine distance to closest point on triangle
+        float u, v;
+        const Vec3fa p = closestPointTriangle(q, v0, v1, v2, u, v);
         float d = distance(q, p);
 
         // Store result in userPtr and update the query radius if we found a
@@ -183,6 +259,10 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
             result->p = p;
             result->primID = primID;
             result->geomID = geomID;
+            Vec3fa e1 = v1 - v0;
+            Vec3fa e2 = v2 - v0;
+            result->uv = embree::Vec2f(u, v);
+            result->n = normalize(cross(e1, e2));
             return true;  // Return true to indicate that the query radius
                           // changed.
         }
@@ -423,6 +503,8 @@ struct RaycastingScene::Impl {
                               float* closest_points,
                               unsigned int* geometry_ids,
                               unsigned int* primitive_ids,
+                              float* primitive_uvs,
+                              float* primitive_normals,
                               const int nthreads) {
         if (!scene_committed_) {
             rtcCommitScene(scene_);
@@ -451,6 +533,11 @@ struct RaycastingScene::Impl {
                 closest_points[3 * i + 2] = result.p.z;
                 geometry_ids[i] = result.geomID;
                 primitive_ids[i] = result.primID;
+                primitive_uvs[2 * i + 0] = result.uv.x;
+                primitive_uvs[2 * i + 1] = result.uv.y;
+                primitive_normals[3 * i + 0] = result.n.x;
+                primitive_normals[3 * i + 1] = result.n.y;
+                primitive_normals[3 * i + 2] = result.n.z;
             }
         };
 
@@ -469,8 +556,14 @@ struct RaycastingScene::Impl {
     }
 };
 
-RaycastingScene::RaycastingScene() : impl_(new RaycastingScene::Impl()) {
-    impl_->device_ = rtcNewDevice(NULL);
+RaycastingScene::RaycastingScene(int64_t nthreads)
+    : impl_(new RaycastingScene::Impl()) {
+    if (nthreads > 0) {
+        std::string config("threads=" + std::to_string(nthreads));
+        impl_->device_ = rtcNewDevice(config.c_str());
+    } else {
+        impl_->device_ = rtcNewDevice(NULL);
+    }
     rtcSetDeviceErrorFunction(impl_->device_, ErrorFunction, NULL);
 
     impl_->scene_ = rtcNewScene(impl_->device_);
@@ -629,12 +722,17 @@ RaycastingScene::ComputeClosestPoints(const core::Tensor& query_points,
     result["primitive_ids"] = core::Tensor(shape, core::UInt32);
     shape.push_back(3);
     result["points"] = core::Tensor(shape, core::Float32);
+    result["primitive_normals"] = core::Tensor(shape, core::Float32);
+    shape.back() = 2;
+    result["primitive_uvs"] = core::Tensor(shape, core::Float32);
 
     auto data = query_points.Contiguous();
     impl_->ComputeClosestPoints(data.GetDataPtr<float>(), num_query_points,
                                 result["points"].GetDataPtr<float>(),
                                 result["geometry_ids"].GetDataPtr<uint32_t>(),
                                 result["primitive_ids"].GetDataPtr<uint32_t>(),
+                                result["primitive_uvs"].GetDataPtr<float>(),
+                                result["primitive_normals"].GetDataPtr<float>(),
                                 nthreads);
 
     return result;

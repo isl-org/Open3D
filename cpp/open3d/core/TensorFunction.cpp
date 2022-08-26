@@ -26,6 +26,8 @@
 
 #include "open3d/core/TensorFunction.h"
 
+#include "open3d/core/kernel/Kernel.h"
+
 namespace open3d {
 namespace core {
 
@@ -98,7 +100,7 @@ Tensor Concatenate(const std::vector<Tensor>& tensors,
     const int num_tensors = tensors.size();
 
     if (num_tensors < 1) {
-        utility::LogError("Expected atleast 1 tensor, but got 0.");
+        utility::LogError("Expected at least 1 tensor, but got 0.");
     }
     if (num_tensors == 1) {
         std::vector<Tensor> split_tensors;
@@ -136,6 +138,30 @@ Tensor Append(const Tensor& self,
               const Tensor& other,
               const utility::optional<int64_t>& axis) {
     return Concatenate({self, other}, axis);
+}
+
+Tensor Maximum(const Tensor& input, const Tensor& other) {
+    core::AssertTensorDevice(input, other.GetDevice());
+    core::AssertTensorDtype(input, other.GetDtype());
+
+    Tensor dst_tensor(
+            shape_util::BroadcastedShape(input.GetShape(), other.GetShape()),
+            input.GetDtype(), input.GetDevice());
+    kernel::BinaryEW(input, other, dst_tensor, kernel::BinaryEWOpCode::Maximum);
+
+    return dst_tensor;
+}
+
+Tensor Minimum(const Tensor& input, const Tensor& other) {
+    core::AssertTensorDevice(input, other.GetDevice());
+    core::AssertTensorDtype(input, other.GetDtype());
+
+    Tensor dst_tensor(
+            shape_util::BroadcastedShape(input.GetShape(), other.GetShape()),
+            input.GetDtype(), input.GetDevice());
+    kernel::BinaryEW(input, other, dst_tensor, kernel::BinaryEWOpCode::Minimum);
+
+    return dst_tensor;
 }
 
 }  // namespace core

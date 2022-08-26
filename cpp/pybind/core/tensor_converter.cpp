@@ -53,7 +53,7 @@ static Tensor CastOptionalDtypeDevice(const Tensor& t,
 
 /// Convert Tensor class to py::array (Numpy array).
 py::array TensorToPyArray(const Tensor& tensor) {
-    if (tensor.GetDevice().GetType() != Device::DeviceType::CPU) {
+    if (!tensor.IsCPU()) {
         utility::LogError(
                 "Can only convert CPU Tensor to numpy. Copy Tensor to CPU "
                 "before converting to numpy.");
@@ -76,7 +76,7 @@ py::array TensorToPyArray(const Tensor& tensor) {
     // tensors referencing the base have gone out-of-scope), the
     // deleter is called to free the `base_tensor`.
     //
-    // This behavior is important when the origianl `tensor` goes
+    // This behavior is important when the original `tensor` goes
     // out-of-scope while we still want to keep the data alive.
     // e.g.
     //

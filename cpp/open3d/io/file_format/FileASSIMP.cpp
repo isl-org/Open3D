@@ -77,34 +77,66 @@ struct TextureImages {
 };
 
 void LoadTextures(const std::string& filename,
-                  aiMaterial* mat,
+                  const aiScene* scene,
+                  const aiMaterial* mat,
                   TextureImages& maps) {
     // Retrieve textures
     std::string base_path =
             utility::filesystem::GetFileParentDirectory(filename);
 
-    auto texture_loader = [&base_path, &mat](
+    auto texture_loader = [&base_path, &scene, &mat](
                                   aiTextureType type,
                                   std::shared_ptr<geometry::Image>& img) {
         if (mat->GetTextureCount(type) > 0) {
             aiString path;
             mat->GetTexture(type, 0, &path);
-            std::string strpath(path.C_Str());
-            // normalize path separators
-            auto p_win = strpath.find("\\");
-            while (p_win != std::string::npos) {
-                strpath[p_win] = '/';
-                p_win = strpath.find("\\", p_win + 1);
+            // If the texture is an embedded texture, use `GetEmbeddedTexture`.
+            if (auto texture = scene->GetEmbeddedTexture(path.C_Str())) {
+                if (texture->CheckFormat("png")) {
+                    auto image = io::CreateImageFromMemory(
+                            "png",
+                            reinterpret_cast<const unsigned char*>(
+                                    texture->pcData),
+                            texture->mWidth);
+                    if (image->HasData()) {
+                        img = image;
+                    }
+                } else if (texture->CheckFormat("jpg")) {
+                    auto image = io::CreateImageFromMemory(
+                            "jpg",
+                            reinterpret_cast<const unsigned char*>(
+                                    texture->pcData),
+                            texture->mWidth);
+                    if (image->HasData()) {
+                        img = image;
+                    }
+                }
+
+                else {
+                    utility::LogWarning(
+                            "This format of image is not supported.");
+                }
+
             }
-            // if absolute path convert to relative to base path
-            if (strpath.length() > 1 &&
-                (strpath[0] == '/' || strpath[1] == ':')) {
-                strpath = utility::filesystem::GetFileNameWithoutDirectory(
-                        strpath);
-            }
-            auto image = io::CreateImageFromFile(base_path + strpath);
-            if (image->HasData()) {
-                img = image;
+            // Else, build the path to it.
+            else {
+                std::string strpath(path.C_Str());
+                // Normalize path separators.
+                auto p_win = strpath.find("\\");
+                while (p_win != std::string::npos) {
+                    strpath[p_win] = '/';
+                    p_win = strpath.find("\\", p_win + 1);
+                }
+                // If absolute path convert to relative to base path.
+                if (strpath.length() > 1 &&
+                    (strpath[0] == '/' || strpath[1] == ':')) {
+                    strpath = utility::filesystem::GetFileNameWithoutDirectory(
+                            strpath);
+                }
+                auto image = io::CreateImageFromFile(base_path + strpath);
+                if (image->HasData()) {
+                    img = image;
+                }
             }
         }
     };
@@ -254,7 +286,7 @@ bool ReadTriangleMeshUsingASSIMP(
 
         // Retrieve textures
         TextureImages maps;
-        LoadTextures(filename, mat, maps);
+        LoadTextures(filename, scene, mat, maps);
         mesh_material.albedo = maps.albedo;
         mesh_material.normalMap = maps.normal;
         mesh_material.ambientOcclusion = maps.ao;
@@ -320,7 +352,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
     for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
         const auto* assimp_mesh = scene->mMeshes[midx];
         // Only process triangle meshes
-        if (assimp_mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
+        if (!(assimp_mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE)) {
             utility::LogInfo(
                     "Skipping non-triangle primitive geometry of type: "
                     "{}",
@@ -413,7 +445,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         // Retrieve textures
         TextureImages maps;
-        LoadTextures(filename, mat, maps);
+        LoadTextures(filename, scene, mat, maps);
         o3d_mat.albedo_img = maps.albedo;
         o3d_mat.normal_img = maps.normal;
         o3d_mat.ao_img = maps.ao;

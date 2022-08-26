@@ -73,7 +73,12 @@ The following shows how to create a scene and compute ray intersections::
 )doc");
 
     // Constructors.
-    raycasting_scene.def(py::init<>());
+    raycasting_scene.def(py::init<int64_t>(), "nthreads"_a = 0, R"doc(
+Create a RaycastingScene.
+
+Args:
+    nthreads (int): The number of threads to use for building the scene. Set to 0 for automatic.
+)doc");
 
     raycasting_scene.def(
             "add_triangles",
@@ -219,6 +224,14 @@ Returns:
     primitive_ids
         A tensor with the primitive IDs, which corresponds to the triangle
         index. The shape is {..}.
+
+    primitive_uvs 
+        A tensor with the barycentric coordinates of the closest points within 
+        the triangles. The shape is {.., 2}.
+
+    primitive_normals 
+        A tensor with the normals of the closest triangle . The shape is 
+        {.., 3}.
 
 )doc");
 

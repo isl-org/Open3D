@@ -61,22 +61,22 @@ Dataset::Dataset(const std::string& prefix, const std::string& data_root)
 
 SingleDownloadDataset::SingleDownloadDataset(
         const std::string& prefix,
-        const std::vector<std::string>& urls,
+        const std::vector<std::string>& url_mirrors,
         const std::string& md5,
         const bool no_extract,
         const std::string& data_root)
     : Dataset(prefix, data_root) {
     const std::string filename =
-            utility::filesystem::GetFileNameWithoutDirectory(urls[0]);
+            utility::filesystem::GetFileNameWithoutDirectory(url_mirrors[0]);
 
-    const bool is_extract_present =
+    const bool is_extract_folder_present =
             utility::filesystem::DirectoryExists(Dataset::GetExtractDir());
 
-    if (!is_extract_present) {
+    if (!is_extract_folder_present) {
         // `download_dir` is relative path from `${data_root}`.
         const std::string download_dir = "download/" + GetPrefix();
-        const std::string download_file_path =
-                utility::DownloadFromURL(urls, md5, download_dir, data_root_);
+        const std::string download_file_path = utility::DownloadFromURL(
+                url_mirrors, md5, download_dir, data_root_);
 
         // Extract / Copy data.
         if (!no_extract) {
@@ -90,18 +90,65 @@ SingleDownloadDataset::SingleDownloadDataset(
     }
 }
 
+MultiDownloadDataset::MultiDownloadDataset(
+        const std::string& prefix,
+        const std::vector<std::vector<std::string>>& url_mirrors_list,
+        const std::vector<std::string>& md5_list,
+        const bool no_extract,
+        const std::string& data_root)
+    : Dataset(prefix, data_root) {
+    std::vector<std::string> filenames;
+    for (auto& file_mirrors : url_mirrors_list) {
+        filenames.push_back(file_mirrors[0]);
+    }
+    const bool is_extract_folder_present =
+            utility::filesystem::DirectoryExists(Dataset::GetExtractDir());
+
+    if (!is_extract_folder_present) {
+        size_t number_of_files = url_mirrors_list.size();
+        if (md5_list.size() != number_of_files) {
+            utility::LogError(
+                    "md5_list and url_mirrors_list must be of same length.");
+        }
+
+        // `download_dir` is relative path from `${data_root}`.
+        const std::string download_dir = "download/" + GetPrefix();
+        std::vector<std::string> download_file_paths;
+        for (size_t i = 0; i < number_of_files; ++i) {
+            download_file_paths.push_back(
+                    utility::DownloadFromURL(url_mirrors_list[i], md5_list[i],
+                                             download_dir, data_root_));
+        }
+
+        // Extract / Copy data.
+        if (!no_extract) {
+            for (auto& download_file_path : download_file_paths) {
+                utility::Extract(download_file_path, Dataset::GetExtractDir());
+            }
+        } else {
+            utility::filesystem::MakeDirectoryHierarchy(
+                    Dataset::GetExtractDir());
+            for (auto& download_file_path : download_file_paths) {
+                utility::filesystem::Copy(download_file_path,
+                                          Dataset::GetExtractDir());
+            }
+        }
+    }
+}
+
 DemoICPPointClouds::DemoICPPointClouds(const std::string& data_root)
     : SingleDownloadDataset(
               "DemoICPPointClouds",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220201-data/DemoICPPointClouds.zip"},
-              "76cf67ab1af942e3c4d5e97b9c2ae58f",
+               "20220301-data/DemoICPPointClouds.zip"},
+              "596cffe5f9c587045e7397ad70754de9",
               /*no_extract =*/false,
               data_root) {
     for (int i = 0; i < 3; ++i) {
         paths_.push_back(Dataset::GetExtractDir() + "/cloud_bin_" +
                          std::to_string(i) + ".pcd");
     }
+    transformation_log_path_ = Dataset::GetExtractDir() + "/init.log";
 }
 
 std::string DemoICPPointClouds::GetPaths(size_t index) const {
@@ -181,6 +228,20 @@ DemoPoseGraphOptimization::DemoPoseGraphOptimization(
     pose_graph_global_path_ = extract_dir + "/pose_graph_example_global.json";
 }
 
+DemoCustomVisualization::DemoCustomVisualization(const std::string& data_root)
+    : SingleDownloadDataset(
+              "DemoCustomVisualization",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/DemoCustomVisualization.zip"},
+              "04cb716145c51d0119b59c7876249891",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    point_cloud_path_ = extract_dir + "/fragment.ply";
+    camera_trajectory_path_ = extract_dir + "/camera_trajectory.json";
+    render_option_path_ = extract_dir + "/renderoption.json";
+}
+
 PCDPointCloud::PCDPointCloud(const std::string& data_root)
     : SingleDownloadDataset(
               "PCDPointCloud",
@@ -201,6 +262,17 @@ PLYPointCloud::PLYPointCloud(const std::string& data_root)
               /*no_extract =*/true,
               data_root) {
     path_ = Dataset::GetExtractDir() + "/fragment.ply";
+}
+
+PTSPointCloud::PTSPointCloud(const std::string& data_root)
+    : SingleDownloadDataset(
+              "PTSPointCloud",
+              {"https://github.com/isl-org/open3d_downloads/releases/"
+               "download/20220301-data/point_cloud_sample1.pts"},
+              "5c2c618b703d0161e6e333fcbf55a1e9",
+              /*no_extract =*/true,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/point_cloud_sample1.pts";
 }
 
 SampleNYURGBDImage::SampleNYURGBDImage(const std::string& data_root)
@@ -243,8 +315,8 @@ SampleRedwoodRGBDImages::SampleRedwoodRGBDImages(const std::string& data_root)
     : SingleDownloadDataset(
               "SampleRedwoodRGBDImages",
               {"https://github.com/isl-org/open3d_downloads/releases/download/"
-               "20220201-data/SampleRedwoodRGBDImages.zip"},
-              "3af3b6ee53e4d64396537553995d9556",
+               "20220301-data/SampleRedwoodRGBDImages.zip"},
+              "43971c5f690c9cfc52dda8c96a0140ee",
               /*no_extract =*/false,
               data_root) {
     const std::string extract_dir = Dataset::GetExtractDir();
@@ -263,6 +335,7 @@ SampleRedwoodRGBDImages::SampleRedwoodRGBDImages(const std::string& data_root)
     odometry_log_path_ = extract_dir + "/odometry.log";
     rgbd_match_path_ = extract_dir + "/rgbd.match";
     reconstruction_path_ = extract_dir + "/example_tsdf_pcd.ply";
+    camera_intrinsic_path_ = extract_dir + "/camera_primesense.json";
 }
 
 SampleFountainRGBDImages::SampleFountainRGBDImages(const std::string& data_root)
@@ -346,6 +419,17 @@ SampleFountainRGBDImages::SampleFountainRGBDImages(const std::string& data_root)
     reconstruction_path_ = extract_dir + "/scene/integrated.ply";
 }
 
+SampleL515Bag::SampleL515Bag(const std::string& data_root)
+    : SingleDownloadDataset(
+              "SampleL515Bag",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/SampleL515Bag.zip"},
+              "9770eeb194c78103037dbdbec78b9c8c",
+              /*no_extract =*/false,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/L515_test_s.bag";
+}
+
 EaglePointCloud::EaglePointCloud(const std::string& data_root)
     : SingleDownloadDataset(
               "EaglePointCloud",
@@ -388,6 +472,227 @@ KnotMesh::KnotMesh(const std::string& data_root)
               /*no_extract =*/true,
               data_root) {
     path_ = Dataset::GetExtractDir() + "/KnotMesh.ply";
+}
+
+MonkeyModel::MonkeyModel(const std::string& data_root)
+    : SingleDownloadDataset(
+              "MonkeyModel",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/MonkeyModel.zip"},
+              "fc330bf4fd8e022c1e5ded76139785d4",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/albedo.png"},
+            {"ao", extract_dir + "/ao.png"},
+            {"metallic", extract_dir + "/metallic.png"},
+            {"monkey_material", extract_dir + "/monkey.mtl"},
+            {"monkey_model", extract_dir + "/monkey.obj"},
+            {"monkey_solid_material", extract_dir + "/monkey_solid.mtl"},
+            {"monkey_solid_model", extract_dir + "/monkey_solid.obj"},
+            {"normal", extract_dir + "/normal.png"},
+            {"roughness", extract_dir + "/roughness.png"}};
+}
+
+SwordModel::SwordModel(const std::string& data_root)
+    : SingleDownloadDataset(
+              "SwordModel",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/SwordModel.zip"},
+              "eb7df358b5c31c839f03c4b3b4157c04",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"sword_material", extract_dir + "/UV.mtl"},
+            {"sword_model", extract_dir + "/UV.obj"},
+            {"base_color", extract_dir + "/UV_blinn1SG_BaseColor.png"},
+            {"metallic", extract_dir + "/UV_blinn1SG_Metallic.png"},
+            {"normal", extract_dir + "/UV_blinn1SG_Normal.png"},
+            {"roughness", extract_dir + "/UV_blinn1SG_Roughness.png"}};
+}
+
+CrateModel::CrateModel(const std::string& data_root)
+    : SingleDownloadDataset(
+              "CrateModel",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/CrateModel.zip"},
+              "20413eada103969bb3ca5df9aebc2034",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {{"crate_material", extract_dir + "/crate.mtl"},
+                             {"crate_model", extract_dir + "/crate.obj"},
+                             {"texture_image", extract_dir + "/crate.jpg"}};
+}
+
+FlightHelmetModel::FlightHelmetModel(const std::string& data_root)
+    : SingleDownloadDataset(
+              "FlightHelmetModel",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/FlightHelmetModel.zip"},
+              "597c3aa8b46955fff1949a8baa768bb4",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"flight_helmet", extract_dir + "/FlightHelmet.gltf"},
+            {"flight_helmet_bin", extract_dir + "/FlightHelmet.bin"},
+            {"mat_glass_plastic_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_GlassPlasticMat_BaseColor.png"},
+            {"mat_glass_plastic_normal",
+             extract_dir +
+                     "/FlightHelmet_Materials_GlassPlasticMat_Normal.png"},
+            {"mat_glass_plastic_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_GlassPlasticMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_leather_parts_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_LeatherPartsMat_BaseColor.png"},
+            {"mat_leather_parts_normal",
+             extract_dir +
+                     "/FlightHelmet_Materials_LeatherPartsMat_Normal.png"},
+            {"mat_leather_parts_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_LeatherPartsMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_lenses_base",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_BaseColor.png"},
+            {"mat_lenses_normal",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_Normal.png"},
+            {"mat_lenses_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_metal_parts_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_MetalPartsMat_BaseColor.png"},
+            {"mat_metal_parts_normal",
+             extract_dir + "/FlightHelmet_Materials_MetalPartsMat_Normal.png"},
+            {"mat_metal_parts_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_MetalPartsMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_rubber_wood_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_RubberWoodMat_BaseColor.png"},
+            {"mat_rubber_wood_normal",
+             extract_dir + "/FlightHelmet_Materials_RubberWoodMat_Normal.png"},
+            {"mat_rubber_wood_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_RubberWoodMat_"
+                           "OcclusionRoughMetal.png"}};
+}
+
+AvocadoModel::AvocadoModel(const std::string& data_root)
+    : SingleDownloadDataset(
+              "AvocadoModel",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/AvocadoModel.glb"},
+              "829f96a0a3a7d5556e0a263ea0699217",
+              /*no_extract =*/true,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/AvocadoModel.glb";
+}
+
+DamagedHelmetModel::DamagedHelmetModel(const std::string& data_root)
+    : SingleDownloadDataset(
+              "DamagedHelmetModel",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/DamagedHelmetModel.glb"},
+              "a3af6ad5a8329f22ba08b7f16e4a97d8",
+              /*no_extract =*/true,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/DamagedHelmetModel.glb";
+}
+
+MetalTexture::MetalTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "MetalTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/MetalTexture.zip"},
+              "2b6a17e41157138868a2cd2926eedcc7",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/Metal008_Color.jpg"},
+            {"normal", extract_dir + "/Metal008_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Metal008_Roughness.jpg"},
+            {"metallic", extract_dir + "/Metal008_Metalness.jpg"}};
+}
+
+PaintedPlasterTexture::PaintedPlasterTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "PaintedPlasterTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/PaintedPlasterTexture.zip"},
+              "344096b29b06f14aac58f9ad73851dc2",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/PaintedPlaster017_Color.jpg"},
+            {"normal", extract_dir + "/PaintedPlaster017_NormalDX.jpg"},
+            {"roughness", extract_dir + "/noiseTexture.png"}};
+}
+
+TilesTexture::TilesTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "TilesTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/TilesTexture.zip"},
+              "23f47f1e8e1799216724eb0c837c274d",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/Tiles074_Color.jpg"},
+            {"normal", extract_dir + "/Tiles074_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Tiles074_Roughness.jpg"}};
+}
+
+TerrazzoTexture::TerrazzoTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "TerrazzoTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/TerrazzoTexture.zip"},
+              "8d67f191fb5d80a27d8110902cac008e",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/Terrazzo018_Color.jpg"},
+            {"normal", extract_dir + "/Terrazzo018_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Terrazzo018_Roughness.jpg"}};
+}
+
+WoodTexture::WoodTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "WoodTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/WoodTexture.zip"},
+              "28788c7ecc42d78d4d623afbab2301e9",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/Wood049_Color.jpg"},
+            {"normal", extract_dir + "/Wood049_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Wood049_Roughness.jpg"}};
+}
+
+WoodFloorTexture::WoodFloorTexture(const std::string& data_root)
+    : SingleDownloadDataset(
+              "WoodFloorTexture",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/WoodFloorTexture.zip"},
+              "f11b3e50208095e87340049b9ac3c319",
+              /*no_extract =*/false,
+              data_root) {
+    const std::string extract_dir = Dataset::GetExtractDir();
+    map_filename_to_path_ = {
+            {"albedo", extract_dir + "/WoodFloor050_Color.jpg"},
+            {"normal", extract_dir + "/WoodFloor050_NormalDX.jpg"},
+            {"roughness", extract_dir + "/WoodFloor050_Roughness.jpg"}};
 }
 
 JuneauImage::JuneauImage(const std::string& data_root)
@@ -451,6 +756,75 @@ std::string OfficePointClouds::GetPaths(size_t index) const {
                 index);
     }
     return paths_[index];
+}
+
+LoungeRGBDImages::LoungeRGBDImages(const std::string& data_root)
+    : SingleDownloadDataset(
+              "LoungeRGBDImages",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/LoungeRGBDImages.zip"},
+              "cdd307caef898519a8829ce1b6ab9f75",
+              /*no_extract =*/false,
+              data_root) {
+    color_paths_.reserve(3000);
+    depth_paths_.reserve(3000);
+    const std::string extract_dir = Dataset::GetExtractDir();
+    const size_t n_zero = 6;
+    for (int i = 1; i < 3000; ++i) {
+        std::string idx = std::to_string(i);
+        idx = std::string(n_zero - std::min(n_zero, idx.length()), '0') + idx;
+        color_paths_.push_back(extract_dir + "/color/" + idx + ".png");
+        depth_paths_.push_back(extract_dir + "/depth/" + idx + ".png");
+    }
+
+    trajectory_log_path_ = extract_dir + "/lounge_trajectory.log";
+    reconstruction_path_ = extract_dir + "/lounge.ply";
+}
+
+BedroomRGBDImages::BedroomRGBDImages(const std::string& data_root)
+    : MultiDownloadDataset(
+              "BedroomRGBDImages",
+              {{"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom01.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom02.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom03.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom04.zip"},
+               {"https://github.com/isl-org/open3d_downloads/releases/download/"
+                "20220301-data/bedroom05.zip"}},
+              {"2d1018ceeb72680f5d16b2f419da9bb1",
+               "5e6ffbccc0907dc5acc374aa76a79081",
+               "ebf13b89ec364b1788dd492c27b9b800",
+               "94c0e6c862a54588582b06520946fb15",
+               "54b927edb6fd61838025bc66ed767408"},
+              /*no_extract =*/false,
+              data_root) {
+    color_paths_.reserve(21931);
+    depth_paths_.reserve(21931);
+    const std::string extract_dir = Dataset::GetExtractDir();
+    const size_t n_zero = 6;
+    for (int i = 1; i < 21931; ++i) {
+        std::string idx = std::to_string(i);
+        idx = std::string(n_zero - std::min(n_zero, idx.length()), '0') + idx;
+        color_paths_.push_back(extract_dir + "/image/" + idx + ".jpg");
+        depth_paths_.push_back(extract_dir + "/depth/" + idx + ".png");
+    }
+
+    trajectory_log_path_ = extract_dir + "/bedroom.log";
+    reconstruction_path_ = extract_dir + "/bedroom.ply";
+}
+
+JackJackL515Bag::JackJackL515Bag(const std::string& data_root)
+    : SingleDownloadDataset(
+              "JackJackL515Bag",
+              {"https://github.com/isl-org/open3d_downloads/releases/download/"
+               "20220301-data/JackJackL515Bag.bag"},
+              "9f670dc92569b986b739c4179a659176",
+              /*no_extract =*/true,
+              data_root) {
+    path_ = Dataset::GetExtractDir() + "/JackJackL515Bag.bag";
 }
 
 }  // namespace data

@@ -327,7 +327,8 @@ void EstimateRangeCPU
          int64_t block_resolution,
          float voxel_size,
          float depth_min,
-         float depth_max) {
+         float depth_max,
+         core::Tensor& fragment_buffer) {
 
     // TODO(wei): reserve it in a reusable buffer
 
@@ -340,11 +341,17 @@ void EstimateRangeCPU
 
     // Every 6 channels: (v_min, u_min, v_max, u_max, z_min, z_max)
     const int fragment_size = 16;
-    const int frag_buffer_size = 65535;
 
-    // TODO(wei): explicit buffer
-    core::Tensor fragment_buffer = core::Tensor(
-            {frag_buffer_size, 6}, core::Float32, block_keys.GetDevice());
+    if (fragment_buffer.GetDataPtr() == 0 ||
+        fragment_buffer.NumElements() == 0) {
+        // Rough heuristic; should tend to overallocate
+        const int reserve_frag_buffer_size =
+                h_down * w_down / (fragment_size * fragment_size) / voxel_size;
+        fragment_buffer = core::Tensor({reserve_frag_buffer_size, 6},
+                                       core::Float32, block_keys.GetDevice());
+    }
+
+    const int frag_buffer_size = fragment_buffer.NumElements() / 6;
 
     NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
     NDArrayIndexer block_keys_indexer(block_keys, 1);
@@ -418,10 +425,10 @@ void EstimateRangeCPU
                         ceilf(float(u_max - u_min + 1) / float(fragment_size));
 
                 int frag_count = frag_v_count * frag_u_count;
-                int frag_count_start = OPEN3D_ATOMIC_ADD(count_ptr, 1);
+                int frag_count_start = OPEN3D_ATOMIC_ADD(count_ptr, frag_count);
                 int frag_count_end = frag_count_start + frag_count;
                 if (frag_count_end >= frag_buffer_size) {
-                    printf("Fragment count exceeding buffer size, abort!\n");
+                    return;
                 }
 
                 int offset = 0;
@@ -447,10 +454,22 @@ void EstimateRangeCPU
                 }
             });
 #if defined(__CUDACC__)
-    int frag_count = count[0].Item<int>();
+    int needed_frag_count = count[0].Item<int>();
 #else
-    int frag_count = (*count_ptr).load();
+    int needed_frag_count = (*count_ptr).load();
 #endif
+
+    int frag_count = needed_frag_count;
+    if (frag_count >= frag_buffer_size) {
+        utility::LogWarning(
+                "Could not generate full range map; allocated {} fragments but "
+                "needed {}",
+                frag_buffer_size, frag_count);
+        frag_count = frag_buffer_size - 1;
+    } else {
+        utility::LogDebug("EstimateRange Allocated {} fragments and needed {}",
+                          frag_buffer_size, frag_count);
+    }
 
     // Pass 0.5: Fill in range map to prepare for atomic min/max
     core::ParallelFor(block_keys.GetDevice(), h_down * w_down,
@@ -497,9 +516,18 @@ void EstimateRangeCPU
                 }
 #endif
             });
+
 #if defined(__CUDACC__)
     core::cuda::Synchronize();
 #endif
+
+    if (needed_frag_count != frag_count) {
+        utility::LogInfo("Reallocating {} fragments for EstimateRange (was {})",
+                         needed_frag_count, frag_count);
+
+        fragment_buffer = core::Tensor({needed_frag_count, 6}, core::Float32,
+                                       block_keys.GetDevice());
+    }
 }
 
 struct MiniVecCache {
@@ -1318,12 +1346,10 @@ void ExtractTriangleMeshCPU
                 device);
     } catch (const std::runtime_error&) {
         utility::LogError(
-                "[MeshExtractionKernel] Unable to allocate assistance mesh "
-                "structure for Marching "
+                "Unable to allocate assistance mesh structure for Marching "
                 "Cubes with {} active voxel blocks. Please consider using a "
-                "larger voxel size (currently {}) for TSDF "
-                "integration, or using tsdf_volume.cpu() to perform mesh "
-                "extraction on CPU.",
+                "larger voxel size (currently {}) for TSDF integration, or "
+                "using tsdf_volume.cpu() to perform mesh extraction on CPU.",
                 n_blocks, voxel_size);
     }
 

@@ -84,7 +84,7 @@ def run(config):
         voxel_size=config['tsdf_cubic_size'] / 512,
         block_resolution=16,
         block_count=config['block_count'],
-        device=o3d.core.Device('CUDA:0'))
+        device=device)
 
     # Load control grid.
     ctr_grid_keys = o3d.core.Tensor.load(slac_folder + "ctr_grid_keys.npy")
@@ -99,7 +99,7 @@ def run(config):
 
     k = 0
     depth_scale = float(config['depth_scale'])
-    depth_max = float(config['max_depth'])
+    depth_max = float(config['depth_max'])
     for i in range(len(posegraph.nodes)):
         fragment_pose_graph = o3d.io.read_pose_graph(
             join(fragment_folder, "fragment_optimized_%03d.json" % i))

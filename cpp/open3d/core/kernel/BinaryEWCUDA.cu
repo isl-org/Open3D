@@ -52,6 +52,22 @@ void LaunchBinaryEWKernel(const Device& device,
 }
 
 template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDAMaxElementKernel(const void* lhs,
+                                                    const void* rhs,
+                                                    void* dst) {
+    *static_cast<scalar_t*>(dst) = max(*static_cast<const scalar_t*>(lhs),
+                                       *static_cast<const scalar_t*>(rhs));
+}
+
+template <typename scalar_t>
+static OPEN3D_HOST_DEVICE void CUDAMinElementKernel(const void* lhs,
+                                                    const void* rhs,
+                                                    void* dst) {
+    *static_cast<scalar_t*>(dst) = min(*static_cast<const scalar_t*>(lhs),
+                                       *static_cast<const scalar_t*>(rhs));
+}
+
+template <typename scalar_t>
 static OPEN3D_HOST_DEVICE void CUDAAddElementKernel(const void* lhs,
                                                     const void* rhs,
                                                     void* dst) {
@@ -279,6 +295,31 @@ void BinaryEWCUDA(const Tensor& lhs,
                 utility::LogError(
                         "Boolean op's output type must be boolean or the "
                         "same type as the input.");
+            }
+        });
+    } else if (op_code == BinaryEWOpCode::Maximum ||
+               op_code == BinaryEWOpCode::Minimum) {
+        Indexer indexer({lhs, rhs}, dst, DtypePolicy::ALL_SAME);
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(src_dtype, [&]() {
+            switch (op_code) {
+                case BinaryEWOpCode::Maximum:
+                    LaunchBinaryEWKernel<scalar_t, scalar_t>(
+                            src_device, indexer,
+                            [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                                                  void* dst) {
+                                CUDAMaxElementKernel<scalar_t>(lhs, rhs, dst);
+                            });
+                    break;
+                case BinaryEWOpCode::Minimum:
+                    LaunchBinaryEWKernel<scalar_t, scalar_t>(
+                            src_device, indexer,
+                            [] OPEN3D_HOST_DEVICE(const void* lhs, void* rhs,
+                                                  void* dst) {
+                                CUDAMinElementKernel<scalar_t>(lhs, rhs, dst);
+                            });
+                    break;
+                default:
+                    break;
             }
         });
     } else {

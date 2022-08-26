@@ -21,8 +21,6 @@ target_sources(tests PRIVATE
 
 target_include_directories(tests PRIVATE ".")
 
-target_compile_definitions(tests PRIVATE TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
-
 # If gpu not available, add "DISABLED_" to the gpu test names
 if (BUILD_CUDA_MODULE)
     target_compile_definitions(tests PRIVATE GPU_CONDITIONAL_TEST_STR=) # Empty string
@@ -41,6 +39,7 @@ target_link_libraries(tests PRIVATE
     Open3D::3rdparty_jsoncpp
     Open3D::3rdparty_googletest
     Open3D::3rdparty_threads
+    Open3D::3rdparty_vtk
 )
 
 if (TARGET Open3D::3rdparty_openmp)
@@ -48,6 +47,7 @@ if (TARGET Open3D::3rdparty_openmp)
         Open3D::3rdparty_openmp
     )
 endif()
+    
 
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)

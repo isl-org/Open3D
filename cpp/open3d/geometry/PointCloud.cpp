@@ -29,7 +29,6 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <numeric>
-#include <random>
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/KDTreeFlann.h"
@@ -39,6 +38,7 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
 #include "open3d/utility/ProgressBar.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace geometry {
@@ -158,6 +158,41 @@ std::vector<double> PointCloud::ComputePointCloudDistance(
     return distances;
 }
 
+PointCloud &PointCloud::RemoveDuplicatedPoints() {
+    const bool has_normals = HasNormals();
+    const bool has_colors = HasColors();
+    const bool has_covariances = HasCovariances();
+    const size_t old_points_num = points_.size();
+    size_t k = 0;
+
+    typedef std::tuple<double, double, double> Coordinate3;
+    std::unordered_map<Coordinate3, size_t, utility::hash_tuple<Coordinate3>>
+            point_to_old_index;
+
+    for (size_t i = 0; i < old_points_num; i++) {
+        Coordinate3 coord =
+                std::make_tuple(points_[i](0), points_[i](1), points_[i](2));
+        if (point_to_old_index.find(coord) == point_to_old_index.end()) {
+            point_to_old_index[coord] = i;
+            points_[k] = points_[i];
+            if (has_normals) normals_[k] = normals_[i];
+            if (has_covariances) covariances_[k] = covariances_[i];
+            if (has_colors) colors_[k] = colors_[i];
+            k++;
+        }
+    }
+
+    points_.resize(k);
+    if (has_normals) normals_.resize(k);
+    if (has_covariances) covariances_.resize(k);
+    if (has_colors) colors_.resize(k);
+
+    utility::LogDebug("[RemoveDuplicatedPoints] {:d} points have been removed.",
+                      (int)(old_points_num - k));
+
+    return *this;
+}
+
 PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
                                               bool remove_infinite) {
     bool has_normal = HasNormals();
@@ -180,13 +215,16 @@ PointCloud &PointCloud::RemoveNonFinitePoints(bool remove_nan,
             k++;
         }
     }
+
     points_.resize(k);
     if (has_normal) normals_.resize(k);
     if (has_color) colors_.resize(k);
     if (has_covariance) covariances_.resize(k);
+
     utility::LogDebug(
             "[RemoveNonFinitePoints] {:d} nan points have been removed.",
             (int)(old_point_num - k));
+
     return *this;
 }
 
@@ -210,9 +248,11 @@ std::shared_ptr<PointCloud> PointCloud::SelectByIndex(
             if (has_covariance) output->covariances_.push_back(covariances_[i]);
         }
     }
+
     utility::LogDebug(
             "Pointcloud down sampled from {:d} points to {:d} points.",
             (int)points_.size(), (int)output->points_.size());
+
     return output;
 }
 
@@ -329,7 +369,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
         double voxel_size) const {
     auto output = std::make_shared<PointCloud>();
     if (voxel_size <= 0.0) {
-        utility::LogError("[VoxelDownSample] voxel_size <= 0.");
+        utility::LogError("voxel_size <= 0.");
     }
     Eigen::Vector3d voxel_size3 =
             Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
@@ -337,7 +377,7 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::LogError("[VoxelDownSample] voxel_size is too small.");
+        utility::LogError("voxel_size is too small.");
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPoint,
                        utility::hash_eigen<Eigen::Vector3i>>
@@ -383,7 +423,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     auto output = std::make_shared<PointCloud>();
     Eigen::MatrixXi cubic_id;
     if (voxel_size <= 0.0) {
-        utility::LogError("[VoxelDownSample] voxel_size <= 0.");
+        utility::LogError("voxel_size <= 0.");
     }
     // Note: this is different from VoxelDownSample.
     // It is for fixing coordinate for multiscale voxel space
@@ -391,7 +431,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
     auto voxel_max_bound = max_bound;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::LogError("[VoxelDownSample] voxel_size is too small.");
+        utility::LogError("voxel_size is too small.");
     }
     std::unordered_map<Eigen::Vector3i, AccumulatedPointForTrace,
                        utility::hash_eigen<Eigen::Vector3i>>
@@ -453,7 +493,7 @@ PointCloud::VoxelDownSampleAndTrace(double voxel_size,
 std::shared_ptr<PointCloud> PointCloud::UniformDownSample(
         size_t every_k_points) const {
     if (every_k_points == 0) {
-        utility::LogError("[UniformDownSample] Illegal sample rate.");
+        utility::LogError("Illegal sample rate.");
     }
     std::vector<size_t> indices;
     for (size_t i = 0; i < points_.size(); i += every_k_points) {
@@ -466,24 +506,61 @@ std::shared_ptr<PointCloud> PointCloud::RandomDownSample(
         double sampling_ratio) const {
     if (sampling_ratio < 0 || sampling_ratio > 1) {
         utility::LogError(
-                "[RandomDownSample] Illegal sampling_ratio {}, sampling_ratio "
-                "must be between 0 and 1.");
+                "Illegal sampling_ratio {}, sampling_ratio must be between 0 "
+                "and 1.");
     }
     std::vector<size_t> indices(points_.size());
     std::iota(std::begin(indices), std::end(indices), (size_t)0);
-    std::random_device rd;
-    std::mt19937 prng(rd());
-    std::shuffle(indices.begin(), indices.end(), prng);
+    {
+        std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
+        std::shuffle(indices.begin(), indices.end(),
+                     *utility::random::GetEngine());
+    }
     indices.resize((int)(sampling_ratio * points_.size()));
     return SelectByIndex(indices);
+}
+
+std::shared_ptr<PointCloud> PointCloud::FarthestPointDownSample(
+        size_t num_samples) const {
+    if (num_samples == 0) {
+        return std::make_shared<PointCloud>();
+    } else if (num_samples == points_.size()) {
+        return std::make_shared<PointCloud>(*this);
+    } else if (num_samples > points_.size()) {
+        utility::LogError(
+                "Illegal number of samples: {}, must <= point size: {}",
+                num_samples, points_.size());
+    }
+    // We can also keep track of the non-selected indices with unordered_set,
+    // but since typically num_samples << num_points, it may not be worth it.
+    std::vector<size_t> selected_indices;
+    selected_indices.reserve(num_samples);
+    const size_t num_points = points_.size();
+    std::vector<double> distances(num_points,
+                                  std::numeric_limits<double>::infinity());
+    size_t farthest_index = 0;
+    for (size_t i = 0; i < num_samples; i++) {
+        selected_indices.push_back(farthest_index);
+        const Eigen::Vector3d &selected = points_[farthest_index];
+        double max_dist = 0;
+        for (size_t j = 0; j < num_points; j++) {
+            double dist = (points_[j] - selected).squaredNorm();
+            distances[j] = std::min(distances[j], dist);
+            if (distances[j] > max_dist) {
+                max_dist = distances[j];
+                farthest_index = j;
+            }
+        }
+    }
+    return SelectByIndex(selected_indices);
 }
 
 std::shared_ptr<PointCloud> PointCloud::Crop(
         const AxisAlignedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
-                "size, or has wrong bounds.");
+                "AxisAlignedBoundingBox either has zeros size, or has wrong "
+                "bounds.");
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
@@ -491,8 +568,8 @@ std::shared_ptr<PointCloud> PointCloud::Crop(
         const OrientedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "[CropPointCloud] AxisAlignedBoundingBox either has zeros "
-                "size, or has wrong bounds.");
+                "AxisAlignedBoundingBox either has zeros size, or has wrong "
+                "bounds.");
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(points_));
 }
@@ -503,8 +580,8 @@ PointCloud::RemoveRadiusOutliers(size_t nb_points,
                                  bool print_progress /* = false */) const {
     if (nb_points < 1 || search_radius <= 0) {
         utility::LogError(
-                "[RemoveRadiusOutliers] Illegal input parameters,"
-                "number of points and radius must be positive");
+                "Illegal input parameters, the number of points and radius "
+                "must be positive.");
     }
     KDTreeFlann kdtree;
     kdtree.SetGeometry(*this);
@@ -536,8 +613,8 @@ PointCloud::RemoveStatisticalOutliers(size_t nb_neighbors,
                                       bool print_progress /* = false */) const {
     if (nb_neighbors < 1 || std_ratio <= 0) {
         utility::LogError(
-                "[RemoveStatisticalOutliers] Illegal input parameters, number "
-                "of neighbors and standard deviation ratio must be positive");
+                "Illegal input parameters, the number of neighbors and "
+                "standard deviation ratio must be positive.");
     }
     if (points_.size() == 0) {
         return std::make_tuple(std::make_shared<PointCloud>(),
@@ -681,8 +758,7 @@ std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
 PointCloud::HiddenPointRemoval(const Eigen::Vector3d &camera_location,
                                const double radius) const {
     if (radius <= 0) {
-        utility::LogError(
-                "[HiddenPointRemoval] radius must be larger than zero.");
+        utility::LogError("radius must be larger than zero.");
     }
 
     // perform spherical projection

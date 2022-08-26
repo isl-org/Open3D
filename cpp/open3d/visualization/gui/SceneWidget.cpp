@@ -823,7 +823,7 @@ SceneWidget::~SceneWidget() {
 
 void SceneWidget::SetFrame(const Rect& f) {
     // Early exit if frame hasn't changed because changing frame size causes GPU
-    // memory re-allocations that are best avoided if unecessary
+    // memory re-allocations that are best avoided if unnecessary
     auto old_frame = GetFrame();
     if (f.width == old_frame.width && f.height == old_frame.height) return;
 
@@ -1158,7 +1158,7 @@ Widget::DrawResult SceneWidget::Draw(const DrawContext& context) {
             ndc.y() *= f.height;
             ImGui::SetWindowFontScale(l->GetTextScale());
             ImGui::SetCursorScreenPos(
-                    ImVec2(ndc.x() - f.x, f.height - ndc.y() - f.y));
+                    ImVec2(ndc.x() + f.x, f.height - ndc.y() - f.y));
             auto color = l->GetTextColor();
             ImGui::TextColored({color.GetRed(), color.GetGreen(),
                                 color.GetBlue(), color.GetAlpha()},

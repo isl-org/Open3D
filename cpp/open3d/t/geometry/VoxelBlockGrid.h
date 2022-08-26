@@ -127,8 +127,8 @@ public:
     core::Tensor GetVoxelCoordinates(const core::Tensor &voxel_indices) const;
 
     /// Accelerated combination of GetVoxelIndices and GetVoxelCoordinates.
-    /// Returns a (N, 3) coordinate in float, and a (N, ) flattend index tensor,
-    /// where N is the number of active voxels located at buf_indices.
+    /// Returns a (N, 3) coordinate in float, and a (N, ) flattened index
+    /// tensor, where N is the number of active voxels located at buf_indices.
     std::pair<core::Tensor, core::Tensor>
     GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor &buf_indices);
 
@@ -250,8 +250,20 @@ public:
     /// Load a voxel block grid from a .npz file.
     static VoxelBlockGrid Load(const std::string &file_name);
 
+    /// Convert the hash map to another device.
+    VoxelBlockGrid To(const core::Device &device, bool copy = false) const;
+
 private:
     void AssertInitialized() const;
+
+    VoxelBlockGrid(float voxelSize,
+                   int64_t blockResolution,
+                   const std::shared_ptr<core::HashMap> &blockHashmap,
+                   const std::unordered_map<std::string, int> &nameAttrMap)
+        : voxel_size_(voxelSize),
+          block_resolution_(blockResolution),
+          block_hashmap_(blockHashmap),
+          name_attr_map_(nameAttrMap) {}
 
     float voxel_size_ = -1;
     int64_t block_resolution_ = -1;
@@ -264,6 +276,9 @@ private:
 
     // Map: attribute name -> index to access the attribute in SoA.
     std::unordered_map<std::string, int> name_attr_map_;
+
+    // Allocated fragment buffer for reuse in depth estimation
+    core::Tensor fragment_buffer_;
 };
 }  // namespace geometry
 }  // namespace t

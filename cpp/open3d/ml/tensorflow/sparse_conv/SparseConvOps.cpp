@@ -90,7 +90,7 @@ REGISTER_OP("Open3DSparseConv")
         .Doc(R"doc(
 General sparse convolution.
 
-This op computes the features for the forwad pass.
+This op computes the features for the forward pass.
 This example shows how to use this op::
 
   import tensorflow as tf

@@ -79,7 +79,7 @@ static std::vector<core::Tensor> GetExtrinsicTensors() {
 static std::vector<core::HashBackendType> EnumerateBackends(
         const core::Device &device, bool include_slab = true) {
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         if (include_slab) {
             backends.push_back(core::HashBackendType::Slab);
         }

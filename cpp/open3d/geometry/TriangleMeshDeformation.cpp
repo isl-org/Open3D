@@ -98,8 +98,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
     solver.analyzePattern(L);
     solver.factorize(L);
     if (solver.info() != Eigen::Success) {
-        utility::LogError(
-                "[DeformAsRigidAsPossible] Failed to build solver (factorize)");
+        utility::LogError("Failed to build solver (factorize)");
     } else {
         utility::LogDebug(
                 "[DeformAsRigidAsPossible] done setting up sparse solver");
@@ -145,7 +144,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
             Rs[i] = V * D.asDiagonal() * U.transpose();
             if (Rs[i].determinant() <= 0) {
                 utility::LogError(
-                        "[DeformAsRigidAsPossible] something went wrong with "
+                        "something went wrong with "
                         "updating R");
             }
         }
@@ -173,8 +172,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::DeformAsRigidAsPossible(
         for (int comp = 0; comp < 3; ++comp) {
             Eigen::VectorXd p_prime = solver.solve(b[comp]);
             if (solver.info() != Eigen::Success) {
-                utility::LogError(
-                        "[DeformAsRigidAsPossible] Cholesky solve failed");
+                utility::LogError("Cholesky solve failed");
             }
             for (int i = 0; i < int(vertices_.size()); ++i) {
                 prime->vertices_[i](comp) = p_prime(i);

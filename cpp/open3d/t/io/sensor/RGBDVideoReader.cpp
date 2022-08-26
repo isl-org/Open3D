@@ -32,6 +32,7 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/t/io/sensor/realsense/RSBagReader.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace t {
@@ -102,12 +103,14 @@ std::unique_ptr<RGBDVideoReader> RGBDVideoReader::Create(
         auto reader = std::make_unique<RSBagReader>();
         reader->Open(filename);
         return reader;
-    } else
-#endif
-    {
-        utility::LogError("Unsupported file format for {}", filename);
+    } else {
+        utility::LogError("Unsupported file format for {}.", filename);
     }
+#endif
+    utility::LogError(
+            "Build with -DBUILD_LIBREALSENSE=ON to use RealSense bag file.");
 }
+
 }  // namespace io
 }  // namespace t
 }  // namespace open3d

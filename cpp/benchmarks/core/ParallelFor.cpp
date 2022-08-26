@@ -28,6 +28,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include <numeric>
 #include <vector>
 
 #ifdef BUILD_ISPC_MODULE

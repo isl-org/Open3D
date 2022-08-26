@@ -1,5 +1,6 @@
 target_sources(tests PRIVATE
     Blob.cpp
+    CoreTest.cpp
     CUDAUtils.cpp
     Device.cpp
     EigenConverter.cpp
@@ -18,6 +19,7 @@ target_sources(tests PRIVATE
     TensorFunction.cpp
     TensorList.cpp
     TensorObject.cpp
+    SYCLUtils.cpp
 )
 
 if (BUILD_CUDA_MODULE)

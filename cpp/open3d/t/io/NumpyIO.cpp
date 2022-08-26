@@ -291,7 +291,7 @@ static std::tuple<core::SizeVector, char, int64_t, bool> ParsePropertyDict(
 // - bytes[7]                         : \x00      # Minor version, unsigned
 // - bytes[8] to bytes[9]             : HEADER_LEN little-endian uint16_t
 // - bytes[10] to bytes[10+HEADER_LEN]: Dict, padded, terminated by '\n'
-// - (10 + HEADER_LEN) % 64 == 0      : Guranteed
+// - (10 + HEADER_LEN) % 64 == 0      : Guaranteed
 //
 // - We only support Version 1.0 for now.
 // - Version 2.0+ supports up to 4GiB HEADER_LEN and the HEADER_LEN is
@@ -317,7 +317,7 @@ static size_t ParseNpyPreamble(const char* preamble) {
     return static_cast<size_t>(header_len);
 }
 
-// Retruns {shape, type(char), word_size, fortran_order}.
+// Returns {shape, type(char), word_size, fortran_order}.
 // This will advance the file pointer to the end of the header.
 static std::tuple<core::SizeVector, char, int64_t, bool> ParseNpyHeaderFromFile(
         FILE* fp) {
@@ -718,7 +718,7 @@ std::unordered_map<std::string, core::Tensor> ReadNpz(
             if (std::memcmp(empty_zip_bytes, local_header.Data(), 22) == 0) {
                 break;
             } else {
-                utility::LogError("Inalid empty .npz file.");
+                utility::LogError("Invalid empty .npz file.");
             }
         }
 

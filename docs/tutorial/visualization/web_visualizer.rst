@@ -102,10 +102,10 @@ Example:
 
 .. code-block:: sh
 
-    python examples/python/gui/draw_webrtc.py
+    python examples/python/visualization/draw_webrtc.py
     google-chrome http://localhost:8888  # Or, open the address in your browser
 
-Checkout `examples/python/gui/draw_webrtc.py <https://github.com/isl-org/Open3D/blob/master/examples/python/gui/draw_webrtc.py>`_
+Checkout `examples/python/visualization/draw_webrtc.py <https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/draw_webrtc.py>`_
 for the complete source code.
 
 IP/port binding
@@ -121,11 +121,10 @@ custom port number, set the ``WEBRTC_PORT`` environment variable. For instance:
 .. code-block:: sh
 
     # Bind to localhost:8888 (default)
-    python examples/python/gui/draw_webrtc.py
+    python examples/python/visualization/draw_webrtc.py
 
     # Bind to 127.0.0.1:8889
     WEBRTC_IP=127.0.0.1 WEBRTC_PORT=8889 python draw_webrtc.py
-
 
 To enable remote visualization, we typically bind to the internal IP and
 internal port as seen by the server. The router may translate the internal IP
@@ -145,7 +144,6 @@ external IP address from the browser.
     rebuild with `appropriate web server configuration and SSL certificates
     <https://github.com/civetweb/civetweb/blob/master/docs/OpenSSL.md>`_.
 
-
 Jupyter mode
 ------------
 
@@ -164,7 +162,7 @@ or, you may also install JupyterLab instead:
     jupyter-lab
 
 Then, run the example notebook
-`examples/python/visualization/jupyter_visualization.ipynb <https://github.com/isl-org/Open3D/blob/master/examples/python/visualization/jupyter_visualization.ipynb>`_.
+`docs/jupyter/visualization/jupyter_visualization.ipynb <https://github.com/isl-org/Open3D/blob/master/docs/jupyter/visualization/jupyter_visualization.ipynb>`_.
 
 Unlike standalone mode, ``WEBRTC_IP`` and ``WEBRTC_PORT`` are not used in
 Jupyter mode. However, you might want to
@@ -204,7 +202,7 @@ need to :
 
    .. code-block:: sh
 
-     pip install -r python/requirements_jupyter.txt
+     pip install -r python/requirements_jupyter_build.txt
 
 3. Build Open3D Python package:
 
@@ -214,7 +212,6 @@ need to :
      cmake -DBUILD_JUPYTER_EXTENSION ..
      make install-pip-package -j$(nproc)
 
-
 Advanced topic: local server in airplane mode
 ------------------------------------------------
 
@@ -222,7 +219,6 @@ When the computer has no active network interfaces (e.g. Wi-Fi is turned off and
 ethernet is unplugged, the machine only has the loopback ``lo`` interface),
 WebRTC may fail to work. In this case, we need to create a dummy interface.
 The workaround is tested on Ubuntu.
-
 
 .. code-block:: sh
 
@@ -235,13 +231,12 @@ The workaround is tested on Ubuntu.
     ip addr
 
     # Do WebRTC things here
-    python examples/python/gui/draw_webrtc.py
+    python examples/python/visualization/draw_webrtc.py
     google-chrome http://localhost:8888  # Or, open the address in your browser
 
     # Clean up
     sudo ip link set dummy0 down
     sudo ip link delete dummy0
-
 
 Advanced topic: TURN server
 ------------------------------
@@ -266,7 +261,6 @@ with ``;``. For instance:
     WEBRTC_STUN_SERVER="turn:user:password@my_tcp_turn_server.com:3478?transport=tcp"
     # UDP and TCP (more than one TURN servers)
     WEBRTC_STUN_SERVER="turn:user:password@my_turn_server.com:3478;turn:user:password@my_tcp_turn_server.com:3478?transport=tcp"
-
 
 Advanced topic: debugging network issues
 -------------------------------------------

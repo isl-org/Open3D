@@ -109,11 +109,12 @@ jobs:
               --boot-disk-size="128GB" \
               --boot-disk-type="pd-ssd" \
               --image-family="ubuntu-os-docker-gpu-2004-lts" \
-              --scopes "https://www.googleapis.com/auth/devstorage.full_control" \
+              --metadata-from-file=startup-script=./util/gcloud_auto_clean.sh \
+              --scopes="storage-full,compute-rw" \
               --service-account="$GCE_GPU_CI_SA"; do
               ((ZONE_ID = ZONE_ID + 1))
           done
-          sleep 30
+          sleep 90
           echo "GCE_ZONE=${INSTANCE_ZONES[$ZONE_ID]}" >> "${GITHUB_ENV}"
           echo "INSTANCE_NAME=${INSTANCE_NAME}" >> "${GITHUB_ENV}"
           exit $((ZONE_ID >= ${#INSTANCE_ZONES[@]})) # 0 => success
@@ -178,4 +179,5 @@ jobs:
         run: |
           gcloud compute instances delete "${INSTANCE_NAME}" --zone "${GCE_ZONE}"
           ls -alh "${HOME}/.ssh"
+          gcloud compute os-login describe-profile
           gcloud compute os-login ssh-keys remove --key-file "${HOME}/.ssh/google_compute_engine.pub"

@@ -42,20 +42,32 @@ FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
     SetTensorData(dataset_points, radius);
 };
 
+FixedRadiusIndex::FixedRadiusIndex(const Tensor &dataset_points,
+                                   double radius,
+                                   const Dtype &index_dtype) {
+    AssertTensorDtypes(dataset_points, {Float32, Float64});
+    assert(index_dtype == Int32 || index_dtype == Int64);
+    SetTensorData(dataset_points, radius, index_dtype);
+};
+
 FixedRadiusIndex::~FixedRadiusIndex(){};
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
-                                     double radius) {
+                                     double radius,
+                                     const Dtype &index_dtype) {
     const int64_t num_dataset_points = dataset_points.GetShape()[0];
     Tensor points_row_splits(std::vector<int64_t>({0, num_dataset_points}), {2},
                              Int64);
-    return SetTensorData(dataset_points, points_row_splits, radius);
+    return SetTensorData(dataset_points, points_row_splits, radius,
+                         index_dtype);
 }
 
 bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
                                      const Tensor &points_row_splits,
-                                     double radius) {
+                                     double radius,
+                                     const Dtype &index_dtype) {
     AssertTensorDtypes(dataset_points, {Float32, Float64});
+    assert(index_dtype == Int32 || index_dtype == Int64);
     AssertTensorDevice(points_row_splits, Device("CPU:0"));
     AssertTensorDtype(points_row_splits, Int64);
 
@@ -70,6 +82,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
 
     dataset_points_ = dataset_points.Contiguous();
     points_row_splits_ = points_row_splits.Contiguous();
+    index_dtype_ = index_dtype;
 
     const int64_t num_dataset_points = GetDatasetSize();
     const int64_t num_batch = points_row_splits.GetShape()[0] - 1;
@@ -104,7 +117,7 @@ bool FixedRadiusIndex::SetTensorData(const Tensor &dataset_points,
         return true;                        \
     }
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         CALL_BUILD(float, BuildSpatialHashTableCUDA)
         CALL_BUILD(double, BuildSpatialHashTableCUDA)
@@ -134,6 +147,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
         double radius,
         bool sort) const {
     const Dtype dtype = GetDtype();
+    const Dtype index_dtype = GetIndexDtype();
     const Device device = GetDevice();
 
     // Check device and dtype.
@@ -169,27 +183,24 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchRadius(
             hash_table_cell_splits_, Metric::L2, false, true, sort,     \
             neighbors_index, neighbors_row_splits, neighbors_distance
 
-#define CALL_RADIUS(type, fn)               \
-    if (Dtype::FromType<type>() == dtype) { \
-        fn<type>(RADIUS_PARAMETERS);        \
-    }
-
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
-        CALL_RADIUS(float, FixedRadiusSearchCUDA)
-        CALL_RADIUS(double, FixedRadiusSearchCUDA)
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            FixedRadiusSearchCUDA<scalar_t, int_t>(RADIUS_PARAMETERS);
+        });
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
-        CALL_RADIUS(float, FixedRadiusSearchCPU)
-        CALL_RADIUS(double, FixedRadiusSearchCPU)
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            FixedRadiusSearchCPU<scalar_t, int_t>(RADIUS_PARAMETERS);
+        });
     }
 
     return std::make_tuple(neighbors_index, neighbors_distance,
-                           neighbors_row_splits);
+                           neighbors_row_splits.To(index_dtype));
 };
 
 std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
@@ -206,6 +217,7 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
         double radius,
         int max_knn) const {
     const Dtype dtype = GetDtype();
+    const Dtype index_dtype = GetIndexDtype();
     const Device device = GetDevice();
 
     // Check device and dtype.
@@ -240,23 +252,20 @@ std::tuple<Tensor, Tensor, Tensor> FixedRadiusIndex::SearchHybrid(
             hash_table_cell_splits_, Metric::L2, neighbors_index,        \
             neighbors_count, neighbors_distance
 
-#define CALL_HYBRID(type, fn)               \
-    if (Dtype::FromType<type>() == dtype) { \
-        fn<type>(HYBRID_PARAMETERS);        \
-    }
-
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
-        CALL_HYBRID(float, HybridSearchCUDA)
-        CALL_HYBRID(double, HybridSearchCUDA)
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            HybridSearchCUDA<scalar_t, int_t>(HYBRID_PARAMETERS);
+        });
 #else
         utility::LogError(
                 "-DBUILD_CUDA_MODULE=OFF. Please compile Open3d with "
                 "-DBUILD_CUDA_MODULE=ON.");
 #endif
     } else {
-        CALL_HYBRID(float, HybridSearchCPU)
-        CALL_HYBRID(double, HybridSearchCPU)
+        DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
+            HybridSearchCPU<scalar_t, int_t>(HYBRID_PARAMETERS);
+        });
     }
 
     return std::make_tuple(neighbors_index.View({num_query_points, max_knn}),

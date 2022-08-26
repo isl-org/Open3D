@@ -16,10 +16,10 @@ Supported Python versions:
 .. hlist::
     :columns: 4
 
-    * 3.6
     * 3.7
     * 3.8
     * 3.9
+    * 3.10
 
 Supported operating systems:
 
@@ -70,22 +70,23 @@ version (``HEAD`` of ``master`` branch):
     :widths: auto
 
     * - Linux
-      - `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-manylinux_2_27_x86_64.whl>`__
       - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-manylinux_2_27_x86_64.whl>`__
       - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
       - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_27_x86_64.whl>`__
+
 
     * - MacOS
-      - `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-macosx_10_15_x86_64.whl>`__
       - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_15_x86_64.whl>`__
       - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-macosx_10_15_x86_64.whl>`__
       - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-macosx_10_15_x86_64.whl>`__
+      - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-macosx_10_15_x86_64.whl>`__
 
     * - Windows
-      - `Python 3.6 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp36-cp36m-win_amd64.whl>`__
       - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-win_amd64.whl>`__
       - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp38-cp38-win_amd64.whl>`__
       - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-win_amd64.whl>`__
+      - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-win_amd64.whl>`__
 
 Please use these links from the `latest version of this page
 <http://www.open3d.org/docs/latest/getting_started.html>`__ only. For example,
@@ -120,7 +121,6 @@ Try it
 
 If everything works, congratulations, now Open3D has been successfully installed!
 
-
 Troubleshooting:
 ^^^^^^^^^^^^^^^^
 
@@ -130,7 +130,6 @@ help troubleshoot the issue:
 .. code-block:: bash
 
     python -W default -c "import open3d as o3d"
-
 
 Running Open3D tutorials
 ------------------------
@@ -143,7 +142,6 @@ all Python examples.
     ``matplotlib``, ``opencv-python``. OpenCV is only used for reconstruction
     system. Please read ``util/install-deps-python.sh`` for installing these
     packages.
-
 
 .. _install_open3d_c++:
 
@@ -216,7 +214,6 @@ Extract the archive and move the contents to a local folder (such as
         ├── libOpen3D.so                  │       ├── ...
         ├── open3d_tf_ops.so              └── lib
         └── open3d_torch_ops.so               └── Open3D.lib
-
 
 Some files may be absent in the case of unsupported functionality. To use Open3D
 with your programs through `cmake`, add ``-D

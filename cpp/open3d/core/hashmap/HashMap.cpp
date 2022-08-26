@@ -339,31 +339,30 @@ void HashMap::Init(int64_t init_capacity,
                    const HashBackendType& backend) {
     // Key check
     if (key_dtype_.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
-        utility::LogError("[HashMap] Undefined key dtype is not allowed.");
+        utility::LogError("Undefined key dtype is not allowed.");
     }
     if (key_element_shape_.NumElements() == 0) {
         utility::LogError(
-                "[HashMap] Key element shape must contain at least 1 element, "
+                "Key element shape must contain at least 1 element, "
                 "but got 0.");
     }
 
     // Value check
     if (dtypes_value_.size() != element_shapes_value_.size()) {
         utility::LogError(
-                "[HashMap] Size of value_dtype ({}) mismatches with size of "
+                "Size of value_dtype ({}) mismatches with size of "
                 "element_shapes_value ({}).",
                 dtypes_value_.size(), element_shapes_value_.size());
     }
     for (const auto& value_dtype : dtypes_value_) {
         if (value_dtype.GetDtypeCode() == Dtype::DtypeCode::Undefined) {
-            utility::LogError(
-                    "[HashMap] Undefined value dtype is not allowed.");
+            utility::LogError("Undefined value dtype is not allowed.");
         }
     }
     for (const auto& value_element_shape : element_shapes_value_) {
         if (value_element_shape.NumElements() == 0) {
             utility::LogError(
-                    "[HashMap] Value element shape must contain at least 1 "
+                    "Value element shape must contain at least 1 "
                     "element, but got 0.");
         }
     }

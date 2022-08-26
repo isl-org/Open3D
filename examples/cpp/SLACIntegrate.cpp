@@ -45,7 +45,7 @@ void PrintHelp() {
     utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
     utility::LogInfo("    --block_count [=40000]");
     utility::LogInfo("    --depth_scale [=1000.0]");
-    utility::LogInfo("    --max_depth [=3.0]");
+    utility::LogInfo("    --depth_max [=3.0]");
     utility::LogInfo("    --sdf_trunc [=0.04]");
     utility::LogInfo("    --device [CPU:0]");
     utility::LogInfo("    --mesh");
@@ -132,8 +132,8 @@ int main(int argc, char* argv[]) {
             argc, argv, "--voxel_size", 3.f / 512.f));
     float depth_scale = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--depth_scale", 1000.f));
-    float max_depth = static_cast<float>(
-            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
+    float depth_max = static_cast<float>(
+            utility::GetProgramOptionAsDouble(argc, argv, "--depth_max", 3.f));
     // float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
     //         argc, argv, "--sdf_trunc", 0.04f));
     t::geometry::VoxelBlockGrid voxel_grid(
@@ -176,21 +176,21 @@ int main(int argc, char* argv[]) {
 
             t::geometry::RGBDImage rgbd_projected =
                     ctr_grid.Deform(rgbd, intrinsic_t, extrinsic_local_t,
-                                    depth_scale, max_depth);
+                                    depth_scale, depth_max);
 
             core::Tensor frustum_block_coords =
                     voxel_grid.GetUniqueBlockCoordinates(
                             rgbd_projected.depth_, intrinsic_t, extrinsic_t,
-                            depth_scale, max_depth);
+                            depth_scale, depth_max);
 
             voxel_grid.Integrate(frustum_block_coords, rgbd_projected.depth_,
                                  rgbd_projected.color_, intrinsic_t,
-                                 extrinsic_t, depth_scale, max_depth);
+                                 extrinsic_t, depth_scale, depth_max);
             timer.Stop();
 
             ++k;
             utility::LogInfo("{}: Deformation + Integration takes {}", k,
-                             timer.GetDuration());
+                             timer.GetDurationInMillisecond());
         }
     }
 

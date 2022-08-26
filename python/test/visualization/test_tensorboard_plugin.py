@@ -24,13 +24,16 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 import os
-import sys
 from time import sleep
 import subprocess as sp
 import webbrowser
 import shutil
 import numpy as np
 import pytest
+try:
+    import tensorflow as tf  # noqa
+except (ImportError, ModuleNotFoundError):
+    pytest.importorskip("torch")
 pytest.importorskip("tensorboard")
 vis = pytest.importorskip("open3d.ml.vis")
 try:
@@ -42,9 +45,6 @@ import open3d as o3d
 from open3d.visualization.tensorboard_plugin import summary
 from open3d.visualization.tensorboard_plugin.util import to_dict_batch
 from open3d.visualization.tensorboard_plugin.util import Open3DPluginDataReader
-
-sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/..")
-from open3d_test import test_data_dir
 
 
 @pytest.fixture
@@ -372,10 +372,13 @@ def check_material_dict(o3d_geo, material, batch_idx):
 @pytest.fixture
 def logdir():
     """Extract logdir zip to provide logdir for tests, cleanup afterwards."""
-    shutil.unpack_archive(
-        os.path.join(test_data_dir, "test_tensorboard_plugin.zip"))
-    yield "test_tensorboard_plugin"
-    shutil.rmtree("test_tensorboard_plugin")
+    test_data = o3d.data.SingleDownloadDataset(
+        "TestTensorboardPlugin", [
+            "https://github.com/isl-org/open3d_downloads/releases/"
+            "download/20220301-data/test_tensorboard_plugin.zip"
+        ], "746612f1d3b413236091d263bff29dc9", False)
+    yield test_data.extract_dir
+    shutil.rmtree(test_data.extract_dir)
 
 
 def test_plugin_data_reader(geometry_data, logdir):
@@ -393,43 +396,42 @@ def test_plugin_data_reader(geometry_data, logdir):
 
     reader = Open3DPluginDataReader(logdir)
     assert reader.is_active()
-    assert reader.run_to_tags == {'.': tags_ref}
-    assert reader.get_label_to_names('.', 'cube_pcd') == label_to_names_ref
-    assert reader.get_label_to_names('.', 'bboxes') == label_to_names_ref
+    assert reader.run_to_tags == {'test_tensorboard_plugin': tags_ref}
+    assert reader.get_label_to_names('test_tensorboard_plugin',
+                                     'cube_pcd') == label_to_names_ref
+    assert reader.get_label_to_names('test_tensorboard_plugin',
+                                     'bboxes') == label_to_names_ref
     step_to_idx = {i: i for i in range(3)}
     for step in range(3):
         for batch_idx in range(max_outputs):
             cube[batch_idx].paint_uniform_color(colors[step][batch_idx])
             cube_ref = o3d.t.geometry.TriangleMesh.from_legacy(cube[batch_idx])
-            cube_ref.triangle["indices"] = cube_ref.triangle["indices"].to(
+            cube_ref.triangle.indices = cube_ref.triangle.indices.to(
                 o3d.core.int32)
-            cube_ref.vertex['colors'] = (cube_ref.vertex['colors'] * 255).to(
+            cube_ref.vertex.colors = (cube_ref.vertex.colors * 255).to(
                 o3d.core.uint8)
 
-            cube_out = reader.read_geometry(".", "cube", step, batch_idx,
-                                            step_to_idx)[0]
-            assert (cube_out.vertex['positions'] == cube_ref.vertex['positions']
-                   ).all()
+            cube_out = reader.read_geometry("test_tensorboard_plugin", "cube",
+                                            step, batch_idx, step_to_idx)[0]
             assert (
-                cube_out.vertex['normals'] == cube_ref.vertex['normals']).all()
+                cube_out.vertex.positions == cube_ref.vertex.positions).all()
+            assert (cube_out.vertex.normals == cube_ref.vertex.normals).all()
+            assert (cube_out.vertex.colors == cube_ref.vertex.colors).all()
             assert (
-                cube_out.vertex['colors'] == cube_ref.vertex['colors']).all()
-            assert (cube_out.triangle['indices'] == cube_ref.triangle['indices']
-                   ).all()
+                cube_out.triangle.indices == cube_ref.triangle.indices).all()
             check_material_dict(cube_out, material, batch_idx)
 
-            cube_pcd_out = reader.read_geometry(".", "cube_pcd", step,
-                                                batch_idx, step_to_idx)[0]
-            assert (cube_pcd_out.point['positions'] ==
-                    cube_ref.vertex['positions']).all()
+            cube_pcd_out = reader.read_geometry("test_tensorboard_plugin",
+                                                "cube_pcd", step, batch_idx,
+                                                step_to_idx)[0]
+            assert (cube_pcd_out.point.positions == cube_ref.vertex.positions
+                   ).all()
             assert cube_pcd_out.has_valid_material()
-            assert (cube_pcd_out.point['normals'] == cube_ref.vertex['normals']
-                   ).all()
-            assert (cube_pcd_out.point['colors'] == cube_ref.vertex['colors']
-                   ).all()
-            assert (cube_pcd_out.point['custom'].numpy() ==
-                    cube_custom_prop[step][batch_idx]).all()
-            assert (cube_pcd_out.point['labels'].numpy() == cube_labels[step]
+            assert (cube_pcd_out.point.normals == cube_ref.vertex.normals).all()
+            assert (cube_pcd_out.point.colors == cube_ref.vertex.colors).all()
+            assert (cube_pcd_out.point.custom.numpy() == cube_custom_prop[step]
+                    [batch_idx]).all()
+            assert (cube_pcd_out.point.labels.numpy() == cube_labels[step]
                     [batch_idx]).all()
             for key in tuple(material):
                 if key.startswith('material_texture_map_'):
@@ -438,31 +440,30 @@ def test_plugin_data_reader(geometry_data, logdir):
 
             cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
             cube_ls_ref = o3d.t.geometry.LineSet.from_legacy(cube_ls[batch_idx])
-            cube_ls_ref.line["indices"] = cube_ls_ref.line["indices"].to(
+            cube_ls_ref.line.indices = cube_ls_ref.line.indices.to(
                 o3d.core.int32)
-            cube_ls_ref.line['colors'] = (cube_ls_ref.line['colors'] * 255).to(
+            cube_ls_ref.line.colors = (cube_ls_ref.line.colors * 255).to(
                 o3d.core.uint8)
 
-            cube_ls_out = reader.read_geometry(".", "cube_ls", step, batch_idx,
+            cube_ls_out = reader.read_geometry("test_tensorboard_plugin",
+                                               "cube_ls", step, batch_idx,
                                                step_to_idx)[0]
-            assert (cube_ls_out.point['positions'] ==
-                    cube_ls_ref.point['positions']).all()
-            assert (cube_ls_out.line['indices'] == cube_ls_ref.line['indices']
+            assert (cube_ls_out.point.positions == cube_ls_ref.point.positions
                    ).all()
-            assert (
-                cube_ls_out.line['colors'] == cube_ls_ref.line['colors']).all()
+            assert (cube_ls_out.line.indices == cube_ls_ref.line.indices).all()
+            assert (cube_ls_out.line.colors == cube_ls_ref.line.colors).all()
             check_material_dict(cube_ls_out, material_ls, batch_idx)
 
             bbox_ls_out, data_bbox_proto = reader.read_geometry(
-                ".", "bboxes", step, batch_idx, step_to_idx)
+                "test_tensorboard_plugin", "bboxes", step, batch_idx,
+                step_to_idx)
             bbox_ls_ref = o3d.t.geometry.LineSet.from_legacy(
                 BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
-            bbox_ls_ref.line["indices"] = bbox_ls_ref.line["indices"].to(
+            bbox_ls_ref.line.indices = bbox_ls_ref.line.indices.to(
                 o3d.core.int32)
-            assert (bbox_ls_out.point["positions"] ==
-                    bbox_ls_ref.point["positions"]).all()
-            assert (bbox_ls_out.line["indices"] == bbox_ls_ref.line["indices"]
+            assert (bbox_ls_out.point.positions == bbox_ls_ref.point.positions
                    ).all()
+            assert (bbox_ls_out.line.indices == bbox_ls_ref.line.indices).all()
             assert "colors" not in bbox_ls_out.line
             label_conf_ref = tuple((bb.label_class, bb.confidence)
                                    for bb in bboxes_ref[step][batch_idx])

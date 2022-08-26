@@ -62,7 +62,7 @@ inline Eigen::Matrix3d GetRotationFromE1ToX(const Eigen::Vector3d &x) {
 }
 
 /// Compute the covariance matrix according to the original paper. If the input
-/// has already pre-computed covariances returns inmediatly. If the input has
+/// has already pre-computed covariances returns immediately. If the input has
 /// pre-computed normals but no covariances, compute the covariances from those
 /// normals. If there is no covariances nor normals, compute each covariance
 /// matrix following the original implementation of GICP using 20 NN.

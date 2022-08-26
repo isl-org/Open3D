@@ -73,120 +73,70 @@ TEST_P(RegistrationPermuteDevices, RegistrationResultConstructor) {
     EXPECT_TRUE(reg_result.transformation_.AllClose(init_trans_t));
 }
 
-static std::tuple<t::geometry::PointCloud, t::geometry::PointCloud>
-GetTestPointClouds(const core::Dtype& dtype, const core::Device& device) {
-    t::geometry::PointCloud source(device);
-    t::geometry::PointCloud target(device);
+static std::tuple<t::geometry::PointCloud,
+                  t::geometry::PointCloud,
+                  core::Tensor,
+                  double>
+GetRegistrationTestData(core::Dtype& dtype, core::Device& device) {
+    t::geometry::PointCloud source_tpcd, target_tpcd;
+    data::DemoICPPointClouds pcd_fragments;
+    t::io::ReadPointCloud(pcd_fragments.GetPaths()[0], source_tpcd);
+    t::io::ReadPointCloud(pcd_fragments.GetPaths()[1], target_tpcd);
+    source_tpcd = source_tpcd.To(device).VoxelDownSample(0.02);
+    target_tpcd = target_tpcd.To(device).VoxelDownSample(0.02);
 
-    core::Tensor source_points =
-            core::Tensor::Init<float>(
-                    {{1.0, 0.5, 2.0}, {0.5, 0.5, 2.0}, {0.5, 0.5, 2.5},
-                     {3.0, 1.0, 1.5}, {3.5, 1.0, 1.0}, {0.5, 1.0, 2.0},
-                     {1.5, 1.0, 1.5}, {2.0, 1.0, 1.5}, {1.0, 1.0, 2.0},
-                     {2.5, 1.0, 1.5}, {3.0, 1.0, 1.0}, {0.5, 1.0, 2.5},
-                     {1.0, 1.0, 1.0}, {1.5, 1.0, 1.0}, {1.0, 1.5, 1.0},
-                     {3.0, 1.5, 1.0}, {3.5, 1.5, 1.0}, {3.0, 1.5, 1.5},
-                     {0.5, 1.5, 1.5}, {0.5, 1.5, 2.0}, {1.0, 1.5, 2.0},
-                     {2.5, 1.5, 1.5}, {1.5, 1.5, 1.0}, {1.5, 1.5, 1.5},
-                     {2.0, 1.5, 1.5}, {3.0, 1.5, 0.5}, {2.5, 1.5, 1.0},
-                     {2.0, 1.5, 1.0}, {3.0, 2.0, 0.5}, {0.5, 2.0, 1.5},
-                     {3.0, 2.0, 1.0}, {1.0, 2.0, 1.0}, {2.0, 1.5, 0.5},
-                     {0.5, 2.0, 2.0}, {2.5, 2.0, 1.0}, {2.5, 2.0, 0.5},
-                     {2.0, 2.0, 0.5}, {2.5, 1.5, 0.5}, {3.0, 2.0, 1.5},
-                     {2.0, 2.0, 1.0}, {1.0, 2.0, 2.0}, {1.5, 2.0, 1.0},
-                     {1.5, 2.0, 1.5}, {2.5, 2.0, 1.5}, {2.0, 2.0, 1.5},
-                     {1.0, 2.0, 0.5}, {0.5, 2.0, 1.0}, {1.5, 2.0, 0.5},
-                     {1.0, 2.0, 1.5}},
-                    device)
-                    .To(dtype);
+    // Convert color to float values.
+    for (auto& kv : source_tpcd.GetPointAttr()) {
+        if (kv.first == "colors" && kv.second.GetDtype() == core::UInt8) {
+            source_tpcd.SetPointAttr(kv.first,
+                                     kv.second.To(device, dtype).Div(255.0));
+        } else {
+            source_tpcd.SetPointAttr(kv.first, kv.second.To(device, dtype));
+        }
+    }
+    for (auto& kv : target_tpcd.GetPointAttr()) {
+        if (kv.first == "colors" && kv.second.GetDtype() == core::UInt8) {
+            target_tpcd.SetPointAttr(kv.first,
+                                     kv.second.To(device, dtype).Div(255.0));
+        } else {
+            target_tpcd.SetPointAttr(kv.first, kv.second.To(device, dtype));
+        }
+    }
 
-    core::Tensor target_points =
-            core::Tensor::Init<float>(
-                    {{1.5, 1.0, 1.5}, {2.5, 1.0, 1.5}, {1.5, 1.0, 1.0},
-                     {1.0, 1.0, 1.0}, {2.0, 1.0, 1.5}, {3.0, 1.0, 1.5},
-                     {1.0, 1.0, 0.5}, {1.0, 1.5, 1.0}, {1.0, 1.5, 0.5},
-                     {1.0, 1.0, 1.5}, {3.0, 1.0, 2.0}, {3.0, 1.5, 2.0},
-                     {3.0, 1.5, 1.5}, {1.0, 1.5, 1.5}, {1.5, 1.5, 1.5},
-                     {2.5, 1.5, 1.5}, {2.0, 1.5, 1.5}, {1.5, 1.5, 1.0},
-                     {2.5, 1.5, 2.0}, {1.0, 2.0, 1.0}, {1.0, 2.0, 0.5},
-                     {2.5, 1.5, 1.0}, {3.0, 2.0, 1.5}, {2.5, 2.0, 1.0},
-                     {2.5, 2.0, 1.5}, {1.5, 2.0, 1.0}, {2.0, 1.5, 1.0},
-                     {1.0, 2.0, 1.5}, {2.0, 2.0, 1.0}, {1.5, 2.0, 1.5},
-                     {1.5, 2.0, 0.5}, {2.0, 2.0, 1.5}, {2.0, 2.0, 0.5},
-                     {1.5, 2.5, 1.0}, {1.0, 2.5, 1.0}, {3.0, 2.0, 1.0},
-                     {2.0, 2.5, 1.0}, {2.5, 2.5, 1.0}},
-                    device)
-                    .To(dtype);
+    // Initial transformation input.
+    const core::Tensor initial_transform_t =
+            core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
+                                        {-0.139, 0.967, -0.215, 0.7},
+                                        {0.487, 0.255, 0.835, -1.4},
+                                        {0.0, 0.0, 0.0, 1.0}},
+                                       core::Device("CPU:0"));
 
-    core::Tensor target_normals =
-            core::Tensor::Init<float>({{0.15597, -0.0463812, -0.986672},
-                                       {-0.213545, 0.887963, 0.407334},
-                                       {0.423193, -0.121977, -0.897792},
-                                       {0.202251, 0.27611, -0.939605},
-                                       {0.275452, 0.207216, -0.938716},
-                                       {0.326146, 0.0385317, -0.944534},
-                                       {0.983129, -0.174668, -0.0543011},
-                                       {0.898665, -0.0602029, 0.434485},
-                                       {0.711325, 0.193223, -0.675783},
-                                       {0.346158, 0.198724, -0.916888},
-                                       {0.302085, 0.28938, -0.908297},
-                                       {0.341044, 0.414138, -0.843907},
-                                       {0.212191, 0.213068, -0.953717},
-                                       {0.239759, 0.313187, -0.918929},
-                                       {0.302290, 0.27265, -0.913391},
-                                       {0.209796, 0.402747, -0.890944},
-                                       {0.267025, 0.218226, -0.938656},
-                                       {0.00126928, -0.976587, -0.21512},
-                                       {0.321912, 0.194736, -0.926526},
-                                       {0.831227, 0.236675, -0.503037},
-                                       {0.987006, -0.155324, 0.0411639},
-                                       {0.103384, -0.808796, -0.57893},
-                                       {0.181245, 0.66226, -0.727023},
-                                       {0.235471, 0.525053, -0.817846},
-                                       {0.231954, 0.446165, -0.864369},
-                                       {-0.261931, -0.725542, -0.636381},
-                                       {0.120953, -0.864985, -0.487003},
-                                       {0.858345, -0.227847, 0.459706},
-                                       {-0.416259, -0.367408, -0.831709},
-                                       {-0.476652, 0.206048, -0.854604},
-                                       {-0.211959, -0.523378, -0.825317},
-                                       {-0.964914, 0.0541031, -0.256931},
-                                       {-0.0653566, -0.913961, -0.400504},
-                                       {-0.846868, -0.170805, -0.503628},
-                                       {0.0366971, 0.515834, -0.855902},
-                                       {-0.0714554, -0.855019, -0.513651},
-                                       {-0.0217377, -0.957744, -0.286799},
-                                       {-0.0345231, -0.947096, -0.319088}},
-                                      device)
-                    .To(dtype);
+    const double max_correspondence_dist = 0.7;
 
-    source.SetPointPositions(source_points.To(dtype, false));
-
-    target.SetPointPositions(target_points.To(dtype, false));
-    target.SetPointNormals(target_normals.To(dtype, false));
-
-    return std::make_tuple(source, target);
+    return std::make_tuple(source_tpcd, target_tpcd, initial_transform_t,
+                           max_correspondence_dist);
 }
 
 TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
     core::Device device = GetParam();
 
     for (auto dtype : {core::Float32, core::Float64}) {
-        t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
-        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
-
+        // 1. Get data and parameters.
+        t::geometry::PointCloud source_tpcd, target_tpcd;
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t;
+        // Search radius.
+        double max_correspondence_dist;
+        std::tie(source_tpcd, target_tpcd, initial_transform_t,
+                 max_correspondence_dist) =
+                GetRegistrationTestData(dtype, device);
         open3d::geometry::PointCloud source_lpcd = source_tpcd.ToLegacy();
         open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
 
-        // Initial transformation input for tensor implementation.
-        core::Tensor initial_transform_t =
-                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
-
         // Initial transformation input for legacy implementation.
-        Eigen::Matrix4d initial_transform_l = Eigen::Matrix4d::Identity();
-
-        // Identity transformation.
-        double max_correspondence_dist = 3.0;
+        const Eigen::Matrix4d initial_transform_l =
+                core::eigen_converter::TensorToEigenMatrixXd(
+                        initial_transform_t);
 
         // Tensor evaluation.
         t_reg::RegistrationResult evaluation_t = t_reg::EvaluateRegistration(
@@ -198,9 +148,9 @@ TEST_P(RegistrationPermuteDevices, EvaluateRegistration) {
                 source_lpcd, target_lpcd, max_correspondence_dist,
                 initial_transform_l);
         Eigen::Matrix4d::Identity();
-        EXPECT_NEAR(evaluation_t.fitness_, evaluation_l.fitness_, 0.0005);
+        EXPECT_NEAR(evaluation_t.fitness_, evaluation_l.fitness_, 0.005);
         EXPECT_NEAR(evaluation_t.inlier_rmse_, evaluation_l.inlier_rmse_,
-                    0.0005);
+                    0.005);
     }
 }
 
@@ -208,26 +158,23 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPoint) {
     core::Device device = GetParam();
 
     for (auto dtype : {core::Float32, core::Float64}) {
-        t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
-        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
-
+        // 1. Get data and parameters.
+        t::geometry::PointCloud source_tpcd, target_tpcd;
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t;
+        // Search radius.
+        double max_correspondence_dist;
+        std::tie(source_tpcd, target_tpcd, initial_transform_t,
+                 max_correspondence_dist) =
+                GetRegistrationTestData(dtype, device);
         open3d::geometry::PointCloud source_lpcd = source_tpcd.ToLegacy();
         open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
 
-        // Initial transformation input for tensor implementation.
-        core::Tensor initial_transform_t =
-                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
-                                            {-0.139, 0.967, -0.215, 0.7},
-                                            {0.487, 0.255, 0.835, -1.4},
-                                            {0.0, 0.0, 0.0, 1.0}},
-                                           core::Device("CPU:0"));
-
         // Initial transformation input for legacy implementation.
-        Eigen::Matrix4d initial_transform_l =
+        const Eigen::Matrix4d initial_transform_l =
                 core::eigen_converter::TensorToEigenMatrixXd(
                         initial_transform_t);
 
-        double max_correspondence_dist = 3.0;
         double relative_fitness = 1e-6;
         double relative_rmse = 1e-6;
         int max_iterations = 2;
@@ -249,8 +196,8 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPoint) {
                 l_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
                                               max_iterations));
 
-        EXPECT_NEAR(reg_p2p_t.fitness_, reg_p2p_l.fitness_, 0.0005);
-        EXPECT_NEAR(reg_p2p_t.inlier_rmse_, reg_p2p_l.inlier_rmse_, 0.0005);
+        EXPECT_NEAR(reg_p2p_t.fitness_, reg_p2p_l.fitness_, 0.005);
+        EXPECT_NEAR(reg_p2p_t.inlier_rmse_, reg_p2p_l.inlier_rmse_, 0.005);
     }
 }
 
@@ -258,32 +205,28 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPlane) {
     core::Device device = GetParam();
 
     for (auto dtype : {core::Float32, core::Float64}) {
-        t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
-        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
-
+        // 1. Get data and parameters.
+        t::geometry::PointCloud source_tpcd, target_tpcd;
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t;
+        // Search radius.
+        double max_correspondence_dist;
+        std::tie(source_tpcd, target_tpcd, initial_transform_t,
+                 max_correspondence_dist) =
+                GetRegistrationTestData(dtype, device);
         open3d::geometry::PointCloud source_lpcd = source_tpcd.ToLegacy();
         open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
 
-        // Initial transformation input for tensor implementation.
-        core::Tensor initial_transform_t =
-                core::Tensor::Init<double>({{0.862, 0.011, -0.507, 0.5},
-                                            {-0.139, 0.967, -0.215, 0.7},
-                                            {0.487, 0.255, 0.835, -1.4},
-                                            {0.0, 0.0, 0.0, 1.0}},
-                                           core::Device("CPU:0"));
-
         // Initial transformation input for legacy implementation.
-        Eigen::Matrix4d initial_transform_l =
+        const Eigen::Matrix4d initial_transform_l =
                 core::eigen_converter::TensorToEigenMatrixXd(
                         initial_transform_t);
 
-        double max_correspondence_dist = 1.5;
         double relative_fitness = 1e-6;
         double relative_rmse = 1e-6;
         int max_iterations = 2;
 
         // L1Loss Method:
-
         // PointToPlane - Tensor.
         t_reg::RegistrationResult reg_p2plane_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
@@ -305,58 +248,39 @@ TEST_P(RegistrationPermuteDevices, ICPPointToPlane) {
                 l_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
                                               max_iterations));
 
-        EXPECT_NEAR(reg_p2plane_t.fitness_, reg_p2plane_l.fitness_, 0.0005);
+        EXPECT_NEAR(reg_p2plane_t.fitness_, reg_p2plane_l.fitness_, 0.005);
         EXPECT_NEAR(reg_p2plane_t.inlier_rmse_, reg_p2plane_l.inlier_rmse_,
-                    0.0005);
+                    0.005);
     }
 }
 
-TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
+TEST_P(RegistrationPermuteDevices, ICPColored) {
     core::Device device = GetParam();
 
-    t::geometry::PointCloud source_tpcd, target_tpcd;
-    data::DemoColoredICPPointClouds colored_frag;
-    t::io::ReadPointCloud(colored_frag.GetPaths()[0], source_tpcd);
-    t::io::ReadPointCloud(colored_frag.GetPaths()[1], target_tpcd);
-    source_tpcd = source_tpcd.To(device);
-    target_tpcd = target_tpcd.To(device);
-
     for (auto dtype : {core::Float32, core::Float64}) {
-        for (auto& kv : source_tpcd.GetPointAttr()) {
-            if (kv.first == "colors") {
-                source_tpcd.SetPointAttr(
-                        kv.first, kv.second.To(device, dtype).Div(255.0));
-            } else {
-                source_tpcd.SetPointAttr(kv.first, kv.second.To(device, dtype));
-            }
-        }
-        for (auto& kv : target_tpcd.GetPointAttr()) {
-            if (kv.first == "colors") {
-                target_tpcd.SetPointAttr(
-                        kv.first, kv.second.To(device, dtype).Div(255.0));
-            } else {
-                target_tpcd.SetPointAttr(kv.first, kv.second.To(device, dtype));
-            }
-        }
-
+        // 1. Get data and parameters.
+        t::geometry::PointCloud source_tpcd, target_tpcd;
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t;
+        // Search radius.
+        double max_correspondence_dist;
+        std::tie(source_tpcd, target_tpcd, initial_transform_t,
+                 max_correspondence_dist) =
+                GetRegistrationTestData(dtype, device);
         open3d::geometry::PointCloud source_lpcd = source_tpcd.ToLegacy();
         open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
 
-        // Initial transformation input for tensor implementation.
-        core::Tensor initial_transform_t = core::Tensor::Eye(4, dtype, device);
-
         // Initial transformation input for legacy implementation.
-        Eigen::Matrix4d initial_transform_l =
+        const Eigen::Matrix4d initial_transform_l =
                 core::eigen_converter::TensorToEigenMatrixXd(
                         initial_transform_t);
 
-        double max_correspondence_dist = 0.01;
         double relative_fitness = 1e-6;
         double relative_rmse = 1e-6;
         int max_iterations = 2;
 
         // ColoredICP - Tensor.
-        t_reg::RegistrationResult reg_p2plane_t = t_reg::ICP(
+        t_reg::RegistrationResult reg_colored_t = t_reg::ICP(
                 source_tpcd, target_tpcd, max_correspondence_dist,
                 initial_transform_t,
                 t_reg::TransformationEstimationForColoredICP(),
@@ -365,15 +289,15 @@ TEST_P(RegistrationPermuteDevices, RegistrationColoredICP) {
                 -1.0);
 
         // ColoredICP - Legacy.
-        l_reg::RegistrationResult reg_p2plane_l = l_reg::RegistrationColoredICP(
+        l_reg::RegistrationResult reg_colored_l = l_reg::RegistrationColoredICP(
                 source_lpcd, target_lpcd, max_correspondence_dist,
                 initial_transform_l,
                 l_reg::TransformationEstimationForColoredICP(),
                 l_reg::ICPConvergenceCriteria(relative_fitness, relative_rmse,
                                               max_iterations));
 
-        EXPECT_NEAR(reg_p2plane_t.fitness_, reg_p2plane_l.fitness_, 0.02);
-        EXPECT_NEAR(reg_p2plane_t.inlier_rmse_, reg_p2plane_l.inlier_rmse_,
+        EXPECT_NEAR(reg_colored_t.fitness_, reg_colored_l.fitness_, 0.05);
+        EXPECT_NEAR(reg_colored_t.inlier_rmse_, reg_colored_l.inlier_rmse_,
                     0.02);
     }
 }
@@ -463,21 +387,22 @@ TEST_P(RegistrationPermuteDevices, GetInformationMatrixFromPointCloud) {
     core::Device device = GetParam();
 
     for (auto dtype : {core::Float32, core::Float64}) {
-        t::geometry::PointCloud source_tpcd(device), target_tpcd(device);
-        std::tie(source_tpcd, target_tpcd) = GetTestPointClouds(dtype, device);
-
+        // 1. Get data and parameters.
+        t::geometry::PointCloud source_tpcd, target_tpcd;
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t;
+        // Search radius.
+        double max_correspondence_dist;
+        std::tie(source_tpcd, target_tpcd, initial_transform_t,
+                 max_correspondence_dist) =
+                GetRegistrationTestData(dtype, device);
         open3d::geometry::PointCloud source_lpcd = source_tpcd.ToLegacy();
         open3d::geometry::PointCloud target_lpcd = target_tpcd.ToLegacy();
 
-        // Initial transformation input for tensor implementation.
-        core::Tensor initial_transform_t =
-                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
-
         // Initial transformation input for legacy implementation.
-        Eigen::Matrix4d initial_transform_l = Eigen::Matrix4d::Identity();
-
-        // Identity transformation.
-        double max_correspondence_dist = 3.0;
+        const Eigen::Matrix4d initial_transform_l =
+                core::eigen_converter::TensorToEigenMatrixXd(
+                        initial_transform_t);
 
         // Tensor information matrix.
         core::Tensor information_matrix_t = t_reg::GetInformationMatrix(

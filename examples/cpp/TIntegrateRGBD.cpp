@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
 
     if (color_filenames.size() != depth_filenames.size()) {
         utility::LogError(
-                "[TIntegrateRGBD] numbers of color and depth files mismatch. "
+                "The numbers of color and depth files mismatch. "
                 "Please provide folders with same number of images.");
     }
 
@@ -140,13 +140,14 @@ int main(int argc, char* argv[]) {
         t::geometry::Image color =
                 (*t::io::CreateImageFromFile(color_filenames[i]));
         timer_io.Stop();
-        utility::LogInfo("IO takes {}", timer_io.GetDuration());
+        utility::LogInfo("IO takes {}", timer_io.GetDurationInMillisecond());
 
         timer_io.Start();
         depth = depth.To(device);
         color = color.To(device);
         timer_io.Stop();
-        utility::LogInfo("Conversion takes {}", timer_io.GetDuration());
+        utility::LogInfo("Conversion takes {}",
+                         timer_io.GetDurationInMillisecond());
 
         Eigen::Matrix4d extrinsic = trajectory->parameters_[i].extrinsic_;
         Tensor extrinsic_t =
@@ -162,8 +163,8 @@ int main(int argc, char* argv[]) {
                              extrinsic_t);
         int_timer.Stop();
         utility::LogInfo("{}: Integration takes {}", i,
-                         int_timer.GetDuration());
-        time_int += int_timer.GetDuration();
+                         int_timer.GetDurationInMillisecond());
+        time_int += int_timer.GetDurationInMillisecond();
 
         if (enable_raycast) {
             utility::Timer ray_timer;
@@ -176,8 +177,8 @@ int main(int argc, char* argv[]) {
             ray_timer.Stop();
 
             utility::LogInfo("{}: Raycast takes {}", i,
-                             ray_timer.GetDuration());
-            time_raycasting += ray_timer.GetDuration();
+                             ray_timer.GetDurationInMillisecond());
+            time_raycasting += ray_timer.GetDurationInMillisecond();
 
             if (debug) {
                 t::geometry::Image depth_raycast(result["depth"]);
@@ -195,8 +196,9 @@ int main(int argc, char* argv[]) {
         }
 
         timer.Stop();
-        utility::LogInfo("{}: Per iteration takes {}", i, timer.GetDuration());
-        time_total += timer.GetDuration();
+        utility::LogInfo("{}: Per iteration takes {}", i,
+                         timer.GetDurationInMillisecond());
+        time_total += timer.GetDurationInMillisecond();
     }
 
     size_t n = trajectory->parameters_.size();

@@ -90,20 +90,21 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > DepthCapture  [filename]");
+    utility::LogInfo("    > DepthCapture");
     // clang-format on
     utility::LogInfo("");
 }
 
 int main(int argc, char *argv[]) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
-    if (argc != 2 ||
+    if (argc != 1 ||
         utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
 
-    auto mesh_ptr = io::CreateMeshFromFile(argv[1]);
+    data::BunnyMesh bunny_mesh;
+    auto mesh_ptr = io::CreateMeshFromFile(bunny_mesh.GetPath());
     mesh_ptr->ComputeVertexNormals();
     utility::LogInfo("Press S to capture a depth image.");
     VisualizerWithDepthCapture visualizer;

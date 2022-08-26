@@ -34,25 +34,23 @@
 #include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/IJsonConvertible.h"
 #include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
 
-void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
-                             bool delete_temp = true) {
+void WriteReadAndAssertEqual(const geometry::Octree& src_octree) {
     // Write to file
-    std::string file_name = utility::GetDataPathCommon("temp_octree.json");
+    std::string file_name =
+            utility::filesystem::GetTempDirectoryPath() + "/temp_octree.json";
     EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
 
     // Read from file
     geometry::Octree dst_octree;
     EXPECT_TRUE(io::ReadOctree(file_name, dst_octree));
     EXPECT_TRUE(src_octree == dst_octree);
-    if (delete_temp) {
-        EXPECT_EQ(std::remove(file_name.c_str()), 0);
-    }
 }
 
 TEST(OctreeIO, EmptyTree) {

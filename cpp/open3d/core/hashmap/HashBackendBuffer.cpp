@@ -69,7 +69,7 @@ HashBackendBuffer::HashBackendBuffer(int64_t capacity,
     }
 
     // Heap top is device specific
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         heap_top_.cuda = Tensor({1}, Dtype::Int32, device);
     }
 
@@ -80,10 +80,10 @@ void HashBackendBuffer::ResetHeap() {
     Device device = GetDevice();
 
     Tensor heap = GetIndexHeap();
-    if (device.GetType() == Device::DeviceType::CPU) {
+    if (device.IsCPU()) {
         CPUResetHeap(heap);
         heap_top_.cpu = 0;
-    } else if (device.GetType() == Device::DeviceType::CUDA) {
+    } else if (device.IsCUDA()) {
         CUDA_CALL(CUDAResetHeap, heap);
         heap_top_.cuda.Fill<int>(0);
     }
@@ -120,7 +120,7 @@ HashBackendBuffer::HeapTop &HashBackendBuffer::GetHeapTop() {
 }
 
 int HashBackendBuffer::GetHeapTopIndex() const {
-    if (heap_.GetDevice().GetType() == Device::DeviceType::CUDA) {
+    if (heap_.IsCUDA()) {
         return heap_top_.cuda[0].Item<int>();
     }
     return heap_top_.cpu.load();

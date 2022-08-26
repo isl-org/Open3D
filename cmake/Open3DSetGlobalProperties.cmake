@@ -1,3 +1,30 @@
+# Make hardening flags
+include(Open3DMakeHardeningFlags)
+open3d_make_hardening_flags(HARDENING_CFLAGS HARDENING_LDFLAGS)
+open3d_make_hardening_definitions(HARDENING_DEFINITIONS)
+message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS}")
+message(STATUS "Using security hardening linker flags: ${HARDENING_LDFLAGS}")
+message(STATUS "Using security hardening compiler definitions: ${HARDENING_DEFINITIONS}")
+
+# open3d_enable_strip(target)
+#
+# Enable binary strip. Only effective on Linux or macOS.
+function(open3d_enable_strip target)
+    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
+    # (from pybind11)
+    # macOS: -x: strip local symbols
+    # Linux: defaults
+    if(NOT DEVELOPER_BUILD AND UNIX AND CMAKE_STRIP)
+        get_target_property(target_type ${target} TYPE)
+        if(target_type MATCHES MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
+            add_custom_command(TARGET ${target} POST_BUILD
+                COMMAND $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
+                        $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
+                        COMMAND_EXPAND_LISTS)
+        endif()
+    endif()
+endfunction()
+
 # open3d_set_global_properties(target)
 #
 # Sets important project-related properties to <target>.
@@ -9,8 +36,8 @@ function(open3d_set_global_properties target)
     # - OPEN3D_CXX_STANDARD
     # - OPEN3D_CXX_COMPILER_ID
     # - OPEN3D_CXX_COMPILER_VERSION
-    # - OPEN3D_CUDA_COMPILER_ID       # Emtpy if not BUILD_CUDA_MODULE
-    # - OPEN3D_CUDA_COMPILER_VERSION  # Emtpy if not BUILD_CUDA_MODULE
+    # - OPEN3D_CUDA_COMPILER_ID       # Empty if not BUILD_CUDA_MODULE
+    # - OPEN3D_CUDA_COMPILER_VERSION  # Empty if not BUILD_CUDA_MODULE
     if (NOT CMAKE_CXX_STANDARD)
         message(FATAL_ERROR "CMAKE_CXX_STANDARD must be defined globally.")
     endif()
@@ -60,12 +87,18 @@ function(open3d_set_global_properties target)
     # Propagate build configuration into source code
     if (BUILD_CUDA_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)
-        if (BUILD_CACHED_CUDA_MANAGER)
-            target_compile_definitions(${target} PRIVATE BUILD_CACHED_CUDA_MANAGER)
+        if (ENABLE_CACHED_CUDA_MANAGER)
+            target_compile_definitions(${target} PRIVATE ENABLE_CACHED_CUDA_MANAGER)
         endif()
     endif()
     if (BUILD_ISPC_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_ISPC_MODULE)
+    endif()
+    if (BUILD_SYCL_MODULE)
+        target_compile_definitions(${target} PRIVATE BUILD_SYCL_MODULE)
+        if (ENABLE_SYCL_UNIFIED_SHARED_MEMORY)
+            target_compile_definitions(${target} PRIVATE ENABLE_SYCL_UNIFIED_SHARED_MEMORY)
+        endif()
     endif()
     if (BUILD_GUI)
         target_compile_definitions(${target} PRIVATE BUILD_GUI)
@@ -94,7 +127,7 @@ function(open3d_set_global_properties target)
         target_compile_definitions(${target} PUBLIC _GLIBCXX_USE_CXX11_ABI=0)
     endif()
 
-    if(NOT WITH_OPENMP)
+    if(UNIX AND NOT WITH_OPENMP)
         target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:-Wno-unknown-pragmas>")
     endif()
     if(WIN32)
@@ -143,27 +176,22 @@ function(open3d_set_global_properties target)
         target_compile_options(${target} PRIVATE $<$<COMPILE_LANGUAGE:ISPC>:--arch=x86-64>)
     endif()
 
+    # Turn off fast math for IntelLLVM DPC++ compiler.
+    # Fast math does not work with some of our NaN handling logics.
+    target_compile_options(${target} PRIVATE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-ffp-contract=on>)
+    target_compile_options(${target} PRIVATE
+        $<$<AND:$<CXX_COMPILER_ID:IntelLLVM>,$<NOT:$<COMPILE_LANGUAGE:ISPC>>>:-fno-fast-math>)
+
     # TBB static version is used
     # See: https://github.com/wjakob/tbb/commit/615d690c165d68088c32b6756c430261b309b79c
     target_compile_definitions(${target} PRIVATE __TBB_LIB_NAME=tbb_static)
 
-    # Download test data files from open3d_downloads repo.
-    add_dependencies(${target} open3d_downloads)
+    # Enable strip
+    open3d_enable_strip(${target})
 
-    # Strip unnecessary sections of the binary on Linux/macOS for Release builds
-    # (from pybind11)
-    # macOS: -x: strip local symbols
-    # Linux: defaults
-    if(NOT DEVELOPER_BUILD AND UNIX AND CMAKE_STRIP)
-        get_target_property(target_type ${target} TYPE)
-        if(target_type MATCHES
-                MODULE_LIBRARY|SHARED_LIBRARY|EXECUTABLE)
-            add_custom_command(TARGET ${target} POST_BUILD
-                COMMAND
-                $<IF:$<CONFIG:Release>,${CMAKE_STRIP},true>
-                $<$<PLATFORM_ID:Darwin>:-x> $<TARGET_FILE:${target}>
-                COMMAND_EXPAND_LISTS)
-        endif()
-    endif()
-
+    # Harderning flags
+    target_compile_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_CFLAGS}>")
+    target_link_options(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_LDFLAGS}>")
+    target_compile_definitions(${target} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${HARDENING_DEFINITIONS}>")
 endfunction()

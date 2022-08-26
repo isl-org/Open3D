@@ -1,9 +1,17 @@
 include(ExternalProject)
 
 if(MSVC)
-    set(lib_name assimp-vc142-mt)
+    set(lib_name assimp-vc${MSVC_TOOLSET_VERSION}-mt)
 else()
     set(lib_name assimp)
+endif()
+
+# IntelLLVM (SYCL) compiler defaults to fast math, causing NaN comparison code
+# compilation error.
+if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    set(assimp_cmake_cxx_flags "${CMAKE_CXX_FLAGS} -ffp-contract=on -fno-fast-math")
+else()
+    set(assimp_cmake_cxx_flags "${CMAKE_CXX_FLAGS}")
 endif()
 
 ExternalProject_Add(
@@ -14,6 +22,8 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        ${ExternalProject_CMAKE_ARGS_hidden}
+        -DCMAKE_CXX_FLAGS:STRING=${assimp_cmake_cxx_flags}
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DASSIMP_NO_EXPORT=ON
@@ -23,10 +33,9 @@ ExternalProject_Add(
         -DASSIMP_BUILD_ZLIB=ON
         -DHUNTER_ENABLED=OFF # Renamed to "ASSIMP_HUNTER_ENABLED" in newer assimp.
         -DCMAKE_DEBUG_POSTFIX=
-        ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
-        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
-        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}IrrXML${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}IrrXML${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)

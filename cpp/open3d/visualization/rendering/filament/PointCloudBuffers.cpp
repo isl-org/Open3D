@@ -310,7 +310,7 @@ TPointCloudBuffersBuilder::TPointCloudBuffersBuilder(
     : geometry_(geometry) {
     // Make sure geometry is on CPU
     auto pts = geometry.GetPointPositions();
-    if (pts.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (pts.IsCUDA()) {
         utility::LogWarning(
                 "GPU resident point clouds are not currently supported for "
                 "visualization. Copying data to CPU.");

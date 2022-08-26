@@ -80,7 +80,7 @@ void IndexGetCUDA(const Tensor& src,
                     CUDACopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
             LaunchAdvancedIndexerKernel(
                     src.GetDevice(), ai,
                     // Need to wrap as extended CUDA lambda function
@@ -108,7 +108,7 @@ void IndexSetCUDA(const Tensor& src,
                     CUDACopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
             LaunchAdvancedIndexerKernel(
                     src.GetDevice(), ai,
                     // Need to wrap as extended CUDA lambda function

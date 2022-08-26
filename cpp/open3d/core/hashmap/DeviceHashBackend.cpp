@@ -41,20 +41,20 @@ std::shared_ptr<DeviceHashBackend> CreateDeviceHashBackend(
         const std::vector<SizeVector>& value_element_shapes,
         const Device& device,
         const HashBackendType& backend) {
-    if (device.GetType() == Device::DeviceType::CPU) {
+    if (device.IsCPU()) {
         return CreateCPUHashBackend(init_capacity, key_dtype, key_element_shape,
                                     value_dtypes, value_element_shapes, device,
                                     backend);
     }
 #if defined(BUILD_CUDA_MODULE)
-    else if (device.GetType() == Device::DeviceType::CUDA) {
+    else if (device.IsCUDA()) {
         return CreateCUDAHashBackend(init_capacity, key_dtype,
                                      key_element_shape, value_dtypes,
                                      value_element_shapes, device, backend);
     }
 #endif
     else {
-        utility::LogError("[CreateDeviceHashBackend]: Unimplemented device");
+        utility::LogError("Unimplemented device");
     }
 }
 

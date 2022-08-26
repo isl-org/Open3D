@@ -101,7 +101,7 @@ class ExampleWindow:
         # add to the top-level (vertical) layout
         layout.add_child(fileedit_layout)
 
-        # Create a collapsable vertical widget, which takes up enough vertical
+        # Create a collapsible vertical widget, which takes up enough vertical
         # space for all its children when open, but only enough for text when
         # closed. This is useful for property pages, so the user can hide sets
         # of properties they rarely use. All layouts take a spacing parameter,
@@ -299,6 +299,22 @@ class ExampleWindow:
         tab2.add_child(gui.Label("No plugins detected"))
         tab2.add_stretch()
         tabs.add_tab("Plugins", tab2)
+        tab3 = gui.RadioButton(gui.RadioButton.VERT)
+        tab3.set_items(["Apple", "Orange"])
+
+        def vt_changed(idx):
+            print(f"current cargo: {tab3.selected_value}")
+
+        tab3.set_on_selection_changed(vt_changed)
+        tabs.add_tab("Cargo", tab3)
+        tab4 = gui.RadioButton(gui.RadioButton.HORIZ)
+        tab4.set_items(["Air plane", "Train", "Bus"])
+
+        def hz_changed(idx):
+            print(f"current traffic plan: {tab4.selected_value}")
+
+        tab4.set_on_selection_changed(hz_changed)
+        tabs.add_tab("Traffic", tab4)
         collapse.add_child(tabs)
 
         # Quit button. (Typically this is a menu item)
@@ -460,7 +476,7 @@ class MessageBox:
 
 
 def main():
-    # We need to initalize the application, which finds the necessary shaders for
+    # We need to initialize the application, which finds the necessary shaders for
     # rendering and prepares the cross-platform window abstraction.
     gui.Application.instance.initialize()
 

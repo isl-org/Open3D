@@ -45,6 +45,8 @@ static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
 static const int max_iterations = 10;
 
+static const double voxel_downsampling_factor = 0.02;
+
 // NNS parameter.
 static const double max_correspondence_distance = 0.05;
 
@@ -75,7 +77,7 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
         target = target.VoxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                "VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                "VoxelDownsample: Impractical voxel size [< 0.001], skipping "
                 "downsampling.");
     }
 
@@ -103,7 +105,7 @@ static void BenchmarkICP(benchmark::State& state,
     geometry::PointCloud source, target;
     std::tie(source, target) = LoadTensorPointCloudFromFile(
             demo_icp_pointclouds.GetPaths(0), demo_icp_pointclouds.GetPaths(1),
-            /*voxel_downsampling_factor =*/0.02, dtype, device);
+            voxel_downsampling_factor, dtype, device);
 
     std::shared_ptr<TransformationEstimation> estimation;
     if (type == TransformationEstimationType::PointToPlane) {

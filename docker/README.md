@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-### Docker dependencis
+### Docker dependencies
 
 - [Install Docker](https://docs.docker.com/get-docker/).
 - [Post-installation steps for linux](https://docs.docker.com/engine/install/linux-postinstall/).
@@ -31,11 +31,14 @@ docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
 
 ### ARM64 Docker
 
-You can build and run ARM64 docker. This works on a ARM64 host including Apple
+You can build and run ARM64 docker. This works on an ARM64 host including Apple
 Silicon. However, if your host is x86-64, you will need to install QEMU:
 
 ```bash
 sudo apt-get --yes install qemu binfmt-support qemu-user-static
+
+# Run the registering scripts
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 ```
 
 To verify that the ARM64 environment is working, run:
@@ -56,10 +59,10 @@ For example:
 cd docker
 
 # Build Docker.
-./docker_build.sh openblas-amd64-py36-dev
+./docker_build.sh openblas-amd64-py38-dev
 
 # Test Docker.
-./docker_test.sh openblas-amd64-py36-dev
+./docker_test.sh openblas-amd64-py38-dev
 ```
 
 See `./docker_build.sh` and `./docker_test.sh` for all available options.

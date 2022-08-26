@@ -93,7 +93,7 @@ void pybind_color_map_options(py::module &m) {
              "int: (Default ``10``) If a projected 3D point onto a 2D image "
              "lies in the image border within ``image_boundary_margin``, the "
              "3D point is considered invisible from the camera producing the "
-             "image. This parmeter is not used for visibility check, but used "
+             "image. This parameter is not used for visibility check, but used "
              "when computing the final color assignment after color map "
              "optimization."},
             {"invisible_vertex_color_knn",

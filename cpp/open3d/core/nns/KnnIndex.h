@@ -57,15 +57,20 @@ public:
     /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     KnnIndex(const Tensor& dataset_points);
+    KnnIndex(const Tensor& dataset_points, const Dtype& index_dtype);
     ~KnnIndex();
     KnnIndex(const KnnIndex&) = delete;
     KnnIndex& operator=(const KnnIndex&) = delete;
 
 public:
-    bool SetTensorData(const Tensor& dataset_points) override;
     bool SetTensorData(const Tensor& dataset_points,
-                       const Tensor& points_row_splits);
-    bool SetTensorData(const Tensor& dataset_points, double radius) override {
+                       const Dtype& index_dtype = core::Int64) override;
+    bool SetTensorData(const Tensor& dataset_points,
+                       const Tensor& points_row_splits,
+                       const Dtype& index_dtype = core::Int64);
+    bool SetTensorData(const Tensor& dataset_points,
+                       double radius,
+                       const Dtype& index_dtype = core::Int64) override {
         utility::LogError(
                 "[KnnIndex::SetTensorData with radius not implemented.");
     }
@@ -84,15 +89,15 @@ public:
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(const Tensor& query_points,
-                                                    double radius,
+                                                    const double radius,
                                                     bool sort) const override {
         utility::LogError("KnnIndex::SearchRadius not implemented.");
     }
 
     std::tuple<Tensor, Tensor, Tensor> SearchHybrid(
             const Tensor& query_points,
-            double radius,
-            int max_knn) const override {
+            const double radius,
+            const int max_knn) const override {
         utility::LogError("KnnIndex::SearchHybrid not implemented.");
     }
 

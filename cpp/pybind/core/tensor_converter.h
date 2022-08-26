@@ -41,7 +41,7 @@ namespace core {
 /// You may use this helper function for exporting data to Numpy.
 ///
 /// To expose a C++ buffer to python, we need to carefully manage the buffer
-/// ownership. You firest need to allocate the memory in the heap (e.g. with
+/// ownership. You first need to allocate the memory in the heap (e.g. with
 /// `new`, `malloc`, avoid using containers that frees up memory when the C++
 /// variable goes out of scope), then in pybind11, define a deleter function for
 /// py::array_t that deallocates the buffer. This deleater function will be
@@ -52,7 +52,7 @@ namespace core {
 /// Alternatively, you can create a Tensor with a **copy** of your data (so that
 /// your original buffer can be freed), and let TensorToPyArray generate a
 /// py::array that manages the buffer lifetime automatically. This is more
-/// convienent, but will require an extra copy.
+/// convenient, but will require an extra copy.
 py::array TensorToPyArray(const Tensor& tensor);
 
 /// Convert py::array (Numpy array) to Tensor.
