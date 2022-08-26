@@ -420,6 +420,28 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
                            finite_indices_mask);
 }
 
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveDuplicatedPoints()
+        const {
+    core::Tensor points_voxeli;
+    const core::Dtype dtype = GetPointPositions().GetDtype();
+    if (dtype.ByteSize() == 4) {
+        points_voxeli = GetPointPositions().ReinterpretCast(core::Int32);
+    } else if (dtype.ByteSize() == 8) {
+        points_voxeli = GetPointPositions().ReinterpretCast(core::Int64);
+    } else {
+        utility::LogError(
+                "Unsupported point position data-type. Only support "
+                "Int32, Int64, Float32 and Float64.");
+    }
+
+    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(),
+                                        points_voxeli.GetDtype(), {3}, device_);
+    core::Tensor buf_indices, masks;
+    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
+
+    return std::make_tuple(SelectByMask(masks), masks);
+}
+
 PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {
     core::AssertTensorShape(color, {3});
     core::Tensor clipped_color = color.To(GetDevice());

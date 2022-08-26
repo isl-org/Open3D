@@ -218,6 +218,9 @@ The attributes of the point cloud have different levels::
                    "nb_points"_a, "search_radius"_a,
                    "Remove points that have less than nb_points neighbors in a "
                    "sphere of a given search radius.");
+    pointcloud.def("remove_duplicated_points",
+                   &PointCloud::RemoveDuplicatedPoints,
+                   "Remove duplicated points and there associated attributes.");
     pointcloud.def(
             "remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
             "remove_nan"_a = true, "remove_infinite"_a = true,

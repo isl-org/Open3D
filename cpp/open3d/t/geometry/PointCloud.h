@@ -379,6 +379,12 @@ public:
     std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
 
+    /// \brief Remove duplicated points and there associated attributes.
+    ///
+    /// \return tuple of filtered PointCloud and boolean indexing tensor w.r.t.
+    /// input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveDuplicatedPoints() const;
+
     /// \brief Remove all points from the point cloud that have a nan entry, or
     /// infinite value. It also removes the corresponding attributes.
     ///
