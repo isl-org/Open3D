@@ -90,7 +90,8 @@ void EstimateRange(const core::Tensor& block_keys,
                    int64_t block_resolution,
                    float voxel_size,
                    float depth_min,
-                   float depth_max);
+                   float depth_max,
+                   core::Tensor& fragment_buffer);
 
 void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              const TensorMap& block_value_map,
@@ -193,7 +194,8 @@ void EstimateRangeCPU(const core::Tensor& block_keys,
                       int64_t block_resolution,
                       float voxel_size,
                       float depth_min,
-                      float depth_max);
+                      float depth_max,
+                      core::Tensor& fragment_buffer);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
 void RayCastCPU(std::shared_ptr<core::HashMap>& hashmap,
@@ -299,7 +301,8 @@ void EstimateRangeCUDA(const core::Tensor& block_keys,
                        int64_t block_resolution,
                        float voxel_size,
                        float depth_min,
-                       float depth_max);
+                       float depth_max,
+                       core::Tensor& fragment_buffer);
 
 template <typename tsdf_t, typename weight_t, typename color_t>
 void RayCastCUDA(std::shared_ptr<core::HashMap>& hashmap,

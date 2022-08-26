@@ -365,10 +365,10 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
     core::Device device = block_hashmap_->GetDevice();
 
     core::Tensor range_minmax_map;
-    kernel::voxel_grid::EstimateRange(block_coords, range_minmax_map, intrinsic,
-                                      extrinsic, height, width,
-                                      range_map_down_factor, block_resolution_,
-                                      voxel_size_, depth_min, depth_max);
+    kernel::voxel_grid::EstimateRange(
+            block_coords, range_minmax_map, intrinsic, extrinsic, height, width,
+            range_map_down_factor, block_resolution_, voxel_size_, depth_min,
+            depth_max, fragment_buffer_);
 
     static const std::unordered_map<std::string, int> kAttrChannelMap = {
             // Conventional rendering
