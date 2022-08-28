@@ -45,8 +45,6 @@
 #define AI_MATKEY_SHEEN "$mat.sheen", 0, 0
 #define AI_MATKEY_ANISOTROPY "$mat.anisotropy", 0, 0
 
-#define ASSIMP_DOUBLE_PRECISION
-
 namespace open3d {
 namespace t {
 namespace io {
@@ -106,29 +104,15 @@ bool ReadTriangleMeshUsingASSIMP(
             vertex_normals = core::Tensor::Empty({assimp_mesh->mNumFaces, 3},
                                                  core::Dtype::Float32);
             auto vertex_normals_ptr = vertices.GetDataPtr<float>();
-            core::ParallelFor(core::Device("CPU:0"), assimp_mesh->mNumVertices,
-                              [&](size_t vidx) {
-                                  const auto& vertex =
-                                          assimp_mesh->mVertices[vidx];
-                                  vertices_ptr[3 * vidx] = vertex.x;
-                                  vertices_ptr[3 * vidx + 1] = vertex.y;
-                                  vertices_ptr[3 * vidx + 2] = vertex.z;
-                                  auto& normal = assimp_mesh->mNormals[vidx];
-                                  vertex_normals_ptr[3 * vidx] = normal.x;
-                                  vertex_normals_ptr[3 * vidx + 1] = normal.y;
-                                  vertex_normals_ptr[3 * vidx + 2] = normal.z;
-                              });
+            std::memcpy(vertices_ptr, assimp_mesh->mVertices,
+                        3 * assimp_mesh->mNumVertices * sizeof(float));
+            std::memcpy(vertex_normals_ptr, assimp_mesh->mNormals,
+                        3 * assimp_mesh->mNumVertices * sizeof(float));
             mesh_vertex_normals.push_back(vertex_normals);
             count_mesh_with_normals++;
         } else {
-            core::ParallelFor(core::Device("CPU:0"), assimp_mesh->mNumVertices,
-                              [&](size_t vidx) {
-                                  const auto& vertex =
-                                          assimp_mesh->mVertices[vidx];
-                                  vertices_ptr[3 * vidx] = vertex.x;
-                                  vertices_ptr[3 * vidx + 1] = vertex.y;
-                                  vertices_ptr[3 * vidx + 2] = vertex.z;
-                              });
+            std::memcpy(vertices_ptr, assimp_mesh->mVertices,
+                        3 * assimp_mesh->mNumVertices * sizeof(float));
         }
         mesh_vertices.push_back(vertices);
 
@@ -143,6 +127,7 @@ bool ReadTriangleMeshUsingASSIMP(
                     faces_ptr[3 * fidx + 1] = face.mIndices[1] + current_vidx;
                     faces_ptr[3 * fidx + 2] = face.mIndices[2] + current_vidx;
                 });
+
         mesh_faces.push_back(faces);
 
         // Adjust face indices to index into combined mesh vertex array
