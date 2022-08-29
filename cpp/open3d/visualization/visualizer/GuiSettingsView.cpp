@@ -326,6 +326,11 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         model_.SetBasicMode(checked);
     });
     mat_grid->AddChild(basic_mode_);
+    mat_grid->AddChild(std::make_shared<gui::Label>("Wireframe"));
+    wireframe_mode_ = std::make_shared<gui::Checkbox>("");
+/*    wireframe_mode_->SetOnChecked([this](bool checked) {*/
+    /*});*/
+    mat_grid->AddChild(wireframe_mode_);
 
     materials->AddChild(mat_grid);
 
