@@ -225,6 +225,12 @@ public:
         return *this;
     }
 
+    /// Tensor reinterpret cast operator.
+    /// It changes the tensor's dtype without changing the underlying memory
+    /// blob itself. The byte-size of dtype must be same as the original dtype
+    /// before casting.
+    Tensor ReinterpretCast(const core::Dtype& dtype) const;
+
     /// Assign an object to a tensor. The tensor being assigned to must be a
     /// scalar tensor of shape {}. The element byte size of the tensor must be
     /// the same as the size of the object. The object must be a POD.

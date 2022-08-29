@@ -50,9 +50,9 @@ body:
 
       # For Colored-ICP `colors` attribute must be of the same dtype as
       # `positions` and `normals` attribute.
-      source.point["colors"] = source.point["colors"].to(
+      source.point.colors = source.point.colors.to(
           o3d.core.Dtype.Float32) / 255.0
-      target.point["colors"] = target.point["colors"].to(
+      target.point.colors = target.point.colors.to(
           o3d.core.Dtype.Float32) / 255.0
 
       # Initial guess transform between the two point-cloud.

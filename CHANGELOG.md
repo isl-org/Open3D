@@ -6,6 +6,9 @@
 * Corrected documentation for KDTree (typo in Notebook) (PR #4744)
 * Remove `setuptools` and `wheel` from requirements for end users (PR #5020)
 * Fix various typos (PR #5070)
+* Exposed more functionality in SLAM pipeline
+* Fix for depth estimation for VoxelBlockGrid
+* Reserve fragment buffer for VoxelBlockGrid operations
 * Fix raycasting scene: Allow setting of number of threads that are used for building a raycasting scene
 * Fix Python bindings for CUDA device synchronization, voxel grid saving (PR #5425)
 

@@ -691,6 +691,41 @@ def test_flight_helmet():
     assert Path(helmet.extract_dir) == gt_extract_dir
 
 
+def test_avocado():
+    gt_prefix = "AvocadoModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    avocado = o3d.data.AvocadoModel()
+    assert Path(gt_download_dir).is_dir()
+
+    assert Path(avocado.path) == gt_extract_dir / "AvocadoModel.glb"
+    assert Path(avocado.path).is_file()
+
+    assert avocado.prefix == gt_prefix
+    assert Path(avocado.data_root) == gt_data_root
+    assert Path(avocado.download_dir) == gt_download_dir
+    assert Path(avocado.extract_dir) == gt_extract_dir
+
+
+def test_damaged_helmet():
+    gt_prefix = "DamagedHelmetModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    damaged_helmet = o3d.data.DamagedHelmetModel()
+    assert Path(gt_download_dir).is_dir()
+
+    assert Path(
+        damaged_helmet.path) == gt_extract_dir / "DamagedHelmetModel.glb"
+    assert Path(damaged_helmet.path).is_file()
+
+    assert damaged_helmet.prefix == gt_prefix
+    assert Path(damaged_helmet.data_root) == gt_data_root
+    assert Path(damaged_helmet.download_dir) == gt_download_dir
+    assert Path(damaged_helmet.extract_dir) == gt_extract_dir
+
+
 def test_metal_texture():
     gt_prefix = "MetalTexture"
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
