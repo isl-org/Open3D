@@ -406,36 +406,32 @@ def test_plugin_data_reader(geometry_data, logdir):
         for batch_idx in range(max_outputs):
             cube[batch_idx].paint_uniform_color(colors[step][batch_idx])
             cube_ref = o3d.t.geometry.TriangleMesh.from_legacy(cube[batch_idx])
-            cube_ref.triangle["indices"] = cube_ref.triangle["indices"].to(
+            cube_ref.triangle.indices = cube_ref.triangle.indices.to(
                 o3d.core.int32)
-            cube_ref.vertex['colors'] = (cube_ref.vertex['colors'] * 255).to(
+            cube_ref.vertex.colors = (cube_ref.vertex.colors * 255).to(
                 o3d.core.uint8)
 
             cube_out = reader.read_geometry("test_tensorboard_plugin", "cube",
                                             step, batch_idx, step_to_idx)[0]
-            assert (cube_out.vertex['positions'] == cube_ref.vertex['positions']
-                   ).all()
             assert (
-                cube_out.vertex['normals'] == cube_ref.vertex['normals']).all()
+                cube_out.vertex.positions == cube_ref.vertex.positions).all()
+            assert (cube_out.vertex.normals == cube_ref.vertex.normals).all()
+            assert (cube_out.vertex.colors == cube_ref.vertex.colors).all()
             assert (
-                cube_out.vertex['colors'] == cube_ref.vertex['colors']).all()
-            assert (cube_out.triangle['indices'] == cube_ref.triangle['indices']
-                   ).all()
+                cube_out.triangle.indices == cube_ref.triangle.indices).all()
             check_material_dict(cube_out, material, batch_idx)
 
             cube_pcd_out = reader.read_geometry("test_tensorboard_plugin",
                                                 "cube_pcd", step, batch_idx,
                                                 step_to_idx)[0]
-            assert (cube_pcd_out.point['positions'] ==
-                    cube_ref.vertex['positions']).all()
+            assert (cube_pcd_out.point.positions == cube_ref.vertex.positions
+                   ).all()
             assert cube_pcd_out.has_valid_material()
-            assert (cube_pcd_out.point['normals'] == cube_ref.vertex['normals']
-                   ).all()
-            assert (cube_pcd_out.point['colors'] == cube_ref.vertex['colors']
-                   ).all()
-            assert (cube_pcd_out.point['custom'].numpy() ==
-                    cube_custom_prop[step][batch_idx]).all()
-            assert (cube_pcd_out.point['labels'].numpy() == cube_labels[step]
+            assert (cube_pcd_out.point.normals == cube_ref.vertex.normals).all()
+            assert (cube_pcd_out.point.colors == cube_ref.vertex.colors).all()
+            assert (cube_pcd_out.point.custom.numpy() == cube_custom_prop[step]
+                    [batch_idx]).all()
+            assert (cube_pcd_out.point.labels.numpy() == cube_labels[step]
                     [batch_idx]).all()
             for key in tuple(material):
                 if key.startswith('material_texture_map_'):
@@ -444,20 +440,18 @@ def test_plugin_data_reader(geometry_data, logdir):
 
             cube_ls[batch_idx].paint_uniform_color(colors[step][batch_idx])
             cube_ls_ref = o3d.t.geometry.LineSet.from_legacy(cube_ls[batch_idx])
-            cube_ls_ref.line["indices"] = cube_ls_ref.line["indices"].to(
+            cube_ls_ref.line.indices = cube_ls_ref.line.indices.to(
                 o3d.core.int32)
-            cube_ls_ref.line['colors'] = (cube_ls_ref.line['colors'] * 255).to(
+            cube_ls_ref.line.colors = (cube_ls_ref.line.colors * 255).to(
                 o3d.core.uint8)
 
             cube_ls_out = reader.read_geometry("test_tensorboard_plugin",
                                                "cube_ls", step, batch_idx,
                                                step_to_idx)[0]
-            assert (cube_ls_out.point['positions'] ==
-                    cube_ls_ref.point['positions']).all()
-            assert (cube_ls_out.line['indices'] == cube_ls_ref.line['indices']
+            assert (cube_ls_out.point.positions == cube_ls_ref.point.positions
                    ).all()
-            assert (
-                cube_ls_out.line['colors'] == cube_ls_ref.line['colors']).all()
+            assert (cube_ls_out.line.indices == cube_ls_ref.line.indices).all()
+            assert (cube_ls_out.line.colors == cube_ls_ref.line.colors).all()
             check_material_dict(cube_ls_out, material_ls, batch_idx)
 
             bbox_ls_out, data_bbox_proto = reader.read_geometry(
@@ -465,12 +459,11 @@ def test_plugin_data_reader(geometry_data, logdir):
                 step_to_idx)
             bbox_ls_ref = o3d.t.geometry.LineSet.from_legacy(
                 BoundingBox3D.create_lines(bboxes_ref[step][batch_idx]))
-            bbox_ls_ref.line["indices"] = bbox_ls_ref.line["indices"].to(
+            bbox_ls_ref.line.indices = bbox_ls_ref.line.indices.to(
                 o3d.core.int32)
-            assert (bbox_ls_out.point["positions"] ==
-                    bbox_ls_ref.point["positions"]).all()
-            assert (bbox_ls_out.line["indices"] == bbox_ls_ref.line["indices"]
+            assert (bbox_ls_out.point.positions == bbox_ls_ref.point.positions
                    ).all()
+            assert (bbox_ls_out.line.indices == bbox_ls_ref.line.indices).all()
             assert "colors" not in bbox_ls_out.line
             label_conf_ref = tuple((bb.label_class, bb.confidence)
                                    for bb in bboxes_ref[step][batch_idx])

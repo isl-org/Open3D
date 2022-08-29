@@ -636,6 +636,36 @@ void pybind_helmet(py::module& m) {
     docstring::ClassMethodDocInject(m, "FlightHelmetModel", "path_map");
 }
 
+void pybind_avocado(py::module& m) {
+    // open3d.data.AvocadoModel
+    py::class_<AvocadoModel, PySingleDownloadDataset<AvocadoModel>,
+               std::shared_ptr<AvocadoModel>, SingleDownloadDataset>
+            avocado(m, "AvocadoModel",
+                    "Data class for `AvocadoModel` contains a avocado model "
+                    "file, "
+                    "along with material and PNG format embedded textures.");
+    avocado.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly("path", &AvocadoModel::GetPath,
+                                   "Path to the `AvocadoModel.glb` file.");
+    docstring::ClassMethodDocInject(m, "AvocadoModel", "path");
+}
+
+void pybind_damaged_helmet(py::module& m) {
+    // open3d.data.DamagedHelmetModel
+    py::class_<DamagedHelmetModel, PySingleDownloadDataset<DamagedHelmetModel>,
+               std::shared_ptr<DamagedHelmetModel>, SingleDownloadDataset>
+            damaged_helmet(
+                    m, "DamagedHelmetModel",
+                    "Data class for `DamagedHelmetModel` contains a damaged "
+                    "helmet model file, "
+                    "along with material and JPG format embedded textures. ");
+    damaged_helmet.def(py::init<const std::string&>(), "data_root"_a = "")
+            .def_property_readonly(
+                    "path", &DamagedHelmetModel::GetPath,
+                    "Path to the `DamagedHelmetModel.glb` file.");
+    docstring::ClassMethodDocInject(m, "DamagedHelmetModel", "path");
+}
+
 void pybind_metal_texture(py::module& m) {
     // open3d.data.MetalTexture
     py::class_<MetalTexture, PySingleDownloadDataset<MetalTexture>,
@@ -986,6 +1016,8 @@ void pybind_data(py::module& m) {
     pybind_sword(m_submodule);
     pybind_crate(m_submodule);
     pybind_helmet(m_submodule);
+    pybind_avocado(m_submodule);
+    pybind_damaged_helmet(m_submodule);
     // Texture images for material.
     pybind_metal_texture(m_submodule);
     pybind_painted_plaster_texture(m_submodule);

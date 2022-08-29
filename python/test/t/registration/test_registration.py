@@ -86,9 +86,9 @@ def get_pcds(dtype, device):
     source = o3d.t.geometry.PointCloud(device)
     target = o3d.t.geometry.PointCloud(device)
 
-    source.point["positions"] = source_points
-    target.point["positions"] = target_points
-    target.point["normals"] = target_normals
+    source.point.positions = source_points
+    target.point.positions = target_points
+    target.point.normals = target_normals
 
     return source, target
 

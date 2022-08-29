@@ -153,5 +153,56 @@ bool WriteImageToJPG(const std::string &filename,
     return true;
 }
 
+bool ReadJPGFromMemory(const unsigned char *image_data_ptr,
+                       size_t image_data_size,
+                       geometry::Image &image) {
+    struct jpeg_decompress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+    JSAMPARRAY buffer;
+
+    cinfo.err = jpeg_std_error(&jerr);
+    jpeg_create_decompress(&cinfo);
+    jpeg_mem_src(&cinfo, image_data_ptr, image_data_size);
+    jpeg_read_header(&cinfo, TRUE);
+
+    // We only support two channel types: gray, and RGB.
+    int num_of_channels = 3;
+    int bytes_per_channel = 1;
+    switch (cinfo.jpeg_color_space) {
+        case JCS_RGB:
+        case JCS_YCbCr:
+            cinfo.out_color_space = JCS_RGB;
+            cinfo.out_color_components = 3;
+            num_of_channels = 3;
+            break;
+        case JCS_GRAYSCALE:
+            cinfo.jpeg_color_space = JCS_GRAYSCALE;
+            cinfo.out_color_components = 1;
+            num_of_channels = 1;
+            break;
+        case JCS_CMYK:
+        case JCS_YCCK:
+        default:
+            utility::LogWarning("Read JPG failed: color space not supported.");
+            jpeg_destroy_decompress(&cinfo);
+            return false;
+    }
+    jpeg_start_decompress(&cinfo);
+    image.Prepare(cinfo.output_width, cinfo.output_height, num_of_channels,
+                  bytes_per_channel);
+    int row_stride = cinfo.output_width * cinfo.output_components;
+    buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE,
+                                        row_stride, 1);
+    uint8_t *pdata = image.data_.data();
+    while (cinfo.output_scanline < cinfo.output_height) {
+        jpeg_read_scanlines(&cinfo, buffer, 1);
+        memcpy(pdata, buffer[0], row_stride);
+        pdata += row_stride;
+    }
+    jpeg_finish_decompress(&cinfo);
+    jpeg_destroy_decompress(&cinfo);
+    return true;
+}
+
 }  // namespace io
 }  // namespace open3d

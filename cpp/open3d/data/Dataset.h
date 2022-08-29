@@ -643,6 +643,36 @@ private:
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
+/// \class AvocadoModel
+/// \brief Data class for `AvocadoModel` contains a avocado model file,
+/// along with material and PNG format embedded textures.
+class AvocadoModel : public SingleDownloadDataset {
+public:
+    AvocadoModel(const std::string& data_root = "");
+
+    /// \brief Returns path to the GLB format avocado model.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to the GLB format avocado model.
+    std::string path_;
+};
+
+/// \class DamagedHelmetModel
+/// \brief Data class for `DamagedHelmetModel` contains a damaged helmet model
+/// file, along with material and JPG format embedded textures.
+class DamagedHelmetModel : public SingleDownloadDataset {
+public:
+    DamagedHelmetModel(const std::string& data_root = "");
+
+    /// \brief Returns path to the GLB format damaged helmet model.
+    std::string GetPath() const { return path_; };
+
+private:
+    /// Path to the GLB format damaged helmet model.
+    std::string path_;
+};
+
 /// \class MetalTexture
 /// \brief Data class for `MetalTexture` contains albedo, normal, roughness and
 /// metallic texture files for metal based material.

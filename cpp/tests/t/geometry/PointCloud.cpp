@@ -853,6 +853,31 @@ TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
                                       device)));
 }
 
+TEST_P(PointCloudPermuteDevices, RemoveDuplicatedPoints) {
+    core::Device device = GetParam();
+
+    const t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<float>({{1.0, 1.0, 1.0},
+                                       {1.0, 1.0, 1.0},
+                                       {1.1, 1.1, 1.1},
+                                       {1.1, 1.1, 1.1},
+                                       {1.2, 1.2, 1.2},
+                                       {1.3, 1.3, 1.3}},
+                                      device));
+
+    t::geometry::PointCloud output_pcd;
+    core::Tensor selected_boolean_mask;
+    std::tie(output_pcd, selected_boolean_mask) =
+            pcd_small.RemoveDuplicatedPoints();
+
+    EXPECT_TRUE(output_pcd.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{1.0, 1.0, 1.0},
+                                       {1.1, 1.1, 1.1},
+                                       {1.2, 1.2, 1.2},
+                                       {1.3, 1.3, 1.3}},
+                                      device)));
+}
+
 TEST_P(PointCloudPermuteDevices, RemoveNonFinitePoints) {
     core::Device device = GetParam();
 
