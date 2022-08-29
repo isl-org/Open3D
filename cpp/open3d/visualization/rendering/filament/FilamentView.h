@@ -77,6 +77,7 @@ public:
 
     void SetPostProcessing(bool enabled) override;
     void SetAmbientOcclusion(bool enabled, bool ssct_enabled = false) override;
+    void SetBloom(bool enabled, float strength = 0.5f, int spread = 6) override;
     void SetAntiAliasing(bool enabled, bool temporal = false) override;
     void SetShadowing(bool enabled, ShadowType type) override;
 

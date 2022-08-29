@@ -85,6 +85,9 @@ public:
     virtual void SetPostProcessing(bool enabled) = 0;
     virtual void SetAmbientOcclusion(bool enabled,
                                      bool ssct_enabled = false) = 0;
+    virtual void SetBloom(bool enabled,
+                          float strength = 0.5f,
+                          int spread = 6) = 0;
     virtual void SetAntiAliasing(bool enabled, bool temporal = false) = 0;
     virtual void SetShadowing(bool enabled, ShadowType type) = 0;
 
