@@ -62,9 +62,10 @@ public:
                  FilamentResourceManager& resource_mgr);
     ~FilamentView() override;
 
+    void SetDiscardBuffers(const TargetBuffers& buffers) override;
     Mode GetMode() const override;
     void SetMode(Mode mode) override;
-    void SetDiscardBuffers(const TargetBuffers& buffers) override;
+    void SetWireframe(bool enable) override;
 
     void SetSampleCount(int n) override;
     int GetSampleCount() const override;

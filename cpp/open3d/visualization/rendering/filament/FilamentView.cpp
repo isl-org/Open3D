@@ -150,6 +150,15 @@ void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers) {
     view_->setRenderTarget(nullptr);
 }
 
+void FilamentView::SetWireframe(bool enable) {
+    // Enable bloom for wireframe mode
+    if (enable) {
+        SetBloom(true, 0.5f, 8);
+    } else {
+        SetBloom(false);
+    }
+}
+
 void FilamentView::SetSampleCount(int n) { view_->setSampleCount(n); }
 
 int FilamentView::GetSampleCount() const { return view_->getSampleCount(); }
@@ -167,7 +176,6 @@ std::array<int, 4> FilamentView::GetViewport() const {
 }
 
 void FilamentView::SetPostProcessing(bool enabled) {
-    SetBloom(true, 0.5f, 6);
     view_->setPostProcessingEnabled(enabled);
 }
 
@@ -179,8 +187,9 @@ void FilamentView::SetAmbientOcclusion(bool enabled,
     view_->setAmbientOcclusionOptions(options);
 }
 
-void FilamentView::SetBloom(bool enabled, float strength /* = 0.5f */, int spread /* = 6 */)
-{
+void FilamentView::SetBloom(bool enabled,
+                            float strength /* = 0.5f */,
+                            int spread /* = 6 */) {
     filament::View::BloomOptions bloom_options;
     bloom_options.enabled = enabled;
     bloom_options.strength = strength;

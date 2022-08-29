@@ -72,6 +72,7 @@ public:
     virtual void SetDiscardBuffers(const TargetBuffers& buffers) = 0;
     virtual Mode GetMode() const = 0;
     virtual void SetMode(Mode mode) = 0;
+    virtual void SetWireframe(bool enable) = 0;
 
     virtual void SetSampleCount(int n) = 0;
     virtual int GetSampleCount() const = 0;
