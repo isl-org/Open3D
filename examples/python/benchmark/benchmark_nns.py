@@ -32,27 +32,34 @@ import argparse
 import pickle
 from collections import OrderedDict
 
+import matplotlib.pyplot as plt
 import numpy as np
 import open3d as o3d
+import pcl
 import torch
 import torch_cluster
 from scipy.spatial import cKDTree
-import matplotlib.pyplot as plt
 
 from benchmark_utils import measure_time, print_table_simple
-
 
 OUT_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_data")
 if not os.path.isdir(OUT_DIR):
     os.makedirs(OUT_DIR)
 
 
-# Define NNS methods
-class Open3D:
-
-    def __init__(self, device, search_type, index_type):
+class BaseModule:
+    def __init__(self, device, search_type):
         self.device = device
         self.search_type = search_type
+    
+    def __str__(self):
+        return f"{self.__class__.__name__}-{self.search_type.capitalize()}({self.device.upper()})"
+# Define NNS methods
+class Open3D(BaseModule):
+
+    def __init__(self, device, search_type, index_type):
+        BaseModule.__init__(self, device, search_type)
+        self._device = o3d.core.Device() if device == "cpu" else o3d.core.Device(o3d.core.Device.CUDA, 0)
         self.index_type = {
             "int": o3d.core.Dtype.Int32,
             "long": o3d.core.Dtype.Int64
@@ -64,8 +71,8 @@ class Open3D:
         return points, queries
 
     def setup(self, points, queries, radius):
-        points_dev = points.contiguous().to(self.device)
-        queries_dev = queries.contiguous().to(self.device)
+        points_dev = points.contiguous().to(self._device)
+        queries_dev = queries.contiguous().to(self._device)
         index = o3d.core.nns.NearestNeighborSearch(points_dev, self.index_type)
         if self.search_type == "knn":
             index.knn_index()
@@ -89,15 +96,13 @@ class Open3D:
             raise ValueError(f"{self.search_type} is not supported.")
         return out
 
-    def __str__(self):
-        return f"{self.__class__.__name__}-{self.search_type.capitalize()}({self.device})"
 
 
-class PyTorchCluster:
+class PyTorchCluster(BaseModule):
 
     def __init__(self, device, search_type):
-        self.device = device
-        self.search_type = search_type
+        BaseModule.__init__(self, device, search_type)
+        self._device = torch.device(device)
 
     def prepare_data(self, points, queries):
         points = torch.from_numpy(points).float()
@@ -105,8 +110,8 @@ class PyTorchCluster:
         return points, queries
 
     def setup(self, points, queries, radius):
-        points_dev = points.contiguous().to(self.device)
-        queries_dev = queries.contiguous().to(self.device)
+        points_dev = points.contiguous().to(self._device)
+        queries_dev = queries.contiguous().to(self._device)
         return {'points': points_dev, 'queries': queries_dev}
 
     def search(self, points, queries, search_args):
@@ -118,37 +123,70 @@ class PyTorchCluster:
             raise ValueError(f"{self.search_type} is not supported.")
         return out
 
-    def __str__(self):
-        return f"{self.__class__.__name__}-{self.search_type.capitalize()}({self.device})"
+
+
+class PCL(BaseModule):
+    def __init__(self, device, search_type):
+        # self.device = device
+        # self.search_type = search_type
+        BaseModule.__init__(self, device, search_type)
+
+    def prepare_data(self, points, queries):
+        pcd0 = pcl.PointCloud()
+        pcd0.from_array(points)
+        pcd1 = pcl.PointCloud()
+        pcd1.from_array(queries)
+        return pcd0, pcd1 
+
+    def setup(self, points, queries, radius):
+        tree = pcl.KdTreeFLANN(points)
+        return {'points': tree, 'queries': queries}
+
+    def search(self, points, queries, search_args):
+        if self.search_type == "knn":
+            out = points.nearest_k_search_for_cloud(queries, search_args["k"])
+        elif self.search_type == "radius":
+            out = points.radius_search_for_cloud(queries, search_args["radius"])
+        elif self.search_type == "hybrid":
+            out = points.radius_search_for_cloud(queries, search_args["radius"], search_args["k"])
+        else:
+            raise ValueError(f"{self.search_type} is not supported.")
+        return out 
 
 
 def compute_avg_radii(points, queries, neighbors):
     """Computes the radii based on the number of neighbors"""
-    tree = cKDTree(points.numpy())
+    if isinstance(points, torch.Tensor):
+        points = points.numpy()
+    if isinstance(queries, torch.Tensor):
+        queries = queries.numpy()
+    tree = cKDTree(points)
     avg_radii = []
     for k in neighbors:
-        dist, _ = tree.query(queries.numpy(), k=k + 1)
+        dist, _ = tree.query(queries, k=k + 1)
         avg_radii.append(np.mean(dist.max(axis=-1)))
     return avg_radii
 
 
-def prepare_benchmark_data(num_points, dimensions, num_queries=10):
+def prepare_benchmark_data(num_points, dimensions, num_queries=10, data_type=np.float32):
     # setup dataset examples
     datasets = OrderedDict()
 
     # random dataset
     for D in dimensions:
         for N in num_points:
-            npy_file = os.path.join(OUT_DIR, f"random_D={D}_N={N}.npy")
+            npy_file = os.path.join(OUT_DIR, f"random_D={D}_N={N}.npz")
 
             if not os.path.exists(npy_file):
                 print(f"Generating a random dataset, random_D={D}_N={N}.npy...")
                 points = np.random.randn(N, D)
-                np.save(npy_file, points)
+                queries = np.random.randn(1000, D)
+                np.savez(npy_file, points=points, queries=queries)
 
             print(f"Loading the random dataset, random_D={D}_N={N}.npy...")
-            points = np.load(npy_file)
-            queries = points.copy()[::num_queries]
+            data = np.load(npy_file)
+            points = data["points"].astype(data_type)
+            queries = data["queries"].astype(data_type) 
             filename = os.path.basename(npy_file)
             datasets[filename] = {'points': points, 'queries': queries}
 
@@ -167,15 +205,11 @@ if __name__ == "__main__":
                         choices=["int", "long"])
     parser.add_argument("-x", "--x_axis", type=str, default="num_points", choices=["num_points", "k"])
     parser.add_argument("-o", "--overwrite", action="store_true")
-    parser.add_argument("--use_gpu", action="store_true")
     args = parser.parse_args()
-
-    # devices
-    device = o3d.core.Device(o3d.core.Device.CUDA, 0) if args.use_gpu else o3d.core.Device()
 
     # collects runtimes for all examples
     results = OrderedDict()
-    num_points = [int(1e2), int(1e3), int(1e4), int(1e5)]
+    num_points = [int(1e3), int(1e4), int(1e5), int(1e6), int(1e7)]
     datasets = prepare_benchmark_data(
         num_points=num_points,
         dimensions=[3] # TODO(chrockey): higher dimension
@@ -184,8 +218,11 @@ if __name__ == "__main__":
 
     # prepare method
     methods = [
-        Open3D(device, args.search_type, args.index_type),
-        PyTorchCluster(torch.device('cuda' if args.use_gpu else 'cpu'), args.search_type),
+        Open3D("cpu", args.search_type, args.index_type),
+        PyTorchCluster("cpu", args.search_type),
+        PCL(device="cpu", search_type=args.search_type),
+        Open3D("cuda", args.search_type, args.index_type),
+        PyTorchCluster("cuda", args.search_type)
     ]
 
     # run benchmark
@@ -196,11 +233,12 @@ if __name__ == "__main__":
 
         for example_name, example in datasets.items():
             points, queries = example['points'], example['queries']
+            n = len(points)
             if args.search_type == "knn":
                 radii = neighbors
             else:
                 radii = compute_avg_radii(points, queries, neighbors)
-            print(f"\n{example_name} | {len(points)} points", end="")
+            print(f"\n{example_name} | {n} points", end="")
 
             for k, radius in zip(neighbors, radii):
                 points, queries = example['points'], example['queries']
@@ -222,7 +260,7 @@ if __name__ == "__main__":
 
                 time = measure_time(search_fn)
                 example_results["search"] = time
-                results[f"{example_name} n={len(points)} k={k}"] = example_results
+                results[f"{example_name} n={n} k={k}"] = example_results
 
                 for v in setup_results.values():
                     del v
@@ -233,10 +271,10 @@ if __name__ == "__main__":
         with open(os.path.join(OUT_DIR, f"{method}.pkl"), "wb") as f:
             pickle.dump(results, f)
 
+    # load benchmark data
     results = []
-    # stat_methods = methods
-    stat_methods = ["Open3D-Knn(CUDA:0)", "Open3D-Knn(CPU:0)", "PyTorchCluster-Knn(cuda)", "PyTorchCluster-Knn(cpu)"]
-    for method in stat_methods:
+    method_names = [str(m) for m in methods]
+    for method in method_names:
         with open(os.path.join(OUT_DIR, f"{method}.pkl"), "rb") as f:
             data = pickle.load(f)
             results.append(data)
@@ -246,13 +284,13 @@ if __name__ == "__main__":
     # save plots
     log_num_points = [np.log10(x) for x in num_points]
     for k in neighbors:
-        fig = plt.figure()
+        fig = plt.figure(figsize=(10,10))
         plt.title(f"# neighbors = {k}")
-        plt.xlabel(f"log (# points)")
-        plt.ylabel(f"Latency (sec)")
+        plt.xlabel("# points")
+        plt.ylabel("Latency (sec)")
         
         latency = {}
-        for method, result in zip(stat_methods, results):
+        for method, result in zip(method_names, results):
             if method not in latency.keys():
                 latency[method] = []
             for data in result.values():
@@ -260,10 +298,29 @@ if __name__ == "__main__":
                     t = np.median(data['setup']) + np.median(data['search'])
                     latency[method].append(t)
 
-        plt.plot(log_num_points, latency["Open3D-Knn(CUDA:0)"], marker="o", color="r", label="Open3D (CUDA)")
-        plt.plot(log_num_points, latency["Open3D-Knn(CPU:0)"], marker="o", color="b", label="Open3D (CPU)")
-        plt.plot(log_num_points, latency["PyTorchCluster-Knn(cuda)"], marker="^", color="r", label="PyTorch Cluster (CUDA)")
-        plt.plot(log_num_points, latency["PyTorchCluster-Knn(cpu)"], marker="^", color="b", label="PyTorch Cluster (CPU)")
+        def assign_style(name):
+            lower_name = name.lower()
+            style = dict(linestyle="--" if "cpu" in lower_name else "-")
+            if "open3d" in lower_name:
+                style["color"] = "r"
+                style["marker"]  = "o"
+            elif "cluster" in lower_name:
+                style["color"] = "b"
+                style["marker"] = "^"
+            elif "pcl" in lower_name:
+                style["color"] = "g"
+                style["marker"] = "+"
+            return style
+        for method in method_names:
+            style = assign_style(method) 
+            plt.plot(num_points, latency[method], label=method, **style)
+
+        plt.semilogx()
+        plt.semilogy()
         plt.legend()
-        plt.show()
-        plt.savefig(os.path.join(OUT_DIR, f"o3d_vs_tc_k={k}.png"))
+        ax = plt.gca()
+        handles, labels = ax.get_legend_handles_labels()
+        # sort both labels and handles by labels
+        labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+        ax.legend(handles, labels)
+        plt.savefig(os.path.join(OUT_DIR, f"benchmark_{args.search_type}_k={k}.jpeg"), bbox_inches='tight')
