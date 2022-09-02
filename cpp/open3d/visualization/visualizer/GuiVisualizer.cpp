@@ -361,6 +361,7 @@ struct GuiVisualizer::Impl {
 
     bool sun_follows_camera_ = false;
     bool basic_mode_enabled_ = false;
+    bool wireframe_enabled_ = false;
 
     void InitializeMaterials(rendering::Renderer &renderer,
                              const std::string &resource_path) {
@@ -509,14 +510,18 @@ struct GuiVisualizer::Impl {
             RunNormalEstimation();
         }
 
-        if (settings_.model_.GetWireframeMode() && !loaded_pcd_) {
-            // create wireframe line set
-            if (!wireframe_model_) {
-                wireframe_model_ = std::make_shared<geometry::LineSet>();
-                for (const auto &mi : loaded_model_.meshes_) {
-                    auto lines =
-                            geometry::LineSet::CreateFromTriangleMesh(*mi.mesh);
-                    *wireframe_model_ += *lines;
+        // o3dscene->ShowGeometry(WIREFRAME_NAME, true);
+        if (settings_.model_.GetWireframeMode() != wireframe_enabled_) {
+            wireframe_enabled_ = settings_.model_.GetWireframeMode();
+            if (wireframe_enabled_ && !loaded_pcd_) {
+                // create wireframe line set
+                if (!wireframe_model_) {
+                    wireframe_model_ = std::make_shared<geometry::LineSet>();
+                    for (const auto &mi : loaded_model_.meshes_) {
+                        auto lines = geometry::LineSet::CreateFromTriangleMesh(
+                                *mi.mesh);
+                        *wireframe_model_ += *lines;
+                    }
                 }
                 // Add to scene
                 rendering::MaterialRecord wireframe_mat;
@@ -526,17 +531,18 @@ struct GuiVisualizer::Impl {
                 wireframe_mat.emissive_color = {10000.f, 10000.f, 10000.f, 1.f};
                 o3dscene->AddGeometry(WIREFRAME_NAME, wireframe_model_.get(),
                                       wireframe_mat);
+                // o3dscene->ShowGeometry(WIREFRAME_NAME, true);
+                o3dscene->ShowGeometry(MODEL_NAME, false);
+                o3dscene->GetView()->SetWireframe(true);
+                o3dscene->SetBackground({0.1f, 0.1f, 0.1f, 1.f});
+            } else {
+                o3dscene->RemoveGeometry(WIREFRAME_NAME);
+                o3dscene->ShowGeometry(MODEL_NAME, true);
+                o3dscene->GetView()->SetWireframe(false);
+                auto bcolor = settings_.model_.GetBackgroundColor();
+                o3dscene->SetBackground(
+                        {bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
             }
-            o3dscene->ShowGeometry(WIREFRAME_NAME, true);
-            o3dscene->ShowGeometry(MODEL_NAME, false);
-            o3dscene->GetView()->SetWireframe(true);
-            o3dscene->SetBackground({0.1f, 0.1f, 0.1f, 1.f});
-        } else {
-            o3dscene->ShowGeometry(WIREFRAME_NAME, false);
-            o3dscene->ShowGeometry(MODEL_NAME, true);
-            o3dscene->GetView()->SetWireframe(false);
-            auto bcolor = settings_.model_.GetBackgroundColor();
-            o3dscene->SetBackground({bcolor.x(), bcolor.y(), bcolor.z(), 1.f});
         }
 
         if (settings_.model_.GetBasicMode() != basic_mode_enabled_) {
