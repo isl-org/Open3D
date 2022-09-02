@@ -24,15 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include <assimp/GltfMaterial.h>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/ProgressHandler.hpp>
 #include <fstream>
 #include <numeric>
 #include <vector>
 
-#include "assimp/GltfMaterial.h"
-#include "assimp/Importer.hpp"
-#include "assimp/ProgressHandler.hpp"
-#include "assimp/postprocess.h"
-#include "assimp/scene.h"
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/TensorFunction.h"
 #include "open3d/t/io/TriangleMeshIO.h"
@@ -49,8 +50,9 @@ namespace open3d {
 namespace t {
 namespace io {
 
+// Split all polygons with more than 3 edges into triangles.
 const unsigned int kPostProcessFlags_compulsory =
-        aiProcess_JoinIdenticalVertices;
+        aiProcess_Triangulate | aiProcess_SortByPType;
 
 const unsigned int kPostProcessFlags_fast =
         aiProcessPreset_TargetRealtime_Fast |
@@ -85,14 +87,6 @@ bool ReadTriangleMeshUsingASSIMP(
     // Merge individual meshes in aiScene into a single TriangleMesh
     for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
         const auto* assimp_mesh = scene->mMeshes[midx];
-        // Only process triangle meshes
-        if (assimp_mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
-            utility::LogInfo(
-                    "Skipping non-triangle primitive geometry of type: "
-                    "{}",
-                    assimp_mesh->mPrimitiveTypes);
-            continue;
-        }
 
         core::Tensor vertices = core::Tensor::Empty(
                 {assimp_mesh->mNumVertices, 3}, core::Dtype::Float32);
