@@ -52,7 +52,8 @@ namespace io {
 
 // Split all polygons with more than 3 edges into triangles.
 const unsigned int kPostProcessFlags_compulsory =
-        aiProcess_Triangulate | aiProcess_SortByPType;
+        aiProcess_JoinIdenticalVertices | aiProcess_Triangulate |
+        aiProcess_SortByPType;
 
 const unsigned int kPostProcessFlags_fast =
         aiProcessPreset_TargetRealtime_Fast |
