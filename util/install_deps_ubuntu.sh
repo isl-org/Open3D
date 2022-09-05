@@ -33,19 +33,19 @@ deps=(
     libtool
 )
 
-# Ubuntu ARM64
+# Filament build-from-source
+# Ubuntu 18.04's clang/libc++-dev/libc++abi-dev are version 6, but we need 7+.
+source /etc/lsb-release
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
+    deps=("${deps[@]/clang/clang-7}")
+    deps=("${deps[@]/libc++-dev/libc++-7-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-7-dev}")
+fi
+
+# Ubuntu ARM64 requires gfortran to compile OpenBLAS.
 if [ "$(uname -m)" == "aarch64" ]; then
     # For LAPACK
     deps+=("gfortran")
-
-    # For compiling Filament from source
-    # Ubuntu 18.04 ARM64's libc++-dev and libc++abi-dev are version 6, but we need 7+.
-    source /etc/lsb-release
-    if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
-        deps=("${deps[@]/clang/clang-7}")
-        deps=("${deps[@]/libc++-dev/libc++-7-dev}")
-        deps=("${deps[@]/libc++abi-dev/libc++abi-7-dev}")
-    fi
 fi
 
 echo "apt-get install ${deps[*]}"
