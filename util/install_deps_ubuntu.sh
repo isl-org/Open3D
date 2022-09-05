@@ -17,9 +17,10 @@ deps=(
     libglu1-mesa-dev
     python3-dev
     # Filament build-from-source
-    libsdl2-dev
+    clang
     libc++-dev
     libc++abi-dev
+    libsdl2-dev
     ninja-build
     libxi-dev
     # ML
@@ -41,6 +42,7 @@ if [ "$(uname -m)" == "aarch64" ]; then
     # Ubuntu 18.04 ARM64's libc++-dev and libc++abi-dev are version 6, but we need 7+.
     source /etc/lsb-release
     if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
+        deps=("${deps[@]/clang/clang-7}")
         deps=("${deps[@]/libc++-dev/libc++-7-dev}")
         deps=("${deps[@]/libc++abi-dev/libc++abi-7-dev}")
     fi
