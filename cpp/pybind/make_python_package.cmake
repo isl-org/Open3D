@@ -31,6 +31,15 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
         endif()
     endforeach()
 endforeach()
+# Include additional libraries that may be absent from the user system
+# eg: libc++.so and libc++abi.so (needed by filament)
+# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
+foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
+    get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
+    get_filename_component(SO_VER_NAME ${PYTHON_EXTRA_LIB_REAL} NAME)
+    string(REGEX REPLACE "\\.so\\.1\\..*" ".so.1" SO_1_NAME ${SO_VER_NAME})
+    configure_file(${PYTHON_EXTRA_LIB_REAL} ${PYTHON_PACKAGE_DST_DIR}/open3d/${SO_1_NAME} COPYONLY)
+endforeach()
 
 # 3) Configured files and supporting files
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"

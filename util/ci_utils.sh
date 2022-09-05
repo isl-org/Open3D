@@ -164,15 +164,7 @@ build_pip_package() {
     echo "Building Open3D wheel"
     options="$(echo "$@" | tr ' ' '|')"
 
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        BUILD_FILAMENT_FROM_SOURCE=ON
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        BUILD_FILAMENT_FROM_SOURCE=OFF
-    else
-        echo "unknown OS $OSTYPE"
-        exit 1
-    fi
-
+    BUILD_FILAMENT_FROM_SOURCE=OFF
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."

@@ -41,6 +41,13 @@ from pathlib import Path as _Path
 import warnings
 
 from open3d._build_config import _build_config
+if _build_config["BUILD_GUI"] and not (_find_library('c++abi') or
+                                       _find_library('c++')):
+    try:  # Preload libc++.so and libc++abi.so (required by filament)
+        _CDLL(str(next((_Path(__file__).parent).glob('*c++abi.*'))))
+        _CDLL(str(next((_Path(__file__).parent).glob('*c++.*'))))
+    except StopIteration:  # Not found: check system paths while loading
+        pass
 
 # Enable CPU rendering based on env vars
 if _build_config["BUILD_GUI"] and sys.platform.startswith('linux') and (
