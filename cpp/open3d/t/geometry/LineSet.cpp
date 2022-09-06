@@ -85,7 +85,7 @@ std::string LineSet::ToString() const {
     } else {
         for (const auto &keyval : point_attr_) {
             if (keyval.first == "positions") continue;
-            str += fmt::format(" {} (dtype={}, shape={}),", keyval.first,
+            str += fmt::format(" {} (dtype = {}, shape = {}),", keyval.first,
                                keyval.second.GetDtype().ToString(),
                                keyval.second.GetShape().ToString());
         }
@@ -103,7 +103,7 @@ std::string LineSet::ToString() const {
     } else {
         for (const auto &keyval : line_attr_) {
             if (keyval.first == "indices") continue;
-            str += fmt::format(" {} (dtype={}, shape={}),", keyval.first,
+            str += fmt::format(" {} (dtype = {}, shape = {}),", keyval.first,
                                keyval.second.GetDtype().ToString(),
                                keyval.second.GetShape().ToString());
         }
