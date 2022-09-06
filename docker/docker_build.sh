@@ -102,15 +102,13 @@ openblas_export_env() {
     if [[ "amd64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform AMD64"
         export DOCKER_TAG=open3d-ci:openblas-amd64
-        export BASE_IMAGE=ubuntu:20.04
+        export BASE_IMAGE=ubuntu:18.04
         export CONDA_SUFFIX=x86_64
         export CMAKE_VERSION=${CMAKE_VERSION}
     elif [[ "arm64" =~ ^($options)$ ]]; then
-        # 2022-09-03 Dependency conflict libudev-dev on Ubuntu 18.04
-        # https://bugs.launchpad.net/ubuntu/+source/apt/+bug/1988563
         echo "[openblas_export_env()] platform ARM64"
         export DOCKER_TAG=open3d-ci:openblas-arm64
-        export BASE_IMAGE=arm64v8/ubuntu:20.04
+        export BASE_IMAGE=arm64v8/ubuntu:18.04
         export CONDA_SUFFIX=aarch64
         export CMAKE_VERSION=${CMAKE_VERSION_AARCH64}
     else

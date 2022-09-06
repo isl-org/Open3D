@@ -65,9 +65,7 @@ RUN echo ${PATH} \
  && echo "gcc=$(which gcc)" \
  && gcc --version \
  && echo "g++=$(which g++)" \
- && g++ --version \
- && echo "clang=$(which clang)" \
- && clang --version
+ && g++ --version
 
 # Python and dependencies
 COPY ./python/requirements*.txt /root/Open3D/python/
