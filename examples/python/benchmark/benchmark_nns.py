@@ -41,7 +41,8 @@ except ImportError:
     print("PCL is not installed.")
 import torch
 import torch_cluster
-from scipy.spatial import cKDTree, KDTree
+from scipy.spatial import cKDTree, KDTree as scipy_kdtree
+from sklearn.neighbors import BallTree, KDTree as sklearn_kdtree
 
 from benchmark_utils import measure_time, print_table_simple
 
@@ -164,7 +165,7 @@ class SciPy(BaseModule):
         BaseModule.__init__(self, device, search_type)
 
     def setup(self, points, queries, radius):
-        tree = KDTree(points)
+        tree = scipy_kdtree(points)
         return {'points': tree, 'queries': queries}
 
     def search(self, points, queries, search_args):
@@ -172,6 +173,46 @@ class SciPy(BaseModule):
             out = points.query(queries, search_args["k"])
         elif self.search_type == "radius":
             out = points.query_ball_point(queries, search_args["radius"])
+        else:
+            raise ValueError(f"{self.search_type} is not supported.")
+        return out
+
+
+class SklearnKDTree(BaseModule):
+    def __init__(self, device, search_type):
+        if search_type == "hybrid":
+            raise ValueError("Hybrid search is not supported in Sklearn.")
+        BaseModule.__init__(self, device, search_type)
+
+    def setup(self, points, queries, radius):
+        tree = sklearn_kdtree(points)
+        return {'points': tree, 'queries': queries}
+
+    def search(self, points, queries, search_args):
+        if self.search_type == "knn":
+            out = points.query(queries, search_args["k"])
+        elif self.search_type == "radius":
+            out = points.query_radius(queries, search_args["radius"])
+        else:
+            raise ValueError(f"{self.search_type} is not supported.")
+        return out
+
+
+class SklearnBallTree(BaseModule):
+    def __init__(self, device, search_type):
+        if search_type == "hybrid":
+            raise ValueError("Hybrid search is not supported in Sklearn.")
+        BaseModule.__init__(self, device, search_type)
+
+    def setup(self, points, queries, radius):
+        tree = BallTree(points)
+        return {'points': tree, 'queries': queries}
+
+    def search(self, points, queries, search_args):
+        if self.search_type == "knn":
+            out = points.query(queries, search_args["k"])
+        elif self.search_type == "radius":
+            out = points.query_radius(queries, search_args["radius"])
         else:
             raise ValueError(f"{self.search_type} is not supported.")
         return out
@@ -244,6 +285,8 @@ if __name__ == "__main__":
         Open3D("cpu", args.search_type, args.index_type),
         PyTorchCluster("cpu", args.search_type),
         SciPy("cpu", args.search_type),
+        SklearnKDTree("cpu", args.search_type),
+        SklearnBallTree("cpu", args.search_type),
         # PCL(device="cpu", search_type=args.search_type),
         Open3D("cuda", args.search_type, args.index_type),
         PyTorchCluster("cuda", args.search_type)
