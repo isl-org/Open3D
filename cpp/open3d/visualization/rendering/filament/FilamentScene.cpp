@@ -978,6 +978,7 @@ void FilamentScene::UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi) {
 void FilamentScene::UpdateLineShader(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetColor("emissiveColor", geom_mi.properties.emissive_color, false)
             .SetParameter("lineWidth", geom_mi.properties.line_width)
             .Finish();
 }
