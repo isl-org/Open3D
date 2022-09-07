@@ -55,14 +55,21 @@ if not os.path.isdir(OUT_DIR):
 
 
 class BaseModule:
+    AVAILABLE_MODE = []
+
     def __init__(self, device, search_type):
         self.device = device
         self.search_type = search_type
+        self.activated = True
+        if self.search_type not in self.AVAILABLE_MODE:
+            print(f"{self.search_type} is not supported in {self.__class__.__name__}.")
+            self.activated = False
     
     def __str__(self):
         return f"{self.__class__.__name__}-{self.search_type.capitalize()}({self.device.upper()})"
 # Define NNS methods
 class Open3D(BaseModule):
+    AVAILABLE_MODE = ['knn', 'radius', 'hybrid']
 
     def __init__(self, device, search_type, index_type):
         BaseModule.__init__(self, device, search_type)
@@ -106,6 +113,7 @@ class Open3D(BaseModule):
 
 
 class PyTorchCluster(BaseModule):
+    AVAILABLE_MODE = ['knn', 'radius']
 
     def __init__(self, device, search_type):
         BaseModule.__init__(self, device, search_type)
@@ -133,9 +141,9 @@ class PyTorchCluster(BaseModule):
 
 
 class PCL(BaseModule):
+    AVAILABLE_MODE = ['knn', 'radius', 'hybrid']
+
     def __init__(self, device, search_type):
-        # self.device = device
-        # self.search_type = search_type
         BaseModule.__init__(self, device, search_type)
 
     def prepare_data(self, points, queries):
@@ -162,9 +170,9 @@ class PCL(BaseModule):
 
 
 class SciPy(BaseModule):
+    AVAILABLE_MODE = ['knn', 'radius']
+
     def __init__(self, device, search_type):
-        if search_type == "hybrid":
-            raise ValueError("Hybrid search is not supported in SciPy.")
         BaseModule.__init__(self, device, search_type)
 
     def setup(self, points, queries, radius):
@@ -182,9 +190,9 @@ class SciPy(BaseModule):
 
 
 class SklearnKDTree(BaseModule):
+    AVAILABLE_MODE = ['knn', 'radius']
+
     def __init__(self, device, search_type):
-        if search_type == "hybrid":
-            raise ValueError("Hybrid search is not supported in Sklearn.")
         BaseModule.__init__(self, device, search_type)
 
     def setup(self, points, queries, radius):
@@ -202,9 +210,9 @@ class SklearnKDTree(BaseModule):
 
 
 class SklearnBallTree(BaseModule):
+    AVAILABLE_MODE = ['knn', 'radius']
+    
     def __init__(self, device, search_type):
-        if search_type == "hybrid":
-            raise ValueError("Hybrid search is not supported in Sklearn.")
         BaseModule.__init__(self, device, search_type)
 
     def setup(self, points, queries, radius):
@@ -295,6 +303,8 @@ if __name__ == "__main__":
         PyTorchCluster("cuda", args.search_type)
     ]
 
+    methods = [m for m in methods if m.activated]
+
     # run benchmark
     for method in methods:
         if not args.overwrite and os.path.exists(os.path.join(OUT_DIR, f"{method}.pkl")):
@@ -353,13 +363,28 @@ if __name__ == "__main__":
     print_table_simple(methods, results)
 
     # save plots
+    fig = plt.figure(figsize=(10 * len(neighbors),10))
     log_num_points = [np.log10(x) for x in num_points]
-    for k in neighbors:
-        fig = plt.figure(figsize=(10,10))
-        plt.title(f"# neighbors = {k}")
-        plt.xlabel("# points")
-        plt.ylabel("Latency (sec)")
-        
+
+    SMALL_SIZE = 16
+    MEDIUM_SIZE = 20
+    BIGGER_SIZE = 20
+
+    # plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
+    # plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
+    # plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+    # plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    # plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    # plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+    # plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+    for i, k in enumerate(neighbors):
+        ax = fig.add_subplot(1, len(neighbors), i + 1)
+        ax.set_title(f"# neighbors = {k}", fontsize=MEDIUM_SIZE)
+        ax.set_xlabel("# points", fontsize=MEDIUM_SIZE)
+        ax.set_ylabel("Latency (sec)", fontsize=MEDIUM_SIZE)
+        ax.tick_params(axis="x", labelsize=SMALL_SIZE)
+        ax.tick_params(axis="y", labelsize=SMALL_SIZE)
         latency = {}
         for method, result in zip(method_names, results):
             if method not in latency.keys():
@@ -393,14 +418,14 @@ if __name__ == "__main__":
             return style
         for method in method_names:
             style = assign_style(method) 
-            plt.plot(num_points, latency[method], label=method, **style)
-        plt.grid(axis="both", which="major")
-        plt.semilogx()
-        plt.semilogy()
-        plt.legend()
-        ax = plt.gca()
-        handles, labels = ax.get_legend_handles_labels()
-        # sort both labels and handles by labels
-        labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
-        ax.legend(handles, labels)
-        plt.savefig(os.path.join(OUT_DIR, f"benchmark_{args.search_type}_k={k}.jpeg"), bbox_inches='tight')
+            ax.plot(num_points, latency[method], label=method, **style)
+        ax.grid(axis="both", which="major")
+        ax.semilogx()
+        ax.semilogy()
+    ax = plt.gca()
+    handles, labels = ax.get_legend_handles_labels()
+    
+    # sort both labels and handles by labels
+    labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+    ax.legend(handles, labels, fontsize=SMALL_SIZE)
+    plt.savefig(os.path.join(OUT_DIR, f"benchmark_{args.search_type}.jpeg"), bbox_inches='tight')
