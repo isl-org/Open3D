@@ -35,10 +35,13 @@ from collections import OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
 import open3d as o3d
-import pcl
+try:
+    import pcl
+except ImportError:
+    print("PCL is not installed.")
 import torch
 import torch_cluster
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree, KDTree
 
 from benchmark_utils import measure_time, print_table_simple
 
@@ -154,6 +157,26 @@ class PCL(BaseModule):
         return out 
 
 
+class SciPy(BaseModule):
+    def __init__(self, device, search_type):
+        if search_type == "hybrid":
+            raise ValueError("Hybrid search is not supported in SciPy.")
+        BaseModule.__init__(self, device, search_type)
+
+    def setup(self, points, queries, radius):
+        tree = KDTree(points)
+        return {'points': tree, 'queries': queries}
+
+    def search(self, points, queries, search_args):
+        if self.search_type == "knn":
+            out = points.query(queries, search_args["k"])
+        elif self.search_type == "radius":
+            out = points.query_ball_point(queries, search_args["radius"])
+        else:
+            raise ValueError(f"{self.search_type} is not supported.")
+        return out
+
+
 def compute_avg_radii(points, queries, neighbors):
     """Computes the radii based on the number of neighbors"""
     if isinstance(points, torch.Tensor):
@@ -220,7 +243,8 @@ if __name__ == "__main__":
     methods = [
         Open3D("cpu", args.search_type, args.index_type),
         PyTorchCluster("cpu", args.search_type),
-        PCL(device="cpu", search_type=args.search_type),
+        SciPy("cpu", args.search_type),
+        # PCL(device="cpu", search_type=args.search_type),
         Open3D("cuda", args.search_type, args.index_type),
         PyTorchCluster("cuda", args.search_type)
     ]

@@ -30,7 +30,10 @@ import subprocess
 
 import numpy as np
 import tabulate
-import nvidia_smi # pip install nvidia-ml-py3
+try:
+    import nvidia_smi # pip install nvidia-ml-py3
+except ImportError:
+    print('Nvidia-smi-python is not installed.')
 
 
 def get_processor_name():
