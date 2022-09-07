@@ -207,7 +207,6 @@ def _draw(parser, args):
         parser.print_help()
     elif not os.path.isfile(args.filename):
         print(f"Error: could not find file: {args.filename}")
-        parser.print_help()
         parser.exit(2)
 
     removed_arg = sys.argv[1]
@@ -224,7 +223,6 @@ def _draw_legacy(parser, args):
         parser.exit(2)
     elif not os.path.isfile(args.filename):
         print(f"Error: could not find file: {args.filename}")
-        parser.print_help()
         parser.exit(2)
 
     # Try loading as triangle mesh, and then point cloud.

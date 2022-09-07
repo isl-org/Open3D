@@ -150,12 +150,12 @@ void Visualizer::KeyPressCallback(
             break;
         case GLFW_KEY_C:
             if (mods & GLFW_MOD_CONTROL || mods & GLFW_MOD_SUPER) {
-                CopyViewStatusToClipboard();
+                GetViewStatusToClipboard();
             }
             break;
         case GLFW_KEY_V:
             if (mods & GLFW_MOD_CONTROL || mods & GLFW_MOD_SUPER) {
-                CopyViewStatusFromClipboard();
+                SetViewStatusFromClipboard();
             }
             break;
         case GLFW_KEY_ESCAPE:

@@ -248,11 +248,19 @@ protected:
     /// meshes individually).
     virtual void Render(bool render_screen = false);
 
-    void CopyViewStatusToClipboard();
+    /// Copy the current view status to clipboard.
+    void GetViewStatusToClipboard();
 
-    void CopyViewStatusFromClipboard();
+    /// Apply the view point from clipboard.
+    void SetViewStatusFromClipboard();
 
-    // callback functions
+    /// Get the current view status as a json string of ViewTrajectory.
+    std::string GetViewStatus();
+
+    /// Set the current view status from a json string of ViewTrajectory.
+    void SetViewStatus(const std::string &view_status_str);
+
+    /// Callback functions
     virtual void WindowRefreshCallback(GLFWwindow *window);
     virtual void WindowResizeCallback(GLFWwindow *window, int w, int h);
     virtual void MouseMoveCallback(GLFWwindow *window, double x, double y);

@@ -161,35 +161,41 @@ void Visualizer::ResetViewPoint(bool reset_bounding_box /* = false*/) {
     is_redraw_required_ = true;
 }
 
-void Visualizer::CopyViewStatusToClipboard() {
+void Visualizer::GetViewStatusToClipboard() {
+    glfwSetClipboardString(window_, GetViewStatus().c_str());
+}
+
+void Visualizer::SetViewStatusFromClipboard() {
+    const char *clipboard_string_buffer = glfwGetClipboardString(window_);
+    if (clipboard_string_buffer != nullptr) {
+        std::string clipboard_string(clipboard_string_buffer);
+        SetViewStatus(clipboard_string);
+    }
+}
+
+std::string Visualizer::GetViewStatus() {
     ViewParameters current_status;
     if (!view_control_ptr_->ConvertToViewParameters(current_status)) {
-        utility::LogWarning("Something is wrong copying view status.");
+        utility::LogWarning("Cannot convert to view parameters.");
     }
     ViewTrajectory trajectory;
     trajectory.view_status_.push_back(current_status);
-    std::string clipboard_string;
-    if (!io::WriteIJsonConvertibleToJSONString(clipboard_string, trajectory)) {
-        utility::LogWarning("Something is wrong copying view status.");
+    std::string view_status_str;
+    if (!io::WriteIJsonConvertibleToJSONString(view_status_str, trajectory)) {
+        utility::LogWarning("Cannot convert ViewTrajectory to json string.");
     }
-    glfwSetClipboardString(window_, clipboard_string.c_str());
+    return view_status_str;
 }
 
-void Visualizer::CopyViewStatusFromClipboard() {
-    const char *clipboard_string_buffer = glfwGetClipboardString(window_);
-    if (clipboard_string_buffer != NULL) {
-        std::string clipboard_string(clipboard_string_buffer);
-        ViewTrajectory trajectory;
-        if (!io::ReadIJsonConvertibleFromJSONString(clipboard_string,
-                                                    trajectory)) {
-            utility::LogWarning("Something is wrong copying view status.");
-        }
-        if (trajectory.view_status_.size() != 1) {
-            utility::LogWarning("Something is wrong copying view status.");
-        }
-        view_control_ptr_->ConvertFromViewParameters(
-                trajectory.view_status_[0]);
+void Visualizer::SetViewStatus(const std::string &view_status_str) {
+    ViewTrajectory trajectory;
+    if (!io::ReadIJsonConvertibleFromJSONString(view_status_str, trajectory)) {
+        utility::LogWarning("Cannot convert string to view status.");
     }
+    if (trajectory.view_status_.size() != 1) {
+        utility::LogWarning("Cannot convert string to view status.");
+    }
+    view_control_ptr_->ConvertFromViewParameters(trajectory.view_status_[0]);
 }
 
 std::shared_ptr<geometry::Image> Visualizer::CaptureScreenFloatBuffer(
