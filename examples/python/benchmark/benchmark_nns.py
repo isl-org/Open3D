@@ -377,6 +377,15 @@ if __name__ == "__main__":
             elif "pcl" in lower_name:
                 style["color"] = "g"
                 style["marker"] = "+"
+            elif "scipy" in lower_name:
+                style["color"] = "c"
+                style["marker"] = "h"
+            elif "sklearnkd" in lower_name:
+                style["color"] = "m"
+                style["marker"] = "<"
+            elif "sklearnball" in lower_name:
+                style["color"] = "m"
+                style["marker"] = ">"
             return style
         for method in method_names:
             style = assign_style(method) 
