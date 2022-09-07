@@ -46,7 +46,20 @@ void pybind_core_device(py::module &m) {
             .def("__repr__", &Device::ToString)
             .def("__str__", &Device::ToString)
             .def("get_type", &Device::GetType)
-            .def("get_id", &Device::GetID);
+            .def("get_id", &Device::GetID)
+            .def(py::pickle(
+                    [](const Device &d) {
+                        return py::make_tuple(d.GetType(), d.GetID());
+                    },
+                    [](py::tuple t) {
+                        if (t.size() != 2) {
+                            utility::LogError(
+                                    "Invalid state! Expecting a tuple of size "
+                                    "2.");
+                        }
+                        return Device(t[0].cast<Device::DeviceType>(),
+                                      t[1].cast<int>());
+                    }));
 
     py::enum_<Device::DeviceType>(device, "DeviceType")
             .value("CPU", Device::DeviceType::CPU)

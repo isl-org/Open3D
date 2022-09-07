@@ -356,6 +356,27 @@ void pybind_core_tensor(py::module& m) {
     BindTensorFullCreation<bool>(m, tensor);
     docstring::ClassMethodDocInject(m, "Tensor", "full", argument_docs);
 
+    // Pickling support.
+    // The tensor will be on the same device after de-serialization.
+    // Non contiguous tensors will be converted to contiguous tensors after
+    // de-serilization.
+    tensor.def(py::pickle(
+            [](const Tensor& t) {
+                // __getstate__
+                return py::make_tuple(t.GetDevice(),
+                                      TensorToPyArray(t.To(Device("CPU:0"))));
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 2) {
+                    utility::LogError(
+                            "Invalid state! Expecting a tuple of size 2.");
+                }
+                const Device& device = t[0].cast<Device>();
+
+                return PyArrayToTensor(t[1].cast<py::array>(), true).To(device);
+            }));
+
     tensor.def_static(
             "eye",
             [](int64_t n, utility::optional<Dtype> dtype,

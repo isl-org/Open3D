@@ -109,6 +109,34 @@ and ``device`` as the tensor. The device for ``point_positions`` must be consist
              {"line_indices",
               "A tensor with element shape (2,) and Int dtype."}});
 
+    // Pickling support.
+    line_set.def(py::pickle(
+            [](const LineSet& line_set) {
+                // __getstate__
+                return py::make_tuple(line_set.GetDevice(),
+                                      line_set.GetPointAttr(),
+                                      line_set.GetLineAttr());
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 3) {
+                    utility::LogError(
+                            "Invalid state! Expecting a tuple of size 3.");
+                }
+                const TensorMap point_attr = t[1].cast<TensorMap>();
+                const TensorMap line_attr = t[2].cast<TensorMap>();
+                LineSet line_set(t[0].cast<core::Device>());
+
+                for (auto& kv : point_attr) {
+                    line_set.SetPointAttr(kv.first, kv.second);
+                }
+                for (auto& kv : line_attr) {
+                    line_set.SetLineAttr(kv.first, kv.second);
+                }
+
+                return line_set;
+            }));
+
     // Line set's attributes: point_positions, line_indices, line_colors, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced

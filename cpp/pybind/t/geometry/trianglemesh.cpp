@@ -107,6 +107,33 @@ The attributes of the triangle mesh have different levels::
                  "vertex_positions"_a, "triangle_indices"_a)
             .def("__repr__", &TriangleMesh::ToString);
 
+    // Pickle support.
+    triangle_mesh.def(py::pickle(
+            [](const TriangleMesh& mesh) {
+                // __getstate__
+                return py::make_tuple(mesh.GetDevice(), mesh.GetVertexAttr(),
+                                      mesh.GetTriangleAttr());
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 3) {
+                    utility::LogError(
+                            "Invalid state! Expecting a tuple of size 3.");
+                }
+                const TensorMap vertex_attr = t[1].cast<TensorMap>();
+                const TensorMap triangle_attr = t[2].cast<TensorMap>();
+                TriangleMesh mesh(t[0].cast<core::Device>());
+
+                for (auto& kv : vertex_attr) {
+                    mesh.SetVertexAttr(kv.first, kv.second);
+                }
+                for (auto& kv : triangle_attr) {
+                    mesh.SetTriangleAttr(kv.first, kv.second);
+                }
+
+                return mesh;
+            }));
+
     // Triangle mesh's attributes: vertices, vertex_colors, vertex_normals, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced

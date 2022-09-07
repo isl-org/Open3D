@@ -101,6 +101,22 @@ void pybind_image(py::module &m) {
                  "tensor"_a);
     docstring::ClassMethodDocInject(m, "Image", "__init__",
                                     map_shared_argument_docstrings);
+
+    // Pickle support.
+    image.def(py::pickle(
+            [](const Image &image) {
+                // __getstate__
+                return py::make_tuple(image.AsTensor());
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 1) {
+                    utility::LogError(
+                            "Invalid state! Expecting a tuple of size 1.");
+                }
+                return Image(t[0].cast<core::Tensor>());
+            }));
+
     // Buffer protocol.
     image.def_buffer([](Image &I) -> py::buffer_info {
         if (!I.IsCPU()) {
