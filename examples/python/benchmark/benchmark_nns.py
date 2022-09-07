@@ -35,14 +35,17 @@ from collections import OrderedDict
 import matplotlib.pyplot as plt
 import numpy as np
 import open3d as o3d
+
 try:
     import pcl
 except ImportError:
     print("PCL is not installed.")
 import torch
 import torch_cluster
-from scipy.spatial import cKDTree, KDTree as scipy_kdtree
-from sklearn.neighbors import BallTree, KDTree as sklearn_kdtree
+from scipy.spatial import KDTree as scipy_kdtree
+from scipy.spatial import cKDTree
+from sklearn.neighbors import BallTree
+from sklearn.neighbors import KDTree as sklearn_kdtree
 
 from benchmark_utils import measure_time, print_table_simple
 
@@ -287,7 +290,7 @@ if __name__ == "__main__":
         SciPy("cpu", args.search_type),
         SklearnKDTree("cpu", args.search_type),
         SklearnBallTree("cpu", args.search_type),
-        # PCL(device="cpu", search_type=args.search_type),
+        PCL(device="cpu", search_type=args.search_type),
         Open3D("cuda", args.search_type, args.index_type),
         PyTorchCluster("cuda", args.search_type)
     ]
@@ -298,6 +301,7 @@ if __name__ == "__main__":
             print(f"Skip {method}...")
             continue
 
+        print(f"benchmark {method}...")
         for example_name, example in datasets.items():
             points, queries = example['points'], example['queries']
             n = len(points)
@@ -370,7 +374,7 @@ if __name__ == "__main__":
             style = dict(linestyle="--" if "cpu" in lower_name else "-")
             if "open3d" in lower_name:
                 style["color"] = "r"
-                style["marker"]  = "o"
+                style["marker"]  = "*"
             elif "cluster" in lower_name:
                 style["color"] = "b"
                 style["marker"] = "^"
@@ -385,12 +389,12 @@ if __name__ == "__main__":
                 style["marker"] = "<"
             elif "sklearnball" in lower_name:
                 style["color"] = "m"
-                style["marker"] = ">"
+                style["marker"] = "P"
             return style
         for method in method_names:
             style = assign_style(method) 
             plt.plot(num_points, latency[method], label=method, **style)
-
+        plt.grid(axis="both", which="major")
         plt.semilogx()
         plt.semilogy()
         plt.legend()
