@@ -203,6 +203,7 @@ def _example(parser, args):
 
 def _draw(parser, args):
     if args.filename == None:
+        # Print help and create a blank window.
         parser.print_help()
     elif not os.path.isfile(args.filename):
         print(f"Error: could not find file: {args.filename}")
@@ -216,6 +217,27 @@ def _draw(parser, args):
     return 0
 
 
+def _draw_legacy(parser, args):
+    if args.filename == None:
+        # Print help and exit. No window will be created.
+        parser.print_help()
+        parser.exit(2)
+    elif not os.path.isfile(args.filename):
+        print(f"Error: could not find file: {args.filename}")
+        parser.print_help()
+        parser.exit(2)
+
+    # Try loading as triangle mesh, and then point cloud.
+    # Need to implement "guess and load" as a C++ function, essentially
+    # exposing GuiVisualizer::LoadGeometry().
+    geometry = o3d.io.read_triangle_mesh(args.filename)
+    if geometry.has_triangles():
+        geometry.compute_vertex_normals()
+    else:
+        geometry = o3d.io.read_point_cloud(args.filename)
+    o3d.visualization.draw_geometries([geometry])
+
+
 def main():
     print(f"***************************************************\n"
           f"* Open3D: A Modern Library for 3D Data Processing *\n"
@@ -225,6 +247,7 @@ def main():
           f"* Code    https://github.com/isl-org/Open3D       *\n"
           f"***************************************************")
 
+    # Main parser.
     main_parser = _Open3DArgumentParser(
         description="Open3D commad-line tools",
         add_help=False,
@@ -239,6 +262,7 @@ def main():
                              action="help",
                              help="Show this help message and exit.")
 
+    # Parser for "open3d example".
     subparsers = main_parser.add_subparsers(
         title="command",
         dest="command",
@@ -295,18 +319,17 @@ def main():
                                 help="Show this help message and exit.")
     parser_example.set_defaults(func=_example)
 
+    # Parser for "open3d draw".
     draw_help = (
         "Load and visualize a 3D model. Example usage:\n"
-        "  open3d draw                                            # Start a blank Open3D viewer\n"
-        "  open3d draw path/to/model_file                         # Visualize a 3D model file\n"
-    )
+        "  open3d draw                     # Start a blank Open3D viewer\n"
+        "  open3d draw path/to/model_file  # Visualize a 3D model file\n")
     parser_draw = subparsers.add_parser(
         "draw",
         description=draw_help,
         help=draw_help,
         add_help=False,
         formatter_class=argparse.RawTextHelpFormatter)
-
     parser_draw.add_argument("filename",
                              nargs="?",
                              help="Name of the mesh or point cloud file.")
@@ -315,6 +338,26 @@ def main():
                              action="help",
                              help="Show this help message and exit.")
     parser_draw.set_defaults(func=_draw)
+
+    # Parser for "open3d draw_legacy"
+    draw_legacy_help = (
+        "Load and visualize a 3D model with the legacy viewer. Example usage:\n"
+        "  open3d draw_legacy                     # Start a blank Open3D viewer\n"
+        "  open3d draw_legacy path/to/model_file  # Visualize a 3D model file\n"
+    )
+    parser_draw_legacy = subparsers.add_parser(
+        "draw_legacy",
+        description=draw_legacy_help,
+        help=draw_legacy_help,
+        add_help=False,
+        formatter_class=argparse.RawTextHelpFormatter)
+    parser_draw_legacy.add_argument(
+        "filename", nargs="?", help="Name of the mesh or point cloud file.")
+    parser_draw_legacy.add_argument("-h",
+                                    "--help",
+                                    action="help",
+                                    help="Show this help message and exit.")
+    parser_draw_legacy.set_defaults(func=_draw_legacy)
 
     args = main_parser.parse_args()
     if args.command in subparsers.choices.keys():
