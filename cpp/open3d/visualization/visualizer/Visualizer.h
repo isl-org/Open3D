@@ -228,10 +228,17 @@ public:
                                 bool do_render = true,
                                 bool convert_to_world_coordinate = false);
     void CaptureRenderOption(const std::string &filename = "");
+
     /// Function to reset view point.
     void ResetViewPoint(bool reset_bounding_box = false);
 
     const std::string &GetWindowName() const { return window_name_; }
+
+    /// Get the current view status as a json string of ViewTrajectory.
+    std::string GetViewStatus();
+
+    /// Set the current view status from a json string of ViewTrajectory.
+    void SetViewStatus(const std::string &view_status_str);
 
 protected:
     /// Function to initialize OpenGL
@@ -253,12 +260,6 @@ protected:
 
     /// Apply the view point from clipboard.
     void SetViewStatusFromClipboard();
-
-    /// Get the current view status as a json string of ViewTrajectory.
-    std::string GetViewStatus();
-
-    /// Set the current view status from a json string of ViewTrajectory.
-    void SetViewStatus(const std::string &view_status_str);
 
     /// Callback functions
     virtual void WindowRefreshCallback(GLFWwindow *window);
