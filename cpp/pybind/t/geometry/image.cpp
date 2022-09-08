@@ -298,6 +298,26 @@ void pybind_image(py::module &m) {
             .def(py::init<const Image &, const Image &, bool>(),
                  "Parameterized constructor", "color"_a, "depth"_a,
                  "aligned"_a = true)
+
+            // Pickling support.
+            .def(py::pickle(
+                    [](const RGBDImage &rgbd) {
+                        // __getstate__
+                        return py::make_tuple(rgbd.color_, rgbd.depth_,
+                                              rgbd.aligned_);
+                    },
+                    [](py::tuple t) {
+                        // __setstate__
+                        if (t.size() != 3) {
+                            utility::LogError(
+                                    "Invalid state! Expecting a tuple of size "
+                                    "3.");
+                        }
+
+                        return RGBDImage(t[0].cast<Image>(), t[1].cast<Image>(),
+                                         t[2].cast<bool>());
+                    }))
+
             // Depth and color images.
             .def_readwrite("color", &RGBDImage::color_, "The color image.")
             .def_readwrite("depth", &RGBDImage::depth_, "The depth image.")

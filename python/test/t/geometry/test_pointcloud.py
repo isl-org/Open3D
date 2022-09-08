@@ -28,6 +28,7 @@ import open3d as o3d
 import open3d.core as o3c
 import numpy as np
 import pytest
+import pickle
 
 import sys
 import os
@@ -195,3 +196,14 @@ def test_extrude_linear():
     ans = pcd.extrude_linear([0, 0, 1])
     assert ans.point.positions.shape == (2, 3)
     assert ans.line.indices.shape == (1, 2)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_pickle(device):
+    pcd = o3d.t.geometry.PointCloud(device)
+    pcd.point.positions = o3c.Tensor.ones((10, 3), o3c.float32, device=device)
+    pickle.dump(pcd, open("pcd.pkl", "wb"))
+    pcd_load = pickle.load(open("pcd.pkl", "rb"))
+    assert pcd_load.point.positions.device == device and pcd_load.point.positions.dtype == o3c.float32
+    np.testing.assert_equal(pcd.point.positions.cpu().numpy(),
+                            pcd_load.point.positions.cpu().numpy())

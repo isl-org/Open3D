@@ -25,6 +25,15 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
+import numpy as np
+import pytest
+import pickle
+
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+from open3d_test import list_devices
 
 
 def test_extrude_rotation():
@@ -42,3 +51,15 @@ def test_extrude_linear():
     ans = lines.extrude_linear([0, 1, 0])
     assert ans.vertex.positions.shape == (6, 3)
     assert ans.triangle.indices.shape == (4, 3)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_pickle(device):
+    line = o3d.t.geometry.LineSet([[0.7, 0, 0], [1, 0, 0]], [[0, 1]]).to(device)
+    pickle.dump(line, open("lineset.pkl", "wb"))
+    line_load = pickle.load(open("lineset.pkl", "rb"))
+    assert line_load.device == device
+    np.testing.assert_equal(line_load.point.positions.cpu().numpy(),
+                            line.point.positions.cpu().numpy())
+    np.testing.assert_equal(line_load.line.indices.cpu().numpy(),
+                            line.line.indices.cpu().numpy())
