@@ -357,9 +357,9 @@ void pybind_core_tensor(py::module& m) {
     docstring::ClassMethodDocInject(m, "Tensor", "full", argument_docs);
 
     // Pickling support.
-    // The tensor will be on the same device after de-serialization.
+    // The tensor will be on the same device after deserialization.
     // Non contiguous tensors will be converted to contiguous tensors after
-    // de-serilization.
+    // deserialization.
     tensor.def(py::pickle(
             [](const Tensor& t) {
                 // __getstate__
