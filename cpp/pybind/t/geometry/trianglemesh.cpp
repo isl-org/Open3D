@@ -120,10 +120,17 @@ The attributes of the triangle mesh have different levels::
                     utility::LogError(
                             "Invalid state! Expecting a tuple of size 3.");
                 }
+
+                TriangleMesh mesh(t[0].cast<core::Device>());
+                if (!core::cuda::IsAvailable()) {
+                    utility::LogWarning(
+                            "CUDA is not available. TriangleMesh will be "
+                            "created on CPU.");
+                    mesh.To(core::Device("CPU:0"));
+                }
+
                 const TensorMap vertex_attr = t[1].cast<TensorMap>();
                 const TensorMap triangle_attr = t[2].cast<TensorMap>();
-                TriangleMesh mesh(t[0].cast<core::Device>());
-
                 for (auto& kv : vertex_attr) {
                     mesh.SetVertexAttr(kv.first, kv.second);
                 }

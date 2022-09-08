@@ -29,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
@@ -123,10 +124,17 @@ and ``device`` as the tensor. The device for ``point_positions`` must be consist
                     utility::LogError(
                             "Invalid state! Expecting a tuple of size 3.");
                 }
+
+                LineSet line_set(t[0].cast<core::Device>());
+                if (!core::cuda::IsAvailable()) {
+                    utility::LogWarning(
+                            "CUDA is not available. LineSet will be created on "
+                            "CPU.");
+                    line_set.To(core::Device("CPU:0"));
+                }
+
                 const TensorMap point_attr = t[1].cast<TensorMap>();
                 const TensorMap line_attr = t[2].cast<TensorMap>();
-                LineSet line_set(t[0].cast<core::Device>());
-
                 for (auto& kv : point_attr) {
                     line_set.SetPointAttr(kv.first, kv.second);
                 }

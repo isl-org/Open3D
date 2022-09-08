@@ -144,6 +144,13 @@ The attributes of the point cloud have different levels::
                 }
 
                 PointCloud pcd(t[0].cast<core::Device>());
+                if (!core::cuda::IsAvailable()) {
+                    utility::LogWarning(
+                            "CUDA is not available. PointCloud will be "
+                            "created on CPU.");
+                    pcd.To(core::Device("CPU:0"));
+                }
+
                 const TensorMap map_keys_to_tensors = t[1].cast<TensorMap>();
                 for (auto& kv : map_keys_to_tensors) {
                     pcd.SetPointAttr(kv.first, kv.second);

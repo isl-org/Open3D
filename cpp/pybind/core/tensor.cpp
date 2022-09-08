@@ -373,8 +373,15 @@ void pybind_core_tensor(py::module& m) {
                             "Invalid state! Expecting a tuple of size 2.");
                 }
                 const Device& device = t[0].cast<Device>();
-
-                return PyArrayToTensor(t[1].cast<py::array>(), true).To(device);
+                if (device.IsCUDA() && !core::cuda::IsAvailable()) {
+                    utility::LogWarning(
+                            "CUDA is not available, tensor will be "
+                            "created on CPU.");
+                    return PyArrayToTensor(t[1].cast<py::array>(), true);
+                } else {
+                    return PyArrayToTensor(t[1].cast<py::array>(), true)
+                            .To(device);
+                }
             }));
 
     tensor.def_static(
