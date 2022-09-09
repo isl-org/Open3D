@@ -29,6 +29,7 @@ import open3d.core as o3c
 import numpy as np
 import pytest
 import pickle
+import tempfile
 
 import sys
 import os
@@ -82,7 +83,9 @@ def test_buffer_protocol_cpu(device):
 @pytest.mark.parametrize("device", list_devices())
 def test_pickle(device):
     img = o3d.t.geometry.Image(o3c.Tensor.ones((10, 10, 3), o3c.uint8, device))
-    pickle.dump(img, open("img.pkl", "wb"))
-    img_load = pickle.load(open("img.pkl", "rb"))
-    assert img_load.as_tensor().allclose(img.as_tensor())
-    assert img_load.device == img.device and img_load.dtype == o3c.uint8
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_name = f"{temp_dir}/img.pkl"
+        pickle.dump(img, open(file_name, "wb"))
+        img_load = pickle.load(open(file_name, "rb"))
+        assert img_load.as_tensor().allclose(img.as_tensor())
+        assert img_load.device == img.device and img_load.dtype == o3c.uint8

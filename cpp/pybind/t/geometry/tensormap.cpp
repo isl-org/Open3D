@@ -179,7 +179,7 @@ void pybind_tensormap(py::module &m) {
                 // __setstate__
                 if (t.size() != 2) {
                     utility::LogError(
-                            "Invalid state! Expecting a tuple of size 2.");
+                            "Cannot unpickle TensorMap! Expecting a tuple of size 2.");
                 }
                 return TensorMap(t[0].cast<std::string>(),
                                  t[1].cast<std::unordered_map<std::string,

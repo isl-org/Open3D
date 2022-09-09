@@ -29,6 +29,7 @@ import open3d.core as o3c
 import numpy as np
 import pytest
 import pickle
+import tempfile
 
 import sys
 import os
@@ -322,9 +323,11 @@ def test_numpy_dict_modify():
 @pytest.mark.parametrize("device", list_devices())
 def test_pickle(device):
     tm = o3d.t.geometry.TensorMap("positions")
-    tm.positions = o3c.Tensor.ones((10, 3), o3c.float32, device=device)
-    pickle.dump(tm, open("tm.pkl", "wb"))
-    tm_load = pickle.load(open("tm.pkl", "rb"))
-    assert tm_load.positions.device == device and tm_load.positions.dtype == o3c.float32
-    np.testing.assert_equal(tm.positions.cpu().numpy(),
-                            tm_load.positions.cpu().numpy())
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_name = f"{temp_dir}/tm.pkl"
+        tm.positions = o3c.Tensor.ones((10, 3), o3c.float32, device=device)
+        pickle.dump(tm, open(file_name, "wb"))
+        tm_load = pickle.load(open(file_name, "rb"))
+        assert tm_load.positions.device == device and tm_load.positions.dtype == o3c.float32
+        np.testing.assert_equal(tm.positions.cpu().numpy(),
+                                tm_load.positions.cpu().numpy())

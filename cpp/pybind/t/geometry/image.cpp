@@ -112,7 +112,7 @@ void pybind_image(py::module &m) {
                 // __setstate__
                 if (t.size() != 1) {
                     utility::LogError(
-                            "Invalid state! Expecting a tuple of size 1.");
+                            "Cannot unpickle Image! Expecting a tuple of size 1.");
                 }
                 return Image(t[0].cast<core::Tensor>());
             }));
@@ -310,7 +310,7 @@ void pybind_image(py::module &m) {
                         // __setstate__
                         if (t.size() != 3) {
                             utility::LogError(
-                                    "Invalid state! Expecting a tuple of size "
+                                    "Cannot unpickle RGBDImage! Expecting a tuple of size "
                                     "3.");
                         }
 

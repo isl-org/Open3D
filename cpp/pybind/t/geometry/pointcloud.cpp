@@ -140,7 +140,7 @@ The attributes of the point cloud have different levels::
                 // __setstate__
                 if (t.size() != 2) {
                     utility::LogError(
-                            "Invalid state! Expecting a tuple of size 2.");
+                            "Cannot unpickle PointCloud! Expecting a tuple of size 2.");
                 }
 
                 PointCloud pcd(t[0].cast<core::Device>());

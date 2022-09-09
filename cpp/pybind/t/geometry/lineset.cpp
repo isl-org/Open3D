@@ -122,7 +122,7 @@ and ``device`` as the tensor. The device for ``point_positions`` must be consist
                 // __setstate__
                 if (t.size() != 3) {
                     utility::LogError(
-                            "Invalid state! Expecting a tuple of size 3.");
+                            "Cannot unpickle LineSet! Expecting a tuple of size 3.");
                 }
 
                 LineSet line_set(t[0].cast<core::Device>());

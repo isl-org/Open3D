@@ -29,6 +29,7 @@ import open3d.core as o3c
 import numpy as np
 import pytest
 import pickle
+import tempfile
 
 import sys
 import os
@@ -201,9 +202,11 @@ def test_extrude_linear():
 @pytest.mark.parametrize("device", list_devices())
 def test_pickle(device):
     pcd = o3d.t.geometry.PointCloud(device)
-    pcd.point.positions = o3c.Tensor.ones((10, 3), o3c.float32, device=device)
-    pickle.dump(pcd, open("pcd.pkl", "wb"))
-    pcd_load = pickle.load(open("pcd.pkl", "rb"))
-    assert pcd_load.point.positions.device == device and pcd_load.point.positions.dtype == o3c.float32
-    np.testing.assert_equal(pcd.point.positions.cpu().numpy(),
-                            pcd_load.point.positions.cpu().numpy())
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_name = f"{temp_dir}/pcd.pkl"
+        pcd.point.positions = o3c.Tensor.ones((10, 3), o3c.float32, device=device)
+        pickle.dump(pcd, open(file_name, "wb"))
+        pcd_load = pickle.load(open(file_name, "rb"))
+        assert pcd_load.point.positions.device == device and pcd_load.point.positions.dtype == o3c.float32
+        np.testing.assert_equal(pcd.point.positions.cpu().numpy(),
+                                pcd_load.point.positions.cpu().numpy())

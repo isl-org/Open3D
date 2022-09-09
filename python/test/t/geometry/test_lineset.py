@@ -28,6 +28,7 @@ import open3d as o3d
 import numpy as np
 import pytest
 import pickle
+import tempfile
 
 import sys
 import os
@@ -56,10 +57,12 @@ def test_extrude_linear():
 @pytest.mark.parametrize("device", list_devices())
 def test_pickle(device):
     line = o3d.t.geometry.LineSet([[0.7, 0, 0], [1, 0, 0]], [[0, 1]]).to(device)
-    pickle.dump(line, open("lineset.pkl", "wb"))
-    line_load = pickle.load(open("lineset.pkl", "rb"))
-    assert line_load.device == device
-    np.testing.assert_equal(line_load.point.positions.cpu().numpy(),
-                            line.point.positions.cpu().numpy())
-    np.testing.assert_equal(line_load.line.indices.cpu().numpy(),
-                            line.line.indices.cpu().numpy())
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_name = f"{temp_dir}/lineset.pkl"
+        pickle.dump(line, open(file_name, "wb"))
+        line_load = pickle.load(open(file_name, "rb"))
+        assert line_load.device == device
+        np.testing.assert_equal(line_load.point.positions.cpu().numpy(),
+                                line.point.positions.cpu().numpy())
+        np.testing.assert_equal(line_load.line.indices.cpu().numpy(),
+                                line.line.indices.cpu().numpy())

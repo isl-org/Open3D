@@ -118,7 +118,7 @@ The attributes of the triangle mesh have different levels::
                 // __setstate__
                 if (t.size() != 3) {
                     utility::LogError(
-                            "Invalid state! Expecting a tuple of size 3.");
+                            "Cannot unpickle TriangleMesh! Expecting a tuple of size 3.");
                 }
 
                 TriangleMesh mesh(t[0].cast<core::Device>());
