@@ -33,7 +33,9 @@
 
 #pragma once
 
+#include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "open3d/core/Device.h"
 #include "open3d/core/SYCLUtils.h"
@@ -72,6 +74,9 @@ private:
 
     /// List of available Open3D SYCL devices.
     std::vector<Device> devices_;
+
+    /// Registered SYCL devices' names.
+    std::unordered_set<std::string> device_names_;
 
     /// Maps core::Device to the corresponding default SYCL queue.
     std::unordered_map<Device, sy::queue> device_to_default_queue_;

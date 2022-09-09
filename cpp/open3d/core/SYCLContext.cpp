@@ -55,6 +55,7 @@ bool SYCLContext::IsDeviceAvailable(const Device &device) {
     }
     return rc;
 }
+
 std::vector<Device> SYCLContext::GetAvailableSYCLDevices() { return devices_; }
 
 sy::queue &SYCLContext::GetDefaultQueue(const Device &device) {
@@ -74,10 +75,13 @@ sy::device &SYCLContext::GetSYCLDevice(const Device &device) {
     return device_to_sycl_device_.at(device);
 }
 
-class DG2Selector : public sy::device_selector {
+class PCISelector : public sy::device_selector {
 public:
+    PCISelector(const std::string pci_id) : pci_id_(pci_id) {}
+
     int operator()(const sy::device &dev) const override {
-        const std::string expected_name = "Intel(R) Graphics [0x5693]";
+        const std::string expected_name =
+                fmt::format("Intel(R) Graphics [{}]", pci_id_);
         const std::string dev_name = dev.get_info<sy::info::device::name>();
         if (dev_name == expected_name) {
             return 1;
@@ -85,44 +89,95 @@ public:
             return -1;
         }
     }
+
+    // https://github.com/torvalds/linux/blob/master/include/drm/i915_pciids.h
+    static std::vector<std::string> GetDG2Ids() {
+        static std::vector<std::string> dg2_ids = {
+                // G10
+                "0x5690",
+                "0x5691",
+                "0x5692",
+                "0x56A0",
+                "0x56A1",
+                "0x56A2",
+                // G11
+                "0x5693",
+                "0x5694",
+                "0x5695",
+                "0x5698",
+                "0x56A5",
+                "0x56A6",
+                "0x56B0",
+                "0x56B1",
+                // G12
+                "0x5696",
+                "0x5697",
+                "0x56A3",
+                "0x56A4",
+                "0x56B2",
+                "0x56B3",
+        };
+        return dg2_ids;
+    }
+
+private:
+    std::string pci_id_;
 };
 
 SYCLContext::SYCLContext() {
-    // Discrete GPU.
-    // Intel(R) Graphics [0x5693]
-    try {
-        const sy::device &sycl_device = sy::device(DG2Selector());
-        const Device open3d_device = Device("SYCL", devices_.size());
-        devices_.push_back(open3d_device);
-        device_to_sycl_device_[open3d_device] = sycl_device;
-        device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
-    } catch (const sy::exception &e) {
+    // DG2 GPUs.
+    // TODO: Two devices can have the same PCI ID.
+    for (const std::string &pci_id : PCISelector::GetDG2Ids()) {
+        try {
+            const sy::device &sycl_device = sy::device(PCISelector(pci_id));
+            const Device open3d_device = Device("SYCL", devices_.size());
+            const std::string device_name =
+                    sycl_device.get_info<sy::info::device::name>();
+            if (device_names_.count(device_name) == 0) {
+                devices_.push_back(open3d_device);
+                device_names_.insert(device_name);
+                device_to_sycl_device_[open3d_device] = sycl_device;
+                device_to_default_queue_[open3d_device] =
+                        sy::queue(sycl_device);
+                utility::LogInfo("Device({}): DG2 GPU \"{}\" registered.",
+                                 open3d_device.ToString(), device_name);
+            }
+        } catch (const sy::exception &e) {
+        }
     }
 
-    // Integrated GPU.
-    // TODO: Currently we only support one GPU device.
+    // Try default GPU selector.
     try {
         const sy::device &sycl_device = sy::device(sy::gpu_selector());
         const Device open3d_device = Device("SYCL", devices_.size());
-        devices_.push_back(open3d_device);
-        device_to_sycl_device_[open3d_device] = sycl_device;
-        device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
+        const std::string device_name =
+                sycl_device.get_info<sy::info::device::name>();
+        if (device_names_.count(device_name) == 0) {
+            devices_.push_back(open3d_device);
+            device_names_.insert(device_name);
+            device_to_sycl_device_[open3d_device] = sycl_device;
+            device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
+            utility::LogInfo("Device({}): default GPU \"{}\" registered.",
+                             open3d_device.ToString(), device_name);
+        }
     } catch (const sy::exception &e) {
     }
 
+    // Fallback to SYCL host device.
     if (devices_.size() == 0) {
-        // SYCL CPU fallback.
-        // This could happen if the Intel GPGPU driver is not installed or if
-        // your CPU does not have integrated GPU.
         try {
             const sy::device &sycl_device = sy::device(sy::host_selector());
             const Device open3d_device = Device("SYCL:0");
-            utility::LogWarning(
-                    "SYCL GPU device is not available, falling back to SYCL "
-                    "host device.");
+            const std::string device_name =
+                    sycl_device.get_info<sy::info::device::name>();
             devices_.push_back(open3d_device);
             device_to_sycl_device_[open3d_device] = sycl_device;
             device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
+            utility::LogInfo("Device({}): host device \"{}\" registered.",
+                             open3d_device.ToString(), device_name);
+            utility::LogWarning(
+                    "SYCL GPU device is not available, falling back to SYCL "
+                    "host device.");
         } catch (const sy::exception &e) {
         }
     }
