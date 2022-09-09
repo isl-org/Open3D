@@ -33,7 +33,11 @@ deps=(
     libtool
 )
 
-source /etc/lsb-release
+eval $(
+    source /etc/lsb-release;
+    echo DISTRIB_ID="$DISTRIB_ID";
+    echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
+)
 if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
     # Ubuntu 18.04's clang/libc++-dev/libc++abi-dev are version 6.
     # To build Filament from source, we need version 7+.
