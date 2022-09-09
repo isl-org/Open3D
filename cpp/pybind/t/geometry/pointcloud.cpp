@@ -140,7 +140,8 @@ The attributes of the point cloud have different levels::
                 // __setstate__
                 if (t.size() != 2) {
                     utility::LogError(
-                            "Cannot unpickle PointCloud! Expecting a tuple of size 2.");
+                            "Cannot unpickle PointCloud! Expecting a tuple of "
+                            "size 2.");
                 }
 
                 const core::Device device = t[0].cast<core::Device>();
@@ -148,7 +149,8 @@ The attributes of the point cloud have different levels::
                 if (!device.IsAvailable()) {
                     utility::LogWarning(
                             "Device ({}) is not available. PointCloud will be "
-                            "created on CPU.", device.ToString());
+                            "created on CPU.",
+                            device.ToString());
                     pcd.To(core::Device("CPU:0"));
                 }
 

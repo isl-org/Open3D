@@ -122,15 +122,18 @@ and ``device`` as the tensor. The device for ``point_positions`` must be consist
                 // __setstate__
                 if (t.size() != 3) {
                     utility::LogError(
-                            "Cannot unpickle LineSet! Expecting a tuple of size 3.");
+                            "Cannot unpickle LineSet! Expecting a tuple of "
+                            "size 3.");
                 }
 
                 const core::Device device = t[0].cast<core::Device>();
                 LineSet line_set(device);
                 if (!device.IsAvailable()) {
                     utility::LogWarning(
-                            "Device ({}) is not available. LineSet will be created on "
-                            "CPU.", device.ToString());
+                            "Device ({}) is not available. LineSet will be "
+                            "created on "
+                            "CPU.",
+                            device.ToString());
                     line_set.To(core::Device("CPU:0"));
                 }
 

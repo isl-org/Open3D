@@ -54,7 +54,8 @@ void pybind_core_device(py::module &m) {
                     [](py::tuple t) {
                         if (t.size() != 2) {
                             utility::LogError(
-                                    "Cannot unpickle Device! Expecting a tuple of size "
+                                    "Cannot unpickle Device! Expecting a tuple "
+                                    "of size "
                                     "2.");
                         }
                         return Device(t[0].cast<Device::DeviceType>(),

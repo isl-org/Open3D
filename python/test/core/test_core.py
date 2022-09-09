@@ -1602,4 +1602,5 @@ def test_pickle(device):
         pickle.dump(o3_t_nc, open(file_name, "wb"))
         o3_t_nc_load = pickle.load(open(file_name, "rb"))
         assert o3_t_nc_load.is_contiguous()
-        np.testing.assert_equal(o3_t_nc.cpu().numpy(), o3_t_nc_load.cpu().numpy())
+        np.testing.assert_equal(o3_t_nc.cpu().numpy(),
+                                o3_t_nc_load.cpu().numpy())

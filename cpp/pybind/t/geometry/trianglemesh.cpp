@@ -118,15 +118,18 @@ The attributes of the triangle mesh have different levels::
                 // __setstate__
                 if (t.size() != 3) {
                     utility::LogError(
-                            "Cannot unpickle TriangleMesh! Expecting a tuple of size 3.");
+                            "Cannot unpickle TriangleMesh! Expecting a tuple "
+                            "of size 3.");
                 }
 
                 const core::Device device = t[0].cast<core::Device>();
                 TriangleMesh mesh(device);
                 if (!device.IsAvailable()) {
                     utility::LogWarning(
-                            "Device ({}) is not available. TriangleMesh will be "
-                            "created on CPU.", device.ToString());
+                            "Device ({}) is not available. TriangleMesh will "
+                            "be "
+                            "created on CPU.",
+                            device.ToString());
                     mesh.To(core::Device("CPU:0"));
                 }
 

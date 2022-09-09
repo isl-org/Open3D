@@ -370,13 +370,15 @@ void pybind_core_tensor(py::module& m) {
                 // __setstate__
                 if (t.size() != 2) {
                     utility::LogError(
-                            "Cannot unpickle Tensor! Expecting a tuple of size 2.");
+                            "Cannot unpickle Tensor! Expecting a tuple of size "
+                            "2.");
                 }
                 const Device& device = t[0].cast<Device>();
                 if (device.IsCUDA() && !device.IsAvailable()) {
                     utility::LogWarning(
                             "Device {} is not available, tensor will be "
-                            "created on CPU.", device.ToString());
+                            "created on CPU.",
+                            device.ToString());
                     return PyArrayToTensor(t[1].cast<py::array>(), true);
                 } else {
                     return PyArrayToTensor(t[1].cast<py::array>(), true)
