@@ -143,11 +143,12 @@ The attributes of the point cloud have different levels::
                             "Cannot unpickle PointCloud! Expecting a tuple of size 2.");
                 }
 
-                PointCloud pcd(t[0].cast<core::Device>());
-                if (!core::cuda::IsAvailable()) {
+                const core::Device device = t[0].cast<core::Device>();
+                PointCloud pcd(device);
+                if (!device.IsAvailable()) {
                     utility::LogWarning(
-                            "CUDA is not available. PointCloud will be "
-                            "created on CPU.");
+                            "Device ({}) is not available. PointCloud will be "
+                            "created on CPU.", device.ToString());
                     pcd.To(core::Device("CPU:0"));
                 }
 

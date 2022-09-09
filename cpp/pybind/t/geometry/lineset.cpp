@@ -125,11 +125,12 @@ and ``device`` as the tensor. The device for ``point_positions`` must be consist
                             "Cannot unpickle LineSet! Expecting a tuple of size 3.");
                 }
 
-                LineSet line_set(t[0].cast<core::Device>());
-                if (!core::cuda::IsAvailable()) {
+                const core::Device device = t[0].cast<core::Device>();
+                LineSet line_set(device);
+                if (!device.IsAvailable()) {
                     utility::LogWarning(
-                            "CUDA is not available. LineSet will be created on "
-                            "CPU.");
+                            "Device ({}) is not available. LineSet will be created on "
+                            "CPU.", device.ToString());
                     line_set.To(core::Device("CPU:0"));
                 }
 
