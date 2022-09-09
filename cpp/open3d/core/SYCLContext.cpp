@@ -147,20 +147,26 @@ SYCLContext::SYCLContext() {
     }
 
     // Try default GPU selector.
-    try {
-        const sy::device &sycl_device = sy::device(sy::gpu_selector());
-        const Device open3d_device = Device("SYCL", devices_.size());
-        const std::string device_name =
-                sycl_device.get_info<sy::info::device::name>();
-        if (device_names_.count(device_name) == 0) {
-            devices_.push_back(open3d_device);
-            device_names_.insert(device_name);
-            device_to_sycl_device_[open3d_device] = sycl_device;
-            device_to_default_queue_[open3d_device] = sy::queue(sycl_device);
-            utility::LogInfo("Device({}): default GPU \"{}\" registered.",
-                             open3d_device.ToString(), device_name);
+    // TODO: Enable this even when `devices_.size() != 0`. We need a combination
+    // of Linux kernel, driver, and firmware that is compatible with both DG2
+    // and the default GPU at the same time.
+    if (devices_.size() == 0) {
+        try {
+            const sy::device &sycl_device = sy::device(sy::gpu_selector());
+            const Device open3d_device = Device("SYCL", devices_.size());
+            const std::string device_name =
+                    sycl_device.get_info<sy::info::device::name>();
+            if (device_names_.count(device_name) == 0) {
+                devices_.push_back(open3d_device);
+                device_names_.insert(device_name);
+                device_to_sycl_device_[open3d_device] = sycl_device;
+                device_to_default_queue_[open3d_device] =
+                        sy::queue(sycl_device);
+                utility::LogInfo("Device({}): default GPU \"{}\" registered.",
+                                 open3d_device.ToString(), device_name);
+            }
+        } catch (const sy::exception &e) {
         }
-    } catch (const sy::exception &e) {
     }
 
     // Fallback to SYCL host device.
