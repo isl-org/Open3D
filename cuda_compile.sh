@@ -1,1 +1,1 @@
-nvcc -forward-unknown-to-host-compiler -DBUILD_CUDA_MODULE -I/home/yixing/repo/Open3D/cpp -isystem=/home/yixing/repo/Open3D/build/fmt/include --Werror reorder -Xcompiler -Wall,-Wextra,-Werror,-Wno-unused-parameter --expt-extended-lambda -std=c++14 -MD -MT -c /home/yixing/repo/Open3D/cpp/open3d/core/kernel/ReductionCUDA.cu
+nvcc -forward-unknown-to-host-compiler -DBUILD_CUDA_MODULE -I/home/yixing/repo/Open3D/cpp -isystem=/home/yixing/repo/Open3D/build/fmt/include --expt-extended-lambda -std=c++14 -MD -MT -c /home/yixing/repo/Open3D/cpp/open3d/core/kernel/ReductionCUDA.cu
