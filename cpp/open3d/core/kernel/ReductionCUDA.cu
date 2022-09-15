@@ -133,7 +133,6 @@ private:
     int num_threads_;
 
 public:
-    remove this;
     ReduceConfig(int element_size_bytes, const Indexer& indexer)
         : element_size_bytes_(element_size_bytes) {
         num_outputs_ = indexer.NumOutputElements();
