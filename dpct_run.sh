@@ -1,1 +1,9 @@
-nvcc --compiler-options -dM -DBUILD_CUDA_MODULE -I/home/yixing/repo/Open3D/cpp -isystem=/home/yixing/repo/Open3D/build/fmt/include --expt-extended-lambda -std=c++14 -c /home/yixing/repo/Open3D/cpp/open3d/core/kernel/ReductionCUDA.cu
+#/bin/env bash
+
+open3d_root=/home/yixing/repo/Open3D
+
+dpct \
+    --in-root ${open3d_root}/cpp \
+    --out-root ${open3d_root}/out \
+    --extra-arg="-I${open3d_root}/cpp" \
+    ${open3d_root}/cpp/open3d/core/kernel/ReductionCUDA.cu
