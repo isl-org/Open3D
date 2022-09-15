@@ -1,0 +1,585 @@
+27,30c27,31
+< #include <cuda.h>
+< #include <cuda_runtime.h>
+< #include <thrust/pair.h>
+< #include <thrust/tuple.h>
+---
+> #include <oneapi/dpl/execution>
+> #include <oneapi/dpl/algorithm>
+> #include <CL/sycl.hpp>
+> #include <dpct/dpct.hpp>
+> #include <dpct/dpl_utils.hpp>
+56c57
+< #if __CUDA_ARCH__ >= 750
+---
+> #if DPCT_COMPATIBILITY_TEMP >= 750
+74,77c75
+< #define OPEN3D_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm)       \
+<     __launch_bounds__((OPEN3D_MAX_THREADS_PER_BLOCK((max_threads_per_block))), \
+<                       (OPEN3D_MIN_BLOCKS_PER_SM((max_threads_per_block),       \
+<                                                 (min_blocks_per_sm))))
+---
+> #define OPEN3D_LAUNCH_BOUNDS_2(max_threads_per_block, min_blocks_per_sm)
+80c78
+< OPEN3D_DEVICE __forceinline__ T WARP_SHFL_DOWN(T value,
+---
+> OPEN3D_DEVICE __dpct_inline__ T WARP_SHFL_DOWN(T value,
+82c80,81
+<                                                int width = warpSize,
+---
+>                                                sycl::nd_item<3> item_ct1,
+>                                                int width = 0,
+85c84,90
+<     return __shfl_down_sync(mask, value, delta, width);
+---
+>     /*
+>     DPCT1023:1: The DPC++ sub-group does not support mask options for
+>     dpct::shift_sub_group_left.
+>     */
+>     if (!width) width = item_ct1.get_sub_group().get_local_range().get(0);
+>     return dpct::shift_sub_group_left(item_ct1.get_sub_group(), value, delta,
+>                                       width);
+253c258,260
+<     dim3 BlockDim() const { return dim3(block_width_, block_height_); }
+---
+>     sycl::range<3> BlockDim() const {
+>         return sycl::range<3>(1, block_height_, block_width_);
+>     }
+255,256c262,264
+<     dim3 GridDim() const {
+<         return dim3(DivUp(num_outputs_, step_output_), ctas_per_output_);
+---
+>     sycl::range<3> GridDim() const {
+>         return sycl::range<3>(1, ctas_per_output_,
+>                               DivUp(num_outputs_, step_output_));
+271c279
+<     OPEN3D_DEVICE bool ShouldStore(int output_idx) const {
+---
+>     OPEN3D_DEVICE bool ShouldStore(int output_idx, sycl::nd_item<3> item_ct1) const {
+273,274c281,282
+<                (!ShouldBlockXReduce() || threadIdx.x == 0) &&
+<                (!ShouldBlockYReduce() || threadIdx.y == 0);
+---
+>                (!ShouldBlockXReduce() || item_ct1.get_local_id(2) == 0) &&
+>                (!ShouldBlockYReduce() || item_ct1.get_local_id(1) == 0);
+277,280c285,288
+<     OPEN3D_HOST_DEVICE int InputIdx() const {
+<         int lane = threadIdx.x;
+<         int warp = threadIdx.y;
+<         int cta2 = blockIdx.y;
+---
+>     OPEN3D_HOST_DEVICE int InputIdx(sycl::nd_item<3> item_ct1) const {
+>         int lane = item_ct1.get_local_id(2);
+>         int warp = item_ct1.get_local_id(1);
+>         int cta2 = item_ct1.get_group(1);
+285,288c293,296
+<     OPEN3D_HOST_DEVICE int OutputIdx() const {
+<         int lane = threadIdx.x;
+<         int warp = threadIdx.y;
+<         int cta1 = blockIdx.x;
+---
+>     OPEN3D_HOST_DEVICE int OutputIdx(sycl::nd_item<3> item_ct1) const {
+>         int lane = item_ct1.get_local_id(2);
+>         int warp = item_ct1.get_local_id(1);
+>         int cta1 = item_ct1.get_group(2);
+293,294c301,303
+<     OPEN3D_DEVICE int SharedMemoryOffset(int offset) const {
+<         return threadIdx.x + (threadIdx.y + offset) * blockDim.x;
+---
+>     OPEN3D_DEVICE int SharedMemoryOffset(int offset, sycl::nd_item<3> item_ct1) const {
+>         return item_ct1.get_local_id(2) + (item_ct1.get_local_id(1) + offset) *
+>                                                   item_ct1.get_local_range(2);
+297,298c306,307
+<     OPEN3D_DEVICE int StagingMemoryOffset(int cta2) const {
+<         int offset = cta2 + blockIdx.x * gridDim.y;
+---
+>     OPEN3D_DEVICE int StagingMemoryOffset(int cta2, sycl::nd_item<3> item_ct1) const {
+>         int offset = cta2 + item_ct1.get_group(2) * item_ct1.get_group_range(1);
+300c309,310
+<             offset = threadIdx.x + offset * blockDim.x;
+---
+>             offset = item_ct1.get_local_id(2) +
+>                      offset * item_ct1.get_local_range(2);
+321c331
+<             size *= BlockDim().x;
+---
+>             size *= BlockDim()[2];
+330c340
+<         return sizeof(int) * GridDim().x;
+---
+>         return sizeof(int) * GridDim()[2];
+342,345c352,355
+<         std::string block_str = fmt::format("[{},{},{}]", BlockDim().x,
+<                                             BlockDim().y, BlockDim().z);
+<         std::string grid_str = fmt::format("[{},{},{}]", GridDim().x,
+<                                            GridDim().y, GridDim().z);
+---
+>         std::string block_str = fmt::format("[{},{},{}]", BlockDim()[2],
+>                                             BlockDim()[1], BlockDim()[0]);
+>         std::string grid_str = fmt::format("[{},{},{}]", GridDim()[2],
+>                                            GridDim()[1], GridDim()[0]);
+362c372,377
+< __global__ void ReduceKernel(R reduction) {
+---
+> void ReduceKernel(R reduction) {
+>     /*
+>     DPCT1084:2: The function call has multiple migration results in different
+>     template instantiations that could not be unified. You may need to adjust
+>     the code.
+>     */
+397a413,417
+>             /*
+>             DPCT1084:3: The function call has multiple migration results in
+>             different template instantiations that could not be unified. You may
+>             need to adjust the code.
+>             */
+404a425,429
+>                 /*
+>                 DPCT1084:4: The function call has multiple migration results in
+>                 different template instantiations that could not be unified. You
+>                 may need to adjust the code.
+>                 */
+424,425c449,451
+<     static inline OPEN3D_DEVICE arg_t WarpShflDown(arg_t arg, int offset) {
+<         return WARP_SHFL_DOWN(arg, offset);
+---
+>     static inline OPEN3D_DEVICE arg_t WarpShflDown(arg_t arg, int offset,
+>                                                    sycl::nd_item<3> item_ct1) {
+>         return WARP_SHFL_DOWN(arg, offset, item_ct1);
+428a455,459
+>         /*
+>         DPCT1084:5: The function call has multiple migration results in
+>         different template instantiations that could not be unified. You may
+>         need to adjust the code.
+>         */
+435a467,471
+>         /*
+>         DPCT1084:6: The function call has multiple migration results in
+>         different template instantiations that could not be unified. You may
+>         need to adjust the code.
+>         */
+452c488
+<     using arg_t = thrust::pair<scalar_t, index_t>;
+---
+>     using arg_t = std::pair<scalar_t, index_t>;
+459,461c495,498
+<     static OPEN3D_DEVICE arg_t WarpShflDown(arg_t arg, int offset) {
+<         return arg_t(WARP_SHFL_DOWN(arg.first, offset),
+<                      WARP_SHFL_DOWN(arg.second, offset));
+---
+>     static OPEN3D_DEVICE arg_t WarpShflDown(arg_t arg, int offset,
+>                                             sycl::nd_item<3> item_ct1) {
+>         return arg_t(WARP_SHFL_DOWN(arg.first, offset, item_ct1),
+>                      WARP_SHFL_DOWN(arg.second, offset, item_ct1));
+467a505,509
+>         /*
+>         DPCT1084:7: The function call has multiple migration results in
+>         different template instantiations that could not be unified. You may
+>         need to adjust the code.
+>         */
+476a519,523
+>         /*
+>         DPCT1084:8: The function call has multiple migration results in
+>         different template instantiations that could not be unified. You may
+>         need to adjust the code.
+>         */
+527,530c574,578
+<     OPEN3D_DEVICE void Run() const {
+<         extern __shared__ char shared_memory[];
+<         index_t output_idx = config_.OutputIdx();
+<         index_t input_idx = config_.InputIdx();
+---
+>     OPEN3D_DEVICE void Run(sycl::nd_item<3> item_ct1, uint8_t *dpct_local,
+>                            bool *is_last_block_done_shared) const {
+>         auto shared_memory = (char*)dpct_local;
+>         index_t output_idx = config_.OutputIdx(item_ct1);
+>         index_t input_idx = config_.InputIdx(item_ct1);
+537c585
+<             value = ThreadReduce((const scalar_t*)input_slice);
+---
+>             value = ThreadReduce((const scalar_t*)input_slice, item_ct1);
+541c589
+<             value = BlockYReduce(value, shared_memory);
+---
+>             value = BlockYReduce(value, shared_memory, item_ct1);
+544c592
+<             value = BlockXReduce(value, shared_memory);
+---
+>             value = BlockXReduce(value, shared_memory, item_ct1);
+558,559c606,608
+<             value = GlobalReduce(value, acc, shared_memory);
+<         } else if (config_.ShouldStore(output_idx)) {
+---
+>             value = GlobalReduce(value, acc, shared_memory, item_ct1,
+>                                  is_last_block_done_shared);
+>         } else if (config_.ShouldStore(output_idx, item_ct1)) {
+562,563c611,619
+<                     value = AccumulateInOutput<can_accumulate_in_output>(out,
+<                                                                          value);
+---
+>                     value = AccumulateInOutput<can_accumulate_in_output>(
+>                             out,
+>                             /*
+>                             DPCT1084:16: The function call has multiple
+>                             migration results in different template
+>                             instantiations that could not be unified. You may
+>                             need to adjust the code.
+>                             */
+>                             value);
+569c625,632
+<                             out, value);
+---
+>                             /*
+>                             DPCT1084:17: The function call has multiple
+>                             migration results in different template
+>                             instantiations that could not be unified. You may
+>                             need to adjust the code.
+>                             */
+>                             out,
+>                             value);
+572a636,640
+>                     /*
+>                     DPCT1084:18: The function call has multiple migration
+>                     results in different template instantiations that could not
+>                     be unified. You may need to adjust the code.
+>                     */
+584,585c652,654
+<     OPEN3D_DEVICE arg_t ThreadReduce(const scalar_t* data) const {
+<         index_t idx = config_.InputIdx();
+---
+>     OPEN3D_DEVICE arg_t ThreadReduce(const scalar_t* data,
+>                                      sycl::nd_item<3> item_ct1) const {
+>         index_t idx = config_.InputIdx(item_ct1);
+626a696,700
+>             /*
+>             DPCT1084:19: The function call has multiple migration results in
+>             different template instantiations that could not be unified. You may
+>             need to adjust the code.
+>             */
+632,633c706,708
+<     OPEN3D_DEVICE arg_t BlockXReduce(arg_t value, char* shared_memory) const {
+<         int dim_x = blockDim.x;
+---
+>     OPEN3D_DEVICE arg_t BlockXReduce(arg_t value, char* shared_memory,
+>                                      sycl::nd_item<3> item_ct1) const {
+>         int dim_x = item_ct1.get_local_range(2);
+635,636c710,713
+<         if (dim_x > warpSize) {
+<             int address_base = threadIdx.x + threadIdx.y * blockDim.x;
+---
+>         if (dim_x > item_ct1.get_sub_group().get_local_range().get(0)) {
+>             int address_base =
+>                     item_ct1.get_local_id(2) +
+>                     item_ct1.get_local_id(1) * item_ct1.get_local_range(2);
+638,640c715,726
+<             for (int offset = dim_x / 2; offset >= warpSize; offset >>= 1) {
+<                 __syncthreads();
+<                 if (threadIdx.x < offset && threadIdx.x + offset < blockDim.x) {
+---
+>             for (int offset = dim_x / 2;
+>                  offset >= item_ct1.get_sub_group().get_local_range().get(0);
+>                  offset >>= 1) {
+>                 /*
+>                 DPCT1065:10: Consider replacing sycl::nd_item::barrier() with
+>                 sycl::nd_item::barrier(sycl::access::fence_space::local_space)
+>                 for better performance if there is no access to global memory.
+>                 */
+>                 item_ct1.barrier();
+>                 if (item_ct1.get_local_id(2) < offset &&
+>                     item_ct1.get_local_id(2) + offset <
+>                             item_ct1.get_local_range(2)) {
+641a728,732
+>                     /*
+>                     DPCT1084:20: The function call has multiple migration
+>                     results in different template instantiations that could not
+>                     be unified. You may need to adjust the code.
+>                     */
+646c737
+<             dim_x = warpSize;
+---
+>             dim_x = item_ct1.get_sub_group().get_local_range().get(0);
+649c740,745
+<         __syncthreads();
+---
+>         /*
+>         DPCT1065:9: Consider replacing sycl::nd_item::barrier() with
+>         sycl::nd_item::barrier(sycl::access::fence_space::local_space) for
+>         better performance if there is no access to global memory.
+>         */
+>         item_ct1.barrier();
+652c748,758
+<             arg_t other = ops_.WarpShflDown(value, offset);
+---
+>             /*
+>             DPCT1084:21: The function call has multiple migration results in
+>             different template instantiations that could not be unified. You may
+>             need to adjust the code.
+>             */
+>             arg_t other = ops_.WarpShflDown(value, offset, item_ct1);
+>             /*
+>             DPCT1084:22: The function call has multiple migration results in
+>             different template instantiations that could not be unified. You may
+>             need to adjust the code.
+>             */
+658c764,765
+<     OPEN3D_DEVICE arg_t BlockYReduce(arg_t value, char* shared_memory) const {
+---
+>     OPEN3D_DEVICE arg_t BlockYReduce(arg_t value, char* shared_memory,
+>                                      sycl::nd_item<3> item_ct1) const {
+660,664c767,785
+<         shared[config_.SharedMemoryOffset(0)] = value;
+<         for (int offset = blockDim.y / 2; offset > 0; offset >>= 1) {
+<             __syncthreads();
+<             if (threadIdx.y < offset && threadIdx.y + offset < blockDim.y) {
+<                 arg_t other = shared[config_.SharedMemoryOffset(offset)];
+---
+>         shared[config_.SharedMemoryOffset(0, item_ct1)] = value;
+>         for (int offset = item_ct1.get_local_range(1) / 2; offset > 0;
+>              offset >>= 1) {
+>             /*
+>             DPCT1065:11: Consider replacing sycl::nd_item::barrier() with
+>             sycl::nd_item::barrier(sycl::access::fence_space::local_space) for
+>             better performance if there is no access to global memory.
+>             */
+>             item_ct1.barrier();
+>             if (item_ct1.get_local_id(1) < offset &&
+>                 item_ct1.get_local_id(1) + offset <
+>                         item_ct1.get_local_range(1)) {
+>                 arg_t other =
+>                         shared[config_.SharedMemoryOffset(offset, item_ct1)];
+>                 /*
+>                 DPCT1084:23: The function call has multiple migration results in
+>                 different template instantiations that could not be unified. You
+>                 may need to adjust the code.
+>                 */
+666c787
+<                 shared[config_.SharedMemoryOffset(0)] = value;
+---
+>                 shared[config_.SharedMemoryOffset(0, item_ct1)] = value;
+672,681c793,814
+<     OPEN3D_DEVICE bool MarkBlockFinished() const {
+<         __shared__ bool is_last_block_done_shared;
+< 
+<         __syncthreads();
+<         if (threadIdx.x == 0 && threadIdx.y == 0) {
+<             int prev_blocks_finished = atomicAdd(&semaphores_[blockIdx.x], 1);
+<             is_last_block_done_shared = (prev_blocks_finished == gridDim.y - 1);
+<         }
+< 
+<         __syncthreads();
+---
+>     OPEN3D_DEVICE bool MarkBlockFinished(sycl::nd_item<3> item_ct1,
+>                                          bool *is_last_block_done_shared) const {
+>         /*
+>         DPCT1065:12: Consider replacing sycl::nd_item::barrier() with
+>         sycl::nd_item::barrier(sycl::access::fence_space::local_space) for
+>         better performance if there is no access to global memory.
+>         */
+>         item_ct1.barrier();
+>         if (item_ct1.get_local_id(2) == 0 && item_ct1.get_local_id(1) == 0) {
+>             int prev_blocks_finished = dpct::atomic_fetch_add<
+>                     int, sycl::access::address_space::generic_space>(
+>                     &semaphores_[item_ct1.get_group(2)], 1);
+>             *is_last_block_done_shared =
+>                     (prev_blocks_finished == item_ct1.get_group_range(1) - 1);
+>         }
+> 
+>         /*
+>         DPCT1065:13: Consider replacing sycl::nd_item::barrier() with
+>         sycl::nd_item::barrier(sycl::access::fence_space::local_space) for
+>         better performance if there is no access to global memory.
+>         */
+>         item_ct1.barrier();
+683c816
+<         return is_last_block_done_shared;
+---
+>         return (*is_last_block_done_shared);
+735a869,873
+>         /*
+>         DPCT1084:24: The function call has multiple migration results in
+>         different template instantiations that could not be unified. You may
+>         need to adjust the code.
+>         */
+741c879,881
+<                                      char* shared_memory) const {
+---
+>                                      char* shared_memory,
+>                                      sycl::nd_item<3> item_ct1,
+>                                      bool *is_last_block_done_shared) const {
+743c883
+<         index_t output_idx = config_.OutputIdx();
+---
+>         index_t output_idx = config_.OutputIdx(item_ct1);
+747c887,888
+<         bool should_store = config_.ShouldStore(config_.OutputIdx());
+---
+>         bool should_store =
+>                 config_.ShouldStore(config_.OutputIdx(item_ct1), item_ct1);
+749c890,891
+<             index_t offset = config_.StagingMemoryOffset(blockIdx.y);
+---
+>             index_t offset = config_.StagingMemoryOffset(item_ct1.get_group(1),
+>                                                          item_ct1);
+753,756c895,911
+<         __threadfence();  // make sure writes are globally visible
+<         __syncthreads();  // if multiple warps in this block wrote to staging,
+<                           // make sure they're all done
+<         bool is_last_block_done = MarkBlockFinished();
+---
+>         /*
+>         DPCT1078:14: Consider replacing memory_order::acq_rel with
+>         memory_order::seq_cst for correctness if strong memory order
+>         restrictions are needed.
+>         */
+>         sycl::atomic_fence(sycl::memory_order::acq_rel,
+>                            sycl::memory_scope::device);  // make sure writes are
+>                                                          // globally visible
+>         /*
+>         DPCT1065:15: Consider replacing sycl::nd_item::barrier() with
+>         sycl::nd_item::barrier(sycl::access::fence_space::local_space) for
+>         better performance if there is no access to global memory.
+>         */
+>         item_ct1.barrier();  // if multiple warps in this block wrote to
+>                              // staging, make sure they're all done
+>         bool is_last_block_done =
+>                 MarkBlockFinished(item_ct1, is_last_block_done_shared);
+761,762c916,920
+<                 index_t input_offset = threadIdx.x + threadIdx.y * blockDim.x;
+<                 index_t step = blockDim.x * blockDim.y;
+---
+>                 index_t input_offset =
+>                         item_ct1.get_local_id(2) +
+>                         item_ct1.get_local_id(1) * item_ct1.get_local_range(2);
+>                 index_t step = item_ct1.get_local_range(2) *
+>                                item_ct1.get_local_range(1);
+765c923,924
+<                     index_t idx = config_.StagingMemoryOffset(input_offset);
+---
+>                     index_t idx =
+>                             config_.StagingMemoryOffset(input_offset, item_ct1);
+766a926,930
+>                     /*
+>                     DPCT1084:25: The function call has multiple migration
+>                     results in different template instantiations that could not
+>                     be unified. You may need to adjust the code.
+>                     */
+770,771c934,935
+<                 index_t input_offset = threadIdx.y;
+<                 index_t step = blockDim.y;
+---
+>                 index_t input_offset = item_ct1.get_local_id(1);
+>                 index_t step = item_ct1.get_local_range(1);
+774c938,939
+<                     index_t idx = config_.StagingMemoryOffset(input_offset);
+---
+>                     index_t idx =
+>                             config_.StagingMemoryOffset(input_offset, item_ct1);
+775a941,945
+>                     /*
+>                     DPCT1084:26: The function call has multiple migration
+>                     results in different template instantiations that could not
+>                     be unified. You may need to adjust the code.
+>                     */
+779c949
+<             value = BlockYReduce(value, shared_memory);
+---
+>             value = BlockYReduce(value, shared_memory, item_ct1);
+781c951
+<                 value = BlockXReduce(value, shared_memory);
+---
+>                 value = BlockXReduce(value, shared_memory, item_ct1);
+787c957,964
+<                                 out, value);
+---
+>                                 /*
+>                                 DPCT1084:27: The function call has multiple
+>                                 migration results in different template
+>                                 instantiations that could not be unified. You
+>                                 may need to adjust the code.
+>                                 */
+>                                 out,
+>                                 value);
+793c970,977
+<                                 out, value);
+---
+>                                 /*
+>                                 DPCT1084:28: The function call has multiple
+>                                 migration results in different template
+>                                 instantiations that could not be unified. You
+>                                 may need to adjust the code.
+>                                 */
+>                                 out,
+>                                 value);
+796a981,985
+>                         /*
+>                         DPCT1084:29: The function call has multiple migration
+>                         results in different template instantiations that could
+>                         not be unified. You may need to adjust the code.
+>                         */
+906c1095
+<                     thrust::pair<scalar_t, int64_t>(identity, 0));
+---
+>                     std::pair<scalar_t, int64_t>(identity, 0));
+966a1156,1160
+>         /*
+>         DPCT1083:32: The size of local memory in the migrated code may be
+>         different from the original code. Check that the allocated memory size
+>         in the migrated code is correct.
+>         */
+981a1176,1179
+>             /*
+>             DPCT1003:30: Migrated API does not return error code. (*, 0) is
+>             inserted. You may need to rewrite this code.
+>             */
+983c1181,1184
+<                     cudaMemset(semaphores, 0, config.SemaphoreSize()));
+---
+>                     (dpct::get_default_queue()
+>                              .memset(semaphores, 0, config.SemaphoreSize())
+>                              .wait(),
+>                      0));
+1000,1002c1201,1212
+<         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
+<                 <<<config.GridDim(), config.BlockDim(), shared_memory,
+<                    core::cuda::GetStream()>>>(reduce_op);
+---
+>         /*
+>         DPCT1049:31: The work-group size passed to the SYCL kernel may exceed
+>         the limit. To get the device limit, query
+>         info::device::max_work_group_size. Adjust the work-group size if needed.
+>         */
+>                 core::cuda::GetStream()->parallel_for(
+>                         sycl::nd_range<3>(config.GridDim() * config.BlockDim(),
+>                                           config.BlockDim()),
+>                         [=](sycl::nd_item<3> item_ct1) {
+>                                 ReduceKernel<ReduceConfig::MAX_NUM_THREADS>(
+>                                         reduce_op);
+>                         });
+1004c1214,1219
+<         OPEN3D_CUDA_CHECK(cudaGetLastError());
+---
+>         /*
+>         DPCT1010:33: SYCL uses exceptions to report errors and does not use the
+>         error codes. The call was replaced with 0. You need to rewrite this
+>         code.
+>         */
+>         OPEN3D_CUDA_CHECK(0);
+1021a1237,1244
+>         /*
+>         DPCT1064:34: Migrated max call is used in a macro definition and is not
+>         valid for all macro uses. Adjust the code.
+>         */
+>         /*
+>         DPCT1064:35: Migrated min call is used in a macro definition and is not
+>         valid for all macro uses. Adjust the code.
+>         */
+1051c1274,1275
+<                                        -> scalar_t { return min(a, b); },
+---
+>                                        -> scalar_t {
+>                                                      return sycl::min(a, b); },
+1062c1286,1287
+<                                        -> scalar_t { return max(a, b); },
+---
+>                                        -> scalar_t {
+>                                                      return sycl::max((float)a, (float)b); },
