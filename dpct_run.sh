@@ -9,3 +9,8 @@ dpct \
     --extra-arg="-I${open3d_root}/cpp" \
     --extra-arg="-I${open3d_root}/build/fmt/include" \
     ${open3d_root}/cpp/open3d/core/kernel/ReductionCUDA.cu
+
+diff \
+    ${open3d_root}/cpp/open3d/core/kernel/ReductionCUDA.cu \
+    ${open3d_root}/build/out/open3d/core/kernel/ReductionCUDA.dp.cpp \
+    >${open3d_root}/build/out/migrate.diff
