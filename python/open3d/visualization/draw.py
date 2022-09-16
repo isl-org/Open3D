@@ -26,13 +26,6 @@
 
 from . import gui
 from . import O3DVisualizer
-from dash import html
-from dash import dcc
-from dash import Dash
-
-import open3d as o3d
-import numpy as np
-import plotly.graph_objects as go
 
 
 def draw(geometry=None,
