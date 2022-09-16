@@ -649,8 +649,12 @@ Example:
         bunny = o3d.data.BunnyMesh()
         mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
         mesh.compute_uvatlas()
-        # print the shape of the generated uvs
-        print(mesh.triangle['texture_uvs'].shape)    
+        
+        # Add a wood texture and visualize
+        texture_data = o3d.data.WoodTexture()
+        mesh.material.material_name = 'defaultLit'
+        mesh.material.texture_maps['albedo'] = o3d.t.io.read_image(texture_data.albedo_texture_path)
+        o3d.visualization.draw(mesh)
 )");
 
     triangle_mesh.def("bake_vertex_attr_textures",

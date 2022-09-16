@@ -71,7 +71,7 @@ void ComputeUVAtlas(TriangleMesh& mesh,
 
     // Compute adjacency as described here
     // https://github.com/microsoft/DirectXMesh/wiki/DirectXMesh
-    std::unique_ptr<uint32_t[]> adj(new uint32_t[triangles.NumElements()]);
+    std::vector<uint32_t> adj(triangles.NumElements());
     {
         std::unordered_map<Edge_t, AdjTriangles_t> edge_adjtriangle_map;
         for (int64_t i = 0; i < num_triangles; ++i) {
@@ -89,16 +89,16 @@ void ComputeUVAtlas(TriangleMesh& mesh,
         }
 
         // second pass filling the adj array
+        int64_t linear_idx = 0;
         for (int64_t i = 0; i < num_triangles; ++i) {
             const uint32_t* t_ptr = triangles_ptr + i * 3;
-            for (int j = 0; j < 3; ++j) {
-                int64_t linear_idx = i * 3 + j;
+            for (int j = 0; j < 3; ++j, ++linear_idx) {
                 auto e = MakeEdge(t_ptr[j], t_ptr[(j + 1) % 3]);
                 auto& adjacent_tri = edge_adjtriangle_map[e];
                 if (adjacent_tri.first != i) {
-                    adj.get()[linear_idx] = adjacent_tri.first;
+                    adj[linear_idx] = adjacent_tri.first;
                 } else {
-                    adj.get()[linear_idx] = adjacent_tri.second;
+                    adj[linear_idx] = adjacent_tri.second;
                 }
             }
         }
@@ -116,17 +116,17 @@ void ComputeUVAtlas(TriangleMesh& mesh,
 
     HRESULT hr = UVAtlasCreate(
             pos.get(), num_verts, triangles_ptr, DXGI_FORMAT_R32_UINT,
-            num_triangles, 0, max_stretch, width, height, gutter, adj.get(),
+            num_triangles, 0, max_stretch, width, height, gutter, adj.data(),
             nullptr, nullptr, nullptr, UVATLAS_DEFAULT_CALLBACK_FREQUENCY,
             UVATLAS_DEFAULT, vb, ib, nullptr, &remap, max_stretch_out,
             num_charts_out);
     if (FAILED(hr)) {
         if (hr == static_cast<HRESULT>(0x8007000DL)) {
-            utility::LogError("Non-manifold mesh");
+            utility::LogError("UVAtlasCreate: Non-manifold mesh");
         } else if (hr == static_cast<HRESULT>(0x80070216L)) {
-            utility::LogError("Arithmetic overflow");
+            utility::LogError("UVAtlasCreate: Arithmetic overflow");
         } else if (hr == static_cast<HRESULT>(0x80070032L)) {
-            utility::LogError("Not supported");
+            utility::LogError("UVAtlasCreate: Not supported");
         }
         utility::LogError("UVAtlasCreate failed with code 0x{:X}",
                           static_cast<uint32_t>(hr));
