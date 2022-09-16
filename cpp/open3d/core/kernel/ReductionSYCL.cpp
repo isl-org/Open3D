@@ -38,6 +38,19 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+class SYCLReductionEngine {
+public:
+    SYCLReductionEngine(const SYCLReductionEngine&) = delete;
+    SYCLReductionEngine& operator=(const SYCLReductionEngine&) = delete;
+    SYCLReductionEngine(const Indexer& indexer) : indexer_(indexer) {}
+
+    template <typename func_t, typename scalar_t>
+    void Run(const func_t& reduce_func, scalar_t identity) {}
+
+private:
+    Indexer indexer_;
+};
+
 void ReductionSYCL(const Tensor& src,
                    Tensor& dst,
                    const SizeVector& dims,
@@ -47,6 +60,7 @@ void ReductionSYCL(const Tensor& src,
 
     if (s_regular_reduce_ops.count(op_code)) {
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
+
         const int64_t num_workloads = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE_SYCL(src.GetDtype(), [&]() {
             scalar_t identity;
