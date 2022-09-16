@@ -38,14 +38,36 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+template <typename scalar_t>
+OPEN3D_SYCL_EXTERNAL scalar_t CPUSumReductionKernel(scalar_t a, scalar_t b) {
+    return a + b;
+}
+
 class SYCLReductionEngine {
 public:
     SYCLReductionEngine(const SYCLReductionEngine&) = delete;
     SYCLReductionEngine& operator=(const SYCLReductionEngine&) = delete;
     SYCLReductionEngine(const Indexer& indexer) : indexer_(indexer) {}
 
-    template <typename func_t, typename scalar_t>
-    void Run(const func_t& reduce_func, scalar_t identity) {}
+    template <typename scalar_t>
+    void Run(const ReductionOpCode& op_code,
+             scalar_t identity,
+             const Device& device) {
+        sy::queue& queue = sycl::GetDefaultQueue(device);
+        const int64_t num_workloads = indexer_.NumWorkloads();
+        queue.submit([&](sy::handler& h) {
+                 h.parallel_for(1, [num_workloads, this](int64_t i) {
+                     for (int64_t workload_idx = 0;
+                          workload_idx < num_workloads; workload_idx++) {
+                         scalar_t* src = indexer_.GetInputPtr<scalar_t>(
+                                 0, workload_idx);
+                         scalar_t* dst =
+                                 indexer_.GetOutputPtr<scalar_t>(workload_idx);
+                         *dst = (*src) + (*dst);
+                     }
+                 });
+             }).wait();
+    }
 
 private:
     Indexer indexer_;
@@ -56,43 +78,15 @@ void ReductionSYCL(const Tensor& src,
                    const SizeVector& dims,
                    bool keepdim,
                    ReductionOpCode op_code) {
-    sy::queue& queue = sycl::GetDefaultQueue(src.GetDevice());
-
     if (s_regular_reduce_ops.count(op_code)) {
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
+        SYCLReductionEngine re(indexer);
 
-        const int64_t num_workloads = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE_SYCL(src.GetDtype(), [&]() {
-            scalar_t identity;
-            switch (op_code) {
-                case ReductionOpCode::Sum:
-                    identity = 0;
-                    dst.Fill(identity);
-                    queue.submit([&](sy::handler& h) {
-                             h.parallel_for(1, [indexer,
-                                                num_workloads](int64_t i) {
-                                 for (int64_t workload_idx = 0;
-                                      workload_idx < num_workloads;
-                                      workload_idx++) {
-                                     scalar_t* src =
-                                             indexer.GetInputPtr<scalar_t>(
-                                                     0, workload_idx);
-                                     scalar_t* dst =
-                                             indexer.GetOutputPtr<scalar_t>(
-                                                     workload_idx);
-                                     *dst = (*src) + (*dst);
-                                 }
-                             });
-                         }).wait();
-                    break;
-                default:
-                    utility::LogError("Unsupported op code.");
-                    break;
-            }
+            re.Run<scalar_t>(op_code, 0, src.GetDevice());
         });
     } else if (s_arg_reduce_ops.count(op_code)) {
         utility::LogError("To be implemented.");
-
     } else if (s_boolean_reduce_ops.count(op_code)) {
         utility::LogError("To be implemented.");
     }
