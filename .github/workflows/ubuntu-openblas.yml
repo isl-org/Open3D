@@ -38,9 +38,6 @@ jobs:
           service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
           export_default_credentials: true
-      - name: Upload ccache to GCS
-        run: |
-          gsutil cp ${GITHUB_WORKSPACE}/open3d-ci-openblas-amd64.tar.gz gs://open3d-ci-cache/ || true
       - name: Docker test
         run: |
           docker/docker_test.sh openblas-amd64-py310-dev
@@ -71,10 +68,9 @@ jobs:
       fail-fast: false
     env:
       # Export everything from matrix to be easily used.
-      # Docker tag and ccache names must be consistent with docker_build.sh
+      # Docker tag must be consistent with docker_build.sh
       CI_CONFIG          : openblas-arm64-py310-dev
       GCE_INSTANCE_PREFIX: open3d-ci-openblas-arm64-py310-dev
-      CCACHE_TAR_NAME    : open3d-ci-openblas-arm64
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -95,39 +91,27 @@ jobs:
           gcloud compute images list
           gcloud container images list
           INSTANCE_NAME="${GCE_INSTANCE_PREFIX}-${GITHUB_SHA::8}"
-          INSTANCE_ZONES=(us-west1-a
-                          us-west1-b
-                          us-central1-a
+          INSTANCE_ZONES=(us-central1-a
                           us-central1-b
                           us-central1-f
-                          us-east1-c
-                          us-east1-d
-                          us-east4-b
-                          southamerica-east1-c
-                          europe-west2-b
-                          europe-west3-b
-                          europe-west4-b
-                          europe-west4-c
-                          europe-west2-a
                           asia-southeast1-b
                           asia-southeast1-c
-                          australia-southeast1-a)
-          # GCE only supports GPU on n1-standard (2020/07)
+                          europe-west4-a
+                          europe-west4-b)
           ZONE_ID=0
           until ((ZONE_ID >= ${#INSTANCE_ZONES[@]})) ||
             gcloud compute instances create "$INSTANCE_NAME" \
               --zone="${INSTANCE_ZONES[$ZONE_ID]}" \
-              --machine-type=e2-highcpu-32 \
+              --machine-type=t2a-standard-4 \
               --boot-disk-size="128GB" \
-              --boot-disk-type="pd-ssd" \
               --image-project="ubuntu-os-cloud" \
-              --image-family="ubuntu-2004-lts" \
+              --image-family="ubuntu-2004-lts-arm64" \
               --metadata-from-file=startup-script=./util/gcloud_auto_clean.sh \
               --scopes="storage-full,compute-rw" \
               --service-account="$GCE_GPU_CI_SA"; do
               ((ZONE_ID = ZONE_ID + 1))
           done
-          sleep 60
+          sleep 90
           echo "GCE_ZONE=${INSTANCE_ZONES[$ZONE_ID]}" >> "${GITHUB_ENV}"
           echo "INSTANCE_NAME=${INSTANCE_NAME}" >> "${GITHUB_ENV}"
           exit $((ZONE_ID >= ${#INSTANCE_ZONES[@]})) # 0 => success
@@ -142,12 +126,6 @@ jobs:
                     && tar -xvzf Open3D.tar.gz \
                     && ls -alh \
                     && ls -alh Open3D"
-      - name: VM install QEMU dependencies
-        run: |
-          gcloud compute ssh "${INSTANCE_NAME}" \
-            --zone "${GCE_ZONE}" \
-            --command "sudo apt-get update \
-                    && sudo apt-get --yes install qemu binfmt-support qemu-user-static"
       - name: VM install docker
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
@@ -159,16 +137,8 @@ jobs:
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \
             --zone="${GCE_ZONE}" \
-            --command="sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes \
-                    && sudo docker run --rm arm64v8/ubuntu:20.04 uname -p \
+            --command="sudo docker run --rm arm64v8/ubuntu:20.04 uname -p \
                     && sudo Open3D/docker/docker_build.sh ${CI_CONFIG}"
-      - name: VM ccache upload
-        if: ${{ github.ref == 'refs/heads/master' }}
-        run: |
-          gcloud compute ssh "${INSTANCE_NAME}" \
-            --zone="${GCE_ZONE}" \
-            --command="ls -alh \
-                    && gsutil cp ${CCACHE_TAR_NAME}.tar.gz gs://open3d-ci-cache/"
       - name: VM run docker
         run: |
           gcloud compute ssh "${INSTANCE_NAME}" \

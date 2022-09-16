@@ -89,8 +89,8 @@ print_usage_and_exit_docker_build() {
 openblas_print_env() {
     echo "[openblas_print_env()] DOCKER_TAG: ${DOCKER_TAG}"
     echo "[openblas_print_env()] BASE_IMAGE: ${BASE_IMAGE}"
+    echo "[openblas_print_env()] CONDA_SUFFIX: ${CONDA_SUFFIX}"
     echo "[openblas_print_env()] CMAKE_VERSION: ${CMAKE_VERSION}"
-    echo "[openblas_print_env()] CCACHE_TAR_NAME: ${CCACHE_TAR_NAME}"
     echo "[openblas_print_env()] PYTHON_VERSION: ${PYTHON_VERSION}"
     echo "[openblas_print_env()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
 }
@@ -103,14 +103,14 @@ openblas_export_env() {
         echo "[openblas_export_env()] platform AMD64"
         export DOCKER_TAG=open3d-ci:openblas-amd64
         export BASE_IMAGE=ubuntu:18.04
+        export CONDA_SUFFIX=x86_64
         export CMAKE_VERSION=${CMAKE_VERSION}
-        export CCACHE_TAR_NAME=open3d-ci-openblas-amd64
     elif [[ "arm64" =~ ^($options)$ ]]; then
         echo "[openblas_export_env()] platform ARM64"
         export DOCKER_TAG=open3d-ci:openblas-arm64
         export BASE_IMAGE=arm64v8/ubuntu:18.04
+        export CONDA_SUFFIX=aarch64
         export CMAKE_VERSION=${CMAKE_VERSION_AARCH64}
-        export CCACHE_TAR_NAME=open3d-ci-openblas-arm64
     else
         echo "Invalid platform."
         print_usage_and_exit_docker_build
@@ -156,17 +156,13 @@ openblas_build() {
     docker build \
         --progress plain \
         --build-arg BASE_IMAGE="${BASE_IMAGE}" \
+        --build-arg CONDA_SUFFIX="${CONDA_SUFFIX}" \
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
-        --build-arg CCACHE_TAR_NAME="${CCACHE_TAR_NAME}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
         --build-arg DEVELOPER_BUILD="${DEVELOPER_BUILD}" \
         -t "${DOCKER_TAG}" \
         -f docker/Dockerfile.openblas .
     popd
-
-    docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
-        bash -c "cp /${CCACHE_TAR_NAME}.tar.gz /opt/mount \
-              && chown $(id -u):$(id -g) /opt/mount/${CCACHE_TAR_NAME}.tar.gz"
 
     docker run -v "${PWD}:/opt/mount" --rm "${DOCKER_TAG}" \
         bash -c "cp /*.whl /opt/mount \

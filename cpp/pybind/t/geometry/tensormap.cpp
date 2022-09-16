@@ -87,7 +87,9 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
             "__getitem__",
             [](Map &m, const KeyType &k) -> MappedType & {
                 auto it = m.find(k);
-                if (it == m.end()) throw py::key_error();
+                if (it == m.end())
+                    throw py::key_error(
+                            fmt::format("Key {} not found in TensorMap", k));
                 return it->second;
             },
             // py::return_value_policy::copy is used as the safest option.
@@ -106,6 +108,15 @@ static py::class_<Map, holder_type> bind_tensor_map(py::handle scope,
             // - reference_internal : doesn't work, value in map overwritten
             //                        when assigning to alias
             py::return_value_policy::copy);
+
+    cl.def("__setitem__", [](Map &m, const KeyType &k, const MappedType &v) {
+        if (!TensorMap::GetReservedKeys().count(k)) {
+            m[k] = v;
+        } else {
+            throw py::key_error(
+                    fmt::format("Cannot assign to reserved key \"{}\"", k));
+        }
+    });
 
     cl.def("__contains__", [](Map &m, const KeyType &k) -> bool {
         auto it = m.find(k);
@@ -149,9 +160,50 @@ void pybind_tensormap(py::module &m) {
 
     // Member functions. Some C++ functions are ignored since the
     // functionalities are already covered in the generic dictionary interface.
-    tm.def("get_primary_key", &TensorMap::GetPrimaryKey);
+    tm.def_property_readonly("primary_key", &TensorMap::GetPrimaryKey);
     tm.def("is_size_synchronized", &TensorMap::IsSizeSynchronized);
     tm.def("assert_size_synchronized", &TensorMap::AssertSizeSynchronized);
+
+    tm.def("__setattr__",
+           [](TensorMap &m, const std::string &key, const core::Tensor &val) {
+               if (!TensorMap::GetReservedKeys().count(key)) {
+                   m[key] = val;
+               } else {
+                   throw py::key_error(fmt::format(
+                           "Cannot assign to reserved key \"{}\"", key));
+               }
+           });
+
+    tm.def("__getattr__",
+           [](TensorMap &m, const std::string &key) -> core::Tensor {
+               auto it = m.find(key);
+               if (it == m.end()) {
+                   throw py::key_error(
+                           fmt::format("Key {} not found in TensorMap", key));
+               }
+               return it->second;
+           });
+
+    tm.def("__delattr__", [](TensorMap &m, const std::string &key) {
+        auto it = m.find(key);
+        if (it == m.end()) {
+            throw py::key_error(
+                    fmt::format("Key {} not found in TensorMap", key));
+        }
+        return m.Erase(key);
+    });
+
+    tm.def("__str__", &TensorMap::ToString);
+
+    tm.def("__repr__", &TensorMap::ToString);
+
+    tm.def("__dir__", [](TensorMap &m) {
+        auto keys = py::list();
+        for (const auto &kv : m) {
+            keys.append(kv.first);
+        }
+        return keys;
+    });
 }
 
 }  // namespace geometry

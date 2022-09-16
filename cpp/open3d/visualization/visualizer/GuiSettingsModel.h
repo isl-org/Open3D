@@ -140,6 +140,9 @@ public:
     bool GetBasicMode() const;
     void SetBasicMode(bool enable);
 
+    bool GetWireframeMode() const;
+    void SetWireframeMode(bool enable);
+
     bool GetUserWantsEstimateNormals();
     void EstimateNormalsClicked();
 
@@ -170,6 +173,7 @@ private:
     bool displaying_point_clouds_ = false;
     bool user_wants_estimate_normals_ = false;
     bool basic_mode_enabled_ = false;
+    bool wireframe_mode_enabled_ = false;
 
     std::function<void(bool)> on_changed_;
 

@@ -116,7 +116,6 @@ Install dependencies
 
     # Install dependencies
     ./util/install_deps_ubuntu.sh
-    sudo apt-get install -y clang-7  # Or any >= 7 version of clang.
 
     # Optional: ccache is recommended to speed up subsequent builds
     sudo apt-get install -y ccache

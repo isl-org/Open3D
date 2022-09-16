@@ -28,6 +28,7 @@
 #include <vtkSmartPointer.h>
 
 #include "open3d/t/geometry/Geometry.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 
@@ -77,6 +78,70 @@ vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
 /// \param copy If true always create a copy of the data.
 TriangleMesh CreateTriangleMeshFromVtkPolyData(vtkPolyData* polydata,
                                                bool copy = false);
+
+/// Creates a LineSet a vtkPolyData object.
+/// The returned LineSet may directly use the memory of the data arrays in
+/// the vtkPolyData object.
+/// The returned LineSet will hold references to the arrays and it is not
+/// necessary to keep other references to the vtkPolyData object or its arrays
+/// alive.
+/// \param polydata Input polyData object.
+/// \param copy If true always create a copy of the data.
+LineSet CreateLineSetFromVtkPolyData(vtkPolyData* polydata, bool copy = false);
+
+/// Sweeps the geometry rotationally about an axis.
+/// \param geometry Open3D geometry object, e.g., a TriangleMesh.
+/// \param angle The rotation angle in degree.
+/// \param axis The rotation axis.
+/// \param resolution The resolution defines the number of intermediate
+/// sweeps about the rotation axis.
+/// \param translation The translation along the rotation axis.
+/// \param capping If true adds caps to the mesh.
+/// \return A triangle mesh with the result of the sweep operation.
+TriangleMesh ExtrudeRotationTriangleMesh(const Geometry& geometry,
+                                         double angle,
+                                         const core::Tensor& axis,
+                                         int resolution = 16,
+                                         double translation = 0.0,
+                                         bool capping = true);
+
+/// Sweeps the geometry rotationally about an axis.
+/// \param pointcloud A point cloud.
+/// \param angle The rotation angle in degree.
+/// \param axis The rotation axis.
+/// \param resolution The resolution defines the number of intermediate
+/// sweeps about the rotation axis.
+/// \param translation The translation along the rotation axis.
+/// \param capping If true adds caps to the mesh.
+/// \return A line set with the result of the sweep operation.
+LineSet ExtrudeRotationLineSet(const PointCloud& pointcloud,
+                               double angle,
+                               const core::Tensor& axis,
+                               int resolution = 16,
+                               double translation = 0.0,
+                               bool capping = true);
+
+/// Sweeps the geometry along a direction vector.
+/// \param geometry Open3D geometry object, e.g., a TriangleMesh.
+/// \param vector The direction vector.
+/// \param scale Scalar factor which essentially scales the direction vector.
+/// \param capping If true adds caps to the mesh.
+/// \return A triangle mesh with the result of the sweep operation.
+TriangleMesh ExtrudeLinearTriangleMesh(const Geometry& geometry,
+                                       const core::Tensor& vector,
+                                       double scale,
+                                       bool capping);
+
+/// Sweeps the geometry along a direction vector.
+/// \param pointcloud A point cloud.
+/// \param vector The direction vector.
+/// \param scale Scalar factor which essentially scales the direction vector.
+/// \param capping If true adds caps to the mesh.
+/// \return A triangle mesh with the result of the sweep operation.
+LineSet ExtrudeLinearLineSet(const PointCloud& pointcloud,
+                             const core::Tensor& vector,
+                             double scale,
+                             bool capping);
 
 }  // namespace vtkutils
 }  // namespace geometry
