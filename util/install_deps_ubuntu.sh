@@ -13,12 +13,14 @@ fi
 deps=(
     # Open3D
     xorg-dev
+    libxcb-shm0
     libglu1-mesa-dev
     python3-dev
     # Filament build-from-source
-    libsdl2-dev
+    clang
     libc++-dev
     libc++abi-dev
+    libsdl2-dev
     ninja-build
     libxi-dev
     # ML
@@ -31,18 +33,35 @@ deps=(
     libtool
 )
 
-# Ubuntu ARM64
-if [ "$(uname -m)" == "aarch64" ]; then
-    # For LAPACK
-    deps+=("gfortran")
+eval $(
+    source /etc/lsb-release;
+    echo DISTRIB_ID="$DISTRIB_ID";
+    echo DISTRIB_RELEASE="$DISTRIB_RELEASE"
+)
+if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
+    # Ubuntu 18.04's clang/libc++-dev/libc++abi-dev are version 6.
+    # To build Filament from source, we need version 7+.
+    deps=("${deps[@]/clang/clang-7}")
+    deps=("${deps[@]/libc++-dev/libc++-7-dev}")
+    deps=("${deps[@]/libc++abi-dev/libc++abi-7-dev}")
 
-    # For compiling Filament from source
-    # Ubuntu 18.04 ARM64's libc++-dev and libc++abi-dev are version 6, but we need 7+.
-    source /etc/lsb-release
-    if [ "$DISTRIB_ID" == "Ubuntu" -a "$DISTRIB_RELEASE" == "18.04" ]; then
-        deps=("${deps[@]/libc++-dev/libc++-7-dev}")
-        deps=("${deps[@]/libc++abi-dev/libc++abi-7-dev}")
+    # Fix dependency conflict libudev-dev on Ubuntu 18.04 (2022-09-03)
+    # https://bugs.launchpad.net/ubuntu/+source/apt/+bug/1988563
+    $SUDO apt-get update
+    $SUDO apt-get install curl ${APT_CONFIRM}
+    if [ "$(uname -m)" == "aarch64" ]; then
+        curl http://ports.ubuntu.com/ubuntu-ports/pool/main/s/systemd/libudev1_237-3ubuntu10.53_arm64.deb -o /tmp/libudev1_237-3ubuntu10.53_arm64.deb
+        $SUDO dpkg -i /tmp/libudev1_237-3ubuntu10.53_arm64.deb
+    else
+        curl http://archive.ubuntu.com/ubuntu/pool/main/s/systemd/libudev1_237-3ubuntu10.53_amd64.deb -o /tmp/libudev1_237-3ubuntu10.53_amd64.deb
+        $SUDO dpkg -i /tmp/libudev1_237-3ubuntu10.53_amd64.deb
     fi
+fi
+
+# Special case for ARM64
+if [ "$(uname -m)" == "aarch64" ]; then
+    # For compling LAPACK in OpenBLAS
+    deps+=("gfortran")
 fi
 
 echo "apt-get install ${deps[*]}"

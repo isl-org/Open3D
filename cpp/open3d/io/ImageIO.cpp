@@ -102,5 +102,28 @@ bool WriteImage(const std::string &filename,
     return map_itr->second(filename, image, quality);
 }
 
+std::shared_ptr<geometry::Image> CreateImageFromMemory(
+        const std::string &image_format,
+        const unsigned char *image_data_ptr,
+        size_t image_data_size) {
+    auto image = std::make_shared<geometry::Image>();
+    ReadImageFromMemory(image_format, image_data_ptr, image_data_size, *image);
+    return image;
+}
+
+bool ReadImageFromMemory(const std::string &image_format,
+                         const unsigned char *image_data_ptr,
+                         size_t image_data_size,
+                         geometry::Image &image) {
+    if (image_format == "png") {
+        return ReadPNGFromMemory(image_data_ptr, image_data_size, image);
+    } else if (image_format == "jpg") {
+        return ReadJPGFromMemory(image_data_ptr, image_data_size, image);
+    } else {
+        utility::LogWarning("The format of {} is not supported", image_format);
+        return false;
+    }
+}
+
 }  // namespace io
 }  // namespace open3d

@@ -47,6 +47,8 @@ namespace open3d {
 namespace t {
 namespace geometry {
 
+class LineSet;
+
 /// \class PointCloud
 /// \brief A point cloud contains a list of 3D points.
 ///
@@ -358,6 +360,15 @@ public:
     /// number of points in the pointcloud.
     PointCloud RandomDownSample(double sampling_ratio) const;
 
+    /// \brief Downsample a pointcloud into output pointcloud with a set of
+    /// points has farthest distance.
+    ///
+    /// The sampling is performed by selecting the farthest point from previous
+    /// selected points iteratively.
+    ///
+    /// \param num_samples Number of points to be sampled.
+    PointCloud FarthestPointDownSample(size_t num_samples) const;
+
     /// \brief Remove points that have less than \p nb_points neighbors in a
     /// sphere of a given radius.
     ///
@@ -367,6 +378,12 @@ public:
     /// selected values w.r.t. input point cloud.
     std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
+
+    /// \brief Remove duplicated points and there associated attributes.
+    ///
+    /// \return tuple of filtered PointCloud and boolean indexing tensor w.r.t.
+    /// input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveDuplicatedPoints() const;
 
     /// \brief Remove all points from the point cloud that have a nan entry, or
     /// infinite value. It also removes the corresponding attributes.
@@ -378,8 +395,32 @@ public:
     std::tuple<PointCloud, core::Tensor> RemoveNonFinitePoints(
             bool remove_nan = true, bool remove_infinite = true) const;
 
+    /// \brief Assigns uniform color to the point cloud.
+    ///
+    /// \param color  RGB color for the point cloud. {3,} shaped Tensor.
+    /// Floating color values are clipped between 0.0 and 1.0.
+    PointCloud PaintUniformColor(const core::Tensor &color) const;
+
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const override { return device_; }
+
+    /// \brief This is an implementation of the Hidden Point Removal operator
+    /// described in Katz et. al. 'Direct Visibility of Point Sets', 2007.
+    ///
+    /// Additional information about the choice of radius
+    /// for noisy point clouds can be found in Mehra et. al. 'Visibility of
+    /// Noisy Point Cloud Data', 2010.
+    ///
+    /// This is a wrapper for a CPU implementation and a copy of the point cloud
+    /// data and resulting visible triangle mesh and indiecs will be made.
+    ///
+    /// \param camera_location All points not visible from that location will be
+    /// removed.
+    /// \param radius The radius of the spherical projection.
+    /// \return Tuple of visible triangle mesh and indices of visible points on
+    /// the same device as the point cloud.
+    std::tuple<TriangleMesh, core::Tensor> HiddenPointRemoval(
+            const core::Tensor &camera_location, double radius) const;
 
     /// \brief Cluster PointCloud using the DBSCAN algorithm
     /// Ester et al., "A Density-Based Algorithm for Discovering Clusters
@@ -392,10 +433,28 @@ public:
     /// \param print_progress If `true` the progress is visualized in the
     /// console.
     /// \return A Tensor list of point labels on the same device as the point
-    /// cloud, -1 indicates noise according to the algorithm
+    /// cloud, -1 indicates noise according to the algorithm.
     core::Tensor ClusterDBSCAN(double eps,
                                size_t min_points,
                                bool print_progress = false) const;
+
+    /// \brief Segment PointCloud plane using the RANSAC algorithm.
+    /// This is a wrapper for a CPU implementation and a copy of the point cloud
+    /// data and resulting plane model and inlier indiecs will be made.
+    ///
+    /// \param distance_threshold Max distance a point can be from the plane
+    /// model, and still be considered an inlier.
+    /// \param ransac_n Number of initial points to be considered inliers in
+    /// each iteration.
+    /// \param num_iterations Maximum number of iterations.
+    /// \param probability Expected probability of finding the optimal plane.
+    /// \return Tuple of the plane model ax + by + cz + d = 0 and the indices of
+    /// the plane inliers on the same device as the point cloud.
+    std::tuple<core::Tensor, core::Tensor> SegmentPlane(
+            const double distance_threshold = 0.01,
+            const int ransac_n = 3,
+            const int num_iterations = 100,
+            const double probability = 0.99999999) const;
 
     /// Compute the convex hull of a point cloud using qhull.
     ///
@@ -413,27 +472,52 @@ public:
     /// corresponding vertex in the original mesh.
     TriangleMesh ComputeConvexHull(bool joggle_inputs = false) const;
 
+    /// \brief Compute the boundary points of a point cloud.
+    /// The implementation is inspired by the PCL implementation. Reference:
+    /// https://pointclouds.org/documentation/classpcl_1_1_boundary_estimation.html
+    ///
+    /// \param radius Neighbor search radius parameter.
+    /// \param max_nn Neighbor search max neighbors parameter
+    /// [Default = 30].
+    /// \param angle_threshold Angle threshold to decide if a point is on the
+    /// boundary [Default = 90.0].
+    /// \return Tensor of boundary points and its boolean mask tensor.
+    std::tuple<PointCloud, core::Tensor> ComputeBoundaryPoints(
+            double radius,
+            int max_nn = 30,
+            double angle_threshold = 90.0) const;
+
 public:
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.
-    /// It uses KNN search if only max_nn parameter is provided, and
-    /// HybridSearch if radius parameter is also provided.
-    /// \param max_nn Neighbor search max neighbors parameter [Default = 30].
-    /// \param radius [optional] Neighbor search radius parameter to use
-    /// HybridSearch. [Recommended ~1.4x voxel size].
+    /// It uses KNN search (Not recommended to use on GPU) if only max_nn
+    /// parameter is provided, Radius search (Not recommended to use on GPU) if
+    /// only radius is provided and Hybrid Search (Recommended) if radius
+    /// parameter is also provided.
+    ///
+    /// \param max_nn [optional] Neighbor search max neighbors parameter
+    /// [Default = 30].
+    /// \param radius [optional] Neighbor search radius parameter. [Recommended
+    /// ~1.4x voxel size].
     void EstimateNormals(
-            const int max_nn = 30,
+            const utility::optional<int> max_nn = 30,
             const utility::optional<double> radius = utility::nullopt);
 
     /// \brief Function to compute point color gradients. If radius is provided,
     /// then HybridSearch is used, otherwise KNN-Search is used.
     /// Reference: Park, Q.-Y. Zhou, and V. Koltun,
     /// Colored Point Cloud Registration Revisited, ICCV, 2017.
-    /// \param max_nn Neighbor search max neighbors parameter [Default = 30].
+    /// It uses KNN search (Not recommended to use on GPU) if only max_nn
+    /// parameter is provided, Radius search (Not recommended to use on GPU) if
+    /// only radius is provided and Hybrid Search (Recommended) if radius
+    /// parameter is also provided.
+    ///
+    /// \param max_nn [optional] Neighbor search max neighbors parameter
+    /// [Default = 30].
     /// \param radius [optional] Neighbor search radius parameter to use
     /// HybridSearch. [Recommended ~1.4x voxel size].
     void EstimateColorGradients(
-            const int max_nn = 30,
+            const utility::optional<int> max_nn = 30,
             const utility::optional<double> radius = utility::nullopt);
 
 public:
@@ -545,6 +629,29 @@ public:
     /// the bounding box.
     PointCloud Crop(const AxisAlignedBoundingBox &aabb,
                     bool invert = false) const;
+
+    /// Sweeps the point cloud rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A line set with the result of the sweep operation.
+    LineSet ExtrudeRotation(double angle,
+                            const core::Tensor &axis,
+                            int resolution = 16,
+                            double translation = 0.0,
+                            bool capping = true) const;
+
+    /// Sweeps the point cloud along a direction vector.
+    /// \param vector The direction vector.
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A line set
+    /// with the result of the sweep operation.
+    LineSet ExtrudeLinear(const core::Tensor &vector,
+                          double scale = 1.0,
+                          bool capping = true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");
