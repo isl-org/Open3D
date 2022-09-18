@@ -88,15 +88,20 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
 }
 
 std::string PointCloud::ToString() const {
-    if (point_attr_.size() == 0)
-        return fmt::format("PointCloud on {} [0 points ()] Attributes: None.",
-                           GetDevice().ToString());
+    size_t num_points = 0;
+    std::string points_dtype_str = "";
+    if (point_attr_.count(point_attr_.GetPrimaryKey())) {
+        num_points = GetPointPositions().GetLength();
+        points_dtype_str =
+                fmt::format(" ({})", GetPointPositions().GetDtype().ToString());
+    }
     auto str =
-            fmt::format("PointCloud on {} [{} points ({})] Attributes:",
-                        GetDevice().ToString(), GetPointPositions().GetShape(0),
-                        GetPointPositions().GetDtype().ToString());
+            fmt::format("PointCloud on {} [{} points{}] Attributes:",
+                        GetDevice().ToString(), num_points, points_dtype_str);
 
-    if (point_attr_.size() == 1) return str + " None.";
+    if ((point_attr_.size() - point_attr_.count(point_attr_.GetPrimaryKey())) ==
+        0)
+        return str + " None.";
     for (const auto &keyval : point_attr_) {
         if (keyval.first != "positions") {
             str += fmt::format(" {} (dtype = {}, shape = {}),", keyval.first,
