@@ -623,6 +623,40 @@ Example:
         o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
 )");
 
+    triangle_mesh.def(
+            "compute_uvatlas", &TriangleMesh::ComputeUVAtlas, "size"_a = 512,
+            "gutter"_a = 1.f, "max_stretch"_a = 1.f / 6,
+            R"(Creates an UV atlas and adds it as triangle attr 'texture_uvs' to the mesh.
+    
+Input meshes must be manifold for this method to work.
+The algorithm is based on:
+Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using Spectral 
+             Analysis", Eurographics Symposium on Geometry Processing (2004)
+Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
+This function always uses the CPU device.
+Args:
+    size (int): The target size of the texture (size x size). The uv coordinates
+        will still be in the range [0..1] but parameters like gutter use pixels
+        as units.
+    gutter (float): This is the space around the uv islands in pixels.
+    max_stretch (float): The maximum amount of stretching allowed. The parameter
+        range is [0..1] with 0 meaning no stretch allowed.
+Returns:
+    None. This function modifies the mesh in-place.
+Example:
+    This code creates a uv map for the Stanford Bunny mesh::
+        import open3d as o3d
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        mesh.compute_uvatlas()
+        
+        # Add a wood texture and visualize
+        texture_data = o3d.data.WoodTexture()
+        mesh.material.material_name = 'defaultLit'
+        mesh.material.texture_maps['albedo'] = o3d.t.io.read_image(texture_data.albedo_texture_path)
+        o3d.visualization.draw(mesh)
+)");
+
     triangle_mesh.def("bake_vertex_attr_textures",
                       &TriangleMesh::BakeVertexAttrTextures, "size"_a,
                       "vertex_attr"_a, "margin"_a = 2., "fill"_a = 0.,
