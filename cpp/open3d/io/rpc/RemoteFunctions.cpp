@@ -214,7 +214,7 @@ bool SetMeshData(const std::string& path,
             LogError(
                     "SetMeshData: faces must have dtype Int32 or Int64 but "
                     "is {}",
-                    vertices.GetDtype().ToString());
+                    faces.GetDtype().ToString());
         } else if (faces.NumDims() != 2) {
             LogError("SetMeshData: faces must have rank 2 but is {}",
                      faces.NumDims());

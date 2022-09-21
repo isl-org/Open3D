@@ -7,6 +7,7 @@ target_sources(tgeometry_kernel PRIVATE
     PointCloudCPU.cpp
     Transform.cpp
     TransformCPU.cpp
+    UVUnwrapping.cpp
     VoxelBlockGrid.cpp
     VoxelBlockGridCPU.cpp
 )
