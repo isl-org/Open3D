@@ -55,17 +55,17 @@ def test_simple_dataset_base():
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
         gt_prefix)
 
-    url_mirrors = [
-        "https://github.com/isl-org/open3d_downloads/releases/download/"
-        "20220201-data/BunnyMesh.ply"
-    ]
-    md5 = "568f871d1a221ba6627569f1e6f9a3f2"
-
-    single_download_dataset = o3d.data.SingleDownloadDataset(
-        gt_prefix,
-        url_mirrors,
-        md5,
-        True,
+    data_descriptor = o3d.data.DataDescriptor(
+        urls=[
+            "https://github.com/isl-org/open3d_downloads/releases/download/"
+            "20220201-data/BunnyMesh.ply"
+        ],
+        md5="568f871d1a221ba6627569f1e6f9a3f2",
+        do_extract=False,
+    )
+    single_download_dataset = o3d.data.DownloadDataset(
+        prefix=gt_prefix,
+        data_descriptor=data_descriptor,
     )
 
     assert Path(gt_extract_dir / "BunnyMesh.ply").is_file()

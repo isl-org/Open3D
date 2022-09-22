@@ -372,11 +372,19 @@ def check_material_dict(o3d_geo, material, batch_idx):
 @pytest.fixture
 def logdir():
     """Extract logdir zip to provide logdir for tests, cleanup afterwards."""
-    test_data = o3d.data.SingleDownloadDataset(
-        "TestTensorboardPlugin", [
+    data_descriptor = o3d.data.DataDescriptor(
+        urls=[
             "https://github.com/isl-org/open3d_downloads/releases/"
             "download/20220301-data/test_tensorboard_plugin.zip"
-        ], "746612f1d3b413236091d263bff29dc9", False)
+        ],
+        md5="746612f1d3b413236091d263bff29dc9",
+        do_extract=True,
+    )
+    test_data = o3d.data.DownloadDataset(
+        prefix="TestTensorboardPlugin",
+        data_descriptor=data_descriptor,
+    )
+
     yield test_data.extract_dir
     shutil.rmtree(test_data.extract_dir)
 
