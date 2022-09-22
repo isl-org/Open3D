@@ -48,6 +48,7 @@
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
+#include "open3d/t/geometry/kernel/UVUnwrapping.h"
 
 namespace open3d {
 namespace t {
@@ -78,20 +79,29 @@ TriangleMesh::TriangleMesh(const core::Tensor &vertex_positions,
 }
 
 std::string TriangleMesh::ToString() const {
-    if (vertex_attr_.size() == 0 || triangle_attr_.size() == 0)
-        return fmt::format("TriangleMesh on {} [{} vertices and {} triangles].",
-                           GetDevice().ToString(), vertex_attr_.size(),
-                           triangle_attr_.size());
+    size_t num_vertices = 0;
+    std::string vertex_dtype_str = "";
+    size_t num_triangles = 0;
+    std::string triangles_dtype_str = "";
+    if (vertex_attr_.count(vertex_attr_.GetPrimaryKey())) {
+        num_vertices = GetVertexPositions().GetLength();
+        vertex_dtype_str = fmt::format(
+                " ({})", GetVertexPositions().GetDtype().ToString());
+    }
+    if (triangle_attr_.count(triangle_attr_.GetPrimaryKey())) {
+        num_triangles = GetTriangleIndices().GetLength();
+        triangles_dtype_str = fmt::format(
+                " ({})", GetTriangleIndices().GetDtype().ToString());
+    }
 
     auto str = fmt::format(
-            "TriangleMesh on {} [{} vertices ({}) and {} triangles ({})].",
-            GetDevice().ToString(), GetVertexPositions().GetLength(),
-            GetVertexPositions().GetDtype().ToString(),
-            GetTriangleIndices().GetLength(),
-            GetTriangleIndices().GetDtype().ToString());
+            "TriangleMesh on {} [{} vertices{} and {} triangles{}].",
+            GetDevice().ToString(), num_vertices, vertex_dtype_str,
+            num_triangles, triangles_dtype_str);
 
     std::string vertices_attr_str = "\nVertex Attributes:";
-    if (vertex_attr_.size() == 1) {
+    if ((vertex_attr_.size() -
+         vertex_attr_.count(vertex_attr_.GetPrimaryKey())) == 0) {
         vertices_attr_str += " None.";
     } else {
         for (const auto &kv : vertex_attr_) {
@@ -106,7 +116,8 @@ std::string TriangleMesh::ToString() const {
     }
 
     std::string triangles_attr_str = "\nTriangle Attributes:";
-    if (triangle_attr_.size() == 1) {
+    if ((triangle_attr_.size() -
+         triangle_attr_.count(triangle_attr_.GetPrimaryKey())) == 0) {
         triangles_attr_str += " None.";
     } else {
         for (const auto &kv : triangle_attr_) {
@@ -446,6 +457,13 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     fill_holes->Update();
     auto result = fill_holes->GetOutput();
     return CreateTriangleMeshFromVtkPolyData(result);
+}
+
+void TriangleMesh::ComputeUVAtlas(size_t size,
+                                  float gutter,
+                                  float max_stretch) {
+    kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter,
+                                         max_stretch);
 }
 
 namespace {

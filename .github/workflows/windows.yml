@@ -56,6 +56,11 @@ jobs:
       - name: Disk space used
         run: Get-PSDrive
 
+      - name: Setup Windows SDK
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.7
+        with:
+          sdk-version: 19041
+
       - name: Install CUDA
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
         run: |
@@ -108,6 +113,7 @@ jobs:
           }
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
@@ -237,6 +243,11 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
 
+      - name: Setup Windows SDK
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.7
+        with:
+          sdk-version: 19041
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -260,6 +271,7 @@ jobs:
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `

@@ -800,6 +800,28 @@ public:
     /// \return New mesh after filling holes.
     TriangleMesh FillHoles(double hole_size = 1e6) const;
 
+    /// Creates an UV atlas and adds it as triangle attr 'texture_uvs' to the
+    /// mesh.
+    ///
+    /// Input meshes must be manifold for this method to work.
+    ///
+    /// The algorithm is based on:
+    /// - Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using
+    /// Spectral Analysis", Eurographics Symposium on Geometry Processing (2004)
+    /// - Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The target size of the texture (size x size). The uv
+    /// coordinates will still be in the range [0..1] but parameters like gutter
+    /// use pixels as units.
+    /// \param gutter This is the space around the uv islands in pixels.
+    /// \param max_stretch The maximum amount of stretching allowed. The
+    /// parameter range is [0..1] with 0 meaning no stretch allowed.
+    void ComputeUVAtlas(size_t size = 512,
+                        float gutter = 1.0f,
+                        float max_stretch = 1.f / 6);
+
     /// Bake vertex attributes into textures.
     ///
     /// This function assumes a triangle attribute with name 'texture_uvs'.

@@ -88,15 +88,20 @@ PointCloud::PointCloud(const std::unordered_map<std::string, core::Tensor>
 }
 
 std::string PointCloud::ToString() const {
-    if (point_attr_.size() == 0)
-        return fmt::format("PointCloud on {} [0 points ()] Attributes: None.",
-                           GetDevice().ToString());
+    size_t num_points = 0;
+    std::string points_dtype_str = "";
+    if (point_attr_.count(point_attr_.GetPrimaryKey())) {
+        num_points = GetPointPositions().GetLength();
+        points_dtype_str =
+                fmt::format(" ({})", GetPointPositions().GetDtype().ToString());
+    }
     auto str =
-            fmt::format("PointCloud on {} [{} points ({})] Attributes:",
-                        GetDevice().ToString(), GetPointPositions().GetShape(0),
-                        GetPointPositions().GetDtype().ToString());
+            fmt::format("PointCloud on {} [{} points{}] Attributes:",
+                        GetDevice().ToString(), num_points, points_dtype_str);
 
-    if (point_attr_.size() == 1) return str + " None.";
+    if ((point_attr_.size() - point_attr_.count(point_attr_.GetPrimaryKey())) ==
+        0)
+        return str + " None.";
     for (const auto &keyval : point_attr_) {
         if (keyval.first != "positions") {
             str += fmt::format(" {} (dtype = {}, shape = {}),", keyval.first,
@@ -418,6 +423,28 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
     utility::LogDebug("Removing non-finite points.");
     return std::make_tuple(SelectByMask(finite_indices_mask),
                            finite_indices_mask);
+}
+
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveDuplicatedPoints()
+        const {
+    core::Tensor points_voxeli;
+    const core::Dtype dtype = GetPointPositions().GetDtype();
+    if (dtype.ByteSize() == 4) {
+        points_voxeli = GetPointPositions().ReinterpretCast(core::Int32);
+    } else if (dtype.ByteSize() == 8) {
+        points_voxeli = GetPointPositions().ReinterpretCast(core::Int64);
+    } else {
+        utility::LogError(
+                "Unsupported point position data-type. Only support "
+                "Int32, Int64, Float32 and Float64.");
+    }
+
+    core::HashSet points_voxeli_hashset(points_voxeli.GetLength(),
+                                        points_voxeli.GetDtype(), {3}, device_);
+    core::Tensor buf_indices, masks;
+    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
+
+    return std::make_tuple(SelectByMask(masks), masks);
 }
 
 PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {

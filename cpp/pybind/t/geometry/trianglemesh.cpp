@@ -60,41 +60,41 @@ The attributes of the triangle mesh have different levels::
     # Use mesh.triangle to access the triangles' attributes
     mesh = o3d.t.geometry.TriangleMesh(device)
 
-    # Default attribute: vertex["positions"], triangle["indices"]
+    # Default attribute: vertex.positions, triangle.indices
     # These attributes is created by default and is required by all triangle
     # meshes. The shape of both must be (N, 3). The device of "positions"
     # determines the device of the triangle mesh.
-    mesh.vertex["positions"] = o3d.core.Tensor([[0, 0, 0],
+    mesh.vertex.positions = o3d.core.Tensor([[0, 0, 0],
                                                 [0, 0, 1],
                                                 [0, 1, 0],
                                                 [0, 1, 1]], dtype_f, device)
-    mesh.triangle["indices"] = o3d.core.Tensor([[0, 1, 2],
+    mesh.triangle.indices = o3d.core.Tensor([[0, 1, 2],
                                                 [0, 2, 3]]], dtype_i, device)
 
-    # Common attributes: vertex["colors"]  , vertex["normals"]
-    #                    triangle["colors"], triangle["normals"]
+    # Common attributes: vertex.colors  , vertex.normals
+    #                    triangle.colors, triangle.normals
     # Common attributes are used in built-in triangle mesh operations. The
     # spellings must be correct. For example, if "normal" is used instead of
     # "normals", some internal operations that expects "normals" will not work.
     # "normals" and "colors" must have shape (N, 3) and must be on the same
     # device as the triangle mesh.
-    mesh.vertex["normals"] = o3d.core.Tensor([[0, 0, 1],
+    mesh.vertex.normals = o3d.core.Tensor([[0, 0, 1],
                                               [0, 1, 0],
                                               [1, 0, 0],
                                               [1, 1, 1]], dtype_f, device)
-    mesh.vertex["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
+    mesh.vertex.colors = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                              [0.1, 0.1, 0.1],
                                              [0.2, 0.2, 0.2],
                                              [0.3, 0.3, 0.3]], dtype_f, device)
-    mesh.triangle["normals"] = o3d.core.Tensor(...)
-    mesh.triangle["colors"] = o3d.core.Tensor(...)
+    mesh.triangle.normals = o3d.core.Tensor(...)
+    mesh.triangle.colors = o3d.core.Tensor(...)
 
     # User-defined attributes
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the triangle mesh. The are no restrictions on the shape and
     # dtype, e.g.,
-    pcd.vertex["labels"] = o3d.core.Tensor(...)
-    pcd.triangle["features"] = o3d.core.Tensor(...)
+    pcd.vertex.labels = o3d.core.Tensor(...)
+    pcd.triangle.features = o3d.core.Tensor(...)
 )");
 
     // Constructors.
@@ -623,6 +623,40 @@ Example:
         o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
 )");
 
+    triangle_mesh.def(
+            "compute_uvatlas", &TriangleMesh::ComputeUVAtlas, "size"_a = 512,
+            "gutter"_a = 1.f, "max_stretch"_a = 1.f / 6,
+            R"(Creates an UV atlas and adds it as triangle attr 'texture_uvs' to the mesh.
+    
+Input meshes must be manifold for this method to work.
+The algorithm is based on:
+Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using Spectral 
+             Analysis", Eurographics Symposium on Geometry Processing (2004)
+Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
+This function always uses the CPU device.
+Args:
+    size (int): The target size of the texture (size x size). The uv coordinates
+        will still be in the range [0..1] but parameters like gutter use pixels
+        as units.
+    gutter (float): This is the space around the uv islands in pixels.
+    max_stretch (float): The maximum amount of stretching allowed. The parameter
+        range is [0..1] with 0 meaning no stretch allowed.
+Returns:
+    None. This function modifies the mesh in-place.
+Example:
+    This code creates a uv map for the Stanford Bunny mesh::
+        import open3d as o3d
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        mesh.compute_uvatlas()
+        
+        # Add a wood texture and visualize
+        texture_data = o3d.data.WoodTexture()
+        mesh.material.material_name = 'defaultLit'
+        mesh.material.texture_maps['albedo'] = o3d.t.io.read_image(texture_data.albedo_texture_path)
+        o3d.visualization.draw(mesh)
+)");
+
     triangle_mesh.def("bake_vertex_attr_textures",
                       &TriangleMesh::BakeVertexAttrTextures, "size"_a,
                       "vertex_attr"_a, "margin"_a = 2., "fill"_a = 0.,
@@ -661,7 +695,7 @@ Example:
 
         box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
         box = o3d.t.geometry.TriangleMesh.from_legacy(box)
-        box.vertex['albedo'] = box.vertex['positions']
+        box.vertex['albedo'] = box.vertex.positions
 
         # Initialize material and bake the 'albedo' vertex attribute to a 
         # texture. The texture will be automatically added to the material of
@@ -717,7 +751,7 @@ Example:
         box = o3d.t.geometry.TriangleMesh.from_legacy(box)
         # Creates a triangle attribute 'albedo' which is the triangle index 
         # multiplied by (255//12).
-        box.triangle['albedo'] = (255//12)*np.arange(box.triangle['indices'].shape[0], dtype=np.uint8)
+        box.triangle['albedo'] = (255//12)*np.arange(box.triangle.indices.shape[0], dtype=np.uint8)
 
         # Initialize material and bake the 'albedo' triangle attribute to a 
         # texture. The texture will be automatically added to the material of

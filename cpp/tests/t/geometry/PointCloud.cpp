@@ -72,7 +72,7 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
 
     // ToString
     EXPECT_EQ(pcd.ToString(),
-              "PointCloud on CPU:0 [0 points ()] Attributes: None.");
+              "PointCloud on CPU:0 [0 points] Attributes: None.");
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
@@ -844,6 +844,31 @@ TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
     core::Tensor selected_boolean_mask;
     std::tie(output_pcd, selected_boolean_mask) =
             pcd_small.RemoveRadiusOutliers(3, 0.5);
+
+    EXPECT_TRUE(output_pcd.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{1.0, 1.0, 1.0},
+                                       {1.1, 1.1, 1.1},
+                                       {1.2, 1.2, 1.2},
+                                       {1.3, 1.3, 1.3}},
+                                      device)));
+}
+
+TEST_P(PointCloudPermuteDevices, RemoveDuplicatedPoints) {
+    core::Device device = GetParam();
+
+    const t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<float>({{1.0, 1.0, 1.0},
+                                       {1.0, 1.0, 1.0},
+                                       {1.1, 1.1, 1.1},
+                                       {1.1, 1.1, 1.1},
+                                       {1.2, 1.2, 1.2},
+                                       {1.3, 1.3, 1.3}},
+                                      device));
+
+    t::geometry::PointCloud output_pcd;
+    core::Tensor selected_boolean_mask;
+    std::tie(output_pcd, selected_boolean_mask) =
+            pcd_small.RemoveDuplicatedPoints();
 
     EXPECT_TRUE(output_pcd.GetPointPositions().AllClose(
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},
