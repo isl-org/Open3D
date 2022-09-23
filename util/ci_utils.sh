@@ -433,6 +433,8 @@ build_docs() {
     make -j$NPROC
     bin/GLInfo
     python -c "from open3d import *; import open3d; print(open3d)"
+    python -c "import dash; print('dash version:', dash.__version__)"
+    python -c "import nbformat; print('nbformat version:', nbformat.__version__)"
     cd ../docs # To Open3D/docs
     python make_docs.py $DOC_ARGS --clean_notebooks --execute_notebooks=always --py_api_rst=never
     python -m pip uninstall --yes open3d
@@ -452,6 +454,8 @@ build_docs() {
     make -j$NPROC
     bin/GLInfo || echo "Expect failure since HEADLESS_RENDERING=OFF"
     python -c "from open3d import *; import open3d; print(open3d)"
+    python -c "import dash; print('dash version:', dash.__version__)"
+    python -c "import nbformat; print('nbformat version:', nbformat.__version__)"
     cd ../docs # To Open3D/docs
     python make_docs.py $DOC_ARGS --py_api_rst=always --execute_notebooks=never --sphinx --doxygen
     set +x # Echo commands off
