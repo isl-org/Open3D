@@ -170,6 +170,7 @@ set(ExternalProject_CMAKE_ARGS
     -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
     -DCMAKE_CUDA_COMPILER_LAUNCHER=${CMAKE_CUDA_COMPILER_LAUNCHER}
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}
+    -DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}
     -DCMAKE_INSTALL_LIBDIR=${Open3D_INSTALL_LIB_DIR}
     # Always build 3rd party code in Release mode. Ignored by multi-config
     # generators (XCode, MSVC). MSVC needs matching config anyway.
@@ -1429,6 +1430,18 @@ if(UNIX AND NOT APPLE)
     target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vtk)
+
+# UVAtlas
+include(${Open3D_3RDPARTY_DIR}/uvatlas/uvatlas.cmake)
+open3d_import_3rdparty_library(3rdparty_uvatlas
+    HIDDEN
+    INCLUDE_DIRS ${UVATLAS_INCLUDE_DIRS}
+    LIB_DIR      ${UVATLAS_LIB_DIR}
+    LIBRARIES    ${UVATLAS_LIBRARIES}
+    DEPENDS      ext_uvatlas
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_uvatlas)
+
 
 if(BUILD_SYCL_MODULE)
     add_library(3rdparty_sycl INTERFACE)
