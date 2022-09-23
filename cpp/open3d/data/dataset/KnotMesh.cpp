@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220201-data/KnotMesh.ply"},
-        "bfc9f132ecdfb7f9fdc42abf620170fc",
-        false};
+        Open3DDownloadsPrefix() + "20220201-data/KnotMesh.ply",
+        "bfc9f132ecdfb7f9fdc42abf620170fc"};
 
 KnotMesh::KnotMesh(const std::string& data_root)
     : DownloadDataset("KnotMesh", data_descriptor, data_root) {

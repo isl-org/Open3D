@@ -34,10 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() +
-         "20220301-data/DemoCustomVisualization.zip"},
-        "04cb716145c51d0119b59c7876249891",
-        true};
+        Open3DDownloadsPrefix() + "20220301-data/DemoCustomVisualization.zip",
+        "04cb716145c51d0119b59c7876249891"};
 
 DemoCustomVisualization::DemoCustomVisualization(const std::string& data_root)
     : DownloadDataset("DemoCustomVisualization", data_descriptor, data_root) {

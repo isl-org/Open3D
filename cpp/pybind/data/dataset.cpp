@@ -46,6 +46,9 @@ public:
 };
 
 void pybind_data_classes(py::module& m) {
+    // open3d.data.open3d_downloads_prefix as static attr of open3d.data.
+    m.attr("open3d_downloads_prefix") = py::cast(Open3DDownloadsPrefix());
+
     // open3d.data.DataDescriptor
     py::class_<DataDescriptor> data_descriptor(
             m, "DataDescriptor",
@@ -54,16 +57,26 @@ void pybind_data_classes(py::module& m) {
             "and wether to extract the file.");
     data_descriptor
             .def(py::init([](const std::vector<std::string>& urls,
-                             const std::string& md5, const bool do_extract) {
-                     return DataDescriptor{urls, md5, do_extract};
+                             const std::string& md5,
+                             const std::string& extract_in_subdir) {
+                     return DataDescriptor{urls, md5, extract_in_subdir};
                  }),
-                 "urls"_a, "md5"_a, "do_extract"_a)
+                 "urls"_a, "md5"_a, "extract_in_subdir"_a = "")
+            .def(py::init([](const std::string& url, const std::string& md5,
+                             const std::string& extract_in_subdir) {
+                     return DataDescriptor{std::vector<std::string>{url}, md5,
+                                           extract_in_subdir};
+                 }),
+                 "url"_a, "md5"_a, "extract_in_subdir"_a = "")
             .def_readonly("urls", &DataDescriptor::urls_,
                           "URL to download the data file.")
             .def_readonly("md5", &DataDescriptor::md5_,
                           "MD5 hash of the data file.")
-            .def_readonly("do_extract", &DataDescriptor::do_extract_,
-                          "Whether to extract the downloaded file.");
+            .def_readonly("extract_in_subdir",
+                          &DataDescriptor::extract_in_subdir_,
+                          "Subdirectory to extract the file. If empty, the "
+                          "file will be extracted in the root extract "
+                          "directory of the dataset.");
 
     // open3d.data.Dataset
     py::class_<Dataset, PyDataset<Dataset>, std::shared_ptr<Dataset>> dataset(
@@ -257,7 +270,7 @@ void pybind_demo_custom_visualization(py::module& m) {
                                    "Returns path to the point cloud (ply).")
             .def_property_readonly(
                     "camera_trajectory_path",
-                    &DemoCustomVisualization::GetCameraTrajectoryPath,
+                    &DemoCustomVisualization::GetTrajectoryPath,
                     "Returns path to the camera_trajectory.json.")
             .def_property_readonly(
                     "render_option_path",
@@ -972,6 +985,206 @@ void pybind_jackjack_l515_bag(py::module& m) {
     docstring::ClassMethodDocInject(m, "JackJackL515Bag", "path");
 }
 
+void pybind_redwood_indoor_living_room1(py::module& m) {
+    py::class_<RedwoodIndoorLivingRoom1,
+               PyDownloadDataset<RedwoodIndoorLivingRoom1>,
+               std::shared_ptr<RedwoodIndoorLivingRoom1>, DownloadDataset>
+            dataset(m, "RedwoodIndoorLivingRoom1",
+                    R"doc(RedwoodIndoorLivingRoom1 (Augmented ICL-NUIM Dataset)
+Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+sequence, and ground-truth camera trajectory.
+
+RedwoodIndoorLivingRoom1
+├── colors
+│   ├── 00000.jpg
+│   ├── 00001.jpg
+│   ├── ...
+│   └── 02869.jpg
+├── depth
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02869.png
+├── depth_noisy
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02869.png
+├── livingroom1.oni
+├── livingroom1-traj.txt
+└── livingroom.ply
+)doc");
+    dataset.def(py::init<const std::string&>(), "data_root"_a = "");
+    dataset.def_property_readonly("point_cloud_path",
+                                  &RedwoodIndoorLivingRoom1::GetPointCloudPath,
+                                  "Path to the point cloud.");
+    dataset.def_property_readonly("color_paths",
+                                  &RedwoodIndoorLivingRoom1::GetColorPaths,
+                                  "List of paths to color images.");
+    dataset.def_property_readonly("depth_paths",
+                                  &RedwoodIndoorLivingRoom1::GetDepthPaths,
+                                  "List of paths to depth images.");
+    dataset.def_property_readonly("noisy_depth_paths",
+                                  &RedwoodIndoorLivingRoom1::GetNoisyDepthPaths,
+                                  "List of paths to noisy depth images.");
+    dataset.def_property_readonly("oni_path",
+                                  &RedwoodIndoorLivingRoom1::GetONIPath,
+                                  "Path to the oni file.");
+    dataset.def_property_readonly("trajectory_path",
+                                  &RedwoodIndoorLivingRoom1::GetTrajectoryPath,
+                                  "Path to the trajectory file.");
+}
+
+void pybind_redwood_indoor_living_room2(py::module& m) {
+    py::class_<RedwoodIndoorLivingRoom2,
+               PyDownloadDataset<RedwoodIndoorLivingRoom2>,
+               std::shared_ptr<RedwoodIndoorLivingRoom2>, DownloadDataset>
+            dataset(m, "RedwoodIndoorLivingRoom2",
+                    R"doc(RedwoodIndoorLivingRoom2 (Augmented ICL-NUIM Dataset)
+Data class for `RedwoodIndoorLivingRoom2`, containing dense point
+cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+sequence, and ground-truth camera trajectory.
+
+RedwoodIndoorLivingRoom2
+├── colors
+│   ├── 00000.jpg
+│   ├── 00001.jpg
+│   ├── ...
+│   └── 02349.jpg
+├── depth
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02349.png
+├── depth_noisy
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02349.png
+├── livingroom2.oni
+├── livingroom2-traj.txt
+└── livingroom.ply
+)doc");
+    dataset.def(py::init<const std::string&>(), "data_root"_a = "");
+    dataset.def_property_readonly("point_cloud_path",
+                                  &RedwoodIndoorLivingRoom2::GetPointCloudPath,
+                                  "Path to the point cloud.");
+    dataset.def_property_readonly("color_paths",
+                                  &RedwoodIndoorLivingRoom2::GetColorPaths,
+                                  "List of paths to color images.");
+    dataset.def_property_readonly("depth_paths",
+                                  &RedwoodIndoorLivingRoom2::GetDepthPaths,
+                                  "List of paths to depth images.");
+    dataset.def_property_readonly("noisy_depth_paths",
+                                  &RedwoodIndoorLivingRoom2::GetNoisyDepthPaths,
+                                  "List of paths to noisy depth images.");
+    dataset.def_property_readonly("oni_path",
+                                  &RedwoodIndoorLivingRoom2::GetONIPath,
+                                  "Path to the oni file.");
+    dataset.def_property_readonly("trajectory_path",
+                                  &RedwoodIndoorLivingRoom2::GetTrajectoryPath,
+                                  "Path to the trajectory file.");
+}
+
+void pybind_redwood_indoor_office1(py::module& m) {
+    py::class_<RedwoodIndoorOffice1, PyDownloadDataset<RedwoodIndoorOffice1>,
+               std::shared_ptr<RedwoodIndoorOffice1>, DownloadDataset>
+            dataset(m, "RedwoodIndoorOffice1",
+                    R"doc(RedwoodIndoorOffice1 (Augmented ICL-NUIM Dataset)
+Data class for `RedwoodIndoorOffice1`, containing dense point
+cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+sequence, and ground-truth camera trajectory.
+
+RedwoodIndoorOffice1
+├── colors
+│   ├── 00000.jpg
+│   ├── 00001.jpg
+│   ├── ...
+│   └── 02689.jpg
+├── depth
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02689.png
+├── depth_noisy
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02689.png
+├── office1.oni
+├── office1-traj.txt
+└── office.ply
+)doc");
+    dataset.def(py::init<const std::string&>(), "data_root"_a = "");
+    dataset.def_property_readonly("point_cloud_path",
+                                  &RedwoodIndoorOffice1::GetPointCloudPath,
+                                  "Path to the point cloud.");
+    dataset.def_property_readonly("color_paths",
+                                  &RedwoodIndoorOffice1::GetColorPaths,
+                                  "List of paths to color images.");
+    dataset.def_property_readonly("depth_paths",
+                                  &RedwoodIndoorOffice1::GetDepthPaths,
+                                  "List of paths to depth images.");
+    dataset.def_property_readonly("noisy_depth_paths",
+                                  &RedwoodIndoorOffice1::GetNoisyDepthPaths,
+                                  "List of paths to noisy depth images.");
+    dataset.def_property_readonly("oni_path", &RedwoodIndoorOffice1::GetONIPath,
+                                  "Path to the oni file.");
+    dataset.def_property_readonly("trajectory_path",
+                                  &RedwoodIndoorOffice1::GetTrajectoryPath,
+                                  "Path to the trajectory file.");
+}
+
+void pybind_redwood_indoor_office2(py::module& m) {
+    py::class_<RedwoodIndoorOffice2, PyDownloadDataset<RedwoodIndoorOffice2>,
+               std::shared_ptr<RedwoodIndoorOffice2>, DownloadDataset>
+            dataset(m, "RedwoodIndoorOffice2",
+                    R"doc(RedwoodIndoorOffice2 (Augmented ICL-NUIM Dataset)
+Data class for `RedwoodIndoorOffice2`, containing dense point
+cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+sequence, and ground-truth camera trajectory.
+
+RedwoodIndoorOffice2
+├── colors
+│   ├── 00000.jpg
+│   ├── 00001.jpg
+│   ├── ...
+│   └── 02537.jpg
+├── depth
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02537.png
+├── depth_noisy
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02537.png
+├── office2.oni
+├── office2-traj.txt
+└── office.ply
+)doc");
+    dataset.def(py::init<const std::string&>(), "data_root"_a = "");
+    dataset.def_property_readonly("point_cloud_path",
+                                  &RedwoodIndoorOffice2::GetPointCloudPath,
+                                  "Path to the point cloud.");
+    dataset.def_property_readonly("color_paths",
+                                  &RedwoodIndoorOffice2::GetColorPaths,
+                                  "List of paths to color images.");
+    dataset.def_property_readonly("depth_paths",
+                                  &RedwoodIndoorOffice2::GetDepthPaths,
+                                  "List of paths to depth images.");
+    dataset.def_property_readonly("noisy_depth_paths",
+                                  &RedwoodIndoorOffice2::GetNoisyDepthPaths,
+                                  "List of paths to noisy depth images.");
+    dataset.def_property_readonly("oni_path", &RedwoodIndoorOffice2::GetONIPath,
+                                  "Path to the oni file.");
+    dataset.def_property_readonly("trajectory_path",
+                                  &RedwoodIndoorOffice2::GetTrajectoryPath,
+                                  "Path to the trajectory file.");
+}
+
 void pybind_data(py::module& m) {
     py::module m_submodule = m.def_submodule("data", "Data handling module.");
     pybind_data_classes(m_submodule);
@@ -1021,6 +1234,11 @@ void pybind_data(py::module& m) {
     pybind_lounge_rgbd_images(m_submodule);
     pybind_bedroom_rgbd_images(m_submodule);
     pybind_jackjack_l515_bag(m_submodule);
+    // RedwoodIndoor (Augmented ICL-NUIM Dataset).
+    pybind_redwood_indoor_living_room1(m_submodule);
+    pybind_redwood_indoor_living_room2(m_submodule);
+    pybind_redwood_indoor_office1(m_submodule);
+    pybind_redwood_indoor_office2(m_submodule);
 }
 
 }  // namespace data

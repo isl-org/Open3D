@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220301-data/MetalTexture.zip"},
-        "2b6a17e41157138868a2cd2926eedcc7",
-        true};
+        Open3DDownloadsPrefix() + "20220301-data/MetalTexture.zip",
+        "2b6a17e41157138868a2cd2926eedcc7"};
 
 MetalTexture::MetalTexture(const std::string& data_root)
     : DownloadDataset("MetalTexture", data_descriptor, data_root) {

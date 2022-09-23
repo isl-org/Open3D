@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220201-data/fragment.ply"},
-        "831ecffd4d7cbbbe02494c5c351aa6e5",
-        false};
+        Open3DDownloadsPrefix() + "20220201-data/fragment.ply",
+        "831ecffd4d7cbbbe02494c5c351aa6e5"};
 
 PLYPointCloud::PLYPointCloud(const std::string& data_root)
     : DownloadDataset("PLYPointCloud", data_descriptor, data_root) {

@@ -26,6 +26,7 @@
 
 #include "open3d/data/Dataset.h"
 
+#include "open3d/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
@@ -62,8 +63,8 @@ TEST(Dataset, DownloadDataset) {
             "20220201-data/BunnyMesh.ply"};
     const std::string md5 = "568f871d1a221ba6627569f1e6f9a3f2";
 
-    data::DownloadDataset single_download_dataset(
-            prefix, {url_mirrors, md5, false}, data_root);
+    data::DownloadDataset single_download_dataset(prefix, {url_mirrors, md5},
+                                                  data_root);
 
     EXPECT_TRUE(
             utility::filesystem::FileExists(download_dir + "/BunnyMesh.ply"));
@@ -603,7 +604,7 @@ TEST(Dataset, PaintedPlasterTexture) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
-TEST(Dataset, DISABLED_RedwoodLivingRoomPointClouds) {
+TEST(Dataset, DISABLED_LivingRoomPointClouds) {
     const std::string prefix = "LivingRoomPointClouds";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -631,7 +632,7 @@ TEST(Dataset, DISABLED_RedwoodLivingRoomPointClouds) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
-TEST(Dataset, DISABLED_RedwoodOfficePointClouds) {
+TEST(Dataset, DISABLED_OfficePointClouds) {
     const std::string prefix = "OfficePointClouds";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -657,6 +658,138 @@ TEST(Dataset, DISABLED_RedwoodOfficePointClouds) {
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, DISABLED_RedwoodIndoorLivingRoom1) {
+    const std::string prefix = "RedwoodIndoorLivingRoom1";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::RedwoodIndoorLivingRoom1 dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(extract_dir));
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+}
+
+TEST(Dataset, DISABLED_RedwoodIndoorLivingRoom2) {
+    const std::string prefix = "RedwoodIndoorLivingRoom2";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::RedwoodIndoorLivingRoom2 dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(extract_dir));
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+}
+
+TEST(Dataset, DISABLED_RedwoodIndoorOffice1) {
+    const std::string prefix = "RedwoodIndoorOffice1";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::RedwoodIndoorOffice1 dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(extract_dir));
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+}
+
+TEST(Dataset, DISABLED_RedwoodIndoorOffice2) {
+    const std::string prefix = "RedwoodIndoorOffice2";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::RedwoodIndoorOffice2 dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(extract_dir));
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
 }
 
 TEST(Dataset, SampleFountainRGBDImages) {

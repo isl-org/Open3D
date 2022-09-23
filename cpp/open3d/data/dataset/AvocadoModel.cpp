@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220301-data/AvocadoModel.glb"},
-        "829f96a0a3a7d5556e0a263ea0699217",
-        false};
+        Open3DDownloadsPrefix() + "20220301-data/AvocadoModel.glb",
+        "829f96a0a3a7d5556e0a263ea0699217"};
 
 AvocadoModel::AvocadoModel(const std::string& data_root)
     : DownloadDataset("AvocadoModel", data_descriptor, data_root) {

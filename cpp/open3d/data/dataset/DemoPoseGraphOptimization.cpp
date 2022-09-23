@@ -34,10 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() +
-         "20220201-data/DemoPoseGraphOptimization.zip"},
-        "af085b28d79dea7f0a50aef50c96b62c",
-        true};
+        Open3DDownloadsPrefix() + "20220201-data/DemoPoseGraphOptimization.zip",
+        "af085b28d79dea7f0a50aef50c96b62c"};
 
 DemoPoseGraphOptimization::DemoPoseGraphOptimization(
         const std::string& data_root)

@@ -47,7 +47,7 @@ std::string LocateDataRoot() {
     return data_root;
 }
 
-std::string Open3DDownloadsURLPrefix() {
+std::string Open3DDownloadsPrefix() {
     return "https://github.com/isl-org/open3d_downloads/releases/download/";
 }
 
@@ -63,6 +63,24 @@ Dataset::Dataset(const std::string& prefix, const std::string& data_root)
     }
 }
 
+void Dataset::CheckPathsExist(const std::vector<std::string>& paths) const {
+    const size_t num_expected_paths = paths.size();
+    size_t num_existing_paths = 0;
+    for (const auto& path : paths) {
+        if (utility::filesystem::FileExists(path)) {
+            num_existing_paths++;
+        } else {
+            utility::LogWarning("{} does not exist.", path);
+        }
+    }
+    if (num_existing_paths != num_expected_paths) {
+        utility::LogError(
+                "Expected {} files, but only found {} files. Please "
+                "re-download and re-extract the dataset.",
+                num_expected_paths, num_existing_paths);
+    }
+}
+
 DownloadDataset::DownloadDataset(const std::string& prefix,
                                  const DataDescriptor& data_descriptor,
                                  const std::string& data_root)
@@ -75,8 +93,8 @@ DownloadDataset::DownloadDataset(
         const std::vector<DataDescriptor>& data_descriptors,
         const std::string& data_root)
     : Dataset(prefix, data_root), data_descriptors_(data_descriptors) {
+    // Download.
     for (const auto& data_descriptor : data_descriptors) {
-        // Download.
         if (!HasDownloaded(data_descriptor)) {
             utility::DownloadFromMirrors(data_descriptor.urls_,
                                          data_descriptor.md5_,
@@ -85,19 +103,33 @@ DownloadDataset::DownloadDataset(
                 utility::LogError("Download failed integrity check.");
             }
         }
+    }
 
-        // Extract.
-        // TODO: add force_extract option.
-        if (!utility::filesystem::DirectoryExists(GetExtractDir())) {
-            const std::string download_path =
-                    GetDownloadDir() + "/" +
+    // Extract.
+    // TODO: All dataset constructors should have full knowledge of the list of
+    // extracted files. If CheckPathsExist() fails, we shall trigger
+    // re-extraction automatically or throw an error. To enable this, we need to
+    // modify the dataset constructors to provide a list of extracted files for
+    // each dataset.
+    const std::string base_extract_dir = GetExtractDir();
+    if (!utility::filesystem::DirectoryExists(base_extract_dir)) {
+        for (const auto& data_descriptor : data_descriptors) {
+            const std::string download_name =
                     utility::filesystem::GetFileNameWithoutDirectory(
                             data_descriptor.urls_[0]);
-            if (data_descriptor.do_extract_) {
-                utility::Extract(download_path, GetExtractDir());
+            const std::string download_path =
+                    GetDownloadDir() + "/" + download_name;
+
+            std::string extract_dir = base_extract_dir;
+            if (!data_descriptor.extract_in_subdir_.empty()) {
+                extract_dir += "/" + data_descriptor.extract_in_subdir_;
+            }
+
+            if (utility::IsSupportedCompressedFilePath(download_path)) {
+                utility::Extract(download_path, extract_dir);
             } else {
-                utility::filesystem::MakeDirectoryHierarchy(GetExtractDir());
-                utility::filesystem::Copy(download_path, GetExtractDir());
+                utility::filesystem::MakeDirectoryHierarchy(extract_dir);
+                utility::filesystem::Copy(download_path, extract_dir);
             }
         }
     }

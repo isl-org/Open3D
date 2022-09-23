@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220201-data/BunnyMesh.ply"},
-        "568f871d1a221ba6627569f1e6f9a3f2",
-        false};
+        Open3DDownloadsPrefix() + "20220201-data/BunnyMesh.ply",
+        "568f871d1a221ba6627569f1e6f9a3f2"};
 
 BunnyMesh::BunnyMesh(const std::string& data_root)
     : DownloadDataset("BunnyMesh", data_descriptor, data_root) {

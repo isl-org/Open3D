@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220201-data/DemoCropPointCloud.zip"},
-        "12dbcdddd3f0865d8312929506135e23",
-        true};
+        Open3DDownloadsPrefix() + "20220201-data/DemoCropPointCloud.zip",
+        "12dbcdddd3f0865d8312929506135e23"};
 
 DemoCropPointCloud::DemoCropPointCloud(const std::string& data_root)
     : DownloadDataset("DemoCropPointCloud", data_descriptor, data_root) {

@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220301-data/TerrazzoTexture.zip"},
-        "8d67f191fb5d80a27d8110902cac008e",
-        true};
+        Open3DDownloadsPrefix() + "20220301-data/TerrazzoTexture.zip",
+        "8d67f191fb5d80a27d8110902cac008e"};
 
 TerrazzoTexture::TerrazzoTexture(const std::string& data_root)
     : DownloadDataset("TerrazzoTexture", data_descriptor, data_root) {

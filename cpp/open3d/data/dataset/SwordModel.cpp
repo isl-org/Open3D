@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220301-data/SwordModel.zip"},
-        "eb7df358b5c31c839f03c4b3b4157c04",
-        true};
+        Open3DDownloadsPrefix() + "20220301-data/SwordModel.zip",
+        "eb7df358b5c31c839f03c4b3b4157c04"};
 
 SwordModel::SwordModel(const std::string& data_root)
     : DownloadDataset("SwordModel", data_descriptor, data_root) {
