@@ -172,7 +172,8 @@ TEST_P(TriangleMeshPermuteDevices, ToString) {
     // Empty mesh.
     mesh.Clear();
     std::string text_3 = "TriangleMesh on " + device.ToString() +
-                         " [0 vertices and 0 triangles].";
+                         " [0 vertices and 0 triangles].\nVertex Attributes: "
+                         "None.\nTriangle Attributes: None.";
     EXPECT_STREQ(mesh.ToString().c_str(), text_3.c_str());
 }
 

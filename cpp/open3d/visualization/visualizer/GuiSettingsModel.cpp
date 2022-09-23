@@ -227,6 +227,14 @@ void GuiSettingsModel::SetBasicMode(bool enable) {
     NotifyChanged(true);
 }
 
+bool GuiSettingsModel::GetWireframeMode() const {
+    return wireframe_mode_enabled_;
+}
+void GuiSettingsModel::SetWireframeMode(bool enable) {
+    wireframe_mode_enabled_ = enable;
+    NotifyChanged();
+}
+
 const Eigen::Vector3f& GuiSettingsModel::GetBackgroundColor() const {
     return bg_color_;
 }

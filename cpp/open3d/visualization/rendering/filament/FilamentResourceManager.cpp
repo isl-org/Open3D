@@ -1174,8 +1174,10 @@ void FilamentResourceManager::LoadDefaults() {
 
     const auto line_path = resource_root + "/unlitLine.filamat";
     auto line_mat = LoadMaterialFromFile(line_path, engine_);
-    line_mat->setDefaultParameter("baseColor", filament::RgbType::LINEAR,
-                                  {1.f, 1.f, 1.f});
+    line_mat->setDefaultParameter("baseColor", filament::RgbaType::LINEAR,
+                                  default_color_alpha);
+    line_mat->setDefaultParameter("emissiveColor",
+                                  filament::math::float4(0.0, 0.0, 0.0, 1.0f));
     line_mat->setDefaultParameter("lineWidth", 1.f);
     materials_[kDefaultLineShader] = BoxResource(line_mat, engine_);
 
