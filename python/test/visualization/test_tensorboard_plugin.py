@@ -373,13 +373,9 @@ def check_material_dict(o3d_geo, material, batch_idx):
 def logdir():
     """Extract logdir zip to provide logdir for tests, cleanup afterwards."""
     data_descriptor = o3d.data.DataDescriptor(
-        urls=[
-            "https://github.com/isl-org/open3d_downloads/releases/"
-            "download/20220301-data/test_tensorboard_plugin.zip"
-        ],
-        md5="746612f1d3b413236091d263bff29dc9",
-        do_extract=True,
-    )
+        url=o3d.data.open3d_downloads_prefix +
+        "20220301-data/test_tensorboard_plugin.zip",
+        md5="746612f1d3b413236091d263bff29dc9")
     test_data = o3d.data.DownloadDataset(
         prefix="TestTensorboardPlugin",
         data_descriptor=data_descriptor,

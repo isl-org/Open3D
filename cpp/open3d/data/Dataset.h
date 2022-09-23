@@ -41,7 +41,9 @@ namespace data {
 std::string LocateDataRoot();
 
 /// Returns the URL prefix for the open3d_downloads's releases.
-std::string Open3DDownloadsURLPrefix();
+/// See https://github.com/isl-org/open3d_downloads/releases/ for more info.
+/// This is hard-coded to have "/" at the end.
+std::string Open3DDownloadsPrefix();
 
 /// \class Dataset
 /// \brief Base Open3D dataset class.
@@ -113,23 +115,44 @@ protected:
 
     /// Dataset prefix.
     std::string prefix_;
+
+    /// Check if the paths exists after extraction.
+    void CheckPathsExist(const std::vector<std::string>& paths) const;
 };
 
 /// \struct DataDescriptor
 /// \brief Infomation about a file to be downloaded.
 struct DataDescriptor {
+    /// \brief Constructor a list of url mirrors.
+    /// \param urls URL mirrors of the file.
+    /// \param md5 MD5 checksum of the file.
+    /// \param extract_in_subdir Subdirectory to extract the file. If empty, the
+    /// file will be extracted in the root extract directory of the dataset.
+    DataDescriptor(const std::vector<std::string>& urls,
+                   const std::string& md5,
+                   const std::string& extract_in_subdir = "")
+        : urls_(urls), md5_(md5), extract_in_subdir_(extract_in_subdir) {}
+
+    /// \brief Constructor a download url.
+    /// \param url URL of the file.
+    /// \param md5 MD5 checksum of the file.
+    /// \param extract_in_subdir Subdirectory to extract the file. If empty, the
+    /// file will be extracted in the root extract directory of the dataset.
+    DataDescriptor(const std::string& url,
+                   const std::string& md5,
+                   const std::string& extract_in_subdir = "")
+        : DataDescriptor(
+                  std::vector<std::string>{url}, md5, extract_in_subdir) {}
+
     /// List of URL mirrors.
     std::vector<std::string> urls_;
+
     /// MD5 checksum of the downloaded file.
     std::string md5_;
-    /// Whether to extract the downloaded file.
-    bool do_extract_;
 
-    // /// \brief Constructor.
-    // DataDescriptor(const std::vector<std::string>& urls,
-    //                const std::string& md5,
-    //                bool do_extract)
-    //     : urls_(urls), md5_(md5), do_extract_(do_extract) {}
+    /// Subdirectory to extract the file. If empty, the file will be extracted
+    /// in the root extract directory of the dataset.
+    std::string extract_in_subdir_ = "";
 };
 
 /// \class DownloadDataset
@@ -165,7 +188,7 @@ class ArmadilloMesh : public DownloadDataset {
 public:
     ArmadilloMesh(const std::string& data_root = "");
 
-    /// \brief Returns path to the `ArmadilloMesh.ply` file.
+    /// \brief Path to the `ArmadilloMesh.ply` file.
     std::string GetPath() const { return path_; }
 
 private:
@@ -180,7 +203,7 @@ class AvocadoModel : public DownloadDataset {
 public:
     AvocadoModel(const std::string& data_root = "");
 
-    /// \brief Returns path to the GLB format avocado model.
+    /// \brief Path to the GLB format avocado model.
     std::string GetPath() const { return path_; }
 
 private:
@@ -201,10 +224,10 @@ public:
     /// \brief Returns List of paths to depth image samples of size 21931.
     std::vector<std::string> GetDepthPaths() const { return depth_paths_; }
 
-    /// \brief Returns path to camera trajectory log file
+    /// \brief Path to camera trajectory log file
     /// `lounge_trajectory.log`.
     std::string GetTrajectoryLogPath() const { return trajectory_log_path_; }
-    /// \brief Returns path to mesh reconstruction `bedroom.ply`.
+    /// \brief Path to mesh reconstruction `bedroom.ply`.
     std::string GetReconstructionPath() const { return reconstruction_path_; }
 
 private:
@@ -226,7 +249,7 @@ class BunnyMesh : public DownloadDataset {
 public:
     BunnyMesh(const std::string& data_root = "");
 
-    /// \brief Returns path to the `BunnyMesh.ply` file.
+    /// \brief Path to the `BunnyMesh.ply` file.
     std::string GetPath() const { return path_; }
 
 private:
@@ -244,7 +267,7 @@ class CrateModel : public DownloadDataset {
 public:
     CrateModel(const std::string& data_root = "");
 
-    /// \brief Returns path to the `filename`. By default it returns the path to
+    /// \brief Path to the `filename`. By default it returns the path to
     /// `crate.obj` file. Refer documentation page for available options.
     std::string GetPath(const std::string filename = "crate_model") const {
         return map_filename_to_path_.at(filename);
@@ -268,7 +291,7 @@ class DamagedHelmetModel : public DownloadDataset {
 public:
     DamagedHelmetModel(const std::string& data_root = "");
 
-    /// \brief Returns path to the GLB format damaged helmet model.
+    /// \brief Path to the GLB format damaged helmet model.
     std::string GetPath() const { return path_; }
 
 private:
@@ -287,7 +310,7 @@ public:
 
     /// \brief Returns list of list of 2 point cloud paths.
     std::vector<std::string> GetPaths() const { return paths_; }
-    /// \brief Returns path to the point cloud at index. Use `GetPaths(0)`, and
+    /// \brief Path to the point cloud at index. Use `GetPaths(0)`, and
     /// `GetPaths(1)` to access the paths.
     std::string GetPaths(size_t index) const;
 
@@ -305,9 +328,9 @@ class DemoCropPointCloud : public DownloadDataset {
 public:
     DemoCropPointCloud(const std::string& data_root = "");
 
-    /// \brief Returns path to example point cloud.
+    /// \brief Path to example point cloud.
     std::string GetPointCloudPath() const { return point_cloud_path_; }
-    /// \brief Returns path to saved selected polygon volume file.
+    /// \brief Path to saved selected polygon volume file.
     std::string GetCroppedJSONPath() const { return cropped_json_path_; }
 
 private:
@@ -326,13 +349,11 @@ class DemoCustomVisualization : public DownloadDataset {
 public:
     DemoCustomVisualization(const std::string& data_root = "");
 
-    /// \brief Returns path to the point cloud (ply).
+    /// \brief Path to the point cloud (ply).
     std::string GetPointCloudPath() const { return point_cloud_path_; }
-    /// \brief Returns path to the camera_trajectory.json.
-    std::string GetCameraTrajectoryPath() const {
-        return camera_trajectory_path_;
-    }
-    /// \brief Returns path to the renderoption.json.
+    /// \brief Path to the camera_trajectory.json.
+    std::string GetTrajectoryPath() const { return camera_trajectory_path_; }
+    /// \brief Path to the renderoption.json.
     std::string GetRenderOptionPath() const { return render_option_path_; }
 
 private:
@@ -386,10 +407,10 @@ public:
 
     /// \brief Returns list of 3 point cloud paths.
     std::vector<std::string> GetPaths() const { return paths_; }
-    /// \brief Returns path to the point cloud at index. Use `GetPaths(0)`,
+    /// \brief Path to the point cloud at index. Use `GetPaths(0)`,
     /// `GetPaths(1)`, and `GetPaths(2)` to access the paths.
     std::string GetPaths(size_t index) const;
-    /// \brief Returns path to the transformation metadata log file, containing
+    /// \brief Path to the transformation metadata log file, containing
     /// transformation between frame 0 and 1, and frame 1 and 2.
     std::string GetTransformationLogPath() const {
         return transformation_log_path_;
@@ -409,11 +430,11 @@ class DemoPoseGraphOptimization : public DownloadDataset {
 public:
     DemoPoseGraphOptimization(const std::string& data_root = "");
 
-    /// \brief Returns path to example global pose graph (json).
+    /// \brief Path to example global pose graph (json).
     std::string GetPoseGraphFragmentPath() const {
         return pose_graph_fragment_path_;
     }
-    /// \brief Returns path to example fragment pose graph (json).
+    /// \brief Path to example fragment pose graph (json).
     std::string GetPoseGraphGlobalPath() const {
         return pose_graph_global_path_;
     }
@@ -432,7 +453,7 @@ class EaglePointCloud : public DownloadDataset {
 public:
     EaglePointCloud(const std::string& data_root = "");
 
-    /// \brief Returns path to the `EaglePointCloud.ply` file.
+    /// \brief Path to the `EaglePointCloud.ply` file.
     std::string GetPath() const { return path_; }
 
 private:
@@ -450,7 +471,7 @@ class FlightHelmetModel : public DownloadDataset {
 public:
     FlightHelmetModel(const std::string& data_root = "");
 
-    /// \brief Returns path to the `filename`. By default it returns the path to
+    /// \brief Path to the `filename`. By default it returns the path to
     /// `FlightHelmet.gltf` file. Refer documentation page for available
     /// options.
     std::string GetPath(const std::string filename = "flight_helmet") const {
@@ -475,7 +496,7 @@ class JackJackL515Bag : public DownloadDataset {
 public:
     JackJackL515Bag(const std::string& data_root = "");
 
-    /// \brief Returns path to the `JackJackL515Bag.bag` file.
+    /// \brief Path to the `JackJackL515Bag.bag` file.
     std::string GetPath() const { return path_; }
 
 private:
@@ -489,7 +510,7 @@ class JuneauImage : public DownloadDataset {
 public:
     JuneauImage(const std::string& data_root = "");
 
-    /// \brief Returns path to the `JuneauImage.jgp` file.
+    /// \brief Path to the `JuneauImage.jgp` file.
     std::string GetPath() const { return path_; }
 
 private:
@@ -503,7 +524,7 @@ class KnotMesh : public DownloadDataset {
 public:
     KnotMesh(const std::string& data_root = "");
 
-    /// \brief Returns path to the `KnotMesh.ply` file.
+    /// \brief Path to the `KnotMesh.ply` file.
     std::string GetPath() const { return path_; }
 
 private:
@@ -521,7 +542,7 @@ public:
 
     /// \brief Returns list of paths to ply point-cloud fragments of size 57.
     std::vector<std::string> GetPaths() const { return paths_; }
-    /// \brief Returns path to the ply point-cloud fragment at index (from 0 to
+    /// \brief Path to the ply point-cloud fragment at index (from 0 to
     /// 56). Use `GetPaths(0)`, `GetPaths(1)` ... `GetPaths(56)` to access the
     /// paths.
     std::string GetPaths(size_t index) const;
@@ -544,10 +565,10 @@ public:
     /// \brief Returns List of paths to depth image samples of size 3000.
     std::vector<std::string> GetDepthPaths() const { return depth_paths_; }
 
-    /// \brief Returns path to camera trajectory log file
+    /// \brief Path to camera trajectory log file
     /// `lounge_trajectory.log`.
     std::string GetTrajectoryLogPath() const { return trajectory_log_path_; }
-    /// \brief Returns path to mesh reconstruction `lounge.ply`.
+    /// \brief Path to mesh reconstruction `lounge.ply`.
     std::string GetReconstructionPath() const { return reconstruction_path_; }
 
 private:
@@ -605,7 +626,7 @@ class MonkeyModel : public DownloadDataset {
 public:
     MonkeyModel(const std::string& data_root = "");
 
-    /// \brief Returns path to the `filename`. By default it returns the path to
+    /// \brief Path to the `filename`. By default it returns the path to
     /// `mokey.obj` file. Refer documentation page for available options.
     std::string GetPath(const std::string filename = "monkey_model") const {
         return map_filename_to_path_.at(filename);
@@ -632,7 +653,7 @@ public:
 
     /// \brief Returns list of paths to ply point-cloud fragments of size 52.
     std::vector<std::string> GetPaths() const { return paths_; }
-    /// \brief Returns path to the ply point-cloud fragment at index (from 0 to
+    /// \brief Path to the ply point-cloud fragment at index (from 0 to
     /// 52). Use `GetPaths(0)`, `GetPaths(1)` ... `GetPaths(52)` to access the
     /// paths.
     std::string GetPaths(size_t index) const;
@@ -649,7 +670,7 @@ class PCDPointCloud : public DownloadDataset {
 public:
     PCDPointCloud(const std::string& data_root = "");
 
-    /// \brief Returns path to the `pcd` format point cloud.
+    /// \brief Path to the `pcd` format point cloud.
     std::string GetPath() const { return path_; }
 
 private:
@@ -664,7 +685,7 @@ class PLYPointCloud : public DownloadDataset {
 public:
     PLYPointCloud(const std::string& data_root = "");
 
-    /// \brief Returns path to the PLY format point cloud.
+    /// \brief Path to the PLY format point cloud.
     std::string GetPath() const { return path_; }
 
 private:
@@ -679,7 +700,7 @@ class PTSPointCloud : public DownloadDataset {
 public:
     PTSPointCloud(const std::string& data_root = "");
 
-    /// \brief Returns path to the PTS format point cloud.
+    /// \brief Path to the PTS format point cloud.
     std::string GetPath() const { return path_; }
 
 private:
@@ -716,9 +737,217 @@ private:
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
+/// \class RedwoodIndoorLivingRoom1 (Augmented ICL-NUIM Dataset)
+/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+/// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+/// sequence, and ground-truth camera trajectory.
+///
+/// RedwoodIndoorLivingRoom1
+/// ├── colors
+/// │   ├── 00000.jpg
+/// │   ├── 00001.jpg
+/// │   ├── ...
+/// │   └── 02869.jpg
+/// ├── depth
+/// │   ├── 00000.png
+/// │   ├── 00001.png
+/// │   ├── ...
+/// │   └── 02869.png
+/// ├── depth_noisy
+/// │   ├── 00000.png
+/// │   ├── 00001.png
+/// │   ├── ...
+/// │   └── 02869.png
+/// ├── livingroom1.oni
+/// ├── livingroom1-traj.txt
+/// └── livingroom.ply
+class RedwoodIndoorLivingRoom1 : public DownloadDataset {
+public:
+    RedwoodIndoorLivingRoom1(const std::string& data_root = "");
+
+    /// \brief Path to the point cloud.
+    std::string GetPointCloudPath() const { return point_cloud_path_; }
+    /// \brief Paths to the color images.
+    std::vector<std::string> GetColorPaths() const { return color_paths_; }
+    /// \brief Paths to the clean depth images.
+    std::vector<std::string> GetDepthPaths() const { return depth_paths_; }
+    /// \brief Paths to the noisy depth images.
+    std::vector<std::string> GetNoisyDepthPaths() const {
+        return noisy_depth_paths_;
+    }
+    /// \brief Paths to the ONI sequence.
+    std::string GetONIPath() const { return oni_path_; }
+    /// \brief Path to the ground-truth camera trajectory.
+    std::string GetTrajectoryPath() const { return trajectory_path_; }
+
+private:
+    std::string point_cloud_path_;
+    std::vector<std::string> color_paths_;
+    std::vector<std::string> depth_paths_;
+    std::vector<std::string> noisy_depth_paths_;
+    std::string oni_path_;
+    std::string trajectory_path_;
+};
+
+/// \class RedwoodIndoorLivingRoom2 (Augmented ICL-NUIM Dataset)
+/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+/// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+/// sequence, and ground-truth camera trajectory.
+///
+/// RedwoodIndoorLivingRoom2
+/// ├── colors
+/// │   ├── 00000.jpg
+/// │   ├── 00001.jpg
+/// │   ├── ...
+/// │   └── 02349.jpg
+/// ├── depth
+/// │   ├── 00000.png
+/// │   ├── 00001.png
+/// │   ├── ...
+/// │   └── 02349.png
+/// ├── depth_noisy
+/// │   ├── 00000.png
+/// │   ├── 00001.png
+/// │   ├── ...
+/// │   └── 02349.png
+/// ├── livingroom2.oni
+/// ├── livingroom2-traj.txt
+/// └── livingroom.ply
+class RedwoodIndoorLivingRoom2 : public DownloadDataset {
+public:
+    RedwoodIndoorLivingRoom2(const std::string& data_root = "");
+
+    /// \brief Path to the point cloud.
+    std::string GetPointCloudPath() const { return point_cloud_path_; }
+    /// \brief Paths to the color images.
+    std::vector<std::string> GetColorPaths() const { return color_paths_; }
+    /// \brief Paths to the clean depth images.
+    std::vector<std::string> GetDepthPaths() const { return depth_paths_; }
+    /// \brief Paths to the noisy depth images.
+    std::vector<std::string> GetNoisyDepthPaths() const {
+        return noisy_depth_paths_;
+    }
+    /// \brief Paths to the ONI sequence.
+    std::string GetONIPath() const { return oni_path_; }
+    /// \brief Path to the ground-truth camera trajectory.
+    std::string GetTrajectoryPath() const { return trajectory_path_; }
+
+private:
+    std::string point_cloud_path_;
+    std::vector<std::string> color_paths_;
+    std::vector<std::string> depth_paths_;
+    std::vector<std::string> noisy_depth_paths_;
+    std::string oni_path_;
+    std::string trajectory_path_;
+};
+
+/// \class RedwoodIndoorOffice1 (Augmented ICL-NUIM Dataset)
+/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+/// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+/// sequence, and ground-truth camera trajectory.
+///
+/// RedwoodIndoorOffice1
+/// ├── colors
+/// │   ├── 00000.jpg
+/// │   ├── 00001.jpg
+/// │   ├── ...
+/// │   └── 02689.jpg
+/// ├── depth
+/// │   ├── 00000.png
+/// │   ├── 00001.png
+/// │   ├── ...
+/// │   └── 02689.png
+/// ├── depth_noisy
+/// │   ├── 00000.png
+/// │   ├── 00001.png
+/// │   ├── ...
+/// │   └── 02689.png
+/// ├── office1.oni
+/// ├── office1-traj.txt
+/// └── office.ply
+class RedwoodIndoorOffice1 : public DownloadDataset {
+public:
+    RedwoodIndoorOffice1(const std::string& data_root = "");
+
+    /// \brief Path to the point cloud.
+    std::string GetPointCloudPath() const { return point_cloud_path_; }
+    /// \brief Paths to the color images.
+    std::vector<std::string> GetColorPaths() const { return color_paths_; }
+    /// \brief Paths to the clean depth images.
+    std::vector<std::string> GetDepthPaths() const { return depth_paths_; }
+    /// \brief Paths to the noisy depth images.
+    std::vector<std::string> GetNoisyDepthPaths() const {
+        return noisy_depth_paths_;
+    }
+    /// \brief Paths to the ONI sequence.
+    std::string GetONIPath() const { return oni_path_; }
+    /// \brief Path to the ground-truth camera trajectory.
+    std::string GetTrajectoryPath() const { return trajectory_path_; }
+
+private:
+    std::string point_cloud_path_;
+    std::vector<std::string> color_paths_;
+    std::vector<std::string> depth_paths_;
+    std::vector<std::string> noisy_depth_paths_;
+    std::string oni_path_;
+    std::string trajectory_path_;
+};
+
+/// \class RedwoodIndoorOffice2 (Augmented ICL-NUIM Dataset)
+/// \brief Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+/// cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+/// sequence, and ground-truth camera trajectory.
+///
+/// RedwoodIndoorOffice2
+/// ├── colors
+/// │   ├── 00000.jpg
+/// │   ├── 00001.jpg
+/// │   ├── ...
+/// │   └── 02537.jpg
+/// ├── depth
+/// │   ├── 00000.png
+/// │   ├── 00001.png
+/// │   ├── ...
+/// │   └── 02537.png
+/// ├── depth_noisy
+/// │   ├── 00000.png
+/// │   ├── 00001.png
+/// │   ├── ...
+/// │   └── 02537.png
+/// ├── office2.oni
+/// ├── office2-traj.txt
+/// └── office.ply
+class RedwoodIndoorOffice2 : public DownloadDataset {
+public:
+    RedwoodIndoorOffice2(const std::string& data_root = "");
+
+    /// \brief Path to the point cloud.
+    std::string GetPointCloudPath() const { return point_cloud_path_; }
+    /// \brief Paths to the color images.
+    std::vector<std::string> GetColorPaths() const { return color_paths_; }
+    /// \brief Paths to the clean depth images.
+    std::vector<std::string> GetDepthPaths() const { return depth_paths_; }
+    /// \brief Paths to the noisy depth images.
+    std::vector<std::string> GetNoisyDepthPaths() const {
+        return noisy_depth_paths_;
+    }
+    /// \brief Paths to the ONI sequence.
+    std::string GetONIPath() const { return oni_path_; }
+    /// \brief Path to the ground-truth camera trajectory.
+    std::string GetTrajectoryPath() const { return trajectory_path_; }
+
+private:
+    std::string point_cloud_path_;
+    std::vector<std::string> color_paths_;
+    std::vector<std::string> depth_paths_;
+    std::vector<std::string> noisy_depth_paths_;
+    std::string oni_path_;
+    std::string trajectory_path_;
+};
+
 /// \class SampleFountainRGBDImages
-/// \brief Data class for `SampleFountainRGBDImages` contains a sample set of
-/// 33 color and depth images from the `Fountain RGBD dataset`.
+/// \brief Data class for `SampleFountainRGBDImages` contains a sample set
+/// of 33 color and depth images from the `Fountain RGBD dataset`.
 class SampleFountainRGBDImages : public DownloadDataset {
 public:
     SampleFountainRGBDImages(const std::string& data_root = "");
@@ -727,11 +956,11 @@ public:
     std::vector<std::string> GetColorPaths() const { return color_paths_; }
     /// \brief Returns List of paths to depth image samples of size 33.
     std::vector<std::string> GetDepthPaths() const { return depth_paths_; }
-    /// \brief Returns path to camera poses at key frames log file `key.log`.
+    /// \brief Path to camera poses at key frames log file `key.log`.
     std::string GetKeyframePosesLogPath() const {
         return keyframe_poses_log_path_;
     }
-    /// \brief Returns path to mesh reconstruction.
+    /// \brief Path to mesh reconstruction.
     std::string GetReconstructionPath() const { return reconstruction_path_; }
 
 private:
@@ -747,7 +976,7 @@ class SampleL515Bag : public DownloadDataset {
 public:
     SampleL515Bag(const std::string& data_root = "");
 
-    /// \brief Returns path to the `SampleL515Bag.bag` file.
+    /// \brief Path to the `SampleL515Bag.bag` file.
     std::string GetPath() const { return path_; }
 
 private:
@@ -763,9 +992,9 @@ class SampleNYURGBDImage : public DownloadDataset {
 public:
     SampleNYURGBDImage(const std::string& data_root = "");
 
-    /// \brief Returns path to color image sample.
+    /// \brief Path to color image sample.
     std::string GetColorPath() const { return color_path_; }
-    /// \brief Returns path to depth image sample.
+    /// \brief Path to depth image sample.
     std::string GetDepthPath() const { return depth_path_; }
 
 private:
@@ -776,8 +1005,8 @@ private:
 };
 
 /// \class SampleRedwoodRGBDImages
-/// \brief Data class for `SampleRedwoodRGBDImages` contains a sample set of 5
-/// color and depth images from Redwood RGBD dataset living-room1.
+/// \brief Data class for `SampleRedwoodRGBDImages` contains a sample set of
+/// 5 color and depth images from Redwood RGBD dataset living-room1.
 // Additionally it also contains camera trajectory log, camera odometry log,
 // rgbd match, and point cloud reconstruction obtained using TSDF.
 class SampleRedwoodRGBDImages : public DownloadDataset {
@@ -789,15 +1018,15 @@ public:
     /// \brief Returns List of paths to depth image samples of size 5.
     std::vector<std::string> GetDepthPaths() const { return depth_paths_; }
 
-    /// \brief Returns path to camera trajectory log file `trajectory.log`.
+    /// \brief Path to camera trajectory log file `trajectory.log`.
     std::string GetTrajectoryLogPath() const { return trajectory_log_path_; }
-    /// \brief Returns path to camera trajectory log file `odometry.log`.
+    /// \brief Path to camera trajectory log file `odometry.log`.
     std::string GetOdometryLogPath() const { return odometry_log_path_; }
-    /// \brief Returns path to color and depth image match file `rgbd.match`.
+    /// \brief Path to color and depth image match file `rgbd.match`.
     std::string GetRGBDMatchPath() const { return rgbd_match_path_; }
-    /// \brief Returns path to point cloud reconstruction from TSDF.
+    /// \brief Path to point cloud reconstruction from TSDF.
     std::string GetReconstructionPath() const { return reconstruction_path_; }
-    /// \brief Returns path to pinhole camera intrinsic (json).
+    /// \brief Path to pinhole camera intrinsic (json).
     std::string GetCameraIntrinsicPath() const {
         return camera_intrinsic_path_;
     }
@@ -828,9 +1057,9 @@ class SampleSUNRGBDImage : public DownloadDataset {
 public:
     SampleSUNRGBDImage(const std::string& data_root = "");
 
-    /// \brief Returns path to color image sample.
+    /// \brief Path to color image sample.
     std::string GetColorPath() const { return color_path_; }
-    /// \brief Returns path to depth image sample.
+    /// \brief Path to depth image sample.
     std::string GetDepthPath() const { return depth_path_; }
 
 private:
@@ -848,9 +1077,9 @@ class SampleTUMRGBDImage : public DownloadDataset {
 public:
     SampleTUMRGBDImage(const std::string& data_root = "");
 
-    /// \brief Returns path to color image sample.
+    /// \brief Path to color image sample.
     std::string GetColorPath() const { return color_path_; }
-    /// \brief Returns path to depth image sample.
+    /// \brief Path to depth image sample.
     std::string GetDepthPath() const { return depth_path_; }
 
 private:
@@ -870,14 +1099,15 @@ class SwordModel : public DownloadDataset {
 public:
     SwordModel(const std::string& data_root = "");
 
-    /// \brief Returns path to the `filename`. By default it returns the path to
-    /// `sword.obj` file. Refer documentation page for available options.
+    /// \brief Path to the `filename`. By default it returns the
+    /// path to `sword.obj` file. Refer documentation page for available
+    /// options.
     std::string GetPath(const std::string filename = "sword_model") const {
         return map_filename_to_path_.at(filename);
     }
 
-    /// \brief Returns the map of filename to path. Refer documentation page for
-    /// available options.
+    /// \brief Returns the map of filename to path. Refer documentation page
+    /// for available options.
     std::unordered_map<std::string, std::string> GetPathMap() const {
         return map_filename_to_path_;
     }

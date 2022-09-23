@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220301-data/CrateModel.zip"},
-        "20413eada103969bb3ca5df9aebc2034",
-        true};
+        Open3DDownloadsPrefix() + "20220301-data/CrateModel.zip",
+        "20413eada103969bb3ca5df9aebc2034"};
 
 CrateModel::CrateModel(const std::string& data_root)
     : DownloadDataset("CrateModel", data_descriptor, data_root) {

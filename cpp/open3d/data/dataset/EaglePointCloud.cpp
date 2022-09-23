@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220201-data/EaglePointCloud.ply"},
-        "e4e6c77bc548e7eb7548542a0220ad78",
-        false};
+        Open3DDownloadsPrefix() + "20220201-data/EaglePointCloud.ply",
+        "e4e6c77bc548e7eb7548542a0220ad78"};
 
 EaglePointCloud::EaglePointCloud(const std::string& data_root)
     : DownloadDataset("EaglePointCloud", data_descriptor, data_root) {

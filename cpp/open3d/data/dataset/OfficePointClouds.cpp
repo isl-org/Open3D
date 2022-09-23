@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "redwood/office1-fragments-ply.zip"},
-        "c519fe0495b3c731ebe38ae3a227ac25",
-        true};
+        Open3DDownloadsPrefix() + "redwood/office1-fragments-ply.zip",
+        "c519fe0495b3c731ebe38ae3a227ac25"};
 
 OfficePointClouds::OfficePointClouds(const std::string& data_root)
     : DownloadDataset("OfficePointClouds", data_descriptor, data_root) {

@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220301-data/LoungeRGBDImages.zip"},
-        "cdd307caef898519a8829ce1b6ab9f75",
-        true};
+        Open3DDownloadsPrefix() + "20220301-data/LoungeRGBDImages.zip",
+        "cdd307caef898519a8829ce1b6ab9f75"};
 
 LoungeRGBDImages::LoungeRGBDImages(const std::string& data_root)
     : DownloadDataset("LoungeRGBDImages", data_descriptor, data_root) {

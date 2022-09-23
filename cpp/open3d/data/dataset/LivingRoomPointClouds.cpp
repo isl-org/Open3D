@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "redwood/livingroom1-fragments-ply.zip"},
-        "36e0eb23a66ccad6af52c05f8390d33e",
-        true};
+        Open3DDownloadsPrefix() + "redwood/livingroom1-fragments-ply.zip",
+        "36e0eb23a66ccad6af52c05f8390d33e"};
 
 LivingRoomPointClouds::LivingRoomPointClouds(const std::string& data_root)
     : DownloadDataset("LivingRoomPointClouds", data_descriptor, data_root) {

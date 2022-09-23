@@ -34,21 +34,16 @@ namespace open3d {
 namespace data {
 
 const static std::vector<DataDescriptor> data_descriptors = {
-        {{Open3DDownloadsURLPrefix() + "20220301-data/bedroom01.zip"},
-         "2d1018ceeb72680f5d16b2f419da9bb1",
-         true},
-        {{Open3DDownloadsURLPrefix() + "20220301-data/bedroom02.zip"},
-         "5e6ffbccc0907dc5acc374aa76a79081",
-         true},
-        {{Open3DDownloadsURLPrefix() + "20220301-data/bedroom03.zip"},
-         "ebf13b89ec364b1788dd492c27b9b800",
-         true},
-        {{Open3DDownloadsURLPrefix() + "20220301-data/bedroom04.zip"},
-         "94c0e6c862a54588582b06520946fb15",
-         true},
-        {{Open3DDownloadsURLPrefix() + "20220301-data/bedroom05.zip"},
-         "54b927edb6fd61838025bc66ed767408",
-         true},
+        {Open3DDownloadsPrefix() + "20220301-data/bedroom01.zip",
+         "2d1018ceeb72680f5d16b2f419da9bb1"},
+        {Open3DDownloadsPrefix() + "20220301-data/bedroom02.zip",
+         "5e6ffbccc0907dc5acc374aa76a79081"},
+        {Open3DDownloadsPrefix() + "20220301-data/bedroom03.zip",
+         "ebf13b89ec364b1788dd492c27b9b800"},
+        {Open3DDownloadsPrefix() + "20220301-data/bedroom04.zip",
+         "94c0e6c862a54588582b06520946fb15"},
+        {Open3DDownloadsPrefix() + "20220301-data/bedroom05.zip",
+         "54b927edb6fd61838025bc66ed767408"},
 };
 
 BedroomRGBDImages::BedroomRGBDImages(const std::string& data_root)

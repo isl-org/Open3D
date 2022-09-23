@@ -33,9 +33,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220301-data/JackJackL515Bag.bag"},
-        "9f670dc92569b986b739c4179a659176",
-        false};
+        Open3DDownloadsPrefix() + "20220301-data/JackJackL515Bag.bag",
+        "9f670dc92569b986b739c4179a659176"};
 
 JackJackL515Bag::JackJackL515Bag(const std::string& data_root)
     : DownloadDataset("JackJackL515Bag", data_descriptor, data_root) {

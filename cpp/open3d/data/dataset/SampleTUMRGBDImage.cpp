@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220201-data/SampleTUMRGBDImage.zip"},
-        "91758d42b142dbad7b0d90e857ad47a8",
-        true};
+        Open3DDownloadsPrefix() + "20220201-data/SampleTUMRGBDImage.zip",
+        "91758d42b142dbad7b0d90e857ad47a8"};
 
 SampleTUMRGBDImage::SampleTUMRGBDImage(const std::string& data_root)
     : DownloadDataset("SampleTUMRGBDImage", data_descriptor, data_root) {

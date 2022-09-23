@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220301-data/FlightHelmetModel.zip"},
-        "597c3aa8b46955fff1949a8baa768bb4",
-        true};
+        Open3DDownloadsPrefix() + "20220301-data/FlightHelmetModel.zip",
+        "597c3aa8b46955fff1949a8baa768bb4"};
 
 FlightHelmetModel::FlightHelmetModel(const std::string& data_root)
     : DownloadDataset("FlightHelmetModel", data_descriptor, data_root) {

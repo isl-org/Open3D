@@ -31,6 +31,10 @@ target_sources(data PRIVATE
     dataset/PCDPointCloud.cpp
     dataset/PLYPointCloud.cpp
     dataset/PTSPointCloud.cpp
+    dataset/RedwoodIndoorLivingRoom1.cpp
+    dataset/RedwoodIndoorLivingRoom2.cpp
+    dataset/RedwoodIndoorOffice1.cpp
+    dataset/RedwoodIndoorOffice2.cpp
     dataset/SampleFountainRGBDImages.cpp
     dataset/SampleL515Bag.cpp
     dataset/SampleNYURGBDImage.cpp

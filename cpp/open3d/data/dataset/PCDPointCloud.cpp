@@ -34,9 +34,8 @@ namespace open3d {
 namespace data {
 
 const static DataDescriptor data_descriptor = {
-        {Open3DDownloadsURLPrefix() + "20220201-data/fragment.pcd"},
-        "f3a613fd2bdecd699aabdd858fb29606",
-        false};
+        Open3DDownloadsPrefix() + "20220201-data/fragment.pcd",
+        "f3a613fd2bdecd699aabdd858fb29606"};
 
 PCDPointCloud::PCDPointCloud(const std::string& data_root)
     : DownloadDataset("PCDPointCloud", data_descriptor, data_root) {
