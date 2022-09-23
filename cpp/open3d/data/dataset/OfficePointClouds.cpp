@@ -24,45 +24,37 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Download.h"
+#include <string>
+#include <vector>
 
 #include "open3d/data/Dataset.h"
-#include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
-#include "tests/Tests.h"
 
 namespace open3d {
-namespace tests {
+namespace data {
 
-TEST(Downloader, DownloadAndVerify) {
-    std::string url =
-            "https://github.com/isl-org/open3d_downloads/releases/download/"
-            "data-manager/test_data_00.zip";
-    std::string md5 = "996987b27c4497dbb951ec056c9684f4";
+const static DataDescriptor data_descriptor = {
+        {Open3DDownloadsURLPrefix() + "redwood/office1-fragments-ply.zip"},
+        "c519fe0495b3c731ebe38ae3a227ac25",
+        true};
 
-    std::string prefix = "temp_test";
-    std::string file_dir = data::LocateDataRoot() + "/" + prefix;
-    std::string file_path = file_dir + "/" + "test_data_00.zip";
-    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
-
-    // This download shall work.
-    EXPECT_EQ(utility::DownloadFromURL(url, md5, file_dir), file_path);
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(file_dir));
-    EXPECT_TRUE(utility::filesystem::FileExists(file_path));
-    EXPECT_EQ(utility::GetMD5(file_path), md5);
-
-    // This download shall be skipped as the file already exists (look at the
-    // message).
-    EXPECT_EQ(utility::DownloadFromURL(url, md5, file_dir), file_path);
-
-    // Mismatch md5.
-    EXPECT_ANY_THROW(utility::DownloadFromURL(
-            url, "00000000000000000000000000000000", file_dir));
-
-    // Clean up.
-    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
+OfficePointClouds::OfficePointClouds(const std::string& data_root)
+    : DownloadDataset("OfficePointClouds", data_descriptor, data_root) {
+    paths_.reserve(53);
+    for (int i = 0; i < 53; ++i) {
+        paths_.push_back(GetExtractDir() + "/cloud_bin_" + std::to_string(i) +
+                         ".ply");
+    }
 }
 
-}  // namespace tests
+std::string OfficePointClouds::GetPaths(size_t index) const {
+    if (index > 52) {
+        utility::LogError(
+                "Invalid index. Expected index between 0 to 52 but got {}.",
+                index);
+    }
+    return paths_[index];
+}
+
+}  // namespace data
 }  // namespace open3d

@@ -24,45 +24,49 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Download.h"
+#include <string>
+#include <vector>
 
 #include "open3d/data/Dataset.h"
-#include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
-#include "tests/Tests.h"
 
 namespace open3d {
-namespace tests {
+namespace data {
 
-TEST(Downloader, DownloadAndVerify) {
-    std::string url =
-            "https://github.com/isl-org/open3d_downloads/releases/download/"
-            "data-manager/test_data_00.zip";
-    std::string md5 = "996987b27c4497dbb951ec056c9684f4";
+const static std::vector<DataDescriptor> data_descriptors = {
+        {{Open3DDownloadsURLPrefix() + "20220301-data/bedroom01.zip"},
+         "2d1018ceeb72680f5d16b2f419da9bb1",
+         true},
+        {{Open3DDownloadsURLPrefix() + "20220301-data/bedroom02.zip"},
+         "5e6ffbccc0907dc5acc374aa76a79081",
+         true},
+        {{Open3DDownloadsURLPrefix() + "20220301-data/bedroom03.zip"},
+         "ebf13b89ec364b1788dd492c27b9b800",
+         true},
+        {{Open3DDownloadsURLPrefix() + "20220301-data/bedroom04.zip"},
+         "94c0e6c862a54588582b06520946fb15",
+         true},
+        {{Open3DDownloadsURLPrefix() + "20220301-data/bedroom05.zip"},
+         "54b927edb6fd61838025bc66ed767408",
+         true},
+};
 
-    std::string prefix = "temp_test";
-    std::string file_dir = data::LocateDataRoot() + "/" + prefix;
-    std::string file_path = file_dir + "/" + "test_data_00.zip";
-    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
+BedroomRGBDImages::BedroomRGBDImages(const std::string& data_root)
+    : DownloadDataset("BedroomRGBDImages", data_descriptors, data_root) {
+    color_paths_.reserve(21931);
+    depth_paths_.reserve(21931);
+    const std::string extract_dir = GetExtractDir();
+    const size_t n_zero = 6;
+    for (int i = 1; i < 21931; ++i) {
+        std::string idx = std::to_string(i);
+        idx = std::string(n_zero - std::min(n_zero, idx.length()), '0') + idx;
+        color_paths_.push_back(extract_dir + "/image/" + idx + ".jpg");
+        depth_paths_.push_back(extract_dir + "/depth/" + idx + ".png");
+    }
 
-    // This download shall work.
-    EXPECT_EQ(utility::DownloadFromURL(url, md5, file_dir), file_path);
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(file_dir));
-    EXPECT_TRUE(utility::filesystem::FileExists(file_path));
-    EXPECT_EQ(utility::GetMD5(file_path), md5);
-
-    // This download shall be skipped as the file already exists (look at the
-    // message).
-    EXPECT_EQ(utility::DownloadFromURL(url, md5, file_dir), file_path);
-
-    // Mismatch md5.
-    EXPECT_ANY_THROW(utility::DownloadFromURL(
-            url, "00000000000000000000000000000000", file_dir));
-
-    // Clean up.
-    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
+    trajectory_log_path_ = extract_dir + "/bedroom.log";
+    reconstruction_path_ = extract_dir + "/bedroom.ply";
 }
 
-}  // namespace tests
+}  // namespace data
 }  // namespace open3d

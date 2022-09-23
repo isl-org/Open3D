@@ -24,45 +24,41 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/utility/Download.h"
+#include <string>
+#include <vector>
 
 #include "open3d/data/Dataset.h"
-#include "open3d/utility/FileSystem.h"
-#include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
-#include "tests/Tests.h"
 
 namespace open3d {
-namespace tests {
+namespace data {
 
-TEST(Downloader, DownloadAndVerify) {
-    std::string url =
-            "https://github.com/isl-org/open3d_downloads/releases/download/"
-            "data-manager/test_data_00.zip";
-    std::string md5 = "996987b27c4497dbb951ec056c9684f4";
+const static DataDescriptor data_descriptor = {
+        {Open3DDownloadsURLPrefix() +
+         "20220301-data/SampleRedwoodRGBDImages.zip"},
+        "43971c5f690c9cfc52dda8c96a0140ee",
+        true};
 
-    std::string prefix = "temp_test";
-    std::string file_dir = data::LocateDataRoot() + "/" + prefix;
-    std::string file_path = file_dir + "/" + "test_data_00.zip";
-    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
+SampleRedwoodRGBDImages::SampleRedwoodRGBDImages(const std::string& data_root)
+    : DownloadDataset("SampleRedwoodRGBDImages", data_descriptor, data_root) {
+    const std::string extract_dir = GetExtractDir();
 
-    // This download shall work.
-    EXPECT_EQ(utility::DownloadFromURL(url, md5, file_dir), file_path);
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(file_dir));
-    EXPECT_TRUE(utility::filesystem::FileExists(file_path));
-    EXPECT_EQ(utility::GetMD5(file_path), md5);
+    color_paths_ = {
+            extract_dir + "/color/00000.jpg", extract_dir + "/color/00001.jpg",
+            extract_dir + "/color/00002.jpg", extract_dir + "/color/00003.jpg",
+            extract_dir + "/color/00004.jpg"};
 
-    // This download shall be skipped as the file already exists (look at the
-    // message).
-    EXPECT_EQ(utility::DownloadFromURL(url, md5, file_dir), file_path);
+    depth_paths_ = {
+            extract_dir + "/depth/00000.png", extract_dir + "/depth/00001.png",
+            extract_dir + "/depth/00002.png", extract_dir + "/depth/00003.png",
+            extract_dir + "/depth/00004.png"};
 
-    // Mismatch md5.
-    EXPECT_ANY_THROW(utility::DownloadFromURL(
-            url, "00000000000000000000000000000000", file_dir));
-
-    // Clean up.
-    EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
+    trajectory_log_path_ = extract_dir + "/trajectory.log";
+    odometry_log_path_ = extract_dir + "/odometry.log";
+    rgbd_match_path_ = extract_dir + "/rgbd.match";
+    reconstruction_path_ = extract_dir + "/example_tsdf_pcd.ply";
+    camera_intrinsic_path_ = extract_dir + "/camera_primesense.json";
 }
 
-}  // namespace tests
+}  // namespace data
 }  // namespace open3d
