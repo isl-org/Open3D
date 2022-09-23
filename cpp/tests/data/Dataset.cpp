@@ -115,7 +115,6 @@ TEST(Dataset, AvocadoModel) {
 }
 
 TEST(Dataset, DISABLED_BedroomRGBDImages) {
-    // DISABLED_BedroomRGBDImages
     const std::string prefix = "BedroomRGBDImages";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -604,8 +603,7 @@ TEST(Dataset, PaintedPlasterTexture) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
-TEST(Dataset, RedwoodLivingRoomPointClouds) {
-    // DISABLED_RedwoodLivingRoomPointClouds
+TEST(Dataset, DISABLED_RedwoodLivingRoomPointClouds) {
     const std::string prefix = "LivingRoomPointClouds";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
@@ -633,8 +631,7 @@ TEST(Dataset, RedwoodLivingRoomPointClouds) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
-TEST(Dataset, RedwoodOfficePointClouds) {
-    // DISABLED_RedwoodOfficePointClouds
+TEST(Dataset, DISABLED_RedwoodOfficePointClouds) {
     const std::string prefix = "OfficePointClouds";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";

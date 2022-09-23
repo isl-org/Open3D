@@ -208,9 +208,9 @@ public:
     std::string GetReconstructionPath() const { return reconstruction_path_; }
 
 private:
-    /// List of paths to color image samples of size 3000.
+    /// List of paths to color image samples of size 21931.
     std::vector<std::string> color_paths_;
-    /// List of paths to depth image samples of size 3000.
+    /// List of paths to depth image samples of size 21931.
     std::vector<std::string> depth_paths_;
 
     /// Path to camera trajectory log file `bedroom.log`.
@@ -725,7 +725,7 @@ public:
 
     /// \brief Returns List of paths to color image samples of size 33.
     std::vector<std::string> GetColorPaths() const { return color_paths_; }
-    /// \brief Returns List of paths to depth image samples of size 5.
+    /// \brief Returns List of paths to depth image samples of size 33.
     std::vector<std::string> GetDepthPaths() const { return depth_paths_; }
     /// \brief Returns path to camera poses at key frames log file `key.log`.
     std::string GetKeyframePosesLogPath() const {
