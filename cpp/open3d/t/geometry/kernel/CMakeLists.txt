@@ -9,6 +9,7 @@ target_sources(tgeometry_kernel PRIVATE
     TriangleMeshCPU.cpp
     Transform.cpp
     TransformCPU.cpp
+    UVUnwrapping.cpp
     VoxelBlockGrid.cpp
     VoxelBlockGridCPU.cpp
 )

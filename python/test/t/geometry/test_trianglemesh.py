@@ -348,6 +348,12 @@ def test_hole_filling():
     assert filled.to_legacy().is_watertight()
 
 
+def test_uvatlas():
+    box = o3d.t.geometry.TriangleMesh.create_box()
+    box.compute_uvatlas()
+    assert box.triangle['texture_uvs'].shape == (12, 3, 2)
+
+
 def test_bake_vertex_attr_textures():
     desired = np.array([
         [[0., 0., 0.], [0., 0., 0.], [1., 0.25, 0.75], [1., 0.75, 0.75],

@@ -354,6 +354,7 @@ void pybind_rendering_classes(py::module &m) {
             .def_readwrite("base_clearcoat_roughness",
                            &MaterialRecord::base_clearcoat_roughness)
             .def_readwrite("base_anisotropy", &MaterialRecord::base_anisotropy)
+            .def_readwrite("emissive_color", &MaterialRecord::emissive_color)
             .def_readwrite("thickness", &MaterialRecord::thickness)
             .def_readwrite("transmission", &MaterialRecord::transmission)
             .def_readwrite("absorption_color",

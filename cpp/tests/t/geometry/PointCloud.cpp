@@ -72,7 +72,7 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
 
     // ToString
     EXPECT_EQ(pcd.ToString(),
-              "PointCloud on CPU:0 [0 points ()] Attributes: None.");
+              "PointCloud on CPU:0 [0 points] Attributes: None.");
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {

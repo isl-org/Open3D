@@ -52,6 +52,7 @@ struct MaterialRecord {
     float base_clearcoat = 0.f;
     float base_clearcoat_roughness = 0.f;
     float base_anisotropy = 0.f;
+    Eigen::Vector4f emissive_color = Eigen::Vector4f(0.f, 0.f, 0.f, 1.f);
 
     // PBR material properties for refractive materials
     float thickness = 1.f;
