@@ -257,7 +257,7 @@ public:
     }
 
 private:
-    /// Map to path for the avialble filenames.
+    /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
@@ -464,7 +464,7 @@ public:
     }
 
 private:
-    /// Map to path for the avialble filenames.
+    /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
@@ -591,7 +591,7 @@ public:
     }
 
 private:
-    /// Map to path for the avialble filenames.
+    /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
@@ -618,7 +618,7 @@ public:
     }
 
 private:
-    /// Map to path for the avialble filenames.
+    /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
@@ -712,7 +712,7 @@ public:
     }
 
 private:
-    /// Map to path for the avialble filenames.
+    /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
@@ -883,7 +883,7 @@ public:
     }
 
 private:
-    /// Map to path for the avialble filenames.
+    /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
@@ -912,7 +912,7 @@ public:
     }
 
 private:
-    /// Map to path for the avialble filenames.
+    /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
@@ -941,7 +941,7 @@ public:
     }
 
 private:
-    /// Map to path for the avialble filenames.
+    /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
@@ -970,7 +970,7 @@ public:
     }
 
 private:
-    /// Map to path for the avialble filenames.
+    /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
@@ -999,7 +999,7 @@ public:
     }
 
 private:
-    /// Map to path for the avialble filenames.
+    /// Map to path for the available filenames.
     std::unordered_map<std::string, std::string> map_filename_to_path_;
 };
 
