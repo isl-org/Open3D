@@ -336,6 +336,43 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "RGBDImage", "to_legacy");
     docstring::ClassMethodDocInject(m, "RGBDImage", "__init__",
                                     map_shared_argument_docstrings);
+
+    // DepthNoiseSimulator
+    py::class_<DepthNoiseSimulator> depth_noise_simulator(
+            m, "DepthNoiseSimulator",
+            "Simulate depth image noise from a given noise distortion model.");
+    depth_noise_simulator.def(py::init<const std::string &>(),
+                              "noise_model_path"_a);
+    depth_noise_simulator.def("simulate", &DepthNoiseSimulator::Simulate,
+                              "im_src"_a, "depth_scale"_a = 1000.0f,
+                              "Apply noise model to a depth image.");
+    depth_noise_simulator.def(
+            "enable_deterministic_debug_mode",
+            &DepthNoiseSimulator::EnableDeterministicDebugMode,
+            "Enable deterministic debug mode. All normally distributed noise "
+            "will be replaced by 0.");
+    depth_noise_simulator.def_property_readonly(
+            "noise_model", &DepthNoiseSimulator::GetNoiseModel,
+            "The noise model tensor.");
+    docstring::ClassMethodDocInject(
+            m, "DepthNoiseSimulator", "__init__",
+            {{"noise_model_path",
+              "Path to the noise model file. See "
+              "http://redwood-data.org/indoor/dataset.html for the format. Or, "
+              "you may use one of our example datasets, e.g., "
+              "RedwoodIndoorLivingRoom1."}});
+    docstring::ClassMethodDocInject(
+            m, "DepthNoiseSimulator", "simulate",
+            {{"im_src",
+              "Source depth image, must be with dtype UInt16 or Float32, "
+              "channels==1."},
+             {"depth_scale",
+              "Scale factor to the depth image. As a sanity check, if the "
+              "dtype is Float32, the depth_scale must be 1.0. If the dtype is "
+              "is UInt16, the depth_scale is typically larger than 1.0, e.g. "
+              "it can be 1000.0."}});
+    docstring::ClassMethodDocInject(m, "DepthNoiseSimulator",
+                                    "enable_deterministic_debug_mode");
 }
 
 }  // namespace geometry
