@@ -39,43 +39,22 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
-          path: ~/.ccache
-          # We include the commit sha in the cache key, as new cache entries are
-          # only created if there is no existing entry for the key yet.
-          key: ${{ runner.os }}-ccache-${{ github.sha }}
-          # Restore any ccache cache entry, if none for
-          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
-          # Common prefix will be used so that ccache can be used across commits.
-          restore-keys: |
-            ${{ runner.os }}-ccache
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
-      - name: Install dependencies
-        run: |
-          brew install ccache pkg-config
-          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
-          PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
-          ccache -s
           ./util/run_ci.sh
           DEVEL_PKG_NAME="$(basename package/open3d-devel-*.tar.xz)"
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" >> $GITHUB_ENV
       - name: Build Open3D viewer app
         if: ${{ env.BUILD_SHARED_LIBS == 'OFF' }}
         run: |
-          PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
           pushd build
           make -j${NPROC} Open3DViewer
           pushd bin
           zip -rv open3d-app-macosx-10_15.zip Open3D.app
-          ccache -s
 
       - name: Upload package
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
@@ -140,20 +119,6 @@ jobs:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
-          path: ~/.ccache
-          # We include the commit sha in the cache key, as new cache entries are
-          # only created if there is no existing entry for the key yet.
-          key: ${{ runner.os }}-ccache-${{ github.sha }}
-          # Restore any ccache cache entry, if none for
-          # ${{ runner.os }}-ccache-${{ github.sha }} exists.
-          # Common prefix will be used so that ccache can be used across commits.
-          restore-keys: |
-            ${{ runner.os }}-ccache
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -169,16 +134,11 @@ jobs:
           cmake --version
           source util/ci_utils.sh
           install_python_dependencies
-          brew install ccache
-          ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel
         run: |
-          PATH=/usr/local/var/homebrew/linked/ccache/libexec:$PATH
-          ccache -s
           source util/ci_utils.sh
           build_pip_package
-          ccache -s
           PIP_PKG_NAME="$(basename build/lib/python_package/pip_package/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
 
