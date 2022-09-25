@@ -28,6 +28,8 @@ import open3d as o3d
 import open3d.core as o3c
 import numpy as np
 import pytest
+import pickle
+import tempfile
 
 import sys
 import os
@@ -418,3 +420,19 @@ def test_extrude_linear():
     ans = triangle.extrude_linear([0, 0, 1])
     assert ans.vertex.positions.shape == (6, 3)
     assert ans.triangle.indices.shape == (8, 3)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_pickle(device):
+    mesh = o3d.t.geometry.TriangleMesh.create_box().to(device)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_name = f"{temp_dir}/mesh.pkl"
+        pickle.dump(mesh, open(file_name, "wb"))
+        mesh_load = pickle.load(open(file_name, "rb"))
+        assert mesh_load.device == device
+        assert mesh_load.vertex.positions.dtype == o3c.float32
+        assert mesh_load.triangle.indices.dtype == o3c.int64
+        np.testing.assert_equal(mesh_load.vertex.positions.cpu().numpy(),
+                                mesh.vertex.positions.cpu().numpy())
+        np.testing.assert_equal(mesh_load.triangle.indices.cpu().numpy(),
+                                mesh.triangle.indices.cpu().numpy())
