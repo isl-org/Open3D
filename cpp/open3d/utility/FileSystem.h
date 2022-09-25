@@ -72,6 +72,11 @@ bool ChangeWorkingDirectory(const std::string &directory);
 
 bool DirectoryExists(const std::string &directory);
 
+// Return true if the directory is present and empty. Return false if the
+// directory is present but not empty. Throw an exception if the directory is
+// not present.
+bool DirectoryIsEmpty(const std::string &directory);
+
 bool MakeDirectory(const std::string &directory);
 
 bool MakeDirectoryHierarchy(const std::string &directory);

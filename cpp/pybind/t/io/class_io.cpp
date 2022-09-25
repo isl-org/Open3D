@@ -30,6 +30,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
+#include "open3d/t/io/TriangleMeshIO.h"
 #include "pybind/docstring.h"
 #include "pybind/t/io/io.h"
 
@@ -86,6 +87,32 @@ static const std::unordered_map<std::string, std::string>
 };
 
 void pybind_class_io(py::module &m_io) {
+    // open3d::t::geometry::Image
+    m_io.def(
+            "read_image",
+            [](const std::string &filename) {
+                py::gil_scoped_release release;
+                geometry::Image image;
+                ReadImage(filename, image);
+                return image;
+            },
+            "Function to read image from file.", "filename"_a);
+    docstring::FunctionDocInject(m_io, "read_image",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "write_image",
+            [](const std::string &filename, const geometry::Image &image,
+               int quality) {
+                py::gil_scoped_release release;
+                return WriteImage(filename, image, quality);
+            },
+            "Function to write Image to file.", "filename"_a, "image"_a,
+            "quality"_a = kOpen3DImageIODefaultQuality);
+    docstring::FunctionDocInject(m_io, "write_image",
+                                 map_shared_argument_docstrings);
+
+    // open3d::t::geometry::PointCloud
     m_io.def(
             "read_point_cloud",
             [](const std::string &filename, const std::string &format,
@@ -120,28 +147,42 @@ void pybind_class_io(py::module &m_io) {
     docstring::FunctionDocInject(m_io, "write_point_cloud",
                                  map_shared_argument_docstrings);
 
+    // open3d::geometry::TriangleMesh
     m_io.def(
-            "read_image",
-            [](const std::string &filename) {
+            "read_triangle_mesh",
+            [](const std::string &filename, bool enable_post_processing,
+               bool print_progress) {
                 py::gil_scoped_release release;
-                geometry::Image image;
-                ReadImage(filename, image);
-                return image;
+                t::geometry::TriangleMesh mesh;
+                open3d::io::ReadTriangleMeshOptions opt;
+                opt.enable_post_processing = enable_post_processing;
+                opt.print_progress = print_progress;
+                ReadTriangleMesh(filename, mesh, opt);
+                return mesh;
             },
-            "Function to read image from file.", "filename"_a);
-    docstring::FunctionDocInject(m_io, "read_image",
+            "Function to read TriangleMesh from file", "filename"_a,
+            "enable_post_processing"_a = false, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "read_triangle_mesh",
                                  map_shared_argument_docstrings);
 
     m_io.def(
-            "write_image",
-            [](const std::string &filename, const geometry::Image &image,
-               int quality) {
+            "write_triangle_mesh",
+            [](const std::string &filename,
+               const t::geometry::TriangleMesh &mesh, bool write_ascii,
+               bool compressed, bool write_vertex_normals,
+               bool write_vertex_colors, bool write_triangle_uvs,
+               bool print_progress) {
                 py::gil_scoped_release release;
-                return WriteImage(filename, image, quality);
+                return WriteTriangleMesh(filename, mesh, write_ascii,
+                                         compressed, write_vertex_normals,
+                                         write_vertex_colors,
+                                         write_triangle_uvs, print_progress);
             },
-            "Function to write Image to file.", "filename"_a, "image"_a,
-            "quality"_a = kOpen3DImageIODefaultQuality);
-    docstring::FunctionDocInject(m_io, "write_image",
+            "Function to write TriangleMesh to file", "filename"_a, "mesh"_a,
+            "write_ascii"_a = false, "compressed"_a = false,
+            "write_vertex_normals"_a = true, "write_vertex_colors"_a = true,
+            "write_triangle_uvs"_a = true, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "write_triangle_mesh",
                                  map_shared_argument_docstrings);
 }
 
