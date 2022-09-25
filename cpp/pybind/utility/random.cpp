@@ -40,53 +40,6 @@ void pybind_random(py::module &m) {
 
     docstring::FunctionDocInject(m_submodule, "seed",
                                  {{"seed", "Random seed value."}});
-
-    // open3d::utility::random::UniformIntGenerator
-    py::class_<UniformIntGenerator<int>> uniform_int_generator(
-            m_submodule, "UniformIntGenerator",
-            "Generate uniformly distributed integer values in [low, high). "
-            "This class is globally seeded by open3d.utility.random.seed().");
-    uniform_int_generator.def(py::init<int, int>(), "low"_a, "high"_a);
-    uniform_int_generator.def("__call__", &UniformIntGenerator<int>::operator(),
-                              "Generate a random number.");
-    docstring::ClassMethodDocInject(
-            m, "UniformIntGenerator", "__init__",
-            {{"low", "Lower bound of the range (inclusive)."},
-             {"high", "Upper bound of the range (exclusive)."}});
-    docstring::ClassMethodDocInject(m, "UniformIntGenerator", "__call__");
-
-    // open3d::utility::random::UniformRealGenerator
-    py::class_<UniformRealGenerator<double>> uniform_real_generator(
-            m_submodule, "UniformRealGenerator",
-            "Generate uniformly distributed floating point values in [low, "
-            "high). This class is globally seeded by "
-            "open3d.utility.random.seed().");
-    uniform_real_generator.def(py::init<double, double>(), "low"_a = 0.0,
-                               "high"_a = 1.0);
-    uniform_real_generator.def("__call__",
-                               &UniformRealGenerator<double>::operator(),
-                               "Generate a random number.");
-    docstring::ClassMethodDocInject(
-            m, "UniformRealGenerator", "__init__",
-            {{"low", "Lower bound of the range (inclusive)."},
-             {"high", "Upper bound of the range (exclusive)."}});
-    docstring::ClassMethodDocInject(m, "UniformRealGenerator", "__call__");
-
-    // open3d::utility::random::NormalGenerator
-    py::class_<NormalGenerator<double>> normal_generator(
-            m_submodule, "NormalGenerator",
-            "Generate normally distributed floating point values with mean and "
-            "standard deviation). This class is globally seeded by "
-            "open3d.utility.random.seed().");
-    normal_generator.def(py::init<double, double>(), "mean"_a = 0.0,
-                         "stddev"_a = 1.0);
-    normal_generator.def("__call__", &NormalGenerator<double>::operator(),
-                         "Generate a random number.");
-    docstring::ClassMethodDocInject(
-            m_submodule, "NormalGenerator", "__init__",
-            {{"mean", "Mean of the normal distribution."},
-             {"stddev", "Standard deviation of the normal distribution."}});
-    docstring::ClassMethodDocInject(m_submodule, "NormalGenerator", "__call__");
 }
 
 }  // namespace random
