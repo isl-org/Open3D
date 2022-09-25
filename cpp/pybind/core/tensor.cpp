@@ -374,7 +374,7 @@ void pybind_core_tensor(py::module& m) {
                             "2.");
                 }
                 const Device& device = t[0].cast<Device>();
-                if (device.IsCUDA() && !device.IsAvailable()) {
+                if (!device.IsAvailable()) {
                     utility::LogWarning(
                             "Device {} is not available, tensor will be "
                             "created on CPU.",
