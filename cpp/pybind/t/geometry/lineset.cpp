@@ -131,8 +131,7 @@ and ``device`` as the tensor. The device for ``point_positions`` must be consist
                 if (!device.IsAvailable()) {
                     utility::LogWarning(
                             "Device ({}) is not available. LineSet will be "
-                            "created on "
-                            "CPU.",
+                            "created on CPU.",
                             device.ToString());
                     line_set.To(core::Device("CPU:0"));
                 }

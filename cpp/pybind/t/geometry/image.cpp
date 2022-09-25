@@ -312,8 +312,7 @@ void pybind_image(py::module &m) {
                         if (t.size() != 3) {
                             utility::LogError(
                                     "Cannot unpickle RGBDImage! Expecting a "
-                                    "tuple of size "
-                                    "3.");
+                                    "tuple of size 3.");
                         }
 
                         return RGBDImage(t[0].cast<Image>(), t[1].cast<Image>(),
