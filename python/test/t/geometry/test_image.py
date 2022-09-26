@@ -28,6 +28,7 @@ import open3d as o3d
 import open3d.core as o3c
 import numpy as np
 import pytest
+import pickle
 import tempfile
 
 import sys
@@ -212,3 +213,14 @@ def test_apply_depth_noise_model():
     im_dst = (im_dst * depth_scale).astype(np.uint16).astype(
         np.float32) / depth_scale  # Simulate rounding integers.
     np.testing.assert_allclose(im_dst, im_dst_gt)
+
+
+@pytest.mark.parametrize("device", list_devices())
+def test_pickle(device):
+    img = o3d.t.geometry.Image(o3c.Tensor.ones((10, 10, 3), o3c.uint8, device))
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_name = f"{temp_dir}/img.pkl"
+        pickle.dump(img, open(file_name, "wb"))
+        img_load = pickle.load(open(file_name, "rb"))
+        assert img_load.as_tensor().allclose(img.as_tensor())
+        assert img_load.device == img.device and img_load.dtype == o3c.uint8
