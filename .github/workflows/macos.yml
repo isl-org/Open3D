@@ -25,7 +25,7 @@ env:
 
 jobs:
   MacOS:
-    runs-on: macos-10.15
+    runs-on: macos-12
     strategy:
       fail-fast: false
       matrix:
@@ -111,7 +111,7 @@ jobs:
 
   build-wheel:
     name: Build wheel
-    runs-on: macos-10.15
+    runs-on: macos-12
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
@@ -209,7 +209,7 @@ jobs:
 
   test-wheel:
     name: Test wheel
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: [build-wheel]
     strategy:
       fail-fast: false
