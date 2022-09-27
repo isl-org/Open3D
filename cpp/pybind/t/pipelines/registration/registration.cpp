@@ -225,18 +225,8 @@ void pybind_registration_classes(py::module &m) {
                    return new TransformationEstimationForColoredICP(
                            lambda_geometric, kernel);
                }),
-               "lambda_geometric"_a, "kernel"_a)
-            .def(py::init([](const double lambda_geometric) {
-                     return new TransformationEstimationForColoredICP(
-                             lambda_geometric);
-                 }),
-                 "lambda_geometric"_a)
-            .def(py::init([](const RobustKernel kernel) {
-                     auto te = TransformationEstimationForColoredICP();
-                     te.kernel_ = kernel;
-                     return te;
-                 }),
-                 "kernel"_a)
+               "lambda_geometric"_a=0.968, 
+               "kernel"_a=RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0))
             .def("__repr__",
                  [](const TransformationEstimationForColoredICP &te) {
                      return std::string(
