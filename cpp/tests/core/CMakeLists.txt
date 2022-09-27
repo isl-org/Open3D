@@ -19,6 +19,7 @@ target_sources(tests PRIVATE
     TensorFunction.cpp
     TensorList.cpp
     TensorObject.cpp
+    SYCLUtils.cpp
 )
 
 if (BUILD_CUDA_MODULE)
@@ -33,11 +34,5 @@ if (BUILD_ISPC_MODULE)
     target_sources(tests PRIVATE
         Indexer.ispc
         ParallelFor.ispc
-    )
-endif()
-
-if (BUILD_SYCL_MODULE)
-    target_sources(tests PRIVATE
-        SYCLUtils.cpp
     )
 endif()

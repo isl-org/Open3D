@@ -151,7 +151,8 @@ void install_cleanup_atexit() {
     }
 }
 
-void InitializeForPython(std::string resource_path /*= ""*/) {
+void InitializeForPython(std::string resource_path /*= ""*/,
+                         bool headless /*= false*/) {
     if (resource_path.empty()) {
         // We need to find the resources directory. Fortunately,
         // Python knows where the module lives (open3d.__file__
@@ -165,7 +166,11 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
         resource_path = module_path + "/resources";
     }
     Application::GetInstance().Initialize(resource_path.c_str());
-    install_cleanup_atexit();
+    // NOTE: The PyOffscreenRenderer takes care of cleaning itself up so the
+    // atext is not necessary
+    if (!headless) {
+        install_cleanup_atexit();
+    }
 }
 
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(

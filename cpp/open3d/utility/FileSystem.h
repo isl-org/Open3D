@@ -72,6 +72,11 @@ bool ChangeWorkingDirectory(const std::string &directory);
 
 bool DirectoryExists(const std::string &directory);
 
+// Return true if the directory is present and empty. Return false if the
+// directory is present but not empty. Throw an exception if the directory is
+// not present.
+bool DirectoryIsEmpty(const std::string &directory);
+
 bool MakeDirectory(const std::string &directory);
 
 bool MakeDirectoryHierarchy(const std::string &directory);
@@ -105,6 +110,14 @@ std::string GetIOErrorString(const int errnoVal);
 bool FReadToBuffer(const std::string &path,
                    std::vector<char> &bytes,
                    std::string *errorStr);
+
+std::string JoinPath(const std::vector<std::string> &path_components);
+
+std::string JoinPath(const std::string &path_component1,
+                     const std::string &path_component2);
+
+std::string AddIfExist(const std::string &path,
+                       const std::vector<std::string> &folder_names);
 
 /// RAII Wrapper for C FILE*
 /// Throws exceptions in situations where the caller is not usually going to

@@ -49,7 +49,7 @@ namespace geometry {
 class RaycastingScene {
 public:
     /// \brief Default Constructor.
-    RaycastingScene();
+    RaycastingScene(int64_t nthreads = 0);
 
     ~RaycastingScene();
 
@@ -137,6 +137,10 @@ public:
     ///           {..}.
     ///         - \b primitive_ids A tensor with the primitive IDs, which
     ///           corresponds to the triangle index. The shape is {..}.
+    ///         - \b primitive_uvs A tensor with the barycentric coordinates of
+    ///           the closest points within the triangles. The shape is {.., 2}.
+    ///         - \b primitive_normals A tensor with the normals of the
+    ///           closest triangle . The shape is {.., 3}.
     std::unordered_map<std::string, core::Tensor> ComputeClosestPoints(
             const core::Tensor &query_points, const int nthreads = 0);
 

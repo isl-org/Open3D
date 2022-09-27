@@ -35,6 +35,8 @@ else:
     from open3d.cpu.pybind.visualization import *
 
 from ._external_visualizer import *
+from .draw_plotly import draw_plotly
+from .draw_plotly import draw_plotly_server
 
 if "@BUILD_GUI@" == "ON":
     from .draw import draw

@@ -33,6 +33,7 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
+void pybind_feature(py::module &m);
 void pybind_registration(py::module &m);
 void pybind_robust_kernels(py::module &m);
 

@@ -24,36 +24,4 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/pipelines/registration/ColoredICP.h"
-
-#include "open3d/io/PointCloudIO.h"
-#include "tests/Tests.h"
-
-namespace open3d {
-namespace tests {
-
-TEST(ColoredICP, RegistrationColoredICP) {
-    data::DemoICPPointClouds dataset;
-    std::shared_ptr<geometry::PointCloud> src =
-            io::CreatePointCloudFromFile(dataset.GetPaths()[0]);
-    std::shared_ptr<geometry::PointCloud> dst =
-            io::CreatePointCloudFromFile(dataset.GetPaths()[1]);
-
-    Eigen::Matrix4d transformation = Eigen::Matrix4d::Identity();
-    auto result = pipelines::registration::RegistrationColoredICP(
-            *src, *dst, 0.07, transformation,
-            pipelines::registration::TransformationEstimationForColoredICP(),
-            pipelines::registration::ICPConvergenceCriteria(1e-6, 1e-6, 50));
-    transformation = result.transformation_;
-
-    Eigen::Matrix4d ref_transformation;
-    ref_transformation << 0.748899, 0.00425476, 0.662671, -0.275425, 0.115777,
-            0.98376, -0.137159, 0.108227, -0.652492, 0.17944, 0.736244, 1.21057,
-            0, 0, 0, 1;
-    ExpectEQ(ref_transformation, transformation, /*threshold=*/1e-4);
-}
-
-TEST(ColoredICP, DISABLED_ICPConvergenceCriteria) { NotImplemented(); }
-
-}  // namespace tests
-}  // namespace open3d
+#include "open3d/t/pipelines/kernel/FeatureImpl.h"

@@ -57,8 +57,8 @@ TEST(TriangleMeshIO, ReadWriteTriangleMeshPLY) {
 }
 
 TEST(TriangleMeshIO, ReadWriteTriangleMeshOBJ) {
-    auto cube_mesh = t::geometry::TriangleMesh::FromLegacy(
-            *geometry::TriangleMesh::CreateBox());
+    auto cube_mesh = t::geometry::TriangleMesh::CreateBox();
+
     const std::string filename =
             utility::filesystem::GetTempDirectoryPath() + "/cube.obj";
     EXPECT_TRUE(t::io::WriteTriangleMesh(filename, cube_mesh));

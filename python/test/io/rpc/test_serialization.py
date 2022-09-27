@@ -104,7 +104,7 @@ def test_set_mesh_data_deserialization():
     assert path == "pcd"
     assert time == 123
     assert isinstance(geom, o3d.t.geometry.PointCloud)
-    np.testing.assert_equal(geom.point['positions'].numpy(), verts)
+    np.testing.assert_equal(geom.point.positions.numpy(), verts)
     for key, value in vert_attrs.items():
         np.testing.assert_equal(geom.point[key].numpy(), value)
 
@@ -124,8 +124,8 @@ def test_set_mesh_data_deserialization():
     assert path == "trimesh"
     assert time == 123
     assert isinstance(geom, o3d.t.geometry.TriangleMesh)
-    np.testing.assert_equal(geom.vertex['positions'].numpy(), verts)
-    np.testing.assert_equal(geom.triangle['indices'].numpy(), tris)
+    np.testing.assert_equal(geom.vertex.positions.numpy(), verts)
+    np.testing.assert_equal(geom.triangle.indices.numpy(), tris)
     for key, value in vert_attrs.items():
         np.testing.assert_equal(geom.vertex[key].numpy(), value)
     for key, value in tri_attrs.items():
@@ -171,8 +171,8 @@ def test_set_mesh_data_deserialization():
     assert path == "lines"
     assert time == 123
     assert isinstance(geom, o3d.t.geometry.LineSet)
-    np.testing.assert_equal(geom.point['positions'].numpy(), verts)
-    np.testing.assert_equal(geom.line['indices'].numpy(), lines)
+    np.testing.assert_equal(geom.point.positions.numpy(), verts)
+    np.testing.assert_equal(geom.line.indices.numpy(), lines)
     for key, value in vert_attrs.items():
         np.testing.assert_equal(geom.point[key].numpy(), value)
     for key, value in line_attrs.items():
@@ -261,7 +261,7 @@ def test_recv_msgpack():
 
     out_o3d = o3d.io.rpc.data_buffer_to_meta_geometry(data)
     assert out_o3d[:2] == ("test", 0.)
-    assert np.allclose(out_o3d[2].point["positions"].numpy(), verts)
+    assert np.allclose(out_o3d[2].point.positions.numpy(), verts)
     assert np.isclose(out_o3d[2].material.scalar_properties['roughness'],
                       roughness)
     assert np.allclose(out_o3d[2].material.vector_properties['base_color'],

@@ -30,7 +30,7 @@
 #include "open3d/utility/Logging.h"
 #include "pybind/camera/camera.h"
 #include "pybind/core/core.h"
-#include "pybind/data/data.h"
+#include "pybind/data/dataset.h"
 #include "pybind/geometry/geometry.h"
 #include "pybind/io/io.h"
 #include "pybind/ml/ml.h"

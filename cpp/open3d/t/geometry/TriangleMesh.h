@@ -26,9 +26,12 @@
 
 #pragma once
 
+#include <list>
+
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
@@ -36,6 +39,8 @@
 namespace open3d {
 namespace t {
 namespace geometry {
+
+class LineSet;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -140,6 +145,9 @@ public:
     /// Getter for vertex_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetVertexAttr() const { return vertex_attr_; }
 
+    /// Getter for vertex_attr_ TensorMap.
+    TensorMap &GetVertexAttr() { return vertex_attr_; }
+
     /// Get vertex attributes in vertex_attr_. Throws exception if the attribute
     /// does not exist.
     ///
@@ -162,6 +170,9 @@ public:
 
     /// Getter for triangle_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetTriangleAttr() const { return triangle_attr_; }
+
+    /// Getter for triangle_attr_ TensorMap.
+    TensorMap &GetTriangleAttr() { return triangle_attr_; }
 
     /// Get triangle attributes in triangle_attr_. Throws exception if the
     /// attribute does not exist.
@@ -368,6 +379,240 @@ public:
     /// Convenience function.
     bool HasTriangleColors() const { return HasTriangleAttr("colors"); }
 
+    /// Create a box triangle mesh. One vertex of the box will be placed at
+    /// the origin and the box aligns with the positive x, y, and z axes.
+    /// \param width is x-directional length.
+    /// \param height is y-directional length.
+    /// \param depth is z-directional length.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateBox(
+            double width = 1.0,
+            double height = 1.0,
+            double depth = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a sphere triangle mesh. The sphere with radius will be centered
+    /// at (0, 0, 0). Its axis is aligned with z-axis.
+    /// \param radius defines the radius of the sphere.
+    /// \param resolution defines the resolution of the sphere. The longitudes
+    /// will be split into resolution segments (i.e. there are resolution + 1
+    /// latitude lines including the north and south pole). The latitudes will
+    /// be split into `2 * resolution segments (i.e. there are 2 * resolution
+    /// longitude lines.)
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateSphere(
+            double radius = 1.0,
+            int resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a tetrahedron triangle mesh. The centroid of the mesh will be
+    /// placed at (0, 0, 0) and the vertices have a distance of radius to the
+    /// center.
+    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateTetrahedron(
+            double radius = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a octahedron triangle mesh. The centroid of the mesh will be
+    /// placed at (0, 0, 0) and the vertices have a distance of radius to the
+    /// center.
+    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateOctahedron(
+            double radius = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a icosahedron triangle mesh. The centroid of the mesh will be
+    /// placed at (0, 0, 0) and the vertices have a distance of radius to the
+    /// center.
+    /// \param radius defines the distance from centroid to mesh vetices.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateIcosahedron(
+            double radius = 1.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a cylinder triangle mesh.
+    /// \param radius defines the radius of the cylinder.
+    /// \param height defines the height of the cylinder. The axis of the
+    /// cylinder will be from (0, 0, -height/2) to (0, 0, height/2).
+    /// \param resolution defines the resolution of the cylinder. The circle
+    /// will be split into resolution segments
+    /// \param split defines the number of segments along the height direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateCylinder(
+            double radius = 1.0,
+            double height = 2.0,
+            int resolution = 20,
+            int split = 4,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a cone triangle mesh.
+    /// \param radius defines the radius of the cone.
+    /// \param height defines the height of the cone. The axis of the
+    /// cone will be from (0, 0, 0) to (0, 0, height).
+    /// \param resolution defines the resolution of the cone. The circle
+    /// will be split into resolution segments.
+    /// \param split defines the number of segments along the height direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateCone(
+            double radius = 1.0,
+            double height = 2.0,
+            int resolution = 20,
+            int split = 1,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a torus triangle mesh.
+    /// \param torus_radius defines the radius from the center of the
+    /// torus to the center of the tube.
+    /// \param tube_radius defines the radius of the torus tube.
+    /// \param radial_resolution defines the number of segments along the
+    /// radial direction.
+    /// \param tubular_resolution defines the number of segments along
+    /// the tubular direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateTorus(
+            double torus_radius = 1.0,
+            double tube_radius = 0.5,
+            int radial_resolution = 30,
+            int tubular_resolution = 20,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a arrow triangle mesh.
+    /// \param cylinder_radius defines the radius of the cylinder.
+    /// \param cone_radius defines the radius of the cone.
+    /// \param cylinder_height defines the height of the cylinder. The axis of
+    /// cylinder is from (0, 0, 0) to (0, 0, cylinder_height).
+    /// \param cone_height defines the height of the cone. The axis of the
+    /// cone will be from (0, 0, cylinder_height) to (0, 0, cylinder_height +
+    /// cone_height). \param resolution defines the resolution of the cone. The
+    /// circle will be split into resolution segments. \param cylinder_split
+    /// defines the number of segments along the cylinder_height direction.
+    /// \param cone_split defines the number of segments along
+    /// the cone_height direction.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateArrow(
+            double cylinder_radius = 1.0,
+            double cone_radius = 1.5,
+            double cylinder_height = 5.0,
+            double cone_height = 4.0,
+            int resolution = 20,
+            int cylinder_split = 4,
+            int cone_split = 1,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a coordinate frame mesh.
+    /// \param size defines the size of the coordinate frame.
+    /// \param origin defines the origin of the coordinate frame.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateCoordinateFrame(
+            double size = 1.0,
+            const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0),
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a Mobius strip.
+    /// \param length_split defines the number of segments along the Mobius
+    /// strip.
+    /// \param width_split defines the number of segments along the width
+    /// of the Mobius strip.
+    /// \param twists defines the number of twists of the strip.
+    /// \param radius defines the radius of the Mobius strip.
+    /// \param flatness controls the height of the strip.
+    /// \param width controls the width of the Mobius strip.
+    /// \param scale is used to scale the entire Mobius strip.
+    /// \param float_dtype Float32 or Float64, used to store floating point
+    /// values, e.g. vertices, normals, colors.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateMobius(
+            int length_split = 70,
+            int width_split = 15,
+            int twists = 1,
+            double radius = 1,
+            double flatness = 1,
+            double width = 1,
+            double scale = 1,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
+    /// Create a text triangle mesh.
+    /// \param text The text for generating the mesh. ASCII characters 32-126
+    /// are supported (includes alphanumeric characters and punctuation). In
+    /// addition the line feed '\n' is supported to start a new line.
+    /// \param depth The depth of the generated mesh. If depth is 0 then a flat
+    /// mesh will be generated.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateText(
+            const std::string &text,
+            double depth = 0.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
@@ -439,6 +684,18 @@ public:
     /// \return New triangle mesh clipped with the plane.
     TriangleMesh ClipPlane(const core::Tensor &point,
                            const core::Tensor &normal) const;
+
+    /// \brief Extract contour slices given a plane.
+    /// This method extracts slices as LineSet from the mesh at specific
+    /// contour values defined by the specified plane.
+    /// \param point A point on the plane as [Tensor of dim {3}].
+    /// \param normal The normal of the plane as [Tensor of dim {3}].
+    /// \param contour_values Contour values at which slices will be generated.
+    /// The value describes the signed distance to the plane.
+    /// \return LineSet with the extracted contours.
+    LineSet SlicePlane(const core::Tensor &point,
+                       const core::Tensor &normal,
+                       const std::vector<double> contour_values = {0.0}) const;
 
     core::Device GetDevice() const override { return device_; }
 
@@ -529,6 +786,127 @@ public:
     /// \return The mesh describing the difference volume.
     TriangleMesh BooleanDifference(const TriangleMesh &mesh,
                                    double tolerance = 1e-6) const;
+
+    /// Create an axis-aligned bounding box from vertex attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// Fill holes by triangulating boundary edges.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param hole_size This is the approximate threshold for filling holes.
+    /// The value describes the maximum radius of holes to be filled.
+    ///
+    /// \return New mesh after filling holes.
+    TriangleMesh FillHoles(double hole_size = 1e6) const;
+
+    /// Creates an UV atlas and adds it as triangle attr 'texture_uvs' to the
+    /// mesh.
+    ///
+    /// Input meshes must be manifold for this method to work.
+    ///
+    /// The algorithm is based on:
+    /// - Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using
+    /// Spectral Analysis", Eurographics Symposium on Geometry Processing (2004)
+    /// - Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The target size of the texture (size x size). The uv
+    /// coordinates will still be in the range [0..1] but parameters like gutter
+    /// use pixels as units.
+    /// \param gutter This is the space around the uv islands in pixels.
+    /// \param max_stretch The maximum amount of stretching allowed. The
+    /// parameter range is [0..1] with 0 meaning no stretch allowed.
+    void ComputeUVAtlas(size_t size = 512,
+                        float gutter = 1.0f,
+                        float max_stretch = 1.f / 6);
+
+    /// Bake vertex attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    /// Only float type attributes can be baked to textures.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeVertexAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &vertex_attr = {},
+            double margin = 2.,
+            double fill = 0.,
+            bool update_material = true);
+
+    /// Bake triangle attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeTriangleAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &triangle_attr = {},
+            double margin = 2.,
+            double fill = 0.,
+            bool update_material = true);
+
+    /// Sweeps the triangle mesh rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A triangle mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeRotation(double angle,
+                                 const core::Tensor &axis,
+                                 int resolution = 16,
+                                 double translation = 0.0,
+                                 bool capping = true) const;
+
+    /// Sweeps the triangle mesh along a direction vector.
+    /// \param vector The direction vector.
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A triangle
+    /// mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeLinear(const core::Tensor &vector,
+                               double scale = 1.0,
+                               bool capping = true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

@@ -34,6 +34,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 
 namespace open3d {
@@ -202,6 +203,27 @@ open3d::geometry::LineSet LineSet::ToLegacy() const {
                         GetLineColors());
     }
     return lineset_legacy;
+}
+
+AxisAlignedBoundingBox LineSet::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
+TriangleMesh LineSet::ExtrudeRotation(double angle,
+                                      const core::Tensor &axis,
+                                      int resolution,
+                                      double translation,
+                                      bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution,
+                                       translation, capping);
+}
+
+TriangleMesh LineSet::ExtrudeLinear(const core::Tensor &vector,
+                                    double scale,
+                                    bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
 }
 
 }  // namespace geometry

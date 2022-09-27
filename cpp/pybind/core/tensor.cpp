@@ -193,6 +193,8 @@
             },                                                                 \
             "dim"_a = py::none(), "keepdim"_a = false);
 
+// TODO (rishabh): add this behavior to the cpp implementation. Refer to the
+// Tensor::Any and Tensor::All ops.
 #define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)              \
     tensor.def(                                                      \
             #py_name,                                                \
@@ -353,6 +355,36 @@ void pybind_core_tensor(py::module& m) {
     BindTensorFullCreation<uint64_t>(m, tensor);
     BindTensorFullCreation<bool>(m, tensor);
     docstring::ClassMethodDocInject(m, "Tensor", "full", argument_docs);
+
+    // Pickling support.
+    // The tensor will be on the same device after deserialization.
+    // Non contiguous tensors will be converted to contiguous tensors after
+    // deserialization.
+    tensor.def(py::pickle(
+            [](const Tensor& t) {
+                // __getstate__
+                return py::make_tuple(t.GetDevice(),
+                                      TensorToPyArray(t.To(Device("CPU:0"))));
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 2) {
+                    utility::LogError(
+                            "Cannot unpickle Tensor! Expecting a tuple of size "
+                            "2.");
+                }
+                const Device& device = t[0].cast<Device>();
+                if (!device.IsAvailable()) {
+                    utility::LogWarning(
+                            "Device {} is not available, tensor will be "
+                            "created on CPU.",
+                            device.ToString());
+                    return PyArrayToTensor(t[1].cast<py::array>(), true);
+                } else {
+                    return PyArrayToTensor(t[1].cast<py::array>(), true)
+                            .To(device);
+                }
+            }));
 
     tensor.def_static(
             "eye",
@@ -867,15 +899,15 @@ Ref:
               "int64 Tensors, each containing the indices of the non-zero "
               "elements in each dimension."}});
     tensor.def(
-            "all", &Tensor::All,
+            "all", &Tensor::All, py::call_guard<py::gil_scoped_release>(),
+            py::arg("dim") = py::none(), py::arg("keepdim") = false,
             "Returns true if all elements in the tensor are true. Only works "
-            "for boolean tensors. This function does not take reduction "
-            "dimensions, and the reduction is applied to all dimensions.");
+            "for boolean tensors.");
     tensor.def(
-            "any", &Tensor::Any,
+            "any", &Tensor::Any, py::call_guard<py::gil_scoped_release>(),
+            py::arg("dim") = py::none(), py::arg("keepdim") = false,
             "Returns true if any elements in the tensor are true. Only works "
-            "for boolean tensors. This function does not take reduction "
-            "dimensions, and the reduction is applied to all dimensions.");
+            "for boolean tensors.");
 
     // Reduction ops.
     BIND_REDUCTION_OP(sum, Sum);

@@ -225,6 +225,12 @@ public:
         return *this;
     }
 
+    /// Tensor reinterpret cast operator.
+    /// It changes the tensor's dtype without changing the underlying memory
+    /// blob itself. The byte-size of dtype must be same as the original dtype
+    /// before casting.
+    Tensor ReinterpretCast(const core::Dtype& dtype) const;
+
     /// Assign an object to a tensor. The tensor being assigned to must be a
     /// scalar tensor of shape {}. The element byte size of the tensor must be
     /// the same as the size of the object. The object must be a POD.
@@ -949,14 +955,14 @@ public:
     bool IsNonZero() const;
 
     /// Returns true if all elements in the tensor are true. Only works for
-    /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is applied to all dimensions.
-    bool All() const;
+    /// boolean tensors.
+    Tensor All(const utility::optional<SizeVector>& dims = utility::nullopt,
+               bool keepdim = false) const;
 
     /// Returns true if any elements in the tensor are true. Only works for
-    /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is applied to all dimensions.
-    bool Any() const;
+    /// boolean tensors.
+    Tensor Any(const utility::optional<SizeVector>& dims = utility::nullopt,
+               bool keepdim = false) const;
 
     /// Returns true if the two tensors are element-wise equal.
     ///

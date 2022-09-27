@@ -29,6 +29,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -58,26 +60,26 @@ The attributes of the line set have different levels::
     # Use lineset.line to access the line attributes
     lineset = o3d.t.geometry.LineSet()
 
-    # Default attribute: point["positions"], line["indices"]
+    # Default attribute: point.positions, line.indices
     # These attributes is created by default and are required by all line
     # sets. The shape must be (N, 3) and (N, 2) respectively. The device of
     # "positions" determines the device of the line set.
-    lineset.point["positions"] = o3d.core.Tensor([[0, 0, 0],
+    lineset.point.positions = o3d.core.Tensor([[0, 0, 0],
                                                   [0, 0, 1],
                                                   [0, 1, 0],
                                                   [0, 1, 1]], dtype_f, device)
-    lineset.line["indices"] = o3d.core.Tensor([[0, 1],
+    lineset.line.indices = o3d.core.Tensor([[0, 1],
                                                [1, 2],
                                                [2, 3],
                                                [3, 0]], dtype_i, device)
 
-    # Common attributes: line["colors"]
+    # Common attributes: line.colors
     # Common attributes are used in built-in line set operations. The
     # spellings must be correct. For example, if "color" is used instead of
     # "color", some internal operations that expects "colors" will not work.
     # "colors" must have shape (N, 3) and must be on the same device as the
     # line set.
-    lineset.line["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
+    lineset.line.colors = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                               [0.1, 0.1, 0.1],
                                               [0.2, 0.2, 0.2],
                                               [0.3, 0.3, 0.3]], dtype_f, device)
@@ -86,8 +88,8 @@ The attributes of the line set have different levels::
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the line set. The are no restrictions on the shape or
     # dtype, e.g.,
-    pcd.point["labels"] = o3d.core.Tensor(...)
-    pcd.line["features"] = o3d.core.Tensor(...)
+    lineset.point.labels = o3d.core.Tensor(...)
+    lineset.line.features = o3d.core.Tensor(...)
 )");
 
     // Constructors.
@@ -107,6 +109,44 @@ and ``device`` as the tensor. The device for ``point_positions`` must be consist
             {{"point_positions", "A tensor with element shape (3,)"},
              {"line_indices",
               "A tensor with element shape (2,) and Int dtype."}});
+
+    // Pickling support.
+    line_set.def(py::pickle(
+            [](const LineSet& line_set) {
+                // __getstate__
+                return py::make_tuple(line_set.GetDevice(),
+                                      line_set.GetPointAttr(),
+                                      line_set.GetLineAttr());
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 3) {
+                    utility::LogError(
+                            "Cannot unpickle LineSet! Expecting a tuple of "
+                            "size 3.");
+                }
+
+                const core::Device device = t[0].cast<core::Device>();
+                LineSet line_set(device);
+                if (!device.IsAvailable()) {
+                    utility::LogWarning(
+                            "Device ({}) is not available. LineSet will be "
+                            "created on CPU.",
+                            device.ToString());
+                    line_set.To(core::Device("CPU:0"));
+                }
+
+                const TensorMap point_attr = t[1].cast<TensorMap>();
+                const TensorMap line_attr = t[2].cast<TensorMap>();
+                for (auto& kv : point_attr) {
+                    line_set.SetPointAttr(kv.first, kv.second);
+                }
+                for (auto& kv : line_attr) {
+                    line_set.SetLineAttr(kv.first, kv.second);
+                }
+
+                return line_set;
+            }));
 
     // Line set's attributes: point_positions, line_indices, line_colors, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can
@@ -215,6 +255,67 @@ transformation as :math:`P = R(P) + t`)");
             });
     line_set.def("to_legacy", &LineSet::ToLegacy,
                  "Convert to a legacy Open3D LineSet.");
+
+    line_set.def("get_axis_aligned_bounding_box",
+                 &LineSet::GetAxisAlignedBoundingBox,
+                 "Create an axis-aligned bounding box from point attribute "
+                 "'positions'.");
+
+    line_set.def("extrude_rotation", &LineSet::ExtrudeRotation, "angle"_a,
+                 "axis"_a, "resolution"_a = 16, "translation"_a = 0.0,
+                 "capping"_a = true,
+                 R"(Sweeps the line set rotationally about an axis.
+
+Args:
+    angle (float): The rotation angle in degree.
+
+    axis (open3d.core.Tensor): The rotation axis.
+
+    resolution (int): The resolution defines the number of intermediate sweeps
+        about the rotation axis.
+
+    translation (float): The translation along the rotation axis.
+
+Returns:
+    A triangle mesh with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a spring from a single line::
+
+        import open3d as o3d
+
+        line = o3d.t.geometry.LineSet([[0.7,0,0],[1,0,0]], [[0,1]])
+        spring = line.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
+        o3d.visualization.draw([{'name': 'spring', 'geometry': spring}])
+
+)");
+
+    line_set.def("extrude_linear", &LineSet::ExtrudeLinear, "vector"_a,
+                 "scale"_a = 1.0, "capping"_a = true,
+                 R"(Sweeps the line set along a direction vector.
+
+Args:
+
+    vector (open3d.core.Tensor): The direction vector.
+
+    scale (float): Scalar factor which essentially scales the direction vector.
+
+Returns:
+    A triangle mesh with the result of the sweep operation.
+
+
+Example:
+
+    This code generates an L-shaped mesh::
+        import open3d as o3d
+
+        lines = o3d.t.geometry.LineSet([[1.0,0.0,0.0],[0,0,0],[0,0,1]], [[0,1],[1,2]])
+        mesh = lines.extrude_linear([0,1,0])
+        o3d.visualization.draw([{'name': 'L', 'geometry': mesh}])
+
+)");
 }
 
 }  // namespace geometry

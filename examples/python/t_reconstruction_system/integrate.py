@@ -97,6 +97,11 @@ if __name__ == '__main__':
         help='YAML config file path. Please refer to default_config.yml as a '
         'reference. It overrides the default config file, but will be '
         'overridden by other command line inputs.')
+    parser.add('--default_dataset',
+               help='Default dataset is used when config file is not provided. '
+               'Default dataset may be selected from the following options: '
+               '[lounge, jack_jack]',
+               default='lounge')
     parser.add('--integrate_color', action='store_true')
 
     config = parser.get_config()

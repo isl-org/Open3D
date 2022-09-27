@@ -47,18 +47,18 @@ TEST(Downloader, DownloadAndVerify) {
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
 
     // This download shall work.
-    EXPECT_EQ(utility::DownloadFromURL(url, md5, prefix), file_path);
+    EXPECT_EQ(utility::DownloadFromURL(url, md5, file_dir), file_path);
     EXPECT_TRUE(utility::filesystem::DirectoryExists(file_dir));
     EXPECT_TRUE(utility::filesystem::FileExists(file_path));
     EXPECT_EQ(utility::GetMD5(file_path), md5);
 
     // This download shall be skipped as the file already exists (look at the
     // message).
-    EXPECT_EQ(utility::DownloadFromURL(url, md5, prefix), file_path);
+    EXPECT_EQ(utility::DownloadFromURL(url, md5, file_dir), file_path);
 
     // Mismatch md5.
     EXPECT_ANY_THROW(utility::DownloadFromURL(
-            url, "00000000000000000000000000000000", prefix));
+            url, "00000000000000000000000000000000", file_dir));
 
     // Clean up.
     EXPECT_TRUE(utility::filesystem::DeleteDirectory(file_dir));
