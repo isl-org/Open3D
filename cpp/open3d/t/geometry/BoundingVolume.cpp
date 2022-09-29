@@ -30,19 +30,6 @@
 #include "open3d/core/TensorFunction.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 
-namespace {
-
-void PrintWarningMessageFromTensor(const std::string &name,
-                                   const open3d::core::Dtype &target_type,
-                                   const open3d::core::Dtype &ref_dtype) {
-    open3d::utility::LogWarning(
-            "Data type of {}[{}] is different from the box[{}]. Force type "
-            "casting will be performed and the result may be unexpected.",
-            name, target_type.ToString(), ref_dtype.ToString());
-}
-
-}  // namespace
-
 namespace open3d {
 namespace t {
 namespace geometry {
@@ -102,10 +89,7 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::Clear() {
 void AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound) {
     core::AssertTensorDevice(min_bound, GetDevice());
     core::AssertTensorShape(min_bound, {3});
-    if (min_bound.GetDtype() != GetDtype()) {
-        PrintWarningMessageFromTensor("min_bound", min_bound.GetDtype(),
-                                      GetDtype());
-    }
+    core::AssertTensorDtypes(min_bound, {core::Float32, core::Float64});
 
     const core::Tensor tmp = min_bound_.Clone();
     min_bound_ = min_bound.To(GetDtype());
@@ -123,10 +107,7 @@ void AxisAlignedBoundingBox::SetMinBound(const core::Tensor &min_bound) {
 void AxisAlignedBoundingBox::SetMaxBound(const core::Tensor &max_bound) {
     core::AssertTensorDevice(max_bound, GetDevice());
     core::AssertTensorShape(max_bound, {3});
-    if (max_bound.GetDtype() != GetDtype()) {
-        PrintWarningMessageFromTensor("max_bound", max_bound.GetDtype(),
-                                      GetDtype());
-    }
+    core::AssertTensorDtypes(max_bound, {core::Float32, core::Float64});
 
     const core::Tensor tmp = max_bound_.Clone();
     max_bound_ = max_bound.To(GetDtype());
@@ -161,10 +142,7 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::Translate(
         const core::Tensor &translation, bool relative) {
     core::AssertTensorDevice(translation, GetDevice());
     core::AssertTensorShape(translation, {3});
-    if (translation.GetDtype() != GetDtype()) {
-        PrintWarningMessageFromTensor("translation", translation.GetDtype(),
-                                      GetDtype());
-    }
+    core::AssertTensorDtypes(translation, {core::Float32, core::Float64});
 
     const core::Tensor translation_d = translation.To(GetDtype());
     if (relative) {
@@ -187,11 +165,8 @@ AxisAlignedBoundingBox &AxisAlignedBoundingBox::Scale(
         center_d = center.value();
         core::AssertTensorDevice(center_d, GetDevice());
         core::AssertTensorShape(center_d, {3});
-        if (center_d.GetDtype() != GetDtype()) {
-            PrintWarningMessageFromTensor("center", center_d.GetDtype(),
-                                          GetDtype());
-            center_d = center_d.To(GetDtype());
-        }
+        core::AssertTensorDtypes(center_d, {core::Float32, core::Float64});
+        center_d = center_d.To(GetDtype());
     }
     min_bound_ = center_d + scale * (min_bound_ - center_d);
     max_bound_ = center_d + scale * (max_bound_ - center_d);
@@ -390,9 +365,7 @@ OrientedBoundingBox &OrientedBoundingBox::Clear() {
 void OrientedBoundingBox::SetCenter(const core::Tensor &center) {
     core::AssertTensorDevice(center, GetDevice());
     core::AssertTensorShape(center, {3});
-    if (center.GetDtype() != GetDtype()) {
-        PrintWarningMessageFromTensor("center", center.GetDtype(), GetDtype());
-    }
+    core::AssertTensorDtypes(center, {core::Float32, core::Float64});
 
     center_ = center.To(GetDtype());
 }
@@ -400,9 +373,7 @@ void OrientedBoundingBox::SetCenter(const core::Tensor &center) {
 void OrientedBoundingBox::SetExtent(const core::Tensor &extent) {
     core::AssertTensorDevice(extent, GetDevice());
     core::AssertTensorShape(extent, {3});
-    if (extent.GetDtype() != GetDtype()) {
-        PrintWarningMessageFromTensor("extent", extent.GetDtype(), GetDtype());
-    }
+    core::AssertTensorDtypes(extent, {core::Float32, core::Float64});
 
     if (extent.Min({0}).To(core::Float64).Item<double>() <= 0) {
         utility::LogError(
@@ -416,10 +387,7 @@ void OrientedBoundingBox::SetExtent(const core::Tensor &extent) {
 void OrientedBoundingBox::SetRotation(const core::Tensor &rotation) {
     core::AssertTensorDevice(rotation, GetDevice());
     core::AssertTensorShape(rotation, {3, 3});
-    if (rotation.GetDtype() != GetDtype()) {
-        PrintWarningMessageFromTensor("rotation", rotation.GetDtype(),
-                                      GetDtype());
-    }
+    core::AssertTensorDtypes(rotation, {core::Float32, core::Float64});
 
     if (!rotation.T().AllClose(rotation.Inverse(), 1e-5, 1e-5)) {
         utility::LogWarning(
@@ -454,50 +422,15 @@ core::Tensor OrientedBoundingBox::GetMaxBound() const {
 }
 
 core::Tensor OrientedBoundingBox::GetBoxPoints() const {
-    const core::Tensor x_axis =
-            rotation_.GetItem(
-                    {core::TensorKey::Slice(core::None, core::None, core::None),
-                     core::TensorKey::Index(0)}) *
-            extent_.GetItem({core::TensorKey::Index(0)}) * 0.5;
-    const core::Tensor y_axis =
-            rotation_.GetItem(
-                    {core::TensorKey::Slice(core::None, core::None, core::None),
-                     core::TensorKey::Index(1)}) *
-            extent_.GetItem({core::TensorKey::Index(1)}) * 0.5;
-    const core::Tensor z_axis =
-            rotation_.GetItem(
-                    {core::TensorKey::Slice(core::None, core::None, core::None),
-                     core::TensorKey::Index(2)}) *
-            extent_.GetItem({core::TensorKey::Index(2)}) * 0.5;
-
-    core::Tensor points = core::Tensor::Zeros({8, 3}, GetDtype(), GetDevice());
-    points.SetItem(core::TensorKey::Index(0),
-                   center_ - x_axis - y_axis - z_axis);
-    points.SetItem(core::TensorKey::Index(1),
-                   center_ + x_axis - y_axis - z_axis);
-    points.SetItem(core::TensorKey::Index(2),
-                   center_ - x_axis + y_axis - z_axis);
-    points.SetItem(core::TensorKey::Index(3),
-                   center_ - x_axis - y_axis + z_axis);
-    points.SetItem(core::TensorKey::Index(4),
-                   center_ + x_axis + y_axis + z_axis);
-    points.SetItem(core::TensorKey::Index(5),
-                   center_ - x_axis + y_axis + z_axis);
-    points.SetItem(core::TensorKey::Index(6),
-                   center_ + x_axis - y_axis + z_axis);
-    points.SetItem(core::TensorKey::Index(7),
-                   center_ + x_axis + y_axis - z_axis);
-    return points;
+    const t::geometry::AxisAlignedBoundingBox aabb(GetExtent() * -0.5, GetExtent() * 0.5);
+    return aabb.GetBoxPoints().Matmul(GetRotation()).Add(GetCenter());
 }
 
 OrientedBoundingBox &OrientedBoundingBox::Translate(
         const core::Tensor &translation, bool relative) {
     core::AssertTensorDevice(translation, GetDevice());
     core::AssertTensorShape(translation, {3});
-    if (translation.GetDtype() != GetDtype()) {
-        PrintWarningMessageFromTensor("translation", translation.GetDtype(),
-                                      GetDtype());
-    }
+    core::AssertTensorDtypes(translation, {core::Float32, core::Float64});
 
     const core::Tensor translation_d = translation.To(GetDtype());
     if (relative) {
@@ -513,10 +446,7 @@ OrientedBoundingBox &OrientedBoundingBox::Rotate(
         const utility::optional<core::Tensor> &center) {
     core::AssertTensorDevice(rotation, GetDevice());
     core::AssertTensorShape(rotation, {3, 3});
-    if (rotation.GetDtype() != GetDtype()) {
-        PrintWarningMessageFromTensor("rotation", rotation.GetDtype(),
-                                      GetDtype());
-    }
+    core::AssertTensorDtypes(rotation, {core::Float32, core::Float64});
 
     if (!rotation.T().AllClose(rotation.Inverse(), 1e-5, 1e-5)) {
         utility::LogWarning(
@@ -530,12 +460,9 @@ OrientedBoundingBox &OrientedBoundingBox::Rotate(
     if (center.has_value()) {
         core::AssertTensorDevice(center.value(), GetDevice());
         core::AssertTensorShape(center.value(), {3});
-        core::Tensor center_d = center.value();
-        if (center_d.GetDtype() != GetDtype()) {
-            PrintWarningMessageFromTensor("center", center_d.GetDtype(),
-                                          GetDtype());
-            center_d = center_d.To(GetDtype());
-        }
+        core::AssertTensorDtypes(center.value(), {core::Float32, core::Float64});
+
+        core::Tensor center_d = center.value().To(GetDtype());
         center_ = rotation_d.Matmul(center_ - center_d).Flatten() + center_d;
     }
 
@@ -546,10 +473,7 @@ OrientedBoundingBox &OrientedBoundingBox::Transform(
         const core::Tensor &transformation) {
     core::AssertTensorDevice(transformation, GetDevice());
     core::AssertTensorShape(transformation, {4, 4});
-    if (transformation.GetDtype() != GetDtype()) {
-        PrintWarningMessageFromTensor("transformation",
-                                      transformation.GetDtype(), GetDtype());
-    }
+    core::AssertTensorDtypes(transformation, {core::Float32, core::Float64});
 
     const core::Tensor transformation_d = transformation.To(GetDtype());
     Rotate(transformation_d.GetItem({core::TensorKey::Slice(0, 3, 1),
@@ -568,11 +492,9 @@ OrientedBoundingBox &OrientedBoundingBox::Scale(
         core::Tensor center_d = center.value();
         core::AssertTensorDevice(center_d, GetDevice());
         core::AssertTensorShape(center_d, {3});
-        if (center_d.GetDtype() != GetDtype()) {
-            PrintWarningMessageFromTensor("center", center_d.GetDtype(),
-                                          GetDtype());
-            center_d = center_d.To(GetDtype());
-        }
+        core::AssertTensorDtypes(center_d, {core::Float32, core::Float64});
+
+        center_d = center_d.To(GetDtype());
         center_ = scale * (center_ - center_d) + center_d;
     }
     return *this;
