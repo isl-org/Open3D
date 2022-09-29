@@ -422,7 +422,8 @@ core::Tensor OrientedBoundingBox::GetMaxBound() const {
 }
 
 core::Tensor OrientedBoundingBox::GetBoxPoints() const {
-    const t::geometry::AxisAlignedBoundingBox aabb(GetExtent() * -0.5, GetExtent() * 0.5);
+    const t::geometry::AxisAlignedBoundingBox aabb(GetExtent() * -0.5,
+                                                   GetExtent() * 0.5);
     return aabb.GetBoxPoints().Matmul(GetRotation()).Add(GetCenter());
 }
 
@@ -460,7 +461,8 @@ OrientedBoundingBox &OrientedBoundingBox::Rotate(
     if (center.has_value()) {
         core::AssertTensorDevice(center.value(), GetDevice());
         core::AssertTensorShape(center.value(), {3});
-        core::AssertTensorDtypes(center.value(), {core::Float32, core::Float64});
+        core::AssertTensorDtypes(center.value(),
+                                 {core::Float32, core::Float64});
 
         core::Tensor center_d = center.value().To(GetDtype());
         center_ = rotation_d.Matmul(center_ - center_d).Flatten() + center_d;
