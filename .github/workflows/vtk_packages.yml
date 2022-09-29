@@ -83,7 +83,7 @@ jobs:
           if-no-files-found: error
 
   MacOS:
-    runs-on: macos-10.15
+    runs-on: macos-12
     strategy:
       fail-fast: false
 

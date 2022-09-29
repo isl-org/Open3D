@@ -164,6 +164,29 @@ void pybind_tensormap(py::module &m) {
     tm.def("is_size_synchronized", &TensorMap::IsSizeSynchronized);
     tm.def("assert_size_synchronized", &TensorMap::AssertSizeSynchronized);
 
+    // Pickle support.
+    tm.def(py::pickle(
+            [](const TensorMap &m) {
+                // __getstate__
+                std::unordered_map<std::string, core::Tensor> map;
+                for (const auto &kv : m) {
+                    map[kv.first] = kv.second;
+                }
+
+                return py::make_tuple(m.GetPrimaryKey(), map);
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 2) {
+                    utility::LogError(
+                            "Cannot unpickle TensorMap! Expecting a tuple of "
+                            "size 2.");
+                }
+                return TensorMap(t[0].cast<std::string>(),
+                                 t[1].cast<std::unordered_map<std::string,
+                                                              core::Tensor>>());
+            }));
+
     tm.def("__setattr__",
            [](TensorMap &m, const std::string &key, const core::Tensor &val) {
                if (!TensorMap::GetReservedKeys().count(key)) {
