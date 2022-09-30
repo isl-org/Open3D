@@ -55,17 +55,18 @@ public:
              const Device& device) {
         sy::queue& queue = sycl::GetDefaultQueue(device);
         const int64_t num_workloads = indexer_.NumWorkloads();
+
         queue.submit([&](sy::handler& h) {
-                 h.parallel_for(1, [num_workloads, this](int64_t i) {
-                     for (int64_t workload_idx = 0;
-                          workload_idx < num_workloads; workload_idx++) {
-                         scalar_t* src = indexer_.GetInputPtr<scalar_t>(
-                                 0, workload_idx);
-                         scalar_t* dst =
-                                 indexer_.GetOutputPtr<scalar_t>(workload_idx);
-                         *dst = (*src) + (*dst);
-                     }
-                 });
+                 auto reducer = sy::reduction(
+                         indexer_.GetOutputPtr<scalar_t>(0),
+                         static_cast<scalar_t>(identity), sy::plus<scalar_t>());
+                 h.parallel_for(
+                         sy::range<1>(num_workloads), reducer,
+                         [num_workloads, this](sy::id<1> i, auto& reducer_arg) {
+                             scalar_t* src =
+                                     indexer_.GetInputPtr<scalar_t>(-0, i);
+                             reducer_arg += scalar_t(*src);
+                         });
              }).wait();
     }
 

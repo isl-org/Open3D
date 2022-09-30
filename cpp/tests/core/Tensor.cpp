@@ -1752,7 +1752,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceSumKeepDim) {
     // Repeated.
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, ReduceSumNotKeepDim) {
+TEST_P(TensorPermuteDevices, ReduceSumNotKeepDim) {
     core::Device device = GetParam();
     core::Tensor src = core::Tensor::Init<float>({{{22.f, 23.f, 20.f, 9.f},
                                                    {6.f, 14.f, 18.f, 13.f},
@@ -1807,7 +1807,7 @@ TEST_P(TensorPermuteDevicesWithSYCL, ReduceSumNotKeepDim) {
     EXPECT_EQ(dst.ToFlatVector<float>(), std::vector<float>({276.f}));
 }
 
-TEST_P(TensorPermuteDevicesWithSYCL, ReduceSumSpecialShapes) {
+TEST_P(TensorPermuteDevices, ReduceSumSpecialShapes) {
     core::Device device = GetParam();
     core::Tensor src;
     core::Tensor dst;
