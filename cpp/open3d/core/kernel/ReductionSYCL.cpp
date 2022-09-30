@@ -64,7 +64,7 @@ public:
                          sy::range<1>(num_workloads), reducer,
                          [num_workloads, this](sy::id<1> i, auto& reducer_arg) {
                              scalar_t* src =
-                                     indexer_.GetInputPtr<scalar_t>(-0, i);
+                                     indexer_.GetInputPtr<scalar_t>(0, i);
                              reducer_arg += *src;
                          });
              }).wait();
