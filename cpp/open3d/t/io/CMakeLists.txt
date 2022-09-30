@@ -9,6 +9,7 @@ target_sources(tio PRIVATE
 )
 
 target_sources(tio PRIVATE
+    file_format/FileASSIMP.cpp
     file_format/FileJPG.cpp
     file_format/FilePCD.cpp
     file_format/FilePLY.cpp

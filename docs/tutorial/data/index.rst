@@ -621,7 +621,7 @@ RGBD dataset.
 LoungeRGBDImages
 ------------------
 
-Lounge RGBD dataset from Stanford containing ``color`` and ``depth`` 
+Lounge RGBD dataset from Stanford containing ``color`` and ``depth``
 sequence of 3000 images, along with ``camera trajectory`` and ``reconstruction``.
 
 .. code-block:: python
@@ -660,7 +660,7 @@ sequence of 3000 images, along with ``camera trajectory`` and ``reconstruction``
 BedroomRGBDImages
 ------------------
 
-Bedroom RGBD dataset from Redwood containing ``color`` and ``depth`` 
+Bedroom RGBD dataset from Redwood containing ``color`` and ``depth``
 sequence of 21931 images, along with ``camera trajectory`` and ``reconstruction``.
 
 .. code-block:: python
@@ -811,3 +811,228 @@ graph optimization demo.
                         dataset.GetPoseGraphFragmentPath());
     auto pose_graph_global = io::CreatePoseGraphFromFile(
                         dataset.GetPoseGraphGlobalPath());
+
+RedwoodIndoorLivingRoom1
+------------------------
+
+The living room 1 scene of the Redwood indoor dataset (Augmented ICL-NUIM
+Dataset). The dataset contains a dense point cloud, a rgb sequence, a clean
+depth sequence, a noisy depth sequence, an oni file, and camera trajectory.
+
+
+.. code-block:: python
+
+    dataset = o3d.data.RedwoodIndoorLivingRoom1()
+    assert Path(gt_download_dir).is_dir()
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+
+.. code-block:: cpp
+
+    data::RedwoodIndoorLivingRoom1 dataset;
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+
+RedwoodIndoorLivingRoom2
+------------------------
+
+The living room 2 scene of the Redwood indoor dataset (Augmented ICL-NUIM
+Dataset). The dataset contains a dense point cloud, a rgb sequence, a clean
+depth sequence, a noisy depth sequence, an oni file, and camera trajectory.
+
+
+.. code-block:: python
+
+    dataset = o3d.data.RedwoodIndoorLivingRoom2()
+    assert Path(gt_download_dir).is_dir()
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+
+.. code-block:: cpp
+
+    data::RedwoodIndoorLivingRoom2 dataset;
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+
+
+RedwoodIndoorOffice1
+--------------------
+
+The office 1 scene of the Redwood indoor dataset (Augmented ICL-NUIM
+Dataset). The dataset contains a dense point cloud, a rgb sequence, a clean
+depth sequence, a noisy depth sequence, an oni file, and camera trajectory.
+
+
+.. code-block:: python
+
+    dataset = o3d.data.RedwoodIndoorOffice1()
+    assert Path(gt_download_dir).is_dir()
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+
+.. code-block:: cpp
+
+    data::RedwoodIndoorOffice1 dataset;
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+
+RedwoodIndoorOffice2
+--------------------
+
+The office 2 scene of the Redwood indoor dataset (Augmented ICL-NUIM
+Dataset). The dataset contains a dense point cloud, a rgb sequence, a clean
+depth sequence, a noisy depth sequence, an oni file, and camera trajectory.
+
+
+.. code-block:: python
+
+    dataset = o3d.data.RedwoodIndoorOffice2()
+    assert Path(gt_download_dir).is_dir()
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+
+.. code-block:: cpp
+
+    data::RedwoodIndoorOffice2 dataset;
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }

@@ -245,6 +245,13 @@ bool DirectoryExists(const std::string &directory) {
     return fs::is_directory(directory);
 }
 
+bool DirectoryIsEmpty(const std::string &directory) {
+    if (!DirectoryExists(directory)) {
+        utility::LogError("Directory {} does not exist.", directory);
+    }
+    return fs::is_empty(directory);
+}
+
 bool MakeDirectory(const std::string &directory) {
 #ifdef WINDOWS
     return (_mkdir(directory.c_str()) == 0);

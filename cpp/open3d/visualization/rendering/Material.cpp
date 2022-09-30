@@ -94,6 +94,12 @@ void Material::ToMaterialRecord(MaterialRecord &record) const {
     if (HasAbsorptionDistance()) {
         record.absorption_distance = GetAbsorptionDistance();
     }
+    if (HasPointSize()) {
+        record.point_size = GetPointSize();
+    }
+    if (HasLineWidth()) {
+        record.line_width = GetLineWidth();
+    }
     // Convert maps
     if (HasAlbedoMap()) {
         record.albedo_img =

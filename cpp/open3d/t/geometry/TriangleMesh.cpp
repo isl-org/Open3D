@@ -48,6 +48,7 @@
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
+#include "open3d/t/geometry/kernel/UVUnwrapping.h"
 
 namespace open3d {
 namespace t {
@@ -456,6 +457,13 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     fill_holes->Update();
     auto result = fill_holes->GetOutput();
     return CreateTriangleMeshFromVtkPolyData(result);
+}
+
+void TriangleMesh::ComputeUVAtlas(size_t size,
+                                  float gutter,
+                                  float max_stretch) {
+    kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter,
+                                         max_stretch);
 }
 
 namespace {
