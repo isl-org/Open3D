@@ -401,6 +401,44 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
     return std::make_tuple(SelectByMask(valid), valid);
 }
 
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveStatisticalOutliers(
+        size_t nb_neighbors, double std_ratio) const {
+    if (nb_neighbors < 1 || std_ratio <= 0) {
+        utility::LogError(
+                "Illegal input parameters, the number of neighbors and "
+                "standard deviation ratio must be positive.");
+    }
+    if (GetPointPositions().GetLength() == 0) {
+        return std::make_tuple(PointCloud(GetDevice()),
+                               core::Tensor({0}, core::Bool, GetDevice()));
+    }
+
+    core::nns::NearestNeighborSearch nns(GetPointPositions().Contiguous());
+    const bool check = nns.KnnIndex();
+    if (!check) {
+        utility::LogError("Knn search index is not set.");
+    }
+
+    core::Tensor indices, distance2;
+    std::tie(indices, distance2) =
+            nns.KnnSearch(GetPointPositions(), nb_neighbors);
+
+    core::Tensor avg_distances = distance2.Sqrt().Mean({1});
+    const double cloud_mean =
+            avg_distances.Mean({0}).To(core::Float64).Item<double>();
+    const core::Tensor std_distances_centered = avg_distances - cloud_mean;
+    const double sq_sum = (std_distances_centered * std_distances_centered)
+                                  .Sum({0})
+                                  .To(core::Float64)
+                                  .Item<double>();
+    const double std_dev =
+            std::sqrt(sq_sum / (avg_distances.GetShape()[0] - 1));
+    const double distance_threshold = cloud_mean + std_ratio * std_dev;
+    const core::Tensor valid = avg_distances.Le(distance_threshold);
+
+    return std::make_tuple(SelectByMask(valid), valid);
+}
+
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
         bool remove_nan, bool remove_inf) const {
     core::Tensor finite_indices_mask;

@@ -253,6 +253,12 @@ The attributes of the point cloud have different levels::
                    "nb_points"_a, "search_radius"_a,
                    "Remove points that have less than nb_points neighbors in a "
                    "sphere of a given search radius.");
+    pointcloud.def(
+            "remove_statistical_outliers",
+            &PointCloud::RemoveStatisticalOutliers, "nb_neighbors"_a,
+            "std_ratio"_a,
+            "Remove points that have less than nb_points in a sphere of "
+            "a given radius. This function is not recommended to use on GPU.");
     pointcloud.def("remove_duplicated_points",
                    &PointCloud::RemoveDuplicatedPoints,
                    "Remove duplicated points and there associated attributes.");
