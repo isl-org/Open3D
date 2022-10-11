@@ -377,7 +377,29 @@ void pybind_image(py::module &m) {
     // DepthNoiseSimulator
     py::class_<DepthNoiseSimulator> depth_noise_simulator(
             m, "DepthNoiseSimulator",
-            "Simulate depth image noise from a given noise distortion model.");
+            R"(Simulate depth image noise from a given noise distortion model.
+
+Example::
+
+    import open3d as o3d
+
+    # Redwood Indoor LivingRoom1 (Augmented ICL-NUIM)
+    # http://redwood-data.org/indoor/
+    data = o3d.data.RedwoodIndoorLivingRoom1()
+    noise_model_path = data.noise_model_path
+    im_src_path = data.depth_paths[0]
+    depth_scale = 1000.0
+
+    # Read clean depth image (uint16)
+    im_src = o3d.t.io.read_image(im_src_path)
+
+    # Run noise model simulation
+    simulator = o3d.t.geometry.DepthNoiseSimulator(noise_model_path)
+    im_dst = simulator.simulate(im_src, depth_scale=depth_scale)
+
+    # Save noisy depth image (uint16)
+    o3d.t.io.write_image("noisy_depth.png", im_dst)
+            )");
     depth_noise_simulator.def(py::init<const std::string &>(),
                               "noise_model_path"_a);
     depth_noise_simulator.def("simulate", &DepthNoiseSimulator::Simulate,

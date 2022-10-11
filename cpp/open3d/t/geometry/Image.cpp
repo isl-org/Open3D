@@ -597,9 +597,7 @@ DepthNoiseSimulator::DepthNoiseSimulator(const std::string &noise_model_path) {
         std::string line(line_buffer);
         line.erase(std::find(line.begin(), line.end(), comment_prefix),
                    line.end());
-        if (line.empty()) {
-            continue;
-        } else {
+        if (!line.empty()) {
             std::istringstream iss(line);
             float value;
             while (iss >> value) {
@@ -727,7 +725,6 @@ Image DepthNoiseSimulator::Simulate(const Image &im_src, float depth_scale) {
     if (original_dtype == core::UInt16) {
         im_dst_tensor = (im_dst_tensor * depth_scale).To(core::UInt16);
     }
-    assert(im_dst_tensor.GetDtype() == original_dtype);
     im_dst_tensor = im_dst_tensor.To(original_device);
 
     return Image(im_dst_tensor);
