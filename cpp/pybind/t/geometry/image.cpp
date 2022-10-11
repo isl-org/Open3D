@@ -373,7 +373,6 @@ void pybind_image(py::module &m) {
     docstring::ClassMethodDocInject(m, "RGBDImage", "to_legacy");
     docstring::ClassMethodDocInject(m, "RGBDImage", "__init__",
                                     map_shared_argument_docstrings);
-
 }
 
 }  // namespace geometry
