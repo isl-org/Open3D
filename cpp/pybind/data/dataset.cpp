@@ -1011,6 +1011,7 @@ RedwoodIndoorLivingRoom1
 │   ├── 00001.png
 │   ├── ...
 │   └── 02869.png
+├── dist-model.txt
 ├── livingroom1.oni
 ├── livingroom1-traj.txt
 └── livingroom.ply
@@ -1034,6 +1035,9 @@ RedwoodIndoorLivingRoom1
     dataset.def_property_readonly("trajectory_path",
                                   &RedwoodIndoorLivingRoom1::GetTrajectoryPath,
                                   "Path to the trajectory file.");
+    dataset.def_property_readonly("noise_model_path",
+                                  &RedwoodIndoorLivingRoom1::GetNoiseModelPath,
+                                  "Path to the noise model file.");
 }
 
 void pybind_redwood_indoor_living_room2(py::module& m) {
@@ -1062,6 +1066,7 @@ RedwoodIndoorLivingRoom2
 │   ├── 00001.png
 │   ├── ...
 │   └── 02349.png
+├── dist-model.txt
 ├── livingroom2.oni
 ├── livingroom2-traj.txt
 └── livingroom.ply
@@ -1085,6 +1090,9 @@ RedwoodIndoorLivingRoom2
     dataset.def_property_readonly("trajectory_path",
                                   &RedwoodIndoorLivingRoom2::GetTrajectoryPath,
                                   "Path to the trajectory file.");
+    dataset.def_property_readonly("noise_model_path",
+                                  &RedwoodIndoorLivingRoom2::GetNoiseModelPath,
+                                  "Path to the noise model file.");
 }
 
 void pybind_redwood_indoor_office1(py::module& m) {
@@ -1112,6 +1120,7 @@ RedwoodIndoorOffice1
 │   ├── 00001.png
 │   ├── ...
 │   └── 02689.png
+├── dist-model.txt
 ├── office1.oni
 ├── office1-traj.txt
 └── office.ply
@@ -1134,6 +1143,9 @@ RedwoodIndoorOffice1
     dataset.def_property_readonly("trajectory_path",
                                   &RedwoodIndoorOffice1::GetTrajectoryPath,
                                   "Path to the trajectory file.");
+    dataset.def_property_readonly("noise_model_path",
+                                  &RedwoodIndoorOffice1::GetNoiseModelPath,
+                                  "Path to the noise model file.");
 }
 
 void pybind_redwood_indoor_office2(py::module& m) {
@@ -1161,6 +1173,7 @@ RedwoodIndoorOffice2
 │   ├── 00001.png
 │   ├── ...
 │   └── 02537.png
+├── dist-model.txt
 ├── office2.oni
 ├── office2-traj.txt
 └── office.ply
@@ -1183,6 +1196,9 @@ RedwoodIndoorOffice2
     dataset.def_property_readonly("trajectory_path",
                                   &RedwoodIndoorOffice2::GetTrajectoryPath,
                                   "Path to the trajectory file.");
+    dataset.def_property_readonly("noise_model_path",
+                                  &RedwoodIndoorOffice2::GetNoiseModelPath,
+                                  "Path to the noise model file.");
 }
 
 void pybind_data(py::module& m) {

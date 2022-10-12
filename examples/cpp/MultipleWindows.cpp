@@ -131,7 +131,7 @@ private:
                 });
 
         Eigen::Vector3d magnitude = 0.005 * extent;
-        utility::random::UniformDoubleGenerator uniform_gen(-0.5, 0.5);
+        utility::random::UniformRealGenerator<double> uniform_gen(-0.5, 0.5);
 
         while (main_vis_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
