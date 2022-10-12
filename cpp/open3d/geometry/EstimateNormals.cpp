@@ -34,6 +34,7 @@
 #include "open3d/utility/Eigen.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 
@@ -311,12 +312,21 @@ void PointCloud::EstimateNormals(
     if (!has_normal) {
         normals_.resize(points_.size());
     }
+
+    utility::Timer timer;
+
+    timer.Start();
     std::vector<Eigen::Matrix3d> covariances;
     if (!HasCovariances()) {
         covariances = EstimatePerPointCovariances(*this, search_param);
     } else {
         covariances = covariances_;
     }
+    timer.Stop();
+    utility::LogInfo("EstimatePerPointCovariances took {:.3f} ms.",
+                     timer.GetDurationInMillisecond());
+
+    timer.Start();
 #pragma omp parallel for schedule(static) \
         num_threads(utility::EstimateMaxThreads())
     for (int i = 0; i < (int)covariances.size(); i++) {
@@ -333,6 +343,9 @@ void PointCloud::EstimateNormals(
         }
         normals_[i] = normal;
     }
+    timer.Stop();
+    utility::LogInfo("ComputeNormal took {:.3f} ms.",
+                     timer.GetDurationInMillisecond());
 }
 
 void PointCloud::OrientNormalsToAlignWithDirection(

@@ -529,19 +529,22 @@ BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   Legacy Hybrid[0.02 | 30 | 0.06],
                   0.02,
                   open3d::geometry::KDTreeSearchParamHybrid(0.06, 30))
-        ->Unit(benchmark::kMillisecond);
+        ->Unit(benchmark::kMillisecond)
+        ->Iterations(1);
 
 BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   Legacy KNN[0.02 | 30],
                   0.02,
                   open3d::geometry::KDTreeSearchParamKNN(30))
-        ->Unit(benchmark::kMillisecond);
+        ->Unit(benchmark::kMillisecond)
+        ->Iterations(1);
 
 BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   Legacy Radius[0.02 | 0.06],
                   0.02,
                   open3d::geometry::KDTreeSearchParamRadius(0.06))
-        ->Unit(benchmark::kMillisecond);
+        ->Unit(benchmark::kMillisecond)
+        ->Iterations(1);
 
 BENCHMARK_CAPTURE(
         RemoveRadiusOutliers, CPU[50 | 0.05], core::Device("CPU:0"), 50, 0.03)
