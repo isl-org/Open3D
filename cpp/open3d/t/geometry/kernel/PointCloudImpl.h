@@ -41,6 +41,7 @@
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -520,17 +521,28 @@ void EstimateCovariancesUsingKNNSearchCPU
     core::Dtype dtype = points.GetDtype();
     int64_t n = points.GetLength();
 
+    utility::Timer timer;
+
+    timer.Start();
     core::nns::NearestNeighborSearch tree(points, core::Int32);
     bool check = tree.KnnIndex();
     if (!check) {
         utility::LogError("Building KNN-Index failed.");
     }
+    timer.Stop();
+    utility::LogInfo("- KNN-Index took {} ms.",
+                     timer.GetDurationInMillisecond());
 
+    timer.Start();
     core::Tensor indices, distance;
     std::tie(indices, distance) = tree.KnnSearch(points, max_nn);
 
     indices = indices.Contiguous();
     int32_t nn_count = static_cast<int32_t>(indices.GetShape()[1]);
+
+    timer.Stop();
+    utility::LogInfo("- KNN-Search took {} ms.",
+                     timer.GetDurationInMillisecond());
 
     if (nn_count < 3) {
         utility::LogError(
@@ -539,6 +551,7 @@ void EstimateCovariancesUsingKNNSearchCPU
                 "increasing the max_nn parameter.");
     }
 
+    timer.Start();
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         auto points_ptr = points.GetDataPtr<scalar_t>();
         auto neighbour_indices_ptr = indices.GetDataPtr<int32_t>();
@@ -558,6 +571,9 @@ void EstimateCovariancesUsingKNNSearchCPU
                             covariances_ptr + covariances_offset);
                 });
     });
+    timer.Stop();
+    utility::LogInfo("- Covariance Estimation took {} ms.",
+                     timer.GetDurationInMillisecond());
 
     core::cuda::Synchronize(points.GetDevice());
 }

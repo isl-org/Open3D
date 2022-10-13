@@ -57,6 +57,7 @@
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/utility/Random.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -534,6 +535,9 @@ void PointCloud::EstimateNormals(
             core::Tensor::Empty({GetPointPositions().GetLength(), 3, 3}, dtype,
                                 device));
 
+    utility::Timer timer;
+
+    timer.Start();
     if (radius.has_value() && max_knn.has_value()) {
         utility::LogDebug("Using Hybrid Search for computing covariances");
         // Computes and sets `covariances` attribute using Hybrid Search
@@ -584,8 +588,12 @@ void PointCloud::EstimateNormals(
     } else {
         utility::LogError("Both max_nn and radius are none.");
     }
+    timer.Stop();
+    utility::LogInfo("EstimateCovariances: {} ms.",
+                     timer.GetDurationInMillisecond());
 
     // Estimate `normal` of each point using its `covariance` matrix.
+    timer.Start();
     if (IsCPU()) {
         kernel::pointcloud::EstimateNormalsFromCovariancesCPU(
                 this->GetPointAttr("covariances"), this->GetPointNormals(),
@@ -597,6 +605,9 @@ void PointCloud::EstimateNormals(
     } else {
         utility::LogError("Unimplemented device");
     }
+    timer.Stop();
+    utility::LogInfo("EstimateNormalsFromCovariances: {} ms.",
+                     timer.GetDurationInMillisecond());
 
     // TODO (@rishabh): Don't remove covariances attribute, when
     // EstimateCovariance functionality is exposed.

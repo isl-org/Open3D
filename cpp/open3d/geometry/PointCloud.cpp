@@ -39,6 +39,7 @@
 #include "open3d/utility/Parallel.h"
 #include "open3d/utility/ProgressBar.h"
 #include "open3d/utility/Random.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace geometry {
@@ -675,23 +676,49 @@ std::vector<Eigen::Matrix3d> PointCloud::EstimatePerPointCovariances(
     std::vector<Eigen::Matrix3d> covariances;
     covariances.resize(points.size());
 
+    utility::Timer timer;
+
+    timer.Start();
     KDTreeFlann kdtree;
     kdtree.SetGeometry(input);
+    timer.Stop();
+    utility::LogInfo("KDTree construction time: {:.3f} ms.",
+                     timer.GetDurationInMillisecond());
+
+    std::vector<double> search_times(points.size(), 0);      // In ms
+    std::vector<double> covariance_times(points.size(), 0);  // In ms
+
 #pragma omp parallel for schedule(static)
     for (int i = 0; i < (int)points.size(); i++) {
         std::vector<int> indices;
         std::vector<double> distance2;
+
+        utility::Timer thread_timer;
+        thread_timer.Start();
         if (kdtree.Search(points[i], search_param, indices, distance2) >= 3) {
+            thread_timer.Stop();
+            search_times[i] = thread_timer.GetDurationInMillisecond();
+
+            thread_timer.Start();
             auto covariance = utility::ComputeCovariance(points, indices);
             if (input.HasCovariances() && covariance.isIdentity(1e-4)) {
                 covariances[i] = input.covariances_[i];
             } else {
                 covariances[i] = covariance;
             }
+            thread_timer.Stop();
+            covariance_times[i] = thread_timer.GetDurationInMillisecond();
         } else {
             covariances[i] = Eigen::Matrix3d::Identity();
         }
     }
+    double total_search_time =
+            std::accumulate(search_times.begin(), search_times.end(), 0.0);
+    double total_covariance_time = std::accumulate(covariance_times.begin(),
+                                                   covariance_times.end(), 0.0);
+    utility::LogInfo("Search time: {:.3f} ms.", total_search_time);
+    utility::LogInfo("Covariance time: {:.3f} ms.", total_covariance_time);
+
     return covariances;
 }
 void PointCloud::EstimateCovariances(

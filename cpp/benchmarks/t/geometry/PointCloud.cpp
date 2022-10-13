@@ -423,22 +423,22 @@ BENCHMARK_CAPTURE(SelectByIndex,
         ->Unit(benchmark::kMillisecond);
 #endif
 
-BENCHMARK_CAPTURE(EstimateNormals,
-                  CPU F32 Hybrid[0.02 | 30 | 0.06],
-                  core::Device("CPU:0"),
-                  core::Float32,
-                  0.02,
-                  30,
-                  0.06)
-        ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateNormals,
-                  CPU F64 Hybrid[0.02 | 30 | 0.06],
-                  core::Device("CPU:0"),
-                  core::Float64,
-                  0.02,
-                  30,
-                  0.06)
-        ->Unit(benchmark::kMillisecond);
+// BENCHMARK_CAPTURE(EstimateNormals,
+//                   CPU F32 Hybrid[0.02 | 30 | 0.06],
+//                   core::Device("CPU:0"),
+//                   core::Float32,
+//                   0.02,
+//                   30,
+//                   0.06)
+//         ->Unit(benchmark::kMillisecond);
+// BENCHMARK_CAPTURE(EstimateNormals,
+//                   CPU F64 Hybrid[0.02 | 30 | 0.06],
+//                   core::Device("CPU:0"),
+//                   core::Float64,
+//                   0.02,
+//                   30,
+//                   0.06)
+//         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(EstimateNormals,
                   CPU F32 KNN[0.02 | 30],
                   core::Device("CPU:0"),
@@ -446,31 +446,31 @@ BENCHMARK_CAPTURE(EstimateNormals,
                   0.02,
                   30,
                   utility::nullopt)
-        ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateNormals,
-                  CPU F64 KNN[0.02 | 30],
-                  core::Device("CPU:0"),
-                  core::Float64,
-                  0.02,
-                  30,
-                  utility::nullopt)
-        ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateNormals,
-                  CPU F32 Radius[0.02 | 0.06],
-                  core::Device("CPU:0"),
-                  core::Float32,
-                  0.02,
-                  utility::nullopt,
-                  0.06)
-        ->Unit(benchmark::kMillisecond);
-BENCHMARK_CAPTURE(EstimateNormals,
-                  CPU F64 Radius[0.02 | 0.06],
-                  core::Device("CPU:0"),
-                  core::Float64,
-                  0.02,
-                  utility::nullopt,
-                  0.06)
-        ->Unit(benchmark::kMillisecond);
+        ->Unit(benchmark::kMillisecond)->Iterations(1);
+// BENCHMARK_CAPTURE(EstimateNormals,
+//                   CPU F64 KNN[0.02 | 30],
+//                   core::Device("CPU:0"),
+//                   core::Float64,
+//                   0.02,
+//                   30,
+//                   utility::nullopt)
+//         ->Unit(benchmark::kMillisecond);
+// BENCHMARK_CAPTURE(EstimateNormals,
+//                   CPU F32 Radius[0.02 | 0.06],
+//                   core::Device("CPU:0"),
+//                   core::Float32,
+//                   0.02,
+//                   utility::nullopt,
+//                   0.06)
+//         ->Unit(benchmark::kMillisecond);
+// BENCHMARK_CAPTURE(EstimateNormals,
+//                   CPU F64 Radius[0.02 | 0.06],
+//                   core::Device("CPU:0"),
+//                   core::Float64,
+//                   0.02,
+//                   utility::nullopt,
+//                   0.06)
+//         ->Unit(benchmark::kMillisecond);
 #ifdef BUILD_CUDA_MODULE
 BENCHMARK_CAPTURE(EstimateNormals,
                   CUDA F32 Hybrid[0.02 | 30 | 0.06],
@@ -525,12 +525,12 @@ BENCHMARK_CAPTURE(EstimateNormals,
 BENCHMARK_CAPTURE(LegacyTransform, CPU, 1)->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(LegacySelectByIndex, CPU, 1)->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(LegacyEstimateNormals,
-                  Legacy Hybrid[0.02 | 30 | 0.06],
-                  0.02,
-                  open3d::geometry::KDTreeSearchParamHybrid(0.06, 30))
-        ->Unit(benchmark::kMillisecond)
-        ->Iterations(1);
+// BENCHMARK_CAPTURE(LegacyEstimateNormals,
+//                   Legacy Hybrid[0.02 | 30 | 0.06],
+//                   0.02,
+//                   open3d::geometry::KDTreeSearchParamHybrid(0.06, 30))
+//         ->Unit(benchmark::kMillisecond)
+//         ->Iterations(1);
 
 BENCHMARK_CAPTURE(LegacyEstimateNormals,
                   Legacy KNN[0.02 | 30],
@@ -539,12 +539,12 @@ BENCHMARK_CAPTURE(LegacyEstimateNormals,
         ->Unit(benchmark::kMillisecond)
         ->Iterations(1);
 
-BENCHMARK_CAPTURE(LegacyEstimateNormals,
-                  Legacy Radius[0.02 | 0.06],
-                  0.02,
-                  open3d::geometry::KDTreeSearchParamRadius(0.06))
-        ->Unit(benchmark::kMillisecond)
-        ->Iterations(1);
+// BENCHMARK_CAPTURE(LegacyEstimateNormals,
+//                   Legacy Radius[0.02 | 0.06],
+//                   0.02,
+//                   open3d::geometry::KDTreeSearchParamRadius(0.06))
+//         ->Unit(benchmark::kMillisecond)
+//         ->Iterations(1);
 
 BENCHMARK_CAPTURE(
         RemoveRadiusOutliers, CPU[50 | 0.05], core::Device("CPU:0"), 50, 0.03)
