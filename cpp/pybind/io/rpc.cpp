@@ -111,21 +111,43 @@ A connection writing to a memory buffer.
                      "the connection."},
             });
 
-    m.def("set_triangle_mesh", &rpc::SetTriangleMesh, "mesh"_a, "path"_a = "",
-          "time"_a = 0, "layer"_a = "",
+    m.def("set_triangle_mesh",
+          py::overload_cast<const geometry::TriangleMesh&, const std::string&,
+                            int, const std::string&,
+                            std::shared_ptr<rpc::ConnectionBase>>(
+                  &rpc::SetTriangleMesh),
+          "mesh"_a, "path"_a = "", "time"_a = 0, "layer"_a = "",
           "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
-          "Sends a point cloud message to a viewer.");
-    docstring::FunctionDocInject(
-            m, "set_triangle_mesh",
-            {
-                    {"mesh", "The TriangleMesh object."},
-                    {"path", "A path descriptor, e.g., 'mygroup/mesh'."},
-                    {"time", "The time associated with this data."},
-                    {"layer", "The layer associated with this data."},
-                    {"connection",
-                     "A Connection object. Use None to automatically create "
-                     "the connection."},
-            });
+          R"doc(Sends a triangle mesh to a viewer.
+Args:
+    mesh (o3d.geometry.TriangleMesh): The triangle mesh.
+    path (str): The path in the scene graph.
+    time (int): The time associated with the data.
+    layer (str): A layer name that can be used by receivers that support layers.
+    connection (o3d.io.rpc.Connection): A connection object that will be used for sending the data.
+
+Returns:
+    Returns True if the data was successfully received.
+)doc");
+
+    m.def("set_triangle_mesh",
+          py::overload_cast<const t::geometry::TriangleMesh&,
+                            const std::string&, int, const std::string&,
+                            std::shared_ptr<rpc::ConnectionBase>>(
+                  &rpc::SetTriangleMesh),
+          "mesh"_a, "path"_a = "", "time"_a = 0, "layer"_a = "",
+          "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
+          R"doc(Sends a triangle mesh to a viewer.
+Args:
+    mesh (o3d.t.geometry.TriangleMesh): The triangle mesh.
+    path (str): The path in the scene graph.
+    time (int): The time associated with the data.
+    layer (str): A layer name that can be used by receivers that support layers.
+    connection (o3d.io.rpc.Connection): A connection object that will be used for sending the data.
+
+Returns:
+    Returns True if the data was successfully received.
+)doc");
 
     m.def("set_mesh_data", &rpc::SetMeshData, "path"_a = "", "time"_a = 0,
           "layer"_a = "", "vertices"_a = core::Tensor({0}, core::Float32),

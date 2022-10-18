@@ -26,6 +26,7 @@
 
 #include "open3d/data/Dataset.h"
 
+#include "open3d/io/ImageIO.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Helper.h"
@@ -50,8 +51,8 @@ TEST(Dataset, DatasetBase) {
               "/my/custom/data_root/extract/some_prefix");
 }
 
-TEST(Dataset, SingleDownloadDataset) {
-    const std::string prefix = "SingleDownloadDataset";
+TEST(Dataset, DownloadDataset) {
+    const std::string prefix = "DownloadDataset";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
     const std::string download_dir = data_root + "/download/" + prefix;
@@ -62,9 +63,8 @@ TEST(Dataset, SingleDownloadDataset) {
             "20220201-data/BunnyMesh.ply"};
     const std::string md5 = "568f871d1a221ba6627569f1e6f9a3f2";
 
-    data::SingleDownloadDataset single_download_dataset(
-            prefix, url_mirrors, md5,
-            /*no_extact*/ true, data_root);
+    data::DownloadDataset single_download_dataset(prefix, {url_mirrors, md5},
+                                                  data_root);
 
     EXPECT_TRUE(
             utility::filesystem::FileExists(download_dir + "/BunnyMesh.ply"));
@@ -77,33 +77,123 @@ TEST(Dataset, SingleDownloadDataset) {
     EXPECT_EQ(single_download_dataset.GetExtractDir(), extract_dir);
 }
 
-TEST(Dataset, DemoICPPointClouds) {
-    const std::string prefix = "DemoICPPointClouds";
+TEST(Dataset, ArmadilloMesh) {
+    const std::string prefix = "ArmadilloMesh";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
-    data::DemoICPPointClouds demo_icp;
+    data::ArmadilloMesh dataset;
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    const std::vector<std::string> paths = {extract_dir + "/cloud_bin_0.pcd",
-                                            extract_dir + "/cloud_bin_1.pcd",
-                                            extract_dir + "/cloud_bin_2.pcd"};
-    EXPECT_EQ(demo_icp.GetPaths(), paths);
-    for (size_t i = 0; i < paths.size(); ++i) {
-        EXPECT_EQ(demo_icp.GetPaths(i), paths[i]);
-        EXPECT_TRUE(utility::filesystem::FileExists(demo_icp.GetPaths(i)));
+    EXPECT_EQ(dataset.GetPath(), extract_dir + "/ArmadilloMesh.ply");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, AvocadoModel) {
+    const std::string prefix = "AvocadoModel";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::AvocadoModel dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetPath(), extract_dir + "/AvocadoModel.glb");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, DISABLED_BedroomRGBDImages) {
+    const std::string prefix = "BedroomRGBDImages";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::BedroomRGBDImages dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, BunnyMesh) {
+    const std::string prefix = "BunnyMesh";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::BunnyMesh dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetPath(), extract_dir + "/BunnyMesh.ply");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, CrateModel) {
+    const std::string prefix = "CrateModel";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::CrateModel dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"crate_material", extract_dir + "/crate.mtl"},
+            {"crate_model", extract_dir + "/crate.obj"},
+            {"texture_image", extract_dir + "/crate.jpg"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
     }
 
-    EXPECT_EQ(demo_icp.GetTransformationLogPath(), extract_dir + "/init.log");
-    EXPECT_TRUE(utility::filesystem::FileExists(
-            demo_icp.GetTransformationLogPath()));
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
 
-    EXPECT_EQ(demo_icp.GetPrefix(), prefix);
-    EXPECT_EQ(demo_icp.GetDataRoot(), data_root);
-    EXPECT_EQ(demo_icp.GetDownloadDir(), download_dir);
-    EXPECT_EQ(demo_icp.GetExtractDir(), extract_dir);
+TEST(Dataset, DamagedHelmetModel) {
+    const std::string prefix = "DamagedHelmetModel";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::DamagedHelmetModel dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetPath(), extract_dir + "/DamagedHelmetModel.glb");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
 TEST(Dataset, DemoColoredICPPointClouds) {
@@ -181,6 +271,35 @@ TEST(Dataset, DemoFeatureMatchingPointClouds) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
+TEST(Dataset, DemoICPPointClouds) {
+    const std::string prefix = "DemoICPPointClouds";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::DemoICPPointClouds demo_icp;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    const std::vector<std::string> paths = {extract_dir + "/cloud_bin_0.pcd",
+                                            extract_dir + "/cloud_bin_1.pcd",
+                                            extract_dir + "/cloud_bin_2.pcd"};
+    EXPECT_EQ(demo_icp.GetPaths(), paths);
+    for (size_t i = 0; i < paths.size(); ++i) {
+        EXPECT_EQ(demo_icp.GetPaths(i), paths[i]);
+        EXPECT_TRUE(utility::filesystem::FileExists(demo_icp.GetPaths(i)));
+    }
+
+    EXPECT_EQ(demo_icp.GetTransformationLogPath(), extract_dir + "/init.log");
+    EXPECT_TRUE(utility::filesystem::FileExists(
+            demo_icp.GetTransformationLogPath()));
+
+    EXPECT_EQ(demo_icp.GetPrefix(), prefix);
+    EXPECT_EQ(demo_icp.GetDataRoot(), data_root);
+    EXPECT_EQ(demo_icp.GetDownloadDir(), download_dir);
+    EXPECT_EQ(demo_icp.GetExtractDir(), extract_dir);
+}
+
 TEST(Dataset, DemoPoseGraphOptimization) {
     const std::string prefix = "DemoPoseGraphOptimization";
     const std::string data_root =
@@ -195,6 +314,199 @@ TEST(Dataset, DemoPoseGraphOptimization) {
               extract_dir + "/pose_graph_example_fragment.json");
     EXPECT_EQ(dataset.GetPoseGraphGlobalPath(),
               extract_dir + "/pose_graph_example_global.json");
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, EaglePointCloud) {
+    const std::string prefix = "EaglePointCloud";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::EaglePointCloud dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetPath(), extract_dir + "/EaglePointCloud.ply");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, FlightHelmetModel) {
+    const std::string prefix = "FlightHelmetModel";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::FlightHelmetModel dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"flight_helmet", extract_dir + "/FlightHelmet.gltf"},
+            {"flight_helmet_bin", extract_dir + "/FlightHelmet.bin"},
+            {"mat_glass_plastic_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_GlassPlasticMat_BaseColor.png"},
+            {"mat_glass_plastic_normal",
+             extract_dir +
+                     "/FlightHelmet_Materials_GlassPlasticMat_Normal.png"},
+            {"mat_glass_plastic_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_GlassPlasticMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_leather_parts_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_LeatherPartsMat_BaseColor.png"},
+            {"mat_leather_parts_normal",
+             extract_dir +
+                     "/FlightHelmet_Materials_LeatherPartsMat_Normal.png"},
+            {"mat_leather_parts_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_LeatherPartsMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_lenses_base",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_BaseColor.png"},
+            {"mat_lenses_normal",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_Normal.png"},
+            {"mat_lenses_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_LensesMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_metal_parts_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_MetalPartsMat_BaseColor.png"},
+            {"mat_metal_parts_normal",
+             extract_dir + "/FlightHelmet_Materials_MetalPartsMat_Normal.png"},
+            {"mat_metal_parts_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_MetalPartsMat_"
+                           "OcclusionRoughMetal.png"},
+            {"mat_rubber_wood_base",
+             extract_dir +
+                     "/FlightHelmet_Materials_RubberWoodMat_BaseColor.png"},
+            {"mat_rubber_wood_normal",
+             extract_dir + "/FlightHelmet_Materials_RubberWoodMat_Normal.png"},
+            {"mat_rubber_wood_occlusion_rough_metal",
+             extract_dir + "/FlightHelmet_Materials_RubberWoodMat_"
+                           "OcclusionRoughMetal.png"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, JuneauImage) {
+    const std::string prefix = "JuneauImage";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::JuneauImage dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetPath(), extract_dir + "/JuneauImage.jpg");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, KnotMesh) {
+    const std::string prefix = "KnotMesh";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::KnotMesh dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetPath(), extract_dir + "/KnotMesh.ply");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, MetalTexture) {
+    const std::string prefix = "MetalTexture";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::MetalTexture dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"albedo", extract_dir + "/Metal008_Color.jpg"},
+            {"normal", extract_dir + "/Metal008_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Metal008_Roughness.jpg"},
+            {"metallic", extract_dir + "/Metal008_Metalness.jpg"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
+
+    EXPECT_EQ(dataset.GetAlbedoTexturePath(),
+              map_filename_to_path.at("albedo"));
+    EXPECT_EQ(dataset.GetNormalTexturePath(),
+              map_filename_to_path.at("normal"));
+    EXPECT_EQ(dataset.GetRoughnessTexturePath(),
+              map_filename_to_path.at("roughness"));
+    EXPECT_EQ(dataset.GetMetallicTexturePath(),
+              map_filename_to_path.at("metallic"));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, MonkeyModel) {
+    const std::string prefix = "MonkeyModel";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::MonkeyModel dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"albedo", extract_dir + "/albedo.png"},
+            {"ao", extract_dir + "/ao.png"},
+            {"metallic", extract_dir + "/metallic.png"},
+            {"monkey_material", extract_dir + "/monkey.mtl"},
+            {"monkey_model", extract_dir + "/monkey.obj"},
+            {"monkey_solid_material", extract_dir + "/monkey_solid.mtl"},
+            {"monkey_solid_model", extract_dir + "/monkey_solid.obj"},
+            {"normal", extract_dir + "/normal.png"},
+            {"roughness", extract_dir + "/roughness.png"}};
+
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    }
 
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
@@ -259,116 +571,225 @@ TEST(Dataset, PTSPointCloud) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
-TEST(Dataset, SampleNYURGBDImage) {
-    const std::string prefix = "SampleNYURGBDImage";
+TEST(Dataset, PaintedPlasterTexture) {
+    const std::string prefix = "PaintedPlasterTexture";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
-    data::SampleNYURGBDImage dataset;
+    data::PaintedPlasterTexture dataset;
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    EXPECT_EQ(dataset.GetColorPath(), extract_dir + "/NYU_color.ppm");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetColorPath()));
-    EXPECT_EQ(dataset.GetDepthPath(), extract_dir + "/NYU_depth.pgm");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetDepthPath()));
+    std::unordered_map<std::string, std::string> map_filename_to_path = {
+            {"albedo", extract_dir + "/PaintedPlaster017_Color.jpg"},
+            {"normal", extract_dir + "/PaintedPlaster017_NormalDX.jpg"},
+            {"roughness", extract_dir + "/noiseTexture.png"}};
 
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, SampleSUNRGBDImage) {
-    const std::string prefix = "SampleSUNRGBDImage";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::SampleSUNRGBDImage dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    EXPECT_EQ(dataset.GetColorPath(), extract_dir + "/SUN_color.jpg");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetColorPath()));
-    EXPECT_EQ(dataset.GetDepthPath(), extract_dir + "/SUN_depth.png");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetDepthPath()));
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, SampleTUMRGBDImage) {
-    const std::string prefix = "SampleTUMRGBDImage";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::SampleTUMRGBDImage dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    EXPECT_EQ(dataset.GetColorPath(), extract_dir + "/TUM_color.png");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetColorPath()));
-    EXPECT_EQ(dataset.GetDepthPath(), extract_dir + "/TUM_depth.png");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetDepthPath()));
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, SampleRedwoodRGBDImages) {
-    const std::string prefix = "SampleRedwoodRGBDImages";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::SampleRedwoodRGBDImages dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    const std::vector<std::string> color_paths = {
-            extract_dir + "/color/00000.jpg", extract_dir + "/color/00001.jpg",
-            extract_dir + "/color/00002.jpg", extract_dir + "/color/00003.jpg",
-            extract_dir + "/color/00004.jpg"};
-    EXPECT_EQ(dataset.GetColorPaths(), color_paths);
-
-    const std::vector<std::string> depth_paths = {
-            extract_dir + "/depth/00000.png", extract_dir + "/depth/00001.png",
-            extract_dir + "/depth/00002.png", extract_dir + "/depth/00003.png",
-            extract_dir + "/depth/00004.png"};
-    EXPECT_EQ(dataset.GetDepthPaths(), depth_paths);
-    for (size_t i = 0; i < color_paths.size(); ++i) {
-        EXPECT_TRUE(
-                utility::filesystem::FileExists(dataset.GetColorPaths()[i]));
-        EXPECT_TRUE(
-                utility::filesystem::FileExists(dataset.GetDepthPaths()[i]));
+    for (auto file_name : dataset.GetPathMap()) {
+        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
+        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
     }
 
-    EXPECT_EQ(dataset.GetTrajectoryLogPath(), extract_dir + "/trajectory.log");
-    EXPECT_TRUE(
-            utility::filesystem::FileExists(dataset.GetTrajectoryLogPath()));
-
-    EXPECT_EQ(dataset.GetOdometryLogPath(), extract_dir + "/odometry.log");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetOdometryLogPath()));
-
-    EXPECT_EQ(dataset.GetRGBDMatchPath(), extract_dir + "/rgbd.match");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetRGBDMatchPath()));
-
-    EXPECT_EQ(dataset.GetReconstructionPath(),
-              extract_dir + "/example_tsdf_pcd.ply");
-    EXPECT_TRUE(
-            utility::filesystem::FileExists(dataset.GetReconstructionPath()));
+    EXPECT_EQ(dataset.GetAlbedoTexturePath(),
+              map_filename_to_path.at("albedo"));
+    EXPECT_EQ(dataset.GetNormalTexturePath(),
+              map_filename_to_path.at("normal"));
+    EXPECT_EQ(dataset.GetRoughnessTexturePath(),
+              map_filename_to_path.at("roughness"));
 
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
     EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, DISABLED_LivingRoomPointClouds) {
+    const std::string prefix = "LivingRoomPointClouds";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::LivingRoomPointClouds dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::vector<std::string> paths;
+    paths.reserve(57);
+    for (int i = 0; i < 57; ++i) {
+        paths.push_back(extract_dir + "/cloud_bin_" + std::to_string(i) +
+                        ".ply");
+    }
+    EXPECT_EQ(dataset.GetPaths(), paths);
+    for (size_t i = 0; i < paths.size(); ++i) {
+        EXPECT_EQ(dataset.GetPaths(i), paths[i]);
+        EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPaths(i)));
+    }
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, DISABLED_OfficePointClouds) {
+    const std::string prefix = "OfficePointClouds";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::OfficePointClouds dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    std::vector<std::string> paths;
+    paths.reserve(53);
+    for (int i = 0; i < 53; ++i) {
+        paths.push_back(extract_dir + "/cloud_bin_" + std::to_string(i) +
+                        ".ply");
+    }
+    EXPECT_EQ(dataset.GetPaths(), paths);
+    for (size_t i = 0; i < paths.size(); ++i) {
+        EXPECT_EQ(dataset.GetPaths(i), paths[i]);
+        EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPaths(i)));
+    }
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, DISABLED_RedwoodIndoorLivingRoom1) {
+    const std::string prefix = "RedwoodIndoorLivingRoom1";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::RedwoodIndoorLivingRoom1 dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(extract_dir));
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+}
+
+TEST(Dataset, DISABLED_RedwoodIndoorLivingRoom2) {
+    const std::string prefix = "RedwoodIndoorLivingRoom2";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::RedwoodIndoorLivingRoom2 dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(extract_dir));
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+}
+
+TEST(Dataset, DISABLED_RedwoodIndoorOffice1) {
+    const std::string prefix = "RedwoodIndoorOffice1";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::RedwoodIndoorOffice1 dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(extract_dir));
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
+}
+
+TEST(Dataset, DISABLED_RedwoodIndoorOffice2) {
+    const std::string prefix = "RedwoodIndoorOffice2";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::RedwoodIndoorOffice2 dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(extract_dir));
+
+    auto pcd = io::CreatePointCloudFromFile(dataset.GetPointCloudPath());
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth = io::CreateImageFromFile(dataset.GetDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_rgbds.push_back(im_rgbd);
+    }
+
+    std::vector<std::shared_ptr<geometry::RGBDImage>> im_noisy_rgbds;
+    for (size_t i = 0; i < dataset.GetColorPaths().size(); ++i) {
+        auto im_color = io::CreateImageFromFile(dataset.GetColorPaths()[i]);
+        auto im_depth =
+                io::CreateImageFromFile(dataset.GetNoisyDepthPaths()[i]);
+        auto im_rgbd = geometry::RGBDImage::CreateFromColorAndDepth(*im_color,
+                                                                    *im_depth);
+        im_noisy_rgbds.push_back(im_rgbd);
+    }
 }
 
 TEST(Dataset, SampleFountainRGBDImages) {
@@ -495,18 +916,20 @@ TEST(Dataset, SampleL515Bag) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
-TEST(Dataset, EaglePointCloud) {
-    const std::string prefix = "EaglePointCloud";
+TEST(Dataset, SampleNYURGBDImage) {
+    const std::string prefix = "SampleNYURGBDImage";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
-    data::EaglePointCloud dataset;
+    data::SampleNYURGBDImage dataset;
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    EXPECT_EQ(dataset.GetPath(), extract_dir + "/EaglePointCloud.ply");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+    EXPECT_EQ(dataset.GetColorPath(), extract_dir + "/NYU_color.ppm");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetColorPath()));
+    EXPECT_EQ(dataset.GetDepthPath(), extract_dir + "/NYU_depth.pgm");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetDepthPath()));
 
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
@@ -514,89 +937,90 @@ TEST(Dataset, EaglePointCloud) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
-TEST(Dataset, ArmadilloMesh) {
-    const std::string prefix = "ArmadilloMesh";
+TEST(Dataset, SampleRedwoodRGBDImages) {
+    const std::string prefix = "SampleRedwoodRGBDImages";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
-    data::ArmadilloMesh dataset;
+    data::SampleRedwoodRGBDImages dataset;
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
-    EXPECT_EQ(dataset.GetPath(), extract_dir + "/ArmadilloMesh.ply");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
+    const std::vector<std::string> color_paths = {
+            extract_dir + "/color/00000.jpg", extract_dir + "/color/00001.jpg",
+            extract_dir + "/color/00002.jpg", extract_dir + "/color/00003.jpg",
+            extract_dir + "/color/00004.jpg"};
+    EXPECT_EQ(dataset.GetColorPaths(), color_paths);
 
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, BunnyMesh) {
-    const std::string prefix = "BunnyMesh";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::BunnyMesh dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    EXPECT_EQ(dataset.GetPath(), extract_dir + "/BunnyMesh.ply");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, KnotMesh) {
-    const std::string prefix = "KnotMesh";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::KnotMesh dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    EXPECT_EQ(dataset.GetPath(), extract_dir + "/KnotMesh.ply");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, MonkeyModel) {
-    const std::string prefix = "MonkeyModel";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::MonkeyModel dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    std::unordered_map<std::string, std::string> map_filename_to_path = {
-            {"albedo", extract_dir + "/albedo.png"},
-            {"ao", extract_dir + "/ao.png"},
-            {"metallic", extract_dir + "/metallic.png"},
-            {"monkey_material", extract_dir + "/monkey.mtl"},
-            {"monkey_model", extract_dir + "/monkey.obj"},
-            {"monkey_solid_material", extract_dir + "/monkey_solid.mtl"},
-            {"monkey_solid_model", extract_dir + "/monkey_solid.obj"},
-            {"normal", extract_dir + "/normal.png"},
-            {"roughness", extract_dir + "/roughness.png"}};
-
-    for (auto file_name : dataset.GetPathMap()) {
-        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
-        EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
-        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
+    const std::vector<std::string> depth_paths = {
+            extract_dir + "/depth/00000.png", extract_dir + "/depth/00001.png",
+            extract_dir + "/depth/00002.png", extract_dir + "/depth/00003.png",
+            extract_dir + "/depth/00004.png"};
+    EXPECT_EQ(dataset.GetDepthPaths(), depth_paths);
+    for (size_t i = 0; i < color_paths.size(); ++i) {
+        EXPECT_TRUE(
+                utility::filesystem::FileExists(dataset.GetColorPaths()[i]));
+        EXPECT_TRUE(
+                utility::filesystem::FileExists(dataset.GetDepthPaths()[i]));
     }
+
+    EXPECT_EQ(dataset.GetTrajectoryLogPath(), extract_dir + "/trajectory.log");
+    EXPECT_TRUE(
+            utility::filesystem::FileExists(dataset.GetTrajectoryLogPath()));
+
+    EXPECT_EQ(dataset.GetOdometryLogPath(), extract_dir + "/odometry.log");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetOdometryLogPath()));
+
+    EXPECT_EQ(dataset.GetRGBDMatchPath(), extract_dir + "/rgbd.match");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetRGBDMatchPath()));
+
+    EXPECT_EQ(dataset.GetReconstructionPath(),
+              extract_dir + "/example_tsdf_pcd.ply");
+    EXPECT_TRUE(
+            utility::filesystem::FileExists(dataset.GetReconstructionPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, SampleSUNRGBDImage) {
+    const std::string prefix = "SampleSUNRGBDImage";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::SampleSUNRGBDImage dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetColorPath(), extract_dir + "/SUN_color.jpg");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetColorPath()));
+    EXPECT_EQ(dataset.GetDepthPath(), extract_dir + "/SUN_depth.png");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetDepthPath()));
+
+    EXPECT_EQ(dataset.GetPrefix(), prefix);
+    EXPECT_EQ(dataset.GetDataRoot(), data_root);
+    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
+    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
+}
+
+TEST(Dataset, SampleTUMRGBDImage) {
+    const std::string prefix = "SampleTUMRGBDImage";
+    const std::string data_root =
+            utility::filesystem::GetHomeDirectory() + "/open3d_data";
+    const std::string download_dir = data_root + "/download/" + prefix;
+    const std::string extract_dir = data_root + "/extract/" + prefix;
+
+    data::SampleTUMRGBDImage dataset;
+    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
+
+    EXPECT_EQ(dataset.GetColorPath(), extract_dir + "/TUM_color.png");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetColorPath()));
+    EXPECT_EQ(dataset.GetDepthPath(), extract_dir + "/TUM_depth.png");
+    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetDepthPath()));
 
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);
@@ -634,188 +1058,20 @@ TEST(Dataset, SwordModel) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
-TEST(Dataset, CrateModel) {
-    const std::string prefix = "CrateModel";
+TEST(Dataset, TerrazzoTexture) {
+    const std::string prefix = "TerrazzoTexture";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
-    data::CrateModel dataset;
+    data::TerrazzoTexture dataset;
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     std::unordered_map<std::string, std::string> map_filename_to_path = {
-            {"crate_material", extract_dir + "/crate.mtl"},
-            {"crate_model", extract_dir + "/crate.obj"},
-            {"texture_image", extract_dir + "/crate.jpg"}};
-
-    for (auto file_name : dataset.GetPathMap()) {
-        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
-        EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
-        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
-    }
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, FlightHelmetModel) {
-    const std::string prefix = "FlightHelmetModel";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::FlightHelmetModel dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    std::unordered_map<std::string, std::string> map_filename_to_path = {
-            {"flight_helmet", extract_dir + "/FlightHelmet.gltf"},
-            {"flight_helmet_bin", extract_dir + "/FlightHelmet.bin"},
-            {"mat_glass_plastic_base",
-             extract_dir +
-                     "/FlightHelmet_Materials_GlassPlasticMat_BaseColor.png"},
-            {"mat_glass_plastic_normal",
-             extract_dir +
-                     "/FlightHelmet_Materials_GlassPlasticMat_Normal.png"},
-            {"mat_glass_plastic_occlusion_rough_metal",
-             extract_dir + "/FlightHelmet_Materials_GlassPlasticMat_"
-                           "OcclusionRoughMetal.png"},
-            {"mat_leather_parts_base",
-             extract_dir +
-                     "/FlightHelmet_Materials_LeatherPartsMat_BaseColor.png"},
-            {"mat_leather_parts_normal",
-             extract_dir +
-                     "/FlightHelmet_Materials_LeatherPartsMat_Normal.png"},
-            {"mat_leather_parts_occlusion_rough_metal",
-             extract_dir + "/FlightHelmet_Materials_LeatherPartsMat_"
-                           "OcclusionRoughMetal.png"},
-            {"mat_lenses_base",
-             extract_dir + "/FlightHelmet_Materials_LensesMat_BaseColor.png"},
-            {"mat_lenses_normal",
-             extract_dir + "/FlightHelmet_Materials_LensesMat_Normal.png"},
-            {"mat_lenses_occlusion_rough_metal",
-             extract_dir + "/FlightHelmet_Materials_LensesMat_"
-                           "OcclusionRoughMetal.png"},
-            {"mat_metal_parts_base",
-             extract_dir +
-                     "/FlightHelmet_Materials_MetalPartsMat_BaseColor.png"},
-            {"mat_metal_parts_normal",
-             extract_dir + "/FlightHelmet_Materials_MetalPartsMat_Normal.png"},
-            {"mat_metal_parts_occlusion_rough_metal",
-             extract_dir + "/FlightHelmet_Materials_MetalPartsMat_"
-                           "OcclusionRoughMetal.png"},
-            {"mat_rubber_wood_base",
-             extract_dir +
-                     "/FlightHelmet_Materials_RubberWoodMat_BaseColor.png"},
-            {"mat_rubber_wood_normal",
-             extract_dir + "/FlightHelmet_Materials_RubberWoodMat_Normal.png"},
-            {"mat_rubber_wood_occlusion_rough_metal",
-             extract_dir + "/FlightHelmet_Materials_RubberWoodMat_"
-                           "OcclusionRoughMetal.png"}};
-
-    for (auto file_name : dataset.GetPathMap()) {
-        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
-        EXPECT_EQ(dataset.GetPath(file_name.first), file_name.second);
-        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
-    }
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, AvocadoModel) {
-    const std::string prefix = "AvocadoModel";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::AvocadoModel dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    EXPECT_EQ(dataset.GetPath(), extract_dir + "/AvocadoModel.glb");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, DamagedHelmetModel) {
-    const std::string prefix = "DamagedHelmetModel";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::DamagedHelmetModel dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    EXPECT_EQ(dataset.GetPath(), extract_dir + "/DamagedHelmetModel.glb");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, MetalTexture) {
-    const std::string prefix = "MetalTexture";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::MetalTexture dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    std::unordered_map<std::string, std::string> map_filename_to_path = {
-            {"albedo", extract_dir + "/Metal008_Color.jpg"},
-            {"normal", extract_dir + "/Metal008_NormalDX.jpg"},
-            {"roughness", extract_dir + "/Metal008_Roughness.jpg"},
-            {"metallic", extract_dir + "/Metal008_Metalness.jpg"}};
-
-    for (auto file_name : dataset.GetPathMap()) {
-        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
-        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
-    }
-
-    EXPECT_EQ(dataset.GetAlbedoTexturePath(),
-              map_filename_to_path.at("albedo"));
-    EXPECT_EQ(dataset.GetNormalTexturePath(),
-              map_filename_to_path.at("normal"));
-    EXPECT_EQ(dataset.GetRoughnessTexturePath(),
-              map_filename_to_path.at("roughness"));
-    EXPECT_EQ(dataset.GetMetallicTexturePath(),
-              map_filename_to_path.at("metallic"));
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, PaintedPlasterTexture) {
-    const std::string prefix = "PaintedPlasterTexture";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::PaintedPlasterTexture dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    std::unordered_map<std::string, std::string> map_filename_to_path = {
-            {"albedo", extract_dir + "/PaintedPlaster017_Color.jpg"},
-            {"normal", extract_dir + "/PaintedPlaster017_NormalDX.jpg"},
-            {"roughness", extract_dir + "/noiseTexture.png"}};
+            {"albedo", extract_dir + "/Terrazzo018_Color.jpg"},
+            {"normal", extract_dir + "/Terrazzo018_NormalDX.jpg"},
+            {"roughness", extract_dir + "/Terrazzo018_Roughness.jpg"}};
 
     for (auto file_name : dataset.GetPathMap()) {
         EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
@@ -868,20 +1124,20 @@ TEST(Dataset, TilesTexture) {
     EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
 }
 
-TEST(Dataset, TerrazzoTexture) {
-    const std::string prefix = "TerrazzoTexture";
+TEST(Dataset, WoodFloorTexture) {
+    const std::string prefix = "WoodFloorTexture";
     const std::string data_root =
             utility::filesystem::GetHomeDirectory() + "/open3d_data";
     const std::string download_dir = data_root + "/download/" + prefix;
     const std::string extract_dir = data_root + "/extract/" + prefix;
 
-    data::TerrazzoTexture dataset;
+    data::WoodFloorTexture dataset;
     EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
 
     std::unordered_map<std::string, std::string> map_filename_to_path = {
-            {"albedo", extract_dir + "/Terrazzo018_Color.jpg"},
-            {"normal", extract_dir + "/Terrazzo018_NormalDX.jpg"},
-            {"roughness", extract_dir + "/Terrazzo018_Roughness.jpg"}};
+            {"albedo", extract_dir + "/WoodFloor050_Color.jpg"},
+            {"normal", extract_dir + "/WoodFloor050_NormalDX.jpg"},
+            {"roughness", extract_dir + "/WoodFloor050_Roughness.jpg"}};
 
     for (auto file_name : dataset.GetPathMap()) {
         EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
@@ -927,114 +1183,6 @@ TEST(Dataset, WoodTexture) {
               map_filename_to_path.at("normal"));
     EXPECT_EQ(dataset.GetRoughnessTexturePath(),
               map_filename_to_path.at("roughness"));
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, WoodFloorTexture) {
-    const std::string prefix = "WoodFloorTexture";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::WoodFloorTexture dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    std::unordered_map<std::string, std::string> map_filename_to_path = {
-            {"albedo", extract_dir + "/WoodFloor050_Color.jpg"},
-            {"normal", extract_dir + "/WoodFloor050_NormalDX.jpg"},
-            {"roughness", extract_dir + "/WoodFloor050_Roughness.jpg"}};
-
-    for (auto file_name : dataset.GetPathMap()) {
-        EXPECT_EQ(map_filename_to_path.at(file_name.first), file_name.second);
-        EXPECT_TRUE(utility::filesystem::FileExists(file_name.second));
-    }
-
-    EXPECT_EQ(dataset.GetAlbedoTexturePath(),
-              map_filename_to_path.at("albedo"));
-    EXPECT_EQ(dataset.GetNormalTexturePath(),
-              map_filename_to_path.at("normal"));
-    EXPECT_EQ(dataset.GetRoughnessTexturePath(),
-              map_filename_to_path.at("roughness"));
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, JuneauImage) {
-    const std::string prefix = "JuneauImage";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::JuneauImage dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    EXPECT_EQ(dataset.GetPath(), extract_dir + "/JuneauImage.jpg");
-    EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPath()));
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, DISABLED_RedwoodLivingRoomPointClouds) {
-    const std::string prefix = "LivingRoomPointClouds";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::LivingRoomPointClouds dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    std::vector<std::string> paths;
-    paths.reserve(57);
-    for (int i = 0; i < 57; ++i) {
-        paths.push_back(extract_dir + "/cloud_bin_" + std::to_string(i) +
-                        ".ply");
-    }
-    EXPECT_EQ(dataset.GetPaths(), paths);
-    for (size_t i = 0; i < paths.size(); ++i) {
-        EXPECT_EQ(dataset.GetPaths(i), paths[i]);
-        EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPaths(i)));
-    }
-
-    EXPECT_EQ(dataset.GetPrefix(), prefix);
-    EXPECT_EQ(dataset.GetDataRoot(), data_root);
-    EXPECT_EQ(dataset.GetDownloadDir(), download_dir);
-    EXPECT_EQ(dataset.GetExtractDir(), extract_dir);
-}
-
-TEST(Dataset, DISABLED_RedwoodOfficePointClouds) {
-    const std::string prefix = "OfficePointClouds";
-    const std::string data_root =
-            utility::filesystem::GetHomeDirectory() + "/open3d_data";
-    const std::string download_dir = data_root + "/download/" + prefix;
-    const std::string extract_dir = data_root + "/extract/" + prefix;
-
-    data::OfficePointClouds dataset;
-    EXPECT_TRUE(utility::filesystem::DirectoryExists(download_dir));
-
-    std::vector<std::string> paths;
-    paths.reserve(53);
-    for (int i = 0; i < 53; ++i) {
-        paths.push_back(extract_dir + "/cloud_bin_" + std::to_string(i) +
-                        ".ply");
-    }
-    EXPECT_EQ(dataset.GetPaths(), paths);
-    for (size_t i = 0; i < paths.size(); ++i) {
-        EXPECT_EQ(dataset.GetPaths(i), paths[i]);
-        EXPECT_TRUE(utility::filesystem::FileExists(dataset.GetPaths(i)));
-    }
 
     EXPECT_EQ(dataset.GetPrefix(), prefix);
     EXPECT_EQ(dataset.GetDataRoot(), data_root);

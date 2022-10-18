@@ -72,7 +72,7 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
 
     // ToString
     EXPECT_EQ(pcd.ToString(),
-              "PointCloud on CPU:0 [0 points] Attributes: None.");
+              "PointCloud on CPU:0 [0 points].\nAttributes: None.");
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
@@ -536,7 +536,7 @@ TEST_P(PointCloudPermuteDevices, Getters) {
 
     // ToString
     std::string text = "PointCloud on " + device.ToString() +
-                       " [2 points (Float32)] Attributes: ";
+                       " [2 points (Float32)].\nAttributes: ";
     EXPECT_THAT(pcd.ToString(),  // Compiler dependent output
                 AnyOf(text + "colors (dtype = Float32, shape = {2, 3}), labels "
                              "(dtype = Float32, shape = {2, 3}).",

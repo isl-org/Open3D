@@ -96,7 +96,7 @@ std::string PointCloud::ToString() const {
                 fmt::format(" ({})", GetPointPositions().GetDtype().ToString());
     }
     auto str =
-            fmt::format("PointCloud on {} [{} points{}] Attributes:",
+            fmt::format("PointCloud on {} [{} points{}].\nAttributes:",
                         GetDevice().ToString(), num_points, points_dtype_str);
 
     if ((point_attr_.size() - point_attr_.count(point_attr_.GetPrimaryKey())) ==

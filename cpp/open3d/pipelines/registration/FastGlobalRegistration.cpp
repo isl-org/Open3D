@@ -88,7 +88,7 @@ static std::vector<std::pair<int, int>> AdvancedMatching(
     int ncorr = static_cast<int>(corres_cross.size());
     int number_of_trial = ncorr * 100;
 
-    utility::random::UniformIntGenerator rand_generator(0, ncorr - 1);
+    utility::random::UniformIntGenerator<int> rand_generator(0, ncorr - 1);
     std::vector<std::pair<int, int>> corres_tuple;
     for (i = 0; i < number_of_trial; i++) {
         rand0 = rand_generator();
