@@ -34,14 +34,14 @@ namespace random {
 
 /// Global thread-safe singleton instance for random generation.
 /// Generates compiler/OS/device independent random numbers.
-class GlobalContext {
+class RandomContext {
 public:
-    GlobalContext(GlobalContext const&) = delete;
-    void operator=(GlobalContext const&) = delete;
+    RandomContext(RandomContext const&) = delete;
+    void operator=(RandomContext const&) = delete;
 
     /// Returns the singleton instance.
-    static GlobalContext& GetInstance() {
-        static GlobalContext instance;
+    static RandomContext& GetInstance() {
+        static RandomContext instance;
         return instance;
     }
 
@@ -59,7 +59,7 @@ public:
     std::mutex* GetMutex() { return &mutex_; }
 
 private:
-    GlobalContext() {
+    RandomContext() {
         // Randomly seed the seed by default.
         std::random_device rd;
         Seed(rd());
@@ -69,45 +69,15 @@ private:
     std::mutex mutex_;
 };
 
-void Seed(const int seed) { GlobalContext::GetInstance().Seed(seed); }
+void Seed(const int seed) { RandomContext::GetInstance().Seed(seed); }
 
-std::mt19937* GetEngine() { return GlobalContext::GetInstance().GetEngine(); }
+std::mt19937* GetEngine() { return RandomContext::GetInstance().GetEngine(); }
 
-std::mutex* GetMutex() { return GlobalContext::GetInstance().GetMutex(); }
+std::mutex* GetMutex() { return RandomContext::GetInstance().GetMutex(); }
 
 uint32_t RandUint32() {
     std::lock_guard<std::mutex> lock(*GetMutex());
     return (*GetEngine())();
-}
-
-UniformIntGenerator::UniformIntGenerator(const int low, const int high)
-    : distribution_(low, high) {
-    if (low < 0) {
-        utility::LogError("low must be > 0, but got {}.", low);
-    }
-    if (low >= high) {
-        utility::LogError("low must be < high, but got low={} and high={}.",
-                          low, high);
-    }
-}
-
-int UniformIntGenerator::operator()() {
-    std::lock_guard<std::mutex> lock(*GetMutex());
-    return distribution_(*GetEngine());
-}
-
-UniformDoubleGenerator::UniformDoubleGenerator(const double low,
-                                               const double high) {
-    if (low >= high) {
-        utility::LogError("low must be < high, but got low={} and high={}.",
-                          low, high);
-    }
-    distribution_ = std::uniform_real_distribution<double>(low, high);
-}
-
-double UniformDoubleGenerator::operator()() {
-    std::lock_guard<std::mutex> lock(*GetMutex());
-    return distribution_(*GetEngine());
 }
 
 }  // namespace random
