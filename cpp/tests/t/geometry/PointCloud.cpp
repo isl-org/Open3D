@@ -1095,7 +1095,7 @@ TEST_P(PointCloudPermuteDevices, HiddenPointRemoval) {
 TEST_P(PointCloudPermuteDevices, PaintUniformColor) {
     core::Device device = GetParam();
 
-    const t::geometry::PointCloud pcd_small(
+    t::geometry::PointCloud pcd_small(
             core::Tensor::Init<double>({{1.0, 1.0, 1.0},
                                         {1.1, 1.1, 1.1},
                                         {1.2, 1.2, 1.2},

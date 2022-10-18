@@ -318,6 +318,12 @@ public:
     /// \return Rotated point cloud
     PointCloud &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// \brief Assigns uniform color to the point cloud.
+    ///
+    /// \param color  RGB color for the point cloud. {3,} shaped Tensor.
+    /// Floating color values are clipped between 0.0 and 1.0.
+    PointCloud &PaintUniformColor(const core::Tensor &color);
+
     /// \brief Select points from input pointcloud, based on boolean mask
     /// indices into output point cloud.
     ///
@@ -394,12 +400,6 @@ public:
     /// selected values w.r.t. input point cloud.
     std::tuple<PointCloud, core::Tensor> RemoveNonFinitePoints(
             bool remove_nan = true, bool remove_infinite = true) const;
-
-    /// \brief Assigns uniform color to the point cloud.
-    ///
-    /// \param color  RGB color for the point cloud. {3,} shaped Tensor.
-    /// Floating color values are clipped between 0.0 and 1.0.
-    PointCloud PaintUniformColor(const core::Tensor &color) const;
 
     /// \brief Returns the device attribute of this PointCloud.
     core::Device GetDevice() const override { return device_; }
