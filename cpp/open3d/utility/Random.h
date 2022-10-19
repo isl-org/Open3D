@@ -29,6 +29,8 @@
 #include <mutex>
 #include <random>
 
+#include "open3d/utility/Logging.h"
+
 namespace open3d {
 namespace utility {
 namespace random {
@@ -42,6 +44,7 @@ void Seed(const int seed);
 /// Example:
 /// ```cpp
 /// #include "open3d/utility/Random.h"
+///
 /// {
 ///     // Put the lock and the call to the engine in the same scope.
 ///     std::lock_guard<std::mutex> lock(*utility::random::GetMutex());
@@ -59,9 +62,9 @@ std::mutex* GetMutex();
 /// This function is automatically protected by the global random mutex.
 uint32_t RandUint32();
 
-/// Generates uniformly distributed random integers in [low, high).
+/// Generate uniformly distributed random integers in [low, high).
 /// This class is globally seeded by utility::random::Seed().
-/// This class is automatically protected by the global random mutex.
+/// This class is a wrapper around std::uniform_int_distribution.
 ///
 /// Example:
 /// ```cpp
@@ -70,31 +73,43 @@ uint32_t RandUint32();
 /// // Globally seed Open3D. This will affect all random functions.
 /// utility::random::Seed(0);
 ///
-/// // Generate a random integer in [0, 100).
-/// utility::random::UniformIntGenerator gen(0, 100);
-/// for (int i = 0; i < 10; i++) {
+/// // Generate a random int in [0, 100).
+/// utility::random::UniformIntGenerator<int> gen(0, 100);
+/// for (size_t i = 0; i < 10; i++) {
 ///     std::cout << gen() << std::endl;
 /// }
 /// ```
+template <typename T>
 class UniformIntGenerator {
 public:
     /// Generate uniformly distributed random integer from
     /// [low, low + 1, ... high - 1].
     ///
-    /// \param low The lower bound (inclusive). \p low must be >= 0.
+    /// \param low The lower bound (inclusive).
     /// \param high The upper bound (exclusive). \p high must be > \p low.
-    UniformIntGenerator(const int low, const int high);
+    UniformIntGenerator(const T low, const T high) : distribution_(low, high) {
+        if (low < 0) {
+            utility::LogError("low must be > 0, but got {}.", low);
+        }
+        if (low >= high) {
+            utility::LogError("low must be < high, but got low={} and high={}.",
+                              low, high);
+        }
+    }
 
-    /// Call this to generate a uniformly distributed random integer.
-    int operator()();
+    /// Call this to generate a uniformly distributed integer.
+    T operator()() {
+        std::lock_guard<std::mutex> lock(*GetMutex());
+        return distribution_(*GetEngine());
+    }
 
 protected:
-    std::uniform_int_distribution<int> distribution_;
+    std::uniform_int_distribution<T> distribution_;
 };
 
-/// Generates uniformly distributed random doubles in [low, high).
+/// Generate uniformly distributed floating point values in [low, high).
 /// This class is globally seeded by utility::random::Seed().
-/// This class is automatically protected by the global random mutex.
+/// This class is a wrapper around std::uniform_real_distribution.
 ///
 /// Example:
 /// ```cpp
@@ -104,24 +119,75 @@ protected:
 /// utility::random::Seed(0);
 ///
 /// // Generate a random double in [0, 1).
-/// utility::random::UniformDoubleGenerator gen(0, 1);
-/// for (int i = 0; i < 10; i++) {
+/// utility::random::UniformRealGenerator<double> gen(0, 1);
+/// for (size_t i = 0; i < 10; i++) {
 ///    std::cout << gen() << std::endl;
 /// }
 /// ```
-class UniformDoubleGenerator {
+template <typename T>
+class UniformRealGenerator {
 public:
-    /// Generate uniformly distributed random doubles in [low, high).
+    /// Generate uniformly distributed floating point values in [low, high).
     ///
     /// \param low The lower bound (inclusive).
     /// \param high The upper bound (exclusive).
-    UniformDoubleGenerator(const double low, const double high);
+    UniformRealGenerator(const T low = 0.0, const T high = 1.0)
+        : distribution_(low, high) {
+        if (low >= high) {
+            utility::LogError("low must be < high, but got low={} and high={}.",
+                              low, high);
+        }
+    }
 
-    /// Call this to generate a uniformly distributed random double.
-    double operator()();
+    /// Call this to generate a uniformly distributed floating point value.
+    T operator()() {
+        std::lock_guard<std::mutex> lock(*GetMutex());
+        return distribution_(*GetEngine());
+    }
 
 protected:
-    std::uniform_real_distribution<double> distribution_;
+    std::uniform_real_distribution<T> distribution_;
+};
+
+/// Generate normally distributed floating point values with mean and std.
+/// This class is globally seeded by utility::random::Seed().
+/// This class is a wrapper around std::normal_distribution.
+///
+/// Example:
+/// ```cpp
+/// #include "open3d/utility/Random.h"
+///
+/// // Globally seed Open3D. This will affect all random functions.
+/// utility::random::Seed(0);
+///
+/// // Generate a random double with mean 0 and std 1.
+/// utility::random::NormalGenerator<double> gen(0, 1);
+/// for (size_t i = 0; i < 10; i++) {
+///     std::cout << gen() << std::endl;
+/// }
+/// ```
+template <typename T>
+class NormalGenerator {
+public:
+    /// Generate normally distributed floating point value with mean and std.
+    ///
+    /// \param mean The mean of the distribution.
+    /// \param stddev The standard deviation of the distribution.
+    NormalGenerator(const T mean = 0.0, const T stddev = 1.0)
+        : distribution_(mean, stddev) {
+        if (stddev <= 0) {
+            utility::LogError("stddev must be > 0, but got {}.", stddev);
+        }
+    }
+
+    /// Call this to generate a normally distributed floating point value.
+    T operator()() {
+        std::lock_guard<std::mutex> lock(*GetMutex());
+        return distribution_(*GetEngine());
+    }
+
+protected:
+    std::normal_distribution<T> distribution_;
 };
 
 }  // namespace random
