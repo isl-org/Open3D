@@ -109,7 +109,8 @@ class ExternalVisualizer:
                                                 layer=layer,
                                                 connection=connection)
             result.append(status)
-        elif isinstance(obj, o3d.geometry.TriangleMesh):
+        elif isinstance(
+                obj, (o3d.t.geometry.TriangleMesh, o3d.geometry.TriangleMesh)):
             status = o3d.io.rpc.set_triangle_mesh(obj,
                                                   path=path,
                                                   time=time,

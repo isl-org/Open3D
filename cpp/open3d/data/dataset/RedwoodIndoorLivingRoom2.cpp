@@ -48,6 +48,8 @@ const static std::vector<DataDescriptor> data_descriptors = {
          "193961c018f4c2a753458d5231544036"},
         {Open3DDownloadsPrefix() + "augmented-icl-nuim/livingroom2.oni.zip",
          "b827aa33cddffc8131d9b25007930137"},
+        {Open3DDownloadsPrefix() + "augmented-icl-nuim/dist-model.txt",
+         "d8d7b6d29e754c2993a6eba4fd8d89ea"},
 };
 
 RedwoodIndoorLivingRoom2::RedwoodIndoorLivingRoom2(const std::string& data_root)
@@ -90,6 +92,10 @@ RedwoodIndoorLivingRoom2::RedwoodIndoorLivingRoom2(const std::string& data_root)
     // trajectory_path_
     trajectory_path_ = extract_dir + "/livingroom2-traj.txt";
     all_paths.push_back(trajectory_path_);
+
+    // noise_model_path_
+    noise_model_path_ = extract_dir + "/dist-model.txt";
+    all_paths.push_back(noise_model_path_);
 
     // Check all files exist.
     CheckPathsExist(all_paths);
