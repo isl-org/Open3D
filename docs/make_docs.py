@@ -505,12 +505,19 @@ class JupyterDocsBuilder:
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
         nb_direct_copy = [
-            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration.ipynb',
-            'jupyter_visualization.ipynb'
+            'draw_plotly.ipynb',
+            'hashmap.ipynb',
+            'jupyter_visualization.ipynb',
+            't_icp_registration.ipynb',
+            'tensor.ipynb',
         ]
         example_dirs = [
-            "geometry", "core", "data", "pipelines", "visualization",
-            "t_pipelines"
+            "core",
+            "data",
+            "geometry",
+            "pipelines",
+            "t_pipelines",
+            "visualization",
         ]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir) / "jupyter" / example_dir)
