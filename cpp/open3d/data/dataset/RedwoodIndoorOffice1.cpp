@@ -47,6 +47,8 @@ const static std::vector<DataDescriptor> data_descriptors = {
          "3fac752ab38a4e8a96d1b5afa535f9f7"},
         {Open3DDownloadsPrefix() + "augmented-icl-nuim/office1.oni.zip",
          "1edd52a60b052fde97b05ae3d628caba"},
+        {Open3DDownloadsPrefix() + "augmented-icl-nuim/dist-model.txt",
+         "d8d7b6d29e754c2993a6eba4fd8d89ea"},
 };
 
 RedwoodIndoorOffice1::RedwoodIndoorOffice1(const std::string& data_root)
@@ -89,6 +91,10 @@ RedwoodIndoorOffice1::RedwoodIndoorOffice1(const std::string& data_root)
     // trajectory_path_
     trajectory_path_ = extract_dir + "/office1-traj.txt";
     all_paths.push_back(trajectory_path_);
+
+    // noise_model_path_
+    noise_model_path_ = extract_dir + "/dist-model.txt";
+    all_paths.push_back(noise_model_path_);
 
     // Check all files exist.
     CheckPathsExist(all_paths);

@@ -447,7 +447,7 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveDuplicatedPoints()
     return std::make_tuple(SelectByMask(masks), masks);
 }
 
-PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {
+PointCloud &PointCloud::PaintUniformColor(const core::Tensor &color) {
     core::AssertTensorShape(color, {3});
     core::Tensor clipped_color = color.To(GetDevice());
     if (color.GetDtype() == core::Float32 ||
@@ -458,10 +458,9 @@ PointCloud PointCloud::PaintUniformColor(const core::Tensor &color) const {
             core::Tensor::Empty({GetPointPositions().GetLength(), 3},
                                 clipped_color.GetDtype(), GetDevice());
     pcd_colors.AsRvalue() = clipped_color;
-    PointCloud pcd(this->Clone());
-    pcd.SetPointColors(pcd_colors);
+    SetPointColors(pcd_colors);
 
-    return pcd;
+    return *this;
 }
 
 std::tuple<PointCloud, core::Tensor> PointCloud::ComputeBoundaryPoints(

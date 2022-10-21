@@ -470,7 +470,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     // sample point cloud
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
-    utility::random::UniformDoubleGenerator uniform_generator(0.0, 1.0);
+    utility::random::UniformRealGenerator<double> uniform_generator(0.0, 1.0);
     auto pcd = std::make_shared<PointCloud>();
     pcd->points_.resize(number_of_points);
     if (has_vert_normal || use_triangle_normal) {

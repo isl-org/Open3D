@@ -31,16 +31,17 @@
 
 namespace open3d {
 namespace utility {
+namespace random {
 
 void pybind_random(py::module &m) {
     py::module m_submodule = m.def_submodule("random");
 
-    m_submodule.def("seed", &random::Seed, "seed"_a,
-                    "Set Open3D global random seed.");
+    m_submodule.def("seed", &Seed, "seed"_a, "Set Open3D global random seed.");
 
     docstring::FunctionDocInject(m_submodule, "seed",
                                  {{"seed", "Random seed value."}});
 }
 
+}  // namespace random
 }  // namespace utility
 }  // namespace open3d
