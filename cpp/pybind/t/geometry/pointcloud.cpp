@@ -249,24 +249,49 @@ The attributes of the point cloud have different levels::
                    "by selecting the farthest point from previous selected "
                    "points iteratively",
                    "num_samples"_a);
-    pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
-                   "nb_points"_a, "search_radius"_a,
-                   "Remove points that have less than nb_points neighbors in a "
-                   "sphere of a given search radius.");
+    pointcloud.def(
+            "remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
+            "nb_points"_a, "search_radius"_a,
+            R"(Remove points that have less than nb_points neighbors in a 
+sphere of a given search radius. 
+
+Args:
+    nb_points. Number of neighbor points required within the radius.
+    search_radius. Radius of the sphere.
+
+Return:
+    Tuple of filtered point cloud and boolean mask tensor for selected values
+    w.r.t. input point cloud.)");
     pointcloud.def(
             "remove_statistical_outliers",
             &PointCloud::RemoveStatisticalOutliers, "nb_neighbors"_a,
             "std_ratio"_a,
-            "Remove points that have less than nb_points in a sphere of "
-            "a given radius. This function is not recommended to use on GPU.");
+            R"(Remove points that have less than nb_points in a sphere of 
+a given radius. This function is not recommended to use on GPU. 
+
+Args:
+    nb_neighbors. Number of neighbors around the target point.
+    std_ratio. Standard deviation ratio.
+
+Return:
+    Tuple of filtered point cloud and boolean mask tensor for selected values
+    w.r.t. input point cloud.)");
     pointcloud.def("remove_duplicated_points",
                    &PointCloud::RemoveDuplicatedPoints,
                    "Remove duplicated points and there associated attributes.");
     pointcloud.def(
             "remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
             "remove_nan"_a = true, "remove_infinite"_a = true,
-            "Remove all points from the point cloud that have a nan entry, or "
-            "infinite value. It also removes the corresponding attributes.");
+            R"(Remove all points from the point cloud that have a nan entry, or 
+infinite value. It also removes the corresponding attributes. 
+    
+Args:
+    remove_nan. Remove NaN values from the PointCloud.
+    remove_infinite. Remove infinite values from the PointCloud.
+
+Return:
+    Tuple of filtered point cloud and boolean mask tensor for selected values
+    w.r.t. input point cloud.)");
     pointcloud.def("paint_uniform_color", &PointCloud::PaintUniformColor,
                    "color"_a, "Assigns uniform color to the point cloud.");
 
