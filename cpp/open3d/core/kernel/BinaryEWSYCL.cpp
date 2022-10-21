@@ -190,13 +190,34 @@ void BinaryEWSYCL(const Tensor& lhs,
         const int64_t num_workloads = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE_SYCL(src_dtype, [&]() {
             if (op_code == BinaryEWOpCode::Add) {
-                queue.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<scalar_t>(i) =
-                                     *indexer.GetInputPtr<scalar_t>(0, i) +
-                                     *indexer.GetInputPtr<scalar_t>(1, i);
-                         });
-                     }).wait();
+                // int num_threads =
+                //         queue.get_device()
+                //                 .get_info<sy::info::device::
+                //                                   max_work_group_size>();
+                // int workloads_per_thread =
+                //         (num_workloads + num_threads - 1) / num_threads;
+
+                // queue.submit([&](sy::handler& h) {
+                //          h.parallel_for(
+                //                  num_threads,
+                //                  [indexer, num_threads,
+                //                   num_workloads](int64_t thread_idx) {
+                //                      int64_t i = thread_idx;
+                //                      while (i < num_workloads) {
+                //                          *indexer.GetOutputPtr<scalar_t>(i) =
+                //                                  *indexer.GetInputPtr<scalar_t>(
+                //                                          0, i) +
+                //                                  *indexer.GetInputPtr<scalar_t>(
+                //                                          1, i);
+                //                          i += num_threads;
+                //                      }
+                //                  });
+                //      }).wait();
+                h.parallel_for(num_workloads, [indexer](int64_t i) {
+                    *indexer.GetOutputPtr<scalar_t>(i) =
+                            *indexer.GetInputPtr<scalar_t>(0, i) +
+                            *indexer.GetInputPtr<scalar_t>(1, i);
+                });
             } else if (op_code == BinaryEWOpCode::Sub) {
                 queue.submit([&](sy::handler& h) {
                          h.parallel_for(num_workloads, [indexer](int64_t i) {
