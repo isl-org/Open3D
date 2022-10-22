@@ -127,6 +127,41 @@ The attributes of the point cloud have different levels::
                  "map_keys_to_tensors"_a)
             .def("__repr__", &PointCloud::ToString);
 
+    // Pickle support.
+    pointcloud.def(py::pickle(
+            [](const PointCloud& pcd) {
+                // __getstate__
+                // Convert point attributes to tensor map to CPU.
+                auto map_keys_to_tensors = pcd.GetPointAttr();
+
+                return py::make_tuple(pcd.GetDevice(), pcd.GetPointAttr());
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 2) {
+                    utility::LogError(
+                            "Cannot unpickle PointCloud! Expecting a tuple of "
+                            "size 2.");
+                }
+
+                const core::Device device = t[0].cast<core::Device>();
+                PointCloud pcd(device);
+                if (!device.IsAvailable()) {
+                    utility::LogWarning(
+                            "Device ({}) is not available. PointCloud will be "
+                            "created on CPU.",
+                            device.ToString());
+                    pcd.To(core::Device("CPU:0"));
+                }
+
+                const TensorMap map_keys_to_tensors = t[1].cast<TensorMap>();
+                for (auto& kv : map_keys_to_tensors) {
+                    pcd.SetPointAttr(kv.first, kv.second);
+                }
+
+                return pcd;
+            }));
+
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced
     // by another TensorMap in Python.

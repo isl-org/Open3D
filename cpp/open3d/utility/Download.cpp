@@ -49,6 +49,7 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <unordered_set>
 #include <string>
 
 #include "open3d/data/Dataset.h"
@@ -103,39 +104,35 @@ static size_t WriteDataCb(void* ptr, size_t size, size_t nmemb, FILE* stream) {
 
 std::string DownloadFromURL(const std::string& url,
                             const std::string& md5,
-                            const std::string& prefix,
-                            const std::string& data_root) {
-    // Always print URL to inform the user. If the download fails, the user
-    // knows the URL.
-    utility::LogInfo("Downloading {}", url);
-
+                            const std::string& download_dir) {
     // Sanity checks.
     if (md5.size() != MD5_DIGEST_LENGTH * 2) {
         utility::LogError("Invalid md5 length {}, expected to be {}.",
                           md5.size(), MD5_DIGEST_LENGTH * 2);
     }
-    if (prefix.empty()) {
-        utility::LogError("Download prefix cannot be empty.");
+    if (download_dir.empty()) {
+        utility::LogError("download_dir cannot be empty.");
     }
 
     // Resolve path.
-    const std::string resolved_data_root =
-            data_root.empty() ? data::LocateDataRoot() : data_root;
-    const std::string file_dir = resolved_data_root + "/" + prefix;
     const std::string file_name =
             utility::filesystem::GetFileNameWithoutDirectory(url);
-    const std::string file_path = file_dir + "/" + file_name;
-    if (!utility::filesystem::DirectoryExists(file_dir)) {
-        utility::filesystem::MakeDirectoryHierarchy(file_dir);
+    const std::string file_path = download_dir + "/" + file_name;
+    if (!utility::filesystem::DirectoryExists(download_dir)) {
+        utility::filesystem::MakeDirectoryHierarchy(download_dir);
     }
 
     // Check if the file exists.
     if (utility::filesystem::FileExists(file_path) &&
         GetMD5(file_path) == md5) {
-        utility::LogInfo("{} exists and md5 matches. Skipped downloading.",
+        utility::LogInfo("{} exists and MD5 matches. Download skipped.",
                          file_path);
         return file_path;
     }
+
+    // Always print URL to inform the user. If the download fails, the user
+    // knows the URL.
+    utility::LogInfo("Downloading {}", url);
 
     // Download.
     CURL* curl;
@@ -176,16 +173,28 @@ std::string DownloadFromURL(const std::string& url,
     return file_path;
 }
 
-std::string DownloadFromURL(const std::vector<std::string>& mirror_urls,
-                            const std::string& md5,
-                            const std::string& prefix,
-                            const std::string& data_root) {
-    for (size_t i = 0; i < mirror_urls.size(); ++i) {
+std::string DownloadFromMirrors(const std::vector<std::string>& mirrors,
+                                const std::string& md5,
+                                const std::string& download_dir) {
+    // All file names must be the same in mirrors.
+    if (mirrors.empty()) {
+        utility::LogError("No mirror URLs provided.");
+    }
+    const std::string file_name =
+            utility::filesystem::GetFileNameWithoutDirectory(mirrors[0]);
+    for (const std::string& url : mirrors) {
+        if (utility::filesystem::GetFileNameWithoutDirectory(url) !=
+            file_name) {
+            utility::LogError("File name mismatch in mirrors {}.", mirrors);
+        }
+    }
+
+    for (const std::string& url : mirrors) {
         try {
-            return DownloadFromURL(mirror_urls[i], md5, prefix, data_root);
+            return DownloadFromURL(url, md5, download_dir);
         } catch (const std::exception& ex) {
             utility::LogWarning("Failed to download from {}. Exception {}.",
-                                mirror_urls[i], ex.what());
+                                url, ex.what());
         }
     }
 

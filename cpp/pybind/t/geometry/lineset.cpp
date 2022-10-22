@@ -29,6 +29,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
@@ -108,6 +109,44 @@ and ``device`` as the tensor. The device for ``point_positions`` must be consist
             {{"point_positions", "A tensor with element shape (3,)"},
              {"line_indices",
               "A tensor with element shape (2,) and Int dtype."}});
+
+    // Pickling support.
+    line_set.def(py::pickle(
+            [](const LineSet& line_set) {
+                // __getstate__
+                return py::make_tuple(line_set.GetDevice(),
+                                      line_set.GetPointAttr(),
+                                      line_set.GetLineAttr());
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 3) {
+                    utility::LogError(
+                            "Cannot unpickle LineSet! Expecting a tuple of "
+                            "size 3.");
+                }
+
+                const core::Device device = t[0].cast<core::Device>();
+                LineSet line_set(device);
+                if (!device.IsAvailable()) {
+                    utility::LogWarning(
+                            "Device ({}) is not available. LineSet will be "
+                            "created on CPU.",
+                            device.ToString());
+                    line_set.To(core::Device("CPU:0"));
+                }
+
+                const TensorMap point_attr = t[1].cast<TensorMap>();
+                const TensorMap line_attr = t[2].cast<TensorMap>();
+                for (auto& kv : point_attr) {
+                    line_set.SetPointAttr(kv.first, kv.second);
+                }
+                for (auto& kv : line_attr) {
+                    line_set.SetLineAttr(kv.first, kv.second);
+                }
+
+                return line_set;
+            }));
 
     // Line set's attributes: point_positions, line_indices, line_colors, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can

@@ -134,8 +134,6 @@ static int ExtractCurrentFile(unzFile uf,
         }
 
         if (fout != nullptr) {
-            utility::LogDebug(" Extracting: {}", write_filename);
-
             do {
                 err = unzReadCurrentFile(uf, buf, size_buf);
                 if (err < 0) {
