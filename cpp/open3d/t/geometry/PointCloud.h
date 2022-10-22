@@ -385,8 +385,8 @@ public:
     std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
 
-    /// \brief Remove points that have less than \p nb_points in a sphere of a
-    /// given radius. This function is not recommended to use on GPU.
+    /// \brief Remove points that are further away from their \p nb_neighbor
+    /// neighbors in average. This function is not recommended to use on GPU.
     ///
     /// \param nb_neighbors Number of neighbors around the target point.
     /// \param std_ratio Standard deviation ratio.

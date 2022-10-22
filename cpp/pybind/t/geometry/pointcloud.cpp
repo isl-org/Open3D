@@ -266,8 +266,8 @@ Return:
             "remove_statistical_outliers",
             &PointCloud::RemoveStatisticalOutliers, "nb_neighbors"_a,
             "std_ratio"_a,
-            R"(Remove points that have less than nb_points in a sphere of 
-a given radius. This function is not recommended to use on GPU. 
+            R"(Remove points that are further away from their \p nb_neighbor
+neighbors in average. This function is not recommended to use on GPU. 
 
 Args:
     nb_neighbors. Number of neighbors around the target point.
