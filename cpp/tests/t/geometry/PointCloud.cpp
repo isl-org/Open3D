@@ -31,6 +31,7 @@
 #include <limits>
 
 #include "core/CoreTest.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
@@ -1002,6 +1003,24 @@ TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
                                        {1.2, 1.2, 1.2},
                                        {1.3, 1.3, 1.3}},
                                       device)));
+}
+
+TEST_P(PointCloudPermuteDevices, RemoveStatisticalOutliers) {
+    core::Device device = GetParam();
+
+    data::PCDPointCloud sample_pcd_data;
+    geometry::PointCloud pcd_legacy;
+    io::ReadPointCloud(sample_pcd_data.GetPath(), pcd_legacy);
+
+    auto down_pcd = pcd_legacy.VoxelDownSample(0.02);
+    auto res = down_pcd->RemoveStatisticalOutliers(20, 2.0);
+
+    t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacy(
+            *down_pcd, core::Float64, device);
+    auto res_t = pcd.RemoveStatisticalOutliers(20, 2.0);
+    EXPECT_TRUE(std::get<0>(res_t).GetPointPositions().AllClose(
+            core::eigen_converter::EigenVector3dVectorToTensor(
+                    std::get<0>(res)->points_, core::Float64, device)));
 }
 
 TEST_P(PointCloudPermuteDevices, RemoveDuplicatedPoints) {
