@@ -380,14 +380,24 @@ public:
     ///
     /// \param nb_points Number of neighbor points required within the radius.
     /// \param search_radius Radius of the sphere.
-    /// \return tuple of filtered point cloud and boolean mask tensor for
+    /// \return Tuple of filtered point cloud and boolean mask tensor for
     /// selected values w.r.t. input point cloud.
     std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
 
+    /// \brief Remove points that are further away from their \p nb_neighbor
+    /// neighbors in average. This function is not recommended to use on GPU.
+    ///
+    /// \param nb_neighbors Number of neighbors around the target point.
+    /// \param std_ratio Standard deviation ratio.
+    /// \return Tuple of filtered point cloud and boolean mask tensor for
+    /// selected values w.r.t. input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveStatisticalOutliers(
+            size_t nb_neighbors, double std_ratio) const;
+
     /// \brief Remove duplicated points and there associated attributes.
     ///
-    /// \return tuple of filtered PointCloud and boolean indexing tensor w.r.t.
+    /// \return Tuple of filtered PointCloud and boolean indexing tensor w.r.t.
     /// input point cloud.
     std::tuple<PointCloud, core::Tensor> RemoveDuplicatedPoints() const;
 
@@ -396,7 +406,7 @@ public:
     ///
     /// \param remove_nan Remove NaN values from the PointCloud.
     /// \param remove_infinite Remove infinite values from the PointCloud.
-    /// \return tuple of filtered point cloud and boolean mask tensor for
+    /// \return Tuple of filtered point cloud and boolean mask tensor for
     /// selected values w.r.t. input point cloud.
     std::tuple<PointCloud, core::Tensor> RemoveNonFinitePoints(
             bool remove_nan = true, bool remove_infinite = true) const;
