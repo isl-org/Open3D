@@ -25,12 +25,44 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/kernel/TriangleMeshImpl.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace t {
 namespace geometry {
 namespace kernel {
 namespace trianglemesh {
+
+template <typename scalar_t>
+void ComputeVertexNormalsImpl(const int64_t* triangle_ptr,
+                              const scalar_t* triangle_normals_ptr,
+                              scalar_t* vertex_normals_ptr,
+                              const int num_workloads) {
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
+    for (int64_t i = 0; i < num_workloads; ++i) {
+        int64_t idx = 3 * i;
+        int64_t triangle_id1 = triangle_ptr[idx];
+        int64_t triangle_id2 = triangle_ptr[idx + 1];
+        int64_t triangle_id3 = triangle_ptr[idx + 2];
+
+        scalar_t n1 = triangle_normals_ptr[idx];
+        scalar_t n2 = triangle_normals_ptr[idx + 1];
+        scalar_t n3 = triangle_normals_ptr[idx + 2];
+
+#pragma omp critical(ComputeVertexNormals)
+        {
+            vertex_normals_ptr[3 * triangle_id1] += n1;
+            vertex_normals_ptr[3 * triangle_id1 + 1] += n2;
+            vertex_normals_ptr[3 * triangle_id1 + 2] += n3;
+            vertex_normals_ptr[3 * triangle_id2] += n1;
+            vertex_normals_ptr[3 * triangle_id2 + 1] += n2;
+            vertex_normals_ptr[3 * triangle_id2 + 2] += n3;
+            vertex_normals_ptr[3 * triangle_id3] += n1;
+            vertex_normals_ptr[3 * triangle_id3 + 1] += n2;
+            vertex_normals_ptr[3 * triangle_id3 + 2] += n3;
+        }
+    }
+}
 
 void ComputeVertexNormalsCPU(const core::Tensor& triangles,
                              const core::Tensor& triangle_normals,
@@ -45,29 +77,8 @@ void ComputeVertexNormalsCPU(const core::Tensor& triangles,
                 triangle_normals.GetDataPtr<scalar_t>();
         scalar_t* vertex_normals_ptr = vertex_normals.GetDataPtr<scalar_t>();
 
-        core::ParallelFor(triangles.GetDevice(), n, [&](int64_t i) {
-            int64_t idx = 3 * i;
-            int64_t triangle_id1 = triangle_ptr[idx];
-            int64_t triangle_id2 = triangle_ptr[idx + 1];
-            int64_t triangle_id3 = triangle_ptr[idx + 2];
-
-            scalar_t n1 = triangle_normals_ptr[idx];
-            scalar_t n2 = triangle_normals_ptr[idx + 1];
-            scalar_t n3 = triangle_normals_ptr[idx + 2];
-
-#pragma omp critical
-            {
-                vertex_normals_ptr[3 * triangle_id1] += n1;
-                vertex_normals_ptr[3 * triangle_id1 + 1] += n2;
-                vertex_normals_ptr[3 * triangle_id1 + 2] += n3;
-                vertex_normals_ptr[3 * triangle_id2] += n1;
-                vertex_normals_ptr[3 * triangle_id2 + 1] += n2;
-                vertex_normals_ptr[3 * triangle_id2 + 2] += n3;
-                vertex_normals_ptr[3 * triangle_id3] += n1;
-                vertex_normals_ptr[3 * triangle_id3 + 1] += n2;
-                vertex_normals_ptr[3 * triangle_id3 + 2] += n3;
-            }
-        });
+        ComputeVertexNormalsImpl<scalar_t>(triangle_ptr, triangle_normals_ptr,
+                                           vertex_normals_ptr, n);
     });
 }
 
