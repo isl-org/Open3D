@@ -45,7 +45,7 @@ void ComputeVertexNormalsCPU(const core::Tensor& triangles,
                 triangle_normals.GetDataPtr<scalar_t>();
         scalar_t* vertex_normals_ptr = vertex_normals.GetDataPtr<scalar_t>();
 
-        for (int64_t i = 0; i < n; i++) {
+        core::ParallelFor(triangles.GetDevice(), n, [&](int64_t i) {
             int64_t idx = 3 * i;
             int64_t triangle_id1 = triangle_ptr[idx];
             int64_t triangle_id2 = triangle_ptr[idx + 1];
@@ -55,16 +55,19 @@ void ComputeVertexNormalsCPU(const core::Tensor& triangles,
             scalar_t n2 = triangle_normals_ptr[idx + 1];
             scalar_t n3 = triangle_normals_ptr[idx + 2];
 
-            vertex_normals_ptr[3 * triangle_id1] += n1;
-            vertex_normals_ptr[3 * triangle_id1 + 1] += n2;
-            vertex_normals_ptr[3 * triangle_id1 + 2] += n3;
-            vertex_normals_ptr[3 * triangle_id2] += n1;
-            vertex_normals_ptr[3 * triangle_id2 + 1] += n2;
-            vertex_normals_ptr[3 * triangle_id2 + 2] += n3;
-            vertex_normals_ptr[3 * triangle_id3] += n1;
-            vertex_normals_ptr[3 * triangle_id3 + 1] += n2;
-            vertex_normals_ptr[3 * triangle_id3 + 2] += n3;
-        }
+#pragma omp critical
+            {
+                vertex_normals_ptr[3 * triangle_id1] += n1;
+                vertex_normals_ptr[3 * triangle_id1 + 1] += n2;
+                vertex_normals_ptr[3 * triangle_id1 + 2] += n3;
+                vertex_normals_ptr[3 * triangle_id2] += n1;
+                vertex_normals_ptr[3 * triangle_id2 + 1] += n2;
+                vertex_normals_ptr[3 * triangle_id2 + 2] += n3;
+                vertex_normals_ptr[3 * triangle_id3] += n1;
+                vertex_normals_ptr[3 * triangle_id3 + 1] += n2;
+                vertex_normals_ptr[3 * triangle_id3 + 2] += n3;
+            }
+        });
     });
 }
 

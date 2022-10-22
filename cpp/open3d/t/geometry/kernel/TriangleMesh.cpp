@@ -25,20 +25,3 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/kernel/TriangleMesh.h"
-
-#include <vector>
-
-#include "open3d/core/CUDAUtils.h"
-#include "open3d/core/ShapeUtil.h"
-#include "open3d/core/Tensor.h"
-#include "open3d/utility/Logging.h"
-
-namespace open3d {
-namespace t {
-namespace geometry {
-namespace kernel {
-namespace pointcloud {}
-}  // namespace kernel
-}  // namespace geometry
-}  // namespace t
-}  // namespace open3d
