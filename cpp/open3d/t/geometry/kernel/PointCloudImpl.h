@@ -227,6 +227,12 @@ void GetPointMaskWithinOBBCPU
                                   mask_ptr[workload_idx] = true;
                               } else {
                                   mask_ptr[workload_idx] = false;
+                              }
+                          });
+    });
+}
+
+#if defined(__CUDACC__)
 void NormalizeNormalsCUDA
 #else
 void NormalizeNormalsCPU
@@ -349,11 +355,11 @@ template <typename scalar_t>
 OPEN3D_HOST_DEVICE void GetCoordinateSystemOnPlane(const scalar_t* query,
                                                    scalar_t* u,
                                                    scalar_t* v) {
-    // Unless the x and y coords are both close to zero, we can simply take (
-    // -y, x, 0 ) and normalize it.
-    // If both x and y are close to zero, then the vector is close to the
-    // z-axis, so it's far from colinear to the x-axis for instance. So we
-    // take the crossed product with (1,0,0) and normalize it.
+    // Unless the x and y coords are both close to zero, we can simply take
+    // ( -y, x, 0 ) and normalize it. If both x and y are close to zero,
+    // then the vector is close to the z-axis, so it's far from colinear to
+    // the x-axis for instance. So we take the crossed product with (1,0,0)
+    // and normalize it.
     if (!(abs(query[0] - query[2]) < 1e-6) ||
         !(abs(query[1] - query[2]) < 1e-6)) {
         const scalar_t norm2_inv =
@@ -437,7 +443,6 @@ void ComputeBoundaryPointsCPU
          const core::Tensor& counts,
          core::Tensor& mask,
          double angle_threshold) {
-
     const int nn_size = indices.GetShape()[1];
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
