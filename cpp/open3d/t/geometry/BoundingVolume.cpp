@@ -332,8 +332,15 @@ OrientedBoundingBox::OrientedBoundingBox(const core::Tensor &center,
 
     // Check if the bounding box is valid by checking the volume and the
     // orthogonality of rotation.
-    if (Volume() < 0 ||
-        !rotation_.T().AllClose(rotation_.Inverse(), 1e-5, 1e-5)) {
+    core::Tensor rotation_inv;
+    if (rotation.GetDevice().GetID() == 0) {
+        rotation_inv = rotation.Inverse();
+    } else {
+        rotation_inv = rotation.To(open3d::core::Device("CPU:0"), true)
+                               .Inverse()
+                               .To(device_);
+    }
+    if (Volume() < 0 || !rotation_.T().AllClose(rotation_inv, 1e-5, 1e-5)) {
         utility::LogError(
                 "Invalid oriented bounding box. Please make sure the values of "
                 "extent are all positive and the rotation matrix is "
@@ -389,7 +396,15 @@ void OrientedBoundingBox::SetRotation(const core::Tensor &rotation) {
     core::AssertTensorShape(rotation, {3, 3});
     core::AssertTensorDtypes(rotation, {core::Float32, core::Float64});
 
-    if (!rotation.T().AllClose(rotation.Inverse(), 1e-5, 1e-5)) {
+    core::Tensor rotation_inv;
+    if (rotation.GetDevice().GetID() == 0) {
+        rotation_inv = rotation.Inverse();
+    } else {
+        rotation_inv = rotation.To(open3d::core::Device("CPU:0"), true)
+                               .Inverse()
+                               .To(device_);
+    }
+    if (!rotation.T().AllClose(rotation_inv, 1e-5, 1e-5)) {
         utility::LogWarning(
                 "Invalid oriented bounding box. Please make sure the rotation "
                 "matrix is orthogonal.");
@@ -449,7 +464,15 @@ OrientedBoundingBox &OrientedBoundingBox::Rotate(
     core::AssertTensorShape(rotation, {3, 3});
     core::AssertTensorDtypes(rotation, {core::Float32, core::Float64});
 
-    if (!rotation.T().AllClose(rotation.Inverse(), 1e-5, 1e-5)) {
+    core::Tensor rotation_inv;
+    if (rotation.GetDevice().GetID() == 0) {
+        rotation_inv = rotation.Inverse();
+    } else {
+        rotation_inv = rotation.To(open3d::core::Device("CPU:0"), true)
+                               .Inverse()
+                               .To(device_);
+    }
+    if (!rotation.T().AllClose(rotation_inv, 1e-5, 1e-5)) {
         utility::LogWarning(
                 "Invalid rotation matrix. Please make sure the rotation "
                 "matrix is orthogonal.");
