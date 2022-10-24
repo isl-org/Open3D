@@ -38,6 +38,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/ShapeUtil.h"
 #include "open3d/core/Tensor.h"
@@ -48,6 +49,7 @@
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
+#include "open3d/t/geometry/kernel/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/UVUnwrapping.h"
 
 namespace open3d {
@@ -186,6 +188,115 @@ TriangleMesh &TriangleMesh::Rotate(const core::Tensor &R,
     if (HasTriangleNormals()) {
         kernel::transform::RotateNormals(R, GetTriangleNormals());
     }
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::NormalizeNormals() {
+    if (HasVertexNormals()) {
+        SetVertexNormals(GetVertexNormals().Contiguous());
+        core::Tensor &vertex_normals = GetVertexNormals();
+        if (IsCPU()) {
+            kernel::trianglemesh::NormalizeNormalsCPU(vertex_normals);
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::trianglemesh::NormalizeNormalsCUDA,
+                      vertex_normals);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogWarning("TriangleMesh has no vertex normals.");
+    }
+
+    if (HasTriangleNormals()) {
+        SetTriangleNormals(GetTriangleNormals().Contiguous());
+        core::Tensor &triangle_normals = GetTriangleNormals();
+        if (IsCPU()) {
+            kernel::trianglemesh::NormalizeNormalsCPU(triangle_normals);
+        } else if (IsCUDA()) {
+            CUDA_CALL(kernel::trianglemesh::NormalizeNormalsCUDA,
+                      triangle_normals);
+        } else {
+            utility::LogError("Unimplemented device");
+        }
+    } else {
+        utility::LogWarning("TriangleMesh has no triangle normals.");
+    }
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::ComputeTriangleNormals(bool normalized) {
+    if (IsEmpty()) {
+        utility::LogWarning("TriangleMesh is empty.");
+        return *this;
+    }
+
+    if (!HasTriangleIndices()) {
+        utility::LogWarning("TriangleMesh has no triangle indices.");
+        return *this;
+    }
+
+    const int64_t triangle_num = GetTriangleIndices().GetLength();
+    const core::Dtype dtype = GetVertexPositions().GetDtype();
+    core::Tensor triangle_normals({triangle_num, 3}, dtype, GetDevice());
+    SetVertexPositions(GetVertexPositions().Contiguous());
+    SetTriangleIndices(GetTriangleIndices().Contiguous());
+
+    if (IsCPU()) {
+        kernel::trianglemesh::ComputeTriangleNormalsCPU(
+                GetVertexPositions(), GetTriangleIndices(), triangle_normals);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::trianglemesh::ComputeTriangleNormalsCUDA,
+                  GetVertexPositions(), GetTriangleIndices(), triangle_normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    SetTriangleNormals(triangle_normals);
+
+    if (normalized) {
+        NormalizeNormals();
+    }
+
+    return *this;
+}
+
+TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized) {
+    if (IsEmpty()) {
+        utility::LogWarning("TriangleMesh is empty.");
+        return *this;
+    }
+
+    if (!HasTriangleIndices()) {
+        utility::LogWarning("TriangleMesh has no triangle indices.");
+        return *this;
+    }
+
+    ComputeTriangleNormals(false);
+
+    const int64_t vertex_num = GetVertexPositions().GetLength();
+    const core::Dtype dtype = GetVertexPositions().GetDtype();
+    core::Tensor vertex_normals =
+            core::Tensor::Zeros({vertex_num, 3}, dtype, GetDevice());
+
+    SetTriangleNormals(GetTriangleNormals().Contiguous());
+    SetTriangleIndices(GetTriangleIndices().Contiguous());
+
+    if (IsCPU()) {
+        kernel::trianglemesh::ComputeVertexNormalsCPU(
+                GetTriangleIndices(), GetTriangleNormals(), vertex_normals);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::trianglemesh::ComputeVertexNormalsCUDA,
+                  GetTriangleIndices(), GetTriangleNormals(), vertex_normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    SetVertexNormals(vertex_normals);
+    if (normalized) {
+        NormalizeNormals();
+    }
+
     return *this;
 }
 

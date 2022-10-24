@@ -758,6 +758,7 @@ private:
 /// │   ├── 00001.png
 /// │   ├── ...
 /// │   └── 02869.png
+/// ├── dist-model.txt
 /// ├── livingroom1.oni
 /// ├── livingroom1-traj.txt
 /// └── livingroom.ply
@@ -779,6 +780,8 @@ public:
     std::string GetONIPath() const { return oni_path_; }
     /// \brief Path to the ground-truth camera trajectory.
     std::string GetTrajectoryPath() const { return trajectory_path_; }
+    /// \brief Path to the noise model.
+    std::string GetNoiseModelPath() const { return noise_model_path_; }
 
 private:
     std::string point_cloud_path_;
@@ -787,6 +790,7 @@ private:
     std::vector<std::string> noisy_depth_paths_;
     std::string oni_path_;
     std::string trajectory_path_;
+    std::string noise_model_path_;
 };
 
 /// \class RedwoodIndoorLivingRoom2 (Augmented ICL-NUIM Dataset)
@@ -810,6 +814,7 @@ private:
 /// │   ├── 00001.png
 /// │   ├── ...
 /// │   └── 02349.png
+/// ├── dist-model.txt
 /// ├── livingroom2.oni
 /// ├── livingroom2-traj.txt
 /// └── livingroom.ply
@@ -831,6 +836,8 @@ public:
     std::string GetONIPath() const { return oni_path_; }
     /// \brief Path to the ground-truth camera trajectory.
     std::string GetTrajectoryPath() const { return trajectory_path_; }
+    /// \brief Path to the noise model.
+    std::string GetNoiseModelPath() const { return noise_model_path_; }
 
 private:
     std::string point_cloud_path_;
@@ -839,6 +846,7 @@ private:
     std::vector<std::string> noisy_depth_paths_;
     std::string oni_path_;
     std::string trajectory_path_;
+    std::string noise_model_path_;
 };
 
 /// \class RedwoodIndoorOffice1 (Augmented ICL-NUIM Dataset)
@@ -862,6 +870,7 @@ private:
 /// │   ├── 00001.png
 /// │   ├── ...
 /// │   └── 02689.png
+/// ├── dist-model.txt
 /// ├── office1.oni
 /// ├── office1-traj.txt
 /// └── office.ply
@@ -883,6 +892,8 @@ public:
     std::string GetONIPath() const { return oni_path_; }
     /// \brief Path to the ground-truth camera trajectory.
     std::string GetTrajectoryPath() const { return trajectory_path_; }
+    /// \brief Path to the noise model.
+    std::string GetNoiseModelPath() const { return noise_model_path_; }
 
 private:
     std::string point_cloud_path_;
@@ -891,6 +902,7 @@ private:
     std::vector<std::string> noisy_depth_paths_;
     std::string oni_path_;
     std::string trajectory_path_;
+    std::string noise_model_path_;
 };
 
 /// \class RedwoodIndoorOffice2 (Augmented ICL-NUIM Dataset)
@@ -914,6 +926,7 @@ private:
 /// │   ├── 00001.png
 /// │   ├── ...
 /// │   └── 02537.png
+/// ├── dist-model.txt
 /// ├── office2.oni
 /// ├── office2-traj.txt
 /// └── office.ply
@@ -935,6 +948,8 @@ public:
     std::string GetONIPath() const { return oni_path_; }
     /// \brief Path to the ground-truth camera trajectory.
     std::string GetTrajectoryPath() const { return trajectory_path_; }
+    /// \brief Path to the noise model.
+    std::string GetNoiseModelPath() const { return noise_model_path_; }
 
 private:
     std::string point_cloud_path_;
@@ -943,6 +958,7 @@ private:
     std::vector<std::string> noisy_depth_paths_;
     std::string oni_path_;
     std::string trajectory_path_;
+    std::string noise_model_path_;
 };
 
 /// \class SampleFountainRGBDImages

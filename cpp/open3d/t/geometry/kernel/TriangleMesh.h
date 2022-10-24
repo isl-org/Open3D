@@ -24,20 +24,40 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/utility/utility.h"
+#pragma once
 
-#include "pybind/docstring.h"
-#include "pybind/open3d_pybind.h"
+#include "open3d/core/Tensor.h"
 
 namespace open3d {
-namespace utility {
+namespace t {
+namespace geometry {
+namespace kernel {
+namespace trianglemesh {
 
-void pybind_utility(py::module &m) {
-    py::module m_submodule = m.def_submodule("utility");
-    pybind_eigen(m_submodule);
-    pybind_logging(m_submodule);
-    random::pybind_random(m_submodule);
-}
+void NormalizeNormalsCPU(core::Tensor& normals);
 
-}  // namespace utility
+void ComputeTriangleNormalsCPU(const core::Tensor& vertices,
+                               const core::Tensor& triangles,
+                               core::Tensor& normals);
+
+void ComputeVertexNormalsCPU(const core::Tensor& triangles,
+                             const core::Tensor& triangle_normals,
+                             core::Tensor& vertex_normals);
+
+#ifdef BUILD_CUDA_MODULE
+void NormalizeNormalsCUDA(core::Tensor& normals);
+
+void ComputeTriangleNormalsCUDA(const core::Tensor& vertices,
+                                const core::Tensor& triangles,
+                                core::Tensor& normals);
+
+void ComputeVertexNormalsCUDA(const core::Tensor& triangles,
+                              const core::Tensor& triangle_normals,
+                              core::Tensor& vertex_normals);
+#endif
+
+}  // namespace trianglemesh
+}  // namespace kernel
+}  // namespace geometry
+}  // namespace t
 }  // namespace open3d

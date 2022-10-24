@@ -34,7 +34,7 @@ namespace tests {
 TEST(Random, UniformRandIntGeneratorWithFixedSeed) {
     utility::random::Seed(42);
     std::array<int, 1024> values;
-    utility::random::UniformIntGenerator rand_generator(0, 9);
+    utility::random::UniformIntGenerator<int> rand_generator(0, 9);
     for (auto it = values.begin(); it != values.end(); ++it) {
         *it = rand_generator();
     }
@@ -42,7 +42,7 @@ TEST(Random, UniformRandIntGeneratorWithFixedSeed) {
     for (int i = 0; i < 10; i++) {
         utility::random::Seed(42);
         std::array<int, 1024> new_values;
-        utility::random::UniformIntGenerator new_rand_generator(0, 9);
+        utility::random::UniformIntGenerator<int> new_rand_generator(0, 9);
         for (auto it = new_values.begin(); it != new_values.end(); ++it) {
             *it = new_rand_generator();
         }
@@ -52,14 +52,14 @@ TEST(Random, UniformRandIntGeneratorWithFixedSeed) {
 
 TEST(Random, UniformRandIntGeneratorWithRandomSeed) {
     std::array<int, 1024> values;
-    utility::random::UniformIntGenerator rand_generator(0, 9);
+    utility::random::UniformIntGenerator<int> rand_generator(0, 9);
     for (auto it = values.begin(); it != values.end(); ++it) {
         *it = rand_generator();
     }
 
     for (int i = 0; i < 10; i++) {
         std::array<int, 1024> new_values;
-        utility::random::UniformIntGenerator new_rand_generator(0, 9);
+        utility::random::UniformIntGenerator<int> new_rand_generator(0, 9);
         for (auto it = new_values.begin(); it != new_values.end(); ++it) {
             *it = new_rand_generator();
         }
