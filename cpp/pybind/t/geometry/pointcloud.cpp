@@ -295,6 +295,8 @@ Return:
     pointcloud.def("paint_uniform_color", &PointCloud::PaintUniformColor,
                    "color"_a, "Assigns uniform color to the point cloud.");
 
+    pointcloud.def("normalize_normals", &PointCloud::NormalizeNormals,
+                   "Normalize point normals to length 1.");
     pointcloud.def(
             "estimate_normals", &PointCloud::EstimateNormals,
             py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
@@ -305,6 +307,21 @@ Return:
             "max_nn parameter is provided, Radius search (Not recommended to "
             "use on GPU) if only radius is provided and Hybrid Search "
             "(Recommended) if radius parameter is also provided.");
+    pointcloud.def("orient_normals_to_align_with_direction",
+                   &PointCloud::OrientNormalsToAlignWithDirection,
+                   "Function to orient the normals of a point cloud.",
+                   "orientation_reference"_a = core::Tensor::Init<float>(
+                           {0, 0, 1}, core::Device("CPU:0")));
+    pointcloud.def("orient_normals_towards_camera_location",
+                   &PointCloud::OrientNormalsTowardsCameraLocation,
+                   "Function to orient the normals of a point cloud.",
+                   "camera_location"_a = core::Tensor::Zeros(
+                           {3}, core::Float32, core::Device("CPU:0")));
+    pointcloud.def("orient_normals_consistent_tangent_plane",
+                   &PointCloud::OrientNormalsConsistentTangentPlane,
+                   "Function to orient the normals with respect to consistent "
+                   "tangent planes.",
+                   "k"_a);
     pointcloud.def(
             "estimate_color_gradients", &PointCloud::EstimateColorGradients,
             py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
@@ -570,6 +587,19 @@ Example:
             {{"color",
               "Color of the pointcloud. Floating color values are clipped "
               "between 0.0 and 1.0."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_to_align_with_direction",
+            {{"orientation_reference",
+              "Normals are oriented with respect to orientation_reference."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_towards_camera_location",
+            {{"camera_location",
+              "Normals are oriented with towards the camera_location."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_consistent_tangent_plane",
+            {{"k",
+              "Number of k nearest neighbors used in constructing the "
+              "Riemannian graph used to propagate normal orientation."}});
     docstring::ClassMethodDocInject(
             m, "PointCloud", "crop",
             {{"aabb", "AxisAlignedBoundingBox to crop points."},

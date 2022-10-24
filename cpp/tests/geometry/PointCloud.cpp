@@ -975,7 +975,7 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection) {
     pcd.points_ = std::vector<Eigen::Vector3d>{{10, 10, 10}};
     pcd.normals_ = std::vector<Eigen::Vector3d>{{0, 0, 0}};
     pcd.OrientNormalsToAlignWithDirection(Eigen::Vector3d{0, 0, -1});
-    pcd.normals_ = std::vector<Eigen::Vector3d>{{0, 0, -1}};
+    ExpectEQ(pcd.normals_, std::vector<Eigen::Vector3d>{{0, 0, -1}});
 }
 
 TEST(PointCloud, OrientNormalsTowardsCameraLocation) {

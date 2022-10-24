@@ -262,6 +262,39 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
               std::vector<float>({2, 2, 1}));
 }
 
+TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0}},
+                                                     device);
+    core::Tensor normals = core::Tensor::Init<double>({{2, 2, 2},
+                                                       {1, 1, 1},
+                                                       {-1, -1, -1},
+                                                       {0, 0, 1},
+                                                       {0, 1, 0},
+                                                       {1, 0, 0},
+                                                       {0, 0, 0}},
+                                                      device);
+    t::geometry::PointCloud pcd(points);
+    pcd.SetPointNormals(normals);
+    pcd.NormalizeNormals();
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{0.57735, 0.57735, 0.57735},
+                                        {0.57735, 0.57735, 0.57735},
+                                        {-0.57735, -0.57735, -0.57735},
+                                        {0, 0, 1},
+                                        {0, 1, 0},
+                                        {1, 0, 0},
+                                        {0, 0, 0}},
+                                       device)));
+}
+
 TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     core::Device device = GetParam();
 
@@ -300,6 +333,124 @@ TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     // Estimate normals using Radius Search.
     pcd.EstimateNormals(utility::nullopt, 1.1);
     EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+}
+
+TEST_P(PointCloudPermuteDevices, OrientNormalsToAlignWithDirection) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0},
+                                                      {1, 1, 1}},
+                                                     device);
+    t::geometry::PointCloud pcd(points);
+    pcd.EstimateNormals(4);
+    pcd.NormalizeNormals();
+    double v = 1.0 / std::sqrt(3.0);
+    pcd.OrientNormalsToAlignWithDirection(
+            core::Tensor::Init<double>({0, 0, -1}, device));
+
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{-v, -v, -v},
+                                        {v, v, -v},
+                                        {-v, v, -v},
+                                        {v, -v, -v},
+                                        {v, -v, -v},
+                                        {-v, v, -v},
+                                        {v, v, -v},
+                                        {-v, -v, -v}},
+                                       device)));
+
+    // Test with normal norm == 0 case.
+    pcd.SetPointPositions(core::Tensor::Init<double>({{10, 10, 10}}, device));
+    pcd.SetPointNormals(core::Tensor::Init<double>({{0, 0, 0}}, device));
+    pcd.OrientNormalsToAlignWithDirection(
+            core::Tensor::Init<double>({0, 0, -1}, device));
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{0, 0, -1}}, device)));
+}
+
+TEST_P(PointCloudPermuteDevices, OrientNormalsTowardsCameraLocation) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<double>(
+            {{0, 0, 0}, {0, 1, 0}, {1, 0, 0}, {1, 1, 0}}, device);
+    t::geometry::PointCloud pcd(points);
+    pcd.EstimateNormals(4);
+    pcd.NormalizeNormals();
+
+    core::Tensor ref_normals = core::Tensor::Init<double>(
+            {{0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}}, device);
+    core::Tensor ref_normals_rev = core::Tensor::Init<double>(
+            {{0, 0, -1}, {0, 0, -1}, {0, 0, -1}, {0, 0, -1}}, device);
+
+    // Camera outside.
+    pcd.OrientNormalsTowardsCameraLocation(
+            core::Tensor::Init<double>({2, 3, 4}, device));
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(ref_normals));
+    // Camera inside.
+    pcd.OrientNormalsTowardsCameraLocation(
+            core::Tensor::Init<double>({-2, -3, -4}, device));
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(ref_normals_rev));
+    // Camera is on one of the points.
+    pcd.SetPointPositions(core::Tensor::Init<double>({{0, 0, 0}}, device));
+    pcd.SetPointNormals(core::Tensor::Init<double>({{0, 0, 0}}, device));
+    pcd.OrientNormalsTowardsCameraLocation(
+            core::Tensor::Init<double>({0, 0, 0}, device));
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{0, 0, 1}}, device)));
+}
+
+TEST_P(PointCloudPermuteDevices, OrientNormalsConsistentTangentPlane) {
+    core::Device device = GetParam();
+
+    open3d::geometry::PointCloud pcd({
+            {0, 0, 0},
+            {0, 0, 1},
+            {0, 1, 0},
+            {0, 1, 1},
+            {1, 0, 0},
+            {1, 0, 1},
+            {1, 1, 0},
+            {1, 1, 1},
+            {0.5, 0.5, -0.25},
+            {0.5, 0.5, 1.25},
+            {0.5, -0.25, 0.5},
+            {0.5, 1.25, 0.5},
+            {-0.25, 0.5, 0.5},
+            {1.25, 0.5, 0.5},
+    });
+
+    // Hard-coded test.
+    pcd.EstimateNormals(geometry::KDTreeSearchParamKNN(/*knn=*/4));
+    double a = 0.57735;
+    double b = 0.0927618;
+    double c = 0.991358;
+
+    t::geometry::PointCloud t_pcd =
+            t::geometry::PointCloud::FromLegacy(pcd, core::Float64, device);
+
+    t_pcd.OrientNormalsConsistentTangentPlane(4);
+    EXPECT_TRUE(t_pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{-a, -a, -a},
+                                        {-a, -a, a},
+                                        {-a, a, -a},
+                                        {-a, a, a},
+                                        {a, -a, -a},
+                                        {a, -a, a},
+                                        {a, a, -a},
+                                        {a, a, a},
+                                        {-b, -b, -c},
+                                        {-b, -b, c},
+                                        {-b, -c, -b},
+                                        {-b, c, -b},
+                                        {-c, -b, -b},
+                                        {c, -b, -b}},
+                                       device)));
 }
 
 TEST_P(PointCloudPermuteDevices, FromLegacy) {
