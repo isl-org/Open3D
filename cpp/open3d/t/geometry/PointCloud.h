@@ -380,14 +380,24 @@ public:
     ///
     /// \param nb_points Number of neighbor points required within the radius.
     /// \param search_radius Radius of the sphere.
-    /// \return tuple of filtered point cloud and boolean mask tensor for
+    /// \return Tuple of filtered point cloud and boolean mask tensor for
     /// selected values w.r.t. input point cloud.
     std::tuple<PointCloud, core::Tensor> RemoveRadiusOutliers(
             size_t nb_points, double search_radius) const;
 
+    /// \brief Remove points that are further away from their \p nb_neighbor
+    /// neighbors in average. This function is not recommended to use on GPU.
+    ///
+    /// \param nb_neighbors Number of neighbors around the target point.
+    /// \param std_ratio Standard deviation ratio.
+    /// \return Tuple of filtered point cloud and boolean mask tensor for
+    /// selected values w.r.t. input point cloud.
+    std::tuple<PointCloud, core::Tensor> RemoveStatisticalOutliers(
+            size_t nb_neighbors, double std_ratio) const;
+
     /// \brief Remove duplicated points and there associated attributes.
     ///
-    /// \return tuple of filtered PointCloud and boolean indexing tensor w.r.t.
+    /// \return Tuple of filtered PointCloud and boolean indexing tensor w.r.t.
     /// input point cloud.
     std::tuple<PointCloud, core::Tensor> RemoveDuplicatedPoints() const;
 
@@ -396,7 +406,7 @@ public:
     ///
     /// \param remove_nan Remove NaN values from the PointCloud.
     /// \param remove_infinite Remove infinite values from the PointCloud.
-    /// \return tuple of filtered point cloud and boolean mask tensor for
+    /// \return Tuple of filtered point cloud and boolean mask tensor for
     /// selected values w.r.t. input point cloud.
     std::tuple<PointCloud, core::Tensor> RemoveNonFinitePoints(
             bool remove_nan = true, bool remove_infinite = true) const;
@@ -488,6 +498,9 @@ public:
             double angle_threshold = 90.0) const;
 
 public:
+    /// Normalize point normals to length 1.
+    PointCloud &NormalizeNormals();
+
     /// \brief Function to estimate point normals. If the point cloud normals
     /// exist, the estimated normals are oriented with respect to the same.
     /// It uses KNN search (Not recommended to use on GPU) if only max_nn
@@ -502,6 +515,31 @@ public:
     void EstimateNormals(
             const utility::optional<int> max_nn = 30,
             const utility::optional<double> radius = utility::nullopt);
+
+    /// \brief Function to orient the normals of a point cloud.
+    ///
+    /// \param orientation_reference Normals are oriented with respect to
+    /// orientation_reference.
+    void OrientNormalsToAlignWithDirection(
+            const core::Tensor &orientation_reference =
+                    core::Tensor::Init<float>({0, 0, 1},
+                                              core::Device("CPU:0")));
+
+    /// \brief Function to orient the normals of a point cloud.
+    ///
+    /// \param camera_location Normals are oriented with towards the
+    /// camera_location.
+    void OrientNormalsTowardsCameraLocation(
+            const core::Tensor &camera_location = core::Tensor::Zeros(
+                    {3}, core::Float32, core::Device("CPU:0")));
+
+    /// \brief Function to consistently orient estimated normals based on
+    /// consistent tangent planes as described in Hoppe et al., "Surface
+    /// Reconstruction from Unorganized Points", 1992.
+    ///
+    /// \param k k nearest neighbour for graph reconstruction for normal
+    /// propagation.
+    void OrientNormalsConsistentTangentPlane(size_t k);
 
     /// \brief Function to compute point color gradients. If radius is provided,
     /// then HybridSearch is used, otherwise KNN-Search is used.

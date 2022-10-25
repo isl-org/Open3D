@@ -401,6 +401,44 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveRadiusOutliers(
     return std::make_tuple(SelectByMask(valid), valid);
 }
 
+std::tuple<PointCloud, core::Tensor> PointCloud::RemoveStatisticalOutliers(
+        size_t nb_neighbors, double std_ratio) const {
+    if (nb_neighbors < 1 || std_ratio <= 0) {
+        utility::LogError(
+                "Illegal input parameters, the number of neighbors and "
+                "standard deviation ratio must be positive.");
+    }
+    if (GetPointPositions().GetLength() == 0) {
+        return std::make_tuple(PointCloud(GetDevice()),
+                               core::Tensor({0}, core::Bool, GetDevice()));
+    }
+
+    core::nns::NearestNeighborSearch nns(GetPointPositions().Contiguous());
+    const bool check = nns.KnnIndex();
+    if (!check) {
+        utility::LogError("Knn search index is not set.");
+    }
+
+    core::Tensor indices, distance2;
+    std::tie(indices, distance2) =
+            nns.KnnSearch(GetPointPositions(), nb_neighbors);
+
+    core::Tensor avg_distances = distance2.Sqrt().Mean({1});
+    const double cloud_mean =
+            avg_distances.Mean({0}).To(core::Float64).Item<double>();
+    const core::Tensor std_distances_centered = avg_distances - cloud_mean;
+    const double sq_sum = (std_distances_centered * std_distances_centered)
+                                  .Sum({0})
+                                  .To(core::Float64)
+                                  .Item<double>();
+    const double std_dev =
+            std::sqrt(sq_sum / (avg_distances.GetShape()[0] - 1));
+    const double distance_threshold = cloud_mean + std_ratio * std_dev;
+    const core::Tensor valid = avg_distances.Le(distance_threshold);
+
+    return std::make_tuple(SelectByMask(valid), valid);
+}
+
 std::tuple<PointCloud, core::Tensor> PointCloud::RemoveNonFinitePoints(
         bool remove_nan, bool remove_inf) const {
     core::Tensor finite_indices_mask;
@@ -445,6 +483,26 @@ std::tuple<PointCloud, core::Tensor> PointCloud::RemoveDuplicatedPoints()
     points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
 
     return std::make_tuple(SelectByMask(masks), masks);
+}
+
+PointCloud &PointCloud::NormalizeNormals() {
+    if (!HasPointNormals()) {
+        utility::LogWarning("PointCloud has no normals.");
+        return *this;
+    } else {
+        SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    core::Tensor &normals = GetPointNormals();
+    if (IsCPU()) {
+        kernel::pointcloud::NormalizeNormalsCPU(normals);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::NormalizeNormalsCUDA, normals);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+
+    return *this;
 }
 
 PointCloud &PointCloud::PaintUniformColor(const core::Tensor &color) {
@@ -600,6 +658,70 @@ void PointCloud::EstimateNormals(
     // TODO (@rishabh): Don't remove covariances attribute, when
     // EstimateCovariance functionality is exposed.
     RemovePointAttr("covariances");
+}
+
+void PointCloud::OrientNormalsToAlignWithDirection(
+        const core::Tensor &orientation_reference) {
+    core::AssertTensorDevice(orientation_reference, GetDevice());
+    core::AssertTensorShape(orientation_reference, {3});
+
+    if (!HasPointNormals()) {
+        utility::LogError(
+                "No normals in the PointCloud. Call EstimateNormals() first.");
+    } else {
+        SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    core::Tensor reference =
+            orientation_reference.To(GetPointPositions().GetDtype());
+
+    core::Tensor &normals = GetPointNormals();
+    if (IsCPU()) {
+        kernel::pointcloud::OrientNormalsToAlignWithDirectionCPU(normals,
+                                                                 reference);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::OrientNormalsToAlignWithDirectionCUDA,
+                  normals, reference);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
+void PointCloud::OrientNormalsTowardsCameraLocation(
+        const core::Tensor &camera_location) {
+    core::AssertTensorDevice(camera_location, GetDevice());
+    core::AssertTensorShape(camera_location, {3});
+
+    if (!HasPointNormals()) {
+        utility::LogError(
+                "No normals in the PointCloud. Call EstimateNormals() first.");
+    } else {
+        SetPointNormals(GetPointNormals().Contiguous());
+    }
+
+    core::Tensor reference = camera_location.To(GetPointPositions().GetDtype());
+
+    core::Tensor &normals = GetPointNormals();
+    if (IsCPU()) {
+        kernel::pointcloud::OrientNormalsTowardsCameraLocationCPU(
+                GetPointPositions().Contiguous(), normals, reference);
+    } else if (IsCUDA()) {
+        CUDA_CALL(kernel::pointcloud::OrientNormalsTowardsCameraLocationCUDA,
+                  GetPointPositions().Contiguous(), normals, reference);
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
+void PointCloud::OrientNormalsConsistentTangentPlane(size_t k) {
+    PointCloud tpcd(GetPointPositions());
+    tpcd.SetPointNormals(GetPointNormals());
+
+    open3d::geometry::PointCloud lpcd = tpcd.ToLegacy();
+    lpcd.OrientNormalsConsistentTangentPlane(k);
+
+    SetPointNormals(core::eigen_converter::EigenVector3dVectorToTensor(
+            lpcd.normals_, GetPointPositions().GetDtype(), GetDevice()));
 }
 
 void PointCloud::EstimateColorGradients(

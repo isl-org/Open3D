@@ -29,6 +29,7 @@
 #include <gmock/gmock.h>
 
 #include "core/CoreTest.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/TensorCheck.h"
 #include "tests/Tests.h"
 
@@ -343,6 +344,55 @@ TEST_P(TriangleMeshPermuteDevices, Rotate) {
             core::Tensor::Init<float>({{3, 3, 2}, {3, 3, 2}}, device)));
     EXPECT_TRUE(mesh.GetVertexNormals().AllClose(
             core::Tensor::Init<float>({{2, 2, 1}, {2, 2, 1}}, device)));
+}
+
+TEST_P(TriangleMeshPermuteDevices, NormalizeNormals) {
+    core::Device device = GetParam();
+
+    std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
+            open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
+    t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
+            *mesh, core::Float64, core::Int64, device);
+
+    mesh->ComputeTriangleNormals(false);
+    mesh->NormalizeNormals();
+    t_mesh.ComputeTriangleNormals(false);
+    t_mesh.NormalizeNormals();
+
+    EXPECT_TRUE(t_mesh.GetTriangleNormals().AllClose(
+            core::eigen_converter::EigenVector3dVectorToTensor(
+                    mesh->triangle_normals_, core::Dtype::Float64, device)));
+}
+
+TEST_P(TriangleMeshPermuteDevices, ComputeTriangleNormals) {
+    core::Device device = GetParam();
+
+    std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
+            open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
+    t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
+            *mesh, core::Float64, core::Int64, device);
+
+    mesh->ComputeTriangleNormals();
+    t_mesh.ComputeTriangleNormals();
+    EXPECT_TRUE(t_mesh.GetTriangleNormals().AllClose(
+            core::eigen_converter::EigenVector3dVectorToTensor(
+                    mesh->triangle_normals_, core::Dtype::Float64, device)));
+}
+
+TEST_P(TriangleMeshPermuteDevices, ComputeVertexNormals) {
+    core::Device device = GetParam();
+
+    std::shared_ptr<open3d::geometry::TriangleMesh> mesh =
+            open3d::geometry::TriangleMesh::CreateSphere(1.0, 3);
+    t::geometry::TriangleMesh t_mesh = t::geometry::TriangleMesh::FromLegacy(
+            *mesh, core::Float64, core::Int64, device);
+
+    mesh->ComputeVertexNormals();
+    t_mesh.ComputeVertexNormals();
+
+    EXPECT_TRUE(t_mesh.GetVertexNormals().AllClose(
+            core::eigen_converter::EigenVector3dVectorToTensor(
+                    mesh->vertex_normals_, core::Dtype::Float64, device)));
 }
 
 TEST_P(TriangleMeshPermuteDevices, FromLegacy) {

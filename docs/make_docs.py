@@ -505,12 +505,19 @@ class JupyterDocsBuilder:
         # Copy and execute notebooks in the tutorial folder
         nb_paths = []
         nb_direct_copy = [
-            'tensor.ipynb', 'hashmap.ipynb', 't_icp_registration.ipynb',
-            'jupyter_visualization.ipynb'
+            'draw_plotly.ipynb',
+            'hashmap.ipynb',
+            'jupyter_visualization.ipynb',
+            't_icp_registration.ipynb',
+            'tensor.ipynb',
         ]
         example_dirs = [
-            "geometry", "core", "data", "pipelines", "visualization",
-            "t_pipelines"
+            "core",
+            "data",
+            "geometry",
+            "pipelines",
+            "t_pipelines",
+            "visualization",
         ]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir) / "jupyter" / example_dir)
@@ -610,6 +617,13 @@ if __name__ == "__main__":
         help="Jupyter notebook execution mode.",
     )
     parser.add_argument(
+        "--delete_notebooks",
+        action="store_true",
+        default=False,
+        help="Delete all *.ipynb files recursively in the output folder. "
+        "This is for CI only, please use with caution.",
+    )
+    parser.add_argument(
         "--py_api_rst",
         default="always",
         choices=("always", "never"),
@@ -679,6 +693,13 @@ if __name__ == "__main__":
         jdb = JupyterDocsBuilder(pwd, args.clean_notebooks,
                                  args.execute_notebooks)
         jdb.run()
+
+    # Remove *.ipynb in the output folder for CI docs.
+    if args.delete_notebooks:
+        print(f"Deleting all *.ipynb files in the {html_output_dir} folder.")
+        for f in Path(html_output_dir).glob("**/*.ipynb"):
+            print(f"Deleting {f}")
+            f.unlink()
 
     # Sphinx is hard-coded to build with the "html" option
     # To customize build, run sphinx-build manually

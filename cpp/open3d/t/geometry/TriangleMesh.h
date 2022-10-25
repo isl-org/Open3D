@@ -673,6 +673,17 @@ public:
     /// \return Rotated TriangleMesh
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// Normalize both triangle normals and vertex normals to length 1.
+    TriangleMesh &NormalizeNormals();
+
+    /// \brief Function to compute triangle normals, usually called before
+    /// rendering.
+    TriangleMesh &ComputeTriangleNormals(bool normalized = true);
+
+    /// \brief Function to compute vertex normals, usually called before
+    /// rendering.
+    TriangleMesh &ComputeVertexNormals(bool normalized = true);
+
     /// \brief Clip mesh with a plane.
     /// This method clips the triangle mesh with the specified plane.
     /// Parts of the mesh on the positive side of the plane will be kept and
