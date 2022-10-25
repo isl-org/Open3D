@@ -42,6 +42,18 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
+template <typename scalar_t, typename BinaryEWOp>
+static void RunKernel(sy::queue& queue, const Indexer& indexer) {
+    const int64_t num_workloads = indexer.NumWorkloads();
+    queue.submit([&](sy::handler& h) {
+             h.parallel_for(num_workloads, [indexer](int64_t i) {
+                 *indexer.GetOutputPtr<scalar_t>(i) =
+                         BinaryEWOp()(*indexer.GetInputPtr<scalar_t>(0, i),
+                                      *indexer.GetInputPtr<scalar_t>(1, i));
+             });
+         }).wait();
+}
+
 void BinaryEWSYCL(const Tensor& lhs,
                   const Tensor& rhs,
                   Tensor& dst,
@@ -190,37 +202,13 @@ void BinaryEWSYCL(const Tensor& lhs,
         const int64_t num_workloads = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE_SYCL(src_dtype, [&]() {
             if (op_code == BinaryEWOpCode::Add) {
-                queue.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<scalar_t>(i) =
-                                     *indexer.GetInputPtr<scalar_t>(0, i) +
-                                     *indexer.GetInputPtr<scalar_t>(1, i);
-                         });
-                     }).wait();
+                RunKernel<scalar_t, std::plus<scalar_t>>(queue, indexer);
             } else if (op_code == BinaryEWOpCode::Sub) {
-                queue.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<scalar_t>(i) =
-                                     *indexer.GetInputPtr<scalar_t>(0, i) -
-                                     *indexer.GetInputPtr<scalar_t>(1, i);
-                         });
-                     }).wait();
+                RunKernel<scalar_t, std::minus<scalar_t>>(queue, indexer);
             } else if (op_code == BinaryEWOpCode::Mul) {
-                queue.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<scalar_t>(i) =
-                                     *indexer.GetInputPtr<scalar_t>(0, i) *
-                                     *indexer.GetInputPtr<scalar_t>(1, i);
-                         });
-                     }).wait();
+                RunKernel<scalar_t, std::multiplies<scalar_t>>(queue, indexer);
             } else if (op_code == BinaryEWOpCode::Div) {
-                queue.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<scalar_t>(i) =
-                                     *indexer.GetInputPtr<scalar_t>(0, i) /
-                                     *indexer.GetInputPtr<scalar_t>(1, i);
-                         });
-                     }).wait();
+                RunKernel<scalar_t, std::divides<scalar_t>>(queue, indexer);
             } else {
                 utility::LogError("Unsupported BinaryEWOpCode {}.", op_code);
             }
