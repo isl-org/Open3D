@@ -129,10 +129,10 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
         (max_bound - min_bound).maxCoeff()) {
         utility::LogError("voxel_size is too small.");
     }
-       output->voxel_size_ = voxel_size;
+    output->voxel_size_ = voxel_size;
     output->origin_ = min_bound;
     double minx, miny, minz, maxx, maxy, maxz;
-    int num_w, num_h, num_d; 
+    int num_w, num_h,num_d,inix,iniy,iniz; 
 
     const Eigen::Vector3d box_half_size(voxel_size / 2, voxel_size / 2,
                                         voxel_size / 2);
@@ -147,27 +147,23 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
         maxx = std::max(v0[0], std::max(v1[0], v2[0]));
         maxy = std::max(v0[1], std::max(v1[1], v2[1]));
         maxz = std::max(v0[2], std::max(v1[2], v2[2]));
-        num_w = static_cast<int>((std::round((maxx - minx) / voxel_size))) + 1;
-        num_h = static_cast<int>((std::round((maxy - miny) / voxel_size))) + 1;
-        num_d = static_cast<int>((std::round((maxz - minz) / voxel_size))) + 1;
-        for (int widx = 0; widx < num_w; widx++) 
+        inix = static_cast<int>(std::floor((minx - min_bound[0])/ voxel_size));
+        iniy = static_cast<int>(std::floor((miny - min_bound[1]) / voxel_size));
+        iniz = static_cast<int>(std::floor((minz - min_bound[2]) / voxel_size));
+        num_w = static_cast<int>((std::round((maxx - minx) / voxel_size))) +2;
+        num_h = static_cast<int>((std::round((maxy - miny) / voxel_size))) +2;
+        num_d = static_cast<int>((std::round((maxz - minz) / voxel_size))) +2;
+        for (int widx = inix; widx < inix+num_w; widx++)
         {
-            for (int hidx = 0; hidx < num_h; hidx++) 
+            for (int hidx = iniy; hidx < iniy+ num_h; hidx++)
             {
-                for (int didx = 0; didx < num_d; didx++)
+                for (int didx = iniz; didx < iniz+num_d; didx++)
                 {
-                    const Eigen::Vector3d box_center = min_bound +  
-                        Eigen::Vector3d(widx, hidx, didx) * voxel_size;
-
+                    const Eigen::Vector3d box_center = min_bound+ box_half_size + Eigen::Vector3d(widx, hidx, didx) * voxel_size;
                         if (IntersectionTest::TriangleAABB(
                                     box_center, box_half_size, v0, v1, v2)) 
                         {
-                            Eigen::Vector3i grid_index
-                            (
-                                    static_cast<int>(minx / voxel_size) + widx,
-                                    static_cast<int>(miny / voxel_size) + hidx,
-                                    static_cast<int>(minz / voxel_size) + didx
-                             );
+                            Eigen::Vector3i grid_index( widx, hidx,didx);
                             output->AddVoxel(geometry::Voxel(grid_index));
                             break;
                         }
