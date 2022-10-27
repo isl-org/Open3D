@@ -11,6 +11,7 @@
 * Reserve fragment buffer for VoxelBlockGrid operations
 * Fix raycasting scene: Allow setting of number of threads that are used for building a raycasting scene
 * Fix Python bindings for CUDA device synchronization, voxel grid saving (PR #5425)
+* Support msgpack versions without cmake
 
 ## 0.13
 
