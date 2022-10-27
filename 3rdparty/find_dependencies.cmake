@@ -825,6 +825,16 @@ endif()
 # - Curl should be linked before PNG, otherwise it will have undefined symbols.
 # - openssl.cmake needs to be included before curl.cmake, for the
 #   BORINGSSL_ROOT_DIR variable.
+if(USE_SYSTEM_CURL)
+    open3d_find_package_3rdparty_library(3rdparty_curl
+        PACKAGE CURL
+        TARGETS CURL::libcurl
+    )
+    if(NOT 3rdparty_curl_FOUND)
+        set(USE_SYSTEM_CURL OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_CURL)
 include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
 include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
 open3d_import_3rdparty_library(3rdparty_curl
@@ -847,7 +857,6 @@ if(APPLE)
     target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl)
-
 # BoringSSL
 open3d_import_3rdparty_library(3rdparty_openssl
     INCLUDE_DIRS ${BORINGSSL_INCLUDE_DIRS}
@@ -858,6 +867,11 @@ open3d_import_3rdparty_library(3rdparty_openssl
     DEPENDS      ext_zlib ext_boringssl
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_openssl)
+else()
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_curl)
+endif()
+
+
 
 # PNG
 if(USE_SYSTEM_PNG)
