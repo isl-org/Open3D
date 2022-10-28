@@ -96,86 +96,37 @@ void BinaryEWSYCL(const Tensor& lhs,
             DISPATCH_BOOL_OR_TYPE(dst_dtype, src_t, [&]() {
                 using dst_t = scalar_t;
                 if (op_code == BinaryEWOpCode::LogicalAnd) {
-                    queue.submit([&](sy::handler& h) {
-                             h.parallel_for(num_workloads, [indexer](
-                                                                   int64_t i) {
-                                 *indexer.GetOutputPtr<dst_t>(i) =
-                                         *indexer.GetInputPtr<src_t>(0, i) &&
-                                         *indexer.GetInputPtr<src_t>(1, i);
-                             });
-                         }).wait();
+                    LaunchBinaryEWKernel<src_t, dst_t, std::logical_and<src_t>>(
+                            queue, indexer);
                 } else if (op_code == BinaryEWOpCode::LogicalOr) {
-                    queue.submit([&](sy::handler& h) {
-                             h.parallel_for(num_workloads, [indexer](
-                                                                   int64_t i) {
-                                 *indexer.GetOutputPtr<dst_t>(i) =
-                                         *indexer.GetInputPtr<src_t>(0, i) ||
-                                         *indexer.GetInputPtr<src_t>(1, i);
-                             });
-                         }).wait();
+                    LaunchBinaryEWKernel<src_t, dst_t, std::logical_or<src_t>>(
+                            queue, indexer);
                 } else if (op_code == BinaryEWOpCode::LogicalXor) {
-                    queue.submit([&](sy::handler& h) {
-                             h.parallel_for(num_workloads, [indexer](
-                                                                   int64_t i) {
-                                 *indexer.GetOutputPtr<dst_t>(i) =
-                                         *indexer.GetInputPtr<src_t>(0, i) !=
-                                         *indexer.GetInputPtr<src_t>(1, i);
-                             });
-                         }).wait();
+                    // For bool values, != is the same as for xor.
+                    // For non-bool values, we still use != to compute xor.
+                    LaunchBinaryEWKernel<src_t, dst_t,
+                                         std::not_equal_to<src_t>>(queue,
+                                                                   indexer);
                 } else if (op_code == BinaryEWOpCode::Gt) {
-                    queue.submit([&](sy::handler& h) {
-                             h.parallel_for(num_workloads, [indexer](
-                                                                   int64_t i) {
-                                 *indexer.GetOutputPtr<dst_t>(i) =
-                                         *indexer.GetInputPtr<src_t>(0, i) >
-                                         *indexer.GetInputPtr<src_t>(1, i);
-                             });
-                         }).wait();
+                    LaunchBinaryEWKernel<src_t, dst_t, std::greater<src_t>>(
+                            queue, indexer);
                 } else if (op_code == BinaryEWOpCode::Lt) {
-                    queue.submit([&](sy::handler& h) {
-                             h.parallel_for(num_workloads, [indexer](
-                                                                   int64_t i) {
-                                 *indexer.GetOutputPtr<dst_t>(i) =
-                                         *indexer.GetInputPtr<src_t>(0, i) <
-                                         *indexer.GetInputPtr<src_t>(1, i);
-                             });
-                         }).wait();
+                    LaunchBinaryEWKernel<src_t, dst_t, std::less<src_t>>(
+                            queue, indexer);
                 } else if (op_code == BinaryEWOpCode::Ge) {
-                    queue.submit([&](sy::handler& h) {
-                             h.parallel_for(num_workloads, [indexer](
-                                                                   int64_t i) {
-                                 *indexer.GetOutputPtr<dst_t>(i) =
-                                         *indexer.GetInputPtr<src_t>(0, i) >=
-                                         *indexer.GetInputPtr<src_t>(1, i);
-                             });
-                         }).wait();
+                    LaunchBinaryEWKernel<src_t, dst_t,
+                                         std::greater_equal<src_t>>(queue,
+                                                                    indexer);
                 } else if (op_code == BinaryEWOpCode::Le) {
-                    queue.submit([&](sy::handler& h) {
-                             h.parallel_for(num_workloads, [indexer](
-                                                                   int64_t i) {
-                                 *indexer.GetOutputPtr<dst_t>(i) =
-                                         *indexer.GetInputPtr<src_t>(0, i) <=
-                                         *indexer.GetInputPtr<src_t>(1, i);
-                             });
-                         }).wait();
+                    LaunchBinaryEWKernel<src_t, dst_t, std::less_equal<src_t>>(
+                            queue, indexer);
                 } else if (op_code == BinaryEWOpCode::Eq) {
-                    queue.submit([&](sy::handler& h) {
-                             h.parallel_for(num_workloads, [indexer](
-                                                                   int64_t i) {
-                                 *indexer.GetOutputPtr<dst_t>(i) =
-                                         *indexer.GetInputPtr<src_t>(0, i) ==
-                                         *indexer.GetInputPtr<src_t>(1, i);
-                             });
-                         }).wait();
+                    LaunchBinaryEWKernel<src_t, dst_t, std::equal_to<src_t>>(
+                            queue, indexer);
                 } else if (op_code == BinaryEWOpCode::Ne) {
-                    queue.submit([&](sy::handler& h) {
-                             h.parallel_for(num_workloads, [indexer](
-                                                                   int64_t i) {
-                                 *indexer.GetOutputPtr<dst_t>(i) =
-                                         *indexer.GetInputPtr<src_t>(0, i) !=
-                                         *indexer.GetInputPtr<src_t>(1, i);
-                             });
-                         }).wait();
+                    LaunchBinaryEWKernel<src_t, dst_t,
+                                         std::not_equal_to<src_t>>(queue,
+                                                                   indexer);
                 } else {
                     utility::LogError("Unsupported BinaryEWOpCode {}.",
                                       op_code);
