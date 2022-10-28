@@ -81,9 +81,11 @@ bool ReadTriangleMeshUsingASSIMP(
     std::vector<core::Tensor> mesh_vertices;
     std::vector<core::Tensor> mesh_vertex_normals;
     std::vector<core::Tensor> mesh_faces;
+    std::vector<core::Tensor> mesh_vertex_colors;
 
     size_t current_vidx = 0;
     size_t count_mesh_with_normals = 0;
+    size_t count_mesh_with_colors = 0;
 
     // Merge individual meshes in aiScene into a single TriangleMesh
     for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
@@ -92,24 +94,35 @@ bool ReadTriangleMeshUsingASSIMP(
         core::Tensor vertices = core::Tensor::Empty(
                 {assimp_mesh->mNumVertices, 3}, core::Dtype::Float32);
         auto vertices_ptr = vertices.GetDataPtr<float>();
+        std::memcpy(vertices_ptr, assimp_mesh->mVertices,
+                3 * assimp_mesh->mNumVertices * sizeof(float));
+        mesh_vertices.push_back(vertices);
 
         core::Tensor vertex_normals;
+        core::Tensor vertex_colors;
         if (assimp_mesh->mNormals) {
             // Loop fusion for performance optimization.
             vertex_normals = core::Tensor::Empty({assimp_mesh->mNumFaces, 3},
                                                  core::Dtype::Float32);
-            auto vertex_normals_ptr = vertices.GetDataPtr<float>();
-            std::memcpy(vertices_ptr, assimp_mesh->mVertices,
-                        3 * assimp_mesh->mNumVertices * sizeof(float));
+            auto vertex_normals_ptr = vertex_normals.GetDataPtr<float>();
             std::memcpy(vertex_normals_ptr, assimp_mesh->mNormals,
                         3 * assimp_mesh->mNumVertices * sizeof(float));
             mesh_vertex_normals.push_back(vertex_normals);
             count_mesh_with_normals++;
-        } else {
-            std::memcpy(vertices_ptr, assimp_mesh->mVertices,
-                        3 * assimp_mesh->mNumVertices * sizeof(float));
         }
-        mesh_vertices.push_back(vertices);
+
+        if (assimp_mesh->HasVertexColors(0)) {
+            vertex_colors = core::Tensor::Empty({assimp_mesh->mNumVertices, 3},
+                    core::Dtype::Float32);
+            auto vertex_colors_ptr = vertex_colors.GetDataPtr<float>();
+            for (unsigned int i = 0; i < assimp_mesh->mNumVertices; ++i) {
+                *vertex_colors_ptr++ = assimp_mesh->mColors[0][i].r;
+                *vertex_colors_ptr++ = assimp_mesh->mColors[0][i].g;
+                *vertex_colors_ptr++ = assimp_mesh->mColors[0][i].b;
+            }
+            mesh_vertex_colors.push_back(vertex_colors);
+            count_mesh_with_colors++;
+        }
 
         core::Tensor faces = core::Tensor::Empty({assimp_mesh->mNumFaces, 3},
                                                  core::Dtype::Int64);
@@ -136,11 +149,17 @@ bool ReadTriangleMeshUsingASSIMP(
         if (count_mesh_with_normals == scene->mNumMeshes) {
             mesh.SetVertexNormals(core::Concatenate(mesh_vertex_normals));
         }
+        if (count_mesh_with_colors == scene->mNumMeshes) {
+            mesh.SetVertexColors(core::Concatenate(mesh_vertex_colors));
+        }
     } else {
         mesh.SetVertexPositions(mesh_vertices[0]);
         mesh.SetTriangleIndices(mesh_faces[0]);
         if (count_mesh_with_normals) {
             mesh.SetVertexNormals(mesh_vertex_normals[0]);
+        }
+        if (count_mesh_with_colors) {
+            mesh.SetVertexColors(mesh_vertex_colors[0]);
         }
     }
 
