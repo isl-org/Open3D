@@ -43,6 +43,13 @@ OPEN3D_SYCL_EXTERNAL scalar_t CPUSumReductionKernel(scalar_t a, scalar_t b) {
     return a + b;
 }
 
+template <typename T>
+struct SumFunc {
+    OPEN3D_SYCL_EXTERNAL T operator()(const T& a, const T& b) const {
+        return a + b;
+    }
+};
+
 class SYCLReductionEngine {
 public:
     SYCLReductionEngine(const SYCLReductionEngine&) = delete;
