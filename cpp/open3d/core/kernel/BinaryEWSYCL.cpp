@@ -54,6 +54,16 @@ static void LaunchBinaryEWKernel(sy::queue& queue, const Indexer& indexer) {
          }).wait();
 }
 
+template <typename T>
+struct MaxFunc {
+    T operator()(const T& a, const T& b) const { return std::max<T>(a, b); }
+};
+
+template <typename T>
+struct MinFunc {
+    T operator()(const T& a, const T& b) const { return std::min<T>(a, b); }
+};
+
 void BinaryEWSYCL(const Tensor& lhs,
                   const Tensor& rhs,
                   Tensor& dst,
@@ -178,21 +188,11 @@ void BinaryEWSYCL(const Tensor& lhs,
         const int64_t num_workloads = indexer.NumWorkloads();
         DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL_SYCL(src_dtype, [&]() {
             if (op_code == BinaryEWOpCode::Maximum) {
-                queue.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<scalar_t>(i) = std::max(
-                                     *indexer.GetInputPtr<scalar_t>(0, i),
-                                     *indexer.GetInputPtr<scalar_t>(1, i));
-                         });
-                     }).wait();
+                LaunchBinaryEWKernel<scalar_t, MaxFunc<scalar_t>>(queue,
+                                                                  indexer);
             } else if (op_code == BinaryEWOpCode::Minimum) {
-                queue.submit([&](sy::handler& h) {
-                         h.parallel_for(num_workloads, [indexer](int64_t i) {
-                             *indexer.GetOutputPtr<scalar_t>(i) = std::min(
-                                     *indexer.GetInputPtr<scalar_t>(0, i),
-                                     *indexer.GetInputPtr<scalar_t>(1, i));
-                         });
-                     }).wait();
+                LaunchBinaryEWKernel<scalar_t, MinFunc<scalar_t>>(queue,
+                                                                  indexer);
             } else {
                 utility::LogError("Unsupported BinaryEWOpCode {}.", op_code);
             }
