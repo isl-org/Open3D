@@ -97,7 +97,7 @@ bool ReadTriangleMeshUsingASSIMP(
                 {assimp_mesh->mNumVertices, 3}, core::Dtype::Float32);
         auto vertices_ptr = vertices.GetDataPtr<float>();
         std::memcpy(vertices_ptr, assimp_mesh->mVertices,
-                3 * assimp_mesh->mNumVertices * sizeof(float));
+                    3 * assimp_mesh->mNumVertices * sizeof(float));
         mesh_vertices.push_back(vertices);
 
         core::Tensor vertex_normals;
@@ -116,7 +116,7 @@ bool ReadTriangleMeshUsingASSIMP(
 
         if (assimp_mesh->HasVertexColors(0)) {
             vertex_colors = core::Tensor::Empty({assimp_mesh->mNumVertices, 3},
-                    core::Dtype::Float32);
+                                                core::Dtype::Float32);
             auto vertex_colors_ptr = vertex_colors.GetDataPtr<float>();
             for (unsigned int i = 0; i < assimp_mesh->mNumVertices; ++i) {
                 *vertex_colors_ptr++ = assimp_mesh->mColors[0][i].r;
@@ -142,8 +142,8 @@ bool ReadTriangleMeshUsingASSIMP(
         mesh_faces.push_back(faces);
 
         if (assimp_mesh->HasTextureCoords(0)) {
-            auto vertex_uvs = core::Tensor::Empty({assimp_mesh->mNumVertices, 2},
-                    core::Dtype::Float32);
+            auto vertex_uvs = core::Tensor::Empty(
+                    {assimp_mesh->mNumVertices, 2}, core::Dtype::Float32);
             auto uvs_ptr = vertex_uvs.GetDataPtr<float>();
             // NOTE: Can't just memcpy because ASSIMP UVs are 3 element and
             // TriangleMesh wants 2 element UVs.
