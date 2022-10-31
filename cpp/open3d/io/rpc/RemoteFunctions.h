@@ -35,6 +35,7 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/rpc/ConnectionBase.h"
 #include "open3d/t/geometry/Image.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 
 namespace zmq {
 class message_t;
@@ -82,6 +83,26 @@ bool SetPointCloud(const geometry::PointCloud& pcd,
 ///                    If nullptr a default connection object will be used.
 ///
 bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
+                     const std::string& path = "",
+                     int time = 0,
+                     const std::string& layer = "",
+                     std::shared_ptr<ConnectionBase> connection =
+                             std::shared_ptr<ConnectionBase>());
+
+/// Function for sending a TriangleMesh.
+/// \param mesh        The TriangleMesh object.
+///
+/// \param path        Path descriptor defining a location in the scene tree.
+/// E.g., 'mygroup/mypoints'.
+///
+/// \param time        The time point associated with the object.
+///
+/// \param layer       The layer for this object.
+///
+/// \param connection  The connection object used for sending the data.
+///                    If nullptr a default connection object will be used.
+///
+bool SetTriangleMesh(const t::geometry::TriangleMesh& mesh,
                      const std::string& path = "",
                      int time = 0,
                      const std::string& layer = "",

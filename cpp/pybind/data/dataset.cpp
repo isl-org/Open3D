@@ -24,7 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "pybind/data/data.h"
+#include "pybind/data/dataset.h"
 
 #include "open3d/data/Dataset.h"
 #include "pybind/docstring.h"
@@ -39,19 +39,45 @@ public:
     using DatasetBase::DatasetBase;
 };
 
-template <class SingleDownloadDatasetBase = SingleDownloadDataset>
-class PySingleDownloadDataset : public PyDataset<SingleDownloadDatasetBase> {
+template <class DownloadDatasetBase = DownloadDataset>
+class PyDownloadDataset : public PyDataset<DownloadDatasetBase> {
 public:
-    using PyDataset<SingleDownloadDatasetBase>::PyDataset;
-};
-
-template <class MultiDownloadDatasetBase = MultiDownloadDataset>
-class PyMultiDownloadDataset : public PyDataset<MultiDownloadDatasetBase> {
-public:
-    using PyDataset<MultiDownloadDatasetBase>::PyDataset;
+    using PyDataset<DownloadDatasetBase>::PyDataset;
 };
 
 void pybind_data_classes(py::module& m) {
+    // open3d.data.open3d_downloads_prefix as static attr of open3d.data.
+    m.attr("open3d_downloads_prefix") = py::cast(Open3DDownloadsPrefix());
+
+    // open3d.data.DataDescriptor
+    py::class_<DataDescriptor> data_descriptor(
+            m, "DataDescriptor",
+            "DataDescriptor is a class that describes a data file. It contains "
+            "the URL mirrors to download the file, the MD5 hash of the file, "
+            "and wether to extract the file.");
+    data_descriptor
+            .def(py::init([](const std::vector<std::string>& urls,
+                             const std::string& md5,
+                             const std::string& extract_in_subdir) {
+                     return DataDescriptor{urls, md5, extract_in_subdir};
+                 }),
+                 "urls"_a, "md5"_a, "extract_in_subdir"_a = "")
+            .def(py::init([](const std::string& url, const std::string& md5,
+                             const std::string& extract_in_subdir) {
+                     return DataDescriptor{std::vector<std::string>{url}, md5,
+                                           extract_in_subdir};
+                 }),
+                 "url"_a, "md5"_a, "extract_in_subdir"_a = "")
+            .def_readonly("urls", &DataDescriptor::urls_,
+                          "URL to download the data file.")
+            .def_readonly("md5", &DataDescriptor::md5_,
+                          "MD5 hash of the data file.")
+            .def_readonly("extract_in_subdir",
+                          &DataDescriptor::extract_in_subdir_,
+                          "Subdirectory to extract the file. If empty, the "
+                          "file will be extracted in the root extract "
+                          "directory of the dataset.");
+
     // open3d.data.Dataset
     py::class_<Dataset, PyDataset<Dataset>, std::shared_ptr<Dataset>> dataset(
             m, "Dataset", "The base dataset class.");
@@ -76,41 +102,21 @@ void pybind_data_classes(py::module& m) {
     docstring::ClassMethodDocInject(m, "Dataset", "download_dir");
     docstring::ClassMethodDocInject(m, "Dataset", "extract_dir");
 
-    // open3d.data.SingleDownloadDataset
-    py::class_<SingleDownloadDataset,
-               PySingleDownloadDataset<SingleDownloadDataset>,
-               std::shared_ptr<SingleDownloadDataset>, Dataset>
-            single_download_dataset(m, "SingleDownloadDataset",
+    // open3d.data.DownloadDataset
+    py::class_<DownloadDataset, PyDownloadDataset<DownloadDataset>,
+               std::shared_ptr<DownloadDataset>, Dataset>
+            single_download_dataset(m, "DownloadDataset",
                                     "Single file download dataset class.");
     single_download_dataset.def(
-            py::init<const std::string&, const std::vector<std::string>&,
-                     const std::string&, const bool, const std::string&>(),
-            "prefix"_a, "url_mirrors"_a, "md5"_a, "no_extract"_a = false,
-            "data_root"_a = "",
-            "This class allows user to create simple dataset which includes "
-            "single file downloading and extracting / copying.");
-
-    // open3d.data.MultiDownloadDataset
-    py::class_<MultiDownloadDataset,
-               PyMultiDownloadDataset<MultiDownloadDataset>,
-               std::shared_ptr<MultiDownloadDataset>, Dataset>
-            multi_download_dataset(m, "MultiDownloadDataset",
-                                   "Multiple files download dataset class.");
-    multi_download_dataset.def(
-            py::init<const std::string&,
-                     const std::vector<std::vector<std::string>>&,
-                     const std::vector<std::string>&, const bool,
+            py::init<const std::string&, const DataDescriptor&,
                      const std::string&>(),
-            "prefix"_a, "url_mirrors_list"_a, "md5_list"_a,
-            "no_extract"_a = false, "data_root"_a = "",
-            "This class allows user to create simple dataset which includes "
-            "multiple files downloading and extracting / copying.");
+            "prefix"_a, "data_descriptor"_a, "data_root"_a = "");
 }
 
 void pybind_demo_icp_pointclouds(py::module& m) {
     // open3d.data.DemoICPPointClouds
-    py::class_<DemoICPPointClouds, PySingleDownloadDataset<DemoICPPointClouds>,
-               std::shared_ptr<DemoICPPointClouds>, SingleDownloadDataset>
+    py::class_<DemoICPPointClouds, PyDownloadDataset<DemoICPPointClouds>,
+               std::shared_ptr<DemoICPPointClouds>, DownloadDataset>
             demo_icp_pointclouds(m, "DemoICPPointClouds",
                                  "Data class for `DemoICPPointClouds` contains "
                                  "3 point clouds of binary PCD format. This "
@@ -136,9 +142,8 @@ void pybind_demo_icp_pointclouds(py::module& m) {
 void pybind_demo_colored_icp_pointclouds(py::module& m) {
     // open3d.data.DemoColoredICPPointClouds
     py::class_<DemoColoredICPPointClouds,
-               PySingleDownloadDataset<DemoColoredICPPointClouds>,
-               std::shared_ptr<DemoColoredICPPointClouds>,
-               SingleDownloadDataset>
+               PyDownloadDataset<DemoColoredICPPointClouds>,
+               std::shared_ptr<DemoColoredICPPointClouds>, DownloadDataset>
             demo_colored_icp_pointclouds(
                     m, "DemoColoredICPPointClouds",
                     "Data class for `DemoColoredICPPointClouds` contains "
@@ -159,8 +164,8 @@ void pybind_demo_colored_icp_pointclouds(py::module& m) {
 
 void pybind_demo_crop_pointcloud(py::module& m) {
     // open3d.data.DemoCropPointCloud
-    py::class_<DemoCropPointCloud, PySingleDownloadDataset<DemoCropPointCloud>,
-               std::shared_ptr<DemoCropPointCloud>, SingleDownloadDataset>
+    py::class_<DemoCropPointCloud, PyDownloadDataset<DemoCropPointCloud>,
+               std::shared_ptr<DemoCropPointCloud>, DownloadDataset>
             demo_crop_pointcloud(
                     m, "DemoCropPointCloud",
                     "Data class for `DemoCropPointCloud` contains a point "
@@ -184,9 +189,8 @@ void pybind_demo_crop_pointcloud(py::module& m) {
 void pybind_demo_feature_matching_point_clouds(py::module& m) {
     // open3d.data.DemoFeatureMatchingPointClouds
     py::class_<DemoFeatureMatchingPointClouds,
-               PySingleDownloadDataset<DemoFeatureMatchingPointClouds>,
-               std::shared_ptr<DemoFeatureMatchingPointClouds>,
-               SingleDownloadDataset>
+               PyDownloadDataset<DemoFeatureMatchingPointClouds>,
+               std::shared_ptr<DemoFeatureMatchingPointClouds>, DownloadDataset>
             demo_feature_matching(
                     m, "DemoFeatureMatchingPointClouds",
                     "Data class for `DemoFeatureMatchingPointClouds` contains "
@@ -223,9 +227,8 @@ void pybind_demo_feature_matching_point_clouds(py::module& m) {
 void pybind_demo_pose_graph_optimization(py::module& m) {
     // open3d.data.DemoPoseGraphOptimization
     py::class_<DemoPoseGraphOptimization,
-               PySingleDownloadDataset<DemoPoseGraphOptimization>,
-               std::shared_ptr<DemoPoseGraphOptimization>,
-               SingleDownloadDataset>
+               PyDownloadDataset<DemoPoseGraphOptimization>,
+               std::shared_ptr<DemoPoseGraphOptimization>, DownloadDataset>
             demo_pose_graph_optimization(
                     m, "DemoPoseGraphOptimization",
                     "Data class for `DemoPoseGraphOptimization` contains an "
@@ -251,8 +254,8 @@ void pybind_demo_pose_graph_optimization(py::module& m) {
 void pybind_demo_custom_visualization(py::module& m) {
     // open3d.data.DemoCustomVisualization
     py::class_<DemoCustomVisualization,
-               PySingleDownloadDataset<DemoCustomVisualization>,
-               std::shared_ptr<DemoCustomVisualization>, SingleDownloadDataset>
+               PyDownloadDataset<DemoCustomVisualization>,
+               std::shared_ptr<DemoCustomVisualization>, DownloadDataset>
             demo_custom_visualization(
                     m, "DemoCustomVisualization",
                     "Data class for `DemoCustomVisualization` contains an "
@@ -267,7 +270,7 @@ void pybind_demo_custom_visualization(py::module& m) {
                                    "Returns path to the point cloud (ply).")
             .def_property_readonly(
                     "camera_trajectory_path",
-                    &DemoCustomVisualization::GetCameraTrajectoryPath,
+                    &DemoCustomVisualization::GetTrajectoryPath,
                     "Returns path to the camera_trajectory.json.")
             .def_property_readonly(
                     "render_option_path",
@@ -283,8 +286,8 @@ void pybind_demo_custom_visualization(py::module& m) {
 
 void pybind_pcd_point_cloud(py::module& m) {
     // open3d.data.PCDPointCloud
-    py::class_<PCDPointCloud, PySingleDownloadDataset<PCDPointCloud>,
-               std::shared_ptr<PCDPointCloud>, SingleDownloadDataset>
+    py::class_<PCDPointCloud, PyDownloadDataset<PCDPointCloud>,
+               std::shared_ptr<PCDPointCloud>, DownloadDataset>
             pcd_pointcloud(m, "PCDPointCloud",
                            "Data class for `PCDPointCloud` contains the "
                            "`fragment.pcd` point cloud mesh from the `Redwood "
@@ -297,8 +300,8 @@ void pybind_pcd_point_cloud(py::module& m) {
 
 void pybind_ply_point_cloud(py::module& m) {
     // open3d.data.PLYPointCloud
-    py::class_<PLYPointCloud, PySingleDownloadDataset<PLYPointCloud>,
-               std::shared_ptr<PLYPointCloud>, SingleDownloadDataset>
+    py::class_<PLYPointCloud, PyDownloadDataset<PLYPointCloud>,
+               std::shared_ptr<PLYPointCloud>, DownloadDataset>
             ply_pointcloud(m, "PLYPointCloud",
                            "Data class for `PLYPointCloud` contains the "
                            "`fragment.pcd` point cloud mesh from the `Redwood "
@@ -311,8 +314,8 @@ void pybind_ply_point_cloud(py::module& m) {
 
 void pybind_pts_point_cloud(py::module& m) {
     // open3d.data.PTSPointCloud
-    py::class_<PTSPointCloud, PySingleDownloadDataset<PTSPointCloud>,
-               std::shared_ptr<PTSPointCloud>, SingleDownloadDataset>
+    py::class_<PTSPointCloud, PyDownloadDataset<PTSPointCloud>,
+               std::shared_ptr<PTSPointCloud>, DownloadDataset>
             pts_point_cloud(m, "PTSPointCloud",
                             "Data class for `PTSPointCloud` contains a sample "
                             "point-cloud of PTS format.");
@@ -324,8 +327,8 @@ void pybind_pts_point_cloud(py::module& m) {
 
 void pybind_sample_nyu_rgbd_image(py::module& m) {
     // open3d.data.SampleNYURGBDImage
-    py::class_<SampleNYURGBDImage, PySingleDownloadDataset<SampleNYURGBDImage>,
-               std::shared_ptr<SampleNYURGBDImage>, SingleDownloadDataset>
+    py::class_<SampleNYURGBDImage, PyDownloadDataset<SampleNYURGBDImage>,
+               std::shared_ptr<SampleNYURGBDImage>, DownloadDataset>
             rgbd_image_nyu(m, "SampleNYURGBDImage",
                            "Data class for `SampleNYURGBDImage` contains a "
                            "color image `NYU_color.ppm` and a depth image "
@@ -343,8 +346,8 @@ void pybind_sample_nyu_rgbd_image(py::module& m) {
 
 void pybind_sample_sun_rgbd_image(py::module& m) {
     // open3d.data.SampleSUNRGBDImage
-    py::class_<SampleSUNRGBDImage, PySingleDownloadDataset<SampleSUNRGBDImage>,
-               std::shared_ptr<SampleSUNRGBDImage>, SingleDownloadDataset>
+    py::class_<SampleSUNRGBDImage, PyDownloadDataset<SampleSUNRGBDImage>,
+               std::shared_ptr<SampleSUNRGBDImage>, DownloadDataset>
             rgbd_image_sun(m, "SampleSUNRGBDImage",
                            "Data class for `SampleSUNRGBDImage` contains a "
                            "color image `SUN_color.jpg` and a depth image "
@@ -362,8 +365,8 @@ void pybind_sample_sun_rgbd_image(py::module& m) {
 
 void pybind_sample_tum_rgbd_image(py::module& m) {
     // open3d.data.SampleTUMRGBDImage
-    py::class_<SampleTUMRGBDImage, PySingleDownloadDataset<SampleTUMRGBDImage>,
-               std::shared_ptr<SampleTUMRGBDImage>, SingleDownloadDataset>
+    py::class_<SampleTUMRGBDImage, PyDownloadDataset<SampleTUMRGBDImage>,
+               std::shared_ptr<SampleTUMRGBDImage>, DownloadDataset>
             rgbd_image_tum(m, "SampleTUMRGBDImage",
                            "Data class for `SampleTUMRGBDImage` contains a "
                            "color image `TUM_color.png` and a depth image "
@@ -382,8 +385,8 @@ void pybind_sample_tum_rgbd_image(py::module& m) {
 void pybind_sample_redwood_rgbd_images(py::module& m) {
     // open3d.data.SampleRedwoodRGBDImages
     py::class_<SampleRedwoodRGBDImages,
-               PySingleDownloadDataset<SampleRedwoodRGBDImages>,
-               std::shared_ptr<SampleRedwoodRGBDImages>, SingleDownloadDataset>
+               PyDownloadDataset<SampleRedwoodRGBDImages>,
+               std::shared_ptr<SampleRedwoodRGBDImages>, DownloadDataset>
             rgbd_dataset_redwood(
                     m, "SampleRedwoodRGBDImages",
                     "Data class for `SampleRedwoodRGBDImages` contains a "
@@ -441,8 +444,8 @@ void pybind_sample_redwood_rgbd_images(py::module& m) {
 void pybind_sample_fountain_rgbd_images(py::module& m) {
     // open3d.data.SampleFountainRGBDImages
     py::class_<SampleFountainRGBDImages,
-               PySingleDownloadDataset<SampleFountainRGBDImages>,
-               std::shared_ptr<SampleFountainRGBDImages>, SingleDownloadDataset>
+               PyDownloadDataset<SampleFountainRGBDImages>,
+               std::shared_ptr<SampleFountainRGBDImages>, DownloadDataset>
             fountain_rgbd_dataset(
                     m, "SampleFountainRGBDImages",
                     "Data class for `SampleFountainRGBDImages` contains a "
@@ -465,7 +468,7 @@ void pybind_sample_fountain_rgbd_images(py::module& m) {
             .def_property_readonly(
                     "keyframe_poses_log_path",
                     &SampleFountainRGBDImages::GetKeyframePosesLogPath,
-                    "Path to camera poses at keyfragmes log file `key.log`.")
+                    "Path to camera poses at key frames log file `key.log`.")
             .def_property_readonly(
                     "reconstruction_path",
                     &SampleFountainRGBDImages::GetReconstructionPath,
@@ -482,8 +485,8 @@ void pybind_sample_fountain_rgbd_images(py::module& m) {
 
 void pybind_sample_l515_bag(py::module& m) {
     // open3d.data.SampleL515Bag
-    py::class_<SampleL515Bag, PySingleDownloadDataset<SampleL515Bag>,
-               std::shared_ptr<SampleL515Bag>, SingleDownloadDataset>
+    py::class_<SampleL515Bag, PyDownloadDataset<SampleL515Bag>,
+               std::shared_ptr<SampleL515Bag>, DownloadDataset>
             sample_l515_bag(m, "SampleL515Bag",
                             "Data class for `SampleL515Bag` contains the "
                             "`SampleL515Bag.bag` file.");
@@ -495,8 +498,8 @@ void pybind_sample_l515_bag(py::module& m) {
 
 void pybind_eagle(py::module& m) {
     // open3d.data.EaglePointCloud
-    py::class_<EaglePointCloud, PySingleDownloadDataset<EaglePointCloud>,
-               std::shared_ptr<EaglePointCloud>, SingleDownloadDataset>
+    py::class_<EaglePointCloud, PyDownloadDataset<EaglePointCloud>,
+               std::shared_ptr<EaglePointCloud>, DownloadDataset>
             eagle(m, "EaglePointCloud",
                   "Data class for `EaglePointCloud` contains the "
                   "`EaglePointCloud.ply` file.");
@@ -508,8 +511,8 @@ void pybind_eagle(py::module& m) {
 
 void pybind_armadillo(py::module& m) {
     // open3d.data.ArmadilloMesh
-    py::class_<ArmadilloMesh, PySingleDownloadDataset<ArmadilloMesh>,
-               std::shared_ptr<ArmadilloMesh>, SingleDownloadDataset>
+    py::class_<ArmadilloMesh, PyDownloadDataset<ArmadilloMesh>,
+               std::shared_ptr<ArmadilloMesh>, DownloadDataset>
             armadillo(m, "ArmadilloMesh",
                       "Data class for `ArmadilloMesh` contains the "
                       "`ArmadilloMesh.ply` from the `Stanford 3D Scanning "
@@ -522,8 +525,8 @@ void pybind_armadillo(py::module& m) {
 
 void pybind_bunny(py::module& m) {
     // open3d.data.BunnyMesh
-    py::class_<BunnyMesh, PySingleDownloadDataset<BunnyMesh>,
-               std::shared_ptr<BunnyMesh>, SingleDownloadDataset>
+    py::class_<BunnyMesh, PyDownloadDataset<BunnyMesh>,
+               std::shared_ptr<BunnyMesh>, DownloadDataset>
             bunny(m, "BunnyMesh",
                   "Data class for `BunnyMesh` contains the `BunnyMesh.ply` "
                   "from "
@@ -536,8 +539,8 @@ void pybind_bunny(py::module& m) {
 
 void pybind_knot(py::module& m) {
     // open3d.data.KnotMesh
-    py::class_<KnotMesh, PySingleDownloadDataset<KnotMesh>,
-               std::shared_ptr<KnotMesh>, SingleDownloadDataset>
+    py::class_<KnotMesh, PyDownloadDataset<KnotMesh>, std::shared_ptr<KnotMesh>,
+               DownloadDataset>
             knot(m, "KnotMesh",
                  "Data class for `KnotMesh` contains the `KnotMesh.ply`.");
     knot.def(py::init<const std::string&>(), "data_root"_a = "")
@@ -548,8 +551,8 @@ void pybind_knot(py::module& m) {
 
 void pybind_monkey(py::module& m) {
     // open3d.data.MonkeyModel
-    py::class_<MonkeyModel, PySingleDownloadDataset<MonkeyModel>,
-               std::shared_ptr<MonkeyModel>, SingleDownloadDataset>
+    py::class_<MonkeyModel, PyDownloadDataset<MonkeyModel>,
+               std::shared_ptr<MonkeyModel>, DownloadDataset>
             monkey(m, "MonkeyModel",
                    "Data class for `MonkeyModel` contains a monkey model file, "
                    "along with material and various other texture files. The "
@@ -570,8 +573,8 @@ void pybind_monkey(py::module& m) {
 
 void pybind_sword(py::module& m) {
     // open3d.data.SwordModel
-    py::class_<SwordModel, PySingleDownloadDataset<SwordModel>,
-               std::shared_ptr<SwordModel>, SingleDownloadDataset>
+    py::class_<SwordModel, PyDownloadDataset<SwordModel>,
+               std::shared_ptr<SwordModel>, DownloadDataset>
             sword(m, "SwordModel",
                   "Data class for `SwordModel` contains a monkey model file, "
                   "along with material and various other texture files. The "
@@ -592,8 +595,8 @@ void pybind_sword(py::module& m) {
 
 void pybind_crate(py::module& m) {
     // open3d.data.CrateModel
-    py::class_<CrateModel, PySingleDownloadDataset<CrateModel>,
-               std::shared_ptr<CrateModel>, SingleDownloadDataset>
+    py::class_<CrateModel, PyDownloadDataset<CrateModel>,
+               std::shared_ptr<CrateModel>, DownloadDataset>
             crate(m, "CrateModel",
                   "Data class for `CrateModel` contains a crate model file, "
                   "along with material and various other texture files. The "
@@ -614,8 +617,8 @@ void pybind_crate(py::module& m) {
 
 void pybind_helmet(py::module& m) {
     // open3d.data.FlightHelmetModel
-    py::class_<FlightHelmetModel, PySingleDownloadDataset<FlightHelmetModel>,
-               std::shared_ptr<FlightHelmetModel>, SingleDownloadDataset>
+    py::class_<FlightHelmetModel, PyDownloadDataset<FlightHelmetModel>,
+               std::shared_ptr<FlightHelmetModel>, DownloadDataset>
             helmet(m, "FlightHelmetModel",
                    "Data class for `FlightHelmetModel` contains a flight "
                    "helmet GLTF model file, along with material and various "
@@ -638,8 +641,8 @@ void pybind_helmet(py::module& m) {
 
 void pybind_avocado(py::module& m) {
     // open3d.data.AvocadoModel
-    py::class_<AvocadoModel, PySingleDownloadDataset<AvocadoModel>,
-               std::shared_ptr<AvocadoModel>, SingleDownloadDataset>
+    py::class_<AvocadoModel, PyDownloadDataset<AvocadoModel>,
+               std::shared_ptr<AvocadoModel>, DownloadDataset>
             avocado(m, "AvocadoModel",
                     "Data class for `AvocadoModel` contains a avocado model "
                     "file, "
@@ -652,8 +655,8 @@ void pybind_avocado(py::module& m) {
 
 void pybind_damaged_helmet(py::module& m) {
     // open3d.data.DamagedHelmetModel
-    py::class_<DamagedHelmetModel, PySingleDownloadDataset<DamagedHelmetModel>,
-               std::shared_ptr<DamagedHelmetModel>, SingleDownloadDataset>
+    py::class_<DamagedHelmetModel, PyDownloadDataset<DamagedHelmetModel>,
+               std::shared_ptr<DamagedHelmetModel>, DownloadDataset>
             damaged_helmet(
                     m, "DamagedHelmetModel",
                     "Data class for `DamagedHelmetModel` contains a damaged "
@@ -668,8 +671,8 @@ void pybind_damaged_helmet(py::module& m) {
 
 void pybind_metal_texture(py::module& m) {
     // open3d.data.MetalTexture
-    py::class_<MetalTexture, PySingleDownloadDataset<MetalTexture>,
-               std::shared_ptr<MetalTexture>, SingleDownloadDataset>
+    py::class_<MetalTexture, PyDownloadDataset<MetalTexture>,
+               std::shared_ptr<MetalTexture>, DownloadDataset>
             metal_texture(m, "MetalTexture",
                           "Data class for `MetalTexture` contains albedo, "
                           "normal, roughness and metallic texture files for "
@@ -699,9 +702,8 @@ void pybind_metal_texture(py::module& m) {
 
 void pybind_painted_plaster_texture(py::module& m) {
     // open3d.data.PaintedPlasterTexture
-    py::class_<PaintedPlasterTexture,
-               PySingleDownloadDataset<PaintedPlasterTexture>,
-               std::shared_ptr<PaintedPlasterTexture>, SingleDownloadDataset>
+    py::class_<PaintedPlasterTexture, PyDownloadDataset<PaintedPlasterTexture>,
+               std::shared_ptr<PaintedPlasterTexture>, DownloadDataset>
             painted_plaster_texture(
                     m, "PaintedPlasterTexture",
                     "Data class for `PaintedPlasterTexture` contains albedo, "
@@ -733,8 +735,8 @@ void pybind_painted_plaster_texture(py::module& m) {
 
 void pybind_tiles_texture(py::module& m) {
     // open3d.data.TilesTexture
-    py::class_<TilesTexture, PySingleDownloadDataset<TilesTexture>,
-               std::shared_ptr<TilesTexture>, SingleDownloadDataset>
+    py::class_<TilesTexture, PyDownloadDataset<TilesTexture>,
+               std::shared_ptr<TilesTexture>, DownloadDataset>
             tiles_texture(
                     m, "TilesTexture",
                     "Data class for `TilesTexture` contains albedo, normal and "
@@ -760,8 +762,8 @@ void pybind_tiles_texture(py::module& m) {
 
 void pybind_terrazzo_texture(py::module& m) {
     // open3d.data.TerrazzoTexture
-    py::class_<TerrazzoTexture, PySingleDownloadDataset<TerrazzoTexture>,
-               std::shared_ptr<TerrazzoTexture>, SingleDownloadDataset>
+    py::class_<TerrazzoTexture, PyDownloadDataset<TerrazzoTexture>,
+               std::shared_ptr<TerrazzoTexture>, DownloadDataset>
             terrazzo_texture(
                     m, "TerrazzoTexture",
                     "Data class for `TerrazzoTexture` contains albedo, normal "
@@ -789,8 +791,8 @@ void pybind_terrazzo_texture(py::module& m) {
 
 void pybind_wood_texture(py::module& m) {
     // open3d.data.WoodTexture
-    py::class_<WoodTexture, PySingleDownloadDataset<WoodTexture>,
-               std::shared_ptr<WoodTexture>, SingleDownloadDataset>
+    py::class_<WoodTexture, PyDownloadDataset<WoodTexture>,
+               std::shared_ptr<WoodTexture>, DownloadDataset>
             wood_texture(
                     m, "WoodTexture",
                     "Data class for `WoodTexture` contains albedo, normal and "
@@ -815,8 +817,8 @@ void pybind_wood_texture(py::module& m) {
 
 void pybind_wood_floor_texture(py::module& m) {
     // open3d.data.WoodFloorTexture
-    py::class_<WoodFloorTexture, PySingleDownloadDataset<WoodFloorTexture>,
-               std::shared_ptr<WoodFloorTexture>, SingleDownloadDataset>
+    py::class_<WoodFloorTexture, PyDownloadDataset<WoodFloorTexture>,
+               std::shared_ptr<WoodFloorTexture>, DownloadDataset>
             wood_floor_texture(m, "WoodFloorTexture",
                                " Data class for `WoodFloorTexture` contains "
                                "albedo, normal and roughness texture files for "
@@ -844,8 +846,8 @@ void pybind_wood_floor_texture(py::module& m) {
 
 void pybind_juneau(py::module& m) {
     // open3d.data.JuneauImage
-    py::class_<JuneauImage, PySingleDownloadDataset<JuneauImage>,
-               std::shared_ptr<JuneauImage>, SingleDownloadDataset>
+    py::class_<JuneauImage, PyDownloadDataset<JuneauImage>,
+               std::shared_ptr<JuneauImage>, DownloadDataset>
             juneau(m, "JuneauImage",
                    "Data class for `JuneauImage` contains the "
                    "`JuneauImage.jpg` "
@@ -858,9 +860,8 @@ void pybind_juneau(py::module& m) {
 
 void pybind_living_room_point_clouds(py::module& m) {
     // open3d.data.LivingRoomPointClouds
-    py::class_<LivingRoomPointClouds,
-               PySingleDownloadDataset<LivingRoomPointClouds>,
-               std::shared_ptr<LivingRoomPointClouds>, SingleDownloadDataset>
+    py::class_<LivingRoomPointClouds, PyDownloadDataset<LivingRoomPointClouds>,
+               std::shared_ptr<LivingRoomPointClouds>, DownloadDataset>
             living_room_point_clouds(
                     m, "LivingRoomPointClouds",
                     "Dataset class for `LivingRoomPointClouds` contains "
@@ -880,8 +881,8 @@ void pybind_living_room_point_clouds(py::module& m) {
 
 void pybind_office_point_clouds(py::module& m) {
     // open3d.data.OfficePointClouds
-    py::class_<OfficePointClouds, PySingleDownloadDataset<OfficePointClouds>,
-               std::shared_ptr<OfficePointClouds>, SingleDownloadDataset>
+    py::class_<OfficePointClouds, PyDownloadDataset<OfficePointClouds>,
+               std::shared_ptr<OfficePointClouds>, DownloadDataset>
             office_point_clouds(
                     m, "OfficePointClouds",
                     "Dataset class for `OfficePointClouds` contains 53 "
@@ -900,8 +901,8 @@ void pybind_office_point_clouds(py::module& m) {
 
 void pybind_lounge_rgbd_images(py::module& m) {
     // open3d.data.LoungeRGBDImages
-    py::class_<LoungeRGBDImages, PySingleDownloadDataset<LoungeRGBDImages>,
-               std::shared_ptr<LoungeRGBDImages>, SingleDownloadDataset>
+    py::class_<LoungeRGBDImages, PyDownloadDataset<LoungeRGBDImages>,
+               std::shared_ptr<LoungeRGBDImages>, DownloadDataset>
             lounge_rgbd_images(
                     m, "LoungeRGBDImages",
                     "Data class for `LoungeRGBDImages` contains a sample set "
@@ -936,8 +937,8 @@ void pybind_lounge_rgbd_images(py::module& m) {
 
 void pybind_bedroom_rgbd_images(py::module& m) {
     // open3d.data.BedroomRGBDImages
-    py::class_<BedroomRGBDImages, PyMultiDownloadDataset<BedroomRGBDImages>,
-               std::shared_ptr<BedroomRGBDImages>, MultiDownloadDataset>
+    py::class_<BedroomRGBDImages, PyDownloadDataset<BedroomRGBDImages>,
+               std::shared_ptr<BedroomRGBDImages>, DownloadDataset>
             lounge_rgbd_images(
                     m, "BedroomRGBDImages",
                     "Data class for `BedroomRGBDImages` contains a sample set "
@@ -973,8 +974,8 @@ void pybind_bedroom_rgbd_images(py::module& m) {
 
 void pybind_jackjack_l515_bag(py::module& m) {
     // open3d.data.JackJackL515Bag
-    py::class_<JackJackL515Bag, PySingleDownloadDataset<JackJackL515Bag>,
-               std::shared_ptr<JackJackL515Bag>, SingleDownloadDataset>
+    py::class_<JackJackL515Bag, PyDownloadDataset<JackJackL515Bag>,
+               std::shared_ptr<JackJackL515Bag>, DownloadDataset>
             jackjack_l515_bag(m, "JackJackL515Bag",
                               "Data class for `SampleL515Bag` contains the "
                               "`JackJackL515Bag.bag` file.");
@@ -982,6 +983,222 @@ void pybind_jackjack_l515_bag(py::module& m) {
             .def_property_readonly("path", &JackJackL515Bag::GetPath,
                                    "Path to the `JackJackL515Bag.bag` file.");
     docstring::ClassMethodDocInject(m, "JackJackL515Bag", "path");
+}
+
+void pybind_redwood_indoor_living_room1(py::module& m) {
+    py::class_<RedwoodIndoorLivingRoom1,
+               PyDownloadDataset<RedwoodIndoorLivingRoom1>,
+               std::shared_ptr<RedwoodIndoorLivingRoom1>, DownloadDataset>
+            dataset(m, "RedwoodIndoorLivingRoom1",
+                    R"doc(RedwoodIndoorLivingRoom1 (Augmented ICL-NUIM Dataset)
+Data class for `RedwoodIndoorLivingRoom1`, containing dense point
+cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+sequence, and ground-truth camera trajectory.
+
+RedwoodIndoorLivingRoom1
+├── colors
+│   ├── 00000.jpg
+│   ├── 00001.jpg
+│   ├── ...
+│   └── 02869.jpg
+├── depth
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02869.png
+├── depth_noisy
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02869.png
+├── dist-model.txt
+├── livingroom1.oni
+├── livingroom1-traj.txt
+└── livingroom.ply
+)doc");
+    dataset.def(py::init<const std::string&>(), "data_root"_a = "");
+    dataset.def_property_readonly("point_cloud_path",
+                                  &RedwoodIndoorLivingRoom1::GetPointCloudPath,
+                                  "Path to the point cloud.");
+    dataset.def_property_readonly("color_paths",
+                                  &RedwoodIndoorLivingRoom1::GetColorPaths,
+                                  "List of paths to color images.");
+    dataset.def_property_readonly("depth_paths",
+                                  &RedwoodIndoorLivingRoom1::GetDepthPaths,
+                                  "List of paths to depth images.");
+    dataset.def_property_readonly("noisy_depth_paths",
+                                  &RedwoodIndoorLivingRoom1::GetNoisyDepthPaths,
+                                  "List of paths to noisy depth images.");
+    dataset.def_property_readonly("oni_path",
+                                  &RedwoodIndoorLivingRoom1::GetONIPath,
+                                  "Path to the oni file.");
+    dataset.def_property_readonly("trajectory_path",
+                                  &RedwoodIndoorLivingRoom1::GetTrajectoryPath,
+                                  "Path to the trajectory file.");
+    dataset.def_property_readonly("noise_model_path",
+                                  &RedwoodIndoorLivingRoom1::GetNoiseModelPath,
+                                  "Path to the noise model file.");
+}
+
+void pybind_redwood_indoor_living_room2(py::module& m) {
+    py::class_<RedwoodIndoorLivingRoom2,
+               PyDownloadDataset<RedwoodIndoorLivingRoom2>,
+               std::shared_ptr<RedwoodIndoorLivingRoom2>, DownloadDataset>
+            dataset(m, "RedwoodIndoorLivingRoom2",
+                    R"doc(RedwoodIndoorLivingRoom2 (Augmented ICL-NUIM Dataset)
+Data class for `RedwoodIndoorLivingRoom2`, containing dense point
+cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+sequence, and ground-truth camera trajectory.
+
+RedwoodIndoorLivingRoom2
+├── colors
+│   ├── 00000.jpg
+│   ├── 00001.jpg
+│   ├── ...
+│   └── 02349.jpg
+├── depth
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02349.png
+├── depth_noisy
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02349.png
+├── dist-model.txt
+├── livingroom2.oni
+├── livingroom2-traj.txt
+└── livingroom.ply
+)doc");
+    dataset.def(py::init<const std::string&>(), "data_root"_a = "");
+    dataset.def_property_readonly("point_cloud_path",
+                                  &RedwoodIndoorLivingRoom2::GetPointCloudPath,
+                                  "Path to the point cloud.");
+    dataset.def_property_readonly("color_paths",
+                                  &RedwoodIndoorLivingRoom2::GetColorPaths,
+                                  "List of paths to color images.");
+    dataset.def_property_readonly("depth_paths",
+                                  &RedwoodIndoorLivingRoom2::GetDepthPaths,
+                                  "List of paths to depth images.");
+    dataset.def_property_readonly("noisy_depth_paths",
+                                  &RedwoodIndoorLivingRoom2::GetNoisyDepthPaths,
+                                  "List of paths to noisy depth images.");
+    dataset.def_property_readonly("oni_path",
+                                  &RedwoodIndoorLivingRoom2::GetONIPath,
+                                  "Path to the oni file.");
+    dataset.def_property_readonly("trajectory_path",
+                                  &RedwoodIndoorLivingRoom2::GetTrajectoryPath,
+                                  "Path to the trajectory file.");
+    dataset.def_property_readonly("noise_model_path",
+                                  &RedwoodIndoorLivingRoom2::GetNoiseModelPath,
+                                  "Path to the noise model file.");
+}
+
+void pybind_redwood_indoor_office1(py::module& m) {
+    py::class_<RedwoodIndoorOffice1, PyDownloadDataset<RedwoodIndoorOffice1>,
+               std::shared_ptr<RedwoodIndoorOffice1>, DownloadDataset>
+            dataset(m, "RedwoodIndoorOffice1",
+                    R"doc(RedwoodIndoorOffice1 (Augmented ICL-NUIM Dataset)
+Data class for `RedwoodIndoorOffice1`, containing dense point
+cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+sequence, and ground-truth camera trajectory.
+
+RedwoodIndoorOffice1
+├── colors
+│   ├── 00000.jpg
+│   ├── 00001.jpg
+│   ├── ...
+│   └── 02689.jpg
+├── depth
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02689.png
+├── depth_noisy
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02689.png
+├── dist-model.txt
+├── office1.oni
+├── office1-traj.txt
+└── office.ply
+)doc");
+    dataset.def(py::init<const std::string&>(), "data_root"_a = "");
+    dataset.def_property_readonly("point_cloud_path",
+                                  &RedwoodIndoorOffice1::GetPointCloudPath,
+                                  "Path to the point cloud.");
+    dataset.def_property_readonly("color_paths",
+                                  &RedwoodIndoorOffice1::GetColorPaths,
+                                  "List of paths to color images.");
+    dataset.def_property_readonly("depth_paths",
+                                  &RedwoodIndoorOffice1::GetDepthPaths,
+                                  "List of paths to depth images.");
+    dataset.def_property_readonly("noisy_depth_paths",
+                                  &RedwoodIndoorOffice1::GetNoisyDepthPaths,
+                                  "List of paths to noisy depth images.");
+    dataset.def_property_readonly("oni_path", &RedwoodIndoorOffice1::GetONIPath,
+                                  "Path to the oni file.");
+    dataset.def_property_readonly("trajectory_path",
+                                  &RedwoodIndoorOffice1::GetTrajectoryPath,
+                                  "Path to the trajectory file.");
+    dataset.def_property_readonly("noise_model_path",
+                                  &RedwoodIndoorOffice1::GetNoiseModelPath,
+                                  "Path to the noise model file.");
+}
+
+void pybind_redwood_indoor_office2(py::module& m) {
+    py::class_<RedwoodIndoorOffice2, PyDownloadDataset<RedwoodIndoorOffice2>,
+               std::shared_ptr<RedwoodIndoorOffice2>, DownloadDataset>
+            dataset(m, "RedwoodIndoorOffice2",
+                    R"doc(RedwoodIndoorOffice2 (Augmented ICL-NUIM Dataset)
+Data class for `RedwoodIndoorOffice2`, containing dense point
+cloud, rgb sequence, clean depth sequence, noisy depth sequence, oni
+sequence, and ground-truth camera trajectory.
+
+RedwoodIndoorOffice2
+├── colors
+│   ├── 00000.jpg
+│   ├── 00001.jpg
+│   ├── ...
+│   └── 02537.jpg
+├── depth
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02537.png
+├── depth_noisy
+│   ├── 00000.png
+│   ├── 00001.png
+│   ├── ...
+│   └── 02537.png
+├── dist-model.txt
+├── office2.oni
+├── office2-traj.txt
+└── office.ply
+)doc");
+    dataset.def(py::init<const std::string&>(), "data_root"_a = "");
+    dataset.def_property_readonly("point_cloud_path",
+                                  &RedwoodIndoorOffice2::GetPointCloudPath,
+                                  "Path to the point cloud.");
+    dataset.def_property_readonly("color_paths",
+                                  &RedwoodIndoorOffice2::GetColorPaths,
+                                  "List of paths to color images.");
+    dataset.def_property_readonly("depth_paths",
+                                  &RedwoodIndoorOffice2::GetDepthPaths,
+                                  "List of paths to depth images.");
+    dataset.def_property_readonly("noisy_depth_paths",
+                                  &RedwoodIndoorOffice2::GetNoisyDepthPaths,
+                                  "List of paths to noisy depth images.");
+    dataset.def_property_readonly("oni_path", &RedwoodIndoorOffice2::GetONIPath,
+                                  "Path to the oni file.");
+    dataset.def_property_readonly("trajectory_path",
+                                  &RedwoodIndoorOffice2::GetTrajectoryPath,
+                                  "Path to the trajectory file.");
+    dataset.def_property_readonly("noise_model_path",
+                                  &RedwoodIndoorOffice2::GetNoiseModelPath,
+                                  "Path to the noise model file.");
 }
 
 void pybind_data(py::module& m) {
@@ -1033,6 +1250,11 @@ void pybind_data(py::module& m) {
     pybind_lounge_rgbd_images(m_submodule);
     pybind_bedroom_rgbd_images(m_submodule);
     pybind_jackjack_l515_bag(m_submodule);
+    // RedwoodIndoor (Augmented ICL-NUIM Dataset).
+    pybind_redwood_indoor_living_room1(m_submodule);
+    pybind_redwood_indoor_living_room2(m_submodule);
+    pybind_redwood_indoor_office1(m_submodule);
+    pybind_redwood_indoor_office2(m_submodule);
 }
 
 }  // namespace data
