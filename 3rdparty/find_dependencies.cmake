@@ -825,26 +825,36 @@ endif()
 # - Curl should be linked before PNG, otherwise it will have undefined symbols.
 # - openssl.cmake needs to be included before curl.cmake, for the
 #   BORINGSSL_ROOT_DIR variable.
-include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
-include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
-open3d_import_3rdparty_library(3rdparty_curl
-    INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
-    INCLUDE_ALL
-    LIB_DIR      ${CURL_LIB_DIR}
-    LIBRARIES    ${CURL_LIBRARIES}
-    DEPENDS      ext_zlib ext_curl
-)
-if(APPLE)
-    # Missing frameworks: https://stackoverflow.com/a/56157695/1255535
-    # Link frameworks   : https://stackoverflow.com/a/18330634/1255535
-    # Fixes error:
-    # ```
-    # Undefined symbols for architecture arm64:
-    # "_SCDynamicStoreCopyProxies", referenced from:
-    #     _Curl_resolv in libcurl.a(hostip.c.o)
-    # ```
-    # The "Foundation" framework is already linked by GLFW.
-    target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
+if(USE_SYSTEM_CURL)
+    open3d_pkg_config_3rdparty_library(3rdparty_curl
+        SEARCH_ARGS libcurl
+    )
+    if(NOT 3rdparty_curl_FOUND)
+        set(USE_SYSTEM_CURL OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_CURL)
+    include(${Open3D_3RDPARTY_DIR}/boringssl/boringssl.cmake)
+    include(${Open3D_3RDPARTY_DIR}/curl/curl.cmake)
+    open3d_import_3rdparty_library(3rdparty_curl
+        INCLUDE_DIRS ${CURL_INCLUDE_DIRS}
+        INCLUDE_ALL
+        LIB_DIR      ${CURL_LIB_DIR}
+        LIBRARIES    ${CURL_LIBRARIES}
+        DEPENDS      ext_zlib ext_curl
+    )
+    if(APPLE)
+        # Missing frameworks: https://stackoverflow.com/a/56157695/1255535
+        # Link frameworks   : https://stackoverflow.com/a/18330634/1255535
+        # Fixes error:
+        # ```
+        # Undefined symbols for architecture arm64:
+        # "_SCDynamicStoreCopyProxies", referenced from:
+        #     _Curl_resolv in libcurl.a(hostip.c.o)
+        # ```
+        # The "Foundation" framework is already linked by GLFW.
+        target_link_libraries(3rdparty_curl INTERFACE "-framework SystemConfiguration")
+    endif()
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_curl)
 
