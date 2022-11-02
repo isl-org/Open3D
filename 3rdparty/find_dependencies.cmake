@@ -1439,16 +1439,41 @@ else()
 endif()
 
 # VTK
-include(${Open3D_3RDPARTY_DIR}/vtk/vtk_build.cmake)
-open3d_import_3rdparty_library(3rdparty_vtk
-    HIDDEN
-    INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
-    LIB_DIR      ${VTK_LIB_DIR}
-    LIBRARIES    ${VTK_LIBRARIES}
-    DEPENDS      ext_vtk
-)
-if(UNIX AND NOT APPLE)
-    target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
+if(USE_SYSTEM_VTK)
+    open3d_find_package_3rdparty_library(3rdparty_vtk
+        PACKAGE VTK
+        TARGETS
+            VTK::FiltersGeneral
+            VTK::FiltersSources
+            VTK::FiltersModeling
+            VTK::FiltersCore
+            VTK::CommonExecutionModel
+            VTK::CommonDataModel
+            VTK::CommonTransforms
+            VTK::CommonMath
+            VTK::CommonMisc
+            VTK::CommonSystem
+            VTK::CommonCore
+            VTK::kissfft
+            VTK::pugixml
+            VTK::vtksys
+    )
+    if(NOT 3rdparty_vtk_FOUND)
+        set(USE_SYSTEM_VTK OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_VTK)
+    include(${Open3D_3RDPARTY_DIR}/vtk/vtk_build.cmake)
+    open3d_import_3rdparty_library(3rdparty_vtk
+        HIDDEN
+        INCLUDE_DIRS ${VTK_INCLUDE_DIRS}
+        LIB_DIR      ${VTK_LIB_DIR}
+        LIBRARIES    ${VTK_LIBRARIES}
+        DEPENDS      ext_vtk
+    )
+    if(UNIX AND NOT APPLE)
+        target_link_libraries(3rdparty_vtk INTERFACE ${CMAKE_DL_LIBS})
+    endif()
 endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_vtk)
 
