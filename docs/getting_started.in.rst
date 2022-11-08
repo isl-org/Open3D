@@ -25,7 +25,7 @@ Supported operating systems:
 
 * Ubuntu 18.04+
 * macOS 10.15+
-* Windows 10 (64-bit)
+* Windows 10+ (64-bit)
 
 If you have other Python versions or operating systems, please refer to
 :ref:`compilation` and compile Open3D from source.
@@ -42,6 +42,16 @@ Pip (PyPI)
    e.g. with
 
         ``pip install -U pip>=20.3``
+
+.. note::
+   In MacOS, please install ``libomp`` (OpenMP) on your system before installing
+   Open3D.
+
+        ``brew install libomp``
+
+    We do not package OpenMP runtime with Open3D since a system OpenMP runtime
+    ensures more reliable interoperation with other Python packages (e.g.
+    PyTorch) that also use OpenMP.
 
 .. note::
     In general, we recommend using a
