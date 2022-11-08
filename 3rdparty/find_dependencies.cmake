@@ -1606,13 +1606,14 @@ else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
                 # On ARM64 Ubuntu and ARM64 macOS, libgfortran.a is compiled with `-fPIC`.
                 find_library(gfortran_lib NAMES libgfortran.a PATHS ${gfortran_lib_dirs} REQUIRED)
                 find_library(gcc_lib      NAMES libgcc.a      PATHS ${gfortran_lib_dirs} REQUIRED)
-                find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
                 target_link_libraries(3rdparty_blas INTERFACE
                     ${gfortran_lib}
                     ${gcc_lib}
-                    ${quadmath_lib}
                 )
                 if(APPLE_AARCH64)
+                    find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
+                    target_link_libraries(3rdparty_blas INTERFACE
+                        ${quadmath_lib})
                     # Suppress Apple compiler warnigns.
                     target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
                 endif()

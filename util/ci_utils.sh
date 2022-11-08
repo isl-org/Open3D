@@ -288,11 +288,10 @@ test_wheel() {
 	fi
 	if [ "$BUILD_TENSORFLOW_OPS" == ON ] && [ "$BUILD_PYTORCH_OPS" == ON ]; then
 		echo "Importing TensorFlow and torch in the reversed order"
-		python -c "import tensorflow as tf; import torch; open3d.ml.torch as o3d"
+		python -c "import tensorflow as tf; import torch; import open3d.ml.torch as o3d"
 		echo "Importing TensorFlow and torch in the normal order"
 		python -c "import open3d.ml.torch as o3d; import tensorflow as tf; import torch"
 	fi
-	#
 	deactivate open3d_test.venv # argument prevents unbound variable error
 }
 
