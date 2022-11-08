@@ -476,7 +476,7 @@ Widget::DrawResult CollapsableVert::Draw(const DrawContext& context) {
     ImGui::PushStyleColor(ImGuiCol_HeaderActive,
                           colorToImgui(context.theme.button_active_color));
 
-    ImGui::SetNextTreeNodeOpen(impl_->is_open_);
+    ImGui::SetNextItemOpen(impl_->is_open_);
     ImGui::PushFont((ImFont*)context.fonts.GetFont(impl_->font_id_));
     bool node_clicked = ImGui::TreeNode(impl_->id_.c_str());
     ImGui::PopFont();
