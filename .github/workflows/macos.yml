@@ -118,15 +118,15 @@ jobs:
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
         python_version: ['3.7', '3.8', '3.9', '3.10']
-        is_master:
-          - ${{ github.ref == 'refs/heads/master' }}
-        exclude:
-          - is_master: false
-            python_version: '3.7'
-          - is_master: false
-            python_version: '3.8'
-          - is_master: false
-            python_version: '3.9'
+        # is_master:
+        #   - ${{ github.ref == 'refs/heads/master' }}
+        # exclude:
+        #   - is_master: false
+        #     python_version: '3.7'
+        #   - is_master: false
+        #     python_version: '3.8'
+        #   - is_master: false
+        #     python_version: '3.9'
 
     env:
       BUILD_CUDA_MODULE: OFF
@@ -171,6 +171,7 @@ jobs:
           source util/ci_utils.sh
           install_python_dependencies
           brew install ccache
+          brew link --force libomp  # needed for cmake to find OpenMP
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel
