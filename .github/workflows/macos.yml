@@ -59,6 +59,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew install ccache pkg-config
+          brew link --force libomp  # needed for cmake to find OpenMP
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
