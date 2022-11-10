@@ -46,7 +46,7 @@
 #include <cmath>
 
 #include "open3d/core/CUDAUtils.h"
-#include "open3d/t/geometry/kernel/GeometryMacros.h"
+#include "open3d/core/kernel/GeometryMacros.h"
 
 #if defined(BUILD_CUDA_MODULE) && defined(__CUDACC__)
 #include <cuda.h>

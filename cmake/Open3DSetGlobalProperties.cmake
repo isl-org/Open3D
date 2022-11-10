@@ -81,9 +81,6 @@ function(open3d_set_global_properties target)
         $<INSTALL_INTERFACE:${Open3D_INSTALL_INCLUDE_DIR}>
     )
 
-    # Required for static linking zeromq
-    target_compile_definitions(${target} PRIVATE ZMQ_STATIC)
-
     # Propagate build configuration into source code
     if (BUILD_CUDA_MODULE)
         target_compile_definitions(${target} PRIVATE BUILD_CUDA_MODULE)

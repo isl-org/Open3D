@@ -28,7 +28,7 @@
 
 #include "open3d/core/Tensor.h"
 #include "open3d/core/hashmap/DeviceHashBackend.h"
-#include "open3d/t/io/HashMapIO.h"
+#include "open3d/io/HashMapIO.h"
 #include "open3d/utility/Helper.h"
 #include "open3d/utility/Logging.h"
 
@@ -95,11 +95,11 @@ void HashSet::GetActiveIndices(Tensor& output_buf_indices) const {
 void HashSet::Clear() { internal_->Clear(); }
 
 void HashSet::Save(const std::string& file_name) {
-    t::io::WriteHashMap(file_name, *internal_);
+    io::WriteHashMap(file_name, *internal_);
 }
 
 HashSet HashSet::Load(const std::string& file_name) {
-    HashMap internal = t::io::ReadHashMap(file_name);
+    HashMap internal = io::ReadHashMap(file_name);
     return HashSet(internal);
 }
 

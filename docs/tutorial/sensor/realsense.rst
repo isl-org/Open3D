@@ -54,7 +54,7 @@ calibration) in the C++ API in the `RSBagReader documentation
 
     #include <open3d/open3d.hpp>
     using namespace open3d;
-    t::io::RSBagReader bag_reader;
+    io::RSBagReader bag_reader;
     bag_reader.Open(bag_filename);
     auto im_rgbd = bag_reader.NextFrame();
     while (!bag_reader.IsEOF()) {
@@ -138,7 +138,7 @@ below.
 .. code-block:: C++
 
     #include <open3d/open3d.hpp>
-    open3d::t::io::RealSenseSensor::ListDevices();
+    open3d::io::RealSenseSensor::ListDevices();
 
 .. code-block:: Python
 
@@ -216,7 +216,7 @@ by processing or displaying the frames after capture.
 .. code-block:: C++
 
     #include <open3d/open3d.hpp>
-    open3d::t::io::RealSenseSensorConfig rs_cfg;
+    open3d::io::RealSenseSensorConfig rs_cfg;
     open3d::io::ReadIJsonConvertible(config_filename, rs_cfg);
     RealSenseSensor rs;
     rs.InitSensor(rs_cfg, 0, bag_filename);

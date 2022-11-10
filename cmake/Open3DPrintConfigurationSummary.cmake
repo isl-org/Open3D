@@ -62,7 +62,6 @@ function(open3d_print_configuration_summary)
         )
     endif()
     open3d_aligned_print("Build Benchmarks" "${BUILD_BENCHMARKS}")
-    open3d_aligned_print("Bundle Open3D-ML" "${BUNDLE_OPEN3D_ML}")
     if(GLIBCXX_USE_CXX11_ABI)
         open3d_aligned_print("Force GLIBCXX_USE_CXX11_ABI=" "1")
     else()
@@ -72,31 +71,20 @@ function(open3d_print_configuration_summary)
     message(STATUS "================================================================================")
     message(STATUS "Third-Party Dependencies:")
     set(3RDPARTY_DEPENDENCIES
-        Assimp
         BLAS
         Eigen3
         filament
         fmt
-        GLEW
-        GLFW
         googletest
         imgui
         ippicv
         JPEG
         jsoncpp
         liblzf
-        msgpack
         nanoflann
         OpenGL
         PNG
-        qhullcpp
-        librealsense
         TBB
-        tinyfiledialogs
-        TinyGLTF
-        tinyobjloader
-        WebRTC
-        ZeroMQ
     )
     foreach(dep IN LISTS 3RDPARTY_DEPENDENCIES)
         string(TOLOWER "${dep}" dep_lower)

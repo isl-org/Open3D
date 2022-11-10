@@ -31,7 +31,7 @@ add_library(Open3D)
 add_subdirectory(core)
 add_subdirectory(data)
 add_subdirectory(utility)
-add_subdirectory(t/io)
+add_subdirectory(io)
 
 # note: adding at least one real source file to any target that references
 # reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
@@ -42,14 +42,14 @@ target_sources(Open3D PRIVATE
 open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
     core
     data
-    tio
+    io
     utility
 )
 
 # Source group for Visual Studio
 add_source_group(core)
 add_source_group(data)
-add_source_group(tio)
+add_source_group(io)
 add_source_group(utility)
 
 open3d_show_and_abort_on_warning(Open3D)

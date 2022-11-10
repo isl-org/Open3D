@@ -50,7 +50,7 @@
 #include "open3d/core/linalg/SVD.h"
 #include "open3d/core/linalg/Solve.h"
 #include "open3d/core/linalg/Tri.h"
-#include "open3d/t/io/NumpyIO.h"
+#include "open3d/io/NumpyIO.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -1803,11 +1803,11 @@ Tensor Tensor::FromDLPack(const DLManagedTensor* src) {
 }
 
 void Tensor::Save(const std::string& file_name) const {
-    t::io::WriteNpy(file_name, *this);
+    io::WriteNpy(file_name, *this);
 }
 
 Tensor Tensor::Load(const std::string& file_name) {
-    return t::io::ReadNpy(file_name);
+    return io::ReadNpy(file_name);
 }
 
 bool Tensor::AllEqual(const Tensor& other) const {
