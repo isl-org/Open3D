@@ -8,19 +8,9 @@ set(PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
 
 pybind11_add_module(pybind)
 
-add_subdirectory(camera)
 add_subdirectory(core)
 add_subdirectory(data)
-add_subdirectory(geometry)
-add_subdirectory(io)
-add_subdirectory(ml)
-add_subdirectory(pipelines)
-add_subdirectory(t)
-add_subdirectory(t/geometry)
-add_subdirectory(t/io)
-add_subdirectory(t/pipelines)
 add_subdirectory(utility)
-add_subdirectory(visualization)
 
 target_sources(pybind PRIVATE
     docstring.cpp
