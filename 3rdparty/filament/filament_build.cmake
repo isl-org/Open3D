@@ -66,5 +66,7 @@ ExternalProject_Add(
         -DFILAMENT_SUPPORTS_VULKAN=OFF
         -DFILAMENT_SKIP_SAMPLES=ON
         -DFILAMENT_OPENGL_HANDLE_ARENA_SIZE_IN_MB=20 # to support many small entities
+        -DCMAKE_OSX_SYSROOT=${CMAKE_OSX_SYSROOT}
+
     BUILD_BYPRODUCTS ${lib_byproducts}
 )
