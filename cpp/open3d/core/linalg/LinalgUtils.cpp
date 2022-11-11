@@ -29,11 +29,9 @@
 namespace open3d {
 namespace core {
 
-std::shared_ptr<CuSolverContext> CuSolverContext::GetInstance() {
-    if (instance_ == nullptr) {
-        instance_ = std::make_shared<CuSolverContext>();
-    }
-    return instance_;
+CuSolverContext& CuSolverContext::GetInstance() {
+    static CuSolverContext instance;
+    return instance;
 }
 
 CuSolverContext::CuSolverContext() {
@@ -47,8 +45,6 @@ CuSolverContext::~CuSolverContext() {
         utility::LogError("Unable to destroy cuSolver handle");
     }
 }
-
-std::shared_ptr<CuSolverContext> CuSolverContext::instance_ = nullptr;
 
 CuBLASContext& CuBLASContext::GetInstance() {
     static CuBLASContext instance;

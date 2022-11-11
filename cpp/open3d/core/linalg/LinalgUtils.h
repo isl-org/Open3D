@@ -93,7 +93,7 @@ inline void OPEN3D_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
 
 class CuSolverContext {
 public:
-    static std::shared_ptr<CuSolverContext> GetInstance();
+    static CuSolverContext& GetInstance();
 
     CuSolverContext(const CuSolverContext&) = delete;
     CuSolverContext& operator=(const CuSolverContext&) = delete;
@@ -105,8 +105,6 @@ public:
 
 private:
     cusolverDnHandle_t handle_;
-
-    static std::shared_ptr<CuSolverContext> instance_;
 };
 
 class CuBLASContext {
