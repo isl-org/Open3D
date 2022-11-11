@@ -28,6 +28,8 @@
 
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
+
 namespace open3d {
 namespace core {
 
@@ -84,6 +86,7 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
 
     if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         MatmulCUDA(B_data, A_data, C_data, n, k, m, dtype);
 #else
         utility::LogError("Unimplemented device.");
