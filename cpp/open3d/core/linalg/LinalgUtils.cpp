@@ -34,13 +34,14 @@ std::shared_ptr<CuSolverContext> CuSolverContext::GetInstance() {
         instance_ = std::make_shared<CuSolverContext>();
     }
     return instance_;
-};
+}
 
 CuSolverContext::CuSolverContext() {
     if (cusolverDnCreate(&handle_) != CUSOLVER_STATUS_SUCCESS) {
         utility::LogError("Unable to create cuSolver handle");
     }
 }
+
 CuSolverContext::~CuSolverContext() {
     if (cusolverDnDestroy(handle_) != CUSOLVER_STATUS_SUCCESS) {
         utility::LogError("Unable to destroy cuSolver handle");
@@ -49,12 +50,10 @@ CuSolverContext::~CuSolverContext() {
 
 std::shared_ptr<CuSolverContext> CuSolverContext::instance_ = nullptr;
 
-std::shared_ptr<CuBLASContext> CuBLASContext::GetInstance() {
-    if (instance_ == nullptr) {
-        instance_ = std::make_shared<CuBLASContext>();
-    }
-    return instance_;
-};
+CuBLASContext& CuBLASContext::GetInstance() {
+    static CuBLASContext instance;
+    return instance;
+}
 
 CuBLASContext::CuBLASContext() {
     if (cublasCreate(&handle_) != CUBLAS_STATUS_SUCCESS) {
@@ -62,8 +61,6 @@ CuBLASContext::CuBLASContext() {
     }
 }
 CuBLASContext::~CuBLASContext() { cublasDestroy(handle_); }
-
-std::shared_ptr<CuBLASContext> CuBLASContext::instance_ = nullptr;
 
 }  // namespace core
 }  // namespace open3d

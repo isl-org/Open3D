@@ -39,7 +39,7 @@ void MatmulCUDA(void* A_data,
                 int64_t k,
                 int64_t n,
                 Dtype dtype) {
-    cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
+    cublasHandle_t handle = CuBLASContext::GetInstance().GetHandle();
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t alpha = 1, beta = 0;
         OPEN3D_CUBLAS_CHECK(

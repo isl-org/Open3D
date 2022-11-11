@@ -111,7 +111,7 @@ private:
 
 class CuBLASContext {
 public:
-    static std::shared_ptr<CuBLASContext> GetInstance();
+    static CuBLASContext& GetInstance();
 
     CuBLASContext(const CuBLASContext&) = delete;
     CuBLASContext& operator=(const CuBLASContext&) = delete;
@@ -123,8 +123,6 @@ public:
 
 private:
     cublasHandle_t handle_;
-
-    static std::shared_ptr<CuBLASContext> instance_;
 };
 #endif
 }  // namespace core

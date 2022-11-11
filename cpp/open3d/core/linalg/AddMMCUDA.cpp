@@ -46,7 +46,7 @@ void AddMMCUDA(void* A_data,
                int ldb,
                int ldc,
                Dtype dtype) {
-    cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
+    cublasHandle_t handle = CuBLASContext::GetInstance().GetHandle();
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t alpha_ = scalar_t(alpha);
         scalar_t beta_ = scalar_t(beta);
