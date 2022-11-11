@@ -26,7 +26,6 @@
 
 #pragma once
 
-#include <memory>
 #include <string>
 
 #include "open3d/core/Dtype.h"
