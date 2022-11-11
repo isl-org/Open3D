@@ -97,13 +97,12 @@ public:
 
     CuSolverContext(const CuSolverContext&) = delete;
     CuSolverContext& operator=(const CuSolverContext&) = delete;
-
-    CuSolverContext();
     ~CuSolverContext();
 
     cusolverDnHandle_t& GetHandle() { return handle_; }
 
 private:
+    CuSolverContext();
     cusolverDnHandle_t handle_;
 };
 
@@ -113,13 +112,12 @@ public:
 
     CuBLASContext(const CuBLASContext&) = delete;
     CuBLASContext& operator=(const CuBLASContext&) = delete;
-
-    CuBLASContext();
     ~CuBLASContext();
 
     cublasHandle_t& GetHandle() { return handle_; }
 
 private:
+    CuBLASContext();
     cublasHandle_t handle_;
 };
 #endif
