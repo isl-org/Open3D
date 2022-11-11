@@ -26,6 +26,8 @@
 
 #include "open3d/core/linalg/LinalgUtils.h"
 
+#include "open3d/core/CUDAUtils.h"
+
 namespace open3d {
 namespace core {
 
@@ -36,6 +38,7 @@ CuSolverContext& CuSolverContext::GetInstance() {
 
 CuSolverContext::CuSolverContext() {
     for (const Device& device : Device::GetAvailableCUDADevices()) {
+        CUDAScopedDevice scoped_device(device);
         cusolverDnHandle_t handle;
         if (cusolverDnCreate(&handle) != CUSOLVER_STATUS_SUCCESS) {
             utility::LogError("Unable to create cuSolver handle for {}.",
@@ -74,6 +77,7 @@ CuBLASContext& CuBLASContext::GetInstance() {
 
 CuBLASContext::CuBLASContext() {
     for (const Device& device : Device::GetAvailableCUDADevices()) {
+        CUDAScopedDevice scoped_device(device);
         cublasHandle_t handle;
         if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
             utility::LogError("Unable to create cublas handle for {}.",
