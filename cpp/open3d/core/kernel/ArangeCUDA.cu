@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/Tensor.h"
@@ -37,6 +38,7 @@ void ArangeCUDA(const Tensor& start,
                 const Tensor& stop,
                 const Tensor& step,
                 Tensor& dst) {
+    CUDAScopedDevice scoped_device(start.GetDevice());
     Dtype dtype = start.GetDtype();
     DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t sstart = start.Item<scalar_t>();
