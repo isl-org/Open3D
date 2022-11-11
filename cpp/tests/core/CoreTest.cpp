@@ -55,8 +55,14 @@ std::vector<core::Device> PermuteDevices::TestCases() {
     if (!cpu_devices.empty()) {
         devices.push_back(cpu_devices[0]);
     }
-    if (!cuda_devices.empty()) {
+
+    // Test 0, 1, or 2 CUDA devices.
+    // Testing 2 CUDA devices is necessary for testing device switching.
+    if (cuda_devices.size() == 1) {
         devices.push_back(cuda_devices[0]);
+    } else if (cuda_devices.size() == 2) {
+        devices.push_back(cuda_devices[0]);
+        devices.push_back(cuda_devices[1]);
     }
 
     return devices;
