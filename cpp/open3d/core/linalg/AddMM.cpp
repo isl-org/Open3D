@@ -114,7 +114,7 @@ void AddMM(const Tensor& A,
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
         AddMMCUDA(B_data, A_data, C_data, n, k, m, alpha, beta, transB, transA,
-                  ldb, lda, ldc, dtype);
+                  ldb, lda, ldc, dtype, device);
 #else
         utility::LogError("Unimplemented device.");
 #endif

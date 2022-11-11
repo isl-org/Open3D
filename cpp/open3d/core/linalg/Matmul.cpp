@@ -87,7 +87,7 @@ void Matmul(const Tensor& A, const Tensor& B, Tensor& output) {
     if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         CUDAScopedDevice scoped_device(device);
-        MatmulCUDA(B_data, A_data, C_data, n, k, m, dtype);
+        MatmulCUDA(B_data, A_data, C_data, n, k, m, dtype, device);
 #else
         utility::LogError("Unimplemented device.");
 #endif

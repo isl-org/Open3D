@@ -114,11 +114,11 @@ public:
     CuBLASContext& operator=(const CuBLASContext&) = delete;
     ~CuBLASContext();
 
-    cublasHandle_t& GetHandle() { return handle_; }
+    cublasHandle_t& GetHandle(const Device& device);
 
 private:
     CuBLASContext();
-    cublasHandle_t handle_;
+    std::unordered_map<Device, cublasHandle_t> map_device_to_handle_;
 };
 #endif
 }  // namespace core

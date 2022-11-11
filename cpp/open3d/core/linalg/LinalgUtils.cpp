@@ -73,11 +73,36 @@ CuBLASContext& CuBLASContext::GetInstance() {
 }
 
 CuBLASContext::CuBLASContext() {
-    if (cublasCreate(&handle_) != CUBLAS_STATUS_SUCCESS) {
-        utility::LogError("Unable to create cublas handle");
+    for (const Device& device : Device::GetAvailableCUDADevices()) {
+        cublasHandle_t handle;
+        if (cublasCreate(&handle) != CUBLAS_STATUS_SUCCESS) {
+            utility::LogError("Unable to create cublas handle for {}.",
+                              device.ToString());
+        }
+        map_device_to_handle_[device] = handle;
     }
 }
-CuBLASContext::~CuBLASContext() { cublasDestroy(handle_); }
+
+CuBLASContext::~CuBLASContext() {
+    // Destroy map_device_to_handle_
+    for (auto& item : map_device_to_handle_) {
+        if (cublasDestroy(item.second) != CUBLAS_STATUS_SUCCESS) {
+            utility::LogError("Unable to destroy cublas handle for device {}.",
+                              item.first.ToString());
+        }
+    }
+}
+
+cublasHandle_t& CuBLASContext::GetHandle(const Device& device) {
+    if (device.GetType() != Device::DeviceType::CUDA) {
+        utility::LogError("cuBLAS is only available on CUDA devices");
+    }
+    if (map_device_to_handle_.count(device) == 0) {
+        utility::LogError("cuBLAS handle not found for device: {}",
+                          device.ToString());
+    }
+    return map_device_to_handle_.at(device);
+}
 
 }  // namespace core
 }  // namespace open3d
