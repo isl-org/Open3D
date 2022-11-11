@@ -28,6 +28,7 @@
 
 #include <string>
 
+#include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
