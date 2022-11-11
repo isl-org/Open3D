@@ -48,7 +48,7 @@ void LeastSquaresCUDA(void* A_data,
                       Dtype dtype,
                       const Device& device) {
     cusolverDnHandle_t cusolver_handle =
-            CuSolverContext::GetInstance().GetHandle();
+            CuSolverContext::GetInstance().GetHandle(device);
     cublasHandle_t cublas_handle = CuBLASContext::GetInstance().GetHandle();
 
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {

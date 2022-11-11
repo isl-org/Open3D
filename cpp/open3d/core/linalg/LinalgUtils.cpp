@@ -35,15 +35,36 @@ CuSolverContext& CuSolverContext::GetInstance() {
 }
 
 CuSolverContext::CuSolverContext() {
-    if (cusolverDnCreate(&handle_) != CUSOLVER_STATUS_SUCCESS) {
-        utility::LogError("Unable to create cuSolver handle");
+    for (const Device& device : Device::GetAvailableCUDADevices()) {
+        cusolverDnHandle_t handle;
+        if (cusolverDnCreate(&handle) != CUSOLVER_STATUS_SUCCESS) {
+            utility::LogError("Unable to create cuSolver handle for {}.",
+                              device.ToString());
+        }
+        map_device_to_handle_[device] = handle;
     }
 }
 
 CuSolverContext::~CuSolverContext() {
-    if (cusolverDnDestroy(handle_) != CUSOLVER_STATUS_SUCCESS) {
-        utility::LogError("Unable to destroy cuSolver handle");
+    // Destroy map_device_to_handle_
+    for (auto& item : map_device_to_handle_) {
+        if (cusolverDnDestroy(item.second) != CUSOLVER_STATUS_SUCCESS) {
+            utility::LogError(
+                    "Unable to destroy cuSolver handle for device {}.",
+                    item.first.ToString());
+        }
     }
+}
+
+cusolverDnHandle_t& CuSolverContext::GetHandle(const Device& device) {
+    if (device.GetType() != Device::DeviceType::CUDA) {
+        utility::LogError("cuSolver is only available on CUDA devices");
+    }
+    if (map_device_to_handle_.count(device) == 0) {
+        utility::LogError("cuSolver handle not found for device: {}",
+                          device.ToString());
+    }
+    return map_device_to_handle_.at(device);
 }
 
 CuBLASContext& CuBLASContext::GetInstance() {
