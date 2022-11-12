@@ -44,16 +44,6 @@ Pip (PyPI)
         ``pip install -U pip>=20.3``
 
 .. note::
-   In MacOS, please install ``libomp`` (OpenMP) on your system before installing
-   Open3D.
-
-        ``brew install libomp``
-
-    We do not package OpenMP runtime with Open3D since a system OpenMP runtime
-    ensures more reliable interoperation with other Python packages (e.g.
-    PyTorch) that also use OpenMP.
-
-.. note::
     In general, we recommend using a
     `virtual environment <https://docs.python-guide.org/dev/virtualenvs/>`_
     or `conda environment <https://docs.conda.io/en/latest/miniconda.html>`_.
