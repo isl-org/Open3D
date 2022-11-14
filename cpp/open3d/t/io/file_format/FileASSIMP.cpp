@@ -153,10 +153,10 @@ bool ReadTriangleMeshUsingASSIMP(
             }
             triangle_uvs = vertex_uvs.IndexGet({faces});
             mesh_uvs.push_back(triangle_uvs);
+            count_mesh_with_uvs++;
         }
         // Adjust face indices to index into combined mesh vertex array
         current_vidx += static_cast<int>(assimp_mesh->mNumVertices);
-        count_mesh_with_uvs++;
     }
 
     mesh.Clear();
