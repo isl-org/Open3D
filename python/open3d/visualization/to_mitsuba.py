@@ -27,18 +27,50 @@
 import open3d as o3d
 
 
-def to_mitsuba(name, o3d_mesh, bsdf=None):
+def o3d_material_to_bsdf(mat, vertex_color=False):
     import mitsuba as mi
 
-    # TODO: if bsdf not provided make one from material properties
+    base_color = mat.vector_properties['base_color'][0:3]
+    roughness = mat.scalar_properties['roughness']
+    metallic = mat.scalar_properties['metallic']
+    reflectance = mat.scalar_properties['reflectance']
+    anisotropy = mat.scalar_properties['anisotropy']
+
+    bsdf_dict = {'type': 'principled'}
+    if 'albedo' in mat.texture_maps:
+        bsdf_dict['base_color'] = {
+            'type': 'bitmap',
+            'bitmap': mi.Bitmap(mat.texture_maps['albedo'].as_tensor().numpy())
+        }
+    else:
+        bsdf_dict['base_color'] = {'type': 'rgb', 'value': base_color}
+
+    bsdf_dict['roughness'] = {'type': 'rgb', 'value': roughness}
+    bsdf_dict['metallic'] = {'type': 'rgb', 'value': metallic}
+    bsdf_dict['anisotropic'] = {'type': 'rgb', 'value': anisotropy}
+
+    bsdf = mi.load_dict(bsdf_dict)
+    print(bsdf)
+    return bsdf
+
+
+def to_mitsuba(name, o3d_mesh, bsdf=None):
+    import mitsuba as mi
+    import numpy as np
+
+    # Convert Open3D Material to Mitsuba's principled BSDF
+    if bsdf is None:
+        bsdf = o3d_material_to_bsdf(o3d_mesh.material)
 
     # Mesh constructor looks for this specific property for setting BSDF
     bsdf_prop = mi.Properties()
-    bsdf_prop["mesh_bsdf"] = bsdf
+    bsdf_prop['mesh_bsdf'] = bsdf
 
     # Create Mitsuba mesh shell
     has_normals = 'normals' in o3d_mesh.vertex
-    has_uvs = False
+    print(has_normals)
+    has_uvs = 'texture_uvs' in o3d_mesh.triangle
+    print(has_uvs)
     has_colors = 'colors' in o3d_mesh.vertex
     mi_mesh = mi.Mesh(name,
                       vertex_count=o3d_mesh.vertex.positions.shape[0],
@@ -49,10 +81,8 @@ def to_mitsuba(name, o3d_mesh, bsdf=None):
 
     # Vertex color is not a 'built-in' attribute. Needs to be added.
     if has_colors:
-        mi_mesh.add_attribute("vertex_color", 3,
+        mi_mesh.add_attribute('vertex_color', 3,
                               o3d_mesh.vertex.colors.numpy().flatten())
-
-    # TODO: Get texcoords into Mitsuba per-vertex.
 
     # "Traverse" the mesh to get its updateable parameters
     mesh_params = mi.traverse(mi_mesh)
@@ -62,7 +92,14 @@ def to_mitsuba(name, o3d_mesh, bsdf=None):
     if has_normals:
         mesh_params['vertex_normals'] = o3d_mesh.vertex.normals.numpy().flatten(
         )
+    if has_uvs:
+        # Mitsuba wants UVs per-vertex so copy them into place
+        per_vtx_uvs = np.zeros((o3d_mesh.vertex.positions.shape[0], 2))
+        for idx, uvs in zip(o3d_mesh.triangle.indices,
+                            o3d_mesh.triangle.texture_uvs):
+            per_vtx_uvs[idx.numpy()] = uvs.numpy()
+        mesh_params['vertex_texcoords'] = per_vtx_uvs.flatten()
 
     # Let Mitsuba know parameters have been updated
-    mesh_params.update()
+    print(mesh_params.update())
     return mi_mesh

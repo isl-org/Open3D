@@ -75,15 +75,23 @@ dataset = o3d.data.MonkeyModel()
 mesh = o3d.io.read_triangle_mesh(dataset.path)
 mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
 mesh_center = mesh.get_axis_aligned_bounding_box().get_center()
+mesh.material.set_default_properties()
+mesh.material.vector_properties['base_color'] = [0.5, 1.0, 1.0, 1.0]
+mesh.material.scalar_properties['roughness'] = 0.5
+mesh.material.scalar_properties['metallic'] = 1.0
+mesh.material.scalar_properties['anisotropy'] = 0.6
+mesh.material.texture_maps['albedo'] = o3d.t.io.read_image(
+    dataset.path_map['albedo'])
 
-bsdf = mi.load_dict({
-    "type": "principled",
-    "base_color": {
-        "type": "mesh_attribute",
-        "name": "vertex_color",
-    },
-})
+# bsdf = mi.load_dict({
+# "type": "principled",
+# "base_color": {
+# "type": "mesh_attribute",
+# "name": "vertex_color",
+# },
+# })
 
-mi_mesh = o3d.visualization.to_mitsuba("monkey", mesh, bsdf=bsdf)
+mi_mesh = o3d.visualization.to_mitsuba("monkey", mesh)
+print(mi_mesh)
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test.exr')
