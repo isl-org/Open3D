@@ -36,8 +36,8 @@ def render_mesh(mesh, mesh_center):
         },
         "light": {
             "type": "envmap",
-            "filename": "/home/renes/Downloads/solitude_interior_1k.exr",
-            "scale": 1.5,
+            "filename": "/home/renes/Downloads/belfast_sunset_puresky_4k.exr",
+            "scale": 1.2,
         },
         "sensor": {
             "type":
@@ -71,27 +71,34 @@ mi.set_variant('llvm_ad_rgb')
 
 # Load mesh using Open3D
 dataset = o3d.data.MonkeyModel()
-# NOTE: Once PR 5632 is merged we can use t IO directly here
-mesh = o3d.io.read_triangle_mesh(dataset.path)
-mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
+mesh = o3d.t.io.read_triangle_mesh(dataset.path)
+# mesh = o3d.t.io.read_triangle_mesh('/home/renes/development/intel_work/sample_data/antman_color.ply')
 mesh_center = mesh.get_axis_aligned_bounding_box().get_center()
 mesh.material.set_default_properties()
-mesh.material.vector_properties['base_color'] = [0.5, 1.0, 1.0, 1.0]
-mesh.material.scalar_properties['roughness'] = 0.5
-mesh.material.scalar_properties['metallic'] = 1.0
-mesh.material.scalar_properties['anisotropy'] = 0.6
+mesh.material.vector_properties['base_color'] = [1.0, 1.0, 1.0, 1.0]
 mesh.material.texture_maps['albedo'] = o3d.t.io.read_image(
     dataset.path_map['albedo'])
+mesh.material.texture_maps['roughness'] = o3d.t.io.read_image(
+    dataset.path_map['roughness'])
+mesh.material.texture_maps['metallic'] = o3d.t.io.read_image(
+    dataset.path_map['metallic'])
 
-# bsdf = mi.load_dict({
-# "type": "principled",
-# "base_color": {
-# "type": "mesh_attribute",
-# "name": "vertex_color",
-# },
-# })
-
+print(
+    'Rendering mesh with its material properties converted to Mitsuba principled BSDF'
+)
 mi_mesh = o3d.visualization.to_mitsuba("monkey", mesh)
-print(mi_mesh)
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test.exr')
+
+print('Rendering mesh with Mitsuba smooth plastic BSDF')
+bsdf_smooth_plastic = mi.load_dict({
+    "type": "plastic",
+    'diffuse_reflectance': {
+        'type': 'rgb',
+        'value': [0.1, 0.27, 0.36]
+    },
+    'int_ior': 1.9
+})
+mi_mesh = o3d.visualization.to_mitsuba("monkey", mesh, bsdf=bsdf_smooth_plastic)
+img = render_mesh(mi_mesh, mesh_center.numpy())
+mi.Bitmap(img).write('test2.exr')
