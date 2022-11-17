@@ -24,11 +24,25 @@
 # IN THE SOFTWARE.
 # ----------------------------------------------------------------------------
 
+import mitsuba
 import open3d as o3d
 
 
 def o3d_material_to_bsdf(mat, vertex_color=False):
     import mitsuba as mi
+
+    def create_bsdf_entry(mat, value, o3d_name, per_vertex):
+        if per_vertex:
+            return {'type': 'mesh_attribute', 'name': 'vertex_color'}
+        elif o3d_name in mat.texture_maps:
+            return {
+                'type':
+                    'bitmap',
+                'bitmap':
+                    mi.Bitmap(mat.texture_maps[o3d_name].as_tensor().numpy())
+            }
+        else:
+            return {'type': 'rgb', 'value': value}
 
     base_color = mat.vector_properties['base_color'][0:3]
     roughness = mat.scalar_properties['roughness']
@@ -37,20 +51,15 @@ def o3d_material_to_bsdf(mat, vertex_color=False):
     anisotropy = mat.scalar_properties['anisotropy']
 
     bsdf_dict = {'type': 'principled'}
-    if 'albedo' in mat.texture_maps:
-        bsdf_dict['base_color'] = {
-            'type': 'bitmap',
-            'bitmap': mi.Bitmap(mat.texture_maps['albedo'].as_tensor().numpy())
-        }
-    else:
-        bsdf_dict['base_color'] = {'type': 'rgb', 'value': base_color}
-
-    bsdf_dict['roughness'] = {'type': 'rgb', 'value': roughness}
-    bsdf_dict['metallic'] = {'type': 'rgb', 'value': metallic}
-    bsdf_dict['anisotropic'] = {'type': 'rgb', 'value': anisotropy}
+    bsdf_dict['base_color'] = create_bsdf_entry(mat, base_color, 'albedo',
+                                                vertex_color)
+    bsdf_dict['roughness'] = create_bsdf_entry(mat, roughness, 'roughness',
+                                               False)
+    bsdf_dict['metallic'] = create_bsdf_entry(mat, metallic, 'metallic', False)
+    bsdf_dict['anisotropic'] = create_bsdf_entry(mat, anisotropy, 'anisotropy',
+                                                 False)
 
     bsdf = mi.load_dict(bsdf_dict)
-    print(bsdf)
     return bsdf
 
 
@@ -58,20 +67,22 @@ def to_mitsuba(name, o3d_mesh, bsdf=None):
     import mitsuba as mi
     import numpy as np
 
+    # What features does this mesh have
+    has_normals = 'normals' in o3d_mesh.vertex
+    print(has_normals)
+    has_uvs = 'texture_uvs' in o3d_mesh.triangle
+    print(has_uvs)
+    has_colors = 'colors' in o3d_mesh.vertex
+
     # Convert Open3D Material to Mitsuba's principled BSDF
     if bsdf is None:
-        bsdf = o3d_material_to_bsdf(o3d_mesh.material)
+        bsdf = o3d_material_to_bsdf(o3d_mesh.material, vertex_color=has_colors)
 
     # Mesh constructor looks for this specific property for setting BSDF
     bsdf_prop = mi.Properties()
     bsdf_prop['mesh_bsdf'] = bsdf
 
     # Create Mitsuba mesh shell
-    has_normals = 'normals' in o3d_mesh.vertex
-    print(has_normals)
-    has_uvs = 'texture_uvs' in o3d_mesh.triangle
-    print(has_uvs)
-    has_colors = 'colors' in o3d_mesh.vertex
     mi_mesh = mi.Mesh(name,
                       vertex_count=o3d_mesh.vertex.positions.shape[0],
                       face_count=o3d_mesh.triangle.indices.shape[0],
@@ -101,5 +112,4 @@ def to_mitsuba(name, o3d_mesh, bsdf=None):
         mesh_params['vertex_texcoords'] = per_vtx_uvs.flatten()
 
     # Let Mitsuba know parameters have been updated
-    print(mesh_params.update())
     return mi_mesh
