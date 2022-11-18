@@ -65,9 +65,11 @@ def render_mesh(mesh, mesh_center):
     return img
 
 
-# Initialize mitsuba with LLVM variant which should be available on all
-# platforms
+# Default to LLVM variant which should be available on all
+# platforms. If you have a system with a CUDA device then comment out LLVM
+# variant and uncomment cuda variant
 mi.set_variant('llvm_ad_rgb')
+# mi.set_variant('cuda_ad_rgb')
 
 # Load mesh using Open3D
 dataset = o3d.data.MonkeyModel()
@@ -86,19 +88,19 @@ mesh.material.texture_maps['metallic'] = o3d.t.io.read_image(
 print(
     'Rendering mesh with its material properties converted to Mitsuba principled BSDF'
 )
-mi_mesh = o3d.visualization.to_mitsuba("monkey", mesh)
+mi_mesh = o3d.visualization.to_mitsuba('monkey', mesh)
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test.exr')
 
 print('Rendering mesh with Mitsuba smooth plastic BSDF')
 bsdf_smooth_plastic = mi.load_dict({
-    "type": "plastic",
+    'type': 'plastic',
     'diffuse_reflectance': {
         'type': 'rgb',
         'value': [0.1, 0.27, 0.36]
     },
     'int_ior': 1.9
 })
-mi_mesh = o3d.visualization.to_mitsuba("monkey", mesh, bsdf=bsdf_smooth_plastic)
+mi_mesh = o3d.visualization.to_mitsuba('monkey', mesh, bsdf=bsdf_smooth_plastic)
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test2.exr')
