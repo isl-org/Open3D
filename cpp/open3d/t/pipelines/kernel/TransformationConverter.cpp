@@ -33,6 +33,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
 namespace t {
@@ -77,6 +78,7 @@ static void PoseToTransformationDevice(
         PoseToTransformationImpl<scalar_t>(transformation_ptr, pose_ptr);
     } else if (device_type == core::Device::DeviceType::CUDA) {
 #ifdef BUILD_CUDA_MODULE
+        core::CUDAScopedDevice scoped_device(transformation.GetDevice());
         PoseToTransformationCUDA<scalar_t>(transformation_ptr, pose_ptr);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");

@@ -28,6 +28,8 @@
 
 #include "open3d/core/TensorCheck.h"
 
+#include "open3d/core/CUDAUtils.h"
+
 namespace open3d {
 namespace t {
 namespace pipelines {
@@ -47,6 +49,7 @@ void ComputeFPFHFeature(const core::Tensor &points,
         ComputeFPFHFeatureCPU(points_d, normals_d, indices, distance2, counts_d,
                               fpfhs);
     } else {
+        core::CUDAScopedDevice scoped_device(points.GetDevice());
         CUDA_CALL(ComputeFPFHFeatureCUDA, points_d, normals_d, indices,
                   distance2, counts_d, fpfhs);
     }
