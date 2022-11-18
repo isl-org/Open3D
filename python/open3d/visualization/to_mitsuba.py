@@ -63,13 +63,23 @@ def o3d_material_to_bsdf(mat, vertex_color=False):
 
 
 def to_mitsuba(self, name, bsdf=None):
-    """
+    """Convert Open3D TriangleMesh to Mitsuba Mesh.
+
     Converts an Open3D TriangleMesh to a Mitsuba Mesh which can be used directly
     in a Mitsbua scene. The TriangleMesh's material will be converted to a
     Mitsuba Principled BSDF and assigned to the Mitsuba Mesh. Optionally, the
-    user may set `bsdf` to a Mitsuba BSDF in which case the TriangleMesh's
-    material will be ignored and the user supplied BSDF will be assigned to the
-    returned Mitsuba Mesh.
+    user may provide a Mitsuba BSDF to be used instead of converting the Open3D
+    material.
+
+    Args:
+        name (str): Name for the Mitsuba Mesh. Used by Mitsuba as an identifier
+
+        bsdf (default None): If a Mitsuba BSDF is supplied it will be used as
+        the BSDF for the converted mesh. Otherwise, the TriangleMesh's material
+        will be converted to Mitsuba Principled BSDF.
+
+    Returns:
+        A Mitsuba Mesh (with associated BSDF) ready for use in a Mitsuba scene.
     """
 
     import mitsuba as mi
