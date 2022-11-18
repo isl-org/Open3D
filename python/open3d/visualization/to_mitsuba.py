@@ -58,7 +58,7 @@ def o3d_material_to_bsdf(mat, vertex_color=False):
     bsdf_dict['metallic'] = create_bsdf_entry(mat, metallic, 'metallic', False)
     bsdf_dict['anisotropic'] = create_bsdf_entry(mat, anisotropy, 'anisotropy',
                                                  False)
-
+    bsdf_dict['specular'] = reflectance
     bsdf = mi.load_dict(bsdf_dict)
     return bsdf
 
@@ -69,9 +69,7 @@ def to_mitsuba(name, o3d_mesh, bsdf=None):
 
     # What features does this mesh have
     has_normals = 'normals' in o3d_mesh.vertex
-    print(has_normals)
     has_uvs = 'texture_uvs' in o3d_mesh.triangle
-    print(has_uvs)
     has_colors = 'colors' in o3d_mesh.vertex
 
     # Convert Open3D Material to Mitsuba's principled BSDF
