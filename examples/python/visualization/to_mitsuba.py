@@ -30,35 +30,37 @@ import mitsuba as mi
 
 def render_mesh(mesh, mesh_center):
     scene = mi.load_dict({
-        "type": "scene",
-        "integrator": {
-            "type": "path"
+        'type': 'scene',
+        'integrator': {
+            'type': 'path'
         },
-        "light": {
-            "type": "envmap",
-            "filename": "/home/renes/Downloads/belfast_sunset_puresky_4k.exr",
-            "scale": 1.2,
+        'light': {
+            'type': 'constant',
+            'radiance': {
+                'type': 'rgb',
+                'value': 1.0
+            }
         },
-        "sensor": {
-            "type":
-                "perspective",
-            "focal_length":
-                "50mm",
-            "to_world":
+        'sensor': {
+            'type':
+                'perspective',
+            'focal_length':
+                '50mm',
+            'to_world':
                 mi.ScalarTransform4f.look_at(origin=[0, 0, 5],
                                              target=mesh_center,
                                              up=[0, 1, 0]),
-            "thefilm": {
-                "type": "hdrfilm",
-                "width": 1024,
-                "height": 768,
+            'thefilm': {
+                'type': 'hdrfilm',
+                'width': 1024,
+                'height': 768,
             },
-            "thesampler": {
-                "type": "multijitter",
-                "sample_count": 64,
+            'thesampler': {
+                'type': 'multijitter',
+                'sample_count': 64,
             },
         },
-        "themesh": mesh,
+        'themesh': mesh,
     })
 
     img = mi.render(scene, spp=256)
@@ -71,13 +73,13 @@ def render_mesh(mesh, mesh_center):
 mi.set_variant('llvm_ad_rgb')
 # mi.set_variant('cuda_ad_rgb')
 
-# Load mesh using Open3D
+# Load mesh and maps using Open3D
 dataset = o3d.data.MonkeyModel()
 mesh = o3d.t.io.read_triangle_mesh(dataset.path)
-# mesh = o3d.t.io.read_triangle_mesh('/home/renes/development/intel_work/sample_data/antman_color.ply')
 mesh_center = mesh.get_axis_aligned_bounding_box().get_center()
 mesh.material.set_default_properties()
-mesh.material.vector_properties['base_color'] = [1.0, 1.0, 1.0, 1.0]
+mesh.material.material_name = 'defaultLit'
+mesh.material.scalar_properties['metallic'] = 1.0
 mesh.material.texture_maps['albedo'] = o3d.t.io.read_image(
     dataset.path_map['albedo'])
 mesh.material.texture_maps['roughness'] = o3d.t.io.read_image(
@@ -85,9 +87,7 @@ mesh.material.texture_maps['roughness'] = o3d.t.io.read_image(
 mesh.material.texture_maps['metallic'] = o3d.t.io.read_image(
     dataset.path_map['metallic'])
 
-print(
-    'Rendering mesh with its material properties converted to Mitsuba principled BSDF'
-)
+print('Render mesh with material converted to Mitsuba principled BSDF')
 mi_mesh = o3d.visualization.to_mitsuba('monkey', mesh)
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test.exr')
@@ -104,3 +104,6 @@ bsdf_smooth_plastic = mi.load_dict({
 mi_mesh = o3d.visualization.to_mitsuba('monkey', mesh, bsdf=bsdf_smooth_plastic)
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test2.exr')
+
+# Render with Open3D
+o3d.visualization.draw(mesh)

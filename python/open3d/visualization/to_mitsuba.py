@@ -107,7 +107,11 @@ def to_mitsuba(name, o3d_mesh, bsdf=None):
         for idx, uvs in zip(o3d_mesh.triangle.indices,
                             o3d_mesh.triangle.texture_uvs):
             per_vtx_uvs[idx.numpy()] = uvs.numpy()
-        mesh_params['vertex_texcoords'] = per_vtx_uvs.flatten()
+        mesh_params['vertex_texcoords'] = np.subtract(1.0,
+                                                      per_vtx_uvs,
+                                                      out=per_vtx_uvs,
+                                                      where=[False,
+                                                             True]).flatten()
 
     # Let Mitsuba know parameters have been updated
     return mi_mesh
