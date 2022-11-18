@@ -63,18 +63,27 @@ def o3d_material_to_bsdf(mat, vertex_color=False):
     return bsdf
 
 
-def to_mitsuba(name, o3d_mesh, bsdf=None):
+def to_mitsuba(self, name, bsdf=None):
+    """
+    Converts an Open3D TriangleMesh to a Mitsuba Mesh which can be used directly
+    in a Mitsbua scene. The TriangleMesh's material will be converted to a
+    Mitsuba Principled BSDF and assigned to the Mitsuba Mesh. Optionally, the
+    user may set `bsdf` to a Mitsuba BSDF in which case the TriangleMesh's
+    material will be ignored and the user supplied BSDF will be assigned to the
+    returned Mitsuba Mesh.
+    """
+
     import mitsuba as mi
     import numpy as np
 
     # What features does this mesh have
-    has_normals = 'normals' in o3d_mesh.vertex
-    has_uvs = 'texture_uvs' in o3d_mesh.triangle
-    has_colors = 'colors' in o3d_mesh.vertex
+    has_normals = 'normals' in self.vertex
+    has_uvs = 'texture_uvs' in self.triangle
+    has_colors = 'colors' in self.vertex
 
     # Convert Open3D Material to Mitsuba's principled BSDF
     if bsdf is None:
-        bsdf = o3d_material_to_bsdf(o3d_mesh.material, vertex_color=has_colors)
+        bsdf = o3d_material_to_bsdf(self.material, vertex_color=has_colors)
 
     # Mesh constructor looks for this specific property for setting BSDF
     bsdf_prop = mi.Properties()
@@ -82,8 +91,8 @@ def to_mitsuba(name, o3d_mesh, bsdf=None):
 
     # Create Mitsuba mesh shell
     mi_mesh = mi.Mesh(name,
-                      vertex_count=o3d_mesh.vertex.positions.shape[0],
-                      face_count=o3d_mesh.triangle.indices.shape[0],
+                      vertex_count=self.vertex.positions.shape[0],
+                      face_count=self.triangle.indices.shape[0],
                       has_vertex_normals=has_normals,
                       has_vertex_texcoords=has_uvs,
                       props=bsdf_prop)
@@ -91,21 +100,18 @@ def to_mitsuba(name, o3d_mesh, bsdf=None):
     # Vertex color is not a 'built-in' attribute. Needs to be added.
     if has_colors:
         mi_mesh.add_attribute('vertex_color', 3,
-                              o3d_mesh.vertex.colors.numpy().flatten())
+                              self.vertex.colors.numpy().flatten())
 
     # "Traverse" the mesh to get its updateable parameters
     mesh_params = mi.traverse(mi_mesh)
-    mesh_params['vertex_positions'] = o3d_mesh.vertex.positions.numpy().flatten(
-    )
-    mesh_params['faces'] = o3d_mesh.triangle.indices.numpy().flatten()
+    mesh_params['vertex_positions'] = self.vertex.positions.numpy().flatten()
+    mesh_params['faces'] = self.triangle.indices.numpy().flatten()
     if has_normals:
-        mesh_params['vertex_normals'] = o3d_mesh.vertex.normals.numpy().flatten(
-        )
+        mesh_params['vertex_normals'] = self.vertex.normals.numpy().flatten()
     if has_uvs:
         # Mitsuba wants UVs per-vertex so copy them into place
-        per_vtx_uvs = np.zeros((o3d_mesh.vertex.positions.shape[0], 2))
-        for idx, uvs in zip(o3d_mesh.triangle.indices,
-                            o3d_mesh.triangle.texture_uvs):
+        per_vtx_uvs = np.zeros((self.vertex.positions.shape[0], 2))
+        for idx, uvs in zip(self.triangle.indices, self.triangle.texture_uvs):
             per_vtx_uvs[idx.numpy()] = uvs.numpy()
         mesh_params['vertex_texcoords'] = np.subtract(1.0,
                                                       per_vtx_uvs,
@@ -115,3 +121,7 @@ def to_mitsuba(name, o3d_mesh, bsdf=None):
 
     # Let Mitsuba know parameters have been updated
     return mi_mesh
+
+
+# Add to_mitsuba method to TriangleMesh
+o3d.t.geometry.TriangleMesh.to_mitsuba = to_mitsuba

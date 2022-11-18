@@ -88,7 +88,7 @@ mesh.material.texture_maps['metallic'] = o3d.t.io.read_image(
     dataset.path_map['metallic'])
 
 print('Render mesh with material converted to Mitsuba principled BSDF')
-mi_mesh = o3d.visualization.to_mitsuba('monkey', mesh)
+mi_mesh = mesh.to_mitsuba('monkey')
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test.exr')
 
@@ -101,7 +101,7 @@ bsdf_smooth_plastic = mi.load_dict({
     },
     'int_ior': 1.9
 })
-mi_mesh = o3d.visualization.to_mitsuba('monkey', mesh, bsdf=bsdf_smooth_plastic)
+mi_mesh = mesh.to_mitsuba('monkey', bsdf=bsdf_smooth_plastic)
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test2.exr')
 
