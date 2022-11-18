@@ -26,9 +26,8 @@
 
 #include "open3d/t/pipelines/kernel/Feature.h"
 
-#include "open3d/core/TensorCheck.h"
-
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/core/TensorCheck.h"
 
 namespace open3d {
 namespace t {

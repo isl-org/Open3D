@@ -132,7 +132,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
                 source_points.GetDtype(), device);
     } else if (source_points.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
-core::CUDAScopedDevice scoped_device(source_points.GetDevice());
+        core::CUDAScopedDevice scoped_device(source_points.GetDevice());
         // TODO: Implement optimized CUDA reduction kernel.
         core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
         // correpondence_set : (i, corres[i]).

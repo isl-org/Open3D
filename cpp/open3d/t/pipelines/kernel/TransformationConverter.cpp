@@ -28,12 +28,12 @@
 
 #include <cmath>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/t/pipelines/kernel/TransformationConverterImpl.h"
 #include "open3d/utility/Logging.h"
-#include "open3d/core/CUDAUtils.h"
 
 namespace open3d {
 namespace t {
