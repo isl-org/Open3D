@@ -101,6 +101,7 @@ void pybind_image(py::module &m) {
                  "tensor"_a);
     docstring::ClassMethodDocInject(m, "Image", "__init__",
                                     map_shared_argument_docstrings);
+    py::detail::bind_copy_functions<Image>(image);
 
     // Pickle support.
     image.def(py::pickle(

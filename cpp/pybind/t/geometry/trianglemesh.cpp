@@ -107,6 +107,7 @@ The attributes of the triangle mesh have different levels::
                  "vertex_positions"_a, "triangle_indices"_a)
             .def("__repr__", &TriangleMesh::ToString);
 
+    py::detail::bind_copy_functions<TriangleMesh>(triangle_mesh);
     // Pickle support.
     triangle_mesh.def(py::pickle(
             [](const TriangleMesh& mesh) {
