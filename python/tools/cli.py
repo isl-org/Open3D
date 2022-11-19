@@ -202,7 +202,7 @@ def _example(parser, args):
 
 
 def _draw(parser, args):
-    if args.filename == None:
+    if args.filename is None:
         parser.print_help()
     elif not os.path.isfile(args.filename):
         print(f"Error: could not find file: {args.filename}")
@@ -214,6 +214,20 @@ def _draw(parser, args):
     app.main()
     sys.argv.insert(1, removed_arg)
     return 0
+
+
+def _draw_webrtc(parser, args):
+    if args.filename is None:
+        parser.print_help()
+    elif not os.path.isfile(args.filename):
+        print(f"Error: could not find file: {args.filename}")
+        parser.print_help()
+        parser.exit(2)
+    if args.bind_all:
+        os.environ['WEBRTC_IP'] = "0.0.0.0"
+    mesh = o3d.t.io.read_triangle_mesh(args.filename)
+    o3d.visualization.webrtc_server.enable_webrtc()
+    o3d.visualization.draw(mesh)
 
 
 def main():
@@ -315,6 +329,36 @@ def main():
                              action="help",
                              help="Show this help message and exit.")
     parser_draw.set_defaults(func=_draw)
+
+    draw_web_help = (
+        "Load and visualize a 3D model in a browser with WebRTC. Example usage:\n"
+        "# Visualize a 3D model file at http://localhost:8888 \n"
+        "  open3d draw_web path/to/model_file \n"
+        "# Visualize a 3D model file at http://hostname.domainname:8888 \n"
+        "  open3d draw_web --bind_all path/to/model_file")
+    parser_draw_web = subparsers.add_parser(
+        "draw_web",
+        description=draw_web_help,
+        help=draw_web_help,
+        add_help=False,
+        formatter_class=argparse.RawTextHelpFormatter)
+
+    parser_draw_web.add_argument("filename",
+                                 nargs="?",
+                                 help="Name of the mesh or point cloud file.")
+    parser_draw_web.add_argument(
+        "--bind_all",
+        required=False,
+        action="store_true",
+        dest="bind_all",
+        help="Listen for connections on all interfaces. "
+        "This is only secure in a private network and"
+        " with an encrypted tunnel.")
+    parser_draw_web.add_argument("-h",
+                                 "--help",
+                                 action="help",
+                                 help="Show this help message and exit.")
+    parser_draw_web.set_defaults(func=_draw_webrtc)
 
     args = main_parser.parse_args()
     if args.command in subparsers.choices.keys():
