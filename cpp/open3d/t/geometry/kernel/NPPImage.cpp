@@ -425,7 +425,7 @@ void FilterSobel(const core::Tensor &src_im,
                  core::Tensor &dst_im_dx,
                  core::Tensor &dst_im_dy,
                  int kernel_size) {
-    if (src_im.GetDevice() != dst_im_dx.GetDevice() or
+    if (src_im.GetDevice() != dst_im_dx.GetDevice() ||
         src_im.GetDevice() != dst_im_dy.GetDevice()) {
         utility::LogError(
                 "src_im, dst_im_dx, and dst_im_dy are not on the same device, "
