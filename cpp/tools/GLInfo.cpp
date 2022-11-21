@@ -41,6 +41,10 @@ void TryGLVersion(int major,
     std::string forwardCompatStr =
             (forwardCompat ? "GLFW_OPENGL_FORWARD_COMPAT " : "");
     std::string profileStr = "UnknownProfile";
+    // Some versions of GCC reports Wstringop-overflow error if string storage
+    // is not reserved. This might be related to a bug reported here:
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96963
+    profileStr.reserve(32);
 #define OPEN3D_CHECK_PROFILESTR(p) \
     if (profileId == p) {          \
         profileStr = #p;           \
