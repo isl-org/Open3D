@@ -26,6 +26,7 @@
 
 #include "open3d/t/pipelines/kernel/FillInLinearSystem.h"
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/TensorCheck.h"
 
 namespace open3d {
@@ -72,6 +73,7 @@ void FillInRigidAlignmentTerm(core::Tensor &AtA,
 
     } else if (AtA.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        core::CUDAScopedDevice scoped_device(AtA.GetDevice());
         FillInRigidAlignmentTermCUDA(AtA, Atb, residual, Ti_ps, Tj_qs,
                                      Ri_normal_ps, i, j, threshold);
 
@@ -133,6 +135,7 @@ void FillInSLACAlignmentTerm(core::Tensor &AtA,
 
     } else if (AtA.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        core::CUDAScopedDevice scoped_device(AtA.GetDevice());
         FillInSLACAlignmentTermCUDA(AtA, Atb, residual, Ti_ps, Tj_qs, normal_ps,
                                     Ri_normal_ps, RjT_Ri_normal_ps,
                                     cgrid_idx_ps, cgrid_idx_qs, cgrid_ratio_ps,
@@ -173,6 +176,7 @@ void FillInSLACRegularizerTerm(core::Tensor &AtA,
 
     } else if (AtA.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        core::CUDAScopedDevice scoped_device(AtA.GetDevice());
         FillInSLACRegularizerTermCUDA(
                 AtA, Atb, residual, grid_idx, grid_nbs_idx, grid_nbs_mask,
                 positions_init, positions_curr, weight, n, anchor_idx);

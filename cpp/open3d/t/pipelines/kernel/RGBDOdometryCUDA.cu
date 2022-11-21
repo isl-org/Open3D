@@ -112,6 +112,8 @@ void ComputeOdometryResultPointToPlaneCUDA(
         int& inlier_count,
         const float depth_outlier_trunc,
         const float depth_huber_delta) {
+    core::CUDAScopedDevice scoped_device(source_vertex_map.GetDevice());
+
     NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
     NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
     NDArrayIndexer target_normal_indexer(target_normal_map, 2);
@@ -211,6 +213,8 @@ void ComputeOdometryResultIntensityCUDA(
         int& inlier_count,
         const float depth_outlier_trunc,
         const float intensity_huber_delta) {
+    core::CUDAScopedDevice scoped_device(source_depth.GetDevice());
+
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 
@@ -328,6 +332,8 @@ void ComputeOdometryResultHybridCUDA(const core::Tensor& source_depth,
                                      const float depth_outlier_trunc,
                                      const float depth_huber_delta,
                                      const float intensity_huber_delta) {
+    core::CUDAScopedDevice scoped_device(source_depth.GetDevice());
+
     NDArrayIndexer source_depth_indexer(source_depth, 2);
     NDArrayIndexer target_depth_indexer(target_depth, 2);
 

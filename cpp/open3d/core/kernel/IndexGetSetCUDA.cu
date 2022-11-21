@@ -68,6 +68,7 @@ void IndexGetCUDA(const Tensor& src,
                   const std::vector<Tensor>& index_tensors,
                   const SizeVector& indexed_shape,
                   const SizeVector& indexed_strides) {
+    CUDAScopedDevice scoped_device(src.GetDevice());
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
@@ -96,6 +97,7 @@ void IndexSetCUDA(const Tensor& src,
                   const std::vector<Tensor>& index_tensors,
                   const SizeVector& indexed_shape,
                   const SizeVector& indexed_strides) {
+    CUDAScopedDevice scoped_device(src.GetDevice());
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
