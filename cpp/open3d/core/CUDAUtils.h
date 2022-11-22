@@ -66,7 +66,8 @@
 #define OPEN3D_CUDA_CHECK(err)
 #define OPEN3D_GET_LAST_CUDA_ERROR(message)
 #define CUDA_CALL(cuda_function, ...) \
-    utility::LogError("Not built with CUDA, cannot call " #cuda_function);
+    open3d::utility::LogError(        \
+            "Not built with CUDA, cannot call " #cuda_function);
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 
