@@ -127,6 +127,8 @@ The attributes of the point cloud have different levels::
                  "map_keys_to_tensors"_a)
             .def("__repr__", &PointCloud::ToString);
 
+    py::detail::bind_copy_functions<PointCloud>(pointcloud);
+
     // Pickle support.
     pointcloud.def(py::pickle(
             [](const PointCloud& pcd) {

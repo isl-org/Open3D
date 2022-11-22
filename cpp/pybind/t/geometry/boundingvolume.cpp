@@ -80,6 +80,7 @@ tensor, which must be on the same device and have the same data type.)");
               "Upper bounds of the bounding box for all axes. Tensor with {3,} "
               "shape, and type float32 or float64"}});
 
+    py::detail::bind_copy_functions<AxisAlignedBoundingBox>(aabb);
     aabb.def("__repr__", &AxisAlignedBoundingBox::ToString);
     aabb.def(
             "__add__",
