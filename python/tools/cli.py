@@ -229,9 +229,16 @@ def _draw_webrtc(parser, args):
         parser.exit(2)
     if args.bind_all:
         os.environ["WEBRTC_IP"] = "0.0.0.0"
-    mesh = o3d.t.io.read_triangle_mesh(args.filename)
+    filetype = o3d.io.read_file_geometry_type(args.filename)
+    if (filetype & o3d.io.CONTAINS_TRIANGLES):
+        geometry = o3d.io.read_triangle_model(args.filename)
+    else:
+        geometry = o3d.t.io.read_point_cloud(args.filename)
+        if 'normals' not in geometry.point and 'colors' not in geometry.point:
+            geometry.estimate_normals()
+            geometry.normalize_normals()
     o3d.visualization.webrtc_server.enable_webrtc()
-    o3d.visualization.draw(mesh)
+    o3d.visualization.draw(geometry)
 
 
 def main():
