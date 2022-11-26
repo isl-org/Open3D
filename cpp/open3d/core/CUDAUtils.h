@@ -226,6 +226,19 @@ int GetCUDACurrentDeviceTextureAlignment();
 
 /// Returns the size of total global memory for the current device.
 size_t GetCUDACurrentTotalMemSize();
+
+#else
+
+/// When CUDA is not enabled, this is a dummy class.
+class CUDAScopedDevice {
+public:
+    explicit CUDAScopedDevice(int device_id) {}
+    explicit CUDAScopedDevice(const Device& device) {}
+    ~CUDAScopedDevice() {}
+    CUDAScopedDevice(const CUDAScopedDevice&) = delete;
+    CUDAScopedDevice& operator=(const CUDAScopedDevice&) = delete;
+};
+
 #endif
 
 namespace cuda {
