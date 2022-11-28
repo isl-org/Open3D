@@ -25,8 +25,8 @@
 # ----------------------------------------------------------------------------
 """Functionality for quickly building Graphical User Interfaces."""
 
-if "@BUILD_GUI@" == "ON":
-    import open3d
+import open3d
+if open3d._build_config['BUILD_GUI']:
     if open3d.__DEVICE_API__ == 'cuda':
         from open3d.cuda.pybind.visualization.gui import *
     else:
