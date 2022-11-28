@@ -20,7 +20,7 @@ concurrency:
 
 env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-  NPROC: 3
+  NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
@@ -59,6 +59,13 @@ jobs:
       - name: Install dependencies
         run: |
           brew install ccache pkg-config
+          # Install libomp 11.1.0 from old brew bottle for catalina (10.15).
+          # Directly installing the Ruby formula will install for the current OS
+          # https://github.com/microsoft/LightGBM/issues/4229
+          brew unlink libomp
+          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.catalina.bottle.tar.gz \
+          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+          brew install -f libomp-11.1.0.catalina.bottle.tar.gz
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
@@ -169,7 +176,12 @@ jobs:
           cmake --version
           source util/ci_utils.sh
           install_python_dependencies
+          # Install libomp 11.1.0. See comment above.
           brew install ccache
+          brew unlink libomp
+          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.catalina.bottle.tar.gz \
+          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+          brew install -f libomp-11.1.0.catalina.bottle.tar.gz
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel

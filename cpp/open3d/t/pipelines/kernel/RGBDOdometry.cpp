@@ -72,6 +72,7 @@ void ComputeOdometryResultPointToPlane(
                 intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
                 depth_outlier_trunc, depth_huber_delta);
     } else if (device.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(source_vertex_map.GetDevice());
         CUDA_CALL(ComputeOdometryResultPointToPlaneCUDA, source_vertex_map,
                   target_vertex_map, target_normal_map, intrinsics_d, trans_d,
                   delta, inlier_residual, inlier_count, depth_outlier_trunc,
@@ -130,6 +131,7 @@ void ComputeOdometryResultIntensity(const core::Tensor &source_depth,
                 intrinsics_d, trans_d, delta, inlier_residual, inlier_count,
                 depth_outlier_trunc, intensity_huber_delta);
     } else if (device.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(source_depth.GetDevice());
         CUDA_CALL(ComputeOdometryResultIntensityCUDA, source_depth,
                   target_depth, source_intensity, target_intensity,
                   target_intensity_dx, target_intensity_dy, source_vertex_map,
@@ -197,6 +199,7 @@ void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
                 delta, inlier_residual, inlier_count, depth_outlier_trunc,
                 depth_huber_delta, intensity_huber_delta);
     } else if (device.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(source_depth.GetDevice());
         CUDA_CALL(ComputeOdometryResultHybridCUDA, source_depth, target_depth,
                   source_intensity, target_intensity, target_depth_dx,
                   target_depth_dy, target_intensity_dx, target_intensity_dy,

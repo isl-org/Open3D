@@ -110,6 +110,7 @@ and ``device`` as the tensor. The device for ``point_positions`` must be consist
              {"line_indices",
               "A tensor with element shape (2,) and Int dtype."}});
 
+    py::detail::bind_copy_functions<LineSet>(line_set);
     // Pickling support.
     line_set.def(py::pickle(
             [](const LineSet& line_set) {

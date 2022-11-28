@@ -513,6 +513,8 @@ if(WITH_OPENMP)
     if(3rdparty_openmp_FOUND)
         message(STATUS "Building with OpenMP")
         list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_openmp)
+    else()
+        set(WITH_OPENMP OFF)
     endif()
 endif()
 
@@ -1135,6 +1137,7 @@ if(BUILD_GUI)
             SOURCES
                 imgui_demo.cpp
                 imgui_draw.cpp
+                imgui_tables.cpp
                 imgui_widgets.cpp
                 imgui.cpp
             DEPENDS
@@ -1187,6 +1190,7 @@ if(BUILD_GUI)
                 # If the default version is not sufficient, look for some specific versions
                 if(NOT FILAMENT_C_COMPILER OR NOT FILAMENT_CXX_COMPILER)
                     find_program(CLANG_VERSIONED_CC NAMES
+                                 clang-15
                                  clang-14
                                  clang-13
                                  clang-12
@@ -1197,6 +1201,7 @@ if(BUILD_GUI)
                                  clang-7
                     )
                     find_program(CLANG_VERSIONED_CXX NAMES
+                                 clang++-15
                                  clang++-14
                                  clang++-13
                                  clang++-12
@@ -1266,6 +1271,7 @@ if(BUILD_GUI)
             # search path. LLVM version must be >= 7 to compile Filament.
             if (NOT CLANG_LIBDIR)
                 set(ubuntu_default_llvm_lib_dirs
+                    /usr/lib/llvm-15/lib
                     /usr/lib/llvm-14/lib
                     /usr/lib/llvm-13/lib
                     /usr/lib/llvm-12/lib
@@ -1291,6 +1297,7 @@ if(BUILD_GUI)
             # is not enforced by CMake.
             if (NOT CLANG_LIBDIR)
                 find_library(CPPABI_LIBRARY c++abi PATH_SUFFIXES
+                             llvm-15/lib
                              llvm-14/lib
                              llvm-13/lib
                              llvm-12/lib
@@ -1604,6 +1611,9 @@ else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
                     ${gcc_lib}
                 )
                 if(APPLE_AARCH64)
+                    find_library(quadmath_lib NAMES libquadmath.a PATHS ${gfortran_lib_dirs} REQUIRED)
+                    target_link_libraries(3rdparty_blas INTERFACE
+                        ${quadmath_lib})
                     # Suppress Apple compiler warnigns.
                     target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
                 endif()

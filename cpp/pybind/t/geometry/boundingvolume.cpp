@@ -83,6 +83,7 @@ tensor, which must be on the same device and have the same data type.)");
     aabb.def_property_readonly(
             "dtype", &AxisAlignedBoundingBox::GetDtype,
             "Returns the data type attribute of this AxisAlignedBoundingBox.");
+    py::detail::bind_copy_functions<AxisAlignedBoundingBox>(aabb);
     aabb.def("__repr__", &AxisAlignedBoundingBox::ToString);
     aabb.def(
             "__add__",
@@ -263,6 +264,7 @@ must be on the same device and have the same data type.)");
     obb.def_property_readonly(
             "dtype", &OrientedBoundingBox::GetDtype,
             "Returns the data type attribute of this OrientedBoundingBox.");
+    py::detail::bind_copy_functions<OrientedBoundingBox>(obb);
     obb.def("__repr__", &OrientedBoundingBox::ToString);
 
     // Device transfers.
