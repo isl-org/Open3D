@@ -637,6 +637,7 @@ BENCHMARK_CAPTURE(
 BENCHMARK_CAPTURE(CropByAxisAlignedBox, CUDA, core::Device("CUDA:0"))
         ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(CropByOrientedBox, CUDA, core::Device("CUDA:0"))
+        ->Unit(benchmark::kMillisecond);
 BENCHMARK_CAPTURE(RemoveStatisticalOutliers,
                   CUDA[30],
                   core::Device("CUDA:0"),
