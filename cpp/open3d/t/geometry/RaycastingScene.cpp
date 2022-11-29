@@ -33,10 +33,10 @@
 // This header is in the embree src dir (embree/src/ext_embree/..).
 #include <embree3/rtcore.h>
 #include <tbb/parallel_for.h>
-#include <tutorials/common/math/closest_point.h>
 
 #include <Eigen/Core>
 #include <tuple>
+#include <unsupported/Eigen/AlignedVector3>
 #include <vector>
 
 #include "open3d/core/TensorCheck.h"
@@ -44,6 +44,11 @@
 #include "open3d/utility/Logging.h"
 
 namespace {
+
+typedef Eigen::AlignedVector3<float> Vec3fa;
+// Dont force alignment for Vec2f because we use it just for storing
+typedef Eigen::Matrix<float, 2, 1, Eigen::DontAlign> Vec2f;
+typedef Eigen::Vector3f Vec3f;
 
 // Error function called by embree.
 void ErrorFunction(void* userPtr, enum RTCError error, const char* str) {
@@ -124,9 +129,6 @@ void CountIntersectionsFunc(const RTCFilterFunctionNArguments* args) {
     }
 }
 
-namespace {
-
-using namespace embree;
 // Adapted from common/math/closest_point.h
 inline Vec3fa closestPointTriangle(Vec3fa const& p,
                                    Vec3fa const& a,
@@ -138,8 +140,8 @@ inline Vec3fa closestPointTriangle(Vec3fa const& p,
     const Vec3fa ac = c - a;
     const Vec3fa ap = p - a;
 
-    const float d1 = dot(ab, ap);
-    const float d2 = dot(ac, ap);
+    const float d1 = ab.dot(ap);
+    const float d2 = ac.dot(ap);
     if (d1 <= 0.f && d2 <= 0.f) {
         tex_u = 0;
         tex_v = 0;
@@ -147,8 +149,8 @@ inline Vec3fa closestPointTriangle(Vec3fa const& p,
     }
 
     const Vec3fa bp = p - b;
-    const float d3 = dot(ab, bp);
-    const float d4 = dot(ac, bp);
+    const float d3 = ab.dot(bp);
+    const float d4 = ac.dot(bp);
     if (d3 >= 0.f && d4 <= d3) {
         tex_u = 1;
         tex_v = 0;
@@ -156,8 +158,8 @@ inline Vec3fa closestPointTriangle(Vec3fa const& p,
     }
 
     const Vec3fa cp = p - c;
-    const float d5 = dot(ab, cp);
-    const float d6 = dot(ac, cp);
+    const float d5 = ab.dot(cp);
+    const float d6 = ac.dot(cp);
     if (d6 >= 0.f && d5 <= d6) {
         tex_u = 0;
         tex_v = 1;
@@ -196,26 +198,23 @@ inline Vec3fa closestPointTriangle(Vec3fa const& p,
     return a + v * ab + w * ac;
 }
 
-}  // namespace
-
 struct ClosestPointResult {
     ClosestPointResult()
         : primID(RTC_INVALID_GEOMETRY_ID),
           geomID(RTC_INVALID_GEOMETRY_ID),
           geometry_ptrs_ptr() {}
 
-    embree::Vec3f p;
+    Vec3f p;
     unsigned int primID;
     unsigned int geomID;
-    embree::Vec2f uv;
-    embree::Vec3f n;
+    Vec2f uv;
+    Vec3f n;
     std::vector<std::tuple<RTCGeometryType, const void*, const void*>>*
             geometry_ptrs_ptr;
 };
 
 // Code adapted from the embree closest_point tutorial.
 bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
-    using namespace embree;
     assert(args->userPtr);
     const unsigned int geomID = args->geomID;
     const unsigned int primID = args->primID;
@@ -249,7 +248,7 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
         // Determine distance to closest point on triangle
         float u, v;
         const Vec3fa p = closestPointTriangle(q, v0, v1, v2, u, v);
-        float d = distance(q, p);
+        float d = (q - p).norm();
 
         // Store result in userPtr and update the query radius if we found a
         // point closer to the query position. This is optional but allows for
@@ -261,8 +260,8 @@ bool ClosestPointFunc(RTCPointQueryFunctionArguments* args) {
             result->geomID = geomID;
             Vec3fa e1 = v1 - v0;
             Vec3fa e2 = v2 - v0;
-            result->uv = embree::Vec2f(u, v);
-            result->n = normalize(cross(e1, e2));
+            result->uv = Vec2f(u, v);
+            result->n = (e1.cross(e2)).normalized();
             return true;  // Return true to indicate that the query radius
                           // changed.
         }
@@ -528,16 +527,16 @@ struct RaycastingScene::Impl {
                 rtcPointQuery(scene_, &query, &instStack, &ClosestPointFunc,
                               (void*)&result);
 
-                closest_points[3 * i + 0] = result.p.x;
-                closest_points[3 * i + 1] = result.p.y;
-                closest_points[3 * i + 2] = result.p.z;
+                closest_points[3 * i + 0] = result.p.x();
+                closest_points[3 * i + 1] = result.p.y();
+                closest_points[3 * i + 2] = result.p.z();
                 geometry_ids[i] = result.geomID;
                 primitive_ids[i] = result.primID;
-                primitive_uvs[2 * i + 0] = result.uv.x;
-                primitive_uvs[2 * i + 1] = result.uv.y;
-                primitive_normals[3 * i + 0] = result.n.x;
-                primitive_normals[3 * i + 1] = result.n.y;
-                primitive_normals[3 * i + 2] = result.n.z;
+                primitive_uvs[2 * i + 0] = result.uv.x();
+                primitive_uvs[2 * i + 1] = result.uv.y();
+                primitive_normals[3 * i + 0] = result.n.x();
+                primitive_normals[3 * i + 1] = result.n.y();
+                primitive_normals[3 * i + 2] = result.n.z();
             }
         };
 
