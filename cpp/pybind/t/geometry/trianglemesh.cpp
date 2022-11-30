@@ -652,6 +652,10 @@ Example:
                       &TriangleMesh::GetAxisAlignedBoundingBox,
                       "Create an axis-aligned bounding box from vertex "
                       "attribute 'positions'.");
+    triangle_mesh.def("get_oriented_bounding_box",
+                      &TriangleMesh::GetOrientedBoundingBox,
+                      "Create an oriented bounding box from vertex attribute "
+                      "'positions'.");
 
     triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
                       "hole_size"_a = 1e6,

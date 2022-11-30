@@ -660,6 +660,9 @@ public:
     /// Create an axis-aligned bounding box from attribute "positions".
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
+    /// Create an oriented bounding box from attribute "positions".
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+
     /// \brief Function to crop pointcloud into output pointcloud.
     ///
     /// \param aabb AxisAlignedBoundingBox to crop points.
@@ -667,6 +670,13 @@ public:
     /// the bounding box.
     PointCloud Crop(const AxisAlignedBoundingBox &aabb,
                     bool invert = false) const;
+
+    /// \brief Function to crop pointcloud into output pointcloud.
+    ///
+    /// \param obb OrientedBoundingBox to crop points.
+    /// \param invert Crop the points outside of the bounding box or inside of
+    /// the bounding box.
+    PointCloud Crop(const OrientedBoundingBox &obb, bool invert = false) const;
 
     /// Sweeps the point cloud rotationally about an axis.
     /// \param angle The rotation angle in degree.

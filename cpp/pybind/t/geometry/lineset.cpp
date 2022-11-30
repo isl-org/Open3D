@@ -261,7 +261,9 @@ transformation as :math:`P = R(P) + t`)");
                  &LineSet::GetAxisAlignedBoundingBox,
                  "Create an axis-aligned bounding box from point attribute "
                  "'positions'.");
-
+    line_set.def("get_oriented_bounding_box", &LineSet::GetOrientedBoundingBox,
+                 "Create an oriented bounding box from point attribute "
+                 "'positions'.");
     line_set.def("extrude_rotation", &LineSet::ExtrudeRotation, "angle"_a,
                  "axis"_a, "resolution"_a = 16, "translation"_a = 0.0,
                  "capping"_a = true,
