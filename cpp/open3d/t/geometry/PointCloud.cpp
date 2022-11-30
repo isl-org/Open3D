@@ -1211,22 +1211,12 @@ TriangleMesh PointCloud::ComputeConvexHull(bool joggle_inputs) const {
     return convex_hull.To(GetPointPositions().GetDevice());
 }
 
-PointCloud PointCloud::Crop(const AxisAlignedBoundingBox &aabb,
-                            bool invert) const {
-    core::AssertTensorDevice(GetPointPositions(), aabb.GetDevice());
-    if (aabb.IsEmpty()) {
-        utility::LogWarning(
-                "Bounding box is empty. Returning empty point cloud if "
-                "invert is false, or the original point cloud if "
-                "invert is true.");
-        return invert ? Clone() : PointCloud(GetDevice());
-    }
-    return SelectByIndex(
-            aabb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
-}
-
 AxisAlignedBoundingBox PointCloud::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
+OrientedBoundingBox PointCloud::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
 LineSet PointCloud::ExtrudeRotation(double angle,
@@ -1244,6 +1234,33 @@ LineSet PointCloud::ExtrudeLinear(const core::Tensor &vector,
                                   bool capping) const {
     using namespace vtkutils;
     return ExtrudeLinearLineSet(*this, vector, scale, capping);
+}
+
+PointCloud PointCloud::Crop(const AxisAlignedBoundingBox &aabb,
+                            bool invert) const {
+    core::AssertTensorDevice(GetPointPositions(), aabb.GetDevice());
+    if (aabb.IsEmpty()) {
+        utility::LogWarning(
+                "Bounding box is empty. Returning empty point cloud if "
+                "invert is false, or the original point cloud if "
+                "invert is true.");
+        return invert ? Clone() : PointCloud(GetDevice());
+    }
+    return SelectByIndex(
+            aabb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
+}
+
+PointCloud PointCloud::Crop(const OrientedBoundingBox &obb, bool invert) const {
+    core::AssertTensorDevice(GetPointPositions(), obb.GetDevice());
+    if (obb.IsEmpty()) {
+        utility::LogWarning(
+                "Bounding box is empty. Returning empty point cloud if "
+                "invert is false, or the original point cloud if "
+                "invert is true.");
+        return invert ? Clone() : PointCloud(GetDevice());
+    }
+    return SelectByIndex(
+            obb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
 }
 
 }  // namespace geometry

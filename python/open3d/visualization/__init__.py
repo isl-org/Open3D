@@ -37,6 +37,7 @@ else:
 from ._external_visualizer import *
 from .draw_plotly import draw_plotly
 from .draw_plotly import draw_plotly_server
+from .to_mitsuba import to_mitsuba
 
 if "@BUILD_GUI@" == "ON":
     from .draw import draw

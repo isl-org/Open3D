@@ -29,6 +29,7 @@
 #include <thrust/for_each.h>
 #include <thrust/iterator/zip_iterator.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/kernel/NonZero.h"
 
@@ -75,6 +76,7 @@ protected:
 };
 
 Tensor NonZeroCUDA(const Tensor& src) {
+    CUDAScopedDevice scoped_device(src.GetDevice());
     Tensor src_contiguous = src.Contiguous();
     const int64_t num_elements = src_contiguous.NumElements();
     const int64_t num_bytes =

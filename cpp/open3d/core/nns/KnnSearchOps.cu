@@ -52,6 +52,7 @@ void KnnSearchCUDABruteForce(const Tensor& points,
                              int knn,
                              OUTPUT_ALLOCATOR& output_allocator,
                              Tensor& query_neighbors_row_splits) {
+    CUDAScopedDevice scoped_device(points.GetDevice());
     const cudaStream_t stream = cuda::GetStream();
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
@@ -117,6 +118,7 @@ void KnnSearchCUDAOptimized(const Tensor& points,
                             int knn,
                             OUTPUT_ALLOCATOR& output_allocator,
                             Tensor& query_neighbors_row_splits) {
+    CUDAScopedDevice scoped_device(points.GetDevice());
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     int dim = points.GetShape(1);
@@ -241,6 +243,7 @@ void KnnSearchCUDA(const Tensor& points,
                    Tensor& neighbors_index,
                    Tensor& neighbors_row_splits,
                    Tensor& neighbors_distance) {
+    CUDAScopedDevice scoped_device(points.GetDevice());
     int num_points = points.GetShape(0);
     int num_queries = queries.GetShape(0);
     Device device = points.GetDevice();

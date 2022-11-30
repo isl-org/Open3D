@@ -417,13 +417,13 @@ public:
             const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
             bool project_valid_depth_only = true);
 
-    /// \brief Function to create a PointCloud from a VoxelGrid.
+    /// \brief Factory Function to create a PointCloud from a VoxelGrid.
     ///
     /// It transforms the voxel centers to 3D points using the original point
     /// cloud coordinate (with respect to the center of the voxel grid).
     ///
     /// \param voxel_grid The input VoxelGrid.
-    std::shared_ptr<PointCloud> CreateFromVoxelGrid(
+    static std::shared_ptr<PointCloud> CreateFromVoxelGrid(
             const VoxelGrid &voxel_grid);
 
 public:
