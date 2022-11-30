@@ -34,34 +34,34 @@
 # https://github.com/dmlc/xgboost/issues/1715
 import os
 import sys
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 from ctypes import CDLL
 from ctypes.util import find_library
 from pathlib import Path
 import warnings
 
 from open3d._build_config import _build_config
-if _build_config["BUILD_GUI"] and not (find_library('c++abi') or
-                                       find_library('c++')):
+if _build_config["BUILD_GUI"] and not (find_library("c++abi") or
+                                       find_library("c++")):
     try:  # Preload libc++.so and libc++abi.so (required by filament)
-        CDLL(str(next((Path(__file__).parent).glob('*c++abi.*'))))
-        CDLL(str(next((Path(__file__).parent).glob('*c++.*'))))
+        CDLL(str(next((Path(__file__).parent).glob("*c++abi.*"))))
+        CDLL(str(next((Path(__file__).parent).glob("*c++.*"))))
     except StopIteration:  # Not found: check system paths while loading
         pass
 
 # Enable CPU rendering based on env vars
-if _build_config["BUILD_GUI"] and sys.platform.startswith('linux') and (
-        os.getenv('OPEN3D_CPU_RENDERING', default='') == 'true'):
-    os.environ['LIBGL_DRIVERS_PATH'] = str(Path(__file__).parent)
-    CDLL(Path(__file__).parent / 'libEGL.so.1')
-    CDLL(Path(__file__).parent / 'libGL.so.1')
+if _build_config["BUILD_GUI"] and sys.platform.startswith("linux") and (
+        os.getenv("OPEN3D_CPU_RENDERING", default="") == "true"):
+    os.environ["LIBGL_DRIVERS_PATH"] = str(Path(__file__).parent)
+    CDLL(Path(__file__).parent / "libEGL.so.1")
+    CDLL(Path(__file__).parent / "libGL.so.1")
 
-__DEVICE_API__ = 'cpu'
+__DEVICE_API__ = "cpu"
 if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
     # Do this before loading the CUDA pybind dll to correctly resolve symbols
     try:  # StopIteration if cpu version not available
-        CDLL(str(next((Path(__file__).parent / 'cpu').glob('pybind*'))))
+        CDLL(str(next((Path(__file__).parent / "cpu").glob("pybind*"))))
     except StopIteration:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CPU Python "
@@ -71,12 +71,12 @@ if _build_config["BUILD_CUDA_MODULE"]:
         # Check CUDA availability without importing CUDA pybind symbols to
         # prevent "symbol already registered" errors if first import fails.
         _pybind_cuda = CDLL(
-            str(next((Path(__file__).parent / 'cuda').glob('pybind*'))))
+            str(next((Path(__file__).parent / "cuda").glob("pybind*"))))
         if _pybind_cuda.open3d_core_cuda_device_count() > 0:
-            from open3d.cuda.pybind import (camera, data, geometry, io,
+            from open3d.cuda.pybind import (core, camera, data, geometry, io,
                                             pipelines, utility, t)
             from open3d.cuda import pybind
-            __DEVICE_API__ = 'cuda'
+            __DEVICE_API__ = "cuda"
         else:
             warnings.warn(
                 "Open3D was built with CUDA support, but no suitable CUDA "
@@ -93,12 +93,28 @@ if _build_config["BUILD_CUDA_MODULE"]:
             "binding library not found! Falling back to the CPU Python "
             "binding library.", ImportWarning)
 
-if __DEVICE_API__ == 'cpu':
+if __DEVICE_API__ == "cpu":
     from open3d.cpu.pybind import (core, camera, data, geometry, io, pipelines,
                                    utility, t)
     from open3d.cpu import pybind
 
+
+def _insert_pybind_names(skip_names=()):
+    """Introduce pybind names as open3d names. Skip names corresponding to
+    python subpackages, since they have a different import mechanism."""
+    submodules = {}
+    for modname in sys.modules:
+        if "open3d." + __DEVICE_API__ + ".pybind" in modname:
+            if any("." + skip_name in modname for skip_name in skip_names):
+                continue
+            subname = modname.replace(__DEVICE_API__ + ".pybind.", "")
+            if subname not in sys.modules:
+                submodules[subname] = sys.modules[modname]
+    sys.modules.update(submodules)
+
+
 import open3d.visualization
+_insert_pybind_names(skip_names=("ml",))
 
 __version__ = "@PROJECT_VERSION@"
 
@@ -111,7 +127,7 @@ if _build_config["BUILD_JUPYTER_EXTENSION"]:
             platform.machine().startswith("aarch")):
         try:
             shell = get_ipython().__class__.__name__
-            if shell == 'ZMQInteractiveShell':
+            if shell == "ZMQInteractiveShell":
                 print("Jupyter environment detected. "
                       "Enabling Open3D WebVisualizer.")
                 # Set default window system.
@@ -127,10 +143,13 @@ if _build_config["BUILD_JUPYTER_EXTENSION"]:
 
 # OPEN3D_ML_ROOT points to the root of the Open3D-ML repo.
 # If set this will override the integrated Open3D-ML.
-if 'OPEN3D_ML_ROOT' in os.environ:
-    print('Using external Open3D-ML in {}'.format(os.environ['OPEN3D_ML_ROOT']))
-    sys.path.append(os.environ['OPEN3D_ML_ROOT'])
+if "OPEN3D_ML_ROOT" in os.environ:
+    print("Using external Open3D-ML in {}".format(os.environ["OPEN3D_ML_ROOT"]))
+    sys.path.append(os.environ["OPEN3D_ML_ROOT"])
 import open3d.ml
+
+# Finally insert pybind names corresponding to ml
+_insert_pybind_names()
 
 
 def _jupyter_labextension_paths():
@@ -146,8 +165,8 @@ def _jupyter_labextension_paths():
             directory during widget installation.
     """
     return [{
-        'src': 'labextension',
-        'dest': 'open3d',
+        "src": "labextension",
+        "dest": "open3d",
     }]
 
 
@@ -157,7 +176,7 @@ def _jupyter_nbextension_paths():
 
     Returns:
         section: The section of the Jupyter Notebook Server to change.
-            Must be 'notebook' for widget extensions.
+            Must be "notebook" for widget extensions.
         src: Source directory name to copy files from. Webpack outputs generated
             files into this directory and Jupyter Notebook copies from this
             directory during widget installation.
@@ -169,20 +188,11 @@ def _jupyter_nbextension_paths():
             <jupyter path>/nbextensions/<dest> directory.
     """
     return [{
-        'section': 'notebook',
-        'src': 'nbextension',
-        'dest': 'open3d',
-        'require': 'open3d/extension'
+        "section": "notebook",
+        "src": "nbextension",
+        "dest": "open3d",
+        "require": "open3d/extension"
     }]
 
 
-# Introduce pybind names as open3d names
-submodules = {}
-for modname in sys.modules:
-    if 'open3d.' + __DEVICE_API__ + '.pybind' in modname:
-        subname = modname.replace(__DEVICE_API__ + '.pybind.', "")
-        if subname not in sys.modules:
-            submodules[subname] = sys.modules[modname]
-sys.modules.update(submodules)
-
-del os, sys, CDLL, find_library, Path, warnings, submodules, subname
+del os, sys, CDLL, find_library, Path, warnings, _insert_pybind_names
