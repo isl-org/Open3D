@@ -59,7 +59,7 @@ const unsigned int kPostProcessFlags_compulsory =
         aiProcess_JoinIdenticalVertices;
 
 const unsigned int kPostProcessFlags_fast =
-        aiProcessPreset_TargetRealtime_Fast |
+        (aiProcessPreset_TargetRealtime_Fast & ~aiProcess_GenNormals) |
         aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes |
         aiProcess_PreTransformVertices;
 
