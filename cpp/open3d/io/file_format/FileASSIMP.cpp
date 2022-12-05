@@ -184,6 +184,8 @@ bool ReadTriangleMeshUsingASSIMP(
         post_process_flags = kPostProcessFlags_fast;
     }
 
+    importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, aiComponent_NORMALS);
+    post_process_flags |= aiProcess_RemoveComponent;
     const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
