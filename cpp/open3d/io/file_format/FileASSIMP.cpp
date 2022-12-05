@@ -257,6 +257,9 @@ bool ReadTriangleMeshUsingASSIMP(
         current_vidx += assimp_mesh->mNumVertices;
     }
 
+    // Compute triangle normals independent from assimp
+    mesh.ComputeTriangleNormals();
+
     // Now load the materials
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
@@ -410,6 +413,9 @@ bool ReadModelUsingAssimp(const std::string& filename,
                 mesh->vertex_colors_.push_back({c.r, c.g, c.b});
             }
         }
+
+        // Compute triangle normals independent from assimp
+        mesh->ComputeTriangleNormals();
 
         // Add the mesh to the model
         model.meshes_.push_back({mesh, std::string(assimp_mesh->mName.C_Str()),
