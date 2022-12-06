@@ -225,12 +225,14 @@ bool ReadTriangleMeshUsingASSIMP(
             mesh.triangle_material_ids_.push_back(assimp_mesh->mMaterialIndex);
         }
 
+/*
         if (assimp_mesh->mNormals) {
             for (size_t nidx = 0; nidx < assimp_mesh->mNumVertices; ++nidx) {
                 auto& normal = assimp_mesh->mNormals[nidx];
                 mesh.vertex_normals_.push_back({normal.x, normal.y, normal.z});
             }
         }
+*/
 
         // NOTE: only support a single UV channel
         if (assimp_mesh->HasTextureCoords(0)) {
@@ -257,8 +259,8 @@ bool ReadTriangleMeshUsingASSIMP(
         current_vidx += assimp_mesh->mNumVertices;
     }
 
-    // Compute triangle normals independent from assimp
-    mesh.ComputeTriangleNormals();
+    // Compute vertex normals independent from assimp
+    mesh.ComputeVertexNormals();
 
     // Now load the materials
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
@@ -386,12 +388,14 @@ bool ReadModelUsingAssimp(const std::string& filename,
             mesh->triangles_.push_back(facet);
         }
 
+/*
         if (assimp_mesh->mNormals) {
             for (size_t nidx = 0; nidx < assimp_mesh->mNumVertices; ++nidx) {
                 auto& normal = assimp_mesh->mNormals[nidx];
                 mesh->vertex_normals_.push_back({normal.x, normal.y, normal.z});
             }
         }
+*/
 
         // NOTE: only use the first UV channel
         if (assimp_mesh->HasTextureCoords(0)) {
@@ -414,8 +418,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
             }
         }
 
-        // Compute triangle normals independent from assimp
-        mesh->ComputeTriangleNormals();
+        // Compute vertex normals independent from assimp
+        mesh->ComputeVertexNormals();
 
         // Add the mesh to the model
         model.meshes_.push_back({mesh, std::string(assimp_mesh->mName.C_Str()),
