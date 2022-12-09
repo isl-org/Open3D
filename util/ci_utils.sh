@@ -419,12 +419,12 @@ build_docs() {
 		"-DGLIBCXX_USE_CXX11_ABI=OFF"
 		"-DBUILD_TENSORFLOW_OPS=ON"
 		"-DBUILD_PYTORCH_OPS=ON"
-		"-DBUNDLE_OPEN3D_ML=ON"
 		"-DBUILD_EXAMPLES=OFF"
 	)
 	set -x # Echo commands on
 	cmake "${cmakeOptions[@]}" \
 		-DENABLE_HEADLESS_RENDERING=ON \
+		-DBUNDLE_OPEN3D_ML=OFF \
 		-DBUILD_GUI=OFF \
 		-DBUILD_WEBRTC=OFF \
 		-DBUILD_JUPYTER_EXTENSION=OFF \
@@ -444,6 +444,7 @@ build_docs() {
 	set -x # Echo commands on
 	cmake "${cmakeOptions[@]}" \
 		-DENABLE_HEADLESS_RENDERING=OFF \
+		-DBUNDLE_OPEN3D_ML=ON \
 		-DBUILD_GUI=ON \
 		-DBUILD_WEBRTC=ON \
 		-DBUILD_JUPYTER_EXTENSION=OFF \

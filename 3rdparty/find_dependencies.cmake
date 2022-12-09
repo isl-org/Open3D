@@ -1410,7 +1410,12 @@ if(USE_SYSTEM_MSGPACK)
         TARGETS msgpackc
     )
     if(NOT 3rdparty_msgpack_FOUND)
-        set(USE_SYSTEM_MSGPACK OFF)
+        open3d_pkg_config_3rdparty_library(3rdparty_msgpack
+            SEARCH_ARGS msgpack
+        )
+        if(NOT 3rdparty_msgpack_FOUND)
+            set(USE_SYSTEM_MSGPACK OFF)
+        endif()
     endif()
 endif()
 if(NOT USE_SYSTEM_MSGPACK)

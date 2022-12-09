@@ -50,14 +50,6 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/tools/cli.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/tools/cli.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/tools/app.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/app.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/app/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/app/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/gui/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/gui/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/rendering/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/rendering/__init__.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/web_visualizer.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/web_visualizer.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/lib/web_visualizer.js"
