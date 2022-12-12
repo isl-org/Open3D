@@ -667,6 +667,10 @@ def test_unary_ew_ops(device):
                                -src_vals,
                                rtol=rtol,
                                atol=atol)
+    np.testing.assert_allclose((-src).cpu().numpy(),
+                               -src_vals,
+                               rtol=rtol,
+                               atol=atol)
     np.testing.assert_allclose(src.exp().cpu().numpy(),
                                np.exp(src_vals),
                                rtol=rtol,
