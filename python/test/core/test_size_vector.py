@@ -66,7 +66,7 @@ def test_size_vector():
         3,
     ]) == (3,)
 
-    # Not integer: thorws exception
+    # Not integer: throws exception
     with pytest.raises(Exception):
         sv = o3d.core.SizeVector([1.9, 2, 3])
 

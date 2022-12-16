@@ -135,9 +135,8 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
                 index_tensors_.size(), tensor_.NumDims());
     }
 
-    // Index tensors must be using int64.
-    // Boolean indexing tensors will be supported in the future by
-    // converting to int64_t tensors.
+    // Index tensors must be using int64. Boolean indexing tensors have already
+    // been converted to int64 tensors.
     for (const Tensor& index_tensor : index_tensors_) {
         if (index_tensor.GetDtype() != core::Int64) {
             utility::LogError(
@@ -169,7 +168,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     }
 
     // Transpose all indexed dimensions to front if indexed dimensions are
-    // splitted by sliced dimensions. The tensor being indexed are dimshuffled
+    // splitted by sliced dimensions. The tensor being indexed are dim-shuffled
     // accordingly.
     //
     // E.g. Given A.shape == [5, 6, 7, 8],
