@@ -512,12 +512,8 @@ class JupyterDocsBuilder:
             'tensor.ipynb',
         ]
         example_dirs = [
-            "core",
-            "data",
-            "geometry",
-            "pipelines",
-            "t_pipelines",
-            "visualization",
+            "geometry", "t_geometry", "core", "data", "pipelines",
+            "visualization", "t_pipelines"
         ]
         for example_dir in example_dirs:
             in_dir = (Path(self.current_file_dir) / "jupyter" / example_dir)
