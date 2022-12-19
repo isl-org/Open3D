@@ -65,6 +65,23 @@ std::tuple<bool, Eigen::Matrix4d, Eigen::Matrix6d> ComputeRGBDOdometry(
                 RGBDOdometryJacobianFromHybridTerm(),
         const OdometryOption &option = OdometryOption());
 
+/// \brief Function to estimate point to point correspondences from two depth
+/// images.
+///
+/// \param intrinsic_matrix Camera intrinsic parameters.
+/// \param extrinsic Estimation of transform from source to target.
+/// \param depth_s Source depth image.
+/// \param depth_t Target depth image.
+/// \param option Odometry hyper parameters.
+/// \return A vector of u_s, v_s, u_t, v_t which maps the 2d coordinates of
+/// source to target.
+CorrespondenceSetPixelWise ComputeCorrespondence(
+        const Eigen::Matrix3d &intrinsic_matrix,
+        const Eigen::Matrix4d &extrinsic,
+        const geometry::Image &depth_s,
+        const geometry::Image &depth_t,
+        const OdometryOption &option);
+
 }  // namespace odometry
 }  // namespace pipelines
 }  // namespace open3d

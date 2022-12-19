@@ -756,6 +756,9 @@ public:
     /// Element-wise negation of a tensor, in-place.
     Tensor Neg_();
 
+    /// Unary minus of a tensor, returning a new tensor.
+    Tensor operator-() const { return Neg(); }
+
     /// Element-wise exponential of a tensor, returning a new tensor.
     Tensor Exp() const;
 

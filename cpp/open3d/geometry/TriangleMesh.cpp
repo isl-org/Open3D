@@ -575,7 +575,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
 
     // Set-up sample elimination
     double alpha = 8;    // constant defined in paper
-    double beta = 0.5;   // constant defined in paper
+    double beta = 0.65;  // constant defined in paper
     double gamma = 1.5;  // constant defined in paper
     double ratio = double(number_of_points) / double(pcl->points_.size());
     double r_max = 2 * std::sqrt((surface_area / number_of_points) /

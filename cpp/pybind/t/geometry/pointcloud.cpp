@@ -477,7 +477,7 @@ Example:
                                                  ransac_n=3,
                                                  num_iterations=1000)
         inlier_cloud = pcd.select_by_index(inliers)
-        inlier_cloud.paint_uniform_color([1.0, 0, 0])
+        inlier_cloud = inlier_cloud.paint_uniform_color([1.0, 0, 0])
         outlier_cloud = pcd.select_by_index(inliers, invert=True)
         o3d.visualization.draw([inlier_cloud, outlier_cloud]))");
     pointcloud.def(
