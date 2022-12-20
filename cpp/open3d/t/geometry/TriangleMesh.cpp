@@ -348,6 +348,40 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                         mesh_legacy.triangle_uvs_, float_dtype, device)
                         .Reshape({-1, 3, 2}));
     }
+
+    // Convert material if legacy mesh only has one
+    if (mesh_legacy.materials_.size() == 1) {
+        const auto &mat = mesh_legacy.materials_.begin()->second;
+        auto &tmat = mesh.GetMaterial();
+        tmat.SetDefaultProperties();
+        tmat.SetBaseColor(Eigen::Vector4f{mat.baseColor.f4});
+        tmat.SetBaseRoughness(mat.baseRoughness);
+        tmat.SetBaseMetallic(mat.baseMetallic);
+        tmat.SetBaseReflectance(mat.baseReflectance);
+        tmat.SetAnisotropy(mat.baseAnisotropy);
+        tmat.SetBaseClearcoat(mat.baseClearCoat);
+        tmat.SetBaseClearcoatRoughness(mat.baseClearCoatRoughness);
+        if (mat.albedo) tmat.SetAlbedoMap(Image::FromLegacy(*mat.albedo));
+        if (mat.normalMap) tmat.SetNormalMap(Image::FromLegacy(*mat.normalMap));
+        if (mat.roughness)
+            tmat.SetRoughnessMap(Image::FromLegacy(*mat.roughness));
+        if (mat.metallic) tmat.SetMetallicMap(Image::FromLegacy(*mat.metallic));
+        if (mat.reflectance)
+            tmat.SetReflectanceMap(Image::FromLegacy(*mat.reflectance));
+        if (mat.ambientOcclusion)
+            tmat.SetAOMap(Image::FromLegacy(*mat.ambientOcclusion));
+        if (mat.clearCoat)
+            tmat.SetClearcoatMap(Image::FromLegacy(*mat.clearCoat));
+        if (mat.clearCoatRoughness)
+            tmat.SetClearcoatRoughnessMap(
+                    Image::FromLegacy(*mat.clearCoatRoughness));
+        if (mat.anisotropy)
+            tmat.SetAnisotropyMap(Image::FromLegacy(*mat.anisotropy));
+    } else if (mesh_legacy.materials_.size() > 1) {
+        utility::LogWarning(
+                "Legacy mesh has more than 1 material which is not supported "
+                "by Tensor-based meshes.");
+    }
     return mesh;
 }
 
