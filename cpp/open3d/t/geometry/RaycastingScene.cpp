@@ -832,13 +832,13 @@ core::Tensor VoteInsideOutside(RaycastingScene& scene,
 core::Tensor RaycastingScene::ComputeSignedDistance(
         const core::Tensor& query_points,
         const int nthreads,
-        const int samples) {
+        const int nsamples) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
                                                  3, impl_->tensor_device_);
 
-    if (samples < 1 || (samples % 2) != 1) {
-        open3d::utility::LogError("samples must be odd and >= 1 but is {}",
-                                  samples);
+    if (nsamples < 1 || (nsamples % 2) != 1) {
+        open3d::utility::LogError("nsamples must be odd and >= 1 but is {}",
+                                  nsamples);
     }
     auto shape = query_points.GetShape();
     shape.pop_back();  // Remove last dim, we want to use this shape for the
@@ -850,7 +850,7 @@ core::Tensor RaycastingScene::ComputeSignedDistance(
                                              num_query_points);
 
     auto inside_outside =
-            VoteInsideOutside(*this, data, nthreads, samples, -1, 1);
+            VoteInsideOutside(*this, data, nthreads, nsamples, -1, 1);
     Eigen::Map<Eigen::VectorXi> inside_outside_map(
             inside_outside.GetDataPtr<int>(), num_query_points);
     distance_map.array() *= inside_outside_map.array().cast<float>();
@@ -859,16 +859,16 @@ core::Tensor RaycastingScene::ComputeSignedDistance(
 
 core::Tensor RaycastingScene::ComputeOccupancy(const core::Tensor& query_points,
                                                const int nthreads,
-                                               const int samples) {
+                                               const int nsamples) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
                                                  3, impl_->tensor_device_);
 
-    if (samples < 1 || (samples % 2) != 1) {
+    if (nsamples < 1 || (nsamples % 2) != 1) {
         open3d::utility::LogError("samples must be odd and >= 1 but is {}",
-                                  samples);
+                                  nsamples);
     }
 
-    auto result = VoteInsideOutside(*this, query_points, nthreads, samples);
+    auto result = VoteInsideOutside(*this, query_points, nthreads, nsamples);
     return result.To(core::Float32);
 }
 
