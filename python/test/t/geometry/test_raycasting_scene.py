@@ -328,5 +328,5 @@ def test_sphere_wrong_occupancy():
     np.testing.assert_equal(occupancy.numpy(), expected)
 
     # we should get the same result with more samples
-    occupancy_3samples = scene.compute_occupancy(query_points, samples=3)
+    occupancy_3samples = scene.compute_occupancy(query_points, nsamples=3)
     np.testing.assert_equal(occupancy_3samples.numpy(), expected)
