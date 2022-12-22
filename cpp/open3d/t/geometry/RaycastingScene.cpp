@@ -774,10 +774,14 @@ core::Tensor VoteInsideOutside(RaycastingScene& scene,
                        // results.
     size_t num_query_points = shape.NumElements();
 
-    std::mt19937 gen(42);
-    std::uniform_real_distribution<float> dist(-0.001, 0.001);
     Eigen::MatrixXf ray_dirs(3, num_votes);
-    ray_dirs = ray_dirs.unaryExpr([&](float) { return 1 + dist(gen); });
+    for (int i = 0; i < num_votes; ++i) {
+        ray_dirs.col(i) =
+                Eigen::Vector3f::Ones() +
+                0.001f * Eigen::Vector3f(std::cos((i + 1) * 12815.349f),
+                                         std::cos((i + 1) * 85381.575f),
+                                         std::cos((i + 1) * 46031.538f));
+    }
 
     auto query_points_ = query_points.Contiguous();
     Eigen::Map<Eigen::MatrixXf> query_points_map(
