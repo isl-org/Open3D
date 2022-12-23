@@ -761,60 +761,117 @@ core::Tensor RaycastingScene::ComputeDistance(const core::Tensor& query_points,
     return distance;
 }
 
-core::Tensor RaycastingScene::ComputeSignedDistance(
-        const core::Tensor& query_points, const int nthreads) {
-    AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
-                                                 3, impl_->tensor_device_);
+namespace {
+// Helper function to determine the inside and outside with voting.
+core::Tensor VoteInsideOutside(RaycastingScene& scene,
+                               const core::Tensor& query_points,
+                               const int nthreads = 0,
+                               const int num_votes = 3,
+                               const int inside_val = 1,
+                               const int outside_val = 0) {
     auto shape = query_points.GetShape();
     shape.pop_back();  // Remove last dim, we want to use this shape for the
                        // results.
     size_t num_query_points = shape.NumElements();
 
+    // Use local RNG here to generate rays with a similar direction in a
+    // deterministic manner.
+    std::mt19937 gen(42);
+    std::uniform_real_distribution<float> dist(-0.001, 0.001);
+    Eigen::MatrixXf ray_dirs(3, num_votes);
+    ray_dirs = ray_dirs.unaryExpr([&](float) { return 1 + dist(gen); });
+
+    auto query_points_ = query_points.Contiguous();
+    Eigen::Map<Eigen::MatrixXf> query_points_map(
+            query_points_.GetDataPtr<float>(), 3, num_query_points);
+
+    core::Tensor rays({int64_t(num_votes * num_query_points), 6},
+                      core::Float32);
+    Eigen::Map<Eigen::MatrixXf> rays_map(rays.GetDataPtr<float>(), 6,
+                                         num_votes * num_query_points);
+    if (num_votes > 1) {
+        for (size_t i = 0; i < num_query_points; ++i) {
+            for (int j = 0; j < num_votes; ++j) {
+                rays_map.col(i * num_votes + j).topRows<3>() =
+                        query_points_map.col(i);
+                rays_map.col(i * num_votes + j).bottomRows<3>() =
+                        ray_dirs.col(j);
+            }
+        }
+    } else {
+        for (size_t i = 0; i < num_query_points; ++i) {
+            rays_map.col(i).topRows<3>() = query_points_map.col(i);
+            rays_map.col(i).bottomRows<3>() = ray_dirs;
+        }
+    }
+
+    auto intersections = scene.CountIntersections(rays, nthreads);
+    Eigen::Map<Eigen::MatrixXi> intersections_map(
+            intersections.GetDataPtr<int>(), num_votes, num_query_points);
+
+    if (num_votes > 1) {
+        core::Tensor result({int64_t(num_query_points)}, core::Int32);
+        Eigen::Map<Eigen::VectorXi> result_map(result.GetDataPtr<int>(),
+                                               num_query_points);
+        result_map =
+                intersections_map.unaryExpr([&](const int x) { return x % 2; })
+                        .colwise()
+                        .sum()
+                        .unaryExpr([&](const int x) {
+                            return (x > num_votes / 2) ? inside_val
+                                                       : outside_val;
+                        });
+        return result.Reshape(shape);
+    } else {
+        intersections_map = intersections_map.unaryExpr([&](const int x) {
+            return (x % 2) ? inside_val : outside_val;
+        });
+        return intersections.Reshape(shape);
+    }
+}
+}  // namespace
+
+core::Tensor RaycastingScene::ComputeSignedDistance(
+        const core::Tensor& query_points,
+        const int nthreads,
+        const int nsamples) {
+    AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
+                                                 3, impl_->tensor_device_);
+
+    if (nsamples < 1 || (nsamples % 2) != 1) {
+        open3d::utility::LogError("nsamples must be odd and >= 1 but is {}",
+                                  nsamples);
+    }
+    auto shape = query_points.GetShape();
+    shape.pop_back();  // Remove last dim, we want to use this shape for the
+                       // results.
+    size_t num_query_points = shape.NumElements();
     auto data = query_points.Contiguous();
     auto distance = ComputeDistance(data, nthreads);
-    core::Tensor rays({int64_t(num_query_points), 6}, core::Float32);
-    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                  core::TensorKey::Slice(0, 3, 1)},
-                 data.Reshape({int64_t(num_query_points), 3}));
-    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                  core::TensorKey::Slice(3, 6, 1)},
-                 core::Tensor::Ones({1}, core::Float32, impl_->tensor_device_)
-                         .Expand({int64_t(num_query_points), 3}));
-    auto intersections = CountIntersections(rays, nthreads);
-
     Eigen::Map<Eigen::VectorXf> distance_map(distance.GetDataPtr<float>(),
                                              num_query_points);
-    Eigen::Map<Eigen::VectorXi> intersections_map(
-            intersections.GetDataPtr<int>(), num_query_points);
-    intersections_map = intersections_map.unaryExpr(
-            [](const int x) { return (x % 2) ? -1 : 1; });
-    distance_map.array() *= intersections_map.array().cast<float>();
+
+    auto inside_outside =
+            VoteInsideOutside(*this, data, nthreads, nsamples, -1, 1);
+    Eigen::Map<Eigen::VectorXi> inside_outside_map(
+            inside_outside.GetDataPtr<int>(), num_query_points);
+    distance_map.array() *= inside_outside_map.array().cast<float>();
     return distance;
 }
 
 core::Tensor RaycastingScene::ComputeOccupancy(const core::Tensor& query_points,
-                                               const int nthreads) {
+                                               const int nthreads,
+                                               const int nsamples) {
     AssertTensorDtypeLastDimDeviceMinNDim<float>(query_points, "query_points",
                                                  3, impl_->tensor_device_);
-    auto shape = query_points.GetShape();
-    shape.pop_back();  // Remove last dim, we want to use this shape for the
-                       // results.
-    size_t num_query_points = shape.NumElements();
 
-    core::Tensor rays({int64_t(num_query_points), 6}, core::Float32);
-    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                  core::TensorKey::Slice(0, 3, 1)},
-                 query_points.Reshape({int64_t(num_query_points), 3}));
-    rays.SetItem({core::TensorKey::Slice(0, num_query_points, 1),
-                  core::TensorKey::Slice(3, 6, 1)},
-                 core::Tensor::Ones({1}, core::Float32, impl_->tensor_device_)
-                         .Expand({int64_t(num_query_points), 3}));
-    auto intersections = CountIntersections(rays, nthreads);
-    Eigen::Map<Eigen::VectorXi> intersections_map(
-            intersections.GetDataPtr<int>(), num_query_points);
-    intersections_map =
-            intersections_map.unaryExpr([](const int x) { return x % 2; });
-    return intersections.To(core::Float32).Reshape(shape);
+    if (nsamples < 1 || (nsamples % 2) != 1) {
+        open3d::utility::LogError("samples must be odd and >= 1 but is {}",
+                                  nsamples);
+    }
+
+    auto result = VoteInsideOutside(*this, query_points, nthreads, nsamples);
+    return result.To(core::Float32);
 }
 
 core::Tensor RaycastingScene::CreateRaysPinhole(
