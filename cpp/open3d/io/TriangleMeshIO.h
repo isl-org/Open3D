@@ -39,7 +39,23 @@ std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress = false);
 
 struct ReadTriangleMeshOptions {
-    /// Enables post-processing on the mesh
+    /// Enables post-processing on the mesh.
+    /// Post-processing will
+    ///   - triangulate meshes with polygonal faces
+    ///   - remove redundant materials
+    ///   - pretransform vertices
+    ///   - generate face normals if needed
+    ///
+    /// For more information see ASSIMPs documentation on the flags
+    /// `aiProcessPreset_TargetRealtime_Fast,
+    /// aiProcess_RemoveRedundantMaterials, aiProcess_OptimizeMeshes,
+    /// aiProcess_PreTransformVertices`.
+    ///
+    /// Note that identical vertices will always be joined regardless of whether
+    /// post-processing is enabled or not, which changes the number of vertices
+    /// in the mesh.
+    ///
+    /// The ply-format is not affected by the post-processing.
     bool enable_post_processing = false;
     /// Print progress to stdout about loading progress.
     /// Also see \p update_progress if you want to have your own progress
