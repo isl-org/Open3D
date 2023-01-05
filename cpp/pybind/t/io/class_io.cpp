@@ -161,9 +161,39 @@ void pybind_class_io(py::module &m_io) {
                 return mesh;
             },
             "Function to read TriangleMesh from file", "filename"_a,
-            "enable_post_processing"_a = false, "print_progress"_a = false);
-    docstring::FunctionDocInject(m_io, "read_triangle_mesh",
-                                 map_shared_argument_docstrings);
+            "enable_post_processing"_a = false, "print_progress"_a = false,
+            R"doc(The general entrance for reading a TriangleMesh from a file.
+The function calls read functions based on the extension name of filename.
+Supported formats are `obj, ply, stl, off, gltf, glb, fbx`.
+
+The following example reads a triangle mesh with the .ply extension::
+    import open3d as o3d
+    mesh = o3d.t.io.read_triangle_mesh('mesh.ply')
+
+Args:
+    filename (str): Path to the mesh file.
+    enable_post_processing (bool): If True enables post-processing. 
+        Post-processing will 
+          - triangulate meshes with polygonal faces
+          - remove redundant materials
+          - pretransform vertices
+          - generate face normals if needed
+        
+        For more information see ASSIMPs documentation on the flags
+        `aiProcessPreset_TargetRealtime_Fast, aiProcess_RemoveRedundantMaterials, 
+        aiProcess_OptimizeMeshes, aiProcess_PreTransformVertices`.
+        
+        Note that identical vertices will always be joined regardless of whether
+        post-processing is enabled or not, which changes the number of vertices 
+        in the mesh.
+
+        The `ply`-format is not affected by the post-processing.
+
+    print_progress (bool): If True print the reading progress to the terminal.
+    
+Returns:
+    Returns the mesh object. On failure an empty mesh is returned.
+)doc");
 
     m_io.def(
             "write_triangle_mesh",
