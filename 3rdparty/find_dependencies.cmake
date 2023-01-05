@@ -1688,7 +1688,7 @@ if(BUILD_CUDA_MODULE)
         add_library(3rdparty_cublas INTERFACE)
         target_link_libraries(3rdparty_cublas INTERFACE
             CUDA::cusolver_static
-            ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
+            ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
             CUDA::cusparse_static
             CUDA::cublas_static
             CUDA::cublasLt_static
