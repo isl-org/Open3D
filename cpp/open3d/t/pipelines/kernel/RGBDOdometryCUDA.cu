@@ -70,7 +70,7 @@ __global__ void ComputeOdometryResultPointToPlaneCUDAKernel(
     int x = workload % cols;
     const int tid = threadIdx.x;
 
-    ReduceVec local_sum;
+    ReduceVec local_sum(0.0f);
     if (workload < rows * cols) {
         float J[6] = {0};
         float r = 0;
@@ -165,7 +165,7 @@ __global__ void ComputeOdometryResultIntensityCUDAKernel(
     int x = workload % cols;
     const int tid = threadIdx.x;
 
-    ReduceVec local_sum;
+    ReduceVec local_sum(0.0f);
     if (workload < rows * cols) {
         float J[6] = {0};
         float r = 0;
@@ -277,7 +277,7 @@ __global__ void ComputeOdometryResultHybridCUDAKernel(
     int x = workload % cols;
     const int tid = threadIdx.x;
 
-    ReduceVec local_sum;
+    ReduceVec local_sum(0.0f);
     if (workload < rows * cols) {
         float J_I[6] = {0}, J_D[6] = {0};
         float r_I = 0, r_D = 0;
@@ -390,7 +390,7 @@ __global__ void ComputeOdometryInformationMatrixCUDAKernel(
     int x = workload % cols;
     const int tid = threadIdx.x;
 
-    ReduceVec local_sum;
+    ReduceVec local_sum(0.0f);
     if (workload < rows * cols) {
         float J_x[6], J_y[6], J_z[6];
         float rx = 0, ry = 0, rz = 0;
