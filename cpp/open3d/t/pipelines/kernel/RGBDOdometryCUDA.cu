@@ -46,7 +46,10 @@ namespace kernel {
 namespace odometry {
 
 const int kBlockSize = 256;
-const int kReduceDim = 29;  // 21 (JtJ) + 6 (Jtr) + 1 (inlier) + 1 (r)
+const int kJtJDim = 21;
+const int kJtrDim = 6;
+const int kReduceDim =
+        kJtJDim + kJtrDim + 1 + 1;  // 21 (JtJ) + 6 (Jtr) + 1 (inlier) + 1 (r)
 typedef utility::MiniVec<float, kReduceDim> ReduceVec;
 typedef cub::BlockReduce<ReduceVec, kBlockSize> BlockReduce;
 
@@ -67,7 +70,7 @@ __global__ void ComputeOdometryResultPointToPlaneCUDAKernel(
     int x = workload % cols;
     const int tid = threadIdx.x;
 
-    ReduceVec local_sum;
+    ReduceVec local_sum(0.0f);
     if (workload < rows * cols) {
         float J[6] = {0};
         float r = 0;
@@ -162,7 +165,7 @@ __global__ void ComputeOdometryResultIntensityCUDAKernel(
     int x = workload % cols;
     const int tid = threadIdx.x;
 
-    ReduceVec local_sum;
+    ReduceVec local_sum(0.0f);
     if (workload < rows * cols) {
         float J[6] = {0};
         float r = 0;
@@ -274,7 +277,7 @@ __global__ void ComputeOdometryResultHybridCUDAKernel(
     int x = workload % cols;
     const int tid = threadIdx.x;
 
-    ReduceVec local_sum;
+    ReduceVec local_sum(0.0f);
     if (workload < rows * cols) {
         float J_I[6] = {0}, J_D[6] = {0};
         float r_I = 0, r_D = 0;
@@ -372,6 +375,93 @@ void ComputeOdometryResultHybridCUDA(const core::Tensor& source_depth,
     DecodeAndSolve6x6(global_sum, delta, inlier_residual, inlier_count);
 }
 
+__global__ void ComputeOdometryInformationMatrixCUDAKernel(
+        NDArrayIndexer source_vertex_indexer,
+        NDArrayIndexer target_vertex_indexer,
+        TransformIndexer ti,
+        float* global_sum,
+        int rows,
+        int cols,
+        const float square_dist_thr) {
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+
+    const int workload = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = workload / cols;
+    int x = workload % cols;
+    const int tid = threadIdx.x;
+
+    ReduceVec local_sum(0.0f);
+    if (workload < rows * cols) {
+        float J_x[6], J_y[6], J_z[6];
+        float rx = 0, ry = 0, rz = 0;
+        bool valid = GetJacobianPointToPoint(
+                x, y, square_dist_thr, source_vertex_indexer,
+                target_vertex_indexer, ti, J_x, J_y, J_z, rx, ry, rz);
+
+        // Dump J, r into JtJ and Jtr
+        int offset = 0;
+        for (int i = 0; i < 6; ++i) {
+            for (int j = 0; j <= i; ++j) {
+                local_sum[offset] = valid ? J_x[i] * J_x[j] : 0;
+                local_sum[offset] += valid ? J_y[i] * J_y[j] : 0;
+                local_sum[offset] += valid ? J_z[i] * J_z[j] : 0;
+                offset++;
+            }
+        }
+    }
+
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+    if (tid == 0) {
+#pragma unroll
+        for (int i = 0; i < kJtJDim; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
+        }
+    }
+}
+
+void ComputeOdometryInformationMatrixCUDA(const core::Tensor& source_vertex_map,
+                                          const core::Tensor& target_vertex_map,
+                                          const core::Tensor& intrinsic,
+                                          const core::Tensor& source_to_target,
+                                          const float square_dist_thr,
+                                          core::Tensor& information) {
+    NDArrayIndexer source_vertex_indexer(source_vertex_map, 2);
+    NDArrayIndexer target_vertex_indexer(target_vertex_map, 2);
+
+    core::Device device = source_vertex_map.GetDevice();
+    core::Tensor trans = source_to_target;
+    t::geometry::kernel::TransformIndexer ti(intrinsic, trans);
+
+    const int64_t rows = source_vertex_indexer.GetShape(0);
+    const int64_t cols = source_vertex_indexer.GetShape(1);
+
+    core::Tensor global_sum =
+            core::Tensor::Zeros({kJtJDim}, core::Float32, device);
+    float* global_sum_ptr = global_sum.GetDataPtr<float>();
+
+    const dim3 blocks((cols * rows + kBlockSize - 1) / kBlockSize);
+    const dim3 threads(kBlockSize);
+    ComputeOdometryInformationMatrixCUDAKernel<<<blocks, threads, 0,
+                                                 core::cuda::GetStream()>>>(
+            source_vertex_indexer, target_vertex_indexer, ti, global_sum_ptr,
+            rows, cols, square_dist_thr);
+    core::cuda::Synchronize();
+
+    // 21 => 6x6
+    const core::Device host(core::Device("CPU:0"));
+    information = core::Tensor::Empty({6, 6}, core::Float64, host);
+    global_sum = global_sum.To(host, core::Float64);
+
+    double* info_ptr = information.GetDataPtr<double>();
+    double* reduction_ptr = global_sum.GetDataPtr<double>();
+    for (int j = 0; j < 6; j++) {
+        const int64_t reduction_idx = ((j * (j + 1)) / 2);
+        for (int k = 0; k <= j; k++) {
+            info_ptr[j * 6 + k] = reduction_ptr[reduction_idx + k];
+            info_ptr[k * 6 + j] = reduction_ptr[reduction_idx + k];
+        }
+    }
+}
 }  // namespace odometry
 }  // namespace kernel
 }  // namespace pipelines
