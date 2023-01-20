@@ -9,6 +9,7 @@ import os
 import sys
 import platform
 import ctypes
+from collections import defaultdict
 from setuptools import setup, find_packages
 from setuptools.command.install import install as _install
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
@@ -93,10 +94,44 @@ cmdclass["install"] = install
 with open("requirements.txt", "r") as f:
     install_requires = [line.strip() for line in f.readlines() if line]
 
-# Read requirements for ML.
+# Read extra requirements for GUI/ML/TF/Torch.
+extra_requires = defaultdict(list)
+
+# GUI Deps
+with open("requirements_gui.txt", "r") as f:
+    extra_requires["gui"] += [line.strip() for line in f.readlines() if line]
+
+# Make sure GUI deps is part of "all"
+extra_requires["all"] += extra_requires["gui"]
+
 if "@BUNDLE_OPEN3D_ML@" == "ON":
+    # ML Deps
     with open("@OPEN3D_ML_ROOT@/requirements.txt", "r") as f:
-        install_requires += [line.strip() for line in f.readlines() if line]
+        extra_requires["ml"] += [line.strip() for line in f.readlines() if line]
+        extra_requires["all"] += extra_requires["ml"]
+
+    # ML + TF Deps
+    with open("@OPEN3D_ML_ROOT@/requirements-tensorflow.txt", "r") as f:
+        extra_requires["tf"] += extra_requires["ml"]
+        extra_requires["tf"] += [line.strip() for line in f.readlines() if line]
+        extra_requires["all"] += extra_requires["tf"]
+
+    # ML + Torch Deps
+    if "@BUILD_CUDA_MODULE@" == "ON":
+        torch_reqs = "@OPEN3D_ML_ROOT@/requirements-torch-cuda.txt"
+    else:
+        torch_reqs = "@OPEN3D_ML_ROOT@/requirements-torch.txt"
+    with open(torch_reqs, "r") as f:
+        extra_requires["torch"] += extra_requires["ml"]
+        extra_requires["torch"] += [
+            line.strip()
+            for line in f.readlines()
+            if line and not line.startswith("-")
+        ]
+        extra_requires["all"] += extra_requires["torch"]
+
+# Dedupe Extras w/ All
+extra_requires["all"] = list(set(extra_requires["all"]))
 
 entry_points = {
     "console_scripts": ["open3d = @PYPI_PACKAGE_NAME@.tools.cli:main",]
@@ -160,6 +195,7 @@ setup_args = dict(
     python_requires=">=3.6",
     include_package_data=True,
     install_requires=install_requires,
+    extras_require=extra_requires,
     packages=find_packages(),
     entry_points=entry_points,
     zip_safe=False,

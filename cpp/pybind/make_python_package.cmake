@@ -113,6 +113,7 @@ if (BUILD_JUPYTER_EXTENSION)
     # These will be installed when `pip install open3d`.
     execute_process(COMMAND ${CMAKE_COMMAND} -E cat
         ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements_gui.txt
         ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter_install.txt
         OUTPUT_VARIABLE ALL_REQUIREMENTS
     )

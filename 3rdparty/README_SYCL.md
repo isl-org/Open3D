@@ -98,7 +98,7 @@ Open3D is designed to make use of the SYCL GPU devices.
 
 ## List of oneAPI Python packages
 
-To make `pip install open3d` works out-of-the box on SYCL-enabled platforms,
+To make `pip install open3d[gui,ml]` works out-of-the box on SYCL-enabled platforms,
 we can utilize runtime libraries released via PyPI. This feature needs to be
 implemented.
 

@@ -109,7 +109,14 @@ def _insert_pybind_names(skip_names=()):
     sys.modules.update(submodules)
 
 
-import open3d.visualization
+try:
+    import open3d.visualization
+except ModuleNotFoundError:
+    warnings.warn(
+        "Open3D Python GUI Libraries not found. "
+        "Please make sure to install open3d[gui] if you wish to use "
+        "the open3d.visualization module.", RuntimeWarning)
+
 _insert_pybind_names(skip_names=("ml",))
 
 __version__ = "@PROJECT_VERSION@"
@@ -142,10 +149,16 @@ if _build_config["BUILD_JUPYTER_EXTENSION"]:
 if "OPEN3D_ML_ROOT" in os.environ:
     print("Using external Open3D-ML in {}".format(os.environ["OPEN3D_ML_ROOT"]))
     sys.path.append(os.environ["OPEN3D_ML_ROOT"])
-import open3d.ml
 
-# Finally insert pybind names corresponding to ml
-_insert_pybind_names()
+try:
+    import open3d.ml
+    # Finally insert pybind names corresponding to ml
+    _insert_pybind_names()
+except ModuleNotFoundError:
+    warnings.warn(
+        "Open3D Python ML Libraries not found. "
+        "Please make sure to install open3d[ml] if you wish to use "
+        "the open3d.ml module.", RuntimeWarning)
 
 
 def _jupyter_labextension_paths():
