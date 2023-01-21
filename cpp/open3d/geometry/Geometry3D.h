@@ -74,6 +74,8 @@ public:
     ///               coordinates.
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust = false) const = 0;
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const = 0;
     /// \brief Apply transformation (4x4 matrix) to the geometry coordinates.
     virtual Geometry3D& Transform(const Eigen::Matrix4d& transformation) = 0;
 

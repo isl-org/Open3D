@@ -88,6 +88,8 @@ public:
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust = false) const override;
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
     virtual MeshBase &Transform(const Eigen::Matrix4d &transformation) override;
     virtual MeshBase &Translate(const Eigen::Vector3d &translation,
                                 bool relative = true) override;

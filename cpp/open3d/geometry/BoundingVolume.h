@@ -76,6 +76,8 @@ public:
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust) const override;
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust) const override;
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
@@ -133,6 +135,9 @@ public:
     static OrientedBoundingBox CreateFromPoints(
             const std::vector<Eigen::Vector3d>& points, bool robust = false);
 
+    static OrientedBoundingBox CreateFromPointsMinimal(
+            const std::vector<Eigen::Vector3d>& points, bool robust = false);
+
 public:
     /// The center point of the bounding box.
     Eigen::Vector3d center_;
@@ -182,6 +187,8 @@ public:
     virtual Eigen::Vector3d GetCenter() const override;
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     virtual OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override;
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
     virtual AxisAlignedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;

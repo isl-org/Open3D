@@ -121,6 +121,9 @@ Returns:
      bounding box is oriented such that the axes are ordered with respect to
      the principal components.
 )doc")
+            .def("get_minimal_oriented_bounding_box",
+                 &Geometry3D::GetMinimalOrientedBoundingBox, "robust"_a = false,
+                 "Returns the minimal oriented bounding box of the geometry.")
             .def("transform", &Geometry3D::Transform,
                  "Apply transformation (4x4 matrix) to the geometry "
                  "coordinates.")

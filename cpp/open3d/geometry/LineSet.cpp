@@ -60,6 +60,10 @@ OrientedBoundingBox LineSet::GetOrientedBoundingBox(bool robust) const {
     return OrientedBoundingBox::CreateFromPoints(points_, robust);
 }
 
+OrientedBoundingBox LineSet::GetMinimalOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPointsMinimal(points_, robust);
+}
+
 LineSet &LineSet::Transform(const Eigen::Matrix4d &transformation) {
     TransformPoints(transformation, points_);
     return *this;

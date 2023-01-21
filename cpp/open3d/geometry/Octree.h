@@ -300,6 +300,8 @@ public:
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     OrientedBoundingBox GetOrientedBoundingBox(
             bool robust = false) const override;
+    OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
     Octree& Transform(const Eigen::Matrix4d& transformation) override;
     Octree& Translate(const Eigen::Vector3d& translation,
                       bool relative = true) override;

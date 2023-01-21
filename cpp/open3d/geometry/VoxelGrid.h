@@ -93,6 +93,8 @@ public:
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
     OrientedBoundingBox GetOrientedBoundingBox(
             bool robust = false) const override;
+    OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
     VoxelGrid &Translate(const Eigen::Vector3d &translation,
                          bool relative = true) override;

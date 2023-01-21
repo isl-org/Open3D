@@ -67,6 +67,10 @@ OrientedBoundingBox OrientedBoundingBox::GetOrientedBoundingBox(bool) const {
     return *this;
 }
 
+OrientedBoundingBox OrientedBoundingBox::GetMinimalOrientedBoundingBox(bool) const {
+    return *this;
+}
+
 OrientedBoundingBox& OrientedBoundingBox::Transform(
         const Eigen::Matrix4d& transformation) {
     utility::LogError(
@@ -201,6 +205,62 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
     return obox;
 }
 
+OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
+        const std::vector<Eigen::Vector3d>& points, bool robust) {
+    PointCloud hull_pcd;
+    std::vector<size_t> hull_point_indices;
+    {
+        std::shared_ptr<TriangleMesh> mesh;
+        std::tie(mesh, hull_point_indices) =
+                Qhull::ComputeConvexHull(points, robust);
+        hull_pcd.points_ = mesh->vertices_;
+    }
+
+    Eigen::Vector3d mean;
+    Eigen::Matrix3d cov;
+    std::tie(mean, cov) = hull_pcd.ComputeMeanAndCovariance();
+
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es(cov);
+    Eigen::Vector3d evals = es.eigenvalues();
+    Eigen::Matrix3d R = es.eigenvectors();
+
+    if (evals(1) > evals(0)) {
+        std::swap(evals(1), evals(0));
+        Eigen::Vector3d tmp = R.col(1);
+        R.col(1) = R.col(0);
+        R.col(0) = tmp;
+    }
+    if (evals(2) > evals(0)) {
+        std::swap(evals(2), evals(0));
+        Eigen::Vector3d tmp = R.col(2);
+        R.col(2) = R.col(0);
+        R.col(0) = tmp;
+    }
+    if (evals(2) > evals(1)) {
+        std::swap(evals(2), evals(1));
+        Eigen::Vector3d tmp = R.col(2);
+        R.col(2) = R.col(1);
+        R.col(1) = tmp;
+    }
+    R.col(0) /= R.col(0).norm();
+    R.col(1) /= R.col(1).norm();
+    R.col(2) = R.col(0).cross(R.col(1));
+
+    for (size_t i = 0; i < hull_point_indices.size(); ++i) {
+        hull_pcd.points_[i] =
+                R.transpose() * (points[hull_point_indices[i]] - mean);
+    }
+
+    const auto aabox = hull_pcd.GetAxisAlignedBoundingBox();
+
+    OrientedBoundingBox obox;
+    obox.center_ = R * aabox.GetCenter() + mean;
+    obox.R_ = R;
+    obox.extent_ = aabox.GetExtent();
+
+    return obox;
+}
+
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Clear() {
     min_bound_.setZero();
     max_bound_.setZero();
@@ -227,6 +287,11 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::GetAxisAlignedBoundingBox()
 }
 
 OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox(
+        bool robust) const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
+}
+
+OrientedBoundingBox AxisAlignedBoundingBox::GetMinimalOrientedBoundingBox(
         bool robust) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
 }
