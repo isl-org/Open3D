@@ -34,6 +34,8 @@
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
 
+#include<iostream>
+
 namespace open3d {
 namespace geometry {
 
@@ -151,6 +153,7 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
         const std::vector<Eigen::Vector3d>& points, bool robust) {
+    std::cout << "OrientedBoundingBox::CreateFromPoints()" << std::endl;
     PointCloud hull_pcd;
     std::vector<size_t> hull_point_indices;
     {
@@ -207,58 +210,63 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
         const std::vector<Eigen::Vector3d>& points, bool robust) {
+    std::cout << "OrientedBoundingBox::CreateFromPointsMinimal()" << std::endl;
     PointCloud hull_pcd;
     std::vector<size_t> hull_point_indices;
-    {
-        std::shared_ptr<TriangleMesh> mesh;
-        std::tie(mesh, hull_point_indices) =
-                Qhull::ComputeConvexHull(points, robust);
+    std::shared_ptr<TriangleMesh> mesh;
+    std::tie(mesh, hull_point_indices) =
+            Qhull::ComputeConvexHull(points, robust);
+    auto triangles = mesh->triangles_;
+    double min_vol = -1;
+    OrientedBoundingBox min_box;
+    for (auto &triangle : triangles) {
         hull_pcd.points_ = mesh->vertices_;
+        Eigen::Vector3d a = mesh->vertices_[triangle(0)];
+        Eigen::Vector3d b = mesh->vertices_[triangle(1)];
+        Eigen::Vector3d c = mesh->vertices_[triangle(2)];
+        Eigen::Vector3d u = b - a;
+        Eigen::Vector3d v = c - a;
+        Eigen::Vector3d w = u.cross(v);
+        v = w.cross(u);
+        u = u / u.norm();
+        v = v / v.norm();
+        w = u.cross(v);
+        Eigen::Matrix4d matrix_from = Eigen::Matrix4d::Identity();
+        Eigen::Matrix4d matrix_to = Eigen::Matrix4d::Identity();
+        matrix_to.col(0) = Eigen::Vector4d{u[0], u[1], u[2], 0};
+        matrix_to.col(1) = Eigen::Vector4d{v[0], v[1], v[2], 0};
+        matrix_to.col(2) = Eigen::Vector4d{w[0], w[1], w[2], 0};
+        matrix_to.col(3) = Eigen::Vector4d{a[0], a[1], a[2], 1};
+        Eigen::Matrix4d matrix_trans = matrix_to.inverse() * matrix_from;
+        hull_pcd.Transform(matrix_trans);
+        const auto aabox = hull_pcd.GetAxisAlignedBoundingBox();
+        double volume = aabox.Volume();
+        std::cout << "aabox.Volume() = " << volume << std::endl;
+        if (min_vol==-1. || volume < min_vol) {
+            min_vol = volume;
+            min_box.center_ = aabox.GetCenter();
+            min_box.extent_ = aabox.GetExtent();
+            Eigen::Matrix3d matrix_rot;
+            Eigen::Matrix4d m = matrix_trans.inverse();
+            std::cout << "m = " << m << std::endl;
+            matrix_rot.col(0) = m.col(0).head(3);
+            matrix_rot.col(1) = m.col(1).head(3);
+            matrix_rot.col(2) = m.col(2).head(3);
+            Eigen::Vector3d vec_trans = m.col(3).head(3);
+            min_box.Rotate(matrix_rot, Eigen::Vector3d{0,0,0});
+            min_box.Translate(vec_trans);
+            //min_box.Transform(matrix_trans.inverse());
+        }
+//        Eigen::Vector3d v01 = vertices_[triangle(1)] - vertices_[triangle(0)];
+//        Eigen::Vector3d v02 = vertices_[triangle(2)] - vertices_[triangle(0)];
     }
-
-    Eigen::Vector3d mean;
-    Eigen::Matrix3d cov;
-    std::tie(mean, cov) = hull_pcd.ComputeMeanAndCovariance();
-
-    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> es(cov);
-    Eigen::Vector3d evals = es.eigenvalues();
-    Eigen::Matrix3d R = es.eigenvectors();
-
-    if (evals(1) > evals(0)) {
-        std::swap(evals(1), evals(0));
-        Eigen::Vector3d tmp = R.col(1);
-        R.col(1) = R.col(0);
-        R.col(0) = tmp;
-    }
-    if (evals(2) > evals(0)) {
-        std::swap(evals(2), evals(0));
-        Eigen::Vector3d tmp = R.col(2);
-        R.col(2) = R.col(0);
-        R.col(0) = tmp;
-    }
-    if (evals(2) > evals(1)) {
-        std::swap(evals(2), evals(1));
-        Eigen::Vector3d tmp = R.col(2);
-        R.col(2) = R.col(1);
-        R.col(1) = tmp;
-    }
-    R.col(0) /= R.col(0).norm();
-    R.col(1) /= R.col(1).norm();
-    R.col(2) = R.col(0).cross(R.col(1));
-
-    for (size_t i = 0; i < hull_point_indices.size(); ++i) {
-        hull_pcd.points_[i] =
-                R.transpose() * (points[hull_point_indices[i]] - mean);
-    }
-
-    const auto aabox = hull_pcd.GetAxisAlignedBoundingBox();
-
-    OrientedBoundingBox obox;
-    obox.center_ = R * aabox.GetCenter() + mean;
-    obox.R_ = R;
-    obox.extent_ = aabox.GetExtent();
-
-    return obox;
+    return min_box;
+    //std::cout << "mesh->vertices_ = " << mesh->vertices_ << std::endl;
+    //std::cout << "mesh->triangles_ = " << mesh->triangles_ << std::endl;
+    //std::cout << "mesh->ComputeTriangleNormals() = " << mesh->ComputeTriangleNormals() << std::endl;
+    //std::cout << "mesh->GetNonManifoldEdges(true) = " << mesh->GetNonManifoldEdges(true) << std::endl;
+    //std::cout << "mesh->GetTrianglePlane(0) = " << mesh->GetTrianglePlane(0) << std::endl;
+    //std::cout << "mesh->CreateCoordinateFrame() = " << mesh->CreateCoordinateFrame() << std::endl;
 }
 
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Clear() {
