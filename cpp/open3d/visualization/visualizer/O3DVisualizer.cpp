@@ -1065,8 +1065,8 @@ struct O3DVisualizer::Impl {
         for (size_t i = 0; i < objects_.size(); ++i) {
             if (objects_[i].name == name) {
                 group = objects_[i].group;
-                objects_.erase(objects_.begin() + i);
                 settings.object2itemid.erase(objects_[i].name);
+                objects_.erase(objects_.begin() + i);
                 break;
             }
         }
