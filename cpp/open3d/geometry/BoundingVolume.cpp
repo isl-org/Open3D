@@ -210,6 +210,7 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
 
 OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
         const std::vector<Eigen::Vector3d>& points, bool robust) {
+    std::cout << "OrientedBoundingBox::CreateFromPointsMinimal()" << std::endl;
     std::shared_ptr<TriangleMesh> mesh;
     std::tie(mesh, std::ignore) = Qhull::ComputeConvexHull(points, robust);
     double min_vol = -1;
@@ -235,6 +236,7 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
 
         const auto aabox = hull_pcd.GetAxisAlignedBoundingBox();
         double volume = aabox.Volume();
+        std::cout << "aabox.Volume() = " << volume << std::endl;
         if (min_vol==-1. || volume < min_vol) {
             min_vol = volume;
             min_box = aabox.GetOrientedBoundingBox();
