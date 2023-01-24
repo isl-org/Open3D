@@ -67,7 +67,8 @@ OrientedBoundingBox OrientedBoundingBox::GetOrientedBoundingBox(bool) const {
     return *this;
 }
 
-OrientedBoundingBox OrientedBoundingBox::GetMinimalOrientedBoundingBox(bool) const {
+OrientedBoundingBox OrientedBoundingBox::GetMinimalOrientedBoundingBox(
+        bool) const {
     return *this;
 }
 
@@ -212,7 +213,7 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
     double min_vol = -1;
     OrientedBoundingBox min_box;
     PointCloud hull_pcd;
-    for (auto &tri : mesh->triangles_) {
+    for (auto& tri : mesh->triangles_) {
         hull_pcd.points_ = mesh->vertices_;
         Eigen::Vector3d a = mesh->vertices_[tri(0)];
         Eigen::Vector3d b = mesh->vertices_[tri(1)];
@@ -225,14 +226,12 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
         v = v / v.norm();
         w = w / w.norm();
         Eigen::Matrix3d m_rot;
-        m_rot << u[0], v[0], w[0],
-                 u[1], v[1], w[1],
-                 u[2], v[2], w[2];
+        m_rot << u[0], v[0], w[0], u[1], v[1], w[1], u[2], v[2], w[2];
         hull_pcd.Rotate(m_rot.inverse(), a);
 
         const auto aabox = hull_pcd.GetAxisAlignedBoundingBox();
         double volume = aabox.Volume();
-        if (min_vol==-1. || volume < min_vol) {
+        if (min_vol == -1. || volume < min_vol) {
             min_vol = volume;
             min_box = aabox.GetOrientedBoundingBox();
             min_box.Rotate(m_rot, a);

@@ -279,7 +279,8 @@ TEST(PointCloud, GetMinimalOrientedBoundingBox) {
                                 {0.744, 0.182, 0.052},
                                 {0.019, 0.525, 0.699},
                                 {0.722, 0.134, 0.668}});
-    geometry::OrientedBoundingBox mobb = pcd.GetMinimalOrientedBoundingBox();;
+    geometry::OrientedBoundingBox mobb = pcd.GetMinimalOrientedBoundingBox();
+    ;
     obb = pcd.GetOrientedBoundingBox();
     geometry::AxisAlignedBoundingBox aabb = pcd.GetAxisAlignedBoundingBox();
     EXPECT_GT(obb.Volume(), mobb.Volume());
