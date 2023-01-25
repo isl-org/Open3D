@@ -73,11 +73,19 @@ public:
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
     virtual Eigen::Vector3d GetCenter() const override;
+
+    /// Creates an axis-aligned bounding box around the
+    /// points (corners) of the object.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+
+    /// Returns the object itself
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust) const override;
+
+    /// Returns the object itself
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust) const override;
+
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
@@ -195,9 +203,17 @@ public:
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
     virtual Eigen::Vector3d GetCenter() const override;
+
+    /// Returns the object itself
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+
+    /// Returns an oriented bounding box with the same dimensions
+    /// and orientation as the object
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust = false) const override;
+
+    /// Returns an oriented bounding box with the same dimensions
+    /// and orientation as the object
     virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
     virtual AxisAlignedBoundingBox& Transform(
