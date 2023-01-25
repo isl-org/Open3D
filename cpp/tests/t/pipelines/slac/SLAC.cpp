@@ -213,7 +213,7 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
     int block_count = 40000;
     float voxel_size = 0.05;
     float depth_scale = 1000.f;
-    float max_depth = 3.f;
+    float depth_max = 3.f;
     t::geometry::VoxelBlockGrid voxel_grid(
             {"tsdf", "weight", "color"},
             {core::Dtype::Float32, core::Dtype::Float32, core::Dtype::Float32},
@@ -265,19 +265,19 @@ TEST_P(SLACPermuteDevices, DISABLED_SLACIntegrate) {
 
             t::geometry::RGBDImage rgbd_projected =
                     ctr_grid.Deform(rgbd, intrinsic_t, extrinsic_local_t,
-                                    depth_scale, max_depth);
+                                    depth_scale, depth_max);
             core::Tensor frustum_block_coords =
                     voxel_grid.GetUniqueBlockCoordinates(
                             rgbd.depth_, intrinsic_t, extrinsic_t, depth_scale,
-                            max_depth);
+                            depth_max);
             voxel_grid.Integrate(frustum_block_coords, rgbd_projected.depth_,
                                  rgbd_projected.color_, intrinsic_t,
-                                 extrinsic_t, depth_scale, max_depth);
+                                 extrinsic_t, depth_scale, depth_max);
             timer.Stop();
 
             ++k;
             utility::LogDebug("{}: Deformation + Integration takes {}", k,
-                              timer.GetDuration());
+                              timer.GetDurationInMillisecond());
         }
     }
 

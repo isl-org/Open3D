@@ -79,6 +79,13 @@ void ComputeOdometryResultHybrid(const core::Tensor &source_depth,
                                  const float depth_huber_delta,
                                  const float intensity_huber_delta);
 
+void ComputeOdometryInformationMatrix(const core::Tensor &source_vertex_map,
+                                      const core::Tensor &target_vertex_map,
+                                      const core::Tensor &intrinsic,
+                                      const core::Tensor &source_to_target,
+                                      const float square_dist_thr,
+                                      core::Tensor &information);
+
 }  // namespace odometry
 }  // namespace kernel
 }  // namespace pipelines

@@ -32,6 +32,7 @@
 
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 
 namespace open3d {
@@ -78,8 +79,9 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     X = B.T().Clone();
     void *B_data = X.GetDataPtr();
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         Tensor ipiv = Tensor::Empty({n}, core::Int32, device);
         void *ipiv_data = ipiv.GetDataPtr();
 

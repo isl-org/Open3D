@@ -371,6 +371,18 @@ Tensor& Tensor::operator=(Tensor&& other) && {
     return *this;
 }
 
+Tensor Tensor::ReinterpretCast(const core::Dtype& dtype) const {
+    if (dtype_.ByteSize() != dtype.ByteSize()) {
+        utility::LogError(
+                "Cannot reinterpret cast between data-types of different "
+                "sizes. Expected data-type of {} bytes ({}), but got "
+                "data-type {} of {} bytes.",
+                dtype_.ByteSize(), dtype_.ToString(), dtype.ToString(),
+                dtype.ByteSize());
+    }
+    return Tensor(shape_, strides_, data_ptr_, dtype, blob_);
+}
+
 Tensor Tensor::Empty(const SizeVector& shape,
                      Dtype dtype,
                      const Device& device) {
@@ -754,7 +766,7 @@ Tensor Tensor::Contiguous() const {
 std::string Tensor::ToString(bool with_suffix,
                              const std::string& indent) const {
     std::ostringstream rc;
-    if (GetDevice().GetType() == Device::DeviceType::CUDA || !IsContiguous()) {
+    if (IsCUDA() || !IsContiguous()) {
         Tensor host_contiguous_tensor = Contiguous().To(Device("CPU:0"));
         rc << host_contiguous_tensor.ToString(false, "");
     } else {
@@ -890,7 +902,7 @@ Tensor Tensor::IndexGet(const std::vector<Tensor>& index_tensors) const {
 
         if (index_tensor.IsNonZero()) {
             // E.g. np.array(5)[np.array(True)].
-            return *this;
+            return Clone();
         } else {
             // E.g. np.array(5)[np.array(False)].
             // The output tensor becomes 1D of 0 element.
@@ -1037,7 +1049,8 @@ Tensor Tensor::Add(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Add(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Add);
+
     return dst_tensor;
 }
 
@@ -1054,7 +1067,8 @@ Tensor Tensor::Add_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Add(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Add);
+
     return *this;
 }
 
@@ -1071,7 +1085,8 @@ Tensor Tensor::Sub(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Sub(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Sub);
+
     return dst_tensor;
 }
 
@@ -1088,7 +1103,8 @@ Tensor Tensor::Sub_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Sub(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Sub);
+
     return *this;
 }
 
@@ -1105,7 +1121,8 @@ Tensor Tensor::Mul(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Mul(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Mul);
+
     return dst_tensor;
 }
 
@@ -1122,7 +1139,8 @@ Tensor Tensor::Mul_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Mul(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Mul);
+
     return *this;
 }
 
@@ -1139,7 +1157,8 @@ Tensor Tensor::Div(const Tensor& value) const {
 
     Tensor dst_tensor(shape_util::BroadcastedShape(shape_, value.shape_),
                       dtype_, GetDevice());
-    kernel::Div(*this, value, dst_tensor);
+    kernel::BinaryEW(*this, value, dst_tensor, kernel::BinaryEWOpCode::Div);
+
     return dst_tensor;
 }
 
@@ -1156,7 +1175,7 @@ Tensor Tensor::Div_(const Tensor& value) {
     AssertTensorDevice(value, GetDevice());
     AssertTensorDtype(value, GetDtype());
 
-    kernel::Div(*this, value, *this);
+    kernel::BinaryEW(*this, value, *this, kernel::BinaryEWOpCode::Div);
     return *this;
 }
 
@@ -1697,18 +1716,42 @@ bool Tensor::IsNonZero() const {
     return rc;
 }
 
-bool Tensor::All() const {
-    Tensor dst({}, dtype_, GetDevice());
-    kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
-                      kernel::ReductionOpCode::All);
-    return dst.Item<bool>();
+Tensor Tensor::All(const utility::optional<SizeVector>& dims,
+                   bool keepdim) const {
+    AssertTensorDtype(*this, core::Bool);
+
+    Tensor dst;
+    if (dims.has_value()) {
+        dst = Tensor(shape_util::ReductionShape(shape_, dims.value(), keepdim),
+                     dtype_, GetDevice());
+        kernel::Reduction(*this, dst, dims.value(), keepdim,
+                          kernel::ReductionOpCode::All);
+    } else {
+        dst = Tensor({}, dtype_, GetDevice());
+        kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
+                          kernel::ReductionOpCode::All);
+    }
+
+    return dst;
 }
 
-bool Tensor::Any() const {
-    Tensor dst({}, dtype_, GetDevice());
-    kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
-                      kernel::ReductionOpCode::Any);
-    return dst.Item<bool>();
+Tensor Tensor::Any(const utility::optional<SizeVector>& dims,
+                   bool keepdim) const {
+    AssertTensorDtype(*this, core::Bool);
+
+    Tensor dst;
+    if (dims.has_value()) {
+        dst = Tensor(shape_util::ReductionShape(shape_, dims.value(), keepdim),
+                     dtype_, GetDevice());
+        kernel::Reduction(*this, dst, dims.value(), keepdim,
+                          kernel::ReductionOpCode::Any);
+    } else {
+        dst = Tensor({}, dtype_, GetDevice());
+        kernel::Reduction(*this, dst, shape_util::Iota(NumDims()), false,
+                          kernel::ReductionOpCode::Any);
+    }
+
+    return dst;
 }
 
 DLManagedTensor* Tensor::ToDLPack() const {
@@ -1774,12 +1817,12 @@ bool Tensor::AllEqual(const Tensor& other) const {
     if (shape_ != other.shape_) {
         return false;
     }
-    return (*this == other).All();
+    return (*this == other).All().Item<bool>();
 }
 
 bool Tensor::AllClose(const Tensor& other, double rtol, double atol) const {
     // TODO: support nan;
-    return IsClose(other, rtol, atol).All();
+    return IsClose(other, rtol, atol).All().Item<bool>();
 }
 
 Tensor Tensor::IsClose(const Tensor& other, double rtol, double atol) const {

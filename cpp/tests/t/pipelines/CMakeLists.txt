@@ -7,6 +7,7 @@ target_sources(tests PRIVATE
 )
 
 target_sources(tests PRIVATE
+    registration/Feature.cpp
     registration/Registration.cpp
     registration/TransformationEstimation.cpp
 )

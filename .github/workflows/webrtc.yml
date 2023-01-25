@@ -30,10 +30,10 @@ jobs:
         # macOS 10.15 build does not work on macOS 10.14 due to this issue:
         # https://openradar.appspot.com/FB7647406
         # macOS 10.14 build works on both 10.14 and 10.15
-        os: [ubuntu-18.04, macos-10.15]
+        os: [ubuntu-18.04, macos-12]
         GLIBCXX_USE_CXX11_ABI: [0, 1]
         exclude:
-          - os: macos-10.15
+          - os: macos-12
             GLIBCXX_USE_CXX11_ABI: 0
     env:
       GLIBCXX_USE_CXX11_ABI: ${{ matrix.GLIBCXX_USE_CXX11_ABI }}
@@ -89,7 +89,7 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: '3.8'
 
       - name: Disk space
         run: |

@@ -542,7 +542,7 @@ protected:
                     geometry::AxisAlignedBoundingBox bbox(
                             Eigen::Vector3d(-5, -5, -5),
                             Eigen::Vector3d(5, 5, 5));
-                    auto center = bbox.GetCenter().cast<float>();
+                    Eigen::Vector3f center = bbox.GetCenter().cast<float>();
                     this->widget3d_->SetupCamera(60, bbox, center);
                     this->widget3d_->LookAt(center,
                                             center - Eigen::Vector3f{0, 1, 3},
@@ -645,7 +645,7 @@ protected:
 
             if (idx % fps_interval_len == 0) {
                 timer.Stop();
-                time_interval = timer.GetDuration();
+                time_interval = timer.GetDurationInMillisecond();
                 timer.Start();
             }
             std::string fps_str =

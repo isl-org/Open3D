@@ -143,8 +143,7 @@ static void AssertInputMultiScaleICP(
     core::AssertTensorDtype(target.GetPointPositions(), dtype);
     core::AssertTensorDevice(target.GetPointPositions(), device);
 
-    if (dtype == core::Float64 &&
-        device.GetType() == core::Device::DeviceType::CUDA) {
+    if (dtype == core::Float64 && device.IsCUDA()) {
         utility::LogDebug(
                 "Use Float32 pointcloud for best performance on CUDA device.");
     }
@@ -329,6 +328,8 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
                     criteria.relative_rmse_) {
             break;
         }
+        prev_fitness = result.fitness_;
+        prev_inlier_rmse = result.inlier_rmse_;
     }
     return std::make_tuple(result, prev_iteration_count + iteration_count);
 }

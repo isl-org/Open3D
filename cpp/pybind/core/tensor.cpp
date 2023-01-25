@@ -193,6 +193,8 @@
             },                                                                 \
             "dim"_a = py::none(), "keepdim"_a = false);
 
+// TODO (rishabh): add this behavior to the cpp implementation. Refer to the
+// Tensor::Any and Tensor::All ops.
 #define BIND_REDUCTION_OP_NO_KEEPDIM(py_name, cpp_name)              \
     tensor.def(                                                      \
             #py_name,                                                \
@@ -354,6 +356,36 @@ void pybind_core_tensor(py::module& m) {
     BindTensorFullCreation<bool>(m, tensor);
     docstring::ClassMethodDocInject(m, "Tensor", "full", argument_docs);
 
+    // Pickling support.
+    // The tensor will be on the same device after deserialization.
+    // Non contiguous tensors will be converted to contiguous tensors after
+    // deserialization.
+    tensor.def(py::pickle(
+            [](const Tensor& t) {
+                // __getstate__
+                return py::make_tuple(t.GetDevice(),
+                                      TensorToPyArray(t.To(Device("CPU:0"))));
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 2) {
+                    utility::LogError(
+                            "Cannot unpickle Tensor! Expecting a tuple of size "
+                            "2.");
+                }
+                const Device& device = t[0].cast<Device>();
+                if (!device.IsAvailable()) {
+                    utility::LogWarning(
+                            "Device {} is not available, tensor will be "
+                            "created on CPU.",
+                            device.ToString());
+                    return PyArrayToTensor(t[1].cast<py::array>(), true);
+                } else {
+                    return PyArrayToTensor(t[1].cast<py::array>(), true)
+                            .To(device);
+                }
+            }));
+
     tensor.def_static(
             "eye",
             [](int64_t n, utility::optional<Dtype> dtype,
@@ -434,9 +466,9 @@ void pybind_core_tensor(py::module& m) {
                 return tensor.Append(values);
             },
             R"(Appends the `values` tensor, along the given axis and returns
-a copy of the original tensor. Both the tensors must have same data-type 
+a copy of the original tensor. Both the tensors must have same data-type
 device, and number of dimensions. All dimensions must be the same, except the
-dimension along the axis the tensors are to be appended. 
+dimension along the axis the tensors are to be appended.
 
 This is the similar to NumPy's semantics:
 - https://numpy.org/doc/stable/reference/generated/numpy.append.html
@@ -454,7 +486,7 @@ Example:
      [2 3],
      [4 5]]
     Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
- 
+
     >>> a.append(b)
     [0 1 2 3 4 5]
     Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70])",
@@ -801,11 +833,14 @@ Ref:
         return tensor.GetStrides();
     });
     tensor.def_property_readonly("dtype", &Tensor::GetDtype);
-    tensor.def_property_readonly("device", &Tensor::GetDevice);
     tensor.def_property_readonly("blob", &Tensor::GetBlob);
     tensor.def_property_readonly("ndim", &Tensor::NumDims);
     tensor.def("num_elements", &Tensor::NumElements);
     tensor.def("__bool__", &Tensor::IsNonZero);  // Python 3.X.
+
+    tensor.def_property_readonly("device", &Tensor::GetDevice);
+    tensor.def_property_readonly("is_cpu", &Tensor::IsCPU);
+    tensor.def_property_readonly("is_cuda", &Tensor::IsCUDA);
 
     // Length and iterator.
     tensor.def("__len__", &Tensor::GetLength);
@@ -825,6 +860,7 @@ Ref:
     tensor.def("cos_", &Tensor::Cos_);
     tensor.def("neg", &Tensor::Neg);
     tensor.def("neg_", &Tensor::Neg_);
+    tensor.def("__neg__", &Tensor::Neg);
     tensor.def("exp", &Tensor::Exp);
     tensor.def("exp_", &Tensor::Exp_);
     tensor.def("abs", &Tensor::Abs);
@@ -864,15 +900,15 @@ Ref:
               "int64 Tensors, each containing the indices of the non-zero "
               "elements in each dimension."}});
     tensor.def(
-            "all", &Tensor::All,
+            "all", &Tensor::All, py::call_guard<py::gil_scoped_release>(),
+            py::arg("dim") = py::none(), py::arg("keepdim") = false,
             "Returns true if all elements in the tensor are true. Only works "
-            "for boolean tensors. This function does not take reduction "
-            "dimensions, and the reduction is applied to all dimensions.");
+            "for boolean tensors.");
     tensor.def(
-            "any", &Tensor::Any,
+            "any", &Tensor::Any, py::call_guard<py::gil_scoped_release>(),
+            py::arg("dim") = py::none(), py::arg("keepdim") = false,
             "Returns true if any elements in the tensor are true. Only works "
-            "for boolean tensors. This function does not take reduction "
-            "dimensions, and the reduction is applied to all dimensions.");
+            "for boolean tensors.");
 
     // Reduction ops.
     BIND_REDUCTION_OP(sum, Sum);

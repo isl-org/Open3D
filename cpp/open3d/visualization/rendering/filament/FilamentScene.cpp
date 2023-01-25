@@ -581,8 +581,7 @@ void FilamentScene::UpdateGeometry(const std::string& object_name,
         }
 
         bool geometry_update_needed = n_vertices != vbuf->getVertexCount();
-        bool pcloud_is_gpu =
-                points.GetDevice().GetType() == core::Device::DeviceType::CUDA;
+        bool pcloud_is_gpu = points.IsCUDA();
         t::geometry::PointCloud cpu_pcloud;
         if (pcloud_is_gpu) {
             cpu_pcloud = point_cloud.To(core::Device("CPU:0"));
@@ -979,6 +978,7 @@ void FilamentScene::UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi) {
 void FilamentScene::UpdateLineShader(GeometryMaterialInstance& geom_mi) {
     renderer_.ModifyMaterial(geom_mi.mat_instance)
             .SetColor("baseColor", geom_mi.properties.base_color, true)
+            .SetColor("emissiveColor", geom_mi.properties.emissive_color, false)
             .SetParameter("lineWidth", geom_mi.properties.line_width)
             .Finish();
 }

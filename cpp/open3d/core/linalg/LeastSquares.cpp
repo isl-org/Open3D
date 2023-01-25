@@ -28,6 +28,8 @@
 
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
+
 namespace open3d {
 namespace core {
 
@@ -74,8 +76,9 @@ void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
     void *A_data = A_copy.GetDataPtr();
     void *B_data = B_copy.GetDataPtr();
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         LeastSquaresCUDA(A_data, B_data, m, n, k, dtype, device);
 #else
         utility::LogError("Unimplemented device.");

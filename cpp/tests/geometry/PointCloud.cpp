@@ -975,7 +975,7 @@ TEST(PointCloud, OrientNormalsToAlignWithDirection) {
     pcd.points_ = std::vector<Eigen::Vector3d>{{10, 10, 10}};
     pcd.normals_ = std::vector<Eigen::Vector3d>{{0, 0, 0}};
     pcd.OrientNormalsToAlignWithDirection(Eigen::Vector3d{0, 0, -1});
-    pcd.normals_ = std::vector<Eigen::Vector3d>{{0, 0, -1}};
+    ExpectEQ(pcd.normals_, std::vector<Eigen::Vector3d>{{0, 0, -1}});
 }
 
 TEST(PointCloud, OrientNormalsTowardsCameraLocation) {
@@ -1064,6 +1064,29 @@ TEST(PointCloud, ComputePointCloudToPointCloudDistance) {
     pc0.ComputePointCloudDistance(pc1);
     ExpectEQ(pc0.ComputePointCloudDistance(pc1),
              std::vector<double>({1, 2, 3}));
+}
+
+TEST(PointCloud, RemoveDuplicatedPoints) {
+    geometry::PointCloud pc({{0, 0, 0}, {1, 3, 0}, {1, 3, 0}, {2, 2, 0}});
+    std::vector<Eigen::Vector3d> normals = {{1.0, 2.0, 3.0},
+                                            {4.0, 5.0, 6.0},
+                                            {7.0, 8.0, 9.0},
+                                            {10.0, 11.0, 12.0}};
+    std::vector<Eigen::Vector3d> colors = {
+            {0.5, 0.5, 0.5}, {0.6, 0.6, 0.6}, {0.7, 0.7, 0.7}, {0.8, 0.8, 0.8}};
+    pc.normals_ = normals;
+    pc.colors_ = colors;
+
+    std::vector<Eigen::Vector3d> ref_points = {{0, 0, 0}, {1, 3, 0}, {2, 2, 0}};
+    std::vector<Eigen::Vector3d> ref_normals = {
+            {1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}, {10.0, 11.0, 12.0}};
+    std::vector<Eigen::Vector3d> ref_colors = {
+            {0.5, 0.5, 0.5}, {0.6, 0.6, 0.6}, {0.8, 0.8, 0.8}};
+
+    pc.RemoveDuplicatedPoints();
+    ExpectEQ(ref_points, pc.points_);
+    ExpectEQ(ref_normals, pc.normals_);
+    ExpectEQ(ref_colors, pc.colors_);
 }
 
 // TODO(Nacho): Add covariances unit tests
@@ -1245,8 +1268,6 @@ TEST(PointCloud, SegmentPlane) {
     Eigen::Vector4d plane_model;
     std::vector<size_t> inliers;
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 1000);
-
-    // TODO: seed the ransac
     ExpectEQ(plane_model, Eigen::Vector4d(-0.06, -0.10, 0.99, -1.06), 0.1);
 
     std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 10, 1000);

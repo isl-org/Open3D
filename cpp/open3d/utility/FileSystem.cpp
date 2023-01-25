@@ -245,6 +245,13 @@ bool DirectoryExists(const std::string &directory) {
     return fs::is_directory(directory);
 }
 
+bool DirectoryIsEmpty(const std::string &directory) {
+    if (!DirectoryExists(directory)) {
+        utility::LogError("Directory {} does not exist.", directory);
+    }
+    return fs::is_empty(directory);
+}
+
 bool MakeDirectory(const std::string &directory) {
 #ifdef WINDOWS
     return (_mkdir(directory.c_str()) == 0);
@@ -494,6 +501,31 @@ bool FReadToBuffer(const std::string &path,
 
     fclose(file);
     return true;
+}
+
+std::string JoinPath(const std::string &path_component1,
+                     const std::string &path_component2) {
+    fs::path path(path_component1);
+    return (path / path_component2).string();
+}
+
+std::string JoinPath(const std::vector<std::string> &path_components) {
+    fs::path path;
+    for (const auto &pc : path_components) {
+        path /= pc;
+    }
+    return path.string();
+}
+
+std::string AddIfExist(const std::string &path,
+                       const std::vector<std::string> &folder_names) {
+    for (const auto &folder_name : folder_names) {
+        const std::string folder_path = JoinPath(path, folder_name);
+        if (utility::filesystem::DirectoryExists(folder_path)) {
+            return folder_path;
+        }
+    }
+    return path;
 }
 
 CFile::~CFile() { Close(); }

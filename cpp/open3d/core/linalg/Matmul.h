@@ -41,7 +41,8 @@ void MatmulCUDA(void* A_data,
                 int64_t m,
                 int64_t k,
                 int64_t n,
-                Dtype dtype);
+                Dtype dtype,
+                const Device& device);
 #endif
 void MatmulCPU(void* A_data,
                void* B_data,

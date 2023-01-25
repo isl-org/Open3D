@@ -80,6 +80,13 @@ static NppStreamContext MakeNPPContext() {
 }
 
 void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
+    if (src_im.GetDevice() != dst_im.GetDevice()) {
+        utility::LogError(
+                "src_im and dst_im are not on the same device, got {} and {}.",
+                src_im.GetDevice().ToString(), dst_im.GetDevice().ToString());
+    }
+    core::CUDAScopedDevice scoped_device(src_im.GetDevice());
+
     NppiSize size_ROI = {static_cast<int>(dst_im.GetShape(1)),
                          static_cast<int>(dst_im.GetShape(0))};
 
@@ -109,6 +116,13 @@ void RGBToGray(const core::Tensor &src_im, core::Tensor &dst_im) {
 void Resize(const open3d::core::Tensor &src_im,
             open3d::core::Tensor &dst_im,
             t::geometry::Image::InterpType interp_type) {
+    if (src_im.GetDevice() != dst_im.GetDevice()) {
+        utility::LogError(
+                "src_im and dst_im are not on the same device, got {} and {}.",
+                src_im.GetDevice().ToString(), dst_im.GetDevice().ToString());
+    }
+    core::CUDAScopedDevice scoped_device(src_im.GetDevice());
+
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
@@ -180,6 +194,12 @@ void Resize(const open3d::core::Tensor &src_im,
 }
 
 void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
+    if (src_im.GetDevice() != dst_im.GetDevice()) {
+        utility::LogError(
+                "src_im and dst_im are not on the same device, got {} and {}.",
+                src_im.GetDevice().ToString(), dst_im.GetDevice().ToString());
+    }
+    core::CUDAScopedDevice scoped_device(src_im.GetDevice());
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
 
@@ -244,6 +264,13 @@ void Dilate(const core::Tensor &src_im, core::Tensor &dst_im, int kernel_size) {
 void Filter(const open3d::core::Tensor &src_im,
             open3d::core::Tensor &dst_im,
             const open3d::core::Tensor &kernel) {
+    if (src_im.GetDevice() != dst_im.GetDevice()) {
+        utility::LogError(
+                "src_im and dst_im are not on the same device, got {} and {}.",
+                src_im.GetDevice().ToString(), dst_im.GetDevice().ToString());
+    }
+    core::CUDAScopedDevice scoped_device(src_im.GetDevice());
+
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
@@ -312,6 +339,13 @@ void FilterBilateral(const core::Tensor &src_im,
                      int kernel_size,
                      float value_sigma,
                      float distance_sigma) {
+    if (src_im.GetDevice() != dst_im.GetDevice()) {
+        utility::LogError(
+                "src_im and dst_im are not on the same device, got {} and {}.",
+                src_im.GetDevice().ToString(), dst_im.GetDevice().ToString());
+    }
+    core::CUDAScopedDevice scoped_device(src_im.GetDevice());
+
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),
@@ -363,6 +397,13 @@ void FilterGaussian(const core::Tensor &src_im,
                     core::Tensor &dst_im,
                     int kernel_size,
                     float sigma) {
+    if (src_im.GetDevice() != dst_im.GetDevice()) {
+        utility::LogError(
+                "src_im and dst_im are not on the same device, got {} and {}.",
+                src_im.GetDevice().ToString(), dst_im.GetDevice().ToString());
+    }
+    core::CUDAScopedDevice scoped_device(src_im.GetDevice());
+
     // Generate separable kernel weights given the sigma value.
     core::Tensor dist =
             core::Tensor::Arange(static_cast<float>(-kernel_size / 2),
@@ -384,6 +425,16 @@ void FilterSobel(const core::Tensor &src_im,
                  core::Tensor &dst_im_dx,
                  core::Tensor &dst_im_dy,
                  int kernel_size) {
+    if (src_im.GetDevice() != dst_im_dx.GetDevice() ||
+        src_im.GetDevice() != dst_im_dy.GetDevice()) {
+        utility::LogError(
+                "src_im, dst_im_dx, and dst_im_dy are not on the same device, "
+                "got {}, {} and {}.",
+                src_im.GetDevice().ToString(), dst_im_dx.GetDevice().ToString(),
+                dst_im_dy.GetDevice().ToString());
+    }
+    core::CUDAScopedDevice scoped_device(src_im.GetDevice());
+
     // Supported device and datatype checking happens in calling code and will
     // result in an exception if there are errors.
     NppiSize src_size = {static_cast<int>(src_im.GetShape(1)),

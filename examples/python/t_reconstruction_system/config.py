@@ -86,6 +86,7 @@ class ConfigParser(configargparse.ArgParser):
         input_parser.add(
             '--depth_scale', type=float,
             help='Scale factor to convert raw input depth data to meters.')
+        input_parser.add('--fragment_size', type=int, help='Number of RGBD frames per fragment')
 
         odometry_parser = self.add_argument_group('odometry')
         odometry_parser.add(

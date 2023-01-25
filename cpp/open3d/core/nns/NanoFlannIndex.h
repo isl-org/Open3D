@@ -86,7 +86,7 @@ public:
     /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int32.
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
-    /// - counts: Tensor of shape {n,}, dtype Int32.
+    /// - counts: Tensor of shape {n,}, dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor &query_points,
             const Tensor &radii,
@@ -101,7 +101,7 @@ public:
     /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int32.
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
-    /// - counts: Tensor of shape {n}, dtype Int32.
+    /// - counts: Tensor of shape {n}, dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor &query_points,
             double radius,

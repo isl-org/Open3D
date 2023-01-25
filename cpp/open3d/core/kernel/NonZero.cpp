@@ -35,10 +35,9 @@ namespace core {
 namespace kernel {
 
 Tensor NonZero(const Tensor& src) {
-    Device::DeviceType device_type = src.GetDevice().GetType();
-    if (device_type == Device::DeviceType::CPU) {
+    if (src.IsCPU()) {
         return NonZeroCPU(src);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    } else if (src.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         return NonZeroCUDA(src);
 #else

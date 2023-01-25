@@ -58,8 +58,7 @@ core::Tensor CreateIntrisicTensor() {
 
 TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
     core::Device device = GetParam();
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {
+    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
         return;
     }
 
@@ -126,8 +125,7 @@ TEST_P(OdometryPermuteDevices, ComputeOdometryResultPointToPlane) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
     core::Device device = GetParam();
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {
+    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
         return;
     }
 
@@ -194,8 +192,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScalePointToPlane) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
     core::Device device = GetParam();
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {
+    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
         return;
     }
 
@@ -262,8 +259,7 @@ TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleIntensity) {
 
 TEST_P(OdometryPermuteDevices, RGBDOdometryMultiScaleHybrid) {
     core::Device device = GetParam();
-    if (!t::geometry::Image::HAVE_IPPICV &&
-        device.GetType() == core::Device::DeviceType::CPU) {
+    if (!t::geometry::Image::HAVE_IPPICV && device.IsCPU()) {
         return;
     }
 

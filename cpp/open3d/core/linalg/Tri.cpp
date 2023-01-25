@@ -26,6 +26,7 @@
 
 #include "open3d/core/linalg/Tri.h"
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/linalg/TriImpl.h"
 
@@ -54,8 +55,9 @@ void Triu(const Tensor& A, Tensor& output, const int diagonal) {
     CheckInput(A, diagonal);
     core::Device device = A.GetDevice();
     output = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         TriuCUDA(A.Contiguous(), output, diagonal);
 #else
         utility::LogError("Unimplemented device.");
@@ -69,8 +71,9 @@ void Tril(const Tensor& A, Tensor& output, const int diagonal) {
     CheckInput(A, diagonal);
     core::Device device = A.GetDevice();
     output = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         TrilCUDA(A.Contiguous(), output, diagonal);
 #else
         utility::LogError("Unimplemented device.");
@@ -85,8 +88,9 @@ void Triul(const Tensor& A, Tensor& upper, Tensor& lower, const int diagonal) {
     core::Device device = A.GetDevice();
     upper = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
     lower = core::Tensor::Zeros(A.GetShape(), A.GetDtype(), device);
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         TriulCUDA(A.Contiguous(), upper, lower, diagonal);
 #else
         utility::LogError("Unimplemented device.");
