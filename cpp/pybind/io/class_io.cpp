@@ -176,19 +176,62 @@ void pybind_class_io(py::module &m_io) {
                                  map_shared_argument_docstrings);
 
     m_io.def(
+            "read_point_cloud_from_bytes",
+            [](const py::bytes &bytes, const std::string &format,
+               bool remove_nan_points, bool remove_infinite_points,
+               bool print_progress) {
+                const char *dataptr = PYBIND11_BYTES_AS_STRING(bytes.ptr());
+                auto length = PYBIND11_BYTES_SIZE(bytes.ptr());
+                auto data = std::vector<char>(dataptr, dataptr + length);
+                py::gil_scoped_release release;
+                geometry::PointCloud pcd;
+                ReadPointCloud(data, pcd,
+                               {format, remove_nan_points,
+                                remove_infinite_points, print_progress});
+                return pcd;
+            },
+            "Function to read PointCloud from memory", "bytes"_a,
+            "format"_a = "auto", "remove_nan_points"_a = false,
+            "remove_infinite_points"_a = false, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "read_point_cloud_from_bytes",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
             "write_point_cloud",
             [](const std::string &filename,
-               const geometry::PointCloud &pointcloud, bool write_ascii,
-               bool compressed, bool print_progress) {
+               const geometry::PointCloud &pointcloud,
+               const std::string &format, bool write_ascii, bool compressed,
+               bool print_progress) {
                 py::gil_scoped_release release;
                 return WritePointCloud(
                         filename, pointcloud,
-                        {write_ascii, compressed, print_progress});
+                        {format, write_ascii, compressed, print_progress});
             },
             "Function to write PointCloud to file", "filename"_a,
-            "pointcloud"_a, "write_ascii"_a = false, "compressed"_a = false,
-            "print_progress"_a = false);
+            "pointcloud"_a, "format"_a = "auto", "write_ascii"_a = false,
+            "compressed"_a = false, "print_progress"_a = false);
     docstring::FunctionDocInject(m_io, "write_point_cloud",
+                                 map_shared_argument_docstrings);
+
+    m_io.def(
+            "write_point_cloud_to_bytes",
+            [](const geometry::PointCloud &pointcloud,
+               const std::string &format, bool write_ascii, bool compressed,
+               bool print_progress) {
+                py::gil_scoped_release release;
+                std::vector<char> buffer;
+                WritePointCloud(
+                        buffer, pointcloud,
+                        {format, write_ascii, compressed, print_progress});
+                if (!buffer.empty()) {
+                    return py::bytes(buffer.data(), buffer.size());
+                }
+                return py::bytes();
+            },
+            "Function to write PointCloud to memory", "pointcloud"_a,
+            "format"_a = "auto", "write_ascii"_a = false,
+            "compressed"_a = false, "print_progress"_a = false);
+    docstring::FunctionDocInject(m_io, "write_point_cloud_to_bytes",
                                  map_shared_argument_docstrings);
 
     // open3d::geometry::TriangleMesh

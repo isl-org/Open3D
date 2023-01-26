@@ -48,6 +48,7 @@ typedef std::vector<Eigen::Matrix4d, open3d::utility::Matrix4d_allocator>
 typedef std::vector<Eigen::Vector4i, open3d::utility::Vector4i_allocator>
         temp_eigen_vector4i;
 
+PYBIND11_MAKE_OPAQUE(std::vector<char>);
 PYBIND11_MAKE_OPAQUE(std::vector<int>);
 PYBIND11_MAKE_OPAQUE(std::vector<int64_t>);
 PYBIND11_MAKE_OPAQUE(std::vector<uint8_t>);
