@@ -142,7 +142,7 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
         for (int hidx = 0; hidx < num_h; hidx++) {
             for (int didx = 0; didx < num_d; didx++) {
                 const Eigen::Vector3d box_center =
-                        min_bound +
+                        min_bound + box_half_size +
                         Eigen::Vector3d(widx, hidx, didx) * voxel_size;
                 for (const Eigen::Vector3i &tria : input.triangles_) {
                     const Eigen::Vector3d &v0 = input.vertices_[tria(0)];

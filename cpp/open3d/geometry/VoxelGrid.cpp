@@ -109,6 +109,11 @@ OrientedBoundingBox VoxelGrid::GetOrientedBoundingBox(bool) const {
             GetAxisAlignedBoundingBox());
 }
 
+OrientedBoundingBox VoxelGrid::GetMinimalOrientedBoundingBox(bool) const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
+}
+
 VoxelGrid &VoxelGrid::Transform(const Eigen::Matrix4d &transformation) {
     utility::LogError("VoxelGrid::Transform is not supported");
     return *this;

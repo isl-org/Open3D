@@ -1686,14 +1686,27 @@ if(BUILD_CUDA_MODULE)
         # open3d_find_package_3rdparty_library, but we have to insert
         # liblapack_static.a in the middle of the targets.
         add_library(3rdparty_cublas INTERFACE)
-        target_link_libraries(3rdparty_cublas INTERFACE
-            CUDA::cusolver_static
-            ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
-            CUDA::cusparse_static
-            CUDA::cublas_static
-            CUDA::cublasLt_static
-            CUDA::culibos
-        )
+        if(CUDAToolkit_VERSION VERSION_LESS "12.0")
+            target_link_libraries(3rdparty_cublas INTERFACE
+                CUDA::cusolver_static
+                ${CUDAToolkit_LIBRARY_DIR}/liblapack_static.a
+                CUDA::cusparse_static
+                CUDA::cublas_static
+                CUDA::cublasLt_static
+                CUDA::culibos
+            )
+        else()
+            # In CUDA12.0 the liblapack_static.a is deprecated and removed.
+            # Use the libcusolver_lapack_static.a instead.
+            target_link_libraries(3rdparty_cublas INTERFACE
+                CUDA::cusolver_static
+                ${CUDAToolkit_LIBRARY_DIR}/libcusolver_lapack_static.a
+                CUDA::cusparse_static
+                CUDA::cublas_static
+                CUDA::cublasLt_static
+                CUDA::culibos
+            )
+        endif()
         if(NOT BUILD_SHARED_LIBS)
             # Listed in ${CMAKE_INSTALL_PREFIX}/lib/cmake/Open3D/Open3DTargets.cmake.
             install(TARGETS 3rdparty_cublas EXPORT Open3DTargets)

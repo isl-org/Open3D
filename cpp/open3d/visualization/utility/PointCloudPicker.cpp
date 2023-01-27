@@ -87,6 +87,17 @@ geometry::OrientedBoundingBox PointCloudPicker::GetOrientedBoundingBox(
     }
 }
 
+geometry::OrientedBoundingBox PointCloudPicker::GetMinimalOrientedBoundingBox(
+        bool robust) const {
+    if (pointcloud_ptr_) {
+        return geometry::OrientedBoundingBox::CreateFromPointsMinimal(
+                ((const geometry::PointCloud&)(*pointcloud_ptr_)).points_,
+                robust);
+    } else {
+        return geometry::OrientedBoundingBox();
+    }
+}
+
 PointCloudPicker& PointCloudPicker::Transform(
         const Eigen::Matrix4d& /*transformation*/) {
     // Do nothing

@@ -73,9 +73,19 @@ public:
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
     virtual Eigen::Vector3d GetCenter() const override;
+
+    /// Creates an axis-aligned bounding box around the
+    /// points (corners) of the object.
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+
+    /// Returns the object itself
     virtual OrientedBoundingBox GetOrientedBoundingBox(
             bool robust) const override;
+
+    /// Returns the object itself
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust) const override;
+
     virtual OrientedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
     virtual OrientedBoundingBox& Translate(const Eigen::Vector3d& translation,
@@ -133,6 +143,19 @@ public:
     static OrientedBoundingBox CreateFromPoints(
             const std::vector<Eigen::Vector3d>& points, bool robust = false);
 
+    /// Creates the oriented bounding box with the smallest volume.
+    /// The algorithm makes use of the fact that at least one edge of
+    /// the convex hull must be collinear with an edge of the minimum
+    /// bounding box: for each triangle in the convex hull, calculate
+    /// the minimal axis aligned box in the frame of that triangle.
+    /// at the end, return the box with the smallest volume
+    /// \param points The input points
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    static OrientedBoundingBox CreateFromPointsMinimal(
+            const std::vector<Eigen::Vector3d>& points, bool robust = false);
+
 public:
     /// The center point of the bounding box.
     Eigen::Vector3d center_;
@@ -180,8 +203,18 @@ public:
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
     virtual Eigen::Vector3d GetCenter() const override;
+
+    /// Returns the object itself
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+
+    /// Returns an oriented bounding box with the same dimensions
+    /// and orientation as the object
     virtual OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override;
+
+    /// Returns an oriented bounding box with the same dimensions
+    /// and orientation as the object
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
             bool robust = false) const override;
     virtual AxisAlignedBoundingBox& Transform(
             const Eigen::Matrix4d& transformation) override;
