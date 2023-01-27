@@ -460,13 +460,12 @@ TEST(ReadWritePC, InMemoryXYZ) {
     }
 
     std::vector<char> bytes;
-    EXPECT_TRUE(WritePointCloud(
-            bytes, pc_start,
-            {"mem::xyz", false, false, true}));
+    EXPECT_TRUE(
+            WritePointCloud(bytes, pc_start, {"mem::xyz", false, false, true}));
 
     geometry::PointCloud pc_load;
-    EXPECT_TRUE(ReadPointCloud(bytes, pc_load,
-                               {"mem::xyz", false, false, true}));
+    EXPECT_TRUE(
+            ReadPointCloud(bytes, pc_load, {"mem::xyz", false, false, true}));
     EXPECT_EQ(pc_load.points_.size(), 256);
 }
 
