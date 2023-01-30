@@ -43,7 +43,8 @@ std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
 /// Factory function to create a pointcloud from memory
 /// Return an empty pointcloud if fail to read from buffer.
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromMemory(
-        const std::vector<char> &bytes,
+        const unsigned char *buffer,
+        const size_t length,
         const std::string &format,
         bool print_progress = false);
 
@@ -97,7 +98,8 @@ bool ReadPointCloud(const std::string &filename,
 /// The function calls read functions based on the format.
 /// See \p ReadPointCloudOption for additional options you can pass.
 /// \return return true if the read function is successful, false otherwise.
-bool ReadPointCloud(const std::vector<char> &bytes,
+bool ReadPointCloud(const unsigned char *buffer,
+                    const size_t length,
                     geometry::PointCloud &pointcloud,
                     const ReadPointCloudOption &params = {});
 
@@ -174,9 +176,13 @@ bool WritePointCloud(const std::string &filename,
 
 /// The general entrance for writing a PointCloud to memory
 /// The function calls write functions based on the format.
+/// WARNING: buffer gets initialized by WritePointCloud, you need to
+/// delete it when finished when ret is true
 /// See \p WritePointCloudOption for additional options you can pass.
-/// \return return true if the write function is successful, false otherwise.
-bool WritePointCloud(std::vector<char> &bytes,
+/// \return return true if the write function is
+/// successful, false otherwise.
+bool WritePointCloud(unsigned char *&buffer,
+                     size_t &length,
                      const geometry::PointCloud &pointcloud,
                      const WritePointCloudOption &params = {});
 
@@ -184,7 +190,8 @@ bool ReadPointCloudFromXYZ(const std::string &filename,
                            geometry::PointCloud &pointcloud,
                            const ReadPointCloudOption &params);
 
-bool ReadPointCloudInMemoryFromXYZ(const std::vector<char> &bytes,
+bool ReadPointCloudInMemoryFromXYZ(const unsigned char *buffer,
+                                   const size_t length,
                                    geometry::PointCloud &pointcloud,
                                    const ReadPointCloudOption &params);
 
@@ -192,7 +199,8 @@ bool WritePointCloudToXYZ(const std::string &filename,
                           const geometry::PointCloud &pointcloud,
                           const WritePointCloudOption &params);
 
-bool WritePointCloudInMemoryToXYZ(std::vector<char> &bytes,
+bool WritePointCloudInMemoryToXYZ(unsigned char *&buffer,
+                                  size_t &length,
                                   const geometry::PointCloud &pointcloud,
                                   const WritePointCloudOption &params);
 

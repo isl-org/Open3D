@@ -171,6 +171,23 @@ inline std::string FormatString(const std::string& format, Args... args) {
                        buf.get() + size - 1);  // We don't want the '\0' inside
 };
 
+/// Format string fast (Unix / BSD Only)
+template <typename... Args>
+inline std::string FastFormatString(const std::string& format, Args... args) {
+#ifdef _WIN32
+    return FormatString(format, &args...);
+#endif  // _WIN32
+    char* buffer = nullptr;
+    int size_s = asprintf(&buffer, format.c_str(), args...);
+    if (size_s == -1) {
+        throw std::runtime_error("Error during formatting.");
+    }
+    auto ret = std::string(buffer,
+                           buffer + size_s);  // no + 1 since we ignore the \0
+    std::free(buffer);                        // asprintf calls malloc
+    return ret;
+};
+
 void Sleep(int milliseconds);
 
 /// Computes the quotient of x/y with rounding up
