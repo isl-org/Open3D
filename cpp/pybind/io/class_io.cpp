@@ -182,12 +182,15 @@ void pybind_class_io(py::module &m_io) {
                bool print_progress) {
                 const char *dataptr = PYBIND11_BYTES_AS_STRING(bytes.ptr());
                 auto length = PYBIND11_BYTES_SIZE(bytes.ptr());
-                auto data = std::vector<char>(dataptr, dataptr + length);
+                auto buffer = new unsigned char[length];
+                memcpy(buffer, dataptr, length);  // copy before releasing GIL
                 py::gil_scoped_release release;
                 geometry::PointCloud pcd;
-                ReadPointCloud(data, pcd,
+                ReadPointCloud(reinterpret_cast<const unsigned char *>(buffer),
+                               length, pcd,
                                {format, remove_nan_points,
                                 remove_infinite_points, print_progress});
+                delete[] buffer;
                 return pcd;
             },
             "Function to read PointCloud from memory", "bytes"_a,
@@ -219,14 +222,19 @@ void pybind_class_io(py::module &m_io) {
                const std::string &format, bool write_ascii, bool compressed,
                bool print_progress) {
                 py::gil_scoped_release release;
-                std::vector<char> buffer;
-                WritePointCloud(
-                        buffer, pointcloud,
+                size_t len = 0;
+                unsigned char *buffer = nullptr;
+                bool wrote = WritePointCloud(
+                        buffer, len, pointcloud,
                         {format, write_ascii, compressed, print_progress});
-                if (!buffer.empty()) {
-                    return py::bytes(buffer.data(), buffer.size());
+                py::gil_scoped_acquire acquire;
+                if (!wrote) {
+                    return py::bytes();
                 }
-                return py::bytes();
+                auto ret =
+                        py::bytes(reinterpret_cast<const char *>(buffer), len);
+                delete[] buffer;
+                return ret;
             },
             "Function to write PointCloud to memory", "pointcloud"_a,
             "format"_a = "auto", "write_ascii"_a = false,

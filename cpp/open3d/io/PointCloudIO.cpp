@@ -34,7 +34,8 @@ static const std::unordered_map<
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(const std::vector<char> &,
+        std::function<bool(const unsigned char *,
+                           const size_t,
                            geometry::PointCloud &,
                            const ReadPointCloudOption &)>>
         in_memory_to_pointcloud_read_function{
@@ -57,7 +58,8 @@ static const std::unordered_map<
 
 static const std::unordered_map<
         std::string,
-        std::function<bool(std::vector<char> &,
+        std::function<bool(unsigned char *&,
+                           size_t &,
                            const geometry::PointCloud &,
                            const WritePointCloudOption &)>>
         in_memory_to_pointcloud_write_function{
@@ -74,11 +76,13 @@ std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
 }
 
 std::shared_ptr<geometry::PointCloud> CreatePointCloudFromMemory(
-        const std::vector<char> &bytes,
+        const unsigned char *buffer,
+        const size_t length,
         const std::string &format,
         bool print_progress) {
     auto pointcloud = std::make_shared<geometry::PointCloud>();
-    ReadPointCloud(bytes, *pointcloud, {format, true, true, print_progress});
+    ReadPointCloud(buffer, length, *pointcloud,
+                   {format, true, true, print_progress});
     return pointcloud;
 }
 
@@ -131,7 +135,8 @@ bool ReadPointCloud(const std::string &filename,
     p.update_progress = progress_updater;
     return ReadPointCloud(filename, pointcloud, p);
 }
-bool ReadPointCloud(const std::vector<char> &bytes,
+bool ReadPointCloud(const unsigned char *buffer,
+                    const size_t length,
                     geometry::PointCloud &pointcloud,
                     const ReadPointCloudOption &params) {
     std::string format = params.format;
@@ -153,7 +158,7 @@ bool ReadPointCloud(const std::vector<char> &bytes,
                 params.format);
         return false;
     }
-    bool success = map_itr->second(bytes, pointcloud, params);
+    bool success = map_itr->second(buffer, length, pointcloud, params);
     utility::LogDebug("Read geometry::PointCloud: {} vertices.",
                       pointcloud.points_.size());
     if (params.remove_nan_points || params.remove_infinite_points) {
@@ -203,7 +208,8 @@ bool WritePointCloud(const std::string &filename,
     return WritePointCloud(filename, pointcloud, p);
 }
 
-bool WritePointCloud(std::vector<char> &bytes,
+bool WritePointCloud(unsigned char *&buffer,
+                     size_t &length,
                      const geometry::PointCloud &pointcloud,
                      const WritePointCloudOption &params) {
     std::string format = params.format;
@@ -222,7 +228,7 @@ bool WritePointCloud(std::vector<char> &bytes,
         return false;
     }
 
-    bool success = map_itr->second(bytes, pointcloud, params);
+    bool success = map_itr->second(buffer, length, pointcloud, params);
     utility::LogDebug("Write geometry::PointCloud: {} vertices.",
                       pointcloud.points_.size());
     return success;
