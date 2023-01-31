@@ -25,7 +25,7 @@ Supported operating systems:
 
 * Ubuntu 18.04+
 * macOS 10.15+
-* Windows 10 (64-bit)
+* Windows 10+ (64-bit)
 
 If you have other Python versions or operating systems, please refer to
 :ref:`compilation` and compile Open3D from source.

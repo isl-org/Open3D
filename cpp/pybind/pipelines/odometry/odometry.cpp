@@ -127,6 +127,18 @@ void pybind_odometry_classes(py::module &m) {
                     m, "RGBDOdometryJacobian",
                     "Base class that computes Jacobian from two RGB-D images.");
 
+    jacobian.def(
+            "compute_jacobian_and_residual",
+            &RGBDOdometryJacobian::ComputeJacobianAndResidual,
+            py::call_guard<py::gil_scoped_release>(),
+            "Function to compute i-th row of J and r the vector form of J_r is "
+            "basically 6x1 matrix, but it can be easily extendable to 6xn "
+            "matrix. See RGBDOdometryJacobianFromHybridTerm for this case."
+            "row"_a,
+            "J_r"_a, "r"_a, "w"_a, "source"_a, "target"_a, "source_xyz"_a,
+            "target_dx"_a, "target_dy"_a, "intrinsic"_a, "extrinsic"_a,
+            "corresps"_a);
+
     // open3d.odometry.RGBDOdometryJacobianFromColorTerm: RGBDOdometryJacobian
     py::class_<RGBDOdometryJacobianFromColorTerm,
                PyRGBDOdometryJacobian<RGBDOdometryJacobianFromColorTerm>,
@@ -199,6 +211,24 @@ void pybind_odometry_methods(py::module &m) {
                      "RGBDOdometryJacobianFromHybridTerm()`` or "
                      "``RGBDOdometryJacobianFromColorTerm("
                      ").``"},
+                    {"option", "Odometry hyper parameters."},
+            });
+
+    m.def("compute_correspondence", &ComputeCorrespondence,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function to estimate point to point correspondences from two depth "
+          "images. A vector of u_s, v_s, u_t, v_t which maps the 2d "
+          "coordinates of source to target.",
+          "intrinsic_matrix"_a, "extrinsic"_a, "depth_s"_a, "depth_t"_a,
+          "option"_a = OdometryOption());
+    docstring::FunctionDocInject(
+            m, "compute_correspondence",
+            {
+                    {"intrinsic_matrix", "Camera intrinsic parameters."},
+                    {"extrinsic",
+                     "Estimation of transform from source to target."},
+                    {"depth_s", "Source depth image."},
+                    {"depth_t", "Target depth image."},
                     {"option", "Odometry hyper parameters."},
             });
 }

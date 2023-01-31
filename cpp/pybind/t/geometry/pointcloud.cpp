@@ -127,6 +127,8 @@ The attributes of the point cloud have different levels::
                  "map_keys_to_tensors"_a)
             .def("__repr__", &PointCloud::ToString);
 
+    py::detail::bind_copy_functions<PointCloud>(pointcloud);
+
     // Pickle support.
     pointcloud.def(py::pickle(
             [](const PointCloud& pcd) {
@@ -475,7 +477,7 @@ Example:
                                                  ransac_n=3,
                                                  num_iterations=1000)
         inlier_cloud = pcd.select_by_index(inliers)
-        inlier_cloud.paint_uniform_color([1.0, 0, 0])
+        inlier_cloud = inlier_cloud.paint_uniform_color([1.0, 0, 0])
         outlier_cloud = pcd.select_by_index(inliers, invert=True)
         o3d.visualization.draw([inlier_cloud, outlier_cloud]))");
     pointcloud.def(
@@ -536,9 +538,21 @@ Example:
             "get_axis_aligned_bounding_box",
             &PointCloud::GetAxisAlignedBoundingBox,
             "Create an axis-aligned bounding box from attribute 'positions'.");
-    pointcloud.def("crop", &PointCloud::Crop,
+    pointcloud.def(
+            "get_oriented_bounding_box", &PointCloud::GetOrientedBoundingBox,
+            "Create an oriented bounding box from attribute 'positions'.");
+    pointcloud.def("crop",
+                   (PointCloud(PointCloud::*)(const AxisAlignedBoundingBox&,
+                                              bool) const) &
+                           PointCloud::Crop,
                    "Function to crop pointcloud into output pointcloud.",
                    "aabb"_a, "invert"_a = false);
+    pointcloud.def("crop",
+                   (PointCloud(PointCloud::*)(const OrientedBoundingBox&, bool)
+                            const) &
+                           PointCloud::Crop,
+                   "Function to crop pointcloud into output pointcloud.",
+                   "obb"_a, "invert"_a = false);
 
     docstring::ClassMethodDocInject(m, "PointCloud", "estimate_normals",
                                     map_shared_argument_docstrings);
@@ -606,7 +620,12 @@ Example:
              {"invert",
               "Crop the points outside of the bounding box or inside of the "
               "bounding box."}});
-
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "crop",
+            {{"obb", "OrientedBoundingBox to crop points."},
+             {"invert",
+              "Crop the points outside of the bounding box or inside of the "
+              "bounding box."}});
     pointcloud.def("extrude_rotation", &PointCloud::ExtrudeRotation, "angle"_a,
                    "axis"_a, "resolution"_a = 16, "translation"_a = 0.0,
                    "capping"_a = true,

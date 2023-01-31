@@ -34,6 +34,7 @@
 #include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/core/linalg/kernel/Matrix.h"
 #include "open3d/core/linalg/kernel/SVD3x3.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/Utility.h"
@@ -163,7 +164,7 @@ void GetPointMaskWithinAABBCPU
          const core::Tensor& max_bound,
          core::Tensor& mask) {
 
-    DISPATCH_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
         const scalar_t* points_ptr = points.GetDataPtr<scalar_t>();
         const int64_t n = points.GetLength();
         const scalar_t* min_bound_ptr = min_bound.GetDataPtr<scalar_t>();
@@ -184,6 +185,50 @@ void GetPointMaskWithinAABBCPU
                         mask_ptr[workload_idx] = false;
                     }
                 });
+    });
+}
+
+#if defined(__CUDACC__)
+void GetPointMaskWithinOBBCUDA
+#else
+void GetPointMaskWithinOBBCPU
+#endif
+        (const core::Tensor& points,
+         const core::Tensor& center,
+         const core::Tensor& rotation,
+         const core::Tensor& extent,
+         core::Tensor& mask) {
+    const core::Tensor half_extent = extent.Div(2);
+    // Since we will extract 3 rotation axis from matrix and use it inside
+    // kernel, the transpose is needed.
+    const core::Tensor rotation_t = rotation.Transpose(0, 1).Contiguous();
+    const core::Tensor pd = points - center;
+    const int64_t n = points.GetLength();
+
+    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {
+        const scalar_t* pd_ptr = pd.GetDataPtr<scalar_t>();
+        // const scalar_t* center_ptr = center.GetDataPtr<scalar_t>();
+        const scalar_t* rotation_ptr = rotation_t.GetDataPtr<scalar_t>();
+        const scalar_t* half_extent_ptr = half_extent.GetDataPtr<scalar_t>();
+        bool* mask_ptr = mask.GetDataPtr<bool>();
+
+        core::ParallelFor(points.GetDevice(), n,
+                          [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                              int64_t idx = 3 * workload_idx;
+                              if (abs(core::linalg::kernel::dot_3x1(
+                                          pd_ptr + idx, rotation_ptr)) <=
+                                          half_extent_ptr[0] &&
+                                  abs(core::linalg::kernel::dot_3x1(
+                                          pd_ptr + idx, rotation_ptr + 3)) <=
+                                          half_extent_ptr[1] &&
+                                  abs(core::linalg::kernel::dot_3x1(
+                                          pd_ptr + idx, rotation_ptr + 6)) <=
+                                          half_extent_ptr[2]) {
+                                  mask_ptr[workload_idx] = true;
+                              } else {
+                                  mask_ptr[workload_idx] = false;
+                              }
+                          });
     });
 }
 
@@ -310,11 +355,11 @@ template <typename scalar_t>
 OPEN3D_HOST_DEVICE void GetCoordinateSystemOnPlane(const scalar_t* query,
                                                    scalar_t* u,
                                                    scalar_t* v) {
-    // Unless the x and y coords are both close to zero, we can simply take (
-    // -y, x, 0 ) and normalize it.
-    // If both x and y are close to zero, then the vector is close to the
-    // z-axis, so it's far from colinear to the x-axis for instance. So we
-    // take the crossed product with (1,0,0) and normalize it.
+    // Unless the x and y coords are both close to zero, we can simply take
+    // ( -y, x, 0 ) and normalize it. If both x and y are close to zero,
+    // then the vector is close to the z-axis, so it's far from colinear to
+    // the x-axis for instance. So we take the crossed product with (1,0,0)
+    // and normalize it.
     if (!(abs(query[0] - query[2]) < 1e-6) ||
         !(abs(query[1] - query[2]) < 1e-6)) {
         const scalar_t norm2_inv =
@@ -398,7 +443,6 @@ void ComputeBoundaryPointsCPU
          const core::Tensor& counts,
          core::Tensor& mask,
          double angle_threshold) {
-
     const int nn_size = indices.GetShape()[1];
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(points.GetDtype(), [&]() {

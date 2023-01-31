@@ -226,6 +226,10 @@ TriangleMesh LineSet::ExtrudeLinear(const core::Tensor &vector,
     return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
 }
 
+OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

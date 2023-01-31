@@ -107,6 +107,7 @@ The attributes of the triangle mesh have different levels::
                  "vertex_positions"_a, "triangle_indices"_a)
             .def("__repr__", &TriangleMesh::ToString);
 
+    py::detail::bind_copy_functions<TriangleMesh>(triangle_mesh);
     // Pickle support.
     triangle_mesh.def(py::pickle(
             [](const TriangleMesh& mesh) {
@@ -651,6 +652,10 @@ Example:
                       &TriangleMesh::GetAxisAlignedBoundingBox,
                       "Create an axis-aligned bounding box from vertex "
                       "attribute 'positions'.");
+    triangle_mesh.def("get_oriented_bounding_box",
+                      &TriangleMesh::GetOrientedBoundingBox,
+                      "Create an oriented bounding box from vertex attribute "
+                      "'positions'.");
 
     triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
                       "hole_size"_a = 1e6,

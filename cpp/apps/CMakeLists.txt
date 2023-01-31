@@ -18,7 +18,7 @@ macro(open3d_add_app SRC_DIR APP_NAME TARGET_NAME)
         set(MACOSX_BUNDLE_LONG_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_THREE_NUMBER})
         set(MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION_THREE_NUMBER})
-        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2018-2021 www.open3d.org")
+        set(MACOSX_BUNDLE_COPYRIGHT "Copyright (c) 2018-2022 www.open3d.org")
     endif()
 
     # Copy the resource files. This needs to be done as a post-build step
@@ -120,7 +120,7 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
 
     target_link_libraries(${TARGET_NAME} PRIVATE Open3D::Open3D ${ARGN})
     set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "apps")
-    
+
     open3d_link_3rdparty_libraries(${TARGET_NAME})
     open3d_show_and_abort_on_warning(${TARGET_NAME})
     open3d_set_global_properties(${TARGET_NAME})
@@ -132,5 +132,3 @@ if (BUILD_GUI)
 endif()
 
 open3d_add_app_common(OfflineReconstruction OfflineReconstruction OfflineReconstruction)
-
-

@@ -378,6 +378,9 @@ public:
     /// Create an axis-aligned bounding box from point attribute "positions".
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
 
+    /// Create an oriented bounding box from point attribute "positions".
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+
     /// Sweeps the line set rotationally about an axis.
     /// \param angle The rotation angle in degree.
     /// \param axis The rotation axis.

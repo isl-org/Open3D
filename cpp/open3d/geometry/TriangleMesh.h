@@ -600,6 +600,15 @@ public:
     static std::shared_ptr<TriangleMesh> CreateIcosahedron(
             double radius = 1.0, bool create_uv_map = false);
 
+    /// Factory function to create solid mesh from an OrientedBoundingBox.
+    /// \param obox OrientedBoundingBox object to create a mesh of
+    /// \param scale scale factor along each direction of OrientedBoundingBox
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateFromOrientedBoundingBox(
+            const OrientedBoundingBox &obox,
+            const Eigen::Vector3d &scale = Eigen::Vector3d::Ones(),
+            bool create_uv_map = false);
+
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
     /// The left bottom corner on the front will be placed at (0, 0, 0).
     /// \param width is x-directional length.

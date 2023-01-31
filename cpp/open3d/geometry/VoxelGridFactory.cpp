@@ -167,11 +167,10 @@ std::shared_ptr<VoxelGrid> VoxelGrid::CreateFromTriangleMeshWithinBounds(
                             output->AddVoxel(geometry::Voxel(grid_index));
                             break;
                         }
-                    }
                 }
             }
+        }
     }
-
 
     return output;
 }

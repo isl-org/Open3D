@@ -66,7 +66,8 @@
 #define OPEN3D_CUDA_CHECK(err)
 #define OPEN3D_GET_LAST_CUDA_ERROR(message)
 #define CUDA_CALL(cuda_function, ...) \
-    utility::LogError("Not built with CUDA, cannot call " #cuda_function);
+    open3d::utility::LogError(        \
+            "Not built with CUDA, cannot call " #cuda_function);
 
 #endif  // #ifdef BUILD_CUDA_MODULE
 
@@ -225,6 +226,19 @@ int GetCUDACurrentDeviceTextureAlignment();
 
 /// Returns the size of total global memory for the current device.
 size_t GetCUDACurrentTotalMemSize();
+
+#else
+
+/// When CUDA is not enabled, this is a dummy class.
+class CUDAScopedDevice {
+public:
+    explicit CUDAScopedDevice(int device_id) {}
+    explicit CUDAScopedDevice(const Device& device) {}
+    ~CUDAScopedDevice() {}
+    CUDAScopedDevice(const CUDAScopedDevice&) = delete;
+    CUDAScopedDevice& operator=(const CUDAScopedDevice&) = delete;
+};
+
 #endif
 
 namespace cuda {

@@ -253,9 +253,9 @@ Returns:
     A tensor with the distances to the surface. The shape is {..}.
 )doc");
 
-    raycasting_scene.def("compute_signed_distance",
-                         &RaycastingScene::ComputeSignedDistance,
-                         "query_points"_a, "nthreads"_a = 0, R"doc(
+    raycasting_scene.def(
+            "compute_signed_distance", &RaycastingScene::ComputeSignedDistance,
+            "query_points"_a, "nthreads"_a = 0, "nsamples"_a = 1, R"doc(
 Computes the signed distance to the surface of the scene.
 
 This function computes the signed distance to the meshes in the scene.
@@ -274,6 +274,11 @@ Args:
 
     nthreads (int): The number of threads to use. Set to 0 for automatic.
 
+    nsamples (int): The number of rays used for determining the inside.
+        This must be an odd number. The default is 1. Use a higher value if you
+        notice sign flipping, which can occur when rays hit exactly an edge or 
+        vertex in the scene.
+
 Returns:
     A tensor with the signed distances to the surface. The shape is {..}.
     Negative distances mean a point is inside a closed surface.
@@ -281,7 +286,7 @@ Returns:
 
     raycasting_scene.def("compute_occupancy",
                          &RaycastingScene::ComputeOccupancy, "query_points"_a,
-                         "nthreads"_a = 0,
+                         "nthreads"_a = 0, "nsamples"_a = 1,
                          R"doc(
 Computes the occupancy at the query point positions.
 
@@ -300,6 +305,11 @@ Args:
         The last dimension must be 3 and has the format [x, y, z].
 
     nthreads (int): The number of threads to use. Set to 0 for automatic.
+
+    nsamples (int): The number of rays used for determining the inside.
+        This must be an odd number. The default is 1. Use a higher value if you
+        notice errors in the occupancy values. Errors can occur when rays hit
+        exactly an edge or vertex in the scene.
 
 Returns:
     A tensor with the occupancy values. The shape is {..}. Values are either 0

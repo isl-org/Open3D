@@ -24,14 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/geometry/BoundingVolume.h"
-
 #include <gmock/gmock.h>
 
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/BoundingVolume.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/utility/FileSystem.h"
 #include "tests/Tests.h"

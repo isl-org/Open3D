@@ -860,6 +860,7 @@ Ref:
     tensor.def("cos_", &Tensor::Cos_);
     tensor.def("neg", &Tensor::Neg);
     tensor.def("neg_", &Tensor::Neg_);
+    tensor.def("__neg__", &Tensor::Neg);
     tensor.def("exp", &Tensor::Exp);
     tensor.def("exp_", &Tensor::Exp_);
     tensor.def("abs", &Tensor::Abs);
