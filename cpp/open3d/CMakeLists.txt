@@ -35,10 +35,11 @@ function(open3d_set_open3d_lib_properties target)
              open3d::*;
         };
     local: *;
-};
-]=])
+};]=])
             target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
                 "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map">)
+        elseif (WIN32)
+            # TODO(Sameer): Only export open3d symbols
         endif()
     endif()
 endfunction()

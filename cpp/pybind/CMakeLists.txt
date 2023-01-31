@@ -41,29 +41,28 @@ target_include_directories(pybind SYSTEM PRIVATE
 
 open3d_show_and_abort_on_warning(pybind)
 open3d_set_global_properties(pybind)
+target_link_libraries(pybind PRIVATE Open3D::Open3D)
+
 
 if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
-endif()
-
-target_link_libraries(pybind PRIVATE Open3D::Open3D)
-
-if (APPLE)
+    # TODO(Sameer): Only export PyInit_pybind
+elseif (APPLE)
     file(GENERATE OUTPUT pybind.map CONTENT
         [=[_PyInit_pybind
         ]=])
-    target_link_options(pybind PRIVATE $<$<CONFIG:Debug>:
+    target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         -Wl,-exported_symbols_list
         "${CMAKE_CURRENT_BINARY_DIR}/pybind.map">)
 elseif (UNIX)   # Linux
     file(GENERATE OUTPUT pybind.map CONTENT
         [=[{
-global:
-    _PyInit_pybind;
-local:
-    *;
+    global:
+        PyInit_pybind;
+    local:
+        *;
 };]=])
-    target_link_options(pybind PRIVATE $<$<CONFIG:Debug>:
+    target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map">)
 endif()
 
