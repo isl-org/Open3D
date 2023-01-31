@@ -1,0 +1,9 @@
+/* GNU linker script to limit exported symbols */
+{
+    global:
+        _PyInit_pybind;
+        extern "C++" {
+             open3d::*;
+        };
+    local: *;
+};

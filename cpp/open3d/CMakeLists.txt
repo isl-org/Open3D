@@ -17,6 +17,16 @@ function(open3d_set_open3d_lib_properties target)
         target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
     endif()
 
+    if (APPLE)
+        target_link_options(${target} PUBLIC
+            -Wl,-exported_symbols_list
+            "${CMAKE_CURRENT_SOURCE_DIR}/libOpen3D.macOS.map")
+    elseif (UNIX)   # Linux
+        target_link_options(${target} PUBLIC
+            "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libOpen3D.gnu.map")
+
+    endif()
+
 endfunction()
 
 # Configure a header file to pass the version settings to the source code
