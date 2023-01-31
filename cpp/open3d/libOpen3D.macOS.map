@@ -1,4 +1,0 @@
-# macOS linker -exported_symbols_list argument file
-_PyInit_pybind
-*open3d*
-*Open3D*

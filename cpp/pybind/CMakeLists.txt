@@ -48,6 +48,26 @@ endif()
 
 target_link_libraries(pybind PRIVATE Open3D::Open3D)
 
+if (APPLE)
+    file(GENERATE OUTPUT pybind.map CONTENT
+        [=[_PyInit_pybind
+        ]=])
+    target_link_options(pybind PRIVATE $<$<CONFIG:Debug>:
+        -Wl,-exported_symbols_list
+        "${CMAKE_CURRENT_BINARY_DIR}/pybind.map">)
+elseif (UNIX)   # Linux
+    file(GENERATE OUTPUT pybind.map CONTENT
+        [=[{
+global:
+    _PyInit_pybind;
+local:
+    *;
+};]=])
+    target_link_options(pybind PRIVATE $<$<CONFIG:Debug>:
+        "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map">)
+endif()
+
+
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
 # `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`

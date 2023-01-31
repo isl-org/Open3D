@@ -17,16 +17,30 @@ function(open3d_set_open3d_lib_properties target)
         target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
     endif()
 
-    if (APPLE)
-        target_link_options(${target} PUBLIC
-            -Wl,-exported_symbols_list
-            "${CMAKE_CURRENT_SOURCE_DIR}/libOpen3D.macOS.map")
-    elseif (UNIX)   # Linux
-        target_link_options(${target} PUBLIC
-            "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libOpen3D.gnu.map")
-
+# Hide all 3rd party symbols, e.g. from header libraries.
+    if (BUILD_SHARED_LIBS)
+        if (APPLE)
+            file(GENERATE OUTPUT libOpen3D.map CONTENT
+                [=[*open3d*
+                   *Open3D*
+                ]=])
+            target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
+                -Wl,-exported_symbols_list
+                "${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map">)
+        elseif (UNIX)   # Linux
+            file(GENERATE OUTPUT libOpen3D.map CONTENT
+                [=[{
+    global:
+        extern "C++" {
+             open3d::*;
+        };
+    local: *;
+};
+]=])
+            target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
+                "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map">)
+        endif()
     endif()
-
 endfunction()
 
 # Configure a header file to pass the version settings to the source code
