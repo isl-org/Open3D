@@ -262,7 +262,7 @@ void pybind_image(py::module &m) {
               py::overload_cast<core::Dtype, bool, utility::optional<double>,
                                 double>(&Image::To, py::const_),
               "Returns an Image with the specified Dtype.", "dtype"_a,
-              "scale"_a = py::none(), "offset"_a = 0.0, "copy"_a = false);
+              "copy"_a = false, "scale"_a = py::none(), "offset"_a = 0.0);
     docstring::ClassMethodDocInject(
             m, "Image", "to",
             {{"dtype", "The targeted dtype to convert to."},
