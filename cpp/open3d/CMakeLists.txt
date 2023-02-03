@@ -31,6 +31,7 @@ function(open3d_set_open3d_lib_properties target)
             file(GENERATE OUTPUT libOpen3D.map CONTENT
                 [=[{
     global:
+        open3d_core_cuda_device_count;
         extern "C++" {
              open3d::*;
         };

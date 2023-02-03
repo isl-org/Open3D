@@ -50,6 +50,7 @@ if (WIN32)
 elseif (APPLE)
     file(GENERATE OUTPUT pybind.map CONTENT
         [=[_PyInit_pybind
+open3d_core_cuda_device_count
         ]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         -Wl,-exported_symbols_list
@@ -59,6 +60,7 @@ elseif (UNIX)   # Linux
         [=[{
     global:
         PyInit_pybind;
+        open3d_core_cuda_device_count;
     local:
         *;
 };]=])
