@@ -46,7 +46,7 @@ target_link_libraries(pybind PRIVATE Open3D::Open3D)
 
 if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
-    # TODO(Sameer): Only export PyInit_pybind
+    # TODO(Sameer): Only export PyInit_pybind, open3d_core_cuda_device_count
 elseif (APPLE)
     file(GENERATE OUTPUT pybind.map CONTENT
         [=[_PyInit_pybind
@@ -54,7 +54,7 @@ open3d_core_cuda_device_count
         ]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
         -Wl,-exported_symbols_list
-        "${CMAKE_CURRENT_BINARY_DIR}/pybind.map">)
+        "${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
 elseif (UNIX)   # Linux
     file(GENERATE OUTPUT pybind.map CONTENT
         [=[{
@@ -65,7 +65,7 @@ elseif (UNIX)   # Linux
         *;
 };]=])
     target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
-        "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map">)
+        "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
 endif()
 
 

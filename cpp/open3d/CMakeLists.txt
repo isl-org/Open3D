@@ -18,7 +18,8 @@ function(open3d_set_open3d_lib_properties target)
     endif()
 
 # Hide all 3rd party symbols, e.g. from header libraries.
-    if (BUILD_SHARED_LIBS)
+get_target_property(TARGET_TYPE ${target} TYPE)
+if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
         if (APPLE)
             file(GENERATE OUTPUT libOpen3D.map CONTENT
                 [=[*open3d*
@@ -26,19 +27,19 @@ function(open3d_set_open3d_lib_properties target)
                 ]=])
             target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
                 -Wl,-exported_symbols_list
-                "${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map">)
+                "${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
         elseif (UNIX)   # Linux
             file(GENERATE OUTPUT libOpen3D.map CONTENT
                 [=[{
     global:
-        open3d_core_cuda_device_count;
+        *open3d*;
         extern "C++" {
              open3d::*;
         };
     local: *;
 };]=])
             target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
-                "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map">)
+                "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
         elseif (WIN32)
             # TODO(Sameer): Only export open3d symbols
         endif()
