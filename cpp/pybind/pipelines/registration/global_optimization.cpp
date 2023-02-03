@@ -62,9 +62,7 @@ void pybind_global_optimization(py::module &m) {
                  "pose"_a)
             .def("__repr__", [](const PoseGraphNode &rr) {
                 return std::string(
-                        "PoseGraphNode, access "
-                        "pose to get its "
-                        "current pose.");
+                        "PoseGraphNode, access pose to get its current pose.");
             });
 
     // open3d.registration.PoseGraphNodeVector
@@ -331,6 +329,7 @@ void pybind_global_optimization_methods(py::module &m) {
                const GlobalOptimizationOption &option) {
                 GlobalOptimization(pose_graph, method, criteria, option);
             },
+            py::call_guard<py::gil_scoped_release>(),
             "Function to optimize PoseGraph", "pose_graph"_a, "method"_a,
             "criteria"_a, "option"_a);
     docstring::FunctionDocInject(
