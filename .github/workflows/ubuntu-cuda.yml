@@ -34,10 +34,10 @@ jobs:
         run: |
           if [ "${GITHUB_REPOSITORY}" == "isl-org/Open3D" ] && [ -n "${GCE_GPU_CI_SA}" ] ; then
             echo "Secrets available: performing GCE test"
-            echo "::set-output name=skip::no"
+            echo "skip=no" >> $GITHUB_OUTPUT
           else
             echo "Secrets not available: skipping GCE test"
-            echo "::set-output name=skip::yes"
+            echo "skip=yes" >> $GITHUB_OUTPUT
           fi
 
   build-and-run-docker:

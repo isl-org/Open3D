@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   style-check:
-    runs-on: ubuntu-20.04     # No need for cmake repo
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
