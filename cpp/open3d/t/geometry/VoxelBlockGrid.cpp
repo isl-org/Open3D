@@ -365,10 +365,10 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
     core::Device device = block_hashmap_->GetDevice();
 
     core::Tensor range_minmax_map;
-    kernel::voxel_grid::EstimateRange(block_coords, range_minmax_map, intrinsic,
-                                      extrinsic, height, width,
-                                      range_map_down_factor, block_resolution_,
-                                      voxel_size_, depth_min, depth_max);
+    kernel::voxel_grid::EstimateRange(
+            block_coords, range_minmax_map, intrinsic, extrinsic, height, width,
+            range_map_down_factor, block_resolution_, voxel_size_, depth_min,
+            depth_max, fragment_buffer_);
 
     static const std::unordered_map<std::string, int> kAttrChannelMap = {
             // Conventional rendering
@@ -543,6 +543,17 @@ void VoxelBlockGrid::Save(const std::string &file_name) const {
     } else {
         t::io::WriteNpz(file_name, output);
     }
+}
+
+VoxelBlockGrid VoxelBlockGrid::To(const core::Device &device, bool copy) const {
+    if (!copy && block_hashmap_->GetDevice() == device) {
+        return *this;
+    }
+
+    auto device_hashmap =
+            std::make_shared<core::HashMap>(this->block_hashmap_->To(device));
+    return VoxelBlockGrid(voxel_size_, block_resolution_, device_hashmap,
+                          name_attr_map_);
 }
 
 VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {

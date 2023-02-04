@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
 
@@ -154,6 +155,18 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateIcosahedron(
                 {0.3149, 0.7272}, {0.3149, 0.909},  {0.1575, 0.8181}};
     }
 
+    return mesh;
+}
+
+std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromOrientedBoundingBox(
+        const OrientedBoundingBox &obox,
+        const Eigen::Vector3d &scale /*= Eigen::Vector3d::Ones()*/,
+        bool create_uv_map /*= false*/) {
+    Eigen::Vector3d origin = scale.asDiagonal() * obox.extent_;
+    auto mesh = CreateBox(origin.x(), origin.y(), origin.z(), create_uv_map);
+    mesh->Rotate(obox.R_, origin / 2.);
+    mesh->Translate(obox.center_ - origin / 2.);
+    mesh->PaintUniformColor(obox.color_);
     return mesh;
 }
 

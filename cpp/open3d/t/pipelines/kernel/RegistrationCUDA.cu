@@ -107,6 +107,7 @@ void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
                                  const core::Dtype &dtype,
                                  const core::Device &device,
                                  const registration::RobustKernel &kernel) {
+    core::CUDAScopedDevice scoped_device(source_points.GetDevice());
     int n = source_points.GetLength();
 
     core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
@@ -211,6 +212,7 @@ void ComputePoseColoredICPCUDA(const core::Tensor &source_points,
                                const core::Device &device,
                                const registration::RobustKernel &kernel,
                                const double &lambda_geometric) {
+    core::CUDAScopedDevice scoped_device(source_points.GetDevice());
     int n = source_points.GetLength();
 
     core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
@@ -295,6 +297,7 @@ void ComputeInformationMatrixCUDA(const core::Tensor &target_points,
                                   core::Tensor &information_matrix,
                                   const core::Dtype &dtype,
                                   const core::Device &device) {
+    core::CUDAScopedDevice scoped_device(target_points.GetDevice());
     int n = correspondence_indices.GetLength();
 
     core::Tensor global_sum = core::Tensor::Zeros({21}, dtype, device);

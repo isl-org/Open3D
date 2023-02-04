@@ -116,8 +116,8 @@ static int CountCorrespondence(const geometry::Image &correspondence_map) {
     return correspondence_count;
 }
 
-static CorrespondenceSetPixelWise ComputeCorrespondence(
-        const Eigen::Matrix3d intrinsic_matrix,
+CorrespondenceSetPixelWise ComputeCorrespondence(
+        const Eigen::Matrix3d &intrinsic_matrix,
         const Eigen::Matrix4d &extrinsic,
         const geometry::Image &depth_s,
         const geometry::Image &depth_t,

@@ -28,6 +28,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "open3d/core/Tensor.h"
 
@@ -51,7 +52,10 @@ public:
     /// Create empty TensorMap and set primary key.
     explicit TensorMap(const std::string& primary_key)
         : std::unordered_map<std::string, core::Tensor>(),
-          primary_key_(primary_key) {}
+          primary_key_(primary_key) {
+        AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
+    }
 
     /// A primary key is always required. This constructor can be marked as
     /// delete in C++, but it is needed for pybind to bind as a generic python
@@ -65,17 +69,22 @@ public:
         : std::unordered_map<std::string, core::Tensor>(first, last),
           primary_key_(primary_key) {
         AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
     }
 
     TensorMap(const std::string& primary_key,
               const std::unordered_map<std::string, core::Tensor>& tensor_map)
-        : TensorMap(primary_key, tensor_map.begin(), tensor_map.end()) {}
+        : TensorMap(primary_key, tensor_map.begin(), tensor_map.end()) {
+        AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
+    }
 
     TensorMap(const std::string& primary_key,
               std::initializer_list<value_type> init)
         : std::unordered_map<std::string, core::Tensor>(init),
           primary_key_(primary_key) {
         AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
     }
 
     /// Copy constructor performs a "shallow" copy of the Tensors.
@@ -83,6 +92,7 @@ public:
         : std::unordered_map<std::string, core::Tensor>(other),
           primary_key_(other.primary_key_) {
         AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
     }
 
     /// Move constructor performs a "shallow" copy of the Tensors.
@@ -90,6 +100,7 @@ public:
         : std::unordered_map<std::string, core::Tensor>(other),
           primary_key_(other.primary_key_) {
         AssertPrimaryKeyInMapOrEmpty();
+        AssertNoReservedKeys();
     }
 
     /// \brief Erase elements for the TensorMap by key value, if the key
@@ -99,12 +110,64 @@ public:
     /// \return The number of elements deleted. [0 if key was not present].
     std::size_t Erase(const std::string key) {
         if (key == primary_key_) {
-            utility::LogError("Primary key: {} cannot be deleted.",
+            utility::LogError("Primary key \"{}\" cannot be deleted.",
                               primary_key_);
         } else if (!Contains(key)) {
-            utility::LogWarning("Key: {} is not present.", key);
+            utility::LogWarning("Key \"{}\" is not present.", key);
         }
         return this->erase(key);
+    }
+
+    std::pair<iterator, bool> insert(const value_type& value) {
+        if (GetReservedKeys().count(value.first)) {
+            utility::LogError("Key \"{}\" is reserved.", value.first);
+        }
+        return std::unordered_map<std::string, core::Tensor>::insert(value);
+    }
+
+    template <class P>
+    std::pair<iterator, bool> insert(P&& value) {
+        if (GetReservedKeys().count(value.first)) {
+            utility::LogError("Key \"{}\" is reserved.", value.first);
+        }
+        return std::unordered_map<std::string, core::Tensor>::insert(
+                std::forward<P>(value));
+    }
+
+    iterator insert(const_iterator hint, const value_type& value) {
+        if (GetReservedKeys().count(value.first)) {
+            utility::LogError("Key \"{}\" is reserved.", value.first);
+        }
+        return std::unordered_map<std::string, core::Tensor>::insert(hint,
+                                                                     value);
+    }
+
+    template <class P>
+    iterator insert(const_iterator hint, P&& value) {
+        if (GetReservedKeys().count(value.first)) {
+            utility::LogError("Key \"{}\" is reserved.", value.first);
+        }
+        return std::unordered_map<std::string, core::Tensor>::insert(
+                hint, std::forward<P>(value));
+    }
+
+    template <class InputIt>
+    void insert(InputIt first, InputIt last) {
+        for (auto it = first; it != last; ++it) {
+            if (GetReservedKeys().count(it->first)) {
+                utility::LogError("Key \"{}\" is reserved.", it->first);
+            }
+        }
+        std::unordered_map<std::string, core::Tensor>::insert(first, last);
+    }
+
+    void insert(std::initializer_list<value_type> ilist) {
+        for (auto it = ilist.begin(); it != ilist.end(); ++it) {
+            if (GetReservedKeys().count(it->first)) {
+                utility::LogError("Key \"{}\" is reserved.", it->first);
+            }
+        }
+        std::unordered_map<std::string, core::Tensor>::insert(ilist);
     }
 
     TensorMap& operator=(const TensorMap&) = default;
@@ -113,6 +176,15 @@ public:
 
     /// Returns the primary key of the TensorMap.
     std::string GetPrimaryKey() const { return primary_key_; }
+
+    /// Returns a set with all keys.
+    std::unordered_set<std::string> GetKeySet() const {
+        std::unordered_set<std::string> keys;
+        for (const auto& item : *this) {
+            keys.insert(item.first);
+        }
+        return keys;
+    }
 
     /// Returns true if all tensors in the map have the same size.
     bool IsSizeSynchronized() const;
@@ -133,10 +205,20 @@ public:
     /// Same as C++20's std::unordered_map::contains().
     bool Contains(const std::string& key) const { return count(key) != 0; }
 
+    /// Get reserved keys for the map. A map cannot contain any of these keys.
+    static std::unordered_set<std::string> GetReservedKeys();
+
+    /// Print the TensorMap to string.
+    std::string ToString() const;
+
 private:
     /// Asserts that the map indeed contains the primary_key. This is typically
     /// called in constructors.
     void AssertPrimaryKeyInMapOrEmpty() const;
+
+    /// Asserts that there are no reserved keys in the map. This is typically
+    /// called in constructors or in modifying functions.
+    void AssertNoReservedKeys() const;
 
     /// Returns the size (length) of the primary key's tensor.
     int64_t GetPrimarySize() const { return at(primary_key_).GetLength(); }

@@ -213,7 +213,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         CorrespondenceSet ransac_corres(ransac_n);
         RegistrationResult best_result_local;
         int est_k_local = criteria.max_iteration_;
-        utility::random::UniformIntGenerator rand_gen(0, corres.size() - 1);
+        utility::random::UniformIntGenerator<int> rand_gen(0,
+                                                           corres.size() - 1);
 
 #pragma omp for nowait
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {

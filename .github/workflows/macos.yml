@@ -20,12 +20,12 @@ concurrency:
 
 env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-  NPROC: 3
+  NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
 
 jobs:
   MacOS:
-    runs-on: macos-10.15
+    runs-on: macos-12
     strategy:
       fail-fast: false
       matrix:
@@ -55,10 +55,17 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: 3.7
       - name: Install dependencies
         run: |
           brew install ccache pkg-config
+          # Install libomp 11.1.0 from old brew bottle for catalina (10.15).
+          # Directly installing the Ruby formula will install for the current OS
+          # https://github.com/microsoft/LightGBM/issues/4229
+          brew unlink libomp
+          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.catalina.bottle.tar.gz \
+          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+          brew install -f libomp-11.1.0.catalina.bottle.tar.gz
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
       - name: Config and build
         run: |
@@ -111,21 +118,21 @@ jobs:
 
   build-wheel:
     name: Build wheel
-    runs-on: macos-10.15
+    runs-on: macos-12
     strategy:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        python_version: ['3.7', '3.8', '3.9', '3.10']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python_version: 3.7
+            python_version: '3.7'
           - is_master: false
-            python_version: 3.8
+            python_version: '3.8'
           - is_master: false
-            python_version: 3.9
+            python_version: '3.9'
 
     env:
       BUILD_CUDA_MODULE: OFF
@@ -169,7 +176,12 @@ jobs:
           cmake --version
           source util/ci_utils.sh
           install_python_dependencies
+          # Install libomp 11.1.0. See comment above.
           brew install ccache
+          brew unlink libomp
+          curl -L -H "Authorization: Bearer QQ==" -o libomp-11.1.0.catalina.bottle.tar.gz \
+          https://ghcr.io/v2/homebrew/core/libomp/blobs/sha256:45a5aa653bd45bd5ff5858580b1a4670c4b5a51ea29d68d45a53f72f56010e05
+          brew install -f libomp-11.1.0.catalina.bottle.tar.gz
           ccache -M 2G  # See .github/workflows/readme.md for ccache strategy.
 
       - name: Config and build wheel
@@ -209,21 +221,21 @@ jobs:
 
   test-wheel:
     name: Test wheel
-    runs-on: macos-10.15
+    runs-on: macos-12
     needs: [build-wheel]
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        python_version: ['3.7', '3.8', '3.9', '3.10']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python_version: 3.7
+            python_version: '3.7'
           - is_master: false
-            python_version: 3.8
+            python_version: '3.8'
           - is_master: false
-            python_version: 3.9
+            python_version: '3.9'
 
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML

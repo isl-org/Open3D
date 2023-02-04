@@ -20,7 +20,7 @@ endif()
 # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
 # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
 if(UNIX AND NOT APPLE)
-    execute_process(COMMAND uname -p
+    execute_process(COMMAND uname -m
         OUTPUT_VARIABLE PROCESSOR_ARCH
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
@@ -48,7 +48,7 @@ option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
-option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
+option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"        ON )
 if(NOT LINUX_AARCH64 AND NOT APPLE_AARCH64)
     option(BUILD_ISPC_MODULE      "Build the ISPC module"                    ON )
 else()
@@ -70,6 +70,7 @@ if(BUILD_SYCL_MODULE)
 else()
     option(GLIBCXX_USE_CXX11_ABI  "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
 endif()
+option(ENABLE_SYCL_UNIFIED_SHARED_MEMORY "Enable SYCL unified shared memory" OFF)
 if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
 else()
@@ -166,8 +167,9 @@ endif()
 # use this directory to cache downloaded 3rd party dependencies and automatically skip
 # downloading from the Internet if the files are available. This is only supported by
 # a limited number of 3rd party libraries.
-set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads")
-message(STATUS "Downloading 3rdparty dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
+set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads"
+    CACHE PATH "Third-party download directory for caching.")
+message(STATUS "Downloading third-party dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 
@@ -275,6 +277,9 @@ if(BUILD_SYCL_MODULE AND BUILD_TENSORFLOW_OPS)
 endif()
 if(BUILD_SYCL_MODULE AND BUILD_PYTORCH_OPS)
     message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires BUILD_PYTORCH_OPS=OFF")
+endif()
+if(BUILD_SYCL_MODULE AND BUILD_CUDA_MODULE)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE and BUILD_SYCL_MODULE cannot be on at the same time for now.")
 endif()
 
 # Global flag to set CXX standard.

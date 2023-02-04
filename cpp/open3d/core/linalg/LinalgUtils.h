@@ -26,9 +26,9 @@
 
 #pragma once
 
-#include <memory>
 #include <string>
 
+#include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
@@ -93,31 +93,32 @@ inline void OPEN3D_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
 
 class CuSolverContext {
 public:
-    static std::shared_ptr<CuSolverContext> GetInstance();
-    CuSolverContext();
+    static CuSolverContext& GetInstance();
+
+    CuSolverContext(const CuSolverContext&) = delete;
+    CuSolverContext& operator=(const CuSolverContext&) = delete;
     ~CuSolverContext();
 
-    cusolverDnHandle_t& GetHandle() { return handle_; }
+    cusolverDnHandle_t& GetHandle(const Device& device);
 
 private:
-    cusolverDnHandle_t handle_;
-
-    static std::shared_ptr<CuSolverContext> instance_;
+    CuSolverContext();
+    std::unordered_map<Device, cusolverDnHandle_t> map_device_to_handle_;
 };
 
 class CuBLASContext {
 public:
-    static std::shared_ptr<CuBLASContext> GetInstance();
+    static CuBLASContext& GetInstance();
 
-    CuBLASContext();
+    CuBLASContext(const CuBLASContext&) = delete;
+    CuBLASContext& operator=(const CuBLASContext&) = delete;
     ~CuBLASContext();
 
-    cublasHandle_t& GetHandle() { return handle_; }
+    cublasHandle_t& GetHandle(const Device& device);
 
 private:
-    cublasHandle_t handle_;
-
-    static std::shared_ptr<CuBLASContext> instance_;
+    CuBLASContext();
+    std::unordered_map<Device, cublasHandle_t> map_device_to_handle_;
 };
 #endif
 }  // namespace core
