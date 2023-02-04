@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: CMake configure
         run: |
           mkdir build
@@ -24,7 +24,7 @@ jobs:
           make -j$(nproc)
           cmake -E sha256sum vtk*.tar.gz > checksum_linux.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: vtk_linux
           path: |
@@ -52,7 +52,7 @@ jobs:
       - name: Disk space used
         run: Get-PSDrive
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
         run: |
@@ -74,7 +74,7 @@ jobs:
           ls
           cmake -E sha256sum (get-item vtk*.tar.gz).Name > checksum_win_${{matrix.configuration}}.txt
       - name: Upload package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: vtk_windows_${{matrix.configuration}}
           path: |
@@ -89,7 +89,7 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: CMake configure
         run: |
           mkdir build
@@ -101,7 +101,7 @@ jobs:
           make -j2
           cmake -E sha256sum vtk*.tar.gz > checksum_macos.txt
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: vtk_macos
           path: |
