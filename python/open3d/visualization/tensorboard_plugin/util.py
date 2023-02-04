@@ -26,6 +26,7 @@
 """Utility functions for the Open3D TensorBoard plugin."""
 
 import os
+from glob import iglob
 from copy import deepcopy
 from collections import OrderedDict
 import logging
@@ -224,17 +225,37 @@ class Open3DPluginDataReader:
         self._file_handles_lock = threading.Lock()
         self.reload_events()
 
+    def _have_data(self):
+        """Do we have any Open3D data?"""
+        try:
+            next(
+                iglob(os.path.join(self.logdir, "**", "plugins", "Open3D",
+                                   "*.msgpack"),
+                      recursive=True))
+            return True
+        except StopIteration:
+            return False
+
     def reload_events(self):
         """Reload event file"""
-        self.event_mux.AddRunsFromDirectory(self.logdir)
-        self.event_mux.Reload()
-        run_tags = self.event_mux.PluginRunToTagToContent(metadata.PLUGIN_NAME)
-        with self._event_lock:
-            self._run_to_tags = {
-                run: sorted(tagdict.keys())
-                for run, tagdict in sorted(run_tags.items())
-            }
-            self._tensor_events = dict()  # Invalidate index
+        # Quickly check for Open3D data, since adding all runs can take a long
+        # time
+        if not self._have_data():
+            with self._event_lock:
+                self._run_to_tags = {}
+            _log.debug(f"No event data found in {self.logdir}")
+        else:
+            self.event_mux.AddRunsFromDirectory(self.logdir)
+            self.event_mux.Reload()
+            run_tags = self.event_mux.PluginRunToTagToContent(
+                metadata.PLUGIN_NAME)
+            with self._event_lock:
+                self._run_to_tags = {
+                    run: sorted(tagdict.keys())
+                    for run, tagdict in sorted(run_tags.items())
+                }
+            _log.debug(f"Event data reloaded: {self._run_to_tags}")
+        self._tensor_events = dict()  # Invalidate index
         # Close all open files
         with self._file_handles_lock:
             while len(self._file_handles) > 0:
@@ -242,12 +263,11 @@ class Open3DPluginDataReader:
                 with file_handle[1]:
                     file_handle[0].close()
 
-        _log.debug(f"Event data reloaded: {self._run_to_tags}")
-
     def is_active(self):
         """Do we have any Open3D data to display?"""
         with self._event_lock:
-            return any(len(tags) > 0 for tags in self._run_to_tags.values())
+            return self._have_data() and any(
+                len(tags) > 0 for tags in self._run_to_tags.values())
 
     @property
     def run_to_tags(self):
