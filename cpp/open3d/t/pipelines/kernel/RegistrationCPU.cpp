@@ -388,7 +388,7 @@ void ComputePoseDopplerICPCPU(
         const double doppler_outlier_threshold,
         const registration::RobustKernel &kernel_geometric,
         const registration::RobustKernel &kernel_doppler,
-        const double &lambda_doppler) {
+        const double lambda_doppler) {
     const int n = source_points.GetLength();
 
     core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);

@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <memory>
 #include <string>
 #include <utility>
@@ -35,6 +36,7 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/kernel/TransformationConverter.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 
@@ -45,6 +47,13 @@ class PointCloud;
 
 namespace pipelines {
 namespace registration {
+
+namespace {
+
+// Minimum time period (sec) between two sequential scans for Doppler ICP.
+constexpr double kMinTimePeriod{1e-3};
+
+}  // namespace
 
 enum class TransformationEstimationType {
     Unspecified = 0,
@@ -90,12 +99,16 @@ public:
     /// corresponding target points, where the value is the target index and the
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
+    /// \param current_transform The current pose estimate of ICP.
+    /// \param iteration The current iteration number of the ICP algorithm.
     /// \return transformation between source to target, a tensor of shape {4,
     /// 4}, type Float64 on CPU device.
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const core::Tensor &correspondences) const = 0;
+            const core::Tensor &correspondences,
+            const core::Tensor &current_transform,
+            const std::size_t iteration) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -135,12 +148,16 @@ public:
     /// corresponding target points, where the value is the target index and the
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
+    /// \param current_transform The current pose estimate of ICP.
+    /// \param iteration The current iteration number of the ICP algorithm.
     /// \return transformation between source to target, a tensor of shape {4,
     /// 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const core::Tensor &correspondences) const override;
+            const core::Tensor &correspondences,
+            const core::Tensor &current_transform,
+            const std::size_t iteration) const override;
 
 private:
     const TransformationEstimationType type_ =
@@ -194,12 +211,16 @@ public:
     /// corresponding target points, where the value is the target index and the
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
-    /// \return transformation between source to target, a tensor
-    /// of shape {4, 4}, type Float64 on CPU device.
+    /// \param current_transform The current pose estimate of ICP.
+    /// \param iteration The current iteration number of the ICP algorithm.
+    /// \return transformation between source to target, a tensor of shape {4,
+    /// 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const core::Tensor &correspondences) const override;
+            const core::Tensor &correspondences,
+            const core::Tensor &current_transform,
+            const std::size_t iteration) const override;
 
 public:
     /// RobustKernel for outlier rejection.
@@ -270,12 +291,16 @@ public:
     /// corresponding target points, where the value is the target index and the
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
+    /// \param current_transform The current pose estimate of ICP.
+    /// \param iteration The current iteration number of the ICP algorithm.
     /// \return transformation between source to target, a tensor of shape {4,
     /// 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            const core::Tensor &correspondences) const override;
+            const core::Tensor &correspondences,
+            const core::Tensor &current_transform,
+            const std::size_t iteration) const override;
 
 public:
     double lambda_geometric_ = 0.968;
@@ -301,6 +326,8 @@ public:
 
     /// \brief Constructor.
     ///
+    /// \param period Time period (in seconds) between the source and the target
+    /// point clouds. Default value: 0.1.
     /// \param lambda_doppler `λ ∈ [0, 1]` in the overall energy `(1−λ)EG +
     /// λED`. Refer the documentation of DopplerICP for more information.
     /// \param reject_dynamic_outliers Whether or not to reject dynamic point
@@ -317,18 +344,25 @@ public:
     /// robust kernel for outlier rejection for the geometric term.
     /// \param doppler_kernel (optional) Any of the implemented statistical
     /// robust kernel for outlier rejection for the Doppler term.
+    /// \param transform_vehicle_to_sensor The 4x4 extrinsic transformation
+    /// matrix between the vehicle and the sensor frames. Defaults to identity
+    /// transform.
     explicit TransformationEstimationForDopplerICP(
-            double lambda_doppler = 0.01,
-            bool reject_dynamic_outliers = false,
-            double doppler_outlier_threshold = 2.0,
-            size_t outlier_rejection_min_iteration = 2,
-            size_t geometric_robust_loss_min_iteration = 0,
-            size_t doppler_robust_loss_min_iteration = 2,
+            const double period = 0.1,
+            const double lambda_doppler = 0.01,
+            const bool reject_dynamic_outliers = false,
+            const double doppler_outlier_threshold = 2.0,
+            const std::size_t outlier_rejection_min_iteration = 2,
+            const std::size_t geometric_robust_loss_min_iteration = 0,
+            const std::size_t doppler_robust_loss_min_iteration = 2,
             const RobustKernel &geometric_kernel =
                     RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0),
             const RobustKernel &doppler_kernel =
-                    RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0))
-        : lambda_doppler_(lambda_doppler),
+                    RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0),
+            const core::Tensor &transform_vehicle_to_sensor =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")))
+        : period_(period),
+          lambda_doppler_(lambda_doppler),
           reject_dynamic_outliers_(reject_dynamic_outliers),
           doppler_outlier_threshold_(doppler_outlier_threshold),
           outlier_rejection_min_iteration_(outlier_rejection_min_iteration),
@@ -336,7 +370,14 @@ public:
                   geometric_robust_loss_min_iteration),
           doppler_robust_loss_min_iteration_(doppler_robust_loss_min_iteration),
           geometric_kernel_(geometric_kernel),
-          doppler_kernel_(doppler_kernel) {
+          doppler_kernel_(doppler_kernel),
+          transform_vehicle_to_sensor_(transform_vehicle_to_sensor) {
+        core::AssertTensorShape(transform_vehicle_to_sensor, {4, 4});
+
+        if (std::abs(period) < kMinTimePeriod) {
+            utility::LogError("Time period too small.");
+        }
+
         if (lambda_doppler_ < 0 || lambda_doppler_ > 1.0) {
             lambda_doppler_ = 0.01;
         }
@@ -363,13 +404,6 @@ public:
                        const geometry::PointCloud &target,
                        const core::Tensor &correspondences) const override;
 
-    /// \brief This method is only present to override the method in the base
-    /// class and must not be used. Use the other method below.
-    core::Tensor ComputeTransformation(
-            const geometry::PointCloud &source,
-            const geometry::PointCloud &target,
-            const core::Tensor &correspondences) const override;
-
     /// \brief Estimates the transformation matrix for DopplerICP method,
     /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
     ///
@@ -382,22 +416,19 @@ public:
     /// index of the value itself is the source index. It contains -1 as value
     /// at index with no correspondence.
     /// \param current_transform The current pose estimate of ICP.
-    /// \param T_V_to_S The 4x4 transformation matrix to transform
-    /// sensor to vehicle frame.
-    /// \param period Time period (in seconds) between the source and the target
-    /// point clouds.
-    /// \param iteration current iteration number of the ICP algorithm.
+    /// \param iteration The current iteration number of the ICP algorithm.
     /// \return transformation between source to target, a tensor of shape {4,
     /// 4}, type Float64 on CPU device.
-    core::Tensor ComputeTransformation(const geometry::PointCloud &source,
-                                       const geometry::PointCloud &target,
-                                       const core::Tensor &correspondences,
-                                       const core::Tensor &current_transform,
-                                       const core::Tensor &T_V_to_S,
-                                       const double period,
-                                       const size_t iteration) const;
+    core::Tensor ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const core::Tensor &correspondences,
+            const core::Tensor &current_transform,
+            const std::size_t iteration) const override;
 
 public:
+    /// Time period (in seconds) between the source and the target point clouds.
+    double period_{0.1};
     /// Factor that weighs the Doppler residual term in DICP objective.
     double lambda_doppler_{0.01};
     /// Whether or not to prune dynamic point outlier correspondences.
@@ -406,15 +437,19 @@ public:
     /// rejected from optimization.
     double doppler_outlier_threshold_{2.0};
     /// Number of iterations of ICP after which outlier rejection is enabled.
-    size_t outlier_rejection_min_iteration_{2};
+    std::size_t outlier_rejection_min_iteration_{2};
     /// Number of iterations of ICP after which robust loss kicks in.
-    size_t geometric_robust_loss_min_iteration_{0};
-    size_t doppler_robust_loss_min_iteration_{2};
+    std::size_t geometric_robust_loss_min_iteration_{0};
+    std::size_t doppler_robust_loss_min_iteration_{2};
     /// RobustKernel for outlier rejection.
     RobustKernel geometric_kernel_ =
             RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0);
     RobustKernel doppler_kernel_ =
             RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0);
+    /// The 4x4 extrinsic transformation matrix between the vehicle and the
+    /// sensor frames.
+    core::Tensor transform_vehicle_to_sensor_ =
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
 
 private:
     const TransformationEstimationType type_ =

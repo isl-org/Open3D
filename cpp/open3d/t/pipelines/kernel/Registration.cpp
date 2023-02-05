@@ -122,17 +122,17 @@ core::Tensor ComputePoseDopplerICP(
         const core::Tensor &target_normals,
         const core::Tensor &correspondence_indices,
         const core::Tensor &current_transform,
-        const core::Tensor &T_V_to_S,
+        const core::Tensor &transform_vehicle_to_sensor,
+        const std::size_t iteration,
         const double period,
-        const size_t iteration,
+        const double lambda_doppler,
         const bool reject_dynamic_outliers,
         const double doppler_outlier_threshold,
-        const size_t outlier_rejection_min_iteration,
-        const size_t geometric_robust_loss_min_iteration,
-        const size_t doppler_robust_loss_min_iteration,
+        const std::size_t outlier_rejection_min_iteration,
+        const std::size_t geometric_robust_loss_min_iteration,
+        const std::size_t doppler_robust_loss_min_iteration,
         const registration::RobustKernel &geometric_kernel,
-        const registration::RobustKernel &doppler_kernel,
-        const double &lambda_doppler) {
+        const registration::RobustKernel &doppler_kernel) {
     const core::Device device = source_points.GetDevice();
     const core::Dtype dtype = source_points.GetDtype();
 
@@ -160,13 +160,15 @@ core::Tensor ComputePoseDopplerICP(
 
     // Extract the rotation and translation parts from the matrix.
     const core::Tensor R_S_to_V =
-            T_V_to_S.GetItem({core::TensorKey::Slice(0, 3, 1),
+            transform_vehicle_to_sensor
+                    .GetItem({core::TensorKey::Slice(0, 3, 1),
                               core::TensorKey::Slice(0, 3, 1)})
                     .Inverse()
                     .Flatten()
                     .To(device, dtype);
     const core::Tensor r_v_to_s_in_V =
-            T_V_to_S.GetItem({core::TensorKey::Slice(0, 3, 1),
+            transform_vehicle_to_sensor
+                    .GetItem({core::TensorKey::Slice(0, 3, 1),
                               core::TensorKey::Slice(3, 4, 1)})
                     .Flatten()
                     .To(device, dtype);

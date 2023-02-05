@@ -103,11 +103,12 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_positions,
 /// index of the value itself is the source index. It contains -1 as value at
 /// index with no correspondence.
 /// \param current_transform The current pose estimate of ICP.
-/// \param T_V_to_S The 4x4 transformation matrix to transform
-/// sensor to vehicle frame.
+/// \param transform_vehicle_to_sensor The 4x4 extrinsic transformation matrix
+/// between the vehicle and the sensor frames.
+/// \param iteration current iteration number of the ICP algorithm.
 /// \param period Time period (in seconds) between the source and the target
 /// point clouds.
-/// \param iteration current iteration number of the ICP algorithm.
+/// \param lambda_doppler weight for the Doppler objective.
 /// \param reject_dynamic_outliers Whether or not to prune dynamic point
 /// outlier correspondences.
 /// \param doppler_outlier_threshold Correspondences with Doppler error
@@ -120,7 +121,6 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_positions,
 /// after which robust loss for Doppler term kicks in.
 /// \param geometric_kernel statistical robust kernel for outlier rejection.
 /// \param doppler_kernel statistical robust kernel for outlier rejection.
-/// \param lambda_doppler weight for the Doppler objective.
 /// \return Pose [alpha beta gamma, tx, ty, tz], a shape {6} tensor of dtype
 /// Float64, where alpha, beta, gamma are the Euler angles in the ZYX order.
 core::Tensor ComputePoseDopplerICP(
@@ -131,17 +131,17 @@ core::Tensor ComputePoseDopplerICP(
         const core::Tensor &target_normals,
         const core::Tensor &correspondence_indices,
         const core::Tensor &current_transform,
-        const core::Tensor &T_V_to_S,
+        const core::Tensor &transform_vehicle_to_sensor,
+        const std::size_t iteration,
         const double period,
-        const size_t iteration,
+        const double lambda_doppler,
         const bool reject_dynamic_outliers,
         const double doppler_outlier_threshold,
-        const size_t outlier_rejection_min_iteration,
-        const size_t geometric_robust_loss_min_iteration,
-        const size_t doppler_robust_loss_min_iteration,
+        const std::size_t outlier_rejection_min_iteration,
+        const std::size_t geometric_robust_loss_min_iteration,
+        const std::size_t doppler_robust_loss_min_iteration,
         const registration::RobustKernel &geometric_kernel,
-        const registration::RobustKernel &doppler_kernel,
-        const double &lambda_doppler);
+        const registration::RobustKernel &doppler_kernel);
 
 /// \brief Computes (R) Rotation {3,3} and (t) translation {3,}
 /// for point to point registration method.

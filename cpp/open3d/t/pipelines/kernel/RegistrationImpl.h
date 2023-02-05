@@ -92,7 +92,7 @@ void ComputePoseDopplerICPCPU(
         const double doppler_outlier_threshold,
         const registration::RobustKernel &kernel_geometric,
         const registration::RobustKernel &kernel_doppler,
-        const double &lambda_doppler);
+        const double lambda_doppler);
 
 #ifdef BUILD_CUDA_MODULE
 void ComputePosePointToPlaneCUDA(const core::Tensor &source_points,
@@ -142,7 +142,7 @@ void ComputePoseDopplerICPCUDA(
         const double doppler_outlier_threshold,
         const registration::RobustKernel &kernel_geometric,
         const registration::RobustKernel &kernel_doppler,
-        const double &lambda_doppler);
+        const double lambda_doppler);
 #endif
 
 void ComputeRtPointToPointCPU(const core::Tensor &source_points,

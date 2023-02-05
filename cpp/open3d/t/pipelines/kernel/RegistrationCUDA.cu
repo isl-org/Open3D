@@ -347,7 +347,7 @@ void ComputePoseDopplerICPCUDA(
         const double doppler_outlier_threshold,
         const registration::RobustKernel &kernel_geometric,
         const registration::RobustKernel &kernel_doppler,
-        const double &lambda_doppler) {
+        const double lambda_doppler) {
     int n = source_points.GetLength();
     const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
     const dim3 threads(kThread1DUnit);

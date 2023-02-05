@@ -89,7 +89,9 @@ double TransformationEstimationPointToPoint::ComputeRMSE(
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const core::Tensor &correspondences) const {
+        const core::Tensor &correspondences,
+        const core::Tensor &current_transform,
+        const std::size_t iteration) const {
     if (!target.HasPointPositions() || !source.HasPointPositions()) {
         utility::LogError("Source and/or Target pointcloud is empty.");
     }
@@ -151,7 +153,9 @@ double TransformationEstimationPointToPlane::ComputeRMSE(
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const core::Tensor &correspondences) const {
+        const core::Tensor &correspondences,
+        const core::Tensor &current_transform,
+        const std::size_t iteration) const {
     if (!target.HasPointPositions() || !source.HasPointPositions()) {
         utility::LogError("Source and/or Target pointcloud is empty.");
     }
@@ -270,7 +274,9 @@ double TransformationEstimationForColoredICP::ComputeRMSE(
 core::Tensor TransformationEstimationForColoredICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const core::Tensor &correspondences) const {
+        const core::Tensor &correspondences,
+        const core::Tensor &current_transform,
+        const std::size_t iteration) const {
     if (!target.HasPointPositions() || !source.HasPointPositions()) {
         utility::LogError("Source and/or Target pointcloud is empty.");
     }
@@ -355,22 +361,9 @@ double TransformationEstimationForDopplerICP::ComputeRMSE(
 core::Tensor TransformationEstimationForDopplerICP::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const core::Tensor &correspondences) const {
-    utility::LogError(
-            "This method should not be called for DopplerICP. DopplerICP "
-            "requires the period, current transformation, and T_V_to_S "
-            "calibration.");
-    return core::Tensor::Eye(4, core::Float64, core::Device("CPU:0"));
-}
-
-core::Tensor TransformationEstimationForDopplerICP::ComputeTransformation(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
         const core::Tensor &correspondences,
         const core::Tensor &current_transform,
-        const core::Tensor &T_V_to_S,
-        const double period,
-        const size_t iteration) const {
+        const std::size_t iteration) const {
     if (!source.HasPointPositions() || !target.HasPointPositions()) {
         utility::LogError("Source and/or Target pointcloud is empty.");
     }
@@ -403,12 +396,13 @@ core::Tensor TransformationEstimationForDopplerICP::ComputeTransformation(
             source.GetPointPositions(), source.GetPointAttr("dopplers"),
             source.GetPointAttr("directions"), target.GetPointPositions(),
             target.GetPointNormals(), correspondences, current_transform,
-            T_V_to_S, period, iteration, this->reject_dynamic_outliers_,
+            this->transform_vehicle_to_sensor_, iteration, this->period_,
+            this->lambda_doppler_, this->reject_dynamic_outliers_,
             this->doppler_outlier_threshold_,
             this->outlier_rejection_min_iteration_,
             this->geometric_robust_loss_min_iteration_,
             this->doppler_robust_loss_min_iteration_, this->geometric_kernel_,
-            this->doppler_kernel_, this->lambda_doppler_);
+            this->doppler_kernel_);
 
     // Get transformation {4,4} of type Float64 from pose {6}.
     core::Tensor transform = pipelines::kernel::PoseToTransformation(pose);
