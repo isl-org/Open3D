@@ -53,7 +53,8 @@ void AddMMCUDA(void* A_data,
                int lda,
                int ldb,
                int ldc,
-               Dtype dtype);
+               Dtype dtype,
+               const Device& device);
 #endif
 
 void AddMMCPU(void* A_data,

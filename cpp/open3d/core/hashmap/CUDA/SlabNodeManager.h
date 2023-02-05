@@ -43,12 +43,12 @@
 #include <thrust/device_vector.h>
 
 #include <memory>
-#include <random>
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/hashmap/CUDA/SlabMacros.h"
 #include "open3d/core/hashmap/HashBackendBuffer.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace core {
@@ -239,8 +239,7 @@ class SlabNodeManager {
 public:
     SlabNodeManager(const Device& device) : device_(device) {
         /// Random coefficients for allocator's hash function.
-        std::mt19937 rng(time(0));
-        impl_.hash_coef_ = rng();
+        impl_.hash_coef_ = utility::random::RandUint32();
 
         /// In the light version, we put num_super_blocks super blocks within
         /// a single array.

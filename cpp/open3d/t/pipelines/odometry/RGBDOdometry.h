@@ -315,6 +315,16 @@ OdometryResult ComputeOdometryResultHybrid(
         const float depth_huber_delta,
         const float intensity_huber_delta);
 
+/// Estimates 6x6 information matrix from a pair of depth images.
+/// The process is akin to information matrix creation for point clouds.
+core::Tensor ComputeOdometryInformationMatrix(
+        const geometry::Image& source_depth,
+        const geometry::Image& target_depth,
+        const core::Tensor& intrinsic,
+        const core::Tensor& source_to_target,
+        const float dist_thr,
+        const float depth_scale = 1000.0f,
+        const float depth_max = 3.0f);
 }  // namespace odometry
 }  // namespace pipelines
 }  // namespace t

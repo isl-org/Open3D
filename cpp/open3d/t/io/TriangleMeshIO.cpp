@@ -40,7 +40,14 @@ static const std::unordered_map<
         std::function<bool(const std::string &,
                            geometry::TriangleMesh &,
                            const open3d::io::ReadTriangleMeshOptions &)>>
-        file_extension_to_trianglemesh_read_function{};
+        file_extension_to_trianglemesh_read_function{
+                {"stl", ReadTriangleMeshUsingASSIMP},
+                {"obj", ReadTriangleMeshUsingASSIMP},
+                {"off", ReadTriangleMeshUsingASSIMP},
+                {"gltf", ReadTriangleMeshUsingASSIMP},
+                {"glb", ReadTriangleMeshUsingASSIMP},
+                {"fbx", ReadTriangleMeshUsingASSIMP},
+        };
 
 static const std::unordered_map<
         std::string,

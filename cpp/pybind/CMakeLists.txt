@@ -62,11 +62,33 @@ set_target_properties(pybind PROPERTIES
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
 set(PYTHON_EXTRA_LIBRARIES "")
 if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY}
+        ${MESA_CPU_GL_LIBRARY})
+endif()
+if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
+# Package libomp v11.1.0, if it is not installed. Later version cause crash on
+# x86_64 if PyTorch is already imported. Case of shared libopen3d.dylib is not
+# handled.
+# https://github.com/microsoft/LightGBM/issues/4229
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${OpenMP_libomp_LIBRARY})
+    execute_process(COMMAND brew list --versions libomp
+        COMMAND cut "-d\ " -f2
+        OUTPUT_VARIABLE libomp_ver OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(libomp_ver VERSION_GREATER_EQUAL 12.0.0)
+        message(SEND_ERROR "libomp ${libomp_ver} found, which can lead to interoperability problems with other Python libraries using libomp.  Please use libomp v11.1 to build Open3D.")
+    endif()
+    file(GENERATE OUTPUT update_pybind_libomp.sh
+        CONTENT [=[libomp_library=$(dyld_info -dependents "$<TARGET_FILE:pybind>" |
+grep libomp | tr -d '[:space:]')
+install_name_tool -change $libomp_library @loader_path/../libomp.dylib \
+"$<TARGET_FILE:pybind>"]=])
+    add_custom_command(TARGET pybind POST_BUILD
+        COMMAND bash update_pybind_libomp.sh
+        COMMENT "Updating pybind to use packaged libomp")
 endif()
 
 # Use `make python-package` to create the python package in the build directory
-# The python package will be created at PYTHON_PACKAGE_DIR. It contains:
+# The python package will be created at PYTHON_PACKAGE_DST_DIR. It contains:
 # 1) Pure-python code and misc files, copied from python/package
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 # 3) Configured files and supporting files
@@ -83,8 +105,8 @@ set(GENERATED_OUTPUTS "")
 
 # add additional optional compiled modules
 if (BUILD_TENSORFLOW_OPS)
-    list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
-    add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
+    list(APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
+    add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
             COMMAND ${Python3_EXECUTABLE} generate_tf_ops_wrapper.py --input "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/tf/python/ops/ops.py.in" --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops>
                         DEPENDS open3d_tf_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

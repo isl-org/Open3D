@@ -203,12 +203,34 @@ void pybind_voxel_block_grid(py::module& m) {
             "Extract triangle mesh at isosurface points.",
             "weight_threshold"_a = 3.0f, "estimated_vertex_number"_a = -1);
 
+    // Device transfers.
+    vbg.def("to", &VoxelBlockGrid::To,
+            "Transfer the voxel block grid to a specified device.", "device"_a,
+            "copy"_a = false);
+
+    vbg.def(
+            "cpu",
+            [](const VoxelBlockGrid& voxelBlockGrid) {
+                return voxelBlockGrid.To(core::Device("CPU:0"));
+            },
+            "Transfer the voxel block grid to CPU. If the voxel block grid is "
+            "already on CPU, no copy will be performed.");
+    vbg.def(
+            "cuda",
+            [](const VoxelBlockGrid& voxelBlockGrid, int device_id) {
+                return voxelBlockGrid.To(core::Device("CUDA", device_id));
+            },
+            "Transfer the voxel block grid to a CUDA device. If the voxel "
+            "block grid is already on the specified CUDA device, no copy "
+            "will be performed.",
+            "device_id"_a = 0);
+
     vbg.def("save", &VoxelBlockGrid::Save,
-            "Save the voxel block grid to a npz file."
-            "file_name"_a);
+            "Save the voxel block grid to a npz file.", "file_name"_a);
     vbg.def_static("load", &VoxelBlockGrid::Load,
                    "Load a voxel block grid from a npz file.", "file_name"_a);
 }
+
 }  // namespace geometry
 }  // namespace t
 }  // namespace open3d

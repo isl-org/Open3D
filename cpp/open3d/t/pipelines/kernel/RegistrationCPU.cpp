@@ -70,7 +70,7 @@ static void ComputePosePointToPlaneKernelCPU(
 #else
     scalar_t *A_reduction = A_1x29.data();
 #pragma omp parallel for reduction(+ : A_reduction[:29]) schedule(static) num_threads(utility::EstimateMaxThreads())
-    for (int workload_idx = 0; workload_idx < n; workload_idx++) {
+    for (int workload_idx = 0; workload_idx < n; ++workload_idx) {
 #endif
                     scalar_t J_ij[6];
                     scalar_t r = 0;

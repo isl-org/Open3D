@@ -63,18 +63,31 @@ void MemoryManager::Memcpy(void* dst_ptr,
         utility::LogError("src_ptr and dst_ptr cannot be nullptr.");
     }
 
-    if ((!dst_device.IsCPU() && !dst_device.IsCUDA()) ||
-        (!src_device.IsCPU() && !src_device.IsCUDA())) {
-        utility::LogError("MemoryManager::Memcpy: Unimplemented device.");
-    }
-
     std::shared_ptr<MemoryManagerDevice> device_mm;
-    if (dst_device.IsCPU() && src_device.IsCPU()) {
+    // CPU.
+    if (src_device.IsCPU() && dst_device.IsCPU()) {
         device_mm = GetMemoryManagerDevice(src_device);
-    } else if (src_device.IsCUDA()) {
-        device_mm = GetMemoryManagerDevice(src_device);
-    } else {
+    }
+    // CUDA.
+    else if (src_device.IsCPU() && dst_device.IsCUDA()) {
         device_mm = GetMemoryManagerDevice(dst_device);
+    } else if (src_device.IsCUDA() && dst_device.IsCPU()) {
+        device_mm = GetMemoryManagerDevice(src_device);
+    } else if (src_device.IsCUDA() && dst_device.IsCUDA()) {
+        device_mm = GetMemoryManagerDevice(src_device);
+    }
+    // SYCL.
+    else if (src_device.IsCPU() && dst_device.IsSYCL()) {
+        device_mm = GetMemoryManagerDevice(dst_device);
+    } else if (src_device.IsSYCL() && dst_device.IsCPU()) {
+        device_mm = GetMemoryManagerDevice(src_device);
+    } else if (src_device.IsSYCL() && dst_device.IsSYCL()) {
+        device_mm = GetMemoryManagerDevice(src_device);
+    }
+    // Not supporting other combinations at the moment, e.g. SYCL->CUDA.
+    else {
+        utility::LogError("Unsupported device type from {} to {}.",
+                          src_device.ToString(), dst_device.ToString());
     }
 
     device_mm->Memcpy(dst_ptr, dst_device, src_ptr, src_device, num_bytes);
@@ -105,19 +118,28 @@ std::shared_ptr<MemoryManagerDevice> MemoryManager::GetMemoryManagerDevice(
                     {Device::DeviceType::CPU,
                      std::make_shared<MemoryManagerCPU>()},
 #ifdef BUILD_CUDA_MODULE
-#ifdef BUILD_CACHED_CUDA_MANAGER
+#ifdef ENABLE_CACHED_CUDA_MANAGER
                     {Device::DeviceType::CUDA,
                      std::make_shared<MemoryManagerCached>(
                              std::make_shared<MemoryManagerCUDA>())},
 #else
                     {Device::DeviceType::CUDA,
                      std::make_shared<MemoryManagerCUDA>()},
-#endif  // BUILD_CACHED_CUDA_MANAGER
-#endif  // BUILD_CUDA_MODULE
+#endif
+#endif
+#ifdef BUILD_SYCL_MODULE
+                    {Device::DeviceType::SYCL,
+                     std::make_shared<MemoryManagerSYCL>()},
+#endif
             };
+
     if (map_device_type_to_memory_manager.find(device.GetType()) ==
         map_device_type_to_memory_manager.end()) {
-        utility::LogError("Unimplemented device '{}'.", device.ToString());
+        utility::LogError(
+                "Unsupported device \"{}\". Set BUILD_CUDA_MODULE=ON to "
+                "compile for CUDA support and BUILD_SYCL_MODULE=ON to compile "
+                "for SYCL support.",
+                device.ToString());
     }
     return map_device_type_to_memory_manager.at(device.GetType());
 }

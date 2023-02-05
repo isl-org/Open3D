@@ -67,6 +67,11 @@ OrientedBoundingBox OrientedBoundingBox::GetOrientedBoundingBox(bool) const {
     return *this;
 }
 
+OrientedBoundingBox OrientedBoundingBox::GetMinimalOrientedBoundingBox(
+        bool) const {
+    return *this;
+}
+
 OrientedBoundingBox& OrientedBoundingBox::Transform(
         const Eigen::Matrix4d& transformation) {
     utility::LogError(
@@ -201,6 +206,40 @@ OrientedBoundingBox OrientedBoundingBox::CreateFromPoints(
     return obox;
 }
 
+OrientedBoundingBox OrientedBoundingBox::CreateFromPointsMinimal(
+        const std::vector<Eigen::Vector3d>& points, bool robust) {
+    std::shared_ptr<TriangleMesh> mesh;
+    std::tie(mesh, std::ignore) = Qhull::ComputeConvexHull(points, robust);
+    double min_vol = -1;
+    OrientedBoundingBox min_box;
+    PointCloud hull_pcd;
+    for (auto& tri : mesh->triangles_) {
+        hull_pcd.points_ = mesh->vertices_;
+        Eigen::Vector3d a = mesh->vertices_[tri(0)];
+        Eigen::Vector3d b = mesh->vertices_[tri(1)];
+        Eigen::Vector3d c = mesh->vertices_[tri(2)];
+        Eigen::Vector3d u = b - a;
+        Eigen::Vector3d v = c - a;
+        Eigen::Vector3d w = u.cross(v);
+        v = w.cross(u);
+        u = u / u.norm();
+        v = v / v.norm();
+        w = w / w.norm();
+        Eigen::Matrix3d m_rot;
+        m_rot << u[0], v[0], w[0], u[1], v[1], w[1], u[2], v[2], w[2];
+        hull_pcd.Rotate(m_rot.inverse(), a);
+
+        const auto aabox = hull_pcd.GetAxisAlignedBoundingBox();
+        double volume = aabox.Volume();
+        if (min_vol == -1. || volume < min_vol) {
+            min_vol = volume;
+            min_box = aabox.GetOrientedBoundingBox();
+            min_box.Rotate(m_rot, a);
+        }
+    }
+    return min_box;
+}
+
 AxisAlignedBoundingBox& AxisAlignedBoundingBox::Clear() {
     min_bound_.setZero();
     max_bound_.setZero();
@@ -227,6 +266,11 @@ AxisAlignedBoundingBox AxisAlignedBoundingBox::GetAxisAlignedBoundingBox()
 }
 
 OrientedBoundingBox AxisAlignedBoundingBox::GetOrientedBoundingBox(
+        bool robust) const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
+}
+
+OrientedBoundingBox AxisAlignedBoundingBox::GetMinimalOrientedBoundingBox(
         bool robust) const {
     return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(*this);
 }

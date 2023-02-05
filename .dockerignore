@@ -6,3 +6,4 @@ docs/_static/build
 docs/_out
 3rdparty_downloads
 .python-version
+cmake-build-*

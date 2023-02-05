@@ -176,7 +176,7 @@ class PipelineModel:
                 log.warning(f"No valid depth data in frame {frame_id})")
                 continue
 
-            n_pts += self.pcd_frame.point['positions'].shape[0]
+            n_pts += self.pcd_frame.point.positions.shape[0]
             if frame_id % 60 == 0 and frame_id > 0:
                 t0, t1 = t1, time.perf_counter()
                 log.debug(f"\nframe_id = {frame_id}, \t {(t1-t0)*1000./60:0.2f}"
@@ -221,8 +221,8 @@ class PipelineModel:
         now = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = f"{self.rgbd_metadata.serial_number}_pcd_{now}.ply"
         # Convert colors to uint8 for compatibility
-        self.pcd_frame.point['colors'] = (self.pcd_frame.point['colors'] *
-                                          255).to(o3d.core.Dtype.UInt8)
+        self.pcd_frame.point.colors = (self.pcd_frame.point.colors * 255).to(
+            o3d.core.Dtype.UInt8)
         self.executor.submit(o3d.t.io.write_point_cloud,
                              filename,
                              self.pcd_frame,

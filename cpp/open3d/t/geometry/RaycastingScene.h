@@ -49,7 +49,7 @@ namespace geometry {
 class RaycastingScene {
 public:
     /// \brief Default Constructor.
-    RaycastingScene();
+    RaycastingScene(int64_t nthreads = 0);
 
     ~RaycastingScene();
 
@@ -137,6 +137,10 @@ public:
     ///           {..}.
     ///         - \b primitive_ids A tensor with the primitive IDs, which
     ///           corresponds to the triangle index. The shape is {..}.
+    ///         - \b primitive_uvs A tensor with the barycentric coordinates of
+    ///           the closest points within the triangles. The shape is {.., 2}.
+    ///         - \b primitive_normals A tensor with the normals of the
+    ///           closest triangle . The shape is {.., 3}.
     std::unordered_map<std::string, core::Tensor> ComputeClosestPoints(
             const core::Tensor &query_points, const int nthreads = 0);
 
@@ -166,11 +170,17 @@ public:
     /// shape can be {depth, height, width, 3}. The last dimension must be 3 and
     /// has the format [x, y, z].
     /// \param nthreads The number of threads to use. Set to 0 for automatic.
+    /// \param nsamples The number of rays used for determining the inside.
+    /// This must be an odd number. The default is 1. Use a higher value if you
+    /// notice sign flipping, which can occur when rays hit exactly an edge or
+    /// vertex in the scene.
+    ///
     /// \return A tensor with the signed distances to
     /// the surface. The shape is
     /// {..}. Negative distances mean a point is inside a closed surface.
     core::Tensor ComputeSignedDistance(const core::Tensor &query_points,
-                                       const int nthreads = 0);
+                                       const int nthreads = 0,
+                                       const int nsamples = 1);
 
     /// \brief Computes the occupancy at the query point positions.
     ///
@@ -187,10 +197,16 @@ public:
     /// {depth, height, width, 3}.
     /// The last dimension must be 3 and has the format [x, y, z].
     /// \param nthreads The number of threads to use. Set to 0 for automatic.
+    /// \param nsamples The number of rays used for determining the inside.
+    /// This must be an odd number. The default is 1. Use a higher value if you
+    /// notice errors in the occupancy values. Errors can occur when rays hit
+    /// exactly an edge or vertex in the scene.
+    ///
     /// \return A tensor with the occupancy values. The shape is {..}. Values
     /// are either 0 or 1. A point is occupied or inside if the value is 1.
     core::Tensor ComputeOccupancy(const core::Tensor &query_points,
-                                  const int nthreads = 0);
+                                  const int nthreads = 0,
+                                  const int nsamples = 1);
 
     /// \brief Creates rays for the given camera parameters.
     ///
