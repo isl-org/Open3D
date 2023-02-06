@@ -26,6 +26,8 @@
 
 #include "open3d/utility/Download.h"
 
+// BoringSSL is currently compatible with OpenSSL 1.1.0
+#define OPENSSL_API_COMPAT 10100
 // clang-format off
 // Must include openssl before curl to build on Windows.
 #include <openssl/md5.h>
@@ -49,8 +51,8 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <unordered_set>
 #include <string>
+#include <unordered_set>
 
 #include "open3d/data/Dataset.h"
 #include "open3d/utility/FileSystem.h"
