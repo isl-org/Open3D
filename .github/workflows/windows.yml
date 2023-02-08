@@ -39,18 +39,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        BUILD_SHARED_LIBS: [ON, OFF]
-        STATIC_RUNTIME: [ON, OFF]
-        BUILD_CUDA_MODULE: [ON, OFF]
+        LIB_TYPE: [SHARED, STATIC]
+        RUNTIME: [STATIC_RT, DYNAMIC_RT]
+        BUILD_ARCH: [CUDA, NOCUDA]
         CONFIG: [Release, Debug]
         exclude:
-          - BUILD_SHARED_LIBS: ON
-            STATIC_RUNTIME: ON
+          - LIB_TYPE: SHARED
+            RUNTIME: STATIC
         include:
-          - BUILD_CUDA_MODULE: ON
+          - BUILD_ARCH: CUDA
             CUDA_VERSION: 11.0.3
     env:
       BUILD_WEBRTC: ${{ ( matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' ) && 'ON' || 'OFF' }}
+      BUILD_SHARED_LIBS: ${{ ( matrix.LIB_TYPE == 'SHARED' ) && 'ON' || 'OFF' }}
+      STATIC_RUNTIME: ${{ ( matrix.RUNTIME == 'STATIC_RT' ) && 'ON' || 'OFF' }}
+      BUILD_CUDA_MODULE: ${{ ( matrix.BUILD_ARCH == 'CUDA' ) && 'ON' || 'OFF' }}
 
     steps:
       - name: Disk space used
