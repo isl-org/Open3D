@@ -159,7 +159,8 @@ void pybind_kdtreeflann(py::module &m) {
                                     "search_vector_3d() error!");
                         return std::make_tuple(k, indices, distance2);
                     },
-                    "query"_a, "search_param"_a)
+                    py::call_guard<py::gil_scoped_release>(), "query"_a,
+                    "search_param"_a)
             .def(
                     "search_knn_vector_3d",
                     [](const KDTreeFlann &tree, const Eigen::Vector3d &query,
@@ -172,7 +173,8 @@ void pybind_kdtreeflann(py::module &m) {
                                     "search_knn_vector_3d() error!");
                         return std::make_tuple(k, indices, distance2);
                     },
-                    "query"_a, "knn"_a)
+                    py::call_guard<py::gil_scoped_release>(), "query"_a,
+                    "knn"_a)
             .def(
                     "search_radius_vector_3d",
                     [](const KDTreeFlann &tree, const Eigen::Vector3d &query,
@@ -186,7 +188,8 @@ void pybind_kdtreeflann(py::module &m) {
                                     "search_radius_vector_3d() error!");
                         return std::make_tuple(k, indices, distance2);
                     },
-                    "query"_a, "radius"_a)
+                    py::call_guard<py::gil_scoped_release>(), "query"_a,
+                    "radius"_a)
             .def(
                     "search_hybrid_vector_3d",
                     [](const KDTreeFlann &tree, const Eigen::Vector3d &query,
@@ -200,7 +203,8 @@ void pybind_kdtreeflann(py::module &m) {
                                     "search_hybrid_vector_3d() error!");
                         return std::make_tuple(k, indices, distance2);
                     },
-                    "query"_a, "radius"_a, "max_nn"_a)
+                    py::call_guard<py::gil_scoped_release>(), "query"_a,
+                    "radius"_a, "max_nn"_a)
             .def(
                     "search_vector_xd",
                     [](const KDTreeFlann &tree, const Eigen::VectorXd &query,
@@ -213,7 +217,8 @@ void pybind_kdtreeflann(py::module &m) {
                                     "search_vector_xd() error!");
                         return std::make_tuple(k, indices, distance2);
                     },
-                    "query"_a, "search_param"_a)
+                    py::call_guard<py::gil_scoped_release>(), "query"_a,
+                    "search_param"_a)
             .def(
                     "search_knn_vector_xd",
                     [](const KDTreeFlann &tree, const Eigen::VectorXd &query,
@@ -226,7 +231,8 @@ void pybind_kdtreeflann(py::module &m) {
                                     "search_knn_vector_xd() error!");
                         return std::make_tuple(k, indices, distance2);
                     },
-                    "query"_a, "knn"_a)
+                    py::call_guard<py::gil_scoped_release>(), "query"_a,
+                    "knn"_a)
             .def(
                     "search_radius_vector_xd",
                     [](const KDTreeFlann &tree, const Eigen::VectorXd &query,
@@ -240,7 +246,8 @@ void pybind_kdtreeflann(py::module &m) {
                                     "search_radius_vector_xd() error!");
                         return std::make_tuple(k, indices, distance2);
                     },
-                    "query"_a, "radius"_a)
+                    py::call_guard<py::gil_scoped_release>(), "query"_a,
+                    "radius"_a)
             .def(
                     "search_hybrid_vector_xd",
                     [](const KDTreeFlann &tree, const Eigen::VectorXd &query,
@@ -254,7 +261,8 @@ void pybind_kdtreeflann(py::module &m) {
                                     "search_hybrid_vector_xd() error!");
                         return std::make_tuple(k, indices, distance2);
                     },
-                    "query"_a, "radius"_a, "max_nn"_a);
+                    py::call_guard<py::gil_scoped_release>(), "query"_a,
+                    "radius"_a, "max_nn"_a);
     docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_hybrid_vector_3d",
                                     map_kd_tree_flann_method_docs);
     docstring::ClassMethodDocInject(m, "KDTreeFlann", "search_hybrid_vector_xd",

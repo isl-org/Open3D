@@ -176,10 +176,13 @@ void pybind_image(py::module &m) {
                             return *output;
                         }
                     },
+                    py::call_guard<py::gil_scoped_release>(),
                     "Function to filter Image", "filter_type"_a)
             .def("flip_vertical", &Image::FlipVertical,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to flip image vertically (upside down)")
             .def("flip_horizontal", &Image::FlipHorizontal,
+                 py::call_guard<py::gil_scoped_release>(),
                  "Function to flip image horizontally (from left to right)")
             .def(
                     "create_pyramid",
@@ -197,6 +200,7 @@ void pybind_image(py::module &m) {
                             return output;
                         }
                     },
+                    py::call_guard<py::gil_scoped_release>(),
                     "Function to create ImagePyramid", "num_of_levels"_a,
                     "with_gaussian_filter"_a)
             .def_static(
@@ -206,6 +210,7 @@ void pybind_image(py::module &m) {
                         auto output = Image::FilterPyramid(input, filter_type);
                         return output;
                     },
+                    py::call_guard<py::gil_scoped_release>(),
                     "Function to filter ImagePyramid", "image_pyramid"_a,
                     "filter_type"_a);
 

@@ -117,6 +117,7 @@ void pybind_class_io(py::module &m_io) {
             .export_values();
     m_io.def(
             "read_file_geometry_type", &ReadFileGeometryType,
+            py::call_guard<py::gil_scoped_release>(),
             "Returns the type of geometry of the file. This is a faster way of "
             "determining the file type than attempting to read the file as a "
             "point cloud, mesh, or line set in turn.");
@@ -130,6 +131,7 @@ void pybind_class_io(py::module &m_io) {
                 ReadImage(filename, image);
                 return image;
             },
+            py::call_guard<py::gil_scoped_release>(),
             "Function to read Image from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_image",
                                  map_shared_argument_docstrings);
@@ -453,6 +455,7 @@ void pybind_class_io(py::module &m_io) {
                 }
                 return config;
             },
+            py::call_guard<py::gil_scoped_release>(),
             "Function to read Azure Kinect sensor config from file",
             "filename"_a);
     docstring::FunctionDocInject(m_io, "read_azure_kinect_sensor_config",
@@ -464,6 +467,7 @@ void pybind_class_io(py::module &m_io) {
                const AzureKinectSensorConfig config) {
                 return WriteIJsonConvertibleToJSON(filename, config);
             },
+            py::call_guard<py::gil_scoped_release>(),
             "Function to write Azure Kinect sensor config to file",
             "filename"_a, "config"_a);
     docstring::FunctionDocInject(m_io, "write_azure_kinect_sensor_config",
@@ -482,6 +486,7 @@ void pybind_class_io(py::module &m_io) {
                 }
                 return metadata;
             },
+            py::call_guard<py::gil_scoped_release>(),
             "Function to read Azure Kinect metadata from file", "filename"_a);
     docstring::FunctionDocInject(m_io, "read_azure_kinect_mkv_metadata",
                                  map_shared_argument_docstrings);
@@ -491,6 +496,7 @@ void pybind_class_io(py::module &m_io) {
             [](const std::string &filename, const MKVMetadata metadata) {
                 return WriteIJsonConvertibleToJSON(filename, metadata);
             },
+            py::call_guard<py::gil_scoped_release>(),
             "Function to write Azure Kinect metadata to file", "filename"_a,
             "config"_a);
     docstring::FunctionDocInject(m_io, "write_azure_kinect_mkv_metadata",
