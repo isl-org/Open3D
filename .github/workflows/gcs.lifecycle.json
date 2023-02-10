@@ -1,9 +1,12 @@
 {
-    "rule":
-    [
-      {
-        "action": {"type": "Delete"},
-        "condition": {"age": 7}
+  "rule": [
+    {
+      "action": {
+        "type": "Delete"
+      },
+      "condition": {
+        "age": 7
       }
-    ]
+    }
+  ]
 }
