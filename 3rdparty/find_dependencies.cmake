@@ -1028,6 +1028,8 @@ endif()
 
 # fmt
 if(USE_SYSTEM_FMT)
+    # MSVC >= 17.x required for building fmt 8+
+    # SYCL / DPC++ needs fmt ver <8 or >= 9.2: https://github.com/fmtlib/fmt/issues/3005
     open3d_find_package_3rdparty_library(3rdparty_fmt
         PUBLIC
         PACKAGE fmt
