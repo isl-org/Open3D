@@ -220,6 +220,12 @@ build_pip_package() {
 	echo
 	make VERBOSE=1 -j"$NPROC" pybind open3d_tf_ops open3d_torch_ops
 
+    echo "Packaging Open3D CPU pip package..."
+	make VERBOSE=1 -j"$NPROC" pip-package
+    mv lib/python-package/pip-package/open3d*.whl .
+    whl_name="$(ls open3d*.whl)"
+    mv "$whl_name" "${whl_name/open3d/open3d-cpu}"
+
 	if [ "$BUILD_CUDA_MODULE" == ON ]; then
 		echo
 		echo Installing CUDA versions of TensorFlow and PyTorch...
@@ -238,9 +244,9 @@ build_pip_package() {
 	fi
 	echo
 
-	echo "Packaging Open3D pip package..."
-	make VERBOSE=1 -j"$NPROC" pip-package
-
+	echo "Packaging Open3D full pip package..."
+	make VERBOSE=1 -j"$NPROC" pip-packagei
+    mv open3d-cpu*.whl lib/python-package/pip-package/
 	popd # PWD=Open3D
 }
 
@@ -311,6 +317,7 @@ run_python_tests() {
 	fi
 	python -m pytest "${pytest_args[@]}"
 	deactivate open3d_test.venv # argument prevents unbound variable error
+    rm -rf open3d_test.venv     # cleanup for testing the next wheel
 }
 
 # Use: run_unit_tests
