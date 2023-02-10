@@ -45,8 +45,6 @@ struct MiniVec {
 
     FN_SPECIFIERS MiniVec() {}
 
-    FN_SPECIFIERS ~MiniVec() {}
-
     template <class... TInit>
     FN_SPECIFIERS explicit MiniVec(TInit... as) : arr{as...} {}
 
