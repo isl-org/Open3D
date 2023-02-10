@@ -222,7 +222,7 @@ build_pip_package() {
 
     echo "Packaging Open3D CPU pip package..."
 	make VERBOSE=1 -j"$NPROC" pip-package
-    mv lib/python-package/pip-package/open3d*.whl .
+    mv lib/python_package/pip_package/open3d*.whl .
     whl_name="$(ls open3d*.whl)"
     mv "$whl_name" "${whl_name/open3d/open3d-cpu}"
 
@@ -245,8 +245,8 @@ build_pip_package() {
 	echo
 
 	echo "Packaging Open3D full pip package..."
-	make VERBOSE=1 -j"$NPROC" pip-packagei
-    mv open3d-cpu*.whl lib/python-package/pip-package/
+	make VERBOSE=1 -j"$NPROC" pip-package
+    mv open3d-cpu*.whl lib/python_package/pip_package/
 	popd # PWD=Open3D
 }
 
