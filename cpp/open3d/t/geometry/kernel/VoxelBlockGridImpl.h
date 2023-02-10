@@ -586,7 +586,7 @@ void RayCastCPU
         utility::LogError(
                 "Unsupported backend: CUDA raycasting only supports STDGPU.");
     }
-    auto hashmap_impl = cuda_hashmap->GetImpl();
+    auto hashmap_impl = *cuda_hashmap->GetImpl();
 #else
     auto cpu_hashmap =
             std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash, Eq>>(
