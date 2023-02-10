@@ -28,6 +28,8 @@
 
 #include "open3d/core/CUDAUtils.h"
 
+#include <fmt/std.h>
+
 #include <thread>
 #include <vector>
 
