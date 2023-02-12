@@ -222,9 +222,7 @@ build_pip_package() {
 
     echo "Packaging Open3D CPU pip package..."
 	make VERBOSE=1 -j"$NPROC" pip-package
-    mv lib/python_package/pip_package/open3d*.whl .
-    whl_name="$(ls open3d*.whl)"
-    mv "$whl_name" "${whl_name/open3d/open3d-cpu}"
+    mv lib/python_package/pip_package/open3d*.whl . # save CPU wheel
 
 	if [ "$BUILD_CUDA_MODULE" == ON ]; then
 		echo
@@ -246,7 +244,7 @@ build_pip_package() {
 
 	echo "Packaging Open3D full pip package..."
 	make VERBOSE=1 -j"$NPROC" pip-package
-    mv open3d-cpu*.whl lib/python_package/pip_package/
+    mv open3d*.whl lib/python_package/pip_package/   # restore CPU wheel
 	popd # PWD=Open3D
 }
 
@@ -259,13 +257,13 @@ test_wheel() {
 	source open3d_test.venv/bin/activate
 	python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
 		setuptools=="$STOOLS_VER"
-	echo "Using python: $(command -v python)"
+	echo -n "Using python: $(command -v python)"
 	python --version
 	echo -n "Using pip: "
 	python -m pip --version
 	echo "Installing Open3D wheel $wheel_path in virtual environment..."
 	python -m pip install "$wheel_path"
-	python -c "import open3d; print('Installed:', open3d)"
+    python -c "import open3d; print('Installed:', open3d); print('BUILD_CUDA_MODULE: ', open3d._build_config['BUILD_CUDA_MODULE'])"
 	python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 	echo
 	# echo "Dynamic libraries used:"

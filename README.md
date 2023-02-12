@@ -49,7 +49,8 @@ Pre-built pip packages support Ubuntu 18.04+, macOS 10.15+ and Windows 10+
 
 ```bash
 # Install
-pip install open3d
+pip install open3d       # or
+pip install open3d_cpu   # Smaller CPU only wheel on Linux (v0.17+)
 
 # Verify installation
 python -c "import open3d as o3d; print(o3d.__version__)"
