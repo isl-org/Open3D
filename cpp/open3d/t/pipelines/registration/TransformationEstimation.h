@@ -107,8 +107,9 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const core::Tensor &correspondences,
-            const core::Tensor &current_transform,
-            const std::size_t iteration) const = 0;
+            const core::Tensor &current_transform =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+            const std::size_t iteration = 0) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
@@ -156,8 +157,9 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const core::Tensor &correspondences,
-            const core::Tensor &current_transform,
-            const std::size_t iteration) const override;
+            const core::Tensor &current_transform =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+            const std::size_t iteration = 0) const override;
 
 private:
     const TransformationEstimationType type_ =
@@ -219,8 +221,9 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const core::Tensor &correspondences,
-            const core::Tensor &current_transform,
-            const std::size_t iteration) const override;
+            const core::Tensor &current_transform =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+            const std::size_t iteration = 0) const override;
 
 public:
     /// RobustKernel for outlier rejection.
@@ -299,8 +302,9 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const core::Tensor &correspondences,
-            const core::Tensor &current_transform,
-            const std::size_t iteration) const override;
+            const core::Tensor &current_transform =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+            const std::size_t iteration = 0) const override;
 
 public:
     double lambda_geometric_ = 0.968;
@@ -423,8 +427,9 @@ public:
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
             const core::Tensor &correspondences,
-            const core::Tensor &current_transform,
-            const std::size_t iteration) const override;
+            const core::Tensor &current_transform =
+                    core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+            const std::size_t iteration = 0) const override;
 
 public:
     /// Time period (in seconds) between the source and the target point clouds.

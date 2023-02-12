@@ -269,51 +269,54 @@ __global__ void ComputePoseDopplerICPKernelCUDA(
         funct1_t GetWeightFromRobustKernelFirst,  // Geometric kernel
         funct2_t GetWeightFromRobustKernelSecond  // Doppler kernel
 ) {
-    __shared__ scalar_t local_sum0[kThread1DUnit];
-    __shared__ scalar_t local_sum1[kThread1DUnit];
-    __shared__ scalar_t local_sum2[kThread1DUnit];
-
-    const int tid = threadIdx.x;
-
-    local_sum0[tid] = 0;
-    local_sum1[tid] = 0;
-    local_sum2[tid] = 0;
+    typedef utility::MiniVec<scalar_t, kReduceDim> ReduceVec;
+    // Create shared memory.
+    typedef cub::BlockReduce<ReduceVec, kThread1DUnit> BlockReduce;
+    __shared__ typename BlockReduce::TempStorage temp_storage;
+    ReduceVec local_sum(static_cast<scalar_t>(0));
 
     const int workload_idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (workload_idx < n) {
+        scalar_t J_G[6] = {0}, J_D[6] = {0};
+        scalar_t r_G = 0, r_D = 0;
 
-    if (workload_idx >= n) return;
+        const bool valid = GetJacobianDopplerICP<scalar_t>(
+                workload_idx, source_points_ptr, source_dopplers_ptr,
+                source_directions_ptr, target_points_ptr, target_normals_ptr,
+                correspondence_indices, R_S_to_V, r_v_to_s_in_V, v_s_in_S,
+                prune_correspondences, doppler_outlier_threshold,
+                sqrt_lambda_geometric, sqrt_lambda_doppler,
+                sqrt_lambda_doppler_by_dt, J_G, J_D, r_G, r_D);
 
-    scalar_t J_G[6] = {0}, J_D[6] = {0}, reduction[29] = {0};
-    scalar_t r_G = 0, r_D = 0;
+        if (valid) {
+            const scalar_t w_G = GetWeightFromRobustKernelFirst(r_G);
+            const scalar_t w_D = GetWeightFromRobustKernelSecond(r_D);
 
-    bool valid = GetJacobianDopplerICP<scalar_t>(
-            workload_idx, source_points_ptr, source_dopplers_ptr,
-            source_directions_ptr, target_points_ptr, target_normals_ptr,
-            correspondence_indices, R_S_to_V, r_v_to_s_in_V, v_s_in_S,
-            prune_correspondences, doppler_outlier_threshold,
-            sqrt_lambda_geometric, sqrt_lambda_doppler,
-            sqrt_lambda_doppler_by_dt, J_G, J_D, r_G, r_D);
-
-    scalar_t w_G = GetWeightFromRobustKernelFirst(r_G);
-    scalar_t w_D = GetWeightFromRobustKernelSecond(r_D);
-
-    if (valid) {
-        // Dump J, r into JtJ and Jtr
-        int i = 0;
-        for (int j = 0; j < 6; ++j) {
-            for (int k = 0; k <= j; ++k) {
-                reduction[i] += J_G[j] * w_G * J_G[k] + J_D[j] * w_D * J_D[k];
-                ++i;
+            // Dump J, r into JtJ and Jtr
+            int i = 0;
+            for (int j = 0; j < 6; ++j) {
+                for (int k = 0; k <= j; ++k) {
+                    local_sum[i] +=
+                            J_G[j] * w_G * J_G[k] + J_D[j] * w_D * J_D[k];
+                    ++i;
+                }
+                local_sum[21 + j] += J_G[j] * w_G * r_G + J_D[j] * w_D * r_D;
             }
-            reduction[21 + j] += J_G[j] * w_G * r_G + J_D[j] * w_D * r_D;
+            local_sum[27] += r_G * r_G + r_D * r_D;
+            local_sum[28] += 1;
         }
-        reduction[27] += r_G * r_G + r_D * r_D;
-        reduction[28] += 1;
     }
 
-    ReduceSum6x6LinearSystem<scalar_t, kThread1DUnit>(tid, valid, reduction,
-                                                      local_sum0, local_sum1,
-                                                      local_sum2, global_sum);
+    // Reduction.
+    auto result = BlockReduce(temp_storage).Sum(local_sum);
+
+    // Add result to global_sum.
+    if (threadIdx.x == 0) {
+#pragma unroll
+        for (int i = 0; i < kReduceDim; ++i) {
+            atomicAdd(&global_sum[i], result[i]);
+        }
+    }
 }
 
 template <typename scalar_t>
@@ -348,11 +351,13 @@ void ComputePoseDopplerICPCUDA(
         const registration::RobustKernel &kernel_geometric,
         const registration::RobustKernel &kernel_doppler,
         const double lambda_doppler) {
+    core::CUDAScopedDevice scoped_device(source_points.GetDevice());
     int n = source_points.GetLength();
+
+    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
     const dim3 blocks((n + kThread1DUnit - 1) / kThread1DUnit);
     const dim3 threads(kThread1DUnit);
 
-    core::Tensor global_sum = core::Tensor::Zeros({29}, dtype, device);
     core::Tensor v_s_in_S = core::Tensor::Zeros({3}, dtype, device);
 
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
