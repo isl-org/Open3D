@@ -167,7 +167,7 @@ inline std::string FastFormatString(const std::string& format, Args... args) {
                            buffer + size_s);  // no + 1 since we ignore the \0
     std::free(buffer);                        // asprintf calls malloc
     return ret;
-#endif // _WIN32
+#endif  // _WIN32
 };
 
 void Sleep(int milliseconds);
