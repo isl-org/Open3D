@@ -328,6 +328,8 @@ static std::tuple<RegistrationResult, int> DoSingleScaleICPIterations(
                     criteria.relative_rmse_) {
             break;
         }
+        prev_fitness = result.fitness_;
+        prev_inlier_rmse = result.inlier_rmse_;
     }
     return std::make_tuple(result, prev_iteration_count + iteration_count);
 }

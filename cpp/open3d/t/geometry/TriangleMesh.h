@@ -26,9 +26,12 @@
 
 #pragma once
 
+#include <list>
+
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/BoundingVolume.h"
 #include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
@@ -36,6 +39,8 @@
 namespace open3d {
 namespace t {
 namespace geometry {
+
+class LineSet;
 
 /// \class TriangleMesh
 /// \brief A triangle mesh contains vertices and triangles.
@@ -140,6 +145,9 @@ public:
     /// Getter for vertex_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetVertexAttr() const { return vertex_attr_; }
 
+    /// Getter for vertex_attr_ TensorMap.
+    TensorMap &GetVertexAttr() { return vertex_attr_; }
+
     /// Get vertex attributes in vertex_attr_. Throws exception if the attribute
     /// does not exist.
     ///
@@ -162,6 +170,9 @@ public:
 
     /// Getter for triangle_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetTriangleAttr() const { return triangle_attr_; }
+
+    /// Getter for triangle_attr_ TensorMap.
+    TensorMap &GetTriangleAttr() { return triangle_attr_; }
 
     /// Get triangle attributes in triangle_attr_. Throws exception if the
     /// attribute does not exist.
@@ -586,6 +597,22 @@ public:
             core::Dtype int_dtype = core::Int64,
             const core::Device &device = core::Device("CPU:0"));
 
+    /// Create a text triangle mesh.
+    /// \param text The text for generating the mesh. ASCII characters 32-126
+    /// are supported (includes alphanumeric characters and punctuation). In
+    /// addition the line feed '\n' is supported to start a new line.
+    /// \param depth The depth of the generated mesh. If depth is 0 then a flat
+    /// mesh will be generated.
+    /// \param int_dtype Int32 or Int64, used to store index values, e.g.
+    /// triangles.
+    /// \param device The device where the resulting TriangleMesh resides in.
+    static TriangleMesh CreateText(
+            const std::string &text,
+            double depth = 0.0,
+            core::Dtype float_dtype = core::Float32,
+            core::Dtype int_dtype = core::Int64,
+            const core::Device &device = core::Device("CPU:0"));
+
 public:
     /// Clear all data in the trianglemesh.
     TriangleMesh &Clear() override {
@@ -646,6 +673,17 @@ public:
     /// \return Rotated TriangleMesh
     TriangleMesh &Rotate(const core::Tensor &R, const core::Tensor &center);
 
+    /// Normalize both triangle normals and vertex normals to length 1.
+    TriangleMesh &NormalizeNormals();
+
+    /// \brief Function to compute triangle normals, usually called before
+    /// rendering.
+    TriangleMesh &ComputeTriangleNormals(bool normalized = true);
+
+    /// \brief Function to compute vertex normals, usually called before
+    /// rendering.
+    TriangleMesh &ComputeVertexNormals(bool normalized = true);
+
     /// \brief Clip mesh with a plane.
     /// This method clips the triangle mesh with the specified plane.
     /// Parts of the mesh on the positive side of the plane will be kept and
@@ -657,6 +695,18 @@ public:
     /// \return New triangle mesh clipped with the plane.
     TriangleMesh ClipPlane(const core::Tensor &point,
                            const core::Tensor &normal) const;
+
+    /// \brief Extract contour slices given a plane.
+    /// This method extracts slices as LineSet from the mesh at specific
+    /// contour values defined by the specified plane.
+    /// \param point A point on the plane as [Tensor of dim {3}].
+    /// \param normal The normal of the plane as [Tensor of dim {3}].
+    /// \param contour_values Contour values at which slices will be generated.
+    /// The value describes the signed distance to the plane.
+    /// \return LineSet with the extracted contours.
+    LineSet SlicePlane(const core::Tensor &point,
+                       const core::Tensor &normal,
+                       const std::vector<double> contour_values = {0.0}) const;
 
     core::Device GetDevice() const override { return device_; }
 
@@ -748,6 +798,12 @@ public:
     TriangleMesh BooleanDifference(const TriangleMesh &mesh,
                                    double tolerance = 1e-6) const;
 
+    /// Create an axis-aligned bounding box from vertex attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// Create an oriented bounding box from vertex attribute "positions".
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+
     /// Fill holes by triangulating boundary edges.
     ///
     /// This function always uses the CPU device.
@@ -757,6 +813,114 @@ public:
     ///
     /// \return New mesh after filling holes.
     TriangleMesh FillHoles(double hole_size = 1e6) const;
+
+    /// Creates an UV atlas and adds it as triangle attr 'texture_uvs' to the
+    /// mesh.
+    ///
+    /// Input meshes must be manifold for this method to work.
+    ///
+    /// The algorithm is based on:
+    /// - Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using
+    /// Spectral Analysis", Eurographics Symposium on Geometry Processing (2004)
+    /// - Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The target size of the texture (size x size). The uv
+    /// coordinates will still be in the range [0..1] but parameters like gutter
+    /// use pixels as units.
+    /// \param gutter This is the space around the uv islands in pixels.
+    /// \param max_stretch The maximum amount of stretching allowed. The
+    /// parameter range is [0..1] with 0 meaning no stretch allowed.
+    void ComputeUVAtlas(size_t size = 512,
+                        float gutter = 1.0f,
+                        float max_stretch = 1.f / 6);
+
+    /// Bake vertex attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    /// Only float type attributes can be baked to textures.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeVertexAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &vertex_attr = {},
+            double margin = 2.,
+            double fill = 0.,
+            bool update_material = true);
+
+    /// Bake triangle attributes into textures.
+    ///
+    /// This function assumes a triangle attribute with name 'texture_uvs'.
+    ///
+    /// This function always uses the CPU device.
+    ///
+    /// \param size The width and height of the texture in pixels. Only square
+    /// textures are supported.
+    ///
+    /// \param vertex_attr The vertex attributes for which textures should be
+    /// generated.
+    ///
+    /// \param margin The margin in pixels. The recommended value is 2. The
+    /// margin are additional pixels around the UV islands to avoid
+    /// discontinuities.
+    ///
+    /// \param fill The value used for filling texels outside the UV islands.
+    ///
+    /// \param update_material If true updates the material of the mesh.
+    /// Baking a vertex attribute with the name 'albedo' will become the albedo
+    /// texture in the material. Existing textures in the material will be
+    /// overwritten.
+    ///
+    /// \return A dictionary of textures.
+    std::unordered_map<std::string, core::Tensor> BakeTriangleAttrTextures(
+            int size,
+            const std::unordered_set<std::string> &triangle_attr = {},
+            double margin = 2.,
+            double fill = 0.,
+            bool update_material = true);
+
+    /// Sweeps the triangle mesh rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A triangle mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeRotation(double angle,
+                                 const core::Tensor &axis,
+                                 int resolution = 16,
+                                 double translation = 0.0,
+                                 bool capping = true) const;
+
+    /// Sweeps the triangle mesh along a direction vector.
+    /// \param vector The direction vector.
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A triangle
+    /// mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeLinear(const core::Tensor &vector,
+                               double scale = 1.0,
+                               bool capping = true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

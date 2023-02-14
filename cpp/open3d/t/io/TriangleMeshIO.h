@@ -40,9 +40,14 @@ namespace io {
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress = false);
 
-/// The general entrance for reading a TriangleMesh from a file
+/// The general entrance for reading a TriangleMesh from a file.
 /// The function calls read functions based on the extension name of filename.
-/// \return return true if the read function is successful, false otherwise.
+/// Supported formats are \c obj,ply,stl,off,gltf,glb,fbx .
+/// \param filename Path to the mesh file.
+/// \param mesh Output parameter for the mesh.
+/// \param params Additional read options to enable post-processing or progress
+/// reporting. \return return true if the read function is successful, false
+/// otherwise.
 bool ReadTriangleMesh(const std::string &filename,
                       geometry::TriangleMesh &mesh,
                       open3d::io::ReadTriangleMeshOptions params = {});
@@ -62,6 +67,11 @@ bool WriteTriangleMesh(const std::string &filename,
                        bool write_vertex_colors = true,
                        bool write_triangle_uvs = true,
                        bool print_progress = false);
+
+bool ReadTriangleMeshUsingASSIMP(
+        const std::string &filename,
+        geometry::TriangleMesh &mesh,
+        const open3d::io::ReadTriangleMeshOptions &params);
 
 }  // namespace io
 }  // namespace t

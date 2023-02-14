@@ -40,10 +40,10 @@ public:
     /// \param max_correspondence_distance Identifies which distance value is
     /// used for finding neighboring points when making information matrix.
     /// According to [Choi et al 2015], this distance is used for determining
-    /// $mu, a line process weight. \param edge_prune_threshold According to
+    /// $\mu$, a line process weight. \param edge_prune_threshold According to
     /// [Choi et al 2015], line_process weight < edge_prune_threshold (0.25) is
-    /// pruned. \param preference_loop_closure dometry vs loop-closure. [0,1] ->
-    /// try to unchange odometry edges, [1) -> try to utilize loop-closure.
+    /// pruned. \param preference_loop_closure odometry vs loop-closure. [0,1]
+    /// -> try to unchange odometry edges, [1) -> try to utilize loop-closure.
     /// Recommendation: 0.1 for RGBD Odometry, 2.0 for fragment registration.
     /// \param reference_node The pose of this node is unchanged after
     /// optimization.
@@ -71,7 +71,7 @@ public:
     /// See reference list in GlobalOptimization.h
     /// Identifies which distance value is used for finding neighboring points
     /// when making information matrix. According to [Choi et al 2015],
-    /// this distance is used for determining $mu, a line process weight.
+    /// this distance is used for determining $\mu$, a line process weight.
     double max_correspondence_distance_;
     /// According to [Choi et al 2015],
     /// line_process weight < edge_prune_threshold_ (0.25) is pruned.

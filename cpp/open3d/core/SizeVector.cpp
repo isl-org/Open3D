@@ -148,7 +148,9 @@ int64_t SizeVector::GetLength() const {
     }
 }
 
-std::string SizeVector::ToString() const { return fmt::format("{}", *this); }
+std::string SizeVector::ToString() const {
+    return fmt::format("{{{}}}", fmt::join(*this, ", "));
+}
 
 void SizeVector::AssertCompatible(const DynamicSizeVector& dsv,
                                   const std::string msg) const {

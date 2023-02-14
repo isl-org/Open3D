@@ -635,6 +635,7 @@ void pybind_registration_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("registration_generalized_icp", &RegistrationGeneralizedICP,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for Generalized ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
           "init"_a = Eigen::Matrix4d::Identity(),

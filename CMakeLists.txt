@@ -20,7 +20,7 @@ endif()
 # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
 # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
 if(UNIX AND NOT APPLE)
-    execute_process(COMMAND uname -p
+    execute_process(COMMAND uname -m
         OUTPUT_VARIABLE PROCESSOR_ARCH
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
@@ -90,6 +90,7 @@ else()
     option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        ON )
 endif()
 option(USE_SYSTEM_ASSIMP          "Use system pre-installed assimp"          OFF)
+option(USE_SYSTEM_CURL            "Use system pre-installed curl"            OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
 option(USE_SYSTEM_FILAMENT        "Use system pre-installed filament"        OFF)
 option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
@@ -102,12 +103,14 @@ option(USE_SYSTEM_JSONCPP         "Use system pre-installed jsoncpp"         OFF
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
 option(USE_SYSTEM_MSGPACK         "Use system pre-installed msgpack"         OFF)
 option(USE_SYSTEM_NANOFLANN       "Use system pre-installed nanoflann"       OFF)
+option(USE_SYSTEM_OPENSSL         "Use system pre-installed OpenSSL"         OFF)
 option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
 option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
 option(USE_SYSTEM_QHULLCPP        "Use system pre-installed qhullcpp"        OFF)
 option(USE_SYSTEM_TBB             "Use system pre-installed TBB"             OFF)
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
+option(USE_SYSTEM_VTK             "Use system pre-installed VTK"             OFF)
 option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                ON )
@@ -167,8 +170,9 @@ endif()
 # use this directory to cache downloaded 3rd party dependencies and automatically skip
 # downloading from the Internet if the files are available. This is only supported by
 # a limited number of 3rd party libraries.
-set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads")
-message(STATUS "Downloading 3rdparty dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
+set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads"
+    CACHE PATH "Third-party download directory for caching.")
+message(STATUS "Downloading third-party dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 

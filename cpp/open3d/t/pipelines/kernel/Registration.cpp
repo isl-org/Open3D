@@ -54,6 +54,7 @@ core::Tensor ComputePosePointToPlane(const core::Tensor &source_points,
                 correspondence_indices.Contiguous(), pose, residual,
                 inlier_count, source_points.GetDtype(), device, kernel);
     } else if (source_points.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(source_points.GetDevice());
         CUDA_CALL(ComputePosePointToPlaneCUDA, source_points.Contiguous(),
                   target_points.Contiguous(), target_normals.Contiguous(),
                   correspondence_indices.Contiguous(), pose, residual,
@@ -94,6 +95,7 @@ core::Tensor ComputePoseColoredICP(const core::Tensor &source_points,
                 inlier_count, source_points.GetDtype(), device, kernel,
                 lambda_geometric);
     } else if (source_points.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(source_points.GetDevice());
         CUDA_CALL(ComputePoseColoredICPCUDA, source_points.Contiguous(),
                   source_colors.Contiguous(), target_points.Contiguous(),
                   target_normals.Contiguous(), target_colors.Contiguous(),
@@ -130,6 +132,7 @@ std::tuple<core::Tensor, core::Tensor> ComputeRtPointToPoint(
                 source_points.GetDtype(), device);
     } else if (source_points.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        core::CUDAScopedDevice scoped_device(source_points.GetDevice());
         // TODO: Implement optimized CUDA reduction kernel.
         core::Tensor valid = correspondence_indices.Ne(-1).Reshape({-1});
         // correpondence_set : (i, corres[i]).
@@ -198,6 +201,7 @@ core::Tensor ComputeInformationMatrix(
                 target_points.Contiguous(), correspondence_indices.Contiguous(),
                 information_matrix, target_points.GetDtype(), device);
     } else if (target_points.IsCUDA()) {
+        core::CUDAScopedDevice scoped_device(target_points.GetDevice());
         CUDA_CALL(ComputeInformationMatrixCUDA, target_points.Contiguous(),
                   correspondence_indices.Contiguous(), information_matrix,
                   target_points.GetDtype(), device);

@@ -26,6 +26,8 @@
 
 #include "open3d/core/Tensor.h"
 
+#include <gmock/gmock.h>
+
 #include <cmath>
 #include <limits>
 
@@ -681,12 +683,14 @@ TEST_P(TensorPermuteDevices, ItemAssign) {
 }
 
 TEST_P(TensorPermuteDevices, ToString) {
+    using ::testing::AnyOf;
     core::Device device = GetParam();
     core::Tensor t;
 
     // 0D
     t = core::Tensor::Ones({}, core::Float32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(1.0)");
+    // IntelLLVM / fmt 6 adds 1 decimal place
+    EXPECT_THAT(t.ToString(/*with_suffix=*/false), AnyOf(R"(1)", R"(1.0)"));
     t = core::Tensor::Full({}, std::numeric_limits<float>::quiet_NaN(),
                            core::Float32, device);
     EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
@@ -697,7 +701,9 @@ TEST_P(TensorPermuteDevices, ToString) {
     // 1D float
     t = core::Tensor(std::vector<float>{0, 1, 2, 3, 4}, {5}, core::Float32,
                      device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"([0.0 1.0 2.0 3.0 4.0])");
+    // IntelLLVM / fmt 6 adds 1 decimal place
+    EXPECT_THAT(t.ToString(/*with_suffix=*/false),
+                AnyOf(R"([0 1 2 3 4])", R"([0.0 1.0 2.0 3.0 4.0])"));
 
     // 1D int
     std::vector<int32_t> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,
@@ -2009,7 +2015,7 @@ TEST_P(TensorPermuteDevices, ReduceSumLargeArray) {
     int64_t max_size = *std::max_element(sizes.begin(), sizes.end());
     std::vector<int> vals(max_size);
     std::transform(vals.begin(), vals.end(), vals.begin(), [](int x) -> int {
-        return utility::random::UniformIntGenerator(0, 3)();
+        return utility::random::UniformIntGenerator<int>(0, 3)();
     });
 
     for (int64_t size : sizes) {
@@ -2349,6 +2355,21 @@ TEST_P(TensorPermuteDevices, Neg) {
     // Also works for int.
     src = core::Tensor(std::vector<int>{-1, 0, 2}, {1, 3}, core::Int32, device);
     dst = src.Neg();
+    EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>({1, 0, -2}));
+}
+
+TEST_P(TensorPermuteDevices, UnaryMinus) {
+    core::Device device = GetParam();
+
+    std::vector<float> dst_vals{2, 1, 0, -1, -2, -3};
+    core::Tensor src =
+            core::Tensor::Init<float>({{-2, -1, 0}, {1, 2, 3}}, device);
+    core::Tensor dst = -src;
+    EXPECT_EQ(dst.ToFlatVector<float>(), dst_vals);
+
+    // Also works for int.
+    src = core::Tensor(std::vector<int>{-1, 0, 2}, {1, 3}, core::Int32, device);
+    dst = -src;
     EXPECT_EQ(dst.ToFlatVector<int>(), std::vector<int>({1, 0, -2}));
 }
 

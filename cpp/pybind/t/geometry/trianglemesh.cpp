@@ -30,6 +30,7 @@
 #include <unordered_map>
 
 #include "open3d/core/CUDAUtils.h"
+#include "open3d/t/geometry/LineSet.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -59,41 +60,41 @@ The attributes of the triangle mesh have different levels::
     # Use mesh.triangle to access the triangles' attributes
     mesh = o3d.t.geometry.TriangleMesh(device)
 
-    # Default attribute: vertex["positions"], triangle["indices"]
+    # Default attribute: vertex.positions, triangle.indices
     # These attributes is created by default and is required by all triangle
     # meshes. The shape of both must be (N, 3). The device of "positions"
     # determines the device of the triangle mesh.
-    mesh.vertex["positions"] = o3d.core.Tensor([[0, 0, 0],
+    mesh.vertex.positions = o3d.core.Tensor([[0, 0, 0],
                                                 [0, 0, 1],
                                                 [0, 1, 0],
                                                 [0, 1, 1]], dtype_f, device)
-    mesh.triangle["indices"] = o3d.core.Tensor([[0, 1, 2],
+    mesh.triangle.indices = o3d.core.Tensor([[0, 1, 2],
                                                 [0, 2, 3]]], dtype_i, device)
 
-    # Common attributes: vertex["colors"]  , vertex["normals"]
-    #                    triangle["colors"], triangle["normals"]
+    # Common attributes: vertex.colors  , vertex.normals
+    #                    triangle.colors, triangle.normals
     # Common attributes are used in built-in triangle mesh operations. The
     # spellings must be correct. For example, if "normal" is used instead of
     # "normals", some internal operations that expects "normals" will not work.
     # "normals" and "colors" must have shape (N, 3) and must be on the same
     # device as the triangle mesh.
-    mesh.vertex["normals"] = o3d.core.Tensor([[0, 0, 1],
+    mesh.vertex.normals = o3d.core.Tensor([[0, 0, 1],
                                               [0, 1, 0],
                                               [1, 0, 0],
                                               [1, 1, 1]], dtype_f, device)
-    mesh.vertex["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
+    mesh.vertex.colors = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                              [0.1, 0.1, 0.1],
                                              [0.2, 0.2, 0.2],
                                              [0.3, 0.3, 0.3]], dtype_f, device)
-    mesh.triangle["normals"] = o3d.core.Tensor(...)
-    mesh.triangle["colors"] = o3d.core.Tensor(...)
+    mesh.triangle.normals = o3d.core.Tensor(...)
+    mesh.triangle.colors = o3d.core.Tensor(...)
 
     # User-defined attributes
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the triangle mesh. The are no restrictions on the shape and
     # dtype, e.g.,
-    pcd.vertex["labels"] = o3d.core.Tensor(...)
-    pcd.triangle["features"] = o3d.core.Tensor(...)
+    pcd.vertex.labels = o3d.core.Tensor(...)
+    pcd.triangle.features = o3d.core.Tensor(...)
 )");
 
     // Constructors.
@@ -105,6 +106,44 @@ The attributes of the triangle mesh have different levels::
             .def(py::init<const core::Tensor&, const core::Tensor&>(),
                  "vertex_positions"_a, "triangle_indices"_a)
             .def("__repr__", &TriangleMesh::ToString);
+
+    py::detail::bind_copy_functions<TriangleMesh>(triangle_mesh);
+    // Pickle support.
+    triangle_mesh.def(py::pickle(
+            [](const TriangleMesh& mesh) {
+                // __getstate__
+                return py::make_tuple(mesh.GetDevice(), mesh.GetVertexAttr(),
+                                      mesh.GetTriangleAttr());
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 3) {
+                    utility::LogError(
+                            "Cannot unpickle TriangleMesh! Expecting a tuple "
+                            "of size 3.");
+                }
+
+                const core::Device device = t[0].cast<core::Device>();
+                TriangleMesh mesh(device);
+                if (!device.IsAvailable()) {
+                    utility::LogWarning(
+                            "Device ({}) is not available. TriangleMesh will "
+                            "be created on CPU.",
+                            device.ToString());
+                    mesh.To(core::Device("CPU:0"));
+                }
+
+                const TensorMap vertex_attr = t[1].cast<TensorMap>();
+                const TensorMap triangle_attr = t[2].cast<TensorMap>();
+                for (auto& kv : vertex_attr) {
+                    mesh.SetVertexAttr(kv.first, kv.second);
+                }
+                for (auto& kv : triangle_attr) {
+                    mesh.SetTriangleAttr(kv.first, kv.second);
+                }
+
+                return mesh;
+            }));
 
     // Triangle mesh's attributes: vertices, vertex_colors, vertex_normals, etc.
     // def_property_readonly is sufficient, since the returned TensorMap can
@@ -156,6 +195,20 @@ The attributes of the triangle mesh have different levels::
                       "Scale points.");
     triangle_mesh.def("rotate", &TriangleMesh::Rotate, "R"_a, "center"_a,
                       "Rotate points and normals (if exist).");
+
+    triangle_mesh.def(
+            "normalize_normals", &TriangleMesh::NormalizeNormals,
+            "Normalize both triangle normals and vertex normals to length 1.");
+    triangle_mesh.def("compute_triangle_normals",
+                      &TriangleMesh::ComputeTriangleNormals,
+                      "Function to compute triangle normals, usually called "
+                      "before rendering.",
+                      "normalized"_a = true);
+    triangle_mesh.def("compute_vertex_normals",
+                      &TriangleMesh::ComputeVertexNormals,
+                      "Function to compute vertex normals, usually called "
+                      "before rendering.",
+                      "normalized"_a = true);
 
     triangle_mesh.def(
             "compute_convex_hull", &TriangleMesh::ComputeConvexHull,
@@ -220,6 +273,44 @@ This example shows how to create a hemisphere from a sphere::
     hemisphere = sphere.clip_plane(point=[0,0,0], normal=[1,0,0])
 
     o3d.visualization.draw(hemisphere)
+)");
+
+    triangle_mesh.def(
+            "slice_plane",
+            // Accept anything for contour_values that pybind can convert to
+            // std::list. This also avoids o3d.utility.DoubleVector.
+            [](const TriangleMesh& self, const core::Tensor& point,
+               const core::Tensor& normal, std::list<double> contour_values) {
+                std::vector<double> cv(contour_values.begin(),
+                                       contour_values.end());
+                return self.SlicePlane(point, normal, cv);
+            },
+            "point"_a, "normal"_a, "contour_values"_a = std::list<double>{0.0},
+            R"(Returns a line set with the contour slices defined by the plane and values.
+
+This method generates slices as LineSet from the mesh at specific contour
+values with respect to a plane.
+
+Args:
+    point (open3d.core.Tensor): A point on the plane.
+    normal (open3d.core.Tensor): The normal of the plane.
+    contour_values (list): A list of contour values at which slices will be
+        generated. The value describes the signed distance to the plane.
+
+Returns:
+    LineSet with he extracted contours.
+
+
+This example shows how to create a hemisphere from a sphere::
+
+    import open3d as o3d
+    import numpy as np
+
+    bunny = o3d.data.BunnyMesh()
+    mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+    contours = mesh.slice_plane([0,0,0], [0,1,0], np.linspace(0,0.2))
+    o3d.visualization.draw([{'name': 'bunny', 'geometry': contours}])
+
 )");
 
     // Triangle Mesh's creation APIs.
@@ -408,12 +499,39 @@ This example shows how to create a hemisphere from a sphere::
              {"int_dtype", "Int_dtype, Int32 or Int64."},
              {"device", "Device of the create octahedron."}});
 
+    triangle_mesh.def_static("create_text", &TriangleMesh::CreateText, "text"_a,
+                             "depth"_a = 0.0, "float_dtype"_a = core::Float32,
+                             "int_dtype"_a = core::Int64,
+                             "device"_a = core::Device("CPU:0"),
+                             R"(Create a triangle mesh from a text string.
+
+Args:
+    text (str): The text for generating the mesh. ASCII characters 32-126 are
+        supported (includes alphanumeric characters and punctuation). In
+        addition the line feed '\n' is supported to start a new line.
+    depth (float): The depth of the generated mesh. If depth is 0 then a flat mesh will be generated.
+    float_dtype (o3d.core.Dtype): Float type for the vertices. Either Float32 or Float64.
+    int_dtype (o3d.core.Dtype): Int type for the triangle indices. Either Int32 or Int64.
+    device (o3d.core.Device): The device for the returned mesh.
+
+Returns:
+    Text as triangle mesh.
+
+Example:
+    This shows how to simplifify the Stanford Bunny mesh::
+
+        import open3d as o3d
+
+        mesh = o3d.t.geometry.TriangleMesh.create_text('Open3D', depth=1)
+        o3d.visualization.draw([{'name': 'text', 'geometry': mesh}])
+)");
+
     triangle_mesh.def(
             "simplify_quadric_decimation",
             &TriangleMesh::SimplifyQuadricDecimation, "target_reduction"_a,
             "preserve_volume"_a = true,
             R"(Function to simplify mesh using Quadric Error Metric Decimation by Garland and Heckbert.
-    
+
 This function always uses the CPU device.
 
 Args:
@@ -446,7 +564,7 @@ Both meshes should be manifold.
 This function always uses the CPU device.
 
 Args:
-    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the
         boolean operation.
 
     tolerance (float): Threshold which determines when point distances are
@@ -477,7 +595,7 @@ Both meshes should be manifold.
 This function always uses the CPU device.
 
 Args:
-    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the
         boolean operation.
 
     tolerance (float): Threshold which determines when point distances are
@@ -508,7 +626,7 @@ Both meshes should be manifold.
 This function always uses the CPU device.
 
 Args:
-    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the 
+    mesh (open3d.t.geometry.TriangleMesh): This is the second operand for the
         boolean operation.
 
     tolerance (float): Threshold which determines when point distances are
@@ -530,6 +648,15 @@ Example:
         o3d.visualization.draw([{'name': 'difference', 'geometry': ans}])
 )");
 
+    triangle_mesh.def("get_axis_aligned_bounding_box",
+                      &TriangleMesh::GetAxisAlignedBoundingBox,
+                      "Create an axis-aligned bounding box from vertex "
+                      "attribute 'positions'.");
+    triangle_mesh.def("get_oriented_bounding_box",
+                      &TriangleMesh::GetOrientedBoundingBox,
+                      "Create an oriented bounding box from vertex attribute "
+                      "'positions'.");
+
     triangle_mesh.def("fill_holes", &TriangleMesh::FillHoles,
                       "hole_size"_a = 1e6,
                       R"(Fill holes by triangulating boundary edges.
@@ -550,6 +677,190 @@ Example:
         mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
         filled = mesh.fill_holes()
         o3d.visualization.draw([{'name': 'filled', 'geometry': ans}])
+)");
+
+    triangle_mesh.def(
+            "compute_uvatlas", &TriangleMesh::ComputeUVAtlas, "size"_a = 512,
+            "gutter"_a = 1.f, "max_stretch"_a = 1.f / 6,
+            R"(Creates an UV atlas and adds it as triangle attr 'texture_uvs' to the mesh.
+
+Input meshes must be manifold for this method to work.
+The algorithm is based on:
+Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using Spectral
+             Analysis", Eurographics Symposium on Geometry Processing (2004)
+Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
+This function always uses the CPU device.
+Args:
+    size (int): The target size of the texture (size x size). The uv coordinates
+        will still be in the range [0..1] but parameters like gutter use pixels
+        as units.
+    gutter (float): This is the space around the uv islands in pixels.
+    max_stretch (float): The maximum amount of stretching allowed. The parameter
+        range is [0..1] with 0 meaning no stretch allowed.
+Returns:
+    None. This function modifies the mesh in-place.
+Example:
+    This code creates a uv map for the Stanford Bunny mesh::
+        import open3d as o3d
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        mesh.compute_uvatlas()
+
+        # Add a wood texture and visualize
+        texture_data = o3d.data.WoodTexture()
+        mesh.material.material_name = 'defaultLit'
+        mesh.material.texture_maps['albedo'] = o3d.t.io.read_image(texture_data.albedo_texture_path)
+        o3d.visualization.draw(mesh)
+)");
+
+    triangle_mesh.def("bake_vertex_attr_textures",
+                      &TriangleMesh::BakeVertexAttrTextures, "size"_a,
+                      "vertex_attr"_a, "margin"_a = 2., "fill"_a = 0.,
+                      "update_material"_a = true,
+                      R"(Bake vertex attributes into textures.
+
+This function assumes a triangle attribute with name 'texture_uvs'.
+Only float type attributes can be baked to textures.
+
+This function always uses the CPU device.
+
+Args:
+    size (int): The width and height of the texture in pixels. Only square
+        textures are supported.
+
+    vertex_attr (set): The vertex attributes for which textures should be
+        generated.
+
+    margin (float): The margin in pixels. The recommended value is 2. The margin
+        are additional pixels around the UV islands to avoid discontinuities.
+
+    fill (float): The value used for filling texels outside the UV islands.
+
+    update_material (bool): If true updates the material of the mesh.
+        Baking a vertex attribute with the name 'albedo' will become the albedo
+        texture in the material. Existing textures in the material will be
+        overwritten.
+
+Returns:
+    A dictionary of tensors that store the baked textures.
+
+Example:
+    We generate a texture storing the xyz coordinates for each texel::
+        import open3d as o3d
+        from matplotlib import pyplot as plt
+
+        box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        box.vertex['albedo'] = box.vertex.positions
+
+        # Initialize material and bake the 'albedo' vertex attribute to a
+        # texture. The texture will be automatically added to the material of
+        # the object.
+        box.material.set_default_properties()
+        texture_tensors = box.bake_vertex_attr_textures(128, {'albedo'})
+
+        # Shows the textured cube.
+        o3d.visualization.draw([box])
+
+        # Plot the tensor with the texture.
+        plt.imshow(texture_tensors['albedo'].numpy())
+
+)");
+
+    triangle_mesh.def("bake_triangle_attr_textures",
+                      &TriangleMesh::BakeTriangleAttrTextures, "size"_a,
+                      "triangle_attr"_a, "margin"_a = 2., "fill"_a = 0.,
+                      "update_material"_a = true,
+                      R"(Bake triangle attributes into textures.
+
+This function assumes a triangle attribute with name 'texture_uvs'.
+
+This function always uses the CPU device.
+
+Args:
+    size (int): The width and height of the texture in pixels. Only square
+        textures are supported.
+
+    triangle_attr (set): The vertex attributes for which textures should be
+        generated.
+
+    margin (float): The margin in pixels. The recommended value is 2. The margin
+        are additional pixels around the UV islands to avoid discontinuities.
+
+    fill (float): The value used for filling texels outside the UV islands.
+
+    update_material (bool): If true updates the material of the mesh.
+        Baking a vertex attribute with the name 'albedo' will become the albedo
+        texture in the material. Existing textures in the material will be
+        overwritten.
+
+Returns:
+    A dictionary of tensors that store the baked textures.
+
+Example:
+    We generate a texture visualizing the index of the triangle to which the
+    texel belongs to::
+        import open3d as o3d
+        from matplotlib import pyplot as plt
+
+        box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+        box = o3d.t.geometry.TriangleMesh.from_legacy(box)
+        # Creates a triangle attribute 'albedo' which is the triangle index
+        # multiplied by (255//12).
+        box.triangle['albedo'] = (255//12)*np.arange(box.triangle.indices.shape[0], dtype=np.uint8)
+
+        # Initialize material and bake the 'albedo' triangle attribute to a
+        # texture. The texture will be automatically added to the material of
+        # the object.
+        box.material.set_default_properties()
+        texture_tensors = box.bake_triangle_attr_textures(128, {'albedo'})
+
+        # Shows the textured cube.
+        o3d.visualization.draw([box])
+
+        # Plot the tensor with the texture.
+        plt.imshow(texture_tensors['albedo'].numpy())
+)");
+
+    triangle_mesh.def("extrude_rotation", &TriangleMesh::ExtrudeRotation,
+                      "angle"_a, "axis"_a, "resolution"_a = 16,
+                      "translation"_a = 0.0, "capping"_a = true,
+                      R"(Sweeps the triangle mesh rotationally about an axis.
+Args:
+    angle (float): The rotation angle in degree.
+
+    axis (open3d.core.Tensor): The rotation axis.
+
+    resolution (int): The resolution defines the number of intermediate sweeps
+        about the rotation axis.
+    translation (float): The translation along the rotation axis.
+Returns:
+    A triangle mesh with the result of the sweep operation.
+Example:
+    This code generates a spring with a triangle cross-section::
+        import open3d as o3d
+
+        mesh = o3d.t.geometry.TriangleMesh([[1,1,0], [0.7,1,0], [1,0.7,0]], [[0,1,2]])
+        spring = mesh.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
+        o3d.visualization.draw([{'name': 'spring', 'geometry': spring}])
+)");
+
+    triangle_mesh.def("extrude_linear", &TriangleMesh::ExtrudeLinear,
+                      "vector"_a, "scale"_a = 1.0, "capping"_a = true,
+                      R"(Sweeps the line set along a direction vector.
+Args:
+
+    vector (open3d.core.Tensor): The direction vector.
+
+    scale (float): Scalar factor which essentially scales the direction vector.
+Returns:
+    A triangle mesh with the result of the sweep operation.
+Example:
+    This code generates a wedge from a triangle::
+        import open3d as o3d
+        triangle = o3d.t.geometry.TriangleMesh([[1.0,1.0,0.0], [0,1,0], [1,0,0]], [[0,1,2]])
+        wedge = triangle.extrude_linear([0,0,1])
+        o3d.visualization.draw([{'name': 'wedge', 'geometry': wedge}])
 )");
 }
 

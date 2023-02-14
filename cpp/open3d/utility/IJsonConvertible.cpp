@@ -47,7 +47,7 @@ Json::Value StringToJson(const std::string &json_str) {
     return json;
 }
 
-std::string JsonToString(const Json::Value json) {
+std::string JsonToString(const Json::Value &json) {
     return Json::writeString(Json::StreamWriterBuilder(), json);
 }
 

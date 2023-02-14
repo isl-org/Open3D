@@ -31,6 +31,7 @@
 #include <limits>
 
 #include "core/CoreTest.h"
+#include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
@@ -72,7 +73,7 @@ TEST_P(PointCloudPermuteDevices, DefaultConstructor) {
 
     // ToString
     EXPECT_EQ(pcd.ToString(),
-              "PointCloud on CPU:0 [0 points ()] Attributes: None.");
+              "PointCloud on CPU:0 [0 points].\nAttributes: None.");
 }
 
 TEST_P(PointCloudPermuteDevices, ConstructFromPoints) {
@@ -261,6 +262,39 @@ TEST_P(PointCloudPermuteDevices, Rotate) {
               std::vector<float>({2, 2, 1}));
 }
 
+TEST_P(PointCloudPermuteDevices, NormalizeNormals) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0}},
+                                                     device);
+    core::Tensor normals = core::Tensor::Init<double>({{2, 2, 2},
+                                                       {1, 1, 1},
+                                                       {-1, -1, -1},
+                                                       {0, 0, 1},
+                                                       {0, 1, 0},
+                                                       {1, 0, 0},
+                                                       {0, 0, 0}},
+                                                      device);
+    t::geometry::PointCloud pcd(points);
+    pcd.SetPointNormals(normals);
+    pcd.NormalizeNormals();
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{0.57735, 0.57735, 0.57735},
+                                        {0.57735, 0.57735, 0.57735},
+                                        {-0.57735, -0.57735, -0.57735},
+                                        {0, 0, 1},
+                                        {0, 1, 0},
+                                        {1, 0, 0},
+                                        {0, 0, 0}},
+                                       device)));
+}
+
 TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     core::Device device = GetParam();
 
@@ -295,6 +329,128 @@ TEST_P(PointCloudPermuteDevices, EstimateNormals) {
     // Estimate normals using KNN Search.
     pcd.EstimateNormals(4);
     EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+
+    // Estimate normals using Radius Search.
+    pcd.EstimateNormals(utility::nullopt, 1.1);
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(normals, 1e-4, 1e-4));
+}
+
+TEST_P(PointCloudPermuteDevices, OrientNormalsToAlignWithDirection) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<double>({{0, 0, 0},
+                                                      {0, 0, 1},
+                                                      {0, 1, 0},
+                                                      {0, 1, 1},
+                                                      {1, 0, 0},
+                                                      {1, 0, 1},
+                                                      {1, 1, 0},
+                                                      {1, 1, 1}},
+                                                     device);
+    t::geometry::PointCloud pcd(points);
+    pcd.EstimateNormals(4);
+    pcd.NormalizeNormals();
+    double v = 1.0 / std::sqrt(3.0);
+    pcd.OrientNormalsToAlignWithDirection(
+            core::Tensor::Init<double>({0, 0, -1}, device));
+
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{-v, -v, -v},
+                                        {v, v, -v},
+                                        {-v, v, -v},
+                                        {v, -v, -v},
+                                        {v, -v, -v},
+                                        {-v, v, -v},
+                                        {v, v, -v},
+                                        {-v, -v, -v}},
+                                       device)));
+
+    // Test with normal norm == 0 case.
+    pcd.SetPointPositions(core::Tensor::Init<double>({{10, 10, 10}}, device));
+    pcd.SetPointNormals(core::Tensor::Init<double>({{0, 0, 0}}, device));
+    pcd.OrientNormalsToAlignWithDirection(
+            core::Tensor::Init<double>({0, 0, -1}, device));
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{0, 0, -1}}, device)));
+}
+
+TEST_P(PointCloudPermuteDevices, OrientNormalsTowardsCameraLocation) {
+    core::Device device = GetParam();
+
+    core::Tensor points = core::Tensor::Init<double>(
+            {{0, 0, 0}, {0, 1, 0}, {1, 0, 0}, {1, 1, 0}}, device);
+    t::geometry::PointCloud pcd(points);
+    pcd.EstimateNormals(4);
+    pcd.NormalizeNormals();
+
+    core::Tensor ref_normals = core::Tensor::Init<double>(
+            {{0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}}, device);
+    core::Tensor ref_normals_rev = core::Tensor::Init<double>(
+            {{0, 0, -1}, {0, 0, -1}, {0, 0, -1}, {0, 0, -1}}, device);
+
+    // Camera outside.
+    pcd.OrientNormalsTowardsCameraLocation(
+            core::Tensor::Init<double>({2, 3, 4}, device));
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(ref_normals));
+    // Camera inside.
+    pcd.OrientNormalsTowardsCameraLocation(
+            core::Tensor::Init<double>({-2, -3, -4}, device));
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(ref_normals_rev));
+    // Camera is on one of the points.
+    pcd.SetPointPositions(core::Tensor::Init<double>({{0, 0, 0}}, device));
+    pcd.SetPointNormals(core::Tensor::Init<double>({{0, 0, 0}}, device));
+    pcd.OrientNormalsTowardsCameraLocation(
+            core::Tensor::Init<double>({0, 0, 0}, device));
+    EXPECT_TRUE(pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{0, 0, 1}}, device)));
+}
+
+TEST_P(PointCloudPermuteDevices, OrientNormalsConsistentTangentPlane) {
+    core::Device device = GetParam();
+
+    open3d::geometry::PointCloud pcd({
+            {0, 0, 0},
+            {0, 0, 1},
+            {0, 1, 0},
+            {0, 1, 1},
+            {1, 0, 0},
+            {1, 0, 1},
+            {1, 1, 0},
+            {1, 1, 1},
+            {0.5, 0.5, -0.25},
+            {0.5, 0.5, 1.25},
+            {0.5, -0.25, 0.5},
+            {0.5, 1.25, 0.5},
+            {-0.25, 0.5, 0.5},
+            {1.25, 0.5, 0.5},
+    });
+
+    // Hard-coded test.
+    pcd.EstimateNormals(geometry::KDTreeSearchParamKNN(/*knn=*/4));
+    double a = 0.57735;
+    double b = 0.0927618;
+    double c = 0.991358;
+
+    t::geometry::PointCloud t_pcd =
+            t::geometry::PointCloud::FromLegacy(pcd, core::Float64, device);
+
+    t_pcd.OrientNormalsConsistentTangentPlane(4);
+    EXPECT_TRUE(t_pcd.GetPointNormals().AllClose(
+            core::Tensor::Init<double>({{-a, -a, -a},
+                                        {-a, -a, a},
+                                        {-a, a, -a},
+                                        {-a, a, a},
+                                        {a, -a, -a},
+                                        {a, -a, a},
+                                        {a, a, -a},
+                                        {a, a, a},
+                                        {-b, -b, -c},
+                                        {-b, -b, c},
+                                        {-b, -c, -b},
+                                        {-b, c, -b},
+                                        {-c, -b, -b},
+                                        {c, -b, -b}},
+                                       device)));
 }
 
 TEST_P(PointCloudPermuteDevices, FromLegacy) {
@@ -381,7 +537,7 @@ TEST_P(PointCloudPermuteDevices, Getters) {
 
     // ToString
     std::string text = "PointCloud on " + device.ToString() +
-                       " [2 points (Float32)] Attributes: ";
+                       " [2 points (Float32)].\nAttributes: ";
     EXPECT_THAT(pcd.ToString(),  // Compiler dependent output
                 AnyOf(text + "colors (dtype = Float32, shape = {2, 3}), labels "
                              "(dtype = Float32, shape = {2, 3}).",
@@ -803,6 +959,27 @@ TEST_P(PointCloudPermuteDevices, RandomDownSample) {
     EXPECT_TRUE(pcd_small_down.GetPointPositions().GetLength() == 4);
 }
 
+TEST_P(PointCloudPermuteDevices, FarthestPointDownSample) {
+    core::Device device = GetParam();
+
+    // Value test.
+    t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<float>({{0, 2.0, 0},
+                                       {1.0, 1.5, 0},
+                                       {0, 1.0, 0},
+                                       {1.0, 1.0, 0},
+                                       {0, 0, 1.0},
+                                       {1.0, 0, 1.0},
+                                       {0, 1.0, 1.0},
+                                       {1.0, 1.0, 1.5}},
+                                      device));
+    auto pcd_small_down = pcd_small.FarthestPointDownSample(4);
+    EXPECT_TRUE(pcd_small_down.GetPointPositions().AllClose(
+            core::Tensor::Init<float>(
+                    {{0, 2.0, 0}, {1.0, 1.0, 0}, {1.0, 0, 1.0}, {0, 1.0, 1.0}},
+                    device)));
+}
+
 TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
     core::Device device = GetParam();
 
@@ -819,6 +996,49 @@ TEST_P(PointCloudPermuteDevices, RemoveRadiusOutliers) {
     core::Tensor selected_boolean_mask;
     std::tie(output_pcd, selected_boolean_mask) =
             pcd_small.RemoveRadiusOutliers(3, 0.5);
+
+    EXPECT_TRUE(output_pcd.GetPointPositions().AllClose(
+            core::Tensor::Init<float>({{1.0, 1.0, 1.0},
+                                       {1.1, 1.1, 1.1},
+                                       {1.2, 1.2, 1.2},
+                                       {1.3, 1.3, 1.3}},
+                                      device)));
+}
+
+TEST_P(PointCloudPermuteDevices, RemoveStatisticalOutliers) {
+    core::Device device = GetParam();
+
+    data::PCDPointCloud sample_pcd_data;
+    geometry::PointCloud pcd_legacy;
+    io::ReadPointCloud(sample_pcd_data.GetPath(), pcd_legacy);
+
+    auto down_pcd = pcd_legacy.VoxelDownSample(0.02);
+    auto res = down_pcd->RemoveStatisticalOutliers(20, 2.0);
+
+    t::geometry::PointCloud pcd = t::geometry::PointCloud::FromLegacy(
+            *down_pcd, core::Float64, device);
+    auto res_t = pcd.RemoveStatisticalOutliers(20, 2.0);
+    EXPECT_TRUE(std::get<0>(res_t).GetPointPositions().AllClose(
+            core::eigen_converter::EigenVector3dVectorToTensor(
+                    std::get<0>(res)->points_, core::Float64, device)));
+}
+
+TEST_P(PointCloudPermuteDevices, RemoveDuplicatedPoints) {
+    core::Device device = GetParam();
+
+    const t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<float>({{1.0, 1.0, 1.0},
+                                       {1.0, 1.0, 1.0},
+                                       {1.1, 1.1, 1.1},
+                                       {1.1, 1.1, 1.1},
+                                       {1.2, 1.2, 1.2},
+                                       {1.3, 1.3, 1.3}},
+                                      device));
+
+    t::geometry::PointCloud output_pcd;
+    core::Tensor selected_boolean_mask;
+    std::tie(output_pcd, selected_boolean_mask) =
+            pcd_small.RemoveDuplicatedPoints();
 
     EXPECT_TRUE(output_pcd.GetPointPositions().AllClose(
             core::Tensor::Init<float>({{1.0, 1.0, 1.0},
@@ -871,19 +1091,62 @@ TEST_P(PointCloudPermuteDevices, RemoveNonFinitePoints) {
             {true, true, true, true, true, true}, device)));
 }
 
-TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
+TEST_P(PointCloudPermuteDevices, HiddenPointRemoval) {
     core::Device device = GetParam();
-    if (!device.IsCPU()) {
-        GTEST_SKIP();
-    }
+
     t::geometry::PointCloud pcd;
     data::PLYPointCloud pointcloud_ply;
     t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
 
     // Hard-coded test
+    pcd = pcd.To(device);
+    t::geometry::TriangleMesh mesh;
+    core::Tensor pt_map;
+    std::tie(mesh, pt_map) = pcd.HiddenPointRemoval(
+            core::Tensor::Init<double>({0, 0, 5}, device), 5 * 100);
+
+    EXPECT_TRUE(mesh.GetVertexPositions().AllClose(
+            pcd.SelectByIndex(pt_map).GetPointPositions()));
+    EXPECT_EQ(mesh.GetVertexPositions().GetLength(), 24581);
+}
+
+TEST_P(PointCloudPermuteDevices, PaintUniformColor) {
+    core::Device device = GetParam();
+
+    t::geometry::PointCloud pcd_small(
+            core::Tensor::Init<double>({{1.0, 1.0, 1.0},
+                                        {1.1, 1.1, 1.1},
+                                        {1.2, 1.2, 1.2},
+                                        {5.1, 5.1, 5.1}},
+                                       device));
+
+    const core::Tensor color =
+            core::Tensor::Init<float>({0.5, 2.3, -1.3}, device);
+
+    t::geometry::PointCloud output_pcd = pcd_small.PaintUniformColor(color);
+
+    EXPECT_TRUE(output_pcd.GetPointColors().AllClose(
+            core::Tensor::Init<float>({{0.5, 1.0, 0.0},
+                                       {0.5, 1.0, 0.0},
+                                       {0.5, 1.0, 0.0},
+                                       {0.5, 1.0, 0.0}},
+                                      device)));
+}
+
+TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
+    core::Device device = GetParam();
+
+    t::geometry::PointCloud pcd;
+    data::PLYPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
+    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 196133);
+
+    // Hard-coded test
+    pcd = pcd.To(device);
     core::Tensor cluster = pcd.ClusterDBSCAN(0.02, 10, false);
 
+    cluster = cluster.To(core::Device("CPU:0"));
     EXPECT_EQ(cluster.GetDtype(), core::Int32);
     EXPECT_EQ(cluster.GetLength(), 196133);
     std::unordered_set<int> cluster_set(
@@ -894,35 +1157,57 @@ TEST_P(PointCloudPermuteDevices, ClusterDBSCAN) {
     EXPECT_EQ(cluster_sum, 398580);
 }
 
+TEST_P(PointCloudPermuteDevices, SegmentPlane) {
+    core::Device device = GetParam();
+
+    t::geometry::PointCloud pcd;
+    data::PCDPointCloud pointcloud_ply;
+    t::io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
+    EXPECT_EQ(pcd.GetPointPositions().GetLength(), 113662);
+
+    // Hard-coded test
+    pcd = pcd.To(device);
+    core::Tensor plane_model;
+    core::Tensor inliers;
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 3, 1000);
+    EXPECT_TRUE(plane_model.AllClose(
+            core::Tensor::Init<double>({-0.06, -0.10, 0.99, -1.06}, device),
+            0.1, 0.1));
+
+    std::tie(plane_model, inliers) = pcd.SegmentPlane(0.01, 10, 1000);
+    EXPECT_TRUE(plane_model.AllClose(
+            core::Tensor::Init<double>({-0.06, -0.10, 0.99, -1.06}, device),
+            0.1, 0.1));
+}
+
 TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
     core::Device device = GetParam();
-    if (!device.IsCPU()) {
-        GTEST_SKIP();
-    }
-    t::geometry::PointCloud pcd;
-    t::geometry::TriangleMesh mesh;
+
+    t::geometry::PointCloud pcd(device);
+    t::geometry::TriangleMesh mesh(device);
 
     // Needs at least 4 points
-    pcd.SetPointPositions(core::Tensor({0, 3}, core::Float32));
+    pcd.SetPointPositions(core::Tensor({0, 3}, core::Float32, device));
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
-    pcd.SetPointPositions(core::Tensor::Init<float>({{0, 0, 0}}));
-    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
-    pcd.SetPointPositions(core::Tensor::Init<float>({{0, 0, 0}, {0, 0, 1}}));
+    pcd.SetPointPositions(core::Tensor::Init<float>({{0, 0, 0}}, device));
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
     pcd.SetPointPositions(
-            core::Tensor::Init<float>({{0, 0, 0}, {0, 0, 1}, {0, 1, 0}}));
+            core::Tensor::Init<float>({{0, 0, 0}, {0, 0, 1}}, device));
+    EXPECT_ANY_THROW(pcd.ComputeConvexHull());
+    pcd.SetPointPositions(core::Tensor::Init<float>(
+            {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}}, device));
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
 
     // Degenerate input
     pcd.SetPointPositions(core::Tensor::Init<float>(
-            {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}));
+            {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}, device));
     EXPECT_ANY_THROW(pcd.ComputeConvexHull());
     // Allow adding random noise to fix the degenerate input
     EXPECT_NO_THROW(pcd.ComputeConvexHull(true));
 
     // Hard-coded test
     pcd.SetPointPositions(core::Tensor::Init<double>(
-            {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}}));
+            {{0, 0, 0}, {0, 0, 1}, {0, 1, 0}, {1, 0, 0}}, device));
     mesh = pcd.ComputeConvexHull();
     auto point_indices = mesh.GetVertexAttr("point_indices");
     EXPECT_EQ(point_indices.GetDtype(), core::Int32);
@@ -940,7 +1225,8 @@ TEST_P(PointCloudPermuteDevices, ComputeConvexHull) {
                                                       {1, 0, 0},
                                                       {1, 0, 1},
                                                       {1, 1, 0},
-                                                      {1, 1, 1}}));
+                                                      {1, 1, 1}},
+                                                     device));
     mesh = pcd.ComputeConvexHull();
     point_indices = mesh.GetVertexAttr("point_indices");
     EXPECT_EQ(point_indices.ToFlatVector<int>(),

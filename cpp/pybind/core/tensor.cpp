@@ -356,6 +356,36 @@ void pybind_core_tensor(py::module& m) {
     BindTensorFullCreation<bool>(m, tensor);
     docstring::ClassMethodDocInject(m, "Tensor", "full", argument_docs);
 
+    // Pickling support.
+    // The tensor will be on the same device after deserialization.
+    // Non contiguous tensors will be converted to contiguous tensors after
+    // deserialization.
+    tensor.def(py::pickle(
+            [](const Tensor& t) {
+                // __getstate__
+                return py::make_tuple(t.GetDevice(),
+                                      TensorToPyArray(t.To(Device("CPU:0"))));
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 2) {
+                    utility::LogError(
+                            "Cannot unpickle Tensor! Expecting a tuple of size "
+                            "2.");
+                }
+                const Device& device = t[0].cast<Device>();
+                if (!device.IsAvailable()) {
+                    utility::LogWarning(
+                            "Device {} is not available, tensor will be "
+                            "created on CPU.",
+                            device.ToString());
+                    return PyArrayToTensor(t[1].cast<py::array>(), true);
+                } else {
+                    return PyArrayToTensor(t[1].cast<py::array>(), true)
+                            .To(device);
+                }
+            }));
+
     tensor.def_static(
             "eye",
             [](int64_t n, utility::optional<Dtype> dtype,
@@ -830,6 +860,7 @@ Ref:
     tensor.def("cos_", &Tensor::Cos_);
     tensor.def("neg", &Tensor::Neg);
     tensor.def("neg_", &Tensor::Neg_);
+    tensor.def("__neg__", &Tensor::Neg);
     tensor.def("exp", &Tensor::Exp);
     tensor.def("exp_", &Tensor::Exp_);
     tensor.def("abs", &Tensor::Abs);

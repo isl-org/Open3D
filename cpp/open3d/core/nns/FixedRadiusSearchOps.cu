@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 //
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/core/nns/FixedRadiusIndex.h"
 #include "open3d/core/nns/FixedRadiusSearchImpl.cuh"
@@ -42,6 +43,7 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
                                const Tensor& hash_table_splits,
                                Tensor& hash_table_index,
                                Tensor& hash_table_cell_splits) {
+    CUDAScopedDevice scoped_device(points.GetDevice());
     const cudaStream_t stream = 0;
     int texture_alignment = 512;
 
@@ -90,6 +92,7 @@ void FixedRadiusSearchCUDA(const Tensor& points,
                            Tensor& neighbors_index,
                            Tensor& neighbors_row_splits,
                            Tensor& neighbors_distance) {
+    CUDAScopedDevice scoped_device(points.GetDevice());
     const cudaStream_t stream = 0;
     int texture_alignment = 512;
 
@@ -189,6 +192,7 @@ void HybridSearchCUDA(const Tensor& points,
                       Tensor& neighbors_index,
                       Tensor& neighbors_count,
                       Tensor& neighbors_distance) {
+    CUDAScopedDevice scoped_device(points.GetDevice());
     const cudaStream_t stream = 0;
 
     Device device = points.GetDevice();

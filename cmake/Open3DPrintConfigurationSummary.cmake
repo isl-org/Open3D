@@ -40,12 +40,15 @@ function(open3d_print_configuration_summary)
     open3d_aligned_print("Build Jupyter Extension" "${BUILD_JUPYTER_EXTENSION}")
     open3d_aligned_print("Build TensorFlow Ops" "${BUILD_TENSORFLOW_OPS}")
     open3d_aligned_print("Build PyTorch Ops" "${BUILD_PYTORCH_OPS}")
-    if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
+    if (BUILD_PYTORCH_OPS AND BUILD_CUDA_MODULE AND CUDAToolkit_VERSION
+            VERSION_GREATER_EQUAL "11.0" AND Pytorch_VERSION VERSION_LESS
+            "1.9")
         message(WARNING
             "--------------------------------------------------------------------------------\n"
             "                                                                                \n"
-            " You are compiling PyTorch ops with CUDA 11. This configuration may have        \n"
-            " stability issues. See https://github.com/isl-org/Open3D/issues/3324 and        \n"
+            " You are compiling PyTorch ops with CUDA 11 with PyTorch version < 1.9. This    \n"
+            " configuration may have stability issues. See                                   \n"
+            " https://github.com/isl-org/Open3D/issues/3324 and                              \n"
             " https://github.com/pytorch/pytorch/issues/52663 for more information on this   \n"
             " problem.                                                                       \n"
             "                                                                                \n"
@@ -71,6 +74,7 @@ function(open3d_print_configuration_summary)
     set(3RDPARTY_DEPENDENCIES
         Assimp
         BLAS
+        curl
         Eigen3
         filament
         fmt
@@ -92,6 +96,7 @@ function(open3d_print_configuration_summary)
         tinyfiledialogs
         TinyGLTF
         tinyobjloader
+        VTK
         WebRTC
         ZeroMQ
     )

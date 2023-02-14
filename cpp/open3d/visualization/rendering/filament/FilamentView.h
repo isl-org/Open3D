@@ -62,9 +62,10 @@ public:
                  FilamentResourceManager& resource_mgr);
     ~FilamentView() override;
 
+    void SetDiscardBuffers(const TargetBuffers& buffers) override;
     Mode GetMode() const override;
     void SetMode(Mode mode) override;
-    void SetDiscardBuffers(const TargetBuffers& buffers) override;
+    void SetWireframe(bool enable) override;
 
     void SetSampleCount(int n) override;
     int GetSampleCount() const override;
@@ -77,6 +78,7 @@ public:
 
     void SetPostProcessing(bool enabled) override;
     void SetAmbientOcclusion(bool enabled, bool ssct_enabled = false) override;
+    void SetBloom(bool enabled, float strength = 0.5f, int spread = 6) override;
     void SetAntiAliasing(bool enabled, bool temporal = false) override;
     void SetShadowing(bool enabled, ShadowType type) override;
 

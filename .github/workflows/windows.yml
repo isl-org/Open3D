@@ -20,13 +20,14 @@ concurrency:
 
 env:
   PIP_VER: "21.1.1"
-  WHEEL_VER: "0.35.1"
+  WHEEL_VER: "0.37.1"
   STOOLS_VER: "50.3.2"
-  PYTEST_VER: "6.0.1"
+  PYTEST_VER: "7.1.2"
   PYTEST_RANDOMLY_VER: "3.8.0"
-  SCIPY_VER: "1.5.4"
+  SCIPY_VER: "1.7.3"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
+  TENSORBOARD_VER: "2.8"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
@@ -54,6 +55,11 @@ jobs:
     steps:
       - name: Disk space used
         run: Get-PSDrive
+
+      - name: Setup Windows SDK
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
+        with:
+          sdk-version: 19041
 
       - name: Install CUDA
         if: ${{ matrix.BUILD_CUDA_MODULE == 'ON' }}
@@ -89,12 +95,12 @@ jobs:
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.6
+          python-version: 3.7
 
       - name: Config
         # Move build directory to C: https://github.com/actions/virtual-environments/issues/1341
@@ -107,6 +113,7 @@ jobs:
           }
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_EXAMPLES=OFF `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DBUILD_SHARED_LIBS=${{ matrix.BUILD_SHARED_LIBS }} `
@@ -144,7 +151,7 @@ jobs:
 
       - name: Upload package
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d-devel-windows
           path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
@@ -153,7 +160,7 @@ jobs:
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1.1.0
         env:
           CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
         with:
@@ -221,23 +228,28 @@ jobs:
       fail-fast: false
       # https://github.community/t/how-to-conditionally-include-exclude-items-in-matrix-eg-based-on-branch/16853/6
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        python_version: ['3.7', '3.8', '3.9', '3.10']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python_version: 3.7
+            python_version: '3.7'
           - is_master: false
-            python_version: 3.8
+            python_version: '3.8'
           - is_master: false
-            python_version: 3.9
+            python_version: '3.9'
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Setup Windows SDK
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
+        with:
+          sdk-version: 19041
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -259,6 +271,7 @@ jobs:
           cmake -G "Visual Studio 16 2019" -A x64 `
             -DCMAKE_INSTALL_PREFIX="C:\Program Files\Open3D" `
             -DDEVELOPER_BUILD="${env:DEVELOPER_BUILD}" `
+            -DCMAKE_SYSTEM_VERSION="10.0.19041.0" `
             -DBUILD_SHARED_LIBS=OFF `
             -DSTATIC_WINDOWS_RUNTIME=ON `
             -DBUILD_COMMON_ISPC_ISAS=ON `
@@ -283,7 +296,7 @@ jobs:
           echo "PYTHON_EXECUTABLE=$PYTHON_EXECUTABLE"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d_win_amd64_wheels
           path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
@@ -292,7 +305,7 @@ jobs:
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
         # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1.1.0
         env:
           CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
         with:
@@ -323,30 +336,30 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [3.6, 3.7, 3.8, 3.9]
+        python_version: ['3.7', '3.8', '3.9', '3.10']
         is_master:
           - ${{ github.ref == 'refs/heads/master' }}
         exclude:
           - is_master: false
-            python_version: 3.7
+            python_version: '3.7'
           - is_master: false
-            python_version: 3.8
+            python_version: '3.8'
           - is_master: false
-            python_version: 3.9
+            python_version: '3.9'
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download wheels
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         # See https://github.com/dawidd6/action-download-artifact for more
         # flexible artifact download options
         with:
           name: open3d_win_amd64_wheels
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -363,7 +376,7 @@ jobs:
           python -m pip install -U pytest==${{ env.PYTEST_VER }}
           python -m pip install -U pytest-randomly==${{ env.PYTEST_RANDOMLY_VER }}
           python -m pip install -U scipy==${{ env.SCIPY_VER }} `
-            tensorboard==${{ env.TENSORFLOW_VER }}
+            tensorboard==${{ env.TENSORBOARD_VER }}
           $py_tag=(python -c "import sys; print(f'cp{sys.version_info.major}{sys.version_info.minor}')")
           if (Test-Path -Path "pip_package") {
             $PIP_PKG_NAME=(Get-ChildItem pip_package\open3d*-$py_tag-*.whl).Name
@@ -377,7 +390,7 @@ jobs:
 
           deactivate
 
-      - name: Run Python unit tests (benchmarks)
+      - name: Run Python unit tests
         run: |
           $ErrorActionPreference = 'Stop'
           open3d_test_venv\Scripts\Activate.ps1
@@ -390,17 +403,22 @@ jobs:
   ready-docs:
     name: Ready docs archive
     # no need to run on Windows
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/master' }}
     needs: [build-wheel, windows]
     steps:
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Check wheels and ready documentation archive
         run: |
             touch marker_file
