@@ -101,7 +101,7 @@ std::function<Tensor(const Tensor&)> MakeOperation(UnaryOpCode op) {
             return [](const Tensor& arg) -> Tensor { return arg.LogicalNot(); };
 
         default:
-            utility::LogError("Unknown operation {}", op);
+            utility::LogError("Unknown operation {}", static_cast<int>(op));
     }
 }
 
@@ -164,31 +164,31 @@ void UnaryEW(benchmark::State& state,
     ENUM_BM_SIZE(FN, OP, DEVICE, DEVICE_NAME, Float32)       \
     ENUM_BM_SIZE(FN, OP, DEVICE, DEVICE_NAME, Float64)
 
-//#ifdef BUILD_CUDA_MODULE
-//#define ENUM_BM_TENSOR(FN, OP)
-//    ENUM_BM_DTYPE(FN, OP, Device("CPU:0"), CPU)
-//    ENUM_BM_DTYPE(FN, OP, Device("CUDA:0"), CUDA)
-//#else
+// #ifdef BUILD_CUDA_MODULE
+// #define ENUM_BM_TENSOR(FN, OP)
+//     ENUM_BM_DTYPE(FN, OP, Device("CPU:0"), CPU)
+//     ENUM_BM_DTYPE(FN, OP, Device("CUDA:0"), CUDA)
+// #else
 #define ENUM_BM_TENSOR(FN, OP) ENUM_BM_DTYPE(FN, OP, Device("CPU:0"), CPU)
-//#endif
+// #endif
 
-//#ifdef BUILD_CUDA_MODULE
-//#define ENUM_BM_TENSOR_FLOAT(FN, OP)
-//    ENUM_BM_DTYPE_FLOAT(FN, OP, Device("CPU:0"), CPU)
-//    ENUM_BM_DTYPE_FLOAT(FN, OP, Device("CUDA:0"), CUDA)
-//#else
+// #ifdef BUILD_CUDA_MODULE
+// #define ENUM_BM_TENSOR_FLOAT(FN, OP)
+//     ENUM_BM_DTYPE_FLOAT(FN, OP, Device("CPU:0"), CPU)
+//     ENUM_BM_DTYPE_FLOAT(FN, OP, Device("CUDA:0"), CUDA)
+// #else
 #define ENUM_BM_TENSOR_FLOAT(FN, OP) \
     ENUM_BM_DTYPE_FLOAT(FN, OP, Device("CPU:0"), CPU)
-//#endif
+// #endif
 
-//#ifdef BUILD_CUDA_MODULE
-//#define ENUM_BM_TENSOR_WTIH_BOOL(FN, OP)
-//    ENUM_BM_DTYPE_WITH_BOOL(FN, OP, Device("CPU:0"), CPU)
-//    ENUM_BM_DTYPE_WITH_BOOL(FN, OP, Device("CUDA:0"), CUDA)
-//#else
+// #ifdef BUILD_CUDA_MODULE
+// #define ENUM_BM_TENSOR_WTIH_BOOL(FN, OP)
+//     ENUM_BM_DTYPE_WITH_BOOL(FN, OP, Device("CPU:0"), CPU)
+//     ENUM_BM_DTYPE_WITH_BOOL(FN, OP, Device("CUDA:0"), CUDA)
+// #else
 #define ENUM_BM_TENSOR_WTIH_BOOL(FN, OP) \
     ENUM_BM_DTYPE_WITH_BOOL(FN, OP, Device("CPU:0"), CPU)
-//#endif
+// #endif
 
 ENUM_BM_TENSOR_FLOAT(UnaryEW, Sqrt)
 ENUM_BM_TENSOR_FLOAT(UnaryEW, Sin)
