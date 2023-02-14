@@ -143,6 +143,30 @@ LineSet ExtrudeLinearLineSet(const PointCloud& pointcloud,
                              double scale,
                              bool capping);
 
+/// Computes the normals for a mesh.
+/// In addition to computing the normals this function can fix the face vertex
+/// order and orient the normals to point outwards.
+/// This function can be applied to non-manifold or non-closed meshes but
+/// without any guarantees to correctness or quality for the result.
+/// \param mesh A point cloud.
+/// \param vertex_normals If true compute the vertex normals.
+/// \param face_normals If true compute the face normals.
+/// \param consistency If true the algorithm fixes the vertex order of faces.
+/// \param auto_orient_normals If true normals will be flipped to point
+/// outwards
+/// \param splitting If true allows splitting of edges to account for
+/// sharp edges. Splitting an edge will create new vertices.
+/// \param feature_angle_deg The angle in degrees that defines sharp edges for
+/// splitting.
+/// \return A new mesh with the computed normals.
+TriangleMesh ComputeNormals(const TriangleMesh& mesh,
+                            bool vertex_normals,
+                            bool face_normals,
+                            bool consistency,
+                            bool auto_orient_normals,
+                            bool splitting,
+                            double feature_angle_deg = 30);
+
 }  // namespace vtkutils
 }  // namespace geometry
 }  // namespace t

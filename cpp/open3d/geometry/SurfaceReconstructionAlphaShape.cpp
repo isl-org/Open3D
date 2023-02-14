@@ -28,10 +28,14 @@
 #include <iostream>
 #include <list>
 
+#include "open3d/core/EigenConverter.h"
+#include "open3d/core/Tensor.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/TriangleMesh.h"
+#include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -172,6 +176,21 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
     utility::LogDebug(
             "[CreateFromPointCloudAlphaShape] done remove duplicate triangles "
             "and unreferenced vertices");
+
+    auto tmesh = t::geometry::TriangleMesh::FromLegacy(*mesh);
+
+    // use new object tmesh2 here even if some arrays share memory with tmesh.
+    // We don't want to replace the blobs in tmesh.
+    auto tmesh2 = t::geometry::vtkutils::ComputeNormals(tmesh, true, false,
+                                                        true, true, false);
+
+    mesh->Clear();
+    mesh->vertices_ = core::eigen_converter::TensorToEigenVector3dVector(
+            tmesh2.GetVertexPositions());
+    mesh->vertex_normals_ = core::eigen_converter::TensorToEigenVector3dVector(
+            tmesh2.GetVertexNormals());
+    mesh->triangles_ = core::eigen_converter::TensorToEigenVector3iVector(
+            tmesh2.GetTriangleIndices());
 
     return mesh;
 }
