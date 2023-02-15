@@ -187,8 +187,6 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
     mesh->Clear();
     mesh->vertices_ = core::eigen_converter::TensorToEigenVector3dVector(
             tmesh2.GetVertexPositions());
-    mesh->vertex_normals_ = core::eigen_converter::TensorToEigenVector3dVector(
-            tmesh2.GetVertexNormals());
     mesh->triangles_ = core::eigen_converter::TensorToEigenVector3iVector(
             tmesh2.GetTriangleIndices());
 
