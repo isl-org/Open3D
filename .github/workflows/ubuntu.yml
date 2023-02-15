@@ -19,11 +19,11 @@ concurrency:
 
 env:
   NPROC: 2
-  GCE_CLI_GHA_VERSION: "302.0.0"
+  GCE_CLI_GHA_VERSION: "416.0.0"
 
 jobs:
   ubuntu:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -41,7 +41,7 @@ jobs:
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
@@ -74,20 +74,23 @@ jobs:
           fi
       - name: Upload package to GitHub artifacts
         if: ${{ env.BUILD_SHARED_LIBS == 'ON' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d-devel-linux-x86_64
           path: open3d-devel-*.tar.xz
           if-no-files-found: error
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' && env.BUILD_SHARED_LIBS == 'ON' }}
-        # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Upload package to GCS bucket
         if: ${{ github.ref == 'refs/heads/master' && env.BUILD_SHARED_LIBS == 'ON' }}
         run: |

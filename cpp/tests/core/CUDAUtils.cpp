@@ -28,10 +28,22 @@
 
 #include "open3d/core/CUDAUtils.h"
 
+#include <sstream>
 #include <thread>
 #include <vector>
 
 #include "tests/Tests.h"
+
+// #include <fmt/std.h>   // fmt version >=9, else:
+namespace {
+// Use std::ostringstream to get string representation.
+template <typename T>
+std::string to_str(T var) {
+    std::ostringstream ss;
+    ss << var;
+    return ss.str();
+}
+}  // namespace
 
 namespace open3d {
 namespace tests {
@@ -98,7 +110,7 @@ void CheckScopedStreamMultiThreaded(const std::function<void()>& func) {
     for (int i = 0; i < kThreads; ++i) {
         threads.emplace_back([&kIterations, &func]() {
             utility::LogDebug("Starting thread with ID {}",
-                              std::this_thread::get_id());
+                              to_str(std::this_thread::get_id()));
             for (int i = 0; i < kIterations; ++i) {
                 func();
             }
@@ -107,7 +119,8 @@ void CheckScopedStreamMultiThreaded(const std::function<void()>& func) {
 
     for (auto& thread : threads) {
         if (thread.joinable()) {
-            utility::LogDebug("Joining thread with ID {}", thread.get_id());
+            utility::LogDebug("Joining thread with ID {}",
+                              to_str(thread.get_id()));
             thread.join();
         }
     }
