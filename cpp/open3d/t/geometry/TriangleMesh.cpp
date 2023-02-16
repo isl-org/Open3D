@@ -423,6 +423,83 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
                             "supported by legacy TriangleMesh. Ignored.");
     }
 
+    // Convert material if the t geometry has a valid one
+    auto &tmat = GetMaterial();
+    if (tmat.IsValid()) {
+        auto &legacy_mat = mesh_legacy.materials_["Mat1"];
+        // Convert scalar properties
+        if (tmat.HasBaseColor()) {
+            legacy_mat.baseColor.f4[0] = tmat.GetBaseColor().x();
+            legacy_mat.baseColor.f4[1] = tmat.GetBaseColor().y();
+            legacy_mat.baseColor.f4[2] = tmat.GetBaseColor().z();
+            legacy_mat.baseColor.f4[3] = tmat.GetBaseColor().w();
+            utility::LogWarning("{},{},{},{}", legacy_mat.baseColor.f4[0],
+                                legacy_mat.baseColor.f4[1],
+                                legacy_mat.baseColor.f4[2],
+                                legacy_mat.baseColor.f4[3]);
+        }
+        if (tmat.HasBaseRoughness()) {
+            legacy_mat.baseRoughness = tmat.GetBaseRoughness();
+        }
+        if (tmat.HasBaseMetallic()) {
+            legacy_mat.baseMetallic = tmat.GetBaseMetallic();
+        }
+        if (tmat.HasBaseReflectance()) {
+            legacy_mat.baseReflectance = tmat.GetBaseReflectance();
+        }
+        if (tmat.HasBaseClearcoat()) {
+            legacy_mat.baseClearCoat = tmat.GetBaseClearcoat();
+        }
+        if (tmat.HasBaseClearcoatRoughness()) {
+            legacy_mat.baseClearCoatRoughness =
+                    tmat.GetBaseClearcoatRoughness();
+        }
+        if (tmat.HasAnisotropy()) {
+            legacy_mat.baseAnisotropy = tmat.GetAnisotropy();
+        }
+        // Convert maps
+        if (tmat.HasAlbedoMap()) {
+            legacy_mat.albedo = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.albedo = tmat.GetAlbedoMap().ToLegacy();
+        }
+        if (tmat.HasNormalMap()) {
+            legacy_mat.normalMap = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.normalMap = tmat.GetNormalMap().ToLegacy();
+        }
+        if (tmat.HasAOMap()) {
+            legacy_mat.ambientOcclusion =
+                    std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.ambientOcclusion = tmat.GetAOMap().ToLegacy();
+        }
+        if (tmat.HasMetallicMap()) {
+            legacy_mat.metallic = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.metallic = tmat.GetMetallicMap().ToLegacy();
+        }
+        if (tmat.HasRoughnessMap()) {
+            legacy_mat.roughness = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.roughness = tmat.GetRoughnessMap().ToLegacy();
+        }
+        if (tmat.HasReflectanceMap()) {
+            legacy_mat.reflectance =
+                    std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.reflectance = tmat.GetReflectanceMap().ToLegacy();
+        }
+        if (tmat.HasClearcoatMap()) {
+            legacy_mat.clearCoat = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.clearCoat = tmat.GetClearcoatMap().ToLegacy();
+        }
+        if (tmat.HasClearcoatRoughnessMap()) {
+            legacy_mat.clearCoatRoughness =
+                    std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.clearCoatRoughness =
+                    tmat.GetClearcoatRoughnessMap().ToLegacy();
+        }
+        if (tmat.HasAnisotropyMap()) {
+            legacy_mat.anisotropy = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.anisotropy = tmat.GetAnisotropyMap().ToLegacy();
+        }
+    }
+
     return mesh_legacy;
 }
 
