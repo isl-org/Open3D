@@ -1,0 +1,43 @@
+From 7ed407f9391454e8cb7fca8ceb48be512ebf4793 Mon Sep 17 00:00:00 2001
+From: Yixing Lao <yixing.lao@gmail.com>
+Date: Wed, 7 Apr 2021 16:18:20 -0700
+Subject: [PATCH] third_party: enable rtc_use_cxx11_abi option
+
+---
+ abseil-cpp/BUILD.gn | 4 ++++
+ jsoncpp/BUILD.gn    | 4 ++++
+ 2 files changed, 8 insertions(+)
+
+diff --git a/abseil-cpp/BUILD.gn b/abseil-cpp/BUILD.gn
+index d3497e50995..562862f36e4 100644
+--- a/abseil-cpp/BUILD.gn
++++ b/abseil-cpp/BUILD.gn
+@@ -115,6 +115,10 @@ config("absl_include_config") {
+ config("absl_define_config") {
+   defines = [ "ABSL_ALLOCATOR_NOTHROW=1" ]
+ 
++  if (!rtc_use_cxx11_abi) {
++    defines += [ "_GLIBCXX_USE_CXX11_ABI=0" ]
++  }
++
+   if (is_win && !use_custom_libcxx) {
+     defines += [
+       # See crbug.com/1101367: Acknowledge extended alignment when using
+diff --git a/jsoncpp/BUILD.gn b/jsoncpp/BUILD.gn
+index b51aa3a8a59..8e793ea562a 100644
+--- a/jsoncpp/BUILD.gn
++++ b/jsoncpp/BUILD.gn
+@@ -41,6 +41,10 @@ source_set("jsoncpp") {
+     "JSON_USE_NULLREF=0",
+   ]
+ 
++  if (!rtc_use_cxx11_abi) {
++    defines += [ "_GLIBCXX_USE_CXX11_ABI=0" ]
++  }
++
+   include_dirs = [ "source/src/lib_json" ]
+ 
+   if (!is_win || is_clang) {
+-- 
+2.17.1
+

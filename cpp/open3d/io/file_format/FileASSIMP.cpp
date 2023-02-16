@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,16 +28,19 @@
 #include <numeric>
 #include <vector>
 
+#include "assimp/GltfMaterial.h"
 #include "assimp/Importer.hpp"
-#include "assimp/pbrmaterial.h"
+#include "assimp/ProgressHandler.hpp"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 #include "open3d/io/FileFormatIO.h"
 #include "open3d/io/ImageIO.h"
+#include "open3d/io/ModelIO.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressReporters.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Model.h"
 
 #define AI_MATKEY_CLEARCOAT_THICKNESS "$mat.clearcoatthickness", 0, 0
@@ -52,11 +55,12 @@ FileGeometry ReadFileGeometryTypeFBX(const std::string& path) {
     return FileGeometry(CONTAINS_TRIANGLES | CONTAINS_POINTS);
 }
 
-const unsigned int kPostProcessFlags =
-        aiProcess_GenSmoothNormals | aiProcess_JoinIdenticalVertices |
-        aiProcess_ImproveCacheLocality | aiProcess_RemoveRedundantMaterials |
-        aiProcess_Triangulate | aiProcess_GenUVCoords | aiProcess_SortByPType |
-        aiProcess_FindDegenerates | aiProcess_OptimizeMeshes |
+const unsigned int kPostProcessFlags_compulsory =
+        aiProcess_JoinIdenticalVertices;
+
+const unsigned int kPostProcessFlags_fast =
+        aiProcessPreset_TargetRealtime_Fast |
+        aiProcess_RemoveRedundantMaterials | aiProcess_OptimizeMeshes |
         aiProcess_PreTransformVertices;
 
 struct TextureImages {
@@ -73,34 +77,66 @@ struct TextureImages {
 };
 
 void LoadTextures(const std::string& filename,
-                  aiMaterial* mat,
+                  const aiScene* scene,
+                  const aiMaterial* mat,
                   TextureImages& maps) {
     // Retrieve textures
     std::string base_path =
             utility::filesystem::GetFileParentDirectory(filename);
 
-    auto texture_loader = [&base_path, &mat](
+    auto texture_loader = [&base_path, &scene, &mat](
                                   aiTextureType type,
                                   std::shared_ptr<geometry::Image>& img) {
         if (mat->GetTextureCount(type) > 0) {
             aiString path;
             mat->GetTexture(type, 0, &path);
-            std::string strpath(path.C_Str());
-            // normalize path separators
-            auto p_win = strpath.find("\\");
-            while (p_win != std::string::npos) {
-                strpath[p_win] = '/';
-                p_win = strpath.find("\\", p_win + 1);
+            // If the texture is an embedded texture, use `GetEmbeddedTexture`.
+            if (auto texture = scene->GetEmbeddedTexture(path.C_Str())) {
+                if (texture->CheckFormat("png")) {
+                    auto image = io::CreateImageFromMemory(
+                            "png",
+                            reinterpret_cast<const unsigned char*>(
+                                    texture->pcData),
+                            texture->mWidth);
+                    if (image->HasData()) {
+                        img = image;
+                    }
+                } else if (texture->CheckFormat("jpg")) {
+                    auto image = io::CreateImageFromMemory(
+                            "jpg",
+                            reinterpret_cast<const unsigned char*>(
+                                    texture->pcData),
+                            texture->mWidth);
+                    if (image->HasData()) {
+                        img = image;
+                    }
+                }
+
+                else {
+                    utility::LogWarning(
+                            "This format of image is not supported.");
+                }
+
             }
-            // if absolute path convert to relative to base path
-            if (strpath.length() > 1 &&
-                (strpath[0] == '/' || strpath[1] == ':')) {
-                strpath = utility::filesystem::GetFileNameWithoutDirectory(
-                        strpath);
-            }
-            auto image = io::CreateImageFromFile(base_path + strpath);
-            if (image->HasData()) {
-                img = image;
+            // Else, build the path to it.
+            else {
+                std::string strpath(path.C_Str());
+                // Normalize path separators.
+                auto p_win = strpath.find("\\");
+                while (p_win != std::string::npos) {
+                    strpath[p_win] = '/';
+                    p_win = strpath.find("\\", p_win + 1);
+                }
+                // If absolute path convert to relative to base path.
+                if (strpath.length() > 1 &&
+                    (strpath[0] == '/' || strpath[1] == ':')) {
+                    strpath = utility::filesystem::GetFileNameWithoutDirectory(
+                            strpath);
+                }
+                auto image = io::CreateImageFromFile(base_path + strpath);
+                if (image->HasData()) {
+                    img = image;
+                }
             }
         }
     };
@@ -136,16 +172,16 @@ void LoadTextures(const std::string& filename,
     // anisotropy
 }
 
-bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
-                                 geometry::TriangleMesh& mesh,
-                                 bool enable_post_processing,
-                                 bool print_progress) {
+bool ReadTriangleMeshUsingASSIMP(
+        const std::string& filename,
+        geometry::TriangleMesh& mesh,
+        const ReadTriangleMeshOptions& params /*={}*/) {
     Assimp::Importer importer;
 
-    unsigned int post_process_flags = 0;
+    unsigned int post_process_flags = kPostProcessFlags_compulsory;
 
-    if (enable_post_processing) {
-        post_process_flags = kPostProcessFlags;
+    if (params.enable_post_processing) {
+        post_process_flags = kPostProcessFlags_fast;
     }
 
     const auto* scene = importer.ReadFile(filename.c_str(), post_process_flags);
@@ -236,10 +272,8 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
         mesh_material.baseColor =
                 MaterialParameter::CreateRGB(color.r, color.g, color.b);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
-                 mesh_material.baseMetallic);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
-                 mesh_material.baseRoughness);
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, mesh_material.baseMetallic);
+        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, mesh_material.baseRoughness);
         // NOTE: We prefer sheen to reflectivity so the following code works
         // since if sheen is not present it won't modify baseReflectance
         mat->Get(AI_MATKEY_REFLECTIVITY, mesh_material.baseReflectance);
@@ -252,7 +286,7 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
 
         // Retrieve textures
         TextureImages maps;
-        LoadTextures(filename, mat, maps);
+        LoadTextures(filename, scene, mat, maps);
         mesh_material.albedo = maps.albedo;
         mesh_material.normalMap = maps.normal;
         mesh_material.ambientOcclusion = maps.ao;
@@ -273,19 +307,52 @@ bool ReadTriangleMeshUsingASSIMP(const std::string& filename,
 
 bool ReadModelUsingAssimp(const std::string& filename,
                           visualization::rendering::TriangleMeshModel& model,
-                          bool print_progress) {
+                          const ReadTriangleModelOptions& params /*={}*/) {
+    int64_t progress_total = 100;  // 70: ReadFile(), 10: mesh, 20: textures
+    float readfile_total = 70.0f;
+    float mesh_total = 10.0f;
+    float textures_total = 20.0f;
+    int64_t progress = 0;
+    utility::CountingProgressReporter reporter(params.update_progress);
+    reporter.SetTotal(progress_total);
+    class AssimpProgress : public Assimp::ProgressHandler {
+    public:
+        AssimpProgress(const ReadTriangleModelOptions& params, float scaling)
+            : params_(params), scaling_(scaling) {}
+
+        bool Update(float percentage = -1.0f) override {
+            if (params_.update_progress) {
+                params_.update_progress(
+                        std::max(0.0f, 100.0f * scaling_ * percentage));
+            }
+            return true;
+        }
+
+    private:
+        const ReadTriangleModelOptions& params_;
+        float scaling_;
+    };
+
     Assimp::Importer importer;
-    const auto* scene = importer.ReadFile(filename.c_str(), kPostProcessFlags);
+    // The importer takes ownership of the pointer (the documentation
+    // is silent on this salient point).
+    importer.SetProgressHandler(
+            new AssimpProgress(params, readfile_total / progress_total));
+    const auto* scene =
+            importer.ReadFile(filename.c_str(), kPostProcessFlags_fast);
     if (!scene) {
         utility::LogWarning("Unable to load file {} with ASSIMP", filename);
         return false;
     }
 
+    progress = int64_t(readfile_total);
+    reporter.Update(progress);
+
     // Process each Assimp mesh into a geometry::TriangleMesh
     for (size_t midx = 0; midx < scene->mNumMeshes; ++midx) {
         const auto* assimp_mesh = scene->mMeshes[midx];
         // Only process triangle meshes
-        if (assimp_mesh->mPrimitiveTypes != aiPrimitiveType_TRIANGLE) {
+        if (!(assimp_mesh->mPrimitiveTypes & aiPrimitiveType_TRIANGLE)) {
             utility::LogInfo(
                     "Skipping non-triangle primitive geometry of type: "
                     "{}",
@@ -344,11 +411,14 @@ bool ReadModelUsingAssimp(const std::string& filename,
                                  assimp_mesh->mMaterialIndex});
     }
 
+    progress = int64_t(readfile_total + mesh_total);
+    reporter.Update(progress);
+
     // Load materials
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
 
-        visualization::rendering::Material o3d_mat;
+        visualization::rendering::MaterialRecord o3d_mat;
 
         o3d_mat.name = mat->GetName().C_Str();
 
@@ -357,10 +427,8 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         mat->Get(AI_MATKEY_COLOR_DIFFUSE, color);
         o3d_mat.base_color = Eigen::Vector4f(color.r, color.g, color.b, 1.f);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR,
-                 o3d_mat.base_metallic);
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR,
-                 o3d_mat.base_roughness);
+        mat->Get(AI_MATKEY_METALLIC_FACTOR, o3d_mat.base_metallic);
+        mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, o3d_mat.base_roughness);
         mat->Get(AI_MATKEY_REFLECTIVITY, o3d_mat.base_reflectance);
         mat->Get(AI_MATKEY_SHEEN, o3d_mat.base_reflectance);
 
@@ -377,7 +445,7 @@ bool ReadModelUsingAssimp(const std::string& filename,
 
         // Retrieve textures
         TextureImages maps;
-        LoadTextures(filename, mat, maps);
+        LoadTextures(filename, scene, mat, maps);
         o3d_mat.albedo_img = maps.albedo;
         o3d_mat.normal_img = maps.normal;
         o3d_mat.ao_img = maps.ao;
@@ -393,7 +461,14 @@ bool ReadModelUsingAssimp(const std::string& filename,
         }
 
         model.materials_.push_back(o3d_mat);
+
+        progress = int64_t(readfile_total + mesh_total +
+                           textures_total * float(i + 1) /
+                                   float(scene->mNumMaterials));
+        reporter.Update(progress);
     }
+
+    reporter.Update(progress_total);
 
     return true;
 }

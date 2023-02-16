@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -503,6 +503,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
                         color = mesh.vertex_colors_[vi];
                         break;
                     }
+                    // fallthrough
                 case RenderOption::MeshColorOption::Default:
                 default:
                     color = option.default_mesh_color_;
@@ -584,6 +585,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
                     voxel_color = voxel.color_;
                     break;
                 }
+                // fallthrough
             case RenderOption::MeshColorOption::Default:
             default:
                 voxel_color = option.default_mesh_color_;
@@ -674,6 +676,7 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
                     voxel_color = voxel.color_;
                     break;
                 }
+                // fallthrough
             case RenderOption::MeshColorOption::Default:
             default:
                 voxel_color = option.default_mesh_color_;
@@ -737,7 +740,7 @@ bool SimpleShaderForOctreeFace::PrepareBinding(
     auto f = [&points, &colors, &option, &global_color_map, &view](
                      const std::shared_ptr<geometry::OctreeNode> &node,
                      const std::shared_ptr<geometry::OctreeNodeInfo> &node_info)
-            -> void {
+            -> bool {
         if (auto leaf_node =
                     std::dynamic_pointer_cast<geometry::OctreeColorLeafNode>(
                             node)) {
@@ -788,6 +791,7 @@ bool SimpleShaderForOctreeFace::PrepareBinding(
                 colors.push_back(voxel_color_f);
             }
         }
+        return false;
     };
 
     octree.Traverse(f);
@@ -835,7 +839,7 @@ bool SimpleShaderForOctreeLine::PrepareBinding(
     auto f = [&points, &colors](
                      const std::shared_ptr<geometry::OctreeNode> &node,
                      const std::shared_ptr<geometry::OctreeNodeInfo> &node_info)
-            -> void {
+            -> bool {
         Eigen::Vector3f base_vertex = node_info->origin_.cast<float>();
         std::vector<Eigen::Vector3f> vertices;
         for (const Eigen::Vector3i &vertex_offset : cuboid_vertex_offsets) {
@@ -856,6 +860,7 @@ bool SimpleShaderForOctreeLine::PrepareBinding(
             colors.push_back(voxel_color);
             colors.push_back(voxel_color);
         }
+        return false;
     };
 
     octree.Traverse(f);

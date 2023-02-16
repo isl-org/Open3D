@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@
 #include "open3d/core/TensorList.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/utility/Helper.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace open3d {
@@ -51,17 +51,6 @@ INSTANTIATE_TEST_SUITE_P(
         TensorObject,
         TensorObjectPermuteDevicePairs,
         testing::ValuesIn(TensorObjectPermuteDevicePairs::TestCases()));
-
-class TensorObjectPermuteSizesDefaultStridesAndDevices
-    : public testing::TestWithParam<
-              std::tuple<std::pair<core::SizeVector, core::SizeVector>,
-                         core::Device>> {};
-INSTANTIATE_TEST_SUITE_P(
-        TensorObject,
-        TensorObjectPermuteSizesDefaultStridesAndDevices,
-        testing::Combine(
-                testing::ValuesIn(PermuteSizesDefaultStrides::TestCases()),
-                testing::ValuesIn(PermuteDevices::TestCases())));
 
 class TestObject {
 public:
@@ -135,10 +124,10 @@ TEST_P(TensorObjectPermuteDevicePairs, IndexSetFillFancyObject) {
 
     // t[:, [1, 2], [1, 2]]
     std::vector<core::Tensor> indices = {
-            core::Tensor(core::SizeVector(), core::Dtype::Int64, dst_device),
-            core::Tensor(std::vector<int64_t>({1, 2}), {2}, core::Dtype::Int64,
+            core::Tensor(core::SizeVector(), core::Int64, dst_device),
+            core::Tensor(std::vector<int64_t>({1, 2}), {2}, core::Int64,
                          src_device),
-            core::Tensor(std::vector<int64_t>({1, 2}), {2}, core::Dtype::Int64,
+            core::Tensor(std::vector<int64_t>({1, 2}), {2}, core::Int64,
                          dst_device)};
 
     dst_t.IndexSet(indices, src_t);
@@ -157,7 +146,7 @@ TEST_P(TensorObjectPermuteDevicePairs, CopyObject) {
 
     std::vector<TestObject> vals{0, 1, 2, 3, 4, 5};
     core::Tensor src_t(vals, shape, dtype, src_device);
-    core::Tensor dst_t = src_t.Copy(dst_device);
+    core::Tensor dst_t = src_t.To(dst_device);
 
     EXPECT_EQ(dst_t.GetShape(), src_t.GetShape());
     EXPECT_EQ(dst_t.GetDevice(), dst_device);
@@ -249,7 +238,7 @@ TEST_P(TensorObjectPermuteDevices, IsSameObject) {
     EXPECT_TRUE(t0_slice.IsSame(t1_slice));
     EXPECT_TRUE(t1_slice.IsSame(t0_slice));
     // Explicit copy to the same device.
-    core::Tensor t0_copy = t0.Copy(device);
+    core::Tensor t0_copy = t0.To(device, /*copy=*/true);
     EXPECT_FALSE(t0.IsSame(t0_copy));
     EXPECT_FALSE(t0_copy.IsSame(t0));
     // std::vector<Tensor> initializer list and push_back() are views.

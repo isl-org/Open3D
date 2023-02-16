@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,10 @@
 #include <filament/Engine.h>
 #include <math/mat4.h>  // necessary for mat4f
 
+// Necessary for filament::utils::EntityManager::get(), replace with
+// engine_.getEntityManager() for Filament 1.9.23+
+#include <utils/EntityManager.h>
+
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif  // _MSC_VER
@@ -47,7 +51,6 @@ namespace rendering {
 namespace {
 Camera::Transform FilamentToCameraTransform(const filament::math::mat4& ft) {
     Camera::Transform::MatrixType m;
-
     m << float(ft(0, 0)), float(ft(0, 1)), float(ft(0, 2)), float(ft(0, 3)),
             float(ft(1, 0)), float(ft(1, 1)), float(ft(1, 2)), float(ft(1, 3)),
             float(ft(2, 0)), float(ft(2, 1)), float(ft(2, 2)), float(ft(2, 3)),
@@ -78,12 +81,17 @@ filament::math::mat4f CameraToFilamentTransformF(const Camera::Transform& t) {
 }  // namespace
 
 FilamentCamera::FilamentCamera(filament::Engine& engine) : engine_(engine) {
-    camera_ = engine_.createCamera();
+    camera_entity_ = utils::EntityManager::get().create();
+    camera_ = engine_.createCamera(camera_entity_);
     projection_.is_ortho = false;
     projection_.is_intrinsic = false;
 }
 
-FilamentCamera::~FilamentCamera() { engine_.destroy(camera_); }
+FilamentCamera::~FilamentCamera() {
+    engine_.destroyCameraComponent(camera_entity_);
+    engine_.destroy(camera_entity_);
+    camera_entity_.clear();
+}
 
 void FilamentCamera::CopyFrom(const Camera* camera) {
     SetModelMatrix(camera->GetModelMatrix());
@@ -162,6 +170,7 @@ void FilamentCamera::SetProjection(const Eigen::Matrix3d& intrinsics,
                                    double width,
                                    double height) {
     filament::math::mat4 custom_proj;
+    filament::math::mat4 culling_proj;
     custom_proj[0][0] = 2.0 * intrinsics(0, 0) / width;
     custom_proj[0][1] = 0.0;
     custom_proj[0][2] = 0.0;
@@ -174,15 +183,23 @@ void FilamentCamera::SetProjection(const Eigen::Matrix3d& intrinsics,
 
     custom_proj[2][0] = 1.0 - 2.0 * intrinsics(0, 2) / width;
     custom_proj[2][1] = -1.0 + 2.0 * intrinsics(1, 2) / height;
-    custom_proj[2][2] = (-far - near) / (far - near);
+    custom_proj[2][2] = -1.0;
     custom_proj[2][3] = -1.0;
 
     custom_proj[3][0] = 0.0;
     custom_proj[3][1] = 0.0;
-    custom_proj[3][2] = -2.0 * far * near / (far - near);
+    custom_proj[3][2] = -2.0 * near;
     custom_proj[3][3] = 0.0;
 
+    culling_proj = custom_proj;
+    culling_proj[2][2] = (-far - near) / (far - near);
+    culling_proj[3][2] = -2.0 * far * near / (far - near);
+
+#ifdef WIN32
     camera_->setCustomProjection(custom_proj, near, far);
+#else
+    camera_->setCustomProjection(custom_proj, culling_proj, near, far);
+#endif
 
     projection_.is_intrinsic = true;
     projection_.is_ortho = false;
@@ -201,26 +218,43 @@ double FilamentCamera::GetNear() const { return camera_->getNear(); }
 double FilamentCamera::GetFar() const { return camera_->getCullingFar(); }
 
 double FilamentCamera::GetFieldOfView() const {
-    if (projection_.is_ortho || projection_.is_intrinsic) {
+    if (projection_.is_ortho) {
         // technically orthographic projection is lim(fov->0) as dist->inf,
         // but it also serves as an obviously wrong value if you call
         // GetFieldOfView() after setting an orthographic projection
         return 0.0;
+    } else if (projection_.is_intrinsic) {
+        double fov_rad =
+                2.0 * std::atan(0.5 * projection_.proj.intrinsics.height /
+                                projection_.proj.intrinsics.fy);
+        return 180.0 / 3.141592 * fov_rad;
     } else {
         return projection_.proj.perspective.fov;
     }
 }
 
 Camera::FovType FilamentCamera::GetFieldOfViewType() const {
-    return projection_.proj.perspective.fov_type;
+    if (projection_.is_ortho) {
+        return Camera::FovType::Vertical;
+    } else if (projection_.is_intrinsic) {
+        return Camera::FovType::Vertical;
+    } else {
+        return projection_.proj.perspective.fov_type;
+    }
 }
 
 void FilamentCamera::LookAt(const Eigen::Vector3f& center,
                             const Eigen::Vector3f& eye,
                             const Eigen::Vector3f& up) {
-    camera_->lookAt({eye.x(), eye.y(), eye.z()},
-                    {center.x(), center.y(), center.z()},
-                    {up.x(), up.y(), up.z()});
+    // We set the camera's model matrix instead of using lookAt, which sets
+    // the view matrix, because we cannot set the view matrix directly, which
+    // the rotation interactors need to do.
+    using namespace filament::math;
+    auto m = mat4f::lookAt(float3(eye.x(), eye.y(), eye.z()),
+                           float3(center.x(), center.y(), center.z()),
+                           float3(up.x(), up.y(), up.z()));
+
+    camera_->setModelMatrix(m);
 }
 
 Eigen::Vector3f FilamentCamera::GetPosition() const {
@@ -253,8 +287,19 @@ Camera::Transform FilamentCamera::GetViewMatrix() const {
     return FilamentToCameraTransform(ftransform);
 }
 
-Camera::Transform FilamentCamera::GetProjectionMatrix() const {
-    auto ftransform = camera_->getProjectionMatrix();  // mat4 (not mat4f)
+Camera::ProjectionMatrix FilamentCamera::GetProjectionMatrix() const {
+    auto ft = camera_->getProjectionMatrix();  // mat4 (not mat4f)
+    Camera::ProjectionMatrix::MatrixType proj;
+    proj << float(ft(0, 0)), float(ft(0, 1)), float(ft(0, 2)), float(ft(0, 3)),
+            float(ft(1, 0)), float(ft(1, 1)), float(ft(1, 2)), float(ft(1, 3)),
+            float(ft(2, 0)), float(ft(2, 1)), float(ft(2, 2)), float(ft(2, 3)),
+            float(ft(3, 0)), float(ft(3, 1)), float(ft(3, 2)), float(ft(3, 3));
+    return Camera::ProjectionMatrix(proj);
+}
+
+Camera::Transform FilamentCamera::GetCullingProjectionMatrix() const {
+    auto ftransform =
+            camera_->getCullingProjectionMatrix();  // mat4 (not mat4f)
     return FilamentToCameraTransform(ftransform);
 }
 
@@ -268,6 +313,15 @@ Eigen::Vector2f FilamentCamera::GetNDC(const Eigen::Vector3f& pt) const {
     ndc_space_p.y = float(clip_space_p.y / clip_space_p.w);
 
     return {ndc_space_p.x, ndc_space_p.y};
+}
+
+double FilamentCamera::GetViewZ(float z_buffer) const {
+    double z_near = GetNear();
+    if (z_buffer >= 1.0f) {
+        return std::numeric_limits<double>::infinity();
+    } else {
+        return -z_near / (1.0 - z_buffer);
+    }
 }
 
 const Camera::ProjectionInfo& FilamentCamera::GetProjection() const {
@@ -290,6 +344,18 @@ void FilamentCamera::SetModelMatrix(const Eigen::Vector3f& forward,
 void FilamentCamera::SetModelMatrix(const Transform& view) {
     auto ftransform = CameraToFilamentTransformF(view);
     camera_->setModelMatrix(ftransform);  // model matrix uses mat4f
+}
+
+Eigen::Vector3f FilamentCamera::Unproject(
+        float x, float y, float z, float view_width, float view_height) const {
+    Eigen::Vector4f gl_pt(2.0f * x / view_width - 1.0f,
+                          2.0f * (view_height - y) / view_height - 1.0f,
+                          2.0f * z - 1.0f, 1.0f);
+
+    auto proj = GetProjectionMatrix();
+    Eigen::Vector4f obj_pt = (proj * GetViewMatrix()).inverse() * gl_pt;
+    return {obj_pt.x() / obj_pt.w(), obj_pt.y() / obj_pt.w(),
+            obj_pt.z() / obj_pt.w()};
 }
 
 }  // namespace rendering

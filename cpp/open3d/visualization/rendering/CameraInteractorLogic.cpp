@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ void CameraInteractorLogic::RotateFly(int dx, int dy) {
     camera_->SetModelMatrix(GetMatrix());
 }
 
-void CameraInteractorLogic::Dolly(int dy, DragType type) {
+void CameraInteractorLogic::Dolly(float dy, DragType type) {
     // Parent's matrix_ may not have been set yet
     if (type != DragType::MOUSE) {
         SetMouseDownInfo(camera_->GetModelMatrix(), center_of_rotation_);

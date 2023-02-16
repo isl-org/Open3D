@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/core/Blob.h"
 #include "open3d/core/linalg/LapackWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 #include "open3d/core/linalg/SVD.h"
@@ -40,17 +41,18 @@ void SVDCUDA(const void* A_data,
              int64_t n,
              Dtype dtype,
              const Device& device) {
-    cusolverDnHandle_t handle = CuSolverContext::GetInstance()->GetHandle();
+    cusolverDnHandle_t handle =
+            CuSolverContext::GetInstance().GetHandle(device);
 
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         int len;
-        int* dinfo =
-                static_cast<int*>(MemoryManager::Malloc(sizeof(int), device));
+        Blob dinfo(sizeof(int), device);
+
         OPEN3D_CUSOLVER_CHECK(
                 gesvd_cuda_buffersize<scalar_t>(handle, m, n, &len),
                 "gesvd_buffersize failed in SVDCUDA");
 
-        void* workspace = MemoryManager::Malloc(len * sizeof(scalar_t), device);
+        Blob workspace(len * sizeof(scalar_t), device);
 
         OPEN3D_CUSOLVER_CHECK_WITH_DINFO(
                 gesvd_cuda<scalar_t>(
@@ -60,11 +62,11 @@ void SVDCUDA(const void* A_data,
                         m, static_cast<scalar_t*>(S_data),
                         static_cast<scalar_t*>(U_data), m,
                         static_cast<scalar_t*>(VT_data), n,
-                        static_cast<scalar_t*>(workspace), len,
-                        static_cast<scalar_t*>(superb_data), dinfo),
-                "gesvd failed in SVDCUDA", dinfo, device);
-
-        MemoryManager::Free(workspace, device);
+                        static_cast<scalar_t*>(workspace.GetDataPtr()), len,
+                        static_cast<scalar_t*>(superb_data),
+                        static_cast<int*>(dinfo.GetDataPtr())),
+                "gesvd failed in SVDCUDA",
+                static_cast<int*>(dinfo.GetDataPtr()), device);
     });
 }
 }  // namespace core

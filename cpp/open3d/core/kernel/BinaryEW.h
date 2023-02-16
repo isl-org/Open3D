@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,8 @@
 #include <unordered_set>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -41,6 +41,8 @@ enum class BinaryEWOpCode {
     Sub,
     Mul,
     Div,
+    Maximum,
+    Minimum,
     LogicalAnd,
     LogicalOr,
     LogicalXor,
@@ -71,22 +73,6 @@ void BinaryEWCUDA(const Tensor& lhs,
                   Tensor& dst,
                   BinaryEWOpCode op_code);
 #endif
-
-inline void Add(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
-    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Add);
-}
-
-inline void Sub(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
-    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Sub);
-}
-
-inline void Mul(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
-    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Mul);
-}
-
-inline void Div(const Tensor& lhs, const Tensor& rhs, Tensor& dst) {
-    BinaryEW(lhs, rhs, dst, BinaryEWOpCode::Div);
-}
 
 }  // namespace kernel
 }  // namespace core

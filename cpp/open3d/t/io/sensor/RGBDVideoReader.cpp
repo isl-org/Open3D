@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@
 #include "open3d/io/ImageIO.h"
 #include "open3d/t/io/sensor/realsense/RSBagReader.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Helper.h"
 
 namespace open3d {
 namespace t {
@@ -75,7 +76,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
     {
 #pragma omp section
         {
-            im_color = tim_rgbd.color_.ToLegacyImage();
+            im_color = tim_rgbd.color_.ToLegacy();
             auto color_file =
                     fmt::format("{0}/color/{1:05d}.jpg", frame_path, idx);
             open3d::io::WriteImage(color_file, im_color);
@@ -83,7 +84,7 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
         }
 #pragma omp section
         {
-            im_depth = tim_rgbd.depth_.ToLegacyImage();
+            im_depth = tim_rgbd.depth_.ToLegacy();
             auto depth_file =
                     fmt::format("{0}/depth/{1:05d}.png", frame_path, idx);
             open3d::io::WriteImage(depth_file, im_depth);
@@ -94,20 +95,22 @@ void RGBDVideoReader::SaveFrames(const std::string &frame_path,
                      idx, frame_path);
 }
 
-std::shared_ptr<RGBDVideoReader> RGBDVideoReader::Create(
+std::unique_ptr<RGBDVideoReader> RGBDVideoReader::Create(
         const std::string &filename) {
 #ifdef BUILD_LIBREALSENSE
     if (utility::ToLower(filename).compare(filename.length() - 4, 4, ".bag") ==
         0) {
-        auto reader = std::make_shared<RSBagReader>();
+        auto reader = std::make_unique<RSBagReader>();
         reader->Open(filename);
         return reader;
-    } else
-#endif
-    {
-        utility::LogError("Unsupported file format for {}", filename);
+    } else {
+        utility::LogError("Unsupported file format for {}.", filename);
     }
+#endif
+    utility::LogError(
+            "Build with -DBUILD_LIBREALSENSE=ON to use RealSense bag file.");
 }
+
 }  // namespace io
 }  // namespace t
 }  // namespace open3d

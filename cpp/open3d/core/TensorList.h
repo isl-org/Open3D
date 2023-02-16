@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -58,13 +58,13 @@ namespace core {
 class TensorList {
 public:
     /// Useful to support operator[] in a map.
-    TensorList() : TensorList(SizeVector({}), Dtype::Float32) {}
+    TensorList() : TensorList(SizeVector({}), core::Float32) {}
 
     /// Constructs an empty tensorlist.
     ///
     /// \param element_shape Shape of the contained tensors, e.g. {3,}. 0-sized
     /// and scalar element_shape are allowed.
-    /// \param dtype Data type of the contained tensors. e.g. Dtype::Float32.
+    /// \param dtype Data type of the contained tensors. e.g. core::Float32.
     /// \param device Device of the contained tensors. e.g. Device("CPU:0").
     TensorList(const SizeVector& element_shape,
                Dtype dtype,
@@ -89,7 +89,7 @@ public:
     /// \param size Size of the tensorlist.
     /// \param element_shape Shape of the contained tensors, e.g. {3,}. 0-sized
     /// and scalar element_shape are allowed.
-    /// \param dtype Data type of the contained tensors. e.g. Dtype::Float32.
+    /// \param dtype Data type of the contained tensors. e.g. core::Float32.
     /// \param device Device of the contained tensors. e.g. Device("CPU:0").
     TensorList(int64_t size,
                const SizeVector& element_shape,
@@ -203,13 +203,9 @@ public:
     /// returned tensor will always be resizable.
     void CopyFrom(const TensorList& other);
 
-    /// Performs "shallow" copy from another tensorlist. The internal tensor
-    /// memory will be shared.
-    void ShallowCopyFrom(const TensorList& other);
-
     /// Duplicate the current tensorlist. Values will be copied. The returned
     /// tensor will always be resizable.
-    TensorList Copy() const;
+    TensorList Clone() const;
 
     /// Return the reference of the contained valid tensors with shared memory.
     Tensor AsTensor() const;

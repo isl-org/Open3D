@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,29 +26,29 @@
 
 #pragma once
 
-#include <memory>
 #include <string>
 
+#include "open3d/core/Device.h"
 #include "open3d/core/Dtype.h"
 #include "open3d/core/MemoryManager.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/core/linalg/LinalgHeadersCUDA.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
-#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)       \
-    [&] {                                                   \
-        if (DTYPE == open3d::core::Dtype::Float32) {        \
-            using scalar_t = float;                         \
-            return __VA_ARGS__();                           \
-        } else if (DTYPE == open3d::core::Dtype::Float64) { \
-            using scalar_t = double;                        \
-            return __VA_ARGS__();                           \
-        } else {                                            \
-            utility::LogError("Unsupported data type.");    \
-        }                                                   \
+#define DISPATCH_LINALG_DTYPE_TO_TEMPLATE(DTYPE, ...)    \
+    [&] {                                                \
+        if (DTYPE == open3d::core::Float32) {            \
+            using scalar_t = float;                      \
+            return __VA_ARGS__();                        \
+        } else if (DTYPE == open3d::core::Float64) {     \
+            using scalar_t = double;                     \
+            return __VA_ARGS__();                        \
+        } else {                                         \
+            utility::LogError("Unsupported data type."); \
+        }                                                \
     }()
 
 inline void OPEN3D_LAPACK_CHECK(OPEN3D_CPU_LINALG_INT info,
@@ -93,31 +93,32 @@ inline void OPEN3D_CUSOLVER_CHECK_WITH_DINFO(cusolverStatus_t status,
 
 class CuSolverContext {
 public:
-    static std::shared_ptr<CuSolverContext> GetInstance();
-    CuSolverContext();
+    static CuSolverContext& GetInstance();
+
+    CuSolverContext(const CuSolverContext&) = delete;
+    CuSolverContext& operator=(const CuSolverContext&) = delete;
     ~CuSolverContext();
 
-    cusolverDnHandle_t& GetHandle() { return handle_; }
+    cusolverDnHandle_t& GetHandle(const Device& device);
 
 private:
-    cusolverDnHandle_t handle_;
-
-    static std::shared_ptr<CuSolverContext> instance_;
+    CuSolverContext();
+    std::unordered_map<Device, cusolverDnHandle_t> map_device_to_handle_;
 };
 
 class CuBLASContext {
 public:
-    static std::shared_ptr<CuBLASContext> GetInstance();
+    static CuBLASContext& GetInstance();
 
-    CuBLASContext();
+    CuBLASContext(const CuBLASContext&) = delete;
+    CuBLASContext& operator=(const CuBLASContext&) = delete;
     ~CuBLASContext();
 
-    cublasHandle_t& GetHandle() { return handle_; }
+    cublasHandle_t& GetHandle(const Device& device);
 
 private:
-    cublasHandle_t handle_;
-
-    static std::shared_ptr<CuBLASContext> instance_;
+    CuBLASContext();
+    std::unordered_map<Device, cublasHandle_t> map_device_to_handle_;
 };
 #endif
 }  // namespace core

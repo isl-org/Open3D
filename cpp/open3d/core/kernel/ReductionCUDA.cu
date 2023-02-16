@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,23 +30,24 @@
 #include <thrust/tuple.h>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <sstream>
 #include <tuple>
 #include <type_traits>
 
-#include "open3d/core/CUDAState.cuh"
+#include "open3d/core/Blob.h"
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Device.h"
 #include "open3d/core/Dispatch.h"
-#include "open3d/core/FuncionTraits.h"
+#include "open3d/core/FunctionTraits.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/MemoryManager.h"
+#include "open3d/core/ParallelFor.h"
 #include "open3d/core/SizeVector.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/core/kernel/CUDALauncher.cuh"
 #include "open3d/core/kernel/Reduction.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 // CUDA reduction is based on PyTorch's CUDA reduction implementation.
 // See: aten/src/ATen/native/cuda/Reduce.cuh
@@ -228,8 +229,7 @@ public:
         int dim1_pow2 = dim1 < MAX_NUM_THREADS
                                 ? static_cast<int>(LastPow2(dim1))
                                 : MAX_NUM_THREADS;
-        block_width_ =
-                std::min(dim0_pow2, CUDAState::GetInstance()->GetWarpSize());
+        block_width_ = std::min(dim0_pow2, GetCUDACurrentWarpSize());
         block_height_ =
                 std::min(dim1_pow2, int(MAX_NUM_THREADS / block_width_));
         block_width_ =
@@ -304,7 +304,7 @@ public:
     int SharedMemorySize() const {
         if (!ShouldBlockYReduce() &&
             (!ShouldBlockXReduce() ||
-             block_width_ <= CUDAState::GetInstance()->GetWarpSize())) {
+             block_width_ <= GetCUDACurrentWarpSize())) {
             return 0;
         }
         return element_size_bytes_ * num_threads_;
@@ -596,7 +596,7 @@ public:
         // unroll that exposes instruction level parallelism.
         while (idx < config_.num_inputs_per_output_) {
             // load input
-            SmallArray<scalar_t, vt0> values;
+            utility::MiniVec<scalar_t, vt0> values;
             if (input_calc_.dims_ == 1) {
                 StridedIterate<vt0>(
                         [&](index_t i, index_t idx) {
@@ -698,7 +698,7 @@ public:
             out_scalar_t*,
             arg_t,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
-        assert(false);  // can't use AT_ASSERT in Cuda.
+        OPEN3D_ASSERT(false);
         return arg_t{};
     }
 
@@ -707,7 +707,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<can_acc>::type* = nullptr) const {
-        assert(!final_output_);
+        OPEN3D_ASSERT(!final_output_);
         return (out_scalar_t)value;
     }
 
@@ -719,7 +719,7 @@ public:
             out_scalar_t* out,
             arg_t value,
             typename std::enable_if<!can_acc>::type* = nullptr) const {
-        assert(false);
+        OPEN3D_ASSERT(false);
         return *out;
     }
 
@@ -731,7 +731,7 @@ public:
 
     OPEN3D_DEVICE void SetResultsToOutput(arg_t value,
                                           index_t base_offset) const {
-        assert(final_output_);
+        OPEN3D_ASSERT(final_output_);
         SetResults(ops_.Project(value), base_offset);
     }
 
@@ -845,10 +845,9 @@ public:
             numerator_ = 1;
             denominator_ = 1;
         } else {
-            int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
-            Device device(Device::DeviceType::CUDA, device_id);
-            buffer_ = (char*)MemoryManager::Malloc(size, device);
-            acc_ptr_ = (char*)buffer_;
+            Device device(Device::DeviceType::CUDA, cuda::GetDevice());
+            buffer_ = std::make_unique<Blob>(size, device);
+            acc_ptr_ = (char*)buffer_->GetDataPtr();
             numerator_ = acc_t_size;
             denominator_ = out_t_size;
             ReduceFraction(numerator_, denominator_);
@@ -863,12 +862,12 @@ public:
     }
 
 private:
+    std::unique_ptr<Blob> buffer_;
     char* acc_ptr_ = nullptr;
     char* out_ptr_ = nullptr;
     float size_factor_ = -1;
     int64_t numerator_ = -1;
     int64_t denominator_ = -1;
-    char* buffer_ = nullptr;
 };
 
 class CUDAReductionEngine {
@@ -881,7 +880,7 @@ public:
     void Run(const func_t& reduce_func, scalar_t identity) {
         if (indexer_.NumWorkloads() == 0) {
             utility::LogError(
-                    "0-sized input should be handled outside of the reudction "
+                    "0-sized input should be handled outside of the reduction "
                     "engine.");
         }
         if (indexer_.NumInputs() != 1) {
@@ -966,19 +965,24 @@ private:
 
         ReduceConfig config(sizeof(arg_t), indexer);
 
+        std::unique_ptr<Blob> buffer_blob;
+        std::unique_ptr<Blob> semaphores_blob;
         void* buffer = nullptr;
         void* semaphores = nullptr;
         if (config.ShouldGlobalReduce()) {
-            int device_id = CUDAState::GetInstance()->GetCurentDeviceID();
-            Device device(Device::DeviceType::CUDA, device_id);
+            Device device(Device::DeviceType::CUDA, cuda::GetDevice());
 
-            buffer = MemoryManager::Malloc(config.GlobalMemorySize(), device);
-            semaphores = MemoryManager::Malloc(config.SemaphoreSize(), device);
+            buffer_blob =
+                    std::make_unique<Blob>(config.GlobalMemorySize(), device);
+            semaphores_blob =
+                    std::make_unique<Blob>(config.SemaphoreSize(), device);
+            buffer = buffer_blob->GetDataPtr();
+            semaphores = semaphores_blob->GetDataPtr();
             OPEN3D_CUDA_CHECK(
                     cudaMemset(semaphores, 0, config.SemaphoreSize()));
         }
 
-        assert(can_use_32bit_indexing);
+        OPEN3D_ASSERT(can_use_32bit_indexing);
         const char* in_data = (char*)indexer.GetInput(0).data_ptr_;
         char* out_data = (char*)indexer.GetOutput().data_ptr_;
         char* acc_data = acc_buf_ptr->GetAccSlice(out_data);
@@ -993,9 +997,9 @@ private:
         // Launch reduce kernel
         int shared_memory = config.SharedMemorySize();
         ReduceKernel<ReduceConfig::MAX_NUM_THREADS>
-                <<<config.GridDim(), config.BlockDim(), shared_memory>>>(
-                        reduce_op);
-        OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
+                <<<config.GridDim(), config.BlockDim(), shared_memory,
+                   core::cuda::GetStream()>>>(reduce_op);
+        cuda::Synchronize();
         OPEN3D_CUDA_CHECK(cudaGetLastError());
     }
 
@@ -1012,7 +1016,8 @@ void ReductionCUDA(const Tensor& src,
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         CUDAReductionEngine re(indexer);
         Dtype dtype = src.GetDtype();
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             switch (op_code) {
                 case ReductionOpCode::Sum:
@@ -1039,10 +1044,10 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::Min:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport Min.");
+                                "Zero-size Tensor does not support Min.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> scalar_t { return a < b ? a : b; },
+                                       -> scalar_t { return min(a, b); },
                                static_cast<scalar_t>(
                                        std::numeric_limits<scalar_t>::max()));
                     }
@@ -1050,10 +1055,10 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::Max:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport Max.");
+                                "Zero-size Tensor does not support Max.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
-                                       -> scalar_t { return a > b ? a : b; },
+                                       -> scalar_t { return max(a, b); },
                                static_cast<scalar_t>(std::numeric_limits<
                                                      scalar_t>::lowest()));
                     }
@@ -1064,19 +1069,20 @@ void ReductionCUDA(const Tensor& src,
             }
         });
     } else if (s_arg_reduce_ops.find(op_code) != s_arg_reduce_ops.end()) {
-        if (dst.GetDtype() != Dtype::Int64) {
+        if (dst.GetDtype() != core::Int64) {
             utility::LogError("Arg-reduction must have int64 output dtype.");
         }
         Indexer indexer({src}, dst, DtypePolicy::INPUT_SAME, dims);
         CUDAReductionEngine re(indexer);
         Dtype dtype = src.GetDtype();
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
             switch (op_code) {
                 case ReductionOpCode::ArgMin:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport ArgMin.");
+                                "Zero-size Tensor does not support ArgMin.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> bool { return a < b; },
@@ -1087,7 +1093,7 @@ void ReductionCUDA(const Tensor& src,
                 case ReductionOpCode::ArgMax:
                     if (indexer.NumWorkloads() == 0) {
                         utility::LogError(
-                                "Zero-size Tensor does not suport ArgMax.");
+                                "Zero-size Tensor does not support ArgMax.");
                     } else {
                         re.Run([] OPEN3D_HOST_DEVICE(scalar_t a, scalar_t b)
                                        -> bool { return a > b; },
@@ -1102,17 +1108,18 @@ void ReductionCUDA(const Tensor& src,
         });
     } else if (s_boolean_reduce_ops.find(op_code) !=
                s_boolean_reduce_ops.end()) {
-        if (src.GetDtype() != Dtype::Bool) {
+        if (src.GetDtype() != core::Bool) {
             utility::LogError(
                     "Boolean reduction only supports boolean input tensor.");
         }
-        if (dst.GetDtype() != Dtype::Bool) {
+        if (dst.GetDtype() != core::Bool) {
             utility::LogError(
                     "Boolean reduction only supports boolean output tensor.");
         }
         Indexer indexer({src}, dst, DtypePolicy::ALL_SAME, dims);
         CUDAReductionEngine re(indexer);
-        CUDADeviceSwitcher switcher(src.GetDevice());
+
+        CUDAScopedDevice scoped_device(src.GetDevice());
         switch (op_code) {
             case ReductionOpCode::All:
                 if (indexer.NumWorkloads() == 0) {

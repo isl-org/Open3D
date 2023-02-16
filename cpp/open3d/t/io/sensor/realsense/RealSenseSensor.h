@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -93,6 +93,9 @@ public:
     virtual bool StartCapture(bool start_record = false) override;
 
     /// Pause recording to the bag file.
+    ///
+    /// \warning If this is called immediately after \c StartCapture(), the
+    /// bag file may have an incorrect end time.
     virtual void PauseRecord() override;
 
     /// Resume recording to the bag file. The file will contain discontinuous

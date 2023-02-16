@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,11 +24,11 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include "open3d/t/pipelines/TransformationConverter.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
 
 #include "core/CoreTest.h"
 #include "open3d/core/Tensor.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -38,49 +38,31 @@ INSTANTIATE_TEST_SUITE_P(TransformationConverter,
                          TransformationConverterPermuteDevices,
                          testing::ValuesIn(PermuteDevices::TestCases()));
 
-class TransformationConverterPermuteDevicePairs : public PermuteDevicePairs {};
-INSTANTIATE_TEST_SUITE_P(
-        TransformationConverter,
-        TransformationConverterPermuteDevicePairs,
-        testing::ValuesIn(
-                TransformationConverterPermuteDevicePairs::TestCases()));
-
 TEST_P(TransformationConverterPermuteDevices, RtToTransformation) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> rotation_vec{1, 0, 0, 0, 1, 0, 0, 0, 1};
-    core::Tensor rotation(rotation_vec, {3, 3}, dtype, device);
+    for (const core::Dtype& dtype : {core::Float32, core::Float64}) {
+        core::Tensor rotation = core::Tensor::Eye(3, dtype, device);
+        core::Tensor translation = core::Tensor::Zeros({3}, dtype, device);
+        core::Tensor transformation_ =
+                t::pipelines::kernel::RtToTransformation(rotation, translation);
 
-    std::vector<float> translation_vec{0, 0, 0};
-    core::Tensor translation(translation_vec, {3}, dtype, device);
-
-    std::vector<float> transformation_vec{1, 0, 0, 0, 0, 1, 0, 0,
-                                          0, 0, 1, 0, 0, 0, 0, 1};
-    core::Tensor transformation(transformation_vec, {4, 4}, dtype, device);
-
-    core::Tensor transformation_ =
-            t::pipelines::RtToTransformation(rotation, translation);
-
-    EXPECT_EQ(transformation.ToFlatVector<float>(),
-              transformation_.ToFlatVector<float>());
+        core::Tensor transformation = core::Tensor::Eye(4, dtype, device);
+        EXPECT_TRUE(transformation_.AllClose(transformation));
+    }
 }
 
 TEST_P(TransformationConverterPermuteDevices, PoseToTransformation) {
     core::Device device = GetParam();
-    core::Dtype dtype = core::Dtype::Float32;
 
-    std::vector<float> pose_vec{0, 0, 0, 0, 0, 0};
-    core::Tensor pose(pose_vec, {6}, dtype, device);
+    for (const core::Dtype& dtype : {core::Float32, core::Float64}) {
+        core::Tensor pose = core::Tensor::Zeros({6}, dtype, device);
+        core::Tensor transformation_ =
+                t::pipelines::kernel::PoseToTransformation(pose);
 
-    std::vector<float> transformation_vec{1, 0, 0, 0, 0, 1, 0, 0,
-                                          0, 0, 1, 0, 0, 0, 0, 1};
-    core::Tensor transformation(transformation_vec, {4, 4}, dtype, device);
-
-    core::Tensor transformation_ = t::pipelines::PoseToTransformation(pose);
-
-    EXPECT_EQ(transformation.ToFlatVector<float>(),
-              transformation_.ToFlatVector<float>());
+        core::Tensor transformation = core::Tensor::Eye(4, dtype, device);
+        EXPECT_TRUE(transformation_.AllClose(transformation));
+    }
 }
 
 }  // namespace tests

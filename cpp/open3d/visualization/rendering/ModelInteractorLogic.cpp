@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -94,8 +94,8 @@ void ModelInteractorLogic::RotateZ(int dx, int dy) {
     UpdateBoundingBox(Camera::Transform(rot_matrix));
 }
 
-void ModelInteractorLogic::Dolly(int dy, DragType drag_type) {
-    float z_dist = CalcDollyDist(dy, drag_type);
+void ModelInteractorLogic::Dolly(float dy, DragType drag_type) {
+    float z_dist = CalcDollyDist(dy, drag_type, matrix_at_mouse_down_);
     Eigen::Vector3f world_move = -z_dist * camera_->GetForwardVector();
 
     for (auto o : transforms_at_mouse_down_) {
@@ -141,7 +141,7 @@ void ModelInteractorLogic::UpdateBoundingBox(const Camera::Transform& t) {
     Eigen::Vector3d new_max = change * model_bounds_.GetMaxBound();
     // Call super's not our SetBoundingBox(): we also update the
     // center of rotation, because normally this call is not done during
-    // mouse movement, but rather, once to initalize the interactor.
+    // mouse movement, but rather, once to initialize the interactor.
     Super::SetBoundingBox(geometry::AxisAlignedBoundingBox(new_min, new_max));
 }
 

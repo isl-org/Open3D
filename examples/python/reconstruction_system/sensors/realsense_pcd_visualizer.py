@@ -1,6 +1,28 @@
-# Open3D: www.open3d.org
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 
 # examples/python/reconstruction_system/sensors/realsense_pcd_visualizer.py
 
@@ -12,6 +34,11 @@ from enum import IntEnum
 
 from datetime import datetime
 import open3d as o3d
+
+from os.path import abspath
+import sys
+sys.path.append(abspath(__file__))
+from realsense_helper import get_profiles
 
 
 class Preset(IntEnum):
@@ -40,8 +67,13 @@ if __name__ == "__main__":
     #  different resolutions of color and depth streams
     config = rs.config()
 
-    config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
-    config.enable_stream(rs.stream.color, 640, 480, rs.format.rgb8, 30)
+    color_profiles, depth_profiles = get_profiles()
+    print('Using the default profiles: \n  color:{}, depth:{}'.format(
+        color_profiles[0], depth_profiles[0]))
+    w, h, fps, fmt = depth_profiles[0]
+    config.enable_stream(rs.stream.depth, w, h, fmt, fps)
+    w, h, fps, fmt = color_profiles[0]
+    config.enable_stream(rs.stream.color, w, h, fmt, fps)
 
     # Start streaming
     profile = pipeline.start(config)
@@ -119,7 +151,7 @@ if __name__ == "__main__":
             vis.update_renderer()
 
             process_time = datetime.now() - dt0
-            print("FPS: " + str(1 / process_time.total_seconds()))
+            print("\rFPS: " + str(1 / process_time.total_seconds()), end='')
             frame_count += 1
 
     finally:

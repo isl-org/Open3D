@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,170 +26,295 @@
 
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
+#include "open3d/core/TensorCheck.h"
+#include "open3d/t/pipelines/kernel/Registration.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
+
 namespace open3d {
 namespace t {
 namespace pipelines {
 namespace registration {
 
+static void AssertValidCorrespondences(
+        const core::Tensor &correspondence_indices,
+        const core::Tensor &source_points) {
+    core::AssertTensorDtype(correspondence_indices, core::Int64);
+    core::AssertTensorDevice(correspondence_indices, source_points.GetDevice());
+
+    if (correspondence_indices.GetShape() !=
+                core::SizeVector({source_points.GetLength(), 1}) &&
+        correspondence_indices.GetShape() !=
+                core::SizeVector({source_points.GetLength()})) {
+        utility::LogError(
+                "Correspondences must be of same length as source point-cloud "
+                "positions. Expected correspondences of shape {} or {}, but "
+                "got {}.",
+                core::SizeVector({source_points.GetLength()}).ToString(),
+                core::SizeVector({source_points.GetLength(), 1}).ToString(),
+                correspondence_indices.GetShape().ToString());
+    }
+}
+
 double TransformationEstimationPointToPoint::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
+        const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
     }
 
-    double error;
-    // TODO: Revist to support Float32 and 64 without type conversion.
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
-    core::Tensor error_t = (source_select - target_select);
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+
+    core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
+    core::Tensor neighbour_indices =
+            correspondences.IndexGet({valid}).Reshape({-1});
+    core::Tensor source_points_indexed =
+            source.GetPointPositions().IndexGet({valid});
+    core::Tensor target_points_indexed =
+            target.GetPointPositions().IndexGet({neighbour_indices});
+
+    core::Tensor error_t = (source_points_indexed - target_points_indexed);
     error_t.Mul_(error_t);
-    error = static_cast<double>(error_t.Sum({0, 1}).Item<float>());
-    return std::sqrt(error / static_cast<double>(corres.second.GetShape()[0]));
+    double error = error_t.Sum({0, 1}).To(core::Float64).Item<double>();
+    return std::sqrt(error /
+                     static_cast<double>(neighbour_indices.GetLength()));
 }
 
 core::Tensor TransformationEstimationPointToPoint::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
+        const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
     }
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
 
-    // https://ieeexplore.ieee.org/document/88573
-    core::Tensor mux = source_select.Mean({0}, true);
-    core::Tensor muy = target_select.Mean({0}, true);
-    core::Tensor Sxy =
-            ((target_select - muy)
-                     .T()
-                     .Matmul(source_select - mux)
-                     .Div_(static_cast<float>(corres.second.GetShape()[0])));
-    core::Tensor U, D, VT;
-    std::tie(U, D, VT) = Sxy.SVD();
-    core::Tensor S = core::Tensor::Eye(3, dtype, device);
-    if (U.Det() * (VT.T()).Det() < 0) {
-        S[-1][-1] = -1;
-    }
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+
     core::Tensor R, t;
-    R = U.Matmul(S.Matmul(VT));
-    t = muy.Reshape({-1}) - R.Matmul(mux.T()).Reshape({-1});
+    // Get tuple of Rotation {3, 3} and Translation {3} of type Float64.
+    std::tie(R, t) = pipelines::kernel::ComputeRtPointToPoint(
+            source.GetPointPositions(), target.GetPointPositions(),
+            correspondences);
 
-    return t::pipelines::RtToTransformation(R, t);
+    // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
+    // device, from rotation {3, 3} and translation {3}.
+    return t::pipelines::kernel::RtToTransformation(R, t);
 }
 
 double TransformationEstimationPointToPlane::ComputeRMSE(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
+        const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    if (!target.HasPointNormals()) {
+        utility::LogError("Target pointcloud missing normals attribute.");
     }
 
-    if (!target.HasPointNormals()) return 0.0;
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
-    core::Tensor source_select = source.GetPoints().IndexGet({corres.first});
-    core::Tensor target_select = target.GetPoints().IndexGet({corres.second});
-    core::Tensor target_n_select =
-            target.GetPointNormals().IndexGet({corres.second});
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
-    core::Tensor error_t =
-            (source_select - target_select).Mul_(target_n_select);
+    core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
+    core::Tensor neighbour_indices =
+            correspondences.IndexGet({valid}).Reshape({-1});
+    core::Tensor source_points_indexed =
+            source.GetPointPositions().IndexGet({valid});
+    core::Tensor target_points_indexed =
+            target.GetPointPositions().IndexGet({neighbour_indices});
+    core::Tensor target_normals_indexed =
+            target.GetPointNormals().IndexGet({neighbour_indices});
+
+    core::Tensor error_t = (source_points_indexed - target_points_indexed)
+                                   .Mul_(target_normals_indexed);
     error_t.Mul_(error_t);
-    double error = static_cast<double>(error_t.Sum({0, 1}).Item<float>());
-    return std::sqrt(error / static_cast<double>(corres.second.GetShape()[0]));
+    double error = error_t.Sum({0, 1}).To(core::Float64).Item<double>();
+    return std::sqrt(error /
+                     static_cast<double>(neighbour_indices.GetLength()));
 }
 
 core::Tensor TransformationEstimationPointToPlane::ComputeTransformation(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        CorrespondenceSet &corres) const {
-    // TODO: If corres empty throw Error.
-    core::Device device = source.GetDevice();
-    core::Dtype dtype = core::Dtype::Float32;
-    source.GetPoints().AssertDtype(dtype);
-    target.GetPoints().AssertDtype(dtype);
-    if (target.GetDevice() != device) {
-        utility::LogError(
-                "Target Pointcloud device {} != Source Pointcloud's device {}.",
-                target.GetDevice().ToString(), device.ToString());
+        const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    if (!target.HasPointNormals()) {
+        utility::LogError("Target pointcloud missing normals attribute.");
     }
 
-    core::Tensor source_select =
-            source.GetPoints().IndexGet({corres.first}).To(dtype);
-    core::Tensor target_select =
-            target.GetPoints().IndexGet({corres.second}).To(dtype);
-    core::Tensor target_n_select =
-            target.GetPointNormals().IndexGet({corres.second}).To(dtype);
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    core::AssertTensorDtype(target.GetPointPositions(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDtype(target.GetPointNormals(),
+                            source.GetPointPositions().GetDtype());
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
 
-    core::Tensor B = ((target_select - source_select).Mul_(target_n_select))
-                             .Sum({1}, true)
-                             .To(dtype);
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
 
-    // --- Computing A in AX = B.
-    int64_t num_corres = source_select.GetShape()[0];
-    // Slicing normals: (nx, ny, nz) and source points: (sx, sy, sz).
-    core::Tensor nx =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(0, 1, 1)});
-    core::Tensor ny =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(1, 2, 1)});
-    core::Tensor nz =
-            target_n_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                     core::TensorKey::Slice(2, 3, 1)});
-    core::Tensor sx =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(0, 1, 1)});
-    core::Tensor sy =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(1, 2, 1)});
-    core::Tensor sz =
-            source_select.GetItem({core::TensorKey::Slice(0, num_corres, 1),
-                                   core::TensorKey::Slice(2, 3, 1)});
-    // Cross product calculation.
-    core::Tensor a1 = (nz * sy) - (ny * sz);
-    core::Tensor a2 = (nx * sz) - (nz * sx);
-    core::Tensor a3 = (ny * sx) - (nx * sy);
+    // Get pose {6} of type Float64.
+    core::Tensor pose = pipelines::kernel::ComputePosePointToPlane(
+            source.GetPointPositions(), target.GetPointPositions(),
+            target.GetPointNormals(), correspondences, this->kernel_);
 
-    // Putting the pieces back together.
-    core::Tensor A({num_corres, 6}, dtype, device);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(0, 1, 1)},
-              a1);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(1, 2, 1)},
-              a2);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(2, 3, 1)},
-              a3);
-    A.SetItem({core::TensorKey::Slice(0, num_corres, 1),
-               core::TensorKey::Slice(3, 6, 1)},
-              target_n_select);
+    // Get rigid transformation tensor of {4, 4} of type Float64 on CPU:0
+    // device, from pose {6}.
+    return pipelines::kernel::PoseToTransformation(pose);
+}
 
-    core::Tensor Pose = (A.LeastSquares(B)).Reshape({-1}).To(dtype);
-    return t::pipelines::PoseToTransformation(Pose);
+double TransformationEstimationForColoredICP::ComputeRMSE(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    if (!target.HasPointColors() || !source.HasPointColors()) {
+        utility::LogError(
+                "Source and/or Target pointcloud missing colors attribute.");
+    }
+    if (!target.HasPointNormals()) {
+        utility::LogError("Target pointcloud missing normals attribute.");
+    }
+    if (!target.HasPointAttr("color_gradients")) {
+        utility::LogError(
+                "Target pointcloud missing color_gradients attribute.");
+    }
+
+    const core::Device device = source.GetPointPositions().GetDevice();
+    core::AssertTensorDevice(target.GetPointPositions(), device);
+
+    const core::Dtype dtype = source.GetPointPositions().GetDtype();
+    core::AssertTensorDtype(source.GetPointColors(), dtype);
+    core::AssertTensorDtype(target.GetPointPositions(), dtype);
+    core::AssertTensorDtype(target.GetPointNormals(), dtype);
+    core::AssertTensorDtype(target.GetPointAttr("color_gradients"), dtype);
+    core::AssertTensorDtype(correspondences, core::Int64);
+    core::AssertTensorDevice(correspondences,
+                             source.GetPointPositions().GetDevice());
+    core::AssertTensorShape(correspondences,
+                            {source.GetPointPositions().GetLength()});
+
+    double sqrt_lambda_geometric = sqrt(lambda_geometric_);
+    double lambda_photometric = 1.0 - lambda_geometric_;
+    double sqrt_lambda_photometric = sqrt(lambda_photometric);
+
+    core::Tensor valid = correspondences.Ne(-1).Reshape({-1});
+    core::Tensor neighbour_indices =
+            correspondences.IndexGet({valid}).Reshape({-1});
+
+    // vs - source points (or vertices)
+    // vt - target points
+    // nt - target normals
+    // cs - source colors
+    // ct - target colors
+    // dit - target color gradients
+    // is - source intensity
+    // it - target intensity
+    // vs_proj - source points projection
+    // is_proj - source intensity projection
+
+    core::Tensor vs = source.GetPointPositions().IndexGet({valid});
+    core::Tensor cs = source.GetPointColors().IndexGet({valid});
+
+    core::Tensor vt = target.GetPointPositions().IndexGet({neighbour_indices});
+    core::Tensor nt = target.GetPointNormals().IndexGet({neighbour_indices});
+    core::Tensor ct = target.GetPointColors().IndexGet({neighbour_indices});
+    core::Tensor dit = target.GetPointAttr("color_gradients")
+                               .IndexGet({neighbour_indices});
+
+    // vs_proj = vs - (vs - vt).dot(nt) * nt
+    // d = (vs - vt).dot(nt)
+    const core::Tensor d = (vs - vt).Mul(nt).Sum({1});
+    core::Tensor vs_proj = vs - d.Mul(nt);
+
+    core::Tensor is = cs.Mean({1});
+    core::Tensor it = ct.Mean({1});
+
+    // is_proj = (dit.dot(vs_proj - vt)) + it
+    core::Tensor is_proj = (dit.Mul(vs_proj - vt)).Sum({1}).Add(it);
+
+    core::Tensor residual_geometric = d.Mul(sqrt_lambda_geometric).Sum({1});
+    core::Tensor sq_residual_geometric =
+            residual_geometric.Mul(residual_geometric);
+    core::Tensor residual_photometric =
+            (is - is_proj).Mul(sqrt_lambda_photometric).Sum({1});
+    core::Tensor sq_residual_photometric =
+            residual_photometric.Mul(residual_photometric);
+
+    double residual = sq_residual_geometric.Add_(sq_residual_photometric)
+                              .Sum({0})
+                              .To(core::Float64)
+                              .Item<double>();
+
+    return residual;
+}
+
+core::Tensor TransformationEstimationForColoredICP::ComputeTransformation(
+        const geometry::PointCloud &source,
+        const geometry::PointCloud &target,
+        const core::Tensor &correspondences) const {
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    if (!target.HasPointPositions() || !source.HasPointPositions()) {
+        utility::LogError("Source and/or Target pointcloud is empty.");
+    }
+    if (!target.HasPointColors() || !source.HasPointColors()) {
+        utility::LogError(
+                "Source and/or Target pointcloud missing colors attribute.");
+    }
+    if (!target.HasPointNormals()) {
+        utility::LogError("Target pointcloud missing normals attribute.");
+    }
+    if (!target.HasPointAttr("color_gradients")) {
+        utility::LogError(
+                "Target pointcloud missing color_gradients attribute.");
+    }
+
+    core::AssertTensorDtypes(source.GetPointPositions(),
+                             {core::Float64, core::Float32});
+    const core::Dtype dtype = source.GetPointPositions().GetDtype();
+
+    core::AssertTensorDtype(source.GetPointColors(), dtype);
+    core::AssertTensorDtype(target.GetPointPositions(), dtype);
+    core::AssertTensorDtype(target.GetPointNormals(), dtype);
+    core::AssertTensorDtype(target.GetPointColors(), dtype);
+    core::AssertTensorDtype(target.GetPointAttr("color_gradients"), dtype);
+
+    core::AssertTensorDevice(target.GetPointPositions(), source.GetDevice());
+
+    AssertValidCorrespondences(correspondences, source.GetPointPositions());
+
+    // Get pose {6} of type Float64 from correspondences indexed source and
+    // target point cloud.
+    core::Tensor pose = pipelines::kernel::ComputePoseColoredICP(
+            source.GetPointPositions(), source.GetPointColors(),
+            target.GetPointPositions(), target.GetPointNormals(),
+            target.GetPointColors(), target.GetPointAttr("color_gradients"),
+            correspondences, this->kernel_, this->lambda_geometric_);
+
+    // Get transformation {4,4} of type Float64 from pose {6}.
+    core::Tensor transform = pipelines::kernel::PoseToTransformation(pose);
+
+    return transform;
 }
 
 }  // namespace registration

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TetraMesh.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {
@@ -35,9 +35,7 @@ namespace geometry {
 std::tuple<std::shared_ptr<TetraMesh>, std::vector<size_t>>
 TetraMesh::CreateFromPointCloud(const PointCloud& point_cloud) {
     if (point_cloud.points_.size() < 4) {
-        utility::LogError(
-                "[CreateFromPointCloud] not enough points to create a "
-                "tetrahedral mesh.");
+        utility::LogError("Not enough points to create a tetrahedral mesh.");
     }
     return Qhull::ComputeDelaunayTetrahedralization(point_cloud.points_);
 }

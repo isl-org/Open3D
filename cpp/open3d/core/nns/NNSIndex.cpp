@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,9 +26,6 @@
 
 #include "open3d/core/nns/NNSIndex.h"
 
-#include "open3d/core/CoreUtil.h"
-#include "open3d/utility/Console.h"
-
 namespace open3d {
 namespace core {
 namespace nns {
@@ -46,6 +43,8 @@ size_t NNSIndex::GetDatasetSize() const {
 Dtype NNSIndex::GetDtype() const { return dataset_points_.GetDtype(); }
 
 Device NNSIndex::GetDevice() const { return dataset_points_.GetDevice(); }
+
+Dtype NNSIndex::GetIndexDtype() const { return index_dtype_; }
 
 }  // namespace nns
 }  // namespace core

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@
 #include "open3d/pipelines/color_map/ImageWarpingField.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Optional.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace pipelines {
@@ -88,11 +89,11 @@ static void ComputeJacobianAndResidualRigid(
     w = 1.0;  // Dummy.
 }
 
-geometry::TriangleMesh RunRigidOptimizer(
-        const geometry::TriangleMesh& mesh,
-        const std::vector<geometry::RGBDImage>& images_rgbd,
-        const camera::PinholeCameraTrajectory& camera_trajectory,
-        const RigidOptimizerOption& option) {
+std::pair<geometry::TriangleMesh, camera::PinholeCameraTrajectory>
+RunRigidOptimizer(const geometry::TriangleMesh& mesh,
+                  const std::vector<geometry::RGBDImage>& images_rgbd,
+                  const camera::PinholeCameraTrajectory& camera_trajectory,
+                  const RigidOptimizerOption& option) {
     // The following properties will change during optimization.
     geometry::TriangleMesh opt_mesh = mesh;
     camera::PinholeCameraTrajectory opt_camera_trajectory = camera_trajectory;
@@ -164,7 +165,8 @@ geometry::TriangleMesh RunRigidOptimizer(
         utility::LogDebug("[Iteration {:04d}] ", itr + 1);
         double residual = 0.0;
         total_num_ = 0;
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
         for (int c = 0; c < n_camera; c++) {
             Eigen::Matrix4d pose;
             pose = opt_camera_trajectory.parameters_[c].extrinsic_;
@@ -200,14 +202,18 @@ geometry::TriangleMesh RunRigidOptimizer(
                                                                          JTr);
             pose = delta * pose;
             opt_camera_trajectory.parameters_[c].extrinsic_ = pose;
-#pragma omp critical
+#pragma omp critical(RunRigidOptimizer)
             {
                 residual += r2;
                 total_num_ += int(visibility_image_to_vertex[c].size());
             }
         }
-        utility::LogDebug("Residual error : {:.6f} (avg : {:.6f})", residual,
-                          residual / total_num_);
+        if (total_num_ > 0) {
+            utility::LogDebug("Residual error : {:.6f} (avg : {:.6f})",
+                              residual, residual / total_num_);
+        } else {
+            utility::LogDebug("Residual error : {:.6f}", residual);
+        }
         SetProxyIntensityForVertex(opt_mesh, images_gray, utility::nullopt,
                                    opt_camera_trajectory,
                                    visibility_vertex_to_image, proxy_intensity,
@@ -240,7 +246,7 @@ geometry::TriangleMesh RunRigidOptimizer(
                             option.image_boundary_margin_,
                             option.invisible_vertex_color_knn_);
 
-    return opt_mesh;
+    return std::make_pair(opt_mesh, opt_camera_trajectory);
 }
 
 }  // namespace color_map

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <functional>
+#include <memory>
+#include <random>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -52,22 +55,23 @@ struct hash_tuple {
 namespace {
 
 template <class T>
-inline void hash_combine(std::size_t& seed, T const& v) {
-    seed ^= hash_tuple<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+inline void hash_combine(std::size_t& hash_seed, T const& v) {
+    hash_seed ^= std::hash<T>()(v) + 0x9e3779b9 + (hash_seed << 6) +
+                 (hash_seed >> 2);
 }
 
 template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
 struct HashValueImpl {
-    static void apply(size_t& seed, Tuple const& tuple) {
-        HashValueImpl<Tuple, Index - 1>::apply(seed, tuple);
-        hash_combine(seed, std::get<Index>(tuple));
+    static void apply(size_t& hash_seed, Tuple const& tuple) {
+        HashValueImpl<Tuple, Index - 1>::apply(hash_seed, tuple);
+        hash_combine(hash_seed, std::get<Index>(tuple));
     }
 };
 
 template <class Tuple>
 struct HashValueImpl<Tuple, 0> {
-    static void apply(size_t& seed, Tuple const& tuple) {
-        hash_combine(seed, std::get<0>(tuple));
+    static void apply(size_t& hash_seed, Tuple const& tuple) {
+        hash_combine(hash_seed, std::get<0>(tuple));
     }
 };
 
@@ -76,22 +80,22 @@ struct HashValueImpl<Tuple, 0> {
 template <typename... TT>
 struct hash_tuple<std::tuple<TT...>> {
     size_t operator()(std::tuple<TT...> const& tt) const {
-        size_t seed = 0;
-        HashValueImpl<std::tuple<TT...>>::apply(seed, tt);
-        return seed;
+        size_t hash_seed = 0;
+        HashValueImpl<std::tuple<TT...>>::apply(hash_seed, tt);
+        return hash_seed;
     }
 };
 
 template <typename T>
 struct hash_eigen {
     std::size_t operator()(T const& matrix) const {
-        size_t seed = 0;
+        size_t hash_seed = 0;
         for (int i = 0; i < (int)matrix.size(); i++) {
             auto elem = *(matrix.data() + i);
-            seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
-                    (seed << 6) + (seed >> 2);
+            hash_seed ^= std::hash<typename T::Scalar>()(elem) + 0x9e3779b9 +
+                         (hash_seed << 6) + (hash_seed >> 2);
         }
-        return seed;
+        return hash_seed;
     }
 };
 
@@ -106,14 +110,31 @@ struct hash_enum_class {
 
 /// Function to split a string, mimics boost::split
 /// http://stackoverflow.com/questions/236129/split-a-string-in-c
-void SplitString(std::vector<std::string>& tokens,
-                 const std::string& str,
-                 const std::string& delimiters = " ",
-                 bool trim_empty_str = true);
+std::vector<std::string> SplitString(const std::string& str,
+                                     const std::string& delimiters = " ",
+                                     bool trim_empty_str = true);
+
+/// Returns true of the source string contains the destination string.
+/// \param src Source string.
+/// \param dst Destination string.
+bool ContainsString(const std::string& src, const std::string& dst);
+
+/// Returns true if \p src starts with \p tar.
+/// \param src Source string.
+/// \param tar Target string.
+bool StringStartsWith(const std::string& src, const std::string& tar);
+
+/// Returns true if \p src ends with \p tar.
+/// \param src Source string.
+/// \param tar Target string.
+bool StringEndsWith(const std::string& src, const std::string& tar);
+
+std::string JoinStrings(const std::vector<std::string>& strs,
+                        const std::string& delimiter = ", ");
 
 /// String util: find length of current word staring from a position
 /// By default, alpha numeric chars and chars in valid_chars are considered
-/// as valid charactors in a word
+/// as valid characters in a word
 size_t WordLength(const std::string& doc,
                   size_t start_pos,
                   const std::string& valid_chars = "_");
@@ -124,7 +145,7 @@ std::string& LeftStripString(std::string& str,
 std::string& RightStripString(std::string& str,
                               const std::string& chars = "\t\n\v\f\r ");
 
-/// Strip empty charactors in front and after string. Similar to Python's
+/// Strip empty characters in front and after string. Similar to Python's
 /// str.strip()
 std::string& StripString(std::string& str,
                          const std::string& chars = "\t\n\v\f\r ");
@@ -135,6 +156,21 @@ std::string ToLower(const std::string& s);
 /// Convert string to the upper case
 std::string ToUpper(const std::string& s);
 
+/// Format string
+template <typename... Args>
+inline std::string FormatString(const std::string& format, Args... args) {
+    int size_s = std::snprintf(nullptr, 0, format.c_str(), args...) +
+                 1;  // Extra space for '\0'
+    if (size_s <= 0) {
+        throw std::runtime_error("Error during formatting.");
+    }
+    auto size = static_cast<size_t>(size_s);
+    auto buf = std::make_unique<char[]>(size);
+    std::snprintf(buf.get(), size, format.c_str(), args...);
+    return std::string(buf.get(),
+                       buf.get() + size - 1);  // We don't want the '\0' inside
+};
+
 void Sleep(int milliseconds);
 
 /// Computes the quotient of x/y with rounding up
@@ -143,30 +179,8 @@ inline int DivUp(int x, int y) {
     return tmp.quot + (tmp.rem != 0 ? 1 : 0);
 }
 
-/// Thread-safe function returning a pseudo-random integer.
-/// The integer is drawn from a uniform distribution bounded by min and max
-/// (inclusive)
-int UniformRandInt(const int min, const int max);
-
-/// Uniformly distributed binary-friendly floating point number in [0, 1).
-///
-/// Binary-friendly means that the random number can be represented by floating
-/// point with a few bits of mantissa. The binary-friendliness is useful for
-/// unit testing since it reduces the chances of numerical errors.
-///
-/// E.g.
-/// - 0.9 is not representable by floating point accurately, the actual value
-///   stored in a float32 is 0.89999997615814208984375...
-/// - 0.875 = 0.5 + 0.25 + 0.125, is binary-friendly.
-///
-/// \param power The possible random numbers are: n * 1 / (2 ^ power),
-///              where n = 0, 1, 2, ..., (2 ^ power - 1).
-template <typename T>
-T UniformRandFloatBinaryFriendly(unsigned int power = 5) {
-    double p = std::pow(2, power);
-    int n = UniformRandInt(0, p - 1);
-    return static_cast<T>(1. / p * n);
-}
+/// Returns current time stamp.
+std::string GetCurrentTimeStamp();
 
 }  // namespace utility
 }  // namespace open3d

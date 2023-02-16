@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,6 @@
 // Forward declarations for librealsense classes
 namespace rs2 {
 class pipeline;
-class align;
 }  // namespace rs2
 
 namespace open3d {
@@ -152,7 +151,6 @@ private:
     std::thread frame_reader_thread_;
 
     std::unique_ptr<rs2::pipeline> pipe_;
-    std::unique_ptr<rs2::align> align_to_color_;
 
     Json::Value GetMetadataJson();
     std::string GetTagInMetadata(const std::string &tag_name);

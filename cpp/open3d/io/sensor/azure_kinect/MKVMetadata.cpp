@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ namespace io {
 bool MKVMetadata::ConvertToJsonValue(Json::Value &value) const {
     intrinsics_.ConvertToJsonValue(value);
 
-    value["serial_number_"] = serial_number_;
+    value["serial_number"] = serial_number_;
     value["color_mode"] = color_mode_;
     value["depth_mode"] = depth_mode_;
 

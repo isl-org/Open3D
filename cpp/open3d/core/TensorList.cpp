@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,7 +72,7 @@ TensorList TensorList::FromTensor(const Tensor& tensor, bool inplace) {
     }
 }
 
-TensorList TensorList::Copy() const {
+TensorList TensorList::Clone() const {
     TensorList copied(*this);
     copied.CopyFrom(*this);
     return copied;
@@ -81,15 +81,9 @@ TensorList TensorList::Copy() const {
 void TensorList::CopyFrom(const TensorList& other) {
     *this = other;
     // Copy the full other.internal_tensor_, not just other.AsTensor().
-    internal_tensor_ = other.internal_tensor_.Copy();
+    internal_tensor_ = other.internal_tensor_.Clone();
     // After copy, the resulting tensorlist is always resizable.
     is_resizable_ = true;
-}
-
-void TensorList::ShallowCopyFrom(const TensorList& other) {
-    // Copy assignment operator is performing shallow copy.
-    // After copy, this.is_resizable_ == other.is_resizable_.
-    *this = other;
 }
 
 Tensor TensorList::AsTensor() const {
@@ -108,20 +102,10 @@ void TensorList::Resize(int64_t new_size) {
 void TensorList::PushBack(const Tensor& tensor) {
     AssertIsResizable(*this, __FUNCTION__);
 
-    if (element_shape_ != tensor.GetShape()) {
-        utility::LogError(
-                "TensorList has element shape {}, but tensor has shape {}.",
-                element_shape_, tensor.GetShape());
-    }
-    if (GetDtype() != tensor.GetDtype()) {
-        utility::LogError("TensorList has dtype {}, but tensor has shape {}.",
-                          GetDtype().ToString(), tensor.GetDtype().ToString());
-    }
-    if (GetDevice() != tensor.GetDevice()) {
-        utility::LogError("TensorList has device {}, but tensor has shape {}.",
-                          GetDevice().ToString(),
-                          tensor.GetDevice().ToString());
-    }
+    AssertTensorDevice(tensor, GetDevice());
+    AssertTensorDtype(tensor, GetDtype());
+    AssertTensorShape(tensor, element_shape_);
+
     ResizeWithExpand(size_ + 1);
     internal_tensor_[size_ - 1] = tensor;  // same as operator[](-1) = tensor;
 }
@@ -155,7 +139,7 @@ void TensorList::Extend(const TensorList& other) {
 
 TensorList TensorList::Concatenate(const TensorList& a, const TensorList& b) {
     // A full copy of a is required.
-    TensorList result = a.Copy();
+    TensorList result = a.Clone();
     result.Extend(b);
     return result;
 }

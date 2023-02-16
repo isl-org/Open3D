@@ -1,17 +1,40 @@
-# Open3D: www.open3d.org
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 
 # examples/python/visualization/non_blocking_visualization.py
 
 import open3d as o3d
 import numpy as np
-import copy
 
 if __name__ == "__main__":
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
-    source_raw = o3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_0.pcd")
-    target_raw = o3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_1.pcd")
+    pcd_data = o3d.data.DemoICPPointClouds()
+    source_raw = o3d.io.read_point_cloud(pcd_data.paths[0])
+    target_raw = o3d.io.read_point_cloud(pcd_data.paths[1])
+
     source = source_raw.voxel_down_sample(voxel_size=0.02)
     target = target_raw.voxel_down_sample(voxel_size=0.02)
     trans = [[0.862, 0.011, -0.507, 0.0], [-0.139, 0.967, -0.215, 0.7],
@@ -42,3 +65,4 @@ if __name__ == "__main__":
         if save_image:
             vis.capture_screen_image("temp_%04d.jpg" % i)
     vis.destroy_window()
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,8 +42,9 @@ class Image;
 
 namespace t {
 namespace geometry {
+class Geometry;
 class PointCloud;
-}
+}  // namespace geometry
 }  // namespace t
 
 namespace visualization {
@@ -52,7 +53,7 @@ namespace rendering {
 class Renderer;
 class View;
 struct TriangleMeshModel;
-struct Material;
+struct MaterialRecord;
 struct Light;
 
 // Contains renderable objects like geometry and lights
@@ -68,6 +69,8 @@ public:
 
     Scene(Renderer& renderer) : renderer_(renderer) {}
     virtual ~Scene() = default;
+
+    virtual Scene* Copy() = 0;
 
     // NOTE: Temporarily need to support old View interface for ImGUI
     virtual ViewHandle AddView(std::int32_t x,
@@ -89,12 +92,12 @@ public:
     // Scene geometry
     virtual bool AddGeometry(const std::string& object_name,
                              const geometry::Geometry3D& geometry,
-                             const Material& material,
+                             const MaterialRecord& material,
                              const std::string& downsampled_name = "",
                              size_t downsample_threshold = SIZE_MAX) = 0;
     virtual bool AddGeometry(const std::string& object_name,
-                             const t::geometry::PointCloud& point_cloud,
-                             const Material& material,
+                             const t::geometry::Geometry& geometry,
+                             const MaterialRecord& material,
                              const std::string& downsampled_name = "",
                              size_t downsample_threshold = SIZE_MAX) = 0;
     virtual bool AddGeometry(const std::string& object_name,
@@ -107,7 +110,7 @@ public:
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;
     virtual bool GeometryIsVisible(const std::string& object_name) = 0;
     virtual void OverrideMaterial(const std::string& object_name,
-                                  const Material& material) = 0;
+                                  const MaterialRecord& material) = 0;
     virtual void GeometryShadows(const std::string& object_name,
                                  bool cast_shadows,
                                  bool receive_shadows) = 0;
@@ -121,7 +124,7 @@ public:
     virtual Transform GetGeometryTransform(const std::string& object_name) = 0;
     virtual geometry::AxisAlignedBoundingBox GetGeometryBoundingBox(
             const std::string& object_name) = 0;
-    virtual void OverrideMaterialAll(const Material& material,
+    virtual void OverrideMaterialAll(const MaterialRecord& material,
                                      bool shader_only = true) = 0;
 
     // Lighting Environment
@@ -170,6 +173,9 @@ public:
                              float intensity) = 0;
     virtual void EnableSunLight(bool enable) = 0;
     virtual void EnableSunLightShadows(bool enable) = 0;
+    virtual void SetSunLightColor(const Eigen::Vector3f& color) = 0;
+    virtual Eigen::Vector3f GetSunLightColor() = 0;
+    virtual void SetSunLightIntensity(float intensity) = 0;
     virtual float GetSunLightIntensity() = 0;
     virtual void SetSunLightDirection(const Eigen::Vector3f& direction) = 0;
     virtual Eigen::Vector3f GetSunLightDirection() = 0;
@@ -185,12 +191,22 @@ public:
     virtual void SetIndirectLightRotation(const Transform& rotation) = 0;
     virtual Transform GetIndirectLightRotation() = 0;
     virtual void ShowSkybox(bool show) = 0;
+    virtual bool GetSkyboxVisible() const = 0;
     virtual void SetBackground(
             const Eigen::Vector4f& color,
             const std::shared_ptr<geometry::Image> image = nullptr) = 0;
+    virtual void SetBackground(TextureHandle image) = 0;
+
+    enum class GroundPlane { XZ, XY, YZ };
+    virtual void EnableGroundPlane(bool enable, GroundPlane plane) = 0;
+    virtual void SetGroundPlaneColor(const Eigen::Vector4f& color) = 0;
 
     /// Size of image is the size of the window.
     virtual void RenderToImage(
+            std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
+
+    /// Size of image is the size of the window.
+    virtual void RenderToDepthImage(
             std::function<void(std::shared_ptr<geometry::Image>)> callback) = 0;
 
 protected:

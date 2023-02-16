@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,19 +26,11 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <array>
 #include <cstdint>
 #include <functional>
-
-#define FMT_HEADER_ONLY 1
-#define FMT_STRING_ALIAS 1
-// Including windows.h causes all kinds of #defines like "OPAQUE", "near",
-// "far", causes compile errors with Filament includes, and generally wrecks
-// havoc.
-#ifndef FMT_USE_WINDOWS_H
-#define FMT_USE_WINDOWS_H 0
-#endif
-#include <fmt/format.h>
 
 namespace open3d {
 
@@ -60,6 +52,7 @@ enum class EntityType : std::uint16_t {
     Material,
     MaterialInstance,
     Texture,
+    RenderTarget,
 
     VertexBuffer,
     IndexBuffer,
@@ -159,6 +152,7 @@ typedef REHandle<EntityType::Camera> CameraHandle;
 typedef REHandle<EntityType::Material> MaterialHandle;
 typedef REHandle<EntityType::MaterialInstance> MaterialInstanceHandle;
 typedef REHandle<EntityType::Texture> TextureHandle;
+typedef REHandle<EntityType::RenderTarget> RenderTargetHandle;
 typedef REHandle<EntityType::VertexBuffer> VertexBufferHandle;
 typedef REHandle<EntityType::IndexBuffer> IndexBufferHandle;
 

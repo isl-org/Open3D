@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -65,9 +65,9 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
     }
 
     value["name"] = "Azure Kinect Record";
-    value["max_depth"] = 3.0;
+    value["depth_max"] = 3.0;
     value["voxel_size"] = 0.05;
-    value["max_depth_diff"] = 0.07;
+    value["depth_diff_max"] = 0.07;
     value["preference_loop_closure_odometry"] = 0.1;
     value["preference_loop_closure_registration"] = 5.0;
     value["tsdf_cubic_size"] = 3.0;
@@ -78,21 +78,27 @@ Json::Value GenerateDatasetConfig(const std::string &output_path) {
     return value;
 }
 
-void PrintUsage() {
+void PrintHelp() {
+    using namespace open3d;
+
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("AzureKinectMKVReader --input input.mkv [--output] [path]");
+    utility::LogInfo("    > AzureKinectMKVReader --input input.mkv [--output] [path]");
     // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char **argv) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (!utility::ProgramOptionExists(argc, argv, "--input")) {
-        PrintUsage();
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
+        !utility::ProgramOptionExists(argc, argv, "--input")) {
+        PrintHelp();
         return 1;
     }
+
     std::string mkv_filename =
             utility::GetProgramOptionAsString(argc, argv, "--input");
 

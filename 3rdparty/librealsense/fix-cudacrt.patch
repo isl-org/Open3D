@@ -1,0 +1,30 @@
+From e937d96e1a355d222b6af355e748f3150039c1f5 Mon Sep 17 00:00:00 2001
+From: Cyril Kaiser <cyril.kaiser2@gmail.com>
+Date: Sun, 14 Mar 2021 17:02:34 +0000
+Subject: [PATCH] Set static/dynamic crt in CMAKE_CUDA_FLAGS.
+
+---
+ CMake/cuda_config.cmake | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/CMake/cuda_config.cmake b/CMake/cuda_config.cmake
+index d03a0f53d..59323577a 100644
+--- a/CMake/cuda_config.cmake
++++ b/CMake/cuda_config.cmake
+@@ -13,3 +13,13 @@ message(STATUS "CUDA_LIBRARIES: ${CUDA_INCLUDE_DIRS} ${ALL_CUDA_LIBS}")
+ set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+ set(CUDA_SEPARABLE_COMPILATION ON)
+ set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}; -O3 -gencode arch=compute_53,code=sm_53 -gencode arch=compute_62,code=sm_62;")
++
++if(WIN32 AND BUILD_WITH_STATIC_CRT)
++    foreach(flag_var
++            CMAKE_CUDA_FLAGS CMAKE_CUDA_FLAGS_DEBUG CMAKE_CUDA_FLAGS_RELEASE
++            CMAKE_CUDA_FLAGS_MINSIZEREL CMAKE_CUDA_FLAGS_RELWITHDEBINFO)
++        if(${flag_var} MATCHES "-MD")
++            string(REGEX REPLACE "-MD" "-MT" ${flag_var} "${${flag_var}}")
++        endif()
++    endforeach()
++endif()
+-- 
+2.30.0
+

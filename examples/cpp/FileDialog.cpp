@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,16 +30,23 @@
 
 void PrintHelp() {
     using namespace open3d;
-    utility::LogInfo("Usage :");
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
     utility::LogInfo("    > FileDialog [save|load]");
+    // clang-format on
+    utility::LogInfo("");
 }
 
 int main(int argc, char *argv[]) {
     using namespace open3d;
-    if (argc == 1) {
+    if (argc != 2 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
+
     std::string option(argv[1]);
     char const *pattern = "*.*";
     if (option == "load") {

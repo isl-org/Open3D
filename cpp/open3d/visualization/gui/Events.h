@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,16 @@
 #pragma once
 
 #include <cstdint>
+#include <sstream>
+#include <string>
+
+#include "open3d/utility/IJsonConvertible.h"
+
+/// @cond
+namespace Json {
+class Value;
+}  // namespace Json
+/// @endcond
 
 namespace open3d {
 namespace visualization {
@@ -53,6 +63,28 @@ enum class KeyModifier {
 
 struct MouseEvent {
     enum Type { MOVE, BUTTON_DOWN, DRAG, BUTTON_UP, WHEEL };
+
+    static MouseEvent MakeMoveEvent(const Type type,
+                                    const int x,
+                                    const int y,
+                                    const int modifiers,
+                                    const int buttons);
+
+    static MouseEvent MakeButtonEvent(const Type type,
+                                      const int x,
+                                      const int y,
+                                      const int modifiers,
+                                      const MouseButton button,
+                                      const int count);
+
+    static MouseEvent MakeWheelEvent(const Type type,
+                                     const int x,
+                                     const int y,
+                                     const int modifiers,
+                                     const float dx,
+                                     const float dy,
+                                     const bool isTrackpad);
+
     Type type;
     int x;
     int y;
@@ -63,16 +95,22 @@ struct MouseEvent {
         } move;           // includes drag
         struct {
             MouseButton button;
+            int count;
         } button;
         struct {
-            int dx;
-            int dy;
+            float dx;  // macOS gives fractional values, and is required
+            float dy;  //   for the buttery-smooth trackpad scrolling on macOS
             bool isTrackpad;
         } wheel;
     };
+
+    bool FromJson(const Json::Value &value);
+    std::string ToString() const;
 };
 
-struct TickEvent {};
+struct TickEvent {
+    double dt;
+};
 
 enum KeyName {
     KEY_NONE = 0,
@@ -166,6 +204,18 @@ enum KeyName {
     KEY_END,
     KEY_PAGEUP,
     KEY_PAGEDOWN,
+    KEY_F1 = 290,
+    KEY_F2,
+    KEY_F3,
+    KEY_F4,
+    KEY_F5,
+    KEY_F6,
+    KEY_F7,
+    KEY_F8,
+    KEY_F9,
+    KEY_F10,
+    KEY_F11,
+    KEY_F12,
     KEY_UNKNOWN = 1000
 };
 

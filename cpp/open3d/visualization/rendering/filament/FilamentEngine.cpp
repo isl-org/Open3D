@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -117,9 +117,10 @@ EngineInstance::EngineInstance() {
     filament::backend::Platform* custom_platform = nullptr;
     if (is_headless_) {
 #ifdef __linux__
+        utility::LogInfo("EGL headless mode enabled.");
         custom_platform = CreateEGLHeadlessPlatform();
 #else
-        utility::LogError("EGL Headless is not supported on this platform");
+        utility::LogError("EGL Headless is not supported on this platform.");
 #endif
     }
 

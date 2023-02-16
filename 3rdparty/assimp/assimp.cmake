@@ -1,54 +1,44 @@
 include(ExternalProject)
 
-set(ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileData.h")
-list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileMtlImporter.cpp")
-list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileImporter.cpp")
-
-if(STATIC_WINDOWS_RUNTIME)
-    set(ASSIMP_MSVC_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+if(MSVC)
+    set(lib_name assimp-vc${MSVC_TOOLSET_VERSION}-mt)
 else()
-    set(ASSIMP_MSVC_RUNTIME "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+    set(lib_name assimp)
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    set(ASSIMP_BUILD_TYPE "Release")
+# IntelLLVM (SYCL) compiler defaults to fast math, causing NaN comparison code
+# compilation error.
+if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    set(assimp_cmake_cxx_flags "${CMAKE_CXX_FLAGS} -ffp-contract=on -fno-fast-math")
 else()
-    set(ASSIMP_BUILD_TYPE ${CMAKE_BUILD_TYPE})
+    set(assimp_cmake_cxx_flags "${CMAKE_CXX_FLAGS}")
 endif()
 
 ExternalProject_Add(
     ext_assimp
     PREFIX assimp
-    GIT_REPOSITORY https://github.com/assimp/assimp
-    GIT_TAG v5.0.1 # Jan 2020
+    URL https://github.com/assimp/assimp/archive/cfed74516b46a7c2bdf19c1643c448363bd90ad7.tar.gz
+    URL_HASH SHA256=b2f1c9450609f3bf201aa63b0b16023073d0ebb1c6e9ae5a832441f1e43c634c
+    DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
     UPDATE_COMMAND ""
     CMAKE_ARGS
-        -DCMAKE_BUILD_TYPE=${ASSIMP_BUILD_TYPE}
+        ${ExternalProject_CMAKE_ARGS_hidden}
+        -DCMAKE_CXX_FLAGS:STRING=${assimp_cmake_cxx_flags}
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DASSIMP_NO_EXPORT=ON
         -DASSIMP_BUILD_ASSIMP_TOOLS=OFF
         -DASSIMP_BUILD_TESTS=OFF
         -DASSIMP_INSTALL_PDB=OFF
         -DASSIMP_BUILD_ZLIB=ON
         -DHUNTER_ENABLED=OFF # Renamed to "ASSIMP_HUNTER_ENABLED" in newer assimp.
-	-DCMAKE_POLICY_DEFAULT_CMP0091=NEW
-	-DCMAKE_MSVC_RUNTIME_LIBRARY=${ASSIMP_MSVC_RUNTIME}
-	-DCMAKE_DEBUG_POSTFIX=
+        -DCMAKE_DEBUG_POSTFIX=
+    BUILD_BYPRODUCTS
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}IrrXML${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
-ExternalProject_Get_Property(ext_assimp SOURCE_DIR)
-ExternalProject_Add_Step(ext_assimp patch-copy
-  COMMAND ${CMAKE_COMMAND} -E copy ${ASSIMP_PATCH_FILES} ${SOURCE_DIR}/code/Obj
-  COMMAND ${CMAKE_COMMAND} -E echo "Copying patch files for Obj loader into assimp source"
-  DEPENDEES download
-  DEPENDERS update)
 set(ASSIMP_INCLUDE_DIR ${INSTALL_DIR}/include/)
-set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
-if (UNIX OR APPLE)
-  set(ASSIMP_LIBRARIES assimp IrrXML)
-else()
-    set(ASSIMP_LIBRARIES assimp-vc142-mt IrrXML)
-endif()
+set(ASSIMP_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
+set(ASSIMP_LIBRARIES ${lib_name})

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +26,15 @@
 //
 
 #include "ATen/cuda/CUDAContext.h"
-#include "open3d/ml/impl/misc/FixedRadiusSearch.cuh"
+#include "open3d/core/nns/FixedRadiusSearchImpl.cuh"
+#include "open3d/core/nns/NeighborSearchCommon.h"
 #include "open3d/ml/pytorch/TorchHelper.h"
 #include "open3d/ml/pytorch/misc/NeighborSearchAllocator.h"
 #include "torch/script.h"
 
-using namespace open3d::ml::impl;
+using namespace open3d::core::nns;
 
-template <class T>
+template <class T, class TIndex>
 void FixedRadiusSearchCUDA(const torch::Tensor& points,
                            const torch::Tensor& queries,
                            double radius,
@@ -55,12 +56,12 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     auto device = points.device().type();
     auto device_idx = points.device().index();
 
-    NeighborSearchAllocator<T> output_allocator(device, device_idx);
+    NeighborSearchAllocator<T, TIndex> output_allocator(device, device_idx);
     void* temp_ptr = nullptr;
     size_t temp_size = 0;
 
     // determine temp_size
-    FixedRadiusSearchCUDA(
+    impl::FixedRadiusSearchCUDA<T, TIndex>(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),
@@ -76,7 +77,7 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     auto temp_tensor = CreateTempTensor(temp_size, points.device(), &temp_ptr);
 
     // actually run the search
-    FixedRadiusSearchCUDA(
+    impl::FixedRadiusSearchCUDA<T, TIndex>(
             stream, temp_ptr, temp_size, texture_alignment,
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),
@@ -93,8 +94,8 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-#define INSTANTIATE(T)                                                        \
-    template void FixedRadiusSearchCUDA<T>(                                   \
+#define INSTANTIATE(T, TIndex)                                                \
+    template void FixedRadiusSearchCUDA<T, TIndex>(                           \
             const torch::Tensor& points, const torch::Tensor& queries,        \
             double radius, const torch::Tensor& points_row_splits,            \
             const torch::Tensor& queries_row_splits,                          \
@@ -106,4 +107,5 @@ void FixedRadiusSearchCUDA(const torch::Tensor& points,
             torch::Tensor& neighbors_row_splits,                              \
             torch::Tensor& neighbors_distance);
 
-INSTANTIATE(float)
+INSTANTIATE(float, int32_t)
+INSTANTIATE(float, int64_t)

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,12 +24,16 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
-#include <open3d/geometry/Geometry3D.h>
-#include <open3d/t/geometry/Geometry.h>
-#include <open3d/visualization/gui/Window.h>
-#include <open3d/visualization/rendering/Open3DScene.h>
-#include <open3d/visualization/visualizer/O3DVisualizer.h>
-#include <pybind/visualization/visualization.h>
+#include "open3d/visualization/visualizer/O3DVisualizer.h"
+
+#include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/geometry/Geometry3D.h"
+#include "open3d/t/geometry/Geometry.h"
+#include "open3d/visualization/gui/Dialog.h"
+#include "open3d/visualization/gui/Window.h"
+#include "open3d/visualization/rendering/Model.h"
+#include "open3d/visualization/rendering/Open3DScene.h"
+#include "pybind/visualization/visualization.h"
 
 namespace open3d {
 namespace visualization {
@@ -113,12 +117,67 @@ void pybind_o3dvisualizer(py::module& m) {
                           "True if the object is checked in the list. "
                           "If the object's group is unchecked or an "
                           "animation is playing, the object's "
-                          "visiblity may not correspond with this "
+                          "visibility may not correspond with this "
                           "value");
 
     o3dvis.def(py::init<const std::string, int, int>(), "title"_a = "Open3D",
                "width"_a = 1024, "height"_a = 768,
                "Creates a O3DVisualizer object")
+            // selected functions inherited from Window
+            .def_property("os_frame", &O3DVisualizer::GetOSFrame,
+                          &O3DVisualizer::SetOSFrame,
+                          "Window rect in OS coords, not device pixels")
+            .def_property("title", &O3DVisualizer::GetTitle,
+                          &O3DVisualizer::SetTitle,
+                          "Returns the title of the window")
+            .def("size_to_fit", &O3DVisualizer::SizeToFit,
+                 "Sets the width and height of window to its preferred size")
+            .def_property("size", &O3DVisualizer::GetSize,
+                          &O3DVisualizer::SetSize,
+                          "The size of the window in device pixels, including "
+                          "menubar (except on macOS)")
+            .def_property_readonly(
+                    "content_rect", &O3DVisualizer::GetContentRect,
+                    "Returns the frame in device pixels, relative "
+                    " to the window, which is available for widgets "
+                    "(read-only)")
+            .def_property_readonly(
+                    "scaling", &O3DVisualizer::GetScaling,
+                    "Returns the scaling factor between OS pixels "
+                    "and device pixels (read-only)")
+            .def_property_readonly("is_visible", &O3DVisualizer::IsVisible,
+                                   "True if window is visible (read-only)")
+            .def_property_readonly(
+                    "uid", &O3DVisualizer::GetWebRTCUID,
+                    "Window's unique ID when WebRTCWindowSystem is use."
+                    "Returns 'window_undefined' otherwise.")
+            .def("post_redraw", &O3DVisualizer::PostRedraw,
+                 "Tells the window to redraw")
+            .def("show", &O3DVisualizer::Show, "Shows or hides the window")
+            .def("close", &O3DVisualizer::Close,
+                 "Closes the window and destroys it, unless an on_close "
+                 "callback cancels the close.")
+            .def(
+                    "show_dialog",
+                    [](O3DVisualizer& w, UnownedPointer<gui::Dialog> dlg) {
+                        w.ShowDialog(TakeOwnership<gui::Dialog>(dlg));
+                    },
+                    "Displays the dialog")
+            .def("close_dialog", &O3DVisualizer::CloseDialog,
+                 "Closes the current dialog")
+            .def("show_message_box", &O3DVisualizer::ShowMessageBox,
+                 "Displays a simple dialog with a title and message and okay "
+                 "button")
+            .def("set_on_close", &O3DVisualizer::SetOnClose,
+                 "Sets a callback that will be called when the window is "
+                 "closed. The callback is given no arguments and should return "
+                 "True to continue closing the window or False to cancel the "
+                 "close")
+            .def("show_menu", &O3DVisualizer::ShowMenu,
+                 "show_menu(show): shows or hides the menu in the window, "
+                 "except on macOS since the menubar is not in the window "
+                 "and all applications must have a menubar.")
+            // from O3DVisualizer
             .def("add_action", &O3DVisualizer::AddAction,
                  "Adds a button to the custom actions section of the UI "
                  "and a corresponding menu item in the \"Actions\" menu. "
@@ -128,23 +187,47 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("add_geometry",
                  py::overload_cast<const std::string&,
                                    std::shared_ptr<geometry::Geometry3D>,
-                                   rendering::Material*, const std::string&,
-                                   double, bool>(&O3DVisualizer::AddGeometry),
+                                   const rendering::MaterialRecord*,
+                                   const std::string&, double, bool>(
+                         &O3DVisualizer::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
                  "time"_a = 0.0, "is_visible"_a = true,
-                 "Adds a geometry: geometry(name, geometry, material=None, "
+                 "Adds a geometry: add_geometry(name, geometry, material=None, "
                  "group='', time=0.0, is_visible=True). 'name' must be unique.")
+            .def("add_geometry",
+                 py::overload_cast<const std::string&,
+                                   std::shared_ptr<t::geometry::Geometry>,
+                                   const rendering::MaterialRecord*,
+                                   const std::string&, double, bool>(
+                         &O3DVisualizer::AddGeometry),
+                 "name"_a, "geometry"_a, "material"_a = nullptr, "group"_a = "",
+                 "time"_a = 0.0, "is_visible"_a = true,
+                 "Adds a Tensor-based add_geometry: geometry(name, geometry, "
+                 "material=None, "
+                 "group='', time=0.0, is_visible=True). 'name' must be unique.")
+            .def("add_geometry",
+                 py::overload_cast<
+                         const std::string&,
+                         std::shared_ptr<rendering::TriangleMeshModel>,
+                         const rendering::MaterialRecord*, const std::string&,
+                         double, bool>(&O3DVisualizer::AddGeometry),
+                 "name"_a, "model"_a, "material"_a = nullptr, "group"_a = "",
+                 "time"_a = 0.0, "is_visible"_a = true,
+                 "Adds a TriangleMeshModel: add_geometry(name, model, "
+                 "material=None, "
+                 "group='', time=0.0, is_visible=True). 'name' must be unique. "
+                 "'material' is ignored.")
             .def(
                     "add_geometry",
                     [](py::object dv, const py::dict& d) {
-                        rendering::Material* material = nullptr;
+                        rendering::MaterialRecord* material = nullptr;
                         std::string group = "";
                         double time = 0;
                         bool is_visible = true;
 
                         std::string name = py::cast<std::string>(d["name"]);
                         if (d.contains("material")) {
-                            material = py::cast<rendering::Material*>(
+                            material = py::cast<rendering::MaterialRecord*>(
                                     d["material"]);
                         }
                         if (d.contains("group")) {
@@ -176,6 +259,11 @@ void pybind_o3dvisualizer(py::module& m) {
             .def("remove_geometry", &O3DVisualizer::RemoveGeometry,
                  "remove_geometry(name): removes the geometry with the "
                  "name.")
+            .def("update_geometry", &O3DVisualizer::UpdateGeometry,
+                 "update_geometry(name, tpoint_cloud, update_flags): updates "
+                 "the attributes of the named geometry specified by "
+                 "update_flags with tpoint_cloud. Note: Currently this "
+                 "function only works with T Geometry Point Clouds.")
             .def("show_geometry", &O3DVisualizer::ShowGeometry,
                  "Checks or unchecks the named geometry in the list. Note that "
                  "even if show_geometry(name, True) is called, the object may "
@@ -186,6 +274,41 @@ void pybind_o3dvisualizer(py::module& m) {
                  "the name. This should be treated as read-only. Modify "
                  "visibility with show_geometry(), and other values by "
                  "removing the object and re-adding it with the new values")
+            .def("get_geometry_material", &O3DVisualizer::GetGeometryMaterial,
+                 "get_geometry_material(name): Returns the MaterialRecord "
+                 "corresponding to the name. The returned material is a copy, "
+                 "therefore modifying it directly will not change the "
+                 "visualization.")
+            .def("modify_geometry_material",
+                 &O3DVisualizer::ModifyGeometryMaterial,
+                 "modify_geometry_material(name,material): Updates the named "
+                 "geometry to use the new provided material.")
+            .def("add_3d_label", &O3DVisualizer::Add3DLabel,
+                 "add_3d_label([x,y,z], text): displays text anchored at the "
+                 "3D coordinate specified")
+            .def("clear_3d_labels", &O3DVisualizer::Clear3DLabels,
+                 "Clears all 3D text")
+            .def("setup_camera",
+                 py::overload_cast<float, const Eigen::Vector3f&,
+                                   const Eigen::Vector3f&,
+                                   const Eigen::Vector3f&>(
+                         &O3DVisualizer::SetupCamera),
+                 "setup_camera(field_of_view, center, eye, up): sets the "
+                 "camera view so that the camera is located at 'eye', pointing "
+                 "towards 'center', and oriented so that the up vector is 'up'")
+            .def("setup_camera",
+                 py::overload_cast<const camera::PinholeCameraIntrinsic&,
+                                   const Eigen::Matrix4d&>(
+                         &O3DVisualizer::SetupCamera),
+                 "setup_camera(intrinsic, extrinsic_matrix): sets the camera "
+                 "view")
+            .def("setup_camera",
+                 py::overload_cast<const Eigen::Matrix3d&,
+                                   const Eigen::Matrix4d&, int, int>(
+                         &O3DVisualizer::SetupCamera),
+                 "setup_camera(intrinsic_matrix, extrinsic_matrix, "
+                 "intrinsic_width_px, intrinsic_height_px): sets the camera "
+                 "view")
             .def("reset_camera_to_default",
                  &O3DVisualizer::ResetCameraToDefault,
                  "Sets camera to default position")
@@ -221,6 +344,19 @@ void pybind_o3dvisualizer(py::module& m) {
                  "set_background(color, image=None): Sets the background color "
                  "and, optionally, the background image. Passing None for the "
                  "background image will clear any image already there.")
+            .def("set_ibl", &O3DVisualizer::SetIBL,
+                 "set_ibl(ibl_name): Sets the IBL and its matching skybox. If "
+                 "ibl_name_ibl.ktx is found in the default resource directory "
+                 "then it is used. Otherwise, ibl_name is assumed to be a path "
+                 "to the ibl KTX file.")
+            .def("set_ibl_intensity", &O3DVisualizer::SetIBLIntensity,
+                 "set_ibl_intensity(intensity): Sets the intensity of the "
+                 "current IBL")
+            .def("enable_raw_mode", &O3DVisualizer::EnableBasicMode,
+                 "enable_raw_mode(enable): Enables/disables raw mode for "
+                 "simplified lighting environment.")
+            .def("show_skybox", &O3DVisualizer::ShowSkybox,
+                 "Show/Hide the skybox")
             .def_property(
                     "show_settings",
                     [](const O3DVisualizer& dv) {
@@ -228,6 +364,13 @@ void pybind_o3dvisualizer(py::module& m) {
                     },
                     &O3DVisualizer::ShowSettings,
                     "Gets/sets if settings panel is visible")
+            .def_property(
+                    "mouse_mode",
+                    [](const O3DVisualizer& dv) {
+                        return dv.GetUIState().mouse_mode;
+                    },
+                    &O3DVisualizer::SetMouseMode,
+                    "Gets/sets the control mode being used for the mouse")
             .def_property(
                     "scene_shader",
                     [](const O3DVisualizer& dv) {
@@ -241,6 +384,20 @@ void pybind_o3dvisualizer(py::module& m) {
                         return dv.GetUIState().show_axes;
                     },
                     &O3DVisualizer::ShowAxes, "Gets/sets if axes are visible")
+            .def_property(
+                    "show_ground",
+                    [](const O3DVisualizer& dv) {
+                        return dv.GetUIState().show_ground;
+                    },
+                    &O3DVisualizer::ShowGround,
+                    "Gets/sets if ground plane is visible")
+            .def_property(
+                    "ground_plane",
+                    [](const O3DVisualizer& dv) {
+                        return dv.GetUIState().ground_plane;
+                    },
+                    &O3DVisualizer::SetGroundPlane,
+                    "Sets the plane for ground plane, XZ, XY, or YZ")
             .def_property(
                     "point_size",
                     [](const O3DVisualizer& dv) {

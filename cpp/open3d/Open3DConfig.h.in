@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@
 #define OPEN3D_VERSION       "@PROJECT_VERSION@"
 
 // Open3D info
-#define OPEN3D_HOME          "@PROJECT_HOME@"
+#define OPEN3D_HOME          "@PROJECT_HOMEPAGE_URL@"
 #define OPEN3D_DOCS          "@PROJECT_DOCS@"
 #define OPEN3D_CODE          "@PROJECT_CODE@"
 #define OPEN3D_ISSUES        "@PROJECT_ISSUES@"

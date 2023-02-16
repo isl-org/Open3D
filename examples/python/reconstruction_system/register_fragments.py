@@ -1,16 +1,41 @@
-# Open3D: www.open3d.org
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 
 # examples/python/reconstruction_system/register_fragments.py
 
 import numpy as np
 import open3d as o3d
-import sys
-sys.path.append("../utility")
-from file import join, get_file_list, make_clean_folder
-from visualization import draw_registration_result
-sys.path.append(".")
+import os, sys
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import join, get_file_list, make_clean_folder, draw_registration_result
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_scene
 from refine_registration import multiscale_icp
 
@@ -29,24 +54,27 @@ def preprocess_point_cloud(pcd, config):
 
 
 def register_point_cloud_fpfh(source, target, source_fpfh, target_fpfh, config):
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
     distance_threshold = config["voxel_size"] * 1.4
     if config["global_registration"] == "fgr":
-        result = o3d.pipelines.registration.registration_fast_based_on_feature_matching(
+        result = o3d.pipelines.registration.registration_fgr_based_on_feature_matching(
             source, target, source_fpfh, target_fpfh,
             o3d.pipelines.registration.FastGlobalRegistrationOption(
                 maximum_correspondence_distance=distance_threshold))
     if config["global_registration"] == "ransac":
+        # Fallback to preset parameters that works better
         result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-            source, target, source_fpfh, target_fpfh, True, distance_threshold,
+            source, target, source_fpfh, target_fpfh, False, distance_threshold,
             o3d.pipelines.registration.TransformationEstimationPointToPoint(
-                False), 3,
+                False), 4,
             [
                 o3d.pipelines.registration.
                 CorrespondenceCheckerBasedOnEdgeLength(0.9),
                 o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
                     distance_threshold)
             ],
-            o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.99))
+            o3d.pipelines.registration.RANSACConvergenceCriteria(
+                1000000, 0.999))
     if (result.transformation.trace() == 4.0):
         return (False, np.identity(4), np.zeros((6, 6)))
     information = o3d.pipelines.registration.get_information_matrix_from_point_clouds(

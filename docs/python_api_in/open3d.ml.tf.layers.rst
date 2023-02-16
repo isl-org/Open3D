@@ -17,7 +17,6 @@ open3d.ml.tf.layers
     SparseConvTranspose
     VoxelPooling
 
-
 .. toctree::
     :hidden:
 

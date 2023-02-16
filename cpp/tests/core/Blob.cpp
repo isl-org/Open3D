@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,16 +28,17 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/core/MemoryManager.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 #include "tests/core/CoreTest.h"
 
 namespace open3d {
 namespace tests {
 
-class BlobPermuteDevices : public PermuteDevices {};
-INSTANTIATE_TEST_SUITE_P(Blob,
-                         BlobPermuteDevices,
-                         testing::ValuesIn(PermuteDevices::TestCases()));
+class BlobPermuteDevices : public PermuteDevicesWithSYCL {};
+INSTANTIATE_TEST_SUITE_P(
+        Blob,
+        BlobPermuteDevices,
+        testing::ValuesIn(PermuteDevicesWithSYCL::TestCases()));
 
 TEST_P(BlobPermuteDevices, BlobConstructor) {
     core::Device device = GetParam();

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 #include <tuple>
 
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {
@@ -99,7 +99,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     }
     auto mesh = std::make_shared<TriangleMesh>();
     if (voxel_size <= 0.0) {
-        utility::LogError("[VoxelGridFromPointCloud] voxel_size <= 0.0");
+        utility::LogError("voxel_size <= 0.0");
     }
 
     Eigen::Vector3d voxel_size3 =
@@ -108,7 +108,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyVertexClustering(
     Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
-        utility::LogError("[VoxelGridFromPointCloud] voxel_size is too small.");
+        utility::LogError("voxel_size is too small.");
     }
 
     auto GetVoxelIdx = [&](const Eigen::Vector3d& vert) {

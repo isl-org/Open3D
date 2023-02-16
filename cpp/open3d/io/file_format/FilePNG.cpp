@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include <png.h>
 
 #include "open3d/io/ImageIO.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 
@@ -111,6 +111,36 @@ bool WriteImageToPNG(const std::string &filename,
                                 image.data_.data(), 0, NULL) == 0) {
         utility::LogWarning("Write PNG failed: unable to write file: {}",
                             filename);
+        return false;
+    }
+    return true;
+}
+
+bool ReadPNGFromMemory(const unsigned char *image_data_ptr,
+                       size_t image_data_size,
+                       geometry::Image &image) {
+    png_image pngimage;
+    memset(&pngimage, 0, sizeof(pngimage));
+    pngimage.version = PNG_IMAGE_VERSION;
+    if (png_image_begin_read_from_memory(&pngimage, image_data_ptr,
+                                         image_data_size) == 0) {
+        utility::LogWarning("Read PNG failed: unable to parse header.");
+        return false;
+    }
+
+    // Clear colormap flag if necessary to ensure libpng expands the colo
+    // indexed pixels to full color
+    if (pngimage.format & PNG_FORMAT_FLAG_COLORMAP) {
+        pngimage.format &= ~PNG_FORMAT_FLAG_COLORMAP;
+    }
+
+    image.Prepare(pngimage.width, pngimage.height,
+                  PNG_IMAGE_SAMPLE_CHANNELS(pngimage.format),
+                  PNG_IMAGE_SAMPLE_COMPONENT_SIZE(pngimage.format));
+
+    if (png_image_finish_read(&pngimage, NULL, image.data_.data(), 0, NULL) ==
+        0) {
+        utility::LogWarning("PNG error: {}", pngimage.message);
         return false;
     }
     return true;

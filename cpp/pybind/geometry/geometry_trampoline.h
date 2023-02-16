@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -66,8 +66,13 @@ public:
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override {
         PYBIND11_OVERLOAD_PURE(AxisAlignedBoundingBox, Geometry3DBase, );
     }
-    OrientedBoundingBox GetOrientedBoundingBox() const override {
-        PYBIND11_OVERLOAD_PURE(OrientedBoundingBox, Geometry3DBase, );
+    OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override {
+        PYBIND11_OVERLOAD_PURE(OrientedBoundingBox, Geometry3DBase, robust);
+    }
+    OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override {
+        PYBIND11_OVERLOAD_PURE(OrientedBoundingBox, Geometry3DBase, robust);
     }
     Geometry3DBase& Transform(const Eigen::Matrix4d& transformation) override {
         PYBIND11_OVERLOAD_PURE(Geometry3DBase&, Geometry3DBase, transformation);

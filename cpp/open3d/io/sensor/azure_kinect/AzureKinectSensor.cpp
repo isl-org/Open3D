@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@
 
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/io/sensor/azure_kinect/K4aPlugin.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace io {
@@ -42,10 +43,7 @@ AzureKinectSensor::AzureKinectSensor(
         const AzureKinectSensorConfig &sensor_config)
     : RGBDSensor(), sensor_config_(sensor_config) {}
 
-AzureKinectSensor::~AzureKinectSensor() {
-    k4a_plugin::k4a_device_stop_cameras(device_);
-    k4a_plugin::k4a_device_close(device_);
-}
+AzureKinectSensor::~AzureKinectSensor() { Disconnect(); }
 
 bool AzureKinectSensor::Connect(size_t sensor_index) {
     utility::LogInfo("AzureKinectSensor::Connect");
@@ -100,7 +98,7 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
     if (K4A_FAILED(k4a_plugin::k4a_device_start_cameras(device_,
                                                         &device_config))) {
         utility::LogWarning(
-                "Runtime error: k4a_plugin::k4a_device_set_color_control() "
+                "Runtime error: k4a_plugin::k4a_device_start_cameras() "
                 "failed");
         k4a_plugin::k4a_device_close(device_);
         return false;
@@ -128,6 +126,11 @@ bool AzureKinectSensor::Connect(size_t sensor_index) {
     return true;
 }
 
+void AzureKinectSensor::Disconnect() {
+    k4a_plugin::k4a_device_stop_cameras(device_);
+    k4a_plugin::k4a_device_close(device_);
+}
+
 k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
     k4a_capture_t capture;
     auto result =
@@ -148,6 +151,8 @@ k4a_capture_t AzureKinectSensor::CaptureRawFrame() const {
 std::shared_ptr<geometry::RGBDImage> AzureKinectSensor::CaptureFrame(
         bool enable_align_depth_to_color) const {
     k4a_capture_t capture = CaptureRawFrame();
+    if (!capture) return nullptr;
+
     auto im_rgbd = DecompressCapture(
             capture,
             enable_align_depth_to_color ? transform_depth_to_color_ : nullptr);
@@ -175,7 +180,8 @@ void ConvertBGRAToRGB(geometry::Image &bgra, geometry::Image &rgb) {
     }
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
 #pragma omp parallel for collapse(3) schedule(static)
 #endif

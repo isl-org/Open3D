@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 
 #include "open3d/core/Dispatch.h"
 #include "open3d/core/SizeVector.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -102,6 +102,21 @@ SizeVector Concat(const SizeVector& l_shape, const SizeVector& r_shape);
 
 /// Returns a SizeVector of {0, 1, ..., n - 1}, similar to std::iota.
 SizeVector Iota(int64_t n);
+
+/// Compute default strides for a shape when a tensor is contiguous.
+SizeVector DefaultStrides(const SizeVector& shape);
+
+/// 1. Separate `oldshape` into chunks of dimensions, where the dimensions are
+///    ``contiguous'' in each chunk, i.e.,
+///    oldstride[i] = oldshape[i+1] * oldstride[i+1]
+/// 2. `newshape` must be able to be separated into same number of chunks as
+///    `oldshape` was separated into, where each chunk of newshape has matching
+///    ``numel'', i.e., number of subspaces, as the corresponding chunk of
+///    `oldshape`.
+/// Ref: aten/src/ATen/TensorUtils.cpp
+std::pair<bool, SizeVector> Restride(const SizeVector& old_shape,
+                                     const SizeVector& old_strides,
+                                     const SizeVector& new_shape);
 
 }  // namespace shape_util
 }  // namespace core

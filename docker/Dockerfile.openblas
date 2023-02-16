@@ -1,0 +1,95 @@
+# FROM must be called before other ARGS except for ARG BASE_IMAGE
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+# For the rest of this Dockerfile
+SHELL ["/bin/bash", "-c"]
+
+# Required build args, should be specified in docker_build.sh
+ARG CONDA_SUFFIX
+ARG CMAKE_VERSION
+ARG PYTHON_VERSION
+ARG DEVELOPER_BUILD
+RUN if [ -z "${CONDA_SUFFIX}"    ]; then echo "Error: ARG CONDA_SUFFIX    not specified."; exit 1; fi \
+ && if [ -z "${CMAKE_VERSION}"   ]; then echo "Error: ARG CMAKE_VERSION   not specified."; exit 1; fi \
+ && if [ -z "${PYTHON_VERSION}"  ]; then echo "Error: ARG PYTHON_VERSION  not specified."; exit 1; fi \
+ && if [ -z "${DEVELOPER_BUILD}" ]; then echo "Error: ARG DEVELOPER_BUILD not specified."; exit 1; fi
+
+# Prevent interactive inputs when installing packages
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=America/Los_Angeles
+ENV SUDO=command
+
+# Minimal dependencies for running Docker
+# wget    : for downloading
+# libgl1  : available on Ubuntu ARM desktop by default
+# libgomp1: available on Ubuntu ARM desktop by default
+RUN apt-get update && apt-get install -y \
+    wget \
+    libgl1 \
+    libgomp1 \
+ && rm -rf /var/lib/apt/lists/*
+
+# Minimal dependencies for building
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+ && rm -rf /var/lib/apt/lists/*
+
+# Miniconda
+ENV PATH="/root/miniconda3/bin:${PATH}"
+RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh \
+ && bash Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh -b \
+ && rm Miniconda3-latest-Linux-${CONDA_SUFFIX}.sh \
+ && conda --version
+ENV PATH="/root/miniconda3/envs/open3d/bin:${PATH}"
+RUN conda create -y -n open3d python=${PYTHON_VERSION} \
+ && source activate open3d
+RUN which python \
+ && python --version
+
+# CMake
+# PWD is /, cmake will be installed to /root/${CMAKE_VERSION}/bin/cmake
+RUN CMAKE_VER_NUMBERS=$(echo "${CMAKE_VERSION}" | cut -d"-" -f2) \
+ && wget -q https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER_NUMBERS}/${CMAKE_VERSION}.tar.gz \
+ && tar -xf ${CMAKE_VERSION}.tar.gz \
+ && cp -ar ${CMAKE_VERSION} ${HOME}
+ENV PATH=${HOME}/${CMAKE_VERSION}/bin:${PATH}
+
+# Install dependencies before copying the full Open3D directory for better Docker caching
+# Open3D C++ dependencies
+COPY ./util/install_deps_ubuntu.sh /root/Open3D/util/
+RUN /root/Open3D/util/install_deps_ubuntu.sh assume-yes \
+ && rm -rf /var/lib/apt/lists/*
+RUN echo ${PATH} \
+ && echo "gcc=$(which gcc)" \
+ && gcc --version \
+ && echo "g++=$(which g++)" \
+ && g++ --version
+
+# Python and dependencies
+COPY ./python/requirements*.txt /root/Open3D/python/
+RUN which python \
+ && python --version \
+ && python -m pip install -U -r /root/Open3D/python/requirements.txt \
+  -r /root/Open3D/python/requirements_build.txt \
+  -r /root/Open3D/python/requirements_test.txt
+
+# Open3D repo
+# Always keep /root/Open3D as the WORKDIR
+COPY . /root/Open3D
+WORKDIR /root/Open3D
+
+# Build
+RUN mkdir build \
+ && cd build \
+ && cmake \
+    -DBUILD_UNIT_TESTS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=~/open3d_install \
+    -DDEVELOPER_BUILD=${DEVELOPER_BUILD} \
+    .. \
+ && make -j$(nproc) \
+ && make install-pip-package -j$(nproc) \
+ && make install -j$(nproc)
+RUN cp build/lib/python_package/pip_package/*.whl /

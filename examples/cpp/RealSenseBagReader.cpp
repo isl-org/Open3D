@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -70,9 +70,9 @@ Json::Value GenerateDatasetConfig(const std::string &output_path,
     }
 
     value["name"] = bagfile;
-    value["max_depth"] = 3.0;
+    value["depth_max"] = 3.0;
     value["voxel_size"] = 0.05;
-    value["max_depth_diff"] = 0.07;
+    value["depth_diff_max"] = 0.07;
     value["preference_loop_closure_odometry"] = 0.1;
     value["preference_loop_closure_registration"] = 5.0;
     value["tsdf_cubic_size"] = 3.0;
@@ -83,19 +83,29 @@ Json::Value GenerateDatasetConfig(const std::string &output_path,
     return value;
 }
 
-void PrintUsage() {
+void PrintHelp() {
+    using namespace open3d;
+
     PrintOpen3DVersion();
-    utility::LogInfo("Usage:");
     // clang-format off
-    utility::LogInfo("RealSenseBagReader [-V] --input input.bag [--output path]");
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > RealSenseBagReader [-V] --input input.bag [--output path]");
     // clang-format on
+    utility::LogInfo("");
 }
 
-int main(int argc, char **argv) {
-    if (!utility::ProgramOptionExists(argc, argv, "--input")) {
-        PrintUsage();
+int main(int argc, char *argv[]) {
+    using namespace open3d;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc == 1 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"}) ||
+        !utility::ProgramOptionExists(argc, argv, "--input")) {
+        PrintHelp();
         return 1;
     }
+
     if (utility::ProgramOptionExists(argc, argv, "-V")) {
         utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
     } else {
@@ -111,19 +121,16 @@ int main(int argc, char **argv) {
     } else {
         output_path = utility::GetProgramOptionAsString(argc, argv, "--output");
         if (output_path.empty()) {
-            utility::LogError("Output path {} is empty, only play bag.",
-                              output_path);
-            return 1;
+            utility::LogWarning("Output path {} is empty, only play bag.",
+                                output_path);
         }
         if (utility::filesystem::DirectoryExists(output_path)) {
             utility::LogWarning(
                     "Output path {} already existing, only play bag.",
                     output_path);
-            return 1;
         } else if (!utility::filesystem::MakeDirectory(output_path)) {
             utility::LogWarning("Unable to create path {}, only play bag.",
                                 output_path);
-            return 1;
         } else {
             utility::LogInfo("Decompress images to {}", output_path);
             utility::filesystem::MakeDirectoryHierarchy(output_path + "/color");
@@ -187,18 +194,7 @@ int main(int argc, char **argv) {
     bool is_geometry_added = false;
     int idx = 0;
     const auto bag_metadata = bag_reader.GetMetadata();
-    utility::LogInfo("Recorded with device {}", bag_metadata.device_name_);
-    utility::LogInfo("    Serial number: {}", bag_metadata.serial_number_);
-    utility::LogInfo("Video resolution: {}x{}", bag_metadata.width_,
-                     bag_metadata.height_);
-    utility::LogInfo("      frame rate: {}", bag_metadata.fps_);
-    utility::LogInfo(
-            "      duration: {:.6f}s",
-            static_cast<double>(bag_metadata.stream_length_usec_) * 1e-6);
-    utility::LogInfo("      color pixel format: {}",
-                     bag_metadata.color_format_);
-    utility::LogInfo("      depth pixel format: {}",
-                     bag_metadata.depth_format_);
+    utility::LogInfo("{}", bag_metadata.ToString());
 
     if (write_image) {
         io::WriteIJsonConvertibleToJSON(
@@ -208,14 +204,11 @@ int main(int argc, char **argv) {
     }
     const auto frame_interval = sc::duration<double>(1. / bag_metadata.fps_);
 
-    auto last_frame_time = std::chrono::steady_clock::now() - frame_interval;
     using legacyRGBDImage = open3d::geometry::RGBDImage;
-    legacyRGBDImage im_rgbd;
+    auto last_frame_time = std::chrono::steady_clock::now();
+    legacyRGBDImage im_rgbd = bag_reader.NextFrame().ToLegacy();
     while (!bag_reader.IsEOF() && !flag_exit) {
         if (flag_play) {
-            std::this_thread::sleep_until(last_frame_time + frame_interval);
-            last_frame_time = std::chrono::steady_clock::now();
-            im_rgbd = bag_reader.NextFrame().ToLegacyRGBDImage();
             // create shared_ptr with no-op deleter for stack RGBDImage
             auto ptr_im_rgbd = std::shared_ptr<legacyRGBDImage>(
                     &im_rgbd, [](legacyRGBDImage *) {});
@@ -249,6 +242,10 @@ int main(int argc, char **argv) {
             }
             vis.UpdateGeometry();
             vis.UpdateRender();
+
+            std::this_thread::sleep_until(last_frame_time + frame_interval);
+            last_frame_time = std::chrono::steady_clock::now();
+            im_rgbd = bag_reader.NextFrame().ToLegacy();
         }
         vis.PollEvents();
     }

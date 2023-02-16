@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -99,6 +99,8 @@ bool AzureKinectRecorder::CloseRecord() {
 std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
         bool write, bool enable_align_depth_to_color) {
     k4a_capture_t capture = sensor_.CaptureRawFrame();
+    if (!capture) return nullptr;
+
     if (capture != nullptr && is_record_created_ && write) {
         if (K4A_FAILED(k4a_plugin::k4a_record_write_capture(recording_,
                                                             capture))) {
@@ -111,7 +113,7 @@ std::shared_ptr<geometry::RGBDImage> AzureKinectRecorder::RecordFrame(
                              ? sensor_.transform_depth_to_color_
                              : nullptr);
     if (im_rgbd == nullptr) {
-        utility::LogInfo("Invalid capture, skipping this frame");
+        utility::LogDebug("Invalid capture, skipping this frame");
         return nullptr;
     }
     k4a_plugin::k4a_capture_release(capture);

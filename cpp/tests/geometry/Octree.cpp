@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,11 +31,12 @@
 #include <iostream>
 #include <memory>
 
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -167,6 +168,108 @@ TEST(Octree, EightCubes) {
     }
 }
 
+TEST(Octree, EightCubesLeafPointIndices) {
+    // Build octree
+    std::vector<Eigen::Vector3d> points{
+            Eigen::Vector3d(0.5, 0.5, 0.5), Eigen::Vector3d(1.5, 0.5, 0.5),
+            Eigen::Vector3d(0.5, 1.5, 0.5), Eigen::Vector3d(1.5, 1.5, 0.5),
+            Eigen::Vector3d(0.5, 0.5, 1.5), Eigen::Vector3d(1.5, 0.5, 1.5),
+            Eigen::Vector3d(0.5, 1.5, 1.5), Eigen::Vector3d(1.5, 1.5, 1.5),
+    };
+    std::vector<Eigen::Vector3d> colors{
+            Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(0.1, 0.0, 0.0),
+            Eigen::Vector3d(0.0, 0.1, 0.0), Eigen::Vector3d(0.1, 0.1, 0.0),
+            Eigen::Vector3d(0.0, 0.0, 0.1), Eigen::Vector3d(0.1, 0.0, 0.1),
+            Eigen::Vector3d(0.0, 0.1, 0.1), Eigen::Vector3d(0.1, 0.1, 0.1),
+    };
+    geometry::Octree octree(1, Eigen::Vector3d(0, 0, 0), 2);
+    for (size_t i = 0; i < points.size(); ++i) {
+        octree.InsertPoint(
+                points[i],
+                geometry::OctreePointColorLeafNode::GetInitFunction(),
+                geometry::OctreePointColorLeafNode::GetUpdateFunction(
+                        i, colors[i]));
+    }
+
+    // Check dimensions
+    ExpectEQ(octree.origin_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(octree.size_, 2);
+
+    // Check node values
+    if (auto root_node =
+                std::dynamic_pointer_cast<geometry::OctreeInternalNode>(
+                        octree.root_node_)) {
+        for (size_t i = 0; i < 8; ++i) {
+            if (auto leaf_node = std::dynamic_pointer_cast<
+                        geometry::OctreePointColorLeafNode>(
+                        root_node->children_[i])) {
+                ExpectEQ(leaf_node->color_, colors[i]);
+                EXPECT_EQ(leaf_node->indices_.size(), 1);
+                EXPECT_EQ(leaf_node->indices_[0], i);
+            } else {
+                throw std::runtime_error(
+                        "Leaf node must be OctreePointColorLeafNode");
+            };
+        }
+    } else {
+        throw std::runtime_error("Root node must be OctreeInternalNode");
+    }
+}
+
+TEST(Octree, EightCubesLeafAndInternalPointIndices) {
+    // Build octree
+    std::vector<Eigen::Vector3d> points{
+            Eigen::Vector3d(0.5, 0.5, 0.5), Eigen::Vector3d(1.5, 0.5, 0.5),
+            Eigen::Vector3d(0.5, 1.5, 0.5), Eigen::Vector3d(1.5, 1.5, 0.5),
+            Eigen::Vector3d(0.5, 0.5, 1.5), Eigen::Vector3d(1.5, 0.5, 1.5),
+            Eigen::Vector3d(0.5, 1.5, 1.5), Eigen::Vector3d(1.5, 1.5, 1.5),
+    };
+    std::vector<Eigen::Vector3d> colors{
+            Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(0.1, 0.0, 0.0),
+            Eigen::Vector3d(0.0, 0.1, 0.0), Eigen::Vector3d(0.1, 0.1, 0.0),
+            Eigen::Vector3d(0.0, 0.0, 0.1), Eigen::Vector3d(0.1, 0.0, 0.1),
+            Eigen::Vector3d(0.0, 0.1, 0.1), Eigen::Vector3d(0.1, 0.1, 0.1),
+    };
+    geometry::Octree octree(1, Eigen::Vector3d(0, 0, 0), 2);
+    for (size_t i = 0; i < points.size(); ++i) {
+        octree.InsertPoint(
+                points[i],
+                geometry::OctreePointColorLeafNode::GetInitFunction(),
+                geometry::OctreePointColorLeafNode::GetUpdateFunction(
+                        i, colors[i]),
+                geometry::OctreeInternalPointNode::GetInitFunction(),
+                geometry::OctreeInternalPointNode::GetUpdateFunction(i));
+    }
+
+    // Check dimensions
+    ExpectEQ(octree.origin_, Eigen::Vector3d(0, 0, 0));
+    EXPECT_EQ(octree.size_, 2);
+
+    // Check node values
+    if (auto root_node =
+                std::dynamic_pointer_cast<geometry::OctreeInternalPointNode>(
+                        octree.root_node_)) {
+        EXPECT_EQ(root_node->indices_.size(), 8);
+        for (size_t i = 0; i < root_node->indices_.size(); i++) {
+            EXPECT_EQ(root_node->indices_[i], i);
+        }
+        for (size_t i = 0; i < 8; ++i) {
+            if (auto leaf_node = std::dynamic_pointer_cast<
+                        geometry::OctreePointColorLeafNode>(
+                        root_node->children_[i])) {
+                ExpectEQ(leaf_node->color_, colors[i]);
+                EXPECT_EQ(leaf_node->indices_.size(), 1);
+                EXPECT_EQ(leaf_node->indices_[0], i);
+            } else {
+                throw std::runtime_error(
+                        "Leaf node must be OctreePointColorLeafNode");
+            };
+        }
+    } else {
+        throw std::runtime_error("Root node must be OctreeInternalPointNode");
+    }
+}
+
 TEST(Octree, EightCubesTraverse) {
     // Data
     std::vector<Eigen::Vector3d> points{
@@ -188,13 +291,14 @@ TEST(Octree, EightCubesTraverse) {
     auto f = [&colors_traversed, &child_indices_traversed](
                      const std::shared_ptr<geometry::OctreeNode>& node,
                      const std::shared_ptr<geometry::OctreeNodeInfo>& node_info)
-            -> void {
+            -> bool {
         if (auto leaf_node =
                     std::dynamic_pointer_cast<geometry::OctreeColorLeafNode>(
                             node)) {
             colors_traversed.push_back(leaf_node->color_);
             child_indices_traversed.push_back(node_info->child_index_);
         }
+        return false;
     };
 
     // Check tree depth 1, we know child index in this case
@@ -232,7 +336,8 @@ TEST(Octree, EightCubesTraverse) {
 TEST(Octree, FragmentPLYCheckClone) {
     // Build src_octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     geometry::Octree src_octree(5);
     src_octree.ConvertFromPointCloud(pcd, 0.01);
 
@@ -252,7 +357,8 @@ TEST(Octree, EqualOperatorSpecialCase) {
 TEST(Octree, FragmentPLYLocate) {
     // Build src_octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 5;
     geometry::Octree octree(max_depth);
     octree.ConvertFromPointCloud(pcd, 0.01);
@@ -294,7 +400,8 @@ TEST(Octree, ConvertFromPointCloudBoundTwoPoints) {
 
 TEST(Octree, Visualization) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     auto octree = std::make_shared<geometry::Octree>(6);
     octree->ConvertFromPointCloud(pcd, 0.01);
     // Uncomment the line below for visualization test
@@ -303,7 +410,8 @@ TEST(Octree, Visualization) {
 
 TEST(Octree, ConvertToJsonValue) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 5;
     geometry::Octree src_octree(max_depth);
     src_octree.ConvertFromPointCloud(pcd, 0.01);

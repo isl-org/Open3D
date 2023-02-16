@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -126,34 +126,36 @@ public:
                                 neighbors_index, neighbors_importance,
                                 neighbors_row_splits});
 
-        const auto& real_dtype = filters.dtype();
+        const auto& feat_dtype = filters.dtype();
+        const auto& real_dtype = inp_positions.dtype();
         const auto& index_dtype = neighbors_index.dtype();
 
         torch::Tensor out_features =
                 torch::empty({num_out_points.value(), out_channels.value()},
-                             torch::dtype(real_dtype).device(device));
+                             torch::dtype(feat_dtype).device(device));
 #define FN_PARAMETERS                                                     \
     filters, out_positions, extents, offset, inp_positions, inp_features, \
             inp_importance, neighbors_index, neighbors_importance,        \
             neighbors_row_splits, align_corners, coordinate_mapping,      \
             normalize, interpolation, max_temp_mem_MB, out_features
 
-#define CALL(real_t, index_t, fn)                  \
-    if (CompareTorchDtype<real_t>(real_dtype) &&   \
-        CompareTorchDtype<index_t>(index_dtype)) { \
-        fn<real_t, index_t>(FN_PARAMETERS);        \
-        return out_features;                       \
+#define CALL(feat_t, out_t, real_t, index_t, fn)           \
+    if (CompareTorchDtype<feat_t>(feat_dtype) &&           \
+        CompareTorchDtype<real_t>(real_dtype) &&           \
+        CompareTorchDtype<index_t>(index_dtype)) {         \
+        fn<feat_t, out_t, real_t, index_t>(FN_PARAMETERS); \
+        return out_features;                               \
     }
 
         if (inp_features.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
-            CALL(float, int32_t, ::ContinuousConvCUDA)
+            CALL(float, float, float, int32_t, ::ContinuousConvCUDA)
 #else
             TORCH_CHECK(false,
                         "ContinuousConv was not compiled with CUDA support")
 #endif
         } else {
-            CALL(float, int32_t, ::ContinuousConvCPU)
+            CALL(float, float, float, int32_t, ::ContinuousConvCPU)
         }
 #undef FN_PARAMETERS
 #undef CALL
@@ -196,7 +198,8 @@ public:
         auto neighbors_row_splits = saved_vars[9];
 
         auto device = inp_features.device();
-        const auto& real_dtype = filters.dtype();
+        const auto& feat_dtype = filters.dtype();
+        const auto& real_dtype = inp_positions.dtype();
         const auto& index_dtype = neighbors_index.dtype();
         auto out_features_gradient = grad_output[0].contiguous();
         CHECK_SAME_DTYPE(out_features_gradient, inp_features, filters);
@@ -206,12 +209,14 @@ public:
         torch::Tensor filters_backprop;
         torch::Tensor inp_features_backprop;
 
-#define CALL(real_t, index_t, fn_suffix)                                       \
-    if (CompareTorchDtype<real_t>(real_dtype) &&                               \
+#define CALL(feat_t, out_t, real_t, index_t, fn_suffix)                        \
+    if (CompareTorchDtype<feat_t>(feat_dtype) &&                               \
+        CompareTorchDtype<real_t>(real_dtype) &&                               \
         CompareTorchDtype<index_t>(index_dtype)) {                             \
         filters_backprop = torch::empty(                                       \
                 filters.sizes(), torch::dtype(real_dtype).device(device));     \
-        ContinuousConvBackpropFilter##fn_suffix<real_t, index_t>(              \
+        ContinuousConvBackpropFilter##fn_suffix<feat_t, out_t, real_t,         \
+                                                index_t>(                      \
                 filters, out_positions, extents, offset, inp_positions,        \
                 inp_features, inp_importance, neighbors_index,                 \
                 neighbors_importance, neighbors_row_splits,                    \
@@ -232,7 +237,7 @@ public:
                             torch::dtype(real_dtype).device(device));          \
         auto filters_transposed = filters.transpose(3, 4).contiguous();        \
                                                                                \
-        ContinuousConvTranspose##fn_suffix<real_t, index_t>(                   \
+        ContinuousConvTranspose##fn_suffix<feat_t, out_t, real_t, index_t>(    \
                 filters_transposed, inp_positions, inp_importance, extents,    \
                 offset, out_positions, out_features_gradient, neighbors_index, \
                 neighbors_importance_sum, neighbors_row_splits,                \
@@ -246,14 +251,14 @@ public:
         bool dispatch_success = false;
         if (inp_features.is_cuda()) {
 #ifdef BUILD_CUDA_MODULE
-            CALL(float, int32_t, CUDA)
+            CALL(float, float, float, int32_t, CUDA)
 #else
             TORCH_CHECK(false,
                         "ContinuousConv backward was not compiled "
                         "with CUDA support")
 #endif
         } else {
-            CALL(float, int32_t, CPU)
+            CALL(float, float, float, int32_t, CPU)
         }
         TORCH_CHECK(dispatch_success,
                     "ContinuousConv backward does not support " +

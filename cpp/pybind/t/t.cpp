@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,12 +29,14 @@
 #include "pybind/open3d_pybind.h"
 #include "pybind/t/geometry/geometry.h"
 #include "pybind/t/io/io.h"
+#include "pybind/t/pipelines/pipelines.h"
 
 namespace open3d {
 namespace t {
 
 void pybind_t(py::module& m) {
     py::module m_submodule = m.def_submodule("t");
+    pipelines::pybind_pipelines(m_submodule);
     geometry::pybind_geometry(m_submodule);
     io::pybind_io(m_submodule);
 }

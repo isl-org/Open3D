@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,12 @@ bool VisualizerWithEditing::AddGeometry(
         std::shared_ptr<const geometry::Geometry> geometry_ptr,
         bool reset_bounding_box) {
     if (!is_initialized_ || !geometry_ptrs_.empty()) {
+        return false;
+    }
+    if (!geometry_ptr.get()) {
+        utility::LogWarning(
+                "[AddGeometry] Invalid pointer. Possibly a null pointer or "
+                "None was passed in.");
         return false;
     }
     glfwMakeContextCurrent(window_);
@@ -257,6 +263,20 @@ std::vector<size_t> &VisualizerWithEditing::GetPickedPoints() {
     return pointcloud_picker_ptr_->picked_indices_;
 }
 
+std::shared_ptr<geometry::Geometry> VisualizerWithEditing::GetCroppedGeometry()
+        const {
+    if (editing_geometry_ptr_->GetGeometryType() ==
+        geometry::Geometry::GeometryType::PointCloud)
+        return std::make_shared<geometry::PointCloud>(
+                *std::dynamic_pointer_cast<geometry::PointCloud>(
+                        editing_geometry_ptr_));
+    else {
+        return std::make_shared<geometry::TriangleMesh>(
+                *std::dynamic_pointer_cast<geometry::TriangleMesh>(
+                        editing_geometry_ptr_));
+    }
+}
+
 bool VisualizerWithEditing::InitViewControl() {
     view_control_ptr_ =
             std::unique_ptr<ViewControlWithEditing>(new ViewControlWithEditing);
@@ -383,29 +403,16 @@ void VisualizerWithEditing::KeyPressCallback(
                     glfwMakeContextCurrent(window_);
                     geometry::PointCloud &pcd =
                             (geometry::PointCloud &)*editing_geometry_ptr_;
-                    pcd = *selection_polygon_ptr_->CropPointCloud(pcd,
-                                                                  view_control);
+                    if (std::shared_ptr<geometry::PointCloud> pcd_ptr =
+                                selection_polygon_ptr_->CropPointCloud(
+                                        pcd, view_control)) {
+                        pcd = *pcd_ptr;
+                    } else {
+                        utility::LogError(
+                                "Internal error: CropPointCloud returned "
+                                "nullptr.");
+                    }
                     editing_geometry_renderer_ptr_->UpdateGeometry();
-                    const char *filename;
-                    const char *pattern[1] = {"*.ply"};
-                    std::string default_filename =
-                            default_directory_ + "cropped_" +
-                            std::to_string(crop_action_count_ + 1) + ".ply";
-                    if (use_dialog_) {
-                        filename = tinyfd_saveFileDialog(
-                                "geometry::PointCloud file",
-                                default_filename.c_str(), 1, pattern,
-                                "Polygon File Format (*.ply)");
-                    } else {
-                        filename = default_filename.c_str();
-                    }
-                    if (filename == NULL) {
-                        utility::LogWarning(
-                                "No filename is given. Abort saving.");
-                    } else {
-                        SaveCroppingResult(filename);
-                        crop_action_count_++;
-                    }
                     view_control.ToggleLocking();
                     InvalidateSelectionPolygon();
                     InvalidatePicking();
@@ -416,28 +423,16 @@ void VisualizerWithEditing::KeyPressCallback(
                     glfwMakeContextCurrent(window_);
                     geometry::TriangleMesh &mesh =
                             (geometry::TriangleMesh &)*editing_geometry_ptr_;
-                    mesh = *selection_polygon_ptr_->CropTriangleMesh(
-                            mesh, view_control);
+                    if (std::shared_ptr<geometry::TriangleMesh> mesh_ptr =
+                                selection_polygon_ptr_->CropTriangleMesh(
+                                        mesh, view_control)) {
+                        mesh = *mesh_ptr;
+                    } else {
+                        utility::LogError(
+                                "Internal error: CropTriangleMesh returned "
+                                "nullptr.");
+                    }
                     editing_geometry_renderer_ptr_->UpdateGeometry();
-                    const char *filename;
-                    const char *pattern[1] = {"*.ply"};
-                    std::string default_filename =
-                            default_directory_ + "cropped_" +
-                            std::to_string(crop_action_count_ + 1) + ".ply";
-                    if (use_dialog_) {
-                        filename = tinyfd_saveFileDialog(
-                                "Mesh file", default_filename.c_str(), 1,
-                                pattern, "Polygon File Format (*.ply)");
-                    } else {
-                        filename = default_filename.c_str();
-                    }
-                    if (filename == NULL) {
-                        utility::LogWarning(
-                                "No filename is given. Abort saving.");
-                    } else {
-                        SaveCroppingResult(filename);
-                        crop_action_count_++;
-                    }
                     view_control.ToggleLocking();
                     InvalidateSelectionPolygon();
                     InvalidatePicking();
@@ -445,6 +440,50 @@ void VisualizerWithEditing::KeyPressCallback(
             } else {
                 Visualizer::KeyPressCallback(window, key, scancode, action,
                                              mods);
+            }
+            break;
+        case GLFW_KEY_S:
+            if (editing_geometry_ptr_ &&
+                editing_geometry_ptr_->GetGeometryType() ==
+                        geometry::Geometry::GeometryType::PointCloud) {
+                const char *filename;
+                const char *pattern[1] = {"*.ply"};
+                std::string default_filename =
+                        default_directory_ + "cropped_" +
+                        std::to_string(crop_action_count_ + 1) + ".ply";
+                if (use_dialog_) {
+                    filename = tinyfd_saveFileDialog(
+                            "geometry::PointCloud file",
+                            default_filename.c_str(), 1, pattern,
+                            "Polygon File Format (*.ply)");
+                } else {
+                    filename = default_filename.c_str();
+                }
+                if (filename == NULL) {
+                    utility::LogWarning("No filename is given. Abort saving.");
+                } else {
+                    SaveCroppingResult(filename);
+                    crop_action_count_++;
+                }
+            } else {
+                const char *filename;
+                const char *pattern[1] = {"*.ply"};
+                std::string default_filename =
+                        default_directory_ + "cropped_" +
+                        std::to_string(crop_action_count_ + 1) + ".ply";
+                if (use_dialog_) {
+                    filename = tinyfd_saveFileDialog(
+                            "Mesh file", default_filename.c_str(), 1, pattern,
+                            "Polygon File Format (*.ply)");
+                } else {
+                    filename = default_filename.c_str();
+                }
+                if (filename == NULL) {
+                    utility::LogWarning("No filename is given. Abort saving.");
+                } else {
+                    SaveCroppingResult(filename);
+                    crop_action_count_++;
+                }
             }
             break;
         case GLFW_KEY_MINUS:

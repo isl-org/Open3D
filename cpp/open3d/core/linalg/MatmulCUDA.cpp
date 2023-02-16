@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@
 #include "open3d/core/linalg/BlasWrapper.h"
 #include "open3d/core/linalg/LinalgUtils.h"
 #include "open3d/core/linalg/Matmul.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
@@ -38,8 +38,9 @@ void MatmulCUDA(void* A_data,
                 int64_t m,
                 int64_t k,
                 int64_t n,
-                Dtype dtype) {
-    cublasHandle_t handle = CuBLASContext::GetInstance()->GetHandle();
+                Dtype dtype,
+                const Device& device) {
+    cublasHandle_t handle = CuBLASContext::GetInstance().GetHandle(device);
     DISPATCH_LINALG_DTYPE_TO_TEMPLATE(dtype, [&]() {
         scalar_t alpha = 1, beta = 0;
         OPEN3D_CUBLAS_CHECK(

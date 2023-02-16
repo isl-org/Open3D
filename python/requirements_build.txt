@@ -1,0 +1,3 @@
+setuptools>=50.3.2
+wheel>=0.37.1
+yapf==0.30.0

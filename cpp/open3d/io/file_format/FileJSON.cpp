@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@
 #include <sstream>
 
 #include "open3d/io/IJsonConvertibleIO.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 
@@ -42,7 +42,7 @@ bool ReadIJsonConvertibleFromJSONStream(std::istream &json_stream,
     Json::Value root_object;
     Json::CharReaderBuilder builder;
     builder["collectComments"] = false;
-    JSONCPP_STRING errs;
+    Json::String errs;
     bool is_parse_successful =
             parseFromStream(builder, json_stream, &root_object, &errs);
     if (!is_parse_successful) {

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 #include "open3d/geometry/Qhull.h"
 #include "open3d/geometry/TetraMesh.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {
@@ -113,22 +113,23 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
         double dz = tmp.determinant();
         // clang-format on
         if (a == 0) {
-            utility::LogError(
+            utility::LogWarning(
                     "[CreateFromPointCloudAlphaShape] invalid tetra in "
                     "TetraMesh");
-        }
-        double r = std::sqrt(dx * dx + dy * dy + dz * dz - 4 * a * c) /
-                   (2 * std::abs(a));
+        } else {
+            double r = std::sqrt(dx * dx + dy * dy + dz * dz - 4 * a * c) /
+                       (2 * std::abs(a));
 
-        if (r <= alpha) {
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(0), tetra(1), tetra(2)));
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(0), tetra(1), tetra(3)));
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(0), tetra(2), tetra(3)));
-            mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
-                    tetra(1), tetra(2), tetra(3)));
+            if (r <= alpha) {
+                mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
+                        tetra(0), tetra(1), tetra(2)));
+                mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
+                        tetra(0), tetra(1), tetra(3)));
+                mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
+                        tetra(0), tetra(2), tetra(3)));
+                mesh->triangles_.push_back(TriangleMesh::GetOrderedTriangle(
+                        tetra(1), tetra(2), tetra(3)));
+            }
         }
     }
     utility::LogDebug(

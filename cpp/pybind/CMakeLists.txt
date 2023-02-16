@@ -1,117 +1,59 @@
-if (NOT PYTHON_EXECUTABLE)
-    message(FATAL_ERROR "PYTHON_EXECUTABLE should be set in top level CMakeLists.txt")
+if (NOT Python3_EXECUTABLE)
+    message(FATAL_ERROR "Python 3 not found in top level file")
 endif()
-
-# Detect whether `npm` is installed. Jupyter support will only be enabled if
-# `npm` is found.
-find_program(NPM "npm")
-if (BUILD_JUPYTER_EXTENSION)
-    if (NOT NPM)
-        message(WARNING "Cannot find npm. Jupyter support will be disabled.")
-        set(BUILD_JUPYTER_EXTENSION OFF)
-    else()
-        message(STATUS "npm found at: ${NPM}. Jupyter support will be enabled.")
-    endif()
-endif()
-message(STATUS "BUILD_JUPYTER_EXTENSION is set to ${BUILD_JUPYTER_EXTENSION}")
 
 # We need to get python version to configure some meta files
-execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d.%d' % (sys.version_info.major, sys.version_info.minor))"
-    OUTPUT_VARIABLE PYTHON_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
+set(PYTHON_VERSION "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
+
+
+pybind11_add_module(pybind)
+
+add_subdirectory(camera)
+add_subdirectory(core)
+add_subdirectory(data)
+add_subdirectory(geometry)
+add_subdirectory(io)
+add_subdirectory(ml)
+add_subdirectory(pipelines)
+add_subdirectory(t)
+add_subdirectory(t/geometry)
+add_subdirectory(t/io)
+add_subdirectory(t/pipelines)
+add_subdirectory(utility)
+add_subdirectory(visualization)
+
+target_sources(pybind PRIVATE
+    docstring.cpp
+    open3d_pybind.cpp
+    pybind_utils.cpp
 )
-message(STATUS "Using Python version: ${PYTHON_VERSION}")
-
-execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print('%d' % (sys.version_info.major,))"
-    OUTPUT_VARIABLE PYTHON_VERSION_MAJOR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-message(STATUS "Using Python version major: ${PYTHON_VERSION_MAJOR}")
-
-if (${PYTHON_VERSION_MAJOR} EQUAL 2)
-    message(FATAL_ERROR "Python 2 is no longer supported. Please check your \
-            your Python version with `python --version`. To use Python 3, do \
-            one of the following: \
-            (1) activate a Python 3 virtual environment; \
-            (2) specify the Python path explicitly with -DPYTHON_EXECUTABLE=/path/to/python3; \
-            (3) add Python 3 to the PATH environment variable.")
-endif()
-
-set(PACKAGE_NAME pybind)
-
-file(GLOB_RECURSE PY_ALL_SOURCE_FILES "*.cpp")
-
-if (NOT BUILD_GUI)
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/gui/gui.cpp")
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/rendering/rendering.cpp")
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/visualization/o3dvisualizer.cpp")
-endif()
-
-if (NOT BUILD_AZURE_KINECT)
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/io/sensor.cpp")
-endif()
-
-if (NOT BUILD_RPC_INTERFACE)
-    list(REMOVE_ITEM PY_ALL_SOURCE_FILES
-        "${CMAKE_CURRENT_SOURCE_DIR}/io/rpc.cpp"
-        )
-endif()
-
-# NO_EXTRAS disables LTO which causes problems during link with nvcc 9.x
-if ( CMAKE_CUDA_COMPILER_VERSION VERSION_LESS "10.0.0" )
-    pybind11_add_module(${PACKAGE_NAME} NO_EXTRAS
-        ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
-    )
-else ()
-    pybind11_add_module(${PACKAGE_NAME}
-        ${PY_ALL_HEADER_FILES} ${PY_ALL_SOURCE_FILES}
-    )
-endif ()
 
 # Include with `#include "pybind/geometry/xxx.h`
-target_include_directories(${PACKAGE_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
+target_include_directories(pybind PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 
 # Suppress Pybind11 warnings
-target_include_directories(${PACKAGE_NAME} SYSTEM PRIVATE
+target_include_directories(pybind SYSTEM PRIVATE
     ${PYBIND11_INCLUDE_DIR}
     ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
-open3d_set_global_properties(${PACKAGE_NAME})
 
-# The Python headers won't be included outside the project, so it is okay to
-# use the target_compile_definitions approach. Otherwise, use configure_file.
-if (BUILD_AZURE_KINECT)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_AZURE_KINECT)
-endif()
-if (BUILD_LIBREALSENSE)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_LIBREALSENSE)
-endif()
-if (BUILD_GUI)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE BUILD_GUI)
-endif()
-if (WITH_FAISS)
-    target_compile_definitions(${PACKAGE_NAME} PRIVATE WITH_FAISS)
-endif()
+open3d_show_and_abort_on_warning(pybind)
+open3d_set_global_properties(pybind)
 
-target_link_libraries(${PACKAGE_NAME} PRIVATE ${CMAKE_PROJECT_NAME})
 if (WIN32)
-    target_link_options(${PACKAGE_NAME} PUBLIC "/force:multiple")
+    target_link_options(pybind PUBLIC "/force:multiple")
 endif()
+
+target_link_libraries(pybind PRIVATE Open3D::Open3D)
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
 # `build/lib/${CMAKE_BUILD_TYPE}/Python/{cpu|cuda}`
 set(PYTHON_COMPILED_MODULE_DIR
     "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Python/$<IF:$<BOOL:${BUILD_CUDA_MODULE}>,cuda,cpu>")
-set_target_properties(${PACKAGE_NAME} PROPERTIES
+set_target_properties(pybind PROPERTIES
                       FOLDER "Python"
                       LIBRARY_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}"
                       ARCHIVE_OUTPUT_DIRECTORY "${PYTHON_COMPILED_MODULE_DIR}")
@@ -120,11 +62,33 @@ set_target_properties(${PACKAGE_NAME} PROPERTIES
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
 set(PYTHON_EXTRA_LIBRARIES "")
 if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY}
+        ${MESA_CPU_GL_LIBRARY})
+endif()
+if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
+# Package libomp v11.1.0, if it is not installed. Later version cause crash on
+# x86_64 if PyTorch is already imported. Case of shared libopen3d.dylib is not
+# handled.
+# https://github.com/microsoft/LightGBM/issues/4229
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${OpenMP_libomp_LIBRARY})
+    execute_process(COMMAND brew list --versions libomp
+        COMMAND cut "-d\ " -f2
+        OUTPUT_VARIABLE libomp_ver OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(libomp_ver VERSION_GREATER_EQUAL 12.0.0)
+        message(SEND_ERROR "libomp ${libomp_ver} found, which can lead to interoperability problems with other Python libraries using libomp.  Please use libomp v11.1 to build Open3D.")
+    endif()
+    file(GENERATE OUTPUT update_pybind_libomp.sh
+        CONTENT [=[libomp_library=$(dyld_info -dependents "$<TARGET_FILE:pybind>" |
+grep libomp | tr -d '[:space:]')
+install_name_tool -change $libomp_library @loader_path/../libomp.dylib \
+"$<TARGET_FILE:pybind>"]=])
+    add_custom_command(TARGET pybind POST_BUILD
+        COMMAND bash update_pybind_libomp.sh
+        COMMENT "Updating pybind to use packaged libomp")
 endif()
 
 # Use `make python-package` to create the python package in the build directory
-# The python package will be created at PYTHON_PACKAGE_DIR. It contains:
+# The python package will be created at PYTHON_PACKAGE_DST_DIR. It contains:
 # 1) Pure-python code and misc files, copied from python/package
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 # 3) Configured files and supporting files
@@ -135,15 +99,15 @@ message(STATUS "PYPI_PACKAGE_NAME: ${PYPI_PACKAGE_NAME}")
 
 
 # add the open3d python module first
-set( COMPILED_MODULE_PATH_LIST $<TARGET_FILE:${PACKAGE_NAME}> )
+set(COMPILED_MODULE_PATH_LIST $<TARGET_FILE:pybind>)
 
 set(GENERATED_OUTPUTS "")
 
 # add additional optional compiled modules
-if ( BUILD_TENSORFLOW_OPS )
-    list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
-    add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
-            COMMAND ${PYTHON_EXECUTABLE} generate_tf_ops_wrapper.py --input "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/tf/python/ops/ops.py.in" --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops>
+if (BUILD_TENSORFLOW_OPS)
+    list(APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
+    add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
+            COMMAND ${Python3_EXECUTABLE} generate_tf_ops_wrapper.py --input "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/tf/python/ops/ops.py.in" --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops>
                         DEPENDS open3d_tf_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py" )
@@ -151,13 +115,13 @@ if ( BUILD_TENSORFLOW_OPS )
     list(APPEND GENERATED_OUTPUTS "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py")
     # find tensorflow to get some info for the _build_config.py
     find_package(Tensorflow)
-endif ()
+endif()
 
 # add additional optional compiled modules
-if ( BUILD_PYTORCH_OPS )
+if (BUILD_PYTORCH_OPS)
     list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_torch_ops> )
     add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/torch/python/ops.py" "${CMAKE_BINARY_DIR}/lib/ml/torch/python/return_types.py"
-            COMMAND ${PYTHON_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow"
+            COMMAND ${Python3_EXECUTABLE} generate_torch_ops_wrapper.py --input_ops_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/ops.py.in" --input_return_types_py_in "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/torch/python/return_types.py.in" --output_dir "${CMAKE_BINARY_DIR}/lib/ml/torch/python/" --lib $<TARGET_FILE:open3d_torch_ops> --tensorflow_ops_dir "${CMAKE_CURRENT_SOURCE_DIR}/../open3d/ml/tensorflow"
                         DEPENDS open3d_torch_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Generating python ops.py and return_types.py" )
@@ -166,13 +130,12 @@ if ( BUILD_PYTORCH_OPS )
     # get the pytorch version information again here for _build_config.py
     # because it is not safe to call find_package(Pytorch) again.
     execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} "-c"
+        COMMAND ${Python3_EXECUTABLE} "-c"
                 "import torch; print(torch.__version__, end='')"
         OUTPUT_VARIABLE Pytorch_VERSION)
-endif ()
+endif()
 
-if ( BUNDLE_OPEN3D_ML )
-
+if (BUNDLE_OPEN3D_ML)
     find_path(
         OPEN3D_ML_ROOT
         NAMES set_open3d_ml_root.sh
@@ -194,16 +157,21 @@ if ( BUNDLE_OPEN3D_ML )
         # do not install
         INSTALL_COMMAND ""
         )
-    list(APPEND GENERATED_OUTPUTS open3d_ml )
-endif ()
+    list(APPEND GENERATED_OUTPUTS open3d_ml)
+endif()
 
 configure_file("_build_config.py.in"
-               "${CMAKE_BINARY_DIR}/lib/_build_config.py")
+               "${CMAKE_BINARY_DIR}/lib/_build_config.py.in")
+file(GENERATE
+    OUTPUT "${PYTHON_COMPILED_MODULE_DIR}/_build_config.py"
+    INPUT "${CMAKE_BINARY_DIR}/lib/_build_config.py.in"
+)
 
 add_custom_target(python-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_SRC_DIR=${PYTHON_PACKAGE_SRC_DIR}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
+            -DPYTHON_COMPILED_MODULE_DIR=${PYTHON_COMPILED_MODULE_DIR}
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
             "-DPYTHON_EXTRA_LIBRARIES=${PYTHON_EXTRA_LIBRARIES}"
@@ -215,7 +183,7 @@ add_custom_target(python-package
             -DBUILD_GUI=${BUILD_GUI}
             -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
-            -DPROJECT_HOME=${PROJECT_HOME}
+            -DPROJECT_HOMEPAGE_URL=${PROJECT_HOMEPAGE_URL}
             -DPROJECT_DOCS=${PROJECT_DOCS}
             -DPROJECT_CODE=${PROJECT_CODE}
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
@@ -229,7 +197,7 @@ add_custom_target(python-package
 
 # Use `make pip-package` to create the pip package in the build directory
 add_custom_target(pip-package
-    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
+    COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
     COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
@@ -240,6 +208,7 @@ add_custom_target(pip-package
 add_custom_target(install-pip-package
     COMMAND ${CMAKE_COMMAND}
             -DPYTHON_PACKAGE_DST_DIR=${PYTHON_PACKAGE_DST_DIR}
+            -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
             -P ${CMAKE_CURRENT_SOURCE_DIR}/make_install_pip_package.cmake
     DEPENDS pip-package
 )
@@ -251,31 +220,7 @@ add_custom_target(install-pip-package
 # for deployment.
 # Ref: https://stackoverflow.com/a/33791008/1255535
 add_custom_target(install-python-package
-    COMMAND ${PYTHON_EXECUTABLE} setup.py install --single-version-externally-managed --root=/
-    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
-    DEPENDS python-package
-)
-
-# Use `make conda-package` to create conda package in the build directory
-# Note that we don't provide `make install-conda-package` similar to pip. This
-# is becuase:
-#     1) `make install-pip-package` works in conda environment for local build
-#     2) `make conda-package` is mainly for internal use to distribute conda
-add_custom_target(conda-package
-    COMMAND conda-build conda_meta --channel conda-forge --output-folder conda_package
-    COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
-    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
-    DEPENDS python-package
-)
-
-# Make pip and conda package in one command. The python-package target clears
-# the ${PYTHON_PACKAGE_DST_DIR}, so if we make pip and conda package one-by-one,
-# the previous one will be deleted.
-add_custom_target(pip-conda-package
-    COMMAND ${PYTHON_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
-    COMMAND conda-build conda_meta --channel conda-forge --output-folder conda_package
-    COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
-    COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
+    COMMAND ${Python3_EXECUTABLE} setup.py install --single-version-externally-managed --root=/
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
 )

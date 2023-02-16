@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,10 +28,18 @@
 
 #include <zmq.hpp>
 
+#include "open3d/io/rpc/DummyMessageProcessor.h"
 #include "open3d/io/rpc/Messages.h"
 
 namespace open3d {
 namespace io {
-namespace rpc {}  // namespace rpc
+namespace rpc {
+
+DummyReceiver::DummyReceiver(const std::string& address, int timeout)
+    : ZMQReceiver(address, timeout) {
+    SetMessageProcessor(std::make_shared<DummyMessageProcessor>());
+}
+
+}  // namespace rpc
 }  // namespace io
 }  // namespace open3d

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,12 +27,6 @@
 #include "open3d/Open3D.h"
 
 using namespace open3d;
-
-void PrintHelp() {
-    PrintOpen3DVersion();
-    utility::LogInfo("Usage :");
-    utility::LogInfo("    > RGBDOdometry [color1] [depth1] [color2] [depth2]");
-}
 
 std::shared_ptr<geometry::RGBDImage> ReadRGBDImage(
         const char* color_filename,
@@ -63,13 +57,28 @@ std::shared_ptr<geometry::RGBDImage> ReadRGBDImage(
     return rgbd_image;
 }
 
+void PrintHelp() {
+    using namespace open3d;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > RGBDOdometry [color1] [depth1] [color2] [depth2]");
+    // clang-format on
+    utility::LogInfo("");
+}
+
 int main(int argc, char* argv[]) {
-    if (argc == 1 || utility::ProgramOptionExists(argc, argv, "--help") ||
-        argc != 5) {
+    using namespace open3d;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
+    if (argc != 5 ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
         PrintHelp();
         return 1;
     }
-    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+
     camera::PinholeCameraIntrinsic intrinsic = camera::PinholeCameraIntrinsic(
             camera::PinholeCameraIntrinsicParameters::PrimeSenseDefault);
     bool visualize = true;

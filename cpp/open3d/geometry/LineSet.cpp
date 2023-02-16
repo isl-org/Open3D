@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,8 +56,12 @@ AxisAlignedBoundingBox LineSet::GetAxisAlignedBoundingBox() const {
     return AxisAlignedBoundingBox::CreateFromPoints(points_);
 }
 
-OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
-    return OrientedBoundingBox::CreateFromPoints(points_);
+OrientedBoundingBox LineSet::GetOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(points_, robust);
+}
+
+OrientedBoundingBox LineSet::GetMinimalOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPointsMinimal(points_, robust);
 }
 
 LineSet &LineSet::Transform(const Eigen::Matrix4d &transformation) {

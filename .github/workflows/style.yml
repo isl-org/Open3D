@@ -1,4 +1,4 @@
-name: Style check
+name: Style Check
 
 on:
   workflow_dispatch:
@@ -8,28 +8,23 @@ on:
   pull_request:
     types: [opened, reopened, synchronize] # Rebuild on new pushes to PR
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   style-check:
-    runs-on: ubuntu-20.04     # No need for cmake repo
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
-        with:
-          submodules: true
+        uses: actions/checkout@v3
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.6
+          python-version: '3.7'
       - name: Install dependencies
         run: |
-          ./util/install_deps_ubuntu.sh assume-yes
-          sudo apt-get install --yes cmake
-          sudo apt-get install --yes clang-7
-          sudo apt-get install --yes clang-format-10
-          python -m pip install -U yapf==0.30.0 nbformat
+          pip install -U clang-format~=10.0.0 yapf==0.30.0 nbformat
       - name: Run style check
         run: |
-          mkdir build
-          cd build
-          cmake ..
-          make check-style
+          python util/check_style.py

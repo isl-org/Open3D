@@ -15,10 +15,13 @@ Geometry
     file_io
     pointcloud_outlier_removal
     voxelization
+    octree
     surface_reconstruction
     transformation
     mesh_deformation
     iss_keypoint_detector
+    ray_casting
+    distance_queries
 
 .. toctree::
     :caption: Interface

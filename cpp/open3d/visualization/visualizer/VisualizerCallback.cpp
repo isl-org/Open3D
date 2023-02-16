@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -54,6 +54,12 @@ void Visualizer::MouseMoveCallback(GLFWwindow *window, double x, double y) {
                                          mouse_control_.mouse_position_y);
         } else if (mouse_control_.is_shift_key_down) {
             view_control_ptr_->Roll(x - mouse_control_.mouse_position_x);
+        } else if (mouse_control_.is_alt_key_down) {
+            view_control_ptr_->CameraLocalRotate(
+                    x - mouse_control_.mouse_position_x,
+                    y - mouse_control_.mouse_position_y,
+                    mouse_control_.mouse_position_x,
+                    mouse_control_.mouse_position_y);
         } else {
             view_control_ptr_->Rotate(x - mouse_control_.mouse_position_x,
                                       y - mouse_control_.mouse_position_y,
@@ -92,6 +98,8 @@ void Visualizer::MouseButtonCallback(GLFWwindow *window,
     mouse_control_.mouse_position_y = y;
     if (action == GLFW_PRESS) {
         if (button == GLFW_MOUSE_BUTTON_LEFT) {
+            view_control_ptr_->ResetCameraLocalRotate();
+
             mouse_control_.is_mouse_left_button_down = true;
             mouse_control_.is_control_key_down = (mods & GLFW_MOD_CONTROL) != 0;
             mouse_control_.is_shift_key_down = (mods & GLFW_MOD_SHIFT) != 0;

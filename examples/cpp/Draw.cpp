@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,8 +29,6 @@
 #include "open3d/Open3D.h"
 
 using namespace open3d;
-
-const std::string TEST_DIR = "../../../examples/test_data";
 
 double GetRandom() { return double(std::rand()) / double(RAND_MAX); }
 
@@ -78,12 +76,14 @@ void MultiObjects() {
     auto big_bbox = std::make_shared<geometry::AxisAlignedBoundingBox>(
             Eigen::Vector3d{-pc_rad, -3, -pc_rad},
             Eigen::Vector3d{6.0 + r, 1.0 + r, pc_rad});
+    big_bbox->color_ = {0.0, 0.0, 0.0};
     auto bbox = sphere_unlit->GetAxisAlignedBoundingBox();
     auto sphere_bbox = std::make_shared<geometry::AxisAlignedBoundingBox>(
             bbox.min_bound_, bbox.max_bound_);
     sphere_bbox->color_ = {1.0, 0.5, 0.0};
     auto lines = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             sphere_lit->GetAxisAlignedBoundingBox());
+    lines->PaintUniformColor({0.0, 1.0, 0.0});
     auto lines_colored = geometry::LineSet::CreateFromAxisAlignedBoundingBox(
             sphere_colored_lit->GetAxisAlignedBoundingBox());
     lines_colored->PaintUniformColor({0.0, 0.0, 1.0});
@@ -98,16 +98,9 @@ void Actions() {
     const char *RESULT_NAME = "Result (Poisson reconstruction)";
     const char *TRUTH_NAME = "Ground truth";
 
+    data::BunnyMesh bunny_data;
     auto bunny = std::make_shared<geometry::TriangleMesh>();
-    io::ReadTriangleMesh(TEST_DIR + "/Bunny.ply", *bunny);
-    if (bunny->vertices_.empty()) {
-        utility::LogError(
-                "Please download the Standford Bunny dataset using:\n"
-                "   cd <open3d_dir>/examples/python\n"
-                "   python -c 'from open3d_tutorial import *; "
-                "get_bunny_mesh()'");
-        return;
-    }
+    io::ReadTriangleMesh(bunny_data.GetPath(), *bunny);
 
     bunny->PaintUniformColor({1, 0.75, 0});
     bunny->ComputeVertexNormals();
@@ -181,18 +174,19 @@ void Selections() {
               << std::endl;
     std::cout << "            three points from the target." << std::endl;
 
-    const auto cloud0_path = TEST_DIR + "/ICP/cloud_bin_0.pcd";
-    const auto cloud1_path = TEST_DIR + "/ICP/cloud_bin_2.pcd";
+    data::DemoICPPointClouds demo_icp_pointclouds;
     auto source = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud(cloud0_path, *source);
+    io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *source);
     if (source->points_.empty()) {
-        utility::LogError("Could not open {}", cloud0_path);
+        utility::LogError("Could not open {}",
+                          demo_icp_pointclouds.GetPaths(0));
         return;
     }
     auto target = std::make_shared<geometry::PointCloud>();
-    io::ReadPointCloud(cloud1_path, *target);
+    io::ReadPointCloud(demo_icp_pointclouds.GetPaths(1), *target);
     if (target->points_.empty()) {
-        utility::LogError("Could not open {}", cloud1_path);
+        utility::LogError("Could not open {}",
+                          demo_icp_pointclouds.GetPaths(1));
         return;
     }
     source->PaintUniformColor({1.000, 0.706, 0.000});
@@ -273,12 +267,6 @@ void Selections() {
 }
 
 int main(int argc, char **argv) {
-    if (!utility::filesystem::DirectoryExists(TEST_DIR)) {
-        utility::LogError(
-                "This example needs to be run from the <build>/bin/examples "
-                "directory");
-    }
-
     SingleObject();
     MultiObjects();
     Actions();

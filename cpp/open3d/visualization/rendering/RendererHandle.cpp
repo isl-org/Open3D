@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -43,19 +43,19 @@ std::ostream& operator<<(std::ostream& os, const REHandle_abstract& uid) {
 
 const char* REHandle_abstract::TypeToString(EntityType type) {
     static const size_t kTypesCount = static_cast<size_t>(EntityType::Count);
-    static const size_t kTypesMapped = 13;
+    static const size_t kTypesMapped = 14;
 
     static_assert(kTypesCount == kTypesMapped,
                   "You forgot to add string value for new handle type.");
 
     static const char* kTypesMapping[kTypesMapped] = {
-            "None",       "View",
-            "Scene",      "Geometry",
-            "Light",      "IndirectLight",
-            "Skybox",     "Camera",
-            "Material",   "MaterialInstance",
-            "Texture",    "VertexBuffer",
-            "IndexBuffer"};
+            "None",         "View",
+            "Scene",        "Geometry",
+            "Light",        "IndirectLight",
+            "Skybox",       "Camera",
+            "Material",     "MaterialInstance",
+            "Texture",      "RenderTarget",
+            "VertexBuffer", "IndexBuffer"};
 
     return kTypesMapping[static_cast<size_t>(type)];
 }

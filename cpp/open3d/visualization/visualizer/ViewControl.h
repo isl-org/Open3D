@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -139,6 +139,13 @@ public:
                            double xo = 0.0,
                            double yo = 0.0);
 
+    virtual void CameraLocalTranslate(double forward, double right, double up);
+    virtual void CameraLocalRotate(double x,
+                                   double y,
+                                   double xo = 0.0,
+                                   double yo = 0.0);
+    virtual void ResetCameraLocalRotate();
+
     // Function to process rolling
     /// \param x is the distances the mouse cursor has moved.
     /// Coordinates are measured in screen coordinates relative to the top-left
@@ -218,6 +225,14 @@ protected:
     gl_util::GLMatrix4f view_matrix_;
     gl_util::GLMatrix4f model_matrix_;
     gl_util::GLMatrix4f MVP_matrix_;
+
+    Eigen::Vector3d start_local_rotate_up_;
+    Eigen::Vector3d start_local_rotate_right_;
+    Eigen::Vector3d start_local_rotate_front_;
+    Eigen::Vector3d start_local_rotate_eye_;
+    Eigen::Vector3d start_local_rotate_lookat_;
+    double local_rotate_up_accum_;
+    double local_rotate_right_accum_;
 };
 
 }  // namespace visualization

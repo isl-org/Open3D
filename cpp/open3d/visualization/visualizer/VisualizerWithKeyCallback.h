@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ namespace visualization {
 
 /// \class VisualizerWithKeyCallback
 ///
-/// \brief Visualizer with custom key callack capabilities.
+/// \brief Visualizer with custom key callback capabilities.
 class VisualizerWithKeyCallback : public Visualizer {
 public:
     typedef std::pair<int, std::function<bool(Visualizer *)>> KeyCallbackPair;

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,9 +32,9 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
-#include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/t/geometry/PointCloud.h"
-#include "open3d/t/pipelines/TransformationConverter.h"
+#include "open3d/t/pipelines/kernel/TransformationConverter.h"
+#include "open3d/t/pipelines/registration/RobustKernel.h"
 
 namespace open3d {
 
@@ -45,14 +45,6 @@ class PointCloud;
 
 namespace pipelines {
 namespace registration {
-
-/// CorrespondenceSet is a pair of tensor, where first tensor
-/// [correspondence_select_bool_] is a {N,1} bool tensor (N is the number of
-/// query points), with value true for source points having good correspondence,
-/// and false otherwise, and second [correspondence_set_] is a {C,1} shape
-/// Float32 tensor (C is the number of good correspondences), where value at
-/// [i, 1] is the corresponding index in the target, for query point [i, 1].
-typedef std::pair<core::Tensor, core::Tensor> CorrespondenceSet;
 
 enum class TransformationEstimationType {
     Unspecified = 0,
@@ -79,27 +71,36 @@ public:
     /// Compute RMSE between source and target points cloud given
     /// correspondences.
     ///
-    /// \param source Source point cloud.
-    /// \param target Target point cloud.
-    /// \param corres Correspondence set between source and target point cloud.
+    /// \param source Source point cloud. (Float32 or Float64 type).
+    /// \param target Target point cloud. (Float32 or Float64 type).
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
     virtual double ComputeRMSE(const geometry::PointCloud &source,
                                const geometry::PointCloud &target,
-                               CorrespondenceSet &corres) const = 0;
+                               const core::Tensor &correspondences) const = 0;
     /// Compute transformation from source to target point cloud given
     /// correspondences.
     ///
-    /// \param source Source point cloud.
-    /// \param target Target point cloud.
-    /// \param corres Correspondence set between source and target point cloud.
+    /// \param source Source point cloud. (Float32 or Float64 type).
+    /// \param target Target point cloud. (Float32 or Float64 type).
+    /// \param correspondences tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    /// \return transformation between source to target, a tensor of shape {4,
+    /// 4}, type Float64 on CPU device.
     virtual core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            CorrespondenceSet &corres) const = 0;
+            const core::Tensor &correspondences) const = 0;
 };
 
 /// \class TransformationEstimationPointToPoint
 ///
-/// Estimate a transformation for point to point distance.
+/// Class to estimate a transformation matrix tensor of shape {4, 4}, dtype
+/// Float64, on CPU device for point to point distance.
 class TransformationEstimationPointToPoint : public TransformationEstimation {
 public:
     // TODO: support with_scaling.
@@ -111,13 +112,34 @@ public:
             const override {
         return type_;
     };
+    /// \brief Computes RMSE (double) for PointToPoint method, between two
+    /// pointclouds, given correspondences.
+    ///
+    /// \param source Source pointcloud. (Float32 or Float64 type).
+    /// \param target Target pointcloud. (Float32 or Float64 type).
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       CorrespondenceSet &corres) const override;
+                       const core::Tensor &correspondences) const override;
+
+    /// \brief Estimates the transformation matrix for PointToPoint method,
+    /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
+    ///
+    /// \param source Source pointcloud. (Float32 or Float64 type).
+    /// \param target Target pointcloud. (Float32 or Float64 type).
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    /// \return transformation between source to target, a tensor of shape {4,
+    /// 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            CorrespondenceSet &corres) const override;
+            const core::Tensor &correspondences) const override;
 
 private:
     const TransformationEstimationType type_ =
@@ -126,29 +148,142 @@ private:
 
 /// \class TransformationEstimationPointToPlane
 ///
-/// Class to estimate a transformation for point to plane distance.
+/// Class to estimate a transformation matrix tensor of shape {4, 4}, dtype
+/// Float64, on CPU device for point to plane distance.
 class TransformationEstimationPointToPlane : public TransformationEstimation {
 public:
     /// \brief Default constructor.
     TransformationEstimationPointToPlane() {}
     ~TransformationEstimationPointToPlane() override {}
 
+    /// \brief Constructor that takes as input a RobustKernel
+    ///
+    /// \param kernel Any of the implemented statistical robust kernel for
+    /// outlier rejection.
+    explicit TransformationEstimationPointToPlane(const RobustKernel &kernel)
+        : kernel_(kernel) {}
+
 public:
     TransformationEstimationType GetTransformationEstimationType()
             const override {
         return type_;
     };
+
+    /// \brief Computes RMSE (double) for PointToPlane method, between two
+    /// pointclouds, given correspondences.
+    ///
+    /// \param source Source pointcloud. (Float32 or Float64 type).
+    /// \param target Target pointcloud. (Float32 or Float64 type). It must
+    /// contain normals of the same shape and dtype as the positions.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
     double ComputeRMSE(const geometry::PointCloud &source,
                        const geometry::PointCloud &target,
-                       CorrespondenceSet &corres) const override;
+                       const core::Tensor &correspondences) const override;
+
+    /// \brief Estimates the transformation matrix for PointToPlane method,
+    /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
+    ///
+    /// \param source Source pointcloud. (Float32 or Float64 type).
+    /// \param target Target pointcloud. (Float32 or Float64 type). It must
+    /// contain normals of the same shape and dtype as the positions.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    /// \return transformation between source to target, a tensor
+    /// of shape {4, 4}, type Float64 on CPU device.
     core::Tensor ComputeTransformation(
             const geometry::PointCloud &source,
             const geometry::PointCloud &target,
-            CorrespondenceSet &corres) const override;
+            const core::Tensor &correspondences) const override;
+
+public:
+    /// RobustKernel for outlier rejection.
+    RobustKernel kernel_ = RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0);
 
 private:
     const TransformationEstimationType type_ =
             TransformationEstimationType::PointToPlane;
+};
+
+/// \class TransformationEstimationForColoredICP
+///
+/// This is implementation of following paper
+/// J. Park, Q.-Y. Zhou, V. Koltun,
+/// Colored Point Cloud Registration Revisited, ICCV 2017.
+///
+/// Class to estimate a transformation matrix tensor of shape {4, 4}, dtype
+/// Float64, on CPU device for colored-icp method.
+class TransformationEstimationForColoredICP : public TransformationEstimation {
+public:
+    ~TransformationEstimationForColoredICP() override{};
+
+    /// \brief Constructor.
+    ///
+    /// \param lamda_geometric  `λ ∈ [0,1]` in the overall energy `λEG +
+    /// (1−λ)EC`. Refer the documentation of Colored-ICP for more information.
+    /// \param kernel (optional) Any of the implemented statistical robust
+    /// kernel for outlier rejection.
+    explicit TransformationEstimationForColoredICP(
+            double lambda_geometric = 0.968,
+            const RobustKernel &kernel =
+                    RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0))
+        : lambda_geometric_(lambda_geometric), kernel_(kernel) {
+        if (lambda_geometric_ < 0 || lambda_geometric_ > 1.0) {
+            lambda_geometric_ = 0.968;
+        }
+    }
+
+    TransformationEstimationType GetTransformationEstimationType()
+            const override {
+        return type_;
+    };
+
+public:
+    /// \brief Computes RMSE (double) for ColoredICP method, between two
+    /// pointclouds, given correspondences.
+    ///
+    /// \param source Source pointcloud. (Float32 or Float64 type).
+    /// \param target Target pointcloud. (Float32 or Float64 type). It must
+    /// contain normals, colors and color_gradients of the same shape and dtype
+    /// as the positions.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    double ComputeRMSE(const geometry::PointCloud &source,
+                       const geometry::PointCloud &target,
+                       const core::Tensor &correspondences) const override;
+
+    /// \brief Estimates the transformation matrix for ColoredICP method,
+    /// a tensor of shape {4, 4}, and dtype Float64 on CPU device.
+    ///
+    /// \param source Source pointcloud. (Float32 or Float64 type).
+    /// \param target Target pointcloud. (Float32 or Float64 type). It must
+    /// contain normals, colors and color_gradients of the same shape and dtype
+    /// as the positions.
+    /// \param correspondences Tensor of type Int64 containing indices of
+    /// corresponding target points, where the value is the target index and the
+    /// index of the value itself is the source index. It contains -1 as value
+    /// at index with no correspondence.
+    /// \return transformation between source to target, a tensor of shape {4,
+    /// 4}, type Float64 on CPU device.
+    core::Tensor ComputeTransformation(
+            const geometry::PointCloud &source,
+            const geometry::PointCloud &target,
+            const core::Tensor &correspondences) const override;
+
+public:
+    double lambda_geometric_ = 0.968;
+    /// RobustKernel for outlier rejection.
+    RobustKernel kernel_ = RobustKernel(RobustKernelMethod::L2Loss, 1.0, 1.0);
+
+private:
+    const TransformationEstimationType type_ =
+            TransformationEstimationType::ColoredICP;
 };
 
 }  // namespace registration

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -85,8 +85,28 @@ public:
     virtual Eigen::Vector3d GetMinBound() const override;
     virtual Eigen::Vector3d GetMaxBound() const override;
     virtual Eigen::Vector3d GetCenter() const override;
+
+    /// Creates the axis-aligned bounding box around the vertices of the object.
+    /// Further details in AxisAlignedBoundingBox::CreateFromPoints()
     virtual AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    virtual OrientedBoundingBox GetOrientedBoundingBox() const override;
+
+    /// Creates an oriented bounding box around the vertices of the object.
+    /// Further details in OrientedBoundingBox::CreateFromPoints()
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    virtual OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override;
+
+    /// Creates the minimal oriented bounding box around the vertices of the
+    /// object. Further details in
+    /// OrientedBoundingBox::CreateFromPointsMinimal()
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    virtual OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
+
     virtual MeshBase &Transform(const Eigen::Matrix4d &transformation) override;
     virtual MeshBase &Translate(const Eigen::Vector3d &translation,
                                 bool relative = true) override;

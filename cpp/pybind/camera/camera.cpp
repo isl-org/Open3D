@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -42,10 +42,9 @@ void pybind_camera_classes(py::module &m) {
     py::detail::bind_default_constructor<PinholeCameraIntrinsic>(pinhole_intr);
     py::detail::bind_copy_functions<PinholeCameraIntrinsic>(pinhole_intr);
     pinhole_intr
-            .def(py::init([](int w, int h, double fx, double fy, double cx,
-                             double cy) {
-                     return new PinholeCameraIntrinsic(w, h, fx, fy, cx, cy);
-                 }),
+            .def(py::init<int, int, const Eigen::Matrix3d>(), "width"_a,
+                 "height"_a, "intrinsic_matrix"_a)
+            .def(py::init<int, int, double, double, double, double>(),
                  "width"_a, "height"_a, "fx"_a, "fy"_a, "cx"_a, "cy"_a)
             .def(py::init([](PinholeCameraIntrinsicParameters param) {
                      return new PinholeCameraIntrinsic(param);

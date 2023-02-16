@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,23 +26,30 @@
 
 #include "open3d/Open3D.h"
 
-int main(int argc, char **argv) {
+void PrintHelp() {
     using namespace open3d;
-    using namespace flann;
+
+    PrintOpen3DVersion();
+    // clang-format off
+    utility::LogInfo("Usage:");
+    utility::LogInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]");
+    utility::LogInfo("      The program will :");
+    utility::LogInfo("      1. load the pointcloud in [filename].");
+    utility::LogInfo("      2. visualize the point cloud.");
+    utility::LogInfo("      3. if a save method is specified, write the point cloud into data.pcd.");
+    // clang-format on
+    utility::LogInfo("");
+}
+
+int main(int argc, char* argv[]) {
+    using namespace open3d;
 
     utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
 
-    if (argc < 2) {
-        PrintOpen3DVersion();
-        // clang-format off
-        utility::LogInfo("Usage:");
-        utility::LogInfo("    > PCDFileFormat [filename] [ascii|binary|compressed]");
-        utility::LogInfo("    The program will :");
-        utility::LogInfo("    1. load the pointcloud in [filename].");
-        utility::LogInfo("    2. visualize the point cloud.");
-        utility::LogInfo("    3. if a save method is specified, write the point cloud into data.pcd.");
-        // clang-format on
-        return 0;
+    if (!(argc == 2 || argc == 3) ||
+        utility::ProgramOptionExistsAny(argc, argv, {"-h", "--help"})) {
+        PrintHelp();
+        return 1;
     }
 
     auto cloud_ptr = io::CreatePointCloudFromFile(argv[1]);

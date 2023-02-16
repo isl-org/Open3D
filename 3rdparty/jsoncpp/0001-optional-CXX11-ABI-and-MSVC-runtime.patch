@@ -1,0 +1,89 @@
+From c597fe35cc069b5bbfeecf8c75b5ef444a3fc81c Mon Sep 17 00:00:00 2001
+From: Yixing Lao <yixing.lao@gmail.com>
+Date: Sun, 17 Jan 2021 17:27:53 -0800
+Subject: [PATCH] optional CXX11 ABI and MSVC runtime
+
+---
+ CMakeLists.txt              | 11 +++++++++++
+ src/lib_json/CMakeLists.txt | 15 +++++++++++++++
+ 2 files changed, 26 insertions(+)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 51b74fc..b27e7e5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -22,6 +22,10 @@ else()
+     set(JSONCPP_CMAKE_POLICY_VERSION "${JSONCPP_NEWEST_VALIDATED_POLICIES_VERSION}")
+ endif()
+ cmake_policy(VERSION ${JSONCPP_CMAKE_POLICY_VERSION})
++# For CMAKE_MSVC_RUNTIME_LIBRARY.
++if(POLICY CMP0091)
++    cmake_policy(SET CMP0091 NEW)
++endif()
+ #
+ # Now enumerate specific policies newer than JSONCPP_NEWEST_VALIDATED_POLICIES_VERSION
+ # that may need to be individually set to NEW/OLD
+@@ -82,6 +86,8 @@ option(JSONCPP_WITH_STRICT_ISO "Issue all the warnings demanded by strict ISO C
+ option(JSONCPP_WITH_PKGCONFIG_SUPPORT "Generate and install .pc files" ON)
+ option(JSONCPP_WITH_CMAKE_PACKAGE "Generate and install cmake package files" ON)
+ option(JSONCPP_WITH_EXAMPLE "Compile JsonCpp example" OFF)
++option(JSONCPP_USE_CXX11_ABI "Set -D_GLIBCXX_USE_CXX11_ABI=1." ON)
++option(JSONCPP_STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime" OFF)
+ option(BUILD_SHARED_LIBS "Build jsoncpp_lib as a shared library." ON)
+ option(BUILD_STATIC_LIBS "Build jsoncpp_lib as a static library." ON)
+ option(BUILD_OBJECT_LIBS "Build jsoncpp_lib as a object library." ON)
+@@ -120,6 +126,11 @@ if(MSVC)
+     # Only enabled in debug because some old versions of VS STL generate
+     # unreachable code warning when compiled in release configuration.
+     add_compile_options($<$<CONFIG:Debug>:/W4>)
++
++    # This needs cmake_policy (SET CMP0091 NEW).
++    if (JSONCPP_STATIC_WINDOWS_RUNTIME)
++        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
++    endif()
+ endif()
+ 
+ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+diff --git a/src/lib_json/CMakeLists.txt b/src/lib_json/CMakeLists.txt
+index af26476..11983d1 100644
+--- a/src/lib_json/CMakeLists.txt
++++ b/src/lib_json/CMakeLists.txt
+@@ -125,6 +125,11 @@ if(BUILD_SHARED_LIBS)
+ 
+     set(SHARED_LIB ${PROJECT_NAME}_lib)
+     add_library(${SHARED_LIB} SHARED ${PUBLIC_HEADERS} ${JSONCPP_SOURCES})
++    if(JSONCPP_USE_CXX11_ABI)
++        target_compile_definitions(${SHARED_LIB} PRIVATE _GLIBCXX_USE_CXX11_ABI=1)
++    else()
++        target_compile_definitions(${SHARED_LIB} PRIVATE _GLIBCXX_USE_CXX11_ABI=0)
++    endif()
+     set_target_properties(${SHARED_LIB} PROPERTIES
+         OUTPUT_NAME jsoncpp
+         VERSION ${PROJECT_VERSION}
+@@ -153,6 +158,11 @@ endif()
+ if(BUILD_STATIC_LIBS)
+     set(STATIC_LIB ${PROJECT_NAME}_static)
+     add_library(${STATIC_LIB} STATIC ${PUBLIC_HEADERS} ${JSONCPP_SOURCES})
++    if(JSONCPP_USE_CXX11_ABI)
++        target_compile_definitions(${STATIC_LIB} PRIVATE _GLIBCXX_USE_CXX11_ABI=1)
++    else()
++        target_compile_definitions(${STATIC_LIB} PRIVATE _GLIBCXX_USE_CXX11_ABI=0)
++    endif()
+ 
+     # avoid name clashes on windows as the shared import lib is alse named jsoncpp.lib
+     if(NOT DEFINED STATIC_SUFFIX AND BUILD_SHARED_LIBS)
+@@ -185,6 +195,11 @@ endif()
+ if(BUILD_OBJECT_LIBS)
+     set(OBJECT_LIB ${PROJECT_NAME}_object)
+     add_library(${OBJECT_LIB} OBJECT ${PUBLIC_HEADERS} ${JSONCPP_SOURCES})
++    if(JSONCPP_USE_CXX11_ABI)
++        target_compile_definitions(${OBJECT_LIB} PRIVATE _GLIBCXX_USE_CXX11_ABI=1)
++    else()
++        target_compile_definitions(${OBJECT_LIB} PRIVATE _GLIBCXX_USE_CXX11_ABI=0)
++    endif()
+ 
+     set_target_properties(${OBJECT_LIB} PROPERTIES
+         OUTPUT_NAME jsoncpp
+-- 
+2.17.1
+

@@ -1,69 +1,66 @@
+open3d_ispc_add_executable(tests)
 
-cmake_minimum_required(VERSION 3.0)
-# Overide policy for hidden symbol visibility
-if(POLICY CMP0063)
-    cmake_policy(SET CMP0063 NEW)
-endif()
+add_subdirectory(camera)
+add_subdirectory(core)
+add_subdirectory(data)
+add_subdirectory(geometry)
+add_subdirectory(io)
+add_subdirectory(ml)
+add_subdirectory(pipelines)
+add_subdirectory(t/geometry)
+add_subdirectory(t/io)
+add_subdirectory(t/pipelines)
+add_subdirectory(test_utility)
+add_subdirectory(utility)
+add_subdirectory(visualization)
 
-include_directories(".")
+target_sources(tests PRIVATE
+    Main.cpp
+    Tests.cpp
+)
 
-file(GLOB_RECURSE UNIT_TEST_SOURCE_FILES "*.cpp")
-
-# TODO: consider explicitly listing the files
-if (NOT BUILD_AZURE_KINECT)
-    set (EXCLUDE_DIR "io/sensor")
-    foreach (TMP_PATH ${UNIT_TEST_SOURCE_FILES})
-        string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
-        if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
-            list (REMOVE_ITEM UNIT_TEST_SOURCE_FILES ${TMP_PATH})
-        endif ()
-    endforeach(TMP_PATH)
-endif()
-
-# TODO: handle conditional compilation more systematically
-if (NOT BUILD_GUI)
-    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/visualization/rendering/.*cpp)
-endif()
-
-if (NOT BUILD_RPC_INTERFACE)
-    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/io/rpc/RemoteFunctions.cpp)
-endif()
-
-if (NOT BUILD_CUDA_MODULE)
-    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/FixedRadiusIndex.cpp)
-endif()
-
-if (NOT WITH_FAISS)
-    list(FILTER UNIT_TEST_SOURCE_FILES EXCLUDE REGEX .*/core/KnnFaiss.cpp)
-endif()
-
-add_executable(tests ${UNIT_TEST_SOURCE_FILES})
-add_definitions(-DTEST_DATA_DIR="${PROJECT_SOURCE_DIR}/examples/test_data")
+target_include_directories(tests PRIVATE ".")
 
 # If gpu not available, add "DISABLED_" to the gpu test names
-if(BUILD_CUDA_MODULE)
+if (BUILD_CUDA_MODULE)
     target_compile_definitions(tests PRIVATE GPU_CONDITIONAL_TEST_STR=) # Empty string
 else()
     target_compile_definitions(tests PRIVATE GPU_CONDITIONAL_TEST_STR=DISABLED_)
 endif()
 
-find_package(Threads)
+if (WITH_IPPICV)
+    target_compile_definitions(tests PRIVATE IPP_CONDITIONAL_TEST_STR=) # Empty string (test not disabled)
+else()
+    target_compile_definitions(tests PRIVATE IPP_CONDITIONAL_TEST_STR=DISABLED_)
+endif()
 
-target_link_libraries(tests PRIVATE Threads::Threads ${CMAKE_PROJECT_NAME} ${JSONCPP_TARGET} ${GOOGLETEST_TARGET})
+target_link_libraries(tests PRIVATE
+    Open3D::Open3D
+    Open3D::3rdparty_jsoncpp
+    Open3D::3rdparty_googletest
+    Open3D::3rdparty_threads
+    Open3D::3rdparty_vtk
+)
+
+if (TARGET Open3D::3rdparty_openmp)
+    target_link_libraries(tests PRIVATE
+        Open3D::3rdparty_openmp
+    )
+endif()
+    
+
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)
 
 if (BUILD_AZURE_KINECT)
-    # K4A headres are directly used in test. Currently we don't need to link
+    # K4A headers are directly used in test. Currently we don't need to link
     # the K4A libraries.
     target_include_directories(tests SYSTEM PRIVATE ${K4A_INCLUDE_DIR})
 endif()
 
 if (BUILD_CUDA_MODULE)
     # We still need to explicitly link against CUDA libraries.
-    # See: https://stackoverflow.com/a/48540499/1255535.
-    # Consider removing dependencies of cuda headers in the future.
-    target_link_libraries(tests PRIVATE ${CUDA_LIBRARIES})
-    target_include_directories(tests SYSTEM PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    # Consider removing dependencies of CUDA headers in the future.
+    find_package(CUDAToolkit REQUIRED)
+    target_link_libraries(tests PRIVATE CUDA::cudart)
 endif()
-

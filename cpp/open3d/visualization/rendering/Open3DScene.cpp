@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,11 +28,11 @@
 
 #include <algorithm>
 
+#include "open3d/geometry/Geometry.h"
 #include "open3d/geometry/LineSet.h"
-#include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/gui/Application.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
 
@@ -105,7 +105,9 @@ void RecreateAxis(Scene* scene,
     }
     axis_length = std::max(axis_length, 0.25 * bounds.GetCenter().norm());
     auto mesh = CreateAxisGeometry(axis_length);
-    scene->AddGeometry(kAxisObjectName, *mesh, Material());
+    MaterialRecord mat;
+    mat.shader = "defaultUnlit";
+    scene->AddGeometry(kAxisObjectName, *mesh, mat);
     // It looks awkward to have the axis cast a a shadow, and even stranger
     // to receive a shadow.
     scene->GeometryShadows(kAxisObjectName, false, false);
@@ -118,7 +120,7 @@ Open3DScene::Open3DScene(Renderer& renderer) : renderer_(renderer) {
     scene_ = renderer_.CreateScene();
     auto scene = renderer_.GetScene(scene_);
     view_ = scene->AddView(0, 0, 1, 1);
-    scene->SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
+    SetBackground({1.0f, 1.0f, 1.0f, 1.0f});
 
     SetLighting(LightingProfile::MED_SHADOWS, {0.577f, -0.577f, -0.577f});
 
@@ -135,6 +137,21 @@ Open3DScene::~Open3DScene() {
 View* Open3DScene::GetView() const {
     auto scene = renderer_.GetScene(scene_);
     return scene->GetView(view_);
+}
+
+void Open3DScene::SetViewport(std::int32_t x,
+                              std::int32_t y,
+                              std::uint32_t width,
+                              std::uint32_t height) {
+    // Setup the view in which we render to a texture. Since this is just a
+    // texture, we want our viewport to be the entire texture.
+    auto view = GetView();
+    // Since we are rendering into a texture (EnableViewCaching(true) below),
+    // we need to use the entire texture; the viewport passed in is the viewport
+    // with respect to the window, and we are setting the viewport with respect
+    // to the render target here.
+    view->SetViewport(0, 0, width, height);
+    view->EnableViewCaching(true);
 }
 
 void Open3DScene::ShowSkybox(bool enable) {
@@ -155,6 +172,16 @@ void Open3DScene::SetBackground(const Eigen::Vector4f& color,
                                 std::shared_ptr<geometry::Image> image /*=0*/) {
     auto scene = renderer_.GetScene(scene_);
     scene->SetBackground(color, image);
+    background_color = color;
+}
+
+const Eigen::Vector4f Open3DScene::GetBackgroundColor() const {
+    return background_color;
+}
+
+void Open3DScene::ShowGroundPlane(bool enable, Scene::GroundPlane plane) {
+    auto scene = renderer_.GetScene(scene_);
+    scene->EnableGroundPlane(enable, plane);
 }
 
 void Open3DScene::SetLighting(LightingProfile profile,
@@ -183,25 +210,25 @@ void Open3DScene::SetLighting(LightingProfile profile,
         case LightingProfile::DARK_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
-            scene->SetIndirectLightIntensity(5000);
+            scene->SetIndirectLightIntensity(10000);
             scene->SetSunLight(sun_dir, sun_color, 85000);
             break;
         default:
         case LightingProfile::MED_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
-            scene->SetIndirectLightIntensity(7500);
-            scene->SetSunLight(sun_dir, sun_color, 70000);
+            scene->SetIndirectLightIntensity(20000);
+            scene->SetSunLight(sun_dir, sun_color, 80000);
             break;
         case LightingProfile::SOFT_SHADOWS:
             scene->EnableIndirectLight(true);
             scene->EnableSunLight(true);
-            scene->SetIndirectLightIntensity(15000);
-            scene->SetSunLight(sun_dir, sun_color, 35000);
+            scene->SetIndirectLightIntensity(37500);
+            scene->SetSunLight(sun_dir, sun_color, 75000);
             break;
         case LightingProfile::NO_SHADOWS:
             scene->EnableIndirectLight(true);
-            scene->SetIndirectLightIntensity(20000);
+            scene->SetIndirectLightIntensity(37500);
             scene->EnableSunLight(false);
             break;
     }
@@ -226,7 +253,7 @@ void Open3DScene::ClearGeometry() {
 void Open3DScene::AddGeometry(
         const std::string& name,
         const geometry::Geometry3D* geom,
-        const Material& mat,
+        const MaterialRecord& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;
     std::string fast_name;
@@ -256,8 +283,8 @@ void Open3DScene::AddGeometry(
 
 void Open3DScene::AddGeometry(
         const std::string& name,
-        const t::geometry::PointCloud* geom,
-        const Material& mat,
+        const t::geometry::Geometry* geom,
+        const MaterialRecord& mat,
         bool add_downsampled_copy_for_fast_rendering /*= true*/) {
     size_t downsample_threshold = SIZE_MAX;
     std::string fast_name;
@@ -281,7 +308,7 @@ void Open3DScene::AddGeometry(
             auto lowq_name = name + kLowQualityModelObjectSuffix;
             auto bbox_geom =
                     geometry::LineSet::CreateFromAxisAlignedBoundingBox(bbox);
-            Material bbox_mat;
+            MaterialRecord bbox_mat;
             bbox_mat.base_color = {1.0f, 0.5f, 0.0f, 1.0f};  // orange
             bbox_mat.shader = "unlitSolidColor";
             scene->AddGeometry(lowq_name, *bbox_geom, bbox_mat);
@@ -315,8 +342,35 @@ void Open3DScene::RemoveGeometry(const std::string& name) {
     }
 }
 
+bool Open3DScene::GeometryIsVisible(const std::string& name) {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->GeometryIsVisible(name);
+}
+
+void Open3DScene::SetGeometryTransform(const std::string& name,
+                                       const Eigen::Matrix4d& transform) {
+    auto scene = renderer_.GetScene(scene_);
+    auto g = geometries_.find(name);
+    if (g != geometries_.end()) {
+        const Eigen::Transform<float, 3, Eigen::Affine> t(
+                transform.cast<float>());
+        scene->SetGeometryTransform(name, t);
+        if (!g->second.fast_name.empty()) {
+            scene->SetGeometryTransform(g->second.fast_name, t);
+        }
+        if (!g->second.low_name.empty()) {
+            scene->SetGeometryTransform(g->second.low_name, t);
+        }
+    }
+}
+
+Eigen::Matrix4d Open3DScene::GetGeometryTransform(const std::string& name) {
+    auto scene = renderer_.GetScene(scene_);
+    return scene->GetGeometryTransform(name).matrix().cast<double>();
+}
+
 void Open3DScene::ModifyGeometryMaterial(const std::string& name,
-                                         const Material& mat) {
+                                         const MaterialRecord& mat) {
     auto scene = renderer_.GetScene(scene_);
     scene->OverrideMaterial(name, mat);
     auto it = geometries_.find(name);
@@ -358,7 +412,7 @@ void Open3DScene::AddModel(const std::string& name,
     axis_dirty_ = true;
 }
 
-void Open3DScene::UpdateMaterial(const Material& mat) {
+void Open3DScene::UpdateMaterial(const MaterialRecord& mat) {
     auto scene = renderer_.GetScene(scene_);
     for (auto& g : geometries_) {
         scene->OverrideMaterial(g.second.name, mat);

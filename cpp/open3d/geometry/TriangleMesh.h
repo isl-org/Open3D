@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -140,8 +140,8 @@ public:
     TriangleMesh &RemoveDuplicatedVertices();
 
     /// \brief Function that removes duplicated triangles, i.e., removes
-    /// triangles that reference the same three vertices, independent of their
-    /// order.
+    /// triangles that reference the same three vertices and have the same
+    /// orientation.
     TriangleMesh &RemoveDuplicatedTriangles();
 
     /// \brief This function removes vertices from the triangle mesh that are
@@ -204,25 +204,25 @@ public:
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
-    /// \param lambda is the smoothing parameter.
+    /// \param lambda_filter is the smoothing parameter.
     std::shared_ptr<TriangleMesh> FilterSmoothLaplacian(
             int number_of_iterations,
-            double lambda,
+            double lambda_filter,
             FilterScope scope = FilterScope::All) const;
 
     /// \brief Function to smooth triangle mesh using method of Taubin,
     /// "Curve and Surface Smoothing Without Shrinkage", 1995.
     /// Applies in each iteration two times FilterSmoothLaplacian, first
-    /// with lambda and second with mu as smoothing parameter.
+    /// with lambda_filter and second with mu as smoothing parameter.
     /// This method avoids shrinkage of the triangle mesh.
     ///
     /// \param number_of_iterations defines the number of repetitions
     /// of this operation.
-    /// \param lambda is the filter parameter
+    /// \param lambda_filter is the filter parameter
     /// \param mu is the filter parameter
     std::shared_ptr<TriangleMesh> FilterSmoothTaubin(
             int number_of_iterations,
-            double lambda = 0.5,
+            double lambda_filter = 0.5,
             double mu = -0.53,
             FilterScope scope = FilterScope::All) const;
 
@@ -358,37 +358,34 @@ public:
             size_t number_of_points,
             std::vector<double> &triangle_areas,
             double surface_area,
-            bool use_triangle_normal,
-            int seed);
+            bool use_triangle_normal);
 
-    /// Function to sample \param number_of_points points uniformly from the
-    /// mesh. \param use_triangle_normal Set to true to assign the triangle
-    /// normals to the returned points instead of the interpolated vertex
-    /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary. \param seed Sets the seed value used in the random
-    /// generator, set to -1 to use a random seed value with each function call.
+    /// Function to sample points uniformly from the mesh.
+    ///
+    /// \param number_of_points points uniformly from the mesh.
+    /// \param use_triangle_normal Set to true to assign the triangle normals to
+    /// the returned points instead of the interpolated vertex normals. The
+    /// triangle normals will be computed and added to the mesh if necessary.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
-            size_t number_of_points,
-            bool use_triangle_normal = false,
-            int seed = -1);
+            size_t number_of_points, bool use_triangle_normal = false);
 
-    /// Function to sample \p number_of_points points (blue noise).
-    /// Based on the method presented in Yuksel, "Sample Elimination for
-    /// Generating Poisson Disk Sample Sets", EUROGRAPHICS, 2015 The PointCloud
-    /// \p pcl_init is used for sample elimination if given, otherwise a
-    /// PointCloud is first uniformly sampled with \p init_number_of_points
-    /// x \p number_of_points number of points.
-    /// \p use_triangle_normal Set to true to assign the triangle
-    /// normals to the returned points instead of the interpolated vertex
-    /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary. \p seed Sets the seed value used in the random
-    /// generator, set to -1 to use a random seed value with each function call.
+    /// Function to sample points from the mesh with Possion disk, based on the
+    /// method presented in Yuksel, "Sample Elimination for Generating Poisson
+    /// Disk Sample Sets", EUROGRAPHICS.
+    ///
+    /// \param number_of_points Number of points that should be sampled.
+    /// \param init_factor Factor for the initial uniformly sampled PointCloud.
+    /// This init PointCloud is used for sample elimination.
+    /// \param pcl_init Initial PointCloud that is used for sample elimination.
+    /// If this parameter is provided the init_factor is ignored.
+    /// \param use_triangle_normal If True assigns the triangle normals instead
+    /// of the interpolated vertex normals to the returned points. The triangle
+    /// normals will be computed and added to the mesh if necessary.
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
             const std::shared_ptr<PointCloud> pcl_init = nullptr,
-            bool use_triangle_normal = false,
-            int seed = -1);
+            bool use_triangle_normal = false);
 
     /// Function to subdivide triangle mesh using the simple midpoint algorithm.
     /// Each triangle is subdivided into four triangles per iteration and the
@@ -443,14 +440,14 @@ public:
             const std::vector<size_t> &indices, bool cleanup = true) const;
 
     /// Function to crop pointcloud into output pointcloud
-    /// All points with coordinates outside the bounding box \param bbox are
+    /// All points with coordinates outside the bounding box \p bbox are
     /// clipped.
     /// \param bbox defines the input Axis Aligned Bounding Box.
     std::shared_ptr<TriangleMesh> Crop(
             const AxisAlignedBoundingBox &bbox) const;
 
     /// Function to crop pointcloud into output pointcloud
-    /// All points with coordinates outside the bounding box \param bbox are
+    /// All points with coordinates outside the bounding box \p bbox are
     /// clipped.
     /// \param bbox defines the input Oriented Bounding Box.
     std::shared_ptr<TriangleMesh> Crop(const OrientedBoundingBox &bbox) const;
@@ -562,50 +559,70 @@ public:
     /// whose resolution is no larger than 2^d x 2^d x 2^d. Note that since the
     /// reconstructor adapts the octree to the sampling density, the specified
     /// reconstruction depth is only an upper bound.
-    /// \param width Specifies the
-    /// target width of the finest level octree cells. This parameter is ignored
-    /// if depth is specified.
-    /// \param scale Specifies the ratio between the
-    /// diameter of the cube used for reconstruction and the diameter of the
-    /// samples' bounding cube. \param linear_fit If true, the reconstructor use
-    /// linear interpolation to estimate the positions of iso-vertices.
-    /// \param n_threads Number of threads used for reconstruction. Set to -1
-    /// to automatically determine it.
-    /// \return The estimated TriangleMesh, and per vertex densitie values that
+    /// \param width Specifies the target width of the finest level octree
+    /// cells. This parameter is ignored if depth is specified.
+    /// \param scale Specifies the ratio between the diameter of the cube used
+    /// for reconstruction and the diameter of the samples' bounding cube.
+    /// \param linear_fit If true, the reconstructor use linear interpolation to
+    /// estimate the positions of iso-vertices.
+    /// \param n_threads Number of threads used for reconstruction. Set to -1 to
+    /// automatically determine it.
+    /// \return The estimated TriangleMesh, and per vertex density values that
     /// can be used to to trim the mesh.
     static std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
     CreateFromPointCloudPoisson(const PointCloud &pcd,
                                 size_t depth = 8,
-                                size_t width = 0,
+                                float width = 0.0f,
                                 float scale = 1.1f,
                                 bool linear_fit = false,
                                 int n_threads = -1);
 
     /// Factory function to create a tetrahedron mesh (trianglemeshfactory.cpp).
-    /// the mesh centroid will be at (0,0,0) and \param radius defines the
+    /// the mesh centroid will be at (0,0,0) and \p radius defines the
     /// distance from the center to the mesh vertices.
     /// \param radius defines the distance from centroid to mesh vetices.
-    static std::shared_ptr<TriangleMesh> CreateTetrahedron(double radius = 1.0);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateTetrahedron(
+            double radius = 1.0, bool create_uv_map = false);
 
     /// Factory function to create an octahedron mesh (trianglemeshfactory.cpp).
-    /// the mesh centroid will be at (0,0,0) and \param radius defines the
+    /// the mesh centroid will be at (0,0,0) and \p radius defines the
     /// distance from the center to the mesh vertices.
     /// \param radius defines the distance from centroid to mesh vetices.
-    static std::shared_ptr<TriangleMesh> CreateOctahedron(double radius = 1.0);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateOctahedron(
+            double radius = 1.0, bool create_uv_map = false);
 
     /// Factory function to create an icosahedron mesh
     /// (trianglemeshfactory.cpp). The mesh centroid will be at (0,0,0) and
     /// \param radius defines the distance from the center to the mesh vertices.
-    static std::shared_ptr<TriangleMesh> CreateIcosahedron(double radius = 1.0);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateIcosahedron(
+            double radius = 1.0, bool create_uv_map = false);
+
+    /// Factory function to create solid mesh from an OrientedBoundingBox.
+    /// \param obox OrientedBoundingBox object to create a mesh of
+    /// \param scale scale factor along each direction of OrientedBoundingBox
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateFromOrientedBoundingBox(
+            const OrientedBoundingBox &obox,
+            const Eigen::Vector3d &scale = Eigen::Vector3d::Ones(),
+            bool create_uv_map = false);
 
     /// Factory function to create a box mesh (TriangleMeshFactory.cpp)
     /// The left bottom corner on the front will be placed at (0, 0, 0).
     /// \param width is x-directional length.
     /// \param height is y-directional length.
     /// \param depth is z-directional length.
-    static std::shared_ptr<TriangleMesh> CreateBox(double width = 1.0,
-                                                   double height = 1.0,
-                                                   double depth = 1.0);
+    /// \param create_uv_map add default UV map to the shape.
+    /// \param map_texture_to_each_face if true, maps the entire texture image
+    /// to each face. If false, sets the default uv map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateBox(
+            double width = 1.0,
+            double height = 1.0,
+            double depth = 1.0,
+            bool create_uv_map = false,
+            bool map_texture_to_each_face = false);
 
     /// Factory function to create a sphere mesh (TriangleMeshFactory.cpp)
     /// The sphere with radius will be centered at (0, 0, 0).
@@ -616,8 +633,11 @@ public:
     /// latitude lines including the north and south pole). The latitudes will
     /// be split into `2 * resolution segments (i.e. there are 2 * resolution
     /// longitude lines.)
-    static std::shared_ptr<TriangleMesh> CreateSphere(double radius = 1.0,
-                                                      int resolution = 20);
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateSphere(
+            double radius = 1.0,
+            int resolution = 20,
+            bool create_uv_map = false);
 
     /// Factory function to create a cylinder mesh (TriangleMeshFactory.cpp)
     /// The axis of the cylinder will be from (0, 0, -height/2) to (0, 0,
@@ -627,12 +647,15 @@ public:
     /// \param radius defines the radius of the cylinder.
     /// \param height defines the height of the cylinder.
     /// \param resolution defines that the circle will be split into resolution
-    /// segments \param split defines that the height will be split into split
     /// segments.
-    static std::shared_ptr<TriangleMesh> CreateCylinder(double radius = 1.0,
-                                                        double height = 2.0,
-                                                        int resolution = 20,
-                                                        int split = 4);
+    /// \param split defines that the height will be split into split segments.
+    /// \param create_uv_map add default UV map to the mesh.
+    static std::shared_ptr<TriangleMesh> CreateCylinder(
+            double radius = 1.0,
+            double height = 2.0,
+            int resolution = 20,
+            int split = 4,
+            bool create_uv_map = false);
 
     /// Factory function to create a cone mesh (TriangleMeshFactory.cpp)
     /// The axis of the cone will be from (0, 0, 0) to (0, 0, height).
@@ -641,23 +664,28 @@ public:
     /// \param radius defines the radius of the cone.
     /// \param height defines the height of the cone.
     /// \param resolution defines that the circle will be split into resolution
-    /// segments \param split defines that the height will be split into split
     /// segments.
+    /// \param split defines that the height will be split into split segments.
+    /// \param create_uv_map add default UV map to the mesh.
     static std::shared_ptr<TriangleMesh> CreateCone(double radius = 1.0,
                                                     double height = 2.0,
                                                     int resolution = 20,
-                                                    int split = 1);
+                                                    int split = 1,
+                                                    bool create_uv_map = false);
 
     /// Factory function to create a torus mesh (TriangleMeshFactory.cpp)
     /// The torus will be centered at (0, 0, 0) and a radius of
     /// torus_radius. The tube of the torus will have a radius of
     /// tube_radius. The number of segments in radial and tubular direction are
     /// radial_resolution and tubular_resolution respectively.
+    ///
     /// \param torus_radius defines the radius from the center of the torus to
-    /// the center of the tube. \param tube_radius defines the radius of the
-    /// torus tube. \param radial_resolution defines the he number of segments
-    /// along the radial direction. \param tubular_resolution defines the number
-    /// of segments along the tubular direction.
+    /// the center of the tube.
+    /// \param tube_radius defines the radius of the torus tube.
+    /// \param radial_resolution defines the he number of segments along the
+    /// radial direction.
+    /// \param tubular_resolution defines the number of segments along the
+    /// tubular direction.
     static std::shared_ptr<TriangleMesh> CreateTorus(
             double torus_radius = 1.0,
             double tube_radius = 0.5,
@@ -674,16 +702,20 @@ public:
     /// The cylinder_height will be split into cylinder_split
     /// segments. The cone_height will be split into cone_split
     /// segments.
+    //
     /// \param cylinder_radius defines the radius of the cylinder.
     /// \param cone_radius defines the radius of the cone.
     /// \param cylinder_height defines the height of the cylinder. The cylinder
-    /// is from (0, 0, 0) to (0, 0, cylinder_height) \param cone_height defines
-    /// the height of the cone. The axis of the cone will be from (0, 0,
-    /// cylinder_height) to (0, 0, cylinder_height + cone_height). \param
-    /// resolution defines the cone will be split into resolution segments.
+    /// is from (0, 0, 0) to (0, 0, cylinder_height)
+    /// \param cone_height defines the height of the cone. The axis of the cone
+    /// will be from (0, 0, cylinder_height) to (0, 0, cylinder_height +
+    /// cone_height).
+    /// \param resolution defines the cone will be split into resolution
+    /// segments.
     /// \param cylinder_split defines the cylinder_height will be split into
-    /// cylinder_split segments. \param cone_split defines the cone_height will
-    /// be split into cone_split segments.
+    /// cylinder_split segments.
+    /// \param cone_split defines the cone_height will be split into cone_split
+    /// segments.
     static std::shared_ptr<TriangleMesh> CreateArrow(
             double cylinder_radius = 1.0,
             double cone_radius = 1.5,
@@ -695,29 +727,30 @@ public:
 
     /// Factory function to create a coordinate frame mesh
     /// (TriangleMeshFactory.cpp).
-    /// arrows respectively. \param size is the length of the axes.
+    /// arrows respectively. \p size is the length of the axes.
     /// \param size defines the size of the coordinate frame.
     /// \param origin defines the origin of the coordinate frame.
     static std::shared_ptr<TriangleMesh> CreateCoordinateFrame(
             double size = 1.0,
             const Eigen::Vector3d &origin = Eigen::Vector3d(0.0, 0.0, 0.0));
 
-    /// Factory function to create a Moebius strip.
-    /// \param length_split defines the number of segments along the Moebius
-    /// strip. \param width_split defines the number of segments along the width
-    /// of the Moebius strip. \param twists defines the number of twists of the
+    /// Factory function to create a Mobius strip.
+    /// \param length_split defines the number of segments along the Mobius
     /// strip.
-    /// \param radius defines the radius of the Moebius strip.
+    /// \param width_split defines the number of segments along the width
+    /// of the Mobius strip.\param twists defines the number of twists of the
+    /// strip.
+    /// \param radius defines the radius of the Mobius strip.
     /// \param flatness controls the height of the strip.
-    /// \param width controls the width of the Moebius strip.
-    /// \param scale is used to scale the entire Moebius strip.
-    static std::shared_ptr<TriangleMesh> CreateMoebius(int length_split = 70,
-                                                       int width_split = 15,
-                                                       int twists = 1,
-                                                       double radius = 1,
-                                                       double flatness = 1,
-                                                       double width = 1,
-                                                       double scale = 1);
+    /// \param width controls the width of the Mobius strip.
+    /// \param scale is used to scale the entire Mobius strip.
+    static std::shared_ptr<TriangleMesh> CreateMobius(int length_split = 70,
+                                                      int width_split = 15,
+                                                      int twists = 1,
+                                                      double radius = 1,
+                                                      double flatness = 1,
+                                                      double width = 1,
+                                                      double scale = 1);
 
 protected:
     // Forward child class type to avoid indirect nonvirtual base
@@ -729,7 +762,7 @@ protected:
             const std::vector<Eigen::Vector3d> &prev_vertex_normals,
             const std::vector<Eigen::Vector3d> &prev_vertex_colors,
             const std::vector<std::unordered_set<int>> &adjacency_list,
-            double lambda,
+            double lambda_filter,
             bool filter_vertex,
             bool filter_normal,
             bool filter_color) const;

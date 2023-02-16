@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,22 +27,20 @@
 #include "open3d/core/kernel/Arange.h"
 
 #include "open3d/core/Tensor.h"
+#include "open3d/core/TensorCheck.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
 
 Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
-    start.AssertShape({}, "Start tensor must have shape {}.");
-    stop.AssertShape({}, "Stop tensor must have shape {}.");
-    step.AssertShape({}, "Step tensor must have shape {}.");
+    AssertTensorShape(start, {});
+    AssertTensorShape(stop, {});
+    AssertTensorShape(step, {});
 
-    Device device = start.GetDevice();
-    Device::DeviceType device_type = device.GetType();
-    stop.AssertDevice(device,
-                      "Stop must have the same dtype and device as start.");
-    step.AssertDevice(device,
-                      "Step must have the same dtype and device as start.");
+    const Device device = start.GetDevice();
+    AssertTensorDevice(stop, device);
+    AssertTensorDevice(step, device);
 
     int64_t num_elements = 0;
     bool is_arange_valid = true;
@@ -82,9 +80,9 @@ Tensor Arange(const Tensor& start, const Tensor& stop, const Tensor& step) {
     // Output.
     Tensor dst = Tensor({num_elements}, dtype, device);
 
-    if (device_type == Device::DeviceType::CPU) {
+    if (device.IsCPU()) {
         ArangeCPU(start, stop, step, dst);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    } else if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         ArangeCUDA(start, stop, step, dst);
 #else

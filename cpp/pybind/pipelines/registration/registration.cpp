@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,9 +34,10 @@
 #include "open3d/pipelines/registration/CorrespondenceChecker.h"
 #include "open3d/pipelines/registration/FastGlobalRegistration.h"
 #include "open3d/pipelines/registration/Feature.h"
+#include "open3d/pipelines/registration/GeneralizedICP.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
 #include "pybind/pipelines/registration/registration.h"
 
@@ -125,13 +126,15 @@ void pybind_registration_classes(py::module &m) {
             m, "RANSACConvergenceCriteria",
             "Class that defines the convergence criteria of "
             "RANSAC. RANSAC algorithm stops if the iteration "
-            "number hits ``max_iteration``, or the validation "
-            "has been run for ``max_validation`` times. Note "
-            "that the validation is the most computational "
-            "expensive operator in an iteration. Most "
-            "iterations do not do full validation. It is "
-            "crucial to control ``max_validation`` so that the "
-            "computation time is acceptable.");
+            "number hits ``max_iteration``, or the fitness "
+            "measured during validation suggests that the "
+            "algorithm can be terminated early with some "
+            "``confidence``. Early termination takes place "
+            "when the number of iterations reaches ``k = "
+            "log(1 - confidence)/log(1 - fitness^{ransac_n})``, "
+            "where ``ransac_n`` is the number of points used "
+            "during a ransac iteration. Use confidence=1.0 "
+            "to avoid early termination.");
     py::detail::bind_copy_functions<RANSACConvergenceCriteria>(ransac_criteria);
     ransac_criteria
             .def(py::init([](int max_iteration, double confidence) {
@@ -144,8 +147,8 @@ void pybind_registration_classes(py::module &m) {
                            "Maximum iteration before iteration stops.")
             .def_readwrite(
                     "confidence", &RANSACConvergenceCriteria::confidence_,
-                    "Maximum times the validation has been run before the "
-                    "iteration stops.")
+                    "Desired probability of success. Used for estimating early "
+                    "termination. Use 1.0 to avoid early termination.")
             .def("__repr__", [](const RANSACConvergenceCriteria &c) {
                 return fmt::format(
                         "RANSACConvergenceCriteria "
@@ -201,7 +204,6 @@ void pybind_registration_classes(py::module &m) {
             .def("__repr__",
                  [](const TransformationEstimationPointToPoint &te) {
                      return std::string(
-                                    ""
                                     "TransformationEstimationPointToPoint ") +
                             (te.with_scaling_
                                      ? std::string("with scaling.")
@@ -277,9 +279,9 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
             .def("__repr__",
                  [](const TransformationEstimationForColoredICP &te) {
                      return std::string(
-                                    "TransformationEstimationForColoredICP "
-                                    "with lambda_geometric:") +
-                            std::to_string(te.lambda_geometric_);
+                                    "TransformationEstimationForColoredICP ") +
+                            ("with lambda_geometric=" +
+                             std::to_string(te.lambda_geometric_));
                  })
             .def_readwrite(
                     "lambda_geometric",
@@ -287,6 +289,49 @@ Sets :math:`c = 1` if ``with_scaling`` is ``False``.
                     "lambda_geometric")
             .def_readwrite("kernel",
                            &TransformationEstimationForColoredICP::kernel_,
+                           "Robust Kernel used in the Optimization");
+
+    // open3d.registration.TransformationEstimationForGeneralizedICP:
+    // TransformationEstimation
+    py::class_<TransformationEstimationForGeneralizedICP,
+               PyTransformationEstimation<
+                       TransformationEstimationForGeneralizedICP>,
+               TransformationEstimation>
+            te_gicp(m, "TransformationEstimationForGeneralizedICP",
+                    "Class to estimate a transformation for Generalized ICP.");
+    py::detail::bind_default_constructor<
+            TransformationEstimationForGeneralizedICP>(te_gicp);
+    py::detail::bind_copy_functions<TransformationEstimationForGeneralizedICP>(
+            te_gicp);
+    te_gicp.def(py::init([](double epsilon,
+                            std::shared_ptr<RobustKernel> kernel) {
+                    return new TransformationEstimationForGeneralizedICP(
+                            epsilon, std::move(kernel));
+                }),
+                "epsilon"_a, "kernel"_a)
+            .def(py::init([](double epsilon) {
+                     return new TransformationEstimationForGeneralizedICP(
+                             epsilon);
+                 }),
+                 "epsilon"_a)
+            .def(py::init([](std::shared_ptr<RobustKernel> kernel) {
+                     auto te = TransformationEstimationForGeneralizedICP();
+                     te.kernel_ = std::move(kernel);
+                     return te;
+                 }),
+                 "kernel"_a)
+            .def("__repr__",
+                 [](const TransformationEstimationForGeneralizedICP &te) {
+                     return std::string(
+                                    "TransformationEstimationForGeneralizedICP"
+                                    " ") +
+                            ("with epsilon=" + std::to_string(te.epsilon_));
+                 })
+            .def_readwrite("epsilon",
+                           &TransformationEstimationForGeneralizedICP::epsilon_,
+                           "epsilon")
+            .def_readwrite("kernel",
+                           &TransformationEstimationForGeneralizedICP::kernel_,
                            "Robust Kernel used in the Optimization");
 
     // open3d.registration.CorrespondenceChecker
@@ -423,17 +468,17 @@ must hold true for all edges.)");
                              bool decrease_mu,
                              double maximum_correspondence_distance,
                              int iteration_number, double tuple_scale,
-                             int maximum_tuple_count) {
+                             int maximum_tuple_count, bool tuple_test) {
                      return new FastGlobalRegistrationOption(
                              division_factor, use_absolute_scale, decrease_mu,
                              maximum_correspondence_distance, iteration_number,
-                             tuple_scale, maximum_tuple_count);
+                             tuple_scale, maximum_tuple_count, tuple_test);
                  }),
                  "division_factor"_a = 1.4, "use_absolute_scale"_a = false,
                  "decrease_mu"_a = false,
                  "maximum_correspondence_distance"_a = 0.025,
                  "iteration_number"_a = 64, "tuple_scale"_a = 0.95,
-                 "maximum_tuple_count"_a = 1000)
+                 "maximum_tuple_count"_a = 1000, "tuple_test"_a = true)
             .def_readwrite(
                     "division_factor",
                     &FastGlobalRegistrationOption::division_factor_,
@@ -461,6 +506,10 @@ must hold true for all edges.)");
             .def_readwrite("maximum_tuple_count",
                            &FastGlobalRegistrationOption::maximum_tuple_count_,
                            "float: Maximum tuple numbers.")
+            .def_readwrite(
+                    "tuple_test", &FastGlobalRegistrationOption::tuple_test_,
+                    "bool: Set to `true` to perform geometric compatibility "
+                    "tests on initial set of correspondences.")
             .def("__repr__", [](const FastGlobalRegistrationOption &c) {
                 return fmt::format(
                         ""
@@ -472,10 +521,10 @@ must hold true for all edges.)");
                         "\niteration_number={}"
                         "\ntuple_scale={}"
                         "\nmaximum_tuple_count={}",
-                        c.division_factor_, c.use_absolute_scale_,
-                        c.decrease_mu_, c.maximum_correspondence_distance_,
-                        c.iteration_number_, c.tuple_scale_,
-                        c.maximum_tuple_count_);
+                        "\ntuple_test={}", c.division_factor_,
+                        c.use_absolute_scale_, c.decrease_mu_,
+                        c.maximum_correspondence_distance_, c.iteration_number_,
+                        c.tuple_scale_, c.maximum_tuple_count_, c.tuple_test_);
             });
 
     // open3d.registration.RegistrationResult
@@ -501,7 +550,7 @@ must hold true for all edges.)");
             .def_readwrite(
                     "fitness", &RegistrationResult::fitness_,
                     "float: The overlapping area (# of inlier correspondences "
-                    "/ # of points in target). Higher is better.")
+                    "/ # of points in source). Higher is better.")
             .def("__repr__", [](const RegistrationResult &rr) {
                 return fmt::format(
                         "RegistrationResult with "
@@ -520,12 +569,9 @@ static const std::unordered_map<std::string, std::string>
                 {"checkers",
                  "Vector of Checker class to check if two point "
                  "clouds can be aligned. One of "
-                 "(``"
-                 "CorrespondenceCheckerBasedOnEdgeLength``, "
-                 "``"
-                 "CorrespondenceCheckerBasedOnDistance``, "
-                 "``"
-                 "CorrespondenceCheckerBasedOnNormal``)"},
+                 "(``CorrespondenceCheckerBasedOnEdgeLength``, "
+                 "``CorrespondenceCheckerBasedOnDistance``, "
+                 "``CorrespondenceCheckerBasedOnNormal``)"},
                 {"confidence",
                  "Desired probability of success for RANSAC. Used for "
                  "estimating early termination by k = log(1 - "
@@ -536,14 +582,13 @@ static const std::unordered_map<std::string, std::string>
                 {"criteria", "Convergence criteria"},
                 {"estimation_method",
                  "Estimation method. One of "
-                 "(``"
-                 "TransformationEstimationPointToPoint``, "
-                 "``"
-                 "TransformationEstimationPointToPlane``, "
-                 "``"
-                 "TransformationEstimationForColoredICP``)"},
+                 "(``TransformationEstimationPointToPoint``, "
+                 "``TransformationEstimationPointToPlane``, "
+                 "``TransformationEstimationForGeneralizedICP``, "
+                 "``TransformationEstimationForColoredICP``)"},
                 {"init", "Initial transformation estimation"},
                 {"lambda_geometric", "lambda_geometric value"},
+                {"epsilon", "epsilon value"},
                 {"kernel", "Robust Kernel used in the Optimization"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},
@@ -562,14 +607,17 @@ static const std::unordered_map<std::string, std::string>
 
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for evaluating registration between point clouds",
           "source"_a, "target"_a, "max_correspondence_distance"_a,
           "transformation"_a = Eigen::Matrix4d::Identity());
     docstring::FunctionDocInject(m, "evaluate_registration",
                                  map_shared_argument_docstrings);
 
-    m.def("registration_icp", &RegistrationICP, "Function for ICP registration",
-          "source"_a, "target"_a, "max_correspondence_distance"_a,
+    m.def("registration_icp", &RegistrationICP,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for ICP registration", "source"_a, "target"_a,
+          "max_correspondence_distance"_a,
           "init"_a = Eigen::Matrix4d::Identity(),
           "estimation_method"_a = TransformationEstimationPointToPoint(false),
           "criteria"_a = ICPConvergenceCriteria());
@@ -577,16 +625,29 @@ void pybind_registration_methods(py::module &m) {
                                  map_shared_argument_docstrings);
 
     m.def("registration_colored_icp", &RegistrationColoredICP,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for Colored ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
           "init"_a = Eigen::Matrix4d::Identity(),
-          "estimation_method"_a = TransformationEstimationForColoredICP(),
+          "estimation_method"_a = TransformationEstimationForColoredICP(0.968),
           "criteria"_a = ICPConvergenceCriteria());
     docstring::FunctionDocInject(m, "registration_colored_icp",
                                  map_shared_argument_docstrings);
 
+    m.def("registration_generalized_icp", &RegistrationGeneralizedICP,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for Generalized ICP registration", "source"_a, "target"_a,
+          "max_correspondence_distance"_a,
+          "init"_a = Eigen::Matrix4d::Identity(),
+          "estimation_method"_a =
+                  TransformationEstimationForGeneralizedICP(1e-3),
+          "criteria"_a = ICPConvergenceCriteria());
+    docstring::FunctionDocInject(m, "registration_generalized_icp",
+                                 map_shared_argument_docstrings);
+
     m.def("registration_ransac_based_on_correspondence",
           &RegistrationRANSACBasedOnCorrespondence,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for global RANSAC registration based on a set of "
           "correspondences",
           "source"_a, "target"_a, "corres"_a, "max_correspondence_distance"_a,
@@ -601,6 +662,7 @@ void pybind_registration_methods(py::module &m) {
 
     m.def("registration_ransac_based_on_feature_matching",
           &RegistrationRANSACBasedOnFeatureMatching,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for global RANSAC registration based on feature matching",
           "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
           "mutual_filter"_a, "max_correspondence_distance"_a,
@@ -613,17 +675,29 @@ void pybind_registration_methods(py::module &m) {
             m, "registration_ransac_based_on_feature_matching",
             map_shared_argument_docstrings);
 
-    m.def("registration_fast_based_on_feature_matching",
-          &FastGlobalRegistration,
+    m.def("registration_fgr_based_on_correspondence",
+          &FastGlobalRegistrationBasedOnCorrespondence,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for fast global registration based on a set of "
+          "correspondences",
+          "source"_a, "target"_a, "corres"_a,
+          "option"_a = FastGlobalRegistrationOption());
+    docstring::FunctionDocInject(m, "registration_fgr_based_on_correspondence",
+                                 map_shared_argument_docstrings);
+
+    m.def("registration_fgr_based_on_feature_matching",
+          &FastGlobalRegistrationBasedOnFeatureMatching,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for fast global registration based on feature matching",
           "source"_a, "target"_a, "source_feature"_a, "target_feature"_a,
           "option"_a = FastGlobalRegistrationOption());
     docstring::FunctionDocInject(m,
-                                 "registration_fast_based_on_feature_matching",
+                                 "registration_fgr_based_on_feature_matching",
                                  map_shared_argument_docstrings);
 
     m.def("get_information_matrix_from_point_clouds",
           &GetInformationMatrixFromPointClouds,
+          py::call_guard<py::gil_scoped_release>(),
           "Function for computing information matrix from transformation "
           "matrix",
           "source"_a, "target"_a, "max_correspondence_distance"_a,

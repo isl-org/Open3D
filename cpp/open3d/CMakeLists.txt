@@ -4,7 +4,19 @@
 # In comparison, open3d_set_global_properties() sets properties for the Open3D
 # lib, and targets that links to the Open3D lib, e.g pybind, unit tests, etc.
 function(open3d_set_open3d_lib_properties target)
-    target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
+    cmake_parse_arguments(arg "HIDDEN" "" "" ${ARGN})
+    if(NOT BUILD_SHARED_LIBS)
+        target_compile_definitions(${target} PUBLIC OPEN3D_STATIC)
+    endif()
+    if (arg_HIDDEN)
+        set_target_properties(${target} PROPERTIES
+                        CXX_VISIBILITY_PRESET hidden
+                        VISIBILITY_INLINES_HIDDEN ON
+                        )
+    else ()
+        target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
+    endif()
+
 endfunction()
 
 # Configure a header file to pass the version settings to the source code
@@ -13,26 +25,69 @@ configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3D.h.in"
 configure_file("${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h.in"
                "${PROJECT_SOURCE_DIR}/cpp/open3d/Open3DConfig.h")
 
-# Subdirectories
+
+add_library(Open3D)
+
 add_subdirectory(camera)
 add_subdirectory(core)
+add_subdirectory(data)
 add_subdirectory(geometry)
-add_subdirectory(t/geometry)
-add_subdirectory(t/io)
-add_subdirectory(t/pipelines)
 add_subdirectory(io)
 add_subdirectory(ml)
 add_subdirectory(pipelines)
+add_subdirectory(t/geometry)
+add_subdirectory(t/io)
+add_subdirectory(t/pipelines)
 add_subdirectory(utility)
 add_subdirectory(visualization)
+
 if (BUILD_GUI)
     add_subdirectory(visualization/gui)
-    set(GUI_OBJECTS "$<TARGET_OBJECTS:GUI>")
+endif()
+
+if (BUILD_WEBRTC)
+    add_subdirectory(visualization/webrtc_server)
+endif()
+
+# note: adding at least one real source file to any target that references
+# reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
+target_sources(Open3D PRIVATE
+    Open3DConfig.cpp
+)
+
+open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
+    camera
+    core
+    data
+    geometry
+    tgeometry
+    tgeometry_kernel
+    io
+    tio
+    ml_contrib
+    pipelines
+    tpipelines
+    tpipelines_kernel
+    utility
+    visualization
+)
+
+if (BUILD_GUI)
+    open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
+        GUI
+    )
+endif()
+
+if (BUILD_WEBRTC)
+    open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
+        webrtc_server
+    )
 endif()
 
 # Source group for Visual Studio
 add_source_group(camera)
 add_source_group(core)
+add_source_group(data)
 add_source_group(geometry)
 add_source_group(tgeometry)
 add_source_group(io)
@@ -43,31 +98,18 @@ add_source_group(tpipelines)
 add_source_group(utility)
 add_source_group(visualization)
 
-# note: adding at least one real source file to any target that references
-# reference: https://cmake.org/cmake/help/v3.12/command/add_library.html#object-libraries
-add_library(${CMAKE_PROJECT_NAME}
-    Open3DConfig.cpp
-    $<TARGET_OBJECTS:camera>
-    $<TARGET_OBJECTS:core>
-    $<TARGET_OBJECTS:geometry>
-    $<TARGET_OBJECTS:tgeometry>
-    $<TARGET_OBJECTS:io>
-    $<TARGET_OBJECTS:tio>
-    $<TARGET_OBJECTS:ml_contrib>
-    $<TARGET_OBJECTS:pipelines>
-    $<TARGET_OBJECTS:tpipelines>
-    $<TARGET_OBJECTS:utility>
-    $<TARGET_OBJECTS:visualization>
-    ${GUI_OBJECTS}
-)
-open3d_show_and_abort_on_warning(${PROJECT_NAME})
-open3d_set_global_properties(${PROJECT_NAME})
-open3d_set_open3d_lib_properties(${PROJECT_NAME})
-open3d_link_3rdparty_libraries(${PROJECT_NAME})
-if(X11_TARGET)
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${X11_TARGET})
-endif()
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+open3d_show_and_abort_on_warning(Open3D)
+open3d_set_global_properties(Open3D)
+open3d_set_open3d_lib_properties(Open3D)
+open3d_link_3rdparty_libraries(Open3D)
+
+# If we are building a STATIC_LIBRARY, hide symbols coming from 3rd party static
+# libraries that are not hidden during compilation. Don't propagate beyond
+# direct consumers of libOpen3D.a
+target_link_options(Open3D INTERFACE
+    $<$<STREQUAL:$<TARGET_PROPERTY:Open3D,TYPE>,STATIC_LIBRARY>:$<LINK_ONLY:${OPEN3D_HIDDEN_3RDPARTY_LINK_OPTIONS}>>)
+
+add_library(Open3D::Open3D ALIAS Open3D)
 
 include(CMakePackageConfigHelpers)
 
@@ -85,7 +127,7 @@ write_basic_package_version_file("${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmak
                                  COMPATIBILITY ExactVersion)
 
 # Installation
-install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME}Targets
+install(TARGETS Open3D EXPORT Open3DTargets
         RUNTIME DESTINATION ${Open3D_INSTALL_BIN_DIR}
         LIBRARY DESTINATION ${Open3D_INSTALL_LIB_DIR}
         ARCHIVE DESTINATION ${Open3D_INSTALL_LIB_DIR}
@@ -103,6 +145,25 @@ install(FILES
         "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
         "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
         DESTINATION "${Open3D_INSTALL_CMAKE_DIR}" COMPONENT dev)
+
+if (BUILD_SHARED_LIBS AND UNIX)
+    file(CONFIGURE OUTPUT Open3D.pc.in
+         CONTENT [=[
+prefix=${pcfiledir}/../..
+libdir=${prefix}/lib
+includedir=${prefix}/include/
+
+Name: Open3D
+Description: @PROJECT_DESCRIPTION@
+URL: @PROJECT_HOMEPAGE_URL@
+Version: @PROJECT_VERSION@
+Cflags: -std=c++@CMAKE_CXX_STANDARD@ -isystem ${includedir} -isystem ${includedir}/open3d/3rdparty -D$<JOIN:$<TARGET_PROPERTY:INTERFACE_COMPILE_DEFINITIONS>, -D>
+Libs: -L${libdir} -Wl,-rpath,${libdir} -lOpen3D]=]  @ONLY NEWLINE_STYLE LF)
+    file(GENERATE OUTPUT Open3D.pc INPUT "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc.in"
+        TARGET "Open3D::Open3D")
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc"
+        DESTINATION "${Open3D_INSTALL_LIB_DIR}/pkgconfig")
+endif ()
 
 # uninstall target
 if(NOT TARGET uninstall)

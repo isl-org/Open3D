@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,30 +28,18 @@
 
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
+
 namespace open3d {
 namespace core {
 
 void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
-    // Check devices
-    Device device = A.GetDevice();
-    if (device != B.GetDevice()) {
-        utility::LogError("Tensor A device {} and Tensor B device {} mismatch.",
-                          A.GetDevice().ToString(), B.GetDevice().ToString());
-    }
+    AssertTensorDtypes(A, {Float32, Float64});
+    AssertTensorDevice(B, A.GetDevice());
+    AssertTensorDtype(B, A.GetDtype());
 
-    // Check dtypes
-    Dtype dtype = A.GetDtype();
-    if (dtype != B.GetDtype()) {
-        utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch.",
-                          A.GetDtype().ToString(), B.GetDtype().ToString());
-    }
-
-    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-        utility::LogError(
-                "Only tensors with Float32 or Float64 are supported, but "
-                "received {}.",
-                dtype.ToString());
-    }
+    const Device device = A.GetDevice();
+    const Dtype dtype = A.GetDtype();
 
     // Check dimensions
     SizeVector A_shape = A.GetShape();
@@ -82,14 +70,15 @@ void LeastSquares(const Tensor &A, const Tensor &B, Tensor &X) {
     }
 
     // A and B are modified in-place
-    Tensor A_copy = A.T().Copy(device);
-    Tensor B_copy = B.T().Copy(device);
+    Tensor A_copy = A.T().Clone();
+    Tensor B_copy = B.T().Clone();
 
     void *A_data = A_copy.GetDataPtr();
     void *B_data = B_copy.GetDataPtr();
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         LeastSquaresCUDA(A_data, B_data, m, n, k, dtype, device);
 #else
         utility::LogError("Unimplemented device.");

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -54,7 +54,7 @@ public:
 
     void Rotate(int dx, int dy) override;
     void RotateZ(int dx, int dy) override;
-    void Dolly(int dy, DragType drag_type) override;
+    void Dolly(float dy, DragType drag_type) override;
     void Pan(int dx, int dy) override;
 
     void StartMouseDrag() override;

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,8 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/rendering/Renderer.h"
+#include "open3d/visualization/rendering/RendererHandle.h"
+#include "open3d/visualization/rendering/Scene.h"
 
 namespace open3d {
 
@@ -41,7 +43,7 @@ class Image;
 
 namespace t {
 namespace geometry {
-class PointCloud;
+class Geometry;
 }
 }  // namespace t
 
@@ -49,7 +51,7 @@ namespace visualization {
 namespace rendering {
 
 class Camera;
-struct Material;
+struct MaterialRecord;
 struct TriangleMeshModel;
 
 class Open3DScene {
@@ -59,11 +61,17 @@ public:
 
     View* GetView() const;
     ViewHandle GetViewId() const { return view_; }
+    void SetViewport(std::int32_t x,
+                     std::int32_t y,
+                     std::uint32_t width,
+                     std::uint32_t height);
 
     void ShowSkybox(bool enable);
     void ShowAxes(bool enable);
     void SetBackground(const Eigen::Vector4f& color,
                        std::shared_ptr<geometry::Image> image = nullptr);
+    const Eigen::Vector4f GetBackgroundColor() const;
+    void ShowGroundPlane(bool enable, Scene::GroundPlane plane);
 
     enum class LightingProfile {
         HARD_SHADOWS,
@@ -87,24 +95,30 @@ public:
     /// Adds a geometry with the specified name. Default visible is true.
     void AddGeometry(const std::string& name,
                      const geometry::Geometry3D* geom,
-                     const Material& mat,
+                     const MaterialRecord& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     // Note: we can't use shared_ptr here, as we might be given something
     //       from Python, which is using unique_ptr. The pointer must live long
     //       enough to get copied to the GPU by the render thread.
     void AddGeometry(const std::string& name,
-                     const t::geometry::PointCloud* geom,
-                     const Material& mat,
+                     const t::geometry::Geometry* geom,
+                     const MaterialRecord& mat,
                      bool add_downsampled_copy_for_fast_rendering = true);
     bool HasGeometry(const std::string& name) const;
     void RemoveGeometry(const std::string& name);
     /// Shows or hides the geometry with the specified name.
     void ShowGeometry(const std::string& name, bool show);
-    void ModifyGeometryMaterial(const std::string& name, const Material& mat);
+    bool GeometryIsVisible(const std::string& name);
+    void SetGeometryTransform(const std::string& name,
+                              const Eigen::Matrix4d& transform);
+    Eigen::Matrix4d GetGeometryTransform(const std::string& name);
+
+    void ModifyGeometryMaterial(const std::string& name,
+                                const MaterialRecord& mat);
     void AddModel(const std::string& name, const TriangleMeshModel& model);
 
     /// Updates all geometries to use this material
-    void UpdateMaterial(const Material& mat);
+    void UpdateMaterial(const MaterialRecord& mat);
     /// Updates the named model to use this material
     void UpdateModelMaterial(const std::string& name,
                              const TriangleMeshModel& model);
@@ -142,6 +156,7 @@ private:
     SceneHandle scene_;
     ViewHandle view_;
 
+    Eigen::Vector4f background_color;
     LOD lod_ = LOD::HIGH_DETAIL;
     bool use_low_quality_if_available_ = false;
     bool axis_dirty_ = true;

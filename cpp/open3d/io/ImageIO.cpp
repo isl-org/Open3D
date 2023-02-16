@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,8 @@
 
 #include <unordered_map>
 
-#include "open3d/utility/Console.h"
 #include "open3d/utility/FileSystem.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 
@@ -100,6 +100,29 @@ bool WriteImage(const std::string &filename,
         return false;
     }
     return map_itr->second(filename, image, quality);
+}
+
+std::shared_ptr<geometry::Image> CreateImageFromMemory(
+        const std::string &image_format,
+        const unsigned char *image_data_ptr,
+        size_t image_data_size) {
+    auto image = std::make_shared<geometry::Image>();
+    ReadImageFromMemory(image_format, image_data_ptr, image_data_size, *image);
+    return image;
+}
+
+bool ReadImageFromMemory(const std::string &image_format,
+                         const unsigned char *image_data_ptr,
+                         size_t image_data_size,
+                         geometry::Image &image) {
+    if (image_format == "png") {
+        return ReadPNGFromMemory(image_data_ptr, image_data_size, image);
+    } else if (image_format == "jpg") {
+        return ReadJPGFromMemory(image_data_ptr, image_data_size, image);
+    } else {
+        utility::LogWarning("The format of {} is not supported", image_format);
+        return false;
+    }
 }
 
 }  // namespace io

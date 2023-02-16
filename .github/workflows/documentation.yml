@@ -1,4 +1,4 @@
-name: Documentation build
+name: Documentation
 
 on:
   workflow_dispatch:
@@ -7,42 +7,43 @@ on:
         description: 'Set to OFF for Release documentation'
         required: false
         default: 'ON'
-
   push:
     branches:
       - master
   pull_request:
     types: [opened, reopened, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
-  GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   headless-docs:
     # Build headless and docs
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest  # Warn about build issues in new versions
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
-      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build }}
+      DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
-      - name: Cancel outdated
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          github_token: ${{ github.token }}
-
       - name: Checkout Open3D source code
-        uses: actions/checkout@v2
-        with:
-          submodules: true
+        uses: actions/checkout@v3
+
+      - name: Maximize build space
+        run: |
+          source util/ci_utils.sh
+          maximize_ubuntu_github_actions_build_space
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
-          repository: intel-isl/Open3D-ML
+          repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -55,16 +56,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.6
+          python-version: '3.7'
+      - name: GCloud CLI auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Install dependencies
         env:
@@ -87,7 +91,7 @@ jobs:
           ccache -s
 
       - name: Upload docs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d_docs
           path: docs/_out/html
@@ -98,8 +102,24 @@ jobs:
         run: |
           # Compress and upload the docs, only for master branch
           docs_out_dir="docs/_out" # Docs in ${docs_out_dir}/html
-          tar_file="${{ github.sha }}.tar.gz"
+          tar_file="${{ github.sha }}_ready.tar.gz"
           rm -rf ${tar_file}
           tar -C ${docs_out_dir} -czvf ${tar_file} html
           gsutil cp ${tar_file} gs://open3d-docs/${tar_file}
-          echo "Download the docs at: https://storage.googleapis.com/open3d-docs/${tar_file}"
+          echo "Docs archive uploaded to:"
+          echo "https://storage.googleapis.com/open3d-docs/${tar_file}"
+
+      - name: Check wheels and ready documentation archive
+        if: ${{ github.ref == 'refs/heads/master' }}
+        run: |
+            if [ $(gsutil ls gs://open3d-docs/${{ github.sha }}_ready* | wc -l)\
+                -eq 4 ]; then
+                echo "All wheels and docs available. Making docs ready."
+                # Remove all marker files: Note _ at end of pattern.
+                gsutil rm gs://open3d-docs/${{ github.sha }}_ready_*
+                # Rename docs archive:
+                gsutil mv gs://open3d-docs/${{ github.sha }}_ready.tar.gz \
+                    gs://open3d-docs/${{ github.sha }}.tar.gz
+            else
+                echo "All wheels / docs not available yet."
+            fi

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,19 +39,18 @@ namespace open3d {
 namespace pipelines {
 namespace odometry {
 
-static std::tuple<std::shared_ptr<geometry::Image>,
-                  std::shared_ptr<geometry::Image>>
-InitializeCorrespondenceMap(int width, int height) {
+static std::tuple<geometry::Image, geometry::Image> InitializeCorrespondenceMap(
+        int width, int height) {
     // initialization: filling with any (u,v) to (-1,-1)
-    auto correspondence_map = std::make_shared<geometry::Image>();
-    auto depth_buffer = std::make_shared<geometry::Image>();
-    correspondence_map->Prepare(width, height, 2, 4);
-    depth_buffer->Prepare(width, height, 1, 4);
-    for (int v = 0; v < correspondence_map->height_; v++) {
-        for (int u = 0; u < correspondence_map->width_; u++) {
-            *correspondence_map->PointerAt<int>(u, v, 0) = -1;
-            *correspondence_map->PointerAt<int>(u, v, 1) = -1;
-            *depth_buffer->PointerAt<float>(u, v, 0) = -1.0f;
+    geometry::Image correspondence_map;
+    geometry::Image depth_buffer;
+    correspondence_map.Prepare(width, height, 2, 4);
+    depth_buffer.Prepare(width, height, 1, 4);
+    for (int v = 0; v < correspondence_map.height_; v++) {
+        for (int u = 0; u < correspondence_map.width_; u++) {
+            *correspondence_map.PointerAt<int>(u, v, 0) = -1;
+            *correspondence_map.PointerAt<int>(u, v, 1) = -1;
+            *depth_buffer.PointerAt<float>(u, v, 0) = -1.0f;
         }
     }
     return std::make_tuple(correspondence_map, depth_buffer);
@@ -117,8 +116,8 @@ static int CountCorrespondence(const geometry::Image &correspondence_map) {
     return correspondence_count;
 }
 
-static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
-        const Eigen::Matrix3d intrinsic_matrix,
+CorrespondenceSetPixelWise ComputeCorrespondence(
+        const Eigen::Matrix3d &intrinsic_matrix,
         const Eigen::Matrix4d &extrinsic,
         const geometry::Image &depth_s,
         const geometry::Image &depth_t,
@@ -129,15 +128,15 @@ static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
     const Eigen::Matrix3d KRK_inv = K * R * K_inv;
     Eigen::Vector3d Kt = K * extrinsic.block<3, 1>(0, 3);
 
-    std::shared_ptr<geometry::Image> correspondence_map;
-    std::shared_ptr<geometry::Image> depth_buffer;
+    geometry::Image correspondence_map;
+    geometry::Image depth_buffer;
     std::tie(correspondence_map, depth_buffer) =
             InitializeCorrespondenceMap(depth_t.width_, depth_t.height_);
 
 #pragma omp parallel
     {
-        std::shared_ptr<geometry::Image> correspondence_map_private;
-        std::shared_ptr<geometry::Image> depth_buffer_private;
+        geometry::Image correspondence_map_private;
+        geometry::Image depth_buffer_private;
         std::tie(correspondence_map_private, depth_buffer_private) =
                 InitializeCorrespondenceMap(depth_t.width_, depth_t.height_);
 #pragma omp for nowait
@@ -155,36 +154,36 @@ static std::shared_ptr<CorrespondenceSetPixelWise> ComputeCorrespondence(
                         double d_t = *depth_t.PointerAt<float>(u_t, v_t);
                         if (!std::isnan(d_t) &&
                             std::abs(transformed_d_s - d_t) <=
-                                    option.max_depth_diff_) {
+                                    option.depth_diff_max_) {
                             AddElementToCorrespondenceMap(
-                                    *correspondence_map_private,
-                                    *depth_buffer_private, u_s, v_s, u_t, v_t,
+                                    correspondence_map_private,
+                                    depth_buffer_private, u_s, v_s, u_t, v_t,
                                     (float)d_s);
                         }
                     }
                 }
             }
         }
-#pragma omp critical
+#pragma omp critical(ComputeCorrespondence)
         {
-            MergeCorrespondenceMaps(*correspondence_map, *depth_buffer,
-                                    *correspondence_map_private,
-                                    *depth_buffer_private);
+            MergeCorrespondenceMaps(correspondence_map, depth_buffer,
+                                    correspondence_map_private,
+                                    depth_buffer_private);
 
         }  //    omp critical
     }      //    omp parallel
 
-    auto correspondence = std::make_shared<CorrespondenceSetPixelWise>();
-    int correspondence_count = CountCorrespondence(*correspondence_map);
-    correspondence->resize(correspondence_count);
+    CorrespondenceSetPixelWise correspondence;
+    int correspondence_count = CountCorrespondence(correspondence_map);
+    correspondence.resize(correspondence_count);
     int cnt = 0;
-    for (int v_s = 0; v_s < correspondence_map->height_; v_s++) {
-        for (int u_s = 0; u_s < correspondence_map->width_; u_s++) {
-            int u_t = *correspondence_map->PointerAt<int>(u_s, v_s, 0);
-            int v_t = *correspondence_map->PointerAt<int>(u_s, v_s, 1);
+    for (int v_s = 0; v_s < correspondence_map.height_; v_s++) {
+        for (int u_s = 0; u_s < correspondence_map.width_; u_s++) {
+            int u_t = *correspondence_map.PointerAt<int>(u_s, v_s, 0);
+            int v_t = *correspondence_map.PointerAt<int>(u_s, v_s, 1);
             if (u_t != -1 && v_t != -1) {
                 Eigen::Vector4i pixel_correspondence(u_s, v_s, u_t, v_t);
-                (*correspondence)[cnt] = pixel_correspondence;
+                correspondence[cnt] = pixel_correspondence;
                 cnt++;
             }
         }
@@ -196,8 +195,7 @@ static std::shared_ptr<geometry::Image> ConvertDepthImageToXYZImage(
         const geometry::Image &depth, const Eigen::Matrix3d &intrinsic_matrix) {
     auto image_xyz = std::make_shared<geometry::Image>();
     if (depth.num_of_channels_ != 1 || depth.bytes_per_channel_ != 4) {
-        utility::LogError(
-                "[ConvertDepthImageToXYZImage] Unsupported image format.");
+        utility::LogError("Unsupported image format.");
     }
     const double inv_fx = 1.0 / intrinsic_matrix(0, 0);
     const double inv_fy = 1.0 / intrinsic_matrix(1, 1);
@@ -242,7 +240,7 @@ static Eigen::Matrix6d CreateInformationMatrix(
         const geometry::Image &depth_s,
         const geometry::Image &depth_t,
         const OdometryOption &option) {
-    auto correspondence =
+    CorrespondenceSetPixelWise correspondence =
             ComputeCorrespondence(pinhole_camera_intrinsic.intrinsic_matrix_,
                                   extrinsic, depth_s, depth_t, option);
 
@@ -258,9 +256,9 @@ static Eigen::Matrix6d CreateInformationMatrix(
         Eigen::Matrix6d GTG_private = Eigen::Matrix6d::Identity();
         Eigen::Vector6d G_r_private = Eigen::Vector6d::Zero();
 #pragma omp for nowait
-        for (int row = 0; row < int(correspondence->size()); row++) {
-            int u_t = (*correspondence)[row](2);
-            int v_t = (*correspondence)[row](3);
+        for (int row = 0; row < int(correspondence.size()); row++) {
+            int u_t = correspondence[row](2);
+            int v_t = correspondence[row](3);
             double x = *xyz_t->PointerAt<float>(u_t, v_t, 0);
             double y = *xyz_t->PointerAt<float>(u_t, v_t, 1);
             double z = *xyz_t->PointerAt<float>(u_t, v_t, 2);
@@ -280,20 +278,19 @@ static Eigen::Matrix6d CreateInformationMatrix(
             G_r_private(5) = 1.0;
             GTG_private.noalias() += G_r_private * G_r_private.transpose();
         }
-#pragma omp critical
+#pragma omp critical(CreateInformationMatrix)
         { GTG += GTG_private; }
     }
     return GTG;
 }
 
-static void NormalizeIntensity(geometry::Image &image_s,
-                               geometry::Image &image_t,
-                               CorrespondenceSetPixelWise &correspondence) {
+static void NormalizeIntensity(
+        geometry::Image &image_s,
+        geometry::Image &image_t,
+        const CorrespondenceSetPixelWise &correspondence) {
     if (image_s.width_ != image_t.width_ ||
         image_s.height_ != image_t.height_) {
-        utility::LogError(
-                "[NormalizeIntensity] Size of two input images should be "
-                "same");
+        utility::LogError("Size of two input images should be the same");
     }
     double mean_s = 0.0, mean_t = 0.0;
     for (size_t row = 0; row < correspondence.size(); row++) {
@@ -324,7 +321,7 @@ static std::shared_ptr<geometry::Image> PreprocessDepth(
     for (int y = 0; y < depth_processed->height_; y++) {
         for (int x = 0; x < depth_processed->width_; x++) {
             float *p = depth_processed->PointerAt<float>(x, y);
-            if ((*p < option.min_depth_ || *p > option.max_depth_ || *p <= 0))
+            if ((*p < option.depth_min_ || *p > option.depth_max_ || *p <= 0))
                 *p = std::numeric_limits<float>::quiet_NaN();
         }
     }
@@ -404,10 +401,10 @@ InitializeRGBDOdometry(
     auto target_depth = target_depth_preprocessed->Filter(
             geometry::Image::FilterType::Gaussian3);
 
-    auto correspondence = ComputeCorrespondence(
+    CorrespondenceSetPixelWise correspondence = ComputeCorrespondence(
             pinhole_camera_intrinsic.intrinsic_matrix_, odo_init, *source_depth,
             *target_depth, option);
-    NormalizeIntensity(*source_gray, *target_gray, *correspondence);
+    NormalizeIntensity(*source_gray, *target_gray, correspondence);
 
     auto source_out = PackRGBDImage(*source_gray, *source_depth);
     auto target_out = PackRGBDImage(*target_gray, *target_depth);
@@ -426,9 +423,9 @@ static std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
         const Eigen::Matrix4d &extrinsic_initial,
         const RGBDOdometryJacobian &jacobian_method,
         const OdometryOption &option) {
-    auto correspondence = ComputeCorrespondence(
+    CorrespondenceSetPixelWise correspondence = ComputeCorrespondence(
             intrinsic, extrinsic_initial, source.depth_, target.depth_, option);
-    int corresps_count = (int)correspondence->size();
+    int corresps_count = (int)correspondence.size();
 
     auto f_lambda =
             [&](int i,
@@ -437,7 +434,7 @@ static std::tuple<bool, Eigen::Matrix4d> DoSingleIteration(
                 jacobian_method.ComputeJacobianAndResidual(
                         i, J_r, r, w, source, target, source_xyz, target_dx,
                         target_dy, intrinsic, extrinsic_initial,
-                        *correspondence);
+                        correspondence);
             };
     utility::LogDebug("Iter : {:d}, Level : {:d}, ", iter, level);
     Eigen::Matrix6d JTJ;

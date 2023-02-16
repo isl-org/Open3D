@@ -1,9 +1,32 @@
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+
 import open3d as o3d
 
-if o3d._build_config['BUILD_RPC_INTERFACE']:
-    __all__ = ['ExternalVisualizer', 'EV']
-else:
-    __all__ = []
+__all__ = ['ExternalVisualizer', 'EV']
 
 
 class ExternalVisualizer:
@@ -50,7 +73,7 @@ class ExternalVisualizer:
                             ]
 
         Args:
-            obj: A geometry or camera object or a list of objects. See the 
+            obj: A geometry or camera object or a list of objects. See the
             example seection for usage instructions.
 
             path: A path describing a location in the scene tree.
@@ -86,7 +109,8 @@ class ExternalVisualizer:
                                                 layer=layer,
                                                 connection=connection)
             result.append(status)
-        elif isinstance(obj, o3d.geometry.TriangleMesh):
+        elif isinstance(
+                obj, (o3d.t.geometry.TriangleMesh, o3d.geometry.TriangleMesh)):
             status = o3d.io.rpc.set_triangle_mesh(obj,
                                                   path=path,
                                                   time=time,
@@ -137,7 +161,7 @@ class ExternalVisualizer:
 
         This function is compatible with the standalone 'draw' function and can
         be used to redirect calls to the external visualizer. Note that only
-        the geometry argument is supported, all other arguments will be 
+        the geometry argument is supported, all other arguments will be
         ignored.
 
         Example:

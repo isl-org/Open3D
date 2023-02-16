@@ -1,8 +1,28 @@
-# Open3D: www.open3d.org
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
-
-# examples/python/benchmark/benchmark_tsdf.py
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 
 import open3d as o3d
 import numpy as np
@@ -10,14 +30,15 @@ import time
 import os
 import sys
 
-pwd = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(pwd, '..', 'pipelines'))
-from trajectory_io import read_trajectory
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import read_trajectory
 
 
 def run_benchmark():
-    dataset_path = os.path.join(pwd, "..", "..", "test_data", "RGBD")
-    camera_poses = read_trajectory(os.path.join(dataset_path, "odometry.log"))
+    redwood_rgbd = o3d.data.SampleRedwoodRGBDImages()
+    camera_poses = read_trajectory(redwood_rgbd.odometry_log_path)
     camera_intrinsics = o3d.camera.PinholeCameraIntrinsic(
         o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault)
     volume = o3d.pipelines.integration.UniformTSDFVolume(
@@ -29,10 +50,8 @@ def run_benchmark():
 
     s = time.time()
     for i in range(len(camera_poses)):
-        color = o3d.io.read_image(
-            os.path.join(dataset_path, "color", "{0:05d}.jpg".format(i)))
-        depth = o3d.io.read_image(
-            os.path.join(dataset_path, "depth", "{0:05d}.png".format(i)))
+        color = o3d.io.read_image(redwood_rgbd.color_paths[i])
+        depth = o3d.io.read_image(redwood_rgbd.depth_paths[i])
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
             color, depth, depth_trunc=4.0, convert_rgb_to_intensity=False)
         volume.integrate(

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -139,7 +139,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     // Boolean indexing tensors will be supported in the future by
     // converting to int64_t tensors.
     for (const Tensor& index_tensor : index_tensors_) {
-        if (index_tensor.GetDtype() != Dtype::Int64) {
+        if (index_tensor.GetDtype() != core::Int64) {
             utility::LogError(
                     "Index tensor must have Int64 dtype, but {} was used.",
                     index_tensor.GetDtype().ToString());
@@ -154,7 +154,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     //      A[[1, 2], [3, 4]] is converted to
     //      A[[1, 2], [3, 4], :, :].
     Tensor empty_index_tensor =
-            Tensor(SizeVector(), Dtype::Int64, tensor_.GetDevice());
+            Tensor(SizeVector(), core::Int64, tensor_.GetDevice());
     int64_t num_omitted_dims = tensor_.NumDims() - index_tensors_.size();
     for (int64_t i = 0; i < num_omitted_dims; ++i) {
         index_tensors_.push_back(empty_index_tensor);
@@ -187,7 +187,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     // Put index tensors_ on the same device as tensor_.
     for (size_t i = 0; i < index_tensors_.size(); ++i) {
         if (index_tensors_[i].GetDevice() != tensor_.GetDevice()) {
-            index_tensors_[i] = index_tensors_[i].Copy(tensor_.GetDevice());
+            index_tensors_[i] = index_tensors_[i].To(tensor_.GetDevice());
         }
     }
 
@@ -226,7 +226,7 @@ void AdvancedIndexPreprocessor::RunPreprocess() {
     // replacement shape does not, the index is out of bounds. This is because
     // there is no valid number to index an empty tensor.
     // Normally, out of bounds is detected in the advanded indexing kernel. We
-    // detecte here for more helpful error message.
+    // detected here for more helpful error message.
     auto contains_zero = [](const SizeVector& vals) -> bool {
         return std::any_of(vals.begin(), vals.end(),
                            [](int64_t val) { return val == 0; });
@@ -250,7 +250,7 @@ std::vector<Tensor> AdvancedIndexPreprocessor::ExpandBoolTensors(
         const std::vector<Tensor>& index_tensors) {
     std::vector<Tensor> res_index_tensors;
     for (const Tensor& index_tensor : index_tensors) {
-        if (index_tensor.GetDtype() == Dtype::Bool) {
+        if (index_tensor.GetDtype() == core::Bool) {
             std::vector<Tensor> non_zero_indices = index_tensor.NonZeroNumpy();
             res_index_tensors.insert(res_index_tensors.end(),
                                      non_zero_indices.begin(),

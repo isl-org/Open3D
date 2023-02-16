@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,10 @@
 #include "open3d/visualization/rendering/View.h"
 
 namespace open3d {
+
+namespace camera {
+class PinholeCameraIntrinsic;
+}  // namespace camera
 
 namespace geometry {
 class AxisAlignedBoundingBox;
@@ -83,6 +87,7 @@ public:
 
     enum Controls {
         ROTATE_CAMERA,
+        ROTATE_CAMERA_SPHERE,
         FLY,
         ROTATE_SUN,
         ROTATE_IBL,
@@ -92,19 +97,32 @@ public:
     void SetViewControls(Controls mode);
 
     void SetupCamera(float verticalFoV,
-                     const geometry::AxisAlignedBoundingBox& geometry_bounds,
+                     const geometry::AxisAlignedBoundingBox& scene_bounds,
                      const Eigen::Vector3f& center_of_rotation);
+    void SetupCamera(const camera::PinholeCameraIntrinsic& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     const geometry::AxisAlignedBoundingBox& scene_bounds);
+    void SetupCamera(const Eigen::Matrix3d& intrinsic,
+                     const Eigen::Matrix4d& extrinsic,
+                     int intrinsic_width_px,
+                     int intrinsic_height_px,
+                     const geometry::AxisAlignedBoundingBox& scene_bounds);
+    void LookAt(const Eigen::Vector3f& center,
+                const Eigen::Vector3f& eye,
+                const Eigen::Vector3f& up);
+
     void SetOnCameraChanged(
             std::function<void(visualization::rendering::Camera*)>
                     on_cam_changed);
+
+    Eigen::Vector3f GetCenterOfRotation() const;
+    void SetCenterOfRotation(const Eigen::Vector3f& center);
 
     /// Enables changing the directional light with the mouse.
     /// SceneWidget will update the light's direction, so onDirChanged is
     /// only needed if other things need to be updated (like a UI).
     void SetOnSunDirectionChanged(
             std::function<void(const Eigen::Vector3f&)> on_dir_changed);
-    /// Enables showing the skybox while in skybox ROTATE_IBL mode.
-    void ShowSkybox(bool is_on);
 
     void SetScene(std::shared_ptr<rendering::Open3DScene> scene);
     std::shared_ptr<rendering::Open3DScene> GetScene() const;
@@ -149,6 +167,8 @@ public:
             : name(n), geometry(g), tgeometry(t) {}
     };
 
+    void SetSunInteractorEnabled(bool enable);
+
     void SetPickableGeometry(const std::vector<PickableGeometry>& geometry);
     void SetPickablePointSize(int px);
     void SetOnPointsPicked(
@@ -157,13 +177,16 @@ public:
                             std::string,
                             std::vector<std::pair<size_t, Eigen::Vector3d>>>&,
                     int)> on_picked);
+    void SetOnStartedPolygonPicking(std::function<void()> on_poly_pick);
+    enum class PolygonPickAction { CANCEL = 0, SELECT };
+    void DoPolygonPick(PolygonPickAction action);
 
     // 3D Labels
     std::shared_ptr<Label3D> AddLabel(const Eigen::Vector3f& pos,
                                       const char* text);
     void RemoveLabel(std::shared_ptr<Label3D> label);
+    void ClearLabels();
 
-    void Layout(const Theme& theme) override;
     Widget::DrawResult Draw(const DrawContext& context) override;
 
     Widget::EventResult Mouse(const MouseEvent& e) override;

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -89,7 +89,7 @@ public:
     virtual std::string ToString() const;
 
     /// Factory function to create object based on RGBD video file type.
-    static std::shared_ptr<RGBDVideoReader> Create(const std::string &filename);
+    static std::unique_ptr<RGBDVideoReader> Create(const std::string &filename);
 };
 
 }  // namespace io
