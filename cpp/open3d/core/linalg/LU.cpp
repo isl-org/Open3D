@@ -26,6 +26,7 @@
 
 #include "open3d/core/linalg/LU.h"
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/LUImpl.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 #include "open3d/core/linalg/Tri.h"
@@ -106,8 +107,9 @@ void LUIpiv(const Tensor& A, Tensor& ipiv, Tensor& output) {
     // elements as U, (diagonal elements of L are unity), and ipiv array,
     // which has the pivot indices (for 1 <= i <= min(M,N), row i of the
     // matrix was interchanged with row IPIV(i).
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         int64_t ipiv_len = std::min(rows, cols);
         ipiv = core::Tensor::Empty({ipiv_len}, core::Int32, device);
         void* ipiv_data = ipiv.GetDataPtr();

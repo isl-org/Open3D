@@ -119,7 +119,7 @@ def main(config, keys):
             color,
             depth,
             depth_scale=config["depth_scale"],
-            depth_trunc=config["max_depth"],
+            depth_trunc=config["depth_max"],
             convert_rgb_to_intensity=False)
         rgbd_images.append(rgbd_image)
 
@@ -141,7 +141,7 @@ def main(config, keys):
     mesh, camera = o3d.pipelines.color_map.run_non_rigid_optimizer(
         mesh, rgbd_images, camera,
         o3d.pipelines.color_map.NonRigidOptimizerOption(
-            maximum_iteration=300, maximum_allowable_depth=config["max_depth"]))
+            maximum_iteration=300, maximum_allowable_depth=config["depth_max"]))
     o3d.visualization.draw_geometries([mesh])
     o3d.io.write_triangle_mesh(
         os.path.join(path, config["folder_scene"],

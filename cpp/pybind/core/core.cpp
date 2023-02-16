@@ -40,6 +40,7 @@ void pybind_core(py::module& m) {
 
     // opn3d::core namespace.
     pybind_cuda_utils(m_core);
+    pybind_sycl_utils(m_core);
     pybind_core_blob(m_core);
     pybind_core_dtype(m_core);
     pybind_core_device(m_core);

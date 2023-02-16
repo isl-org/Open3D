@@ -190,7 +190,8 @@ private:
                 // Getting bounding box and center to setup camera view.
                 pcd_and_bbox_.bbox_ =
                         this->widget3d_->GetScene()->GetBoundingBox();
-                auto center = pcd_and_bbox_.bbox_.GetCenter().cast<float>();
+                Eigen::Vector3f center =
+                        pcd_and_bbox_.bbox_.GetCenter().cast<float>();
                 this->widget3d_->SetupCamera(verticalFoV, pcd_and_bbox_.bbox_,
                                              center);
             });
@@ -334,8 +335,9 @@ private:
                                     &pcd_and_bbox_.current_scan_, mat_);
 
                             // Setup camera.
-                            auto center = pcd_and_bbox_.bbox_.GetCenter()
-                                                  .cast<float>();
+                            Eigen::Vector3f center =
+                                    pcd_and_bbox_.bbox_.GetCenter()
+                                            .cast<float>();
                             this->widget3d_->SetupCamera(
                                     verticalFoV, pcd_and_bbox_.bbox_, center);
                         });
@@ -343,7 +345,7 @@ private:
             // --------------------------------------------------------------
 
             time_total.Stop();
-            total_time_i += time_total.GetDuration();
+            total_time_i += time_total.GetDurationInMillisecond();
         }
         // ------------------------------------------------------------------
         utility::LogInfo(" Total Average FPS: {}", 1000 * i / total_time_i);
@@ -425,8 +427,7 @@ private:
 
         // The dataset might be too large for your memory. If that is the case,
         // one may directly read the pointcloud frame inside
-        if (end_index_ - start_index_ > 500 &&
-            device_.GetType() == core::Device::DeviceType::CUDA) {
+        if (end_index_ - start_index_ > 500 && device_.IsCUDA()) {
             utility::LogWarning(
                     "The range of data might exceed memory. "
                     "You might want to avoid pre-fetching the data to your "

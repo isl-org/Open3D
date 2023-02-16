@@ -326,6 +326,11 @@ GuiSettingsView::GuiSettingsView(GuiSettingsModel &model,
         model_.SetBasicMode(checked);
     });
     mat_grid->AddChild(basic_mode_);
+    mat_grid->AddChild(std::make_shared<gui::Label>("Wireframe"));
+    wireframe_mode_ = std::make_shared<gui::Checkbox>("");
+    wireframe_mode_->SetOnChecked(
+            [this](bool checked) { model_.SetWireframeMode(checked); });
+    mat_grid->AddChild(wireframe_mode_);
 
     materials->AddChild(mat_grid);
 
@@ -454,6 +459,7 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
     sun_follows_camera_->SetEnabled(!enable);
     material_color_->SetEnabled(!enable);
     prefab_material_->SetEnabled(!enable);
+    wireframe_mode_->SetEnabled(!enable);
 
     // Set lighting environment for basic/non-basic mode
     auto lighting = model_.GetLighting();  // copy
@@ -468,6 +474,8 @@ void GuiSettingsView::UpdateUIForBasicMode(bool enable) {
         model_.SetCustomLighting(lighting);
         model_.SetSunFollowsCamera(true);
         sun_follows_camera_->SetChecked(true);
+        wireframe_mode_->SetChecked(false);
+        model_.SetWireframeMode(false);
     } else {
         model_.SetLightingProfile(GuiSettingsModel::lighting_profiles_[0]);
         if (!sun_follows_cam_was_on_) {

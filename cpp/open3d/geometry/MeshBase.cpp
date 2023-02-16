@@ -29,7 +29,6 @@
 #include <Eigen/Dense>
 #include <numeric>
 #include <queue>
-#include <random>
 #include <tuple>
 
 #include "open3d/geometry/BoundingVolume.h"
@@ -67,6 +66,10 @@ AxisAlignedBoundingBox MeshBase::GetAxisAlignedBoundingBox() const {
 }
 
 OrientedBoundingBox MeshBase::GetOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromPoints(vertices_, robust);
+}
+
+OrientedBoundingBox MeshBase::GetMinimalOrientedBoundingBox(bool robust) const {
     return OrientedBoundingBox::CreateFromPoints(vertices_, robust);
 }
 

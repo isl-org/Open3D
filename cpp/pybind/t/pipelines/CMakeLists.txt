@@ -7,6 +7,7 @@ target_sources(pybind PRIVATE
 )
 
 target_sources(pybind PRIVATE
+    registration/feature.cpp
     registration/registration.cpp
     registration/robust_kernel.cpp
 )

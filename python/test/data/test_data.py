@@ -27,7 +27,7 @@
 import open3d as o3d
 
 from pathlib import Path
-import shutil
+import pytest
 
 
 def test_dataset_base():
@@ -55,17 +55,12 @@ def test_simple_dataset_base():
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
         gt_prefix)
 
-    url_mirrors = [
-        "https://github.com/isl-org/open3d_downloads/releases/download/"
-        "20220201-data/BunnyMesh.ply"
-    ]
-    md5 = "568f871d1a221ba6627569f1e6f9a3f2"
-
-    single_download_dataset = o3d.data.SingleDownloadDataset(
-        gt_prefix,
-        url_mirrors,
-        md5,
-        True,
+    data_descriptor = o3d.data.DataDescriptor(
+        url=o3d.data.open3d_downloads_prefix + "20220201-data/BunnyMesh.ply",
+        md5="568f871d1a221ba6627569f1e6f9a3f2")
+    single_download_dataset = o3d.data.DownloadDataset(
+        prefix=gt_prefix,
+        data_descriptor=data_descriptor,
     )
 
     assert Path(gt_extract_dir / "BunnyMesh.ply").is_file()
@@ -691,6 +686,41 @@ def test_flight_helmet():
     assert Path(helmet.extract_dir) == gt_extract_dir
 
 
+def test_avocado():
+    gt_prefix = "AvocadoModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    avocado = o3d.data.AvocadoModel()
+    assert Path(gt_download_dir).is_dir()
+
+    assert Path(avocado.path) == gt_extract_dir / "AvocadoModel.glb"
+    assert Path(avocado.path).is_file()
+
+    assert avocado.prefix == gt_prefix
+    assert Path(avocado.data_root) == gt_data_root
+    assert Path(avocado.download_dir) == gt_download_dir
+    assert Path(avocado.extract_dir) == gt_extract_dir
+
+
+def test_damaged_helmet():
+    gt_prefix = "DamagedHelmetModel"
+    gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
+        gt_prefix)
+
+    damaged_helmet = o3d.data.DamagedHelmetModel()
+    assert Path(gt_download_dir).is_dir()
+
+    assert Path(
+        damaged_helmet.path) == gt_extract_dir / "DamagedHelmetModel.glb"
+    assert Path(damaged_helmet.path).is_file()
+
+    assert damaged_helmet.prefix == gt_prefix
+    assert Path(damaged_helmet.data_root) == gt_data_root
+    assert Path(damaged_helmet.download_dir) == gt_download_dir
+    assert Path(damaged_helmet.extract_dir) == gt_extract_dir
+
+
 def test_metal_texture():
     gt_prefix = "MetalTexture"
     gt_data_root, gt_download_dir, gt_extract_dir = get_test_data_dirs(
@@ -876,3 +906,127 @@ def test_juneau():
     assert Path(juneau.data_root) == gt_data_root
     assert Path(juneau.download_dir) == gt_download_dir
     assert Path(juneau.extract_dir) == gt_extract_dir
+
+
+@pytest.mark.skip()
+def test_redwood_indoor_living_room1():
+    gt_prefix = "RedwoodIndoorLivingRoom1"
+    _, gt_download_dir, gt_extract_dir = get_test_data_dirs(gt_prefix)
+    dataset = o3d.data.RedwoodIndoorLivingRoom1()
+
+    assert Path(gt_download_dir).is_dir()
+    assert Path(gt_extract_dir).is_dir()
+
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+    assert len(im_rgbds) == 2870
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+    assert len(im_noisy_rgbds) == 2870
+
+
+@pytest.mark.skip()
+def test_redwood_indoor_living_room2():
+    gt_prefix = "RedwoodIndoorLivingRoom2"
+    _, gt_download_dir, gt_extract_dir = get_test_data_dirs(gt_prefix)
+    dataset = o3d.data.RedwoodIndoorLivingRoom2()
+
+    assert Path(gt_download_dir).is_dir()
+    assert Path(gt_extract_dir).is_dir()
+
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+    assert len(im_rgbds) == 2350
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+    assert len(im_noisy_rgbds) == 2350
+
+
+@pytest.mark.skip()
+def test_redwood_indoor_office1():
+    gt_prefix = "RedwoodIndoorOffice1"
+    _, gt_download_dir, gt_extract_dir = get_test_data_dirs(gt_prefix)
+    dataset = o3d.data.RedwoodIndoorOffice1()
+
+    assert Path(gt_download_dir).is_dir()
+    assert Path(gt_extract_dir).is_dir()
+
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+    assert len(im_rgbds) == 2690
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+    assert len(im_noisy_rgbds) == 2690
+
+
+@pytest.mark.skip()
+def test_redwood_indoor_office2():
+    gt_prefix = "RedwoodIndoorOffice2"
+    _, gt_download_dir, gt_extract_dir = get_test_data_dirs(gt_prefix)
+    dataset = o3d.data.RedwoodIndoorOffice2()
+
+    assert Path(gt_download_dir).is_dir()
+    assert Path(gt_extract_dir).is_dir()
+
+    pcd = o3d.io.read_point_cloud(dataset.point_cloud_path)
+
+    im_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths, dataset.depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_rgbds.append(im_rgbd)
+    assert len(im_rgbds) == 2538
+
+    im_noisy_rgbds = []
+    for color_path, depth_path in zip(dataset.color_paths,
+                                      dataset.noisy_depth_paths):
+        im_color = o3d.io.read_image(color_path)
+        im_depth = o3d.io.read_image(depth_path)
+        im_rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
+            im_color, im_depth)
+        im_noisy_rgbds.append(im_rgbd)
+    assert len(im_noisy_rgbds) == 2538

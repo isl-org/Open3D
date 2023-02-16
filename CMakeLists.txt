@@ -1,11 +1,16 @@
-cmake_minimum_required(VERSION 3.19.2)
+cmake_minimum_required(VERSION 3.20)
 # If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
-# official repository https://apt.kitware.com/.  CMake 3.19+ is required to:
+# official repository https://apt.kitware.com/.
+#
+# CMake 3.19+ is required to:
 # - allow linking with OBJECT libraries
 # - prevent erroneous -gencode option deduplication with CUDA
 # - simplify generator expressions for selecting compile flags and setting
 #   global hardened link flags
 # - use first-class language support for ISPC (3.19.2 patch release required)
+#
+# CMake 3.20+ is required to:
+# - detect IntelLLVM compiler for SYCL
 
 if (APPLE)
 set (CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
@@ -15,7 +20,7 @@ endif()
 # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
 # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
 if(UNIX AND NOT APPLE)
-    execute_process(COMMAND uname -p
+    execute_process(COMMAND uname -m
         OUTPUT_VARIABLE PROCESSOR_ARCH
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
@@ -43,7 +48,7 @@ option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
-option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
+option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"        ON )
 if(NOT LINUX_AARCH64 AND NOT APPLE_AARCH64)
     option(BUILD_ISPC_MODULE      "Build the ISPC module"                    ON )
 else()
@@ -59,7 +64,13 @@ if(BUILD_SHARED_LIBS)
 else()
     option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
 endif()
-option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
+option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
+if(BUILD_SYCL_MODULE)
+    option(GLIBCXX_USE_CXX11_ABI  "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
+else()
+    option(GLIBCXX_USE_CXX11_ABI  "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
+endif()
+option(ENABLE_SYCL_UNIFIED_SHARED_MEMORY "Enable SYCL unified shared memory" OFF)
 if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
 else()
@@ -79,6 +90,7 @@ else()
     option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        ON )
 endif()
 option(USE_SYSTEM_ASSIMP          "Use system pre-installed assimp"          OFF)
+option(USE_SYSTEM_CURL            "Use system pre-installed curl"            OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
 option(USE_SYSTEM_FILAMENT        "Use system pre-installed filament"        OFF)
 option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
@@ -91,12 +103,14 @@ option(USE_SYSTEM_JSONCPP         "Use system pre-installed jsoncpp"         OFF
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
 option(USE_SYSTEM_MSGPACK         "Use system pre-installed msgpack"         OFF)
 option(USE_SYSTEM_NANOFLANN       "Use system pre-installed nanoflann"       OFF)
+option(USE_SYSTEM_OPENSSL         "Use system pre-installed OpenSSL"         OFF)
 option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
 option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
 option(USE_SYSTEM_QHULLCPP        "Use system pre-installed qhullcpp"        OFF)
 option(USE_SYSTEM_TBB             "Use system pre-installed TBB"             OFF)
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
+option(USE_SYSTEM_VTK             "Use system pre-installed VTK"             OFF)
 option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
 if(LINUX_AARCH64 OR APPLE_AARCH64)
     option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                ON )
@@ -152,12 +166,16 @@ if (CCACHE)
     endif()
 endif()
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)  # URL contents timestamped by download time
+endif()
 # In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
 # use this directory to cache downloaded 3rd party dependencies and automatically skip
 # downloading from the Internet if the files are available. This is only supported by
 # a limited number of 3rd party libraries.
-set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads")
-message(STATUS "Downloading 3rdparty dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
+set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads"
+    CACHE PATH "Third-party download directory for caching.")
+message(STATUS "Downloading third-party dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 
@@ -248,9 +266,35 @@ project(Open3D
     LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
 
+# Check SYCL compatiblility
+if (BUILD_SYCL_MODULE AND NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "BUILD_SYCL_MODULE requires IntelLLVM (DPC++) compiler, "
+                        "but got CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID} "
+                        "and CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}.")
+endif()
+if (BUILD_SYCL_MODULE AND (NOT UNIX OR APPLE))
+    message(FATAL_ERROR "Open3D SYCL support is only available on Linux")
+endif()
+if(BUILD_SYCL_MODULE AND NOT GLIBCXX_USE_CXX11_ABI)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires GLIBCXX_USE_CXX11_ABI=ON")
+endif()
+if(BUILD_SYCL_MODULE AND BUILD_TENSORFLOW_OPS)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires BUILD_TENSORFLOW_OPS=OFF")
+endif()
+if(BUILD_SYCL_MODULE AND BUILD_PYTORCH_OPS)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires BUILD_PYTORCH_OPS=OFF")
+endif()
+if(BUILD_SYCL_MODULE AND BUILD_CUDA_MODULE)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE and BUILD_SYCL_MODULE cannot be on at the same time for now.")
+endif()
+
 # Global flag to set CXX standard.
 # This does not affect 3rd party libraries.
-set(CMAKE_CXX_STANDARD 14)
+if (BUILD_SYCL_MODULE)
+    set(CMAKE_CXX_STANDARD 17)
+else()
+    set(CMAKE_CXX_STANDARD 14)
+endif()
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
@@ -440,6 +484,7 @@ endmacro()
 include(Open3DLink3rdpartyLibraries)
 include(Open3DSetGlobalProperties)
 include(Open3DShowAndAbortOnWarning)
+include(Open3DSYCLTargetSources)
 
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the

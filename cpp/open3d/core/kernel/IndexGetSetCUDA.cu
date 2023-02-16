@@ -68,6 +68,7 @@ void IndexGetCUDA(const Tensor& src,
                   const std::vector<Tensor>& index_tensors,
                   const SizeVector& indexed_shape,
                   const SizeVector& indexed_strides) {
+    CUDAScopedDevice scoped_device(src.GetDevice());
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::GET);
@@ -80,7 +81,7 @@ void IndexGetCUDA(const Tensor& src,
                     CUDACopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
             LaunchAdvancedIndexerKernel(
                     src.GetDevice(), ai,
                     // Need to wrap as extended CUDA lambda function
@@ -96,6 +97,7 @@ void IndexSetCUDA(const Tensor& src,
                   const std::vector<Tensor>& index_tensors,
                   const SizeVector& indexed_shape,
                   const SizeVector& indexed_strides) {
+    CUDAScopedDevice scoped_device(src.GetDevice());
     Dtype dtype = src.GetDtype();
     AdvancedIndexer ai(src, dst, index_tensors, indexed_shape, indexed_strides,
                        AdvancedIndexer::AdvancedIndexerMode::SET);
@@ -108,7 +110,7 @@ void IndexSetCUDA(const Tensor& src,
                     CUDACopyObjectElementKernel(src, dst, object_byte_size);
                 });
     } else {
-        DISPATCH_DTYPE_TO_TEMPLATE(dtype, [&]() {
+        DISPATCH_DTYPE_TO_TEMPLATE_WITH_BOOL(dtype, [&]() {
             LaunchAdvancedIndexerKernel(
                     src.GetDevice(), ai,
                     // Need to wrap as extended CUDA lambda function

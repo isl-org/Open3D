@@ -123,7 +123,8 @@ void Resize(const open3d::core::Tensor &src_im,
 
     auto it = type_dict.find(interp_type);
     if (it == type_dict.end()) {
-        utility::LogError("Unsupported interp type {}", interp_type);
+        utility::LogError("Unsupported interp type {}",
+                          static_cast<int>(interp_type));
     }
 
     try {

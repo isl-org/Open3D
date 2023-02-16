@@ -112,7 +112,7 @@ public:
     core::Dtype GetDtype() const { return data_.GetDtype(); }
 
     /// \brief Get device of the image.
-    core::Device GetDevice() const { return data_.GetDevice(); }
+    core::Device GetDevice() const override { return data_.GetDevice(); }
 
     /// \brief Get pixel(s) in the image.
     ///
@@ -195,12 +195,14 @@ public:
         Lanczos = 3,  ///< Lanczos filter interpolation.
         Super = 4     ///< Super sampling interpolation (only downsample).
     };
+
     /// \brief Return a new image after resizing with specified interpolation
     /// type.
     ///
     /// Downsample if sampling rate is < 1. Upsample if sampling rate > 1.
     /// Aspect ratio is always preserved.
     Image Resize(float sampling_rate = 0.5f,
+
                  InterpType interp_type = InterpType::Nearest) const;
 
     /// \brief Return a new image after performing morphological dilation.

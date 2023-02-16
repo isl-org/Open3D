@@ -31,6 +31,8 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/hashmap/HashMap.h"
+#include "open3d/t/geometry/LineSet.h"
+#include "open3d/t/geometry/TriangleMesh.h"
 #include "pybind/docstring.h"
 #include "pybind/t/geometry/geometry.h"
 
@@ -88,7 +90,7 @@ The attributes of the point cloud have different levels::
     # This attribute is created by default and is required by all point clouds.
     # The shape must be (N, 3). The device of "positions" determines the device
     # of the point cloud.
-    pcd.point["positions"] = o3d.core.Tensor([[0, 0, 0],
+    pcd.point.positions = o3d.core.Tensor([[0, 0, 0],
                                               [1, 1, 1],
                                               [2, 2, 2]], dtype, device)
 
@@ -98,10 +100,10 @@ The attributes of the point cloud have different levels::
     # "normals", some internal operations that expects "normals" will not work.
     # "normals" and "colors" must have shape (N, 3) and must be on the same
     # device as the point cloud.
-    pcd.point["normals"] = o3d.core.Tensor([[0, 0, 1],
+    pcd.point.normals = o3d.core.Tensor([[0, 0, 1],
                                             [0, 1, 0],
                                             [1, 0, 0]], dtype, device)
-    pcd.point["colors"] = o3d.core.Tensor([[0.0, 0.0, 0.0],
+    pcd.point.colors = o3d.core.Tensor([[0.0, 0.0, 0.0],
                                             [0.1, 0.1, 0.1],
                                             [0.2, 0.2, 0.2]], dtype, device)
 
@@ -109,8 +111,8 @@ The attributes of the point cloud have different levels::
     # You can also attach custom attributes. The value tensor must be on the
     # same device as the point cloud. The are no restrictions on the shape and
     # dtype, e.g.,
-    pcd.point["intensities"] = o3d.core.Tensor([0.3, 0.1, 0.4], dtype, device)
-    pcd.point["labels"] = o3d.core.Tensor([3, 1, 4], o3d.core.int32, device)
+    pcd.point.intensities = o3d.core.Tensor([0.3, 0.1, 0.4], dtype, device)
+    pcd.point.labels = o3d.core.Tensor([3, 1, 4], o3d.core.int32, device)
 )");
 
     // Constructors.
@@ -124,6 +126,43 @@ The attributes of the point cloud have different levels::
                                                    core::Tensor>&>(),
                  "map_keys_to_tensors"_a)
             .def("__repr__", &PointCloud::ToString);
+
+    py::detail::bind_copy_functions<PointCloud>(pointcloud);
+
+    // Pickle support.
+    pointcloud.def(py::pickle(
+            [](const PointCloud& pcd) {
+                // __getstate__
+                // Convert point attributes to tensor map to CPU.
+                auto map_keys_to_tensors = pcd.GetPointAttr();
+
+                return py::make_tuple(pcd.GetDevice(), pcd.GetPointAttr());
+            },
+            [](py::tuple t) {
+                // __setstate__
+                if (t.size() != 2) {
+                    utility::LogError(
+                            "Cannot unpickle PointCloud! Expecting a tuple of "
+                            "size 2.");
+                }
+
+                const core::Device device = t[0].cast<core::Device>();
+                PointCloud pcd(device);
+                if (!device.IsAvailable()) {
+                    utility::LogWarning(
+                            "Device ({}) is not available. PointCloud will be "
+                            "created on CPU.",
+                            device.ToString());
+                    pcd.To(core::Device("CPU:0"));
+                }
+
+                const TensorMap map_keys_to_tensors = t[1].cast<TensorMap>();
+                for (auto& kv : map_keys_to_tensors) {
+                    pcd.SetPointAttr(kv.first, kv.second);
+                }
+
+                return pcd;
+            }));
 
     // def_property_readonly is sufficient, since the returned TensorMap can
     // be editable in Python. We don't want the TensorMap to be replaced
@@ -181,10 +220,14 @@ The attributes of the point cloud have different levels::
     pointcloud.def("rotate", &PointCloud::Rotate, "R"_a, "center"_a,
                    "Rotate points and normals (if exist).");
 
-    pointcloud.def("select_points", &PointCloud::SelectPoints, "boolean_mask"_a,
-                   "invert"_a = false,
+    pointcloud.def("select_by_mask", &PointCloud::SelectByMask,
+                   "boolean_mask"_a, "invert"_a = false,
                    "Select points from input pointcloud, based on boolean mask "
                    "indices into output point cloud.");
+    pointcloud.def("select_by_index", &PointCloud::SelectByIndex, "indices"_a,
+                   "invert"_a = false, "remove_duplicates"_a = false,
+                   "Select points from input pointcloud, based on indices into "
+                   "output point cloud.");
     pointcloud.def(
             "voxel_down_sample",
             [](const PointCloud& pointcloud, const double voxel_size) {
@@ -193,27 +236,105 @@ The attributes of the point cloud have different levels::
             },
             "Downsamples a point cloud with a specified voxel size.",
             "voxel_size"_a);
-    pointcloud.def("remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
-                   "nb_points"_a, "search_radius"_a,
-                   "Remove points that have less than nb_points neighbors in a "
-                   "sphere of a given search radius.");
+    pointcloud.def("uniform_down_sample", &PointCloud::UniformDownSample,
+                   "Downsamples a point cloud by selecting every kth index "
+                   "point and its attributes.",
+                   "every_k_points"_a);
+    pointcloud.def("random_down_sample", &PointCloud::RandomDownSample,
+                   "Downsample a pointcloud by selecting random index point "
+                   "and its attributes.",
+                   "sampling_ratio"_a);
+    pointcloud.def("farthest_point_down_sample",
+                   &PointCloud::FarthestPointDownSample,
+                   "Downsample a pointcloud into output pointcloud with a set "
+                   "of points has farthest distance.The sampling is performed "
+                   "by selecting the farthest point from previous selected "
+                   "points iteratively",
+                   "num_samples"_a);
+    pointcloud.def(
+            "remove_radius_outliers", &PointCloud::RemoveRadiusOutliers,
+            "nb_points"_a, "search_radius"_a,
+            R"(Remove points that have less than nb_points neighbors in a 
+sphere of a given search radius. 
 
-    pointcloud.def("estimate_normals", &PointCloud::EstimateNormals,
-                   py::call_guard<py::gil_scoped_release>(),
-                   py::arg("max_nn") = 30, py::arg("radius") = py::none(),
-                   "Function to estimate point normals. If the pointcloud "
-                   "normals exists, the estimated normals are oriented "
-                   "with respect to the same. It uses KNN search if only "
-                   "max_nn parameter is provided, and HybridSearch if radius "
-                   "parameter is also provided.");
-    pointcloud.def("estimate_color_gradients",
-                   &PointCloud::EstimateColorGradients,
-                   py::call_guard<py::gil_scoped_release>(),
-                   py::arg("max_nn") = 30, py::arg("radius") = py::none(),
-                   "Function to estimate point color gradients. If radius is "
-                   "provided, then HybridSearch is used, otherwise KNN-Search "
-                   "is used.");
+Args:
+    nb_points. Number of neighbor points required within the radius.
+    search_radius. Radius of the sphere.
 
+Return:
+    Tuple of filtered point cloud and boolean mask tensor for selected values
+    w.r.t. input point cloud.)");
+    pointcloud.def(
+            "remove_statistical_outliers",
+            &PointCloud::RemoveStatisticalOutliers, "nb_neighbors"_a,
+            "std_ratio"_a,
+            R"(Remove points that are further away from their \p nb_neighbor
+neighbors in average. This function is not recommended to use on GPU. 
+
+Args:
+    nb_neighbors. Number of neighbors around the target point.
+    std_ratio. Standard deviation ratio.
+
+Return:
+    Tuple of filtered point cloud and boolean mask tensor for selected values
+    w.r.t. input point cloud.)");
+    pointcloud.def("remove_duplicated_points",
+                   &PointCloud::RemoveDuplicatedPoints,
+                   "Remove duplicated points and there associated attributes.");
+    pointcloud.def(
+            "remove_non_finite_points", &PointCloud::RemoveNonFinitePoints,
+            "remove_nan"_a = true, "remove_infinite"_a = true,
+            R"(Remove all points from the point cloud that have a nan entry, or 
+infinite value. It also removes the corresponding attributes. 
+    
+Args:
+    remove_nan. Remove NaN values from the PointCloud.
+    remove_infinite. Remove infinite values from the PointCloud.
+
+Return:
+    Tuple of filtered point cloud and boolean mask tensor for selected values
+    w.r.t. input point cloud.)");
+    pointcloud.def("paint_uniform_color", &PointCloud::PaintUniformColor,
+                   "color"_a, "Assigns uniform color to the point cloud.");
+
+    pointcloud.def("normalize_normals", &PointCloud::NormalizeNormals,
+                   "Normalize point normals to length 1.");
+    pointcloud.def(
+            "estimate_normals", &PointCloud::EstimateNormals,
+            py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
+            py::arg("radius") = py::none(),
+            "Function to estimate point normals. If the point cloud normals "
+            "exist, the estimated normals are oriented with respect to the "
+            "same. It uses KNN search (Not recommended to use on GPU) if only "
+            "max_nn parameter is provided, Radius search (Not recommended to "
+            "use on GPU) if only radius is provided and Hybrid Search "
+            "(Recommended) if radius parameter is also provided.");
+    pointcloud.def("orient_normals_to_align_with_direction",
+                   &PointCloud::OrientNormalsToAlignWithDirection,
+                   "Function to orient the normals of a point cloud.",
+                   "orientation_reference"_a = core::Tensor::Init<float>(
+                           {0, 0, 1}, core::Device("CPU:0")));
+    pointcloud.def("orient_normals_towards_camera_location",
+                   &PointCloud::OrientNormalsTowardsCameraLocation,
+                   "Function to orient the normals of a point cloud.",
+                   "camera_location"_a = core::Tensor::Zeros(
+                           {3}, core::Float32, core::Device("CPU:0")));
+    pointcloud.def("orient_normals_consistent_tangent_plane",
+                   &PointCloud::OrientNormalsConsistentTangentPlane,
+                   "Function to orient the normals with respect to consistent "
+                   "tangent planes.",
+                   "k"_a);
+    pointcloud.def(
+            "estimate_color_gradients", &PointCloud::EstimateColorGradients,
+            py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
+            py::arg("radius") = py::none(),
+            "Function to estimate point color gradients. It uses KNN search "
+            "(Not recommended to use on GPU) if only max_nn parameter is "
+            "provided, Radius search (Not recommended to use on GPU) if only "
+            "radius is provided and Hybrid Search (Recommended) if radius "
+            "parameter is also provided.");
+
+    // creation (static)
     pointcloud.def_static(
             "create_from_depth_image", &PointCloud::CreateFromDepthImage,
             py::call_guard<py::gil_scoped_release>(), "depth"_a, "intrinsics"_a,
@@ -243,6 +364,8 @@ The attributes of the point cloud have different levels::
             "from_legacy", &PointCloud::FromLegacy, "pcd_legacy"_a,
             "dtype"_a = core::Float32, "device"_a = core::Device("CPU:0"),
             "Create a PointCloud from a legacy Open3D PointCloud.");
+
+    // processing
     pointcloud.def("project_to_depth_image", &PointCloud::ProjectToDepthImage,
                    "width"_a, "height"_a, "intrinsics"_a,
                    "extrinsics"_a = core::Tensor::Eye(4, core::Float32,
@@ -255,8 +378,181 @@ The attributes of the point cloud have different levels::
                                                       core::Device("CPU:0")),
                    "depth_scale"_a = 1000.0, "depth_max"_a = 3.0,
                    "Project a colored point cloud to a RGBD image.");
+    pointcloud.def(
+            "hidden_point_removal", &PointCloud::HiddenPointRemoval,
+            "camera_location"_a, "radius"_a,
+            R"(Removes hidden points from a point cloud and returns a mesh of
+the remaining points. Based on Katz et al. 'Direct Visibility of Point Sets',
+2007. Additional information about the choice of radius for noisy point clouds
+can be found in Mehra et. al. 'Visibility of Noisy Point Cloud Data', 2010.
+This is a wrapper for a CPU implementation and a copy of the point cloud data
+and resulting visible triangle mesh and indiecs will be made.
+
+Args:
+    camera_location. All points not visible from that location will be removed.
+    radius. The radius of the spherical projection.
+
+Return:
+    Tuple of visible triangle mesh and indices of visible points on the same
+    device as the point cloud.
+
+Example:
+    We use armadillo mesh to compute the visible points from given camera::
+
+        # Convert mesh to a point cloud and estimate dimensions.
+        armadillo_data = o3d.data.ArmadilloMesh()
+        pcd = o3d.io.read_triangle_mesh(
+        armadillo_data.path).sample_points_poisson_disk(5000)
+
+        diameter = np.linalg.norm(
+                np.asarray(pcd.get_max_bound()) - np.asarray(pcd.get_min_bound()))
+
+        # Define parameters used for hidden_point_removal.
+        camera = o3d.core.Tensor([0, 0, diameter], o3d.core.float32)
+        radius = diameter * 100
+
+        # Get all points that are visible from given view point.
+        pcd = o3d.t.geometry.PointCloud.from_legacy(pcd)
+        _, pt_map = pcd.hidden_point_removal(camera, radius)
+        pcd = pcd.select_by_index(pt_map)
+        o3d.visualization.draw([pcd], point_size=5))");
+    pointcloud.def(
+            "cluster_dbscan", &PointCloud::ClusterDBSCAN, "eps"_a,
+            "min_points"_a, "print_progress"_a = false,
+            R"(Cluster PointCloud using the DBSCAN algorithm  Ester et al.,'A
+Density-Based Algorithm for Discovering Clusters in Large Spatial Databases
+with Noise', 1996. This is a wrapper for a CPU implementation and a copy of the
+point cloud data and resulting labels will be made.
+
+Args:
+    eps. Density parameter that is used to find neighbouring points.
+    min_points. Minimum number of points to form a cluster.
+    print_progress (default False). If 'True' the progress is visualized in the console.
+
+Return:
+    A Tensor list of point labels on the same device as the point cloud, -1
+    indicates noise according to the algorithm.
+
+Example:
+    We use Redwood dataset for demonstration::
+
+        import matplotlib.pyplot as plt
+
+        sample_ply_data = o3d.data.PLYPointCloud()
+        pcd = o3d.t.io.read_point_cloud(sample_ply_data.path)
+        labels = pcd.cluster_dbscan(eps=0.02, min_points=10, print_progress=True)
+
+        max_label = labels.max().item()
+        colors = plt.get_cmap("tab20")(
+                labels.numpy() / (max_label if max_label > 0 else 1))
+        colors = o3d.core.Tensor(colors[:, :3], o3d.core.float32)
+        colors[labels < 0] = 0
+        pcd.point.colors = colors
+        o3d.visualization.draw([pcd]))");
+    pointcloud.def(
+            "segment_plane", &PointCloud::SegmentPlane,
+            "distance_threshold"_a = 0.01, "ransac_n"_a = 3,
+            "num_iterations"_a = 100, "probability"_a = 0.99999999,
+            R"(Segments a plane in the point cloud using the RANSAC algorithm.
+This is a wrapper for a CPU implementation and a copy of the point cloud data and
+resulting plane model and inlier indiecs will be made.
+
+Args:
+    distance_threshold (default 0.01). Max distance a point can be from the plane
+    model, and still be considered an inlier.
+    ransac_n (default 3). Number of initial points to be considered inliers in each iteration.
+    num_iterations (default 100). Maximum number of iterations.
+    probability (default 0.99999999). Expected probability of finding the optimal plane.
+
+Return:
+    Tuple of the plane model ax + by + cz + d = 0 and the indices of
+    the plane inliers on the same device as the point cloud.
+
+Example:
+    We use Redwood dataset to compute its plane model and inliers::
+
+        sample_pcd_data = o3d.data.PCDPointCloud()
+        pcd = o3d.t.io.read_point_cloud(sample_pcd_data.path)
+        plane_model, inliers = pcd.segment_plane(distance_threshold=0.01,
+                                                 ransac_n=3,
+                                                 num_iterations=1000)
+        inlier_cloud = pcd.select_by_index(inliers)
+        inlier_cloud = inlier_cloud.paint_uniform_color([1.0, 0, 0])
+        outlier_cloud = pcd.select_by_index(inliers, invert=True)
+        o3d.visualization.draw([inlier_cloud, outlier_cloud]))");
+    pointcloud.def(
+            "compute_convex_hull", &PointCloud::ComputeConvexHull,
+            "joggle_inputs"_a = false,
+            R"doc(Compute the convex hull of a triangle mesh using qhull. This runs on the CPU.
+
+Args:
+    joggle_inputs (default False). Handle precision problems by
+    randomly perturbing the input data. Set to True if perturbing the input
+    iis acceptable but you need convex simplicial output. If False,
+    neighboring facets may be merged in case of precision problems. See
+    `QHull docs <http://www.qhull.org/html/qh-impre.htm#joggle>`__ for more
+    details.
+
+Return:
+    TriangleMesh representing the convexh hull. This contains an
+    extra vertex property "point_indices" that contains the index of the
+    corresponding vertex in the original mesh.
+
+Example:
+    We will load the Eagle dataset, compute and display it's convex hull::
+
+        eagle = o3d.data.EaglePointCloud()
+        pcd = o3d.t.io.read_point_cloud(eagle.path)
+        hull = pcd.compute_convex_hull()
+        o3d.visualization.draw([{'name': 'eagle', 'geometry': pcd}, {'name': 'convex hull', 'geometry': hull}])
+    )doc");
+    pointcloud.def("compute_boundary_points",
+                   &PointCloud::ComputeBoundaryPoints, "radius"_a,
+                   "max_nn"_a = 30, "angle_threshold"_a = 90.0,
+                   R"doc(Compute the boundary points of a point cloud.
+The implementation is inspired by the PCL implementation. Reference:
+https://pointclouds.org/documentation/classpcl_1_1_boundary_estimation.html
+
+Args:
+    radius. Neighbor search radius parameter.
+    max_nn (default 30). Maximum number of neighbors to search.
+    angle_threshold (default 90.0). Angle threshold to decide if a point is on the boundary.
+
+Return:
+    Tensor of boundary points and its boolean mask tensor.
+
+Example:
+    We will load the DemoCropPointCloud dataset, compute its boundary points::
+
+        ply_point_cloud = o3d.data.DemoCropPointCloud()
+        pcd = o3d.t.io.read_point_cloud(ply_point_cloud.point_cloud_path)
+        boundaries, mask = pcd.compute_boundary_points(radius, max_nn)
+        boundaries.paint_uniform_color([1.0, 0.0, 0.0])
+        o3d.visualization.draw([pcd, boundaries])
+    )doc");
+
+    // conversion
     pointcloud.def("to_legacy", &PointCloud::ToLegacy,
                    "Convert to a legacy Open3D PointCloud.");
+    pointcloud.def(
+            "get_axis_aligned_bounding_box",
+            &PointCloud::GetAxisAlignedBoundingBox,
+            "Create an axis-aligned bounding box from attribute 'positions'.");
+    pointcloud.def(
+            "get_oriented_bounding_box", &PointCloud::GetOrientedBoundingBox,
+            "Create an oriented bounding box from attribute 'positions'.");
+    pointcloud.def("crop",
+                   (PointCloud(PointCloud::*)(const AxisAlignedBoundingBox&,
+                                              bool) const) &
+                           PointCloud::Crop,
+                   "Function to crop pointcloud into output pointcloud.",
+                   "aabb"_a, "invert"_a = false);
+    pointcloud.def("crop",
+                   (PointCloud(PointCloud::*)(const OrientedBoundingBox&, bool)
+                            const) &
+                           PointCloud::Crop,
+                   "Function to crop pointcloud into output pointcloud.",
+                   "obb"_a, "invert"_a = false);
 
     docstring::ClassMethodDocInject(m, "PointCloud", "estimate_normals",
                                     map_shared_argument_docstrings);
@@ -264,8 +560,128 @@ The attributes of the point cloud have different levels::
                                     map_shared_argument_docstrings);
     docstring::ClassMethodDocInject(m, "PointCloud", "create_from_rgbd_image",
                                     map_shared_argument_docstrings);
-    docstring::ClassMethodDocInject(m, "PointCloud", "select_points");
-    docstring::ClassMethodDocInject(m, "PointCloud", "remove_radius_outliers");
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "select_by_mask",
+            {{"boolean_mask",
+              "Boolean indexing tensor of shape {n,} containing true value for "
+              "the indices that is to be selected.."},
+             {"invert", "Set to `True` to invert the selection of indices."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "select_by_index",
+            {{"indices",
+              "Int64 indexing tensor of shape {n,} containing index value that "
+              "is to be selected."},
+             {"invert",
+              "Set to `True` to invert the selection of indices, and also "
+              "ignore the duplicated indices."},
+             {"remove_duplicates",
+              "Set to `True` to remove the duplicated indices."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "voxel_down_sample",
+            {{"voxel_size", "Voxel size. A positive number."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "uniform_down_sample",
+            {{"every_k_points",
+              "Sample rate, the selected point indices are [0, k, 2k, …]."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "random_down_sample",
+            {{"sampling_ratio",
+              "Sampling ratio, the ratio of sample to total number of points "
+              "in the pointcloud."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "farthest_point_down_sample",
+            {{"num_samples", "Number of points to be sampled."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "remove_radius_outliers",
+            {{"nb_points",
+              "Number of neighbor points required within the radius."},
+             {"search_radius", "Radius of the sphere."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "paint_uniform_color",
+            {{"color",
+              "Color of the pointcloud. Floating color values are clipped "
+              "between 0.0 and 1.0."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_to_align_with_direction",
+            {{"orientation_reference",
+              "Normals are oriented with respect to orientation_reference."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_towards_camera_location",
+            {{"camera_location",
+              "Normals are oriented with towards the camera_location."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "orient_normals_consistent_tangent_plane",
+            {{"k",
+              "Number of k nearest neighbors used in constructing the "
+              "Riemannian graph used to propagate normal orientation."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "crop",
+            {{"aabb", "AxisAlignedBoundingBox to crop points."},
+             {"invert",
+              "Crop the points outside of the bounding box or inside of the "
+              "bounding box."}});
+    docstring::ClassMethodDocInject(
+            m, "PointCloud", "crop",
+            {{"obb", "OrientedBoundingBox to crop points."},
+             {"invert",
+              "Crop the points outside of the bounding box or inside of the "
+              "bounding box."}});
+    pointcloud.def("extrude_rotation", &PointCloud::ExtrudeRotation, "angle"_a,
+                   "axis"_a, "resolution"_a = 16, "translation"_a = 0.0,
+                   "capping"_a = true,
+                   R"(Sweeps the point set rotationally about an axis.
+
+Args:
+    angle (float): The rotation angle in degree.
+    
+    axis (open3d.core.Tensor): The rotation axis.
+    
+    resolution (int): The resolution defines the number of intermediate sweeps
+        about the rotation axis.
+
+    translation (float): The translation along the rotation axis. 
+
+Returns:
+    A line set with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a number of helices from a point cloud::
+
+        import open3d as o3d
+        import numpy as np
+        pcd = o3d.t.geometry.PointCloud(np.random.rand(10,3))
+        helices = pcd.extrude_rotation(3*360, [0,1,0], resolution=3*16, translation=2)
+        o3d.visualization.draw([{'name': 'helices', 'geometry': helices}])
+
+)");
+
+    pointcloud.def("extrude_linear", &PointCloud::ExtrudeLinear, "vector"_a,
+                   "scale"_a = 1.0, "capping"_a = true,
+                   R"(Sweeps the point cloud along a direction vector.
+
+Args:
+    
+    vector (open3d.core.Tensor): The direction vector.
+    
+    scale (float): Scalar factor which essentially scales the direction vector.
+
+Returns:
+    A line set with the result of the sweep operation.
+
+
+Example:
+
+    This code generates a set of straight lines from a point cloud::
+        import open3d as o3d
+        import numpy as np
+        pcd = o3d.t.geometry.PointCloud(np.random.rand(10,3))
+        lines = pcd.extrude_linear([0,1,0])
+        o3d.visualization.draw([{'name': 'lines', 'geometry': lines}])
+
+
+)");
 }
 
 }  // namespace geometry

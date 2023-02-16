@@ -39,6 +39,7 @@ target_link_libraries(tests PRIVATE
     Open3D::3rdparty_jsoncpp
     Open3D::3rdparty_googletest
     Open3D::3rdparty_threads
+    Open3D::3rdparty_vtk
 )
 
 if (TARGET Open3D::3rdparty_openmp)
@@ -46,6 +47,7 @@ if (TARGET Open3D::3rdparty_openmp)
         Open3D::3rdparty_openmp
     )
 endif()
+    
 
 open3d_show_and_abort_on_warning(tests)
 open3d_set_global_properties(tests)

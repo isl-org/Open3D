@@ -28,6 +28,8 @@
 
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
+
 namespace open3d {
 namespace core {
 
@@ -65,8 +67,9 @@ void SVD(const Tensor &A, Tensor &U, Tensor &S, Tensor &VT) {
     void *VT_data = VT.GetDataPtr();
     void *superb_data = superb.GetDataPtr();
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
+        CUDAScopedDevice scoped_device(device);
         SVDCUDA(A_data, U_data, S_data, VT_data, superb_data, m, n, dtype,
                 device);
 #else

@@ -32,7 +32,7 @@ void PrintHelp() {
     PrintOpen3DVersion();
     // clang-format off
     utility::LogInfo("Usage:");
-    utility::LogInfo("    > DenseSLAM [options]");
+    utility::LogInfo("    > OfflineSLAM [options]");
     utility::LogInfo("      Given an RGBD image sequence, perform frame-to-model tracking and mapping, and reconstruct the surface.");
     utility::LogInfo("");
     utility::LogInfo("Basic options:");
@@ -41,12 +41,14 @@ void PrintHelp() {
     utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
     utility::LogInfo("    --voxel_size [=0.0058 (m)]");
     utility::LogInfo("    --depth_scale [=1000.0]");
-    utility::LogInfo("    --max_depth [=3.0]");
+    utility::LogInfo("    --depth_max [=3.0]");
     utility::LogInfo("    --trunc_voxel_multiplier [=8.0]");
     utility::LogInfo("    --block_count [=10000]");
     utility::LogInfo("    --device [CPU:0]");
     utility::LogInfo("    --pointcloud [file path to save the extracted pointcloud]");
     utility::LogInfo("    --mesh [file path to save the extracted mesh]");
+    utility::LogInfo("    --vis [whether to visualize the result]");
+    utility::LogInfo("To run similar example with a default dataset, try the `OnlineSLAMRGBD` example");
     // clang-format on
     utility::LogInfo("");
 }
@@ -208,8 +210,10 @@ int main(int argc, char* argv[]) {
         auto pcd = model.ExtractPointCloud();
         auto pcd_legacy =
                 std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
-        open3d::visualization::Draw({pcd_legacy}, "Extracted PointCloud.");
         open3d::io::WritePointCloud(filename, *pcd_legacy);
+        if (utility::ProgramOptionExists(argc, argv, "--vis")) {
+            open3d::visualization::Draw({pcd_legacy}, "Extracted PointCloud.");
+        }
     } else {
         // If nothing is specified, draw and save the geometry as mesh.
         std::string filename = utility::GetProgramOptionAsString(
@@ -217,7 +221,9 @@ int main(int argc, char* argv[]) {
         auto mesh = model.ExtractTriangleMesh();
         auto mesh_legacy = std::make_shared<open3d::geometry::TriangleMesh>(
                 mesh.ToLegacy());
-        open3d::visualization::Draw({mesh_legacy}, "Extracted Mesh.");
         open3d::io::WriteTriangleMesh(filename, *mesh_legacy);
+        if (utility::ProgramOptionExists(argc, argv, "--vis")) {
+            open3d::visualization::Draw({mesh_legacy}, "Extracted Mesh.");
+        }
     }
 }

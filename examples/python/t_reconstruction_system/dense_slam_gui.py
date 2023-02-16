@@ -29,18 +29,18 @@
 # P.S. This example is used in documentation, so, please ensure the changes are
 # synchronized.
 
+import open3d as o3d
+import open3d.core as o3c
 import open3d.visualization.gui as gui
 import open3d.visualization.rendering as rendering
 
-import open3d as o3d
-import open3d.core as o3c
 from config import ConfigParser
 
 import os, sys
 import numpy as np
 import threading
 import time
-from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_testdata
+from common import load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_dataset, extract_rgbd_frames
 
 
 def set_enabled(widget, enable):
@@ -255,7 +255,7 @@ class ReconstructionWindow:
 
         pcd_placeholder = o3d.t.geometry.PointCloud(
             o3c.Tensor(np.zeros((max_points, 3), dtype=np.float32)))
-        pcd_placeholder.point['colors'] = o3c.Tensor(
+        pcd_placeholder.point.colors = o3c.Tensor(
             np.zeros((max_points, 3), dtype=np.float32))
         mat = rendering.MaterialRecord()
         mat.shader = 'defaultUnlit'
@@ -326,7 +326,7 @@ class ReconstructionWindow:
             (raycast_color).to(o3c.uint8, False, 255.0).to_legacy())
 
         if self.is_scene_updated:
-            if pcd is not None and pcd.point['positions'].shape[0] > 0:
+            if pcd is not None and pcd.point.positions.shape[0] > 0:
                 self.widget3d.scene.scene.update_geometry(
                     'points', pcd, rendering.Scene.UPDATE_POINTS_FLAG |
                     rendering.Scene.UPDATE_COLORS_FLAG)
@@ -436,7 +436,7 @@ class ReconstructionWindow:
                 self.model.voxel_grid.hashmap().size(),
                 self.model.voxel_grid.hashmap().capacity())
             info += 'Surface points: {}/{}\n'.format(
-                0 if pcd is None else pcd.point['positions'].shape[0],
+                0 if pcd is None else pcd.point.positions.shape[0],
                 self.est_point_count_slider.int_value)
 
             self.output_info.text = info
@@ -462,13 +462,26 @@ if __name__ == '__main__':
         help='YAML config file path. Please refer to default_config.yml as a '
         'reference. It overrides the default config file, but will be '
         'overridden by other command line inputs.')
+    parser.add('--default_dataset',
+               help='Default dataset is used when config file is not provided. '
+               'Default dataset may be selected from the following options: '
+               '[lounge, bedroom, jack_jack]',
+               default='lounge')
     parser.add('--path_npz',
                help='path to the npz file that stores voxel block grid.',
                default='output.npz')
     config = parser.get_config()
 
     if config.path_dataset == '':
-        config.path_dataset = get_default_testdata()
+        config = get_default_dataset(config)
+
+    # Extract RGB-D frames and intrinsic from bag file.
+    if config.path_dataset.endswith(".bag"):
+        assert os.path.isfile(
+            config.path_dataset), (f"File {config.path_dataset} not found.")
+        print("Extracting frames from RGBD video file")
+        config.path_dataset, config.path_intrinsic, config.depth_scale = extract_rgbd_frames(
+            config.path_dataset)
 
     app = gui.Application.instance
     app.initialize()
