@@ -44,12 +44,13 @@ import numpy as np
 
 if __name__ == '__main__':
     parser = ConfigParser()
-    parser.add(
-        '--config',
-        is_config_file=True,
-        help='YAML config file path. Please refer to default_config.yml as a '
-        'reference. It overrides the default config file, but will be '
-        'overridden by other command line inputs.')
+    parser.add('--config',
+               is_config_file=True,
+               help='YAML config file path.'
+               'Please refer to config.py for the options,'
+               'and default_config.yml for default settings '
+               'It overrides the default config file, but will be '
+               'overridden by other command line inputs.')
     parser.add('--default_dataset',
                help='Default dataset is used when config file is not provided. '
                'Default dataset may be selected from the following options: '

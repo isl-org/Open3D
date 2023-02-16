@@ -170,11 +170,17 @@ public:
     /// shape can be {depth, height, width, 3}. The last dimension must be 3 and
     /// has the format [x, y, z].
     /// \param nthreads The number of threads to use. Set to 0 for automatic.
+    /// \param nsamples The number of rays used for determining the inside.
+    /// This must be an odd number. The default is 1. Use a higher value if you
+    /// notice sign flipping, which can occur when rays hit exactly an edge or
+    /// vertex in the scene.
+    ///
     /// \return A tensor with the signed distances to
     /// the surface. The shape is
     /// {..}. Negative distances mean a point is inside a closed surface.
     core::Tensor ComputeSignedDistance(const core::Tensor &query_points,
-                                       const int nthreads = 0);
+                                       const int nthreads = 0,
+                                       const int nsamples = 1);
 
     /// \brief Computes the occupancy at the query point positions.
     ///
@@ -191,10 +197,16 @@ public:
     /// {depth, height, width, 3}.
     /// The last dimension must be 3 and has the format [x, y, z].
     /// \param nthreads The number of threads to use. Set to 0 for automatic.
+    /// \param nsamples The number of rays used for determining the inside.
+    /// This must be an odd number. The default is 1. Use a higher value if you
+    /// notice errors in the occupancy values. Errors can occur when rays hit
+    /// exactly an edge or vertex in the scene.
+    ///
     /// \return A tensor with the occupancy values. The shape is {..}. Values
     /// are either 0 or 1. A point is occupied or inside if the value is 1.
     core::Tensor ComputeOccupancy(const core::Tensor &query_points,
-                                  const int nthreads = 0);
+                                  const int nthreads = 0,
+                                  const int nsamples = 1);
 
     /// \brief Creates rays for the given camera parameters.
     ///

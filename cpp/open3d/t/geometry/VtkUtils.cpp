@@ -405,7 +405,7 @@ vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
                                    face_attr_include, face_attr_exclude);
     } else {
         utility::LogError("Unsupported geometry type {}",
-                          geometry.GetGeometryType());
+                          static_cast<int>(geometry.GetGeometryType()));
     }
 
     return polydata;

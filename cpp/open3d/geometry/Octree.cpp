@@ -534,6 +534,11 @@ OrientedBoundingBox Octree::GetOrientedBoundingBox(bool robust) const {
             GetAxisAlignedBoundingBox());
 }
 
+OrientedBoundingBox Octree::GetMinimalOrientedBoundingBox(bool robust) const {
+    return OrientedBoundingBox::CreateFromAxisAlignedBoundingBox(
+            GetAxisAlignedBoundingBox());
+}
+
 Octree& Octree::Transform(const Eigen::Matrix4d& transformation) {
     utility::LogError("Not implemented");
     return *this;

@@ -68,9 +68,28 @@ public:
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     Eigen::Vector3d GetCenter() const override;
+
+    /// Creates the axis-aligned bounding box around the points of the object.
+    /// Further details in AxisAlignedBoundingBox::CreateFromPoints()
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
+
+    /// Creates an oriented bounding box around the points of the object.
+    /// Further details in OrientedBoundingBox::CreateFromPoints()
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
     OrientedBoundingBox GetOrientedBoundingBox(
             bool robust = false) const override;
+
+    /// Creates the minimal oriented bounding box around the points of the
+    /// object. Further details in
+    /// OrientedBoundingBox::CreateFromPointsMinimal()
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
+
     LineSet &Transform(const Eigen::Matrix4d &transformation) override;
     LineSet &Translate(const Eigen::Vector3d &translation,
                        bool relative = true) override;
