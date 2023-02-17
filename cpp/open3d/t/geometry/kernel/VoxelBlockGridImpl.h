@@ -763,128 +763,125 @@ void RayCastCPU
                    y_v * block_resolution + x_v;
         };
 
-        //         index_t y = workload_idx / cols;
-        //         index_t x = workload_idx % cols;
+        index_t y = workload_idx / cols;
+        index_t x = workload_idx % cols;
 
-        //         const float* range = range_indexer.GetDataPtr<float>(
-        //                 x / range_map_down_factor, y /
-        //                 range_map_down_factor);
+        const float* range = range_indexer.GetDataPtr<float>(
+                x / range_map_down_factor, y / range_map_down_factor);
 
-        //         float* depth_ptr = nullptr;
-        //         float* vertex_ptr = nullptr;
-        //         float* color_ptr = nullptr;
-        //         float* normal_ptr = nullptr;
+        float* depth_ptr = nullptr;
+        float* vertex_ptr = nullptr;
+        float* color_ptr = nullptr;
+        float* normal_ptr = nullptr;
 
-        //         int64_t* index_ptr = nullptr;
-        //         bool* mask_ptr = nullptr;
-        //         float* interp_ratio_ptr = nullptr;
-        //         float* interp_ratio_dx_ptr = nullptr;
-        //         float* interp_ratio_dy_ptr = nullptr;
-        //         float* interp_ratio_dz_ptr = nullptr;
+        int64_t* index_ptr = nullptr;
+        bool* mask_ptr = nullptr;
+        float* interp_ratio_ptr = nullptr;
+        float* interp_ratio_dx_ptr = nullptr;
+        float* interp_ratio_dy_ptr = nullptr;
+        float* interp_ratio_dz_ptr = nullptr;
 
-        //         if (vertex_indexer.GetDataPtr()) {
-        //             vertex_ptr = vertex_indexer.GetDataPtr<float>(x, y);
-        //             vertex_ptr[0] = 0;
-        //             vertex_ptr[1] = 0;
-        //             vertex_ptr[2] = 0;
-        //         }
-        //         if (depth_indexer.GetDataPtr()) {
-        //             depth_ptr = depth_indexer.GetDataPtr<float>(x, y);
-        //             depth_ptr[0] = 0;
-        //         }
-        //         if (normal_indexer.GetDataPtr()) {
-        //             normal_ptr = normal_indexer.GetDataPtr<float>(x, y);
-        //             normal_ptr[0] = 0;
-        //             normal_ptr[1] = 0;
-        //             normal_ptr[2] = 0;
-        //         }
+        if (vertex_indexer.GetDataPtr()) {
+            vertex_ptr = vertex_indexer.GetDataPtr<float>(x, y);
+            vertex_ptr[0] = 0;
+            vertex_ptr[1] = 0;
+            vertex_ptr[2] = 0;
+        }
+        if (depth_indexer.GetDataPtr()) {
+            depth_ptr = depth_indexer.GetDataPtr<float>(x, y);
+            depth_ptr[0] = 0;
+        }
+        if (normal_indexer.GetDataPtr()) {
+            normal_ptr = normal_indexer.GetDataPtr<float>(x, y);
+            normal_ptr[0] = 0;
+            normal_ptr[1] = 0;
+            normal_ptr[2] = 0;
+        }
 
-        //         if (mask_indexer.GetDataPtr()) {
-        //             mask_ptr = mask_indexer.GetDataPtr<bool>(x, y);
-        // #ifdef __CUDACC__
-        // #pragma unroll
-        // #endif
-        //             for (int i = 0; i < 8; ++i) {
-        //                 mask_ptr[i] = false;
-        //             }
-        //         }
-        //         if (index_indexer.GetDataPtr()) {
-        //             index_ptr = index_indexer.GetDataPtr<int64_t>(x, y);
-        // #ifdef __CUDACC__
-        // #pragma unroll
-        // #endif
-        //             for (int i = 0; i < 8; ++i) {
-        //                 index_ptr[i] = 0;
-        //             }
-        //         }
-        //         if (interp_ratio_indexer.GetDataPtr()) {
-        //             interp_ratio_ptr =
-        //             interp_ratio_indexer.GetDataPtr<float>(x, y);
-        // #ifdef __CUDACC__
-        // #pragma unroll
-        // #endif
-        //             for (int i = 0; i < 8; ++i) {
-        //                 interp_ratio_ptr[i] = 0;
-        //             }
-        //         }
-        //         if (interp_ratio_dx_indexer.GetDataPtr()) {
-        //             interp_ratio_dx_ptr =
-        //                     interp_ratio_dx_indexer.GetDataPtr<float>(x, y);
-        // #ifdef __CUDACC__
-        // #pragma unroll
-        // #endif
-        //             for (int i = 0; i < 8; ++i) {
-        //                 interp_ratio_dx_ptr[i] = 0;
-        //             }
-        //         }
-        //         if (interp_ratio_dy_indexer.GetDataPtr()) {
-        //             interp_ratio_dy_ptr =
-        //                     interp_ratio_dy_indexer.GetDataPtr<float>(x, y);
-        // #ifdef __CUDACC__
-        // #pragma unroll
-        // #endif
-        //             for (int i = 0; i < 8; ++i) {
-        //                 interp_ratio_dy_ptr[i] = 0;
-        //             }
-        //         }
-        //         if (interp_ratio_dz_indexer.GetDataPtr()) {
-        //             interp_ratio_dz_ptr =
-        //                     interp_ratio_dz_indexer.GetDataPtr<float>(x, y);
-        // #ifdef __CUDACC__
-        // #pragma unroll
-        // #endif
-        //             for (int i = 0; i < 8; ++i) {
-        //                 interp_ratio_dz_ptr[i] = 0;
-        //             }
-        //         }
+        if (mask_indexer.GetDataPtr()) {
+            mask_ptr = mask_indexer.GetDataPtr<bool>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                mask_ptr[i] = false;
+            }
+        }
+        if (index_indexer.GetDataPtr()) {
+            index_ptr = index_indexer.GetDataPtr<int64_t>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                index_ptr[i] = 0;
+            }
+        }
+        if (interp_ratio_indexer.GetDataPtr()) {
+            interp_ratio_ptr = interp_ratio_indexer.GetDataPtr<float>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                interp_ratio_ptr[i] = 0;
+            }
+        }
+        if (interp_ratio_dx_indexer.GetDataPtr()) {
+            interp_ratio_dx_ptr =
+                    interp_ratio_dx_indexer.GetDataPtr<float>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                interp_ratio_dx_ptr[i] = 0;
+            }
+        }
+        if (interp_ratio_dy_indexer.GetDataPtr()) {
+            interp_ratio_dy_ptr =
+                    interp_ratio_dy_indexer.GetDataPtr<float>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                interp_ratio_dy_ptr[i] = 0;
+            }
+        }
+        if (interp_ratio_dz_indexer.GetDataPtr()) {
+            interp_ratio_dz_ptr =
+                    interp_ratio_dz_indexer.GetDataPtr<float>(x, y);
+#ifdef __CUDACC__
+#pragma unroll
+#endif
+            for (int i = 0; i < 8; ++i) {
+                interp_ratio_dz_ptr[i] = 0;
+            }
+        }
 
-        //         if (color_indexer.GetDataPtr()) {
-        //             color_ptr = color_indexer.GetDataPtr<float>(x, y);
-        //             color_ptr[0] = 0;
-        //             color_ptr[1] = 0;
-        //             color_ptr[2] = 0;
-        //         }
+        if (color_indexer.GetDataPtr()) {
+            color_ptr = color_indexer.GetDataPtr<float>(x, y);
+            color_ptr[0] = 0;
+            color_ptr[1] = 0;
+            color_ptr[2] = 0;
+        }
 
-        //         float t = range[0];
-        //         const float t_max = range[1];
-        //         if (t >= t_max) return;
+        float t = range[0];
+        const float t_max = range[1];
+        if (t >= t_max) return;
 
-        //         // Coordinates in camera and global
-        //         float x_c = 0, y_c = 0, z_c = 0;
-        //         float x_g = 0, y_g = 0, z_g = 0;
-        //         float x_o = 0, y_o = 0, z_o = 0;
+        // Coordinates in camera and global
+        float x_c = 0, y_c = 0, z_c = 0;
+        float x_g = 0, y_g = 0, z_g = 0;
+        float x_o = 0, y_o = 0, z_o = 0;
 
-        //         // Iterative ray intersection check
-        //         float t_prev = t;
+        // Iterative ray intersection check
+        float t_prev = t;
 
-        //         float tsdf_prev = -1.0f;
-        //         float tsdf = 1.0;
-        //         float sdf_trunc = voxel_size * trunc_voxel_multiplier;
-        //         float w = 0.0;
+        float tsdf_prev = -1.0f;
+        float tsdf = 1.0;
+        float sdf_trunc = voxel_size * trunc_voxel_multiplier;
+        float w = 0.0;
 
-        //         // Camera origin
-        //         c2w_transform_indexer.RigidTransform(0, 0, 0, &x_o, &y_o,
-        //         &z_o);
+        // Camera origin
+        c2w_transform_indexer.RigidTransform(0, 0, 0, &x_o, &y_o, &z_o);
 
         //         // Direction
         //         c2w_transform_indexer.Unproject(static_cast<float>(x),
