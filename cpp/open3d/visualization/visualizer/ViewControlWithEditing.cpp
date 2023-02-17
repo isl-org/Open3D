@@ -140,15 +140,15 @@ std::string ViewControlWithEditing::GetStatusString() const {
             break;
         case EditingMode::OrthoPositiveX:
         case EditingMode::OrthoNegativeX:
-            prefix = "orthogonal X asix";
+            prefix = "orthogonal X axis view";
             break;
         case EditingMode::OrthoPositiveY:
         case EditingMode::OrthoNegativeY:
-            prefix = "orthogonal Y asix";
+            prefix = "orthogonal Y axis view";
             break;
         case EditingMode::OrthoPositiveZ:
         case EditingMode::OrthoNegativeZ:
-            prefix = "orthogonal Z asix";
+            prefix = "orthogonal Z axis view";
             break;
     }
     return prefix + (IsLocked() ? ", lock camera for editing" : "");
