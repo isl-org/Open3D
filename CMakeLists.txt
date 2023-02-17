@@ -166,6 +166,9 @@ if (CCACHE)
     endif()
 endif()
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)  # URL contents timestamped by download time
+endif()
 # In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
 # use this directory to cache downloaded 3rd party dependencies and automatically skip
 # downloading from the Internet if the files are available. This is only supported by

@@ -1049,6 +1049,8 @@ endif()
 
 # fmt
 if(USE_SYSTEM_FMT)
+    # MSVC >= 17.x required for building fmt 8+
+    # SYCL / DPC++ needs fmt ver <8 or >= 9.2: https://github.com/fmtlib/fmt/issues/3005
     open3d_find_package_3rdparty_library(3rdparty_fmt
         PUBLIC
         PACKAGE fmt
@@ -1073,7 +1075,7 @@ if(NOT USE_SYSTEM_FMT)
     target_compile_definitions(3rdparty_fmt INTERFACE FMT_STRING_ALIAS=1)
     list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_CUSTOM Open3D::3rdparty_fmt)
 else()
-    list(APPEND Open3D_3RDPARTY_HEADER_TARGETS_FROM_SYSTEM Open3D::3rdparty_fmt)
+    list(APPEND Open3D_3RDPARTY_PUBLIC_TARGETS_FROM_SYSTEM Open3D::3rdparty_fmt)
 endif()
 
 # Pybind11
