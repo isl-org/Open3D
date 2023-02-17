@@ -732,40 +732,36 @@ void RayCastCPU
             }
         };
 
-        //         auto GetLinearIdxAtT = [&] OPEN3D_DEVICE(
-        //                                        float x_o, float y_o, float
-        //                                        z_o, float x_d, float y_d,
-        //                                        float z_d, float t,
-        //                                        MiniVecCache& cache) ->
-        //                                        index_t {
-        //             float x_g = x_o + t * x_d;
-        //             float y_g = y_o + t * y_d;
-        //             float z_g = z_o + t * z_d;
+        auto GetLinearIdxAtT = [&] OPEN3D_DEVICE(
+                                       float x_o, float y_o, float z_o,
+                                       float x_d, float y_d, float z_d, float t,
+                                       MiniVecCache& cache) -> index_t {
+            float x_g = x_o + t * x_d;
+            float y_g = y_o + t * y_d;
+            float z_g = z_o + t * z_d;
 
-        //             // MiniVec coordinate and look up
-        //             index_t x_b = static_cast<index_t>(floorf(x_g /
-        //             block_size)); index_t y_b =
-        //             static_cast<index_t>(floorf(y_g / block_size)); index_t
-        //             z_b = static_cast<index_t>(floorf(z_g / block_size));
+            // MiniVec coordinate and look up
+            index_t x_b = static_cast<index_t>(floorf(x_g / block_size));
+            index_t y_b = static_cast<index_t>(floorf(y_g / block_size));
+            index_t z_b = static_cast<index_t>(floorf(z_g / block_size));
 
-        //             Key key(x_b, y_b, z_b);
-        //             index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
-        //             if (block_buf_idx < 0) {
-        //                 auto iter = hashmap_impl.find(key);
-        //                 if (iter == hashmap_impl.end()) return -1;
-        //                 block_buf_idx = iter->second;
-        //                 cache.Update(x_b, y_b, z_b, block_buf_idx);
-        //             }
+            Key key(x_b, y_b, z_b);
+            index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
+            if (block_buf_idx < 0) {
+                auto iter = hashmap_impl.find(key);
+                if (iter == hashmap_impl.end()) return -1;
+                block_buf_idx = iter->second;
+                cache.Update(x_b, y_b, z_b, block_buf_idx);
+            }
 
-        //             // Voxel coordinate and look up
-        //             index_t x_v = index_t((x_g - x_b * block_size) /
-        //             voxel_size); index_t y_v = index_t((y_g - y_b *
-        //             block_size) / voxel_size); index_t z_v = index_t((z_g -
-        //             z_b * block_size) / voxel_size);
+            // Voxel coordinate and look up
+            index_t x_v = index_t((x_g - x_b * block_size) / voxel_size);
+            index_t y_v = index_t((y_g - y_b * block_size) / voxel_size);
+            index_t z_v = index_t((z_g - z_b * block_size) / voxel_size);
 
-        //             return block_buf_idx * resolution3 + z_v * resolution2 +
-        //                    y_v * block_resolution + x_v;
-        //         };
+            return block_buf_idx * resolution3 + z_v * resolution2 +
+                   y_v * block_resolution + x_v;
+        };
 
         //         index_t y = workload_idx / cols;
         //         index_t x = workload_idx % cols;
