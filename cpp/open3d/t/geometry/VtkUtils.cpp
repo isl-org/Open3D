@@ -584,7 +584,8 @@ OPEN3D_LOCAL TriangleMesh ComputeNormals(const TriangleMesh& mesh,
                                          bool auto_orient_normals,
                                          bool splitting,
                                          double feature_angle_deg) {
-    auto polydata = CreateVtkPolyDataFromGeometry(mesh, {}, {}, {}, {}, false);
+    auto polydata = CreateVtkPolyDataFromGeometry(
+            mesh, mesh.GetVertexAttr().GetKeySet(), {}, {}, {}, false);
 
     vtkNew<vtkPolyDataNormals> normals;
     normals->SetInputData(polydata);

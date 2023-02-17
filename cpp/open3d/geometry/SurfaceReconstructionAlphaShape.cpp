@@ -186,11 +186,20 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
             /*consistency=*/true, /*auto_orient_normals=*/true,
             /*splitting=*/false);
 
-    mesh->Clear();
     mesh->vertices_ = core::eigen_converter::TensorToEigenVector3dVector(
             tmesh2.GetVertexPositions());
     mesh->triangles_ = core::eigen_converter::TensorToEigenVector3iVector(
             tmesh2.GetTriangleIndices());
+    if (mesh->HasVertexColors()) {
+        mesh->vertex_colors_ =
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        tmesh2.GetVertexColors());
+    }
+    if (mesh->HasVertexNormals()) {
+        mesh->vertex_normals_ =
+                core::eigen_converter::TensorToEigenVector3dVector(
+                        tmesh2.GetVertexNormals());
+    }
 
     return mesh;
 }
