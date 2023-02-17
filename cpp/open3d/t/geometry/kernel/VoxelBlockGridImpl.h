@@ -915,142 +915,134 @@ void RayCastCPU
             }
         }
 
-        //         if (surface_found) {
-        //             float t_intersect =
-        //                     (t * tsdf_prev - t_prev * tsdf) / (tsdf_prev -
-        //                     tsdf);
-        //             x_g = x_o + t_intersect * x_d;
-        //             y_g = y_o + t_intersect * y_d;
-        //             z_g = z_o + t_intersect * z_d;
+        // if (surface_found) {
+        //     float t_intersect =
+        //             (t * tsdf_prev - t_prev * tsdf) / (tsdf_prev - tsdf);
+        //     x_g = x_o + t_intersect * x_d;
+        //     y_g = y_o + t_intersect * y_d;
+        //     z_g = z_o + t_intersect * z_d;
 
-        //             // Trivial vertex assignment
-        //             if (depth_ptr) {
-        //                 *depth_ptr = t_intersect * depth_scale;
+        //     // Trivial vertex assignment
+        //     if (depth_ptr) {
+        //         *depth_ptr = t_intersect * depth_scale;
+        //     }
+        //     if (vertex_ptr) {
+        //         w2c_transform_indexer.RigidTransform(
+        //                 x_g, y_g, z_g, vertex_ptr + 0, vertex_ptr + 1,
+        //                 vertex_ptr + 2);
+        //     }
+        //     if (!visit_neighbors) return;
+
+        //     // Trilinear interpolation
+        //     // TODO(wei): simplify the flow by splitting the
+        //     // functions given what is enabled
+        //     index_t x_b = static_cast<index_t>(floorf(x_g / block_size));
+        //     index_t y_b = static_cast<index_t>(floorf(y_g / block_size));
+        //     index_t z_b = static_cast<index_t>(floorf(z_g / block_size));
+        //     float x_v = (x_g - float(x_b) * block_size) / voxel_size;
+        //     float y_v = (y_g - float(y_b) * block_size) / voxel_size;
+        //     float z_v = (z_g - float(z_b) * block_size) / voxel_size;
+
+        //     Key key(x_b, y_b, z_b);
+
+        //     index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
+        //     if (block_buf_idx < 0) {
+        //         auto iter = hashmap_impl.find(key);
+        //         if (iter == hashmap_impl.end()) return;
+        //         block_buf_idx = iter->second;
+        //         cache.Update(x_b, y_b, z_b, block_buf_idx);
+        //     }
+
+        //     index_t x_v_floor = static_cast<index_t>(floorf(x_v));
+        //     index_t y_v_floor = static_cast<index_t>(floorf(y_v));
+        //     index_t z_v_floor = static_cast<index_t>(floorf(z_v));
+
+        //     float ratio_x = x_v - float(x_v_floor);
+        //     float ratio_y = y_v - float(y_v_floor);
+        //     float ratio_z = z_v - float(z_v_floor);
+
+        //     float sum_r = 0.0;
+        //     for (index_t k = 0; k < 8; ++k) {
+        //         index_t dx_v = (k & 1) > 0 ? 1 : 0;
+        //         index_t dy_v = (k & 2) > 0 ? 1 : 0;
+        //         index_t dz_v = (k & 4) > 0 ? 1 : 0;
+
+        //         index_t linear_idx_k = GetLinearIdxAtP(
+        //                 x_b, y_b, z_b, x_v_floor + dx_v, y_v_floor + dy_v,
+        //                 z_v_floor + dz_v, block_buf_idx, cache);
+
+        //         if (linear_idx_k >= 0 && weight_base_ptr[linear_idx_k] > 0) {
+        //             float rx = dx_v * (ratio_x) + (1 - dx_v) * (1 - ratio_x);
+        //             float ry = dy_v * (ratio_y) + (1 - dy_v) * (1 - ratio_y);
+        //             float rz = dz_v * (ratio_z) + (1 - dz_v) * (1 - ratio_z);
+        //             float r = rx * ry * rz;
+
+        //             if (interp_ratio_ptr) {
+        //                 interp_ratio_ptr[k] = r;
         //             }
-        //             if (vertex_ptr) {
-        //                 w2c_transform_indexer.RigidTransform(
-        //                         x_g, y_g, z_g, vertex_ptr + 0, vertex_ptr +
-        //                         1, vertex_ptr + 2);
+        //             if (mask_ptr) {
+        //                 mask_ptr[k] = true;
         //             }
-        //             if (!visit_neighbors) return;
-
-        //             // Trilinear interpolation
-        //             // TODO(wei): simplify the flow by splitting the
-        //             // functions given what is enabled
-        //             index_t x_b = static_cast<index_t>(floorf(x_g /
-        //             block_size)); index_t y_b =
-        //             static_cast<index_t>(floorf(y_g / block_size)); index_t
-        //             z_b = static_cast<index_t>(floorf(z_g / block_size));
-        //             float x_v = (x_g - float(x_b) * block_size) / voxel_size;
-        //             float y_v = (y_g - float(y_b) * block_size) / voxel_size;
-        //             float z_v = (z_g - float(z_b) * block_size) / voxel_size;
-
-        //             Key key(x_b, y_b, z_b);
-
-        //             index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
-        //             if (block_buf_idx < 0) {
-        //                 auto iter = hashmap_impl.find(key);
-        //                 if (iter == hashmap_impl.end()) return;
-        //                 block_buf_idx = iter->second;
-        //                 cache.Update(x_b, y_b, z_b, block_buf_idx);
+        //             if (index_ptr) {
+        //                 index_ptr[k] = linear_idx_k;
         //             }
 
-        //             index_t x_v_floor = static_cast<index_t>(floorf(x_v));
-        //             index_t y_v_floor = static_cast<index_t>(floorf(y_v));
-        //             index_t z_v_floor = static_cast<index_t>(floorf(z_v));
+        //             float tsdf_k = tsdf_base_ptr[linear_idx_k];
+        //             float interp_ratio_dx = ry * rz * (2 * dx_v - 1);
+        //             float interp_ratio_dy = rx * rz * (2 * dy_v - 1);
+        //             float interp_ratio_dz = rx * ry * (2 * dz_v - 1);
 
-        //             float ratio_x = x_v - float(x_v_floor);
-        //             float ratio_y = y_v - float(y_v_floor);
-        //             float ratio_z = z_v - float(z_v_floor);
-
-        //             float sum_r = 0.0;
-        //             for (index_t k = 0; k < 8; ++k) {
-        //                 index_t dx_v = (k & 1) > 0 ? 1 : 0;
-        //                 index_t dy_v = (k & 2) > 0 ? 1 : 0;
-        //                 index_t dz_v = (k & 4) > 0 ? 1 : 0;
-
-        //                 index_t linear_idx_k = GetLinearIdxAtP(
-        //                         x_b, y_b, z_b, x_v_floor + dx_v, y_v_floor +
-        //                         dy_v, z_v_floor + dz_v, block_buf_idx,
-        //                         cache);
-
-        //                 if (linear_idx_k >= 0 &&
-        //                 weight_base_ptr[linear_idx_k] > 0) {
-        //                     float rx = dx_v * (ratio_x) + (1 - dx_v) * (1 -
-        //                     ratio_x); float ry = dy_v * (ratio_y) + (1 -
-        //                     dy_v) * (1 - ratio_y); float rz = dz_v *
-        //                     (ratio_z) + (1 - dz_v) * (1 - ratio_z); float r =
-        //                     rx * ry * rz;
-
-        //                     if (interp_ratio_ptr) {
-        //                         interp_ratio_ptr[k] = r;
-        //                     }
-        //                     if (mask_ptr) {
-        //                         mask_ptr[k] = true;
-        //                     }
-        //                     if (index_ptr) {
-        //                         index_ptr[k] = linear_idx_k;
-        //                     }
-
-        //                     float tsdf_k = tsdf_base_ptr[linear_idx_k];
-        //                     float interp_ratio_dx = ry * rz * (2 * dx_v - 1);
-        //                     float interp_ratio_dy = rx * rz * (2 * dy_v - 1);
-        //                     float interp_ratio_dz = rx * ry * (2 * dz_v - 1);
-
-        //                     if (interp_ratio_dx_ptr) {
-        //                         interp_ratio_dx_ptr[k] = interp_ratio_dx;
-        //                     }
-        //                     if (interp_ratio_dy_ptr) {
-        //                         interp_ratio_dy_ptr[k] = interp_ratio_dy;
-        //                     }
-        //                     if (interp_ratio_dz_ptr) {
-        //                         interp_ratio_dz_ptr[k] = interp_ratio_dz;
-        //                     }
-
-        //                     if (normal_ptr) {
-        //                         normal_ptr[0] += interp_ratio_dx * tsdf_k;
-        //                         normal_ptr[1] += interp_ratio_dy * tsdf_k;
-        //                         normal_ptr[2] += interp_ratio_dz * tsdf_k;
-        //                     }
-
-        //                     if (color_ptr) {
-        //                         index_t color_linear_idx = linear_idx_k * 3;
-        //                         color_ptr[0] +=
-        //                                 r * color_base_ptr[color_linear_idx +
-        //                                 0];
-        //                         color_ptr[1] +=
-        //                                 r * color_base_ptr[color_linear_idx +
-        //                                 1];
-        //                         color_ptr[2] +=
-        //                                 r * color_base_ptr[color_linear_idx +
-        //                                 2];
-        //                     }
-
-        //                     sum_r += r;
-        //                 }
-        //             }  // loop over 8 neighbors
-
-        //             if (sum_r > 0) {
-        //                 sum_r *= 255.0;
-        //                 if (color_ptr) {
-        //                     color_ptr[0] /= sum_r;
-        //                     color_ptr[1] /= sum_r;
-        //                     color_ptr[2] /= sum_r;
-        //                 }
-
-        //                 if (normal_ptr) {
-        //                     constexpr float EPSILON = 1e-5f;
-        //                     float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
-        //                                       normal_ptr[1] * normal_ptr[1] +
-        //                                       normal_ptr[2] * normal_ptr[2]);
-        //                     norm = std::max(norm, EPSILON);
-        //                     w2c_transform_indexer.Rotate(
-        //                             -normal_ptr[0] / norm, -normal_ptr[1] /
-        //                             norm, -normal_ptr[2] / norm, normal_ptr +
-        //                             0, normal_ptr + 1, normal_ptr + 2);
-        //                 }
+        //             if (interp_ratio_dx_ptr) {
+        //                 interp_ratio_dx_ptr[k] = interp_ratio_dx;
         //             }
-        //         }  // surface-found
+        //             if (interp_ratio_dy_ptr) {
+        //                 interp_ratio_dy_ptr[k] = interp_ratio_dy;
+        //             }
+        //             if (interp_ratio_dz_ptr) {
+        //                 interp_ratio_dz_ptr[k] = interp_ratio_dz;
+        //             }
+
+        //             if (normal_ptr) {
+        //                 normal_ptr[0] += interp_ratio_dx * tsdf_k;
+        //                 normal_ptr[1] += interp_ratio_dy * tsdf_k;
+        //                 normal_ptr[2] += interp_ratio_dz * tsdf_k;
+        //             }
+
+        //             if (color_ptr) {
+        //                 index_t color_linear_idx = linear_idx_k * 3;
+        //                 color_ptr[0] +=
+        //                         r * color_base_ptr[color_linear_idx + 0];
+        //                 color_ptr[1] +=
+        //                         r * color_base_ptr[color_linear_idx + 1];
+        //                 color_ptr[2] +=
+        //                         r * color_base_ptr[color_linear_idx + 2];
+        //             }
+
+        //             sum_r += r;
+        //         }
+        //     }  // loop over 8 neighbors
+
+        //     if (sum_r > 0) {
+        //         sum_r *= 255.0;
+        //         if (color_ptr) {
+        //             color_ptr[0] /= sum_r;
+        //             color_ptr[1] /= sum_r;
+        //             color_ptr[2] /= sum_r;
+        //         }
+
+        //         if (normal_ptr) {
+        //             constexpr float EPSILON = 1e-5f;
+        //             float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
+        //                               normal_ptr[1] * normal_ptr[1] +
+        //                               normal_ptr[2] * normal_ptr[2]);
+        //             norm = std::max(norm, EPSILON);
+        //             w2c_transform_indexer.Rotate(
+        //                     -normal_ptr[0] / norm, -normal_ptr[1] / norm,
+        //                     -normal_ptr[2] / norm, normal_ptr + 0,
+        //                     normal_ptr + 1, normal_ptr + 2);
+        //         }
+        //     }
+        // }  // surface-found
     });
 
 #if defined(__CUDACC__)
