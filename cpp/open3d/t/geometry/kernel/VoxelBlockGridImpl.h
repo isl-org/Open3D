@@ -598,108 +598,106 @@ void RayCastCPU
     auto hashmap_impl = *cpu_hashmap->GetImpl();
 #endif
 
-    //     core::Device device = hashmap->GetDevice();
+    core::Device device = hashmap->GetDevice();
 
-    //     ArrayIndexer range_indexer(range, 2);
+    ArrayIndexer range_indexer(range, 2);
 
-    //     // Geometry
-    //     ArrayIndexer depth_indexer;
-    //     ArrayIndexer vertex_indexer;
-    //     ArrayIndexer normal_indexer;
+    // Geometry
+    ArrayIndexer depth_indexer;
+    ArrayIndexer vertex_indexer;
+    ArrayIndexer normal_indexer;
 
-    //     // Diff rendering
-    //     ArrayIndexer index_indexer;
-    //     ArrayIndexer mask_indexer;
-    //     ArrayIndexer interp_ratio_indexer;
-    //     ArrayIndexer interp_ratio_dx_indexer;
-    //     ArrayIndexer interp_ratio_dy_indexer;
-    //     ArrayIndexer interp_ratio_dz_indexer;
+    // Diff rendering
+    ArrayIndexer index_indexer;
+    ArrayIndexer mask_indexer;
+    ArrayIndexer interp_ratio_indexer;
+    ArrayIndexer interp_ratio_dx_indexer;
+    ArrayIndexer interp_ratio_dy_indexer;
+    ArrayIndexer interp_ratio_dz_indexer;
 
-    //     // Color
-    //     ArrayIndexer color_indexer;
+    // Color
+    ArrayIndexer color_indexer;
 
-    //     if (!block_value_map.Contains("tsdf") ||
-    //         !block_value_map.Contains("weight")) {
-    //         utility::LogError(
-    //                 "TSDF and/or weight not allocated in blocks, please
-    //                 implement " "customized integration.");
-    //     }
-    //     const tsdf_t* tsdf_base_ptr =
-    //             block_value_map.at("tsdf").GetDataPtr<tsdf_t>();
-    //     const weight_t* weight_base_ptr =
-    //             block_value_map.at("weight").GetDataPtr<weight_t>();
+    if (!block_value_map.Contains("tsdf") ||
+        !block_value_map.Contains("weight")) {
+        utility::LogError(
+                "TSDF and/or weight not allocated in blocks, please implement "
+                "customized integration.");
+    }
+    const tsdf_t* tsdf_base_ptr =
+            block_value_map.at("tsdf").GetDataPtr<tsdf_t>();
+    const weight_t* weight_base_ptr =
+            block_value_map.at("weight").GetDataPtr<weight_t>();
 
-    //     // Geometry
-    //     if (renderings_map.Contains("depth")) {
-    //         depth_indexer = ArrayIndexer(renderings_map.at("depth"), 2);
-    //     }
-    //     if (renderings_map.Contains("vertex")) {
-    //         vertex_indexer = ArrayIndexer(renderings_map.at("vertex"), 2);
-    //     }
-    //     if (renderings_map.Contains("normal")) {
-    //         normal_indexer = ArrayIndexer(renderings_map.at("normal"), 2);
-    //     }
+    // Geometry
+    if (renderings_map.Contains("depth")) {
+        depth_indexer = ArrayIndexer(renderings_map.at("depth"), 2);
+    }
+    if (renderings_map.Contains("vertex")) {
+        vertex_indexer = ArrayIndexer(renderings_map.at("vertex"), 2);
+    }
+    if (renderings_map.Contains("normal")) {
+        normal_indexer = ArrayIndexer(renderings_map.at("normal"), 2);
+    }
 
-    //     // Diff rendering
-    //     if (renderings_map.Contains("index")) {
-    //         index_indexer = ArrayIndexer(renderings_map.at("index"), 2);
-    //     }
-    //     if (renderings_map.Contains("mask")) {
-    //         mask_indexer = ArrayIndexer(renderings_map.at("mask"), 2);
-    //     }
-    //     if (renderings_map.Contains("interp_ratio")) {
-    //         interp_ratio_indexer =
-    //                 ArrayIndexer(renderings_map.at("interp_ratio"), 2);
-    //     }
-    //     if (renderings_map.Contains("interp_ratio_dx")) {
-    //         interp_ratio_dx_indexer =
-    //                 ArrayIndexer(renderings_map.at("interp_ratio_dx"), 2);
-    //     }
-    //     if (renderings_map.Contains("interp_ratio_dy")) {
-    //         interp_ratio_dy_indexer =
-    //                 ArrayIndexer(renderings_map.at("interp_ratio_dy"), 2);
-    //     }
-    //     if (renderings_map.Contains("interp_ratio_dz")) {
-    //         interp_ratio_dz_indexer =
-    //                 ArrayIndexer(renderings_map.at("interp_ratio_dz"), 2);
-    //     }
+    // Diff rendering
+    if (renderings_map.Contains("index")) {
+        index_indexer = ArrayIndexer(renderings_map.at("index"), 2);
+    }
+    if (renderings_map.Contains("mask")) {
+        mask_indexer = ArrayIndexer(renderings_map.at("mask"), 2);
+    }
+    if (renderings_map.Contains("interp_ratio")) {
+        interp_ratio_indexer =
+                ArrayIndexer(renderings_map.at("interp_ratio"), 2);
+    }
+    if (renderings_map.Contains("interp_ratio_dx")) {
+        interp_ratio_dx_indexer =
+                ArrayIndexer(renderings_map.at("interp_ratio_dx"), 2);
+    }
+    if (renderings_map.Contains("interp_ratio_dy")) {
+        interp_ratio_dy_indexer =
+                ArrayIndexer(renderings_map.at("interp_ratio_dy"), 2);
+    }
+    if (renderings_map.Contains("interp_ratio_dz")) {
+        interp_ratio_dz_indexer =
+                ArrayIndexer(renderings_map.at("interp_ratio_dz"), 2);
+    }
 
-    //     // Color
-    //     bool render_color = false;
-    //     if (block_value_map.Contains("color") &&
-    //     renderings_map.Contains("color")) {
-    //         render_color = true;
-    //         color_indexer = ArrayIndexer(renderings_map.at("color"), 2);
-    //     }
-    //     const color_t* color_base_ptr =
-    //             render_color ?
-    //             block_value_map.at("color").GetDataPtr<color_t>()
-    //                          : nullptr;
+    // Color
+    bool render_color = false;
+    if (block_value_map.Contains("color") && renderings_map.Contains("color")) {
+        render_color = true;
+        color_indexer = ArrayIndexer(renderings_map.at("color"), 2);
+    }
+    const color_t* color_base_ptr =
+            render_color ? block_value_map.at("color").GetDataPtr<color_t>()
+                         : nullptr;
 
-    //     bool visit_neighbors = render_color || normal_indexer.GetDataPtr() ||
-    //                            mask_indexer.GetDataPtr() ||
-    //                            index_indexer.GetDataPtr() ||
-    //                            interp_ratio_indexer.GetDataPtr() ||
-    //                            interp_ratio_dx_indexer.GetDataPtr() ||
-    //                            interp_ratio_dy_indexer.GetDataPtr() ||
-    //                            interp_ratio_dz_indexer.GetDataPtr();
+    bool visit_neighbors = render_color || normal_indexer.GetDataPtr() ||
+                           mask_indexer.GetDataPtr() ||
+                           index_indexer.GetDataPtr() ||
+                           interp_ratio_indexer.GetDataPtr() ||
+                           interp_ratio_dx_indexer.GetDataPtr() ||
+                           interp_ratio_dy_indexer.GetDataPtr() ||
+                           interp_ratio_dz_indexer.GetDataPtr();
 
-    //     TransformIndexer c2w_transform_indexer(
-    //             intrinsic, t::geometry::InverseTransformation(extrinsics));
-    //     TransformIndexer w2c_transform_indexer(intrinsic, extrinsics);
+    TransformIndexer c2w_transform_indexer(
+            intrinsic, t::geometry::InverseTransformation(extrinsics));
+    TransformIndexer w2c_transform_indexer(intrinsic, extrinsics);
 
-    //     index_t rows = h;
-    //     index_t cols = w;
-    //     index_t n = rows * cols;
+    index_t rows = h;
+    index_t cols = w;
+    index_t n = rows * cols;
 
-    //     float block_size = voxel_size * block_resolution;
-    //     index_t resolution2 = block_resolution * block_resolution;
-    //     index_t resolution3 = resolution2 * block_resolution;
+    float block_size = voxel_size * block_resolution;
+    index_t resolution2 = block_resolution * block_resolution;
+    index_t resolution3 = resolution2 * block_resolution;
 
-    // #ifndef __CUDACC__
-    //     using std::max;
-    //     using std::sqrt;
-    // #endif
+#ifndef __CUDACC__
+    using std::max;
+    using std::sqrt;
+#endif
 
     //     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx)
     //     {
