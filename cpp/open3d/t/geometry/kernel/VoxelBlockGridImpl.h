@@ -573,481 +573,493 @@ void RayCastCPU
          float weight_threshold,
          float trunc_voxel_multiplier,
          int range_map_down_factor) {
-    using Key = utility::MiniVec<index_t, 3>;
-    using Hash = utility::MiniVecHash<index_t, 3>;
-    using Eq = utility::MiniVecEq<index_t, 3>;
+    // using Key = utility::MiniVec<index_t, 3>;
+    // using Hash = utility::MiniVecHash<index_t, 3>;
+    // using Eq = utility::MiniVecEq<index_t, 3>;
 
-    auto device_hashmap = hashmap->GetDeviceHashBackend();
-#if defined(__CUDACC__)
-    auto cuda_hashmap =
-            std::dynamic_pointer_cast<core::StdGPUHashBackend<Key, Hash, Eq>>(
-                    device_hashmap);
-    if (cuda_hashmap == nullptr) {
-        utility::LogError(
-                "Unsupported backend: CUDA raycasting only supports STDGPU.");
-    }
-    auto hashmap_impl = *cuda_hashmap->GetImpl();
-#else
-    auto cpu_hashmap =
-            std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash, Eq>>(
-                    device_hashmap);
-    if (cpu_hashmap == nullptr) {
-        utility::LogError(
-                "Unsupported backend: CPU raycasting only supports TBB.");
-    }
-    auto hashmap_impl = *cpu_hashmap->GetImpl();
-#endif
+    //     auto device_hashmap = hashmap->GetDeviceHashBackend();
+    // #if defined(__CUDACC__)
+    //     auto cuda_hashmap =
+    //             std::dynamic_pointer_cast<core::StdGPUHashBackend<Key, Hash,
+    //             Eq>>(
+    //                     device_hashmap);
+    //     if (cuda_hashmap == nullptr) {
+    //         utility::LogError(
+    //                 "Unsupported backend: CUDA raycasting only supports
+    //                 STDGPU.");
+    //     }
+    //     auto hashmap_impl = *cuda_hashmap->GetImpl();
+    // #else
+    //     auto cpu_hashmap =
+    //             std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash,
+    //             Eq>>(
+    //                     device_hashmap);
+    //     if (cpu_hashmap == nullptr) {
+    //         utility::LogError(
+    //                 "Unsupported backend: CPU raycasting only supports
+    //                 TBB.");
+    //     }
+    //     auto hashmap_impl = *cpu_hashmap->GetImpl();
+    // #endif
 
-    core::Device device = hashmap->GetDevice();
+    //     core::Device device = hashmap->GetDevice();
 
-    ArrayIndexer range_indexer(range, 2);
+    //     ArrayIndexer range_indexer(range, 2);
 
-    // Geometry
-    ArrayIndexer depth_indexer;
-    ArrayIndexer vertex_indexer;
-    ArrayIndexer normal_indexer;
+    //     // Geometry
+    //     ArrayIndexer depth_indexer;
+    //     ArrayIndexer vertex_indexer;
+    //     ArrayIndexer normal_indexer;
 
-    // Diff rendering
-    ArrayIndexer index_indexer;
-    ArrayIndexer mask_indexer;
-    ArrayIndexer interp_ratio_indexer;
-    ArrayIndexer interp_ratio_dx_indexer;
-    ArrayIndexer interp_ratio_dy_indexer;
-    ArrayIndexer interp_ratio_dz_indexer;
+    //     // Diff rendering
+    //     ArrayIndexer index_indexer;
+    //     ArrayIndexer mask_indexer;
+    //     ArrayIndexer interp_ratio_indexer;
+    //     ArrayIndexer interp_ratio_dx_indexer;
+    //     ArrayIndexer interp_ratio_dy_indexer;
+    //     ArrayIndexer interp_ratio_dz_indexer;
 
-    // Color
-    ArrayIndexer color_indexer;
+    //     // Color
+    //     ArrayIndexer color_indexer;
 
-    if (!block_value_map.Contains("tsdf") ||
-        !block_value_map.Contains("weight")) {
-        utility::LogError(
-                "TSDF and/or weight not allocated in blocks, please implement "
-                "customized integration.");
-    }
-    const tsdf_t* tsdf_base_ptr =
-            block_value_map.at("tsdf").GetDataPtr<tsdf_t>();
-    const weight_t* weight_base_ptr =
-            block_value_map.at("weight").GetDataPtr<weight_t>();
+    //     if (!block_value_map.Contains("tsdf") ||
+    //         !block_value_map.Contains("weight")) {
+    //         utility::LogError(
+    //                 "TSDF and/or weight not allocated in blocks, please
+    //                 implement " "customized integration.");
+    //     }
+    //     const tsdf_t* tsdf_base_ptr =
+    //             block_value_map.at("tsdf").GetDataPtr<tsdf_t>();
+    //     const weight_t* weight_base_ptr =
+    //             block_value_map.at("weight").GetDataPtr<weight_t>();
 
-    // Geometry
-    if (renderings_map.Contains("depth")) {
-        depth_indexer = ArrayIndexer(renderings_map.at("depth"), 2);
-    }
-    if (renderings_map.Contains("vertex")) {
-        vertex_indexer = ArrayIndexer(renderings_map.at("vertex"), 2);
-    }
-    if (renderings_map.Contains("normal")) {
-        normal_indexer = ArrayIndexer(renderings_map.at("normal"), 2);
-    }
+    //     // Geometry
+    //     if (renderings_map.Contains("depth")) {
+    //         depth_indexer = ArrayIndexer(renderings_map.at("depth"), 2);
+    //     }
+    //     if (renderings_map.Contains("vertex")) {
+    //         vertex_indexer = ArrayIndexer(renderings_map.at("vertex"), 2);
+    //     }
+    //     if (renderings_map.Contains("normal")) {
+    //         normal_indexer = ArrayIndexer(renderings_map.at("normal"), 2);
+    //     }
 
-    // Diff rendering
-    if (renderings_map.Contains("index")) {
-        index_indexer = ArrayIndexer(renderings_map.at("index"), 2);
-    }
-    if (renderings_map.Contains("mask")) {
-        mask_indexer = ArrayIndexer(renderings_map.at("mask"), 2);
-    }
-    if (renderings_map.Contains("interp_ratio")) {
-        interp_ratio_indexer =
-                ArrayIndexer(renderings_map.at("interp_ratio"), 2);
-    }
-    if (renderings_map.Contains("interp_ratio_dx")) {
-        interp_ratio_dx_indexer =
-                ArrayIndexer(renderings_map.at("interp_ratio_dx"), 2);
-    }
-    if (renderings_map.Contains("interp_ratio_dy")) {
-        interp_ratio_dy_indexer =
-                ArrayIndexer(renderings_map.at("interp_ratio_dy"), 2);
-    }
-    if (renderings_map.Contains("interp_ratio_dz")) {
-        interp_ratio_dz_indexer =
-                ArrayIndexer(renderings_map.at("interp_ratio_dz"), 2);
-    }
+    //     // Diff rendering
+    //     if (renderings_map.Contains("index")) {
+    //         index_indexer = ArrayIndexer(renderings_map.at("index"), 2);
+    //     }
+    //     if (renderings_map.Contains("mask")) {
+    //         mask_indexer = ArrayIndexer(renderings_map.at("mask"), 2);
+    //     }
+    //     if (renderings_map.Contains("interp_ratio")) {
+    //         interp_ratio_indexer =
+    //                 ArrayIndexer(renderings_map.at("interp_ratio"), 2);
+    //     }
+    //     if (renderings_map.Contains("interp_ratio_dx")) {
+    //         interp_ratio_dx_indexer =
+    //                 ArrayIndexer(renderings_map.at("interp_ratio_dx"), 2);
+    //     }
+    //     if (renderings_map.Contains("interp_ratio_dy")) {
+    //         interp_ratio_dy_indexer =
+    //                 ArrayIndexer(renderings_map.at("interp_ratio_dy"), 2);
+    //     }
+    //     if (renderings_map.Contains("interp_ratio_dz")) {
+    //         interp_ratio_dz_indexer =
+    //                 ArrayIndexer(renderings_map.at("interp_ratio_dz"), 2);
+    //     }
 
-    // Color
-    bool render_color = false;
-    if (block_value_map.Contains("color") && renderings_map.Contains("color")) {
-        render_color = true;
-        color_indexer = ArrayIndexer(renderings_map.at("color"), 2);
-    }
-    const color_t* color_base_ptr =
-            render_color ? block_value_map.at("color").GetDataPtr<color_t>()
-                         : nullptr;
+    //     // Color
+    //     bool render_color = false;
+    //     if (block_value_map.Contains("color") &&
+    //     renderings_map.Contains("color")) {
+    //         render_color = true;
+    //         color_indexer = ArrayIndexer(renderings_map.at("color"), 2);
+    //     }
+    //     const color_t* color_base_ptr =
+    //             render_color ?
+    //             block_value_map.at("color").GetDataPtr<color_t>()
+    //                          : nullptr;
 
-    bool visit_neighbors = render_color || normal_indexer.GetDataPtr() ||
-                           mask_indexer.GetDataPtr() ||
-                           index_indexer.GetDataPtr() ||
-                           interp_ratio_indexer.GetDataPtr() ||
-                           interp_ratio_dx_indexer.GetDataPtr() ||
-                           interp_ratio_dy_indexer.GetDataPtr() ||
-                           interp_ratio_dz_indexer.GetDataPtr();
+    //     bool visit_neighbors = render_color || normal_indexer.GetDataPtr() ||
+    //                            mask_indexer.GetDataPtr() ||
+    //                            index_indexer.GetDataPtr() ||
+    //                            interp_ratio_indexer.GetDataPtr() ||
+    //                            interp_ratio_dx_indexer.GetDataPtr() ||
+    //                            interp_ratio_dy_indexer.GetDataPtr() ||
+    //                            interp_ratio_dz_indexer.GetDataPtr();
 
-    TransformIndexer c2w_transform_indexer(
-            intrinsic, t::geometry::InverseTransformation(extrinsics));
-    TransformIndexer w2c_transform_indexer(intrinsic, extrinsics);
+    //     TransformIndexer c2w_transform_indexer(
+    //             intrinsic, t::geometry::InverseTransformation(extrinsics));
+    //     TransformIndexer w2c_transform_indexer(intrinsic, extrinsics);
 
-    index_t rows = h;
-    index_t cols = w;
-    index_t n = rows * cols;
+    //     index_t rows = h;
+    //     index_t cols = w;
+    //     index_t n = rows * cols;
 
-    float block_size = voxel_size * block_resolution;
-    index_t resolution2 = block_resolution * block_resolution;
-    index_t resolution3 = resolution2 * block_resolution;
+    //     float block_size = voxel_size * block_resolution;
+    //     index_t resolution2 = block_resolution * block_resolution;
+    //     index_t resolution3 = resolution2 * block_resolution;
 
-#ifndef __CUDACC__
-    using std::max;
-    using std::sqrt;
-#endif
+    // #ifndef __CUDACC__
+    //     using std::max;
+    //     using std::sqrt;
+    // #endif
 
-    core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx) {
-        auto GetLinearIdxAtP = [&] OPEN3D_DEVICE(
-                                       index_t x_b, index_t y_b, index_t z_b,
-                                       index_t x_v, index_t y_v, index_t z_v,
-                                       core::buf_index_t block_buf_idx,
-                                       MiniVecCache & cache) -> index_t {
-            index_t x_vn = (x_v + block_resolution) % block_resolution;
-            index_t y_vn = (y_v + block_resolution) % block_resolution;
-            index_t z_vn = (z_v + block_resolution) % block_resolution;
+    //     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx)
+    //     {
+    //         auto GetLinearIdxAtP = [&] OPEN3D_DEVICE(
+    //                                        index_t x_b, index_t y_b, index_t
+    //                                        z_b, index_t x_v, index_t y_v,
+    //                                        index_t z_v, core::buf_index_t
+    //                                        block_buf_idx, MiniVecCache &
+    //                                        cache) -> index_t {
+    //             index_t x_vn = (x_v + block_resolution) % block_resolution;
+    //             index_t y_vn = (y_v + block_resolution) % block_resolution;
+    //             index_t z_vn = (z_v + block_resolution) % block_resolution;
 
-            index_t dx_b = Sign(x_v - x_vn);
-            index_t dy_b = Sign(y_v - y_vn);
-            index_t dz_b = Sign(z_v - z_vn);
+    //             index_t dx_b = Sign(x_v - x_vn);
+    //             index_t dy_b = Sign(y_v - y_vn);
+    //             index_t dz_b = Sign(z_v - z_vn);
 
-            if (dx_b == 0 && dy_b == 0 && dz_b == 0) {
-                return block_buf_idx * resolution3 + z_v * resolution2 +
-                       y_v * block_resolution + x_v;
-            } else {
-                Key key(x_b + dx_b, y_b + dy_b, z_b + dz_b);
+    //             if (dx_b == 0 && dy_b == 0 && dz_b == 0) {
+    //                 return block_buf_idx * resolution3 + z_v * resolution2 +
+    //                        y_v * block_resolution + x_v;
+    //             } else {
+    //                 Key key(x_b + dx_b, y_b + dy_b, z_b + dz_b);
 
-                index_t block_buf_idx = cache.Check(key[0], key[1], key[2]);
-                if (block_buf_idx < 0) {
-                    auto iter = hashmap_impl.find(key);
-                    if (iter == hashmap_impl.end()) return -1;
-                    block_buf_idx = iter->second;
-                    cache.Update(key[0], key[1], key[2], block_buf_idx);
-                }
+    //                 index_t block_buf_idx = cache.Check(key[0], key[1],
+    //                 key[2]); if (block_buf_idx < 0) {
+    //                     auto iter = hashmap_impl.find(key);
+    //                     if (iter == hashmap_impl.end()) return -1;
+    //                     block_buf_idx = iter->second;
+    //                     cache.Update(key[0], key[1], key[2], block_buf_idx);
+    //                 }
 
-                return block_buf_idx * resolution3 + z_vn * resolution2 +
-                       y_vn * block_resolution + x_vn;
-            }
-        };
+    //                 return block_buf_idx * resolution3 + z_vn * resolution2 +
+    //                        y_vn * block_resolution + x_vn;
+    //             }
+    //         };
 
-        auto GetLinearIdxAtT = [&] OPEN3D_DEVICE(
-                                       float x_o, float y_o, float z_o,
-                                       float x_d, float y_d, float z_d, float t,
-                                       MiniVecCache& cache) -> index_t {
-            float x_g = x_o + t * x_d;
-            float y_g = y_o + t * y_d;
-            float z_g = z_o + t * z_d;
+    //         auto GetLinearIdxAtT = [&] OPEN3D_DEVICE(
+    //                                        float x_o, float y_o, float z_o,
+    //                                        float x_d, float y_d, float z_d,
+    //                                        float t, MiniVecCache& cache) ->
+    //                                        index_t {
+    //             float x_g = x_o + t * x_d;
+    //             float y_g = y_o + t * y_d;
+    //             float z_g = z_o + t * z_d;
 
-            // MiniVec coordinate and look up
-            index_t x_b = static_cast<index_t>(floorf(x_g / block_size));
-            index_t y_b = static_cast<index_t>(floorf(y_g / block_size));
-            index_t z_b = static_cast<index_t>(floorf(z_g / block_size));
+    //             // MiniVec coordinate and look up
+    //             index_t x_b = static_cast<index_t>(floorf(x_g / block_size));
+    //             index_t y_b = static_cast<index_t>(floorf(y_g / block_size));
+    //             index_t z_b = static_cast<index_t>(floorf(z_g / block_size));
 
-            Key key(x_b, y_b, z_b);
-            index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
-            if (block_buf_idx < 0) {
-                auto iter = hashmap_impl.find(key);
-                if (iter == hashmap_impl.end()) return -1;
-                block_buf_idx = iter->second;
-                cache.Update(x_b, y_b, z_b, block_buf_idx);
-            }
+    //             Key key(x_b, y_b, z_b);
+    //             index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
+    //             if (block_buf_idx < 0) {
+    //                 auto iter = hashmap_impl.find(key);
+    //                 if (iter == hashmap_impl.end()) return -1;
+    //                 block_buf_idx = iter->second;
+    //                 cache.Update(x_b, y_b, z_b, block_buf_idx);
+    //             }
 
-            // Voxel coordinate and look up
-            index_t x_v = index_t((x_g - x_b * block_size) / voxel_size);
-            index_t y_v = index_t((y_g - y_b * block_size) / voxel_size);
-            index_t z_v = index_t((z_g - z_b * block_size) / voxel_size);
+    //             // Voxel coordinate and look up
+    //             index_t x_v = index_t((x_g - x_b * block_size) / voxel_size);
+    //             index_t y_v = index_t((y_g - y_b * block_size) / voxel_size);
+    //             index_t z_v = index_t((z_g - z_b * block_size) / voxel_size);
 
-            return block_buf_idx * resolution3 + z_v * resolution2 +
-                   y_v * block_resolution + x_v;
-        };
+    //             return block_buf_idx * resolution3 + z_v * resolution2 +
+    //                    y_v * block_resolution + x_v;
+    //         };
 
-        index_t y = workload_idx / cols;
-        index_t x = workload_idx % cols;
+    //         index_t y = workload_idx / cols;
+    //         index_t x = workload_idx % cols;
 
-        const float* range = range_indexer.GetDataPtr<float>(
-                x / range_map_down_factor, y / range_map_down_factor);
+    //         const float* range = range_indexer.GetDataPtr<float>(
+    //                 x / range_map_down_factor, y / range_map_down_factor);
 
-        float* depth_ptr = nullptr;
-        float* vertex_ptr = nullptr;
-        float* color_ptr = nullptr;
-        float* normal_ptr = nullptr;
+    //         float* depth_ptr = nullptr;
+    //         float* vertex_ptr = nullptr;
+    //         float* color_ptr = nullptr;
+    //         float* normal_ptr = nullptr;
 
-        int64_t* index_ptr = nullptr;
-        bool* mask_ptr = nullptr;
-        float* interp_ratio_ptr = nullptr;
-        float* interp_ratio_dx_ptr = nullptr;
-        float* interp_ratio_dy_ptr = nullptr;
-        float* interp_ratio_dz_ptr = nullptr;
+    //         int64_t* index_ptr = nullptr;
+    //         bool* mask_ptr = nullptr;
+    //         float* interp_ratio_ptr = nullptr;
+    //         float* interp_ratio_dx_ptr = nullptr;
+    //         float* interp_ratio_dy_ptr = nullptr;
+    //         float* interp_ratio_dz_ptr = nullptr;
 
-        if (vertex_indexer.GetDataPtr()) {
-            vertex_ptr = vertex_indexer.GetDataPtr<float>(x, y);
-            vertex_ptr[0] = 0;
-            vertex_ptr[1] = 0;
-            vertex_ptr[2] = 0;
-        }
-        if (depth_indexer.GetDataPtr()) {
-            depth_ptr = depth_indexer.GetDataPtr<float>(x, y);
-            depth_ptr[0] = 0;
-        }
-        if (normal_indexer.GetDataPtr()) {
-            normal_ptr = normal_indexer.GetDataPtr<float>(x, y);
-            normal_ptr[0] = 0;
-            normal_ptr[1] = 0;
-            normal_ptr[2] = 0;
-        }
+    //         if (vertex_indexer.GetDataPtr()) {
+    //             vertex_ptr = vertex_indexer.GetDataPtr<float>(x, y);
+    //             vertex_ptr[0] = 0;
+    //             vertex_ptr[1] = 0;
+    //             vertex_ptr[2] = 0;
+    //         }
+    //         if (depth_indexer.GetDataPtr()) {
+    //             depth_ptr = depth_indexer.GetDataPtr<float>(x, y);
+    //             depth_ptr[0] = 0;
+    //         }
+    //         if (normal_indexer.GetDataPtr()) {
+    //             normal_ptr = normal_indexer.GetDataPtr<float>(x, y);
+    //             normal_ptr[0] = 0;
+    //             normal_ptr[1] = 0;
+    //             normal_ptr[2] = 0;
+    //         }
 
-        if (mask_indexer.GetDataPtr()) {
-            mask_ptr = mask_indexer.GetDataPtr<bool>(x, y);
-#ifdef __CUDACC__
-#pragma unroll
-#endif
-            for (int i = 0; i < 8; ++i) {
-                mask_ptr[i] = false;
-            }
-        }
-        if (index_indexer.GetDataPtr()) {
-            index_ptr = index_indexer.GetDataPtr<int64_t>(x, y);
-#ifdef __CUDACC__
-#pragma unroll
-#endif
-            for (int i = 0; i < 8; ++i) {
-                index_ptr[i] = 0;
-            }
-        }
-        if (interp_ratio_indexer.GetDataPtr()) {
-            interp_ratio_ptr = interp_ratio_indexer.GetDataPtr<float>(x, y);
-#ifdef __CUDACC__
-#pragma unroll
-#endif
-            for (int i = 0; i < 8; ++i) {
-                interp_ratio_ptr[i] = 0;
-            }
-        }
-        if (interp_ratio_dx_indexer.GetDataPtr()) {
-            interp_ratio_dx_ptr =
-                    interp_ratio_dx_indexer.GetDataPtr<float>(x, y);
-#ifdef __CUDACC__
-#pragma unroll
-#endif
-            for (int i = 0; i < 8; ++i) {
-                interp_ratio_dx_ptr[i] = 0;
-            }
-        }
-        if (interp_ratio_dy_indexer.GetDataPtr()) {
-            interp_ratio_dy_ptr =
-                    interp_ratio_dy_indexer.GetDataPtr<float>(x, y);
-#ifdef __CUDACC__
-#pragma unroll
-#endif
-            for (int i = 0; i < 8; ++i) {
-                interp_ratio_dy_ptr[i] = 0;
-            }
-        }
-        if (interp_ratio_dz_indexer.GetDataPtr()) {
-            interp_ratio_dz_ptr =
-                    interp_ratio_dz_indexer.GetDataPtr<float>(x, y);
-#ifdef __CUDACC__
-#pragma unroll
-#endif
-            for (int i = 0; i < 8; ++i) {
-                interp_ratio_dz_ptr[i] = 0;
-            }
-        }
+    //         if (mask_indexer.GetDataPtr()) {
+    //             mask_ptr = mask_indexer.GetDataPtr<bool>(x, y);
+    // #ifdef __CUDACC__
+    // #pragma unroll
+    // #endif
+    //             for (int i = 0; i < 8; ++i) {
+    //                 mask_ptr[i] = false;
+    //             }
+    //         }
+    //         if (index_indexer.GetDataPtr()) {
+    //             index_ptr = index_indexer.GetDataPtr<int64_t>(x, y);
+    // #ifdef __CUDACC__
+    // #pragma unroll
+    // #endif
+    //             for (int i = 0; i < 8; ++i) {
+    //                 index_ptr[i] = 0;
+    //             }
+    //         }
+    //         if (interp_ratio_indexer.GetDataPtr()) {
+    //             interp_ratio_ptr = interp_ratio_indexer.GetDataPtr<float>(x,
+    //             y);
+    // #ifdef __CUDACC__
+    // #pragma unroll
+    // #endif
+    //             for (int i = 0; i < 8; ++i) {
+    //                 interp_ratio_ptr[i] = 0;
+    //             }
+    //         }
+    //         if (interp_ratio_dx_indexer.GetDataPtr()) {
+    //             interp_ratio_dx_ptr =
+    //                     interp_ratio_dx_indexer.GetDataPtr<float>(x, y);
+    // #ifdef __CUDACC__
+    // #pragma unroll
+    // #endif
+    //             for (int i = 0; i < 8; ++i) {
+    //                 interp_ratio_dx_ptr[i] = 0;
+    //             }
+    //         }
+    //         if (interp_ratio_dy_indexer.GetDataPtr()) {
+    //             interp_ratio_dy_ptr =
+    //                     interp_ratio_dy_indexer.GetDataPtr<float>(x, y);
+    // #ifdef __CUDACC__
+    // #pragma unroll
+    // #endif
+    //             for (int i = 0; i < 8; ++i) {
+    //                 interp_ratio_dy_ptr[i] = 0;
+    //             }
+    //         }
+    //         if (interp_ratio_dz_indexer.GetDataPtr()) {
+    //             interp_ratio_dz_ptr =
+    //                     interp_ratio_dz_indexer.GetDataPtr<float>(x, y);
+    // #ifdef __CUDACC__
+    // #pragma unroll
+    // #endif
+    //             for (int i = 0; i < 8; ++i) {
+    //                 interp_ratio_dz_ptr[i] = 0;
+    //             }
+    //         }
 
-        if (color_indexer.GetDataPtr()) {
-            color_ptr = color_indexer.GetDataPtr<float>(x, y);
-            color_ptr[0] = 0;
-            color_ptr[1] = 0;
-            color_ptr[2] = 0;
-        }
+    //         if (color_indexer.GetDataPtr()) {
+    //             color_ptr = color_indexer.GetDataPtr<float>(x, y);
+    //             color_ptr[0] = 0;
+    //             color_ptr[1] = 0;
+    //             color_ptr[2] = 0;
+    //         }
 
-        float t = range[0];
-        const float t_max = range[1];
-        if (t >= t_max) return;
+    //         float t = range[0];
+    //         const float t_max = range[1];
+    //         if (t >= t_max) return;
 
-        // Coordinates in camera and global
-        float x_c = 0, y_c = 0, z_c = 0;
-        float x_g = 0, y_g = 0, z_g = 0;
-        float x_o = 0, y_o = 0, z_o = 0;
+    //         // Coordinates in camera and global
+    //         float x_c = 0, y_c = 0, z_c = 0;
+    //         float x_g = 0, y_g = 0, z_g = 0;
+    //         float x_o = 0, y_o = 0, z_o = 0;
 
-        // Iterative ray intersection check
-        float t_prev = t;
+    //         // Iterative ray intersection check
+    //         float t_prev = t;
 
-        float tsdf_prev = -1.0f;
-        float tsdf = 1.0;
-        float sdf_trunc = voxel_size * trunc_voxel_multiplier;
-        float w = 0.0;
+    //         float tsdf_prev = -1.0f;
+    //         float tsdf = 1.0;
+    //         float sdf_trunc = voxel_size * trunc_voxel_multiplier;
+    //         float w = 0.0;
 
-        // Camera origin
-        c2w_transform_indexer.RigidTransform(0, 0, 0, &x_o, &y_o, &z_o);
+    //         // Camera origin
+    //         c2w_transform_indexer.RigidTransform(0, 0, 0, &x_o, &y_o, &z_o);
 
-        // Direction
-        c2w_transform_indexer.Unproject(static_cast<float>(x),
-                                        static_cast<float>(y), 1.0f, &x_c, &y_c,
-                                        &z_c);
-        c2w_transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g, &y_g, &z_g);
-        float x_d = (x_g - x_o);
-        float y_d = (y_g - y_o);
-        float z_d = (z_g - z_o);
+    //         // Direction
+    //         c2w_transform_indexer.Unproject(static_cast<float>(x),
+    //                                         static_cast<float>(y), 1.0f,
+    //                                         &x_c, &y_c, &z_c);
+    //         c2w_transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g, &y_g,
+    //         &z_g); float x_d = (x_g - x_o); float y_d = (y_g - y_o); float
+    //         z_d = (z_g - z_o);
 
-        MiniVecCache cache{0, 0, 0, -1};
-        bool surface_found = false;
-        while (t < t_max) {
-            index_t linear_idx =
-                    GetLinearIdxAtT(x_o, y_o, z_o, x_d, y_d, z_d, t, cache);
+    //         MiniVecCache cache{0, 0, 0, -1};
+    //         bool surface_found = false;
+    //         while (t < t_max) {
+    //             index_t linear_idx =
+    //                     GetLinearIdxAtT(x_o, y_o, z_o, x_d, y_d, z_d, t,
+    //                     cache);
 
-            if (linear_idx < 0) {
-                t_prev = t;
-                t += block_size;
-            } else {
-                tsdf_prev = tsdf;
-                tsdf = tsdf_base_ptr[linear_idx];
-                w = weight_base_ptr[linear_idx];
-                if (tsdf_prev > 0 && w >= weight_threshold && tsdf <= 0) {
-                    surface_found = true;
-                    break;
-                }
-                t_prev = t;
-                float delta = tsdf * sdf_trunc;
-                t += delta < voxel_size ? voxel_size : delta;
-            }
-        }
+    //             if (linear_idx < 0) {
+    //                 t_prev = t;
+    //                 t += block_size;
+    //             } else {
+    //                 tsdf_prev = tsdf;
+    //                 tsdf = tsdf_base_ptr[linear_idx];
+    //                 w = weight_base_ptr[linear_idx];
+    //                 if (tsdf_prev > 0 && w >= weight_threshold && tsdf <= 0)
+    //                 {
+    //                     surface_found = true;
+    //                     break;
+    //                 }
+    //                 t_prev = t;
+    //                 float delta = tsdf * sdf_trunc;
+    //                 t += delta < voxel_size ? voxel_size : delta;
+    //             }
+    //         }
 
-        if (surface_found) {
-            float t_intersect =
-                    (t * tsdf_prev - t_prev * tsdf) / (tsdf_prev - tsdf);
-            x_g = x_o + t_intersect * x_d;
-            y_g = y_o + t_intersect * y_d;
-            z_g = z_o + t_intersect * z_d;
+    //         if (surface_found) {
+    //             float t_intersect =
+    //                     (t * tsdf_prev - t_prev * tsdf) / (tsdf_prev - tsdf);
+    //             x_g = x_o + t_intersect * x_d;
+    //             y_g = y_o + t_intersect * y_d;
+    //             z_g = z_o + t_intersect * z_d;
 
-            // Trivial vertex assignment
-            if (depth_ptr) {
-                *depth_ptr = t_intersect * depth_scale;
-            }
-            if (vertex_ptr) {
-                w2c_transform_indexer.RigidTransform(
-                        x_g, y_g, z_g, vertex_ptr + 0, vertex_ptr + 1,
-                        vertex_ptr + 2);
-            }
-            if (!visit_neighbors) return;
+    //             // Trivial vertex assignment
+    //             if (depth_ptr) {
+    //                 *depth_ptr = t_intersect * depth_scale;
+    //             }
+    //             if (vertex_ptr) {
+    //                 w2c_transform_indexer.RigidTransform(
+    //                         x_g, y_g, z_g, vertex_ptr + 0, vertex_ptr + 1,
+    //                         vertex_ptr + 2);
+    //             }
+    //             if (!visit_neighbors) return;
 
-            // Trilinear interpolation
-            // TODO(wei): simplify the flow by splitting the
-            // functions given what is enabled
-            index_t x_b = static_cast<index_t>(floorf(x_g / block_size));
-            index_t y_b = static_cast<index_t>(floorf(y_g / block_size));
-            index_t z_b = static_cast<index_t>(floorf(z_g / block_size));
-            float x_v = (x_g - float(x_b) * block_size) / voxel_size;
-            float y_v = (y_g - float(y_b) * block_size) / voxel_size;
-            float z_v = (z_g - float(z_b) * block_size) / voxel_size;
+    //             // Trilinear interpolation
+    //             // TODO(wei): simplify the flow by splitting the
+    //             // functions given what is enabled
+    //             index_t x_b = static_cast<index_t>(floorf(x_g / block_size));
+    //             index_t y_b = static_cast<index_t>(floorf(y_g / block_size));
+    //             index_t z_b = static_cast<index_t>(floorf(z_g / block_size));
+    //             float x_v = (x_g - float(x_b) * block_size) / voxel_size;
+    //             float y_v = (y_g - float(y_b) * block_size) / voxel_size;
+    //             float z_v = (z_g - float(z_b) * block_size) / voxel_size;
 
-            Key key(x_b, y_b, z_b);
+    //             Key key(x_b, y_b, z_b);
 
-            index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
-            if (block_buf_idx < 0) {
-                auto iter = hashmap_impl.find(key);
-                if (iter == hashmap_impl.end()) return;
-                block_buf_idx = iter->second;
-                cache.Update(x_b, y_b, z_b, block_buf_idx);
-            }
+    //             index_t block_buf_idx = cache.Check(x_b, y_b, z_b);
+    //             if (block_buf_idx < 0) {
+    //                 auto iter = hashmap_impl.find(key);
+    //                 if (iter == hashmap_impl.end()) return;
+    //                 block_buf_idx = iter->second;
+    //                 cache.Update(x_b, y_b, z_b, block_buf_idx);
+    //             }
 
-            index_t x_v_floor = static_cast<index_t>(floorf(x_v));
-            index_t y_v_floor = static_cast<index_t>(floorf(y_v));
-            index_t z_v_floor = static_cast<index_t>(floorf(z_v));
+    //             index_t x_v_floor = static_cast<index_t>(floorf(x_v));
+    //             index_t y_v_floor = static_cast<index_t>(floorf(y_v));
+    //             index_t z_v_floor = static_cast<index_t>(floorf(z_v));
 
-            float ratio_x = x_v - float(x_v_floor);
-            float ratio_y = y_v - float(y_v_floor);
-            float ratio_z = z_v - float(z_v_floor);
+    //             float ratio_x = x_v - float(x_v_floor);
+    //             float ratio_y = y_v - float(y_v_floor);
+    //             float ratio_z = z_v - float(z_v_floor);
 
-            float sum_r = 0.0;
-            for (index_t k = 0; k < 8; ++k) {
-                index_t dx_v = (k & 1) > 0 ? 1 : 0;
-                index_t dy_v = (k & 2) > 0 ? 1 : 0;
-                index_t dz_v = (k & 4) > 0 ? 1 : 0;
+    //             float sum_r = 0.0;
+    //             for (index_t k = 0; k < 8; ++k) {
+    //                 index_t dx_v = (k & 1) > 0 ? 1 : 0;
+    //                 index_t dy_v = (k & 2) > 0 ? 1 : 0;
+    //                 index_t dz_v = (k & 4) > 0 ? 1 : 0;
 
-                index_t linear_idx_k = GetLinearIdxAtP(
-                        x_b, y_b, z_b, x_v_floor + dx_v, y_v_floor + dy_v,
-                        z_v_floor + dz_v, block_buf_idx, cache);
+    //                 index_t linear_idx_k = GetLinearIdxAtP(
+    //                         x_b, y_b, z_b, x_v_floor + dx_v, y_v_floor +
+    //                         dy_v, z_v_floor + dz_v, block_buf_idx, cache);
 
-                if (linear_idx_k >= 0 && weight_base_ptr[linear_idx_k] > 0) {
-                    float rx = dx_v * (ratio_x) + (1 - dx_v) * (1 - ratio_x);
-                    float ry = dy_v * (ratio_y) + (1 - dy_v) * (1 - ratio_y);
-                    float rz = dz_v * (ratio_z) + (1 - dz_v) * (1 - ratio_z);
-                    float r = rx * ry * rz;
+    //                 if (linear_idx_k >= 0 && weight_base_ptr[linear_idx_k] >
+    //                 0) {
+    //                     float rx = dx_v * (ratio_x) + (1 - dx_v) * (1 -
+    //                     ratio_x); float ry = dy_v * (ratio_y) + (1 - dy_v) *
+    //                     (1 - ratio_y); float rz = dz_v * (ratio_z) + (1 -
+    //                     dz_v) * (1 - ratio_z); float r = rx * ry * rz;
 
-                    if (interp_ratio_ptr) {
-                        interp_ratio_ptr[k] = r;
-                    }
-                    if (mask_ptr) {
-                        mask_ptr[k] = true;
-                    }
-                    if (index_ptr) {
-                        index_ptr[k] = linear_idx_k;
-                    }
+    //                     if (interp_ratio_ptr) {
+    //                         interp_ratio_ptr[k] = r;
+    //                     }
+    //                     if (mask_ptr) {
+    //                         mask_ptr[k] = true;
+    //                     }
+    //                     if (index_ptr) {
+    //                         index_ptr[k] = linear_idx_k;
+    //                     }
 
-                    float tsdf_k = tsdf_base_ptr[linear_idx_k];
-                    float interp_ratio_dx = ry * rz * (2 * dx_v - 1);
-                    float interp_ratio_dy = rx * rz * (2 * dy_v - 1);
-                    float interp_ratio_dz = rx * ry * (2 * dz_v - 1);
+    //                     float tsdf_k = tsdf_base_ptr[linear_idx_k];
+    //                     float interp_ratio_dx = ry * rz * (2 * dx_v - 1);
+    //                     float interp_ratio_dy = rx * rz * (2 * dy_v - 1);
+    //                     float interp_ratio_dz = rx * ry * (2 * dz_v - 1);
 
-                    if (interp_ratio_dx_ptr) {
-                        interp_ratio_dx_ptr[k] = interp_ratio_dx;
-                    }
-                    if (interp_ratio_dy_ptr) {
-                        interp_ratio_dy_ptr[k] = interp_ratio_dy;
-                    }
-                    if (interp_ratio_dz_ptr) {
-                        interp_ratio_dz_ptr[k] = interp_ratio_dz;
-                    }
+    //                     if (interp_ratio_dx_ptr) {
+    //                         interp_ratio_dx_ptr[k] = interp_ratio_dx;
+    //                     }
+    //                     if (interp_ratio_dy_ptr) {
+    //                         interp_ratio_dy_ptr[k] = interp_ratio_dy;
+    //                     }
+    //                     if (interp_ratio_dz_ptr) {
+    //                         interp_ratio_dz_ptr[k] = interp_ratio_dz;
+    //                     }
 
-                    if (normal_ptr) {
-                        normal_ptr[0] += interp_ratio_dx * tsdf_k;
-                        normal_ptr[1] += interp_ratio_dy * tsdf_k;
-                        normal_ptr[2] += interp_ratio_dz * tsdf_k;
-                    }
+    //                     if (normal_ptr) {
+    //                         normal_ptr[0] += interp_ratio_dx * tsdf_k;
+    //                         normal_ptr[1] += interp_ratio_dy * tsdf_k;
+    //                         normal_ptr[2] += interp_ratio_dz * tsdf_k;
+    //                     }
 
-                    if (color_ptr) {
-                        index_t color_linear_idx = linear_idx_k * 3;
-                        color_ptr[0] +=
-                                r * color_base_ptr[color_linear_idx + 0];
-                        color_ptr[1] +=
-                                r * color_base_ptr[color_linear_idx + 1];
-                        color_ptr[2] +=
-                                r * color_base_ptr[color_linear_idx + 2];
-                    }
+    //                     if (color_ptr) {
+    //                         index_t color_linear_idx = linear_idx_k * 3;
+    //                         color_ptr[0] +=
+    //                                 r * color_base_ptr[color_linear_idx + 0];
+    //                         color_ptr[1] +=
+    //                                 r * color_base_ptr[color_linear_idx + 1];
+    //                         color_ptr[2] +=
+    //                                 r * color_base_ptr[color_linear_idx + 2];
+    //                     }
 
-                    sum_r += r;
-                }
-            }  // loop over 8 neighbors
+    //                     sum_r += r;
+    //                 }
+    //             }  // loop over 8 neighbors
 
-            if (sum_r > 0) {
-                sum_r *= 255.0;
-                if (color_ptr) {
-                    color_ptr[0] /= sum_r;
-                    color_ptr[1] /= sum_r;
-                    color_ptr[2] /= sum_r;
-                }
+    //             if (sum_r > 0) {
+    //                 sum_r *= 255.0;
+    //                 if (color_ptr) {
+    //                     color_ptr[0] /= sum_r;
+    //                     color_ptr[1] /= sum_r;
+    //                     color_ptr[2] /= sum_r;
+    //                 }
 
-                if (normal_ptr) {
-                    constexpr float EPSILON = 1e-5f;
-                    float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
-                                      normal_ptr[1] * normal_ptr[1] +
-                                      normal_ptr[2] * normal_ptr[2]);
-                    norm = std::max(norm, EPSILON);
-                    w2c_transform_indexer.Rotate(
-                            -normal_ptr[0] / norm, -normal_ptr[1] / norm,
-                            -normal_ptr[2] / norm, normal_ptr + 0,
-                            normal_ptr + 1, normal_ptr + 2);
-                }
-            }
-        }  // surface-found
-    });
+    //                 if (normal_ptr) {
+    //                     constexpr float EPSILON = 1e-5f;
+    //                     float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
+    //                                       normal_ptr[1] * normal_ptr[1] +
+    //                                       normal_ptr[2] * normal_ptr[2]);
+    //                     norm = std::max(norm, EPSILON);
+    //                     w2c_transform_indexer.Rotate(
+    //                             -normal_ptr[0] / norm, -normal_ptr[1] / norm,
+    //                             -normal_ptr[2] / norm, normal_ptr + 0,
+    //                             normal_ptr + 1, normal_ptr + 2);
+    //                 }
+    //             }
+    //         }  // surface-found
+    //     });
 
-#if defined(__CUDACC__)
-    core::cuda::Synchronize();
-#endif
+    // #if defined(__CUDACC__)
+    //     core::cuda::Synchronize();
+    // #endif
 }
 
 template <typename tsdf_t, typename weight_t, typename color_t>
