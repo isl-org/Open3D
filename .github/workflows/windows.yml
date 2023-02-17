@@ -150,12 +150,27 @@ jobs:
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" | Out-File -FilePath `
             $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Upload package
+      - name: Viewer App
+        working-directory: ${{ env.BUILD_DIR }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF'  && matrix.CONFIG == 'Release' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+            --target Open3DViewer
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+            --target INSTALL
+          New-Item -ItemType "directory" -Force -Path "package"
+          Compress-Archive -LiteralPath "C:\Program Files\Open3D\bin\Open3D" `
+            -DestinationPath "package/open3d-app-windows-amd64.zip"
+
+      - name: Upload Package & Viewer
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
         uses: actions/upload-artifact@v3
         with:
           name: open3d-devel-windows
-          path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
+          path: |
+            ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
+            ${{ env.BUILD_DIR }}/package/open3d-app-windows-amd64.zip
           if-no-files-found: error
 
       - name: GCloud CLI auth
