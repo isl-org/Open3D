@@ -880,42 +880,39 @@ void RayCastCPU
         float sdf_trunc = voxel_size * trunc_voxel_multiplier;
         float w = 0.0;
 
-        // Camera origin
-        c2w_transform_indexer.RigidTransform(0, 0, 0, &x_o, &y_o, &z_o);
+        // // Camera origin
+        // c2w_transform_indexer.RigidTransform(0, 0, 0, &x_o, &y_o, &z_o);
 
-        //         // Direction
-        //         c2w_transform_indexer.Unproject(static_cast<float>(x),
-        //                                         static_cast<float>(y), 1.0f,
-        //                                         &x_c, &y_c, &z_c);
-        //         c2w_transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g,
-        //         &y_g, &z_g); float x_d = (x_g - x_o); float y_d = (y_g -
-        //         y_o); float z_d = (z_g - z_o);
+        // // Direction
+        // c2w_transform_indexer.Unproject(static_cast<float>(x),
+        //                                 static_cast<float>(y), 1.0f, &x_c,
+        //                                 &y_c, &z_c);
+        // c2w_transform_indexer.RigidTransform(x_c, y_c, z_c, &x_g, &y_g,
+        // &z_g); float x_d = (x_g - x_o); float y_d = (y_g - y_o); float z_d =
+        // (z_g - z_o);
 
-        //         MiniVecCache cache{0, 0, 0, -1};
-        //         bool surface_found = false;
-        //         while (t < t_max) {
-        //             index_t linear_idx =
-        //                     GetLinearIdxAtT(x_o, y_o, z_o, x_d, y_d, z_d, t,
-        //                     cache);
+        // MiniVecCache cache{0, 0, 0, -1};
+        // bool surface_found = false;
+        // while (t < t_max) {
+        //     index_t linear_idx =
+        //             GetLinearIdxAtT(x_o, y_o, z_o, x_d, y_d, z_d, t, cache);
 
-        //             if (linear_idx < 0) {
-        //                 t_prev = t;
-        //                 t += block_size;
-        //             } else {
-        //                 tsdf_prev = tsdf;
-        //                 tsdf = tsdf_base_ptr[linear_idx];
-        //                 w = weight_base_ptr[linear_idx];
-        //                 if (tsdf_prev > 0 && w >= weight_threshold && tsdf <=
-        //                 0)
-        //                 {
-        //                     surface_found = true;
-        //                     break;
-        //                 }
-        //                 t_prev = t;
-        //                 float delta = tsdf * sdf_trunc;
-        //                 t += delta < voxel_size ? voxel_size : delta;
-        //             }
+        //     if (linear_idx < 0) {
+        //         t_prev = t;
+        //         t += block_size;
+        //     } else {
+        //         tsdf_prev = tsdf;
+        //         tsdf = tsdf_base_ptr[linear_idx];
+        //         w = weight_base_ptr[linear_idx];
+        //         if (tsdf_prev > 0 && w >= weight_threshold && tsdf <= 0) {
+        //             surface_found = true;
+        //             break;
         //         }
+        //         t_prev = t;
+        //         float delta = tsdf * sdf_trunc;
+        //         t += delta < voxel_size ? voxel_size : delta;
+        //     }
+        // }
 
         //         if (surface_found) {
         //             float t_intersect =
