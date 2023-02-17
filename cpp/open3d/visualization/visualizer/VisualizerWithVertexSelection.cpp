@@ -498,15 +498,18 @@ void VisualizerWithVertexSelection::KeyPressCallback(
         switch (key) {
             case GLFW_KEY_X:
                 view_control.ToggleEditingX();
-                utility::LogDebug("[Visualizer] Enter orthogonal X editing mode.");
+                utility::LogDebug(
+                        "[Visualizer] Enter orthogonal X editing mode.");
                 break;
             case GLFW_KEY_Y:
                 view_control.ToggleEditingY();
-                utility::LogDebug("[Visualizer] Enter orthogonal Y editing mode.");
+                utility::LogDebug(
+                        "[Visualizer] Enter orthogonal Y editing mode.");
                 break;
             case GLFW_KEY_Z:
                 view_control.ToggleEditingZ();
-                utility::LogInfo("[Visualizer] Enter orthogonal Z editing mode.");
+                utility::LogInfo(
+                        "[Visualizer] Enter orthogonal Z editing mode.");
                 break;
             case GLFW_KEY_R:
                 if (mods & GLFW_MOD_CONTROL) {
@@ -539,7 +542,8 @@ void VisualizerWithVertexSelection::KeyPressCallback(
                 break;
             }
             default:
-                Visualizer::KeyPressCallback(window, key, scancode, action, mods);
+                Visualizer::KeyPressCallback(window, key, scancode, action,
+                                             mods);
                 break;
         }
     }
