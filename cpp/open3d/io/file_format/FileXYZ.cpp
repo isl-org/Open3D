@@ -145,7 +145,7 @@ bool WritePointCloudInMemoryToXYZ(unsigned char *&buffer,
         }
         length = content.length();
         buffer = new unsigned char[length];  // we do this for the caller
-        memcpy(buffer, content.c_str(), length);
+        std::memcpy(buffer, content.c_str(), length);
 
         reporter.Finish();
         return true;

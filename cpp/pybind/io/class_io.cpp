@@ -183,7 +183,8 @@ void pybind_class_io(py::module &m_io) {
                 const char *dataptr = PYBIND11_BYTES_AS_STRING(bytes.ptr());
                 auto length = PYBIND11_BYTES_SIZE(bytes.ptr());
                 auto buffer = new unsigned char[length];
-                memcpy(buffer, dataptr, length);  // copy before releasing GIL
+                // copy before releasing GIL
+                std::memcpy(buffer, dataptr, length);
                 py::gil_scoped_release release;
                 geometry::PointCloud pcd;
                 ReadPointCloud(reinterpret_cast<const unsigned char *>(buffer),
