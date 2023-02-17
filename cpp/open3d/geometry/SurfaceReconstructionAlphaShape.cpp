@@ -181,8 +181,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::CreateFromPointCloudAlphaShape(
 
     // use new object tmesh2 here even if some arrays share memory with tmesh.
     // We don't want to replace the blobs in tmesh.
-    auto tmesh2 = t::geometry::vtkutils::ComputeNormals(tmesh, true, false,
-                                                        true, true, false);
+    auto tmesh2 = t::geometry::vtkutils::ComputeNormals(
+            tmesh, /*vertex_normals=*/true, /*face_normals=*/false,
+            /*consistency=*/true, /*auto_orient_normals=*/true,
+            /*splitting=*/false);
 
     mesh->Clear();
     mesh->vertices_ = core::eigen_converter::TensorToEigenVector3dVector(
