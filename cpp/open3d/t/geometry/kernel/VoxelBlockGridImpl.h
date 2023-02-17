@@ -761,6 +761,7 @@ void RayCastCPU
 
             return block_buf_idx * resolution3 + z_v * resolution2 +
                    y_v * block_resolution + x_v;
+            return 0;
         };
 
         index_t y = workload_idx / cols;
@@ -905,13 +906,13 @@ void RayCastCPU
                 tsdf_prev = tsdf;
                 tsdf = tsdf_base_ptr[linear_idx];
                 w = weight_base_ptr[linear_idx];
-                if (tsdf_prev > 0 && w >= weight_threshold && tsdf <= 0) {
-                    surface_found = true;
-                    break;
-                }
-                t_prev = t;
-                float delta = tsdf * sdf_trunc;
-                t += delta < voxel_size ? voxel_size : delta;
+                // if (tsdf_prev > 0 && w >= weight_threshold && tsdf <= 0) {
+                //     surface_found = true;
+                //     break;
+                // }
+                // t_prev = t;
+                // float delta = tsdf * sdf_trunc;
+                // t += delta < voxel_size ? voxel_size : delta;
             }
         }
 
