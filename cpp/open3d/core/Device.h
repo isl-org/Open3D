@@ -100,7 +100,6 @@ public:
 protected:
     DeviceType device_type_ = DeviceType::CPU;
     int device_id_ = 0;
-    std::string description_;
 };
 
 /// Abstract class to provide IsXXX() functionality to check device location.
