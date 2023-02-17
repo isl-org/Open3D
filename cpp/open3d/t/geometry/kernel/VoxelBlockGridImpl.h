@@ -1051,9 +1051,9 @@ void RayCastCPU
     //         }  // surface-found
     //     });
 
-    // #if defined(__CUDACC__)
-    //     core::cuda::Synchronize();
-    // #endif
+#if defined(__CUDACC__)
+    core::cuda::Synchronize();
+#endif
 }
 
 template <typename tsdf_t, typename weight_t, typename color_t>
