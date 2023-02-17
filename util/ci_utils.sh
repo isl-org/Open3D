@@ -50,7 +50,7 @@ TORCH_MACOS_VER="1.12.0"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="21.1.1"
-WHEEL_VER="0.37.1"
+WHEEL_VER="0.38.0"
 STOOLS_VER="50.3.2"
 PYTEST_VER="7.1.2"
 PYTEST_RANDOMLY_VER="3.8.0"

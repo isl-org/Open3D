@@ -29,8 +29,8 @@ if(BUILD_CURL_FROM_SOURCE)
     ExternalProject_Add(
         ext_curl
         PREFIX curl
-        URL https://github.com/curl/curl/releases/download/curl-7_79_1/curl-7.79.1.tar.gz
-        URL_HASH SHA256=370b11201349816287fb0ccc995e420277fbfcaf76206e309b3f60f0eda090c2
+        URL https://github.com/curl/curl/releases/download/curl-7_88_0/curl-7.88.0.tar.xz
+        URL_HASH SHA256=fd17432cf28714a4cf39d89e26b8ace0d8901199fe5d01d75eb0ae3bbfcc731f
         DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/curl"
         CMAKE_ARGS
             -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -40,6 +40,7 @@ if(BUILD_CURL_FROM_SOURCE)
             -DCURL_DISABLE_LDAP=ON
             -DCURL_DISABLE_LDAPS=ON
             -DCMAKE_USE_LIBSSH2=OFF
+            -DCURL_USE_LIBSSH2=OFF
             -DCMAKE_USE_OPENSSL=ON
             -DOPENSSL_ROOT_DIR=${BORINGSSL_ROOT_DIR}
             ${curl_cmake_extra_args}
