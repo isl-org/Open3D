@@ -573,34 +573,30 @@ void RayCastCPU
          float weight_threshold,
          float trunc_voxel_multiplier,
          int range_map_down_factor) {
-    // using Key = utility::MiniVec<index_t, 3>;
-    // using Hash = utility::MiniVecHash<index_t, 3>;
-    // using Eq = utility::MiniVecEq<index_t, 3>;
+    using Key = utility::MiniVec<index_t, 3>;
+    using Hash = utility::MiniVecHash<index_t, 3>;
+    using Eq = utility::MiniVecEq<index_t, 3>;
 
-    //     auto device_hashmap = hashmap->GetDeviceHashBackend();
-    // #if defined(__CUDACC__)
-    //     auto cuda_hashmap =
-    //             std::dynamic_pointer_cast<core::StdGPUHashBackend<Key, Hash,
-    //             Eq>>(
-    //                     device_hashmap);
-    //     if (cuda_hashmap == nullptr) {
-    //         utility::LogError(
-    //                 "Unsupported backend: CUDA raycasting only supports
-    //                 STDGPU.");
-    //     }
-    //     auto hashmap_impl = *cuda_hashmap->GetImpl();
-    // #else
-    //     auto cpu_hashmap =
-    //             std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash,
-    //             Eq>>(
-    //                     device_hashmap);
-    //     if (cpu_hashmap == nullptr) {
-    //         utility::LogError(
-    //                 "Unsupported backend: CPU raycasting only supports
-    //                 TBB.");
-    //     }
-    //     auto hashmap_impl = *cpu_hashmap->GetImpl();
-    // #endif
+    auto device_hashmap = hashmap->GetDeviceHashBackend();
+#if defined(__CUDACC__)
+    auto cuda_hashmap =
+            std::dynamic_pointer_cast<core::StdGPUHashBackend<Key, Hash, Eq>>(
+                    device_hashmap);
+    if (cuda_hashmap == nullptr) {
+        utility::LogError(
+                "Unsupported backend: CUDA raycasting only supports STDGPU.");
+    }
+    auto hashmap_impl = cuda_hashmap->GetImpl();
+#else
+    auto cpu_hashmap =
+            std::dynamic_pointer_cast<core::TBBHashBackend<Key, Hash, Eq>>(
+                    device_hashmap);
+    if (cpu_hashmap == nullptr) {
+        utility::LogError(
+                "Unsupported backend: CPU raycasting only supports TBB.");
+    }
+    auto hashmap_impl = *cpu_hashmap->GetImpl();
+#endif
 
     //     core::Device device = hashmap->GetDevice();
 
