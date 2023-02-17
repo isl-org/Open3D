@@ -45,6 +45,7 @@ function(open3d_show_and_abort_on_warning target)
         else()
             string(APPEND CUDA_FLAGS " -Xcudafe --diag_suppress=[${DISABLE_NVCC_WARNINGS}]")
         endif()
+        string(APPEND CUDA_FLAGS " -Wno-unused-variable")
 
         # Host compiler flags
         if (MSVC)
@@ -73,9 +74,9 @@ function(open3d_show_and_abort_on_warning target)
 
     target_compile_options(${target} PRIVATE
         $<$<COMPILE_LANG_AND_ID:C,MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>
-        $<$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang,Intel>:-Wall -Wextra -Werror ${DISABLE_GNU_CLANG_INTEL_WARNINGS}>
+        $<$<COMPILE_LANG_AND_ID:C,GNU,Clang,AppleClang,Intel>:-Wall -Wextra -Werror ${DISABLE_GNU_CLANG_INTEL_WARNINGS} -Wno-unused-variable>
         $<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/W4 /WX ${DISABLE_MSVC_WARNINGS}>
-        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,Intel>:-Wall -Wextra -Werror ${DISABLE_GNU_CLANG_INTEL_WARNINGS}>
+        $<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang,Intel>:-Wall -Wextra -Werror ${DISABLE_GNU_CLANG_INTEL_WARNINGS} -Wno-unused-variable>
         $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CUDA_FLAGS}>
         $<$<COMPILE_LANGUAGE:ISPC>:--werror>
     )
