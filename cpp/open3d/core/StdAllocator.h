@@ -26,7 +26,9 @@
 
 #pragma once
 
-#include "open3d/core/Device.h"
+#include <cuda.h>
+#include <cuda_runtime.h>
+
 #include "open3d/core/MemoryManager.h"
 
 namespace open3d {
@@ -48,7 +50,7 @@ public:
     StdAllocator() = default;
 
     /// Constructor from device.
-    explicit StdAllocator(const Device& device) : device_(device) {}
+    explicit StdAllocator(int device_id) : device_id_(device_id) {}
 
     /// Default copy constructor.
     StdAllocator(const StdAllocator&) = default;
@@ -64,19 +66,21 @@ public:
 
     /// Rebind copy constructor.
     template <typename U>
-    StdAllocator(const StdAllocator<U>& other) : device_(other.device_) {}
+    StdAllocator(const StdAllocator<U>& other) : device_id_(other.device_id_) {}
 
     /// Allocates memory of size \p n.
     T* allocate(std::size_t n) {
-        return static_cast<T*>(MemoryManager::Malloc(n * sizeof(T), device_));
+        void* ptr;
+        cudaMalloc(static_cast<void**>(&ptr), n);
+        return static_cast<T*>(ptr);
     }
 
     /// Deallocates memory from pointer \p p of size \p n .
-    void deallocate(T* p, std::size_t n) { MemoryManager::Free(p, device_); }
+    void deallocate(T* p, std::size_t n) {}
 
     /// Returns true if the instances are equal, false otherwise.
     bool operator==(const StdAllocator& other) const {
-        return device_ == other.device_;
+        return device_id_ == other.device_id_;
     }
 
     /// Returns true if the instances are not equal, false otherwise.
@@ -85,14 +89,14 @@ public:
     }
 
     /// Returns the device on which memory is allocated.
-    Device GetDevice() const { return device_; }
+    int GetDeviceID() const { return device_id_; }
 
 private:
     // Allow access in rebind constructor.
     template <typename T2>
     friend class StdAllocator;
 
-    Device device_;
+    int device_id_;
 };
 
 }  // namespace core

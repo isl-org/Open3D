@@ -57,7 +57,7 @@ public:
     StdGPUAllocator() = default;
 
     /// Constructor from device.
-    explicit StdGPUAllocator(const Device& device) : std_allocator_(device) {}
+    explicit StdGPUAllocator(int device_id) : std_allocator_(device_id) {}
 
     /// Default copy constructor.
     StdGPUAllocator(const StdGPUAllocator&) = default;
@@ -78,10 +78,6 @@ public:
 
     /// Allocates memory of size \p n.
     T* allocate(std::size_t n) {
-        if (!GetDevice().IsCUDA()) {
-            utility::LogError("Unsupported device.");
-        }
-
         T* p = std_allocator_.allocate(n);
         stdgpu::register_memory(p, n, stdgpu::dynamic_memory_type::device);
         return p;
@@ -89,10 +85,6 @@ public:
 
     /// Deallocates memory from pointer \p p of size \p n .
     void deallocate(T* p, std::size_t n) {
-        if (!GetDevice().IsCUDA()) {
-            utility::LogError("Unsupported device.");
-        }
-
         stdgpu::deregister_memory(p, n, stdgpu::dynamic_memory_type::device);
         std_allocator_.deallocate(p, n);
     }
@@ -104,9 +96,6 @@ public:
 
     /// Returns true if the instances are not equal, false otherwise.
     bool operator!=(const StdGPUAllocator& other) { return !operator==(other); }
-
-    /// Returns the device on which memory is allocated.
-    Device GetDevice() const { return std_allocator_.GetDevice(); }
 
 private:
     // Allow access in rebind constructor.
@@ -431,7 +420,7 @@ void StdGPUHashBackend<Key, Hash, Eq>::Allocate(int64_t capacity) {
 
         impl_ = InternalStdGPUHashBackend<Key, Hash, Eq>::createDeviceObject(
                 this->capacity_,
-                InternalStdGPUHashBackendAllocator<Key>(this->device_));
+                InternalStdGPUHashBackendAllocator<Key>(this->device_.GetID()));
         cuda::Synchronize(this->device_);
     }
 }
