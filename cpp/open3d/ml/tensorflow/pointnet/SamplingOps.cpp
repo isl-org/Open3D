@@ -49,6 +49,6 @@ REGISTER_OP("Open3DFurthestPointSampling")
             ::tensorflow::shape_inference::ShapeHandle output =
                     c->MakeShape({c->Dim(dims1, 0), npoint});
             c->set_output(0, output);
-            return Status();
+            return Status::OK();
         })
         .Doc(R"doc( TODO )doc");

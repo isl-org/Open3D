@@ -85,7 +85,7 @@ REGISTER_OP("Open3DSparseConvBackpropFilter")
             CHECK_SHAPE_HANDLE(c, out_features_gradient, num_out, out_channels);
 
             c->set_output(0, filters);
-            return Status();
+            return Status::OK();
         })
         .Doc(R"doc(
 Computes the backprop for the filter of the SparseConv
