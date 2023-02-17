@@ -22,10 +22,20 @@ How to add custom UV maps ?
 Quick Reference to default UV Maps for some primitive shapes provided by Open3D
 --------------------------------------------------------------------------------
 
+The examples below all assume the following code preamble:
+
+.. code_block:: python
+    import open3d as o3d
+    import open3d.visualization.rendering as rendering
+
+    material = rendering.MaterialRecord()
+    material.shader = 'defaultUnlit'
+    material.albedo_img = o3d.io.read_image('/Users/renes/Downloads/uv1.png')
+
+
 *****************************
 Example Texture Map
 *****************************
-
 
 .. image:: ../../_static/geometry/uvmaps/uv1.png
     :width: 200px
@@ -35,6 +45,9 @@ Example Texture Map
 Box (map uv to each face = false) 
 ************************************
 
+.. code_block:: python
+    box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True)
+    o3d.visualization.draw({'name': 'box', 'geometry': box, 'material': material})
 
 .. image:: ../../_static/geometry/uvmaps/uv2.png
     :width: 200px
@@ -48,6 +61,10 @@ Box (map uv to each face = false)
 **************************************
 Box (map uv to each face = true)
 **************************************
+
+.. code_block:: python
+    box = o3d.geometry.TriangleMesh.create_box(create_uv_map=True, map_texture_to_each_face=True)
+    o3d.visualization.draw({'name': 'box', 'geometry': box, 'material': material})
 
 .. image:: ../../_static/geometry/uvmaps/uv5.png
     :width: 200px
@@ -63,6 +80,10 @@ Box (map uv to each face = true)
 Tetrahedral
 *************
 
+.. code_block:: python
+    tetra = o3d.geometry.TriangleMesh.create_tetrahedron(create_uv_map=True)
+    o3d.visualization.draw({'name': 'tetrahedron', 'geometry': tetra, 'material': material})
+
 .. image:: ../../_static/geometry/uvmaps/uv8.png
     :width: 200px
 
@@ -77,6 +98,10 @@ Tetrahedral
 Octahedral
 ***************
 
+.. code_block:: python
+    octo = o3d.geometry.TriangleMesh.create_octahedron(create_uv_map=True)
+    o3d.visualization.draw({'name': 'octahedron', 'geometry': octo, 'material': material})
+
 .. image:: ../../_static/geometry/uvmaps/uv11.png
     :width: 200px
 
@@ -89,6 +114,10 @@ Octahedral
 **************
 Icosahedron
 **************
+
+.. code_block:: python
+    ico = o3d.geometry.TriangleMesh.create_icosahedron(create_uv_map=True)
+    o3d.visualization.draw({'name': 'icosahedron', 'geometry': ico, 'material': material})
 
 .. image:: ../../_static/geometry/uvmaps/uv14.png
     :width: 200px
@@ -103,6 +132,10 @@ Icosahedron
 Cylinder
 *************
 
+.. code_block:: python
+    cylinder = o3d.geometry.TriangleMesh.create_cylinder(create_uv_map=True)
+    o3d.visualization.draw({'name': 'cylinder', 'geometry': cylinder, 'material': material})
+
 .. image:: ../../_static/geometry/uvmaps/uv17.png
     :width: 200px
     
@@ -115,6 +148,11 @@ Cylinder
 *******
 Cone
 *******
+
+.. code_block:: python
+    cone = o3d.geometry.TriangleMesh.create_cone(create_uv_map=True)
+    o3d.visualization.draw({'name': 'cone', 'geometry': cone, 'material': material})
+
 .. image:: ../../_static/geometry/uvmaps/uv20.png
     :width: 200px
     
@@ -128,6 +166,9 @@ Cone
 Sphere
 *******
 
+.. code_block:: python
+    sphere = o3d.geometry.TriangleMesh.create_sphere(create_uv_map=True)
+    o3d.visualization.draw({'name': 'sphere', 'geometry': sphere, 'material': material})
 
 .. image:: ../../_static/geometry/uvmaps/uv23.png
     :width: 200px
