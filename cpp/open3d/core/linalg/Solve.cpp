@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,32 +32,19 @@
 
 #include <unordered_map>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/linalg/LinalgHeadersCPU.h"
 
 namespace open3d {
 namespace core {
 
 void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
-    // Check devices
-    Device device = A.GetDevice();
-    if (device != B.GetDevice()) {
-        utility::LogError("Tensor A device {} and Tensor B device {} mismatch",
-                          A.GetDevice().ToString(), B.GetDevice().ToString());
-    }
+    AssertTensorDtypes(A, {Float32, Float64});
+    const Device device = A.GetDevice();
+    const Dtype dtype = A.GetDtype();
 
-    // Check dtypes
-    Dtype dtype = A.GetDtype();
-    if (dtype != B.GetDtype()) {
-        utility::LogError("Tensor A dtype {} and Tensor B dtype {} mismatch",
-                          A.GetDtype().ToString(), B.GetDtype().ToString());
-    }
-
-    if (dtype != Dtype::Float32 && dtype != Dtype::Float64) {
-        utility::LogError(
-                "Only tensors with Float32 or Float64 are supported, but "
-                "received {}",
-                dtype.ToString());
-    }
+    AssertTensorDtype(B, dtype);
+    AssertTensorDevice(B, device);
 
     // Check dimensions
     SizeVector A_shape = A.GetShape();
@@ -86,15 +73,16 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     }
 
     // A and B are modified in-place
-    Tensor A_copy = A.T().To(device, /*copy=*/true);
+    Tensor A_copy = A.T().Clone();
     void *A_data = A_copy.GetDataPtr();
 
-    X = B.T().To(device, /*copy=*/true);
+    X = B.T().Clone();
     void *B_data = X.GetDataPtr();
 
-    if (device.GetType() == Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
-        Tensor ipiv = Tensor::Empty({n}, Dtype::Int32, device);
+        CUDAScopedDevice scoped_device(device);
+        Tensor ipiv = Tensor::Empty({n}, core::Int32, device);
         void *ipiv_data = ipiv.GetDataPtr();
 
         SolveCUDA(A_data, B_data, ipiv_data, n, k, dtype, device);
@@ -104,9 +92,9 @@ void Solve(const Tensor &A, const Tensor &B, Tensor &X) {
     } else {
         Dtype ipiv_dtype;
         if (sizeof(OPEN3D_CPU_LINALG_INT) == 4) {
-            ipiv_dtype = Dtype::Int32;
+            ipiv_dtype = core::Int32;
         } else if (sizeof(OPEN3D_CPU_LINALG_INT) == 8) {
-            ipiv_dtype = Dtype::Int64;
+            ipiv_dtype = core::Int64;
         } else {
             utility::LogError("Unsupported OPEN3D_CPU_LINALG_INT type.");
         }

@@ -3,12 +3,14 @@
 Capture your own dataset
 -------------------------------------
 
-If you have a `RealSense camera <https://www.intel.com/content/www/us/en/architecture-and-technology/realsense-overview.html>`_, capturing RGBD frames is easy by using ``sensors/realsense_recorder.py``.
+If you have a `RealSense camera
+<https://www.intel.com/content/www/us/en/architecture-and-technology/realsense-overview.html>`_,
+capturing RGBD frames is easy by using ``sensors/realsense_recorder.py``.
 
 .. note:: This tutorial assumes that valid RealSense Python package and OpenCV
-Python package are installed in your environment. Please follow
-`this instruction <https://github.com/IntelRealSense/librealsense/tree/master/wrappers/python>`_
-to install RealSense Python package.
+    Python package are installed in your environment. Please follow
+    `this instruction <https://github.com/IntelRealSense/librealsense/tree/master/wrappers/python>`_
+    to install RealSense Python package.
 
 Input arguments
 ``````````````````````````````````````
@@ -65,7 +67,6 @@ A new configuration file is required to specify path to the new dataset.
 
 Note that ``path_dataset`` and ``path_intrinsic`` indicates paths of dataset
 and intrinsic parameters.
-
 
 Run reconstruction system
 ``````````````````````````````````````

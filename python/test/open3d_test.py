@@ -1,14 +1,36 @@
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
+# The MIT License (MIT)
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
+
 import os
 import sys
 import urllib.request
 import zipfile
+
 import numpy as np
 import pytest
-
-# Avoid pathlib to be compatible with Python 3.5+.
-__pwd = os.path.dirname(os.path.realpath(__file__))
-test_data_dir = os.path.join(__pwd, os.pardir, os.pardir, "examples",
-                             "test_data")
 
 
 def torch_available():
@@ -54,17 +76,3 @@ def list_devices_with_torch():
             return [o3d.core.Device("CPU:0")]
     else:
         return []
-
-
-def download_fountain_dataset():
-    fountain_path = os.path.join(test_data_dir, "fountain_small")
-    fountain_zip_path = os.path.join(test_data_dir, "fountain.zip")
-    if not os.path.exists(fountain_path):
-        print("Downloading fountain dataset")
-        url = "https://storage.googleapis.com/isl-datasets/open3d-dev/fountain.zip"
-        urllib.request.urlretrieve(url, fountain_zip_path)
-        print("Extracting fountain dataset")
-        with zipfile.ZipFile(fountain_zip_path, "r") as zip_ref:
-            zip_ref.extractall(os.path.dirname(fountain_path))
-        os.remove(fountain_zip_path)
-    return fountain_path

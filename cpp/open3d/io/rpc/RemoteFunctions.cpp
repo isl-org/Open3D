@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/MessageUtils.h"
 #include "open3d/io/rpc/Messages.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 using namespace open3d::utility;
 
@@ -98,6 +98,8 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
     msg.time = time;
     msg.layer = layer;
 
+    msg.data.SetO3DTypeToTriangleMesh();
+
     msg.data.vertices =
             messages::Array::FromPtr((double*)mesh.vertices_.data(),
                                      {int64_t(mesh.vertices_.size()), 3});
@@ -130,15 +132,15 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
                 std::vector<int64_t> shape(
                         {image.height_, image.width_, image.num_of_channels_});
                 if (image.bytes_per_channel_ == sizeof(uint8_t)) {
-                    msg.data.textures[std::to_string(tex_id)] =
+                    msg.data.texture_maps[std::to_string(tex_id)] =
                             messages::Array::FromPtr(
                                     (uint8_t*)image.data_.data(), shape);
                 } else if (image.bytes_per_channel_ == sizeof(float)) {
-                    msg.data.textures[std::to_string(tex_id)] =
+                    msg.data.texture_maps[std::to_string(tex_id)] =
                             messages::Array::FromPtr((float*)image.data_.data(),
                                                      shape);
                 } else if (image.bytes_per_channel_ == sizeof(double)) {
-                    msg.data.textures[std::to_string(tex_id)] =
+                    msg.data.texture_maps[std::to_string(tex_id)] =
                             messages::Array::FromPtr(
                                     (double*)image.data_.data(), shape);
                 }
@@ -160,76 +162,102 @@ bool SetTriangleMesh(const geometry::TriangleMesh& mesh,
     return ReplyIsOKStatus(*reply);
 }
 
-bool SetMeshData(const core::Tensor& vertices,
-                 const std::string& path,
+bool SetTriangleMesh(const t::geometry::TriangleMesh& mesh,
+                     const std::string& path,
+                     int time,
+                     const std::string& layer,
+                     std::shared_ptr<ConnectionBase> connection) {
+    std::map<std::string, core::Tensor> vertex_attributes(
+            mesh.GetVertexAttr().begin(), mesh.GetVertexAttr().end());
+    std::map<std::string, core::Tensor> face_attributes(
+            mesh.GetTriangleAttr().begin(), mesh.GetTriangleAttr().end());
+
+    std::string material_name;
+    std::map<std::string, float> material_scalar_attributes;
+    std::map<std::string, std::array<float, 4>> material_vector_attributes;
+    std::map<std::string, t::geometry::Image> texture_maps;
+    if (mesh.HasMaterial()) {
+        const auto& material = mesh.GetMaterial();
+        material_name = material.GetMaterialName();
+        material_scalar_attributes = std::map<std::string, float>(
+                material.GetScalarProperties().begin(),
+                material.GetScalarProperties().end());
+        for (const auto& it : material.GetVectorProperties()) {
+            std::array<float, 4> vec = {it.second(0), it.second(1),
+                                        it.second(2), it.second(3)};
+            material_vector_attributes[it.first] = vec;
+        }
+        texture_maps = std::map<std::string, t::geometry::Image>(
+                material.GetTextureMaps().begin(),
+                material.GetTextureMaps().end());
+    }
+
+    messages::MeshData o3d_type;
+    o3d_type.SetO3DTypeToTriangleMesh();
+
+    return SetMeshData(path, time, layer, mesh.GetVertexPositions(),
+                       vertex_attributes, mesh.GetTriangleIndices(),
+                       face_attributes, core::Tensor(),
+                       std::map<std::string, core::Tensor>(), material_name,
+                       material_scalar_attributes, material_vector_attributes,
+                       texture_maps, o3d_type.o3d_type, connection);
+}
+
+bool SetMeshData(const std::string& path,
                  int time,
                  const std::string& layer,
+                 const core::Tensor& vertices,
                  const std::map<std::string, core::Tensor>& vertex_attributes,
                  const core::Tensor& faces,
                  const std::map<std::string, core::Tensor>& face_attributes,
                  const core::Tensor& lines,
                  const std::map<std::string, core::Tensor>& line_attributes,
-                 const std::map<std::string, core::Tensor>& textures,
+                 const std::string& material,
+                 const std::map<std::string, float>& material_scalar_attributes,
+                 const std::map<std::string, std::array<float, 4>>&
+                         material_vector_attributes,
+                 const std::map<std::string, t::geometry::Image>& texture_maps,
+                 const std::string& o3d_type,
                  std::shared_ptr<ConnectionBase> connection) {
-    if (vertices.NumElements() == 0) {
-        LogInfo("SetMeshData: vertices Tensor is empty");
-        return false;
-    }
-    if (vertices.NumDims() != 2) {
-        LogInfo("SetMeshData: vertices ndim must be 2 but is {}",
-                vertices.NumDims());
-        return false;
-    }
-    if (vertices.GetDtype() != core::Dtype::Float32 &&
-        vertices.GetDtype() != core::Dtype::Float64) {
-        LogError(
-                "SetMeshData: vertices must have dtype Float32 or Float64 but "
-                "is {}",
-                vertices.GetDtype().ToString());
-    }
-
-    auto PrepareTensor = [](const core::Tensor& a) {
-        return a.To(core::Device("CPU:0")).Contiguous();
-    };
-
-    auto CreateArray = [](const core::Tensor& a) {
-        return DISPATCH_DTYPE_TO_TEMPLATE(a.GetDtype(), [&]() {
-            return messages::Array::FromPtr(
-                    (scalar_t*)a.GetDataPtr(),
-                    static_cast<std::vector<int64_t>>(a.GetShape()));
-        });
-    };
-
     messages::SetMeshData msg;
     msg.path = path;
     msg.time = time;
     msg.layer = layer;
+    msg.data.o3d_type = o3d_type;
 
-    const core::Tensor vertices_ok = PrepareTensor(vertices);
-    msg.data.vertices = CreateArray(vertices_ok);
+    if (vertices.NumElements()) {
+        if (vertices.NumDims() != 2) {
+            LogError("SetMeshData: vertices ndim must be 2 but is {}",
+                     vertices.NumDims());
+        }
+        if (vertices.GetDtype() != core::Float32 &&
+            vertices.GetDtype() != core::Float64) {
+            LogError(
+                    "SetMeshData: vertices must have dtype Float32 or Float64 "
+                    "but "
+                    "is {}",
+                    vertices.GetDtype().ToString());
+        }
+        msg.data.vertices = messages::Array::FromTensor(vertices);
+    }
 
-    // store tensors in this vector to make sure the memory blob is alive
-    // for tensors where a deep copy was necessary.
-    std::vector<core::Tensor> tensor_cache;
     for (const auto& item : vertex_attributes) {
-        tensor_cache.push_back(PrepareTensor(item.second));
-        const core::Tensor& tensor = tensor_cache.back();
-        if (tensor.NumDims() >= 1 &&
-            tensor.GetShape()[0] == vertices.GetShape()[0]) {
-            msg.data.vertex_attributes[item.first] = CreateArray(tensor);
+        if (item.second.NumDims() >= 1) {
+            msg.data.vertex_attributes[item.first] =
+                    messages::Array::FromTensor(item.second);
         } else {
             LogError("SetMeshData: Attribute {} has incompatible shape {}",
-                     item.first, tensor.GetShape().ToString());
+                     item.first, item.second.GetShape().ToString());
         }
     }
 
     if (faces.NumElements()) {
-        if (faces.GetDtype() != core::Dtype::Int32 &&
-            faces.GetDtype() != core::Dtype::Int64) {
+        if (faces.GetDtype() != core::Int32 &&
+            faces.GetDtype() != core::Int64) {
             LogError(
                     "SetMeshData: faces must have dtype Int32 or Int64 but "
                     "is {}",
-                    vertices.GetDtype().ToString());
+                    faces.GetDtype().ToString());
         } else if (faces.NumDims() != 2) {
             LogError("SetMeshData: faces must have rank 2 but is {}",
                      faces.NumDims());
@@ -237,29 +265,25 @@ bool SetMeshData(const core::Tensor& vertices,
             LogError("SetMeshData: last dim of faces must be >=3 but is {}",
                      faces.GetShape()[1]);
         } else {
-            tensor_cache.push_back(PrepareTensor(faces));
-            const core::Tensor& faces_ok = tensor_cache.back();
-            msg.data.faces = CreateArray(faces_ok);
+            msg.data.faces = messages::Array::FromTensor(faces);
+        }
+    }
 
-            for (const auto& item : face_attributes) {
-                tensor_cache.push_back(PrepareTensor(item.second));
-                const core::Tensor& tensor = tensor_cache.back();
-                if (tensor.NumDims() >= 1 &&
-                    tensor.GetShape()[0] == faces.GetShape()[0]) {
-                    msg.data.face_attributes[item.first] = CreateArray(tensor);
-                } else {
-                    LogError(
-                            "SetMeshData: Attribute {} has incompatible shape "
-                            "{}",
-                            item.first, tensor.GetShape().ToString());
-                }
-            }
+    for (const auto& item : face_attributes) {
+        if (item.second.NumDims() >= 1) {
+            msg.data.face_attributes[item.first] =
+                    messages::Array::FromTensor(item.second);
+        } else {
+            LogError(
+                    "SetMeshData: Attribute {} has incompatible shape "
+                    "{}",
+                    item.first, item.second.GetShape().ToString());
         }
     }
 
     if (lines.NumElements()) {
-        if (lines.GetDtype() != core::Dtype::Int32 &&
-            lines.GetDtype() != core::Dtype::Int64) {
+        if (lines.GetDtype() != core::Int32 &&
+            lines.GetDtype() != core::Int64) {
             LogError(
                     "SetMeshData: lines must have dtype Int32 or Int64 but "
                     "is {}",
@@ -271,33 +295,49 @@ bool SetMeshData(const core::Tensor& vertices,
             LogError("SetMeshData: last dim of lines must be >=2 but is {}",
                      lines.GetShape()[1]);
         } else {
-            tensor_cache.push_back(PrepareTensor(lines));
-            const core::Tensor& lines_ok = tensor_cache.back();
-            msg.data.lines = CreateArray(lines_ok);
-
-            for (const auto& item : line_attributes) {
-                tensor_cache.push_back(PrepareTensor(item.second));
-                const core::Tensor& tensor = tensor_cache.back();
-                if (tensor.NumDims() >= 1 &&
-                    tensor.GetShape()[0] == lines.GetShape()[0]) {
-                    msg.data.line_attributes[item.first] = CreateArray(tensor);
-                } else {
-                    LogError(
-                            "SetMeshData: Attribute {} has incompatible shape "
-                            "{}",
-                            item.first, tensor.GetShape().ToString());
-                }
-            }
+            msg.data.lines = messages::Array::FromTensor(lines);
         }
     }
 
-    for (const auto& item : textures) {
-        tensor_cache.push_back(PrepareTensor(item.second));
-        const core::Tensor& tensor = tensor_cache.back();
-        if (tensor.NumElements()) {
-            msg.data.textures[item.first] = CreateArray(tensor);
+    for (const auto& item : line_attributes) {
+        if (item.second.NumDims() >= 1) {
+            msg.data.line_attributes[item.first] =
+                    messages::Array::FromTensor(item.second);
         } else {
-            LogError("SetMeshData: Texture {} is empty", item.first);
+            LogError(
+                    "SetMeshData: Attribute {} has incompatible shape "
+                    "{}",
+                    item.first, item.second.GetShape().ToString());
+        }
+    }
+
+    if (!material.empty()) {
+        msg.data.material = material;
+        msg.data.material_scalar_attributes = material_scalar_attributes;
+        for (const auto& item : material_vector_attributes) {
+            msg.data.material_vector_attributes[item.first] = item.second;
+        }
+        for (const auto& texture_map : texture_maps) {
+            if (texture_map.second.IsEmpty()) {
+                LogError("SetMeshData: Texture map {} is empty",
+                         texture_map.first);
+            } else {
+                msg.data.texture_maps[texture_map.first] =
+                        messages::Array::FromTensor(
+                                texture_map.second.AsTensor());
+            }
+        }
+
+    } else if (!material_scalar_attributes.empty() ||
+               !material_vector_attributes.empty() || !texture_maps.empty()) {
+        LogError("{}",
+                 "SetMeshData: Please provide a material for the texture maps");
+    }
+
+    {
+        std::string errstr;
+        if (!msg.data.CheckMessage(errstr)) {
+            LogError("SetMeshData: {}", errstr);
         }
     }
 

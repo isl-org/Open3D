@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,9 +48,15 @@ struct KeyEvent;
 struct TickEvent;
 struct Theme;
 
+struct LayoutContext {
+    const Theme& theme;
+    FontContext& fonts;
+};
+
 struct DrawContext {
     const Theme& theme;
     visualization::rendering::Renderer& renderer;
+    FontContext& fonts;
     int uiOffsetX;
     int uiOffsetY;
     int screenWidth;
@@ -67,33 +73,43 @@ public:
     explicit Widget(const std::vector<std::shared_ptr<Widget>>& children);
     virtual ~Widget();
 
-    void AddChild(std::shared_ptr<Widget> child);
-    const std::vector<std::shared_ptr<Widget>> GetChildren() const;
+    virtual void AddChild(std::shared_ptr<Widget> child);
+    virtual const std::vector<std::shared_ptr<Widget>> GetChildren() const;
 
     /// Returns the frame size in pixels.
-    const Rect& GetFrame() const;
+    virtual const Rect& GetFrame() const;
     /// The frame is in pixels. The size of a pixel varies on different
-    /// and operatings sytems now frequently scale text sizes on high DPI
+    /// and operating systems now frequently scale text sizes on high DPI
     /// monitors. Prefer using a Layout to using this function, but if you
     /// must use it, it is best to use a multiple of
     /// Window::GetTheme().fontSize, which represents 1em and is scaled
     /// according to the scaling factor of the window.
     virtual void SetFrame(const Rect& f);
 
-    const Color& GetBackgroundColor() const;
-    bool IsDefaultBackgroundColor() const;
-    void SetBackgroundColor(const Color& color);
+    virtual const Color& GetBackgroundColor() const;
+    virtual bool IsDefaultBackgroundColor() const;
+    virtual void SetBackgroundColor(const Color& color);
 
-    bool IsVisible() const;
+    virtual bool IsVisible() const;
     virtual void SetVisible(bool vis);
 
-    bool IsEnabled() const;
+    virtual bool IsEnabled() const;
     virtual void SetEnabled(bool enabled);
 
-    static constexpr int DIM_GROW = 10000;
-    virtual Size CalcPreferredSize(const Theme& theme) const;
+    virtual void SetTooltip(const char* text);
+    virtual const char* GetTooltip() const;
 
-    virtual void Layout(const Theme& theme);
+    static constexpr int DIM_GROW = 10000;
+    struct Constraints {
+        int width = DIM_GROW;
+        int height = DIM_GROW;
+    };
+    virtual Size CalcPreferredSize(const LayoutContext& context,
+                                   const Constraints& constraints) const;
+
+    virtual Size CalcMinimumSize(const LayoutContext& context) const;
+
+    virtual void Layout(const LayoutContext& context);
 
     enum class DrawResult { NONE, REDRAW, RELAYOUT };
     /// Draws the widget. If this is a Dear ImGUI widget, this is where
@@ -123,6 +139,7 @@ public:
 protected:
     void DrawImGuiPushEnabledState();
     void DrawImGuiPopEnabledState();
+    void DrawImGuiTooltip();
 
 private:
     struct Impl;

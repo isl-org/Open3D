@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -68,6 +68,9 @@ template <typename T>
 std::shared_ptr<T> TakeOwnership(UnownedPointer<T> x) {
     return std::shared_ptr<T>(x.get());
 }
+
+// Please update docs/python_api_in/open3d.visualization.rst when adding /
+// reorganizing submodules to open3d.visualization.
 
 void pybind_visualization(py::module &m);
 

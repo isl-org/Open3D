@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,10 @@
 
 #pragma once
 
-#include "open3d/utility/Console.h"  //for ConsoleProgressBar
+#include <functional>
+#include <string>
+
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace utility {
@@ -55,7 +58,7 @@ public:
         return CallUpdate(percent);
     }
     void Finish() { CallUpdate(100); }
-    // for compatibility with ConsoleProgressBar
+    // for compatibility with ProgressBar
     void operator++() { Update(last_count_ + 1); }
 
 private:
@@ -70,8 +73,7 @@ private:
     int64_t last_count_ = -1;
 };
 
-using utility::ConsoleProgressBar;
-/// update_progress(double percent) functor for ConsoleProgressBar
+/// update_progress(double percent) functor for ProgressBar
 struct ConsoleProgressUpdater {
     ConsoleProgressUpdater(const std::string &progress_info,
                            bool active = false)
@@ -85,7 +87,7 @@ struct ConsoleProgressUpdater {
     }
 
 private:
-    ConsoleProgressBar progress_bar_;
+    utility::ProgressBar progress_bar_;
     int last_pct_ = 0;
 };
 

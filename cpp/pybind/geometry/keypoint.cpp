@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@ void pybind_keypoint_methods(py::module &m) {
              {"salient_radius",
               "The radius of the spherical neighborhood used to detect "
               "keypoints."},
-             {"non_max_radius", "The non maxima supression radius"},
+             {"non_max_radius", "The non maxima suppression radius"},
              {"gamma_21",
               "The upper bound on the ratio between the second and the "
               "first "

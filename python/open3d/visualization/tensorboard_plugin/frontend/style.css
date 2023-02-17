@@ -1,0 +1,358 @@
+/* ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018-2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+ */
+
+/* Code style: With config stylelint-config-standard do stylelint --fix filename.css */
+
+/* Styles for the Open3D Tensorboard plugin */
+
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,300,300italic,400italic,500,500italic,700,700italic');
+@import url('https://fonts.googleapis.com/css?family=Roboto+Mono:400,700');
+
+/* tensorboardColorBlindAssist (standard) palette from tensorboard/components/tf_color_scale/palettes.ts */
+:root {
+  --paper-grey-800: #424242;
+  --tb-ui-dark-accent: #757575;
+  --primary-background-color: #fff;
+  --tb-run-color-0: #ff7043; /* orange */
+  --tb-run-color-1: #0077bb; /* blue   */
+  --tb-run-color-2: #cc3311; /* red    */
+  --tb-run-color-3: #33bbee; /* cyan   */
+  --tb-run-color-4: #ee3377; /* magenta*/
+  --tb-run-color-5: #009988; /* teal   */
+  --tb-run-color-6: #bbbbbb; /* grey   */
+}
+
+html,
+body {
+  font-family: Roboto, sans-serif;
+
+  /* color: #212121;   /1* TB: --paper-gray-900 *1/
+  background-color: #f5f5f5;  /1* --tb-layout-background-color *1/ */
+}
+
+#open3d-dashboard {
+  /* Layout children as flex */
+  display: flex;
+  flex-direction: row;
+  padding: 1em;
+}
+
+/* Options for the whole plugin, runs and tag selection */
+#options-selector {
+  /* Layout children as flex */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 20em;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  padding: 5px;
+  color: var(--paper-grey-800);
+}
+
+#run-selector,
+#tag-selector {
+  height: 40%;
+  padding: 5px;
+}
+
+#logdir {
+  color: var(--tb-ui-dark-accent);
+}
+
+/* Container for all runs */
+
+/* width is 6x left selctor, min-width=576px */
+#widget-view {
+  background-color: var(--primary-background-color);
+
+  /* parent is flex container. Most of the width increase goes here. */
+  flex: 16 576;
+
+  /* Layout children as flex */
+  display: flex;
+  flex-flow: row wrap;
+}
+
+/* Container for a single run */
+.webrtc {
+  z-index: 1000;
+
+  /* Layout children as flex */
+  display: flex;
+  flex-direction: column;
+  padding: 1em;
+}
+
+.webrtc td {
+  text-align: center;
+}
+
+.webrtc td:first-child {
+  text-align: left;
+}
+
+.webrtc td:last-child {
+  text-align: right;
+}
+
+.webrtc button {
+  width: 3em;
+  height: 3em;
+  display: inline;
+}
+
+.webrtc button svg {
+  height: 100%;
+  margin: -35%;
+}
+
+.batchidx-step-selector {
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  color: var(--paper-grey-800);
+}
+
+.batchidx-step-selector input {
+  vertical-align: middle;
+  width: 50%;
+}
+
+.batchidx-step-selector label {
+  font-weight: bold;
+}
+
+.batchidx-step-selector label span {
+  width: 10em;
+  text-align: right;
+  display: inline-block;
+}
+
+.batchidx-step-selector output {
+  width: 4em;
+  text-indent: 2em;
+  font-weight: bold;
+  display: inline-block;
+}
+
+select {
+  font-size: inherit;  /* Dont make options smaller */
+}
+
+/* Add color accent to match run widget to tun table */
+.webrtc:nth-child(7n+1) tbody {
+  border-bottom: solid 4px var(--tb-run-color-0);
+}
+
+.webrtc:nth-child(7n+2) tbody {
+  border-bottom: solid 4px var(--tb-run-color-1);
+}
+
+.webrtc:nth-child(7n+3) tbody {
+  border-bottom: solid 4px var(--tb-run-color-2);
+}
+
+.webrtc:nth-child(7n+4) tbody {
+  border-bottom: solid 4px var(--tb-run-color-3);
+}
+
+.webrtc:nth-child(7n+5) tbody {
+  border-bottom: solid 4px var(--tb-run-color-4);
+}
+
+.webrtc:nth-child(7n+6) tbody {
+  border-bottom: solid 4px var(--tb-run-color-5);
+}
+
+.webrtc:nth-child(7n) tbody {
+  border-bottom: solid 4px var(--tb-run-color-6);
+}
+
+.selector {
+  display: grid;
+  position: relative;
+  align-items: center;
+  text-transform: capitalize;
+}
+
+.sel-1button div {
+  grid-template-columns: 2em auto;
+}
+
+.sel-2button div {
+  grid-template-columns: 2em 2em auto;
+}
+
+.selector > * {
+  margin: 0.3em 1em;
+}
+
+.selector button {
+  width: 2em;
+  height: 2em;
+}
+
+/* Hide disabled button */
+.selector button:disabled {
+  opacity: 0;
+}
+
+.selector button svg {
+  width: 150%;
+  height: 150%;
+  margin: -35%;
+}
+
+.selector input[type="checkbox"] {
+  width: 1.5em;
+  height: 1.5em;
+  accent-color: var(--tb-ui-dark-accent);
+}
+
+.property-ui {
+  display: block;
+  position: relative;
+  margin: 1em;
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.property-ui label {
+  padding-left: 2em;
+  font-size: inherit;
+}
+
+.property-ui input {
+  font-size: inherit;
+}
+
+.property-ui input[type="number"] {
+  width: 5em;
+}
+
+.property-ui option {
+  text-transform: capitalize;
+}
+
+.property-ui-colormap {
+  align-items: center;
+  display: grid;
+  padding: 0.1em;
+  grid-template-columns: 3.5em 6.5em 2em;
+  column-gap: 1em;
+}
+
+.property-ui-colormap input[type="text"] {
+  border-width: 0;
+  font-size: inherit;
+}
+
+.property-ui-colormap input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--tb-ui-dark-accent);
+}
+
+/* Add color accent to match run widget to tun table */
+#run-selector .selector:nth-child(7n+1) input[type="checkbox"],
+.webrtc:nth-child(7n+1) input[type="range"] {
+  accent-color: var(--tb-run-color-0);
+}
+
+#run-selector .selector:nth-child(7n+2) input[type="checkbox"],
+.webrtc:nth-child(7n+2) input[type="range"] {
+  accent-color: var(--tb-run-color-1);
+}
+
+#run-selector .selector:nth-child(7n+3) input[type="checkbox"],
+.webrtc:nth-child(7n+3) input[type="range"] {
+  accent-color: var(--tb-run-color-2);
+}
+
+#run-selector .selector:nth-child(7n+4) input[type="checkbox"],
+.webrtc:nth-child(7n+4) input[type="range"] {
+  accent-color: var(--tb-run-color-3);
+}
+
+#run-selector .selector:nth-child(7n+5) input[type="checkbox"],
+.webrtc:nth-child(7n+5) input[type="range"] {
+  accent-color: var(--tb-run-color-4);
+}
+
+#run-selector .selector:nth-child(7n+6) input[type="checkbox"],
+.webrtc:nth-child(7n+6) input[type="range"] {
+  accent-color: var(--tb-run-color-5);
+}
+
+#run-selector .selector:nth-child(7n) input[type="checkbox"],
+.webrtc:nth-child(7n) input[type="range"] {
+  accent-color: var(--tb-run-color-6);
+}
+
+.property-ui-colormap input[type="color"] {
+  border-radius: 50%;
+  border: 1px solid white;
+  height: 32px;
+  width: 32px;
+  outline: none;
+}
+
+/* Busy indicator while loading
+ * From: https://www.w3schools.com/howto/howto_css_loader.asp
+ */
+.loader {
+  position: fixed;
+  width: 120px;
+  height: 120px;
+  top: 50%;
+  left: 50%;
+  border: 16px solid whitesmoke;
+  border-top: 16px solid darkgray;
+  border-bottom: 16px solid darkgray;
+  border-radius: 50%;
+  animation: spin 2s linear infinite;
+  z-index: 2000;    /* Higher than for .webrtc */
+  opacity: 50%;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Error message when network connection is lost */
+.no-webrtc {
+  padding: 8px;
+  position: fixed;
+  width: 25em;
+  top: 20em;
+  left: 40em;
+  background-color: black;
+  color: white;
+  border-radius: 1em;
+}

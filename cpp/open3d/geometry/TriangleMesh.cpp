@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,6 @@
 #include <Eigen/Dense>
 #include <numeric>
 #include <queue>
-#include <random>
 #include <tuple>
 
 #include "open3d/geometry/BoundingVolume.h"
@@ -37,7 +36,9 @@
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/Qhull.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
+#include "open3d/utility/Parallel.h"
+#include "open3d/utility/Random.h"
 
 namespace open3d {
 namespace geometry {
@@ -70,6 +71,9 @@ TriangleMesh &TriangleMesh::Rotate(const Eigen::Matrix3d &R,
 
 TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (mesh.IsEmpty()) return (*this);
+    bool add_textures = HasTriangleUvs() && HasTextures() &&
+                        HasTriangleMaterialIds() && mesh.HasTriangleUvs() &&
+                        mesh.HasTextures() && mesh.HasTriangleMaterialIds();
     size_t old_vert_num = vertices_.size();
     MeshBase::operator+=(mesh);
     size_t old_tri_num = triangles_.size();
@@ -92,11 +96,30 @@ TriangleMesh &TriangleMesh::operator+=(const TriangleMesh &mesh) {
     if (HasAdjacencyList()) {
         ComputeAdjacencyList();
     }
-    if (HasTriangleUvs() || HasTextures() || HasTriangleMaterialIds()) {
-        utility::LogError(
-                "[TriangleMesh] copy of uvs and texture and per-triangle "
-                "material ids is not implemented "
-                "yet");
+    if (add_textures) {
+        size_t old_tri_uv_num = triangle_uvs_.size();
+        triangle_uvs_.resize(old_tri_uv_num + mesh.triangle_uvs_.size());
+        for (size_t i = 0; i < mesh.triangle_uvs_.size(); i++) {
+            triangle_uvs_[old_tri_uv_num + i] = mesh.triangle_uvs_[i];
+        }
+
+        size_t old_tex_num = textures_.size();
+        textures_.resize(old_tex_num + mesh.textures_.size());
+        for (size_t i = 0; i < mesh.textures_.size(); i++) {
+            textures_[old_tex_num + i] = mesh.textures_[i];
+        }
+
+        size_t old_mat_id_num = triangle_material_ids_.size();
+        triangle_material_ids_.resize(old_mat_id_num +
+                                      mesh.triangle_material_ids_.size());
+        for (size_t i = 0; i < mesh.triangle_material_ids_.size(); i++) {
+            triangle_material_ids_[old_mat_id_num + i] =
+                    mesh.triangle_material_ids_[i] + (int)old_tex_num;
+        }
+    } else {
+        triangle_uvs_.clear();
+        textures_.clear();
+        triangle_material_ids_.clear();
     }
     return (*this);
 }
@@ -121,9 +144,7 @@ TriangleMesh &TriangleMesh::ComputeTriangleNormals(
 }
 
 TriangleMesh &TriangleMesh::ComputeVertexNormals(bool normalized /* = true*/) {
-    if (!HasTriangleNormals()) {
-        ComputeTriangleNormals(false);
-    }
+    ComputeTriangleNormals(false);
     vertex_normals_.resize(vertices_.size(), Eigen::Vector3d::Zero());
     for (size_t i = 0; i < triangles_.size(); i++) {
         auto &triangle = triangles_[i];
@@ -294,7 +315,7 @@ void TriangleMesh::FilterSmoothLaplacianHelper(
         const std::vector<Eigen::Vector3d> &prev_vertex_normals,
         const std::vector<Eigen::Vector3d> &prev_vertex_colors,
         const std::vector<std::unordered_set<int>> &adjacency_list,
-        double lambda,
+        double lambda_filter,
         bool filter_vertex,
         bool filter_normal,
         bool filter_color) const {
@@ -321,25 +342,29 @@ void TriangleMesh::FilterSmoothLaplacianHelper(
         }
 
         if (filter_vertex) {
-            mesh->vertices_[vidx] =
-                    prev_vertices[vidx] +
-                    lambda * (vertex_sum / total_weight - prev_vertices[vidx]);
+            mesh->vertices_[vidx] = prev_vertices[vidx] +
+                                    lambda_filter * (vertex_sum / total_weight -
+                                                     prev_vertices[vidx]);
         }
         if (filter_normal) {
-            mesh->vertex_normals_[vidx] = prev_vertex_normals[vidx] +
-                                          lambda * (normal_sum / total_weight -
-                                                    prev_vertex_normals[vidx]);
+            mesh->vertex_normals_[vidx] =
+                    prev_vertex_normals[vidx] +
+                    lambda_filter * (normal_sum / total_weight -
+                                     prev_vertex_normals[vidx]);
         }
         if (filter_color) {
-            mesh->vertex_colors_[vidx] = prev_vertex_colors[vidx] +
-                                         lambda * (color_sum / total_weight -
-                                                   prev_vertex_colors[vidx]);
+            mesh->vertex_colors_[vidx] =
+                    prev_vertex_colors[vidx] +
+                    lambda_filter * (color_sum / total_weight -
+                                     prev_vertex_colors[vidx]);
         }
     }
 }
 
 std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
-        int number_of_iterations, double lambda, FilterScope scope) const {
+        int number_of_iterations,
+        double lambda_filter,
+        FilterScope scope) const {
     bool filter_vertex =
             scope == FilterScope::All || scope == FilterScope::Vertex;
     bool filter_normal =
@@ -366,7 +391,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
                                     prev_vertex_colors, mesh->adjacency_list_,
-                                    lambda, filter_vertex, filter_normal,
+                                    lambda_filter, filter_vertex, filter_normal,
                                     filter_color);
         if (iter < number_of_iterations - 1) {
             std::swap(mesh->vertices_, prev_vertices);
@@ -379,7 +404,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothLaplacian(
 
 std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
         int number_of_iterations,
-        double lambda,
+        double lambda_filter,
         double mu,
         FilterScope scope) const {
     bool filter_vertex =
@@ -407,7 +432,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::FilterSmoothTaubin(
     for (int iter = 0; iter < number_of_iterations; ++iter) {
         FilterSmoothLaplacianHelper(mesh, prev_vertices, prev_vertex_normals,
                                     prev_vertex_colors, mesh->adjacency_list_,
-                                    lambda, filter_vertex, filter_normal,
+                                    lambda_filter, filter_vertex, filter_normal,
                                     filter_color);
         std::swap(mesh->vertices_, prev_vertices);
         std::swap(mesh->vertex_normals_, prev_vertex_normals);
@@ -429,8 +454,12 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
         size_t number_of_points,
         std::vector<double> &triangle_areas,
         double surface_area,
-        bool use_triangle_normal,
-        int seed) {
+        bool use_triangle_normal) {
+    if (surface_area <= 0) {
+        utility::LogError("Invalid surface area {}, it must be > 0.",
+                          surface_area);
+    }
+
     // triangle areas to cdf
     triangle_areas[0] /= surface_area;
     for (size_t tidx = 1; tidx < triangles_.size(); ++tidx) {
@@ -441,12 +470,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     // sample point cloud
     bool has_vert_normal = HasVertexNormals();
     bool has_vert_color = HasVertexColors();
-    if (seed == -1) {
-        std::random_device rd;
-        seed = rd();
-    }
-    std::mt19937 mt(seed);
-    std::uniform_real_distribution<double> dist(0.0, 1.0);
+    utility::random::UniformRealGenerator<double> uniform_generator(0.0, 1.0);
     auto pcd = std::make_shared<PointCloud>();
     pcd->points_.resize(number_of_points);
     if (has_vert_normal || use_triangle_normal) {
@@ -462,8 +486,8 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
     for (size_t tidx = 0; tidx < triangles_.size(); ++tidx) {
         size_t n = size_t(std::round(triangle_areas[tidx] * number_of_points));
         while (point_idx < n) {
-            double r1 = dist(mt);
-            double r2 = dist(mt);
+            double r1 = uniform_generator();
+            double r2 = uniform_generator();
             double a = (1 - std::sqrt(r1));
             double b = std::sqrt(r1) * (1 - r2);
             double c = std::sqrt(r1) * r2;
@@ -494,15 +518,12 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformlyImpl(
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
-        size_t number_of_points,
-        bool use_triangle_normal /* = false */,
-        int seed /* = -1 */) {
+        size_t number_of_points, bool use_triangle_normal /* = false */) {
     if (number_of_points <= 0) {
-        utility::LogError("[SamplePointsUniformly] number_of_points <= 0");
+        utility::LogError("number_of_points <= 0");
     }
     if (triangles_.size() == 0) {
-        utility::LogError(
-                "[SamplePointsUniformly] input mesh has no triangles");
+        utility::LogError("Input mesh has no triangles.");
     }
 
     // Compute area of each triangle and sum surface area
@@ -510,31 +531,29 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsUniformly(
     double surface_area = GetSurfaceArea(triangle_areas);
 
     return SamplePointsUniformlyImpl(number_of_points, triangle_areas,
-                                     surface_area, use_triangle_normal, seed);
+                                     surface_area, use_triangle_normal);
 }
 
 std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
         size_t number_of_points,
         double init_factor /* = 5 */,
         const std::shared_ptr<PointCloud> pcl_init /* = nullptr */,
-        bool use_triangle_normal /* = false */,
-        int seed /* = -1 */) {
+        bool use_triangle_normal /* = false */) {
     if (number_of_points <= 0) {
-        utility::LogError("[SamplePointsPoissonDisk] number_of_points <= 0");
+        utility::LogError("number_of_points <= 0");
     }
     if (triangles_.size() == 0) {
-        utility::LogError(
-                "[SamplePointsPoissonDisk] input mesh has no triangles");
+        utility::LogError("Input mesh has no triangles.");
     }
     if (pcl_init == nullptr && init_factor < 1) {
         utility::LogError(
-                "[SamplePointsPoissonDisk] either pass pcl_init with #points "
-                "> number_of_points or init_factor > 1");
+                "Either pass pcl_init with #points > number_of_points or "
+                "init_factor > 1");
     }
     if (pcl_init != nullptr && pcl_init->points_.size() < number_of_points) {
         utility::LogError(
-                "[SamplePointsPoissonDisk] either pass pcl_init with #points "
-                "> number_of_points, or init_factor > 1");
+                "Either pass pcl_init with #points > number_of_points, or "
+                "init_factor > 1");
     }
 
     // Compute area of each triangle and sum surface area
@@ -546,7 +565,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
     if (pcl_init == nullptr) {
         pcl = SamplePointsUniformlyImpl(size_t(init_factor * number_of_points),
                                         triangle_areas, surface_area,
-                                        use_triangle_normal, seed);
+                                        use_triangle_normal);
     } else {
         pcl = std::make_shared<PointCloud>();
         pcl->points_ = pcl_init->points_;
@@ -556,7 +575,7 @@ std::shared_ptr<PointCloud> TriangleMesh::SamplePointsPoissonDisk(
 
     // Set-up sample elimination
     double alpha = 8;    // constant defined in paper
-    double beta = 0.5;   // constant defined in paper
+    double beta = 0.65;  // constant defined in paper
     double gamma = 1.5;  // constant defined in paper
     double ratio = double(number_of_points) / double(pcl->points_.size());
     double r_max = 2 * std::sqrt((surface_area / number_of_points) /
@@ -912,7 +931,8 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
     // precompute all neighbours
     utility::LogDebug("Precompute Neighbours");
     std::vector<std::vector<int>> nbs(vertices_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int idx = 0; idx < int(vertices_.size()); ++idx) {
         std::vector<double> dists2;
         kdtree.SearchRadius(vertices_[idx], eps, nbs[idx], dists2);
@@ -934,11 +954,11 @@ TriangleMesh &TriangleMesh::MergeCloseVertices(double eps) {
         new_vert_mapping[vidx] = new_vidx;
 
         Eigen::Vector3d vertex = vertices_[vidx];
-        Eigen::Vector3d normal;
+        Eigen::Vector3d normal{0, 0, 0};
         if (has_vertex_normals) {
             normal = vertex_normals_[vidx];
         }
-        Eigen::Vector3d color;
+        Eigen::Vector3d color{0, 0, 0};
         if (has_vertex_colors) {
             color = vertex_colors_[vidx];
         }
@@ -1071,7 +1091,7 @@ bool OrientTriangleHelper(const std::vector<Eigen::Vector3i> &triangles,
             }
 
             // check if each edge looks in different direction compared to
-            // existing ones if not existend, add the edge to map
+            // existing ones if not existed, add the edge to map
             if (!VerifyAndAdd(vidx0, vidx1)) {
                 return false;
             }
@@ -1207,7 +1227,7 @@ double TriangleMesh::GetVolume() const {
 
     double volume = 0;
     int64_t num_triangles = triangles_.size();
-#pragma omp parallel for reduction(+ : volume)
+#pragma omp parallel for reduction(+ : volume) num_threads(utility::EstimateMaxThreads())
     for (int64_t tidx = 0; tidx < num_triangles; ++tidx) {
         volume += GetSignedVolumeOfTriangle(tidx);
     }
@@ -1348,6 +1368,12 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
         const Eigen::Vector3d &p0 = vertices_[tria_p(0)];
         const Eigen::Vector3d &p1 = vertices_[tria_p(1)];
         const Eigen::Vector3d &p2 = vertices_[tria_p(2)];
+
+        const Eigen::Vector3d bb_min1 =
+                p0.array().min(p1.array().min(p2.array()));
+        const Eigen::Vector3d bb_max1 =
+                p0.array().max(p1.array().max(p2.array()));
+
         for (size_t tidx1 = tidx0 + 1; tidx1 < triangles_.size(); ++tidx1) {
             const Eigen::Vector3i &tria_q = triangles_[tidx1];
             // check if neighbour triangle
@@ -1363,7 +1389,14 @@ std::vector<Eigen::Vector2i> TriangleMesh::GetSelfIntersectingTriangles()
             const Eigen::Vector3d &q0 = vertices_[tria_q(0)];
             const Eigen::Vector3d &q1 = vertices_[tria_q(1)];
             const Eigen::Vector3d &q2 = vertices_[tria_q(2)];
-            if (IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
+
+            const Eigen::Vector3d bb_min2 =
+                    q0.array().min(q1.array().min(q2.array()));
+            const Eigen::Vector3d bb_max2 =
+                    q0.array().max(q1.array().max(q2.array()));
+            if (IntersectionTest::AABBAABB(bb_min1, bb_max1, bb_min2,
+                                           bb_max2) &&
+                IntersectionTest::TriangleTriangle3d(p0, p1, p2, q0, q1, q2)) {
                 self_intersecting_triangles.push_back(
                         Eigen::Vector2i(tidx0, tidx1));
             }
@@ -1412,7 +1445,8 @@ TriangleMesh::ClusterConnectedTriangles() const {
     utility::LogDebug("[ClusterConnectedTriangles] Compute triangle adjacency");
     auto edges_to_triangles = GetEdgeToTrianglesMap();
     std::vector<std::unordered_set<int>> adjacency_list(triangles_.size());
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int tidx = 0; tidx < int(triangles_.size()); ++tidx) {
         const auto &triangle = triangles_[tidx];
         for (auto tnb :
@@ -1473,7 +1507,7 @@ void TriangleMesh::RemoveTrianglesByIndex(
         const std::vector<size_t> &triangle_indices) {
     std::vector<bool> triangle_mask(triangles_.size(), false);
     for (auto tidx : triangle_indices) {
-        if (tidx >= 0 && tidx < triangles_.size()) {
+        if (tidx < triangles_.size()) {
             triangle_mask[tidx] = true;
         } else {
             utility::LogWarning(
@@ -1493,12 +1527,20 @@ void TriangleMesh::RemoveTrianglesByMask(
     }
 
     bool has_tri_normal = HasTriangleNormals();
+    bool has_tri_uvs = HasTriangleUvs();
     int to_tidx = 0;
     for (size_t from_tidx = 0; from_tidx < triangles_.size(); ++from_tidx) {
         if (!triangle_mask[from_tidx]) {
             triangles_[to_tidx] = triangles_[from_tidx];
             if (has_tri_normal) {
                 triangle_normals_[to_tidx] = triangle_normals_[from_tidx];
+            }
+            if (has_tri_uvs) {
+                triangle_uvs_[to_tidx * 3] = triangle_uvs_[from_tidx * 3];
+                triangle_uvs_[to_tidx * 3 + 1] =
+                        triangle_uvs_[from_tidx * 3 + 1];
+                triangle_uvs_[to_tidx * 3 + 2] =
+                        triangle_uvs_[from_tidx * 3 + 2];
             }
             to_tidx++;
         }
@@ -1507,13 +1549,16 @@ void TriangleMesh::RemoveTrianglesByMask(
     if (has_tri_normal) {
         triangle_normals_.resize(to_tidx);
     }
+    if (has_tri_uvs) {
+        triangle_uvs_.resize(to_tidx * 3);
+    }
 }
 
 void TriangleMesh::RemoveVerticesByIndex(
         const std::vector<size_t> &vertex_indices) {
     std::vector<bool> vertex_mask(vertices_.size(), false);
     for (auto vidx : vertex_indices) {
-        if (vidx >= 0 && vidx < vertices_.size()) {
+        if (vidx < vertices_.size()) {
             vertex_mask[vidx] = true;
         } else {
             utility::LogWarning(
@@ -1584,7 +1629,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectByIndex(
 
     std::vector<int> new_vert_ind(vertices_.size(), -1);
     for (const auto &sel_vidx : indices) {
-        if (sel_vidx < 0 || sel_vidx >= vertices_.size()) {
+        if (sel_vidx >= vertices_.size()) {
             utility::LogWarning(
                     "[SelectByIndex] indices contains index {} out of range. "
                     "It is ignored.",
@@ -1634,7 +1679,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
         const AxisAlignedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "[CropTriangleMesh] AxisAlignedBoundingBox either has zeros "
+                "AxisAlignedBoundingBox either has zeros "
                 "size, or has wrong bounds.");
     }
     return SelectByIndex(bbox.GetPointIndicesWithinBoundingBox(vertices_));
@@ -1644,7 +1689,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::Crop(
         const OrientedBoundingBox &bbox) const {
     if (bbox.IsEmpty()) {
         utility::LogError(
-                "[CropTriangleMesh] AxisAlignedBoundingBox either has zeros "
+                "AxisAlignedBoundingBox either has zeros "
                 "size, or has wrong bounds.");
         return std::make_shared<TriangleMesh>();
     }

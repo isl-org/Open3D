@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,11 +29,12 @@
 #include <sstream>
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/RGBDImage.h"
 #include "open3d/io/ImageIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -99,10 +100,9 @@ TEST(UniformTSDFVolume, Constructor) {
 }
 
 TEST(UniformTSDFVolume, RealData) {
-    std::string test_data_dir = std::string(TEST_DATA_DIR);
-
     // Poses
-    std::string trajectory_path = test_data_dir + "/RGBD/odometry.log";
+    data::SampleRedwoodRGBDImages redwood_data;
+    std::string trajectory_path = redwood_data.GetOdometryLogPath();
     std::vector<Eigen::Matrix4d> poses;
     if (!ReadPoses(trajectory_path, poses)) {
         throw std::runtime_error("Cannot read trajectory file");
@@ -126,19 +126,13 @@ TEST(UniformTSDFVolume, RealData) {
     for (size_t i = 0; i < poses.size(); ++i) {
         // Color
         geometry::Image im_color;
-        std::ostringstream im_color_path;
-        im_color_path << TEST_DATA_DIR << "/RGBD/color/" << std::setfill('0')
-                      << std::setw(5) << i << ".jpg";
-        io::ReadImage(im_color_path.str(), im_color);
+        io::ReadImage(redwood_data.GetColorPaths()[i], im_color);
 
         // Depth
         geometry::Image im_depth;
-        std::ostringstream im_depth_path;
-        im_depth_path << TEST_DATA_DIR << "/RGBD/depth/" << std::setfill('0')
-                      << std::setw(5) << i << ".png";
-        io::ReadImage(im_depth_path.str(), im_depth);
+        io::ReadImage(redwood_data.GetDepthPaths()[i], im_depth);
 
-        // Ingegrate
+        // Integrate
         std::shared_ptr<geometry::RGBDImage> im_rgbd =
                 geometry::RGBDImage::CreateFromColorAndDepth(
                         im_color, im_depth, /*depth_scale*/ 1000.0,
@@ -195,29 +189,6 @@ TEST(UniformTSDFVolume, RealData) {
     ExpectEQ(color_sum, Eigen::Vector3d(2096.428416, 2096.428416, 2096.428416),
              /*threshold*/ 0.1);
 }
-
-TEST(UniformTSDFVolume, DISABLED_Destructor) {}
-
-TEST(UniformTSDFVolume, DISABLED_MemberData) {}
-
-TEST(UniformTSDFVolume, DISABLED_Reset) {}
-
-TEST(UniformTSDFVolume, DISABLED_Integrate) {}
-
-TEST(UniformTSDFVolume, DISABLED_ExtractPointCloud) {}
-
-TEST(UniformTSDFVolume, DISABLED_ExtractTriangleMesh) {}
-
-TEST(UniformTSDFVolume, DISABLED_ExtractVoxelPointCloud) {}
-
-TEST(UniformTSDFVolume, DISABLED_IntegrateWithDepthToCameraDistanceMultiplier) {
-}
-
-TEST(UniformTSDFVolume, DISABLED_IndexOf) {}
-
-TEST(UniformTSDFVolume, DISABLED_GetNormalAt) {}
-
-TEST(UniformTSDFVolume, DISABLED_GetTSDFAt) {}
 
 }  // namespace tests
 }  // namespace open3d

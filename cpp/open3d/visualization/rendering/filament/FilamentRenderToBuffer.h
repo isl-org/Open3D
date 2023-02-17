@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -51,13 +51,14 @@ public:
     // FilamentRenderToBuffer, unless you are NOT using
     // open3d::visualization::gui or another FilamentRenderer instance.
     explicit FilamentRenderToBuffer(filament::Engine& engine);
-    FilamentRenderToBuffer(filament::Engine& engine, FilamentRenderer& parent);
     ~FilamentRenderToBuffer() override;
 
     void Configure(const View* view,
                    Scene* scene,
                    int width,
                    int height,
+                   int n_channels,
+                   bool depth_image,
                    BufferReadyCallback cb) override;
     void SetDimensions(std::uint32_t width, std::uint32_t height) override;
     View& GetView() override;
@@ -71,16 +72,18 @@ public:
 private:
     friend class FilamentRenderer;
 
-    FilamentRenderer* parent_ = nullptr;
     filament::Engine& engine_;
     filament::Renderer* renderer_ = nullptr;
     filament::SwapChain* swapchain_ = nullptr;
     FilamentView* view_ = nullptr;
+    FilamentScene* scene_ = nullptr;
 
     std::size_t width_ = 0;
     std::size_t height_ = 0;
+    std::size_t n_channels_ = 0;
     std::uint8_t* buffer_ = nullptr;
     std::size_t buffer_size_ = 0;
+    bool depth_image_ = false;
 
     BufferReadyCallback callback_;
     bool frame_done_ = true;

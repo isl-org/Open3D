@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,7 +32,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sstream>
-#ifdef WINDOWS
+#ifdef WIN32
 #include <direct.h>
 #include <dirent/dirent.h>
 #include <io.h>
@@ -47,11 +47,61 @@
 #include <unistd.h>
 #endif
 
-#include "open3d/utility/Console.h"
+#ifdef WIN32
+#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
+#endif
+#ifdef __APPLE__
+// CMAKE_OSX_DEPLOYMENT_TARGET "10.15" or newer
+#define _LIBCPP_NO_EXPERIMENTAL_DEPRECATION_WARNING_FILESYSTEM
+#endif
+#include <experimental/filesystem>
+namespace fs = std::experimental::filesystem;
+
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace utility {
 namespace filesystem {
+
+static std::string GetEnvVar(const std::string &env_var) {
+    if (const char *env_p = std::getenv(env_var.c_str())) {
+        return std::string(env_p);
+    } else {
+        return "";
+    }
+}
+
+std::string GetHomeDirectory() {
+    std::string home_dir = "";
+#ifdef WINDOWS
+    // %USERPROFILE%
+    // %HOMEDRIVE%
+    // %HOMEPATH%
+    // %HOME%
+    // C:/
+    home_dir = GetEnvVar("USERPROFILE");
+    if (home_dir.empty() || !DirectoryExists(home_dir)) {
+        home_dir = GetEnvVar("HOMEDRIVE");
+        if (home_dir.empty() || !DirectoryExists(home_dir)) {
+            home_dir = GetEnvVar("HOMEPATH");
+            if (home_dir.empty() || !DirectoryExists(home_dir)) {
+                home_dir = GetEnvVar("HOME");
+                if (home_dir.empty() || !DirectoryExists(home_dir)) {
+                    home_dir = "C:/";
+                }
+            }
+        }
+    }
+#else
+    // $HOME
+    // /
+    home_dir = GetEnvVar("HOME");
+    if (home_dir.empty() || !DirectoryExists(home_dir)) {
+        home_dir = "/";
+    }
+#endif
+    return home_dir;
+}
 
 std::string GetFileExtensionInLowerCase(const std::string &filename) {
     size_t dot_pos = filename.find_last_of(".");
@@ -92,7 +142,9 @@ std::string GetFileParentDirectory(const std::string &filename) {
 }
 
 std::string GetRegularizedDirectoryName(const std::string &directory) {
-    if (directory.back() != '/' && directory.back() != '\\') {
+    if (directory.empty()) {
+        return "/";
+    } else if (directory.back() != '/' && directory.back() != '\\') {
         return directory + "/";
     } else {
         return directory;
@@ -101,7 +153,8 @@ std::string GetRegularizedDirectoryName(const std::string &directory) {
 
 std::string GetWorkingDirectory() {
     char buff[PATH_MAX + 1];
-    getcwd(buff, PATH_MAX + 1);
+    auto ignored = getcwd(buff, PATH_MAX + 1);
+    (void)ignored;
     return std::string(buff);
 }
 
@@ -153,16 +206,19 @@ std::vector<std::string> GetPathComponents(const std::string &path) {
     }
 
     std::vector<std::string> components;
-    if (!isWindowsPath) {
-        components.push_back("/");
-    }
     if (isRelative) {
         auto cwd = utility::filesystem::GetWorkingDirectory();
         auto cwdComponents = SplitByPathSeparators(cwd);
         components.insert(components.end(), cwdComponents.begin(),
                           cwdComponents.end());
+        if (cwd[0] != '/') {
+            isWindowsPath = true;
+        }
     } else {
         // absolute path, don't need any prefix
+    }
+    if (!isWindowsPath) {
+        components.insert(components.begin(), "/");
     }
 
     for (auto &dir : pathComponents) {
@@ -177,14 +233,23 @@ std::vector<std::string> GetPathComponents(const std::string &path) {
     return components;
 }
 
+std::string GetTempDirectoryPath() {
+    return fs::temp_directory_path().string();
+}
+
 bool ChangeWorkingDirectory(const std::string &directory) {
     return (chdir(directory.c_str()) == 0);
 }
 
 bool DirectoryExists(const std::string &directory) {
-    struct stat info;
-    if (stat(directory.c_str(), &info) == -1) return false;
-    return S_ISDIR(info.st_mode);
+    return fs::is_directory(directory);
+}
+
+bool DirectoryIsEmpty(const std::string &directory) {
+    if (!DirectoryExists(directory)) {
+        utility::LogError("Directory {} does not exist.", directory);
+    }
+    return fs::is_empty(directory);
 }
 
 bool MakeDirectory(const std::string &directory) {
@@ -211,23 +276,33 @@ bool MakeDirectoryHierarchy(const std::string &directory) {
 }
 
 bool DeleteDirectory(const std::string &directory) {
-#ifdef WINDOWS
-    return (_rmdir(directory.c_str()) == 0);
-#else
-    return (rmdir(directory.c_str()) == 0);
-#endif
+    std::error_code error;
+    if (fs::remove_all(directory, error) == static_cast<std::uintmax_t>(-1)) {
+        utility::LogWarning("Failed to remove directory {}: {}.", directory,
+                            error.message());
+        return false;
+    }
+    return true;
 }
 
 bool FileExists(const std::string &filename) {
-#ifdef WINDOWS
-    struct _stat64 info;
-    if (_stat64(filename.c_str(), &info) == -1) return false;
-    return S_ISREG(info.st_mode);
-#else
-    struct stat info;
-    if (stat(filename.c_str(), &info) == -1) return false;
-    return S_ISREG(info.st_mode);
-#endif
+    return fs::exists(filename) && fs::is_regular_file(filename);
+}
+
+// TODO: this is not a good name. Currently FileSystem.cpp includes windows.h
+// and "CopyFile" will be expanded to "CopyFileA" on Windows. This will be
+// resolved when we switch to C++17's std::filesystem.
+bool Copy(const std::string &src_path, const std::string &dst_path) {
+    try {
+        fs::copy(src_path, dst_path,
+                 fs::copy_options::recursive |
+                         fs::copy_options::overwrite_existing);
+    } catch (std::exception &e) {
+        utility::LogWarning("Failed to copy {} to {}. Exception: {}.", src_path,
+                            dst_path, e.what());
+        return false;
+    }
+    return true;
 }
 
 bool RemoveFile(const std::string &filename) {
@@ -426,6 +501,31 @@ bool FReadToBuffer(const std::string &path,
 
     fclose(file);
     return true;
+}
+
+std::string JoinPath(const std::string &path_component1,
+                     const std::string &path_component2) {
+    fs::path path(path_component1);
+    return (path / path_component2).string();
+}
+
+std::string JoinPath(const std::vector<std::string> &path_components) {
+    fs::path path;
+    for (const auto &pc : path_components) {
+        path /= pc;
+    }
+    return path.string();
+}
+
+std::string AddIfExist(const std::string &path,
+                       const std::vector<std::string> &folder_names) {
+    for (const auto &folder_name : folder_names) {
+        const std::string folder_path = JoinPath(path, folder_name);
+        if (utility::filesystem::DirectoryExists(folder_path)) {
+            return folder_path;
+        }
+    }
+    return path;
 }
 
 CFile::~CFile() { Close(); }

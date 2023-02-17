@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ using namespace tensorflow;
 
 REGISTER_OP("Open3DFixedRadiusSearch")
         .Attr("T: {float, double}")
+        .Attr("index_dtype: {int32, int64} = DT_INT32")
         .Attr("metric: {'L1', 'L2', 'Linf'} = 'L2'")
         .Attr("ignore_query_point: bool = false")
         .Attr("return_distances: bool = false")
@@ -45,7 +46,7 @@ REGISTER_OP("Open3DFixedRadiusSearch")
         .Input("hash_table_splits: uint32")
         .Input("hash_table_index: uint32")
         .Input("hash_table_cell_splits: uint32")
-        .Output("neighbors_index: int32")
+        .Output("neighbors_index: index_dtype")
         .Output("neighbors_row_splits: int64")
         .Output("neighbors_distance: T")
         .SetShapeFn([](::tensorflow::shape_inference::InferenceContext* c) {
@@ -104,7 +105,7 @@ Computes the indices of all neighbors within a radius.
 
 This op computes the neighborhood for each query point and returns the indices
 of the neighbors and optionally also the distances. The same fixed radius is
-used for each query point. Points and queries can be batched with each batch 
+used for each query point. Points and queries can be batched with each batch
 item having an individual number of points and queries. The following example
 shows a simple search with just a single batch item::
 
@@ -112,8 +113,8 @@ shows a simple search with just a single batch item::
   import open3d.ml.tf as ml3d
 
   points = [
-    [0.1,0.1,0.1], 
-    [0.5,0.5,0.5], 
+    [0.1,0.1,0.1],
+    [0.5,0.5,0.5],
     [1.7,1.7,1.7],
     [1.8,1.8,1.8],
     [0.3,2.4,1.4]]
@@ -127,17 +128,17 @@ shows a simple search with just a single batch item::
   radius = 1.0
 
   # build the spatial hash table for fixex_radius_search
-  table = ml3d.ops.build_spatial_hash_table(points, 
-                                            radius, 
-                                            points_row_splits=torch.LongTensor([0,5]), 
+  table = ml3d.ops.build_spatial_hash_table(points,
+                                            radius,
+                                            points_row_splits=torch.LongTensor([0,5]),
                                             hash_table_size_factor=1/32)
 
   # now run the fixed radius search
-  ml3d.ops.fixed_radius_search(points, 
-                               queries, 
-                               radius, 
-                               points_row_splits=torch.LongTensor([0,5]), 
-                               queries_row_splits=torch.LongTensor([0,3]), 
+  ml3d.ops.fixed_radius_search(points,
+                               queries,
+                               radius,
+                               points_row_splits=torch.LongTensor([0,5]),
+                               queries_row_splits=torch.LongTensor([0,3]),
                                **table._asdict())
   # returns neighbors_index      = [1, 4, 4]
   #         neighbors_row_splits = [0, 1, 2, 3]
@@ -148,8 +149,8 @@ shows a simple search with just a single batch item::
   import open3d.ml.torch as ml3d
 
   points = torch.Tensor([
-    [0.1,0.1,0.1], 
-    [0.5,0.5,0.5], 
+    [0.1,0.1,0.1],
+    [0.5,0.5,0.5],
     [1.7,1.7,1.7],
     [1.8,1.8,1.8],
     [0.3,2.4,1.4]])
@@ -163,22 +164,26 @@ shows a simple search with just a single batch item::
   radius = 1.0
 
   # build the spatial hash table for fixex_radius_search
-  table = ml3d.ops.build_spatial_hash_table(points, 
-                                            radius, 
-                                            points_row_splits=torch.LongTensor([0,5]), 
+  table = ml3d.ops.build_spatial_hash_table(points,
+                                            radius,
+                                            points_row_splits=torch.LongTensor([0,5]),
                                             hash_table_size_factor=1/32)
 
   # now run the fixed radius search
-  ml3d.ops.fixed_radius_search(points, 
-                               queries, 
-                               radius, 
-                               points_row_splits=torch.LongTensor([0,5]), 
-                               queries_row_splits=torch.LongTensor([0,3]), 
+  ml3d.ops.fixed_radius_search(points,
+                               queries,
+                               radius,
+                               points_row_splits=torch.LongTensor([0,5]),
+                               queries_row_splits=torch.LongTensor([0,3]),
                                **table._asdict())
   # returns neighbors_index      = [1, 4, 4]
   #         neighbors_row_splits = [0, 1, 2, 3]
   #         neighbors_distance   = []
 
+
+index_dtype:
+  The data type for the returned neighbor_index Tensor. Either int32 or int64.
+  Default is int32.
 
 metric:
   Either L1, L2 or Linf. Default is L2

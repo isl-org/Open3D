@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -245,7 +245,7 @@ public:
     /// When called, the update function adds the point cloud point index to
     /// the corresponding node index list.
     ///
-    /// \param idx Point cloud point index associated with node.
+    /// \param index Point cloud point index associated with node.
     /// \param color Color of the node.
     static std::function<void(std::shared_ptr<OctreeLeafNode>)>
     GetUpdateFunction(size_t index, const Eigen::Vector3d& color);
@@ -297,8 +297,21 @@ public:
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     Eigen::Vector3d GetCenter() const override;
+
+    /// Creates the axis-aligned bounding box around the object.
+    /// Further details in AxisAlignedBoundingBox::AxisAlignedBoundingBox()
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    OrientedBoundingBox GetOrientedBoundingBox() const override;
+
+    /// Creates an oriented bounding box that is identical to the
+    /// axis-aligned bounding from GetAxisAlignedBoundingBox().
+    OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override;
+
+    /// Creates an oriented bounding box that is identical to the
+    /// axis-aligned bounding from GetAxisAlignedBoundingBox().
+    OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
+
     Octree& Transform(const Eigen::Matrix4d& transformation) override;
     Octree& Translate(const Eigen::Vector3d& translation,
                       bool relative = true) override;
@@ -313,7 +326,7 @@ public:
     ///
     /// \param point_cloud Input point cloud.
     /// \param size_expand A small expansion size such that the octree is
-    /// slightly bigger than the original point cloud bounds to accomodate all
+    /// slightly bigger than the original point cloud bounds to accommodate all
     /// points.
     void ConvertFromPointCloud(const geometry::PointCloud& point_cloud,
                                double size_expand = 0.01);

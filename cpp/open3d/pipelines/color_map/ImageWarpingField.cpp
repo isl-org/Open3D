@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 
 #include <json/json.h>
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace pipelines {
@@ -59,7 +59,7 @@ void ImageWarpingField::InitializeWarpingFields(
 
 Eigen::Vector2d ImageWarpingField::QueryFlow(int i, int j) const {
     int baseidx = (i + j * anchor_w_) * 2;
-    // exceptional case: quried anchor index is out of pre-defined space
+    // exceptional case: queried anchor index is out of pre-defined space
     if (baseidx < 0 || baseidx >= anchor_w_ * anchor_h_ * 2)
         return Eigen::Vector2d(0.0, 0.0);
     else

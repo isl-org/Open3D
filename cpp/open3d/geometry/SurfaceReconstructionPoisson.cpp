@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -34,7 +34,7 @@
 
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 // clang-format off
 #ifdef _MSC_VER
@@ -190,7 +190,7 @@ struct FEMTreeProfiler {
     FEMTree<Dim, Real>& tree;
     double t;
 
-    FEMTreeProfiler(FEMTree<Dim, Real>& t) : tree(t) {}
+    FEMTreeProfiler(FEMTree<Dim, Real>& tree) : tree(tree), t(0.0) {}
     void start(void) {
         t = Time(), FEMTree<Dim, Real>::ResetLocalMemoryUsage();
     }
@@ -416,7 +416,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
              std::shared_ptr<open3d::geometry::TriangleMesh>& out_mesh,
              std::vector<double>& out_densities,
              int depth,
-             size_t width,
+             float width,
              float scale,
              bool linear_fit,
              UIntPack<FEMSigs...>) {
@@ -467,7 +467,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
     {
         Open3DPointStream<Real> pointStream(&pcd);
 
-        if (width > 0) {
+        if (width > 0.0f) {
             xForm = GetPointXForm<Real, Dim>(pointStream, (Real)width,
                                              (Real)(scale > 0 ? scale : 1.),
                                              depth) *
@@ -516,9 +516,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
 
     int kernelDepth = depth - 2;
     if (kernelDepth < 0) {
-        utility::LogError(
-                "[CreateFromPointCloudPoisson] depth (={}) has to be >= 2",
-                depth);
+        utility::LogError("depth (={}) has to be >= 2", depth);
     }
 
     DenseNodeData<Real, Sigs> solution;
@@ -673,9 +671,9 @@ void Execute(const open3d::geometry::PointCloud& pcd,
             typename FEMTree<Dim, Real>::SolverInfo sInfo;
             sInfo.cgDepth = 0, sInfo.cascadic = true, sInfo.vCycles = 1,
             sInfo.iters = iters, sInfo.cgAccuracy = cg_solver_accuracy,
-            sInfo.verbose = utility::Logger::i().verbosity_level_ ==
+            sInfo.verbose = utility::GetVerbosityLevel() ==
                             utility::VerbosityLevel::Debug,
-            sInfo.showResidual = utility::Logger::i().verbosity_level_ ==
+            sInfo.showResidual = utility::GetVerbosityLevel() ==
                                  utility::VerbosityLevel::Debug,
             sInfo.showGlobalResidual = SHOW_GLOBAL_RESIDUAL_NONE,
             sInfo.sliceBlockSize = 1;
@@ -739,7 +737,7 @@ void Execute(const open3d::geometry::PointCloud& pcd,
 std::tuple<std::shared_ptr<TriangleMesh>, std::vector<double>>
 TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
                                           size_t depth,
-                                          size_t width,
+                                          float width,
                                           float scale,
                                           bool linear_fit,
                                           int n_threads) {
@@ -750,7 +748,7 @@ TriangleMesh::CreateFromPointCloudPoisson(const PointCloud& pcd,
             FEMSigs;
 
     if (!pcd.HasNormals()) {
-        utility::LogError("[CreateFromPointCloudPoisson] pcd has no normals");
+        utility::LogError("Point cloud has no normals");
     }
 
     if (n_threads <= 0) {

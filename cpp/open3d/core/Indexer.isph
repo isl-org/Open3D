@@ -1,0 +1,248 @@
+// ----------------------------------------------------------------------------
+// -                        Open3D: www.open3d.org                            -
+// ----------------------------------------------------------------------------
+// The MIT License (MIT)
+//
+// Copyright (c) 2018-2021 www.open3d.org
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+#include "open3d/core/ParallelFor.isph"
+#include "open3d/utility/Helper.isph"
+
+// Maximum number of dimensions of TensorRef.
+enum { MAX_DIMS = 10 };
+
+// Maximum number of inputs of an op.
+// MAX_INPUTS shall be >= MAX_DIMS to support advanced indexing.
+enum { MAX_INPUTS = 10 };
+
+// Maximum number of outputs of an op. This number can be increased when
+// necessary.
+enum { MAX_OUTPUTS = 2 };
+
+/// A minimalistic class that reference a Tensor.
+struct TensorRef {
+    void* data_ptr_;
+    int64_t ndims_;
+    int64_t dtype_byte_size_;
+    int64_t shape_[MAX_DIMS];
+    int64_t byte_strides_[MAX_DIMS];
+};
+
+/// Indexing engine for elementwise ops with broadcasting support.
+///
+/// Fancy indexing is supported by restriding input tensor and treating the
+/// operation as elementwise op.
+///
+/// After constructing Indexer on the host, the indexing methods can be
+/// used from both host and device.
+struct Indexer {
+    /// Number of input and output Tensors.
+    int64_t num_inputs_;
+    int64_t num_outputs_;
+
+    /// Array of input TensorRefs.
+    TensorRef inputs_[MAX_INPUTS];
+
+    /// Array of output TensorRefs.
+    TensorRef outputs_[MAX_OUTPUTS];
+
+    /// Array of contiguous flags for all input TensorRefs.
+    bool inputs_contiguous_[MAX_INPUTS];
+
+    /// Array of contiguous flags for all output TensorRefs.
+    bool outputs_contiguous_[MAX_OUTPUTS];
+
+    /// Indexer's global shape. The shape's number of elements is the
+    /// same as GetNumWorkloads() for the Indexer.
+    /// - For broadcasting, master_shape_ is the same as the output shape.
+    /// - For reduction, master_shape_ is the same as the input shape.
+    /// - Currently we don't allow broadcasting mixed with reduction. But if
+    ///   broadcasting mixed with reduction is allowed, master_shape_ is a mix
+    ///   of input shape and output shape. First, fill in all omitted dimensions
+    ///   (in inputs for broadcasting) and reduction dimensions (as if
+    ///   keepdim=true always) with size 1. For each axis, the master dimension
+    ///   is the non-1 dimension (if both are 1, then the master dimension is 1
+    ///   in that axis).
+    int64_t master_shape_[MAX_DIMS];
+
+    /// The default strides for master_shape_ for internal use only. Used to
+    /// compute the actual strides and ultimately the index offsets.
+    int64_t master_strides_[MAX_DIMS];
+
+    /// Indexer's global number of dimensions.
+    int64_t ndims_;
+};
+
+/// Get data pointer from a TensorRef with \p workload_idx.
+/// Note: can be optimized by computing all input ptrs and output ptr
+/// together.
+static inline uint8_t* Indexer_GetWorkloadDataPtr(
+        const uniform Indexer* const uniform self,
+        const uniform TensorRef* const uniform tr,
+        uniform bool tr_contiguous,
+        int64_t workload_idx) {
+    /* For 0-sized input reduction op, the output Tensor
+    workload_idx == 1 > NumWorkloads() == 0. */
+    cif(workload_idx < 0) { return NULL; }
+    if (tr_contiguous) {
+        return (uint8_t*)(tr->data_ptr_) + workload_idx * tr->dtype_byte_size_;
+    } else {
+        int64_t offset = 0;
+        for (uniform int64_t i = 0; i < self->ndims_; ++i) {
+            offset +=
+#pragma ignore warning(perf)
+                    workload_idx / self->master_strides_[i] *
+                    tr->byte_strides_[i];
+
+#pragma ignore warning(perf)
+            workload_idx = workload_idx % self->master_strides_[i];
+        }
+        return (uint8_t*)(tr->data_ptr_) + offset;
+    }
+}
+
+/// Get data pointer from a TensorRef with \p workload_idx.
+/// Note: can be optimized by computing all input ptrs and output ptr
+/// together.
+#define TEMPLATE(T)                                                     \
+    static inline T* OPEN3D_SPECIALIZED(T, Indexer_GetWorkloadDataPtr)( \
+            const uniform Indexer* const uniform self,                  \
+            const uniform TensorRef* const uniform tr,                  \
+            uniform bool tr_contiguous, int64_t workload_idx) {         \
+        cif(workload_idx < 0) { return NULL; }                          \
+        if (tr_contiguous) {                                            \
+            return (T*)(tr->data_ptr_) + workload_idx;                  \
+        } else {                                                        \
+            int64_t offset = 0;                                         \
+            for (uniform int64_t i = 0; i < self->ndims_; ++i) {        \
+                offset += workload_idx / self->master_strides_[i] *     \
+                          tr->byte_strides_[i];                         \
+                workload_idx = workload_idx % self->master_strides_[i]; \
+            }                                                           \
+            return (T*)((uint8_t*)(tr->data_ptr_) + offset);            \
+        }                                                               \
+    }
+#pragma ignore warning(perf)
+OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
+#undef TEMPLATE
+
+/// Get input Tensor data pointer based on \p workload_idx.
+///
+/// \param self The indexer instance.
+/// \param input_idx Input tensor index.
+/// \param workload_idx The index of the compute workload, similar to
+/// thread_id, if a thread only processes one workload.
+static inline uint8_t* Indexer_GetInputPtr(const uniform Indexer* const uniform
+                                                   self,
+                                           uniform int64_t input_idx,
+                                           int64_t workload_idx) {
+    if (input_idx < 0 || input_idx >= self->num_inputs_) {
+        return NULL;
+    }
+    return Indexer_GetWorkloadDataPtr(self, &(self->inputs_[input_idx]),
+                                      self->inputs_contiguous_[input_idx],
+                                      workload_idx);
+}
+
+/// Get input Tensor data pointer based on \p workload_idx.
+///
+/// \param self The indexer instance.
+/// \param input_idx Input tensor index.
+/// \param workload_idx The index of the compute workload, similar to
+/// thread_id, if a thread only processes one workload.
+#define TEMPLATE(T)                                                 \
+    static inline T* OPEN3D_SPECIALIZED(T, Indexer_GetInputPtr)(    \
+            const uniform Indexer* const uniform self,              \
+            uniform int64_t input_idx, int64_t workload_idx) {      \
+        if (input_idx < 0 || input_idx >= self->num_inputs_) {      \
+            return NULL;                                            \
+        }                                                           \
+        return OPEN3D_SPECIALIZED(T, Indexer_GetWorkloadDataPtr)(   \
+                self, &(self->inputs_[input_idx]),                  \
+                self->inputs_contiguous_[input_idx], workload_idx); \
+    }
+#pragma ignore warning(perf)
+OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
+#undef TEMPLATE
+
+/// Get output Tensor data pointer based on \p workload_idx.
+///
+/// \param self The indexer instance.
+/// \param workload_idx The index of the compute workload, similar to
+/// thread_id, if a thread only processes one workload.
+static inline uint8_t* Indexer_GetOutputPtr(
+        const uniform Indexer* const uniform self, int64_t workload_idx) {
+    return Indexer_GetWorkloadDataPtr(self, &(self->outputs_[0]),
+                                      self->outputs_contiguous_[0],
+                                      workload_idx);
+}
+
+/// Get output Tensor data pointer based on \p workload_idx.
+///
+/// \param self The indexer instance.
+/// \param workload_idx The index of the compute workload, similar to
+/// thread_id, if a thread only processes one workload.
+#define TEMPLATE(T)                                                            \
+    static inline T* OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(              \
+            const uniform Indexer* const uniform self, int64_t workload_idx) { \
+        return OPEN3D_SPECIALIZED(T, Indexer_GetWorkloadDataPtr)(              \
+                self, &(self->outputs_[0]), self->outputs_contiguous_[0],      \
+                workload_idx);                                                 \
+    }
+#pragma ignore warning(perf)
+OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
+#undef TEMPLATE
+
+/// Get output Tensor data pointer based on \p workload_idx.
+///
+/// \param self The indexer instance.
+/// \param output_idx Output tensor index.
+/// \param workload_idx The index of the compute workload, similar to
+/// thread_id, if a thread only processes one workload.
+static inline uint8_t* Indexer_GetOutputPtr(const uniform Indexer* const uniform
+                                                    self,
+                                            uniform int64_t output_idx,
+                                            int64_t workload_idx) {
+    return Indexer_GetWorkloadDataPtr(self, &(self->outputs_[output_idx]),
+                                      self->outputs_contiguous_[output_idx],
+                                      workload_idx);
+}
+
+/// Get output Tensor data pointer based on \p workload_idx.
+///
+/// \param self The indexer instance.
+/// \param output_idx Output tensor index.
+/// \param workload_idx The index of the compute workload, similar to
+/// thread_id, if a thread only processes one workload.
+#define TEMPLATE(T)                                                   \
+    static inline T* OPEN3D_SPECIALIZED(T, Indexer_GetOutputPtr)(     \
+            const uniform Indexer* const uniform self,                \
+            uniform int64_t output_idx, int64_t workload_idx) {       \
+        return OPEN3D_SPECIALIZED(T, Indexer_GetWorkloadDataPtr)(     \
+                self, &(self->outputs_[output_idx]),                  \
+                self->outputs_contiguous_[output_idx], workload_idx); \
+    }
+#pragma ignore warning(perf)
+OPEN3D_INSTANTIATE_TEMPLATE_WITH_BOOL()
+#undef TEMPLATE

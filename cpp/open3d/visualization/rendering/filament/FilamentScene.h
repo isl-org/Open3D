@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -53,7 +53,7 @@
 
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/visualization/rendering/Camera.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/RendererHandle.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/filament/FilamentResourceManager.h"
@@ -91,6 +91,8 @@ public:
                   Renderer& renderer);
     ~FilamentScene();
 
+    Scene* Copy() override;
+
     // NOTE: Temporarily needed to support old View interface for ImGUI
     ViewHandle AddView(std::int32_t x,
                        std::int32_t y,
@@ -111,12 +113,12 @@ public:
     // Scene geometry
     bool AddGeometry(const std::string& object_name,
                      const geometry::Geometry3D& geometry,
-                     const Material& material,
+                     const MaterialRecord& material,
                      const std::string& downsampled_name = "",
                      size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
-                     const t::geometry::PointCloud& point_cloud,
-                     const Material& material,
+                     const t::geometry::Geometry& geometry,
+                     const MaterialRecord& material,
                      const std::string& downsampled_name = "",
                      size_t downsample_threshold = SIZE_MAX) override;
     bool AddGeometry(const std::string& object_name,
@@ -141,9 +143,10 @@ public:
     void SetGeometryPriority(const std::string& object_name,
                              uint8_t priority) override;
     void OverrideMaterial(const std::string& object_name,
-                          const Material& material) override;
+                          const MaterialRecord& material) override;
     void QueryGeometry(std::vector<std::string>& geometry) override;
-    void OverrideMaterialAll(const Material& material,
+
+    void OverrideMaterialAll(const MaterialRecord& material,
                              bool shader_only = true) override;
 
     // Lighting Environment
@@ -210,21 +213,35 @@ public:
     void SetIndirectLightRotation(const Transform& rotation) override;
     Transform GetIndirectLightRotation() override;
     void ShowSkybox(bool show) override;
+    bool GetSkyboxVisible() const override;
     void SetBackground(
             const Eigen::Vector4f& color,
             const std::shared_ptr<geometry::Image> image = nullptr) override;
+    void SetBackground(TextureHandle image) override;
+    void EnableGroundPlane(bool enable, GroundPlane plane) override;
+    void SetGroundPlaneColor(const Eigen::Vector4f& color) override;
 
     void RenderToImage(std::function<void(std::shared_ptr<geometry::Image>)>
                                callback) override;
+    void RenderToDepthImage(
+            std::function<void(std::shared_ptr<geometry::Image>)> callback)
+            override;
 
     void Draw(filament::Renderer& renderer);
+
+    // NOTE: This method is to work around Filament limitation when rendering to
+    // depth buffer. Materials with SSR require multiple passes which causes a
+    // crash with render to depth since we must disable multiple passes (i.e.,
+    // post-processing) in order to get back valid, un-modified depth values.
+    void HideRefractedMaterials(bool hide = true);
+
     // NOTE: Can GetNativeScene be removed?
     filament::Scene* GetNativeScene() const { return scene_; }
 
 private:
     MaterialInstanceHandle AssignMaterialToFilamentGeometry(
             filament::RenderableManager::Builder& builder,
-            const Material& material);
+            const MaterialRecord& material);
     enum BufferReuse { kNo, kYes };
     bool CreateAndAddFilamentEntity(
             const std::string& object_name,
@@ -232,7 +249,7 @@ private:
             filament::Box& aabb,
             VertexBufferHandle vb,
             IndexBufferHandle ib,
-            const Material& material,
+            const MaterialRecord& material,
             BufferReuse reusing_vertex_buffer = BufferReuse::kNo);
 
     filament::Engine& engine_;
@@ -260,20 +277,24 @@ private:
 
     struct GeometryMaterialInstance {
         TextureMaps maps;
-        Material properties;
+        MaterialRecord properties;
         MaterialInstanceHandle mat_instance;
     };
 
     struct RenderableGeometry {
         std::string name;
         bool visible = true;
+        bool was_hidden_before_picking = false;
         bool cast_shadows = true;
-        bool receive_shadow = true;
+        bool receive_shadows = true;
+        bool culling_enabled = true;
+        int priority = -1;  // default priority
 
         GeometryMaterialInstance mat;
 
         // Filament resources
         utils::Entity filament_entity;
+        filament::RenderableManager::PrimitiveType primitive_type;
         VertexBufferHandle vb;
         IndexBufferHandle ib;
         void ReleaseResources(filament::Engine& engine,
@@ -299,7 +320,7 @@ private:
     LightEntity* GetLightInternal(const std::string& light_name,
                                   bool warn_if_not_found = true);
     void OverrideMaterialInternal(RenderableGeometry* geom,
-                                  const Material& material,
+                                  const MaterialRecord& material,
                                   bool shader_only = false);
     void UpdateMaterialProperties(RenderableGeometry& geom);
     void UpdateDefaultLit(GeometryMaterialInstance& geom_mi);
@@ -307,14 +328,18 @@ private:
     void UpdateDefaultUnlit(GeometryMaterialInstance& geom_mi);
     void UpdateNormalShader(GeometryMaterialInstance& geom_mi);
     void UpdateDepthShader(GeometryMaterialInstance& geom_mi);
+    void UpdateDepthValueShader(GeometryMaterialInstance& geom_mi);
     void UpdateGradientShader(GeometryMaterialInstance& geom_mi);
     void UpdateSolidColorShader(GeometryMaterialInstance& geom_mi);
     void UpdateBackgroundShader(GeometryMaterialInstance& geom_mi);
+    void UpdateGroundPlaneShader(GeometryMaterialInstance& geom_mi);
     void UpdateLineShader(GeometryMaterialInstance& geom_mi);
     void UpdateUnlitPolygonOffsetShader(GeometryMaterialInstance& geom_mi);
     utils::EntityInstance<filament::TransformManager>
     GetGeometryTransformInstance(RenderableGeometry* geom);
     void CreateSunDirectionalLight();
+    void CreateBackgroundGeometry();
+    void CreateGroundPlaneGeometry();
 
     std::unordered_map<std::string, RenderableGeometry> geometries_;
     std::unordered_map<std::string, LightEntity> lights_;
@@ -327,6 +352,8 @@ private:
     bool skybox_enabled_ = false;
     std::weak_ptr<filament::IndirectLight> indirect_light_;
     std::weak_ptr<filament::Skybox> skybox_;
+    IndirectLightHandle ibl_handle_;
+    SkyboxHandle skybox_handle_;
     LightEntity sun_;
 };
 

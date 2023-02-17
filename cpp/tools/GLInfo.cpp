@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,10 @@ void TryGLVersion(int major,
     std::string forwardCompatStr =
             (forwardCompat ? "GLFW_OPENGL_FORWARD_COMPAT " : "");
     std::string profileStr = "UnknownProfile";
+    // Some versions of GCC reports Wstringop-overflow error if string storage
+    // is not reserved. This might be related to a bug reported here:
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=96963
+    profileStr.reserve(32);
 #define OPEN3D_CHECK_PROFILESTR(p) \
     if (profileId == p) {          \
         profileStr = #p;           \
@@ -81,7 +85,8 @@ void TryGLVersion(int major,
         if (!r) {
             utility::LogWarning("Unable to get info on {} id {:d}", name, id);
         } else {
-            utility::LogDebug("{}:\t{}", name, r);
+            utility::LogDebug("{}:\t{}", name,
+                              reinterpret_cast<const char *>(r));
         }
     };
 #define OPEN3D_REPORT_GL_STRING(n) reportGlStringFunc(n, #n)

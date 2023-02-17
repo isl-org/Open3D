@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -72,10 +72,12 @@ public:
     /// \param color The color image.
     /// \param depth The depth image.
     /// \param depth_scale The ratio to scale depth values. The depth values
-    /// will first be scaled and then truncated. \param depth_trunc Depth values
-    /// larger than depth_trunc gets truncated to 0. The depth values will first
-    /// be scaled and then truncated. \param convert_rgb_to_intensity - Whether
-    /// to convert RGB image to intensity image.
+    /// will first be scaled and then truncated.
+    /// \param depth_trunc Depth values larger than \p depth_trunc gets
+    /// truncated to 0. The depth values will first be scaled and then
+    /// truncated.
+    /// \param convert_rgb_to_intensity - Whether to convert RGB
+    /// image to intensity image.
     static std::shared_ptr<RGBDImage> CreateFromColorAndDepth(
             const Image &color,
             const Image &depth,

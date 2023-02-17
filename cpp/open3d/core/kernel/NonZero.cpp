@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,17 +28,16 @@
 
 #include "open3d/core/Device.h"
 #include "open3d/core/Tensor.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 namespace kernel {
 
 Tensor NonZero(const Tensor& src) {
-    Device::DeviceType device_type = src.GetDevice().GetType();
-    if (device_type == Device::DeviceType::CPU) {
+    if (src.IsCPU()) {
         return NonZeroCPU(src);
-    } else if (device_type == Device::DeviceType::CUDA) {
+    } else if (src.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         return NonZeroCUDA(src);
 #else

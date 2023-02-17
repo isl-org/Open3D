@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,9 +50,9 @@ int main(int argc, char **argv) {
                         "format:", 0.42001);
 
     try {
-        utility::LogError("This Error exception is catched");
+        utility::LogError("This Error exception is caught");
     } catch (const std::exception &e) {
-        utility::LogInfo("Catched exception msg: {}", e.what());
+        utility::LogInfo("Caught exception msg: {}", e.what());
     }
     utility::LogInfo("This Info message shall print in regular color");
     utility::LogError("This Error message terminates the program");

@@ -55,7 +55,12 @@ include_directories(
 )
 
 add_library(usb STATIC ${LIBUSB_C} ${LIBUSB_H})
-set_property(TARGET usb PROPERTY POSITION_INDEPENDENT_CODE ON)
+# Apply LANG_VISIBILITY_PRESET to static libraries and archives as well
+cmake_policy(SET CMP0063 NEW)
+set_target_properties(usb PROPERTIES POSITION_INDEPENDENT_CODE ON
+    C_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON
+    )
 
 if(WIN32)
     set_target_properties (usb PROPERTIES
@@ -95,8 +100,6 @@ if((NOT APPLE) AND (NOT ANDROID) AND (NOT WIN32))
       BYPRODUCTS Makefile libusb-1.0.pc
       )
 endif()
-
-#set_target_properties(usb PROPERTIES PREFIX "")
 
 install(TARGETS ${PROJECT_NAME}
     EXPORT realsense2Targets

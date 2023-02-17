@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,8 @@ namespace t {
 namespace io {
 
 void pybind_io(py::module& m) {
-    py::module m_io = m.def_submodule("io");
+    py::module m_io =
+            m.def_submodule("io", "Tensor-based input-output handling module.");
     pybind_class_io(m_io);
     pybind_sensor(m_io);
 }

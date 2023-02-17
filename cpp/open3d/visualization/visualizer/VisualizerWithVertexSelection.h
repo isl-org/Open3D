@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -69,6 +69,8 @@ public:
     };
     std::vector<PickedPoint> GetPickedPoints() const;
     void ClearPickedPoints();
+    void AddPickedPoints(const std::vector<int> indices);
+    void RemovePickedPoints(const std::vector<int> indices);
 
     void RegisterSelectionChangedCallback(std::function<void()> f);
     /// Do not change the number of vertices in geometry, but can change the
@@ -93,8 +95,6 @@ protected:
                           int mods) override;
     void InvalidateSelectionPolygon();
     void InvalidatePicking();
-    void AddPickedPoints(const std::vector<int> indices);
-    void RemovePickedPoints(const std::vector<int> indices);
     float GetDepth(int winX, int winY);
     Eigen::Vector3d CalcDragDelta(double winX, double winY);
     enum DragType { DRAG_MOVING, DRAG_END };
@@ -109,7 +109,7 @@ protected:
     SelectionMode selection_mode_ = SelectionMode::None;
     Eigen::Vector2d mouse_down_pos_;
     std::vector<int> points_in_rect_;
-    float drag_depth_;
+    float drag_depth_ = 0.0f;
 
     std::shared_ptr<PointCloudPicker> pointcloud_picker_ptr_;
     std::shared_ptr<glsl::PointCloudPickerRenderer>

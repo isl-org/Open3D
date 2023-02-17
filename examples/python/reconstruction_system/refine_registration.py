@@ -1,16 +1,41 @@
-# Open3D: www.open3d.org
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 
 # examples/python/reconstruction_system/refine_registration.py
 
 import numpy as np
 import open3d as o3d
-import sys
-sys.path.append("../utility")
-from file import join, get_file_list
-from visualization import draw_registration_result_original_color
-sys.path.append(".")
+import os, sys
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import join, get_file_list, write_poses_to_log, draw_registration_result_original_color
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_refined_scene
 
 
@@ -76,11 +101,24 @@ def multiscale_icp(source,
                     o3d.pipelines.registration.ICPConvergenceCriteria(
                         max_iteration=iter))
             if config["icp_method"] == "color":
+                # Colored ICP is sensitive to threshold.
+                # Fallback to preset distance threshold that works better.
+                # TODO: make it adjustable in the upgraded system.
                 result_icp = o3d.pipelines.registration.registration_colored_icp(
                     source_down, target_down, voxel_size[scale],
                     current_transformation,
                     o3d.pipelines.registration.
                     TransformationEstimationForColoredICP(),
+                    o3d.pipelines.registration.ICPConvergenceCriteria(
+                        relative_fitness=1e-6,
+                        relative_rmse=1e-6,
+                        max_iteration=iter))
+            if config["icp_method"] == "generalized":
+                result_icp = o3d.pipelines.registration.registration_generalized_icp(
+                    source_down, target_down, distance_threshold,
+                    current_transformation,
+                    o3d.pipelines.registration.
+                    TransformationEstimationForGeneralizedICP(),
                     o3d.pipelines.registration.ICPConvergenceCriteria(
                         relative_fitness=1e-6,
                         relative_rmse=1e-6,
@@ -104,8 +142,7 @@ def local_refinement(source, target, transformation_init, config):
             source, target,
             [voxel_size, voxel_size/2.0, voxel_size/4.0], [50, 30, 14],
             config, transformation_init)
-    if config["debug_mode"]:
-        draw_registration_result_original_color(source, target, transformation)
+
     return (transformation, information)
 
 
@@ -191,3 +228,24 @@ def run(config):
         join(config["path_dataset"], config["folder_fragment"]), ".ply")
     make_posegraph_for_refined_scene(ply_file_names, config)
     optimize_posegraph_for_refined_scene(config["path_dataset"], config)
+
+    path_dataset = config['path_dataset']
+    n_fragments = len(ply_file_names)
+
+    # Save to trajectory
+    poses = []
+    pose_graph_fragment = o3d.io.read_pose_graph(
+        join(path_dataset, config["template_refined_posegraph_optimized"]))
+    for fragment_id in range(len(pose_graph_fragment.nodes)):
+        pose_graph_rgbd = o3d.io.read_pose_graph(
+            join(path_dataset,
+                 config["template_fragment_posegraph_optimized"] % fragment_id))
+        for frame_id in range(len(pose_graph_rgbd.nodes)):
+            frame_id_abs = fragment_id * \
+                    config['n_frames_per_fragment'] + frame_id
+            pose = np.dot(pose_graph_fragment.nodes[fragment_id].pose,
+                          pose_graph_rgbd.nodes[frame_id].pose)
+            poses.append(pose)
+
+    traj_name = join(path_dataset, config["template_global_traj"])
+    write_poses_to_log(traj_name, poses)

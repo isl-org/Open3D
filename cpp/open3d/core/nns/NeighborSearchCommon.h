@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "open3d/utility/MiniVec.h"
 
 namespace open3d {
@@ -46,7 +48,7 @@ HOST_DEVICE inline size_t SpatialHash(int x, int y, int z) {
     return x * 73856096 ^ y * 193649663 ^ z * 83492791;
 }
 
-HOST_DEVICE inline size_t SpatialHash(const utility::MiniVec<int, 3>& xyz) {
+HOST_DEVICE inline size_t SpatialHash(const utility::MiniVec<int, 3> &xyz) {
     return SpatialHash(xyz[0], xyz[1], xyz[2]);
 }
 
@@ -57,7 +59,7 @@ HOST_DEVICE inline size_t SpatialHash(const utility::MiniVec<int, 3>& xyz) {
 ///
 template <class TVecf>
 HOST_DEVICE inline utility::MiniVec<int, 3> ComputeVoxelIndex(
-        const TVecf& pos, const typename TVecf::Scalar_t& inv_voxel_size) {
+        const TVecf &pos, const typename TVecf::Scalar_t &inv_voxel_size) {
     TVecf ref_coord = pos * inv_voxel_size;
 
     utility::MiniVec<int, 3> voxel_index;
@@ -65,6 +67,11 @@ HOST_DEVICE inline utility::MiniVec<int, 3> ComputeVoxelIndex(
     return voxel_index;
 }
 #undef HOST_DEVICE
+
+/// Base struct for NanoFlann index holder
+struct NanoFlannIndexHolderBase {
+    virtual ~NanoFlannIndexHolderBase() {}
+};
 
 }  // namespace nns
 }  // namespace core

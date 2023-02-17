@@ -1,6 +1,28 @@
-# Open3D: www.open3d.org
+# ----------------------------------------------------------------------------
+# -                        Open3D: www.open3d.org                            -
+# ----------------------------------------------------------------------------
 # The MIT License (MIT)
-# See license file or visit www.open3d.org for details
+#
+# Copyright (c) 2018-2021 www.open3d.org
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+# IN THE SOFTWARE.
+# ----------------------------------------------------------------------------
 
 # examples/python/reconstruction_system/sensors/realsense_recorder.py
 
@@ -11,10 +33,14 @@ import numpy as np
 import cv2
 import argparse
 from os import makedirs
-from os.path import exists, join
+from os.path import exists, join, abspath
 import shutil
 import json
 from enum import IntEnum
+
+import sys
+sys.path.append(abspath(__file__))
+from realsense_helper import get_profiles
 
 try:
     # Python 2 compatible
@@ -108,11 +134,17 @@ if __name__ == "__main__":
     #  different resolutions of color and depth streams
     config = rs.config()
 
+    color_profiles, depth_profiles = get_profiles()
+
     if args.record_imgs or args.record_rosbag:
         # note: using 640 x 480 depth resolution produces smooth depth boundaries
         #       using rs.format.bgr8 for color image format for OpenCV based image visualization
-        config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
-        config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+        print('Using the default profiles: \n  color:{}, depth:{}'.format(
+            color_profiles[0], depth_profiles[0]))
+        w, h, fps, fmt = depth_profiles[0]
+        config.enable_stream(rs.stream.depth, w, h, fmt, fps)
+        w, h, fps, fmt = color_profiles[0]
+        config.enable_stream(rs.stream.color, w, h, fmt, fps)
         if args.record_rosbag:
             config.enable_record_to_file(path_bag)
     if args.playback_rosbag:

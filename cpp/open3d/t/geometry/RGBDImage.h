@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,12 +35,13 @@ namespace geometry {
 
 /// \brief RGBDImage A pair of color and depth images.
 ///
-/// For most procesing, the image pair should be aligned (same viewpoint and
+/// For most processing, the image pair should be aligned (same viewpoint and
 /// resolution).
 class RGBDImage : public Geometry {
 public:
     /// \brief Default Comnstructor.
     RGBDImage() : Geometry(Geometry::GeometryType::RGBDImage, 2) {}
+
     /// \brief Parameterized Constructor.
     ///
     /// \param color The color image.
@@ -60,6 +61,17 @@ public:
         }
     }
 
+    core::Device GetDevice() const override {
+        core::Device color_device = color_.GetDevice();
+        core::Device depth_device = depth_.GetDevice();
+        if (color_device != depth_device) {
+            utility::LogError(
+                    "Color {} and depth {} are not on the same device.",
+                    color_device.ToString(), depth_device.ToString());
+        }
+        return color_device;
+    }
+
     ~RGBDImage() override{};
 
     /// Clear stored data.
@@ -73,21 +85,34 @@ public:
 
     /// Compute min 2D coordinates for the data (always {0,0}).
     core::Tensor GetMinBound() const {
-        return core::Tensor::Zeros({2}, core::Dtype::Int64);
-    };
+        return core::Tensor::Zeros({2}, core::Int64);
+    }
 
     /// Compute max 2D coordinates for the data.
     core::Tensor GetMaxBound() const {
         return core::Tensor(
                 std::vector<int64_t>{color_.GetCols() + depth_.GetCols(),
                                      color_.GetRows()},
-                {2}, core::Dtype::Int64);
-    };
+                {2}, core::Int64);
+    }
+
+    /// Transfer the RGBD image to a specified device.
+    /// \param device The targeted device to convert to.
+    /// \param copy If true, a new image is always created; if false, the
+    /// copy is avoided when the original image is already on the target
+    /// device.
+    RGBDImage To(const core::Device &device, bool copy = false) const {
+        return RGBDImage(color_.To(device, copy), depth_.To(device, copy),
+                         aligned_);
+    }
+
+    /// Returns copy of the RGBD image on the same device.
+    RGBDImage Clone() const { return To(color_.GetDevice(), /*copy=*/true); }
 
     /// Convert to the legacy RGBDImage format.
-    open3d::geometry::RGBDImage ToLegacyRGBDImage() const {
-        return open3d::geometry::RGBDImage(color_.ToLegacyImage(),
-                                           depth_.ToLegacyImage());
+    open3d::geometry::RGBDImage ToLegacy() const {
+        return open3d::geometry::RGBDImage(color_.ToLegacy(),
+                                           depth_.ToLegacy());
     }
 
     /// Text description.

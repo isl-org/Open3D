@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -60,7 +60,11 @@ namespace rendering {
 namespace {
 struct ColoredVertex {
     math::float3 position = {0.f, 0.f, 0.f};
-    math::float4 color = {1.0f, 1.0f, 1.0f, 1.f};
+    // Default to mid-gray which provides good separation from the two most
+    // common background colors: white and black. Otherwise, point clouds
+    // without per-vertex colors may appear is if they are not rendering because
+    // they blend with the background.
+    math::float4 color = {0.5f, 0.5f, 0.5f, 1.f};
     math::quatf tangent = {0.f, 0.f, 0.f, 1.f};
     math::float2 uv = {0.f, 0.f};
 
@@ -235,6 +239,7 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
                                            normals.data()))
                                    .build();
         orientation->getQuats(float4v_tagents, n_vertices);
+        delete orientation;
     }
 
     const size_t vertices_byte_count = n_vertices * sizeof(ColoredVertex);
@@ -279,14 +284,21 @@ GeometryBuffersBuilder::Buffers PointCloudBuffersBuilder::ConstructBuffers() {
 
 filament::Box PointCloudBuffersBuilder::ComputeAABB() {
     const auto geometry_aabb = geometry_.GetAxisAlignedBoundingBox();
-
-    const filament::math::float3 min(geometry_aabb.min_bound_.x(),
-                                     geometry_aabb.min_bound_.y(),
-                                     geometry_aabb.min_bound_.z());
-    const filament::math::float3 max(geometry_aabb.max_bound_.x(),
-                                     geometry_aabb.max_bound_.y(),
-                                     geometry_aabb.max_bound_.z());
-
+    filament::math::float3 min(geometry_aabb.min_bound_.x(),
+                               geometry_aabb.min_bound_.y(),
+                               geometry_aabb.min_bound_.z());
+    filament::math::float3 max(geometry_aabb.max_bound_.x(),
+                               geometry_aabb.max_bound_.y(),
+                               geometry_aabb.max_bound_.z());
+    // Filament chokes on empty bounding boxes so don't allow it
+    if (geometry_aabb.IsEmpty()) {
+        min.x -= 0.1f;
+        min.y -= 0.1f;
+        min.z -= 0.1f;
+        max.x += 0.1f;
+        max.y += 0.1f;
+        max.z += 0.1f;
+    }
     Box aabb;
     aabb.set(min, max);
 
@@ -295,7 +307,46 @@ filament::Box PointCloudBuffersBuilder::ComputeAABB() {
 
 TPointCloudBuffersBuilder::TPointCloudBuffersBuilder(
         const t::geometry::PointCloud& geometry)
-    : geometry_(geometry) {}
+    : geometry_(geometry) {
+    // Make sure geometry is on CPU
+    auto pts = geometry.GetPointPositions();
+    if (pts.IsCUDA()) {
+        utility::LogWarning(
+                "GPU resident point clouds are not currently supported for "
+                "visualization. Copying data to CPU.");
+        geometry_ = geometry.To(core::Device("CPU:0"));
+    }
+
+    // Now make sure data types are Float32
+    if (pts.GetDtype() != core::Float32) {
+        utility::LogWarning(
+                "Tensor point cloud points must have DType of Float32 not {}. "
+                "Converting.",
+                pts.GetDtype().ToString());
+        geometry_.GetPointPositions() = pts.To(core::Float32);
+    }
+    if (geometry_.HasPointNormals() &&
+        geometry_.GetPointNormals().GetDtype() != core::Float32) {
+        auto normals = geometry_.GetPointNormals();
+        utility::LogWarning(
+                "Tensor point cloud normals must have DType of Float32 not {}. "
+                "Converting.",
+                normals.GetDtype().ToString());
+        geometry_.GetPointNormals() = normals.To(core::Float32);
+    }
+    if (geometry_.HasPointColors() &&
+        geometry_.GetPointColors().GetDtype() != core::Float32) {
+        auto colors = geometry_.GetPointColors();
+        utility::LogWarning(
+                "Tensor point cloud colors must have DType of Float32 not {}. "
+                "Converting.",
+                colors.GetDtype().ToString());
+        geometry_.GetPointColors() = colors.To(core::Float32);
+        if (colors.GetDtype() == core::UInt8) {
+            geometry_.GetPointColors() = geometry_.GetPointColors() / 255.0f;
+        }
+    }
+}
 
 RenderableManager::PrimitiveType TPointCloudBuffersBuilder::GetPrimitiveType()
         const {
@@ -306,11 +357,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     auto& engine = EngineInstance::GetInstance();
     auto& resource_mgr = EngineInstance::GetResourceManager();
 
-    // NOTE: ConstructBuffers assumes caller has checked that DTYPE of the
-    // tensor is float32. It is an error to call this with a tensor of any other
-    // dtype
-
-    const auto& points = geometry_.GetPoints();
+    const auto& points = geometry_.GetPointPositions();
     const size_t n_vertices = points.GetLength();
 
     // We use CUSTOM0 for tangents along with TANGENTS attribute
@@ -341,14 +388,22 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
         return {};
     }
 
+    const size_t vertex_array_size = n_vertices * 3 * sizeof(float);
+    float* vertex_array = static_cast<float*>(malloc(vertex_array_size));
+    memcpy(vertex_array, points.GetDataPtr(), vertex_array_size);
     VertexBuffer::BufferDescriptor pts_descriptor(
-            points.GetDataPtr(), n_vertices * 3 * sizeof(float));
+            vertex_array, vertex_array_size,
+            GeometryBuffersBuilder::DeallocateBuffer);
     vbuf->setBufferAt(engine, 0, std::move(pts_descriptor));
 
     const size_t color_array_size = n_vertices * 3 * sizeof(float);
     if (geometry_.HasPointColors()) {
+        float* color_array = static_cast<float*>(malloc(color_array_size));
+        memcpy(color_array, geometry_.GetPointColors().GetDataPtr(),
+               color_array_size);
         VertexBuffer::BufferDescriptor color_descriptor(
-                geometry_.GetPointColors().GetDataPtr(), color_array_size);
+                color_array, color_array_size,
+                GeometryBuffersBuilder::DeallocateBuffer);
         vbuf->setBufferAt(engine, 1, std::move(color_descriptor));
     } else {
         float* color_array = static_cast<float*>(malloc(color_array_size));
@@ -379,6 +434,7 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
                 float4v_tangents, normal_array_size,
                 GeometryBuffersBuilder::DeallocateBuffer);
         vbuf->setBufferAt(engine, 2, std::move(normals_descriptor));
+        delete orientation;
     } else {
         float* normal_array = static_cast<float*>(malloc(normal_array_size));
         float* normal_ptr = normal_array;
@@ -403,8 +459,9 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
     } else if (geometry_.HasPointAttr("__visualization_scalar")) {
         // Update in FilamentScene::UpdateGeometry(), too.
         memset(uv_array, 0, uv_array_size);
-        const float* src = static_cast<const float*>(
-                geometry_.GetPointAttr("__visualization_scalar").GetDataPtr());
+        auto vis_scalars =
+                geometry_.GetPointAttr("__visualization_scalar").Contiguous();
+        const float* src = static_cast<const float*>(vis_scalars.GetDataPtr());
         const size_t n = 2 * n_vertices;
         for (size_t i = 0; i < n; i += 2) {
             uv_array[i] = *src++;
@@ -430,17 +487,25 @@ GeometryBuffersBuilder::Buffers TPointCloudBuffersBuilder::ConstructBuffers() {
 filament::Box TPointCloudBuffersBuilder::ComputeAABB() {
     auto min_bounds = geometry_.GetMinBound();
     auto max_bounds = geometry_.GetMaxBound();
-    auto* min_bounds_float = static_cast<float*>(min_bounds.GetDataPtr());
-    auto* max_bounds_float = static_cast<float*>(max_bounds.GetDataPtr());
+    auto* min_bounds_float = min_bounds.GetDataPtr<float>();
+    auto* max_bounds_float = max_bounds.GetDataPtr<float>();
 
-    const filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
-                                     min_bounds_float[2]);
-    const filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
-                                     max_bounds_float[2]);
+    filament::math::float3 min(min_bounds_float[0], min_bounds_float[1],
+                               min_bounds_float[2]);
+    filament::math::float3 max(max_bounds_float[0], max_bounds_float[1],
+                               max_bounds_float[2]);
 
     Box aabb;
     aabb.set(min, max);
-
+    if (aabb.isEmpty()) {
+        min.x -= 0.1f;
+        min.y -= 0.1f;
+        min.z -= 0.1f;
+        max.x += 0.1f;
+        max.y += 0.1f;
+        max.z += 0.1f;
+        aabb.set(min, max);
+    }
     return aabb;
 }
 

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #include "open3d/visualization/visualizer/GuiSettingsModel.h"
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace visualization {
@@ -174,15 +174,8 @@ GuiSettingsModel::GetDefaultLightingProfile() {
 
 const GuiSettingsModel::LightingProfile&
 GuiSettingsModel::GetDefaultPointCloudLightingProfile() {
-    for (auto& lp : GuiSettingsModel::lighting_profiles_) {
-        if (lp.name == POINT_CLOUD_PROFILE_NAME) {
-            return lp;
-        }
-    }
-    utility::LogWarning(
-            "Internal Error: could not find default point cloud lighting "
-            "profile");
-    return GuiSettingsModel::GetDefaultLightingProfile();
+    // Lighting profile 0 will always be default even for Point Clouds
+    return GuiSettingsModel::lighting_profiles_[0];
 }
 
 const GuiSettingsModel::LitMaterial& GuiSettingsModel::GetDefaultLitMaterial() {
@@ -201,6 +194,7 @@ const GuiSettingsModel::LitMaterial& GuiSettingsModel::GetDefaultLitMaterial() {
 GuiSettingsModel::GuiSettingsModel() {
     lighting_ = GetDefaultLightingProfile();
     current_materials_.lit = GetDefaultLitMaterial();
+    current_materials_.lit_name = DEFAULT_MATERIAL_NAME;
 }
 
 bool GuiSettingsModel::GetShowSkybox() const { return show_skybox_; }
@@ -215,10 +209,29 @@ void GuiSettingsModel::SetShowAxes(bool show) {
     NotifyChanged();
 }
 
-bool GuiSettingsModel::GetSunFollowsCamera() const { return sun_follows_cam_; }
+bool GuiSettingsModel::GetShowGround() const { return show_ground_; }
+void GuiSettingsModel::SetShowGround(bool show) {
+    show_ground_ = show;
+    NotifyChanged();
+}
 
+bool GuiSettingsModel::GetSunFollowsCamera() const { return sun_follows_cam_; }
 void GuiSettingsModel::SetSunFollowsCamera(bool follow) {
     sun_follows_cam_ = follow;
+    NotifyChanged();
+}
+
+bool GuiSettingsModel::GetBasicMode() const { return basic_mode_enabled_; }
+void GuiSettingsModel::SetBasicMode(bool enable) {
+    basic_mode_enabled_ = enable;
+    NotifyChanged(true);
+}
+
+bool GuiSettingsModel::GetWireframeMode() const {
+    return wireframe_mode_enabled_;
+}
+void GuiSettingsModel::SetWireframeMode(bool enable) {
+    wireframe_mode_enabled_ = enable;
     NotifyChanged();
 }
 
@@ -233,6 +246,7 @@ void GuiSettingsModel::SetBackgroundColor(const Eigen::Vector3f& color) {
 const GuiSettingsModel::LightingProfile& GuiSettingsModel::GetLighting() const {
     return lighting_;
 }
+
 void GuiSettingsModel::SetLightingProfile(const LightingProfile& profile) {
     lighting_ = profile;
     user_has_changed_lighting_profile_ = true;
@@ -354,6 +368,20 @@ int GuiSettingsModel::GetPointSize() const {
 void GuiSettingsModel::SetPointSize(int size) {
     current_materials_.point_size = float(size);
     NotifyChanged(true);
+}
+
+bool GuiSettingsModel::GetUserWantsEstimateNormals() {
+    if (user_wants_estimate_normals_) {
+        user_wants_estimate_normals_ = false;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void GuiSettingsModel::EstimateNormalsClicked() {
+    user_wants_estimate_normals_ = true;
+    NotifyChanged();
 }
 
 bool GuiSettingsModel::GetDisplayingPointClouds() const {

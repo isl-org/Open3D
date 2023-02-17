@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2018 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +26,7 @@
 
 import open3d as o3d
 import numpy as np
-import time
-import pytest
 import os
-from open3d_test import test_data_dir
 
 _eight_cubes_colors = np.array([
     [0.0, 0.0, 0.0],
@@ -121,8 +118,8 @@ def test_octree_node_access():
 
 
 def test_octree_visualize():
-    pcd_path = os.path.join(test_data_dir, "fragment.ply")
-    pcd = o3d.io.read_point_cloud(pcd_path)
+    pcd_data = o3d.data.PLYPointCloud()
+    pcd = o3d.io.read_point_cloud(pcd_data.path)
     octree = o3d.geometry.Octree(8)
     octree.convert_from_point_cloud(pcd)
     # Enable the following line to test visualization
@@ -130,8 +127,8 @@ def test_octree_visualize():
 
 
 def test_octree_voxel_grid_convert():
-    pcd_path = os.path.join(test_data_dir, "fragment.ply")
-    pcd = o3d.io.read_point_cloud(pcd_path)
+    pcd_data = o3d.data.PLYPointCloud()
+    pcd = o3d.io.read_point_cloud(pcd_data.path)
     octree = o3d.geometry.Octree(8)
     octree.convert_from_point_cloud(pcd)
 
@@ -145,8 +142,8 @@ def test_octree_voxel_grid_convert():
 
 
 def test_locate_leaf_node():
-    pcd_path = os.path.join(test_data_dir, "fragment.ply")
-    pcd = o3d.io.read_point_cloud(pcd_path)
+    pcd_data = o3d.data.PLYPointCloud()
+    pcd = o3d.io.read_point_cloud(pcd_data.path)
 
     max_depth = 5
     octree = o3d.geometry.Octree(max_depth)

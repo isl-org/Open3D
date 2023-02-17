@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,9 +33,10 @@ namespace visualization {
 
 SmallButton::SmallButton(const char *title) : gui::Button(title) {}
 
-gui::Size SmallButton::CalcPreferredSize(const gui::Theme &theme) const {
-    auto em = theme.font_size;
-    auto size = Super::CalcPreferredSize(theme);
+gui::Size SmallButton::CalcPreferredSize(const gui::LayoutContext &context,
+                                         const Constraints &constraints) const {
+    auto em = context.theme.font_size;
+    auto size = Super::CalcPreferredSize(context, constraints);
     return gui::Size(size.width - em, int(std::round(1.2 * em)));
 }
 

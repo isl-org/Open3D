@@ -1,10 +1,9 @@
-
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,14 +28,12 @@
 // Copyright (c) 2020 Ignacio Vizzo, Cyrill Stachniss, University of Bonn.
 // ----------------------------------------------------------------------------
 
-#include <pybind11/attr.h>
-#include <pybind11/pybind11.h>
-
 #include <memory>
 
 #include "open3d/pipelines/registration/RobustKernel.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 #include "pybind/pipelines/registration/registration.h"
 
 namespace open3d {
@@ -126,7 +123,7 @@ weights :math:`w_i` for each residual :math:`r_i`
 
 The different loss functions will only impact in the weight for each residual
 during the optimization step.
-Therefore, the only impact of the choice on the kernel is thorugh its first
+Therefore, the only impact of the choice on the kernel is through its first
 order derivate.
 
 The kernels implemented so far, and the notation has been inspired by the
@@ -317,7 +314,7 @@ The weight :math:`w(r)` for a given residual ``r`` is given by:
                             std::to_string(tk.k_);
                  })
             .def_readwrite("k", &TukeyLoss::k_,
-                           "``k`` Is a tunning constant for the loss.");
+                           "``k`` Is a running constant for the loss.");
 }  // namespace pipelines
 
 }  // namespace registration

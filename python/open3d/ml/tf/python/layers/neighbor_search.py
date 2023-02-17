@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -34,9 +34,10 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
     """Fixed radius search for 3D point clouds.
 
     This layer computes the neighbors for a fixed radius on a point cloud.
+    For batch support, you can either pass 'points' and 'queries' as RaggedTensor,
+    or pass the 'row_splits' information.
 
     Example:
-
       This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
@@ -53,7 +54,6 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
 
 
     Arguments:
-
       metric: Either L1, L2 or Linf. Default is L2.
 
       ignore_query_point: If True the points that coincide with the center of
@@ -69,11 +69,13 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
                  ignore_query_point=False,
                  return_distances=False,
                  max_hash_table_size=32 * 2**20,
+                 index_dtype=tf.int32,
                  **kwargs):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         self.max_hash_table_size = max_hash_table_size
+        self.index_dtype = index_dtype
         super().__init__(autocast=False, **kwargs)
 
     def build(self, inp_shape):
@@ -91,10 +93,10 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
 
         Arguments:
 
-          points: The 3D positions of the input points. *This argument must be
-            given as a positional argument!*
+          points: The 3D positions of the input points. It can be a RaggedTensor.
+          *This argument must be given as a positional argument!*
 
-          queries: The 3D positions of the query points.
+          queries: The 3D positions of the query points. It can be a RaggedTensor.
 
           radius: A scalar with the neighborhood radius
 
@@ -131,6 +133,13 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             Note that the distances are squared if metric is L2.
             This is a zero length Tensor if 'return_distances' is False.
         """
+        if isinstance(points, tf.RaggedTensor):
+            points_row_splits = points.row_splits
+            points = points.values
+        if isinstance(queries, tf.RaggedTensor):
+            queries_row_splits = queries.row_splits
+            queries = queries.values
+
         if points_row_splits is None:
             points_row_splits = tf.cast(tf.stack([0, tf.shape(points)[0]]),
                                         dtype=tf.int64)
@@ -157,7 +166,8 @@ class FixedRadiusSearch(tf.keras.layers.Layer):
             queries_row_splits=queries_row_splits,
             hash_table_splits=table.hash_table_splits,
             hash_table_index=table.hash_table_index,
-            hash_table_cell_splits=table.hash_table_cell_splits)
+            hash_table_cell_splits=table.hash_table_cell_splits,
+            index_dtype=self.index_dtype)
         return result
 
 
@@ -168,7 +178,6 @@ class RadiusSearch(tf.keras.layers.Layer):
     having an individual radius.
 
     Example:
-
       This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
@@ -185,7 +194,6 @@ class RadiusSearch(tf.keras.layers.Layer):
 
 
     Arguments:
-
       metric: Either L1, L2 or Linf. Default is L2.
 
       ignore_query_point: If True the points that coincide with the center of the
@@ -204,11 +212,13 @@ class RadiusSearch(tf.keras.layers.Layer):
                  ignore_query_point=False,
                  return_distances=False,
                  normalize_distances=False,
+                 index_dtype=tf.int32,
                  **kwargs):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
         self.normalize_distances = normalize_distances
+        self.index_dtype = index_dtype
         super().__init__(autocast=False, **kwargs)
 
     def build(self, inp_shape):
@@ -271,7 +281,8 @@ class RadiusSearch(tf.keras.layers.Layer):
                                    queries=queries,
                                    radii=radii,
                                    points_row_splits=points_row_splits,
-                                   queries_row_splits=queries_row_splits)
+                                   queries_row_splits=queries_row_splits,
+                                   index_dtype=self.index_dtype)
         return result
 
 
@@ -281,7 +292,6 @@ class KNNSearch(tf.keras.layers.Layer):
     This layer computes the k nearest neighbors for each query point.
 
     Example:
-
       This example shows a neighbor search that returns the indices to the
       found neighbors and the distances.::
 
@@ -302,7 +312,6 @@ class KNNSearch(tf.keras.layers.Layer):
 
 
     Arguments:
-
       metric: Either L1, L2 or Linf. Default is L2.
 
       ignore_query_point: If True the points that coincide with the center of the
@@ -317,10 +326,12 @@ class KNNSearch(tf.keras.layers.Layer):
                  metric='L2',
                  ignore_query_point=False,
                  return_distances=False,
+                 index_dtype=tf.int32,
                  **kwargs):
         self.metric = metric
         self.ignore_query_point = ignore_query_point
         self.return_distances = return_distances
+        self.index_dtype = index_dtype
         super().__init__(autocast=False, **kwargs)
 
     def build(self, inp_shape):
@@ -335,7 +346,6 @@ class KNNSearch(tf.keras.layers.Layer):
         """This function computes the k nearest neighbors for each query point.
 
         Arguments:
-
           points: The 3D positions of the input points. *This argument must be
             given as a positional argument!*
 
@@ -381,5 +391,6 @@ class KNNSearch(tf.keras.layers.Layer):
                                 queries=queries,
                                 k=k,
                                 points_row_splits=points_row_splits,
-                                queries_row_splits=queries_row_splits)
+                                queries_row_splits=queries_row_splits,
+                                index_dtype=self.index_dtype)
         return result

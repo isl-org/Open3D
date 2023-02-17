@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,28 +30,27 @@
 
 #include <cstdio>
 
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/Octree.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
+#include "open3d/utility/FileSystem.h"
 #include "open3d/utility/IJsonConvertible.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
 
-void WriteReadAndAssertEqual(const geometry::Octree& src_octree,
-                             bool delete_temp = true) {
+void WriteReadAndAssertEqual(const geometry::Octree& src_octree) {
     // Write to file
-    std::string file_name = std::string(TEST_DATA_DIR) + "/temp_octree.json";
+    std::string file_name =
+            utility::filesystem::GetTempDirectoryPath() + "/temp_octree.json";
     EXPECT_TRUE(io::WriteOctree(file_name, src_octree));
 
     // Read from file
     geometry::Octree dst_octree;
     EXPECT_TRUE(io::ReadOctree(file_name, dst_octree));
     EXPECT_TRUE(src_octree == dst_octree);
-    if (delete_temp) {
-        EXPECT_EQ(std::remove(file_name.c_str()), 0);
-    }
 }
 
 TEST(OctreeIO, EmptyTree) {
@@ -75,7 +74,8 @@ TEST(OctreeIO, ZeroDepth) {
 TEST(OctreeIO, JsonFileIOFragment) {
     // Create octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 6;
     geometry::Octree octree(max_depth);
     octree.ConvertFromPointCloud(pcd, 0.01);

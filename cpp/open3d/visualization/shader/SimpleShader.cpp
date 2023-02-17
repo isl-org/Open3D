@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -503,6 +503,7 @@ bool SimpleShaderForTriangleMesh::PrepareBinding(
                         color = mesh.vertex_colors_[vi];
                         break;
                     }
+                    // fallthrough
                 case RenderOption::MeshColorOption::Default:
                 default:
                     color = option.default_mesh_color_;
@@ -584,6 +585,7 @@ bool SimpleShaderForVoxelGridLine::PrepareBinding(
                     voxel_color = voxel.color_;
                     break;
                 }
+                // fallthrough
             case RenderOption::MeshColorOption::Default:
             default:
                 voxel_color = option.default_mesh_color_;
@@ -674,6 +676,7 @@ bool SimpleShaderForVoxelGridFace::PrepareBinding(
                     voxel_color = voxel.color_;
                     break;
                 }
+                // fallthrough
             case RenderOption::MeshColorOption::Default:
             default:
                 voxel_color = option.default_mesh_color_;

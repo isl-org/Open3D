@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +49,7 @@ static const std::unordered_map<std::string, std::string>
                 {"point_cloud", "Input point cloud."},
                 {"size_expand",
                  "A small expansion size such that the octree is slightly "
-                 "bigger than the original point cloud bounds to accomodate "
+                 "bigger than the original point cloud bounds to accommodate "
                  "all points."}};
 
 void pybind_octree(py::module &m) {

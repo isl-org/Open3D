@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace docstring {
@@ -47,8 +47,7 @@ void ClassMethodDocInject(py::module& pybind_module,
                           const std::string& class_name,
                           const std::string& function_name,
                           const std::unordered_map<std::string, std::string>&
-                                  map_parameter_body_docs,
-                          bool skip_init) {
+                                  map_parameter_body_docs) {
     // Get function
     PyObject* module = pybind_module.ptr();
     PyObject* class_obj = PyObject_GetAttrString(module, class_name.c_str());
@@ -79,29 +78,15 @@ void ClassMethodDocInject(py::module& pybind_module,
         return;
     }
 
-    if (function_name == "__init__") {
-        // TODO: parse __init__ separately, currently __init__ can be
-        // overloaded which might cause parsing error. So we only do
-        // namespace fix and skip the parsing.
-        //
-        // If we know for sure that "__init__" is not overloaded, the doc
-        // injection should still work. In this case, skip_init == false.
-        if (skip_init) {
-            std::string pybind_doc = f->m_ml->ml_doc;
-            pybind_doc = FunctionDoc::NamespaceFix(pybind_doc);
-            f->m_ml->ml_doc = strdup(pybind_doc.c_str());
-            return;
-        }
-    }
-
     // Parse existing docstring to FunctionDoc
     FunctionDoc fd(f->m_ml->ml_doc);
 
     // Inject docstring
-    for (ArgumentDoc& ad : fd.argument_docs_) {
-        if (map_parameter_body_docs.find(ad.name_) !=
-            map_parameter_body_docs.end()) {
-            ad.body_ = map_parameter_body_docs.at(ad.name_);
+    for (auto& overload : fd.overload_docs_) {
+        for (ArgumentDoc& ad : overload.argument_docs_) {
+            if (map_parameter_body_docs.count(ad.name_) > 0) {
+                ad.body_ = map_parameter_body_docs.at(ad.name_);
+            }
         }
     }
     f->m_ml->ml_doc = strdup(fd.ToGoogleDocString().c_str());
@@ -126,11 +111,12 @@ void FunctionDocInject(py::module& pybind_module,
     // Parse existing docstring to FunctionDoc
     FunctionDoc fd(f->m_ml->ml_doc);
 
-    // Inject docstring
-    for (ArgumentDoc& ad : fd.argument_docs_) {
-        if (map_parameter_body_docs.find(ad.name_) !=
-            map_parameter_body_docs.end()) {
-            ad.body_ = map_parameter_body_docs.at(ad.name_);
+    // Inject docstring: repeat for each overload
+    for (auto& overload : fd.overload_docs_) {
+        for (ArgumentDoc& ad : overload.argument_docs_) {
+            if (map_parameter_body_docs.count(ad.name_) > 0) {
+                ad.body_ = map_parameter_body_docs.at(ad.name_);
+            }
         }
     }
     f->m_ml->ml_doc = strdup(fd.ToGoogleDocString().c_str());
@@ -138,36 +124,55 @@ void FunctionDocInject(py::module& pybind_module,
 
 FunctionDoc::FunctionDoc(const std::string& pybind_doc)
     : pybind_doc_(pybind_doc) {
-    ParseFunctionName();
-    ParseSummary();
-    ParseArguments();
-    ParseReturn();
-}
-
-void FunctionDoc::ParseFunctionName() {
-    size_t parenthesis_pos = pybind_doc_.find("(");
-    if (parenthesis_pos == std::string::npos) {
-        return;
-    } else {
-        std::string name = pybind_doc_.substr(0, parenthesis_pos);
-        name_ = name;
+    doc_pos_[0] = ParseFunctionName();
+    doc_pos_[1] = ParseSummary();
+    // Repeat for each overload:
+    for (; doc_pos_[1] != std::string::npos; doc_pos_[1] = ParseSummary()) {
+        ParseArguments();
+        ParseReturn();
+        doc_pos_[0] = doc_pos_[1];
     }
 }
 
-void FunctionDoc::ParseSummary() {
-    size_t arrow_pos = pybind_doc_.rfind(" -> ");
+size_t FunctionDoc::ParseFunctionName() {
+    size_t parenthesis_pos = pybind_doc_.find("(");
+    if (parenthesis_pos != std::string::npos) {
+        std::string name = pybind_doc_.substr(0, parenthesis_pos);
+        name_ = name;
+    }
+    size_t preamble_end = pybind_doc_.find("Overloaded function.");
+    if (preamble_end == std::string::npos) {
+        return parenthesis_pos;
+    } else {
+        preamble_end += strlen("Overloaded function.");
+        preamble_ = pybind_doc_.substr(0, preamble_end);
+        return preamble_end;
+    }
+}
+
+size_t FunctionDoc::ParseSummary() {
+    size_t arrow_pos = pybind_doc_.find(" -> ", doc_pos_[0]);
+    size_t summary_end_pos = std::string::npos;
     if (arrow_pos != std::string::npos) {
+        overload_docs_.push_back(OverloadDocs{});
         size_t result_type_pos = arrow_pos + 4;
         size_t summary_start_pos =
                 result_type_pos +
                 utility::WordLength(pybind_doc_, result_type_pos, "._:,[]() ,");
-        size_t summary_len = pybind_doc_.size() - summary_start_pos;
+        summary_end_pos =
+                pybind_doc_.find(". " + name_ + "(", summary_start_pos);
+        if (summary_end_pos == std::string::npos)
+            summary_end_pos = pybind_doc_.size();  // Last overload
+        else
+            summary_end_pos -= 3;  // \n\n[:digit:]
+        size_t summary_len = summary_end_pos - summary_start_pos;
         if (summary_len > 0) {
             std::string summary =
                     pybind_doc_.substr(summary_start_pos, summary_len);
-            summary_ = StringCleanAll(summary);
+            overload_docs_.back().summary_ = StringCleanAll(summary);
         }
     }
+    return summary_end_pos;
 }
 
 void FunctionDoc::ParseArguments() {
@@ -175,115 +180,128 @@ void FunctionDoc::ParseArguments() {
     // Input: "foo(arg0: float, arg1: float = 1.0, arg2: int = 1) -> open3d.bar"
     // Goal: split to {"arg0: float", "arg1: float = 1.0", "arg2: int = 1"} and
     //       call function to parse each argument respectively
-    std::vector<std::string> argument_tokens = GetArgumentTokens(pybind_doc_);
-    argument_docs_.clear();
+    std::vector<std::string> argument_tokens = GetArgumentTokens(
+            pybind_doc_.substr(doc_pos_[0], doc_pos_[1] - doc_pos_[0]));
+    overload_docs_.back().argument_docs_.clear();
     for (const std::string& argument_token : argument_tokens) {
-        argument_docs_.push_back(ParseArgumentToken(argument_token));
+        overload_docs_.back().argument_docs_.push_back(
+                ParseArgumentToken(argument_token));
     }
 }
 
 void FunctionDoc::ParseReturn() {
-    size_t arrow_pos = pybind_doc_.rfind(" -> ");
-    if (arrow_pos != std::string::npos) {
+    size_t arrow_pos = pybind_doc_.rfind(" -> ", doc_pos_[1]);
+    if (arrow_pos != std::string::npos && arrow_pos > doc_pos_[0]) {
         size_t result_type_pos = arrow_pos + 4;
         std::string return_type = pybind_doc_.substr(
                 result_type_pos,
                 utility::WordLength(pybind_doc_, result_type_pos,
                                     "._:,[]() ,"));
-        return_doc_.type_ = StringCleanAll(return_type);
+        overload_docs_.back().return_doc_.type_ = StringCleanAll(return_type);
     }
 }
 
 std::string FunctionDoc::ToGoogleDocString() const {
-    // Example Gooele style:
+    // Example Google style:
     // http://www.sphinx-doc.org/en/1.5/ext/example_google.html
 
     std::ostringstream rc;
     std::string indent = "    ";
+    size_t n_overload = 1;
 
-    // Function signature to be parsed by Sphinx
-    rc << name_ << "(";
-    for (size_t i = 0; i < argument_docs_.size(); ++i) {
-        const ArgumentDoc& argument_doc = argument_docs_[i];
-        rc << argument_doc.name_;
-        if (argument_doc.default_ != "") {
-            rc << "=" << argument_doc.default_;
-        }
-        if (i != argument_docs_.size() - 1) {
-            rc << ", ";
-        }
-    }
-    rc << ")" << std::endl;
-
-    // Summary line, strictly speaking this shall be at the very front. However
-    // from a compiled Python module we need the function signature hints in
-    // front for Sphinx parsing and PyCharm autocomplete
-    if (summary_ != "") {
-        rc << std::endl;
-        rc << summary_ << std::endl;
+    if (!preamble_.empty()) {
+        rc << preamble_ << std::endl << std::endl;
     }
 
-    // Arguments
-    if (argument_docs_.size() != 0 &&
-        !(argument_docs_.size() == 1 && argument_docs_[0].name_ == "self")) {
-        rc << std::endl;
-        rc << "Args:" << std::endl;
-        for (const ArgumentDoc& argument_doc : argument_docs_) {
-            if (argument_doc.name_ == "self") {
-                continue;
-            }
-            rc << indent << argument_doc.name_ << " (" << argument_doc.type_;
+    for (auto& overload : overload_docs_) {
+        // Function signature to be parsed by Sphinx
+        if (!preamble_.empty()) rc << std::endl << n_overload++ << ". ";
+        rc << name_ << "(";
+        for (size_t i = 0; i < overload.argument_docs_.size(); ++i) {
+            const ArgumentDoc& argument_doc = overload.argument_docs_[i];
+            rc << argument_doc.name_;
             if (argument_doc.default_ != "") {
-                rc << ", optional";
+                rc << "=" << argument_doc.default_;
             }
-            if (argument_doc.default_ != "" &&
-                argument_doc.long_default_ == "") {
-                rc << ", default=" << argument_doc.default_;
-            }
-            rc << ")";
-            if (argument_doc.body_ != "") {
-                rc << ": " << argument_doc.body_;
-            }
-            if (argument_doc.long_default_ != "") {
-                std::vector<std::string> lines;
-                utility::SplitString(lines, argument_doc.long_default_, "\n",
-                                     true);
-                rc << " Default value:" << std::endl << std::endl;
-                bool prev_line_is_listing = false;
-                for (std::string& line : lines) {
-                    line = StringCleanAll(line);
-                    if (line[0] == '-') {  // listing
-                        // Add empty line before listing
-                        if (!prev_line_is_listing) {
-                            rc << std::endl;
-                        }
-                        prev_line_is_listing = true;
-                    } else {
-                        prev_line_is_listing = false;
-                    }
-                    rc << indent << indent << line << std::endl;
-                }
-            } else {
-                rc << std::endl;
+            if (i != overload.argument_docs_.size() - 1) {
+                rc << ", ";
             }
         }
-    }
+        rc << ")" << std::endl;
 
-    // Return
-    rc << std::endl;
-    rc << "Returns:" << std::endl;
-    rc << indent << return_doc_.type_;
-    if (return_doc_.body_ != "") {
-        rc << ": " << return_doc_.body_;
-    }
-    rc << std::endl;
+        // Summary line, strictly speaking this shall be at the very front.
+        // However from a compiled Python module we need the function signature
+        // hints in front for Sphinx parsing and PyCharm autocomplete
+        if (overload.summary_ != "") {
+            if (!preamble_.empty()) rc << indent;
+            rc << overload.summary_ << std::endl;
+        }
 
+        // Arguments
+        if (overload.argument_docs_.size() != 0 &&
+            !(overload.argument_docs_.size() == 1 &&
+              overload.argument_docs_[0].name_ == "self")) {
+            rc << std::endl;
+            rc << "Args:" << std::endl;
+            for (const ArgumentDoc& argument_doc : overload.argument_docs_) {
+                if (argument_doc.name_ == "self") {
+                    continue;
+                }
+                rc << indent << argument_doc.name_ << " ("
+                   << argument_doc.type_;
+                if (argument_doc.default_ != "") {
+                    rc << ", optional";
+                }
+                if (argument_doc.default_ != "" &&
+                    argument_doc.long_default_ == "") {
+                    rc << ", default=" << argument_doc.default_;
+                }
+                rc << ")";
+                if (argument_doc.body_ != "") {
+                    rc << ": " << argument_doc.body_;
+                }
+                if (argument_doc.long_default_ != "") {
+                    std::vector<std::string> lines = utility::SplitString(
+                            argument_doc.long_default_, "\n", true);
+                    rc << " Default value:" << std::endl << std::endl;
+                    bool prev_line_is_listing = false;
+                    for (std::string& line : lines) {
+                        line = StringCleanAll(line);
+                        if (line[0] == '-') {  // listing
+                            // Add empty line before listing
+                            if (!prev_line_is_listing) {
+                                rc << std::endl;
+                            }
+                            prev_line_is_listing = true;
+                        } else {
+                            prev_line_is_listing = false;
+                        }
+                        rc << indent << indent << line << std::endl;
+                    }
+                } else {
+                    rc << std::endl;
+                }
+            }
+        }
+
+        // Return
+        if (name_ != "__init__") {
+            rc << std::endl;
+            rc << "Returns:" << std::endl;
+            rc << indent << overload.return_doc_.type_;
+            if (overload.return_doc_.body_ != "") {
+                rc << ": " << overload.return_doc_.body_;
+            }
+            rc << std::endl;
+        }
+    }
     return rc.str();
 }
 
 std::string FunctionDoc::NamespaceFix(const std::string& s) {
-    std::string rc = std::regex_replace(s, std::regex("::"), ".");
-    rc = std::regex_replace(rc, std::regex("open3d\\.pybind\\."), "open3d.");
+    std::string rc = std::regex_replace(s, std::regex("::(\\S)"), ".$1");
+    rc = std::regex_replace(rc, std::regex("open3d\\.(cpu|cuda)\\.pybind\\."),
+                            "open3d.");
     return rc;
 }
 

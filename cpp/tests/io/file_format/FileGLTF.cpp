@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,8 @@
 
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "tests/UnitTest.h"
+#include "open3d/utility/FileSystem.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -37,10 +38,14 @@ TEST(FileGLTF, WriteReadTriangleMeshFromGLTF) {
     tm_gt.triangles_ = {{0, 1, 2}};
     tm_gt.ComputeVertexNormals();
 
-    io::WriteTriangleMesh("tmp.gltf", tm_gt);
+    const std::string tmp_gltf_path =
+            utility::filesystem::GetTempDirectoryPath() + "/tmp.gltf";
+    io::WriteTriangleMesh(tmp_gltf_path, tm_gt);
 
     geometry::TriangleMesh tm_test;
-    io::ReadTriangleMesh("tmp.gltf", tm_test, false);
+    io::ReadTriangleMeshOptions opt;
+    opt.print_progress = false;
+    io::ReadTriangleMesh(tmp_gltf_path, tm_test, opt);
 
     ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
@@ -54,12 +59,13 @@ TEST(FileGLTF, WriteReadTriangleMeshFromGLTF) {
 //     tm_gt.vertices_ = {{0, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 //     tm_gt.triangles_ = {{0, 1, 2}};
 //     tm_gt.ComputeVertexNormals();
-
-//     io::WriteTriangleMesh("tmp.glb", tm_gt);
-
+//     const std::string tmp_glb_path =
+//          utility::filesystem::GetTempDirectoryPath() + "/tmp.glb";
+//     io::WriteTriangleMesh(tmp_glb_path, tm_gt);
+//
 //     geometry::TriangleMesh tm_test;
-//     io::ReadTriangleMesh("tmp.glb", tm_test, false);
-
+//     io::ReadTriangleMesh(tmp_glb_path, tm_test, false);
+//
 //     ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
 //     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
 //     ExpectEQ(tm_gt.vertex_normals_, tm_test.vertex_normals_);

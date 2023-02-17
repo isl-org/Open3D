@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -62,7 +62,7 @@ private:
 /// \brief KDTree search parameters for pure KNN search.
 class KDTreeSearchParamKNN : public KDTreeSearchParam {
 public:
-    /// \brief Default Cosntructor.
+    /// \brief Default Constructor.
     ///
     /// \param knn Specifies the knn neighbors that will searched. Default
     /// is 30.
@@ -79,7 +79,7 @@ public:
 /// \brief KDTree search parameters for pure radius search.
 class KDTreeSearchParamRadius : public KDTreeSearchParam {
 public:
-    /// \brief Default Cosntructor.
+    /// \brief Default Constructor.
     ///
     /// \param radius Specifies the radius of the search.
     KDTreeSearchParamRadius(double radius)
@@ -95,7 +95,7 @@ public:
 /// \brief KDTree search parameters for hybrid KNN and radius search.
 class KDTreeSearchParamHybrid : public KDTreeSearchParam {
 public:
-    /// \brief Default Cosntructor.
+    /// \brief Default Constructor.
     ///
     /// \param radius Specifies the radius of the search.
     /// \param max_nn Specifies the max neighbors to be searched.

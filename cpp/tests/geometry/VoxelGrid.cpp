@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 #include "open3d/geometry/LineSet.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {

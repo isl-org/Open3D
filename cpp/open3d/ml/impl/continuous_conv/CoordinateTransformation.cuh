@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -206,7 +206,7 @@ inline __device__ void ComputeFilterCoordinates(T& x,
 /// \tparam INTERPOLATION    One of LINEAR, LINEAR_BORDER, NEAREST_NEIGHBOR.
 ///         LINEAR is trilinear interpolation with coordinate clamping.
 ///         LINEAR_BORDER uses a zero border if outside the range.
-///         NEAREST_NEIGHBOR uses the neares neighbor instead of interpolation.
+///         NEAREST_NEIGHBOR uses the nearest neighbor instead of interpolation.
 ///
 /// \param w    The interpolation weights with range [0,1].
 ///

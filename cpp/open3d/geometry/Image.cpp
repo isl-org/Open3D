@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,8 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/Image.h"
+
+#include "open3d/utility/Parallel.h"
 
 namespace {
 /// Isotropic 2D kernels are separable:
@@ -120,7 +122,7 @@ std::shared_ptr<Image> Image::ConvertDepthToFloatImage(
 
 Image &Image::ClipIntensity(double min /* = 0.0*/, double max /* = 1.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::LogError("[ClipIntensity] Unsupported image format.");
+        utility::LogError("Unsupported image format.");
     }
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
@@ -134,7 +136,7 @@ Image &Image::ClipIntensity(double min /* = 0.0*/, double max /* = 1.0*/) {
 
 Image &Image::LinearTransform(double scale, double offset /* = 0.0*/) {
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::LogError("[LinearTransform] Unsupported image format.");
+        utility::LogError("Unsupported image format.");
     }
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
@@ -148,16 +150,18 @@ Image &Image::LinearTransform(double scale, double offset /* = 0.0*/) {
 std::shared_ptr<Image> Image::Downsample() const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::LogError("[Downsample] Unsupported image format.");
+        utility::LogError("Unsupported image format.");
     }
     int half_width = (int)floor((double)width_ / 2.0);
     int half_height = (int)floor((double)height_ / 2.0);
     output->Prepare(half_width, half_height, 1, 4);
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int y = 0; y < output->height_; y++) {
         for (int x = 0; x < output->width_; x++) {
@@ -178,7 +182,7 @@ std::shared_ptr<Image> Image::FilterHorizontal(
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4 ||
         kernel.size() % 2 != 1) {
         utility::LogError(
-                "[FilterHorizontal] Unsupported image format or kernel "
+                "Unsupported image format or kernel "
                 "size.");
     }
     output->Prepare(width_, height_, 1, 4);
@@ -186,9 +190,11 @@ std::shared_ptr<Image> Image::FilterHorizontal(
     const int half_kernel_size = (int)(floor((double)kernel.size() / 2.0));
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
@@ -210,7 +216,7 @@ std::shared_ptr<Image> Image::FilterHorizontal(
 std::shared_ptr<Image> Image::Filter(Image::FilterType type) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::LogError("[Filter] Unsupported image format.");
+        utility::LogError("Unsupported image format.");
     }
 
     switch (type) {
@@ -230,7 +236,7 @@ std::shared_ptr<Image> Image::Filter(Image::FilterType type) const {
             output = Filter(Sobel32, Sobel31);
             break;
         default:
-            utility::LogError("[Filter] Unsupported filter type.");
+            utility::LogError("Unsupported filter type.");
             break;
     }
     return output;
@@ -250,7 +256,7 @@ std::shared_ptr<Image> Image::Filter(const std::vector<double> &dx,
                                      const std::vector<double> &dy) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 4) {
-        utility::LogError("[Filter] Unsupported image format.");
+        utility::LogError("Unsupported image format.");
     }
 
     auto temp1 = FilterHorizontal(dx);
@@ -269,9 +275,11 @@ std::shared_ptr<Image> Image::Transpose() const {
     int bytes_per_pixel = num_of_channels_ * bytes_per_channel_;
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
@@ -292,7 +300,8 @@ std::shared_ptr<Image> Image::FlipVertical() const {
     output->Prepare(width_, height_, num_of_channels_, bytes_per_channel_);
 
     int bytes_per_line = BytesPerLine();
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
     for (int y = 0; y < height_; y++) {
         std::copy(data_.data() + y * bytes_per_line,
                   data_.data() + (y + 1) * bytes_per_line,
@@ -308,9 +317,11 @@ std::shared_ptr<Image> Image::FlipHorizontal() const {
     int bytes_per_line = BytesPerLine();
     int bytes_per_pixel = num_of_channels_ * bytes_per_channel_;
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
@@ -328,14 +339,16 @@ std::shared_ptr<Image> Image::FlipHorizontal() const {
 std::shared_ptr<Image> Image::Dilate(int half_kernel_size /* = 1 */) const {
     auto output = std::make_shared<Image>();
     if (num_of_channels_ != 1 || bytes_per_channel_ != 1) {
-        utility::LogError("[Dilate] Unsupported image format.");
+        utility::LogError("Unsupported image format.");
     }
     output->Prepare(width_, height_, 1, 1);
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
@@ -371,9 +384,11 @@ std::shared_ptr<Image> Image::CreateDepthBoundaryMask(
     mask->Prepare(width, height, 1, 1);
 
 #ifdef _WIN32
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #else
-#pragma omp parallel for collapse(2) schedule(static)
+#pragma omp parallel for collapse(2) schedule(static) \
+        num_threads(utility::EstimateMaxThreads())
 #endif
     for (int v = 0; v < height; v++) {
         for (int u = 0; u < width; u++) {

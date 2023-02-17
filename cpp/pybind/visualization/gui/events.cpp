@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 
 #include "open3d/visualization/gui/Events.h"
 
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 #include "pybind/visualization/gui/gui.h"
 #include "pybind11/functional.h"
 
@@ -265,11 +265,23 @@ void pybind_gui_events(py::module& m) {
             .value("END", KeyName::KEY_END)
             .value("PAGE_UP", KeyName::KEY_PAGEUP)
             .value("PAGE_DOWN", KeyName::KEY_PAGEDOWN)
+            .value("F1", KeyName::KEY_F1)
+            .value("F2", KeyName::KEY_F2)
+            .value("F3", KeyName::KEY_F3)
+            .value("F4", KeyName::KEY_F4)
+            .value("F5", KeyName::KEY_F5)
+            .value("F6", KeyName::KEY_F6)
+            .value("F7", KeyName::KEY_F7)
+            .value("F8", KeyName::KEY_F8)
+            .value("F9", KeyName::KEY_F9)
+            .value("F10", KeyName::KEY_F10)
+            .value("F11", KeyName::KEY_F11)
+            .value("F12", KeyName::KEY_F12)
             .value("UNKNOWN", KeyName::KEY_UNKNOWN)
             .export_values();
 
     py::class_<KeyEvent> key_event(m, "KeyEvent",
-                                   "Object that stores mouse events");
+                                   "Object that stores key events");
     py::enum_<KeyEvent::Type> key_event_type(key_event, "Type",
                                              py::arithmetic());
     key_event_type.value("DOWN", KeyEvent::Type::DOWN)

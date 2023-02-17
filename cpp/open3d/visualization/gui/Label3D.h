@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,8 +49,19 @@ public:
     Eigen::Vector3f GetPosition() const;
     void SetPosition(const Eigen::Vector3f& pos);
 
+    /// Returns the color with which the text will be drawn
     Color GetTextColor() const;
+
+    /// Set the color with which the text will be drawn
     void SetTextColor(const Color& color);
+
+    /// Get the current scale. See not below on meaning of scale.
+    float GetTextScale() const;
+
+    /// Sets the scale factor for the text sprite. It does not change the
+    /// underlying font size but scales how large it appears. Warning: large
+    /// scale factors may result in blurry text.
+    void SetTextScale(float scale);
 
 private:
     struct Impl;

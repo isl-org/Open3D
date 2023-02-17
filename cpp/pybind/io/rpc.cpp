@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,10 +24,13 @@
 // IN THE SOFTWARE.
 // ----------------------------------------------------------------------------
 
+#include "open3d/io/rpc/BufferConnection.h"
 #include "open3d/io/rpc/Connection.h"
 #include "open3d/io/rpc/DummyReceiver.h"
+#include "open3d/io/rpc/MessageUtils.h"
 #include "open3d/io/rpc/RemoteFunctions.h"
 #include "open3d/io/rpc/ZMQContext.h"
+#include "pybind/core/tensor_type_caster.h"
 #include "pybind/docstring.h"
 #include "pybind/open3d_pybind.h"
 
@@ -46,7 +49,9 @@ void pybind_rpc(py::module& m_io) {
             m, "_ConnectionBase");
 
     py::class_<rpc::Connection, std::shared_ptr<rpc::Connection>,
-               rpc::ConnectionBase>(m, "Connection")
+               rpc::ConnectionBase>(m, "Connection", R"doc(
+The default connection class which uses a ZeroMQ socket.
+)doc")
             .def(py::init([](std::string address, int connect_timeout,
                              int timeout) {
                      return std::shared_ptr<rpc::Connection>(
@@ -56,6 +61,18 @@ void pybind_rpc(py::module& m_io) {
                  "Creates a connection object",
                  "address"_a = "tcp://127.0.0.1:51454",
                  "connect_timeout"_a = 5000, "timeout"_a = 10000);
+
+    py::class_<rpc::BufferConnection, std::shared_ptr<rpc::BufferConnection>,
+               rpc::ConnectionBase>(m, "BufferConnection", R"doc(
+A connection writing to a memory buffer.
+)doc")
+            .def(py::init<>())
+            .def(
+                    "get_buffer",
+                    [](const rpc::BufferConnection& self) {
+                        return py::bytes(self.buffer().str());
+                    },
+                    "Returns a copy of the buffer.");
 
     py::class_<rpc::DummyReceiver, std::shared_ptr<rpc::DummyReceiver>>(
             m, "_DummyReceiver",
@@ -94,39 +111,66 @@ void pybind_rpc(py::module& m_io) {
                      "the connection."},
             });
 
-    m.def("set_triangle_mesh", &rpc::SetTriangleMesh, "mesh"_a, "path"_a = "",
-          "time"_a = 0, "layer"_a = "",
+    m.def("set_triangle_mesh",
+          py::overload_cast<const geometry::TriangleMesh&, const std::string&,
+                            int, const std::string&,
+                            std::shared_ptr<rpc::ConnectionBase>>(
+                  &rpc::SetTriangleMesh),
+          "mesh"_a, "path"_a = "", "time"_a = 0, "layer"_a = "",
           "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
-          "Sends a point cloud message to a viewer.");
-    docstring::FunctionDocInject(
-            m, "set_triangle_mesh",
-            {
-                    {"mesh", "The TriangleMesh object."},
-                    {"path", "A path descriptor, e.g., 'mygroup/mesh'."},
-                    {"time", "The time associated with this data."},
-                    {"layer", "The layer associated with this data."},
-                    {"connection",
-                     "A Connection object. Use None to automatically create "
-                     "the connection."},
-            });
+          R"doc(Sends a triangle mesh to a viewer.
+Args:
+    mesh (o3d.geometry.TriangleMesh): The triangle mesh.
+    path (str): The path in the scene graph.
+    time (int): The time associated with the data.
+    layer (str): A layer name that can be used by receivers that support layers.
+    connection (o3d.io.rpc.Connection): A connection object that will be used for sending the data.
 
-    m.def("set_mesh_data", &rpc::SetMeshData, "vertices"_a, "path"_a = "",
-          "time"_a = 0, "layer"_a = "",
+Returns:
+    Returns True if the data was successfully received.
+)doc");
+
+    m.def("set_triangle_mesh",
+          py::overload_cast<const t::geometry::TriangleMesh&,
+                            const std::string&, int, const std::string&,
+                            std::shared_ptr<rpc::ConnectionBase>>(
+                  &rpc::SetTriangleMesh),
+          "mesh"_a, "path"_a = "", "time"_a = 0, "layer"_a = "",
+          "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
+          R"doc(Sends a triangle mesh to a viewer.
+Args:
+    mesh (o3d.t.geometry.TriangleMesh): The triangle mesh.
+    path (str): The path in the scene graph.
+    time (int): The time associated with the data.
+    layer (str): A layer name that can be used by receivers that support layers.
+    connection (o3d.io.rpc.Connection): A connection object that will be used for sending the data.
+
+Returns:
+    Returns True if the data was successfully received.
+)doc");
+
+    m.def("set_mesh_data", &rpc::SetMeshData, "path"_a = "", "time"_a = 0,
+          "layer"_a = "", "vertices"_a = core::Tensor({0}, core::Float32),
           "vertex_attributes"_a = std::map<std::string, core::Tensor>(),
-          "faces"_a = core::Tensor({0}, core::Dtype::Int32),
+          "faces"_a = core::Tensor({0}, core::Int32),
           "face_attributes"_a = std::map<std::string, core::Tensor>(),
-          "lines"_a = core::Tensor({0}, core::Dtype::Int32),
+          "lines"_a = core::Tensor({0}, core::Int32),
           "line_attributes"_a = std::map<std::string, core::Tensor>(),
-          "textures"_a = std::map<std::string, core::Tensor>(),
+          "material"_a = "",
+          "material_scalar_attributes"_a = std::map<std::string, float>(),
+          "material_vector_attributes"_a =
+                  std::map<std::string, Eigen::Vector4f>(),
+          "texture_maps"_a = std::map<std::string, t::geometry::Image>(),
+          "o3d_type"_a = "",
           "connection"_a = std::shared_ptr<rpc::ConnectionBase>(),
           "Sends a set_mesh_data message.");
     docstring::FunctionDocInject(
             m, "set_mesh_data",
             {
-                    {"vertices", "Tensor defining the vertices."},
                     {"path", "A path descriptor, e.g., 'mygroup/points'."},
                     {"time", "The time associated with this data."},
                     {"layer", "The layer associated with this data."},
+                    {"vertices", "Tensor defining the vertices."},
                     {"vertex_attributes",
                      "dict of Tensors with vertex attributes."},
                     {"faces", "Tensor defining the faces with vertex indices."},
@@ -135,7 +179,22 @@ void pybind_rpc(py::module& m_io) {
                     {"lines", "Tensor defining lines with vertex indices."},
                     {"line_attributes",
                      "dict of Tensors with line attributes."},
-                    {"textures", "dict of Tensors with textures."},
+                    {"material",
+                     "Basic Material for geometry drawing.  Must be non-empty "
+                     "if any material attributes or texture maps are "
+                     "provided."},
+                    {"material_scalar_attributes",
+                     "dict of material scalar attributes for geometry drawing "
+                     "(e.g. ``point_size``, ``line_width`` or "
+                     "``base_reflectance``)."},
+                    {"material_vector_attributes",
+                     "dict of material Vector4f attributes for geometry "
+                     "drawing (e.g. ``base_color`` or ``absorption_color``)"},
+                    {"texture_maps", "dict of Images with textures."},
+                    {"o3d_type", R"doc(The type of the geometry. This is one of
+        ``PointCloud``, ``LineSet``, ``TriangleMesh``.  This argument should be
+        specified for partial data that has no primary key data, e.g., a
+        triangle mesh without vertices but with other attribute tensors.)doc"},
                     {"connection",
                      "A Connection object. Use None to automatically create "
                      "the connection."},
@@ -179,6 +238,14 @@ void pybind_rpc(py::module& m_io) {
                      "A Connection object. Use None to automatically create "
                      "the connection."},
             });
+
+    m.def("data_buffer_to_meta_geometry", &rpc::DataBufferToMetaGeometry,
+          "data"_a, R"doc(
+This function returns the geometry, the path and the time stored in a
+SetMeshData message. data must contain the Request header message followed
+by the SetMeshData message. The function returns None for the geometry if not
+successful.
+)doc");
 }
 
 }  // namespace io

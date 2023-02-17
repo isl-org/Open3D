@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,13 +27,12 @@
 #include <cstdlib>
 
 #include "open3d/core/MemoryManager.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace core {
 
-CPUMemoryManager::CPUMemoryManager() {}
-
-void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
+void* MemoryManagerCPU::Malloc(size_t byte_size, const Device& device) {
     void* ptr;
     ptr = std::malloc(byte_size);
     if (byte_size != 0 && !ptr) {
@@ -42,13 +41,13 @@ void* CPUMemoryManager::Malloc(size_t byte_size, const Device& device) {
     return ptr;
 }
 
-void CPUMemoryManager::Free(void* ptr, const Device& device) {
+void MemoryManagerCPU::Free(void* ptr, const Device& device) {
     if (ptr) {
         std::free(ptr);
     }
 }
 
-void CPUMemoryManager::Memcpy(void* dst_ptr,
+void MemoryManagerCPU::Memcpy(void* dst_ptr,
                               const Device& dst_device,
                               const void* src_ptr,
                               const Device& src_device,

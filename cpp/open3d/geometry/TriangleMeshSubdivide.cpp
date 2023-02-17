@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@
 #include <tuple>
 
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/utility/Console.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 namespace geometry {
@@ -51,7 +51,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideMidpoint(
     bool has_vert_color = HasVertexColors();
 
     // Compute and return midpoint.
-    // Also adds edge - new vertex refrence to new_verts map.
+    // Also adds edge - new vertex reference to new_verts map.
     auto SubdivideEdge =
             [&](std::unordered_map<Eigen::Vector2i, int,
                                    utility::hash_eigen<Eigen::Vector2i>>&
@@ -204,12 +204,12 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SubdivideLoop(
         if (new_verts.count(edge) == 0) {
             Eigen::Vector3d new_vert =
                     old_mesh->vertices_[vidx0] + old_mesh->vertices_[vidx1];
-            Eigen::Vector3d new_normal;
+            Eigen::Vector3d new_normal{0, 0, 0};
             if (has_vert_normal) {
                 new_normal = old_mesh->vertex_normals_[vidx0] +
                              old_mesh->vertex_normals_[vidx1];
             }
-            Eigen::Vector3d new_color;
+            Eigen::Vector3d new_color{0, 0, 0};
             if (has_vert_color) {
                 new_color = old_mesh->vertex_colors_[vidx0] +
                             old_mesh->vertex_colors_[vidx1];

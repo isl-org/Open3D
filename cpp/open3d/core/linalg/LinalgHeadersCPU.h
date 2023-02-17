@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -39,8 +39,5 @@
 #include <lapacke.h>
 #else
 #include <mkl.h>
-static_assert(
-        sizeof(MKL_INT) == 8,
-        "MKL_INT must be 8 bytes: please link with MKL 64-bit int library.");
 #define OPEN3D_CPU_LINALG_INT MKL_INT
 #endif

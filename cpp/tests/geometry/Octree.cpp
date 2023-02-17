@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,11 +31,12 @@
 #include <iostream>
 #include <memory>
 
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/VoxelGrid.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/visualization/utility/DrawGeometry.h"
-#include "tests/UnitTest.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -335,7 +336,8 @@ TEST(Octree, EightCubesTraverse) {
 TEST(Octree, FragmentPLYCheckClone) {
     // Build src_octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     geometry::Octree src_octree(5);
     src_octree.ConvertFromPointCloud(pcd, 0.01);
 
@@ -355,7 +357,8 @@ TEST(Octree, EqualOperatorSpecialCase) {
 TEST(Octree, FragmentPLYLocate) {
     // Build src_octree
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 5;
     geometry::Octree octree(max_depth);
     octree.ConvertFromPointCloud(pcd, 0.01);
@@ -397,7 +400,8 @@ TEST(Octree, ConvertFromPointCloudBoundTwoPoints) {
 
 TEST(Octree, Visualization) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     auto octree = std::make_shared<geometry::Octree>(6);
     octree->ConvertFromPointCloud(pcd, 0.01);
     // Uncomment the line below for visualization test
@@ -406,7 +410,8 @@ TEST(Octree, Visualization) {
 
 TEST(Octree, ConvertToJsonValue) {
     geometry::PointCloud pcd;
-    io::ReadPointCloud(std::string(TEST_DATA_DIR) + "/fragment.ply", pcd);
+    data::PLYPointCloud pointcloud_ply;
+    io::ReadPointCloud(pointcloud_ply.GetPath(), pcd);
     size_t max_depth = 5;
     geometry::Octree src_octree(max_depth);
     src_octree.ConvertFromPointCloud(pcd, 0.01);

@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -76,9 +76,10 @@ bool WriteIJsonConvertibleToJSONString(std::string &json_string,
 /// - enum_from_string(const std::string &str, ENUM_TYPE &e) -> void
 /// for conversion between the enum and string. Invalid string values are mapped
 /// to the first specified option in the macro.
-#define DECLARE_STRINGIFY_ENUM(ENUM_TYPE)    \
-    std::string enum_to_string(ENUM_TYPE e); \
-    void enum_from_string(const std::string &str, ENUM_TYPE &e);
+#define DECLARE_STRINGIFY_ENUM(ENUM_TYPE)                        \
+    std::string enum_to_string(ENUM_TYPE e);                     \
+    void enum_from_string(const std::string &str, ENUM_TYPE &e); \
+    inline auto format_as(ENUM_TYPE e) { return enum_to_string(e); }
 
 #define STRINGIFY_ENUM(ENUM_TYPE, ...)                                    \
     std::string enum_to_string(ENUM_TYPE e) {                             \

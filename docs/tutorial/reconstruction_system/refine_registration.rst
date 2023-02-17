@@ -15,39 +15,37 @@ The first function performs pairwise registration on the pairs detected by
 :ref:`reconstruction_system_register_fragments`. The second function performs
 multiway registration.
 
-
 Fine-grained registration
 ``````````````````````````````````````
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/refine_registration.py
    :language: python
-   :lineno-start: 38
-   :lines: 5,39-90
+   :lineno-start: 63
+   :lines: 27,64-136
    :linenos:
 
 Two options are given for the fine-grained registration. The ``color`` option is
 recommended since it uses color information to prevent drift. See [Park2017]_
 for details.
 
-
 Multiway registration
 ``````````````````````````````````````
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/refine_registration.py
    :language: python
-   :lineno-start: 16
-   :lines: 5,17-36
+   :lineno-start: 40
+   :lines: 27,41-63
    :linenos:
 
-This script uses the technique demonstrated in :ref:`/tutorial/pipelines/multiway_registration.ipynb`. Function ``update_posegraph_for_refined_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
+This script uses the technique demonstrated in :ref:`/tutorial/pipelines/multiway_registration.ipynb`. Function ``update_posegraph_for_scene`` builds a pose graph for multiway registration of all fragments. Each graph node represents a fragment and its pose which transforms the geometry to the global space.
 
 Once a pose graph is built, function ``optimize_posegraph_for_scene`` is called
 for multiway registration.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/optimize_posegraph.py
    :language: python
-   :lineno-start: 52
-   :lines: 5,53-60
+   :lineno-start: 63
+   :lines: 27,64-73
    :linenos:
 
 Main registration loop
@@ -58,8 +56,8 @@ The function ``make_posegraph_for_refined_scene`` below calls all the functions
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/refine_registration.py
    :language: python
-   :lineno-start: 129
-   :lines: 5,130-176
+   :lineno-start: 173
+   :lines: 27,174-223
    :linenos:
 
 The main workflow is: pairwise local refinement -> multiway registration.
@@ -84,7 +82,6 @@ The pose graph optimization outputs the following messages:
     Delta.norm() < 1.000000e-06 * (x.norm() + 1.000000e-06)
     [GlobalOptimizationLM] total time : 0.000 sec.
     CompensateReferencePoseGraphNode : reference : 0
-
 
 There are 14 fragments and 52 valid matching pairs between fragments. After 23
 iterations, 11 edges are detected to be false positives. After they are pruned,

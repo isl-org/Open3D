@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,8 +32,8 @@
 #include <vector>
 
 #include "open3d/geometry/Geometry3D.h"
-#include "open3d/utility/Console.h"
 #include "open3d/utility/Helper.h"
+#include "open3d/utility/Logging.h"
 
 namespace open3d {
 
@@ -90,8 +90,21 @@ public:
     Eigen::Vector3d GetMinBound() const override;
     Eigen::Vector3d GetMaxBound() const override;
     Eigen::Vector3d GetCenter() const override;
+
+    /// Creates the axis-aligned bounding box around the object.
+    /// Further details in AxisAlignedBoundingBox::AxisAlignedBoundingBox()
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    OrientedBoundingBox GetOrientedBoundingBox() const override;
+
+    /// Creates an oriented bounding box that is identical to the
+    /// axis-aligned bounding from GetAxisAlignedBoundingBox().
+    OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override;
+
+    /// Creates an oriented bounding box that is identical to the
+    /// axis-aligned bounding from GetAxisAlignedBoundingBox().
+    OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
+
     VoxelGrid &Transform(const Eigen::Matrix4d &transformation) override;
     VoxelGrid &Translate(const Eigen::Vector3d &translation,
                          bool relative = true) override;

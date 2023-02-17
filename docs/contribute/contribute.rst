@@ -35,7 +35,7 @@ We have defined a simple recipe for contributing to Open3D:
 2. Read the :ref:`style_guide` guidelines and install the required tools
 3. Check existing classes, examples, and related code
 4. Create new features in your fork. Do not forget unit tests and documentation. Double-check the :ref:`style_guide`
-5. Make a pull request to the `master branch <https://github.com/intel-isl/Open3D/tree/master>`_
+5. Make a pull request to the `master branch <https://github.com/isl-org/Open3D/tree/master>`_
 6. Make sure your PR passes the CI tests. If it doesn’t, fix the code until it builds and passes the CI tests
 7. Your PR will be assigned to reviewers
 8. Engage with your reviewers during the review process. Address issues or concerns raised during the review. Don’t let the review die.

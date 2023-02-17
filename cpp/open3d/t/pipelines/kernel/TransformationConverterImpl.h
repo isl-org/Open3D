@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,8 +38,9 @@ namespace pipelines {
 namespace kernel {
 
 /// Shared implementation for PoseToTransformation function.
+template <typename scalar_t>
 OPEN3D_HOST_DEVICE inline void PoseToTransformationImpl(
-        float *transformation_ptr, const float *pose_ptr) {
+        scalar_t *transformation_ptr, const scalar_t *pose_ptr) {
     transformation_ptr[0] = cos(pose_ptr[2]) * cos(pose_ptr[1]);
     transformation_ptr[1] =
             -1 * sin(pose_ptr[2]) * cos(pose_ptr[0]) +
@@ -64,7 +65,9 @@ OPEN3D_HOST_DEVICE inline void PoseToTransformationImpl(
 /// Do not call this independently, as it only sets the transformation part
 /// in transformation matrix, using the Pose, the rest is set in
 /// the parent function PoseToTransformation.
-void PoseToTransformationCUDA(float *transformation_ptr, const float *pose_ptr);
+template <typename scalar_t>
+void PoseToTransformationCUDA(scalar_t *transformation_ptr,
+                              const scalar_t *pose_ptr);
 #endif
 
 }  // namespace kernel

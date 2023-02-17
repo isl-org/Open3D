@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,6 @@ void pybind_contrib(py::module& m) {
     py::module m_contrib = m.def_submodule("contrib");
 
     pybind_contrib_subsample(m_contrib);
-    pybind_contrib_nns(m_contrib);
     pybind_contrib_iou(m_contrib);
 }
 

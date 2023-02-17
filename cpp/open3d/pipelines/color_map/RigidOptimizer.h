@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -70,7 +70,7 @@ struct RigidOptimizerOption {
 
     /// If a projected 3D point onto a 2D image lies in the image border within
     /// image_boundary_margin, the 3D point is considered invisible from the
-    /// camera producing the image. This parmeter is not used for visibility
+    /// camera producing the image. This parameter is not used for visibility
     /// check, but used when computing the final color assignment after color
     /// map optimization.
     int image_boundary_margin_ = 10;
@@ -86,11 +86,11 @@ struct RigidOptimizerOption {
     std::string debug_output_dir_ = "";
 };
 
-geometry::TriangleMesh RunRigidOptimizer(
-        const geometry::TriangleMesh& mesh,
-        const std::vector<geometry::RGBDImage>& images_rgbd,
-        const camera::PinholeCameraTrajectory& camera_trajectory,
-        const RigidOptimizerOption& option);
+std::pair<geometry::TriangleMesh, camera::PinholeCameraTrajectory>
+RunRigidOptimizer(const geometry::TriangleMesh& mesh,
+                  const std::vector<geometry::RGBDImage>& images_rgbd,
+                  const camera::PinholeCameraTrajectory& camera_trajectory,
+                  const RigidOptimizerOption& option);
 
 }  // namespace color_map
 }  // namespace pipelines

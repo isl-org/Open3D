@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -117,7 +117,7 @@ public:
 struct RealSenseValidConfigs {
     std::string serial;  ///< Device serial number.
     std::string name;    ///< Device name.
-    /// Mapping between configuraiton option name and a list of valid
+    /// Mapping between configuration option name and a list of valid
     /// values.
     std::unordered_map<std::string, std::set<std::string>> valid_configs;
 };

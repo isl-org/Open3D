@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2019 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -62,9 +62,10 @@ public:
                  FilamentResourceManager& resource_mgr);
     ~FilamentView() override;
 
+    void SetDiscardBuffers(const TargetBuffers& buffers) override;
     Mode GetMode() const override;
     void SetMode(Mode mode) override;
-    void SetDiscardBuffers(const TargetBuffers& buffers) override;
+    void SetWireframe(bool enable) override;
 
     void SetSampleCount(int n) override;
     int GetSampleCount() const override;
@@ -77,12 +78,17 @@ public:
 
     void SetPostProcessing(bool enabled) override;
     void SetAmbientOcclusion(bool enabled, bool ssct_enabled = false) override;
+    void SetBloom(bool enabled, float strength = 0.5f, int spread = 6) override;
     void SetAntiAliasing(bool enabled, bool temporal = false) override;
     void SetShadowing(bool enabled, ShadowType type) override;
 
     void SetColorGrading(const ColorGradingParams& color_grading) override;
 
     void ConfigureForColorPicking() override;
+
+    void EnableViewCaching(bool enable) override;
+    bool IsCached() const override;
+    TextureHandle GetColorBuffer() override;
 
     Camera* GetCamera() const override;
 
@@ -97,9 +103,16 @@ public:
     void PostRender();
 
 private:
+    void SetRenderTarget(const RenderTargetHandle render_target);
+
     std::unique_ptr<FilamentCamera> camera_;
     Mode mode_ = Mode::Color;
     TargetBuffers discard_buffers_;
+    bool caching_enabled_ = false;
+    bool configured_for_picking_ = false;
+    TextureHandle color_buffer_;
+    TextureHandle depth_buffer_;
+    RenderTargetHandle render_target_;
 
     filament::Engine& engine_;
     FilamentScene* scene_ = nullptr;

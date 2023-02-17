@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/TriangleMeshIO.h"
 
@@ -35,13 +36,14 @@ namespace benchmarks {
 class SamplePointsFixture : public benchmark::Fixture {
 public:
     void SetUp(const benchmark::State& state) {
-        trimesh = open3d::io::CreateMeshFromFile(TEST_DATA_DIR "/knot.ply");
+        data::KnotMesh knot_data;
+        trimesh = io::CreateMeshFromFile(knot_data.GetPath());
     }
 
     void TearDown(const benchmark::State& state) {
         // empty
     }
-    std::shared_ptr<open3d::geometry::TriangleMesh> trimesh;
+    std::shared_ptr<geometry::TriangleMesh> trimesh;
 };
 
 BENCHMARK_DEFINE_F(SamplePointsFixture, Poisson)(benchmark::State& state) {

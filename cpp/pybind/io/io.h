@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,12 +35,11 @@ void pybind_io(py::module& m);
 
 void pybind_class_io(py::module& m);
 
+void pybind_rpc(py::module& m);
+
 #ifdef BUILD_AZURE_KINECT
 void pybind_sensor(py::module& m);
 #endif
 
-#ifdef BUILD_RPC_INTERFACE
-void pybind_rpc(py::module& m);
-#endif
 }  // namespace io
 }  // namespace open3d

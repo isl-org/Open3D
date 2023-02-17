@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2020 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,13 +27,12 @@
 
 #include "FixedRadiusSearchOpKernel.h"
 
-#include "open3d/ml/impl/misc/FixedRadiusSearch.h"
+#include "open3d/core/nns/FixedRadiusSearchImpl.h"
 
-using namespace open3d::ml::impl;
 using namespace fixed_radius_search_opkernel;
 using namespace tensorflow;
 
-template <class T>
+template <class T, class TIndex>
 class FixedRadiusSearchOpKernelCPU : public FixedRadiusSearchOpKernel {
 public:
     explicit FixedRadiusSearchOpKernelCPU(OpKernelConstruction* construction)
@@ -49,9 +48,9 @@ public:
                 const tensorflow::Tensor& hash_table_index,
                 const tensorflow::Tensor& hash_table_cell_splits,
                 tensorflow::Tensor& query_neighbors_row_splits) {
-        OutputAllocator<T> output_allocator(context);
+        OutputAllocator<T, TIndex> output_allocator(context);
 
-        FixedRadiusSearchCPU(
+        open3d::core::nns::impl::FixedRadiusSearchCPU<T, TIndex>(
                 (int64_t*)query_neighbors_row_splits.flat<int64>().data(),
                 points.shape().dim_size(0), points.flat<T>().data(),
                 queries.shape().dim_size(0), queries.flat<T>().data(),
@@ -67,11 +66,14 @@ public:
     }
 };
 
-#define REG_KB(type)                                            \
-    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")     \
-                                    .Device(DEVICE_CPU)         \
-                                    .TypeConstraint<type>("T"), \
-                            FixedRadiusSearchOpKernelCPU<type>);
-REG_KB(float)
-REG_KB(double)
+#define REG_KB(type, itype)                                                \
+    REGISTER_KERNEL_BUILDER(Name("Open3DFixedRadiusSearch")                \
+                                    .Device(DEVICE_CPU)                    \
+                                    .TypeConstraint<type>("T")             \
+                                    .TypeConstraint<itype>("index_dtype"), \
+                            FixedRadiusSearchOpKernelCPU<type, itype>);
+REG_KB(float, int)
+REG_KB(float, long)
+REG_KB(double, int)
+REG_KB(double, long)
 #undef REG_KB

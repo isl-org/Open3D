@@ -3,7 +3,7 @@
 # ----------------------------------------------------------------------------
 # The MIT License (MIT)
 #
-# Copyright (c) 2020 www.open3d.org
+# Copyright (c) 2018-2021 www.open3d.org
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,7 +31,7 @@ __all__ = ['VoxelPooling']
 
 
 class VoxelPooling(tf.keras.layers.Layer):
-    """Voxel pooling for 3D point clouds
+    """Voxel pooling for 3D point clouds.
 
     Spatial pooling for point clouds by combining points that fall into the same voxel bin.
 
@@ -109,7 +109,7 @@ class VoxelPooling(tf.keras.layers.Layer):
             The output point positions with shape [M,3] and M <= N.
 
           pooled_features:
-            The output point features with shape [M,channnels] and M <= N.
+            The output point features with shape [M,channels] and M <= N.
         """
         result = ops.voxel_pooling(positions,
                                    features,

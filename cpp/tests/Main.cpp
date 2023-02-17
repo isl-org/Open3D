@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,11 +31,11 @@
 #include <string>
 
 #ifdef BUILD_CUDA_MODULE
-#include "open3d/core/CUDAState.cuh"
+#include "open3d/core/CUDAUtils.h"
 #endif
 
-#include "open3d/utility/Console.h"
-#include "tests/UnitTest.h"
+#include "open3d/Open3D.h"
+#include "tests/Tests.h"
 
 #ifdef BUILD_CUDA_MODULE
 /// Returns true if --disable_p2p flag is used.
@@ -52,15 +52,20 @@ bool ShallDisableP2P(int argc, char** argv) {
 #endif
 
 int main(int argc, char** argv) {
+    using namespace open3d;
+
+    utility::SetVerbosityLevel(utility::VerbosityLevel::Debug);
+    utility::CompilerInfo::GetInstance().Print();
+    utility::CPUInfo::GetInstance().Print();
+    utility::ISAInfo::GetInstance().Print();
+
 #ifdef BUILD_CUDA_MODULE
     if (ShallDisableP2P(argc, argv)) {
-        std::shared_ptr<open3d::core::CUDAState> cuda_state =
-                open3d::core::CUDAState::GetInstance();
-        cuda_state->ForceDisableP2PForTesting();
-        open3d::utility::LogInfo("P2P device transfer has been disabled.");
+        core::CUDAState::GetInstance().ForceDisableP2PForTesting();
+        utility::LogInfo("P2P device transfer has been disabled.");
     }
 #endif
+
     testing::InitGoogleMock(&argc, argv);
-    open3d::utility::SetVerbosityLevel(open3d::utility::VerbosityLevel::Debug);
     return RUN_ALL_TESTS();
 }

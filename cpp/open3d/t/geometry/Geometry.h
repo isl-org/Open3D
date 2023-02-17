@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,8 @@
 
 #include <string>
 
+#include "open3d/core/Device.h"
+
 namespace open3d {
 namespace t {
 namespace geometry {
@@ -35,7 +37,7 @@ namespace geometry {
 /// \class Geometry
 ///
 /// \brief The base geometry class.
-class Geometry {
+class Geometry : public core::IsDevice {
 public:
     /// \enum GeometryType
     ///
@@ -86,6 +88,9 @@ public:
 
     /// Returns true iff the geometry is empty.
     virtual bool IsEmpty() const = 0;
+
+    /// Returns the device of the geometry.
+    virtual core::Device GetDevice() const = 0;
 
     /// Returns one of registered geometry types.
     GeometryType GetGeometryType() const { return geometry_type_; }

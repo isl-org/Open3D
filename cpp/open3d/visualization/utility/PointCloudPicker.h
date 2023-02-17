@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -52,8 +52,33 @@ public:
     Eigen::Vector3d GetMinBound() const final;
     Eigen::Vector3d GetMaxBound() const final;
     Eigen::Vector3d GetCenter() const final;
+
+    /// If point cloud does not exist, creates an axis-aligned bounding box
+    /// form its default constructor. If point cloud exists, creates the
+    /// axis-aligned bounding box around it. Further details in
+    /// AxisAlignedBoundingBox::CreateFromPoints()
     geometry::AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const final;
-    geometry::OrientedBoundingBox GetOrientedBoundingBox() const final;
+
+    /// If point cloud does not exist, creates an oriented bounding box
+    /// form its default constructor. If point cloud exists, creates the
+    /// oriented bounding box around it. Further details in
+    /// OrientedBoundingBox::CreateFromPoints()
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    geometry::OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const final;
+
+    /// If point cloud does not exist, creates an oriented bounding box
+    /// form its default constructor. If point cloud exists, creates the minimal
+    /// oriented bounding box around it.
+    /// Further details in OrientedBoundingBox::CreateFromPointsMinimal()
+    /// \param robust If set to true uses a more robust method which works
+    ///               in degenerate cases but introduces noise to the points
+    ///               coordinates.
+    geometry::OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const final;
+
     PointCloudPicker& Transform(const Eigen::Matrix4d& transformation) override;
     PointCloudPicker& Translate(const Eigen::Vector3d& translation,
                                 bool relative = true) override;

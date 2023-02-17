@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 // The MIT License (MIT)
 //
-// Copyright (c) 2018 www.open3d.org
+// Copyright (c) 2018-2021 www.open3d.org
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,8 @@
 
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/io/TriangleMeshIO.h"
-#include "tests/UnitTest.h"
+#include "open3d/utility/FileSystem.h"
+#include "tests/Tests.h"
 
 namespace open3d {
 namespace tests {
@@ -37,10 +38,14 @@ TEST(FileSTL, WriteReadTriangleMeshFromSTL) {
     tm_gt.triangles_ = {{0, 1, 2}};
     tm_gt.ComputeVertexNormals();
 
-    io::WriteTriangleMesh("tmp.stl", tm_gt);
+    const std::string tmp_stl_path =
+            utility::filesystem::GetTempDirectoryPath() + "/tmp.stl";
+    io::WriteTriangleMesh(tmp_stl_path, tm_gt);
 
     geometry::TriangleMesh tm_test;
-    io::ReadTriangleMesh("tmp.stl", tm_test, false);
+    io::ReadTriangleMeshOptions opt;
+    opt.print_progress = false;
+    io::ReadTriangleMesh(tmp_stl_path, tm_test, opt);
 
     ExpectEQ(tm_gt.vertices_, tm_test.vertices_);
     ExpectEQ(tm_gt.triangles_, tm_test.triangles_);
