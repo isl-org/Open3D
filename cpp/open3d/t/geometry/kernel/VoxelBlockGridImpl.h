@@ -700,43 +700,37 @@ void RayCastCPU
 #endif
 
     core::ParallelFor(device, n, [=] OPEN3D_DEVICE(index_t workload_idx) {
-        //         auto GetLinearIdxAtP = [&] OPEN3D_DEVICE(
-        //                                        index_t x_b, index_t y_b,
-        //                                        index_t z_b, index_t x_v,
-        //                                        index_t y_v, index_t z_v,
-        //                                        core::buf_index_t
-        //                                        block_buf_idx, MiniVecCache &
-        //                                        cache) -> index_t {
-        //             index_t x_vn = (x_v + block_resolution) %
-        //             block_resolution; index_t y_vn = (y_v + block_resolution)
-        //             % block_resolution; index_t z_vn = (z_v +
-        //             block_resolution) % block_resolution;
+        auto GetLinearIdxAtP = [&] OPEN3D_DEVICE(
+                                       index_t x_b, index_t y_b, index_t z_b,
+                                       index_t x_v, index_t y_v, index_t z_v,
+                                       core::buf_index_t block_buf_idx,
+                                       MiniVecCache & cache) -> index_t {
+            index_t x_vn = (x_v + block_resolution) % block_resolution;
+            index_t y_vn = (y_v + block_resolution) % block_resolution;
+            index_t z_vn = (z_v + block_resolution) % block_resolution;
 
-        //             index_t dx_b = Sign(x_v - x_vn);
-        //             index_t dy_b = Sign(y_v - y_vn);
-        //             index_t dz_b = Sign(z_v - z_vn);
+            index_t dx_b = Sign(x_v - x_vn);
+            index_t dy_b = Sign(y_v - y_vn);
+            index_t dz_b = Sign(z_v - z_vn);
 
-        //             if (dx_b == 0 && dy_b == 0 && dz_b == 0) {
-        //                 return block_buf_idx * resolution3 + z_v *
-        //                 resolution2 +
-        //                        y_v * block_resolution + x_v;
-        //             } else {
-        //                 Key key(x_b + dx_b, y_b + dy_b, z_b + dz_b);
+            if (dx_b == 0 && dy_b == 0 && dz_b == 0) {
+                return block_buf_idx * resolution3 + z_v * resolution2 +
+                       y_v * block_resolution + x_v;
+            } else {
+                Key key(x_b + dx_b, y_b + dy_b, z_b + dz_b);
 
-        //                 index_t block_buf_idx = cache.Check(key[0], key[1],
-        //                 key[2]); if (block_buf_idx < 0) {
-        //                     auto iter = hashmap_impl.find(key);
-        //                     if (iter == hashmap_impl.end()) return -1;
-        //                     block_buf_idx = iter->second;
-        //                     cache.Update(key[0], key[1], key[2],
-        //                     block_buf_idx);
-        //                 }
+                index_t block_buf_idx = cache.Check(key[0], key[1], key[2]);
+                if (block_buf_idx < 0) {
+                    auto iter = hashmap_impl.find(key);
+                    if (iter == hashmap_impl.end()) return -1;
+                    block_buf_idx = iter->second;
+                    cache.Update(key[0], key[1], key[2], block_buf_idx);
+                }
 
-        //                 return block_buf_idx * resolution3 + z_vn *
-        //                 resolution2 +
-        //                        y_vn * block_resolution + x_vn;
-        //             }
-        //         };
+                return block_buf_idx * resolution3 + z_vn * resolution2 +
+                       y_vn * block_resolution + x_vn;
+            }
+        };
 
         //         auto GetLinearIdxAtT = [&] OPEN3D_DEVICE(
         //                                        float x_o, float y_o, float
