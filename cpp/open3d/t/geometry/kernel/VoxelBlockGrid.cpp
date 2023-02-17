@@ -46,12 +46,10 @@ void PointCloudTouch(std::shared_ptr<core::HashMap>& hashmap,
                      index_t voxel_grid_resolution,
                      float voxel_size,
                      float sdf_trunc) {
-    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
-
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (hashmap->IsCPU()) {
         PointCloudTouchCPU(hashmap, points, voxel_block_coords,
                            voxel_grid_resolution, voxel_size, sdf_trunc);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (hashmap->IsCUDA()) {
         CUDA_CALL(PointCloudTouchCUDA, hashmap, points, voxel_block_coords,
                   voxel_grid_resolution, voxel_size, sdf_trunc);
     } else {
@@ -70,13 +68,11 @@ void DepthTouch(std::shared_ptr<core::HashMap>& hashmap,
                 float depth_scale,
                 float depth_max,
                 index_t stride) {
-    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
-
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (hashmap->IsCPU()) {
         DepthTouchCPU(hashmap, depth, intrinsic, extrinsic, voxel_block_coords,
                       voxel_grid_resolution, voxel_size, sdf_trunc, depth_scale,
                       depth_max, stride);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (hashmap->IsCUDA()) {
         CUDA_CALL(DepthTouchCUDA, hashmap, depth, intrinsic, extrinsic,
                   voxel_block_coords, voxel_grid_resolution, voxel_size,
                   sdf_trunc, depth_scale, depth_max, stride);
@@ -91,13 +87,11 @@ void GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor& buf_indices,
                                             core::Tensor& flattened_indices,
                                             index_t block_resolution,
                                             float voxel_size) {
-    core::Device::DeviceType device_type = block_keys.GetDevice().GetType();
-
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (block_keys.IsCPU()) {
         GetVoxelCoordinatesAndFlattenedIndicesCPU(
                 buf_indices, block_keys, voxel_coords, flattened_indices,
                 block_resolution, voxel_size);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (block_keys.IsCUDA()) {
         CUDA_CALL(GetVoxelCoordinatesAndFlattenedIndicesCUDA, buf_indices,
                   block_keys, voxel_coords, flattened_indices, block_resolution,
                   voxel_size);
@@ -106,38 +100,45 @@ void GetVoxelCoordinatesAndFlattenedIndices(const core::Tensor& buf_indices,
     }
 }
 
-#define DISPATCH_VALUE_DTYPE_TO_TEMPLATE(WEIGHT_DTYPE, COLOR_DTYPE, ...)   \
-    [&] {                                                                  \
-        if (WEIGHT_DTYPE == open3d::core::Float32 &&                       \
-            COLOR_DTYPE == open3d::core::Float32) {                        \
-            using weight_t = float;                                        \
-            using color_t = float;                                         \
-            return __VA_ARGS__();                                          \
-        } else if (WEIGHT_DTYPE == open3d::core::UInt16 &&                 \
-                   COLOR_DTYPE == open3d::core::UInt16) {                  \
-            using weight_t = uint16_t;                                     \
-            using color_t = uint16_t;                                      \
-            return __VA_ARGS__();                                          \
-        } else {                                                           \
-            utility::LogError("Unsupported value data type combination."); \
-        }                                                                  \
+#define DISPATCH_VALUE_DTYPE_TO_TEMPLATE(WEIGHT_DTYPE, COLOR_DTYPE, ...)    \
+    [&] {                                                                   \
+        if (WEIGHT_DTYPE == open3d::core::Float32 &&                        \
+            COLOR_DTYPE == open3d::core::Float32) {                         \
+            using weight_t = float;                                         \
+            using color_t = float;                                          \
+            return __VA_ARGS__();                                           \
+        } else if (WEIGHT_DTYPE == open3d::core::UInt16 &&                  \
+                   COLOR_DTYPE == open3d::core::UInt16) {                   \
+            using weight_t = uint16_t;                                      \
+            using color_t = uint16_t;                                       \
+            return __VA_ARGS__();                                           \
+        } else {                                                            \
+            utility::LogError(                                              \
+                    "Unsupported value data type combination. Expected "    \
+                    "(float, float) or (uint16, uint16), but received ({} " \
+                    "{}).",                                                 \
+                    WEIGHT_DTYPE.ToString(), COLOR_DTYPE.ToString());       \
+        }                                                                   \
     }()
 
-#define DISPATCH_INPUT_DTYPE_TO_TEMPLATE(DEPTH_DTYPE, COLOR_DTYPE, ...)    \
-    [&] {                                                                  \
-        if (DEPTH_DTYPE == open3d::core::Float32 &&                        \
-            COLOR_DTYPE == open3d::core::Float32) {                        \
-            using input_depth_t = float;                                   \
-            using input_color_t = float;                                   \
-            return __VA_ARGS__();                                          \
-        } else if (DEPTH_DTYPE == open3d::core::UInt16 &&                  \
-                   COLOR_DTYPE == open3d::core::UInt8) {                   \
-            using input_depth_t = uint16_t;                                \
-            using input_color_t = uint8_t;                                 \
-            return __VA_ARGS__();                                          \
-        } else {                                                           \
-            utility::LogError("Unsupported input data type combination."); \
-        }                                                                  \
+#define DISPATCH_INPUT_DTYPE_TO_TEMPLATE(DEPTH_DTYPE, COLOR_DTYPE, ...)        \
+    [&] {                                                                      \
+        if (DEPTH_DTYPE == open3d::core::Float32 &&                            \
+            COLOR_DTYPE == open3d::core::Float32) {                            \
+            using input_depth_t = float;                                       \
+            using input_color_t = float;                                       \
+            return __VA_ARGS__();                                              \
+        } else if (DEPTH_DTYPE == open3d::core::UInt16 &&                      \
+                   COLOR_DTYPE == open3d::core::UInt8) {                       \
+            using input_depth_t = uint16_t;                                    \
+            using input_color_t = uint8_t;                                     \
+            return __VA_ARGS__();                                              \
+        } else {                                                               \
+            utility::LogError(                                                 \
+                    "Unsupported input data type combination. Expected "       \
+                    "(float, float) or (uint16, uint8), but received ({} {})", \
+                    DEPTH_DTYPE.ToString(), COLOR_DTYPE.ToString());           \
+        }                                                                      \
     }()
 
 void Integrate(const core::Tensor& depth,
@@ -145,7 +146,8 @@ void Integrate(const core::Tensor& depth,
                const core::Tensor& block_indices,
                const core::Tensor& block_keys,
                TensorMap& block_value_map,
-               const core::Tensor& intrinsic,
+               const core::Tensor& depth_intrinsic,
+               const core::Tensor& color_intrinsic,
                const core::Tensor& extrinsic,
                index_t resolution,
                float voxel_size,
@@ -170,8 +172,7 @@ void Integrate(const core::Tensor& depth,
         input_color_dtype = color.GetDtype();
     }
 
-    core::Device::DeviceType device_type = depth.GetDevice().GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (depth.IsCPU()) {
         DISPATCH_INPUT_DTYPE_TO_TEMPLATE(
                 input_depth_dtype, input_color_dtype, [&] {
                     DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
@@ -179,12 +180,13 @@ void Integrate(const core::Tensor& depth,
                                 IntegrateCPU<input_depth_t, input_color_t,
                                              tsdf_t, weight_t, color_t>(
                                         depth, color, block_indices, block_keys,
-                                        block_value_map, intrinsic, extrinsic,
-                                        resolution, voxel_size, sdf_trunc,
-                                        depth_scale, depth_max);
+                                        block_value_map, depth_intrinsic,
+                                        color_intrinsic, extrinsic, resolution,
+                                        voxel_size, sdf_trunc, depth_scale,
+                                        depth_max);
                             });
                 });
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (depth.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_INPUT_DTYPE_TO_TEMPLATE(
                 input_depth_dtype, input_color_dtype, [&] {
@@ -193,11 +195,45 @@ void Integrate(const core::Tensor& depth,
                                 IntegrateCUDA<input_depth_t, input_color_t,
                                               tsdf_t, weight_t, color_t>(
                                         depth, color, block_indices, block_keys,
-                                        block_value_map, intrinsic, extrinsic,
-                                        resolution, voxel_size, sdf_trunc,
-                                        depth_scale, depth_max);
+                                        block_value_map, depth_intrinsic,
+                                        color_intrinsic, extrinsic, resolution,
+                                        voxel_size, sdf_trunc, depth_scale,
+                                        depth_max);
                             });
                 });
+#else
+        utility::LogError("Not compiled with CUDA, but CUDA device is used.");
+#endif
+    } else {
+        utility::LogError("Unimplemented device");
+    }
+}
+
+void EstimateRange(const core::Tensor& block_keys,
+                   core::Tensor& range_minmax_map,
+                   const core::Tensor& intrinsics,
+                   const core::Tensor& extrinsics,
+                   int h,
+                   int w,
+                   int down_factor,
+                   int64_t block_resolution,
+                   float voxel_size,
+                   float depth_min,
+                   float depth_max,
+                   core::Tensor& fragment_buffer) {
+    static const core::Device host("CPU:0");
+    core::Tensor intrinsics_d = intrinsics.To(host, core::Float64).Contiguous();
+    core::Tensor extrinsics_d = extrinsics.To(host, core::Float64).Contiguous();
+
+    if (block_keys.IsCPU()) {
+        EstimateRangeCPU(block_keys, range_minmax_map, intrinsics_d,
+                         extrinsics_d, h, w, down_factor, block_resolution,
+                         voxel_size, depth_min, depth_max, fragment_buffer);
+    } else if (block_keys.IsCUDA()) {
+#ifdef BUILD_CUDA_MODULE
+        EstimateRangeCUDA(block_keys, range_minmax_map, intrinsics_d,
+                          extrinsics_d, h, w, down_factor, block_resolution,
+                          voxel_size, depth_min, depth_max, fragment_buffer);
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
 #endif
@@ -216,11 +252,12 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
              index_t w,
              index_t block_resolution,
              float voxel_size,
-             float sdf_trunc,
              float depth_scale,
              float depth_min,
              float depth_max,
-             float weight_threshold) {
+             float weight_threshold,
+             float trunc_voxel_multiplier,
+             int range_map_down_factor) {
     using tsdf_t = float;
     core::Dtype block_weight_dtype = core::Dtype::Float32;
     core::Dtype block_color_dtype = core::Dtype::Float32;
@@ -231,26 +268,27 @@ void RayCast(std::shared_ptr<core::HashMap>& hashmap,
         block_color_dtype = block_value_map.at("color").GetDtype();
     }
 
-    core::Device::DeviceType device_type = hashmap->GetDevice().GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (hashmap->IsCPU()) {
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
                     RayCastCPU<tsdf_t, weight_t, color_t>(
                             hashmap, block_value_map, range_map, renderings_map,
                             intrinsic, extrinsic, h, w, block_resolution,
-                            voxel_size, sdf_trunc, depth_scale, depth_min,
-                            depth_max, weight_threshold);
+                            voxel_size, depth_scale, depth_min, depth_max,
+                            weight_threshold, trunc_voxel_multiplier,
+                            range_map_down_factor);
                 });
 
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (hashmap->IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
                     RayCastCUDA<tsdf_t, weight_t, color_t>(
                             hashmap, block_value_map, range_map, renderings_map,
                             intrinsic, extrinsic, h, w, block_resolution,
-                            voxel_size, sdf_trunc, depth_scale, depth_min,
-                            depth_max, weight_threshold);
+                            voxel_size, depth_scale, depth_min, depth_max,
+                            weight_threshold, trunc_voxel_multiplier,
+                            range_map_down_factor);
                 });
 #else
         utility::LogError("Not compiled with CUDA, but CUDA device is used.");
@@ -282,8 +320,7 @@ void ExtractPointCloud(const core::Tensor& block_indices,
         block_color_dtype = block_value_map.at("color").GetDtype();
     }
 
-    core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (block_indices.IsCPU()) {
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
                     ExtractPointCloudCPU<tsdf_t, weight_t, color_t>(
@@ -293,7 +330,7 @@ void ExtractPointCloud(const core::Tensor& block_indices,
                             weight_threshold, valid_size);
                 });
 
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (block_indices.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
@@ -335,8 +372,7 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
         block_color_dtype = block_value_map.at("color").GetDtype();
     }
 
-    core::Device::DeviceType device_type = block_indices.GetDevice().GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (block_indices.IsCPU()) {
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {
                     ExtractTriangleMeshCPU<tsdf_t, weight_t, color_t>(
@@ -346,7 +382,7 @@ void ExtractTriangleMesh(const core::Tensor& block_indices,
                             block_resolution, voxel_size, weight_threshold,
                             vertex_count);
                 });
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (block_indices.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
         DISPATCH_VALUE_DTYPE_TO_TEMPLATE(
                 block_weight_dtype, block_color_dtype, [&] {

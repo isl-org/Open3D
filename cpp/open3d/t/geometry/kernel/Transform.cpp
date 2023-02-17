@@ -39,18 +39,15 @@ namespace transform {
 void TransformPoints(const core::Tensor& transformation, core::Tensor& points) {
     core::AssertTensorShape(points, {utility::nullopt, 3});
     core::AssertTensorShape(transformation, {4, 4});
-    core::Dtype dtype = points.GetDtype();
-    core::AssertTensorDtype(transformation, dtype);
-    core::Device device = points.GetDevice();
-    core::AssertTensorDevice(transformation, device);
 
     core::Tensor points_contiguous = points.Contiguous();
-    core::Tensor transformation_contiguous = transformation.Contiguous();
+    core::Tensor transformation_contiguous =
+            transformation.To(points.GetDevice(), points.GetDtype())
+                    .Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (points.IsCPU()) {
         TransformPointsCPU(transformation_contiguous, points_contiguous);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (points.IsCUDA()) {
         CUDA_CALL(TransformPointsCUDA, transformation_contiguous,
                   points_contiguous);
     } else {
@@ -64,18 +61,15 @@ void TransformNormals(const core::Tensor& transformation,
                       core::Tensor& normals) {
     core::AssertTensorShape(normals, {utility::nullopt, 3});
     core::AssertTensorShape(transformation, {4, 4});
-    core::Dtype dtype = normals.GetDtype();
-    core::AssertTensorDtype(transformation, dtype);
-    core::Device device = normals.GetDevice();
-    core::AssertTensorDevice(transformation, device);
 
     core::Tensor normals_contiguous = normals.Contiguous();
-    core::Tensor transformation_contiguous = transformation.Contiguous();
+    core::Tensor transformation_contiguous =
+            transformation.To(normals.GetDevice(), normals.GetDtype())
+                    .Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (normals.IsCPU()) {
         TransformNormalsCPU(transformation_contiguous, normals_contiguous);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (normals.IsCUDA()) {
         CUDA_CALL(TransformNormalsCUDA, transformation_contiguous,
                   normals_contiguous);
     } else {
@@ -91,21 +85,16 @@ void RotatePoints(const core::Tensor& R,
     core::AssertTensorShape(points, {utility::nullopt, 3});
     core::AssertTensorShape(R, {3, 3});
     core::AssertTensorShape(center, {3});
-    core::Dtype dtype = points.GetDtype();
-    core::AssertTensorDtype(R, dtype);
-    core::AssertTensorDtype(center, dtype);
-    core::Device device = points.GetDevice();
-    core::AssertTensorDevice(R, device);
-    core::AssertTensorDevice(center, device);
 
     core::Tensor points_contiguous = points.Contiguous();
-    core::Tensor R_contiguous = R.Contiguous();
-    core::Tensor center_contiguous = center.Contiguous();
+    core::Tensor R_contiguous =
+            R.To(points.GetDevice(), points.GetDtype()).Contiguous();
+    core::Tensor center_contiguous =
+            center.To(points.GetDevice(), points.GetDtype()).Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (points.IsCPU()) {
         RotatePointsCPU(R_contiguous, points_contiguous, center_contiguous);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (points.IsCUDA()) {
         CUDA_CALL(RotatePointsCUDA, R_contiguous, points_contiguous,
                   center_contiguous);
     } else {
@@ -118,18 +107,14 @@ void RotatePoints(const core::Tensor& R,
 void RotateNormals(const core::Tensor& R, core::Tensor& normals) {
     core::AssertTensorShape(normals, {utility::nullopt, 3});
     core::AssertTensorShape(R, {3, 3});
-    core::Dtype dtype = normals.GetDtype();
-    core::AssertTensorDtype(R, dtype);
-    core::Device device = normals.GetDevice();
-    core::AssertTensorDevice(R, device);
 
     core::Tensor normals_contiguous = normals.Contiguous();
-    core::Tensor R_contiguous = R.Contiguous();
+    core::Tensor R_contiguous =
+            R.To(normals.GetDevice(), normals.GetDtype()).Contiguous();
 
-    core::Device::DeviceType device_type = device.GetType();
-    if (device_type == core::Device::DeviceType::CPU) {
+    if (normals.IsCPU()) {
         RotateNormalsCPU(R_contiguous, normals_contiguous);
-    } else if (device_type == core::Device::DeviceType::CUDA) {
+    } else if (normals.IsCUDA()) {
         CUDA_CALL(RotateNormalsCUDA, R_contiguous, normals_contiguous);
     } else {
         utility::LogError("Unimplemented device");

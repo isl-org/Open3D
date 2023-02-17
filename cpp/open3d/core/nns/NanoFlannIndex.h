@@ -50,14 +50,18 @@ public:
     /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     NanoFlannIndex(const Tensor &dataset_points);
+    NanoFlannIndex(const Tensor &dataset_points, const Dtype &index_dtype);
     ~NanoFlannIndex();
     NanoFlannIndex(const NanoFlannIndex &) = delete;
     NanoFlannIndex &operator=(const NanoFlannIndex &) = delete;
 
 public:
-    bool SetTensorData(const Tensor &dataset_points) override;
+    bool SetTensorData(const Tensor &dataset_points,
+                       const Dtype &index_dtype = core::Int64) override;
 
-    bool SetTensorData(const Tensor &dataset_points, double radius) override {
+    bool SetTensorData(const Tensor &dataset_points,
+                       double radius,
+                       const Dtype &index_dtype = core::Int64) override {
         utility::LogError(
                 "NanoFlannIndex::SetTensorData with radius not implemented.");
     }
@@ -82,7 +86,7 @@ public:
     /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int32.
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
-    /// - counts: Tensor of shape {n,}, dtype Int32.
+    /// - counts: Tensor of shape {n,}, dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor &query_points,
             const Tensor &radii,
@@ -97,7 +101,7 @@ public:
     /// - indicecs: Tensor of shape {total_num_neighbors,}, dtype Int32.
     /// - distances: Tensor of shape {total_num_neighbors,}, same dtype with
     /// dataset_points.
-    /// - counts: Tensor of shape {n}, dtype Int32.
+    /// - counts: Tensor of shape {n}, dtype Int64.
     std::tuple<Tensor, Tensor, Tensor> SearchRadius(
             const Tensor &query_points,
             double radius,

@@ -33,7 +33,7 @@
 
 using namespace open3d::core::nns;
 
-template <class T>
+template <class T, class TIndex>
 void FixedRadiusSearchCPU(const torch::Tensor& points,
                           const torch::Tensor& queries,
                           double radius,
@@ -48,10 +48,10 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
                           torch::Tensor& neighbors_index,
                           torch::Tensor& neighbors_row_splits,
                           torch::Tensor& neighbors_distance) {
-    NeighborSearchAllocator<T> output_allocator(points.device().type(),
-                                                points.device().index());
+    NeighborSearchAllocator<T, TIndex> output_allocator(
+            points.device().type(), points.device().index());
 
-    open3d::core::nns::impl::FixedRadiusSearchCPU(
+    impl::FixedRadiusSearchCPU<T, TIndex>(
             neighbors_row_splits.data_ptr<int64_t>(), points.size(0),
             points.data_ptr<T>(), queries.size(0), queries.data_ptr<T>(),
             T(radius), points_row_splits.size(0),
@@ -67,8 +67,8 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
     neighbors_distance = output_allocator.NeighborsDistance();
 }
 
-#define INSTANTIATE(T)                                                        \
-    template void FixedRadiusSearchCPU<T>(                                    \
+#define INSTANTIATE(T, TIndex)                                                \
+    template void FixedRadiusSearchCPU<T, TIndex>(                            \
             const torch::Tensor& points, const torch::Tensor& queries,        \
             double radius, const torch::Tensor& points_row_splits,            \
             const torch::Tensor& queries_row_splits,                          \
@@ -80,5 +80,7 @@ void FixedRadiusSearchCPU(const torch::Tensor& points,
             torch::Tensor& neighbors_row_splits,                              \
             torch::Tensor& neighbors_distance);
 
-INSTANTIATE(float)
-INSTANTIATE(double)
+INSTANTIATE(float, int32_t)
+INSTANTIATE(float, int64_t)
+INSTANTIATE(double, int32_t)
+INSTANTIATE(double, int64_t)

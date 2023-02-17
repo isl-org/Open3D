@@ -15,14 +15,13 @@ The main function runs ``make_posegraph_for_scene`` and
 ``optimize_posegraph_for_scene``. The first function performs pairwise
 registration. The second function performs multiway registration.
 
-
 Preprocess point cloud
 ``````````````````````````````````````
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/register_fragments.py
    :language: python
-   :lineno-start: 39
-   :lines: 27,40-50
+   :lineno-start: 41
+   :lines: 27,42-54
    :linenos:
 
 This function downsamples a point cloud to make it sparser and regularly
@@ -32,14 +31,13 @@ distributed. Normals and FPFH feature are precomputed. See
 :ref:`/tutorial/pipelines/global_registration.ipynb#extract-geometric-feature`
 for more details.
 
-
 Compute initial registration
 ``````````````````````````````````````
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/register_fragments.py
    :language: python
-   :lineno-start: 81
-   :lines: 27,82-108
+   :lineno-start: 85
+   :lines: 27,86-114
    :linenos:
 
 This function computes a rough alignment between two fragments. If the fragments
@@ -48,7 +46,6 @@ RGBD odometry obtained from :ref:`reconstruction_system_make_fragments`.
 Otherwise, ``register_point_cloud_fpfh`` is called to perform global
 registration. Note that global registration is less reliable according to [Choi2015]_.
 
-
 .. _reconstruction_system_feature_matching:
 
 Pairwise global registration
@@ -56,12 +53,11 @@ Pairwise global registration
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/register_fragments.py
    :language: python
-   :lineno-start: 52
-   :lines: 27,53-79
+   :lineno-start: 54
+   :lines: 27,55-85
    :linenos:
 
 This function uses :ref:`/tutorial/pipelines/global_registration.ipynb#RANSAC` or :ref:`/tutorial/pipelines/global_registration.ipynb#fast-global-registration` for pairwise global registration.
-
 
 .. _reconstruction_system_compute_initial_registration:
 
@@ -70,8 +66,8 @@ Multiway registration
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/register_fragments.py
    :language: python
-   :lineno-start: 110
-   :lines: 27,111-131
+   :lineno-start: 114
+   :lines: 27,115-137
    :linenos:
 
 This script uses the technique demonstrated in
@@ -85,8 +81,8 @@ called for multiway registration.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/optimize_posegraph.py
    :language: python
-   :lineno-start: 66
-   :lines: 27,67-74
+   :lineno-start: 63
+   :lines: 27,64-73
    :linenos:
 
 Main registration loop
@@ -98,8 +94,8 @@ multiway registration.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/register_fragments.py
    :language: python
-   :lineno-start: 164
-   :lines: 27,164-204
+   :lineno-start: 167
+   :lines: 27,168-210
    :linenos:
 
 Results
@@ -127,7 +123,6 @@ The pose graph optimization outputs the following messages:
     Current_residual - new_residual < 1.000000e-06 * current_residual
     [GlobalOptimizationLM] total time : 0.001 sec.
     CompensateReferencePoseGraphNode : reference : 0
-
 
 There are 14 fragments and 52 valid matching pairs among the fragments. After
 23 iterations, 11 edges are detected to be false positives. After they are

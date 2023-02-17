@@ -34,28 +34,47 @@ First, install a TeX distribution such as `MacTeX <http://www.tug.org/mactex/>`_
 
     brew install ghostscript pandoc doxygen
 
-
 2. Install Python dependencies
 ``````````````````````````````
 
 .. code-block:: bash
 
-    # Install deps
-    # Patched m2r: https://github.com/sphinx-doc/sphinx/issues/7420#issuecomment-657160798
-    pip install -U sphinx==3.3.1 sphinx-rtd-theme==0.5.2 nbsphinx==0.8.3 matplotlib==3.3.3 jinja2==2.11.3 m2r2==0.2.7
-
+    pip install -r docs/requirements.txt
 
 Build
 -----
 
 First, clone and build Open3D from source and install the Open3D Python package.
-Visit :ref:`compilation` for details.
+Visit :ref:`compilation` for details. After configuration, install the Open3D
+Python package with:
+
+.. code-block:: bash
+
+    make install-pip-package -j$(nproc)
 
 .. code-block:: bash
 
     cd docs
 
     # Run `python make_docs.py --help` to usage of the flags.
-    python make_docs.py --clean_notebooks --execute_notebooks=auto --sphinx --doxygen
+    python make_docs.py --help
+
+    # Example: build .rst and C++ docs only, skip notebooks.
+    python make_docs.py --execute_notebooks=never --sphinx --doxygen
+
+    # Example: build .rst and C++ docs only, skip notebooks, with parallel build.
+    python make_docs.py --execute_notebooks=never --sphinx --doxygen --parallel
+
+    # Example: build .rst and c++ docs, execute notebooks when it has not been executed.
+    python make_docs.py --execute_notebooks=auto --sphinx --doxygen
 
 The docs html will be saved in ``docs/_out`` folder.
+
+Preview
+-------
+
+Open ``docs/_out/html/index.html`` in a web browser to preview the docs.
+
+.. code-block:: bash
+
+    google-chrome docs/_out/html/index.html

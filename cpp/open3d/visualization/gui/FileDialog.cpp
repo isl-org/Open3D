@@ -147,7 +147,7 @@ struct FileDialog::Impl {
         }
     }
 
-    void UpdateDirectoryListing() {
+    std::string UpdateDirectoryListing() {
         auto path = CalcCurrentDirectory();
 
         std::vector<std::string> raw_subdirs, raw_files;
@@ -159,21 +159,26 @@ struct FileDialog::Impl {
             auto d = utility::filesystem::GetFileNameWithoutDirectory(dir);
             entries_.emplace_back(d, DirEntry::Type::DIR);
         }
-        std::unordered_set<std::string> filter;
-        auto it = filter_idx_2_filter.find(filter_->GetSelectedIndex());
-        if (it != filter_idx_2_filter.end()) {
-            filter = it->second;
-        }
-        for (auto &file : raw_files) {
-            auto f = utility::filesystem::GetFileNameWithoutDirectory(file);
-            auto ext = utility::filesystem::GetFileExtensionInLowerCase(f);
-            if (!ext.empty()) {
-                ext = std::string(".") + ext;
+
+        // append file filters only for file modes
+        if (mode_ != Mode::OPEN_DIR) {
+            std::unordered_set<std::string> filter;
+            auto it = filter_idx_2_filter.find(filter_->GetSelectedIndex());
+            if (it != filter_idx_2_filter.end()) {
+                filter = it->second;
             }
-            if (filter.empty() || filter.find(ext) != filter.end()) {
-                entries_.emplace_back(f, DirEntry::Type::FILE);
+            for (auto &file : raw_files) {
+                auto f = utility::filesystem::GetFileNameWithoutDirectory(file);
+                auto ext = utility::filesystem::GetFileExtensionInLowerCase(f);
+                if (!ext.empty()) {
+                    ext = std::string(".") + ext;
+                }
+                if (filter.empty() || filter.find(ext) != filter.end()) {
+                    entries_.emplace_back(f, DirEntry::Type::FILE);
+                }
             }
         }
+
         std::sort(entries_.begin(), entries_.end());
 
         // Include an entry for ".." for convenience on Linux.
@@ -203,6 +208,7 @@ struct FileDialog::Impl {
             UpdateOk();
         }
         filelist_->SetItems(display);
+        return path;
     }
 
     std::string CalcCurrentDirectory() const {
@@ -223,7 +229,8 @@ struct FileDialog::Impl {
     }
 
     void UpdateOk() {
-        ok_->SetEnabled(std::string(filename_->GetText()) != "");
+        ok_->SetEnabled(mode_ == Mode::OPEN_DIR ||
+                        std::string(filename_->GetText()) != "");
     }
 };
 
@@ -253,7 +260,7 @@ FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
     layout->AddChild(impl_->filelist_);
 
     impl_->cancel_ = std::make_shared<Button>("Cancel");
-    if (mode == Mode::OPEN) {
+    if (mode == Mode::OPEN || mode == Mode::OPEN_DIR) {
         impl_->ok_ = std::make_shared<Button>("Open");
     } else if (mode == Mode::SAVE) {
         impl_->ok_ = std::make_shared<Button>("Save");
@@ -279,7 +286,8 @@ FileDialog::FileDialog(Mode mode, const char *title, const Theme &theme)
     impl_->filename_->SetOnTextChanged(
             [this](const char *) { this->impl_->UpdateOk(); });
     impl_->dirtree_->SetOnValueChanged([this](const char *, int) {
-        this->impl_->UpdateDirectoryListing();
+        auto newpath = this->impl_->UpdateDirectoryListing();
+        SetPath(newpath.c_str());
     });
     impl_->filelist_->SetOnValueChanged([this](const char *value,
                                                bool is_double_click) {
@@ -405,8 +413,14 @@ void FileDialog::OnDone() {
                 }
             }
         }
-        utility::LogInfo("[o3d] name: {}.", name);
-        this->impl_->on_done_((dir + "/" + name).c_str());
+        std::string path;
+        if (!name.empty()) {
+            utility::LogInfo("[o3d] name: {}.", name);
+            path = dir + "/" + name;
+        } else {
+            path = dir;
+        }
+        this->impl_->on_done_(path.c_str());
     } else {
         utility::LogError("FileDialog: need to call SetOnDone()");
     }

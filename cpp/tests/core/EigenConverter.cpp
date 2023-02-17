@@ -48,9 +48,8 @@ TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
     // Device transfer and dtype conversions are handled.
     for (core::Dtype dtype :
          {core::Float32, core::Float64, core::Int32, core::Int64}) {
-        // Testing on shapes {i, j} : {0, 0}, {0, 1}, {1, 0}, {1, 1}.
-        for (const auto& shape :
-             std::vector<core::SizeVector>({{0, 0}, {0, 1}, {1, 0}, {1, 1}})) {
+        for (const auto &shape :
+             std::vector<core::SizeVector>({{0, 0}, {0, 1}, {1, 0}, {2, 3}})) {
             // TensorToEigenMatrixXd.
             core::Tensor tensor_d = core::Tensor::Ones(shape, dtype, device);
             auto eigen_d =
@@ -87,6 +86,22 @@ TEST_P(EigenConverterPermuteDevices, TensorToEigenMatrix) {
             core::eigen_converter::EigenMatrixToTensor(eigen);
     EXPECT_TRUE(tensor_converted.AllClose(
             core::Tensor::Ones({5, 4}, core::Int32, cpu_device)));
+}
+
+TEST_P(EigenConverterPermuteDevices, EigenVectorToTensor) {
+    // (3, 1) tensor.
+    Eigen::Vector3i e_vector3i(0, 1, 2);
+    core::Tensor t_vector3i =
+            core::eigen_converter::EigenMatrixToTensor(e_vector3i);
+    EXPECT_TRUE(
+            t_vector3i.AllClose(core::Tensor::Init<int32_t>({{0}, {1}, {2}})));
+
+    // (4, 1) tensor.
+    Eigen::Vector4d e_vector4d(0.25, 1.00, 2.50, 3.75);
+    core::Tensor t_vector4d =
+            core::eigen_converter::EigenMatrixToTensor(e_vector4d);
+    EXPECT_TRUE(t_vector4d.AllClose(
+            core::Tensor::Init<double>({{0.25}, {1.00}, {2.50}, {3.75}})));
 }
 
 }  // namespace tests

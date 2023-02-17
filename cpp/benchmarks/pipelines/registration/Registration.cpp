@@ -30,11 +30,11 @@
 
 #include <Eigen/Eigen>
 
+#include "open3d/data/Dataset.h"
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/io/PointCloudIO.h"
 #include "open3d/pipelines/registration/TransformationEstimation.h"
-#include "open3d/utility/DataManager.h"
 #include "open3d/utility/Logging.h"
 
 namespace open3d {
@@ -42,18 +42,12 @@ namespace pipelines {
 namespace registration {
 
 // Testing parameters:
-// Filename for pointcloud registration data.
-static const std::string source_pointcloud_filename =
-        utility::GetDataPathCommon("ICP/cloud_bin_0.pcd");
-static const std::string target_pointcloud_filename =
-        utility::GetDataPathCommon("ICP/cloud_bin_1.pcd");
-
-static const double voxel_downsampling_factor = 0.02;
-
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
-static const int max_iterations = 30;
+static const int max_iterations = 10;
+
+static const double voxel_downsampling_factor = 0.02;
 
 // NNS parameter.
 static const double max_correspondence_distance = 0.05;
@@ -74,7 +68,7 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
         target = *target.VoxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                " VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                " VoxelDownsample: Impractical voxel size [< 0.001], skipping "
                 "downsampling.");
     }
 
@@ -83,11 +77,10 @@ static std::tuple<geometry::PointCloud, geometry::PointCloud> LoadPointCloud(
 
 static void BenchmarkICPLegacy(benchmark::State& state,
                                const TransformationEstimationType& type) {
-    geometry::PointCloud source;
-    geometry::PointCloud target;
-
-    std::tie(source, target) = LoadPointCloud(source_pointcloud_filename,
-                                              target_pointcloud_filename,
+    data::DemoICPPointClouds demo_icp_pointclouds;
+    geometry::PointCloud source, target;
+    std::tie(source, target) = LoadPointCloud(demo_icp_pointclouds.GetPaths(0),
+                                              demo_icp_pointclouds.GetPaths(1),
                                               voxel_downsampling_factor);
 
     std::shared_ptr<TransformationEstimation> estimation;

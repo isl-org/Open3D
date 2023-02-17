@@ -28,12 +28,13 @@
 
 import open3d as o3d
 import numpy as np
-import copy
 
 if __name__ == "__main__":
     o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
-    source_raw = o3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_0.pcd")
-    target_raw = o3d.io.read_point_cloud("../../test_data/ICP/cloud_bin_1.pcd")
+    pcd_data = o3d.data.DemoICPPointClouds()
+    source_raw = o3d.io.read_point_cloud(pcd_data.paths[0])
+    target_raw = o3d.io.read_point_cloud(pcd_data.paths[1])
+
     source = source_raw.voxel_down_sample(voxel_size=0.02)
     target = target_raw.voxel_down_sample(voxel_size=0.02)
     trans = [[0.862, 0.011, -0.507, 0.0], [-0.139, 0.967, -0.215, 0.7],
@@ -64,3 +65,4 @@ if __name__ == "__main__":
         if save_image:
             vis.capture_screen_image("temp_%04d.jpg" % i)
     vis.destroy_window()
+    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Info)

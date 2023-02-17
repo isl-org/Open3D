@@ -25,10 +25,11 @@
 // ----------------------------------------------------------------------------
 
 #include "open3d/camera/PinholeCameraIntrinsic.h"
+#include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/visualization/rendering/ColorGrading.h"
 #include "open3d/visualization/rendering/Gradient.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Model.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
@@ -49,14 +50,13 @@ class PyOffscreenRenderer {
 public:
     PyOffscreenRenderer(int width,
                         int height,
-                        const std::string &resource_path,
-                        bool headless) {
-        gui::InitializeForPython(resource_path);
+                        const std::string &resource_path) {
+        gui::InitializeForPython(resource_path, true);
         width_ = width;
         height_ = height;
-        if (headless) {
-            EngineInstance::EnableHeadless();
-        }
+        // NOTE: OffscreenRenderer now always uses headless so that a window
+        // system is never required
+        EngineInstance::EnableHeadless();
         renderer_ = new FilamentRenderer(EngineInstance::GetInstance(), width,
                                          height,
                                          EngineInstance::GetResourceManager());
@@ -66,6 +66,8 @@ public:
     ~PyOffscreenRenderer() {
         delete scene_;
         delete renderer_;
+        // Destroy Filament Engine here so OffscreenRenderer can be reused
+        EngineInstance::DestroyInstance();
     }
 
     Open3DScene *GetScene() { return scene_; }
@@ -74,8 +76,10 @@ public:
         return gui::RenderToImageWithoutWindow(scene_, width_, height_);
     }
 
-    std::shared_ptr<geometry::Image> RenderToDepthImage() {
-        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_);
+    std::shared_ptr<geometry::Image> RenderToDepthImage(
+            bool z_in_view_space = false) {
+        return gui::RenderToDepthImageWithoutWindow(scene_, width_, height_,
+                                                    z_in_view_space);
     }
 
     void SetupCamera(const camera::PinholeCameraIntrinsic &intrinsic,
@@ -145,7 +149,7 @@ void pybind_rendering_classes(py::module &m) {
                  "returns False and does nothing if the image is a different "
                  "size. It is more efficient to call update_texture() rather "
                  "than removing and adding a new texture, especially when "
-                 "changes happen frequently, such as when implmenting video. "
+                 "changes happen frequently, such as when implementing video. "
                  "add_texture(geometry.Image, bool). The first parameter is "
                  "the image, the second parameter is optional and is True "
                  "if the image is in the sRGB colorspace and False otherwise")
@@ -162,19 +166,15 @@ void pybind_rendering_classes(py::module &m) {
                       "Renderer instance that can be used for rendering to an "
                       "image");
     offscreen
-            .def(py::init([](int w, int h, const std::string &resource_path,
-                             bool headless) {
+            .def(py::init([](int w, int h, const std::string &resource_path) {
                      return std::make_shared<PyOffscreenRenderer>(
-                             w, h, resource_path, headless);
+                             w, h, resource_path);
                  }),
                  "width"_a, "height"_a, "resource_path"_a = "",
-                 "headless"_a = false,
-                 "Takes width, height and optionally a resource_path and "
-                 "headless flag. If "
-                 "unspecified, resource_path will use the resource path from "
-                 "the installed Open3D library. By default a running windowing "
-                 "session is required. To enable headless rendering set "
-                 "headless to True")
+                 "Takes width, height and optionally a resource_path. "
+                 " If unspecified, resource_path will use the resource path "
+                 "from "
+                 "the installed Open3D library.")
             .def_property_readonly(
                     "scene", &PyOffscreenRenderer::GetScene,
                     "Returns the Open3DScene for this renderer. This scene is "
@@ -205,9 +205,12 @@ void pybind_rendering_classes(py::module &m) {
                  "returned")
             .def("render_to_depth_image",
                  &PyOffscreenRenderer::RenderToDepthImage,
+                 "z_in_view_space"_a = false,
                  "Renders scene depth buffer to a float image, blocking until "
                  "the image is returned. Pixels range from 0 (near plane) to "
-                 "1 (far plane)");
+                 "1 (far plane). If z_in_view_space is set to True then pixels "
+                 "are pre-transformed into view space (i.e., distance from "
+                 "camera).");
 
     // ---- Camera ----
     py::class_<Camera, std::shared_ptr<Camera>> cam(m, "Camera",
@@ -332,51 +335,57 @@ void pybind_rendering_classes(py::module &m) {
                            "[R, G, B, A]. Color values must be in [0.0, 1.0]");
     gradient.def(py::init<>())
             .def(py::init<std::vector<Gradient::Point>>())
-            .def_property("positions", &Gradient::GetPoints,
-                          &Gradient::SetPoints)
+            .def_property("points", &Gradient::GetPoints, &Gradient::SetPoints)
             .def_property("mode", &Gradient::GetMode, &Gradient::SetMode);
 
     // ---- Material ----
-    py::class_<Material> mat(m, "Material",
-                             "Describes the real-world, physically based (PBR) "
-                             "material used to render a geometry");
+    py::class_<MaterialRecord> mat(
+            m, "MaterialRecord",
+            "Describes the real-world, physically based (PBR) "
+            "material used to render a geometry");
     mat.def(py::init<>())
-            .def_readwrite("has_alpha", &Material::has_alpha)
-            .def_readwrite("base_color", &Material::base_color)
-            .def_readwrite("base_metallic", &Material::base_metallic)
-            .def_readwrite("base_roughness", &Material::base_roughness)
-            .def_readwrite("base_reflectance", &Material::base_reflectance)
-            .def_readwrite("base_clearcoat", &Material::base_clearcoat)
+            .def_readwrite("has_alpha", &MaterialRecord::has_alpha)
+            .def_readwrite("base_color", &MaterialRecord::base_color)
+            .def_readwrite("base_metallic", &MaterialRecord::base_metallic)
+            .def_readwrite("base_roughness", &MaterialRecord::base_roughness)
+            .def_readwrite("base_reflectance",
+                           &MaterialRecord::base_reflectance)
+            .def_readwrite("base_clearcoat", &MaterialRecord::base_clearcoat)
             .def_readwrite("base_clearcoat_roughness",
-                           &Material::base_clearcoat_roughness)
-            .def_readwrite("base_anisotropy", &Material::base_anisotropy)
-            .def_readwrite("thickness", &Material::thickness)
-            .def_readwrite("transmission", &Material::transmission)
-            .def_readwrite("absorption_color", &Material::absorption_color)
+                           &MaterialRecord::base_clearcoat_roughness)
+            .def_readwrite("base_anisotropy", &MaterialRecord::base_anisotropy)
+            .def_readwrite("emissive_color", &MaterialRecord::emissive_color)
+            .def_readwrite("thickness", &MaterialRecord::thickness)
+            .def_readwrite("transmission", &MaterialRecord::transmission)
+            .def_readwrite("absorption_color",
+                           &MaterialRecord::absorption_color)
             .def_readwrite("absorption_distance",
-                           &Material::absorption_distance)
-            .def_readwrite("point_size", &Material::point_size)
-            .def_readwrite("line_width", &Material::line_width,
+                           &MaterialRecord::absorption_distance)
+            .def_readwrite("point_size", &MaterialRecord::point_size)
+            .def_readwrite("line_width", &MaterialRecord::line_width,
                            "Requires 'shader' to be 'unlitLine'")
-            .def_readwrite("albedo_img", &Material::albedo_img)
-            .def_readwrite("normal_img", &Material::normal_img)
-            .def_readwrite("ao_img", &Material::ao_img)
-            .def_readwrite("metallic_img", &Material::metallic_img)
-            .def_readwrite("roughness_img", &Material::roughness_img)
-            .def_readwrite("reflectance_img", &Material::reflectance_img)
-            .def_readwrite("clearcoat_img", &Material::clearcoat_img)
+            .def_readwrite("albedo_img", &MaterialRecord::albedo_img)
+            .def_readwrite("normal_img", &MaterialRecord::normal_img)
+            .def_readwrite("ao_img", &MaterialRecord::ao_img)
+            .def_readwrite("metallic_img", &MaterialRecord::metallic_img)
+            .def_readwrite("roughness_img", &MaterialRecord::roughness_img)
+            .def_readwrite("reflectance_img", &MaterialRecord::reflectance_img)
+            .def_readwrite("clearcoat_img", &MaterialRecord::clearcoat_img)
             .def_readwrite("clearcoat_roughness_img",
-                           &Material::clearcoat_roughness_img)
-            .def_readwrite("anisotropy_img", &Material::anisotropy_img)
-            .def_readwrite("generic_params", &Material::generic_params)
-            .def_readwrite("generic_imgs", &Material::generic_imgs)
-            .def_readwrite("gradient", &Material::gradient)
-            .def_readwrite("scalar_min", &Material::scalar_min)
-            .def_readwrite("scalar_max", &Material::scalar_max)
-            .def_readwrite("sRGB_color", &Material::sRGB_color)
-            .def_readwrite("aspect_ratio", &Material::aspect_ratio)
-            .def_readwrite("ground_plane_axis", &Material::ground_plane_axis)
-            .def_readwrite("shader", &Material::shader);
+                           &MaterialRecord::clearcoat_roughness_img)
+            .def_readwrite("anisotropy_img", &MaterialRecord::anisotropy_img)
+            .def_readwrite("ao_rough_metal_img",
+                           &MaterialRecord::ao_rough_metal_img)
+            .def_readwrite("generic_params", &MaterialRecord::generic_params)
+            .def_readwrite("generic_imgs", &MaterialRecord::generic_imgs)
+            .def_readwrite("gradient", &MaterialRecord::gradient)
+            .def_readwrite("scalar_min", &MaterialRecord::scalar_min)
+            .def_readwrite("scalar_max", &MaterialRecord::scalar_max)
+            .def_readwrite("sRGB_color", &MaterialRecord::sRGB_color)
+            .def_readwrite("aspect_ratio", &MaterialRecord::aspect_ratio)
+            .def_readwrite("ground_plane_axis",
+                           &MaterialRecord::ground_plane_axis)
+            .def_readwrite("shader", &MaterialRecord::shader);
 
     // ---- TriangleMeshModel ----
     py::class_<TriangleMeshModel, std::shared_ptr<TriangleMeshModel>> tri_model(
@@ -449,8 +458,42 @@ void pybind_rendering_classes(py::module &m) {
     // ---- View ----
     py::class_<View, UnownedPointer<View>> view(m, "View",
                                                 "Low-level view class");
+    // ---- Shadow Types ----
+    py::enum_<View::ShadowType> shadow_type(
+            view, "ShadowType", "Available shadow mapping algorithm options");
+    shadow_type.value("PCF", View::ShadowType::kPCF)
+            .value("VSM", View::ShadowType::kVSM);
+
     view.def("set_color_grading", &View::SetColorGrading,
-             "Sets the parameters to be used for the color grading algorithms");
+             "Sets the parameters to be used for the color grading algorithms")
+            .def("set_post_processing", &View::SetPostProcessing,
+                 "True to enable, False to disable post processing. Post "
+                 "processing effects include: color grading, ambient occlusion "
+                 "(and other screen space effects), and anti-aliasing.")
+            .def("set_ambient_occlusion", &View::SetAmbientOcclusion,
+                 "enabled"_a, "ssct_enabled"_a = false,
+                 "True to enable, False to disable ambient occlusion. "
+                 "Optionally, screen-space cone tracing may be enabled with "
+                 "ssct_enabled=True.")
+            .def("set_antialiasing", &View::SetAntiAliasing, "enabled"_a,
+                 "temporal"_a = false,
+                 "True to enable, False to disable anti-aliasing. Note that "
+                 "this only impacts anti-aliasing post-processing. MSAA is "
+                 "controlled separately by `set_sample_count`. Temporal "
+                 "anti-aliasing may be optionally enabled with temporal=True.")
+            .def("set_sample_count", &View::SetSampleCount,
+                 "Sets the sample count for MSAA. Set to 1 to disable MSAA. "
+                 "Typical values are 2, 4 or 8. The maximum possible value "
+                 "depends on the underlying GPU and OpenGL driver.")
+            .def("set_shadowing", &View::SetShadowing, "enabled"_a,
+                 "type"_a = View::ShadowType::kPCF,
+                 "True to enable, false to enable all shadow mapping when "
+                 "rendering this View. When enabling shadow mapping you may "
+                 "also specify one of two shadow mapping algorithms: PCF "
+                 "(default) or VSM. Note: shadowing is enabled by default with "
+                 "PCF shadow mapping.")
+            .def("get_camera", &View::GetCamera,
+                 "Returns the Camera associated with this View.");
 
     // ---- Scene ----
     py::class_<Scene, UnownedPointer<Scene>> scene(m, "Scene",
@@ -471,15 +514,15 @@ void pybind_rendering_classes(py::module &m) {
             .def("add_geometry",
                  (bool (Scene::*)(
                          const std::string &, const geometry::Geometry3D &,
-                         const Material &, const std::string &, size_t)) &
+                         const MaterialRecord &, const std::string &, size_t)) &
                          Scene::AddGeometry,
                  "name"_a, "geometry"_a, "material"_a,
                  "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
                  "Adds a Geometry with a material to the scene")
             .def("add_geometry",
                  (bool (Scene::*)(
-                         const std::string &, const t::geometry::PointCloud &,
-                         const Material &, const std::string &, size_t)) &
+                         const std::string &, const t::geometry::Geometry &,
+                         const MaterialRecord &, const std::string &, size_t)) &
                          Scene::AddGeometry,
                  "name"_a, "geometry"_a, "material"_a,
                  "downsampled_name"_a = "", "downsample_threshold"_a = SIZE_MAX,
@@ -590,14 +633,14 @@ void pybind_rendering_classes(py::module &m) {
             .def("add_geometry",
                  py::overload_cast<const std::string &,
                                    const geometry::Geometry3D *,
-                                   const Material &, bool>(
+                                   const MaterialRecord &, bool>(
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
             .def("add_geometry",
                  py::overload_cast<const std::string &,
-                                   const t::geometry::PointCloud *,
-                                   const Material &, bool>(
+                                   const t::geometry::Geometry *,
+                                   const MaterialRecord &, bool>(
                          &Open3DScene::AddGeometry),
                  "name"_a, "geometry"_a, "material"_a,
                  "add_downsampled_copy_for_fast_rendering"_a = true)
@@ -608,6 +651,15 @@ void pybind_rendering_classes(py::module &m) {
                  "added to the scene, False otherwise")
             .def("remove_geometry", &Open3DScene::RemoveGeometry,
                  "Removes the geometry with the given name")
+            .def("geometry_is_visible", &Open3DScene::GeometryIsVisible,
+                 "geometry_is_visible(name): returns True if the geometry name "
+                 "is visible")
+            .def("set_geometry_transform", &Open3DScene::SetGeometryTransform,
+                 "set_geometry_transform(name, transform): sets the pose of the"
+                 " geometry name to transform")
+            .def("get_geometry_transform", &Open3DScene::GetGeometryTransform,
+                 "get_geometry_transform(name): returns the pose of the "
+                 "geometry name in the scene")
             .def("modify_geometry_material",
                  &Open3DScene::ModifyGeometryMaterial,
                  "modify_geometry_material(name, material). Modifies the "

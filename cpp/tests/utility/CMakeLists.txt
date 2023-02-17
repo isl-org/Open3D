@@ -1,4 +1,6 @@
 target_sources(tests PRIVATE
+    Download.cpp
+    Extract.cpp
     Eigen.cpp
     FileSystem.cpp
     Helper.cpp
@@ -6,7 +8,9 @@ target_sources(tests PRIVATE
     ISAInfo.cpp
     Logging.cpp
     Preprocessor.cpp
+    ProgressBar.cpp
     Timer.cpp
+    Random.cpp
 )
 
 if (BUILD_ISPC_MODULE)

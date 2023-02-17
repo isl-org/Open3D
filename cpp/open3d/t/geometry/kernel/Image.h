@@ -34,6 +34,11 @@ namespace geometry {
 namespace kernel {
 namespace image {
 
+void To(const core::Tensor &src,
+        core::Tensor &dst,
+        double scale,
+        double offset);
+
 void ClipTransform(const core::Tensor &src,
                    core::Tensor &dst,
                    float scale,
@@ -60,6 +65,11 @@ void ColorizeDepth(const core::Tensor &src,
                    float scale,
                    float min_value,
                    float max_value);
+
+void ToCPU(const core::Tensor &src,
+           core::Tensor &dst,
+           double scale,
+           double offset);
 
 void ClipTransformCPU(const core::Tensor &src,
                       core::Tensor &dst,
@@ -89,6 +99,11 @@ void ColorizeDepthCPU(const core::Tensor &src,
                       float max_value);
 
 #ifdef BUILD_CUDA_MODULE
+void ToCUDA(const core::Tensor &src,
+            core::Tensor &dst,
+            double scale,
+            double offset);
+
 void ClipTransformCUDA(const core::Tensor &src,
                        core::Tensor &dst,
                        float scale,

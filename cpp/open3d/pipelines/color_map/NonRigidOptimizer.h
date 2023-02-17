@@ -84,7 +84,7 @@ struct NonRigidOptimizerOption {
 
     /// If a projected 3D point onto a 2D image lies in the image border within
     /// image_boundary_margin, the 3D point is considered invisible from the
-    /// camera producing the image. This parmeter is not used for visibility
+    /// camera producing the image. This parameter is not used for visibility
     /// check, but used when computing the final color assignment after color
     /// map optimization.
     int image_boundary_margin_ = 10;
@@ -100,11 +100,11 @@ struct NonRigidOptimizerOption {
     std::string debug_output_dir_ = "";
 };
 
-geometry::TriangleMesh RunNonRigidOptimizer(
-        const geometry::TriangleMesh& mesh,
-        const std::vector<geometry::RGBDImage>& images_rgbd,
-        const camera::PinholeCameraTrajectory& camera_trajectory,
-        const NonRigidOptimizerOption& option);
+std::pair<geometry::TriangleMesh, camera::PinholeCameraTrajectory>
+RunNonRigidOptimizer(const geometry::TriangleMesh& mesh,
+                     const std::vector<geometry::RGBDImage>& images_rgbd,
+                     const camera::PinholeCameraTrajectory& camera_trajectory,
+                     const NonRigidOptimizerOption& option);
 
 }  // namespace color_map
 }  // namespace pipelines

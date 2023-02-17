@@ -113,14 +113,17 @@ void Renderer::RenderToImage(
 void Renderer::RenderToDepthImage(
         View* view,
         Scene* scene,
-        std::function<void(std::shared_ptr<geometry::Image>)> cb) {
+        std::function<void(std::shared_ptr<geometry::Image>)> cb,
+        bool z_in_view_space /* = false */) {
     auto vp = view->GetViewport();
     auto render = CreateBufferRenderer();
+    double z_near = view->GetCamera()->GetNear();
     render->Configure(
             view, scene, vp[2], vp[3], 1, true,
             // the shared_ptr (render) is const unless the lambda
             // is made mutable
-            [render, cb](const RenderToBuffer::Buffer& buffer) mutable {
+            [render, cb, z_in_view_space,
+             z_near](const RenderToBuffer::Buffer& buffer) mutable {
                 auto image = std::make_shared<geometry::Image>();
                 image->width_ = int(buffer.width);
                 image->height_ = int(buffer.height);
@@ -130,21 +133,34 @@ void Renderer::RenderToDepthImage(
                                     image->num_of_channels_ *
                                     image->bytes_per_channel_);
                 memcpy(image->data_.data(), buffer.bytes, buffer.size);
-                // Filament's shaders calculate depth ranging from 1 (near)
-                // to 0 (far), which is reversed from what is normally done,
-                // so convert here so that users do not need to rediscover
-                // Filament internals. (And so we can change it back if Filament
-                // decides to swap how they do it again.)
+                // Filament's shaders calculate depth ranging from 1
+                // (near) to 0 (far), which is reversed from what is
+                // normally done, so convert here so that users do not
+                // need to rediscover Filament internals. (And so we
+                // can change it back if Filament decides to swap how
+                // they do it again.)
                 float* pixels = (float*)image->data_.data();
                 int n_pixels = image->width_ * image->height_;
-                for (int i = 0; i < n_pixels; ++i) {
-                    pixels[i] = 1.0f - pixels[i];
+                if (z_in_view_space) {
+                    for (int i = 0; i < n_pixels; ++i) {
+                        if (pixels[i] == 0.f) {
+                            pixels[i] = std::numeric_limits<float>::infinity();
+                        } else {
+                            pixels[i] = z_near / pixels[i];
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < n_pixels; ++i) {
+                        pixels[i] = 1.0f - pixels[i];
+                    }
                 }
+
                 cb(image);
-                // This does not actually cause the object to be destroyed--
-                // the lambda still has a copy--but it does ensure that the
-                // object lives long enough for the callback to get executed.
-                // The object will be freed when the callback is unassigned.
+                // This does not actually cause the object to be
+                // destroyed-- the lambda still has a copy--but it
+                // does ensure that the object lives long enough for
+                // the callback to get executed. The object will be
+                // freed when the callback is unassigned.
                 render = nullptr;
             });
 }

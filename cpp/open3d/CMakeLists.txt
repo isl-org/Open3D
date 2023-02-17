@@ -17,6 +17,33 @@ function(open3d_set_open3d_lib_properties target)
         target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
     endif()
 
+# Hide all 3rd party symbols, e.g. from header libraries.
+get_target_property(TARGET_TYPE ${target} TYPE)
+if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
+        if (APPLE)
+            file(GENERATE OUTPUT libOpen3D.map CONTENT
+                [=[*open3d*
+                   *Open3D*
+                ]=])
+            target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
+                -Wl,-exported_symbols_list
+                "${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
+        elseif (UNIX)   # Linux
+            file(GENERATE OUTPUT libOpen3D.map CONTENT
+                [=[{
+    global:
+        *open3d*;
+        extern "C++" {
+             open3d::*;
+        };
+    local: *;
+};]=])
+            target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
+                "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
+        elseif (WIN32)
+            # TODO(Sameer): Only export open3d symbols
+        endif()
+    endif()
 endfunction()
 
 # Configure a header file to pass the version settings to the source code
@@ -30,6 +57,7 @@ add_library(Open3D)
 
 add_subdirectory(camera)
 add_subdirectory(core)
+add_subdirectory(data)
 add_subdirectory(geometry)
 add_subdirectory(io)
 add_subdirectory(ml)
@@ -57,6 +85,7 @@ target_sources(Open3D PRIVATE
 open3d_ispc_target_sources_TARGET_OBJECTS(Open3D PRIVATE
     camera
     core
+    data
     geometry
     tgeometry
     tgeometry_kernel
@@ -85,6 +114,7 @@ endif()
 # Source group for Visual Studio
 add_source_group(camera)
 add_source_group(core)
+add_source_group(data)
 add_source_group(geometry)
 add_source_group(tgeometry)
 add_source_group(io)
@@ -142,6 +172,25 @@ install(FILES
         "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
         "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
         DESTINATION "${Open3D_INSTALL_CMAKE_DIR}" COMPONENT dev)
+
+if (BUILD_SHARED_LIBS AND UNIX)
+    file(CONFIGURE OUTPUT Open3D.pc.in
+         CONTENT [=[
+prefix=${pcfiledir}/../..
+libdir=${prefix}/lib
+includedir=${prefix}/include/
+
+Name: Open3D
+Description: @PROJECT_DESCRIPTION@
+URL: @PROJECT_HOMEPAGE_URL@
+Version: @PROJECT_VERSION@
+Cflags: -std=c++@CMAKE_CXX_STANDARD@ -isystem ${includedir} -isystem ${includedir}/open3d/3rdparty -D$<JOIN:$<TARGET_PROPERTY:INTERFACE_COMPILE_DEFINITIONS>, -D>
+Libs: -L${libdir} -Wl,-rpath,${libdir} -lOpen3D]=]  @ONLY NEWLINE_STYLE LF)
+    file(GENERATE OUTPUT Open3D.pc INPUT "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc.in"
+        TARGET "Open3D::Open3D")
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/Open3D.pc"
+        DESTINATION "${Open3D_INSTALL_LIB_DIR}/pkgconfig")
+endif ()
 
 # uninstall target
 if(NOT TARGET uninstall)

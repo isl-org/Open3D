@@ -32,12 +32,22 @@ set(filament_LIBRARIES
 # Locate byproducts
 set(lib_dir lib)
 if(APPLE)
-    string(APPEND lib_dir /x86_64)
+    if(APPLE_AARCH64)
+        set(lib_dir lib/arm64)
+    else()
+        set(lib_dir lib/x86_64)
+    endif()
 endif()
 
 set(lib_byproducts ${filament_LIBRARIES})
 list(TRANSFORM lib_byproducts PREPEND ${FILAMENT_ROOT}/${lib_dir}/${CMAKE_STATIC_LIBRARY_PREFIX})
 list(TRANSFORM lib_byproducts APPEND ${CMAKE_STATIC_LIBRARY_SUFFIX})
+
+set(filament_cxx_flags "${CMAKE_CXX_FLAGS} -Wno-deprecated")
+if(NOT WIN32)
+    # Issue Open3D#1909, filament#2146
+    set(filament_cxx_flags "${filament_cxx_flags} -fno-builtin")
+endif()
 
 ExternalProject_Add(
     ext_filament
@@ -47,6 +57,7 @@ ExternalProject_Add(
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/filament"
     UPDATE_COMMAND ""
     CMAKE_ARGS
+        ${ExternalProject_CMAKE_ARGS}
         -DCMAKE_BUILD_TYPE=${FILAMENT_BUILD_TYPE}
         -DCCACHE_PROGRAM=OFF  # Enables ccache, "launch-cxx" is not working.
         -DFILAMENT_ENABLE_JAVA=OFF
@@ -54,9 +65,8 @@ ExternalProject_Add(
         -DCMAKE_CXX_COMPILER=${FILAMENT_CXX_COMPILER}
         -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
         -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER}
-        $<$<NOT:$<PLATFORM_ID:Windows>>:-DCMAKE_CXX_FLAGS="-fno-builtin">  # Issue Open3D#1909, filament#2146
+        -DCMAKE_CXX_FLAGS:STRING=${filament_cxx_flags}
         -DCMAKE_INSTALL_PREFIX=${FILAMENT_ROOT}
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
         -DUSE_STATIC_CRT=${STATIC_WINDOWS_RUNTIME}
         -DUSE_STATIC_LIBCXX=ON
         -DFILAMENT_SUPPORTS_VULKAN=OFF

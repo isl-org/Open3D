@@ -170,7 +170,8 @@ void IntegrateCPU
          const core::Tensor& indices,
          const core::Tensor& block_keys,
          TensorMap& block_value_map,
-         const core::Tensor& intrinsics,
+         const core::Tensor& depth_intrinsic,
+         const core::Tensor& color_intrinsic,
          const core::Tensor& extrinsics,
          index_t resolution,
          float voxel_size,
@@ -181,7 +182,10 @@ void IntegrateCPU
     index_t resolution2 = resolution * resolution;
     index_t resolution3 = resolution2 * resolution;
 
-    TransformIndexer transform_indexer(intrinsics, extrinsics, voxel_size);
+    TransformIndexer transform_indexer(depth_intrinsic, extrinsics, voxel_size);
+    TransformIndexer colormap_indexer(
+            color_intrinsic,
+            core::Tensor::Eye(4, core::Dtype::Float64, core::Device("CPU:0")));
 
     ArrayIndexer voxel_indexer({resolution, resolution, resolution});
 
@@ -278,13 +282,26 @@ void IntegrateCPU
 
         if (integrate_color) {
             color_t* color_ptr = color_base_ptr + 3 * linear_idx;
-            input_color_t* input_color_ptr =
-                    color_indexer.GetDataPtr<input_color_t>(ui, vi);
 
-            for (index_t i = 0; i < 3; ++i) {
-                color_ptr[i] = (weight * color_ptr[i] +
-                                input_color_ptr[i] * color_multiplier) *
-                               inv_wsum;
+            // Unproject ui, vi with depth_intrinsic, then project back with
+            // color_intrinsic
+            float x, y, z;
+            transform_indexer.Unproject(ui, vi, 1.0, &x, &y, &z);
+
+            float uf, vf;
+            colormap_indexer.Project(x, y, z, &uf, &vf);
+            if (color_indexer.InBoundary(uf, vf)) {
+                ui = round(uf);
+                vi = round(vf);
+
+                input_color_t* input_color_ptr =
+                        color_indexer.GetDataPtr<input_color_t>(ui, vi);
+
+                for (index_t i = 0; i < 3; ++i) {
+                    color_ptr[i] = (weight * color_ptr[i] +
+                                    input_color_ptr[i] * color_multiplier) *
+                                   inv_wsum;
+                }
             }
         }
         *weight_ptr = weight + 1;
@@ -293,6 +310,224 @@ void IntegrateCPU
 #if defined(__CUDACC__)
     core::cuda::Synchronize();
 #endif
+}
+
+#if defined(__CUDACC__)
+void EstimateRangeCUDA
+#else
+void EstimateRangeCPU
+#endif
+        (const core::Tensor& block_keys,
+         core::Tensor& range_minmax_map,
+         const core::Tensor& intrinsics,
+         const core::Tensor& extrinsics,
+         int h,
+         int w,
+         int down_factor,
+         int64_t block_resolution,
+         float voxel_size,
+         float depth_min,
+         float depth_max,
+         core::Tensor& fragment_buffer) {
+
+    // TODO(wei): reserve it in a reusable buffer
+
+    // Every 2 channels: (min, max)
+    int h_down = h / down_factor;
+    int w_down = w / down_factor;
+    range_minmax_map = core::Tensor({h_down, w_down, 2}, core::Float32,
+                                    block_keys.GetDevice());
+    NDArrayIndexer range_map_indexer(range_minmax_map, 2);
+
+    // Every 6 channels: (v_min, u_min, v_max, u_max, z_min, z_max)
+    const int fragment_size = 16;
+
+    if (fragment_buffer.GetDataPtr() == 0 ||
+        fragment_buffer.NumElements() == 0) {
+        // Rough heuristic; should tend to overallocate
+        const int reserve_frag_buffer_size =
+                h_down * w_down / (fragment_size * fragment_size) / voxel_size;
+        fragment_buffer = core::Tensor({reserve_frag_buffer_size, 6},
+                                       core::Float32, block_keys.GetDevice());
+    }
+
+    const int frag_buffer_size = fragment_buffer.NumElements() / 6;
+
+    NDArrayIndexer frag_buffer_indexer(fragment_buffer, 1);
+    NDArrayIndexer block_keys_indexer(block_keys, 1);
+    TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
+#if defined(__CUDACC__)
+    core::Tensor count(std::vector<int>{0}, {1}, core::Int32,
+                       block_keys.GetDevice());
+    int* count_ptr = count.GetDataPtr<int>();
+#else
+    std::atomic<int> count_atomic(0);
+    std::atomic<int>* count_ptr = &count_atomic;
+#endif
+
+#ifndef __CUDACC__
+    using std::max;
+    using std::min;
+#endif
+
+    // Pass 0: iterate over blocks, fill-in an rendering fragment array
+    core::ParallelFor(
+            block_keys.GetDevice(), block_keys.GetLength(),
+            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int* key = block_keys_indexer.GetDataPtr<int>(workload_idx);
+
+                int u_min = w_down - 1, v_min = h_down - 1, u_max = 0,
+                    v_max = 0;
+                float z_min = depth_max, z_max = depth_min;
+
+                float xc, yc, zc, u, v;
+
+                // Project 8 corners to low-res image and form a rectangle
+                for (int i = 0; i < 8; ++i) {
+                    float xw = (key[0] + ((i & 1) > 0)) * block_resolution *
+                               voxel_size;
+                    float yw = (key[1] + ((i & 2) > 0)) * block_resolution *
+                               voxel_size;
+                    float zw = (key[2] + ((i & 4) > 0)) * block_resolution *
+                               voxel_size;
+
+                    w2c_transform_indexer.RigidTransform(xw, yw, zw, &xc, &yc,
+                                                         &zc);
+                    if (zc <= 0) continue;
+
+                    // Project to the down sampled image buffer
+                    w2c_transform_indexer.Project(xc, yc, zc, &u, &v);
+                    u /= down_factor;
+                    v /= down_factor;
+
+                    v_min = min(static_cast<int>(floorf(v)), v_min);
+                    v_max = max(static_cast<int>(ceilf(v)), v_max);
+
+                    u_min = min(static_cast<int>(floorf(u)), u_min);
+                    u_max = max(static_cast<int>(ceilf(u)), u_max);
+
+                    z_min = min(z_min, zc);
+                    z_max = max(z_max, zc);
+                }
+
+                v_min = max(0, v_min);
+                v_max = min(h_down - 1, v_max);
+
+                u_min = max(0, u_min);
+                u_max = min(w_down - 1, u_max);
+
+                if (v_min >= v_max || u_min >= u_max || z_min >= z_max) return;
+
+                // Divide the rectangle into small 16x16 fragments
+                int frag_v_count =
+                        ceilf(float(v_max - v_min + 1) / float(fragment_size));
+                int frag_u_count =
+                        ceilf(float(u_max - u_min + 1) / float(fragment_size));
+
+                int frag_count = frag_v_count * frag_u_count;
+                int frag_count_start = OPEN3D_ATOMIC_ADD(count_ptr, frag_count);
+                int frag_count_end = frag_count_start + frag_count;
+                if (frag_count_end >= frag_buffer_size) {
+                    return;
+                }
+
+                int offset = 0;
+                for (int frag_v = 0; frag_v < frag_v_count; ++frag_v) {
+                    for (int frag_u = 0; frag_u < frag_u_count;
+                         ++frag_u, ++offset) {
+                        float* frag_ptr = frag_buffer_indexer.GetDataPtr<float>(
+                                frag_count_start + offset);
+                        // zmin, zmax
+                        frag_ptr[0] = z_min;
+                        frag_ptr[1] = z_max;
+
+                        // vmin, umin
+                        frag_ptr[2] = v_min + frag_v * fragment_size;
+                        frag_ptr[3] = u_min + frag_u * fragment_size;
+
+                        // vmax, umax
+                        frag_ptr[4] = min(frag_ptr[2] + fragment_size - 1,
+                                          static_cast<float>(v_max));
+                        frag_ptr[5] = min(frag_ptr[3] + fragment_size - 1,
+                                          static_cast<float>(u_max));
+                    }
+                }
+            });
+#if defined(__CUDACC__)
+    int needed_frag_count = count[0].Item<int>();
+#else
+    int needed_frag_count = (*count_ptr).load();
+#endif
+
+    int frag_count = needed_frag_count;
+    if (frag_count >= frag_buffer_size) {
+        utility::LogWarning(
+                "Could not generate full range map; allocated {} fragments but "
+                "needed {}",
+                frag_buffer_size, frag_count);
+        frag_count = frag_buffer_size - 1;
+    } else {
+        utility::LogDebug("EstimateRange Allocated {} fragments and needed {}",
+                          frag_buffer_size, frag_count);
+    }
+
+    // Pass 0.5: Fill in range map to prepare for atomic min/max
+    core::ParallelFor(block_keys.GetDevice(), h_down * w_down,
+                      [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                          int v = workload_idx / w_down;
+                          int u = workload_idx % w_down;
+                          float* range_ptr =
+                                  range_map_indexer.GetDataPtr<float>(u, v);
+                          range_ptr[0] = depth_max;
+                          range_ptr[1] = depth_min;
+                      });
+
+    // Pass 1: iterate over rendering fragment array, fill-in range
+    core::ParallelFor(
+            block_keys.GetDevice(), frag_count * fragment_size * fragment_size,
+            [=] OPEN3D_DEVICE(int64_t workload_idx) {
+                int frag_idx = workload_idx / (fragment_size * fragment_size);
+                int local_idx = workload_idx % (fragment_size * fragment_size);
+                int dv = local_idx / fragment_size;
+                int du = local_idx % fragment_size;
+
+                float* frag_ptr =
+                        frag_buffer_indexer.GetDataPtr<float>(frag_idx);
+                int v_min = static_cast<int>(frag_ptr[2]);
+                int u_min = static_cast<int>(frag_ptr[3]);
+                int v_max = static_cast<int>(frag_ptr[4]);
+                int u_max = static_cast<int>(frag_ptr[5]);
+
+                int v = v_min + dv;
+                int u = u_min + du;
+                if (v > v_max || u > u_max) return;
+
+                float z_min = frag_ptr[0];
+                float z_max = frag_ptr[1];
+                float* range_ptr = range_map_indexer.GetDataPtr<float>(u, v);
+#ifdef __CUDACC__
+                atomicMinf(&(range_ptr[0]), z_min);
+                atomicMaxf(&(range_ptr[1]), z_max);
+#else
+#pragma omp critical(EstimateRangeCPU)
+                {
+                    range_ptr[0] = min(z_min, range_ptr[0]);
+                    range_ptr[1] = max(z_max, range_ptr[1]);
+                }
+#endif
+            });
+
+#if defined(__CUDACC__)
+    core::cuda::Synchronize();
+#endif
+
+    if (needed_frag_count != frag_count) {
+        utility::LogInfo("Reallocating {} fragments for EstimateRange (was {})",
+                         needed_frag_count, frag_count);
+
+        fragment_buffer = core::Tensor({needed_frag_count, 6}, core::Float32,
+                                       block_keys.GetDevice());
+    }
 }
 
 struct MiniVecCache {
@@ -326,17 +561,18 @@ void RayCastCPU
          const TensorMap& block_value_map,
          const core::Tensor& range,
          TensorMap& renderings_map,
-         const core::Tensor& intrinsics,
+         const core::Tensor& intrinsic,
          const core::Tensor& extrinsics,
          index_t h,
          index_t w,
          index_t block_resolution,
          float voxel_size,
-         float sdf_trunc,
          float depth_scale,
          float depth_min,
          float depth_max,
-         float weight_threshold) {
+         float weight_threshold,
+         float trunc_voxel_multiplier,
+         int range_map_down_factor) {
     using Key = utility::MiniVec<index_t, 3>;
     using Hash = utility::MiniVecHash<index_t, 3>;
     using Eq = utility::MiniVecEq<index_t, 3>;
@@ -447,8 +683,8 @@ void RayCastCPU
                            interp_ratio_dz_indexer.GetDataPtr();
 
     TransformIndexer c2w_transform_indexer(
-            intrinsics, t::geometry::InverseTransformation(extrinsics));
-    TransformIndexer w2c_transform_indexer(intrinsics, extrinsics);
+            intrinsic, t::geometry::InverseTransformation(extrinsics));
+    TransformIndexer w2c_transform_indexer(intrinsic, extrinsics);
 
     index_t rows = h;
     index_t cols = w;
@@ -530,7 +766,8 @@ void RayCastCPU
         index_t y = workload_idx / cols;
         index_t x = workload_idx % cols;
 
-        const float* range = range_indexer.GetDataPtr<float>(x / 8, y / 8);
+        const float* range = range_indexer.GetDataPtr<float>(
+                x / range_map_down_factor, y / range_map_down_factor);
 
         float* depth_ptr = nullptr;
         float* vertex_ptr = nullptr;
@@ -640,6 +877,7 @@ void RayCastCPU
 
         float tsdf_prev = -1.0f;
         float tsdf = 1.0;
+        float sdf_trunc = voxel_size * trunc_voxel_multiplier;
         float w = 0.0;
 
         // Camera origin
@@ -793,9 +1031,11 @@ void RayCastCPU
                 }
 
                 if (normal_ptr) {
+                    constexpr float EPSILON = 1e-5f;
                     float norm = sqrt(normal_ptr[0] * normal_ptr[0] +
                                       normal_ptr[1] * normal_ptr[1] +
                                       normal_ptr[2] * normal_ptr[2]);
+                    norm = std::max(norm, EPSILON);
                     w2c_transform_indexer.Rotate(
                             -normal_ptr[0] / norm, -normal_ptr[1] / norm,
                             -normal_ptr[2] / norm, normal_ptr + 0,
@@ -1106,12 +1346,10 @@ void ExtractTriangleMeshCPU
                 device);
     } catch (const std::runtime_error&) {
         utility::LogError(
-                "[MeshExtractionKernel] Unable to allocate assistance mesh "
-                "structure for Marching "
+                "Unable to allocate assistance mesh structure for Marching "
                 "Cubes with {} active voxel blocks. Please consider using a "
-                "larger voxel size (currently {}) for TSDF "
-                "integration, or using tsdf_volume.cpu() to perform mesh "
-                "extraction on CPU.",
+                "larger voxel size (currently {}) for TSDF integration, or "
+                "using tsdf_volume.cpu() to perform mesh extraction on CPU.",
                 n_blocks, voxel_size);
     }
 

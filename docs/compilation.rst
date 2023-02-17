@@ -11,7 +11,7 @@ System requirements
 * C++14 compiler:
 
   * Ubuntu 18.04+: GCC 5+, Clang 7+
-  * macOS 10.14+: XCode 8.0+
+  * macOS 10.15+: XCode 8.0+
   * Windows 10 (64-bit): Visual Studio 2019+
 
 * CMake: 3.19+
@@ -28,24 +28,20 @@ System requirements
 * CUDA 10.1+ (optional): Open3D supports GPU acceleration of an increasing number
   of operations through CUDA on Linux. We recommend using CUDA 11.0 for the
   best compatibility with recent GPUs and optional external dependencies such
-  as Tensorflow or PyTorch.
-
-  Please see the `official documentation
+  as Tensorflow or PyTorch. Please see the `official documentation
   <https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html>`_ to
   install the CUDA toolkit from Nvidia.
 
+* Ccache 4.0+ (optional, recommended): ccache is a compiler cache that can
+  speed up the compilation process by avoiding recompilation of the same
+  source code. Please refer to :ref:`ccache` for installation guides.
 
 Cloning Open3D
 --------------
 
-Make sure to use the ``--recursive`` flag when cloning Open3D.
-
 .. code-block:: bash
 
-    git clone --recursive https://github.com/isl-org/Open3D
-
-    # You can also update the submodule manually
-    git submodule update --init --recursive
+    git clone https://github.com/isl-org/Open3D
 
 .. _compilation_unix:
 
@@ -59,10 +55,8 @@ Ubuntu/macOS
 
 .. code-block:: bash
 
-    # On Ubuntu
+    # Only needed for Ubuntu
     util/install_deps_ubuntu.sh
-
-    # On macOS: skip this step
 
 .. _compilation_unix_python:
 
@@ -84,12 +78,15 @@ If Python binding is not needed, you can turn it off by ``-DBUILD_PYTHON_MODULE=
 
     mkdir build
     cd build
-    cmake -DCMAKE_INSTALL_PREFIX=<open3d_install_directory> ..
+    cmake ..
 
-The ``CMAKE_INSTALL_PREFIX`` argument is optional and can be used to install
-Open3D to a user location. In the absence of this argument Open3D will be
-installed to a system location where ``sudo`` is required) For more
-options of the build, see :ref:`compilation_options`.
+You can specify ``-DCMAKE_INSTALL_PREFIX=$HOME/open3d_install`` to control the
+installation directory of ``make install``. In the absence of
+``CMAKE_INSTALL_PREFIX``, Open3D will be installed to a system location where
+``sudo`` may be required.
+
+For more build options, see :ref:`compilation_options` and the root
+``CMakeLists.txt``.
 
 .. _compilation_unix_build:
 
@@ -118,7 +115,6 @@ To install Open3D C++ library:
 To link a C++ project against the Open3D C++ library, please refer to
 :ref:`cplusplus_example_project`.
 
-
 To install Open3D Python library, build one of the following options:
 
 .. code-block:: bash
@@ -134,16 +130,11 @@ To install Open3D Python library, build one of the following options:
     # This creates a .whl file that you can install manually.
     make pip-package
 
-    # Create conda package in build/lib
-    # This creates a .tar.bz2 file that you can install manually.
-    make conda-package
-
 Finally, verify the python installation with:
 
 .. code-block:: bash
 
     python -c "import open3d"
-
 
 .. _compilation_windows:
 
@@ -207,10 +198,6 @@ targets in terminal or Visual Studio.
     :: This creates a .whl file that you can install manually.
     cmake --build . --config Release --target pip-package
 
-    :: Create conda package in build/lib
-    :: This creates a .tar.bz2 file that you can install manually.
-    cmake --build . --config Release --target conda-package
-
 Finally, verify the Python installation with:
 
 .. code-block:: bash
@@ -269,18 +256,18 @@ pipelines from Open3D-ML in the python package, set ``BUNDLE_OPEN3D_ML=ON`` and
 Open3D-ML from GitHub during the build with
 ``OPEN3D_ML_ROOT=https://github.com/isl-org/Open3D-ML.git``.
 
-.. warning:: Compiling PyTorch ops with CUDA 11 may have stability issues. See
-    `Open3D issue #3324 <https://github.com/isl-org/Open3D/issues/3324>`_ and
-    `PyTorch issue #52663 <https://github.com/pytorch/pytorch/issues/52663>`_ for
-    more information on this problem.
+.. warning:: Compiling PyTorch ops with CUDA 11 and PyTorch < 1.9 may have
+    stability issues. See `Open3D issue #3324 <https://github.com/isl-org/Open3D/issues/3324>`_
+    and `PyTorch issue #52663 <https://github.com/pytorch/pytorch/issues/52663>`_
+    for more information on this problem. Official PyTorch wheels 1.9 and later
+    do not have this problem.
 
     We recommend to compile Pytorch from source
-    with compile flags ``-Xcompiler -fno-gnu-unique`` or use the `PyTorch
+    with compile flags ``-Xcompiler -fno-gnu-unique`` or use the `PyTorch 1.8.2
     wheels from Open3D.
-    <https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.1>`_
-    To reproduce the Open3D PyTorch wheels see the builder repository `here.
+    <https://github.com/isl-org/open3d_downloads/releases/tag/torch1.8.2>`_
+    To reproduce the Open3D PyTorch 1.8.2 wheels see the builder repository `here.
     <https://github.com/isl-org/pytorch_builder>`_
-
 
 The following example shows the command for building the ops with GPU support
 for all supported ML frameworks and bundling the high level Open3D-ML code.
@@ -289,6 +276,7 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
 
     # In the build directory
     cmake -DBUILD_CUDA_MODULE=ON \
+          -DGLIBCXX_USE_CXX11_ABI=OFF \
           -DBUILD_PYTORCH_OPS=ON \
           -DBUILD_TENSORFLOW_OPS=ON \
           -DBUNDLE_OPEN3D_ML=ON \
@@ -298,10 +286,10 @@ for all supported ML frameworks and bundling the high level Open3D-ML code.
     make -j install-pip-package
 
 .. note::
-    Importing Python libraries compiled with different CXX ABI may cause segfaults
-    in regex. https://stackoverflow.com/q/51382355/1255535. By default, PyTorch
-    and TensorFlow Python releases use the older CXX ABI; while when they are
-    compiled from source, newer ABI is enabled by default.
+    On Linux, importing Python libraries compiled with different CXX ABI may
+    cause segfaults in regex. https://stackoverflow.com/q/51382355/1255535. By
+    default, PyTorch and TensorFlow Python releases use the older CXX ABI; while
+    when compiled from source, the newer CXX11 ABI is enabled by default.
 
     When releasing Open3D as a Python package, we set
     ``-DGLIBCXX_USE_CXX11_ABI=OFF`` and compile all dependencies from source,
@@ -366,7 +354,7 @@ Windows
 We provide Windows MSVC static libraries built in Release and Debug mode built with
 the static Windows runtime. This corresponds to building with the ``/MT`` and
 ``/MTd`` options respectively. For the build procedure, please see
-``.github/workflows/webrtc.yml``. Other configrations are not supported.
+``.github/workflows/webrtc.yml``. Other configurations are not supported.
 
 Unit test
 ---------
@@ -379,7 +367,6 @@ To build and run C++ unit tests:
     make -j$(nproc)
     ./bin/tests
 
-
 To run Python unit tests:
 
 .. code-block:: bash
@@ -388,3 +375,74 @@ To run Python unit tests:
     pip install pytest
     make install-pip-package -j$(nproc)
     pytest ../python/test
+
+.. _ccache:
+
+Caching compilation with ccache
+-------------------------------
+
+ccache is a compiler cache that can speed up the compilation process by avoiding
+recompilation of the same source code. It can significantly speed up
+recompilation of Open3D on Linux/macOS, even if you clear the ``build``
+directory. You'll need ccache 4.0+ to cache both C++ and CUDA compilations.
+
+After installing ``ccache``, simply reconfigure and recompile the Open3D
+library. Open3D's CMake script can detect and use it automatically. You don't
+need to setup additional paths except for the ``ccache`` program itself.
+
+Ubuntu 18.04, 20.04
+```````````````````
+
+If you install ``ccache`` via ``sudo apt install ccache``, the 3.x version will
+be installed. To cache CUDA compilations, you'll need the 4.0+ version. Here, we
+demonstrate one way to setup ``ccache`` by compiling it from source, installing
+it to ``${HOME}/bin``, and adding ``${HOME}/bin`` to ``${PATH}``.
+
+.. code-block:: bash
+
+    # Clone
+    git clone https://github.com/ccache/ccache.git
+    cd ccache
+    git checkout v4.6 -b 4.6
+
+    # Build
+    mkdir build
+    cd build
+    cmake -DZSTD_FROM_INTERNET=ON \
+          -DHIREDIS_FROM_INTERNET=ON \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX=${HOME} \
+          ..
+    make -j$(nproc)
+    make install -j$(nproc)
+
+    # Add ${HOME}/bin to ${PATH} in your ~/.bashrc
+    echo "PATH=${HOME}/bin:${PATH}" >> ~/.bashrc
+
+    # Restart the terminal now, or source ~/.bashrc
+    source ~/.bashrc
+
+    # Verify `ccache` has been installed correctly
+    which ccache
+    ccache --version
+
+Ubuntu 22.04+
+`````````````
+
+.. code-block:: bash
+
+    sudo apt install ccache
+
+macOS
+`````
+
+.. code-block:: bash
+
+    brew install ccache
+
+Monitoring ccache statistics
+````````````````````````````
+
+.. code-block:: bash
+
+    ccache -s

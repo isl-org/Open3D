@@ -137,6 +137,12 @@ public:
     int GetPointSize() const;
     void SetPointSize(int size);
 
+    bool GetBasicMode() const;
+    void SetBasicMode(bool enable);
+
+    bool GetWireframeMode() const;
+    void SetWireframeMode(bool enable);
+
     bool GetUserWantsEstimateNormals();
     void EstimateNormalsClicked();
 
@@ -156,7 +162,7 @@ private:
     bool show_skybox_ = false;
     bool show_axes_ = false;
     bool show_ground_ = false;
-    bool sun_follows_cam_ = false;
+    bool sun_follows_cam_ = true;
     LightingProfile lighting_;
     MaterialType current_type_ = LIT;
     Materials current_materials_;
@@ -166,6 +172,8 @@ private:
     bool user_has_customized_lighting_ = false;
     bool displaying_point_clouds_ = false;
     bool user_wants_estimate_normals_ = false;
+    bool basic_mode_enabled_ = false;
+    bool wireframe_mode_enabled_ = false;
 
     std::function<void(bool)> on_changed_;
 

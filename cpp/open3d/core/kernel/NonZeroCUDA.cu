@@ -29,6 +29,7 @@
 #include <thrust/for_each.h>
 #include <thrust/iterator/zip_iterator.h>
 
+#include "open3d/core/CUDAUtils.h"
 #include "open3d/core/Indexer.h"
 #include "open3d/core/kernel/NonZero.h"
 
@@ -75,6 +76,7 @@ protected:
 };
 
 Tensor NonZeroCUDA(const Tensor& src) {
+    CUDAScopedDevice scoped_device(src.GetDevice());
     Tensor src_contiguous = src.Contiguous();
     const int64_t num_elements = src_contiguous.NumElements();
     const int64_t num_bytes =
@@ -95,7 +97,7 @@ Tensor NonZeroCUDA(const Tensor& src) {
         non_zero_indices.resize(thrust::distance(non_zero_indices.begin(), it));
     });
 
-    // Transform flattend indices to indices in each dimension.
+    // Transform flattened indices to indices in each dimension.
     SizeVector shape = src.GetShape();
     const int64_t num_dims = src.NumDims();
     const size_t num_non_zeros = non_zero_indices.size();

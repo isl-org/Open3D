@@ -30,9 +30,9 @@
 
 #include "open3d/core/CUDAUtils.h"
 #include "open3d/core/nns/NearestNeighborSearch.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/t/io/PointCloudIO.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
-#include "open3d/utility/DataManager.h"
 
 namespace open3d {
 namespace t {
@@ -40,18 +40,12 @@ namespace pipelines {
 namespace registration {
 
 // Testing parameters:
-// Filename for pointcloud registration data.
-static const std::string source_pointcloud_filename =
-        utility::GetDataPathCommon("ICP/cloud_bin_0.pcd");
-static const std::string target_pointcloud_filename =
-        utility::GetDataPathCommon("ICP/cloud_bin_1.pcd");
-
-static const double voxel_downsampling_factor = 0.02;
-
 // ICP ConvergenceCriteria.
 static const double relative_fitness = 1e-6;
 static const double relative_rmse = 1e-6;
 static const int max_iterations = 10;
+
+static const double voxel_downsampling_factor = 0.02;
 
 // NNS parameter.
 static const double max_correspondence_distance = 0.05;
@@ -83,7 +77,7 @@ LoadTensorPointCloudFromFile(const std::string& source_pointcloud_filename,
         target = target.VoxelDownSample(voxel_downsample_factor);
     } else {
         utility::LogWarning(
-                "VoxelDownsample: Impractical voxel size [< 0.001], skiping "
+                "VoxelDownsample: Impractical voxel size [< 0.001], skipping "
                 "downsampling.");
     }
 
@@ -107,10 +101,10 @@ static void BenchmarkICP(benchmark::State& state,
                          const core::Dtype& dtype,
                          const TransformationEstimationType& type) {
     utility::SetVerbosityLevel(utility::VerbosityLevel::Error);
-
-    geometry::PointCloud source(device), target(device);
+    data::DemoICPPointClouds demo_icp_pointclouds;
+    geometry::PointCloud source, target;
     std::tie(source, target) = LoadTensorPointCloudFromFile(
-            source_pointcloud_filename, target_pointcloud_filename,
+            demo_icp_pointclouds.GetPaths(0), demo_icp_pointclouds.GetPaths(1),
             voxel_downsampling_factor, dtype, device);
 
     std::shared_ptr<TransformationEstimation> estimation;

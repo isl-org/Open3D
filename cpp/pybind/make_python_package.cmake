@@ -33,7 +33,7 @@ foreach(COMPILED_MODULE_PATH ${COMPILED_MODULE_PATH_LIST})
 endforeach()
 # Include additional libraries that may be absent from the user system
 # eg: libc++.so and libc++abi.so (needed by filament)
-# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filname
+# The linker recognizes only library.so.MAJOR, so remove .MINOR from the filename
 foreach(PYTHON_EXTRA_LIB ${PYTHON_EXTRA_LIBRARIES})
     get_filename_component(PYTHON_EXTRA_LIB_REAL ${PYTHON_EXTRA_LIB} REALPATH)
     get_filename_component(SO_VER_NAME ${PYTHON_EXTRA_LIB_REAL} NAME)
@@ -46,18 +46,12 @@ configure_file("${PYTHON_PACKAGE_SRC_DIR}/setup.py"
                "${PYTHON_PACKAGE_DST_DIR}/setup.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/__init__.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/gui/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/gui/__init__.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/visualization/rendering/__init__.py"
-               "${PYTHON_PACKAGE_DST_DIR}/open3d/visualization/rendering/__init__.py")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/tools/cli.py"
+               "${PYTHON_PACKAGE_DST_DIR}/open3d/tools/cli.py")
+configure_file("${PYTHON_PACKAGE_SRC_DIR}/tools/app.py"
+               "${PYTHON_PACKAGE_DST_DIR}/open3d/app.py")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/open3d/web_visualizer.py"
                "${PYTHON_PACKAGE_DST_DIR}/open3d/web_visualizer.py")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/conda_build_config.yaml"
-               "${PYTHON_PACKAGE_DST_DIR}/conda_meta/conda_build_config.yaml")
-configure_file("${PYTHON_PACKAGE_SRC_DIR}/conda_meta/meta.yaml"
-               "${PYTHON_PACKAGE_DST_DIR}/conda_meta/meta.yaml")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/lib/web_visualizer.js"
                "${PYTHON_PACKAGE_DST_DIR}/js/lib/web_visualizer.js")
 configure_file("${PYTHON_PACKAGE_SRC_DIR}/js/package.json"
@@ -115,13 +109,15 @@ if (BUILD_JUPYTER_EXTENSION)
                             "npm install -g yarn.")
     endif()
 
-    # Append requirements_jupyter.txt to requirements.txt
+    # Append requirements_jupyter_install.txt to requirements.txt
+    # These will be installed when `pip install open3d`.
     execute_process(COMMAND ${CMAKE_COMMAND} -E cat
         ${PYTHON_PACKAGE_SRC_DIR}/requirements.txt
-        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter.txt
+        ${PYTHON_PACKAGE_SRC_DIR}/requirements_jupyter_install.txt
         OUTPUT_VARIABLE ALL_REQUIREMENTS
     )
-    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt ${ALL_REQUIREMENTS})
+    # The double-quote "" is important as it keeps the semicolons.
+    file(WRITE ${PYTHON_PACKAGE_DST_DIR}/requirements.txt "${ALL_REQUIREMENTS}")
 endif()
 
 if (BUILD_GUI)
@@ -129,3 +125,10 @@ if (BUILD_GUI)
     file(COPY ${GUI_RESOURCE_DIR}
          DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/")
 endif()
+
+# Add all examples to installation directory.
+file(MAKE_DIRECTORY "${PYTHON_PACKAGE_DST_DIR}/open3d/examples/")
+file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
+     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")
+file(COPY "${PYTHON_PACKAGE_SRC_DIR}/../examples/python/"
+     DESTINATION "${PYTHON_PACKAGE_DST_DIR}/open3d/examples")

@@ -35,7 +35,7 @@ namespace pipelines {
 namespace odometry {
 
 void pybind_odometry_classes(py::module &m) {
-    py::enum_<Method>(m, "Method", "Tensor odometry esitmation method.")
+    py::enum_<Method>(m, "Method", "Tensor odometry estimation method.")
             .value("PointToPlane", Method::PointToPlane)
             .value("Intensity", Method::Intensity)
             .value("Hybrid", Method::Hybrid)
@@ -269,6 +269,12 @@ Colored Point Cloud Registration Revisited, ICCV, 2017.)",
           "intensity_huber_delta"_a);
     docstring::FunctionDocInject(m, "compute_odometry_result_hybrid",
                                  map_shared_argument_docstrings);
+
+    m.def("compute_odometry_information_matrix",
+          &ComputeOdometryInformationMatrix,
+          py::call_guard<py::gil_scoped_release>(), "source_depth"_a,
+          "target_depth"_a, "intrinsic"_a, "source_to_target"_a,
+          "dist_threshold"_a, "depth_scale"_a = 1000.0, "depth_max"_a = 3.0);
 }
 
 void pybind_odometry(py::module &m) {

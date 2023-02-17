@@ -3,6 +3,7 @@
 Reference
 -------------------------------------
 
+.. [ArujoAndOliveira2020] A. Araújo and M. Oliveira, A robust statistics approach for plane detection in unorganized point clouds, Pattern Recognition, 2020
 .. [Bernardini1999] F. Bernardini and J. Mittleman and HRushmeier and C. Silva and G. Taubin: The ball-pivoting algorithm for surface reconstruction, IEEE transactions on visualization and computer graphics, 5(4), 349-359, 1999
 .. [BeslAndMcKay1992] Paul J. Besl and Neil D. McKay, A Method for Registration of 3D Shapes, PAMI, 1992.
 .. [ChenAndMedioni1992] Y. Chen and G. G. Medioni, Object modelling by registration of multiple range images, Image and Vision Computing, 10(3), 1992.
@@ -28,3 +29,4 @@ Reference
 .. [Zhou2016] Q.-Y. Zhou, J. Park, and V. Koltun, Fast Global Registration, ECCV, 2016.
 .. [Babin2019] P. Babin, P. Giguère and F. Pomerleau: Analysis of Robust Functions for Registration Algorithms, ICRA, 2019.
 .. [Segal2009] A. Segal, D. Haehnel and S. Thrun: Generalized-icp, RSS, 2009.
+.. [Dong2021] W. Dong, Y. Lao, M. Kaess and V. Koltun: ASH: A Modern Framework for Parallel Spatial Hashing in 3D Perception, arXiv, 2021.

@@ -45,7 +45,7 @@ void PrintHelp() {
     utility::LogInfo("    --intrinsic_path [camera_intrinsic]");
     utility::LogInfo("    --block_count [=40000]");
     utility::LogInfo("    --depth_scale [=1000.0]");
-    utility::LogInfo("    --max_depth [=3.0]");
+    utility::LogInfo("    --depth_max [=3.0]");
     utility::LogInfo("    --sdf_trunc [=0.04]");
     utility::LogInfo("    --device [CPU:0]");
     utility::LogInfo("    --mesh");
@@ -132,15 +132,14 @@ int main(int argc, char* argv[]) {
             argc, argv, "--voxel_size", 3.f / 512.f));
     float depth_scale = static_cast<float>(utility::GetProgramOptionAsDouble(
             argc, argv, "--depth_scale", 1000.f));
-    float max_depth = static_cast<float>(
-            utility::GetProgramOptionAsDouble(argc, argv, "--max_depth", 3.f));
-    float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
-            argc, argv, "--sdf_trunc", 0.04f));
-    t::geometry::TSDFVoxelGrid voxel_grid({{"tsdf", core::Dtype::Float32},
-                                           {"weight", core::Dtype::UInt16},
-                                           {"color", core::Dtype::UInt16}},
-                                          voxel_size, sdf_trunc, 16,
-                                          block_count, device);
+    float depth_max = static_cast<float>(
+            utility::GetProgramOptionAsDouble(argc, argv, "--depth_max", 3.f));
+    // float sdf_trunc = static_cast<float>(utility::GetProgramOptionAsDouble(
+    //         argc, argv, "--sdf_trunc", 0.04f));
+    t::geometry::VoxelBlockGrid voxel_grid(
+            {"tsdf", "weight", "color"},
+            {core::Dtype::Float32, core::Dtype::Float32, core::Dtype::Float32},
+            {{1}, {1}, {3}}, voxel_size, 16, block_count, device);
 
     // Load control grid
     core::Tensor ctr_grid_keys =
@@ -177,20 +176,26 @@ int main(int argc, char* argv[]) {
 
             t::geometry::RGBDImage rgbd_projected =
                     ctr_grid.Deform(rgbd, intrinsic_t, extrinsic_local_t,
-                                    depth_scale, max_depth);
-            voxel_grid.Integrate(rgbd_projected.depth_, rgbd_projected.color_,
-                                 intrinsic_t, extrinsic_t, depth_scale,
-                                 max_depth);
+                                    depth_scale, depth_max);
+
+            core::Tensor frustum_block_coords =
+                    voxel_grid.GetUniqueBlockCoordinates(
+                            rgbd_projected.depth_, intrinsic_t, extrinsic_t,
+                            depth_scale, depth_max);
+
+            voxel_grid.Integrate(frustum_block_coords, rgbd_projected.depth_,
+                                 rgbd_projected.color_, intrinsic_t,
+                                 extrinsic_t, depth_scale, depth_max);
             timer.Stop();
 
             ++k;
             utility::LogInfo("{}: Deformation + Integration takes {}", k,
-                             timer.GetDuration());
+                             timer.GetDurationInMillisecond());
         }
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--mesh")) {
-        auto mesh = voxel_grid.ExtractSurfaceMesh();
+        auto mesh = voxel_grid.ExtractTriangleMesh();
         auto mesh_legacy =
                 std::make_shared<geometry::TriangleMesh>(mesh.ToLegacy());
         open3d::io::WriteTriangleMesh("mesh_" + device.ToString() + ".ply",
@@ -198,7 +203,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (utility::ProgramOptionExists(argc, argv, "--pointcloud")) {
-        auto pcd = voxel_grid.ExtractSurfacePoints();
+        auto pcd = voxel_grid.ExtractPointCloud();
         auto pcd_legacy =
                 std::make_shared<open3d::geometry::PointCloud>(pcd.ToLegacy());
         open3d::io::WritePointCloud("pcd_" + device.ToString() + ".ply",

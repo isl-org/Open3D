@@ -13,16 +13,17 @@ function(open3d_make_cuda_architectures cuda_archs)
 
     if(BUILD_COMMON_CUDA_ARCHS)
         # Build with all supported architectures for previous 2 generations and
-        # M0 (minor=0) architectures for previous generations (inluding
+        # M0 (minor=0) architectures for previous generations (including
         # deprecated). Note that cubin for M0 runs on GPUs with architecture Mx.
         # This is a tradeoff between binary size / build time and runtime on
-        # older architectures.
-        # See https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility.
+        # older architectures. See:
+        # https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#building-for-maximum-compatibility
         # https://docs.nvidia.com/cuda/ampere-compatibility-guide/index.html#application-compatibility-on-ampere
+        # https://github.com/Kitware/CMake/blob/master/Modules/FindCUDA/select_compute_arch.cmake
         if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.1")
-            set(${cuda_archs} 35-real 50-real 60-real 70-real 72-real 75-real 80-real 86)
+            set(${cuda_archs} 60-real 70-real 72-real 75-real 80-real 86)
         elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL "11.0")
-            set(${cuda_archs} 35-real 50-real 60-real 70-real 72-real 75-real 80)
+            set(${cuda_archs} 60-real 70-real 72-real 75-real 80)
         else()
             set(${cuda_archs} 30-real 50-real 60-real 70-real 72-real 75)
         endif()

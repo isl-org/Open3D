@@ -26,7 +26,13 @@
 
 #pragma once
 
-#include "pybind/core/tensor_converter.h"
+#include "pybind/open3d_pybind.h"
+
+namespace open3d {
+namespace core {
+class Tensor;
+}
+}  // namespace open3d
 
 // Define type caster allowing implicit conversion to Tensor from common types.
 // Needs to be included in each compilation unit.
@@ -35,30 +41,11 @@ namespace detail {
 template <>
 struct type_caster<open3d::core::Tensor>
     : public type_caster_base<open3d::core::Tensor> {
-    using base = type_caster_base<open3d::core::Tensor>;
-
 public:
-    bool load(py::handle src, bool convert) {
-        if (base::load(src, convert)) {
-            return true;
-        }
+    bool load(handle src, bool convert);
 
-        if (convert) {
-            std::string class_name(py::str(src.get_type()));
-            if (class_name == "<class 'bool'>" ||
-                class_name == "<class 'int'>" ||
-                class_name == "<class 'float'>" ||
-                class_name == "<class 'list'>" ||
-                class_name == "<class 'tuple'>" ||
-                class_name == "<class 'numpy.ndarray'>") {
-                auto tmp = open3d::core::PyHandleToTensor(src);
-                value = new open3d::core::Tensor(tmp);
-                return true;
-            }
-        }
-
-        return false;
-    }
+private:
+    std::unique_ptr<open3d::core::Tensor> holder_;
 };
 
 }  // namespace detail

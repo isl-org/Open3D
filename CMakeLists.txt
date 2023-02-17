@@ -1,27 +1,40 @@
-cmake_minimum_required(VERSION 3.19.2)
+cmake_minimum_required(VERSION 3.20)
 # If you're using Ubuntu 18.04, we suggest you install the latest CMake from the
-# official repository https://apt.kitware.com/.  CMake 3.19+ is required to:
+# official repository https://apt.kitware.com/.
+#
+# CMake 3.19+ is required to:
 # - allow linking with OBJECT libraries
 # - prevent erroneous -gencode option deduplication with CUDA
 # - simplify generator expressions for selecting compile flags and setting
 #   global hardened link flags
-# - parse JSON files for downloading files from the open3d_downloads repository
 # - use first-class language support for ISPC (3.19.2 patch release required)
+#
+# CMake 3.20+ is required to:
+# - detect IntelLLVM compiler for SYCL
 
 if (APPLE)
-set (CMAKE_OSX_DEPLOYMENT_TARGET "10.14" CACHE STRING
+set (CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING
     "Minimum OS X deployment version" FORCE)
 endif()
 
+# CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
+# which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
 if(UNIX AND NOT APPLE)
-    # CMAKE_HOST_SYSTEM_PROCESSOR is only available after calling project(),
-    # which depends on ${OPEN3D_VERSION}, which depends on ${DEVELOPER_BUILD}.
-    execute_process(COMMAND uname -p
+    execute_process(COMMAND uname -m
         OUTPUT_VARIABLE PROCESSOR_ARCH
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     if(PROCESSOR_ARCH STREQUAL "aarch64")
         set(LINUX_AARCH64 TRUE)
+    endif()
+endif()
+if(APPLE)
+    execute_process(COMMAND uname -m
+        OUTPUT_VARIABLE PROCESSOR_ARCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(PROCESSOR_ARCH STREQUAL "arm64")
+        set(APPLE_AARCH64 TRUE)
     endif()
 endif()
 
@@ -35,45 +48,79 @@ option(BUILD_BENCHMARKS           "Build the micro benchmarks"               OFF
 option(BUILD_PYTHON_MODULE        "Build the python module"                  ON )
 option(BUILD_CUDA_MODULE          "Build the CUDA module"                    OFF)
 option(BUILD_COMMON_CUDA_ARCHS    "Build for common CUDA GPUs (for release)" OFF)
-option(BUILD_CACHED_CUDA_MANAGER  "Build the cached CUDA memory manager"     ON )
-if(NOT LINUX_AARCH64)
-    option(BUILD_ISPC_MODULE          "Build the ISPC module"                    ON )
+option(ENABLE_CACHED_CUDA_MANAGER "Enable cached CUDA memory manager"        ON )
+if(NOT LINUX_AARCH64 AND NOT APPLE_AARCH64)
+    option(BUILD_ISPC_MODULE      "Build the ISPC module"                    ON )
 else()
-    option(BUILD_ISPC_MODULE          "Build the ISPC module"                    OFF)
+    option(BUILD_ISPC_MODULE      "Build the ISPC module"                    OFF)
 endif()
 option(BUILD_COMMON_ISPC_ISAS     "Build for common ISPC ISAs (for release)" OFF)
 option(BUILD_GUI                  "Builds new GUI"                           ON )
 option(WITH_OPENMP                "Use OpenMP multi-threading"               ON )
 option(WITH_IPPICV                "Use Intel Performance Primitives"         ON )
 option(ENABLE_HEADLESS_RENDERING  "Use OSMesa for headless rendering"        OFF)
-cmake_dependent_option(
-       STATIC_WINDOWS_RUNTIME     "Use static (MT/MTd) Windows runtime"      ON
-       "NOT BUILD_SHARED_LIBS"                                               OFF)
-option(GLIBCXX_USE_CXX11_ABI      "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
-if(WIN32 OR UNIX AND NOT LINUX_AARCH64)
-    cmake_dependent_option(BUILD_WEBRTC "Build WebRTC visualizer" ON "BUILD_GUI" OFF)
+if(BUILD_SHARED_LIBS)
+    option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      OFF)
+else()
+    option(STATIC_WINDOWS_RUNTIME "Use static (MT/MTd) Windows runtime"      ON )
+endif()
+option(BUILD_SYCL_MODULE          "Build SYCL module with Intel oneAPI"      OFF)
+if(BUILD_SYCL_MODULE)
+    option(GLIBCXX_USE_CXX11_ABI  "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON )
+else()
+    option(GLIBCXX_USE_CXX11_ABI  "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
+endif()
+option(ENABLE_SYCL_UNIFIED_SHARED_MEMORY "Enable SYCL unified shared memory" OFF)
+if(BUILD_GUI AND (WIN32 OR UNIX AND NOT LINUX_AARCH64 AND NOT APPLE_AARCH64))
+    option(BUILD_WEBRTC           "Build WebRTC visualizer"                  ON )
 else()
     option(BUILD_WEBRTC           "Build WebRTC visualizer"                  OFF)
 endif()
 option(BUILD_JUPYTER_EXTENSION    "Build Jupyter, requires BUILD_WEBRTC=ON"  OFF)
 
 # 3rd-party build options
-option(USE_BLAS                   "Use BLAS/LAPACK instead of MKL"           OFF)
+if(LINUX_AARCH64 OR APPLE_AARCH64)
+    option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           ON )
+else()
+    option(USE_BLAS               "Use BLAS/LAPACK instead of MKL"           OFF)
+endif()
+if(USE_BLAS)
+    option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        OFF)
+else()
+    option(USE_SYSTEM_BLAS        "Use system pre-installed openblas"        ON )
+endif()
+option(USE_SYSTEM_ASSIMP          "Use system pre-installed assimp"          OFF)
+option(USE_SYSTEM_CURL            "Use system pre-installed curl"            OFF)
 option(USE_SYSTEM_EIGEN3          "Use system pre-installed eigen3"          OFF)
+option(USE_SYSTEM_FILAMENT        "Use system pre-installed filament"        OFF)
 option(USE_SYSTEM_FMT             "Use system pre-installed fmt"             OFF)
 option(USE_SYSTEM_GLEW            "Use system pre-installed glew"            OFF)
 option(USE_SYSTEM_GLFW            "Use system pre-installed glfw"            OFF)
+option(USE_SYSTEM_GOOGLETEST      "Use system pre-installed Googletest"      OFF)
 option(USE_SYSTEM_IMGUI           "Use system pre-installed imgui"           OFF)
 option(USE_SYSTEM_JPEG            "Use system pre-installed jpeg"            OFF)
+option(USE_SYSTEM_JSONCPP         "Use system pre-installed jsoncpp"         OFF)
 option(USE_SYSTEM_LIBLZF          "Use system pre-installed liblzf"          OFF)
+option(USE_SYSTEM_MSGPACK         "Use system pre-installed msgpack"         OFF)
+option(USE_SYSTEM_NANOFLANN       "Use system pre-installed nanoflann"       OFF)
+option(USE_SYSTEM_OPENSSL         "Use system pre-installed OpenSSL"         OFF)
 option(USE_SYSTEM_PNG             "Use system pre-installed png"             OFF)
 option(USE_SYSTEM_PYBIND11        "Use system pre-installed pybind11"        OFF)
 option(USE_SYSTEM_QHULLCPP        "Use system pre-installed qhullcpp"        OFF)
+option(USE_SYSTEM_TBB             "Use system pre-installed TBB"             OFF)
 option(USE_SYSTEM_TINYGLTF        "Use system pre-installed tinygltf"        OFF)
 option(USE_SYSTEM_TINYOBJLOADER   "Use system pre-installed tinyobjloader"   OFF)
-option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"               OFF)
+option(USE_SYSTEM_VTK             "Use system pre-installed VTK"             OFF)
+option(USE_SYSTEM_ZEROMQ          "Use system pre-installed ZeroMQ"          OFF)
+if(LINUX_AARCH64 OR APPLE_AARCH64)
+    option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                ON )
+    option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           ON )
+else()
+    option(BUILD_VTK_FROM_SOURCE      "Build VTK from source"                OFF)
+    option(BUILD_FILAMENT_FROM_SOURCE "Build filament from source"           OFF)
+endif()
+
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
-option(WITH_FAISS                 "Enable Faiss"                             ON )
 
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)
@@ -100,8 +147,8 @@ endif()
 # https://blog.kitware.com/cmake-and-the-default-build-type/
 if(NOT CMAKE_CONFIGURATION_TYPES)
     if(NOT CMAKE_BUILD_TYPE)
-        message(STATUS "Setting build type to RelWithDebInfo as none was specified.")
-        set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Choose the type of build." FORCE)
+        message(STATUS "Setting build type to Release as none was specified.")
+        set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
         # Set the possible values of build type for cmake-gui.
         set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
                     "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
@@ -119,12 +166,16 @@ if (CCACHE)
     endif()
 endif()
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)  # URL contents timestamped by download time
+endif()
 # In ExternalProject_Add, if OPEN3D_THIRD_PARTY_DOWNLOAD_DIR is specified, CMake will
 # use this directory to cache downloaded 3rd party dependencies and automatically skip
 # downloading from the Internet if the files are available. This is only supported by
 # a limited number of 3rd party libraries.
-set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads")
-message(STATUS "Downloading 3rdparty dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
+set(OPEN3D_THIRD_PARTY_DOWNLOAD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty_downloads"
+    CACHE PATH "Third-party download directory for caching.")
+message(STATUS "Downloading third-party dependencies to ${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}")
 
 set(FILAMENT_PRECOMPILED_ROOT "" CACHE PATH "Path to precompiled Filament library (used if BUILD_FILAMENT_FROM_SOURCE=OFF)")
 
@@ -139,21 +190,15 @@ if(NOT USE_SYSTEM_GLFW)
 endif()
 cmake_policy(GET CMP0072 CMP0072_VALUE)
 
-# Set BLAS/LAPACK library preference.
-if(LINUX_AARCH64)
-    if(NOT USE_BLAS)
-        set(USE_BLAS ON)
-        message(WARNING "ARM CPU detected, setting USE_BLAS=ON.")
-    endif()
-    if(BUILD_GUI AND (NOT BUILD_FILAMENT_FROM_SOURCE))
-        set(BUILD_FILAMENT_FROM_SOURCE ON)
-        message(WARNING "ARM CPU detected, setting BUILD_FILAMENT_FROM_SOURCE=ON.")
-    endif()
-endif()
-
 # Catch a few incompatible build options
-if (LINUX_AARCH64 AND BUILD_ISPC_MODULE)
+if ((LINUX_AARCH64 OR APPLE_AARCH64) AND BUILD_ISPC_MODULE)
     message(FATAL_ERROR "ISPC module is not yet supported on ARM Linux")
+endif()
+if ((LINUX_AARCH64 OR APPLE_AARCH64) AND NOT BUILD_FILAMENT_FROM_SOURCE)
+    message(FATAL_ERROR "ARM CPU detected, you must set BUILD_FILAMENT_FROM_SOURCE=ON.")
+endif()
+if ((LINUX_AARCH64 OR APPLE_AARCH64) AND NOT USE_BLAS)
+    message(FATAL_ERROR "ARM CPU detected, you must set USE_BLAS=ON.")
 endif()
 if (APPLE AND ENABLE_HEADLESS_RENDERING)
     message(WARNING "Headless rendering is not supported on Mac OS")
@@ -206,9 +251,50 @@ string(CONCAT OPEN3D_VERSION
     ".${OPEN3D_VERSION_PATCH}"
 )
 set(OPEN3D_VERSION_FULL "${OPEN3D_VERSION}${OPEN3D_VERSION_DEVHASH}")
+# Set additional info
+set(PROJECT_EMAIL       "info@open3d.org")
+set(PROJECT_DOCS        "http://www.open3d.org/docs")
+set(PROJECT_CODE        "https://github.com/isl-org/Open3D")
+set(PROJECT_ISSUES      "https://github.com/isl-org/Open3D/issues")
 
-project(Open3D VERSION ${OPEN3D_VERSION} LANGUAGES C CXX)
+project(Open3D
+    VERSION ${OPEN3D_VERSION}
+    # Set PROJECT_DESCRIPTION
+    DESCRIPTION "Open3D: A Modern Library for 3D Data Processing."
+    # Set PROJECT_HOMEPAGE_URL
+    HOMEPAGE_URL "http://www.open3d.org"
+    LANGUAGES C CXX)
 message(STATUS "Open3D ${OPEN3D_VERSION_FULL}")
+
+# Check SYCL compatiblility
+if (BUILD_SYCL_MODULE AND NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    message(FATAL_ERROR "BUILD_SYCL_MODULE requires IntelLLVM (DPC++) compiler, "
+                        "but got CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID} "
+                        "and CMAKE_CXX_COMPILER: ${CMAKE_CXX_COMPILER}.")
+endif()
+if (BUILD_SYCL_MODULE AND (NOT UNIX OR APPLE))
+    message(FATAL_ERROR "Open3D SYCL support is only available on Linux")
+endif()
+if(BUILD_SYCL_MODULE AND NOT GLIBCXX_USE_CXX11_ABI)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires GLIBCXX_USE_CXX11_ABI=ON")
+endif()
+if(BUILD_SYCL_MODULE AND BUILD_TENSORFLOW_OPS)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires BUILD_TENSORFLOW_OPS=OFF")
+endif()
+if(BUILD_SYCL_MODULE AND BUILD_PYTORCH_OPS)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE=ON requires BUILD_PYTORCH_OPS=OFF")
+endif()
+if(BUILD_SYCL_MODULE AND BUILD_CUDA_MODULE)
+    message(FATAL_ERROR "BUILD_SYCL_MODULE and BUILD_SYCL_MODULE cannot be on at the same time for now.")
+endif()
+
+# Global flag to set CXX standard.
+# This does not affect 3rd party libraries.
+if (BUILD_SYCL_MODULE)
+    set(CMAKE_CXX_STANDARD 17)
+else()
+    set(CMAKE_CXX_STANDARD 14)
+endif()
 
 # FIXME: Remove this workaround once a fixed Visual Studio 16.10 version is released.
 if (BUILD_CUDA_MODULE
@@ -216,7 +302,6 @@ if (BUILD_CUDA_MODULE
     AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.29"
 )
     # Keep C++14 standard for unaffected C++ files, but use C++17 for CUDA files.
-    set(CMAKE_CXX_STANDARD 14)
     set(CMAKE_CUDA_STANDARD 17)
     # Suppress warnings for deprecated C++17 functions.
     add_compile_definitions($<$<COMPILE_LANGUAGE:CUDA>:_SILENCE_CXX17_RESULT_OF_DEPRECATION_WARNING>)
@@ -225,16 +310,16 @@ if (BUILD_CUDA_MODULE
 endif()
 
 # CMake modules
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/CMake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cmake")
 
 # Setup Python executable
 if(NOT DEFINED Python3_FIND_REGISTRY)
     # Only consider PATH variable on Windows by default
     set(Python3_FIND_REGISTRY NEVER)
 endif()
-find_package(Python3 3.6...<3.10
-             COMPONENTS Interpreter Development
-)
+# Requires Python 3.6+
+find_package(Python3 3.6
+             COMPONENTS Interpreter Development)
 if (Python3_FOUND)
     # Setup PYTHON_EXECUTABLE for 3rdparty modules
     # which still use the deprecated find_package(PythonInterp)
@@ -242,7 +327,7 @@ if (Python3_FOUND)
         "Deprecated path to the Python executable (for 3rdparty only)" FORCE)
 else()
     if (BUILD_PYTHON_MODULE)
-        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python 3.6-3.9. Please ensure it is in PATH.")
+        message(FATAL_ERROR "BUILD_PYTHON_MODULE=ON requires Python >= 3.6. Please ensure it is in PATH.")
     endif()
 endif()
 
@@ -262,13 +347,6 @@ string(CONCAT PROJECT_VERSION_THREE_NUMBER "${OPEN3D_VERSION_MAJOR}"
 if(NOT DEFINED PYPI_PACKAGE_NAME)
     set(PYPI_PACKAGE_NAME "open3d")
 endif()
-
-# Set additional info
-set(PROJECT_EMAIL   "info@open3d.org")
-set(PROJECT_HOME    "http://www.open3d.org")
-set(PROJECT_DOCS    "http://www.open3d.org/docs")
-set(PROJECT_CODE    "https://github.com/isl-org/Open3D")
-set(PROJECT_ISSUES  "https://github.com/isl-org/Open3D/issues")
 
 # Set installation paths
 if(UNIX OR CYGWIN)
@@ -296,19 +374,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # Add -fPIC for library and -fPIE for executable to compiler and linker. Does not add -pie !
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-include(Open3DMakeHardeningFlags)
-open3d_make_hardening_flags(HARDENING_CFLAGS HARDENING_LDFLAGS)
-open3d_make_hardening_definitions(HARDENING_DEFINITIONS)
-
-message(STATUS "Using security hardening compiler flags: ${HARDENING_CFLAGS}")
-message(STATUS "Using security hardening linker flags: ${HARDENING_LDFLAGS}")
-message(STATUS "Using security hardening compiler definitions: ${HARDENING_DEFINITIONS}")
-
-add_compile_options("${HARDENING_CFLAGS}")
-add_link_options("${HARDENING_LDFLAGS}")
-add_compile_definitions("${HARDENING_DEFINITIONS}")
-
-# Explicitly specifiy the preference of using -pthread over -lpthread.
+# Explicitly specify the preference of using -pthread over -lpthread.
 # This must be defined here since CUDA calls find_package(Threads) internally.
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 
@@ -376,7 +442,7 @@ endif()
 # OS specific settings
 if(WIN32)
     # Windows defaults to hidden symbol visibility, override that
-    # TODO: It would be better to explictly export symbols.
+    # TODO: It would be better to explicitly export symbols.
     #       Then, we could use -fvisibility=hidden for Linux as well
     SET(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
     if(MSVC)
@@ -396,20 +462,8 @@ if(WIN32)
     endif()
 endif()
 
-# Downloads files from https://github.com/isl-org/open3d_downloads to
-# Open3D/examples/test_data/open3d_downloads.
-add_custom_target(open3d_downloads
-    COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/examples/test_data/download_test_data.cmake
-    COMMENT ""
-)
-
 # Folder view for project files
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-# Check if the compiler defines the _GLIBCXX_USE_CXX11_ABI macro
-include(CheckCXXSourceCompiles)
-check_cxx_source_compiles("#include <cxxabi.h>
-int main() { return _GLIBCXX_USE_CXX11_ABI; }" HAS_GLIBCXX_USE_CXX11_ABI)
 
 macro(add_source_group module_name)
     file(GLOB MODULE_HEADER_FILES "${module_name}/*.h")
@@ -430,6 +484,7 @@ endmacro()
 include(Open3DLink3rdpartyLibraries)
 include(Open3DSetGlobalProperties)
 include(Open3DShowAndAbortOnWarning)
+include(Open3DSYCLTargetSources)
 
 # Enumerate all third-party libraries which we need later
 # This creates the necessary targets and sets the
@@ -460,17 +515,19 @@ if (Python3_EXECUTABLE)
     # `make apply-style` applies style for c++/cuda/python/ipynb files
     add_custom_target(apply-style
         COMMAND ${Python3_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --do_apply_style
+        ${CMAKE_CURRENT_SOURCE_DIR}/util/check_style.py --apply
         COMMENT "Python executable used for style check: ${Python3_EXECUTABLE}."
     )
 endif()
+
+include(Open3DPackaging)
 
 # `make check-cpp-style` checks style for c++/cuda files.
 # This works outside of python virtualenv.
 add_custom_target(check-cpp-style
     COMMAND ${CMAKE_COMMAND}
     -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -DDO_APPLY_STYLE=OFF
+    -DAPPLY=OFF
     -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
 )
 
@@ -479,7 +536,7 @@ add_custom_target(check-cpp-style
 add_custom_target(apply-cpp-style
     COMMAND ${CMAKE_COMMAND}
     -DPROJECT_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
-    -DDO_APPLY_STYLE=ON
+    -DAPPLY=ON
     -P ${CMAKE_CURRENT_SOURCE_DIR}/util/check_cpp_style.cmake
 )
 

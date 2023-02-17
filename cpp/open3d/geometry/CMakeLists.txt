@@ -19,6 +19,7 @@ target_sources(geometry PRIVATE
     PointCloudCluster.cpp
     PointCloudFactory.cpp
     PointCloudSegmentation.cpp
+    PointCloudPlanarPatchDetection.cpp
     Qhull.cpp
     RGBDImage.cpp
     RGBDImageFactory.cpp

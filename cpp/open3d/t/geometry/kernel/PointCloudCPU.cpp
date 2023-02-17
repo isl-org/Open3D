@@ -32,6 +32,8 @@ namespace geometry {
 namespace kernel {
 namespace pointcloud {
 
+using std::round;
+
 void ProjectCPU(
         core::Tensor& depth,
         utility::optional<std::reference_wrapper<core::Tensor>> image_colors,
@@ -68,6 +70,8 @@ void ProjectCPU(
 
         // coordinate in image (in pixel)
         transform_indexer.Project(xc, yc, zc, &u, &v);
+        u = round(u);
+        v = round(v);
         if (!depth_indexer.InBoundary(u, v) || zc <= 0 || zc > depth_max) {
             return;
         }
@@ -75,22 +79,20 @@ void ProjectCPU(
         float* depth_ptr = depth_indexer.GetDataPtr<float>(
                 static_cast<int64_t>(u), static_cast<int64_t>(v));
         float d = zc * depth_scale;
-        // TODO: this can be wrong if ParallelFor is not implmented with OpenMP.
+        // TODO: this can be wrong if ParallelFor is not implemented with
+        // OpenMP.
 #pragma omp critical(ProjectCPU)
         {
             if (*depth_ptr == 0 || *depth_ptr >= d) {
                 *depth_ptr = d;
 
                 if (has_colors) {
-                    uint8_t* color_ptr = color_indexer.GetDataPtr<uint8_t>(
+                    float* color_ptr = color_indexer.GetDataPtr<float>(
                             static_cast<int64_t>(u), static_cast<int64_t>(v));
 
-                    color_ptr[0] = static_cast<uint8_t>(
-                            point_colors_ptr[3 * workload_idx + 0] * 255.0);
-                    color_ptr[1] = static_cast<uint8_t>(
-                            point_colors_ptr[3 * workload_idx + 1] * 255.0);
-                    color_ptr[2] = static_cast<uint8_t>(
-                            point_colors_ptr[3 * workload_idx + 2] * 255.0);
+                    color_ptr[0] = point_colors_ptr[3 * workload_idx + 0];
+                    color_ptr[1] = point_colors_ptr[3 * workload_idx + 1];
+                    color_ptr[2] = point_colors_ptr[3 * workload_idx + 2];
                 }
             }
         }

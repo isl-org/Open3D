@@ -27,22 +27,17 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <string>
 
-#ifndef FMT_HEADER_ONLY
-#define FMT_HEADER_ONLY 1
-#endif
-#ifndef FMT_STRING_ALIAS
-#define FMT_STRING_ALIAS 1
-#endif
 // NVCC does not support deprecated attribute on Windows prior to v11.
 #if defined(__CUDACC__) && defined(_MSC_VER) && __CUDACC_VER_MAJOR__ < 11
 #ifndef FMT_DEPRECATED
 #define FMT_DEPRECATED
 #endif
 #endif
-#include <fmt/format.h>
-#include <fmt/ostream.h>
+
+#include <fmt/core.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
 
@@ -147,6 +142,9 @@ public:
     /// Reset the print function to the default one (print to console).
     void ResetPrintFunction();
 
+    /// Get the print function used by the Logger.
+    const std::function<void(const std::string &)> GetPrintFunction();
+
     /// Set global verbosity level of Open3D.
     ///
     /// \param verbosity_level Messages with equal or less than verbosity_level
@@ -177,13 +175,16 @@ public:
                             const char *function,
                             const char *format,
                             Args &&... args) {
-        if (sizeof...(Args) > 0) {
-            Logger::GetInstance().VWarning(
-                    file, line, function,
-                    FormatArgs(format, fmt::make_format_args(args...)));
-        } else {
-            Logger::GetInstance().VWarning(file, line, function,
-                                           std::string(format));
+        if (Logger::GetInstance().GetVerbosityLevel() >=
+            VerbosityLevel::Warning) {
+            if (sizeof...(Args) > 0) {
+                Logger::GetInstance().VWarning(
+                        file, line, function,
+                        FormatArgs(format, fmt::make_format_args(args...)));
+            } else {
+                Logger::GetInstance().VWarning(file, line, function,
+                                               std::string(format));
+            }
         }
     }
     template <typename... Args>
@@ -192,13 +193,15 @@ public:
                          const char *function,
                          const char *format,
                          Args &&... args) {
-        if (sizeof...(Args) > 0) {
-            Logger::GetInstance().VInfo(
-                    file, line, function,
-                    FormatArgs(format, fmt::make_format_args(args...)));
-        } else {
-            Logger::GetInstance().VInfo(file, line, function,
-                                        std::string(format));
+        if (Logger::GetInstance().GetVerbosityLevel() >= VerbosityLevel::Info) {
+            if (sizeof...(Args) > 0) {
+                Logger::GetInstance().VInfo(
+                        file, line, function,
+                        FormatArgs(format, fmt::make_format_args(args...)));
+            } else {
+                Logger::GetInstance().VInfo(file, line, function,
+                                            std::string(format));
+            }
         }
     }
     template <typename... Args>
@@ -207,13 +210,16 @@ public:
                           const char *function,
                           const char *format,
                           Args &&... args) {
-        if (sizeof...(Args) > 0) {
-            Logger::GetInstance().VDebug(
-                    file, line, function,
-                    FormatArgs(format, fmt::make_format_args(args...)));
-        } else {
-            Logger::GetInstance().VDebug(file, line, function,
-                                         std::string(format));
+        if (Logger::GetInstance().GetVerbosityLevel() >=
+            VerbosityLevel::Debug) {
+            if (sizeof...(Args) > 0) {
+                Logger::GetInstance().VDebug(
+                        file, line, function,
+                        FormatArgs(format, fmt::make_format_args(args...)));
+            } else {
+                Logger::GetInstance().VDebug(file, line, function,
+                                             std::string(format));
+            }
         }
     }
 
@@ -268,29 +274,6 @@ public:
 private:
     VerbosityLevel level_;
     VerbosityLevel level_backup_;
-};
-
-class ConsoleProgressBar {
-public:
-    ConsoleProgressBar(size_t expected_count,
-                       const std::string &progress_info,
-                       bool active = false);
-
-    void Reset(size_t expected_count,
-               const std::string &progress_info,
-               bool active);
-
-    ConsoleProgressBar &operator++();
-
-    void SetCurrentCount(size_t n);
-
-private:
-    const size_t resolution_ = 40;
-    size_t expected_count_;
-    size_t current_count_;
-    std::string progress_info_;
-    size_t progress_pixel_;
-    bool active_;
 };
 
 }  // namespace utility

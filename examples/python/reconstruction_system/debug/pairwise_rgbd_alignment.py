@@ -30,9 +30,11 @@ import argparse
 import json
 import sys
 import open3d as o3d
-sys.path.append("../utility")
-from file import *
-from visualization import *
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+from open3d_example import *
+
 sys.path.append(".")
 from initialize_config import *
 from make_fragments import *
@@ -59,7 +61,7 @@ def test_single_pair(s, t, color_files, depth_files, intrinsic, with_opencv,
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="mathching two RGBD images")
+    parser = argparse.ArgumentParser(description="matching two RGBD images")
     parser.add_argument("config", help="path to the config file")
     parser.add_argument("source_id", type=int, help="ID of source RGBD image")
     parser.add_argument("target_id", type=int, help="ID of target RGBD image")

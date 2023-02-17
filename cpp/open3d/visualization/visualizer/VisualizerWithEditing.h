@@ -67,6 +67,7 @@ public:
     void BuildUtilities() override;
     int PickPoint(double x, double y);
     std::vector<size_t> &GetPickedPoints();
+    std::shared_ptr<geometry::Geometry> GetCroppedGeometry() const;
 
 protected:
     bool InitViewControl() override;

@@ -83,17 +83,17 @@ OdometryResult RGBDOdometryMultiScale(
         const Method method,
         const OdometryLossParams& params) {
     // TODO (wei): more device check
-    core::Device device = source.depth_.GetDevice();
-    if (target.depth_.GetDevice() != device) {
-        utility::LogError(
-                "Device mismatch, got {} for source and {} for target.",
-                device.ToString(), target.depth_.GetDevice().ToString());
-    }
+    const core::Device device = source.depth_.GetDevice();
+    core::AssertTensorDevice(target.depth_.AsTensor(), device);
+
+    core::AssertTensorShape(intrinsics, {3, 3});
+    core::AssertTensorShape(init_source_to_target, {4, 4});
 
     // 4x4 transformations are always float64 and stay on CPU.
-    core::Device host("CPU:0");
-    Tensor intrinsics_d = intrinsics.To(host, core::Float64).Clone();
-    Tensor trans_d = init_source_to_target.To(host, core::Float64).Clone();
+    const core::Device host("CPU:0");
+    const Tensor intrinsics_d = intrinsics.To(host, core::Float64).Clone();
+    const Tensor trans_d =
+            init_source_to_target.To(host, core::Float64).Clone();
 
     Image source_depth = source.depth_;
     Image target_depth = target.depth_;
@@ -503,6 +503,31 @@ OdometryResult ComputeOdometryResultHybrid(const Tensor& source_depth,
             inlier_residual / inlier_count,
             double(inlier_count) / double(source_vertex_map.GetShape(0) *
                                           source_vertex_map.GetShape(1)));
+}
+
+core::Tensor ComputeOdometryInformationMatrix(
+        const geometry::Image& source_depth,
+        const geometry::Image& target_depth,
+        const core::Tensor& intrinsic,
+        const core::Tensor& source_to_target,
+        const float dist_thr,
+        const float depth_scale,
+        const float depth_max) {
+    core::Tensor information;
+
+    Image source_depth_processed =
+            source_depth.ClipTransform(depth_scale, 0, depth_max, NAN);
+    Image target_depth_processed =
+            target_depth.ClipTransform(depth_scale, 0, depth_max, NAN);
+    Image source_vertex_map =
+            Image(source_depth_processed).CreateVertexMap(intrinsic, NAN);
+    Image target_vertex_map =
+            Image(target_depth_processed).CreateVertexMap(intrinsic, NAN);
+
+    kernel::odometry::ComputeOdometryInformationMatrix(
+            source_vertex_map.AsTensor(), target_vertex_map.AsTensor(),
+            intrinsic, source_to_target, dist_thr * dist_thr, information);
+    return information;
 }
 
 }  // namespace odometry

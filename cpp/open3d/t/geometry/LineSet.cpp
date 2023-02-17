@@ -34,6 +34,7 @@
 #include "open3d/core/TensorCheck.h"
 #include "open3d/core/linalg/Matmul.h"
 #include "open3d/t/geometry/TensorMap.h"
+#include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 
 namespace open3d {
@@ -49,14 +50,7 @@ LineSet::LineSet(const core::Device &device)
 LineSet::LineSet(const core::Tensor &point_positions,
                  const core::Tensor &line_indices)
     : LineSet([&]() {
-          if (point_positions.GetDevice() != line_indices.GetDevice()) {
-              utility::LogError(
-                      "'point_positions' device {} does not match "
-                      "'line_indices' device "
-                      "{}.",
-                      point_positions.GetDevice().ToString(),
-                      line_indices.GetDevice().ToString());
-          }
+          core::AssertTensorDevice(line_indices, point_positions.GetDevice());
           return point_positions.GetDevice();
       }()) {
     SetPointPositions(point_positions);
@@ -119,15 +113,17 @@ std::string LineSet::ToString() const {
 }
 
 LineSet &LineSet::Transform(const core::Tensor &transformation) {
+    core::AssertTensorShape(transformation, {4, 4});
     kernel::transform::TransformPoints(transformation, GetPointPositions());
     return *this;
 }
 
 LineSet &LineSet::Translate(const core::Tensor &translation, bool relative) {
     core::AssertTensorShape(translation, {3});
-    core::AssertTensorDevice(translation, device_);
 
-    core::Tensor transform = translation;
+    core::Tensor transform =
+            translation.To(GetDevice(), GetPointPositions().GetDtype());
+
     if (!relative) {
         transform -= GetCenter();
     }
@@ -137,14 +133,17 @@ LineSet &LineSet::Translate(const core::Tensor &translation, bool relative) {
 
 LineSet &LineSet::Scale(double scale, const core::Tensor &center) {
     core::AssertTensorShape(center, {3});
-    core::AssertTensorDevice(center, device_);
 
-    core::Tensor point_positions = GetPointPositions();
-    point_positions.Sub_(center).Mul_(scale).Add_(center);
+    const core::Tensor center_d =
+            center.To(GetDevice(), GetPointPositions().GetDtype());
+
+    GetPointPositions().Sub_(center_d).Mul_(scale).Add_(center_d);
     return *this;
 }
 
 LineSet &LineSet::Rotate(const core::Tensor &R, const core::Tensor &center) {
+    core::AssertTensorShape(R, {3, 3});
+    core::AssertTensorShape(center, {3});
     kernel::transform::RotatePoints(R, GetPointPositions(), center);
     return *this;
 }
@@ -204,6 +203,31 @@ open3d::geometry::LineSet LineSet::ToLegacy() const {
                         GetLineColors());
     }
     return lineset_legacy;
+}
+
+AxisAlignedBoundingBox LineSet::GetAxisAlignedBoundingBox() const {
+    return AxisAlignedBoundingBox::CreateFromPoints(GetPointPositions());
+}
+
+TriangleMesh LineSet::ExtrudeRotation(double angle,
+                                      const core::Tensor &axis,
+                                      int resolution,
+                                      double translation,
+                                      bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeRotationTriangleMesh(*this, angle, axis, resolution,
+                                       translation, capping);
+}
+
+TriangleMesh LineSet::ExtrudeLinear(const core::Tensor &vector,
+                                    double scale,
+                                    bool capping) const {
+    using namespace vtkutils;
+    return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
+}
+
+OrientedBoundingBox LineSet::GetOrientedBoundingBox() const {
+    return OrientedBoundingBox::CreateFromPoints(GetPointPositions());
 }
 
 }  // namespace geometry

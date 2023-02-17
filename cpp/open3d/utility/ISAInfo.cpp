@@ -79,7 +79,7 @@ static std::string ToString(ISATarget target) {
             return "DISABLED";
 
         default:
-            utility::LogError("Unknown target {}", target);
+            utility::LogError("Unknown target {}", static_cast<int>(target));
     }
 }
 

@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -47,7 +48,7 @@ namespace core {
 
 /// A Tensor is a "view" of a data Blob with shape, stride, data_ptr.
 /// Tensor can also be used to perform numerical operations.
-class Tensor {
+class Tensor : public IsDevice {
 public:
     Tensor() {}
 
@@ -71,7 +72,6 @@ public:
            const Device& device = Device("CPU:0"))
         : Tensor(shape, dtype, device) {
         // Check number of elements
-
         if (static_cast<int64_t>(init_vals.size()) != shape_.NumElements()) {
             utility::LogError(
                     "Tensor initialization values' size {} does not match the "
@@ -121,6 +121,75 @@ public:
           dtype_(dtype),
           blob_(blob) {}
 
+    /// \brief Take ownership of data in std::vector<T>
+    ///
+    /// Create a Tensor from data "moved" from an std::vector<T>. This always
+    /// produces a Tensor on the CPU device.
+    ///
+    /// \param vec source for the data as an r-value reference. After the Tensor
+    /// is created this will not have access to or manage the data any more.
+    /// \param shape List of dimensions of data in buffer. e.g. `{640, 480, 3}`
+    /// for a 640x480 RGB image. A 1D {vec.size()} shape is assumed if not
+    /// specified.
+    template <typename T>
+    Tensor(std::vector<T>&& vec, const SizeVector& shape = {})
+        : shape_(shape), dtype_(Dtype::FromType<T>()) {
+        if (shape_.empty()) {
+            shape_ = {static_cast<int64_t>(vec.size())};
+        }
+
+        // Check number of elements.
+        if (static_cast<int64_t>(vec.size()) != shape_.NumElements()) {
+            utility::LogError(
+                    "Tensor initialization values' size {} does not match the "
+                    "shape {}",
+                    vec.size(), shape_.NumElements());
+        }
+        strides_ = shape_util::DefaultStrides(shape_);
+        auto sp_vec = std::make_shared<std::vector<T>>();
+        sp_vec->swap(vec);
+        data_ptr_ = static_cast<void*>(sp_vec->data());
+
+        // Create blob that owns the shared pointer to vec. The deleter function
+        // object just stores a shared pointer, ensuring that memory is freed
+        // only when the Tensor is destructed.
+        blob_ = std::make_shared<Blob>(Device("CPU:0"), data_ptr_,
+                                       [sp_vec](void*) { (void)sp_vec; });
+    }
+
+    /// \brief Tensor wrapper constructor from raw host buffer.
+    ///
+    /// This creates a Tensor wrapper for externally managed memory. It is the
+    /// user's responsibility to keep the buffer valid during the lifetime of
+    /// this Tensor and deallocate it afterwards.
+    ///
+    /// \param data_ptr Pointer to externally managed buffer.
+    /// \param dtype Tensor element data type. e.g. `Float32` for single
+    /// precision float.
+    /// \param shape List of dimensions of data in buffer. e.g. `{640, 480, 3}`
+    /// for a 640x480 RGB image.
+    /// \param strides Number of elements to advance to reach the next element,
+    /// for every dimension. This will be calculated from the shape assuming a
+    /// contiguous buffer if not specified. For the above `Float32` image, the
+    /// value of an element will be read as:
+    ///
+    ///     image[row, col, ch] = *(float *) (data_ptr + sizeof(float) *
+    ///     (row * stride[0] + col * stride[1] + ch * stride[2]));
+    ///
+    /// \param device Device containing the data buffer.
+    Tensor(void* data_ptr,
+           Dtype dtype,
+           const SizeVector& shape,
+           const SizeVector& strides = {},
+           const Device& device = Device("CPU:0"))
+        : shape_(shape), strides_(strides), data_ptr_(data_ptr), dtype_(dtype) {
+        if (strides_.empty()) {
+            strides_ = shape_util::DefaultStrides(shape);
+        }
+        // Blob with no-op deleter.
+        blob_ = std::make_shared<Blob>(device, (void*)data_ptr_, [](void*) {});
+    }
+
     /// Copy constructor performs a "shallow" copy of the Tensor.
     /// This takes a lvalue input, e.g. `Tensor dst(src)`.
     Tensor(const Tensor& other) = default;
@@ -155,6 +224,12 @@ public:
         this->Fill(v);
         return *this;
     }
+
+    /// Tensor reinterpret cast operator.
+    /// It changes the tensor's dtype without changing the underlying memory
+    /// blob itself. The byte-size of dtype must be same as the original dtype
+    /// before casting.
+    Tensor ReinterpretCast(const core::Dtype& dtype) const;
 
     /// Assign an object to a tensor. The tensor being assigned to must be a
     /// scalar tensor of shape {}. The element byte size of the tensor must be
@@ -256,10 +331,10 @@ public:
     static Tensor Diag(const Tensor& input);
 
     /// Create a 1D tensor with evenly spaced values in the given interval.
-    static Tensor Arange(Scalar start,
-                         Scalar stop,
-                         Scalar step = 1,
-                         Dtype dtype = core::Int64,
+    static Tensor Arange(const Scalar start,
+                         const Scalar stop,
+                         const Scalar step = 1,
+                         const Dtype dtype = core::Int64,
                          const Device& device = core::Device("CPU:0"));
 
     /// Reverse a Tensor's elements by viewing the tensor as a 1D array.
@@ -342,10 +417,39 @@ public:
     /// ```
     Tensor SetItem(const std::vector<TensorKey>& tks, const Tensor& value);
 
-    /// Assign (copy) values from another Tensor, shape, dtype, device may
-    /// change. Slices of the original Tensor still keeps the original memory.
-    /// After assignment, the Tensor will be contiguous.
-    void Assign(const Tensor& other);
+    /// \brief Appends the `other` tensor, along the given axis and returns a
+    /// copy of the tensor. The `other` tensors must have same data-type,
+    /// device, and number of dimensions. All dimensions must be the same,
+    /// except the dimension along the axis the tensors are to be appended.
+    ///
+    /// This is the same as NumPy's semantics:
+    /// - https://numpy.org/doc/stable/reference/generated/numpy.append.html
+    ///
+    /// Example:
+    /// \code{.cpp}
+    /// Tensor a = Tensor::Init<int64_t>({0, 1}, {2, 3});
+    /// Tensor b = Tensor::Init<int64_t>({4, 5});
+    /// Tensor t1 = a.Append(b, 0);
+    /// // t1:
+    /// //  [[0 1],
+    /// //   [2 3],
+    /// //   [4 5]]
+    /// //  Tensor[shape={3, 2}, stride={2, 1}, Int64, CPU:0, 0x55555abc6b00]
+    /// Tensor t2 = a.Append(b);
+    /// // t2:
+    /// //  [0 1 2 3 4 5]
+    /// //  Tensor[shape={6}, stride={1}, Int64, CPU:0, 0x55555abc6b70]
+    /// \endcode
+    ///
+    /// \param other Values of this tensor is appended to the tensor.
+    /// \param axis [optional] The axis along which values are appended. If axis
+    /// is not given, both tensors are flattened before use.
+    /// \return A copy of the tensor with `values` appended to axis. Note that
+    /// append does not occur in-place: a new array is allocated and filled. If
+    /// axis is None, out is a flattened tensor.
+    Tensor Append(
+            const Tensor& other,
+            const utility::optional<int64_t>& axis = utility::nullopt) const;
 
     /// Broadcast Tensor to a new broadcastable shape.
     Tensor Broadcast(const SizeVector& dst_shape) const;
@@ -369,6 +473,28 @@ public:
     /// - aten/src/ATen/native/TensorShape.cpp
     /// - aten/src/ATen/TensorUtils.cpp
     Tensor Reshape(const SizeVector& dst_shape) const;
+
+    /// Flattens input by reshaping it into a one-dimensional tensor. If
+    /// start_dim or end_dim are passed, only dimensions starting with start_dim
+    /// and ending with end_dim are flattened. The order of elements in input is
+    /// unchanged.
+    ///
+    /// Unlike NumPy’s flatten, which always copies input’s data, this function
+    /// may return the original object, a view, or copy. If no dimensions are
+    /// flattened, then the original object input is returned. Otherwise, if
+    /// input can be viewed as the flattened shape, then that view is returned.
+    /// Finally, only if the input cannot be viewed as the flattened shape is
+    /// input’s data copied.
+    ///
+    /// Ref:
+    /// - https://pytorch.org/docs/stable/tensors.html
+    /// - aten/src/ATen/native/TensorShape.cpp
+    /// - aten/src/ATen/TensorUtils.cpp
+    ///
+    /// \param start_dim The first dimension to flatten (inclusive).
+    /// \param end_dim The last dimension to flatten, starting from \p start_dim
+    /// (inclusive).
+    Tensor Flatten(int64_t start_dim = 0, int64_t end_dim = -1) const;
 
     /// Returns a new tensor view with the same data but of a different shape.
     ///
@@ -438,24 +564,29 @@ public:
                  int64_t step = 1) const;
 
     /// Convert to rvalue such that the Tensor can be assigned.
-    /// E.g. in numpy \code{.py}
+    ///
+    /// E.g. in numpy
+    /// \code{.py}
     /// tensor_a = tensor_b     # tensor_a is lvalue, tensor_a variable will
     ///                         # now reference tensor_b, that is, tensor_a
     ///                         # and tensor_b share exactly the same memory.
     /// tensor_a[:] = tensor_b  # tensor_a[:] is rvalue, tensor_b's values are
     ///                         # assigned to tensor_a's memory.
     /// \endcode
-    Tensor AsRvalue() const { return *this; }
+    Tensor AsRvalue() { return *this; }
 
-    /// \brief Advanced indexing getter
+    /// Convert to constant rvalue.
+    const Tensor AsRvalue() const { return *this; }
+
+    /// \brief Advanced indexing getter. This will always allocate a new Tensor.
     ///
-    /// We use the Numpy advanced indexing symnatics, see:
+    /// We use the Numpy advanced indexing semantics, see:
     /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
     Tensor IndexGet(const std::vector<Tensor>& index_tensors) const;
 
     /// \brief Advanced indexing getter.
     ///
-    /// We use the Numpy advanced indexing symnatics, see:
+    /// We use the Numpy advanced indexing semantics, see:
     /// https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html
     ///
     /// Note: Only support 1D index tensors.
@@ -588,7 +719,7 @@ public:
     /// \param dims \p dims can only contain a single dimension or all
     /// dimensions. If \p dims contains a single dimension, the index is along
     /// the specified dimension. If \p dims contains all dimensions, the index
-    /// is into the flattend tensor.
+    /// is into the flattened tensor.
     Tensor ArgMin(const SizeVector& dims) const;
 
     /// Returns maximum index of the tensor along the given \p dim. The returned
@@ -598,7 +729,7 @@ public:
     /// \param dims \p dims can only contain a single dimension or all
     /// dimensions. If \p dims contains a single dimension, the index is along
     /// the specified dimension. If \p dims contains all dimensions, the index
-    /// is into the flattend tensor.
+    /// is into the flattened tensor.
     Tensor ArgMax(const SizeVector& dims) const;
 
     /// Element-wise square root of a tensor, returns a new tensor.
@@ -624,6 +755,9 @@ public:
 
     /// Element-wise negation of a tensor, in-place.
     Tensor Neg_();
+
+    /// Unary minus of a tensor, returning a new tensor.
+    Tensor operator-() const { return Neg(); }
 
     /// Element-wise exponential of a tensor, returning a new tensor.
     Tensor Exp() const;
@@ -824,14 +958,27 @@ public:
     bool IsNonZero() const;
 
     /// Returns true if all elements in the tensor are true. Only works for
-    /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is applied to all dimensions.
-    bool All() const;
+    /// boolean tensors.
+    Tensor All(const utility::optional<SizeVector>& dims = utility::nullopt,
+               bool keepdim = false) const;
 
     /// Returns true if any elements in the tensor are true. Only works for
-    /// boolean tensors. This function does not take reduction dimensions, and
-    /// the reduction is applied to all dimensions.
-    bool Any() const;
+    /// boolean tensors.
+    Tensor Any(const utility::optional<SizeVector>& dims = utility::nullopt,
+               bool keepdim = false) const;
+
+    /// Returns true if the two tensors are element-wise equal.
+    ///
+    /// - If the device is not the same: throws exception.
+    /// - If the dtype is not the same: throws exception.
+    /// - If the shape is not the same: returns false.
+    /// - Returns true if: the device, dtype and shape are the same and all
+    ///   corresponding elements are equal.
+    ///
+    /// TODO: support nan
+    ///
+    /// \param other The other tensor to compare with.
+    bool AllEqual(const Tensor& other) const;
 
     /// Returns true if the two tensors are element-wise equal within a
     /// tolerance.
@@ -881,7 +1028,7 @@ public:
     /// strides and etc.
     bool IsSame(const Tensor& other) const;
 
-    /// Retrive all values as an std::vector, for debugging and testing
+    /// Retrieve all values as an std::vector, for debugging and testing
     template <typename T>
     std::vector<T> ToFlatVector() const {
         AssertTemplateDtype<T>();
@@ -1024,7 +1171,7 @@ public:
 
     inline Dtype GetDtype() const { return dtype_; }
 
-    Device GetDevice() const;
+    Device GetDevice() const override;
 
     inline std::shared_ptr<Blob> GetBlob() const { return blob_; }
 
@@ -1057,6 +1204,92 @@ public:
     /// Load tensor from numpy's npy format.
     static Tensor Load(const std::string& file_name);
 
+    /// Iterator for Tensor.
+    struct Iterator {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = Tensor;
+        using pointer = value_type*;
+        using reference = value_type;  // Typically Tensor&, but a tensor slice
+                                       // creates a new Tensor object with
+                                       // shared memory.
+
+        // Iterator must be constructible, copy-constructible, copy-assignable,
+        // destructible and swappable.
+        Iterator(pointer tensor, int64_t index);
+        Iterator(const Iterator&);
+        ~Iterator();
+        reference operator*() const;
+        pointer operator->() const;
+        Iterator& operator++();
+        Iterator operator++(int);
+        bool operator==(const Iterator& other) const;
+        bool operator!=(const Iterator& other) const;
+
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> impl_;
+    };
+
+    /// Const iterator for Tensor.
+    struct ConstIterator {
+        using iterator_category = std::forward_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = const Tensor;
+        using pointer = value_type*;
+        using reference = value_type;  // Typically Tensor&, but a tensor slice
+                                       // creates a new Tensor object with
+                                       // shared memory.
+
+        // ConstIterator must be constructible, copy-constructible,
+        // copy-assignable, destructible and swappable.
+        ConstIterator(pointer tensor, int64_t index);
+        ConstIterator(const ConstIterator&);
+        ~ConstIterator();
+        reference operator*() const;
+        pointer operator->() const;
+        ConstIterator& operator++();
+        ConstIterator operator++(int);
+        bool operator==(const ConstIterator& other) const;
+        bool operator!=(const ConstIterator& other) const;
+
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> impl_;
+    };
+
+    /// Returns the beginning of the tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    Iterator begin();
+
+    /// Returns the end of the tensor iterator. The iterator iterates over the
+    /// first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    Iterator end();
+
+    /// Returns the beginning of the const tensor iterator. The iterator
+    /// iterates over the first dimension of the tensor. The generated tensor
+    /// slices share the same memory with the original tensor.
+    ConstIterator cbegin() const;
+
+    /// Returns the end of the const tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor.
+    ConstIterator cend() const;
+
+    /// Returns the beginning of the const tensor iterator. The iterator
+    /// iterates over the first dimension of the tensor. The generated tensor
+    /// slices share the same memory with the original tensor. This is
+    /// equivalent to Tensor::cbegin().
+    ConstIterator begin() const { return cbegin(); }
+
+    /// Returns the end of the const tensor iterator. The iterator iterates over
+    /// the first dimension of the tensor. The generated tensor slices share the
+    /// same memory with the original tensor. This is equivalent to
+    /// Tensor::cend().
+    ConstIterator end() const { return cend(); }
+
 protected:
     std::string ScalarPtrToString(const void* ptr) const;
 
@@ -1073,14 +1306,13 @@ private:
     }
 
 protected:
-    /// SizeVector of the Tensor. SizeVector[i] is the legnth of dimension
-    /// i.
+    /// SizeVector of the Tensor. shape_[i] is the length of dimension i.
     SizeVector shape_ = {0};
 
     /// Stride of a Tensor.
     /// The stride of a n-dimensional tensor is also n-dimensional.
     /// Stride(i) is the number of elements (not bytes) to jump in a
-    /// continuous memory space before eaching the next element in dimension
+    /// continuous memory space before reaching the next element in dimension
     /// i. For example, a 2x3x4 float32 dense tensor has shape(2, 3, 4) and
     /// stride(12, 4, 1). A slicing operation performed on the tensor can
     /// change the shape and stride.

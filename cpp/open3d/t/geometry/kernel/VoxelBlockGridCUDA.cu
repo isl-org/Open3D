@@ -111,9 +111,9 @@ void PointCloudTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     index_t total_block_count = count.Item<index_t>();
     if (total_block_count == 0) {
         utility::LogError(
-                "[CUDATSDFTouchKernel] No block is touched in TSDF volume, "
-                "abort integration. Please check specified parameters, "
-                "especially depth_scale and voxel_size");
+                "No block is touched in TSDF volume, abort integration. Please "
+                "check specified parameters, especially depth_scale and "
+                "voxel_size");
     }
     block_coordi = block_coordi.Slice(0, 0, total_block_count);
     core::Tensor block_buf_indices, block_masks;
@@ -124,8 +124,8 @@ void PointCloudTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
 
 void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
                     const core::Tensor &depth,
-                    const core::Tensor &intrinsics,
-                    const core::Tensor &extrinsics,
+                    const core::Tensor &intrinsic,
+                    const core::Tensor &extrinsic,
                     core::Tensor &voxel_block_coords,
                     index_t voxel_grid_resolution,
                     float voxel_size,
@@ -135,8 +135,8 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
                     index_t stride) {
     core::Device device = depth.GetDevice();
     NDArrayIndexer depth_indexer(depth, 2);
-    core::Tensor pose = t::geometry::InverseTransformation(extrinsics);
-    TransformIndexer ti(intrinsics, pose, 1.0f);
+    core::Tensor pose = t::geometry::InverseTransformation(extrinsic);
+    TransformIndexer ti(intrinsic, pose, 1.0f);
 
     // Output
     index_t rows_strided = depth_indexer.GetShape(0) / stride;
@@ -211,9 +211,9 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     index_t total_block_count = static_cast<index_t>(count[0].Item<index_t>());
     if (total_block_count == 0) {
         utility::LogError(
-                "No block is touched in TSDF volume, "
-                "abort integration. Please check specified parameters, "
-                "especially depth_scale and voxel_size");
+                "No block is touched in TSDF volume, abort integration. Please "
+                "check specified parameters, especially depth_scale and "
+                "voxel_size");
     }
 
     total_block_count = std::min(total_block_count,
@@ -245,12 +245,13 @@ void DepthTouchCUDA(std::shared_ptr<core::HashMap> &hashmap,
     OPEN3D_CUDA_CHECK(cudaDeviceSynchronize());
 }
 
-#define FN_ARGUMENTS                                                     \
-    const core::Tensor &depth, const core::Tensor &color,                \
-            const core::Tensor &indices, const core::Tensor &block_keys, \
-            TensorMap &block_values, const core::Tensor &intrinsics,     \
-            const core::Tensor &extrinsics, index_t resolution,          \
-            float voxel_size, float sdf_trunc, float depth_scale,        \
+#define FN_ARGUMENTS                                                      \
+    const core::Tensor &depth, const core::Tensor &color,                 \
+            const core::Tensor &indices, const core::Tensor &block_keys,  \
+            TensorMap &block_values, const core::Tensor &depth_intrinsic, \
+            const core::Tensor &color_intrinsic,                          \
+            const core::Tensor &extrinsic, index_t resolution,            \
+            float voxel_size, float sdf_trunc, float depth_scale,         \
             float depth_max
 
 template void IntegrateCUDA<uint16_t, uint8_t, float, uint16_t, uint16_t>(
@@ -266,10 +267,11 @@ template void IntegrateCUDA<float, float, float, float, float>(FN_ARGUMENTS);
 #define FN_ARGUMENTS                                                           \
     std::shared_ptr<core::HashMap> &hashmap, const TensorMap &block_value_map, \
             const core::Tensor &range_map, TensorMap &renderings_map,          \
-            const core::Tensor &intrinsics, const core::Tensor &extrinsics,    \
+            const core::Tensor &intrinsic, const core::Tensor &extrinsic,      \
             index_t h, index_t w, index_t block_resolution, float voxel_size,  \
-            float sdf_trunc, float depth_scale, float depth_min,               \
-            float depth_max, float weight_threshold
+            float depth_scale, float depth_min, float depth_max,               \
+            float weight_threshold, float trunc_voxel_multiplier,              \
+            int range_map_down_factor
 
 template void RayCastCUDA<float, uint16_t, uint16_t>(FN_ARGUMENTS);
 template void RayCastCUDA<float, float, float>(FN_ARGUMENTS);

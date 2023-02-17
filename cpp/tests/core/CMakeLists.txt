@@ -1,5 +1,6 @@
 target_sources(tests PRIVATE
     Blob.cpp
+    CoreTest.cpp
     CUDAUtils.cpp
     Device.cpp
     EigenConverter.cpp
@@ -15,8 +16,10 @@ target_sources(tests PRIVATE
     SizeVector.cpp
     Tensor.cpp
     TensorCheck.cpp
+    TensorFunction.cpp
     TensorList.cpp
     TensorObject.cpp
+    SYCLUtils.cpp
 )
 
 if (BUILD_CUDA_MODULE)
@@ -29,12 +32,7 @@ endif()
 
 if (BUILD_ISPC_MODULE)
     target_sources(tests PRIVATE
+        Indexer.ispc
         ParallelFor.ispc
-    )
-endif()
-
-if (WITH_FAISS)
-    target_sources(tests PRIVATE
-        FaissIndex.cpp
     )
 endif()

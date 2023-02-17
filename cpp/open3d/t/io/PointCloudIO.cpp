@@ -47,7 +47,10 @@ static const std::unordered_map<
                            const open3d::io::ReadPointCloudOption &)>>
         file_extension_to_pointcloud_read_function{
                 {"npz", ReadPointCloudFromNPZ},
-                {"xyzi", ReadPointCloudFromXYZI},
+                {"xyz", ReadPointCloudFromTXT},
+                {"xyzi", ReadPointCloudFromTXT},
+                {"xyzn", ReadPointCloudFromTXT},
+                {"xyzrgb", ReadPointCloudFromTXT},
                 {"pcd", ReadPointCloudFromPCD},
                 {"ply", ReadPointCloudFromPLY},
                 {"pts", ReadPointCloudFromPTS},
@@ -59,8 +62,13 @@ static const std::unordered_map<
                            const geometry::PointCloud &,
                            const open3d::io::WritePointCloudOption &)>>
         file_extension_to_pointcloud_write_function{
-                {"npz", WritePointCloudToNPZ}, {"xyzi", WritePointCloudToXYZI},
-                {"pcd", WritePointCloudToPCD}, {"ply", WritePointCloudToPLY},
+                {"npz", WritePointCloudToNPZ},
+                {"xyz", WritePointCloudToTXT},
+                {"xyzi", WritePointCloudToTXT},
+                {"xyzn", WritePointCloudToTXT},
+                {"xyzrgb", WritePointCloudToTXT},
+                {"pcd", WritePointCloudToPCD},
+                {"ply", WritePointCloudToPLY},
                 {"pts", WritePointCloudToPTS},
         };
 
@@ -69,7 +77,8 @@ std::shared_ptr<geometry::PointCloud> CreatePointCloudFromFile(
         const std::string &format,
         bool print_progress) {
     auto pointcloud = std::make_shared<geometry::PointCloud>();
-    ReadPointCloud(filename, *pointcloud, {format, true, true, print_progress});
+    ReadPointCloud(filename, *pointcloud,
+                   {format, false, false, print_progress});
     return pointcloud;
 }
 
@@ -86,12 +95,11 @@ bool ReadPointCloud(const std::string &filename,
     bool success = false;
     auto map_itr = file_extension_to_pointcloud_read_function.find(format);
     if (map_itr == file_extension_to_pointcloud_read_function.end()) {
-        open3d::geometry::PointCloud legacy_pointcloud;
-        success =
-                open3d::io::ReadPointCloud(filename, legacy_pointcloud, params);
-        if (!success) return false;
-        pointcloud = geometry::PointCloud::FromLegacy(legacy_pointcloud,
-                                                      core::Float64);
+        utility::LogWarning(
+                "Read geometry::PointCloud failed: unknown file extension for "
+                "{} (format: {}).",
+                filename, params.format);
+        return false;
     } else {
         success = map_itr->second(filename, pointcloud, params);
         if (params.remove_nan_points || params.remove_infinite_points) {

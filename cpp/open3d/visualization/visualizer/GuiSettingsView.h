@@ -85,6 +85,11 @@ private:
     std::shared_ptr<gui::Button> reset_material_color_;
     std::shared_ptr<gui::Slider> point_size_;
     std::shared_ptr<gui::Button> generate_normals_;
+    std::shared_ptr<gui::Checkbox> basic_mode_;
+    std::shared_ptr<gui::Checkbox> wireframe_mode_;
+
+    bool sun_follows_cam_was_on_ = true;
+    void UpdateUIForBasicMode(bool enable);
 };
 
 }  // namespace visualization

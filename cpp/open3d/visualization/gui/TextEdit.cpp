@@ -102,7 +102,7 @@ Size TextEdit::CalcPreferredSize(const LayoutContext &context,
 Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     auto &frame = GetFrame();
     ImGui::SetCursorScreenPos(
-            ImVec2(float(frame.x), float(frame.y) + ImGui::GetScrollY()));
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()));
 
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,
                         0.0);  // macOS doesn't round text editing
@@ -127,7 +127,7 @@ Widget::DrawResult TextEdit::Draw(const DrawContext &context) {
     if (ImGui::InputTextWithHint(impl_->id_.c_str(),
                                  impl_->placeholder_.c_str(),
                                  const_cast<char *>(impl_->text_.c_str()),
-                                 impl_->text_.capacity(), text_flags,
+                                 impl_->text_.capacity() + 1, text_flags,
                                  InputTextCallback, &impl_->text_)) {
         if (impl_->on_text_changed_) {
             impl_->on_text_changed_(impl_->text_.c_str());

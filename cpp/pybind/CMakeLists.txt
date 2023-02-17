@@ -10,6 +10,7 @@ pybind11_add_module(pybind)
 
 add_subdirectory(camera)
 add_subdirectory(core)
+add_subdirectory(data)
 add_subdirectory(geometry)
 add_subdirectory(io)
 add_subdirectory(ml)
@@ -40,12 +41,33 @@ target_include_directories(pybind SYSTEM PRIVATE
 
 open3d_show_and_abort_on_warning(pybind)
 open3d_set_global_properties(pybind)
+target_link_libraries(pybind PRIVATE Open3D::Open3D)
+
 
 if (WIN32)
     target_link_options(pybind PUBLIC "/force:multiple")
+    # TODO(Sameer): Only export PyInit_pybind, open3d_core_cuda_device_count
+elseif (APPLE)
+    file(GENERATE OUTPUT pybind.map CONTENT
+        [=[_PyInit_pybind
+open3d_core_cuda_device_count
+        ]=])
+    target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
+        -Wl,-exported_symbols_list
+        "${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
+elseif (UNIX)   # Linux
+    file(GENERATE OUTPUT pybind.map CONTENT
+        [=[{
+    global:
+        PyInit_pybind;
+        open3d_core_cuda_device_count;
+    local:
+        *;
+};]=])
+    target_link_options(pybind PRIVATE $<$<CONFIG:Release>:
+        "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/pybind.map" >)
 endif()
 
-target_link_libraries(pybind PRIVATE Open3D::Open3D)
 
 # At `make`: open3d.so (or the equivalents) will be created at
 # PYTHON_COMPILED_MODULE_DIR. The default location is
@@ -61,11 +83,33 @@ set_target_properties(pybind PROPERTIES
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
 set(PYTHON_EXTRA_LIBRARIES "")
 if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY}
+        ${MESA_CPU_GL_LIBRARY})
+endif()
+if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
+# Package libomp v11.1.0, if it is not installed. Later version cause crash on
+# x86_64 if PyTorch is already imported. Case of shared libopen3d.dylib is not
+# handled.
+# https://github.com/microsoft/LightGBM/issues/4229
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${OpenMP_libomp_LIBRARY})
+    execute_process(COMMAND brew list --versions libomp
+        COMMAND cut "-d\ " -f2
+        OUTPUT_VARIABLE libomp_ver OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(libomp_ver VERSION_GREATER_EQUAL 12.0.0)
+        message(SEND_ERROR "libomp ${libomp_ver} found, which can lead to interoperability problems with other Python libraries using libomp.  Please use libomp v11.1 to build Open3D.")
+    endif()
+    file(GENERATE OUTPUT update_pybind_libomp.sh
+        CONTENT [=[libomp_library=$(dyld_info -dependents "$<TARGET_FILE:pybind>" |
+grep libomp | tr -d '[:space:]')
+install_name_tool -change $libomp_library @loader_path/../libomp.dylib \
+"$<TARGET_FILE:pybind>"]=])
+    add_custom_command(TARGET pybind POST_BUILD
+        COMMAND bash update_pybind_libomp.sh
+        COMMENT "Updating pybind to use packaged libomp")
 endif()
 
 # Use `make python-package` to create the python package in the build directory
-# The python package will be created at PYTHON_PACKAGE_DIR. It contains:
+# The python package will be created at PYTHON_PACKAGE_DST_DIR. It contains:
 # 1) Pure-python code and misc files, copied from python/package
 # 2) The compiled python-C++ module, i.e. open3d.so (or the equivalents)
 # 3) Configured files and supporting files
@@ -82,8 +126,8 @@ set(GENERATED_OUTPUTS "")
 
 # add additional optional compiled modules
 if (BUILD_TENSORFLOW_OPS)
-    list( APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
-    add_custom_command( OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
+    list(APPEND COMPILED_MODULE_PATH_LIST $<TARGET_FILE:open3d_tf_ops> )
+    add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py"
             COMMAND ${Python3_EXECUTABLE} generate_tf_ops_wrapper.py --input "${PYTHON_PACKAGE_SRC_DIR}/open3d/ml/tf/python/ops/ops.py.in" --output "${CMAKE_BINARY_DIR}/lib/ml/tf/python/ops/ops.py" --lib $<TARGET_FILE:open3d_tf_ops>
                         DEPENDS open3d_tf_ops
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -160,7 +204,7 @@ add_custom_target(python-package
             -DBUILD_GUI=${BUILD_GUI}
             -DGUI_RESOURCE_DIR=${GUI_RESOURCE_DIR}
             -DPROJECT_EMAIL=${PROJECT_EMAIL}
-            -DPROJECT_HOME=${PROJECT_HOME}
+            -DPROJECT_HOMEPAGE_URL=${PROJECT_HOMEPAGE_URL}
             -DPROJECT_DOCS=${PROJECT_DOCS}
             -DPROJECT_CODE=${PROJECT_CODE}
             -DPROJECT_ISSUES=${PROJECT_ISSUES}
@@ -198,30 +242,6 @@ add_custom_target(install-pip-package
 # Ref: https://stackoverflow.com/a/33791008/1255535
 add_custom_target(install-python-package
     COMMAND ${Python3_EXECUTABLE} setup.py install --single-version-externally-managed --root=/
-    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
-    DEPENDS python-package
-)
-
-# Use `make conda-package` to create conda package in the build directory
-# Note that we don't provide `make install-conda-package` similar to pip. This
-# is becuase:
-#     1) `make install-pip-package` works in conda environment for local build
-#     2) `make conda-package` is mainly for internal use to distribute conda
-add_custom_target(conda-package
-    COMMAND conda-build conda_meta --channel conda-forge --output-folder conda_package
-    COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
-    WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
-    DEPENDS python-package
-)
-
-# Make pip and conda package in one command. The python-package target clears
-# the ${PYTHON_PACKAGE_DST_DIR}, so if we make pip and conda package one-by-one,
-# the previous one will be deleted.
-add_custom_target(pip-conda-package
-    COMMAND ${Python3_EXECUTABLE} setup.py bdist_wheel --dist-dir pip_package
-    COMMAND conda-build conda_meta --channel conda-forge --output-folder conda_package
-    COMMAND echo "pip wheel created at ${PYTHON_PACKAGE_DST_DIR}/pip_package"
-    COMMAND echo "conda package created at ${PYTHON_PACKAGE_DST_DIR}/conda_package"
     WORKING_DIRECTORY ${PYTHON_PACKAGE_DST_DIR}
     DEPENDS python-package
 )

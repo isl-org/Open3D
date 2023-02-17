@@ -130,10 +130,10 @@ void BuildSpatialHashTableCPU(const Tensor& points,
 ///        indices in each batch item. The size of the tensor is
 ///        num_query_points + 1
 ///
-/// \param neighbors_distances   The output tensor that saves the resulting
+/// \param neighbors_distance   The output tensor that saves the resulting
 ///        neighbor distances.
 ///
-template <class T>
+template <class T, class TIndex>
 void FixedRadiusSearchCPU(const Tensor& points,
                           const Tensor& queries,
                           double radius,
@@ -198,10 +198,10 @@ void FixedRadiusSearchCPU(const Tensor& points,
 /// \param neighbors_count     The output tensor that saves the number of
 ///        neighbors for each query points
 ///
-/// \param neighbors_distances   The output tensor that saves the resulting
+/// \param neighbors_distance   The output tensor that saves the resulting
 ///        neighbor distances.
 ///
-template <class T>
+template <class T, class TIndex>
 void HybridSearchCPU(const Tensor& points,
                      const Tensor& queries,
                      double radius,
@@ -308,10 +308,10 @@ void BuildSpatialHashTableCUDA(const Tensor& points,
 /// \param neighbors_row_splits  Tensor defining the start and end the neighbor
 /// indices in each batch item. The size of the tensor is num_query_points + 1
 ///
-/// \param neighbors_distances   The output tensor that saves the resulting
+/// \param neighbors_distance   The output tensor that saves the resulting
 /// neighbor distances.
 ///
-template <class T>
+template <class T, class TIndex>
 void FixedRadiusSearchCUDA(const Tensor& points,
                            const Tensor& queries,
                            double radius,
@@ -376,10 +376,10 @@ void FixedRadiusSearchCUDA(const Tensor& points,
 /// \param neighbors_count     The output tensor that saves the number of
 ///        neighbors for each query points
 ///
-/// \param neighbors_distances   The output tensor that saves the resulting
+/// \param neighbors_distance   The output tensor that saves the resulting
 ///        neighbor distances.
 ///
-template <class T>
+template <class T, class TIndex>
 void HybridSearchCUDA(const Tensor& points,
                       const Tensor& queries,
                       double radius,
@@ -408,21 +408,28 @@ public:
     /// \param dataset_points Provides a set of data points as Tensor for KDTree
     /// construction.
     FixedRadiusIndex(const Tensor& dataset_points, double radius);
+    FixedRadiusIndex(const Tensor& dataset_points,
+                     double radius,
+                     const Dtype& index_dtype);
     ~FixedRadiusIndex();
     FixedRadiusIndex(const FixedRadiusIndex&) = delete;
     FixedRadiusIndex& operator=(const FixedRadiusIndex&) = delete;
 
 public:
-    bool SetTensorData(const Tensor& dataset_points) override {
+    bool SetTensorData(const Tensor& dataset_points,
+                       const Dtype& index_dtype = core::Int64) override {
         utility::LogError(
-                "FixedRadiusIndex::SetTensorData witout radius not "
+                "FixedRadiusIndex::SetTensorData without radius not "
                 "implemented.");
     }
 
-    bool SetTensorData(const Tensor& dataset_points, double radius) override;
+    bool SetTensorData(const Tensor& dataset_points,
+                       double radius,
+                       const Dtype& index_dtype = core::Int64) override;
     bool SetTensorData(const Tensor& dataset_points,
                        const Tensor& points_row_splits,
-                       double radius);
+                       double radius,
+                       const Dtype& index_dtype = core::Int64);
 
     std::pair<Tensor, Tensor> SearchKnn(const Tensor& query_points,
                                         int knn) const override {

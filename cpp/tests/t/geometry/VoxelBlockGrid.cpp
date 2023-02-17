@@ -29,6 +29,7 @@
 #include "core/CoreTest.h"
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
+#include "open3d/data/Dataset.h"
 #include "open3d/io/PinholeCameraTrajectoryIO.h"
 #include "open3d/io/TriangleMeshIO.h"
 #include "open3d/t/io/ImageIO.h"
@@ -58,11 +59,11 @@ static core::Tensor GetIntrinsicTensor() {
 }
 
 static std::vector<core::Tensor> GetExtrinsicTensors() {
+    data::SampleRedwoodRGBDImages redwood_data;
+
     // Extrinsics
-    std::string trajectory_path =
-            std::string(TEST_DATA_DIR) + "/RGBD/odometry.log";
-    auto trajectory =
-            io::CreatePinholeCameraTrajectoryFromFile(trajectory_path);
+    auto trajectory = io::CreatePinholeCameraTrajectoryFromFile(
+            redwood_data.GetOdometryLogPath());
 
     std::vector<core::Tensor> extrinsics;
     for (size_t i = 0; i < trajectory->parameters_.size(); ++i) {
@@ -78,7 +79,7 @@ static std::vector<core::Tensor> GetExtrinsicTensors() {
 static std::vector<core::HashBackendType> EnumerateBackends(
         const core::Device &device, bool include_slab = true) {
     std::vector<core::HashBackendType> backends;
-    if (device.GetType() == core::Device::DeviceType::CUDA) {
+    if (device.IsCUDA()) {
         if (include_slab) {
             backends.push_back(core::HashBackendType::Slab);
         }
@@ -102,20 +103,21 @@ static VoxelBlockGrid Integrate(const core::HashBackendType &backend,
                               {core::Float32, dtype, dtype}, {{1}, {1}, {3}},
                               3.0 / 512, resolution, 10000, device, backend);
 
+    data::SampleRedwoodRGBDImages redwood_data;
     for (size_t i = 0; i < extrinsics.size(); ++i) {
-        Image depth = t::io::CreateImageFromFile(
-                              fmt::format("{}/RGBD/depth/{:05d}.png",
-                                          std::string(TEST_DATA_DIR), i))
-                              ->To(device);
-        Image color = t::io::CreateImageFromFile(
-                              fmt::format("{}/RGBD/color/{:05d}.jpg",
-                                          std::string(TEST_DATA_DIR), i))
-                              ->To(device);
+        Image depth =
+                t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[i])
+                        ->To(device);
+        Image color =
+                t::io::CreateImageFromFile(redwood_data.GetColorPaths()[i])
+                        ->To(device);
 
         core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
-                depth, intrinsic, extrinsics[i], depth_scale, depth_max);
+                depth, intrinsic, extrinsics[i], depth_scale, depth_max,
+                /*trunc_multiplier=*/4.0);
         vbg.Integrate(frustum_block_coords, depth, color, intrinsic,
-                      extrinsics[i]);
+                      extrinsics[i], depth_scale, depth_max,
+                      /*trunc multiplier*/ resolution * 0.5);
     }
 
     return vbg;
@@ -151,11 +153,11 @@ TEST_P(VoxelBlockGridPermuteDevices, Exceptions) {
     std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
     float depth_scale = 1000.0;
     float depth_max = 3.0;
-    Image depth = *t::io::CreateImageFromFile(
-            fmt::format("{}/RGBD/depth/00000.png", std::string(TEST_DATA_DIR)));
 
-    Image color = *t::io::CreateImageFromFile(
-            fmt::format("{}/RGBD/color/00000.jpg", std::string(TEST_DATA_DIR)));
+    data::SampleRedwoodRGBDImages redwood_data;
+    Image depth = *t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[0]);
+
+    Image color = *t::io::CreateImageFromFile(redwood_data.GetColorPaths()[0]);
 
     auto vbg = VoxelBlockGrid();
     EXPECT_THROW(vbg.GetUniqueBlockCoordinates(depth, intrinsic, extrinsics[0],
@@ -219,7 +221,7 @@ TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
     std::vector<core::Tensor> extrinsics = GetExtrinsicTensors();
     const float depth_scale = 1000.0;
     const float depth_max = 3.0;
-
+    const float trunc_voxel_multiplier = 4.0;
     for (auto backend : backends) {
         auto vbg = VoxelBlockGrid({"tsdf", "weight", "color"},
                                   {core::Float32, core::Float32, core::UInt16},
@@ -227,16 +229,18 @@ TEST_P(VoxelBlockGridPermuteDevices, GetUniqueBlockCoordinates) {
                                   backend);
 
         const int i = 0;
-        Image depth = t::io::CreateImageFromFile(
-                              fmt::format("{}/RGBD/depth/{:05d}.png",
-                                          std::string(TEST_DATA_DIR), i))
-                              ->To(device);
+        data::SampleRedwoodRGBDImages redwood_data;
+        Image depth =
+                t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[i])
+                        ->To(device);
         core::Tensor block_coords_from_depth = vbg.GetUniqueBlockCoordinates(
-                depth, intrinsic, extrinsics[i], depth_scale, depth_max);
+                depth, intrinsic, extrinsics[i], depth_scale, depth_max,
+                trunc_voxel_multiplier);
 
         PointCloud pcd = PointCloud::CreateFromDepthImage(
                 depth, intrinsic, extrinsics[i], depth_scale, depth_max, 4);
-        core::Tensor block_coords_from_pcd = vbg.GetUniqueBlockCoordinates(pcd);
+        core::Tensor block_coords_from_pcd =
+                vbg.GetUniqueBlockCoordinates(pcd, trunc_voxel_multiplier);
 
         // Hard-coded result -- implementation could change,
         // freeze result of test_data when stable.
@@ -318,10 +322,10 @@ TEST_P(VoxelBlockGridPermuteDevices, RayCasting) {
 
             int i = extrinsics.size() - 1;
 
-            Image depth = t::io::CreateImageFromFile(
-                                  fmt::format("{}/RGBD/depth/{:05d}.png",
-                                              std::string(TEST_DATA_DIR), i))
-                                  ->To(device);
+            data::SampleRedwoodRGBDImages redwood_data;
+            Image depth =
+                    t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[i])
+                            ->To(device);
             core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
                     depth, intrinsic, extrinsics[i], depth_scale, depth_max);
 
@@ -376,11 +380,10 @@ TEST_P(VoxelBlockGridPermuteDevices, DISABLED_RayCastingVisualize) {
                                  /* block_resolution = */ 8);
 
             int i = extrinsics.size() - 1;
-
-            Image depth = t::io::CreateImageFromFile(
-                                  fmt::format("{}/RGBD/depth/{:05d}.png",
-                                              std::string(TEST_DATA_DIR), i))
-                                  ->To(device);
+            data::SampleRedwoodRGBDImages redwood_data;
+            Image depth =
+                    t::io::CreateImageFromFile(redwood_data.GetDepthPaths()[i])
+                            ->To(device);
             core::Tensor frustum_block_coords = vbg.GetUniqueBlockCoordinates(
                     depth, intrinsic, extrinsics[i], depth_scale, depth_max);
 

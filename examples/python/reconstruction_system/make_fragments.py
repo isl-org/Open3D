@@ -27,31 +27,22 @@
 # examples/python/reconstruction_system/make_fragments.py
 
 import math
-import sys
+import os, sys
 import numpy as np
 import open3d as o3d
-sys.path.append("../utility")
-from file import join, make_clean_folder, get_rgbd_file_lists
-from opencv import initialize_opencv
-sys.path.append(".")
+
+pyexample_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(pyexample_path)
+
+from open3d_example import *
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from optimize_posegraph import optimize_posegraph_for_fragment
 
 # check opencv python package
 with_opencv = initialize_opencv()
 if with_opencv:
     from opencv_pose_estimation import pose_estimation
-
-
-def read_rgbd_image(color_file, depth_file, convert_rgb_to_intensity, config):
-    color = o3d.io.read_image(color_file)
-    depth = o3d.io.read_image(depth_file)
-    rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(
-        color,
-        depth,
-        depth_scale=config["depth_scale"],
-        depth_trunc=config["max_depth"],
-        convert_rgb_to_intensity=convert_rgb_to_intensity)
-    return rgbd_image
 
 
 def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
@@ -62,7 +53,7 @@ def register_one_rgbd_pair(s, t, color_files, depth_files, intrinsic,
                                         config)
 
     option = o3d.pipelines.odometry.OdometryOption()
-    option.max_depth_diff = config["max_depth_diff"]
+    option.depth_diff_max = config["depth_diff_max"]
     if abs(s - t) != 1:
         if with_opencv:
             success_5pt, odo_init = pose_estimation(source_rgbd_image,

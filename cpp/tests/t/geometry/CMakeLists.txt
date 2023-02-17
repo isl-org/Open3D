@@ -4,6 +4,8 @@ target_sources(tests PRIVATE
     PointCloud.cpp
     TensorMap.cpp
     TriangleMesh.cpp
-    TSDFVoxelGrid.cpp
+    AxisAlignedBoundingBox.cpp
+    OrientedBoundingBox.cpp
     VoxelBlockGrid.cpp
+    VtkUtils.cpp
 )

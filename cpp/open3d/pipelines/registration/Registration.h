@@ -89,10 +89,7 @@ public:
 /// terminated early with some confidence_. Early termination takes place when
 /// the number of iteration reaches k = log(1 - confidence)/log(1 -
 /// fitness^{ransac_n}), where ransac_n is the number of points used during a
-/// ransac iteration. Note that the validation is the most computational
-/// expensive operator in an iteration. Most iterations do not do full
-/// validation. It is crucial to control confidence_ so that the computation
-/// time is acceptable.
+/// ransac iteration. Use confidence=1.0 to avoid early termination.
 class RANSACConvergenceCriteria {
 public:
     /// \brief Parameterized Constructor.
@@ -102,7 +99,8 @@ public:
     /// early termination.
     RANSACConvergenceCriteria(int max_iteration = 100000,
                               double confidence = 0.999)
-        : max_iteration_(max_iteration), confidence_(confidence) {}
+        : max_iteration_(max_iteration),
+          confidence_(std::max(std::min(confidence, 1.0), 0.0)) {}
 
     ~RANSACConvergenceCriteria() {}
 
@@ -189,7 +187,6 @@ RegistrationResult RegistrationICP(
 /// \param ransac_n Fit ransac with `ransac_n` correspondences.
 /// \param checkers Correspondence checker.
 /// \param criteria Convergence criteria.
-/// \param seed Random seed.
 RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -200,8 +197,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         int ransac_n = 3,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers = {},
-        const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria(),
-        utility::optional<unsigned int> seed = utility::nullopt);
+        const RANSACConvergenceCriteria &criteria =
+                RANSACConvergenceCriteria());
 
 /// \brief Function for global RANSAC registration based on feature matching.
 ///
@@ -216,7 +213,6 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 /// \param ransac_n Fit ransac with `ransac_n` correspondences.
 /// \param checkers Correspondence checker.
 /// \param criteria Convergence criteria.
-/// \param seed Random seed.
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -229,8 +225,8 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         int ransac_n = 3,
         const std::vector<std::reference_wrapper<const CorrespondenceChecker>>
                 &checkers = {},
-        const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria(),
-        utility::optional<unsigned int> seed = utility::nullopt);
+        const RANSACConvergenceCriteria &criteria =
+                RANSACConvergenceCriteria());
 
 /// \param source The source point cloud.
 /// \param target The target point cloud.

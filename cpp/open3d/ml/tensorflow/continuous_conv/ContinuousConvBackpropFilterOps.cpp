@@ -185,7 +185,7 @@ coordinate_mapping:
     'ball_to_cube_volume_preserving': maps a unit ball to a unit cube preserving the volume.
     'identity': the identity mapping.
   Use 'ball_to_cube_radial' for a spherical or ellipsoidal filter window
-  and 'identiy' for a rectangular filter window.
+  and 'identity' for a rectangular filter window.
 
 
 normalize:

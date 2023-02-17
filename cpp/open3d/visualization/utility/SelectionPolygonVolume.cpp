@@ -31,6 +31,7 @@
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
+#include "open3d/utility/ProgressBar.h"
 
 namespace open3d {
 namespace visualization {
@@ -123,6 +124,11 @@ SelectionPolygonVolume::CropTriangleMeshInPolygon(
 }
 
 std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
+        const geometry::PointCloud &input) const {
+    return CropInPolygon(input.points_);
+}
+
+std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
         const std::vector<Eigen::Vector3d> &input) const {
     std::vector<size_t> output_index;
     int u, v, w;
@@ -140,8 +146,8 @@ std::vector<size_t> SelectionPolygonVolume::CropInPolygon(
         w = 2;
     }
     std::vector<double> nodes;
-    utility::ConsoleProgressBar progress_bar((int64_t)input.size(),
-                                             "Cropping geometry: ");
+    utility::ProgressBar progress_bar((int64_t)input.size(),
+                                      "Cropping geometry: ");
     for (size_t k = 0; k < input.size(); k++) {
         ++progress_bar;
         const auto &point = input[k];

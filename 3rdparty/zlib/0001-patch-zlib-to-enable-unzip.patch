@@ -1,0 +1,63 @@
+From 896883f4dc22d26db653bb92739ca77c4f330389 Mon Sep 17 00:00:00 2001
+From: reyanshsolis <reyanshsolis@gmail.com>
+Date: Sat, 25 Dec 2021 00:10:42 +0530
+Subject: [PATCH] patch zlib to enable unzip
+
+---
+ CMakeLists.txt          | 4 ++++
+ contrib/minizip/ioapi.c | 3 +--
+ contrib/minizip/unzip.c | 2 +-
+ 3 files changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0fe939d..20f25bb 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -93,6 +93,8 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR})
+ set(ZLIB_PUBLIC_HDRS
+     ${CMAKE_CURRENT_BINARY_DIR}/zconf.h
+     zlib.h
++    contrib/minizip/unzip.h
++    contrib/minizip/ioapi.h
+ )
+ set(ZLIB_PRIVATE_HDRS
+     crc32.h
+@@ -121,6 +123,8 @@ set(ZLIB_SRCS
+     trees.c
+     uncompr.c
+     zutil.c
++    contrib/minizip/unzip.c
++    contrib/minizip/ioapi.c
+ )
+ 
+ if(NOT MINGW)
+diff --git a/contrib/minizip/ioapi.c b/contrib/minizip/ioapi.c
+index 7f5c191..c2b536f 100644
+--- a/contrib/minizip/ioapi.c
++++ b/contrib/minizip/ioapi.c
+@@ -221,8 +221,7 @@ static int ZCALLBACK ferror_file_func (voidpf opaque, voidpf stream)
+     return ret;
+ }
+ 
+-void fill_fopen_filefunc (pzlib_filefunc_def)
+-  zlib_filefunc_def* pzlib_filefunc_def;
++void fill_fopen_filefunc (zlib_filefunc_def* pzlib_filefunc_def)
+ {
+     pzlib_filefunc_def->zopen_file = fopen_file_func;
+     pzlib_filefunc_def->zread_file = fread_file_func;
+diff --git a/contrib/minizip/unzip.c b/contrib/minizip/unzip.c
+index bcfb941..9319186 100644
+--- a/contrib/minizip/unzip.c
++++ b/contrib/minizip/unzip.c
+@@ -69,7 +69,7 @@
+ #include <string.h>
+ 
+ #ifndef NOUNCRYPT
+-        #define NOUNCRYPT
++        // #define NOUNCRYPT
+ #endif
+ 
+ #include "zlib.h"
+-- 
+2.25.1
+

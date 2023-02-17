@@ -42,8 +42,9 @@ class Image;
 
 namespace t {
 namespace geometry {
+class Geometry;
 class PointCloud;
-}
+}  // namespace geometry
 }  // namespace t
 
 namespace visualization {
@@ -52,7 +53,7 @@ namespace rendering {
 class Renderer;
 class View;
 struct TriangleMeshModel;
-struct Material;
+struct MaterialRecord;
 struct Light;
 
 // Contains renderable objects like geometry and lights
@@ -91,12 +92,12 @@ public:
     // Scene geometry
     virtual bool AddGeometry(const std::string& object_name,
                              const geometry::Geometry3D& geometry,
-                             const Material& material,
+                             const MaterialRecord& material,
                              const std::string& downsampled_name = "",
                              size_t downsample_threshold = SIZE_MAX) = 0;
     virtual bool AddGeometry(const std::string& object_name,
-                             const t::geometry::PointCloud& point_cloud,
-                             const Material& material,
+                             const t::geometry::Geometry& geometry,
+                             const MaterialRecord& material,
                              const std::string& downsampled_name = "",
                              size_t downsample_threshold = SIZE_MAX) = 0;
     virtual bool AddGeometry(const std::string& object_name,
@@ -109,7 +110,7 @@ public:
     virtual void ShowGeometry(const std::string& object_name, bool show) = 0;
     virtual bool GeometryIsVisible(const std::string& object_name) = 0;
     virtual void OverrideMaterial(const std::string& object_name,
-                                  const Material& material) = 0;
+                                  const MaterialRecord& material) = 0;
     virtual void GeometryShadows(const std::string& object_name,
                                  bool cast_shadows,
                                  bool receive_shadows) = 0;
@@ -123,7 +124,7 @@ public:
     virtual Transform GetGeometryTransform(const std::string& object_name) = 0;
     virtual geometry::AxisAlignedBoundingBox GetGeometryBoundingBox(
             const std::string& object_name) = 0;
-    virtual void OverrideMaterialAll(const Material& material,
+    virtual void OverrideMaterialAll(const MaterialRecord& material,
                                      bool shader_only = true) = 0;
 
     // Lighting Environment

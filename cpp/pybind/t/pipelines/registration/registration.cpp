@@ -120,7 +120,7 @@ void pybind_registration_classes(py::module &m) {
             .def_readwrite("fitness", &RegistrationResult::fitness_,
                            "float: The overlapping area (# of inlier "
                            "correspondences "
-                           "/ # of points in target). Higher is better.")
+                           "/ # of points in source). Higher is better.")
             .def("__repr__", [](const RegistrationResult &rr) {
                 return fmt::format(
                         "RegistrationResult[fitness_={:e}, "
@@ -253,8 +253,7 @@ void pybind_registration_classes(py::module &m) {
                            "Robust Kernel used in the Optimization");
 }
 
-// Registration functions have similar arguments, sharing arg
-// docstrings.
+// Registration functions have similar arguments, sharing arg docstrings.
 static const std::unordered_map<std::string, std::string>
         map_shared_argument_docstrings = {
                 {"correspondences",
@@ -269,7 +268,9 @@ static const std::unordered_map<std::string, std::string>
                 {"estimation_method",
                  "Estimation method. One of "
                  "(``TransformationEstimationPointToPoint``, "
-                 "``TransformationEstimationPointToPlane``)"},
+                 "``TransformationEstimationPointToPlane``, "
+                 "``TransformationEstimationForColoredICP``, "
+                 "``TransformationEstimationForGeneralizedICP``)"},
                 {"init_source_to_target", "Initial transformation estimation"},
                 {"max_correspondence_distance",
                  "Maximum correspondence points-pair distance."},
@@ -282,9 +283,20 @@ static const std::unordered_map<std::string, std::string>
                 {"transformation",
                  "The 4x4 transformation matrix of type Float64 "
                  "to transform ``source`` to ``target``"},
+                {"voxel_size",
+                 "The input pointclouds will be down-sampled to this "
+                 "`voxel_size` scale. If `voxel_size` < 0, original scale will "
+                 "be used. However it is highly recommended to down-sample the "
+                 "point-cloud for performance. By default original scale of "
+                 "the point-cloud will be used."},
                 {"voxel_sizes",
                  "o3d.utility.DoubleVector of voxel sizes in strictly "
-                 "decreasing order, for multi-scale icp."}};
+                 "decreasing order, for multi-scale icp."},
+                {"callback_after_iteration",
+                 "Optional lambda function, saves string to tensor map of "
+                 "attributes such as iteration_index, scale_index, "
+                 "scale_iteration_index, inlier_rmse, fitness, transformation, "
+                 "on CPU device, updated after each iteration."}};
 
 void pybind_registration_methods(py::module &m) {
     m.def("evaluate_registration", &EvaluateRegistration,
@@ -295,14 +307,14 @@ void pybind_registration_methods(py::module &m) {
                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")));
     docstring::FunctionDocInject(m, "evaluate_registration",
                                  map_shared_argument_docstrings);
-
     m.def("icp", &ICP, py::call_guard<py::gil_scoped_release>(),
           "Function for ICP registration", "source"_a, "target"_a,
           "max_correspondence_distance"_a,
           "init_source_to_target"_a =
                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
           "estimation_method"_a = TransformationEstimationPointToPoint(),
-          "criteria"_a = ICPConvergenceCriteria());
+          "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0,
+          "callback_after_iteration"_a = py::none());
     docstring::FunctionDocInject(m, "icp", map_shared_argument_docstrings);
 
     m.def("multi_scale_icp", &MultiScaleICP,
@@ -311,7 +323,8 @@ void pybind_registration_methods(py::module &m) {
           "voxel_sizes"_a, "criteria_list"_a, "max_correspondence_distances"_a,
           "init_source_to_target"_a =
                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-          "estimation_method"_a = TransformationEstimationPointToPoint());
+          "estimation_method"_a = TransformationEstimationPointToPoint(),
+          "callback_after_iteration"_a = py::none());
     docstring::FunctionDocInject(m, "multi_scale_icp",
                                  map_shared_argument_docstrings);
 
@@ -331,6 +344,7 @@ void pybind_registration(py::module &m) {
             "registration", "Tensor-based registration pipeline.");
     pybind_registration_classes(m_submodule);
     pybind_registration_methods(m_submodule);
+    pybind_feature(m_submodule);
 
     pybind_robust_kernels(m_submodule);
 }

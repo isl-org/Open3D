@@ -95,7 +95,7 @@ Widget::DrawResult VectorEdit::Draw(const DrawContext& context) {
     auto result = Widget::DrawResult::NONE;
     DrawImGuiPushEnabledState();
     ImGui::PushItemWidth(float(GetFrame().width));
-    if (ImGui::InputFloat3(impl_->id_.c_str(), impl_->value_.data(), 3)) {
+    if (ImGui::InputFloat3(impl_->id_.c_str(), impl_->value_.data())) {
         result = Widget::DrawResult::REDRAW;
     }
     ImGui::PopItemWidth();

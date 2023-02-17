@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "open3d/core/Tensor.h"
+#include "open3d/t/geometry/TensorMap.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
@@ -85,14 +86,14 @@ public:
     /// \brief Parameterized Constructor.
     ///
     /// \param transformation The estimated transformation matrix of dtype
-    /// Float64 on CPU device.
+    /// Float64 on CPU device. Default: Identity tensor.
     RegistrationResult(const core::Tensor &transformation = core::Tensor::Eye(
                                4, core::Float64, core::Device("CPU:0")))
         : transformation_(transformation), inlier_rmse_(0.0), fitness_(0.0) {}
 
     ~RegistrationResult() {}
 
-    bool IsBetterRANSACThan(const RegistrationResult &other) const {
+    bool IsBetterThan(const RegistrationResult &other) const {
         return fitness_ > other.fitness_ || (fitness_ == other.fitness_ &&
                                              inlier_rmse_ < other.inlier_rmse_);
     }
@@ -136,20 +137,31 @@ RegistrationResult EvaluateRegistration(
 /// Float64 on CPU.
 /// \param estimation Estimation method.
 /// \param criteria Convergence criteria.
-RegistrationResult ICP(
-        const geometry::PointCloud &source,
-        const geometry::PointCloud &target,
-        double max_correspondence_distance,
-        const core::Tensor &init_source_to_target =
-                core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
-        const TransformationEstimation &estimation =
-                TransformationEstimationPointToPoint(),
-        const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria());
+/// \param voxel_size The input pointclouds will be down-sampled to this
+/// `voxel_size` scale. If voxel_size < 0, original scale will be used.
+/// However it is highly recommended to down-sample the point-cloud for
+/// performance. By default original scale of the point-cloud will be used.
+/// \param callback_after_iteration Optional lambda function, saves string to
+/// tensor map of attributes such as "iteration_index", "scale_index",
+/// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on CPU
+/// device, updated after each iteration.
+RegistrationResult
+ICP(const geometry::PointCloud &source,
+    const geometry::PointCloud &target,
+    const double max_correspondence_distance,
+    const core::Tensor &init_source_to_target =
+            core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+    const TransformationEstimation &estimation =
+            TransformationEstimationPointToPoint(),
+    const ICPConvergenceCriteria &criteria = ICPConvergenceCriteria(),
+    const double voxel_size = -1.0,
+    const std::function<void(const std::unordered_map<std::string, core::Tensor>
+                                     &)> &callback_after_iteration = nullptr);
 
 /// \brief Functions for Multi-Scale ICP registration.
 /// It will run ICP on different voxel level, from coarse to dense.
 /// The vector of ICPConvergenceCriteria(relative fitness, relative rmse,
-/// max_iterations) contains the stoping condition for each voxel level.
+/// max_iterations) contains the stopping condition for each voxel level.
 /// The length of voxel_sizes vector, criteria vector,
 /// max_correspondence_distances vector must be same, and voxel_sizes must
 /// contain positive values in strictly decreasing order [Lower the voxel size,
@@ -167,6 +179,10 @@ RegistrationResult ICP(
 /// \param init_source_to_target Initial transformation estimation of type
 /// Float64 on CPU.
 /// \param estimation Estimation method.
+/// \param callback_after_iteration Optional lambda function, saves string to
+/// tensor map of attributes such as "iteration_index", "scale_index",
+/// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on CPU
+/// device, updated after each iteration.
 RegistrationResult MultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -176,9 +192,12 @@ RegistrationResult MultiScaleICP(
         const core::Tensor &init_source_to_target =
                 core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
         const TransformationEstimation &estimation =
-                TransformationEstimationPointToPoint());
+                TransformationEstimationPointToPoint(),
+        const std::function<
+                void(const std::unordered_map<std::string, core::Tensor> &)>
+                &callback_after_iteration = nullptr);
 
-/// \brief Computes `Information Matrix`, from the transfromation between source
+/// \brief Computes `Information Matrix`, from the transformation between source
 /// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},
 /// of dtype `Float64` on device `CPU:0`.
 ///

@@ -31,6 +31,8 @@
 #include "open3d/core/Tensor.h"
 #include "open3d/core/TensorCheck.h"
 #include "open3d/geometry/LineSet.h"
+#include "open3d/t/geometry/BoundingVolume.h"
+#include "open3d/t/geometry/DrawableGeometry.h"
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/TensorMap.h"
 #include "open3d/utility/Logging.h"
@@ -38,6 +40,8 @@
 namespace open3d {
 namespace t {
 namespace geometry {
+
+class TriangleMesh;
 
 /// \class LineSet
 /// \brief A LineSet contains points and lines joining them and optionally
@@ -96,7 +100,7 @@ namespace geometry {
 /// Note that `{Get|Set|Has}{Point|Line}Attr()` functions also work "positions"
 /// and "indices".
 
-class LineSet : public Geometry {
+class LineSet : public Geometry, public DrawableGeometry {
 public:
     /// Construct an empty LineSet on the provided device.
     LineSet(const core::Device &device = core::Device("CPU:0"));
@@ -137,6 +141,9 @@ public:
     /// Getter for point_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetPointAttr() const { return point_attr_; }
 
+    /// Getter for point_attr_ TensorMap.
+    TensorMap &GetPointAttr() { return point_attr_; }
+
     /// Get point attributes in point_attr_. Throws exception if the attribute
     /// does not exist.
     ///
@@ -151,6 +158,9 @@ public:
 
     /// Getter for line_attr_ TensorMap. Used in Pybind.
     const TensorMap &GetLineAttr() const { return line_attr_; }
+
+    /// Getter for line_attr_ TensorMap.
+    TensorMap &GetLineAttr() { return line_attr_; }
 
     /// Get line attributes in line_attr_. Throws exception if the
     /// attribute does not exist.
@@ -251,7 +261,7 @@ public:
         SetLineAttr("colors", value);
     }
 
-    /// Returns true if all of the followings are true in point_attr_:
+    /// Returns true if all of the following are true in point_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as "points"'s length
     /// 3) attribute's length > 0
@@ -264,7 +274,7 @@ public:
     /// 0. Convenience function.
     bool HasPointPositions() const { return HasPointAttr("positions"); }
 
-    /// Returns true if all of the followings are true in line_attr_:
+    /// Returns true if all of the following are true in line_attr_:
     /// 1) attribute key exist
     /// 2) attribute's length as "indices"'s length
     /// 3) attribute's length > 0
@@ -277,7 +287,7 @@ public:
     /// length > 0.  Convenience function.
     bool HasLineIndices() const { return HasLineAttr("indices"); }
 
-    /// Returns true if all of the followings are true in line_attr_:
+    /// Returns true if all of the following are true in line_attr_:
     /// 1) attribute "colors" exist
     /// 2) attribute "colors"'s length as "indices"'s length
     /// 3) attribute "colors"'s length > 0
@@ -307,19 +317,26 @@ public:
     ///
     /// Custom attributes (e.g.: point or line normals) are not transformed.
     ///
-    /// Extracts \f$ R, t \f$ from Transformation \f[
-    /// T_{(4,4)} = \begin{bmatrix} R_{(3,3)} & t_{(3,1)} \\*
-    ///                             O_{(1,3)} & s_{(1,1)} \end{bmatrix} \f]
-    ///  It Assumes \f$s = 1\f$ (no scaling) and \f$O = [0,0,0]\f$ and applies
-    ///  the transformation as \f$P = R(P) + t\f$.
+    /// Transformation matrix is a 4x4 matrix.
+    ///  T (4x4) =   [[ R(3x3)  t(3x1) ],
+    ///               [ O(1x3)  s(1x1) ]]
+    ///  (s = 1 for Transformation without scaling)
+    ///
+    ///  It applies the following general transform to each `positions` and
+    ///  `normals`.
+    ///   |x'|   | R(0,0) R(0,1) R(0,2) t(0)|   |x|
+    ///   |y'| = | R(1,0) R(1,1) R(1,2) t(1)| @ |y|
+    ///   |z'|   | R(2,0) R(2,1) R(2,2) t(2)|   |z|
+    ///   |w'|   | O(0,0) O(0,1) O(0,2)  s  |   |1|
+    ///
+    ///   [x, y, z] = [x', y', z'] / w'
+    ///
     /// \param transformation Transformation [Tensor of shape {4,4}].
-    /// Should be on the same device as the LineSet.
     /// \return Transformed line set.
     LineSet &Transform(const core::Tensor &transformation);
 
     /// \brief Translates the points and lines of the LineSet.
     /// \param translation Translation tensor of shape {3}
-    /// Should be on the same device as the LineSet.
     /// \param relative If true (default) translates relative to center of
     /// LineSet.
     /// \return Translated line set.
@@ -328,21 +345,19 @@ public:
     /// \brief Scales the points and lines of the LineSet.
     /// \param scale Scale magnitude.
     /// \param center Center [Tensor of shape {3}] about which the LineSet is
-    /// to be scaled. Should be on the same device as the LineSet.
     /// \return Scaled line set.
     LineSet &Scale(double scale, const core::Tensor &center);
 
     /// \brief Rotates the points and lines of the line set. Custom attributes
     /// (e.g.: point or line normals) are not transformed.
     /// \param R Rotation [Tensor of shape {3,3}].
-    /// Should be on the same device as the LineSet
     /// \param center Center [Tensor of shape {3}] about which the LineSet is
-    /// to be scaled. Should be on the same device as the LineSet.
+    /// to be scaled.
     /// \return Rotated line set.
     LineSet &Rotate(const core::Tensor &R, const core::Tensor &center);
 
     /// \brief Returns the device attribute of this LineSet.
-    core::Device GetDevice() const { return device_; }
+    core::Device GetDevice() const override { return device_; }
 
     /// Create a LineSet from a legacy Open3D LineSet.
     /// \param lineset_legacy Legacy Open3D LineSet.
@@ -359,6 +374,35 @@ public:
 
     /// Convert to a legacy Open3D LineSet.
     open3d::geometry::LineSet ToLegacy() const;
+
+    /// Create an axis-aligned bounding box from point attribute "positions".
+    AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const;
+
+    /// Create an oriented bounding box from point attribute "positions".
+    OrientedBoundingBox GetOrientedBoundingBox() const;
+
+    /// Sweeps the line set rotationally about an axis.
+    /// \param angle The rotation angle in degree.
+    /// \param axis The rotation axis.
+    /// \param resolution The resolution defines the number of intermediate
+    /// sweeps about the rotation axis.
+    /// \param translation The translation along the rotation axis.
+    /// \param capping If true adds caps to the mesh.
+    /// \return A triangle mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeRotation(double angle,
+                                 const core::Tensor &axis,
+                                 int resolution = 16,
+                                 double translation = 0.0,
+                                 bool capping = true) const;
+
+    /// Sweeps the line set along a direction vector.
+    /// \param vector The direction vector.
+    /// \param scale Scalar factor which essentially scales the direction
+    /// vector. \param capping If true adds caps to the mesh. \return A triangle
+    /// mesh with the result of the sweep operation.
+    TriangleMesh ExtrudeLinear(const core::Tensor &vector,
+                               double scale = 1.0,
+                               bool capping = true) const;
 
 protected:
     core::Device device_ = core::Device("CPU:0");

@@ -33,8 +33,12 @@ namespace utility {
 
 void pybind_utility(py::module &m);
 
-void pybind_logging(py::module &m);
 void pybind_eigen(py::module &m);
+void pybind_logging(py::module &m);
+
+namespace random {
+void pybind_random(py::module &m);
+}
 
 }  // namespace utility
 }  // namespace open3d

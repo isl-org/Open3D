@@ -150,6 +150,15 @@ void FilamentView::SetDiscardBuffers(const TargetBuffers& buffers) {
     view_->setRenderTarget(nullptr);
 }
 
+void FilamentView::SetWireframe(bool enable) {
+    // Enable bloom for wireframe mode
+    if (enable) {
+        SetBloom(true, 0.5f, 8);
+    } else {
+        SetBloom(false);
+    }
+}
+
 void FilamentView::SetSampleCount(int n) { view_->setSampleCount(n); }
 
 int FilamentView::GetSampleCount() const { return view_->getSampleCount(); }
@@ -176,6 +185,17 @@ void FilamentView::SetAmbientOcclusion(bool enabled,
     options.enabled = enabled;
     options.ssct.enabled = ssct_enabled;
     view_->setAmbientOcclusionOptions(options);
+}
+
+void FilamentView::SetBloom(bool enabled,
+                            float strength /* = 0.5f */,
+                            int spread /* = 6 */) {
+    filament::View::BloomOptions bloom_options;
+    bloom_options.enabled = enabled;
+    bloom_options.strength = strength;
+    bloom_options.threshold = false;
+    bloom_options.levels = spread;
+    view_->setBloomOptions(bloom_options);
 }
 
 void FilamentView::SetAntiAliasing(bool enabled, bool temporal /* = false */) {
@@ -351,6 +371,17 @@ void FilamentView::CopySettingsFrom(const FilamentView& other) {
     if (other.configured_for_picking_) {
         ConfigureForColorPicking();
     }
+    if (other.color_grading_) {
+        view_->setColorGrading(other.color_grading_);
+    }
+    auto ao_options = other.view_->getAmbientOcclusionOptions();
+    view_->setAmbientOcclusionOptions(ao_options);
+    auto aa_mode = other.view_->getAntiAliasing();
+    auto temporal_options = other.view_->getTemporalAntiAliasingOptions();
+    view_->setAntiAliasing(aa_mode);
+    view_->setTemporalAntiAliasingOptions(temporal_options);
+    view_->setShadowingEnabled(other.view_->isShadowingEnabled());
+    view_->setPostProcessingEnabled(other.view_->isPostProcessingEnabled());
 }
 
 void FilamentView::SetScene(FilamentScene& scene) {

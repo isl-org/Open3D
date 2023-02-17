@@ -31,7 +31,7 @@ import json
 import functools
 import open3d as o3d
 # Note: the _AsyncEventLoop is started whenever this module is imported.
-from open3d.visualization._async_event_loop import _async_event_loop
+from open3d.visualization.async_event_loop import async_event_loop
 
 from open3d._build_config import _build_config
 if not _build_config["BUILD_JUPYTER_EXTENSION"]:
@@ -144,7 +144,7 @@ def draw(geometry=None,
          on_animation_tick=None):
     """Draw in Jupyter Cell"""
 
-    window_uid = _async_event_loop.run_sync(
+    window_uid = async_event_loop.run_sync(
         functools.partial(o3d.visualization.draw,
                           geometry=geometry,
                           title=title,

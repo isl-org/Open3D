@@ -83,15 +83,14 @@ std::shared_ptr<PointCloudForColoredICP> InitializePointCloudForColoredICP(
             b.setZero();
             for (size_t i = 1; i < nn; i++) {
                 int P_adj_idx = point_idx[i];
-                Eigen::Vector3d vt_adj = output->points_[P_adj_idx];
-                Eigen::Vector3d vt_proj = vt_adj - (vt_adj - vt).dot(nt) * nt;
+                const Eigen::Vector3d &vt_adj = output->points_[P_adj_idx];
                 double it_adj = (output->colors_[P_adj_idx](0) +
                                  output->colors_[P_adj_idx](1) +
                                  output->colors_[P_adj_idx](2)) /
                                 3.0;
-                A(i - 1, 0) = (vt_proj(0) - vt(0));
-                A(i - 1, 1) = (vt_proj(1) - vt(1));
-                A(i - 1, 2) = (vt_proj(2) - vt(2));
+                A(i - 1, 0) = (vt_adj(0) - vt(0));
+                A(i - 1, 1) = (vt_adj(1) - vt(1));
+                A(i - 1, 2) = (vt_adj(2) - vt(2));
                 b(i - 1, 0) = (it_adj - it);
             }
             // adds orthogonal constraint
@@ -170,20 +169,16 @@ Eigen::Matrix4d TransformationEstimationForColoredICP::ComputeTransformation(
                              target.colors_[ct](2)) /
                             3.0;
                 const Eigen::Vector3d &dit = target_c.color_gradient_[ct];
-                double is0_proj = (dit.dot(vs_proj - vt)) + it;
+                double is_proj = (dit.dot(vs_proj - vt)) + it;
 
-                const Eigen::Matrix3d M =
-                        (Eigen::Matrix3d() << 1.0 - nt(0) * nt(0),
-                         -nt(0) * nt(1), -nt(0) * nt(2), -nt(0) * nt(1),
-                         1.0 - nt(1) * nt(1), -nt(1) * nt(2), -nt(0) * nt(2),
-                         -nt(1) * nt(2), 1.0 - nt(2) * nt(2))
-                                .finished();
+                const Eigen::Matrix3d &M =
+                        Eigen::Matrix3d::Identity() - nt * nt.transpose();
+                const Eigen::Vector3d &ditM = dit.transpose() * M;
 
-                const Eigen::Vector3d &ditM = -dit.transpose() * M;
                 J_r[1].block<3, 1>(0, 0) =
                         sqrt_lambda_photometric * vs.cross(ditM);
                 J_r[1].block<3, 1>(3, 0) = sqrt_lambda_photometric * ditM;
-                r[1] = sqrt_lambda_photometric * (is - is0_proj);
+                r[1] = sqrt_lambda_photometric * (is_proj - is);
                 w[1] = kernel_->Weight(r[1]);
             };
 

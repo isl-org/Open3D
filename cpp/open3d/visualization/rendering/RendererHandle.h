@@ -26,19 +26,12 @@
 
 #pragma once
 
+#include <fmt/format.h>
+
 #include <array>
 #include <cstdint>
 #include <functional>
-
-#define FMT_HEADER_ONLY 1
-#define FMT_STRING_ALIAS 1
-// Including windows.h causes all kinds of #defines like "OPAQUE", "near",
-// "far", causes compile errors with Filament includes, and generally wrecks
-// havoc.
-#ifndef FMT_USE_WINDOWS_H
-#define FMT_USE_WINDOWS_H 0
-#endif
-#include <fmt/format.h>
+#include <type_traits>
 
 namespace open3d {
 
@@ -181,12 +174,16 @@ public:
 }  // namespace std
 
 namespace fmt {
-using namespace open3d::visualization;
-template <>
-struct formatter<open3d::visualization::rendering::REHandle_abstract> {
+template <typename T>
+struct formatter<
+        T,
+        std::enable_if_t<std::is_base_of<open3d::visualization::rendering::
+                                                 REHandle_abstract,
+                                         T>::value,
+                         char>> {
     template <typename FormatContext>
     auto format(const open3d::visualization::rendering::REHandle_abstract& uid,
-                FormatContext& ctx) {
+                FormatContext& ctx) -> decltype(ctx.out()) {
         return format_to(ctx.out(), "[{}, {}, hash: {}]",
                          open3d::visualization::rendering::REHandle_abstract::
                                  TypeToString(uid.type),
@@ -194,7 +191,7 @@ struct formatter<open3d::visualization::rendering::REHandle_abstract> {
     }
 
     template <typename ParseContext>
-    constexpr auto parse(ParseContext& ctx) {
+    constexpr auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
         return ctx.begin();
     }
 };

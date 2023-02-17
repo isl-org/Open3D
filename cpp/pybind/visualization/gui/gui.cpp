@@ -26,8 +26,6 @@
 
 #include "pybind/visualization/gui/gui.h"
 
-#include <pybind11/detail/common.h>
-
 #include "open3d/camera/PinholeCameraIntrinsic.h"
 #include "open3d/geometry/Image.h"
 #include "open3d/t/geometry/Image.h"
@@ -48,6 +46,7 @@
 #include "open3d/visualization/gui/ListView.h"
 #include "open3d/visualization/gui/NumberEdit.h"
 #include "open3d/visualization/gui/ProgressBar.h"
+#include "open3d/visualization/gui/RadioButton.h"
 #include "open3d/visualization/gui/SceneWidget.h"
 #include "open3d/visualization/gui/Slider.h"
 #include "open3d/visualization/gui/StackedWidget.h"
@@ -58,6 +57,8 @@
 #include "open3d/visualization/gui/TreeView.h"
 #include "open3d/visualization/gui/VectorEdit.h"
 #include "open3d/visualization/gui/Widget.h"
+#include "open3d/visualization/gui/WidgetProxy.h"
+#include "open3d/visualization/gui/WidgetStack.h"
 #include "open3d/visualization/gui/Window.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Renderer.h"
@@ -65,6 +66,7 @@
 #include "open3d/visualization/rendering/filament/FilamentEngine.h"
 #include "open3d/visualization/rendering/filament/FilamentRenderToBuffer.h"
 #include "pybind/docstring.h"
+#include "pybind/open3d_pybind.h"
 #include "pybind/visualization/visualization.h"
 #include "pybind11/functional.h"
 
@@ -110,7 +112,7 @@ public:
     std::function<void(const LayoutContext &)> on_layout_;
 
 protected:
-    void Layout(const LayoutContext &context) {
+    void Layout(const LayoutContext &context) override {
         if (on_layout_) {
             // the Python callback sizes the children
             on_layout_(context);
@@ -149,7 +151,8 @@ void install_cleanup_atexit() {
     }
 }
 
-void InitializeForPython(std::string resource_path /*= ""*/) {
+void InitializeForPython(std::string resource_path /*= ""*/,
+                         bool headless /*= false*/) {
     if (resource_path.empty()) {
         // We need to find the resources directory. Fortunately,
         // Python knows where the module lives (open3d.__file__
@@ -163,7 +166,11 @@ void InitializeForPython(std::string resource_path /*= ""*/) {
         resource_path = module_path + "/resources";
     }
     Application::GetInstance().Initialize(resource_path.c_str());
-    install_cleanup_atexit();
+    // NOTE: The PyOffscreenRenderer takes care of cleaning itself up so the
+    // atext is not necessary
+    if (!headless) {
+        install_cleanup_atexit();
+    }
 }
 
 std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
@@ -174,10 +181,13 @@ std::shared_ptr<geometry::Image> RenderToImageWithoutWindow(
 }
 
 std::shared_ptr<geometry::Image> RenderToDepthImageWithoutWindow(
-        rendering::Open3DScene *scene, int width, int height) {
+        rendering::Open3DScene *scene,
+        int width,
+        int height,
+        bool z_in_view_space /* = false */) {
     return Application::GetInstance().RenderToDepthImage(
             scene->GetRenderer(), scene->GetView(), scene->GetScene(), width,
-            height);
+            height, z_in_view_space);
 }
 
 enum class EventCallbackResult { IGNORED = 0, HANDLED, CONSUMED };
@@ -193,23 +203,18 @@ void pybind_gui_classes(py::module &m) {
     // ---- FontDescription ----
     py::class_<FontDescription> fd(m, "FontDescription",
                                    "Class to describe a custom font");
-    fd.def_readonly_static("SANS_SERIF", &FontDescription::SANS_SERIF,
-                           "Name of the default sans-serif font that comes "
-                           "with Open3D")
-            .def_readonly_static(
-                    "MONOSPACE", &FontDescription::MONOSPACE,
-                    "Name of the default monospace font that comes "
-                    "with Open3D")
-            .def(py::init<const char *, FontStyle, int>(),
-                 "typeface"_a = FontDescription::SANS_SERIF,
-                 "style"_a = FontStyle::NORMAL, "point_size"_a = 0,
-                 "Creates a FontDescription. 'typeface' is a path to a "
-                 "TrueType (.ttf), TrueType Collection (.ttc), or "
-                 "OpenType (.otf) file, or it is the name of the font, "
-                 "in which case the system font paths will be searched "
-                 "to find the font file. This typeface will be used for "
-                 "roman characters (Extended Latin, that is, European "
-                 "languages")
+    fd.attr("SANS_SERIF") = FontDescription::SANS_SERIF;
+    fd.attr("MONOSPACE") = FontDescription::MONOSPACE;
+    fd.def(py::init<const char *, FontStyle, int>(),
+           "typeface"_a = FontDescription::SANS_SERIF,
+           "style"_a = FontStyle::NORMAL, "point_size"_a = 0,
+           "Creates a FontDescription. 'typeface' is a path to a "
+           "TrueType (.ttf), TrueType Collection (.ttc), or "
+           "OpenType (.otf) file, or it is the name of the font, "
+           "in which case the system font paths will be searched "
+           "to find the font file. This typeface will be used for "
+           "roman characters (Extended Latin, that is, European "
+           "languages")
             .def("add_typeface_for_language",
                  &FontDescription::AddTypefaceForLanguage,
                  "Adds code points outside Extended Latin from the specified "
@@ -240,9 +245,8 @@ void pybind_gui_classes(py::module &m) {
                                         "Global application singleton. This "
                                         "owns the menubar, windows, and event "
                                         "loop");
+    application.attr("DEFAULT_FONT_ID") = Application::DEFAULT_FONT_ID;
     application
-            .def_readonly_static("DEFAULT_FONT_ID",
-                                 &Application::DEFAULT_FONT_ID)
             .def("__repr__",
                  [](const Application &app) {
                      return std::string("Application singleton instance");
@@ -441,6 +445,11 @@ void pybind_gui_classes(py::module &m) {
                     "and device pixels (read-only)")
             .def_property_readonly("is_visible", &PyWindow::IsVisible,
                                    "True if window is visible (read-only)")
+            .def("set_on_key", &PyWindow::SetOnKeyEvent,
+                 "Sets a callback for key events. This callback is passed "
+                 "a KeyEvent object. The callback must return "
+                 "True to stop more dispatching or False to dispatch"
+                 "to focused widget")
             .def("show", &PyWindow::Show, "Shows or hides the window")
             .def("close", &PyWindow::Close,
                  "Closes the window and destroys it, unless an on_close "
@@ -691,6 +700,90 @@ void pybind_gui_classes(py::module &m) {
                  "it requires some internal setup in order to function "
                  "properly");
 
+    // ---- WidgetProxy ----
+    py::class_<WidgetProxy, UnownedPointer<WidgetProxy>, Widget> widgetProxy(
+            m, "WidgetProxy",
+            "Widget container to delegate any widget dynamically."
+            " Widget can not be managed dynamically. Although it is allowed"
+            " to add more child widgets, it's impossible to replace some child"
+            " with new on or remove children. WidgetProxy is designed to solve"
+            " this problem."
+            " When WidgetProxy is created, it's invisible and disabled, so it"
+            " won't be drawn or layout, seeming like it does not exist. When"
+            " a widget is set by  set_widget, all  Widget's APIs will be"
+            " conducted to that child widget. It looks like WidgetProxy is"
+            " that widget."
+            " At any time, a new widget could be set, to replace the old one."
+            " and the old widget will be destroyed."
+            " Due to the content changing after a new widget is set or cleared,"
+            " a relayout of Window might be called after set_widget."
+            " The delegated widget could be retrieved by  get_widget in case"
+            "  you need to access it directly, like get check status of a"
+            " CheckBox. API other than  set_widget and get_widget has"
+            " completely same functions as Widget.");
+    widgetProxy.def(py::init<>(), "Creates a widget proxy")
+            .def("__repr__",
+                 [](const WidgetProxy &c) {
+                     std::stringstream s;
+                     s << "Proxy (" << c.GetFrame().x << ", " << c.GetFrame().y
+                       << "), " << c.GetFrame().width << " x "
+                       << c.GetFrame().height;
+                     return s.str();
+                 })
+            .def(
+                    "set_widget",
+                    [](WidgetProxy &w, UnownedPointer<Widget> proxy) {
+                        w.SetWidget(TakeOwnership<Widget>(proxy));
+                    },
+                    "set a new widget to be delegated by this one."
+                    " After set_widget, the previously delegated widget ,"
+                    " will be abandon all calls to Widget's API will be "
+                    " conducted to widget. Before any set_widget call, "
+                    " this widget is invisible and disabled, seems it "
+                    " does not exist because it won't be drawn or in a "
+                    "layout.")
+            .def("get_widget", &WidgetProxy::GetWidget,
+                 "Retrieve current delegated widget."
+                 "return instance of current delegated widget set by "
+                 "set_widget. An empty pointer will be returned "
+                 "if there is none.");
+
+    // ---- WidgetStack ----
+    py::class_<WidgetStack, UnownedPointer<WidgetStack>, WidgetProxy>
+            widgetStack(m, "WidgetStack",
+                        "A widget stack saves all widgets pushed into by "
+                        "push_widget and always shows the top one. The "
+                        "WidgetStack is a subclass of WidgetProxy, in other"
+                        "words, the topmost widget will delegate itself to "
+                        "WidgetStack. pop_widget will remove the topmost "
+                        "widget and callback set by set_on_top taking the "
+                        "new topmost widget will be called. The WidgetStack "
+                        "disappears in GUI if there is no widget in stack.");
+    widgetStack
+            .def(py::init<>(),
+                 "Creates a widget stack. The widget stack without any"
+                 "widget will not be shown in GUI until set_widget is"
+                 "called to push a widget.")
+            .def("__repr__",
+                 [](const WidgetStack &c) {
+                     std::stringstream s;
+                     s << "Stack (" << c.GetFrame().x << ", " << c.GetFrame().y
+                       << "), " << c.GetFrame().width << " x "
+                       << c.GetFrame().height;
+                     return s.str();
+                 })
+            .def("push_widget", &WidgetStack::PushWidget,
+                 "push a new widget onto the WidgetStack's stack, hiding "
+                 "whatever widget was there before and making the new widget "
+                 "visible.")
+            .def("pop_widget", &WidgetStack::PopWidget,
+                 "pop the topmost widget in the stack. The new topmost widget"
+                 "of stack will be the widget on the show in GUI.")
+            .def("set_on_top", &WidgetStack::SetOnTop,
+                 "Callable[[widget] -> None], called while a widget "
+                 "becomes the topmost of stack after some widget is popped"
+                 "out. It won't be called if a widget is pushed into stack"
+                 "by set_widget.");
     // ---- Button ----
     py::class_<Button, UnownedPointer<Button>, Widget> button(m, "Button",
                                                               "Button");
@@ -827,6 +920,34 @@ void pybind_gui_classes(py::module &m) {
                  "Arguments are the selected text and selected index, "
                  "respectively");
 
+    // ---- RadioButton ----
+    py::class_<RadioButton, UnownedPointer<RadioButton>, Widget> radiobtn(
+            m, "RadioButton", "Exclusive selection from radio button list");
+    py::enum_<RadioButton::Type> radiobtn_type(radiobtn, "Type",
+                                               py::arithmetic());
+    // Trick to write docs without listing the members in the enum class again.
+    radiobtn_type.attr("__doc__") = docstring::static_property(
+            py::cpp_function([](py::handle arg) -> std::string {
+                return "Enum class for RadioButton types.";
+            }),
+            py::none(), py::none(), "");
+    radiobtn_type.value("VERT", RadioButton::Type::VERT)
+            .value("HORIZ", RadioButton::Type::HORIZ)
+            .export_values();
+    radiobtn.def(py::init<RadioButton::Type>(),
+                 "Creates an empty radio buttons. Use set_items() to add items")
+            .def("set_items", &RadioButton::SetItems,
+                 "Set radio items, each item is a radio button.")
+            .def_property("selected_index", &RadioButton::GetSelectedIndex,
+                          &RadioButton::SetSelectedIndex,
+                          "The index of the currently selected item")
+            .def_property_readonly("selected_value",
+                                   &RadioButton::GetSelectedValue,
+                                   "The text of the currently selected item")
+            .def("set_on_selection_changed",
+                 &RadioButton::SetOnSelectionChanged,
+                 "Calls f(new_idx) when user changes selection");
+
     // ---- ImageWidget ----
     py::class_<UIImage, UnownedPointer<UIImage>> uiimage(
             m, "UIImage", "A bitmap suitable for displaying with ImageWidget");
@@ -945,7 +1066,14 @@ void pybind_gui_classes(py::module &m) {
                           "The position of the text in 3D coordinates")
             .def_property("color", &Label3D::GetTextColor,
                           &Label3D::SetTextColor,
-                          "The color of the text (gui.Color)");
+                          "The color of the text (gui.Color)")
+            .def_property(
+                    "scale", &Label3D::GetTextScale, &Label3D::SetTextScale,
+                    "The scale of the 3D label. When set to 1.0 (the default) "
+                    "text will be rendered at its native font size. Larger and "
+                    "smaller values of scale will enlarge or shrink the "
+                    "rendered text. Note: large values of scale may result in "
+                    "blurry text as the underlying font is not resized.");
 
     // ---- ListView ----
     py::class_<ListView, UnownedPointer<ListView>, Widget> listview(
@@ -961,6 +1089,11 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def("set_items", &ListView::SetItems,
                  "Sets the list to display the list of items provided")
+            .def("set_max_visible_items", &ListView::SetMaxVisibleItems,
+                 "Limit the max visible items shown to user. "
+                 "Set to negative number will make list extends vertically "
+                 "as much as possible, otherwise the list will at least show "
+                 "3 items and at most show num items.")
             .def_property("selected_index", &ListView::GetSelectedIndex,
                           &ListView::SetSelectedIndex,
                           "The index of the currently selected item")
@@ -1174,12 +1307,12 @@ void pybind_gui_classes(py::module &m) {
                  "Sets a callback for mouse events. This callback is passed "
                  "a MouseEvent object. The callback must return "
                  "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
-                 "or EventCallackResult.CONSUMED.")
+                 "or EventCallbackResult.CONSUMED.")
             .def("set_on_key", &PySceneWidget::SetOnKey,
                  "Sets a callback for key events. This callback is passed "
                  "a KeyEvent object. The callback must return "
                  "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
-                 "or EventCallackResult.CONSUMED.")
+                 "or EventCallbackResult.CONSUMED.")
             .def("set_on_sun_direction_changed",
                  &PySceneWidget::SetOnSunDirectionChanged,
                  "Callback when user changes sun direction (only called in "
@@ -1261,6 +1394,10 @@ void pybind_gui_classes(py::module &m) {
                     "Adds a tab. The first parameter is the title of the tab, "
                     "and the second parameter is a widget--normally this is a "
                     "layout.")
+            .def_property("selected_tab_index",
+                          &TabControl::GetSelectedTabIndex,
+                          &TabControl::SetSelectedTabIndex,
+                          "The index of the currently selected item")
             .def("set_on_selected_tab_changed",
                  &TabControl::SetOnSelectedTabChanged,
                  "Calls the provided callback function with the index of the "
@@ -1592,7 +1729,7 @@ void pybind_gui_classes(py::module &m) {
                     return new Horiz(spacing, margins);
                 }),
                 "spacing"_a = 0, "margins"_a = Margins(),
-                "Creates a layout that arranges widgets vertically, left to "
+                "Creates a layout that arranges widgets horizontally, left to "
                 "right, making their height equal to the layout's height "
                 "(which will generally be the largest height of the items). "
                 "First argument is the spacing between widgets, the second "
@@ -1601,7 +1738,7 @@ void pybind_gui_classes(py::module &m) {
                      return new Horiz(int(std::round(spacing)), margins);
                  }),
                  "spacing"_a = 0.0f, "margins"_a = Margins(),
-                 "Creates a layout that arranges widgets vertically, left to "
+                 "Creates a layout that arranges widgets horizontally, left to "
                  "right, making their height equal to the layout's height "
                  "(which will generally be the largest height of the items). "
                  "First argument is the spacing between widgets, the second "
@@ -1663,6 +1800,7 @@ void pybind_gui_classes(py::module &m) {
             py::none(), py::none(), "");
     filedlg_mode.value("OPEN", FileDialog::Mode::OPEN)
             .value("SAVE", FileDialog::Mode::SAVE)
+            .value("OPEN_DIR", FileDialog::Mode::OPEN_DIR)
             .export_values();
     filedlg.def(py::init<FileDialog::Mode, const char *, const Theme &>(),
                 "Creates either an open or save file dialog. The first "

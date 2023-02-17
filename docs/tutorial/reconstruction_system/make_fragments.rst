@@ -25,8 +25,8 @@ Register RGBD image pairs
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 56
-   :lines: 27,57-84
+   :lineno-start: 46
+   :lines: 27,47-76
    :linenos:
 
 The function reads a pair of RGBD images and registers the ``source_rgbd_image``
@@ -38,7 +38,6 @@ computes OpenCV ORB feature to match sparse features over wide baseline images,
 then performs 5-point RANSAC to estimate a rough alignment, which is used as
 the initialization of ``compute_rgbd_odometry``.
 
-
 .. _make_fragments_make_a_posegraph:
 
 Multiway registration
@@ -46,8 +45,8 @@ Multiway registration
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 86
-   :lines: 27,87-132
+   :lineno-start: 76
+   :lines: 27,77-123
    :linenos:
 
 This script uses the technique demonstrated in
@@ -62,8 +61,8 @@ function ``optimize_posegraph_for_fragment``.
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/optimize_posegraph.py
    :language: python
-   :lineno-start: 54
-   :lines: 27,55-64
+   :lineno-start: 51
+   :lines: 27,52-63
    :linenos:
 
 This function calls ``global_optimization`` to estimate poses of the RGBD images.
@@ -75,8 +74,8 @@ Make a fragment
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 134
-   :lines: 27,135-154
+   :lineno-start: 124
+   :lines: 27,125-146
    :linenos:
 
 Once the poses are estimates, :ref:`/tutorial/pipelines/rgbd_integration.ipynb`
@@ -87,8 +86,8 @@ Batch processing
 
 .. literalinclude:: ../../../examples/python/reconstruction_system/make_fragments.py
    :language: python
-   :lineno-start: 191
-   :lines: 27,192-213
+   :lineno-start: 181
+   :lines: 27,182-205
    :linenos:
 
 The main function calls each individual function explained above.

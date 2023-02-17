@@ -36,7 +36,7 @@
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/utility/Logging.h"
 #include "open3d/visualization/gui/Events.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 #include "open3d/visualization/rendering/Open3DScene.h"
 #include "open3d/visualization/rendering/Scene.h"
 #include "open3d/visualization/rendering/View.h"
@@ -92,6 +92,7 @@ private:
         size_t start_index;
 
         Obj(const std::string &n, size_t start) : name(n), start_index(start){};
+        bool IsValid() const { return !name.empty(); }
     };
 
 public:
@@ -122,11 +123,7 @@ public:
                                              return value < o.start_index;
                                          });
             if (next == objects_.end()) {
-                utility::LogError("First object != 0");
-            }
-            if (next == objects_.end()) {
                 return objects_.back();
-
             } else {
                 --next;
                 return *next;
@@ -208,7 +205,7 @@ void PickPointsInteractor::SetPickableGeometry(
             // over the occluded points. We paint with a special "mesh index"
             // so that we can to enhanced picking if we hit a mesh index.
             auto mesh_color = CalcIndexColor(kMeshIndex);
-            rendering::Material mat;
+            rendering::MaterialRecord mat;
             mat.shader = "unlitSolidColor";  // ignore any vertex colors!
             mat.base_color = {float(mesh_color.x()), float(mesh_color.y()),
                               float(mesh_color.z()), 1.0f};
@@ -226,6 +223,8 @@ void PickPointsInteractor::SetPickableGeometry(
             }
         }
     }
+    // add safety but invalid obj
+    lookup_->Add("", points_.size());
 
     if (points_.size() > kMaxPickableIndex) {
         utility::LogWarning(
@@ -327,8 +326,8 @@ void PickPointsInteractor::DoPick() {
                 [this](std::shared_ptr<geometry::Image> img) {
 #if WANT_DEBUG_IMAGE
                     std::cout << "[debug] Writing pick image to "
-                              << "/tmp/debug.png" << std::endl;
-                    io::WriteImage("/tmp/debug.png", *img);
+                              << "debug.png" << std::endl;
+                    io::WriteImage("debug.png", *img);
 #endif  // WANT_DEBUG_IMAGE
                     this->OnPickImageDone(img);
                 });
@@ -347,8 +346,8 @@ void PickPointsInteractor::ClearPick() {
     SetNeedsRedraw();
 }
 
-rendering::Material PickPointsInteractor::MakeMaterial() {
-    rendering::Material mat;
+rendering::MaterialRecord PickPointsInteractor::MakeMaterial() {
+    rendering::MaterialRecord mat;
     mat.shader = "unlitPolygonOffset";
     mat.point_size = float(point_size_);
     // We are not tonemapping, so src colors are RGB. This prevents the colors
@@ -420,9 +419,12 @@ void PickPointsInteractor::OnPickImageDone(
                     }
                 }
                 auto &o = lookup_->ObjectForIndex(best_idx);
-                size_t obj_idx = best_idx - o.start_index;
-                indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(
-                        obj_idx, points_[best_idx]));
+                if (o.IsValid()) {
+                    size_t obj_idx = best_idx - o.start_index;
+                    indices[o.name].push_back(
+                            std::pair<size_t, Eigen::Vector3d>(
+                                    obj_idx, points_[best_idx]));
+                }
             }
         } else {
             // Use polygon fill algorithm to find the pixels that need to be
@@ -566,9 +568,12 @@ void PickPointsInteractor::OnPickImageDone(
             // Now add everything that was "filled"
             for (auto idx : raw_indices) {
                 auto &o = lookup_->ObjectForIndex(idx);
-                size_t obj_idx = idx - o.start_index;
-                indices[o.name].push_back(std::pair<size_t, Eigen::Vector3d>(
-                        obj_idx, points_[idx]));
+                if (o.IsValid()) {
+                    size_t obj_idx = idx - o.start_index;
+                    indices[o.name].push_back(
+                            std::pair<size_t, Eigen::Vector3d>(obj_idx,
+                                                               points_[idx]));
+                }
             }
         }
 

@@ -1,15 +1,21 @@
 open3d_ispc_add_library(utility OBJECT)
 
 target_sources(utility PRIVATE
+    CompilerInfo.cpp
     Console.cpp
     CPUInfo.cpp
+    Download.cpp
     Eigen.cpp
+    Extract.cpp
+    ExtractZIP.cpp
     FileSystem.cpp
     Helper.cpp
     IJsonConvertible.cpp
     ISAInfo.cpp
     Logging.cpp
     Parallel.cpp
+    ProgressBar.cpp
+    Random.cpp
     Timer.cpp
 )
 

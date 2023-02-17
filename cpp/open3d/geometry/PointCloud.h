@@ -33,6 +33,7 @@
 
 #include "open3d/geometry/Geometry3D.h"
 #include "open3d/geometry/KDTreeSearchParam.h"
+#include "open3d/utility/Optional.h"
 
 namespace open3d {
 
@@ -69,7 +70,10 @@ public:
     Eigen::Vector3d GetMaxBound() const override;
     Eigen::Vector3d GetCenter() const override;
     AxisAlignedBoundingBox GetAxisAlignedBoundingBox() const override;
-    OrientedBoundingBox GetOrientedBoundingBox() const override;
+    OrientedBoundingBox GetOrientedBoundingBox(
+            bool robust = false) const override;
+    OrientedBoundingBox GetMinimalOrientedBoundingBox(
+            bool robust = false) const override;
     PointCloud &Transform(const Eigen::Matrix4d &transformation) override;
     PointCloud &Translate(const Eigen::Vector3d &translation,
                           bool relative = true) override;
@@ -115,30 +119,34 @@ public:
         return *this;
     }
 
-    /// \brief Remove all points from the point cloud that have a nan entry, or
-    /// infinite entries.
-    ///
-    /// Also removes the corresponding normals and color entries.
+    /// \brief Removes all points from the point cloud that have a nan entry, or
+    /// infinite entries. It also removes the corresponding attributes
+    /// associated with the non-finite point such as normals, covariances and
+    /// color entries. It doesn't re-computes these attributes after removing
+    /// non-finite points.
     ///
     /// \param remove_nan Remove NaN values from the PointCloud.
     /// \param remove_infinite Remove infinite values from the PointCloud.
     PointCloud &RemoveNonFinitePoints(bool remove_nan = true,
                                       bool remove_infinite = true);
 
-    /// \brief Function to select points from \p input pointcloud into
-    /// \p output pointcloud.
-    ///
-    /// Points with indices in \p indices are selected.
+    /// \brief Removes duplicated points, i.e., points that have identical
+    /// coordinates. It also removes the corresponding attributes associated
+    /// with the non-finite point such as normals, covariances and color
+    /// entries. It doesn't re-computes these attributes after removing
+    /// duplicated points.
+    PointCloud &RemoveDuplicatedPoints();
+
+    /// \brief Selects points from \p input pointcloud, with indices in \p
+    /// indices, and returns a new point-cloud with selected points.
     ///
     /// \param indices Indices of points to be selected.
     /// \param invert Set to `True` to invert the selection of indices.
     std::shared_ptr<PointCloud> SelectByIndex(
             const std::vector<size_t> &indices, bool invert = false) const;
 
-    /// \brief Function to downsample input pointcloud into output pointcloud
-    /// with a voxel.
-    ///
-    /// Normals and colors are averaged if they exist.
+    /// \brief Downsample input pointcloud with a voxel, and return a new
+    /// point-cloud. Normals, covariances and colors are averaged if they exist.
     ///
     /// \param voxel_size Defines the resolution of the voxel grid,
     /// smaller value leads to denser output point cloud.
@@ -179,6 +187,17 @@ public:
     /// \param sampling_ratio Sampling ratio, the ratio of sample to total
     /// number of points in the pointcloud.
     std::shared_ptr<PointCloud> RandomDownSample(double sampling_ratio) const;
+
+    /// \brief Function to downsample input pointcloud into output pointcloud
+    /// with a set of points has farthest distance.
+    ///
+    /// The sample is performed by selecting the farthest point from previous
+    /// selected points iteratively.
+    ///
+    /// \param num_samples Number of points to be sampled.
+    std::shared_ptr<PointCloud> FarthestPointDownSample(
+            size_t num_samples) const;
+
     /// \brief Function to crop pointcloud into output pointcloud
     ///
     /// All points with coordinates outside the bounding box \p bbox are
@@ -200,8 +219,11 @@ public:
     ///
     /// \param nb_points Number of points within the radius.
     /// \param search_radius Radius of the sphere.
+    /// \param print_progress Whether to print the progress bar.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-    RemoveRadiusOutliers(size_t nb_points, double search_radius) const;
+    RemoveRadiusOutliers(size_t nb_points,
+                         double search_radius,
+                         bool print_progress = false) const;
 
     /// \brief Function to remove points that are further away from their
     /// \p nb_neighbor neighbors in average.
@@ -209,7 +231,9 @@ public:
     /// \param nb_neighbors Number of neighbors around the target point.
     /// \param std_ratio Standard deviation ratio.
     std::tuple<std::shared_ptr<PointCloud>, std::vector<size_t>>
-    RemoveStatisticalOutliers(size_t nb_neighbors, double std_ratio) const;
+    RemoveStatisticalOutliers(size_t nb_neighbors,
+                              double std_ratio,
+                              bool print_progress = false) const;
 
     /// \brief Function to compute the normals of a point cloud.
     ///
@@ -293,8 +317,13 @@ public:
     std::vector<double> ComputeNearestNeighborDistance() const;
 
     /// Function that computes the convex hull of the point cloud using qhull
+    /// \param joggle_inputs If true allows the algorithm to add random noise
+    ///        to the points to work around degenerate inputs. This adds the
+    ///        'QJ' option to the qhull command.
+    /// \returns The triangle mesh of the convex hull and the list of point
+    ///          indices that are part of the convex hull.
     std::tuple<std::shared_ptr<TriangleMesh>, std::vector<size_t>>
-    ComputeConvexHull() const;
+    ComputeConvexHull(bool joggle_inputs = false) const;
 
     /// \brief This is an implementation of the Hidden Point Removal operator
     /// described in Katz et. al. 'Direct Visibility of Point Sets', 2007.
@@ -330,13 +359,52 @@ public:
     /// model, and still be considered an inlier.
     /// \param ransac_n Number of initial points to be considered inliers in
     /// each iteration.
-    /// \param num_iterations Number of iterations.
+    /// \param num_iterations Maximum number of iterations.
+    /// \param probability Expected probability of finding the optimal plane.
     /// \return Returns the plane model ax + by + cz + d = 0 and the indices of
     /// the plane inliers.
     std::tuple<Eigen::Vector4d, std::vector<size_t>> SegmentPlane(
             const double distance_threshold = 0.01,
             const int ransac_n = 3,
-            const int num_iterations = 100) const;
+            const int num_iterations = 100,
+            const double probability = 0.99999999) const;
+
+    /// \brief Robustly detect planar patches in the point cloud using.
+    /// Araújo and Oliveira, “A robust statistics approach for plane
+    /// detection in unorganized point clouds,” Pattern Recognition, 2020.
+    ///
+    /// \param normal_variance_threshold_deg Planes having point normals with
+    /// high variance are rejected. The default value is 60 deg. Larger values
+    /// would allow more noisy planes to be detected. \param coplanarity_deg The
+    /// curvature of plane detections are scored using the angle between the
+    /// plane's normal vector and an auxiliary vector. An ideal plane would have
+    /// a score of 90 deg. The default value for this threshold is 75 deg, and
+    /// detected planes with scores lower than this are rejected. Large
+    /// threshold values encourage a tighter distribution of points around the
+    /// detected plane, i.e., less curvature. \param outlier_ratio Maximum
+    /// allowable ratio of outliers in associated plane points before plane is
+    /// rejected. \param min_plane_edge_length A patch's largest edge must
+    /// greater than this value to be considered a true planar patch. If set to
+    /// 0, defaults to 1% of largest span of point cloud. \param min_num_points
+    /// Determines how deep the associated octree becomes and how many points
+    /// must be used for estimating a plane. If set to 0, defaults to 0.1% of
+    /// the number of points in point cloud. \param search_param Point neighbors
+    /// are used to grow and merge detected planes. Neighbors are found with
+    /// KDTree search using these params. More neighbors results in higher
+    /// quality patches at the cost of compute. \return Returns a list of
+    /// detected planar patches, represented as OrientedBoundingBox objects,
+    /// with the third column (z) of R indicating the planar patch normal
+    /// vector. The extent in the z direction is non-zero so that the
+    /// OrientedBoundingBox contains the points that contribute to the plane
+    /// detection.
+    std::vector<std::shared_ptr<OrientedBoundingBox>> DetectPlanarPatches(
+            double normal_variance_threshold_deg = 60,
+            double coplanarity_deg = 75,
+            double outlier_ratio = 0.75,
+            double min_plane_edge_length = 0.0,
+            size_t min_num_points = 0,
+            const geometry::KDTreeSearchParam &search_param =
+                    geometry::KDTreeSearchParamKNN()) const;
 
     /// \brief Factory function to create a pointcloud from a depth image and a
     /// camera model.
@@ -388,13 +456,13 @@ public:
             const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity(),
             bool project_valid_depth_only = true);
 
-    /// \brief Function to create a PointCloud from a VoxelGrid.
+    /// \brief Factory Function to create a PointCloud from a VoxelGrid.
     ///
     /// It transforms the voxel centers to 3D points using the original point
     /// cloud coordinate (with respect to the center of the voxel grid).
     ///
     /// \param voxel_grid The input VoxelGrid.
-    std::shared_ptr<PointCloud> CreateFromVoxelGrid(
+    static std::shared_ptr<PointCloud> CreateFromVoxelGrid(
             const VoxelGrid &voxel_grid);
 
 public:

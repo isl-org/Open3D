@@ -35,12 +35,13 @@ namespace geometry {
 
 /// \brief RGBDImage A pair of color and depth images.
 ///
-/// For most procesing, the image pair should be aligned (same viewpoint and
+/// For most processing, the image pair should be aligned (same viewpoint and
 /// resolution).
 class RGBDImage : public Geometry {
 public:
     /// \brief Default Comnstructor.
     RGBDImage() : Geometry(Geometry::GeometryType::RGBDImage, 2) {}
+
     /// \brief Parameterized Constructor.
     ///
     /// \param color The color image.
@@ -60,6 +61,17 @@ public:
         }
     }
 
+    core::Device GetDevice() const override {
+        core::Device color_device = color_.GetDevice();
+        core::Device depth_device = depth_.GetDevice();
+        if (color_device != depth_device) {
+            utility::LogError(
+                    "Color {} and depth {} are not on the same device.",
+                    color_device.ToString(), depth_device.ToString());
+        }
+        return color_device;
+    }
+
     ~RGBDImage() override{};
 
     /// Clear stored data.
@@ -74,7 +86,7 @@ public:
     /// Compute min 2D coordinates for the data (always {0,0}).
     core::Tensor GetMinBound() const {
         return core::Tensor::Zeros({2}, core::Int64);
-    };
+    }
 
     /// Compute max 2D coordinates for the data.
     core::Tensor GetMaxBound() const {
@@ -82,7 +94,7 @@ public:
                 std::vector<int64_t>{color_.GetCols() + depth_.GetCols(),
                                      color_.GetRows()},
                 {2}, core::Int64);
-    };
+    }
 
     /// Transfer the RGBD image to a specified device.
     /// \param device The targeted device to convert to.

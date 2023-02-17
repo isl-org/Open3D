@@ -30,7 +30,6 @@
 #include "open3d/t/geometry/Geometry.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/Utility.h"
-#include "open3d/t/geometry/kernel/TSDFVoxelGrid.h"
 #include "open3d/t/geometry/kernel/VoxelBlockGrid.h"
 #include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/FileSystem.h"
@@ -291,9 +290,10 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
                                const core::Tensor &intrinsic,
                                const core::Tensor &extrinsic,
                                float depth_scale,
-                               float depth_max) {
-    Integrate(block_coords, depth, Image(), intrinsic, extrinsic, depth_scale,
-              depth_max);
+                               float depth_max,
+                               float trunc_voxel_multiplier) {
+    Integrate(block_coords, depth, Image(), intrinsic, intrinsic, extrinsic,
+              depth_scale, depth_max, trunc_voxel_multiplier);
 }
 
 void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
@@ -302,7 +302,21 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
                                const core::Tensor &intrinsic,
                                const core::Tensor &extrinsic,
                                float depth_scale,
-                               float depth_max) {
+                               float depth_max,
+                               float trunc_voxel_multiplier) {
+    Integrate(block_coords, depth, color, intrinsic, intrinsic, extrinsic,
+              depth_scale, depth_max, trunc_voxel_multiplier);
+}
+
+void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
+                               const Image &depth,
+                               const Image &color,
+                               const core::Tensor &depth_intrinsic,
+                               const core::Tensor &color_intrinsic,
+                               const core::Tensor &extrinsic,
+                               float depth_scale,
+                               float depth_max,
+                               float trunc_voxel_multiplier) {
     AssertInitialized();
     bool integrate_color = color.AsTensor().NumElements() > 0;
 
@@ -311,7 +325,8 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
     if (integrate_color) {
         CheckColorTensor(color.AsTensor());
     }
-    CheckIntrinsicTensor(intrinsic);
+    CheckIntrinsicTensor(depth_intrinsic);
+    CheckIntrinsicTensor(color_intrinsic);
     CheckExtrinsicTensor(extrinsic);
 
     core::Tensor buf_indices, masks;
@@ -322,12 +337,11 @@ void VoxelBlockGrid::Integrate(const core::Tensor &block_coords,
     TensorMap block_value_map =
             ConstructTensorMap(*block_hashmap_, name_attr_map_);
 
-    float trunc_multiplier = block_resolution_ * 0.5;
-    kernel::voxel_grid::Integrate(depth.AsTensor(), color.AsTensor(),
-                                  buf_indices, block_keys, block_value_map,
-                                  intrinsic, extrinsic, block_resolution_,
-                                  voxel_size_, voxel_size_ * trunc_multiplier,
-                                  depth_scale, depth_max);
+    kernel::voxel_grid::Integrate(
+            depth.AsTensor(), color.AsTensor(), buf_indices, block_keys,
+            block_value_map, depth_intrinsic, color_intrinsic, extrinsic,
+            block_resolution_, voxel_size_,
+            voxel_size_ * trunc_voxel_multiplier, depth_scale, depth_max);
 }
 
 TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
@@ -339,7 +353,9 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
                                   float depth_scale,
                                   float depth_min,
                                   float depth_max,
-                                  float weight_threshold) {
+                                  float weight_threshold,
+                                  float trunc_voxel_multiplier,
+                                  int range_map_down_factor) {
     AssertInitialized();
     CheckBlockCoorinates(block_coords);
     CheckIntrinsicTensor(intrinsic);
@@ -348,11 +364,11 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
     // Extrinsic: world to camera -> pose: camera to world
     core::Device device = block_hashmap_->GetDevice();
 
-    const int down_factor = 8;
     core::Tensor range_minmax_map;
-    kernel::tsdf::EstimateRange(
+    kernel::voxel_grid::EstimateRange(
             block_coords, range_minmax_map, intrinsic, extrinsic, height, width,
-            down_factor, block_resolution_, voxel_size_, depth_min, depth_max);
+            range_map_down_factor, block_resolution_, voxel_size_, depth_min,
+            depth_max, fragment_buffer_);
 
     static const std::unordered_map<std::string, int> kAttrChannelMap = {
             // Conventional rendering
@@ -393,20 +409,19 @@ TensorMap VoxelBlockGrid::RayCast(const core::Tensor &block_coords,
                 core::Tensor({height, width, channel}, dtype, device);
     }
 
-    float trunc_multiplier = block_resolution_ * 0.5;
     TensorMap block_value_map =
             ConstructTensorMap(*block_hashmap_, name_attr_map_);
     kernel::voxel_grid::RayCast(
             block_hashmap_, block_value_map, range_minmax_map, renderings_map,
             intrinsic, extrinsic, height, width, block_resolution_, voxel_size_,
-            voxel_size_ * trunc_multiplier, depth_scale, depth_min, depth_max,
-            weight_threshold);
+            depth_scale, depth_min, depth_max, weight_threshold,
+            trunc_voxel_multiplier, range_map_down_factor);
 
     return renderings_map;
 }
 
-PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
-                                             float weight_threshold) {
+PointCloud VoxelBlockGrid::ExtractPointCloud(float weight_threshold,
+                                             int estimated_point_number) {
     AssertInitialized();
     core::Tensor active_buf_indices;
     block_hashmap_->GetActiveIndices(active_buf_indices);
@@ -424,20 +439,21 @@ PointCloud VoxelBlockGrid::ExtractPointCloud(int estimated_number,
     kernel::voxel_grid::ExtractPointCloud(
             active_buf_indices, active_nb_buf_indices, active_nb_masks,
             block_keys, block_value_map, points, normals, colors,
-            block_resolution_, voxel_size_, weight_threshold, estimated_number);
+            block_resolution_, voxel_size_, weight_threshold,
+            estimated_point_number);
 
-    auto pcd = PointCloud(points.Slice(0, 0, estimated_number));
-    pcd.SetPointNormals(normals.Slice(0, 0, estimated_number));
+    auto pcd = PointCloud(points.Slice(0, 0, estimated_point_number));
+    pcd.SetPointNormals(normals.Slice(0, 0, estimated_point_number));
 
     if (colors.GetLength() == normals.GetLength()) {
-        pcd.SetPointColors(colors.Slice(0, 0, estimated_number));
+        pcd.SetPointColors(colors.Slice(0, 0, estimated_point_number));
     }
 
     return pcd;
 }
 
-TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
-                                                 float weight_threshold) {
+TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(float weight_threshold,
+                                                 int estimated_vertex_number) {
     AssertInitialized();
     core::Tensor active_buf_indices_i32 = block_hashmap_->GetActiveIndices();
     core::Tensor active_nb_buf_indices, active_nb_masks;
@@ -455,7 +471,6 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
                                iota_map);
 
     core::Tensor vertices, triangles, vertex_normals, vertex_colors;
-    int vertex_count = estimated_number;
 
     core::Tensor block_keys = block_hashmap_->GetKeyTensor();
     TensorMap block_value_map =
@@ -464,7 +479,7 @@ TriangleMesh VoxelBlockGrid::ExtractTriangleMesh(int estimated_number,
             active_buf_indices_i32, inverse_index_map, active_nb_buf_indices,
             active_nb_masks, block_keys, block_value_map, vertices, triangles,
             vertex_normals, vertex_colors, block_resolution_, voxel_size_,
-            weight_threshold, vertex_count);
+            weight_threshold, estimated_vertex_number);
 
     TriangleMesh mesh(vertices, triangles);
     mesh.SetVertexNormals(vertex_normals);
@@ -528,6 +543,17 @@ void VoxelBlockGrid::Save(const std::string &file_name) const {
     } else {
         t::io::WriteNpz(file_name, output);
     }
+}
+
+VoxelBlockGrid VoxelBlockGrid::To(const core::Device &device, bool copy) const {
+    if (!copy && block_hashmap_->GetDevice() == device) {
+        return *this;
+    }
+
+    auto device_hashmap =
+            std::make_shared<core::HashMap>(this->block_hashmap_->To(device));
+    return VoxelBlockGrid(voxel_size_, block_resolution_, device_hashmap,
+                          name_attr_map_);
 }
 
 VoxelBlockGrid VoxelBlockGrid::Load(const std::string &file_name) {

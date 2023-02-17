@@ -38,27 +38,34 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-typedef int32_t index_t;
-
 NanoFlannIndex::NanoFlannIndex(){};
 
 NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points) {
     SetTensorData(dataset_points);
 };
 
+NanoFlannIndex::NanoFlannIndex(const Tensor &dataset_points,
+                               const Dtype &index_dtype) {
+    SetTensorData(dataset_points, index_dtype);
+};
+
 NanoFlannIndex::~NanoFlannIndex(){};
 
-bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
+bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points,
+                                   const Dtype &index_dtype) {
+    AssertTensorDtypes(dataset_points, {Float32, Float64});
+    assert(index_dtype == Int32 || index_dtype == Int64);
+
     if (dataset_points.NumDims() != 2) {
         utility::LogError(
-                "[NanoFlannIndex::SetTensorData] dataset_points must be "
-                "2D matrix, with shape {n_dataset_points, d}.");
+                "dataset_points must be 2D matrix, with shape "
+                "{n_dataset_points, d}.");
     }
 
     dataset_points_ = dataset_points.Contiguous();
-    Dtype dtype = GetDtype();
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
-        holder_ = impl::BuildKdTree<scalar_t>(
+    index_dtype_ = index_dtype;
+    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(GetDtype(), GetIndexDtype(), [&]() {
+        holder_ = impl::BuildKdTree<scalar_t, int_t>(
                 dataset_points_.GetShape(0),
                 dataset_points_.GetDataPtr<scalar_t>(),
                 dataset_points_.GetShape(1), /* metric */ L2);
@@ -68,30 +75,29 @@ bool NanoFlannIndex::SetTensorData(const Tensor &dataset_points) {
 
 std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
                                                     int knn) const {
-    // Check dtype.
-    AssertTensorDtype(query_points, GetDtype());
+    const Dtype dtype = GetDtype();
+    const Device device = GetDevice();
+    const Dtype index_dtype = GetIndexDtype();
 
-    // Check shapes.
-    AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
+    core::AssertTensorDevice(query_points, device);
+    core::AssertTensorDtype(query_points, dtype);
+    core::AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (knn <= 0) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchKnn] knn should be larger than 0.");
+        utility::LogError("knn should be larger than 0.");
     }
 
     const int64_t num_neighbors = std::min(
             static_cast<int64_t>(GetDatasetSize()), static_cast<int64_t>(knn));
     const int64_t num_query_points = query_points.GetShape(0);
-    const Dtype dtype = GetDtype();
-    const Device device = GetDevice();
 
     Tensor indices, distances;
     Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
         const Tensor query_contiguous = query_points.Contiguous();
-        NeighborSearchAllocator<scalar_t> output_allocator(device);
+        NeighborSearchAllocator<scalar_t, int_t> output_allocator(device);
 
-        impl::KnnSearchCPU(
+        impl::KnnSearchCPU<scalar_t, int_t>(
                 holder_.get(), neighbors_row_splits.GetDataPtr<int64_t>(),
                 dataset_points_.GetShape(0),
                 dataset_points_.GetDataPtr<scalar_t>(),
@@ -110,9 +116,14 @@ std::pair<Tensor, Tensor> NanoFlannIndex::SearchKnn(const Tensor &query_points,
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         const Tensor &query_points, const Tensor &radii, bool sort) const {
-    // Check dtype.
-    AssertTensorDtype(query_points, GetDtype());
-    AssertTensorDtype(radii, GetDtype());
+    const Dtype dtype = GetDtype();
+    const Device device = GetDevice();
+    const Dtype index_dtype = GetIndexDtype();
+
+    core::AssertTensorDevice(query_points, device);
+    core::AssertTensorDevice(radii, device);
+    core::AssertTensorDtype(query_points, dtype);
+    core::AssertTensorDtype(radii, dtype);
 
     // Check shapes.
     int64_t num_query_points = query_points.GetShape(0);
@@ -121,22 +132,17 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
     // Check if the radii has negative values.
     Tensor below_zero = radii.Le(0);
-    if (below_zero.Any()) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchRadius] radius should be "
-                "larger than 0.");
+    if (below_zero.Any().Item<bool>()) {
+        utility::LogError("radius should be larger than 0.");
     }
-
-    Dtype dtype = GetDtype();
-    Device device = GetDevice();
 
     Tensor indices, distances;
     Tensor neighbors_row_splits = Tensor({num_query_points + 1}, Int64);
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
         const Tensor query_contiguous = query_points.Contiguous();
-        NeighborSearchAllocator<scalar_t> output_allocator(device);
+        NeighborSearchAllocator<scalar_t, int_t> output_allocator(device);
 
-        impl::RadiusSearchCPU(
+        impl::RadiusSearchCPU<scalar_t, int_t>(
                 holder_.get(), neighbors_row_splits.GetDataPtr<int64_t>(),
                 dataset_points_.GetShape(0),
                 dataset_points_.GetDataPtr<scalar_t>(),
@@ -149,13 +155,15 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         indices = output_allocator.NeighborsIndex();
         distances = output_allocator.NeighborsDistance();
     });
-    return std::make_tuple(indices, distances, neighbors_row_splits);
+
+    return std::make_tuple(indices, distances,
+                           neighbors_row_splits.To(index_dtype_));
 };
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
         const Tensor &query_points, double radius, bool sort) const {
-    int64_t num_query_points = query_points.GetShape()[0];
-    Dtype dtype = GetDtype();
+    const int64_t num_query_points = query_points.GetShape()[0];
+    const Dtype dtype = GetDtype();
     std::tuple<Tensor, Tensor, Tensor> result;
     DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
         Tensor radii(std::vector<scalar_t>(num_query_points, (scalar_t)radius),
@@ -167,38 +175,37 @@ std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchRadius(
 
 std::tuple<Tensor, Tensor, Tensor> NanoFlannIndex::SearchHybrid(
         const Tensor &query_points, double radius, int max_knn) const {
-    AssertTensorDtype(query_points, GetDtype());
+    const Device device = GetDevice();
+    const Dtype dtype = GetDtype();
+    const Dtype index_dtype = GetIndexDtype();
+
+    AssertTensorDevice(query_points, device);
+    AssertTensorDtype(query_points, dtype);
     AssertTensorShape(query_points, {utility::nullopt, GetDimension()});
 
     if (max_knn <= 0) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchHybrid] max_knn should be larger than "
-                "0.");
+        utility::LogError("max_knn should be larger than 0.");
     }
     if (radius <= 0) {
-        utility::LogError(
-                "[NanoFlannIndex::SearchHybrid] radius should be larger than "
-                "0.");
+        utility::LogError("radius should be larger than 0.");
     }
 
     int64_t num_query_points = query_points.GetShape(0);
 
-    Dtype dtype = GetDtype();
-    Device device = GetDevice();
-
     Tensor indices, distances, counts;
-    DISPATCH_FLOAT_DTYPE_TO_TEMPLATE(dtype, [&]() {
+    DISPATCH_FLOAT_INT_DTYPE_TO_TEMPLATE(dtype, index_dtype, [&]() {
         const Tensor query_contiguous = query_points.Contiguous();
-        NeighborSearchAllocator<scalar_t> output_allocator(device);
+        NeighborSearchAllocator<scalar_t, int_t> output_allocator(device);
 
-        impl::HybridSearchCPU(holder_.get(), dataset_points_.GetShape(0),
-                              dataset_points_.GetDataPtr<scalar_t>(),
-                              query_contiguous.GetShape(0),
-                              query_contiguous.GetDataPtr<scalar_t>(),
-                              query_contiguous.GetShape(1),
-                              static_cast<scalar_t>(radius), max_knn,
-                              /* metric*/ L2, /* ignore_query_point */ false,
-                              /* return_distances */ true, output_allocator);
+        impl::HybridSearchCPU<scalar_t, int_t>(
+                holder_.get(), dataset_points_.GetShape(0),
+                dataset_points_.GetDataPtr<scalar_t>(),
+                query_contiguous.GetShape(0),
+                query_contiguous.GetDataPtr<scalar_t>(),
+                query_contiguous.GetShape(1), static_cast<scalar_t>(radius),
+                max_knn,
+                /* metric*/ L2, /* ignore_query_point */ false,
+                /* return_distances */ true, output_allocator);
 
         indices = output_allocator.NeighborsIndex().View(
                 {num_query_points, max_knn});

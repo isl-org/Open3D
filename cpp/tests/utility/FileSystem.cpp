@@ -344,6 +344,7 @@ TEST(FileSystem, MakeDirectoryHierarchy) {
 
 // ----------------------------------------------------------------------------
 // Note: DeleteDirectory can delete one dir at a time.
+// Equivalent to `rm -rf ...`.
 // ----------------------------------------------------------------------------
 TEST(FileSystem, DeleteDirectory) {
     std::string path = "test";
@@ -353,11 +354,18 @@ TEST(FileSystem, DeleteDirectory) {
     status = utility::filesystem::MakeDirectory(path);
     EXPECT_TRUE(status);
 
+    status = utility::filesystem::MakeDirectory(path + "/sub_dir");
+    EXPECT_TRUE(status);
+    FILE *file = utility::filesystem::FOpen(path + "/file_name.txt", "w");
+    fclose(file);
+
     status = utility::filesystem::DeleteDirectory(path);
     EXPECT_TRUE(status);
 
+    // std::filesystem::remove_all() won't throw error if the directory doesn't
+    // exist.
     status = utility::filesystem::DeleteDirectory(path);
-    EXPECT_FALSE(status);
+    EXPECT_TRUE(status);
 }
 
 TEST(FileSystem, File_Exists_Remove) {

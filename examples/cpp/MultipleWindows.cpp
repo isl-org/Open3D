@@ -27,7 +27,6 @@
 #include <atomic>
 #include <chrono>
 #include <mutex>
-#include <random>
 #include <thread>
 
 #include "open3d/Open3D.h"
@@ -37,7 +36,6 @@ using namespace open3d::visualization;
 
 const int WIDTH = 1024;
 const int HEIGHT = 768;
-const std::string DATA_PATH = "../../../examples/test_data/ICP/cloud_bin_0.pcd";
 const Eigen::Vector3f CENTER_OFFSET(0.0f, 0.0f, -3.0f);
 const std::string CLOUD_NAME = "points";
 
@@ -78,7 +76,7 @@ private:
         geometry::AxisAlignedBoundingBox bounds;
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
-            auto mat = rendering::Material();
+            auto mat = rendering::MaterialRecord();
             mat.shader = "defaultUnlit";
             new_vis->AddGeometry(
                     CLOUD_NAME + " #" + std::to_string(n_snapshots_), cloud_,
@@ -87,7 +85,7 @@ private:
         }
 
         new_vis->ResetCameraToDefault();
-        auto center = bounds.GetCenter().cast<float>();
+        Eigen::Vector3f center = bounds.GetCenter().cast<float>();
         new_vis->SetupCamera(60, center, center + CENTER_OFFSET,
                              {0.0f, -1.0f, 0.0f});
         gui::Application::GetInstance().AddWindow(new_vis);
@@ -108,17 +106,18 @@ private:
         // This is NOT the UI thread, need to call PostToMainThread() to
         // update the scene or any part of the UI.
 
+        data::DemoICPPointClouds demo_icp_pointclouds;
         geometry::AxisAlignedBoundingBox bounds;
         Eigen::Vector3d extent;
         {
             std::lock_guard<std::mutex> lock(cloud_lock_);
             cloud_ = std::make_shared<geometry::PointCloud>();
-            io::ReadPointCloud(DATA_PATH, *cloud_);
+            io::ReadPointCloud(demo_icp_pointclouds.GetPaths(0), *cloud_);
             bounds = cloud_->GetAxisAlignedBoundingBox();
             extent = bounds.GetExtent();
         }
 
-        auto mat = rendering::Material();
+        auto mat = rendering::MaterialRecord();
         mat.shader = "defaultUnlit";
 
         gui::Application::GetInstance().PostToMainThread(
@@ -132,9 +131,7 @@ private:
                 });
 
         Eigen::Vector3d magnitude = 0.005 * extent;
-        auto seed = std::random_device()();
-        std::mt19937 gen_algo(seed);
-        std::uniform_real_distribution<> random(-0.5, 0.5);
+        utility::random::UniformRealGenerator<double> uniform_gen(-0.5, 0.5);
 
         while (main_vis_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -143,9 +140,9 @@ private:
             {
                 std::lock_guard<std::mutex> lock(cloud_lock_);
                 for (size_t i = 0; i < cloud_->points_.size(); ++i) {
-                    Eigen::Vector3d perturb(magnitude[0] * random(gen_algo),
-                                            magnitude[1] * random(gen_algo),
-                                            magnitude[2] * random(gen_algo));
+                    Eigen::Vector3d perturb(magnitude[0] * uniform_gen(),
+                                            magnitude[1] * uniform_gen(),
+                                            magnitude[2] * uniform_gen());
                     cloud_->points_[i] += perturb;
                 }
             }

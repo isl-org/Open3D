@@ -1,24 +1,29 @@
 include(ExternalProject)
 
-set(ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileData.h")
-list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileMtlImporter.cpp")
-list(APPEND ASSIMP_PATCH_FILES "${PROJECT_SOURCE_DIR}/3rdparty/assimp/ObjFileImporter.cpp")
-
 if(MSVC)
-    set(lib_name assimp-vc142-mt)
+    set(lib_name assimp-vc${MSVC_TOOLSET_VERSION}-mt)
 else()
     set(lib_name assimp)
+endif()
+
+# IntelLLVM (SYCL) compiler defaults to fast math, causing NaN comparison code
+# compilation error.
+if(CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    set(assimp_cmake_cxx_flags "${CMAKE_CXX_FLAGS} -ffp-contract=on -fno-fast-math")
+else()
+    set(assimp_cmake_cxx_flags "${CMAKE_CXX_FLAGS}")
 endif()
 
 ExternalProject_Add(
     ext_assimp
     PREFIX assimp
-    URL https://github.com/assimp/assimp/archive/refs/tags/v5.0.1.tar.gz # Jan 2020
-    URL_HASH SHA256=11310ec1f2ad2cd46b95ba88faca8f7aaa1efe9aa12605c55e3de2b977b3dbfc
+    URL https://github.com/assimp/assimp/archive/cfed74516b46a7c2bdf19c1643c448363bd90ad7.tar.gz
+    URL_HASH SHA256=b2f1c9450609f3bf201aa63b0b16023073d0ebb1c6e9ae5a832441f1e43c634c
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/assimp"
     UPDATE_COMMAND ""
-    PATCH_COMMAND ${CMAKE_COMMAND} -E copy ${ASSIMP_PATCH_FILES} <SOURCE_DIR>/code/Obj
     CMAKE_ARGS
+        ${ExternalProject_CMAKE_ARGS_hidden}
+        -DCMAKE_CXX_FLAGS:STRING=${assimp_cmake_cxx_flags}
         -DBUILD_SHARED_LIBS=OFF
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
         -DASSIMP_NO_EXPORT=ON
@@ -28,13 +33,12 @@ ExternalProject_Add(
         -DASSIMP_BUILD_ZLIB=ON
         -DHUNTER_ENABLED=OFF # Renamed to "ASSIMP_HUNTER_ENABLED" in newer assimp.
         -DCMAKE_DEBUG_POSTFIX=
-        ${ExternalProject_CMAKE_ARGS_hidden}
     BUILD_BYPRODUCTS
-        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
-        <INSTALL_DIR>/lib/${CMAKE_STATIC_LIBRARY_PREFIX}IrrXML${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${lib_name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+        <INSTALL_DIR>/${Open3D_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}IrrXML${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
 ExternalProject_Get_Property(ext_assimp INSTALL_DIR)
 set(ASSIMP_INCLUDE_DIR ${INSTALL_DIR}/include/)
-set(ASSIMP_LIB_DIR ${INSTALL_DIR}/lib)
-set(ASSIMP_LIBRARIES ${lib_name} IrrXML)
+set(ASSIMP_LIB_DIR ${INSTALL_DIR}/${Open3D_INSTALL_LIB_DIR})
+set(ASSIMP_LIBRARIES ${lib_name})

@@ -37,8 +37,7 @@ namespace open3d {
 namespace core {
 namespace nns {
 
-void pybind_core_nns(py::module &m) {
-    py::module m_nns = m.def_submodule("nns");
+void pybind_core_nns(py::module &m_nns) {
     static const std::unordered_map<std::string, std::string>
             map_nearest_neighbor_search_method_docs = {
                     {"query_points", "The query tensor of shape {n_query, d}."},
@@ -57,7 +56,8 @@ void pybind_core_nns(py::module &m) {
                 "dataset_points of shape {n_dataset, d}.");
 
     // Constructors.
-    nns.def(py::init<const Tensor &>(), "dataset_points"_a);
+    nns.def(py::init<const Tensor &, const Dtype>(), "dataset_points"_a,
+            "index_dtype"_a = core::Int64);
 
     // Index functions.
     nns.def("knn_index", &NearestNeighborSearch::KnnIndex,

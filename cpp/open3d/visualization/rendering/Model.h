@@ -27,7 +27,7 @@
 #pragma once
 
 #include "open3d/geometry/TriangleMesh.h"
-#include "open3d/visualization/rendering/Material.h"
+#include "open3d/visualization/rendering/MaterialRecord.h"
 
 namespace open3d {
 namespace visualization {
@@ -41,7 +41,7 @@ struct TriangleMeshModel {
     };
 
     std::vector<MeshInfo> meshes_;
-    std::vector<visualization::rendering::Material> materials_;
+    std::vector<visualization::rendering::MaterialRecord> materials_;
 };
 
 }  // namespace rendering

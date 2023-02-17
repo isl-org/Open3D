@@ -285,3 +285,48 @@ def test_output_shapes(shape):
             v.shape
         ) == expected_shape, 'shape mismatch: expected {} but got {} for {}'.format(
             expected_shape, list(v.shape), k)
+
+
+def test_sphere_wrong_occupancy():
+    # This test checks a specific scenario where the old implementation
+    # without ray jitter produced wrong results for a sphere because some
+    # rays miss hitting exactly a vertex or an edge.
+    mesh = o3d.geometry.TriangleMesh.create_sphere(0.8)
+    mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
+
+    scene = o3d.t.geometry.RaycastingScene()
+    scene.add_triangles(mesh)
+
+    min_bound = mesh.vertex.positions.min(0).numpy() * 1.1
+    max_bound = mesh.vertex.positions.max(0).numpy() * 1.1
+
+    xyz_range = np.linspace(min_bound, max_bound, num=6)
+    query_points = np.stack(np.meshgrid(*xyz_range.T),
+                            axis=-1).astype(np.float32)
+
+    occupancy = scene.compute_occupancy(query_points)
+    expected = np.array(
+        [[[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+          [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+          [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+         [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 1.0, 0.0, 0.0],
+          [0.0, 1.0, 1.0, 1.0, 1.0, 0.0], [0.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+          [0.0, 0.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+         [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+          [0.0, 1.0, 1.0, 1.0, 1.0, 0.0], [0.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+          [0.0, 1.0, 1.0, 1.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+         [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+          [0.0, 1.0, 1.0, 1.0, 1.0, 0.0], [0.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+          [0.0, 1.0, 1.0, 1.0, 1.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+         [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 1.0, 0.0, 0.0],
+          [0.0, 1.0, 1.0, 1.0, 1.0, 0.0], [0.0, 1.0, 1.0, 1.0, 1.0, 0.0],
+          [0.0, 0.0, 1.0, 1.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]],
+         [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+          [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+          [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]]],
+        dtype=np.float32)
+    np.testing.assert_equal(occupancy.numpy(), expected)
+
+    # we should get the same result with more samples
+    occupancy_3samples = scene.compute_occupancy(query_points, nsamples=3)
+    np.testing.assert_equal(occupancy_3samples.numpy(), expected)

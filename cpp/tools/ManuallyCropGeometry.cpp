@@ -32,7 +32,7 @@ void PrintHelp() {
     // clang-format off
     utility::LogInfo("Usage:");
     utility::LogInfo("    > ManuallyCropGeometry [--pointcloud/mesh] geometry_file [options]");
-    utility::LogInfo("      Manually crop geometry in speficied file.");
+    utility::LogInfo("      Manually crop geometry in specified file.");
     utility::LogInfo("");
     utility::LogInfo("Options:");
     utility::LogInfo("    --pointcloud,             : Read geometry as point cloud.");

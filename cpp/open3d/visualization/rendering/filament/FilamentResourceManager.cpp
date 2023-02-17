@@ -71,6 +71,21 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
+// Implementation of FNV-1a hash function. See
+// https://en.wikipedia.org/wiki/Fowler-Noll-Vo_hash_function for details
+std::uint64_t fnv1a_block_hash(const void* const block, std::size_t len) {
+    const uint64_t kFNVPrime = 0x00000100000001B3;
+    std::uint64_t hash = 0xcbf29ce484222325;
+
+    const auto* ptr = static_cast<const unsigned char*>(block);
+    for (unsigned int i = 0; i < len; ++i) {
+        hash ^= static_cast<uint64_t>(*ptr++);
+        hash *= kFNVPrime;
+    }
+
+    return hash;
+}
+
 namespace {
 template <class ResourceType>
 using ResourcesContainer =
@@ -209,24 +224,41 @@ void FormatSettingsFromImage(TextureSettings& settings,
     // Map of (bytes_per_channel << 4 | num_channles) -> internal format
     static std::unordered_map<unsigned int, filament::Texture::InternalFormat>
             format_map = {
+                    {(4 << 4 | 1), filament::Texture::InternalFormat::R32F},
+                    {(4 << 4 | 2), filament::Texture::InternalFormat::RG32F},
+                    {(4 << 4 | 3), filament::Texture::InternalFormat::RGB32F},
+                    {(4 << 4 | 4), filament::Texture::InternalFormat::RGBA32F},
+                    {(2 << 4 | 1), filament::Texture::InternalFormat::R16UI},
+                    {(2 << 4 | 2), filament::Texture::InternalFormat::RG16UI},
+                    {(2 << 4 | 3), filament::Texture::InternalFormat::RGB16UI},
+                    {(2 << 4 | 4), filament::Texture::InternalFormat::RGBA16UI},
                     {(1 << 4 | 1), filament::Texture::InternalFormat::R8},
                     {(1 << 4 | 2), filament::Texture::InternalFormat::RG8},
                     {(1 << 4 | 3), filament::Texture::InternalFormat::RGB8},
                     {(1 << 4 | 4), filament::Texture::InternalFormat::RGBA8}};
 
     // Set image format
+    bool int_format = (bytes_per_channel == 2);
     switch (num_channels) {
         case 1:
-            settings.image_format = filament::Texture::Format::R;
+            settings.image_format =
+                    (int_format ? filament::Texture::Format::R_INTEGER
+                                : filament::Texture::Format::R);
             break;
         case 2:
-            settings.image_format = filament::Texture::Format::RG;
+            settings.image_format =
+                    (int_format ? filament::Texture::Format::RG_INTEGER
+                                : filament::Texture::Format::RG);
             break;
         case 3:
-            settings.image_format = filament::Texture::Format::RGB;
+            settings.image_format =
+                    (int_format ? filament::Texture::Format::RGB_INTEGER
+                                : filament::Texture::Format::RGB);
             break;
         case 4:
-            settings.image_format = filament::Texture::Format::RGBA;
+            settings.image_format =
+                    (int_format ? filament::Texture::Format::RGBA_INTEGER
+                                : filament::Texture::Format::RGBA);
             break;
         default:
             utility::LogError("Unsupported image number of channels: {}",
@@ -441,10 +473,17 @@ TextureHandle FilamentResourceManager::CreateTexture(const char* path,
 TextureHandle FilamentResourceManager::CreateTexture(
         const std::shared_ptr<geometry::Image>& img, bool srgb) {
     TextureHandle handle;
-    if (img->HasData()) {
+    auto hash = fnv1a_block_hash(img->data_.data(), img->data_.size());
+    if (texture_cache_.count(hash) > 0) {
+        handle = texture_cache_[hash];
+        textures_[handle].use_count++;
+        return handle;
+    } else if (img->HasData()) {
         auto texture = LoadTextureFromImage(img, srgb);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+        textures_[handle].use_count++;
+        texture_cache_[hash] = handle;
     }
 
     return handle;
@@ -453,12 +492,18 @@ TextureHandle FilamentResourceManager::CreateTexture(
 TextureHandle FilamentResourceManager::CreateTexture(
         const geometry::Image& image, bool srgb) {
     TextureHandle handle;
-    if (image.HasData()) {
+    auto hash = fnv1a_block_hash(image.data_.data(), image.data_.size());
+    if (texture_cache_.count(hash) > 0) {
+        handle = texture_cache_[hash];
+        textures_[handle].use_count++;
+        return handle;
+    } else if (image.HasData()) {
         auto copy = std::make_shared<geometry::Image>(image);
-
         auto texture = LoadTextureFromImage(copy, srgb);
 
         handle = RegisterResource<TextureHandle>(engine_, texture, textures_);
+        textures_[handle].use_count++;
+        texture_cache_[hash] = handle;
     }
 
     return handle;
@@ -700,7 +745,7 @@ void FilamentResourceManager::ReuseVertexBuffer(VertexBufferHandle vb) {
     if (found != vertex_buffers_.end()) {
         found->second.use_count += 1;
     } else {
-        utility::LogError("Reusing non-existant vertex buffer");
+        utility::LogError("Reusing non-existent vertex buffer");
     }
 }
 
@@ -766,6 +811,7 @@ std::weak_ptr<filament::IndexBuffer> FilamentResourceManager::GetIndexBuffer(
 }
 
 void FilamentResourceManager::DestroyAll() {
+    texture_cache_.clear();
     material_instances_.clear();
     materials_.clear();
     textures_.clear();
@@ -842,6 +888,11 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     auto texture_settings = GetSettingsFromImage(*image, srgb);
     auto levels = maxLevelCount(texture_settings.texel_width,
                                 texture_settings.texel_height);
+    bool mipmappable =
+            (texture_settings.image_type == filament::Texture::Type::UBYTE);
+    if (!mipmappable) {
+        levels = 1;
+    }
 
     Texture::PixelBufferDescriptor pb(
             image->data_.data(), image->data_.size(),
@@ -856,7 +907,9 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
                            .build(engine_);
 
     texture->setImage(engine_, 0, std::move(pb));
-    texture->generateMipmaps(engine_);
+    if (mipmappable) {
+        texture->generateMipmaps(engine_);
+    }
     return texture;
 }
 
@@ -867,11 +920,16 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
     auto texture_settings = GetSettingsFromImage(image, srgb);
     auto levels = maxLevelCount(texture_settings.texel_width,
                                 texture_settings.texel_height);
+    // Float textures cannot be mipmapped
+    bool mipmappable = (image.GetDtype() == core::Dtype::UInt8);
+    if (mipmappable) {
+        levels = 1;
+    }
 
     const size_t image_bytes = image.GetRows() * image.GetCols() *
                                image.GetChannels() *
                                image.GetDtype().ByteSize();
-    if (image.GetDevice().GetType() == core::Device::DeviceType::CUDA) {
+    if (image.IsCUDA()) {
         t::geometry::Image cpu_image = image.To(core::Device("CPU:0"));
         auto* image_data = malloc(image_bytes);
         memcpy(image_data, cpu_image.GetDataPtr(), image_bytes);
@@ -886,7 +944,9 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
                                .sampler(Texture::Sampler::SAMPLER_2D)
                                .build(engine_);
         texture->setImage(engine_, 0, std::move(pb));
-        texture->generateMipmaps(engine_);
+        if (mipmappable) {
+            texture->generateMipmaps(engine_);
+        }
         return texture;
     } else {
         Texture::PixelBufferDescriptor pb(image.GetDataPtr(), image_bytes,
@@ -900,7 +960,9 @@ filament::Texture* FilamentResourceManager::LoadTextureFromImage(
                                .sampler(Texture::Sampler::SAMPLER_2D)
                                .build(engine_);
         texture->setImage(engine_, 0, std::move(pb));
-        texture->generateMipmaps(engine_);
+        if (mipmappable) {
+            texture->generateMipmaps(engine_);
+        }
         return texture;
     }
 }
@@ -1112,8 +1174,10 @@ void FilamentResourceManager::LoadDefaults() {
 
     const auto line_path = resource_root + "/unlitLine.filamat";
     auto line_mat = LoadMaterialFromFile(line_path, engine_);
-    line_mat->setDefaultParameter("baseColor", filament::RgbType::LINEAR,
-                                  {1.f, 1.f, 1.f});
+    line_mat->setDefaultParameter("baseColor", filament::RgbaType::LINEAR,
+                                  default_color_alpha);
+    line_mat->setDefaultParameter("emissiveColor",
+                                  filament::math::float4(0.0, 0.0, 0.0, 1.0f));
     line_mat->setDefaultParameter("lineWidth", 1.f);
     materials_[kDefaultLineShader] = BoxResource(line_mat, engine_);
 
