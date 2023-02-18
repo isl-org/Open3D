@@ -269,7 +269,7 @@ public:
         return GetScalarProperty("absorption_distance");
     }
 
-    bool HasBaseColor() const { return HasVectorProperty("color"); }
+    bool HasBaseColor() const { return HasVectorProperty("base_color"); }
     bool HasBaseMetallic() const { return HasScalarProperty("metallic"); }
     bool HasBaseRoughness() const { return HasScalarProperty("roughness"); }
     bool HasBaseReflectance() const { return HasScalarProperty("reflectance"); }

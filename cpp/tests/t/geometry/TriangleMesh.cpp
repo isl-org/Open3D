@@ -413,6 +413,9 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
             Eigen::Vector2d(0.4, 0.5), Eigen::Vector2d(0.6, 0.7),
             Eigen::Vector2d(0.8, 0.9), Eigen::Vector2d(1.0, 1.1)};
 
+    auto& mat = legacy_mesh.materials_["Mat1"];
+    mat.baseColor = mat.baseColor.CreateRGB(1, 1, 1);
+
     core::Dtype float_dtype = core::Float32;
     core::Dtype int_dtype = core::Int64;
     t::geometry::TriangleMesh mesh = t::geometry::TriangleMesh::FromLegacy(
@@ -456,6 +459,15 @@ TEST_P(TriangleMeshPermuteDevices, FromLegacy) {
                         .AllClose(core::Tensor::Arange(0., 1.1, 0.1,
                                                        float_dtype, device)
                                           .Reshape({-1, 3, 2})));
+    EXPECT_TRUE(mesh.HasMaterial());
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseColor() ==
+                Eigen::Vector4f(1, 1, 1, 1));
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseMetallic() == 0.0f);
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseRoughness() == 1.0f);
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseReflectance() == 0.5f);
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseClearcoat() == 0.0f);
+    EXPECT_TRUE(mesh.GetMaterial().GetBaseClearcoatRoughness() == 0.0f);
+    EXPECT_TRUE(mesh.GetMaterial().GetAnisotropy() == 0.0f);
 }
 
 TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
@@ -478,6 +490,7 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
     mesh.SetTriangleAttr("texture_uvs",
                          core::Tensor::Arange(0., 1.1, 0.1, float_dtype, device)
                                  .Reshape({-1, 3, 2}));
+    mesh.GetMaterial().SetDefaultProperties();
 
     geometry::TriangleMesh legacy_mesh = mesh.ToLegacy();
     EXPECT_EQ(legacy_mesh.vertices_,
@@ -502,6 +515,17 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
                                   Pointwise(FloatEq(), {0.6, 0.7}),
                                   Pointwise(FloatEq(), {0.8, 0.9}),
                                   Pointwise(FloatEq(), {1.0, 1.1})}));
+
+    EXPECT_TRUE(legacy_mesh.materials_.count("Mat1") > 0);
+    auto& mat = legacy_mesh.materials_["Mat1"];
+    EXPECT_TRUE(Eigen::Vector4f(mat.baseColor.f4) ==
+                Eigen::Vector4f(1, 1, 1, 1));
+    EXPECT_TRUE(mat.baseMetallic == 0.0);
+    EXPECT_TRUE(mat.baseRoughness == 1.0);
+    EXPECT_TRUE(mat.baseReflectance == 0.5);
+    EXPECT_TRUE(mat.baseClearCoat == 0.0);
+    EXPECT_TRUE(mat.baseClearCoatRoughness == 0.0);
+    EXPECT_TRUE(mat.baseAnisotropy == 0.0);
 }
 
 TEST_P(TriangleMeshPermuteDevices, CreateBox) {
