@@ -40,13 +40,13 @@ else
 	GCC_MAX_VER=7
 fi
 # ML
-TENSORFLOW_VER="2.8.2"
+TENSORFLOW_VER="2.8.4"
 TENSORBOARD_VER="2.8.0"
-TORCH_CPU_GLNX_VER="1.12.0+cpu"
-TORCH_CUDA_GLNX_VER="1.12.0+cu116"
+TORCH_CPU_GLNX_VER="1.13.1+cpu"
+TORCH_CUDA_GLNX_VER="1.13.1+cu116"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 # TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.2/torch-1.8.2-${PYTHON_VER}-linux_x86_64.whl"
-TORCH_MACOS_VER="1.12.0"
+TORCH_MACOS_VER="1.13.1"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="21.1.1"
