@@ -2,3 +2,5 @@ pytest==7.1.2
 pytest-randomly==3.8.0
 scipy==1.7.3
 tensorboard==2.8.0
+oauthlib==3.2.2
+certifi==2022.12.7
