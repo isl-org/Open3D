@@ -36,7 +36,7 @@ Pip (PyPI)
 .. code-block:: bash
 
     pip install open3d        # or
-    pip install open3d_cpu    # Smaller CPU only wheel on Linux (since v0.17+)
+    pip install open3d-cpu    # Smaller CPU only wheel on x86_64 Linux (since v0.17+)
 
 
 .. note::

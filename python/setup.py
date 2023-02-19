@@ -165,10 +165,10 @@ classifiers = [
 name = "@PYPI_PACKAGE_NAME@"
 with open("README.rst") as readme:
     long_description = readme.read()
-# open3d_cpu wheel for Linux x86_64
+# open3d-cpu wheel for Linux x86_64
 if sys.platform.startswith("linux") and platform.machine() in (
         'i386', 'x86_64', 'AMD64') and "@BUILD_CUDA_MODULE@" == "OFF":
-    name += "_cpu"
+    name += "-cpu"
     long_description += ("\n\nThis wheel only contains CPU functionality. "
                          "Use the open3d wheel for full functionality.")
     classifiers.remove("Environment :: GPU :: NVIDIA CUDA")
