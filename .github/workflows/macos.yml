@@ -22,6 +22,7 @@ env:
   # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
   NPROC: 4
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   MacOS:

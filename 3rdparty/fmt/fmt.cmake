@@ -2,11 +2,24 @@ include(ExternalProject)
 
 set(FMT_LIB_NAME fmt)
 
+if (MSVC AND MSVC_VERSION VERSION_LESS 1930 OR
+        CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
+    # MSVC 17.x required for building fmt >6
+    # SYCL / DPC++ needs fmt ver <=6 or >= 9.2: https://github.com/fmtlib/fmt/issues/3005
+    set(FMT_VER "6.0.0")
+    set(FMT_SHA256
+        "f1907a58d5e86e6c382e51441d92ad9e23aea63827ba47fd647eacc0d3a16c78")
+else()
+    set(FMT_VER "9.0.0")
+    set(FMT_SHA256
+        "9a1e0e9e843a356d65c7604e2c8bf9402b50fe294c355de0095ebd42fb9bd2c5")
+endif()
+
 ExternalProject_Add(
     ext_fmt
     PREFIX fmt
-    URL https://github.com/fmtlib/fmt/archive/refs/tags/6.0.0.tar.gz
-    URL_HASH SHA256=f1907a58d5e86e6c382e51441d92ad9e23aea63827ba47fd647eacc0d3a16c78
+    URL https://github.com/fmtlib/fmt/archive/refs/tags/${FMT_VER}.tar.gz
+    URL_HASH SHA256=${FMT_SHA256}
     DOWNLOAD_DIR "${OPEN3D_THIRD_PARTY_DOWNLOAD_DIR}/fmt"
     UPDATE_COMMAND ""
     CMAKE_ARGS

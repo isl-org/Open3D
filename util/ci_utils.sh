@@ -40,18 +40,18 @@ else
     GCC_MAX_VER=7
 fi
 # ML
-TENSORFLOW_VER="2.8.2"
+TENSORFLOW_VER="2.8.4"
 TENSORBOARD_VER="2.8.0"
-TORCH_CPU_GLNX_VER="1.12.0+cpu"
-TORCH_CUDA_GLNX_VER="1.12.0+cu116"
+TORCH_CPU_GLNX_VER="1.13.1+cpu"
+TORCH_CUDA_GLNX_VER="1.13.1+cu116"
 PYTHON_VER=$(python -c 'import sys; ver=f"{sys.version_info.major}{sys.version_info.minor}"; print(f"cp{ver}-cp{ver}{sys.abiflags}")' 2>/dev/null || true)
 # TORCH_CUDA_GLNX_URL="https://github.com/isl-org/open3d_downloads/releases/download/torch1.8.2/torch-1.8.2-${PYTHON_VER}-linux_x86_64.whl"
-TORCH_MACOS_VER="1.12.0"
+TORCH_MACOS_VER="1.13.1"
 TORCH_REPO_URL="https://download.pytorch.org/whl/torch/"
 # Python
 PIP_VER="21.1.1"
-WHEEL_VER="0.37.1"
-STOOLS_VER="50.3.2"
+WHEEL_VER="0.38.4"
+STOOLS_VER="67.3.2"
 PYTEST_VER="7.1.2"
 PYTEST_RANDOMLY_VER="3.8.0"
 SCIPY_VER="1.7.3"
@@ -264,7 +264,7 @@ test_wheel() {
     echo "Installing Open3D wheel $wheel_path in virtual environment..."
     python -m pip install "$wheel_path"
     python -c "import open3d; print('Installed:', open3d); print('BUILD_CUDA_MODULE: ', open3d._build_config['BUILD_CUDA_MODULE'])"
-    python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+    python -c "import open3d; print('CUDA available: ', open3d.core.cuda.is_available())"
     echo
     # echo "Dynamic libraries used:"
     # DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..

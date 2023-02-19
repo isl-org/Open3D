@@ -29,6 +29,7 @@
 #include "open3d/camera/PinholeCameraParameters.h"
 #include "open3d/geometry/BoundingVolume.h"
 #include "open3d/geometry/Geometry.h"
+#include "open3d/geometry/Line3D.h"
 #include "open3d/visualization/utility/GLHelper.h"
 #include "open3d/visualization/visualizer/ViewParameters.h"
 
@@ -100,6 +101,13 @@ public:
     /// \param step The step to change field of view.
     virtual void ChangeFieldOfView(double step);
     virtual void ChangeWindowSize(int width, int height);
+
+    /// Function to unproject a point on the window and obtain a ray from the
+    /// camera to that point in 3D.
+    ///
+    /// \param x The coordinate of the point in x-axis, in pixels
+    /// \param y The coordinate of the point in y-axis, in pixels
+    geometry::Ray3D UnprojectPoint(double x, double y) const;
 
     /// Function to process scaling
     ///
