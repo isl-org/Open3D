@@ -190,8 +190,14 @@ cuda_wheel_build() {
     else
         DEVELOPER_BUILD=OFF
     fi
+    if [[ "cuda" =~ ^($options)$ ]]; then
+        BUILD_CUDA_MODULE=ON
+    else
+        BUILD_CUDA_MODULE=OFF
+    fi
     echo "[cuda_wheel_build()] PYTHON_VERSION: ${PYTHON_VERSION}"
     echo "[cuda_wheel_build()] DEVELOPER_BUILD: ${DEVELOPER_BUILD}"
+    echo "[cuda_wheel_build()] BUILD_CUDA_MODULE: ${BUILD_CUDA_MODULE}"
 
     pushd "${HOST_OPEN3D_ROOT}"
     docker build \
@@ -202,6 +208,7 @@ cuda_wheel_build() {
         --build-arg CMAKE_VERSION="${CMAKE_VERSION}" \
         --build-arg CCACHE_VERSION="${CCACHE_VERSION}" \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+        --build-arg BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE}" \
         -t open3d-ci:wheel \
         -f docker/Dockerfile.wheel .
     popd

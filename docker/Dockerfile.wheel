@@ -8,6 +8,7 @@ ARG CCACHE_TAR_NAME
 ARG CMAKE_VERSION
 ARG CCACHE_VERSION
 ARG PYTHON_VERSION
+ARG BUILD_CUDA_MODULE
 
 # Forward all ARG to ENV
 # ci_utils.sh requires these environment variables
@@ -16,6 +17,7 @@ ENV CCACHE_TAR_NAME=${CCACHE_TAR_NAME}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
 ARG CCACHE_VERSION=${CCACHE_VERSION}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
+ENV BUILD_CUDA_MODULE=${BUILD_CUDA_MODULE}
 
 # Prevent interactive inputs when installing packages
 ENV DEBIAN_FRONTEND=noninteractive
@@ -124,7 +126,7 @@ WORKDIR /root/Open3D
 
 # Build python wheel
 RUN export NPROC=$(nproc) \
- && export BUILD_SHARED_LIBS=OFF \
+ && export BUILD_SHARED_LIBS=ON \
  && export BUILD_TENSORFLOW_OPS=ON \
  && export BUILD_PYTORCH_OPS=ON \
  && source /root/Open3D/util/ci_utils.sh \

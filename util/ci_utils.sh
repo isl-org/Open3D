@@ -9,6 +9,12 @@ DEVELOPER_BUILD="${DEVELOPER_BUILD:-ON}"
 if [[ "$DEVELOPER_BUILD" != "OFF" ]]; then # Validate input coming from GHA input field
     DEVELOPER_BUILD="ON"
 fi
+
+BUILD_CUDA_MODULE="${BUILD_CUDA_MODULE:-OFF}"
+if [[ "$BUILD_CUDA_MODULE" == "ON" ]]; then # Validate input coming from GHA input field
+    BUILD_CUDA_MODULE="ON"
+fi
+
 BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS:-OFF}
 NPROC=${NPROC:-$(getconf _NPROCESSORS_ONLN)} # POSIX: MacOS + Linux
 if [ -z "${BUILD_CUDA_MODULE:+x}" ]; then
@@ -165,6 +171,8 @@ build_pip_package() {
     options="$(echo "$@" | tr ' ' '|')"
 
     BUILD_FILAMENT_FROM_SOURCE=OFF
+    BUILD_CUDA_MODULE=OFF
+    BUILD_COMMON_CUDA_ARCHS=OFF
     set +u
     if [ -f "${OPEN3D_ML_ROOT}/set_open3d_ml_root.sh" ]; then
         echo "Open3D-ML available at ${OPEN3D_ML_ROOT}. Bundling Open3D-ML in wheel."
@@ -177,6 +185,16 @@ build_pip_package() {
     fi
     if [[ "$DEVELOPER_BUILD" == "OFF" ]]; then
         echo "Building for a new Open3D release"
+    fi
+    if [[ "$BUILD_CUDA_MODULE" == "ON" ]]; then
+        echo "Building for a Open3D CUDA release"
+        BUILD_CUDA_MODULE=ON
+        BUILD_COMMON_CUDA_ARCHS=ON
+        echo
+        echo Installing CUDA versions of TensorFlow and PyTorch...
+        install_python_dependencies with-cuda purge-cache
+        echo
+        echo Building with CUDA...
     fi
     if [[ "build_azure_kinect" =~ ^($options)$ ]]; then
         echo "Azure Kinect enabled in Python wheel."
@@ -198,8 +216,10 @@ build_pip_package() {
     echo Building with CPU only...
     mkdir -p build
     pushd build # PWD=Open3D/build
-    cmakeOptions=("-DBUILD_SHARED_LIBS=OFF"
+    cmakeOptions=("-DBUILD_SHARED_LIBS=ON"
         "-DDEVELOPER_BUILD=$DEVELOPER_BUILD"
+        "-DBUILD_CUDA_MODULE=$BUILD_CUDA_MODULE"
+        "-DBUILD_COMMON_CUDA_ARCHS=$BUILD_COMMON_CUDA_ARCHS"
         "-DBUILD_COMMON_ISPC_ISAS=ON"
         "-DBUILD_AZURE_KINECT=$BUILD_AZURE_KINECT"
         "-DBUILD_LIBREALSENSE=ON"
@@ -215,28 +235,10 @@ build_pip_package() {
         "-DBUNDLE_OPEN3D_ML=$BUNDLE_OPEN3D_ML"
     )
     set -x # Echo commands on
-    cmake -DBUILD_CUDA_MODULE=OFF "${cmakeOptions[@]}" ..
+    cmake "${cmakeOptions[@]}" ..
     set +x # Echo commands off
     echo
     make VERBOSE=1 -j"$NPROC" pybind open3d_tf_ops open3d_torch_ops
-
-    if [ "$BUILD_CUDA_MODULE" == ON ]; then
-        echo
-        echo Installing CUDA versions of TensorFlow and PyTorch...
-        install_python_dependencies with-cuda purge-cache
-        echo
-        echo Building with CUDA...
-        rebuild_list=(bin lib/Release/*.a lib/_build_config.py cpp lib/ml)
-        echo
-        echo Removing CPU compiled files / folders: "${rebuild_list[@]}"
-        rm -r "${rebuild_list[@]}" || true
-        set -x # Echo commands on
-        cmake -DBUILD_CUDA_MODULE=ON \
-            -DBUILD_COMMON_CUDA_ARCHS=ON \
-            "${cmakeOptions[@]}" ..
-        set +x # Echo commands off
-    fi
-    echo
 
     echo "Packaging Open3D pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
