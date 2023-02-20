@@ -72,6 +72,7 @@ COPY ./python/requirements*.txt /root/Open3D/python/
 RUN which python \
  && python --version \
  && python -m pip install -U -r /root/Open3D/python/requirements.txt \
+  -r /root/Open3D/python/requirements_gui.txt \
   -r /root/Open3D/python/requirements_build.txt \
   -r /root/Open3D/python/requirements_test.txt
 

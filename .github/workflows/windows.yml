@@ -276,6 +276,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           python -m pip install -r python/requirements.txt
+          python -m pip install -r python/requirements_gui.txt
           python -m pip install -r python/requirements_jupyter_build.txt
 
       - name: Config
@@ -399,7 +400,7 @@ jobs:
             $PIP_PKG_NAME=(Get-ChildItem open3d*-$py_tag-*.whl).Name
           }
           echo "Installing Open3D wheel $PIP_PKG_NAME in virtual environment..."
-          python -m pip install "$PIP_PKG_NAME"
+          python -m pip install "$PIP_PKG_NAME[standard]"
           python -c "import open3d; print('Imported:', open3d)"
           python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
 

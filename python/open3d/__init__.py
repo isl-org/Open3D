@@ -109,7 +109,14 @@ def _insert_pybind_names(skip_names=()):
     sys.modules.update(submodules)
 
 
-import open3d.visualization
+try:
+    import open3d.visualization
+except ModuleNotFoundError:
+    warnings.warn(
+        "Open3D Python GUI Libraries not found. "
+        "Please make sure to install open3d[standard] if you wish to use "
+        "the open3d.visualization module.", RuntimeWarning)
+
 _insert_pybind_names(skip_names=("ml",))
 
 __version__ = "@PROJECT_VERSION@"

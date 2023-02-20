@@ -42,7 +42,7 @@ Python applications looks like this:
 
     # Install Open3D from the PyPI repositories
     RUN python3 -m pip install --no-cache-dir --upgrade pip && \
-        python3 -m pip install --no-cache-dir --upgrade open3d
+        python3 -m pip install --no-cache-dir --upgrade open3d[standard]
 
 If you have an NVIDIA GPU and want to use it for computation (``CUDA``) or
 visualization, follow these `directions.

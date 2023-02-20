@@ -9,7 +9,7 @@ we provide pre-compiled ARM64 wheels for Linux and macOS. Install the wheel by:
 
 .. code-block:: bash
 
-    pip install open3d
+    pip install open3d[standard]
     python -c "import open3d; print(open3d.__version__)"
 
     # Test the legacy visualizer
@@ -18,21 +18,21 @@ we provide pre-compiled ARM64 wheels for Linux and macOS. Install the wheel by:
     # Test the new GUI visualizer
     python -c "import open3d as o3d; c = o3d.geometry.TriangleMesh.create_box(); o3d.visualization.draw(c)"
 
-+------------------------+----------------+---------------------+------------+----------------+
-|                        | Linux (OpenGL) | Linux (OpenGL ES)   | macOS      | Windows on ARM |
-+========================+================+=====================+============+================+
-| ``pip install open3d`` | Yes            | Yes                 | Yes        | No             |
-+------------------------+----------------+---------------------+------------+----------------+
-| Compile from source    | Yes            | Yes                 | Yes        | No             |
-+------------------------+----------------+---------------------+------------+----------------+
-| Visualizer and GUI     | Yes            | No                  | Yes        | No             |
-+------------------------+----------------+---------------------+------------+----------------+
-| Non-GUI features       | Yes            | Yes                 | Yes        | No             |
-+------------------------+----------------+---------------------+------------+----------------+
-| Special build flags    | Not needed     | ``-DBUILD_GUI=OFF`` | Not needed | N/A            |
-+------------------------+----------------+---------------------+------------+----------------+
-| Example device         | Nvidia Jetson  | Raspberry Pi 4      | M1 MacBook | Surface Pro X  |
-+------------------------+----------------+---------------------+------------+----------------+
++----------------------------------+----------------+---------------------+------------+----------------+
+|                                  | Linux (OpenGL) | Linux (OpenGL ES)   | macOS      | Windows on ARM |
++==================================+================+=====================+============+================+
+| ``pip install open3d[standard]`` | Yes            | Yes                 | Yes        | No             |
++----------------------------------+----------------+---------------------+------------+----------------+
+| Compile from source              | Yes            | Yes                 | Yes        | No             |
++----------------------------------+----------------+---------------------+------------+----------------+
+| Visualizer and GUI               | Yes            | No                  | Yes        | No             |
++----------------------------------+----------------+---------------------+------------+----------------+
+| Non-GUI features                 | Yes            | Yes                 | Yes        | No             |
++----------------------------------+----------------+---------------------+------------+----------------+
+| Special build flags              | Not needed     | ``-DBUILD_GUI=OFF`` | Not needed | N/A            |
++----------------------------------+----------------+---------------------+------------+----------------+
+| Example device                   | Nvidia Jetson  | Raspberry Pi 4      | M1 MacBook | Surface Pro X  |
++----------------------------------+----------------+---------------------+------------+----------------+
 
 Additional notes:
 
@@ -107,7 +107,7 @@ TBB, Parallel STL, BLAS, LAPACK) may cause compatibility issues if they are not
 the same version as the one used by Open3D.
 
 If you only need the Python wheel, consider using the Docker build method or
-install Open3D via ``pip install open3d`` directly.
+install Open3D via ``pip install open3d[standard]`` directly.
 
 Install dependencies
 ````````````````````

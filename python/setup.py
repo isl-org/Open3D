@@ -9,6 +9,7 @@ import os
 import sys
 import platform
 import ctypes
+from collections import defaultdict
 from setuptools import setup, find_packages
 from setuptools.command.install import install as _install
 from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
@@ -93,6 +94,13 @@ cmdclass["install"] = install
 with open("requirements.txt", "r") as f:
     install_requires = [line.strip() for line in f.readlines() if line]
 
+# For extra requirements
+extra_requires = defaultdict(list)
+
+# Standard Extras
+with open("requirements_gui.txt", "r") as f:
+    extra_requires["standard"] += [line.strip() for line in f.readlines() if line]
+
 # Read requirements for ML.
 if "@BUNDLE_OPEN3D_ML@" == "ON":
     with open("@OPEN3D_ML_ROOT@/requirements.txt", "r") as f:
@@ -160,6 +168,7 @@ setup_args = dict(
     python_requires=">=3.6",
     include_package_data=True,
     install_requires=install_requires,
+    extras_require=extra_requires,
     packages=find_packages(),
     entry_points=entry_points,
     zip_safe=False,

@@ -35,9 +35,12 @@ Pip (PyPI)
 
 .. code-block:: bash
 
-    pip install open3d        # or
-    pip install open3d-cpu    # Smaller CPU only wheel on x86_64 Linux (since v0.17+)
+    pip install open3d[standard]        # or
+    pip install open3d-cpu[standard]    # Smaller CPU only wheel on x86_64 Linux (since v0.17+)
 
+.. note::
+   Above will work for most purposes and aligns with behavior seen in `v0.17` and below.
+   Using anything under :mod:`open3d.visualization` will require ``[standard]``.
 
 .. note::
    Please upgrade your ``pip`` to a version >=20.3 to install Open3D in Linux,
@@ -54,11 +57,11 @@ Pip (PyPI)
 
     .. code-block:: bash
 
-        pip3 install open3d
+        pip3 install open3d[standard]
         # or
-        pip install --user open3d
+        pip install --user open3d[standard]
         # or
-        python3 -m pip install --user open3d
+        python3 -m pip install --user open3d[standard]
 
 Development version (pip)
 -------------------------

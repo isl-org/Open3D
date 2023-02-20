@@ -83,6 +83,7 @@ install_python_dependencies() {
 
     # TODO: modify other locations to use requirements.txt
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_gui.txt"
     if [[ "with-jupyter" =~ ^($options)$ ]]; then
         python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     fi
@@ -262,7 +263,7 @@ test_wheel() {
     echo -n "Using pip: "
     python -m pip --version
     echo "Installing Open3D wheel $wheel_path in virtual environment..."
-    python -m pip install "$wheel_path"
+    python -m pip install "${wheel_path}[standard]"
     python -c "import open3d; print('Installed:', open3d); print('BUILD_CUDA_MODULE: ', open3d._build_config['BUILD_CUDA_MODULE'])"
     python -c "import open3d; print('CUDA available: ', open3d.core.cuda.is_available())"
     echo
@@ -392,6 +393,7 @@ install_docs_dependencies() {
     fi
     echo
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements.txt"
+    python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_gui.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/python/requirements_jupyter_build.txt"
     python -m pip install -r "${OPEN3D_SOURCE_ROOT}/docs/requirements.txt"
 }

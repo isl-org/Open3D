@@ -18,7 +18,7 @@ Install Open3D from PyPI (a virtual environment is recommended):
 
 .. code-block:: sh
 
-    pip install open3d
+    pip install open3d[standard]
 
 Compile from source (C++)
 ^^^^^^^^^^^^^^^^^^^^^^^^^
