@@ -237,12 +237,13 @@ bool ReadTriangleMeshUsingASSIMP(
     }
 
     // Now load the materials
+    mesh.materials_.resize(scene->mNumMaterials);
     for (size_t i = 0; i < scene->mNumMaterials; ++i) {
         auto* mat = scene->mMaterials[i];
 
-        // create material structure to match this name
-        auto& mesh_material =
-                mesh.materials_[std::string(mat->GetName().C_Str())];
+        // Set the material structure to match this name
+        auto& mesh_material = mesh.materials_[i].second;
+        mesh.materials_[i].first = mat->GetName().C_Str();
 
         using MaterialParameter =
                 geometry::TriangleMesh::Material::MaterialParameter;
@@ -277,9 +278,9 @@ bool ReadTriangleMeshUsingASSIMP(
 
         // For legacy visualization support
         if (mesh_material.albedo) {
-            mesh.textures_.push_back(*mesh_material.albedo->FlipVertical());
+            mesh.textures_.emplace_back(*mesh_material.albedo->FlipVertical());
         } else {
-            mesh.textures_.push_back(geometry::Image());
+            mesh.textures_.emplace_back();
         }
     }
 
