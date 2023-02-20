@@ -180,6 +180,8 @@ public:
     /// use. Returns "window_undefined" if the window system is not
     /// WebRTCWindowSystem.
     std::string GetWebRTCUID() const;
+    
+    void SetFullScreen(bool bFullScreen);
 
 protected:
     /// Returns the preferred size of the window. The window is not

@@ -565,6 +565,23 @@ MenuBase* GLFWWindowSystem::CreateOSMenu() {
 #endif
 }
 
+void GLFWWindowSystem::SetFullScreen(OSWindow w, bool bFullScreen)
+{
+    if (!bFullScreen) {
+        glfwSetWindowMonitor((GLFWwindow*)w,
+        	              NULL,
+        		      winX,winY,
+        		      winW,winH,
+        		      GLFW_DONT_CARE);
+    } else {
+        glfwGetWindowSize((GLFWwindow*)w, &winW, &winH);
+        glfwGetWindowPos((GLFWwindow*)w, &winX, &winY);
+        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode *mode = glfwGetVideoMode(monitor);
+        glfwSetWindowMonitor((GLFWwindow*)w, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+    }
+}
+
 }  // namespace gui
 }  // namespace visualization
 }  // namespace open3d
