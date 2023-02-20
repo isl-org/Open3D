@@ -568,29 +568,54 @@ function main() {
 
     # CUDA wheels
     cuda_wheel_py37_dev)
-        cuda_wheel_build py37 dev
+        cuda_wheel_build py37 dev cuda
         ;;
     cuda_wheel_py38_dev)
-        cuda_wheel_build py38 dev
+        cuda_wheel_build py38 dev cuda
         ;;
     cuda_wheel_py39_dev)
-        cuda_wheel_build py39 dev
+        cuda_wheel_build py39 dev cuda
         ;;
     cuda_wheel_py310_dev)
-        cuda_wheel_build py310 dev
+        cuda_wheel_build py310 dev cuda
         ;;
     cuda_wheel_py37)
-        cuda_wheel_build py37
+        cuda_wheel_build py37 cuda
         ;;
     cuda_wheel_py38)
-        cuda_wheel_build py38
+        cuda_wheel_build py38 cuda
         ;;
     cuda_wheel_py39)
-        cuda_wheel_build py39
+        cuda_wheel_build py39 cuda
         ;;
     cuda_wheel_py310)
-        cuda_wheel_build py310
+        cuda_wheel_build py310 cuda
         ;;
+    cpu_wheel_py37_dev)
+        cuda_wheel_build py37 dev 
+        ;;
+    cpu_wheel_py38_dev)
+        cuda_wheel_build py38 dev 
+        ;;
+    cpu_wheel_py39_dev)
+        cuda_wheel_build py39 dev 
+        ;;
+    cpu_wheel_py310_dev)
+        cuda_wheel_build py310 dev 
+        ;;
+    cpu_wheel_py37)
+        cuda_wheel_build py37 
+        ;;
+    cpu_wheel_py38)
+        cuda_wheel_build py38 
+        ;;
+    cpu_wheel_py39)
+        cuda_wheel_build py39 
+        ;;
+    cpu_wheel_py310)
+        cuda_wheel_build py310 
+        ;;
+
 
     # ML CIs
     2-bionic)

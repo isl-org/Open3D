@@ -1,5 +1,5 @@
 # This workflow builds Open3D wheels for Ubuntu 18.04 
-name: Ubuntu Wheel
+name: Ubuntu CUDA Wheel
 
 on:
   workflow_dispatch:
@@ -38,21 +38,21 @@ jobs:
       - name: Docker build
         run: |
           if [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cpu_wheel_py37_dev
+            docker/docker_build.sh cuda_wheel_py37_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cpu_wheel_py38_dev
+            docker/docker_build.sh cuda_wheel_py38_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cpu_wheel_py39_dev
+            docker/docker_build.sh cuda_wheel_py39_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "ON"  ]; then
-            docker/docker_build.sh cpu_wheel_py310_dev
+            docker/docker_build.sh cuda_wheel_py310_dev
           elif [ "${{ env.PYTHON_VERSION }}" = "3.7" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cpu_wheel_py37
+            docker/docker_build.sh cuda_wheel_py37
           elif [ "${{ env.PYTHON_VERSION }}" = "3.8" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cpu_wheel_py38
+            docker/docker_build.sh cuda_wheel_py38
           elif [ "${{ env.PYTHON_VERSION }}" = "3.9" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cpu_wheel_py39
+            docker/docker_build.sh cuda_wheel_py39
           elif [ "${{ env.PYTHON_VERSION }}" = "3.10" ] && [ "${{ env.DEVELOPER_BUILD }}" = "OFF" ]; then
-            docker/docker_build.sh cpu_wheel_py310
+            docker/docker_build.sh cuda_wheel_py310
           fi
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
