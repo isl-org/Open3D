@@ -23,6 +23,12 @@ struct TriangleMeshModel {
 
     std::vector<MeshInfo> meshes_;
     std::vector<visualization::rendering::MaterialRecord> materials_;
+
+    void AddMesh(const geometry::TriangleMesh& mesh, const std::string& name);
+
+    static TriangleMeshModel FromTriangleMesh(
+            const geometry::TriangleMesh& mesh,
+            const std::string& name = "Mesh");
 };
 
 }  // namespace rendering
