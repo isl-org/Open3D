@@ -74,7 +74,6 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
             install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
         elseif (WIN32)
             # Don't create a command window on launch
-            set_target_properties(${TARGET_NAME} PROPERTIES WIN32_EXECUTABLE TRUE)
             target_sources(${TARGET_NAME} PRIVATE "${SOURCE_DIR}/icon.rc")   # add icon
 
             # MSVC puts the binary in bin/Open3D/Release/Open3D.exe
@@ -110,8 +109,7 @@ macro(open3d_add_app_common SRC_DIR APP_NAME TARGET_NAME)
                              )
     elseif (WIN32)
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../${APP_NAME}")
-        add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES}
-            PROPERTIES WIN32_EXECUTABLE TRUE)
+        add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
     else()
         set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../${APP_NAME}")
         add_executable(${TARGET_NAME} ${SOURCE_FILES} ${HEADER_FILES})
