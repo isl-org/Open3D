@@ -84,6 +84,14 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
             install(FILES   "${APP_DIR}/$<CONFIG>/${TARGET_NAME}.exe"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin/${APP_NAME}"
                     RENAME "${APP_NAME}.exe")
+            add_custom_target("${TARGET_NAME}-package"
+                ${CMAKE_COMMAND} -DTARGET_NAME=${TARGET_NAME} -P
+                "${CMAKE_CURRENT_SOURCE_DIR}/make_win32_installer.cmake"
+                DEPENDS ${TARGET_NAME}
+                BYPRODUCTS
+                "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TARGET_NAME}.msi"
+                COMMENT "Packaging ${TARGET_NAME}"
+            )
         else()
             install(DIRECTORY   "${APP_DIR}"
                     DESTINATION "${CMAKE_INSTALL_PREFIX}/bin"

@@ -205,3 +205,6 @@ endif()
 # Export GUI_RESOURCE_FILES to parent CMake context (cpp/open3d/)
 set(GUI_RESOURCE_FILES ${GUI_RESOURCE_FILES} PARENT_SCOPE)
 set(GUI_RESOURCE_DIR ${GUI_RESOURCE_DIR} PARENT_SCOPE)
+
+include(Open3DPackaging)
+include(CPack)

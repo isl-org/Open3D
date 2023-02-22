@@ -1,0 +1,14 @@
+<CPackWiXPatch>
+  <CPackWiXFragment Id="CM_CP_open3d.bin.open3d.exe">
+    <ProgId Id="Open3D.PLY" Description="Polygon File Format" Icon="CM_FP_open3d.bin.open3d.exe">
+        <Extension Id="ply">
+            <Verb Id="open" TargetFile='CM_FP_open3d.bin.open3d.exe' Argument="&quot;%1&quot;" />
+        </Extension>
+    </ProgId>
+    <ProgId Id="Open3D.GLTF" Description="GL Transmission Format" Icon="CM_FP_open3d.bin.open3d.exe">
+        <Extension Id="gltf">
+            <Verb Id="open" TargetFile='CM_FP_open3d.bin.open3d.exe' Argument="&quot;%1&quot;" />
+        </Extension>
+    </ProgId>
+  </CPackWiXFragment>
+</CPackWiXPatch>

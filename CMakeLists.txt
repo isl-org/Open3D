@@ -520,8 +520,6 @@ if (Python3_EXECUTABLE)
     )
 endif()
 
-include(Open3DPackaging)
-
 # `make check-cpp-style` checks style for c++/cuda files.
 # This works outside of python virtualenv.
 add_custom_target(check-cpp-style
