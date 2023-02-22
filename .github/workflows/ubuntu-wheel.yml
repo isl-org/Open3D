@@ -17,10 +17,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
+
 jobs:
   build-wheel:
     name: Build wheel
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -41,7 +44,7 @@ jobs:
       OPEN3D_CPU_RENDERING: true
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
@@ -70,31 +73,27 @@ jobs:
           PIP_PKG_NAME="$(basename ${GITHUB_WORKSPACE}/open3d*.whl)"
           echo "PIP_PKG_NAME=$PIP_PKG_NAME" >> $GITHUB_ENV
       - name: Upload wheel to GitHub artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d_linux_x86_64_wheels
           path: ${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
-      - name: GCloud CLI setup (GCE_SA_KEY_DOCS_CI)
+      - name: GCloud CLI auth
         if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
+      - name: GCloud CLI setup
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Upload ccache to GCS
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
           gsutil cp ${GITHUB_WORKSPACE}/${{ env.CCACHE_TAR_NAME }}.tar.gz gs://open3d-ci-cache/
-      - name: GCloud CLI setup (GCE_SA_KEY_GPU_CI)
-        if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@v0.2.1
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
       - name: Upload wheel to GCS
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |
@@ -122,22 +121,22 @@ jobs:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
       - name: Download wheels
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: open3d_linux_x86_64_wheels
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
       - name: Test Python package
@@ -154,17 +153,22 @@ jobs:
 
   ready-docs:
     name: Ready docs archive
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/master' }}
     needs: [build-wheel]
     steps:
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Check wheels and ready documentation archive
         run: |
             touch marker_file
