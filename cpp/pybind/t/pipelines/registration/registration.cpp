@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/pipelines/registration/GlobalRegistration.h"
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 #include "open3d/utility/Logging.h"
 #include "pybind/docstring.h"
@@ -109,6 +110,31 @@ void pybind_registration_classes(py::module &m) {
                         "\nAccess transformation to get result.",
                         rr.fitness_, rr.inlier_rmse_,
                         rr.fitness_ * rr.correspondences_.GetLength());
+            });
+    py::class_<RANSACConvergenceCriteria> ransac_convergence_criteria(
+            m, "RANSACConvergenceCriteria",
+            "Convergence criteria of RANSAC. "
+            "RANSAC algorithm stops if the expected number of iterations is "
+            "above the threshold. Expected iterations is given by k = log(1 - "
+            "p)/(1 - w^n),"
+            "where p is confidence, w is inlier ratio estimated on-the-fly, "
+            "and n = 3 is the number of samples per iteration.");
+    py::detail::bind_copy_functions<RANSACConvergenceCriteria>(
+            ransac_convergence_criteria);
+    ransac_convergence_criteria
+            .def(py::init<int, double>(), "max_iteration"_a = 100000,
+                 "confidence"_a = 0.999)
+            .def_readwrite("max_iteration",
+                           &RANSACConvergenceCriteria::max_iteration_,
+                           "Maximum iteration before iteration stops.")
+            .def_readwrite("confidence",
+                           &RANSACConvergenceCriteria::confidence_,
+                           "Confidence of obtaining the correct solution, see ")
+            .def("__repr__", [](const RANSACConvergenceCriteria &c) {
+                return fmt::format(
+                        "RANSACConvergenceCriteria[max_iteration_={:d}, "
+                        "confidence_={:e}].",
+                        c.confidence_, c.max_iteration_);
             });
 
     // open3d.t.pipelines.registration.TransformationEstimation
@@ -297,6 +323,27 @@ void pybind_registration_methods(py::module &m) {
           "criteria"_a = ICPConvergenceCriteria(), "voxel_size"_a = -1.0,
           "callback_after_iteration"_a = py::none());
     docstring::FunctionDocInject(m, "icp", map_shared_argument_docstrings);
+
+    m.def("ransac_from_features", &RANSACFromFeatures,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for RANSAC registration of features", "source"_a,
+          "target"_a, "source_feats"_a, "target_feats"_a,
+          "max_correspondence_distance"_a,
+          "estimation_method"_a = TransformationEstimationPointToPoint(),
+          "criteria"_a = RANSACConvergenceCriteria(),
+          "callback_after_iteration"_a = py::none());
+    docstring::FunctionDocInject(m, "ransac_from_correspondences",
+                                 map_shared_argument_docstrings);
+
+    m.def("ransac_from_correspondences", &RANSACFromCorrespondences,
+          py::call_guard<py::gil_scoped_release>(),
+          "Function for RANSAC registration of features", "source"_a,
+          "target"_a, "correspondences"_a, "max_correspondence_distance"_a,
+          "estimation_method"_a = TransformationEstimationPointToPoint(),
+          "criteria"_a = RANSACConvergenceCriteria(),
+          "callback_after_iteration"_a = py::none());
+    docstring::FunctionDocInject(m, "ransac_from_correspondences",
+                                 map_shared_argument_docstrings);
 
     m.def("multi_scale_icp", &MultiScaleICP,
           py::call_guard<py::gil_scoped_release>(),

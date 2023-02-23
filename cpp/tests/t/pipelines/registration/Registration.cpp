@@ -405,5 +405,13 @@ TEST_P(RegistrationPermuteDevices, GetInformationMatrixFromPointCloud) {
     }
 }
 
+TEST_P(RegistrationPermuteDevices, DISABLED_RANSACFromCorrespondences) {
+    NotImplemented();
+}
+
+TEST_P(RegistrationPermuteDevices, DISABLED_RANSACFromFeatures) {
+    NotImplemented();
+}
+
 }  // namespace tests
 }  // namespace open3d
