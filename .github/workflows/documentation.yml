@@ -59,16 +59,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.7'
-      - name: GCloud CLI auth
-        uses: 'google-github-actions/auth@v1'
-        with:
-          project_id: ${{ secrets.GCE_PROJECT }}
-          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
-      - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Install dependencies
         env:
@@ -96,6 +86,19 @@ jobs:
           name: open3d_docs
           path: docs/_out/html
           if-no-files-found: error
+
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
+      - name: GCloud CLI setup
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Deploy docs
         if: ${{ github.ref == 'refs/heads/master' }}

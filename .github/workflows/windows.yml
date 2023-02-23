@@ -167,16 +167,13 @@ jobs:
             --target Open3DViewer
           cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
             --target INSTALL
-          New-Item -ItemType "directory" -Force -Path "package"
-          Compress-Archive -LiteralPath "C:\Program Files\Open3D\bin\Open3D" `
-            -DestinationPath "package/open3d-app-windows-amd64.zip"
 
       - name: Upload Viewer
         if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
         uses: actions/upload-artifact@v3
         with:
-          name: open3d-app-windows
-          path: ${{ env.BUILD_DIR }}/package/open3d-app-windows-amd64.zip
+          name: open3d-app-windows-amd64
+          path: C:\Program Files\Open3D\bin\Open3D
           if-no-files-found: error
 
       - name: GCloud CLI auth
@@ -426,13 +423,11 @@ jobs:
     needs: [build-wheel, windows]
     steps:
       - name: GCloud CLI auth
-        if: ${{ github.ref == 'refs/heads/master' }}
         uses: google-github-actions/auth@v1
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        if: ${{ github.ref == 'refs/heads/master' }}
         uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
