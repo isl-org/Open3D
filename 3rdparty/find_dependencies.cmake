@@ -1889,6 +1889,14 @@ else()
     set(BUILD_WEBRTC_COMMENT "//")
 endif()
 
+# tcb::span
+include(${Open3D_3RDPARTY_DIR}/tcbspan/tcbspan.cmake)
+open3d_import_3rdparty_library(3rdparty_tcbspan
+    INCLUDE_DIRS ${TCB_SPAN_INCLUDE_DIRS}
+    LIBRARIES    ${TCB_SPAN_LIBRARIES}
+)
+list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_tcbspan)
+
 # Compactify list of external modules.
 # This must be called after all dependencies are processed.
 list(REMOVE_DUPLICATES Open3D_3RDPARTY_EXTERNAL_MODULES)
