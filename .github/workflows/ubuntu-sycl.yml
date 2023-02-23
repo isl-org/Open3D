@@ -43,12 +43,15 @@ jobs:
           else
             docker/docker_test.sh sycl-static
           fi
+
       - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' }}
         uses: 'google-github-actions/auth@v1'
         with:
           project_id: ${{ secrets.GCE_PROJECT }}
           credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
+        if: ${{ github.ref == 'refs/heads/master' }}
         uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
