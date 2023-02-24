@@ -220,6 +220,10 @@ build_pip_package() {
     echo
     make VERBOSE=1 -j"$NPROC" pybind open3d_tf_ops open3d_torch_ops
 
+    echo "Packaging Open3D CPU pip package..."
+    make VERBOSE=1 -j"$NPROC" pip-package
+    mv lib/python_package/pip_package/open3d*.whl . # save CPU wheel
+
     if [ "$BUILD_CUDA_MODULE" == ON ]; then
         echo
         echo Installing CUDA versions of TensorFlow and PyTorch...
@@ -238,9 +242,9 @@ build_pip_package() {
     fi
     echo
 
-    echo "Packaging Open3D pip package..."
+    echo "Packaging Open3D full pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
-
+    mv open3d*.whl lib/python_package/pip_package/   # restore CPU wheel
     popd # PWD=Open3D
 }
 
@@ -253,14 +257,14 @@ test_wheel() {
     source open3d_test.venv/bin/activate
     python -m pip install --upgrade pip=="$PIP_VER" wheel=="$WHEEL_VER" \
         setuptools=="$STOOLS_VER"
-    echo "Using python: $(command -v python)"
+    echo -n "Using python: $(command -v python)"
     python --version
     echo -n "Using pip: "
     python -m pip --version
     echo "Installing Open3D wheel $wheel_path in virtual environment..."
     python -m pip install "$wheel_path"
-    python -c "import open3d; print('Installed:', open3d)"
-    python -c "import open3d; print('CUDA enabled: ', open3d.core.cuda.is_available())"
+    python -c "import open3d; print('Installed:', open3d); print('BUILD_CUDA_MODULE: ', open3d._build_config['BUILD_CUDA_MODULE'])"
+    python -c "import open3d; print('CUDA available: ', open3d.core.cuda.is_available())"
     echo
     # echo "Dynamic libraries used:"
     # DLL_PATH=$(dirname $(python -c "import open3d; print(open3d.cpu.pybind.__file__)"))/..
@@ -311,6 +315,7 @@ run_python_tests() {
     fi
     python -m pytest "${pytest_args[@]}"
     deactivate open3d_test.venv # argument prevents unbound variable error
+    rm -rf open3d_test.venv     # cleanup for testing the next wheel
 }
 
 # Use: run_unit_tests

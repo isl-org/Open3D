@@ -35,7 +35,9 @@ Pip (PyPI)
 
 .. code-block:: bash
 
-    pip install open3d
+    pip install open3d        # or
+    pip install open3d-cpu    # Smaller CPU only wheel on x86_64 Linux (since v0.17+)
+
 
 .. note::
    Please upgrade your ``pip`` to a version >=20.3 to install Open3D in Linux,
@@ -75,6 +77,11 @@ version (``HEAD`` of ``master`` branch):
       - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_27_x86_64.whl>`__
       - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_27_x86_64.whl>`__
 
+    * - Linux (CPU)
+      - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp37-cp37m-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.8 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp38-cp38-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.9 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp39-cp39-manylinux_2_27_x86_64.whl>`__
+      - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d_cpu-@OPEN3D_VERSION_FULL@-cp310-cp310-manylinux_2_27_x86_64.whl>`__
 
     * - MacOS
       - `Python 3.7 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp37-cp37m-macosx_10_15_x86_64.whl>`__
