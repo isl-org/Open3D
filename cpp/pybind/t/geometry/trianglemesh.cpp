@@ -663,6 +663,7 @@ Example:
     triangle_mesh.def(
             "compute_uvatlas", &TriangleMesh::ComputeUVAtlas, "size"_a = 512,
             "gutter"_a = 1.f, "max_stretch"_a = 1.f / 6,
+            "parallel_partitions"_a = 1, "nthreads"_a = 0,
             R"(Creates an UV atlas and adds it as triangle attr 'texture_uvs' to the mesh.
 
 Input meshes must be manifold for this method to work.
@@ -679,6 +680,15 @@ Args:
     gutter (float): This is the space around the uv islands in pixels.
     max_stretch (float): The maximum amount of stretching allowed. The parameter
         range is [0..1] with 0 meaning no stretch allowed.
+
+    parallel_partitions (int): The approximate number of partitions created
+        before computing the UV atlas for parallelizing the computation.
+        Parallelization can be enabled with values > 1. Note that
+        parallelization increases the number of UV islands and can lead to results
+        with lower quality.
+
+    nthreads (int): The number of threads used when parallel_partitions
+        is > 1. Set to 0 for automatic number of thread detection.
 
 Returns:
     None. This function modifies the mesh in-place.

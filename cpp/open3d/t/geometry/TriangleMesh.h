@@ -813,18 +813,19 @@ public:
     /// \param gutter This is the space around the uv islands in pixels.
     /// \param max_stretch The maximum amount of stretching allowed. The
     /// parameter range is [0..1] with 0 meaning no stretch allowed.
-    /// \param parallel_partitions The approximate number of partitions created 
+    /// \param parallel_partitions The approximate number of partitions created
     /// before computing the UV atlas for parallelizing the computation.
-    /// Parallelization can be enabled with values > 1. Note that 
-    /// parallelization increases the number UV islands and can lead results
-    /// with lower quality.
-    /// \param nthreads The number of threads used when parallel_partitions 
-    /// is > 1. Set to 0 for automatic number of thread detection.
+    /// Parallelization can be enabled with values > 1. Note that
+    /// parallelization increases the number of UV islands and can lead to
+    /// results with lower quality.
+    /// \param nthreads The number of threads used
+    /// when parallel_partitions is > 1. Set to 0 for automatic number of thread
+    /// detection.
     void ComputeUVAtlas(size_t size = 512,
                         float gutter = 1.0f,
                         float max_stretch = 1.f / 6,
-                        int parallel_partitions=1,
-                        int nthreads=0);
+                        int parallel_partitions = 1,
+                        int nthreads = 0);
 
     /// Bake vertex attributes into textures.
     ///
@@ -914,7 +915,7 @@ public:
 
     /// Partition the mesh by recursively doing PCA.
     /// This function creates a new triangle attribute with the name
-    /// "partition_id". 
+    /// "partition_id".
     /// \param max_faces The maximum allowed number of faces in a partition.
     /// \return The number of partitions.
     int PCAPartition(int max_faces);

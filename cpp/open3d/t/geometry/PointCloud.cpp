@@ -1248,7 +1248,7 @@ PointCloud PointCloud::Crop(const OrientedBoundingBox &obb, bool invert) const {
 int PointCloud::PCAPartition(int max_points) {
     int num_partitions;
     core::Tensor partition_ids;
-    std::tie(num_partitions, partition_ids) = 
+    std::tie(num_partitions, partition_ids) =
             kernel::pcapartition::PCAPartition(GetPointPositions(), max_points);
     SetPointAttr("partition_ids", partition_ids.To(GetDevice()));
     return num_partitions;

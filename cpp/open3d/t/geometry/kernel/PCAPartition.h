@@ -20,7 +20,8 @@ namespace pcapartition {
 /// \param max_points The maximum allowed number of points in a partition.
 /// \return The number of partitions and an int32 tensor with the partition id
 /// for each point. The output tensor uses always the CPU device.
-std::tuple<int,core::Tensor> PCAPartition(core::Tensor& points, int max_points);
+std::tuple<int, core::Tensor> PCAPartition(core::Tensor& points,
+                                           int max_points);
 
 }  // namespace pcapartition
 }  // namespace kernel

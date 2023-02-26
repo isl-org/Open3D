@@ -79,7 +79,8 @@ void Split(const TReal* const points,
 }
 }  // namespace
 
-std::tuple<int,core::Tensor> PCAPartition(core::Tensor& points, int max_points) {
+std::tuple<int, core::Tensor> PCAPartition(core::Tensor& points,
+                                           int max_points) {
     if (max_points <= 0) {
         utility::LogError("max_points must be > 0 bust is {}", max_points);
     }
@@ -132,7 +133,7 @@ std::tuple<int,core::Tensor> PCAPartition(core::Tensor& points, int max_points) 
     }
 
     int num_partitions = partitions_result.size();
-    return std::tie(num_partitions,partition_id);
+    return std::tie(num_partitions, partition_id);
 }
 
 }  // namespace pcapartition

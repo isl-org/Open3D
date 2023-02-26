@@ -673,8 +673,9 @@ void TriangleMesh::ComputeUVAtlas(size_t size,
                                   float max_stretch,
                                   int parallel_partitions,
                                   int nthreads) {
-    kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter,
-                                         max_stretch, nullptr, nullptr, parallel_partitions, nthreads);
+    kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter, max_stretch,
+                                         nullptr, nullptr, parallel_partitions,
+                                         nthreads);
 }
 
 namespace {
