@@ -310,17 +310,19 @@ static void AddTensorMapToVtkFieldData(
             continue;
         }
         // we only support 2D tensors
-        if (key_tensor.second.NumDims() != 2) {
-            utility::LogWarning(
-                    "Ignoring attribute '{}' for TensorMap with primary key "
-                    "'{}' because of incompatible ndim={}",
-                    key_tensor.first, tmap.GetPrimaryKey(),
-                    key_tensor.second.NumDims());
-            continue;
-        }
 
         if (include.count(key_tensor.first) &&
             !exclude.count(key_tensor.first)) {
+            if (key_tensor.second.NumDims() != 2) {
+                utility::LogWarning(
+                        "Ignoring attribute '{}' for TensorMap with primary "
+                        "key "
+                        "'{}' because of incompatible ndim={}",
+                        key_tensor.first, tmap.GetPrimaryKey(),
+                        key_tensor.second.NumDims());
+                continue;
+            }
+
             auto array = CreateVtkDataArrayFromTensor(key_tensor.second, copy);
             array->SetName(key_tensor.first.c_str());
             field_data->AddArray(array);
