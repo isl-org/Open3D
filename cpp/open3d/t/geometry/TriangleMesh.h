@@ -915,7 +915,7 @@ public:
 
     /// Partition the mesh by recursively doing PCA.
     /// This function creates a new triangle attribute with the name
-    /// "partition_id".
+    /// "partition_ids".
     /// \param max_faces The maximum allowed number of faces in a partition.
     /// \return The number of partitions.
     int PCAPartition(int max_faces);
