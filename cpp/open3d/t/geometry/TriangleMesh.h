@@ -903,6 +903,18 @@ public:
                                double scale = 1.0,
                                bool capping = true) const;
 
+    /// Partition the mesh by recursively doing PCA.
+    /// This function creates a new triangle attribute with the name
+    /// "partition_id". \param max_faces The maximum allowed number of faces in
+    /// a partition.
+    void PCAPartition(int max_faces);
+
+    /// Returns a new mesh with the faces selected by a boolean mask.
+    /// \param mask A boolean mask with the shape (N) with N as the number of
+    /// faces in the mesh.
+    /// \return A new mesh with the selected faces.
+    TriangleMesh SelectFacesByMask(const core::Tensor &mask) const;
+
 protected:
     core::Device device_ = core::Device("CPU:0");
     TensorMap vertex_attr_;

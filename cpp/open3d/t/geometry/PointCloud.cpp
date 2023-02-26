@@ -34,6 +34,7 @@
 #include "open3d/t/geometry/TriangleMesh.h"
 #include "open3d/t/geometry/VtkUtils.h"
 #include "open3d/t/geometry/kernel/GeometryMacros.h"
+#include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/pipelines/registration/Registration.h"
@@ -1242,6 +1243,12 @@ PointCloud PointCloud::Crop(const OrientedBoundingBox &obb, bool invert) const {
     }
     return SelectByIndex(
             obb.GetPointIndicesWithinBoundingBox(GetPointPositions()), invert);
+}
+
+void PointCloud::PCAPartition(int max_points) {
+    auto partition_id =
+            kernel::pcapartition::PCAPartition(GetPointPositions(), max_points);
+    SetPointAttr("partition_ids", partition_id.To(GetDevice()));
 }
 
 }  // namespace geometry

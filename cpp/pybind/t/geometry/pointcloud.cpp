@@ -661,6 +661,30 @@ Example:
         lines = pcd.extrude_linear([0,1,0])
         o3d.visualization.draw([{'name': 'lines', 'geometry': lines}])
 
+)");
+
+    pointcloud.def("pca_partition", &PointCloud::PCAPartition, "max_points"_a,
+                   R"(Partition the point cloud by recursively doing PCA.
+
+This function creates a new point attribute with the name "partition_ids" storing 
+the partition id for each point.
+
+Args:
+    max_points (int): The maximum allowed number of points in a partition.
+
+
+Example:
+
+    This code computes the partitions for a point cloud and visualizes them::
+
+        import open3d as o3d
+        import numpy as np
+        pcd = o3d.t.geometry.PointCloud(np.random.rand(100,3))
+        pcd.pca_partition(max_points=20)
+        # visualize
+        pcd.point.colors = np.zeros((100,3), dtype=np.float32)
+        num_partitions = pcd.point.partition_id.max().item()
+        TODO
 
 )");
 }

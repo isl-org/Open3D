@@ -197,12 +197,12 @@ The attributes of the triangle mesh have different levels::
             R"(Compute the convex hull of a point cloud using qhull. This runs on the CPU.
 
 Args:
-    joggle_inputs (default False). Handle precision problems by
-    randomly perturbing the input data. Set to True if perturbing the input
-    iis acceptable but you need convex simplicial output. If False,
-    neighboring facets may be merged in case of precision problems. See
-    `QHull docs <http://www.qhull.org/html/qh-impre.htm#joggle`__ for more
-    details.
+    joggle_inputs (bool with default False): Handle precision problems by
+        randomly perturbing the input data. Set to True if perturbing the input
+        iis acceptable but you need convex simplicial output. If False,
+        neighboring facets may be merged in case of precision problems. See
+        `QHull docs <http://www.qhull.org/html/qh-impre.htm#joggle`__ for more
+        details.
 
 Returns:
     TriangleMesh representing the convexh hull. This contains an
@@ -671,6 +671,7 @@ Zhou et al, "Iso-charts: Stretch-driven Mesh Parameterization using Spectral
              Analysis", Eurographics Symposium on Geometry Processing (2004)
 Sander et al. "Signal-Specialized Parametrization" Europgraphics 2002
 This function always uses the CPU device.
+
 Args:
     size (int): The target size of the texture (size x size). The uv coordinates
         will still be in the range [0..1] but parameters like gutter use pixels
@@ -678,10 +679,13 @@ Args:
     gutter (float): This is the space around the uv islands in pixels.
     max_stretch (float): The maximum amount of stretching allowed. The parameter
         range is [0..1] with 0 meaning no stretch allowed.
+
 Returns:
     None. This function modifies the mesh in-place.
+
 Example:
     This code creates a uv map for the Stanford Bunny mesh::
+
         import open3d as o3d
         bunny = o3d.data.BunnyMesh()
         mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
@@ -727,6 +731,7 @@ Returns:
 
 Example:
     We generate a texture storing the xyz coordinates for each texel::
+
         import open3d as o3d
         from matplotlib import pyplot as plt
 
@@ -781,6 +786,7 @@ Returns:
 Example:
     We generate a texture visualizing the index of the triangle to which the
     texel belongs to::
+
         import open3d as o3d
         from matplotlib import pyplot as plt
 
@@ -809,16 +815,17 @@ Example:
                       R"(Sweeps the triangle mesh rotationally about an axis.
 Args:
     angle (float): The rotation angle in degree.
-
     axis (open3d.core.Tensor): The rotation axis.
-
     resolution (int): The resolution defines the number of intermediate sweeps
         about the rotation axis.
     translation (float): The translation along the rotation axis.
+
 Returns:
     A triangle mesh with the result of the sweep operation.
+
 Example:
     This code generates a spring with a triangle cross-section::
+
         import open3d as o3d
 
         mesh = o3d.t.geometry.TriangleMesh([[1,1,0], [0.7,1,0], [1,0.7,0]], [[0,1,2]])
@@ -830,18 +837,63 @@ Example:
                       "vector"_a, "scale"_a = 1.0, "capping"_a = true,
                       R"(Sweeps the line set along a direction vector.
 Args:
-
     vector (open3d.core.Tensor): The direction vector.
-
     scale (float): Scalar factor which essentially scales the direction vector.
+
 Returns:
     A triangle mesh with the result of the sweep operation.
+
 Example:
     This code generates a wedge from a triangle::
+        
         import open3d as o3d
         triangle = o3d.t.geometry.TriangleMesh([[1.0,1.0,0.0], [0,1,0], [1,0,0]], [[0,1,2]])
         wedge = triangle.extrude_linear([0,0,1])
         o3d.visualization.draw([{'name': 'wedge', 'geometry': wedge}])
+)");
+
+    triangle_mesh.def("pca_partition", &TriangleMesh::PCAPartition,
+                      "max_faces"_a,
+                      R"(Partition the mesh by recursively doing PCA.
+
+This function creates a new face attribute with the name "partition_ids" storing 
+the partition id for each face.
+
+Args:
+    max_faces (int): The maximum allowed number of faces in a partition.
+
+
+Example:
+
+    This code computes the partitions for a mesh and visualizes them::
+
+        import open3d as o3d
+        import numpy as np
+        TODO
+
+)");
+
+    triangle_mesh.def(
+            "select_faces_by_mask", &TriangleMesh::SelectFacesByMask, "mask"_a,
+            R"(Returns a new mesh with the faces selected by a boolean mask.
+
+Args:
+    mask ()
+    mask (open3d.core.Tensor): A boolean mask with the shape (N) with N as the 
+        number of faces in the mesh.
+    
+Returns:
+    A new mesh with the selected faces.
+
+Example:
+
+    This code partitions the mesh using PCA and then selects one of the 
+    partitions:: 
+
+        import open3d as o3d
+        import numpy as np
+        TODO
+
 )");
 }
 
