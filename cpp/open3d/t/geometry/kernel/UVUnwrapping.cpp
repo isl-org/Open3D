@@ -58,9 +58,6 @@ void ComputeUVAtlasPartition(TriangleMesh mesh,
                                      .Contiguous();
     const uint32_t* triangles_ptr = triangles.GetDataPtr<uint32_t>();
     const int64_t num_triangles = triangles.GetLength();
-    // std::cerr << " num_verts " << num_verts << "    "
-    //           << triangles.Min({0, 1}).Item<uint32_t>() << " "
-    //           << triangles.Max({0, 1}).Item<uint32_t>() << "\n";
 
     typedef uint64_t Edge_t;
     typedef std::pair<uint32_t, uint32_t> AdjTriangles_t;
@@ -141,27 +138,6 @@ void ComputeUVAtlasPartition(TriangleMesh mesh,
     output.ib = std::move(ib);
     output.vb = std::move(vb);
     output.partition_result_adjacency = std::move(partition_result_adjacency);
-
-    // for (int i = 0; i < 4; ++i) {
-    //     for (int j = 0; j < 3; ++j) {
-    //         std::cerr << " " << output.partition_result_adjacency[i * 3 + j];
-    //     }
-    //     std::cerr << "\n";
-    // }
-    // uint32_t mini, maxi;
-    // mini = output.partition_result_adjacency[0];
-    // maxi = 0;
-    // for (auto x : output.partition_result_adjacency) {
-    //     mini = std::min(mini, x);
-    //     if (x != 4294967295) maxi = std::max(maxi, x);
-    // }
-
-    // std::cerr << " num_charts " << output.num_charts_out << " max_stretch "
-    //           << output.max_stretch_out << "  pra.size "
-    //           << output.partition_result_adjacency.size() << "  ntris "
-    //           << mesh.GetTriangleIndices().GetLength() << "  mini " << mini
-    //           << "  maxi " << maxi << "  ib " << output.ib.size() << " "
-    //           << output.ib.size() / (sizeof(uint32_t) * 3) << "\n";
 }
 }  // namespace
 
@@ -208,8 +184,6 @@ void ComputeUVAtlas(TriangleMesh& mesh,
     timer.Start();
 
     std::vector<UVAtlasPartitionOutput> uvatlas_partitions(parallel_partitions);
-    // std::cerr << "faces " << mesh_tmp.GetTriangleIndices().GetLength() <<
-    // "\n";
 
     // By default UVAtlas uses a fast mode if there are more than 25k faces.
     // This makes sure that we always use fast mode if we parallelize.
@@ -217,9 +191,6 @@ void ComputeUVAtlas(TriangleMesh& mesh,
     auto LoopFn = [&](const tbb::blocked_range<size_t>& range) {
         for (size_t i = range.begin(); i < range.end(); ++i) {
             auto& output = uvatlas_partitions[i];
-            // std::cerr << i << "th partition "
-            //           << mesh_partitions[i].GetTriangleIndices().GetLength()
-            //           << "\n";
             ComputeUVAtlasPartition(mesh_partitions[i], max_stretch, fast_mode,
                                     output);
         }
@@ -263,8 +234,6 @@ void ComputeUVAtlas(TriangleMesh& mesh,
         const uint32_t fidx_offset =
                 combined_output.ib.size() / (sizeof(uint32_t) * 3);
         const uint32_t invalid = std::numeric_limits<uint32_t>::max();
-        // std::cerr << " invalid " << invalid << "   offset " << fidx_offset
-        //           << "\n";
         for (auto& x : output.partition_result_adjacency) {
             if (x != invalid) {
                 x += fidx_offset;
@@ -289,37 +258,6 @@ void ComputeUVAtlas(TriangleMesh& mesh,
 
         // free memory
         output = UVAtlasPartitionOutput();
-
-        // {
-        //     uint32_t* ptr =
-        //             reinterpret_cast<uint32_t*>(combined_output.ib.data());
-        //     uint32_t min_idx, max_idx;
-        //     const int64_t num_indices =
-        //             combined_output.ib.size() / sizeof(uint32_t);
-        //     for (int64_t indices_i = 0; indices_i < num_indices; ++indices_i)
-        //     {
-        //         if (indices_i == 0) {
-        //             min_idx = ptr[indices_i];
-        //             max_idx = ptr[indices_i];
-        //         }
-        //         min_idx = std::min(min_idx, ptr[indices_i]);
-        //         max_idx = std::max(max_idx, ptr[indices_i]);
-        //     }
-
-        //     uint32_t mini, maxi;
-        //     mini = combined_output.partition_result_adjacency[0];
-        //     maxi = 0;
-        //     for (auto x : combined_output.partition_result_adjacency) {
-        //         mini = std::min(mini, x);
-        //         if (x != 4294967295) maxi = std::max(maxi, x);
-        //     }
-
-        //     std::cerr << "vb " << combined_output.vb.size() << " minidx "
-        //               << min_idx << "   maxidx " << max_idx << "\n";
-        //     std::cerr << "ib " << combined_output.ib.size() << " "
-        //               << combined_output.ib.size() / (sizeof(uint32_t) * 3)
-        //               << "  min " << mini << "  max " << maxi << "\n";
-        // }
     }
 
     timer.Stop();
