@@ -684,9 +684,10 @@ public:
 
     /// Partition the point cloud by recursively doing PCA.
     /// This function creates a new point attribute with the name
-    /// "partition_id". \param max_points The maximum allowed number of points
-    /// in a partition.
-    void PCAPartition(int max_points);
+    /// "partition_id". 
+    /// \param max_points The maximum allowed number of points in a partition.
+    /// \return The number of partitions.
+    int PCAPartition(int max_points);
 
 protected:
     core::Device device_ = core::Device("CPU:0");

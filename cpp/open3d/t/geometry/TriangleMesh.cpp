@@ -670,9 +670,11 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
 
 void TriangleMesh::ComputeUVAtlas(size_t size,
                                   float gutter,
-                                  float max_stretch) {
+                                  float max_stretch,
+                                  int parallel_partitions,
+                                  int nthreads) {
     kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter,
-                                         max_stretch);
+                                         max_stretch, nullptr, nullptr, parallel_partitions, nthreads);
 }
 
 namespace {
@@ -973,7 +975,7 @@ TriangleMesh TriangleMesh::ExtrudeLinear(const core::Tensor &vector,
     return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
 }
 
-void TriangleMesh::PCAPartition(int max_faces) {
+int TriangleMesh::PCAPartition(int max_faces) {
     core::Tensor verts = GetVertexPositions();
     core::Tensor tris = GetTriangleIndices();
     if (!tris.GetLength()) {
@@ -981,9 +983,12 @@ void TriangleMesh::PCAPartition(int max_faces) {
     }
     core::Tensor tris_centers = verts.IndexGet({tris}).Mean({1});
 
-    core::Tensor partition_id =
+    int num_parititions;
+    core::Tensor partition_ids;
+    std::tie(num_parititions, partition_ids) =
             kernel::pcapartition::PCAPartition(tris_centers, max_faces);
-    SetTriangleAttr("partition_ids", partition_id.To(GetDevice()));
+    SetTriangleAttr("partition_ids", partition_ids.To(GetDevice()));
+    return num_parititions;
 }
 
 TriangleMesh TriangleMesh::SelectFacesByMask(const core::Tensor &mask) const {
