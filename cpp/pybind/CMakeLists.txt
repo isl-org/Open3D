@@ -82,9 +82,10 @@ set_target_properties(pybind PROPERTIES
 # eg: libc++.so and libc++abi.so (needed by filament) for Linux.
 # libc++.so is a linker script including libc++.so.1 and libc++abi.so, so append 1 to libc++.so
 set(PYTHON_EXTRA_LIBRARIES "")
+set(PYTHON_EXTRA_LIBRARIES_GL "")
 if (BUILD_GUI AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY}
-        ${MESA_CPU_GL_LIBRARY})
+    list(APPEND PYTHON_EXTRA_LIBRARIES ${CPP_LIBRARY}.1 ${CPPABI_LIBRARY})
+    list(APPEND PYTHON_EXTRA_LIBRARIES_GL ${MESA_CPU_GL_LIBRARY})
 endif()
 if (WITH_OPENMP AND APPLE AND NOT BUILD_SHARED_LIBS)
 # Package libomp v11.1.0, if it is not installed. Later version cause crash on
@@ -206,6 +207,7 @@ add_custom_target(python-package
             -DPYTHON_VERSION=${PYTHON_VERSION}
             "-DCOMPILED_MODULE_PATH_LIST=${COMPILED_MODULE_PATH_LIST}"
             "-DPYTHON_EXTRA_LIBRARIES=${PYTHON_EXTRA_LIBRARIES}"
+            "-DPYTHON_EXTRA_LIBRARIES_GL=${PYTHON_EXTRA_LIBRARIES_GL}"
             -DBUILD_JUPYTER_EXTENSION=${BUILD_JUPYTER_EXTENSION}
             -DBUILD_TENSORFLOW_OPS=${BUILD_TENSORFLOW_OPS}
             -DBUILD_PYTORCH_OPS=${BUILD_PYTORCH_OPS}
