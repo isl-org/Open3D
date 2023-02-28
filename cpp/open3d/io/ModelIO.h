@@ -10,7 +10,12 @@
 #include <functional>
 #include <string>
 
+#include <Eigen/Core>
+
 namespace open3d {
+namespace geometry {
+class TriangleMesh;
+}  // namespace geometry
 namespace visualization {
 namespace rendering {
 struct TriangleMeshModel;
@@ -18,6 +23,17 @@ struct TriangleMeshModel;
 }  // namespace visualization
 
 namespace io {
+
+namespace detail {
+
+std::pair<geometry::TriangleMesh, std::vector<Eigen::Vector2d>>
+MeshWithPerVertexUVs(const geometry::TriangleMesh& mesh);
+
+bool WriteValidatedTriangleMeshModelToGLTF(
+        const std::string& filename,
+        const visualization::rendering::TriangleMeshModel& model);
+
+}  // namespace detail
 
 struct ReadTriangleModelOptions {
     /// Print progress to stdout about loading progress.
@@ -33,6 +49,12 @@ struct ReadTriangleModelOptions {
 bool ReadTriangleModel(const std::string& filename,
                        visualization::rendering::TriangleMeshModel& model,
                        ReadTriangleModelOptions params = {});
+
+bool WriteTriangleMeshModel(const std::string& filename,
+        const visualization::rendering::TriangleMeshModel& model);
+
+bool WriteTriangleMeshModelToGLTF(const std::string& filename,
+        const visualization::rendering::TriangleMeshModel& mesh_model);
 
 }  // namespace io
 }  // namespace open3d
