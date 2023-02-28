@@ -39,7 +39,19 @@ def o3d_material_to_bsdf(mat, vertex_color=False):
     bsdf_dict['anisotropic'] = create_bsdf_entry(mat, anisotropy, 'anisotropy',
                                                  False)
     bsdf_dict['specular'] = reflectance
-    bsdf = mi.load_dict(bsdf_dict)
+
+    # check for normal map
+    if 'normal' in mat.texture_maps:
+        nmap_dict = {'type': 'normalmap'}
+        nmap_dict['normalmap'] = {
+            'type': 'bitmap',
+            'raw': True,
+            'bitmap': mi.Bitmap(mat.texture_maps['normal'].as_tensor().numpy())
+        }
+        nmap_dict['bsdf'] = bsdf_dict
+        bsdf = mi.load_dict(nmap_dict)
+    else:
+        bsdf = mi.load_dict(bsdf_dict)
     return bsdf
 
 

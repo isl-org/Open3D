@@ -21,6 +21,11 @@ def render_mesh(mesh, mesh_center):
                 'type': 'rgb',
                 'value': 1.0
             }
+            # NOTE: For better results comment out the constant emitter above
+            # and uncomment out the lines below changing the filename to an HDRI
+            # envmap you have.
+            # 'type': 'envmap',
+            # 'filename': '/home/renes/Downloads/solitude_interior_4k.exr'
         },
         'sensor': {
             'type':
@@ -73,6 +78,13 @@ mi_mesh = mesh.to_mitsuba('monkey')
 img = render_mesh(mi_mesh, mesh_center.numpy())
 mi.Bitmap(img).write('test.exr')
 
+print('Render mesh with normal-mapped prnincipled BSDF')
+mesh.material.texture_maps['normal'] = o3d.t.io.read_image(
+    dataset.path_map['normal'])
+mi_mesh = mesh.to_mitsuba('monkey')
+img = render_mesh(mi_mesh, mesh_center.numpy())
+mi.Bitmap(img).write('test2.exr')
+
 print('Rendering mesh with Mitsuba smooth plastic BSDF')
 bsdf_smooth_plastic = mi.load_dict({
     'type': 'plastic',
@@ -84,7 +96,7 @@ bsdf_smooth_plastic = mi.load_dict({
 })
 mi_mesh = mesh.to_mitsuba('monkey', bsdf=bsdf_smooth_plastic)
 img = render_mesh(mi_mesh, mesh_center.numpy())
-mi.Bitmap(img).write('test2.exr')
+mi.Bitmap(img).write('test3.exr')
 
 # Render with Open3D
 o3d.visualization.draw(mesh)
