@@ -51,56 +51,61 @@ RegistrationResult RANSACFromCorrespondences(
     int n = correspondences.GetLength();
 
     // TODO: device check
-    core::Device device = source.GetDevice();
+    // core::Device device = source.GetDevice();
 
     // TODO: allow parameter (?)
     const int ransac_n = 3;
 
-    core::Tensor source_positions = source.GetPointPositions();
-    core::Tensor target_positions = target.GetPointPositions();
+    core::Device host("CPU:0");
 
-    core::Tensor source_sample_positions({ransac_n, 3}, core::Dtype::Float32,
-                                         device);
-    core::Tensor target_sample_positions({ransac_n, 3}, core::Dtype::Float32,
-                                         device);
-    core::Tensor corres_sample =
-            core::Tensor::Arange(0, ransac_n, 1, core::Int64, device);
+    // Move to host for easier memcopy/computation on small sized sample sets
+    t::geometry::PointCloud source_host = source.To(host);
+    t::geometry::PointCloud target_host = target.To(host);
+    core::Tensor corres_host = correspondences.To(host);
+
+    // Dummy correspondences to fit in EvaluateRegistration
+    const core::Tensor dummy_corres =
+            core::Tensor::Arange(0, ransac_n, 1, core::Int64, host);
 
     utility::random::UniformIntGenerator<int> rand_gen(0, n - 1);
-
     auto best_result = RegistrationResult();
-
-    // On GPU: iteration without omp
     for (int itr = 0; itr < criteria.max_iteration_; ++itr) {
-        // Construct point clouds to fit estimation.ComputeTransformation's
-        // signature
+        std::vector<int64_t> source_indices_vec(ransac_n);
+        std::vector<int64_t> target_indices_vec(ransac_n);
+
+        // TODO(wei): random tensor generation in Tensor.h
         for (int s = 0; s < ransac_n; ++s) {
             int k = rand_gen();
-            int i = correspondences[k][0].Item<int64_t>();
-            int j = correspondences[k][1].Item<int64_t>();
-            source_sample_positions.SetItem({core::TensorKey::Index(s)},
-                                            source_positions[i]);
-            target_sample_positions.SetItem({core::TensorKey::Index(s)},
-                                            target_positions[j]);
+            auto corres_k = corres_host[k];
+            source_indices_vec[s] = corres_k[0].Item<int64_t>();
+            target_indices_vec[s] = corres_k[1].Item<int64_t>();
         }
 
-        t::geometry::PointCloud source_sample(source_sample_positions);
-        t::geometry::PointCloud target_sample(target_sample_positions);
+        core::Tensor source_indices(source_indices_vec, {ransac_n}, core::Int64,
+                                    host);
+        core::Tensor target_indices(target_indices_vec, {ransac_n}, core::Int64,
+                                    host);
 
+        t::geometry::PointCloud source_sample =
+                source_host.SelectByIndex(source_indices);
+        t::geometry::PointCloud target_sample =
+                target_host.SelectByIndex(target_indices);
+
+        // Inexpensive model estimation: on host
         core::Tensor transformation = estimation.ComputeTransformation(
-                source_sample, target_sample, corres_sample);
+                source_sample, target_sample, dummy_corres);
 
         // TODO: check for filtering
-        // Inexpensive check
+        // Inexpensive candidate check: on host
 
-        // Expensive validation
+        // Expensive validation: on device
         auto result = EvaluateRegistration(
                 source, target, max_correspondence_distance, transformation);
 
         // TODO: update validation
         if (result.IsBetterThan(best_result)) {
             best_result = result;
-            utility::LogDebug(
+            utility::LogInfo(
                     "RANSAC result updated at {:d} iters, current fitness = "
                     "{:e}, rmse = {:e}",
                     itr, result.fitness_, result.inlier_rmse_);

@@ -34,7 +34,7 @@ if __name__ == "__main__":
     if config.path_dataset == "":
         config = get_default_dataset(config)
 
-    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
+    # o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
 
     fragment_file_names = load_fragment_file_names(config)
 
