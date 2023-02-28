@@ -44,6 +44,7 @@ target_sources(visualization PRIVATE
 
 target_sources(visualization PRIVATE
     rendering/Material.cpp  # For RPC serialization
+    rendering/Model.cpp  # For Mesh IO
 )
 
 if (BUILD_GUI)
