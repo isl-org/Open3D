@@ -9,25 +9,13 @@
 
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/PointCloud.h"
+#include "open3d/t/pipelines/registration/Feature.h"
 
 namespace open3d {
 namespace t {
 
 namespace pipelines {
 namespace registration {
-
-core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_feats,
-                                         const core::Tensor &target_feats) {
-    core::nns::NearestNeighborSearch nns_target(target_feats);
-    nns_target.KnnIndex();
-    auto query_result = nns_target.KnnSearch(target_feats, 1);
-
-    core::Tensor target_indices = query_result.first;
-    core::Tensor source_indices = core::Tensor::Arange(
-            0, source_feats.GetLength(), 1, target_indices.GetDtype(),
-            target_indices.GetDevice());
-    return source_indices.Append(target_indices, 1);
-}
 
 RegistrationResult RANSACFromFeatures(
         const geometry::PointCloud &source,

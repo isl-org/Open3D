@@ -105,16 +105,6 @@ RegistrationResult RANSACFromCorrespondences(
                 void(const std::unordered_map<std::string, core::Tensor> &)>
                 &callback_after_iteration = nullptr);
 
-/// \brief Function to find correspondences via 1-nearest neighbor feature
-/// matching. Target is used to construct a nearest neighbor search
-/// object, in order to query source.
-/// \param source_feats (N, D) tensor
-/// \param target_feats (M, D) tensor
-/// \return (N, 2) tensor, where the first column is arange(0, N) of source, and
-/// the second column is the corresponding index of target.
-core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_feats,
-                                         const core::Tensor &target_feats);
-
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

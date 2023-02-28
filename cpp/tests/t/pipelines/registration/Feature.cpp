@@ -49,5 +49,32 @@ TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
             1e-4, 1e-4));
 }
 
+TEST_P(FeaturePermuteDevices, CorrespondencesFromFeatures) {
+    core::Device device = GetParam();
+
+    int feat_len = 32;
+    int feat_dim = 32;
+
+    // Dummy feature at 0-th dimension
+    core::Tensor arange_indices =
+            core::Tensor::Arange(0, feat_len, 1, core::Int32, device);
+    core::Tensor src({feat_len, feat_dim}, core::Float32, device);
+    src.SetItem({core::TensorKey::Slice(core::None, core::None, core::None),
+                 core::TensorKey::Index(0)},
+                arange_indices.To(core::Float32));
+
+    // Feature matching to itself, should be identity
+    core::Tensor correspondences =
+            t::pipelines::registration::CorrespondencesFromFeatures(src, src);
+
+    // correspondences[:, 0] = arange(0, feat_len) [self]
+    // correspondences[:, 1] = arange(0, feat_len) [1nn matched to self]
+    EXPECT_TRUE(arange_indices.AllClose(correspondences.GetItem(
+            {core::TensorKey::Slice(core::None, core::None, core::None),
+             core::TensorKey::Index(0)})));
+    EXPECT_TRUE(arange_indices.AllClose(correspondences.GetItem(
+            {core::TensorKey::Slice(core::None, core::None, core::None),
+             core::TensorKey::Index(1)})));
+}
 }  // namespace tests
 }  // namespace open3d
