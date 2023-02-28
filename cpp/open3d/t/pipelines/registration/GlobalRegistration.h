@@ -87,7 +87,7 @@ RegistrationResult RANSACFromFeatures(
 /// (source_idx, target_idx).
 /// \param source (N, 3) point cloud
 /// \param target (M, 3) point cloud
-/// \param correspondences (M, 2) tensor
+/// \param correspondences (M, 2, Int64) tensor
 /// \param max_correspondence_distance Max correspondence distance threshold to
 /// judge where a correspondent point pair is an inlier
 /// \param estimation Model to estimate the transformation from the sampled

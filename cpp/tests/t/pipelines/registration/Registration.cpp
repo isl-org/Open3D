@@ -16,6 +16,8 @@
 #include "open3d/pipelines/registration/Registration.h"
 #include "open3d/pipelines/registration/RobustKernel.h"
 #include "open3d/t/io/PointCloudIO.h"
+#include "open3d/t/pipelines/registration/Feature.h"
+#include "open3d/t/pipelines/registration/GlobalRegistration.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
 #include "tests/Tests.h"
@@ -409,8 +411,33 @@ TEST_P(RegistrationPermuteDevices, DISABLED_RANSACFromCorrespondences) {
     NotImplemented();
 }
 
-TEST_P(RegistrationPermuteDevices, DISABLED_RANSACFromFeatures) {
-    NotImplemented();
+TEST_P(RegistrationPermuteDevices, RANSACFromFeatures) {
+    core::Device device = GetParam();
+
+    for (auto dtype : {core::Float32, core::Float64}) {
+        // 1. Get data and parameters.
+        t::geometry::PointCloud source_tpcd, target_tpcd;
+        // Initial transformation input for tensor implementation.
+        core::Tensor initial_transform_t;
+        // Search radius.
+        double max_correspondence_dist;
+        std::tie(source_tpcd, target_tpcd, initial_transform_t,
+                 max_correspondence_dist) =
+                GetRegistrationTestData(dtype, device);
+
+        core::Tensor source_fpfh =
+                t::pipelines::registration::ComputeFPFHFeature(source_tpcd);
+        core::Tensor target_fpfh =
+                t::pipelines::registration::ComputeFPFHFeature(target_tpcd);
+        utility::LogDebug("FPFH extracted: source.shape={}, target.shape={}",
+                          source_fpfh.GetShape(), target_fpfh.GetShape());
+
+        auto result = t::pipelines::registration::RANSACFromFeatures(
+                source_tpcd, target_tpcd, source_fpfh, target_fpfh,
+                max_correspondence_dist);
+
+        utility::LogDebug("Result: {}", result.transformation_.ToString());
+    }
 }
 
 }  // namespace tests

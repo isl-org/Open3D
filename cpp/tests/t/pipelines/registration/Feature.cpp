@@ -57,7 +57,7 @@ TEST_P(FeaturePermuteDevices, CorrespondencesFromFeatures) {
 
     // Dummy feature at 0-th dimension
     core::Tensor arange_indices =
-            core::Tensor::Arange(0, feat_len, 1, core::Int32, device);
+            core::Tensor::Arange(0, feat_len, 1, core::Int64, device);
     core::Tensor src({feat_len, feat_dim}, core::Float32, device);
     src.SetItem({core::TensorKey::Slice(core::None, core::None, core::None),
                  core::TensorKey::Index(0)},

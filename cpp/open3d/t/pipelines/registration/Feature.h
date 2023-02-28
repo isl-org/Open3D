@@ -42,8 +42,8 @@ core::Tensor ComputeFPFHFeature(
 /// object, in order to query source.
 /// \param source_feats (N, D) tensor
 /// \param target_feats (M, D) tensor
-/// \return (N, 2) tensor, where the first column is arange(0, N) of source, and
-/// the second column is the corresponding index of target.
+/// \return (N, 2, Int64) tensor, where the first column is arange(0, N) of
+/// source, and the second column is the corresponding index of target.
 core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_feats,
                                          const core::Tensor &target_feats);
 
