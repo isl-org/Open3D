@@ -75,8 +75,6 @@ RegistrationResult RANSACFromFeatures(
         const core::Tensor &source_feats,
         const core::Tensor &target_feats,
         const double max_correspondence_distance,
-        const TransformationEstimation &estimation =
-                TransformationEstimationPointToPoint(),
         const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria(),
         const std::function<
                 void(const std::unordered_map<std::string, core::Tensor> &)>
@@ -98,8 +96,6 @@ RegistrationResult RANSACFromCorrespondences(
         const geometry::PointCloud &target,
         const core::Tensor &correspondences,
         const double max_correspondence_distance,
-        const TransformationEstimation &estimation =
-                TransformationEstimationPointToPoint(),
         const RANSACConvergenceCriteria &criteria = RANSACConvergenceCriteria(),
         const std::function<
                 void(const std::unordered_map<std::string, core::Tensor> &)>

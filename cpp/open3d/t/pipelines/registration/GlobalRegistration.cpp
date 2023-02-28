@@ -24,7 +24,6 @@ RegistrationResult RANSACFromFeatures(
         const core::Tensor &source_feats,
         const core::Tensor &target_feats,
         const double max_correspondence_distance,
-        const TransformationEstimation &estimation,
         const RANSACConvergenceCriteria &criteria,
         const std::function<
                 void(const std::unordered_map<std::string, core::Tensor> &)>
@@ -33,8 +32,8 @@ RegistrationResult RANSACFromFeatures(
     core::Tensor correspondences =
             CorrespondencesFromFeatures(source_feats, target_feats);
     return RANSACFromCorrespondences(source, target, correspondences,
-                                     max_correspondence_distance, estimation,
-                                     criteria, callback_after_iteration);
+                                     max_correspondence_distance, criteria,
+                                     callback_after_iteration);
 }
 
 RegistrationResult RANSACFromCorrespondences(
@@ -42,11 +41,13 @@ RegistrationResult RANSACFromCorrespondences(
         const geometry::PointCloud &target,
         const core::Tensor &correspondences,
         const double max_correspondence_distance,
-        const TransformationEstimation &estimation,
         const RANSACConvergenceCriteria &criteria,
         const std::function<
                 void(const std::unordered_map<std::string, core::Tensor> &)>
                 &callback_after_iteration) {
+    const TransformationEstimation &estimation =
+            TransformationEstimationPointToPoint();
+
     int n = correspondences.GetLength();
 
     // TODO: device check
@@ -89,7 +90,10 @@ RegistrationResult RANSACFromCorrespondences(
         core::Tensor transformation = estimation.ComputeTransformation(
                 source_sample, target_sample, corres_sample);
 
-        // TODO: check
+        // TODO: check for filtering
+        // Inexpensive check
+
+        // Expensive validation
         auto result = EvaluateRegistration(
                 source, target, max_correspondence_distance, transformation);
 

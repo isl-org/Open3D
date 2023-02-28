@@ -130,6 +130,18 @@ def load_rgbd_file_names(config):
               len(depth_file_names), depth_folder, color_folder, extensions))
     return [], []
 
+def load_fragment_file_names(config):
+    if not os.path.exists(config.path_dataset):
+        print(
+            'Path \'{}\' not found.'.format(config.path_dataset),
+            'Please provide --path_dataset in the command line or the config file.'
+        )
+        return [], []
+
+    fragment_folder = os.path.join(config.path_dataset, config.fragment_folder)
+    fragment_file_names = sorted(glob.glob(os.path.join(fragment_folder, '*.ply')))
+    return fragment_file_names
+
 
 def load_intrinsic(config, key='depth'):
     path_intrinsic = config.path_color_intrinsic if key == 'color' else config.path_intrinsic

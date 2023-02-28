@@ -109,7 +109,7 @@ void pybind_registration_classes(py::module &m) {
                         "inlier_rmse={:e}, correspondences={:d}]."
                         "\nAccess transformation to get result.",
                         rr.fitness_, rr.inlier_rmse_,
-                        rr.fitness_ * rr.correspondences_.GetLength());
+                        int(rr.fitness_ * rr.correspondences_.GetLength()));
             });
     py::class_<RANSACConvergenceCriteria> ransac_convergence_criteria(
             m, "RANSACConvergenceCriteria",
@@ -134,7 +134,7 @@ void pybind_registration_classes(py::module &m) {
                 return fmt::format(
                         "RANSACConvergenceCriteria[max_iteration_={:d}, "
                         "confidence_={:e}].",
-                        c.confidence_, c.max_iteration_);
+                        c.max_iteration_, c.confidence_);
             });
 
     // open3d.t.pipelines.registration.TransformationEstimation
@@ -287,6 +287,8 @@ static const std::unordered_map<std::string, std::string>
                 {"option", "Registration option"},
                 {"source", "The source point cloud."},
                 {"target", "The target point cloud."},
+                {"source_feature", "Source point-wise features."},
+                {"target_feature", "Target point-wise features."},
                 {"transformation",
                  "The 4x4 transformation matrix of type Float64 "
                  "to transform ``source`` to ``target``"},
@@ -326,20 +328,18 @@ void pybind_registration_methods(py::module &m) {
 
     m.def("ransac_from_features", &RANSACFromFeatures,
           py::call_guard<py::gil_scoped_release>(),
-          "Function for RANSAC registration of features", "source"_a,
-          "target"_a, "source_feats"_a, "target_feats"_a,
+          "Function for RANSAC registration from features", "source"_a,
+          "target"_a, "source_feature"_a, "target_feature"_a,
           "max_correspondence_distance"_a,
-          "estimation_method"_a = TransformationEstimationPointToPoint(),
           "criteria"_a = RANSACConvergenceCriteria(),
           "callback_after_iteration"_a = py::none());
-    docstring::FunctionDocInject(m, "ransac_from_correspondences",
+    docstring::FunctionDocInject(m, "ransac_from_features",
                                  map_shared_argument_docstrings);
 
     m.def("ransac_from_correspondences", &RANSACFromCorrespondences,
           py::call_guard<py::gil_scoped_release>(),
-          "Function for RANSAC registration of features", "source"_a,
+          "Function for RANSAC registration from correspondences", "source"_a,
           "target"_a, "correspondences"_a, "max_correspondence_distance"_a,
-          "estimation_method"_a = TransformationEstimationPointToPoint(),
           "criteria"_a = RANSACConvergenceCriteria(),
           "callback_after_iteration"_a = py::none());
     docstring::FunctionDocInject(m, "ransac_from_correspondences",

@@ -25,6 +25,12 @@ It uses KNN search (Not recommended to use on GPU) if only max_nn parameter
 is provided, Radius search (Not recommended to use on GPU) if only radius
 parameter is provided, and Hybrid search (Recommended) if both are provided.)",
           "input"_a, "max_nn"_a = 100, "radius"_a = py::none());
+
+    m.def("correspondences_from_features", &CorrespondencesFromFeatures,
+          py::call_guard<py::gil_scoped_release>(),
+          R"(Function to query nearest neighbors of source in target.)",
+          "source"_a, "target"_a);
+
     docstring::FunctionDocInject(
             m, "compute_fpfh_feature",
             {{"input",

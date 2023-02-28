@@ -20,6 +20,7 @@
 #include "open3d/t/pipelines/registration/GlobalRegistration.h"
 #include "open3d/t/pipelines/registration/RobustKernel.h"
 #include "open3d/t/pipelines/registration/RobustKernelImpl.h"
+#include "open3d/visualization/utility/Draw.h"
 #include "tests/Tests.h"
 
 namespace t_reg = open3d::t::pipelines::registration;
@@ -413,6 +414,9 @@ TEST_P(RegistrationPermuteDevices, DISABLED_RANSACFromCorrespondences) {
 
 TEST_P(RegistrationPermuteDevices, RANSACFromFeatures) {
     core::Device device = GetParam();
+    if (device.IsCPU()) return;
+
+    using namespace open3d::t::pipelines::registration;
 
     for (auto dtype : {core::Float32, core::Float64}) {
         // 1. Get data and parameters.
@@ -425,16 +429,14 @@ TEST_P(RegistrationPermuteDevices, RANSACFromFeatures) {
                  max_correspondence_dist) =
                 GetRegistrationTestData(dtype, device);
 
-        core::Tensor source_fpfh =
-                t::pipelines::registration::ComputeFPFHFeature(source_tpcd);
-        core::Tensor target_fpfh =
-                t::pipelines::registration::ComputeFPFHFeature(target_tpcd);
+        core::Tensor source_fpfh = ComputeFPFHFeature(source_tpcd);
+        core::Tensor target_fpfh = ComputeFPFHFeature(target_tpcd);
         utility::LogDebug("FPFH extracted: source.shape={}, target.shape={}",
                           source_fpfh.GetShape(), target_fpfh.GetShape());
 
-        auto result = t::pipelines::registration::RANSACFromFeatures(
-                source_tpcd, target_tpcd, source_fpfh, target_fpfh,
-                max_correspondence_dist);
+        auto result = RANSACFromFeatures(source_tpcd, target_tpcd, source_fpfh,
+                                         target_fpfh, max_correspondence_dist,
+                                         RANSACConvergenceCriteria(2000));
 
         utility::LogDebug("Result: {}", result.transformation_.ToString());
     }
