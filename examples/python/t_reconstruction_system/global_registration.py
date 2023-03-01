@@ -38,19 +38,45 @@ if __name__ == "__main__":
 
     fragment_file_names = load_fragment_file_names(config)
 
+    # Legacy
+    pcd0 = o3d.io.read_point_cloud(fragment_file_names[0])
+    pcd1 = o3d.io.read_point_cloud(fragment_file_names[5])
+    fpfh0 = o3d.pipelines.registration.compute_fpfh_feature(
+        pcd0, o3d.geometry.KDTreeSearchParamHybrid(0.1, 100)
+    )
+    fpfh1 = o3d.pipelines.registration.compute_fpfh_feature(
+        pcd1, o3d.geometry.KDTreeSearchParamHybrid(0.1, 100)
+    )
+    result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
+        pcd0, pcd1, fpfh0, fpfh1, False, 0.05,
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(
+            False), 3,
+        [
+            o3d.pipelines.registration.
+            CorrespondenceCheckerBasedOnEdgeLength(0.9),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
+                0.05)
+        ],
+        o3d.pipelines.registration.RANSACConvergenceCriteria(
+            100000, 0.999))
+    print(result)
+    o3d.visualization.draw([pcd0.transform(result.transformation), pcd1])
+
+
+    # Tensor
     pcd0 = o3d.t.io.read_point_cloud(fragment_file_names[0]).cuda()
     pcd1 = o3d.t.io.read_point_cloud(fragment_file_names[5]).cuda()
-
     fpfh0 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd0)
     fpfh1 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd1)
 
+    print("start")
     result = o3d.t.pipelines.registration.ransac_from_features(
         pcd0,
         pcd1,
         fpfh0,
         fpfh1,
         max_correspondence_distance=0.05,
-        criteria=o3d.t.pipelines.registration.RANSACConvergenceCriteria(10000),
+        criteria=o3d.t.pipelines.registration.RANSACConvergenceCriteria(100000),
     )
     print(result)
 
