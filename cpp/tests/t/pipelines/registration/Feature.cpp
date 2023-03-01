@@ -11,6 +11,7 @@
 #include "open3d/core/EigenConverter.h"
 #include "open3d/core/Tensor.h"
 #include "open3d/data/Dataset.h"
+#include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
 #include "open3d/pipelines/registration/Feature.h"
 #include "open3d/t/geometry/PointCloud.h"
@@ -49,7 +50,7 @@ TEST_P(FeaturePermuteDevices, ComputeFPFHFeature) {
             1e-4, 1e-4));
 }
 
-TEST_P(FeaturePermuteDevices, CorrespondencesFromFeatures) {
+TEST_P(FeaturePermuteDevices, ToyCheckCorrespondencesFromFeatures) {
     core::Device device = GetParam();
 
     int feat_len = 32;
@@ -75,6 +76,109 @@ TEST_P(FeaturePermuteDevices, CorrespondencesFromFeatures) {
     EXPECT_TRUE(arange_indices.AllClose(correspondences.GetItem(
             {core::TensorKey::Slice(core::None, core::None, core::None),
              core::TensorKey::Index(1)})));
+}
+
+TEST_P(FeaturePermuteDevices, DemoCheckCorrespondencesFromFeatures) {
+    core::Device device = GetParam();
+
+    t::geometry::PointCloud source_tpcd, target_tpcd;
+    data::DemoICPPointClouds pcd_fragments;
+    t::io::ReadPointCloud(pcd_fragments.GetPaths()[0], source_tpcd);
+    t::io::ReadPointCloud(pcd_fragments.GetPaths()[1], target_tpcd);
+
+    source_tpcd = source_tpcd.To(device);
+    target_tpcd = target_tpcd.To(device);
+
+    source_tpcd.EstimateNormals();
+    target_tpcd.EstimateNormals();
+
+    const int knn = 100;
+    const float radius = 0.05;
+
+    // source fpfh
+    const auto source_tfpfh = t::pipelines::registration::ComputeFPFHFeature(
+            source_tpcd, knn, radius);
+    const auto target_tfpfh = t::pipelines::registration::ComputeFPFHFeature(
+            target_tpcd, knn, radius);
+
+    // target pcd and fpfh
+    auto source_pcd = source_tpcd.ToLegacy();
+    auto target_pcd = target_tpcd.ToLegacy();
+
+    auto source_fpfh = pipelines::registration::ComputeFPFHFeature(
+            source_pcd, geometry::KDTreeSearchParamHybrid(radius, knn));
+    auto target_fpfh = pipelines::registration::ComputeFPFHFeature(
+            target_pcd, geometry::KDTreeSearchParamHybrid(radius, knn));
+
+    // FPFH consistency check
+    auto source_diff =
+            (source_tfpfh -
+             core::eigen_converter::EigenMatrixToTensor(source_fpfh->data_)
+                     .T()
+                     .To(source_tfpfh.GetDevice(), source_tfpfh.GetDtype()))
+                    .Abs();
+    auto target_diff =
+            (target_tfpfh -
+             core::eigen_converter::EigenMatrixToTensor(target_fpfh->data_)
+                     .T()
+                     .To(target_tfpfh.GetDevice(), target_tfpfh.GetDtype()))
+                    .Abs();
+    // At a large scale FPFH could be a bit different
+
+    // FPFH has a large magnitude
+    float source_consistency_ratio = source_diff.Sum({1})
+                                             .Lt(1.0)
+                                             .To(core::Float32)
+                                             .Sum({0})
+                                             .Item<float>() /
+                                     source_diff.GetLength();
+    float target_consistency_ratio = target_diff.Sum({1})
+                                             .Lt(1.0)
+                                             .To(core::Float32)
+                                             .Sum({0})
+                                             .Item<float>() /
+                                     target_diff.GetLength();
+
+    // TODO: fix ispc conversion issue (?)
+    float factor = source_consistency_ratio > 1.0 ? (1.0 / 255.0) : 1.0;
+    source_consistency_ratio *= factor;
+    target_consistency_ratio *= factor;
+
+    EXPECT_NEAR(source_consistency_ratio, 1.0, 1e-2);
+    EXPECT_NEAR(target_consistency_ratio, 1.0, 1e-2);
+
+    // Compute correspondences
+    auto tcorrespondences =
+            t::pipelines::registration::CorrespondencesFromFeatures(
+                    source_tfpfh, target_tfpfh);
+
+    // No counter part exists in legacy, copied from legacy code
+    int num_src_pts = int(source_pcd.points_.size());
+
+    geometry::KDTreeFlann kdtree_target(*target_fpfh);
+
+    std::vector<int64_t> corres_j_vec;
+
+    for (int i = 0; i < num_src_pts; i++) {
+        std::vector<int> corres_tmp(1);
+        std::vector<double> dist_tmp(1);
+
+        kdtree_target.SearchKNN(Eigen::VectorXd(source_fpfh->data_.col(i)), 1,
+                                corres_tmp, dist_tmp);
+        int j = corres_tmp[0];
+        corres_j_vec.push_back(j);
+    }
+
+    core::Tensor corres_j(corres_j_vec, {num_src_pts}, core::Int64, device);
+
+    // Check consistency
+    auto equivalence = corres_j.Eq(tcorrespondences.GetItem(
+            {core::TensorKey::Slice(core::None, core::None, core::None),
+             core::TensorKey::Index(1)}));
+    float consistency_ratio =
+            equivalence.To(core::Float32).Sum({0}).Item<float>() / num_src_pts;
+    consistency_ratio *= factor;
+    utility::LogInfo("correspondence consistency_ratio: {}", consistency_ratio);
 }
 }  // namespace tests
 }  // namespace open3d

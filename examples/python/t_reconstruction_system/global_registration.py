@@ -64,21 +64,23 @@ if __name__ == "__main__":
 
 
     # Tensor
-    pcd0 = o3d.t.io.read_point_cloud(fragment_file_names[0]).cuda()
-    pcd1 = o3d.t.io.read_point_cloud(fragment_file_names[5]).cuda()
-    fpfh0 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd0)
-    fpfh1 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd1)
 
-    print("start")
-    result = o3d.t.pipelines.registration.ransac_from_features(
-        pcd0,
-        pcd1,
-        fpfh0,
-        fpfh1,
-        max_correspondence_distance=0.05,
-        criteria=o3d.t.pipelines.registration.RANSACConvergenceCriteria(100000),
-    )
-    print(result)
+    for device in [o3d.core.Device('cuda:0'), o3d.core.Device('cpu:0')]:
+        pcd0 = o3d.t.io.read_point_cloud(fragment_file_names[0]).to(device)
+        pcd1 = o3d.t.io.read_point_cloud(fragment_file_names[5]).to(device)
+        fpfh0 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd0)
+        fpfh1 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd1)
 
-    pcd0.transform(result.transformation)
-    o3d.visualization.draw([pcd0.to_legacy(), pcd1.to_legacy()])
+        print("start")
+        result = o3d.t.pipelines.registration.ransac_from_features(
+            pcd0,
+            pcd1,
+            fpfh0,
+            fpfh1,
+            max_correspondence_distance=0.05,
+            criteria=o3d.t.pipelines.registration.RANSACConvergenceCriteria(100000),
+        )
+        print(result)
+
+        pcd0.transform(result.transformation)
+        o3d.visualization.draw([pcd0.to_legacy(), pcd1.to_legacy()])
