@@ -13,18 +13,18 @@ concurrency:
 
 env:
   NPROC: 2
-  GCE_CLI_GHA_VERSION: "302.0.0"
+  GCE_CLI_GHA_VERSION: "416.0.0"
 
 jobs:
   ubuntu-sycl:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         BUILD_SHARED_LIBS: [ON, OFF]
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
@@ -43,14 +43,19 @@ jobs:
           else
             docker/docker_test.sh sycl-static
           fi
+
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Upload ccache to GCS
         if: ${{ github.ref == 'refs/heads/master' }}
         run: |

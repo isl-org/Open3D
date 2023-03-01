@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/TriangleMesh.h"
@@ -47,10 +28,12 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/RaycastingScene.h"
 #include "open3d/t/geometry/VtkUtils.h"
+#include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/geometry/kernel/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/UVUnwrapping.h"
+#include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
 namespace t {
@@ -348,6 +331,40 @@ geometry::TriangleMesh TriangleMesh::FromLegacy(
                         mesh_legacy.triangle_uvs_, float_dtype, device)
                         .Reshape({-1, 3, 2}));
     }
+
+    // Convert material if legacy mesh only has one
+    if (mesh_legacy.materials_.size() == 1) {
+        const auto &mat = mesh_legacy.materials_.begin()->second;
+        auto &tmat = mesh.GetMaterial();
+        tmat.SetDefaultProperties();
+        tmat.SetBaseColor(Eigen::Vector4f{mat.baseColor.f4});
+        tmat.SetBaseRoughness(mat.baseRoughness);
+        tmat.SetBaseMetallic(mat.baseMetallic);
+        tmat.SetBaseReflectance(mat.baseReflectance);
+        tmat.SetAnisotropy(mat.baseAnisotropy);
+        tmat.SetBaseClearcoat(mat.baseClearCoat);
+        tmat.SetBaseClearcoatRoughness(mat.baseClearCoatRoughness);
+        if (mat.albedo) tmat.SetAlbedoMap(Image::FromLegacy(*mat.albedo));
+        if (mat.normalMap) tmat.SetNormalMap(Image::FromLegacy(*mat.normalMap));
+        if (mat.roughness)
+            tmat.SetRoughnessMap(Image::FromLegacy(*mat.roughness));
+        if (mat.metallic) tmat.SetMetallicMap(Image::FromLegacy(*mat.metallic));
+        if (mat.reflectance)
+            tmat.SetReflectanceMap(Image::FromLegacy(*mat.reflectance));
+        if (mat.ambientOcclusion)
+            tmat.SetAOMap(Image::FromLegacy(*mat.ambientOcclusion));
+        if (mat.clearCoat)
+            tmat.SetClearcoatMap(Image::FromLegacy(*mat.clearCoat));
+        if (mat.clearCoatRoughness)
+            tmat.SetClearcoatRoughnessMap(
+                    Image::FromLegacy(*mat.clearCoatRoughness));
+        if (mat.anisotropy)
+            tmat.SetAnisotropyMap(Image::FromLegacy(*mat.anisotropy));
+    } else if (mesh_legacy.materials_.size() > 1) {
+        utility::LogWarning(
+                "Legacy mesh has more than 1 material which is not supported "
+                "by Tensor-based meshes.");
+    }
     return mesh;
 }
 
@@ -387,6 +404,83 @@ open3d::geometry::TriangleMesh TriangleMesh::ToLegacy() const {
         utility::LogWarning("{}",
                             "texture_uvs as a vertex attribute is not "
                             "supported by legacy TriangleMesh. Ignored.");
+    }
+
+    // Convert material if the t geometry has a valid one
+    auto &tmat = GetMaterial();
+    if (tmat.IsValid()) {
+        auto &legacy_mat = mesh_legacy.materials_["Mat1"];
+        // Convert scalar properties
+        if (tmat.HasBaseColor()) {
+            legacy_mat.baseColor.f4[0] = tmat.GetBaseColor().x();
+            legacy_mat.baseColor.f4[1] = tmat.GetBaseColor().y();
+            legacy_mat.baseColor.f4[2] = tmat.GetBaseColor().z();
+            legacy_mat.baseColor.f4[3] = tmat.GetBaseColor().w();
+            utility::LogWarning("{},{},{},{}", legacy_mat.baseColor.f4[0],
+                                legacy_mat.baseColor.f4[1],
+                                legacy_mat.baseColor.f4[2],
+                                legacy_mat.baseColor.f4[3]);
+        }
+        if (tmat.HasBaseRoughness()) {
+            legacy_mat.baseRoughness = tmat.GetBaseRoughness();
+        }
+        if (tmat.HasBaseMetallic()) {
+            legacy_mat.baseMetallic = tmat.GetBaseMetallic();
+        }
+        if (tmat.HasBaseReflectance()) {
+            legacy_mat.baseReflectance = tmat.GetBaseReflectance();
+        }
+        if (tmat.HasBaseClearcoat()) {
+            legacy_mat.baseClearCoat = tmat.GetBaseClearcoat();
+        }
+        if (tmat.HasBaseClearcoatRoughness()) {
+            legacy_mat.baseClearCoatRoughness =
+                    tmat.GetBaseClearcoatRoughness();
+        }
+        if (tmat.HasAnisotropy()) {
+            legacy_mat.baseAnisotropy = tmat.GetAnisotropy();
+        }
+        // Convert maps
+        if (tmat.HasAlbedoMap()) {
+            legacy_mat.albedo = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.albedo = tmat.GetAlbedoMap().ToLegacy();
+        }
+        if (tmat.HasNormalMap()) {
+            legacy_mat.normalMap = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.normalMap = tmat.GetNormalMap().ToLegacy();
+        }
+        if (tmat.HasAOMap()) {
+            legacy_mat.ambientOcclusion =
+                    std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.ambientOcclusion = tmat.GetAOMap().ToLegacy();
+        }
+        if (tmat.HasMetallicMap()) {
+            legacy_mat.metallic = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.metallic = tmat.GetMetallicMap().ToLegacy();
+        }
+        if (tmat.HasRoughnessMap()) {
+            legacy_mat.roughness = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.roughness = tmat.GetRoughnessMap().ToLegacy();
+        }
+        if (tmat.HasReflectanceMap()) {
+            legacy_mat.reflectance =
+                    std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.reflectance = tmat.GetReflectanceMap().ToLegacy();
+        }
+        if (tmat.HasClearcoatMap()) {
+            legacy_mat.clearCoat = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.clearCoat = tmat.GetClearcoatMap().ToLegacy();
+        }
+        if (tmat.HasClearcoatRoughnessMap()) {
+            legacy_mat.clearCoatRoughness =
+                    std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.clearCoatRoughness =
+                    tmat.GetClearcoatRoughnessMap().ToLegacy();
+        }
+        if (tmat.HasAnisotropyMap()) {
+            legacy_mat.anisotropy = std::make_shared<open3d::geometry::Image>();
+            *legacy_mat.anisotropy = tmat.GetAnisotropyMap().ToLegacy();
+        }
     }
 
     return mesh_legacy;
@@ -574,11 +668,15 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     return CreateTriangleMeshFromVtkPolyData(result);
 }
 
-void TriangleMesh::ComputeUVAtlas(size_t size,
-                                  float gutter,
-                                  float max_stretch) {
-    kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter,
-                                         max_stretch);
+std::tuple<float, int, int> TriangleMesh::ComputeUVAtlas(
+        size_t size,
+        float gutter,
+        float max_stretch,
+        int parallel_partitions,
+        int nthreads) {
+    return kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter,
+                                                max_stretch,
+                                                parallel_partitions, nthreads);
 }
 
 namespace {
@@ -877,6 +975,90 @@ TriangleMesh TriangleMesh::ExtrudeLinear(const core::Tensor &vector,
                                          bool capping) const {
     using namespace vtkutils;
     return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
+}
+
+int TriangleMesh::PCAPartition(int max_faces) {
+    core::Tensor verts = GetVertexPositions();
+    core::Tensor tris = GetTriangleIndices();
+    if (!tris.GetLength()) {
+        utility::LogError("Mesh must have at least one face.");
+    }
+    core::Tensor tris_centers = verts.IndexGet({tris}).Mean({1});
+
+    int num_parititions;
+    core::Tensor partition_ids;
+    std::tie(num_parititions, partition_ids) =
+            kernel::pcapartition::PCAPartition(tris_centers, max_faces);
+    SetTriangleAttr("partition_ids", partition_ids.To(GetDevice()));
+    return num_parititions;
+}
+
+TriangleMesh TriangleMesh::SelectFacesByMask(const core::Tensor &mask) const {
+    core::AssertTensorShape(mask, {GetTriangleIndices().GetLength()});
+    core::AssertTensorDtype(mask, core::Bool);
+    GetTriangleAttr().AssertSizeSynchronized();
+    GetVertexAttr().AssertSizeSynchronized();
+
+    // select triangles
+    core::Tensor tris = GetTriangleIndices().IndexGet({mask});
+    core::Tensor tris_cpu = tris.To(core::Device()).Contiguous();
+    const int64_t num_tris = tris_cpu.GetLength();
+
+    // create mask for vertices that are part of the selected faces
+    const int64_t num_verts = GetVertexPositions().GetLength();
+    core::Tensor vertex_mask = core::Tensor::Zeros({num_verts}, core::Int32);
+    std::vector<int64_t> prefix_sum(num_verts + 1, 0);
+    {
+        int32_t *vertex_mask_ptr = vertex_mask.GetDataPtr<int32_t>();
+        if (tris_cpu.GetDtype() == core::Int32) {
+            int32_t *vert_idx_ptr = tris_cpu.GetDataPtr<int32_t>();
+            for (int64_t i = 0; i < tris_cpu.GetLength() * 3; ++i) {
+                vertex_mask_ptr[vert_idx_ptr[i]] = 1;
+            }
+        } else {
+            int64_t *vert_idx_ptr = tris_cpu.GetDataPtr<int64_t>();
+            for (int64_t i = 0; i < tris_cpu.GetLength() * 3; ++i) {
+                vertex_mask_ptr[vert_idx_ptr[i]] = 1;
+            }
+        }
+        utility::InclusivePrefixSum(
+                vertex_mask_ptr, vertex_mask_ptr + num_verts, &prefix_sum[1]);
+    }
+
+    // update triangle indices
+    if (tris_cpu.GetDtype() == core::Int32) {
+        int32_t *vert_idx_ptr = tris_cpu.GetDataPtr<int32_t>();
+        for (int64_t i = 0; i < num_tris * 3; ++i) {
+            int64_t new_idx = prefix_sum[vert_idx_ptr[i]];
+            vert_idx_ptr[i] = int32_t(new_idx);
+        }
+    } else {
+        int64_t *vert_idx_ptr = tris_cpu.GetDataPtr<int64_t>();
+        for (int64_t i = 0; i < num_tris * 3; ++i) {
+            int64_t new_idx = prefix_sum[vert_idx_ptr[i]];
+            vert_idx_ptr[i] = new_idx;
+        }
+    }
+
+    tris = tris_cpu.To(GetDevice());
+    vertex_mask = vertex_mask.To(GetDevice(), core::Bool);
+    core::Tensor verts = GetVertexPositions().IndexGet({vertex_mask});
+    TriangleMesh result(verts, tris);
+
+    // copy attributes
+    for (auto item : GetVertexAttr()) {
+        if (!result.HasVertexAttr(item.first)) {
+            result.SetVertexAttr(item.first,
+                                 item.second.IndexGet({vertex_mask}));
+        }
+    }
+    for (auto item : GetTriangleAttr()) {
+        if (!result.HasTriangleAttr(item.first)) {
+            result.SetTriangleAttr(item.first, item.second.IndexGet({mask}));
+        }
+    }
+
+    return result;
 }
 
 }  // namespace geometry

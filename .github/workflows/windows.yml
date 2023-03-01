@@ -20,18 +20,19 @@ concurrency:
 
 env:
   PIP_VER: "21.1.1"
-  WHEEL_VER: "0.37.1"
-  STOOLS_VER: "50.3.2"
+  WHEEL_VER: "0.38.4"
+  STOOLS_VER: "67.3.2"
   PYTEST_VER: "7.1.2"
   PYTEST_RANDOMLY_VER: "3.8.0"
   SCIPY_VER: "1.7.3"
   JEDI_VER: "0.17.2"  # https://github.com/ipython/ipython/issues/12740
   IDNA_VER: "2.8"  # https://github.com/psf/requests/issues/5710
-  TENSORBOARD_VER: "2.5"
+  TENSORBOARD_VER: "2.8"
   SRC_DIR: "D:\\a\\open3d\\open3d"
   BUILD_DIR: "C:\\Open3D\\build"
   NPROC: 2
   DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   windows:
@@ -57,7 +58,7 @@ jobs:
         run: Get-PSDrive
 
       - name: Setup Windows SDK
-        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.7
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
         with:
           sdk-version: 19041
 
@@ -95,10 +96,10 @@ jobs:
           echo "$CUDA_PATH\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7
 
@@ -149,30 +150,47 @@ jobs:
           echo "DEVEL_PKG_NAME=$DEVEL_PKG_NAME" | Out-File -FilePath `
             $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Upload package
+      - name: Upload Package
         if: ${{ matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d-devel-windows
           path: ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }}
           if-no-files-found: error
 
+      - name: Viewer App
+        working-directory: ${{ env.BUILD_DIR }}
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+            --target Open3DViewer
+          cmake --build . --parallel ${{ env.NPROC }} --config ${{ matrix.CONFIG }} `
+            --target INSTALL
+
+      - name: Upload Viewer
+        if: ${{ matrix.BUILD_SHARED_LIBS == 'OFF' && matrix.STATIC_RUNTIME == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' && matrix.CONFIG == 'Release' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: open3d-app-windows-amd64
+          path: C:\Program Files\Open3D\bin\Open3D
+          if-no-files-found: error
+
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
+        uses: google-github-actions/auth@v1
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: google-github-actions/setup-gcloud@v0.2.1
-        env:
-          CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
 
       - name: Upload package to GCS bucket
         if: ${{ github.ref == 'refs/heads/master' && matrix.BUILD_SHARED_LIBS == 'ON' && matrix.BUILD_CUDA_MODULE == 'OFF' }}
-        env:
-          CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
         run: |
           gsutil cp ${{ env.BUILD_DIR }}/package/${{ env.DEVEL_PKG_NAME }} `
             gs://open3d-releases-master/devel/
@@ -241,15 +259,15 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Windows SDK
-        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.7
+        uses: GuillaumeFalourd/setup-windows10-sdk-action@v1.11
         with:
           sdk-version: 19041
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -291,34 +309,31 @@ jobs:
           cmake --build . --parallel ${{ env.NPROC }} --config Release --target pip-package
           $PIP_PKG_NAME=(Get-ChildItem lib/python_package/pip_package/open3d*.whl).Name
           echo "PIP_PKG_NAME=$PIP_PKG_NAME"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          $PYTHON_EXECUTABLE=(python -c "import sys; print(sys.executable)")
-          echo $PYTHON_EXECUTABLE
-          echo "PYTHON_EXECUTABLE=$PYTHON_EXECUTABLE"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload wheel
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d_win_amd64_wheels
           path: ${{ env.BUILD_DIR }}/lib/python_package/pip_package/${{ env.PIP_PKG_NAME }}
           if-no-files-found: error
 
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: google-github-actions/auth@v1
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
         if: ${{ github.ref == 'refs/heads/master' }}
-        # https://github.com/GoogleCloudPlatform/github-actions/issues/100#issuecomment-650798308
-        uses: google-github-actions/setup-gcloud@v0.2.1
-        env:
-          CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
 
       - name: Upload wheel to GCS bucket
         if: ${{ github.ref == 'refs/heads/master' }}
         env:
           python_version: ${{ matrix.python_version }}
-          CLOUDSDK_PYTHON: ${{env.PYTHON_EXECUTABLE}}
         run: |
           $ErrorActionPreference = 'Stop'
           $PYTAG="-cp$(${{ env.python_version }} -replace '\.', '')"
@@ -349,17 +364,17 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Download wheels
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         # See https://github.com/dawidd6/action-download-artifact for more
         # flexible artifact download options
         with:
           name: open3d_win_amd64_wheels
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
 
@@ -403,17 +418,20 @@ jobs:
   ready-docs:
     name: Ready docs archive
     # no need to run on Windows
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/master' }}
     needs: [build-wheel, windows]
     steps:
+      - name: GCloud CLI auth
+        uses: google-github-actions/auth@v1
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          project_id: ${{ secrets.GCE_PROJECT }}
       - name: Check wheels and ready documentation archive
         run: |
             touch marker_file

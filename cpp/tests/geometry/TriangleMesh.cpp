@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/geometry/TriangleMesh.h"
@@ -33,13 +14,35 @@
 namespace open3d {
 namespace tests {
 
+/// Test if two meshes are equal.
+/// \param mesh0 First mesh.
+/// \param mesh1 Second mesh
+/// \param threshold absolute threshold for comparing attributes like positions,
+/// colors and normals.
+/// \param eq_triangle_vertex_order If true then triangles are only equal if the
+/// order of the vertices is the same. If false any permutation of the triangle
+/// indices is allowed.
 void ExpectMeshEQ(const open3d::geometry::TriangleMesh& mesh0,
                   const open3d::geometry::TriangleMesh& mesh1,
-                  double threshold = 1e-6) {
+                  double threshold = 1e-6,
+                  bool eq_triangle_vertex_order = true) {
     ExpectEQ(mesh0.vertices_, mesh1.vertices_, threshold);
     ExpectEQ(mesh0.vertex_normals_, mesh1.vertex_normals_, threshold);
     ExpectEQ(mesh0.vertex_colors_, mesh1.vertex_colors_, threshold);
-    ExpectEQ(mesh0.triangles_, mesh1.triangles_);
+    if (eq_triangle_vertex_order) {
+        ExpectEQ(mesh0.triangles_, mesh1.triangles_);
+    } else {
+        std::vector<Eigen::Vector3i> tris0 = mesh0.triangles_;
+        std::vector<Eigen::Vector3i> tris1 = mesh1.triangles_;
+        EXPECT_EQ(tris0.size(), tris1.size());
+        for (size_t i = 0; i < tris0.size(); ++i) {
+            tris0[i] = open3d::geometry::TriangleMesh::GetOrderedTriangle(
+                    tris0[i].x(), tris0[i].y(), tris0[i].z());
+            tris1[i] = open3d::geometry::TriangleMesh::GetOrderedTriangle(
+                    tris1[i].x(), tris1[i].y(), tris1[i].z());
+        }
+        ExpectEQ(tris0, tris1);
+    }
     ExpectEQ(mesh0.triangle_normals_, mesh1.triangle_normals_, threshold);
     ExpectEQ(mesh0.triangle_uvs_, mesh1.triangle_uvs_);
 }
@@ -1936,7 +1939,7 @@ TEST(TriangleMesh, CreateFromPointCloudAlphaShape) {
 
     auto mesh_es =
             geometry::TriangleMesh::CreateFromPointCloudAlphaShape(pcd, 1);
-    ExpectMeshEQ(*mesh_es, mesh_gt);
+    ExpectMeshEQ(*mesh_es, mesh_gt, 1e-6, false);
 }
 
 TEST(TriangleMesh, CreateMeshSphere) {

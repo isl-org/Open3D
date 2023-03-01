@@ -14,37 +14,29 @@ concurrency:
 
 env:
   GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
-  GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   openblas-amd64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Maximize build space
         run: |
           source util/ci_utils.sh
           maximize_ubuntu_github_actions_build_space
       - name: Docker build
-        run: |
-          docker/docker_build.sh openblas-amd64-py310-dev
-      - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+        run: docker/docker_build.sh openblas-amd64-py310-dev
+
       - name: Docker test
-        run: |
-          docker/docker_test.sh openblas-amd64-py310-dev
+        run: docker/docker_test.sh openblas-amd64-py310-dev
 
   # With forked repo, the GitHub secret is not available.
   skip-arm64-check-on-fork:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Skip job for forks
     outputs:
       skip: ${{ steps.check.outputs.skip }}
@@ -54,14 +46,14 @@ jobs:
         run: |
           if [ "${GITHUB_REPOSITORY}" == "isl-org/Open3D" ] && [ -n "${GCE_GPU_CI_SA}" ] ; then
             echo "Secrets available: performing GCE test"
-            echo "::set-output name=skip::no"
+            echo "skip=no" >> $GITHUB_OUTPUT
           else
             echo "Secrets not available: skipping GCE test"
-            echo "::set-output name=skip::yes"
+            echo "skip=yes" >> $GITHUB_OUTPUT
           fi
 
   openblas-arm64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [skip-arm64-check-on-fork]
     if: needs.skip-arm64-check-on-fork.outputs.skip == 'no'
     strategy:
@@ -73,18 +65,22 @@ jobs:
       GCE_INSTANCE_PREFIX: open3d-ci-openblas-arm64-py310-dev
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Package code
         run: |
           # GITHUB_WORKSPACE: /home/runner/work/Open3D/Open3D
           cd "${GITHUB_WORKSPACE}/.."
           tar -czvf Open3D.tar.gz Open3D
           ls -alh
+      - name: GCloud CLI auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_PROJECT }}
       - name: VM create
         run: |

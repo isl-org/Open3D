@@ -1,30 +1,13 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/core/Tensor.h"
+
+#include <gmock/gmock.h>
 
 #include <cmath>
 #include <limits>
@@ -681,12 +664,14 @@ TEST_P(TensorPermuteDevices, ItemAssign) {
 }
 
 TEST_P(TensorPermuteDevices, ToString) {
+    using ::testing::AnyOf;
     core::Device device = GetParam();
     core::Tensor t;
 
     // 0D
     t = core::Tensor::Ones({}, core::Float32, device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(1.0)");
+    // IntelLLVM / fmt 6 adds 1 decimal place
+    EXPECT_THAT(t.ToString(/*with_suffix=*/false), AnyOf(R"(1)", R"(1.0)"));
     t = core::Tensor::Full({}, std::numeric_limits<float>::quiet_NaN(),
                            core::Float32, device);
     EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"(nan)");
@@ -697,7 +682,9 @@ TEST_P(TensorPermuteDevices, ToString) {
     // 1D float
     t = core::Tensor(std::vector<float>{0, 1, 2, 3, 4}, {5}, core::Float32,
                      device);
-    EXPECT_EQ(t.ToString(/*with_suffix=*/false), R"([0.0 1.0 2.0 3.0 4.0])");
+    // IntelLLVM / fmt 6 adds 1 decimal place
+    EXPECT_THAT(t.ToString(/*with_suffix=*/false),
+                AnyOf(R"([0 1 2 3 4])", R"([0.0 1.0 2.0 3.0 4.0])"));
 
     // 1D int
     std::vector<int32_t> vals{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11,

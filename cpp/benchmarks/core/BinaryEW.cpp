@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include <benchmark/benchmark.h>
@@ -115,7 +96,7 @@ static std::function<Tensor(const Tensor&, const Tensor&)> MakeOperation(
             };
 
         default:
-            utility::LogError("Unknown operation {}", op);
+            utility::LogError("Unknown operation {}", static_cast<int>(op));
     }
 }
 
@@ -175,22 +156,22 @@ void BinaryEW(benchmark::State& state,
     ENUM_BM_SIZE(FN, OP, DEVICE, DEVICE_NAME, Float32)       \
     ENUM_BM_SIZE(FN, OP, DEVICE, DEVICE_NAME, Float64)
 
-//#ifdef BUILD_CUDA_MODULE
-//#define ENUM_BM_TENSOR(FN, OP)
-//    ENUM_BM_DTYPE(FN, OP, Device("CPU:0"), CPU)
-//    ENUM_BM_DTYPE(FN, OP, Device("CUDA:0"), CUDA)
-//#else
+// #ifdef BUILD_CUDA_MODULE
+// #define ENUM_BM_TENSOR(FN, OP)
+//     ENUM_BM_DTYPE(FN, OP, Device("CPU:0"), CPU)
+//     ENUM_BM_DTYPE(FN, OP, Device("CUDA:0"), CUDA)
+// #else
 #define ENUM_BM_TENSOR(FN, OP) ENUM_BM_DTYPE(FN, OP, Device("CPU:0"), CPU)
-//#endif
+// #endif
 
-//#ifdef BUILD_CUDA_MODULE
-//#define ENUM_BM_TENSOR_WTIH_BOOL(FN, OP)
-//    ENUM_BM_DTYPE_WITH_BOOL(FN, OP, Device("CPU:0"), CPU)
-//    ENUM_BM_DTYPE_WITH_BOOL(FN, OP, Device("CUDA:0"), CUDA)
-//#else
+// #ifdef BUILD_CUDA_MODULE
+// #define ENUM_BM_TENSOR_WTIH_BOOL(FN, OP)
+//     ENUM_BM_DTYPE_WITH_BOOL(FN, OP, Device("CPU:0"), CPU)
+//     ENUM_BM_DTYPE_WITH_BOOL(FN, OP, Device("CUDA:0"), CUDA)
+// #else
 #define ENUM_BM_TENSOR_WTIH_BOOL(FN, OP) \
     ENUM_BM_DTYPE_WITH_BOOL(FN, OP, Device("CPU:0"), CPU)
-//#endif
+// #endif
 
 ENUM_BM_TENSOR(BinaryEW, Add)
 ENUM_BM_TENSOR(BinaryEW, Sub)

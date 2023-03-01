@@ -27,19 +27,23 @@ on:
 
 env:
   GCE_GPU_CI_SA: ${{ secrets.GCE_GPU_CI_SA }}
-  GCE_CLI_GHA_VERSION: '302.0.0' # Fixed to avoid dependency on API changes
+  GCE_CLI_GHA_VERSION: '416.0.0' # Fixed to avoid dependency on API changes
 
 jobs:
   clean-gcloud-profiles:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     steps:
+      - name: GCloud CLI auth
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
       - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
+        uses: google-github-actions/setup-gcloud@v1
         with:
           version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_GPU_CI }}
           project_id: ${{ secrets.GCE_PROJECT }}
       - name: Delete GCloud login profiles manually
         run: |

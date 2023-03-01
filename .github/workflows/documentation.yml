@@ -18,18 +18,18 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GCE_CLI_GHA_VERSION: '302.0.0'      # Fixed to avoid dependency on API changes
+  GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
   headless-docs:
     # Build headless and docs
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest  # Warn about build issues in new versions
     env:
       OPEN3D_ML_ROOT: ${{ github.workspace }}/Open3D-ML
       DEVELOPER_BUILD: ${{ github.event.inputs.developer_build || 'ON' }}
     steps:
       - name: Checkout Open3D source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Maximize build space
         run: |
@@ -37,13 +37,13 @@ jobs:
           maximize_ubuntu_github_actions_build_space
 
       - name: Checkout Open3D-ML source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: isl-org/Open3D-ML
           path: ${{ env.OPEN3D_ML_ROOT }}
 
       - name: Setup cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           # Ref: https://github.com/apache/incubator-mxnet/pull/18459/files
           path: ~/.ccache
@@ -56,16 +56,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache
       - name: Set up Python version
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.7
-      - name: GCloud CLI setup
-        uses: google-github-actions/setup-gcloud@v0.2.1
-        with:
-          version: ${{ env.GCE_CLI_GHA_VERSION }}
-          service_account_key: ${{ secrets.GCE_SA_KEY_DOCS_CI }}
-          project_id: ${{ secrets.GCE_DOCS_PROJECT }}
-          export_default_credentials: true
+          python-version: '3.7'
 
       - name: Install dependencies
         env:
@@ -88,11 +81,24 @@ jobs:
           ccache -s
 
       - name: Upload docs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: open3d_docs
           path: docs/_out/html
           if-no-files-found: error
+
+      - name: GCloud CLI auth
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: 'google-github-actions/auth@v1'
+        with:
+          project_id: ${{ secrets.GCE_PROJECT }}
+          credentials_json: '${{ secrets.GCE_SA_KEY_GPU_CI }}'
+      - name: GCloud CLI setup
+        if: ${{ github.ref == 'refs/heads/master' }}
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          version: ${{ env.GCE_CLI_GHA_VERSION }}
+          project_id: ${{ secrets.GCE_PROJECT }}
 
       - name: Deploy docs
         if: ${{ github.ref == 'refs/heads/master' }}

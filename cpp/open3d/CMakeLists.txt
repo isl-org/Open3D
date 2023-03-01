@@ -17,6 +17,33 @@ function(open3d_set_open3d_lib_properties target)
         target_compile_definitions(${target} PRIVATE OPEN3D_ENABLE_DLL_EXPORTS)
     endif()
 
+# Hide all 3rd party symbols, e.g. from header libraries.
+get_target_property(TARGET_TYPE ${target} TYPE)
+if (TARGET_TYPE STREQUAL SHARED_LIBRARY)
+        if (APPLE)
+            file(GENERATE OUTPUT libOpen3D.map CONTENT
+                [=[*open3d*
+                   *Open3D*
+                ]=])
+            target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
+                -Wl,-exported_symbols_list
+                "${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
+        elseif (UNIX)   # Linux
+            file(GENERATE OUTPUT libOpen3D.map CONTENT
+                [=[{
+    global:
+        *open3d*;
+        extern "C++" {
+             open3d::*;
+        };
+    local: *;
+};]=])
+            target_link_options(${target} PRIVATE $<$<CONFIG:Release>:
+                "-Wl,--version-script=${CMAKE_CURRENT_BINARY_DIR}/libOpen3D.map" >)
+        elseif (WIN32)
+            # TODO(Sameer): Only export open3d symbols
+        endif()
+    endif()
 endfunction()
 
 # Configure a header file to pass the version settings to the source code

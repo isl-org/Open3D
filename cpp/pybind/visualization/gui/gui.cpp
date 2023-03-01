@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "pybind/visualization/gui/gui.h"
@@ -949,6 +930,86 @@ void pybind_gui_classes(py::module &m) {
                  "Calls f(new_idx) when user changes selection");
 
     // ---- ImageWidget ----
+    class PyImageWidget : public ImageWidget {
+        using Super = ImageWidget;
+
+    public:
+        PyImageWidget() : Super() {}
+        /// Uses image from the specified path. Each ImageWidget will use one
+        /// draw call.
+        explicit PyImageWidget(const char *image_path) : Super(image_path) {}
+        /// Uses existing image. Each ImageWidget will use one draw call.
+        explicit PyImageWidget(std::shared_ptr<open3d::geometry::Image> image)
+            : Super(image) {}
+        /// Uses existing image. Each ImageWidget will use one draw call.
+        explicit PyImageWidget(
+                std::shared_ptr<open3d::t::geometry::Image> image)
+            : Super(image) {}
+        /// Uses an existing texture, using texture coordinates
+        /// (u0, v0) to (u1, v1). Does not deallocate texture on destruction.
+        /// This is useful for using an icon atlas to reduce draw calls.
+        explicit PyImageWidget(
+                open3d::visualization::rendering::TextureHandle texture_id,
+                float u0 = 0.0f,
+                float v0 = 0.0f,
+                float u1 = 1.0f,
+                float v1 = 1.0f)
+            : Super(texture_id, u0, v0, u1, v1) {}
+
+        ~PyImageWidget() = default;
+
+        void SetOnMouse(std::function<int(const MouseEvent &)> f) {
+            on_mouse_ = f;
+        }
+        void SetOnKey(std::function<int(const KeyEvent &)> f) { on_key_ = f; }
+
+        Widget::EventResult Mouse(const MouseEvent &e) override {
+            if (on_mouse_) {
+                switch (EventCallbackResult(on_mouse_(e))) {
+                    case EventCallbackResult::CONSUMED:
+                        return Widget::EventResult::CONSUMED;
+                    case EventCallbackResult::HANDLED: {
+                        auto result = Super::Mouse(e);
+                        if (result == Widget::EventResult::IGNORED) {
+                            result = Widget::EventResult::CONSUMED;
+                        }
+                        return result;
+                    }
+                    case EventCallbackResult::IGNORED:
+                    default:
+                        return Super::Mouse(e);
+                }
+            } else {
+                return Super::Mouse(e);
+            }
+        }
+
+        Widget::EventResult Key(const KeyEvent &e) override {
+            if (on_key_) {
+                switch (EventCallbackResult(on_key_(e))) {
+                    case EventCallbackResult::CONSUMED:
+                        return Widget::EventResult::CONSUMED;
+                    case EventCallbackResult::HANDLED: {
+                        auto result = Super::Key(e);
+                        if (result == Widget::EventResult::IGNORED) {
+                            result = Widget::EventResult::CONSUMED;
+                        }
+                        return result;
+                    }
+                    case EventCallbackResult::IGNORED:
+                    default:
+                        return Super::Key(e);
+                }
+            } else {
+                return Super::Key(e);
+            }
+        }
+
+    private:
+        std::function<int(const MouseEvent &)> on_mouse_;
+        std::function<int(const KeyEvent &)> on_key_;
+    };
+
     py::class_<UIImage, UnownedPointer<UIImage>> uiimage(
             m, "UIImage", "A bitmap suitable for displaying with ImageWidget");
 
@@ -972,25 +1033,25 @@ void pybind_gui_classes(py::module &m) {
                           "gui.UIImage.Scaling.ASPECT: scaled to fit but "
                           "keeping the image's aspect ratio");
 
-    py::class_<ImageWidget, UnownedPointer<ImageWidget>, Widget> imagewidget(
-            m, "ImageWidget", "Displays a bitmap");
+    py::class_<PyImageWidget, UnownedPointer<PyImageWidget>, Widget>
+            imagewidget(m, "ImageWidget", "Displays a bitmap");
     imagewidget
-            .def(py::init<>([]() { return new ImageWidget(); }),
+            .def(py::init<>([]() { return new PyImageWidget(); }),
                  "Creates an ImageWidget with no image")
             .def(py::init<>([](const char *path) {
-                     return new ImageWidget(path);
+                     return new PyImageWidget(path);
                  }),
                  "Creates an ImageWidget from the image at the specified path")
             .def(py::init<>([](std::shared_ptr<geometry::Image> image) {
-                     return new ImageWidget(image);
+                     return new PyImageWidget(image);
                  }),
                  "Creates an ImageWidget from the provided image")
             .def(py::init<>([](std::shared_ptr<t::geometry::Image> image) {
-                     return new ImageWidget(image);
+                     return new PyImageWidget(image);
                  }),
                  "Creates an ImageWidget from the provided tgeometry image")
             .def("__repr__",
-                 [](const ImageWidget &il) {
+                 [](const PyImageWidget &il) {
                      std::stringstream s;
                      s << "ImageWidget (" << il.GetFrame().x << ", "
                        << il.GetFrame().y << "), " << il.GetFrame().width
@@ -999,7 +1060,7 @@ void pybind_gui_classes(py::module &m) {
                  })
             .def("update_image",
                  py::overload_cast<std::shared_ptr<geometry::Image>>(
-                         &ImageWidget::UpdateImage),
+                         &PyImageWidget::UpdateImage),
                  "Mostly a convenience function for ui_image.update_image(). "
                  "If 'image' is the same size as the current image, will "
                  "update the texture with the contents of 'image'. This is "
@@ -1011,7 +1072,7 @@ void pybind_gui_classes(py::module &m) {
                  "texture resources.")
             .def("update_image",
                  py::overload_cast<std::shared_ptr<t::geometry::Image>>(
-                         &ImageWidget::UpdateImage),
+                         &PyImageWidget::UpdateImage),
                  "Mostly a convenience function for ui_image.update_image(). "
                  "If 'image' is the same size as the current image, will "
                  "update the texture with the contents of 'image'. This is "
@@ -1021,8 +1082,18 @@ void pybind_gui_classes(py::module &m) {
                  "same as creating a new UIImage and calling SetUIImage(). "
                  "This is the slow path, and may eventually exhaust internal "
                  "texture resources.")
-            .def_property("ui_image", &ImageWidget::GetUIImage,
-                          &ImageWidget::SetUIImage,
+            .def("set_on_mouse", &PyImageWidget::SetOnMouse,
+                 "Sets a callback for mouse events. This callback is passed "
+                 "a MouseEvent object. The callback must return "
+                 "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
+                 "or EventCallbackResult.CONSUMED.")
+            .def("set_on_key", &PyImageWidget::SetOnKey,
+                 "Sets a callback for key events. This callback is passed "
+                 "a KeyEvent object. The callback must return "
+                 "EventCallbackResult.IGNORED, EventCallbackResult.HANDLED, "
+                 "or EventCallackResult.CONSUMED.")
+            .def_property("ui_image", &PyImageWidget::GetUIImage,
+                          &PyImageWidget::SetUIImage,
                           "Replaces the texture with a new texture. This is "
                           "not a fast path, and is not recommended for video "
                           "as you will exhaust internal texture resources.");
