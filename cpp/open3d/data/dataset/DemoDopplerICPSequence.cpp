@@ -96,7 +96,7 @@ const static DataDescriptor data_descriptor = {
 
 DemoDopplerICPSequence::DemoDopplerICPSequence(const std::string& data_root)
     : DownloadDataset("DemoDopplerICPSequence", data_descriptor, data_root) {
-    for (int i = 1; i <= 10; ++i) {
+    for (int i = 1; i <= 100; ++i) {
         std::stringstream ss;
         ss << std::setw(5) << std::setfill('0') << i;
         paths_.push_back(GetExtractDir() + "/xyzd_sequence/" + ss.str() +
@@ -108,9 +108,9 @@ DemoDopplerICPSequence::DemoDopplerICPSequence(const std::string& data_root)
 }
 
 std::string DemoDopplerICPSequence::GetPath(std::size_t index) const {
-    if (index > 9) {
+    if (index > 99) {
         utility::LogError(
-                "Invalid index. Expected index between 0 to 9 but got {}.",
+                "Invalid index. Expected index between 0 to 99 but got {}.",
                 index);
     }
     return paths_[index];

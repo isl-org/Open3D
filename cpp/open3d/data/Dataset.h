@@ -372,7 +372,7 @@ class DemoDopplerICPSequence : public DownloadDataset {
 public:
     DemoDopplerICPSequence(const std::string& data_root = "");
 
-    /// \brief Returns list of the first 10 point cloud paths in the sequence.
+    /// \brief Returns the list of the point cloud paths in the sequence.
     std::vector<std::string> GetPaths() const { return paths_; }
     /// \brief Path to the point cloud at index.
     std::string GetPath(std::size_t index) const;
