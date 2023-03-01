@@ -28,10 +28,12 @@
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/geometry/RaycastingScene.h"
 #include "open3d/t/geometry/VtkUtils.h"
+#include "open3d/t/geometry/kernel/PCAPartition.h"
 #include "open3d/t/geometry/kernel/PointCloud.h"
 #include "open3d/t/geometry/kernel/Transform.h"
 #include "open3d/t/geometry/kernel/TriangleMesh.h"
 #include "open3d/t/geometry/kernel/UVUnwrapping.h"
+#include "open3d/utility/ParallelScan.h"
 
 namespace open3d {
 namespace t {
@@ -666,11 +668,15 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     return CreateTriangleMeshFromVtkPolyData(result);
 }
 
-void TriangleMesh::ComputeUVAtlas(size_t size,
-                                  float gutter,
-                                  float max_stretch) {
-    kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter,
-                                         max_stretch);
+std::tuple<float, int, int> TriangleMesh::ComputeUVAtlas(
+        size_t size,
+        float gutter,
+        float max_stretch,
+        int parallel_partitions,
+        int nthreads) {
+    return kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter,
+                                                max_stretch,
+                                                parallel_partitions, nthreads);
 }
 
 namespace {
@@ -969,6 +975,90 @@ TriangleMesh TriangleMesh::ExtrudeLinear(const core::Tensor &vector,
                                          bool capping) const {
     using namespace vtkutils;
     return ExtrudeLinearTriangleMesh(*this, vector, scale, capping);
+}
+
+int TriangleMesh::PCAPartition(int max_faces) {
+    core::Tensor verts = GetVertexPositions();
+    core::Tensor tris = GetTriangleIndices();
+    if (!tris.GetLength()) {
+        utility::LogError("Mesh must have at least one face.");
+    }
+    core::Tensor tris_centers = verts.IndexGet({tris}).Mean({1});
+
+    int num_parititions;
+    core::Tensor partition_ids;
+    std::tie(num_parititions, partition_ids) =
+            kernel::pcapartition::PCAPartition(tris_centers, max_faces);
+    SetTriangleAttr("partition_ids", partition_ids.To(GetDevice()));
+    return num_parititions;
+}
+
+TriangleMesh TriangleMesh::SelectFacesByMask(const core::Tensor &mask) const {
+    core::AssertTensorShape(mask, {GetTriangleIndices().GetLength()});
+    core::AssertTensorDtype(mask, core::Bool);
+    GetTriangleAttr().AssertSizeSynchronized();
+    GetVertexAttr().AssertSizeSynchronized();
+
+    // select triangles
+    core::Tensor tris = GetTriangleIndices().IndexGet({mask});
+    core::Tensor tris_cpu = tris.To(core::Device()).Contiguous();
+    const int64_t num_tris = tris_cpu.GetLength();
+
+    // create mask for vertices that are part of the selected faces
+    const int64_t num_verts = GetVertexPositions().GetLength();
+    core::Tensor vertex_mask = core::Tensor::Zeros({num_verts}, core::Int32);
+    std::vector<int64_t> prefix_sum(num_verts + 1, 0);
+    {
+        int32_t *vertex_mask_ptr = vertex_mask.GetDataPtr<int32_t>();
+        if (tris_cpu.GetDtype() == core::Int32) {
+            int32_t *vert_idx_ptr = tris_cpu.GetDataPtr<int32_t>();
+            for (int64_t i = 0; i < tris_cpu.GetLength() * 3; ++i) {
+                vertex_mask_ptr[vert_idx_ptr[i]] = 1;
+            }
+        } else {
+            int64_t *vert_idx_ptr = tris_cpu.GetDataPtr<int64_t>();
+            for (int64_t i = 0; i < tris_cpu.GetLength() * 3; ++i) {
+                vertex_mask_ptr[vert_idx_ptr[i]] = 1;
+            }
+        }
+        utility::InclusivePrefixSum(
+                vertex_mask_ptr, vertex_mask_ptr + num_verts, &prefix_sum[1]);
+    }
+
+    // update triangle indices
+    if (tris_cpu.GetDtype() == core::Int32) {
+        int32_t *vert_idx_ptr = tris_cpu.GetDataPtr<int32_t>();
+        for (int64_t i = 0; i < num_tris * 3; ++i) {
+            int64_t new_idx = prefix_sum[vert_idx_ptr[i]];
+            vert_idx_ptr[i] = int32_t(new_idx);
+        }
+    } else {
+        int64_t *vert_idx_ptr = tris_cpu.GetDataPtr<int64_t>();
+        for (int64_t i = 0; i < num_tris * 3; ++i) {
+            int64_t new_idx = prefix_sum[vert_idx_ptr[i]];
+            vert_idx_ptr[i] = new_idx;
+        }
+    }
+
+    tris = tris_cpu.To(GetDevice());
+    vertex_mask = vertex_mask.To(GetDevice(), core::Bool);
+    core::Tensor verts = GetVertexPositions().IndexGet({vertex_mask});
+    TriangleMesh result(verts, tris);
+
+    // copy attributes
+    for (auto item : GetVertexAttr()) {
+        if (!result.HasVertexAttr(item.first)) {
+            result.SetVertexAttr(item.first,
+                                 item.second.IndexGet({vertex_mask}));
+        }
+    }
+    for (auto item : GetTriangleAttr()) {
+        if (!result.HasTriangleAttr(item.first)) {
+            result.SetTriangleAttr(item.first, item.second.IndexGet({mask}));
+        }
+    }
+
+    return result;
 }
 
 }  // namespace geometry

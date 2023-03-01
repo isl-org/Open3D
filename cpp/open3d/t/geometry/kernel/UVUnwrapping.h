@@ -40,13 +40,26 @@ namespace uvunwrapping {
 /// of stretch.
 ///
 /// \param num_charts_out Output parameter with the number of charts created.
-void ComputeUVAtlas(TriangleMesh& mesh,
-                    const size_t width = 512,
-                    const size_t height = 512,
-                    const float gutter = 1.0f,
-                    const float max_stretch = 1.f / 6,
-                    float* max_stretch_out = nullptr,
-                    size_t* num_charts_out = nullptr);
+///
+/// \param parallel_partitions The approximate number of partitions created
+/// before computing the UV atlas for parallelizing the computation.
+/// Parallelization can be enabled with values > 1. Note that
+/// parallelization increases the number of UV islands and can lead to results
+/// with lower quality.
+///
+/// \param nthreads The number of threads used when parallel_partitions
+/// is > 1. Set to 0 for automatic number of thread detection.
+///
+/// \return Tuple with (max stretch, num_charts, num_partitions) storing the
+/// actual amount of stretch, the number of created charts, and the number of
+/// parallel partitions created.
+std::tuple<float, int, int> ComputeUVAtlas(TriangleMesh& mesh,
+                                           const size_t width = 512,
+                                           const size_t height = 512,
+                                           const float gutter = 1.0f,
+                                           const float max_stretch = 1.f / 6,
+                                           int parallel_partitions = 1,
+                                           int nthreads = 0);
 
 }  // namespace uvunwrapping
 }  // namespace kernel

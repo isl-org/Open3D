@@ -38,9 +38,8 @@ int DtypeToVtkType(const core::Dtype& dtype);
 ///  will not be added to the vtkPolyData. The exclusion set has precedence over
 ///  the included keys.
 /// \param face_attr_exclude A set of keys for which face attributes will not be
-/// added
-///  to the vtkPolyData. The exclusion set has precedence over the included
-///  keys.
+/// added to the vtkPolyData. The exclusion set has precedence over the included
+/// keys.
 vtkSmartPointer<vtkPolyData> CreateVtkPolyDataFromGeometry(
         const Geometry& geometry,
         const std::unordered_set<std::string>& point_attr_include,
