@@ -177,9 +177,11 @@ RegistrationResult RANSACFromCorrespondences(
                                            max_correspondence_distance, 0.9);
         if (!consistent) continue;
 
-        // Expensive validation: on device
-        auto result = EvaluateRegistration(
-                source, target, max_correspondence_distance, transformation);
+        // Expensive validation: should be on device
+        // TEMPORARY: on host to rule out inconsistent modules
+        auto result = EvaluateRegistration(source_host, target_host,
+                                           max_correspondence_distance,
+                                           transformation);
 
         // TODO: update validation
         if (result.IsBetterThan(best_result)) {

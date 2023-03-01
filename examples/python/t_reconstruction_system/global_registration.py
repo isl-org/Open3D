@@ -65,18 +65,20 @@ if __name__ == "__main__":
 
     # Tensor
 
+    # Rule out fpfh issue: extract all from cpu
+    pcd0 = o3d.t.io.read_point_cloud(fragment_file_names[0])
+    pcd1 = o3d.t.io.read_point_cloud(fragment_file_names[5])
+    fpfh0 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd0)
+    fpfh1 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd1)
+
     for device in [o3d.core.Device('cuda:0'), o3d.core.Device('cpu:0')]:
-        pcd0 = o3d.t.io.read_point_cloud(fragment_file_names[0]).to(device)
-        pcd1 = o3d.t.io.read_point_cloud(fragment_file_names[5]).to(device)
-        fpfh0 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd0)
-        fpfh1 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd1)
 
         print("start")
         result = o3d.t.pipelines.registration.ransac_from_features(
-            pcd0,
-            pcd1,
-            fpfh0,
-            fpfh1,
+            pcd0.to(device),
+            pcd1.to(device),
+            fpfh0.to(device),
+            fpfh1.to(device),
             max_correspondence_distance=0.05,
             criteria=o3d.t.pipelines.registration.RANSACConvergenceCriteria(100000),
         )
