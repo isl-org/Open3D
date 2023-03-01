@@ -362,6 +362,32 @@ private:
     std::string render_option_path_;
 };
 
+/// \class DemoDopplerICPSequence
+/// \brief Data class for `DemoDopplerICPSequence` contains an example sequence
+/// of 100 point cloud with Doppler velocity channel and corresponding ground
+/// truth poses. The sequence was generated using the CARLA simulator.
+class DemoDopplerICPSequence : public DownloadDataset {
+public:
+    DemoDopplerICPSequence(const std::string& data_root = "");
+
+    /// \brief Returns list of the first 10 point cloud paths in the sequence.
+    std::vector<std::string> GetPaths() const { return paths_; }
+    /// \brief Path to the point cloud at index.
+    std::string GetPath(std::size_t index) const;
+    /// \brief Path to the calibration metadata file, containing transformation
+    /// between the vehicle and sensor frames and the time period.
+    std::string GetCalibrationPath() const {
+        return calibration_path_;
+    }
+    /// \brief Path to the ground truth poses for the entire sequence.
+    std::string GetTrajectoryPath() const { return trajectory_path_; }
+
+private:
+    std::vector<std::string> paths_;
+    std::string calibration_path_;
+    std::string trajectory_path_;
+};
+
 /// \class DemoFeatureMatchingPointClouds
 /// \brief Data class for `DemoFeatureMatchingPointClouds` contains 2
 /// point cloud fragments and their respective FPFH features and L32D features.
