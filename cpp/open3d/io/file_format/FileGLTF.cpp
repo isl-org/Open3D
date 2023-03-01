@@ -595,11 +595,6 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
     return true;
 }
 
-std::string SanitizeStringForURI(const std::string& str) {
-    //  TODO
-    return str;
-}
-
 template <typename T>
 tcb::span<T, tcb::dynamic_extent> GetBufferSpan(
         tinygltf::Buffer& buff,
@@ -731,6 +726,68 @@ void SerializeTexture(tinygltf::Model& model,
             static_cast<int>(model.images.size()) - 1;
 }
 
+void WriteImagesToBuffers(tinygltf::Model& model) {
+    for (tinygltf::Image& image: model.images) {
+        model.buffers.emplace_back();
+        tinygltf::Buffer& img_buff = model.buffers.back();
+        img_buff.name = image.name + "-image-buffer";
+
+        model.bufferViews.emplace_back();
+        tinygltf::BufferView& img_buff_view = model.bufferViews.back();
+        img_buff_view.name = image.name + "-image-buff-view";
+        img_buff_view.buffer = static_cast<int>(model.buffers.size()) - 1;
+        if (image.mimeType == "image/png") {
+            if (!stbi_write_png_to_func(tinygltf::WriteToMemory_stbi,
+                        &img_buff.data, image.width, image.height,
+                        image.component, image.image.data(), 0)) {
+                utility::LogError("Failed to serialize {}", image.name);
+            }
+        } else if (image.mimeType == "image/jpeg") {
+            if (!stbi_write_jpg_to_func(tinygltf::WriteToMemory_stbi,
+                        &img_buff.data, image.width, image.height,
+                        image.component, image.image.data(), 100)) {
+                utility::LogError("Failed to serialize {}", image.name);
+            }
+        } else if (image.mimeType == "image/bmp") {
+            if (!stbi_write_bmp_to_func(tinygltf::WriteToMemory_stbi,
+                        &img_buff.data, image.width, image.height,
+                        image.component, image.image.data())) {
+                utility::LogError("Failed to serialize {}", image.name);
+            }
+        } else {
+            utility::LogError("Unsupported mime-type for image {}", image.name);
+        }
+        image.image.clear();
+        image.bufferView = static_cast<int>(model.bufferViews.size()) - 1;
+        image.as_is = true;
+        img_buff_view.byteLength = img_buff.data.size();
+    }
+}
+
+void ShrinkBuffersToFit(tinygltf::Model& model) {
+    std::vector<std::size_t> sizes(model.buffers.size(), 0);
+    for (const auto& view: model.bufferViews) {
+        sizes[view.buffer] += view.byteLength;
+    }
+    for (std::size_t i = 0; i < model.buffers.size(); ++i) {
+        model.buffers[i].data.resize(sizes[i]);
+    }
+}
+
+void ConsolidateBuffers(tinygltf::Model& model) {
+    ShrinkBuffersToFit(model);
+    for (int i = 1; i < static_cast<int>(model.buffers.size()); ++i) {
+        for (tinygltf::BufferView& view: model.bufferViews) {
+            if (view.buffer != i) { continue; }
+            view.byteOffset += model.buffers[0].data.size();
+            view.buffer = 0;
+        }
+        model.buffers[0].data.insert(model.buffers[0].data.end(),
+            model.buffers[i].data.begin(), model.buffers[i].data.end());
+    }
+    model.buffers.erase(std::next(model.buffers.begin()), model.buffers.end());
+}
+
 bool WriteTriangleMeshModelToGLTF(
         const std::string& filename,
         const visualization::rendering::TriangleMeshModel& mesh_model) {
@@ -744,14 +801,14 @@ bool WriteTriangleMeshModelToGLTF(
             return false;
         }
     }
-    std::string base_uri = utility::filesystem::GetFileNameWithoutDirectory(filename);
-    base_uri = utility::filesystem::GetFileNameWithoutExtension(base_uri);
-    base_uri = SanitizeStringForURI(base_uri);
+    std::string base_name =
+            utility::filesystem::GetFileNameWithoutDirectory(filename);
+    base_name = utility::filesystem::GetFileNameWithoutExtension(base_name);
     tinygltf::Model model;
     model.asset.generator = "Open3d";
     model.asset.version = "2.0";
     model.meshes.emplace_back();
-    model.meshes.back().name = base_uri;
+    model.meshes.back().name = base_name;
     model.nodes.emplace_back();
     model.nodes.back().mesh = 0;
     model.scenes.emplace_back();
@@ -777,8 +834,6 @@ bool WriteTriangleMeshModelToGLTF(
         tinygltf::Buffer& mesh_buffer = model.buffers.back();
         mesh_buffer.name = fmt::format(
                 "primitive-{}-geometry-buffer", i);
-        mesh_buffer.uri = fmt::format(
-                "{}-primitive-{}.bin", base_uri, i);
 
         // Store triangle indices
         bool save_indices_as_uint16 = mesh.vertices_.size() <=
@@ -890,8 +945,6 @@ bool WriteTriangleMeshModelToGLTF(
             normals_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
             normals_accessor.count = mesh.vertex_normals_.size();
             normals_accessor.bufferView = data_view_idx;
-//            normals_accessor.minValues = std::vector<double>(3, double{-1});
-//            normals_accessor.maxValues = std::vector<double>(3, double{1});
             normals_accessor.byteOffset = data_view_strided.byteLength;
             data_view_strided.byteLength += 3 * sizeof(float) * normals_accessor.count;
             {
@@ -918,8 +971,6 @@ bool WriteTriangleMeshModelToGLTF(
             colors_accessor.componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
             colors_accessor.count = mesh.vertex_colors_.size();
             colors_accessor.bufferView = data_view_idx;
-//            colors_accessor.minValues = std::vector<double>(3, double{0});
-//            colors_accessor.maxValues = std::vector<double>(3, double{1});
             colors_accessor.byteOffset = data_view_strided.byteLength;
             data_view_strided.byteLength += 3 * sizeof(float) * colors_accessor.count;
             {
@@ -969,8 +1020,6 @@ bool WriteTriangleMeshModelToGLTF(
             uv_accessor.count = vertex_uvs.size();
             uv_accessor.bufferView =
                     static_cast<int>(model.bufferViews.size()) - 1;
-//            uv_accessor.minValues = std::vector<double>(2, double{0});
-//            uv_accessor.maxValues = std::vector<double>(2, double{1});
             uv_accessor.byteOffset = uv_buffer_view.byteLength;
             uv_buffer_view.byteLength += 2 * sizeof(float) * uv_accessor.count;
             {
@@ -1021,13 +1070,11 @@ bool WriteTriangleMeshModelToGLTF(
     tinygltf::TinyGLTF loader;
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
+    ShrinkBuffersToFit(model);
     if (filename_ext == "glb") {
-        for (auto& buffer: model.buffers) {
-            buffer.uri.clear();
-        }
-        for (auto& image: model.images) {
-            image.uri.clear();
-        }
+        WriteImagesToBuffers(model);
+        ShrinkBuffersToFit(model);
+        ConsolidateBuffers(model);
         if (!loader.WriteGltfSceneToFile(
                     &model, filename, true, true, true, true)) {
             utility::LogWarning("Write GLB failed.");
