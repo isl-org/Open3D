@@ -668,14 +668,15 @@ TriangleMesh TriangleMesh::FillHoles(double hole_size) const {
     return CreateTriangleMeshFromVtkPolyData(result);
 }
 
-void TriangleMesh::ComputeUVAtlas(size_t size,
-                                  float gutter,
-                                  float max_stretch,
-                                  int parallel_partitions,
-                                  int nthreads) {
-    kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter, max_stretch,
-                                         nullptr, nullptr, parallel_partitions,
-                                         nthreads);
+std::tuple<float, int, int> TriangleMesh::ComputeUVAtlas(
+        size_t size,
+        float gutter,
+        float max_stretch,
+        int parallel_partitions,
+        int nthreads) {
+    return kernel::uvunwrapping::ComputeUVAtlas(*this, size, size, gutter,
+                                                max_stretch,
+                                                parallel_partitions, nthreads);
 }
 
 namespace {

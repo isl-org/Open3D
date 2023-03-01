@@ -49,15 +49,17 @@ namespace uvunwrapping {
 ///
 /// \param nthreads The number of threads used when parallel_partitions
 /// is > 1. Set to 0 for automatic number of thread detection.
-void ComputeUVAtlas(TriangleMesh& mesh,
-                    const size_t width = 512,
-                    const size_t height = 512,
-                    const float gutter = 1.0f,
-                    const float max_stretch = 1.f / 6,
-                    float* max_stretch_out = nullptr,
-                    size_t* num_charts_out = nullptr,
-                    int parallel_partitions = 1,
-                    int nthreads = 0);
+///
+/// \return Tuple with (max stretch, num_charts, num_partitions) storing the
+/// actual amount of stretch, the number of created charts, and the number of
+/// parallel partitions created.
+std::tuple<float, int, int> ComputeUVAtlas(TriangleMesh& mesh,
+                                           const size_t width = 512,
+                                           const size_t height = 512,
+                                           const float gutter = 1.0f,
+                                           const float max_stretch = 1.f / 6,
+                                           int parallel_partitions = 1,
+                                           int nthreads = 0);
 
 }  // namespace uvunwrapping
 }  // namespace kernel

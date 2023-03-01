@@ -821,11 +821,15 @@ public:
     /// \param nthreads The number of threads used
     /// when parallel_partitions is > 1. Set to 0 for automatic number of thread
     /// detection.
-    void ComputeUVAtlas(size_t size = 512,
-                        float gutter = 1.0f,
-                        float max_stretch = 1.f / 6,
-                        int parallel_partitions = 1,
-                        int nthreads = 0);
+    ///
+    /// \return Tuple with (max stretch, num_charts, num_partitions) storing the
+    /// actual amount of stretch, the number of created charts, and the number
+    /// of parallel partitions created.
+    std::tuple<float, int, int> ComputeUVAtlas(size_t size = 512,
+                                               float gutter = 1.0f,
+                                               float max_stretch = 1.f / 6,
+                                               int parallel_partitions = 1,
+                                               int nthreads = 0);
 
     /// Bake vertex attributes into textures.
     ///

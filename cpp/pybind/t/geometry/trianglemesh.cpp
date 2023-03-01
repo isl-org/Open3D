@@ -691,7 +691,10 @@ Args:
         is > 1. Set to 0 for automatic number of thread detection.
 
 Returns:
-    None. This function modifies the mesh in-place.
+    This function creates a face attribute "texture_uvs" and returns a tuple
+    with (max stretch, num_charts, num_partitions) storing the 
+    actual amount of stretch, the number of created charts, and the number of
+    parallel partitions created.
 
 Example:
     This code creates a uv map for the Stanford Bunny mesh::
@@ -855,7 +858,7 @@ Returns:
 
 Example:
     This code generates a wedge from a triangle::
-        
+
         import open3d as o3d
         triangle = o3d.t.geometry.TriangleMesh([[1.0,1.0,0.0], [0,1,0], [1,0,0]], [[0,1,2]])
         wedge = triangle.extrude_linear([0,0,1])
@@ -875,11 +878,17 @@ Args:
 
 Example:
 
-    This code computes the partitions for a mesh and visualizes them::
+    This code partitions a mesh such that each partition contains at most 20k 
+    faces::
 
         import open3d as o3d
         import numpy as np
-        TODO
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        num_partitions = mesh.pca_partition(max_faces=20000)
+
+        # print the partition ids and the number of faces for each of them.
+        print(np.unique(mesh.triangle.partition_ids.numpy(), return_counts=True))
 
 )");
 
@@ -897,12 +906,23 @@ Returns:
 
 Example:
 
-    This code partitions the mesh using PCA and then selects one of the 
-    partitions:: 
+    This code partitions the mesh using PCA and then visualized the individual 
+    parts::
 
         import open3d as o3d
         import numpy as np
-        TODO
+        bunny = o3d.data.BunnyMesh()
+        mesh = o3d.t.geometry.TriangleMesh.from_legacy(o3d.io.read_triangle_mesh(bunny.path))
+        num_partitions = mesh.pca_partition(max_faces=20000)
+
+        parts = []
+        for i in range(num_partitions):
+            mask = mesh.triangle.partition_ids == i
+            part = mesh.select_faces_by_mask(mask)
+            part.vertex.colors = np.tile(np.random.rand(3), (part.vertex.positions.shape[0],1))
+            parts.append(part)
+
+        o3d.visualization.draw(parts)
 
 )");
 }

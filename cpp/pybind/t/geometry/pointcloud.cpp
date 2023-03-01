@@ -675,16 +675,16 @@ Args:
 
 Example:
 
-    This code computes the partitions for a point cloud and visualizes them::
+    This code computes parititions a point cloud such that each partition
+    contains at most 20 points::
 
         import open3d as o3d
         import numpy as np
         pcd = o3d.t.geometry.PointCloud(np.random.rand(100,3))
-        pcd.pca_partition(max_points=20)
-        # visualize
-        pcd.point.colors = np.zeros((100,3), dtype=np.float32)
-        num_partitions = pcd.point.partition_id.max().item()
-        TODO
+        num_partitions = pcd.pca_partition(max_points=20)
+
+        # print the partition ids and the number of points for each of them.
+        print(np.unique(pcd.point.partition_ids.numpy(), return_counts=True))
 
 )");
 }

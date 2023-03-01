@@ -13,8 +13,6 @@
 #include <UVAtlas.h>
 // clang-format on
 
-#include "open3d/utility/Timer.h"
-
 namespace open3d {
 namespace t {
 namespace geometry {
@@ -141,19 +139,15 @@ void ComputeUVAtlasPartition(TriangleMesh mesh,
 }
 }  // namespace
 
-void ComputeUVAtlas(TriangleMesh& mesh,
-                    const size_t width,
-                    const size_t height,
-                    const float gutter,
-                    const float max_stretch,
-                    float* max_stretch_out,
-                    size_t* num_charts_out,
-                    int parallel_partitions,
-                    int nthreads) {
+std::tuple<float, int, int> ComputeUVAtlas(TriangleMesh& mesh,
+                                           const size_t width,
+                                           const size_t height,
+                                           const float gutter,
+                                           const float max_stretch,
+                                           int parallel_partitions,
+                                           int nthreads) {
     const int64_t num_verts = mesh.GetVertexPositions().GetLength();
 
-    utility::Timer timer;
-    timer.Start();
     // create temporary mesh for partitioning
     TriangleMesh mesh_tmp(
             mesh.GetVertexPositions().To(core::Device()).Contiguous(),
@@ -178,10 +172,6 @@ void ComputeUVAtlas(TriangleMesh& mesh,
     } else {
         mesh_partitions.emplace_back(mesh_tmp);
     }
-
-    timer.Stop();
-    timer.Print("pca partitioning");
-    timer.Start();
 
     std::vector<UVAtlasPartitionOutput> uvatlas_partitions(parallel_partitions);
 
@@ -211,10 +201,6 @@ void ComputeUVAtlas(TriangleMesh& mesh,
     } else {
         LoopFn(tbb::blocked_range<size_t>(0, parallel_partitions));
     }
-
-    timer.Stop();
-    timer.Print("compute uv partitions");
-    timer.Start();
 
     // merge outputs for the packing algorithm
     UVAtlasPartitionOutput& combined_output = uvatlas_partitions.front();
@@ -260,10 +246,6 @@ void ComputeUVAtlas(TriangleMesh& mesh,
         output = UVAtlasPartitionOutput();
     }
 
-    timer.Stop();
-    timer.Print("combine outputs");
-    timer.Start();
-
     HRESULT hr = UVAtlasPack(combined_output.vb, combined_output.ib,
                              DXGI_FORMAT_R32_UINT, width, height, gutter,
                              combined_output.partition_result_adjacency,
@@ -280,10 +262,6 @@ void ComputeUVAtlas(TriangleMesh& mesh,
         utility::LogError("UVAtlasPack failed with code 0x{:X}",
                           static_cast<uint32_t>(hr));
     }
-
-    timer.Stop();
-    timer.Print("uv pack");
-    timer.Start();
 
     auto& ib = combined_output.ib;
     auto& vb = combined_output.vb;
@@ -312,8 +290,9 @@ void ComputeUVAtlas(TriangleMesh& mesh,
 
     texture_uvs = texture_uvs.To(mesh.GetDevice());
     mesh.SetTriangleAttr("texture_uvs", texture_uvs);
-    timer.Stop();
-    timer.Print("write result");
+
+    return std::tie(combined_output.max_stretch_out,
+                    combined_output.num_charts_out, parallel_partitions);
 }
 
 }  // namespace uvunwrapping

@@ -82,7 +82,7 @@ void Split(const TReal* const points,
 std::tuple<int, core::Tensor> PCAPartition(core::Tensor& points,
                                            int max_points) {
     if (max_points <= 0) {
-        utility::LogError("max_points must be > 0 bust is {}", max_points);
+        utility::LogError("max_points must be > 0 but is {}", max_points);
     }
     core::AssertTensorDtypes(points, {core::Float32, core::Float64});
     core::AssertTensorShape(points, {utility::nullopt, 3});
