@@ -356,7 +356,6 @@ GetDopplerICPRegistrationTestData(core::Dtype& dtype, core::Device& device) {
     auto trajectory = demo_sequence.GetTrajectory();
     const core::Tensor pose_t =
             core::eigen_converter::EigenMatrixToTensor(trajectory[1].second);
-    ;
 
     const double max_correspondence_dist = 0.3;
     const double normals_search_radius = 10.0;

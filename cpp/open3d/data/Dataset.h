@@ -366,7 +366,7 @@ private:
 
 /// \class DemoDopplerICPSequence
 /// \brief Data class for `DemoDopplerICPSequence` contains an example sequence
-/// of 100 point cloud with Doppler velocity channel and corresponding ground
+/// of 100 point clouds with Doppler velocity channel and corresponding ground
 /// truth poses. The sequence was generated using the CARLA simulator.
 class DemoDopplerICPSequence : public DownloadDataset {
 public:
@@ -389,8 +389,11 @@ public:
     std::vector<std::pair<double, Eigen::Matrix4d>> GetTrajectory() const;
 
 private:
+    /// List of paths to the point clouds.
     std::vector<std::string> paths_;
+    /// Path to the calibration JSON file.
     std::string calibration_path_;
+    /// Path to the TUM ground truth trajectory text file.
     std::string trajectory_path_;
 };
 
