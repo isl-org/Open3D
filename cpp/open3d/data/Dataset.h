@@ -31,6 +31,8 @@
 #include <utility>
 #include <vector>
 
+#include "open3d/utility/Eigen.h"
+
 namespace open3d {
 namespace data {
 
@@ -376,11 +378,15 @@ public:
     std::string GetPath(std::size_t index) const;
     /// \brief Path to the calibration metadata file, containing transformation
     /// between the vehicle and sensor frames and the time period.
-    std::string GetCalibrationPath() const {
-        return calibration_path_;
-    }
+    std::string GetCalibrationPath() const { return calibration_path_; }
     /// \brief Path to the ground truth poses for the entire sequence.
     std::string GetTrajectoryPath() const { return trajectory_path_; }
+    /// \brief Returns the vehicle to sensor calibration transformation and the
+    /// time period (in secs) between sequential point cloud scans.
+    bool GetCalibration(Eigen::Matrix4d& calibration, double& period) const;
+    /// \brief Returns a list of (timestamp, pose) representing the ground truth
+    /// trajectory of the sequence.
+    std::vector<std::pair<double, Eigen::Matrix4d>> GetTrajectory() const;
 
 private:
     std::vector<std::string> paths_;
