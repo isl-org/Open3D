@@ -136,7 +136,8 @@ if __name__ == "__main__":
         o3d.utility.Vector2iVector(corres_tensor_cpu.numpy()),
         o3d.utility.Vector2iVector(corres_tensor_cuda.cpu().numpy()),
     ]:
-        print(np.asarray(corres))
+        equivalence = np.asarray(corres_legacy)[:, 1] == np.asarray(corres)[:, 1]
+        print(f'consistency to legacy: {equivalence.sum() / len(equivalence)}')
         result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
             src_down,
             dst_down,

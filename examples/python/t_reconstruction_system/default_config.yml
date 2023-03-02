@@ -6,6 +6,7 @@ multiprocessing: false
 path_dataset: ''
 depth_folder: depth
 color_folder: color
+fragment_folder: fragments
 path_intrinsic: ''
 path_color_intrinsic: ''
 fragment_size: 100

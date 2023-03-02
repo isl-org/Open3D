@@ -23,7 +23,6 @@ class PointCloud;
 
 namespace pipelines {
 namespace registration {
-class Feature;
 
 /// \class ICPConvergenceCriteria
 ///

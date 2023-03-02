@@ -47,6 +47,10 @@ class ConfigParser(configargparse.ArgParser):
             '--color_folder', type=str,
             help='Path that stores color images.')
         input_parser.add(
+            '--fragment_folder', type=str,
+            help='Path that stores reconstructed fragments.')
+
+        input_parser.add(
             '--path_intrinsic', type=str,
             help='Path to the intrinsic.json config file.'
             'If the intrinsic matrix for color image is different,'
