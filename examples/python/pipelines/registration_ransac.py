@@ -26,11 +26,12 @@ def visualize_registration(src, dst, transformation=np.eye(4)):
 def preprocess_point_cloud(pcd, voxel_size):
     pcd_down = pcd.voxel_down_sample(voxel_size)
     pcd_down.estimate_normals(
-        o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0, max_nn=30)
-    )
+        o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0,
+                                             max_nn=30))
     pcd_fpfh = o3d.pipelines.registration.compute_fpfh_feature(
         pcd_down,
-        o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 5.0, max_nn=100),
+        o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 5.0,
+                                             max_nn=100),
     )
     return (pcd_down, pcd_fpfh)
 
@@ -38,8 +39,7 @@ def preprocess_point_cloud(pcd, voxel_size):
 if __name__ == "__main__":
     pcd_data = o3d.data.DemoICPPointClouds()
     parser = argparse.ArgumentParser(
-        "Global point cloud registration example with RANSAC"
-    )
+        "Global point cloud registration example with RANSAC")
     parser.add_argument(
         "src",
         type=str,
@@ -74,9 +74,10 @@ if __name__ == "__main__":
         default=1000000,
         help="number of max RANSAC iterations",
     )
-    parser.add_argument(
-        "--confidence", type=float, default=0.999, help="RANSAC confidence"
-    )
+    parser.add_argument("--confidence",
+                        type=float,
+                        default=0.999,
+                        help="RANSAC confidence")
     parser.add_argument(
         "--mutual_filter",
         action="store_true",
@@ -105,19 +106,17 @@ if __name__ == "__main__":
         dst_fpfh,
         mutual_filter=args.mutual_filter,
         max_correspondence_distance=distance_threshold,
-        estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(
-            False
-        ),
+        estimation_method=o3d.pipelines.registration.
+        TransformationEstimationPointToPoint(False),
         ransac_n=3,
         checkers=[
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(
+                0.9),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                distance_threshold
-            ),
+                distance_threshold),
         ],
         criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(
-            args.max_iterations, args.confidence
-        ),
+            args.max_iterations, args.confidence),
     )
     visualize_registration(src, dst, result.transformation)
 
@@ -134,25 +133,22 @@ if __name__ == "__main__":
     dst_fpfh_import.data = dst_fpfh_np
 
     corres = o3d.pipelines.registration.correspondences_from_features(
-        src_fpfh_import, dst_fpfh_import, args.mutual_filter
-    )
+        src_fpfh_import, dst_fpfh_import, args.mutual_filter)
     result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
         src_down,
         dst_down,
         corres,
         max_correspondence_distance=distance_threshold,
-        estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(
-            False
-        ),
+        estimation_method=o3d.pipelines.registration.
+        TransformationEstimationPointToPoint(False),
         ransac_n=3,
         checkers=[
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(
+                0.9),
             o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                distance_threshold
-            ),
+                distance_threshold),
         ],
         criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(
-            args.max_iterations, args.confidence
-        ),
+            args.max_iterations, args.confidence),
     )
     visualize_registration(src, dst, result.transformation)
