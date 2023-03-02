@@ -69,7 +69,7 @@ void ComputePoseDopplerICPCPU(
         const core::Tensor &w_v_in_V,
         const core::Tensor &v_v_in_V,
         const double period,
-        const bool prune_correspondences,
+        const bool reject_dynamic_outliers,
         const double doppler_outlier_threshold,
         const registration::RobustKernel &kernel_geometric,
         const registration::RobustKernel &kernel_doppler,
@@ -119,7 +119,7 @@ void ComputePoseDopplerICPCUDA(
         const core::Tensor &w_v_in_V,
         const core::Tensor &v_v_in_V,
         const double period,
-        const bool prune_correspondences,
+        const bool reject_dynamic_outliers,
         const double doppler_outlier_threshold,
         const registration::RobustKernel &kernel_geometric,
         const registration::RobustKernel &kernel_doppler,
@@ -315,12 +315,6 @@ template bool GetJacobianColoredICP(const int64_t workload_idx,
                                     double &r_G,
                                     double &r_I);
 
-template <typename scalar_T>
-static void DisplayVector(std::string name, const scalar_T *vector) {
-    utility::LogDebug("{} = [{}, {}, {}]", name, vector[0], vector[1],
-                      vector[2]);
-}
-
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE inline void PreComputeForDopplerICP(
         const scalar_t *R_S_to_V,
@@ -363,7 +357,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDopplerICP(
         const scalar_t *R_S_to_V,
         const scalar_t *r_v_to_s_in_V,
         const scalar_t *v_s_in_S,
-        const bool prune_correspondences,
+        const bool reject_dynamic_outliers,
         const scalar_t doppler_outlier_threshold,
         const scalar_t &sqrt_lambda_geometric,
         const scalar_t &sqrt_lambda_doppler,
@@ -395,7 +389,7 @@ OPEN3D_HOST_DEVICE inline bool GetJacobianDopplerICP(
     const double doppler_error = doppler_in_S - doppler_pred_in_S;
 
     // Dynamic point outlier rejection.
-    if (prune_correspondences &&
+    if (reject_dynamic_outliers &&
         abs(doppler_error) > doppler_outlier_threshold) {
         // Jacobian and residual are set to 0 by default.
         return true;
@@ -451,7 +445,7 @@ template bool GetJacobianDopplerICP(const int64_t workload_idx,
                                     const float *R_S_to_V,
                                     const float *r_v_to_s_in_V,
                                     const float *v_s_in_S,
-                                    const bool prune_correspondences,
+                                    const bool reject_dynamic_outliers,
                                     const float doppler_outlier_threshold,
                                     const float &sqrt_lambda_geometric,
                                     const float &sqrt_lambda_doppler,
@@ -471,7 +465,7 @@ template bool GetJacobianDopplerICP(const int64_t workload_idx,
                                     const double *R_S_to_V,
                                     const double *r_v_to_s_in_V,
                                     const double *v_s_in_S,
-                                    const bool prune_correspondences,
+                                    const bool reject_dynamic_outliers,
                                     const double doppler_outlier_threshold,
                                     const double &sqrt_lambda_geometric,
                                     const double &sqrt_lambda_doppler,
