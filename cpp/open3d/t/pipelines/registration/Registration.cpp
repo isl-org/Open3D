@@ -21,7 +21,7 @@ namespace t {
 namespace pipelines {
 namespace registration {
 
-static RegistrationResult ComputeRegistrationResult(
+RegistrationResult ComputeRegistrationResult(
         const geometry::PointCloud &source,
         const core::nns::NearestNeighborSearch &target_nns,
         const double max_correspondence_distance,

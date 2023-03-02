@@ -15,8 +15,13 @@
 #include "open3d/t/pipelines/registration/TransformationEstimation.h"
 
 namespace open3d {
-namespace t {
+namespace core {
+namespace nns {
+class NearestNeighborSearch;
+}
+}  // namespace core
 
+namespace t {
 namespace geometry {
 class PointCloud;
 }
@@ -34,11 +39,11 @@ public:
     /// \p relative_fitness_ and \p relative_rmse_ individually, or the
     /// iteration number exceeds \p max_iteration_.
     ///
-    /// \param relative_fitness If relative change (difference) of fitness score
-    /// is lower than relative_fitness, the iteration stops.
-    /// \param relative_rmse If relative change (difference) of inliner RMSE
-    /// score is lower than relative_rmse, the iteration stops.
-    /// \param max_iteration Maximum iteration before iteration stops.
+    /// \param relative_fitness If relative change (difference) of fitness
+    /// score is lower than relative_fitness, the iteration stops. \param
+    /// relative_rmse If relative change (difference) of inliner RMSE score
+    /// is lower than relative_rmse, the iteration stops. \param
+    /// max_iteration Maximum iteration before iteration stops.
     ICPConvergenceCriteria(double relative_fitness = 1e-6,
                            double relative_rmse = 1e-6,
                            int max_iteration = 30)
@@ -83,12 +88,13 @@ public:
     core::Tensor transformation_;
     /// Tensor containing indices of corresponding target points, where the
     /// value is the target index and the index of the value itself is the
-    /// source index. It contains -1 as value at index with no correspondence.
+    /// source index. It contains -1 as value at index with no
+    /// correspondence.
     core::Tensor correspondences_;
     /// RMSE of all inlier correspondences. Lower is better.
     double inlier_rmse_;
-    /// For ICP: the overlapping area (# of inlier correspondences / # of points
-    /// in target). Higher is better.
+    /// For ICP: the overlapping area (# of inlier correspondences / # of
+    /// points in target). Higher is better.
     double fitness_;
 };
 
@@ -121,10 +127,10 @@ RegistrationResult EvaluateRegistration(
 /// `voxel_size` scale. If voxel_size < 0, original scale will be used.
 /// However it is highly recommended to down-sample the point-cloud for
 /// performance. By default original scale of the point-cloud will be used.
-/// \param callback_after_iteration Optional lambda function, saves string to
-/// tensor map of attributes such as "iteration_index", "scale_index",
-/// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on CPU
-/// device, updated after each iteration.
+/// \param callback_after_iteration Optional lambda function, saves string
+/// to tensor map of attributes such as "iteration_index", "scale_index",
+/// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on
+/// CPU device, updated after each iteration.
 RegistrationResult
 ICP(const geometry::PointCloud &source,
     const geometry::PointCloud &target,
@@ -144,9 +150,10 @@ ICP(const geometry::PointCloud &source,
 /// max_iterations) contains the stopping condition for each voxel level.
 /// The length of voxel_sizes vector, criteria vector,
 /// max_correspondence_distances vector must be same, and voxel_sizes must
-/// contain positive values in strictly decreasing order [Lower the voxel size,
-/// higher is the resolution]. Only the last value of the voxel_sizes vector can
-/// be {-1}, as it allows to run on the original scale without downsampling.
+/// contain positive values in strictly decreasing order [Lower the voxel
+/// size, higher is the resolution]. Only the last value of the voxel_sizes
+/// vector can be {-1}, as it allows to run on the original scale without
+/// downsampling.
 ///
 /// \param source The source point cloud. (Float32 or Float64 type).
 /// \param target The target point cloud. (Float32 or Float64 type).
@@ -159,10 +166,10 @@ ICP(const geometry::PointCloud &source,
 /// \param init_source_to_target Initial transformation estimation of type
 /// Float64 on CPU.
 /// \param estimation Estimation method.
-/// \param callback_after_iteration Optional lambda function, saves string to
-/// tensor map of attributes such as "iteration_index", "scale_index",
-/// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on CPU
-/// device, updated after each iteration.
+/// \param callback_after_iteration Optional lambda function, saves string
+/// to tensor map of attributes such as "iteration_index", "scale_index",
+/// "scale_iteration_index", "inlier_rmse", "fitness", "transformation", on
+/// CPU device, updated after each iteration.
 RegistrationResult MultiScaleICP(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
@@ -177,9 +184,9 @@ RegistrationResult MultiScaleICP(
                 void(const std::unordered_map<std::string, core::Tensor> &)>
                 &callback_after_iteration = nullptr);
 
-/// \brief Computes `Information Matrix`, from the transformation between source
-/// and target pointcloud. It returns the `Information Matrix` of shape {6, 6},
-/// of dtype `Float64` on device `CPU:0`.
+/// \brief Computes `Information Matrix`, from the transformation between
+/// source and target pointcloud. It returns the `Information Matrix` of
+/// shape {6, 6}, of dtype `Float64` on device `CPU:0`.
 ///
 /// \param source The source point cloud. (Float32 or Float64 type).
 /// \param target The target point cloud. (Float32 or Float64 type).
@@ -192,6 +199,11 @@ core::Tensor GetInformationMatrix(const geometry::PointCloud &source,
                                   const double max_correspondence_distance,
                                   const core::Tensor &transformation);
 
+RegistrationResult ComputeRegistrationResult(
+        const geometry::PointCloud &source,
+        const core::nns::NearestNeighborSearch &target_nns,
+        const double max_correspondence_distance,
+        const core::Tensor &transformation);
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

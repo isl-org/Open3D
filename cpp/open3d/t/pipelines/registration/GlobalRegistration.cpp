@@ -10,6 +10,7 @@
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/registration/Feature.h"
+#include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/utility/Random.h"
 
 namespace open3d {
@@ -141,58 +142,74 @@ RegistrationResult RANSACFromCorrespondences(
     const core::Tensor dummy_corres =
             core::Tensor::Arange(0, ransac_n, 1, core::Int64, host);
 
-    utility::random::UniformIntGenerator<int> rand_gen(0, n - 1);
-    auto best_result = RegistrationResult();
-    for (int itr = 0; itr < criteria.max_iteration_; ++itr) {
-        std::vector<int64_t> source_indices_vec(ransac_n);
-        std::vector<int64_t> target_indices_vec(ransac_n);
+    RegistrationResult best_result;
+    core::nns::NearestNeighborSearch target_nns(target.GetPointPositions());
+    target_nns.HybridIndex(max_correspondence_distance);
 
-        // TODO(wei): random tensor generation in
-        // Tensor.h
-        for (int s = 0; s < ransac_n; ++s) {
-            int k = rand_gen();
-            auto corres_k = corres_host[k];
-            source_indices_vec[s] = corres_k[0].Item<int64_t>();
-            target_indices_vec[s] = corres_k[1].Item<int64_t>();
+#pragma omp parallel
+    {
+        RegistrationResult best_local_result;
+        utility::random::UniformIntGenerator<int> rand_gen(0, n - 1);
+
+#pragma omp for nowait
+        for (int itr = 0; itr < criteria.max_iteration_; ++itr) {
+            std::vector<int64_t> source_indices_vec(ransac_n);
+            std::vector<int64_t> target_indices_vec(ransac_n);
+
+            // TODO(wei): random tensor generation in
+            // Tensor.h
+            for (int s = 0; s < ransac_n; ++s) {
+                int k = rand_gen();
+                auto corres_k = corres_host[k];
+                source_indices_vec[s] = corres_k[0].Item<int64_t>();
+                target_indices_vec[s] = corres_k[1].Item<int64_t>();
+            }
+
+            core::Tensor source_indices(source_indices_vec, {ransac_n},
+                                        core::Int64, host);
+            core::Tensor target_indices(target_indices_vec, {ransac_n},
+                                        core::Int64, host);
+
+            t::geometry::PointCloud source_sample =
+                    source_host.SelectByIndex(source_indices);
+            t::geometry::PointCloud target_sample =
+                    target_host.SelectByIndex(target_indices);
+
+            // Inexpensive model estimation: on host
+            core::Tensor transformation = estimation.ComputeTransformation(
+                    source_sample, target_sample, dummy_corres);
+
+            // TODO: check for filtering
+            // Inexpensive candidate check: on host
+            bool consistent = ConsistencyCheck(
+                    ransac_n, source_sample, target_sample, transformation,
+                    max_correspondence_distance, 0.9);
+            if (!consistent) continue;
+
+            // Expensive validation: should be on device
+            auto result = ComputeRegistrationResult(
+                    source.Clone().Transform(transformation), target_nns,
+                    max_correspondence_distance, transformation);
+
+            // TODO: update validation
+            if (result.IsBetterThan(best_local_result)) {
+                best_local_result = result;
+                utility::LogInfo(
+                        "RANSAC result updated at {:d} "
+                        "iters, current fitness = "
+                        "{:e}, rmse = {:e}",
+                        itr, result.fitness_, result.inlier_rmse_);
+            }
+        }  // omp nowait
+
+        // Reduce across threads
+#pragma omp critical(RANSACFromCorrespondences)
+        {
+            if (best_local_result.IsBetterThan(best_result)) {
+                best_result = best_local_result;
+            }
         }
-
-        core::Tensor source_indices(source_indices_vec, {ransac_n}, core::Int64,
-                                    host);
-        core::Tensor target_indices(target_indices_vec, {ransac_n}, core::Int64,
-                                    host);
-
-        t::geometry::PointCloud source_sample =
-                source_host.SelectByIndex(source_indices);
-        t::geometry::PointCloud target_sample =
-                target_host.SelectByIndex(target_indices);
-
-        // Inexpensive model estimation: on host
-        core::Tensor transformation = estimation.ComputeTransformation(
-                source_sample, target_sample, dummy_corres);
-
-        // TODO: check for filtering
-        // Inexpensive candidate check: on host
-        bool consistent = ConsistencyCheck(ransac_n, source_sample,
-                                           target_sample, transformation,
-                                           max_correspondence_distance, 0.9);
-        if (!consistent) continue;
-
-        // Expensive validation: should be on device
-        // TEMPORARY: on host to rule out inconsistent modules
-        auto result = EvaluateRegistration(source_host, target_host,
-                                           max_correspondence_distance,
-                                           transformation);
-
-        // TODO: update validation
-        if (result.IsBetterThan(best_result)) {
-            best_result = result;
-            utility::LogInfo(
-                    "RANSAC result updated at {:d} "
-                    "iters, current fitness = "
-                    "{:e}, rmse = {:e}",
-                    itr, result.fitness_, result.inlier_rmse_);
-        }
-    }
+    }  // omp parallel
     return best_result;
 }
 
