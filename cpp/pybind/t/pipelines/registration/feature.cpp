@@ -35,6 +35,15 @@ parameter is provided, and Hybrid search (Recommended) if both are provided.)",
              {"radius",
               "[optional] Neighbor search radius parameter. [Recommended ~5x "
               "voxel size]"}});
+
+    m.def("correspondences_from_features", &CorrespondencesFromFeatures,
+          py::call_guard<py::gil_scoped_release>(),
+          R"(Function to query nearest neighbors of source in target.)",
+          "source_features"_a, "target_features"_a);
+    docstring::FunctionDocInject(
+            m, "correspondences_from_features",
+            {{"source_features", "The source features in shape (N, dim)."},
+             {"target_features", "The target features in shape (M, dim)."}});
 }
 
 }  // namespace registration

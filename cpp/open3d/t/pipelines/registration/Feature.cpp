@@ -90,6 +90,22 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
     return fpfh;
 }
 
+core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_feats,
+                                         const core::Tensor &target_feats) {
+    core::nns::NearestNeighborSearch nns_target(target_feats);
+    nns_target.KnnIndex();
+    auto query_result = nns_target.KnnSearch(source_feats, 1);
+
+    // Change view for the appending axis
+    core::Tensor target_indices = query_result.first.View({-1, 1});
+    core::Tensor source_indices =
+            core::Tensor::Arange(0, source_feats.GetLength(), 1,
+                                 target_indices.GetDtype(),
+                                 target_indices.GetDevice())
+                    .View({-1, 1});
+    return source_indices.Append(target_indices, 1).To(core::Int64);
+}
+
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

@@ -139,6 +139,61 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
     return feature;
 }
 
+CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
+                                              const Feature &target_features,
+                                              bool mutual_filter) {
+    int num_src_pts = int(source_features.data_.cols());
+    int num_tgt_pts = int(target_features.data_.cols());
+
+    geometry::KDTreeFlann kdtree_target(target_features);
+    CorrespondenceSet corres_ij(num_src_pts);
+
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
+    for (int i = 0; i < num_src_pts; i++) {
+        std::vector<int> corres_tmp(1);
+        std::vector<double> dist_tmp(1);
+
+        kdtree_target.SearchKNN(Eigen::VectorXd(source_features.data_.col(i)),
+                                1, corres_tmp, dist_tmp);
+        int j = corres_tmp[0];
+        corres_ij[i] = Eigen::Vector2i(i, j);
+    }
+
+    if (!mutual_filter) return corres_ij;
+
+    // Do reverse check if mutual_filter is enabled
+    geometry::KDTreeFlann kdtree_source(source_features);
+    CorrespondenceSet corres_ji(num_tgt_pts);
+
+#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
+    for (int j = 0; j < num_tgt_pts; ++j) {
+        std::vector<int> corres_tmp(1);
+        std::vector<double> dist_tmp(1);
+        kdtree_source.SearchKNN(Eigen::VectorXd(target_features.data_.col(j)),
+                                1, corres_tmp, dist_tmp);
+        int i = corres_tmp[0];
+        corres_ji[j] = Eigen::Vector2i(i, j);
+    }
+
+    CorrespondenceSet corres_mutual;
+    for (int i = 0; i < num_src_pts; ++i) {
+        int j = corres_ij[i](1);
+        if (corres_ji[j](0) == i) {
+            corres_mutual.emplace_back(i, j);
+        }
+    }
+
+    // Empirically mutual correspondence set should not be too small
+    if (int(corres_mutual.size()) >= int(0.3f * num_src_pts)) {
+        utility::LogDebug("{:d} correspondences remain after mutual filter",
+                          corres_mutual.size());
+        return corres_mutual;
+    }
+    utility::LogDebug(
+            "Too few correspondences after mutual filter, fall back to "
+            "original correspondences.");
+    return corres_ij;
+}
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace open3d

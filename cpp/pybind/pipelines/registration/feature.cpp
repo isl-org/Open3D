@@ -53,6 +53,17 @@ void pybind_feature_methods(py::module &m) {
             m, "compute_fpfh_feature",
             {{"input", "The Input point cloud."},
              {"search_param", "KDTree KNN search parameter."}});
+
+    m.def("correspondences_from_features", &CorrespondencesFromFeatures,
+          "Function to find nearest neighbor correspondences from features",
+          "source_features"_a, "target_features"_a, "mutual_filter"_a = false);
+    docstring::FunctionDocInject(
+            m, "correspondences_from_features",
+            {{"source_features", "The source features stored in (dim, N)."},
+             {"target_features", "The target features stored in (dim, M)."},
+             {"mutual_filter",
+              "filter to enforce i in source and j in target are mutually the "
+              "nearest neighbor."}});
 }
 
 }  // namespace registration
