@@ -193,8 +193,7 @@ void pybind_demo_doppler_icp_sequence(py::module& m) {
                     "trajectory_path",
                     &DemoDopplerICPSequence::GetTrajectoryPath,
                     "Path to the ground truth poses for the entire sequence.");
-    docstring::ClassMethodDocInject(m, "DemoDopplerICPSequence",
-                                    "point_cloud_path");
+    docstring::ClassMethodDocInject(m, "DemoDopplerICPSequence", "paths");
     docstring::ClassMethodDocInject(m, "DemoDopplerICPSequence",
                                     "calibration_path");
     docstring::ClassMethodDocInject(m, "DemoDopplerICPSequence",
