@@ -6,6 +6,7 @@
 # ----------------------------------------------------------------------------
 
 import open3d as o3d
+import open3d.core as o3c
 
 import numpy as np
 from copy import deepcopy
@@ -23,7 +24,7 @@ def visualize_registration(src, dst, transformation=np.eye(4)):
     o3d.visualization.draw([src_trans, dst_clone])
 
 
-def preprocess_point_cloud(pcd, voxel_size):
+def preprocess_point_cloud(pcd, voxel_size, tensor_fpfh=False):
     pcd_down = pcd.voxel_down_sample(voxel_size)
     pcd_down.estimate_normals(
         o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2.0,
@@ -89,7 +90,7 @@ if __name__ == "__main__":
     voxel_size = args.voxel_size
     distance_threshold = args.distance_multiplier * voxel_size
 
-    o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
+    # o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
     print("Reading inputs")
     src = o3d.io.read_point_cloud(args.src)
     dst = o3d.io.read_point_cloud(args.dst)
@@ -98,33 +99,13 @@ if __name__ == "__main__":
     src_down, src_fpfh = preprocess_point_cloud(src, voxel_size)
     dst_down, dst_fpfh = preprocess_point_cloud(dst, voxel_size)
 
-    print("Running RANSAC from features")
-    result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-        src_down,
-        dst_down,
-        src_fpfh,
-        dst_fpfh,
-        mutual_filter=args.mutual_filter,
-        max_correspondence_distance=distance_threshold,
-        estimation_method=o3d.pipelines.registration.
-        TransformationEstimationPointToPoint(False),
-        ransac_n=3,
-        checkers=[
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(
-                0.9),
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                distance_threshold),
-        ],
-        criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(
-            args.max_iterations, args.confidence),
-    )
-    visualize_registration(src, dst, result.transformation)
-
     print("Running RANSAC from correspondences")
     # Mimic importing customized external features (e.g. learned FCGF features) in numpy
     # shape: (feature_dim, num_features)
     src_fpfh_np = np.asarray(src_fpfh.data).copy()
     dst_fpfh_np = np.asarray(dst_fpfh.data).copy()
+
+    print(src_fpfh_np)
 
     src_fpfh_import = o3d.pipelines.registration.Feature()
     src_fpfh_import.data = src_fpfh_np
@@ -132,23 +113,43 @@ if __name__ == "__main__":
     dst_fpfh_import = o3d.pipelines.registration.Feature()
     dst_fpfh_import.data = dst_fpfh_np
 
-    corres = o3d.pipelines.registration.correspondences_from_features(
+    # Legacy CPU
+    corres_legacy = o3d.pipelines.registration.correspondences_from_features(
         src_fpfh_import, dst_fpfh_import, args.mutual_filter)
-    result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
-        src_down,
-        dst_down,
-        corres,
-        max_correspondence_distance=distance_threshold,
-        estimation_method=o3d.pipelines.registration.
-        TransformationEstimationPointToPoint(False),
-        ransac_n=3,
-        checkers=[
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(
-                0.9),
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                distance_threshold),
-        ],
-        criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(
-            args.max_iterations, args.confidence),
-    )
-    visualize_registration(src, dst, result.transformation)
+
+    # Tensor CPU
+    src_fpfh_cpu = o3c.Tensor(src_fpfh_np.T).contiguous()
+    dst_fpfh_cpu = o3c.Tensor(dst_fpfh_np.T).contiguous()
+    corres_tensor_cpu = o3d.t.pipelines.registration.correspondences_from_features(
+        src_fpfh_cpu, dst_fpfh_cpu)
+
+    src_fpfh_cuda = src_fpfh_cpu.cuda()
+    dst_fpfh_cuda = dst_fpfh_cpu.cuda()
+    corres_tensor_cuda = o3d.t.pipelines.registration.correspondences_from_features(
+        src_fpfh_cuda, dst_fpfh_cuda)
+
+    for corres in [
+            corres_legacy,
+            o3d.utility.Vector2iVector(corres_tensor_cpu.numpy()),
+            o3d.utility.Vector2iVector(corres_tensor_cuda.cpu().numpy()),
+    ]:
+        print(np.asarray(corres))
+        result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
+            src_down,
+            dst_down,
+            corres,
+            max_correspondence_distance=distance_threshold,
+            estimation_method=o3d.pipelines.registration.
+            TransformationEstimationPointToPoint(False),
+            ransac_n=3,
+            checkers=[
+                o3d.pipelines.registration.
+                CorrespondenceCheckerBasedOnEdgeLength(0.9),
+                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
+                    distance_threshold),
+            ],
+            criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(
+                args.max_iterations, args.confidence),
+        )
+        print(result)
+        visualize_registration(src, dst, result.transformation)
