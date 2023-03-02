@@ -48,20 +48,22 @@ if __name__ == "__main__":
         pcd1, o3d.geometry.KDTreeSearchParamHybrid(0.1, 100)
     )
     result = o3d.pipelines.registration.registration_ransac_based_on_feature_matching(
-        pcd0, pcd1, fpfh0, fpfh1, False, 0.05,
-        o3d.pipelines.registration.TransformationEstimationPointToPoint(
-            False), 3,
+        pcd0,
+        pcd1,
+        fpfh0,
+        fpfh1,
+        False,
+        0.05,
+        o3d.pipelines.registration.TransformationEstimationPointToPoint(False),
+        3,
         [
-            o3d.pipelines.registration.
-            CorrespondenceCheckerBasedOnEdgeLength(0.9),
-            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                0.05)
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+            o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(0.05),
         ],
-        o3d.pipelines.registration.RANSACConvergenceCriteria(
-            100000, 0.999))
+        o3d.pipelines.registration.RANSACConvergenceCriteria(100000, 0.999),
+    )
     print(result)
     o3d.visualization.draw([pcd0.transform(result.transformation), pcd1])
-
 
     # Tensor
 
@@ -71,8 +73,7 @@ if __name__ == "__main__":
     fpfh0 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd0)
     fpfh1 = o3d.t.pipelines.registration.compute_fpfh_feature(pcd1)
 
-    for device in [o3d.core.Device('cuda:0'), o3d.core.Device('cpu:0')]:
-
+    for device in [o3d.core.Device("cuda:0"), o3d.core.Device("cpu:0")]:
         print("start")
         result = o3d.t.pipelines.registration.ransac_from_features(
             pcd0.to(device),
@@ -84,5 +85,9 @@ if __name__ == "__main__":
         )
         print(result)
 
-        pcd0.transform(result.transformation)
-        o3d.visualization.draw([pcd0.to_legacy(), pcd1.to_legacy()])
+        o3d.visualization.draw(
+            [
+                pcd0.clone().transform(result.transformation).to_legacy(),
+                pcd1.to_legacy(),
+            ]
+        )

@@ -117,6 +117,7 @@ if __name__ == "__main__":
     corres_legacy = o3d.pipelines.registration.correspondences_from_features(
         src_fpfh_import, dst_fpfh_import, args.mutual_filter
     )
+    corres_legacy = np.asarray(corres_legacy)
 
     # Tensor CPU
     src_fpfh_cpu = o3c.Tensor(src_fpfh_np.T).contiguous()
@@ -133,29 +134,19 @@ if __name__ == "__main__":
 
     for corres in [
         corres_legacy,
-        o3d.utility.Vector2iVector(corres_tensor_cpu.numpy()),
-        o3d.utility.Vector2iVector(corres_tensor_cuda.cpu().numpy()),
+        corres_tensor_cpu.numpy(),
+        corres_tensor_cuda.cpu().numpy(),
     ]:
-        equivalence = np.asarray(corres_legacy)[:, 1] == np.asarray(corres)[:, 1]
+        equivalence = corres_legacy[:, 1] == corres[:, 1]
         print(f'consistency to legacy: {equivalence.sum() / len(equivalence)}')
-        result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
-            src_down,
-            dst_down,
-            corres,
+        result = o3d.t.pipelines.registration.ransac_from_correspondences(
+            tsrc_down,
+            tdst_down,
+            corres.astype(np.int64),
             max_correspondence_distance=distance_threshold,
-            estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(
-                False
-            ),
-            ransac_n=3,
-            checkers=[
-                o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
-                o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                    distance_threshold
-                ),
-            ],
-            criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(
+            criteria=o3d.t.pipelines.registration.RANSACConvergenceCriteria(
                 args.max_iterations, args.confidence
             ),
         )
         print(result)
-        visualize_registration(src_down, dst_down, result.transformation)
+        visualize_registration(tsrc_down, tdst_down, result.transformation)

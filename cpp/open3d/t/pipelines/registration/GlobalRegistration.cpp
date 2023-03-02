@@ -36,8 +36,8 @@ bool ConsistencyCheck(const int ransac_n,
     auto position_diff = (source_trans_positions - target_positions);
     auto squared_dist = (position_diff * position_diff).Sum({1});
     float squared_dist_threshold = dist_threshold * dist_threshold;
-    utility::LogInfo("squared_dist: {}, thr: {}", squared_dist.ToString(),
-                     squared_dist_threshold);
+    // utility::LogInfo("squared_dist: {}, thr: {}", squared_dist.ToString(),
+    //                  squared_dist_threshold);
 
     if ((squared_dist.Gt(squared_dist_threshold).Any()).Item<bool>())
         return false;
@@ -82,8 +82,8 @@ bool ConsistencyCheck(const int ransac_n,
             dist_source_ij < dist_target_ij * squared_similarity_ratio;
     auto inconsistency_ts =
             dist_target_ij < dist_source_ij * squared_similarity_ratio;
-    utility::LogInfo("edge consistency src2dst: {}, dst2src: {}",
-                     dist_source_ij.ToString(), dist_target_ij.ToString());
+    // utility::LogInfo("edge consistency src2dst: {}, dst2src: {}",
+    //                  dist_source_ij.ToString(), dist_target_ij.ToString());
     if (inconsistency_st.LogicalOr(inconsistency_ts).Any().Item<bool>())
         return false;
 
