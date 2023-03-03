@@ -92,7 +92,7 @@ jobs:
             -DBUILD_AZURE_KINECT=ON `
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=OFF `
-            -DBUILD_JUPYTER_EXTENSION=ON `
+            -DBUILD_JUPYTER_EXTENSION=OFF `
             ${{ env.SRC_DIR }}
 
       - name: Build Python package
