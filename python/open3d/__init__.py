@@ -72,6 +72,9 @@ if _build_config["BUILD_GUI"] and sys.platform.startswith("linux") and (
     load_cdll(Path(__file__).parent / "libEGL.so.1")
     load_cdll(Path(__file__).parent / "libGL.so.1")
 
+if sys.platform == "win32":
+    load_cdll(str(next((Path(__file__).parent / "bin").glob("*.dll*"))))
+
 __DEVICE_API__ = "cpu"
 if _build_config["BUILD_CUDA_MODULE"]:
     # Load CPU pybind dll gracefully without introducing new python variable.
