@@ -38,8 +38,7 @@ def preprocess_point_cloud(pcd, voxel_size, tensor_fpfh=False):
 if __name__ == "__main__":
     pcd_data = o3d.data.DemoICPPointClouds()
     parser = argparse.ArgumentParser(
-        "Global point cloud registration example with RANSAC"
-    )
+        "Global point cloud registration example with RANSAC")
     parser.add_argument(
         "src",
         type=str,
@@ -74,9 +73,10 @@ if __name__ == "__main__":
         default=1000000,
         help="number of max RANSAC iterations",
     )
-    parser.add_argument(
-        "--confidence", type=float, default=0.999, help="RANSAC confidence"
-    )
+    parser.add_argument("--confidence",
+                        type=float,
+                        default=0.999,
+                        help="RANSAC confidence")
     parser.add_argument(
         "--mutual_filter",
         action="store_true",
@@ -115,26 +115,23 @@ if __name__ == "__main__":
 
     # Legacy CPU
     corres_legacy = o3d.pipelines.registration.correspondences_from_features(
-        src_fpfh_import, dst_fpfh_import, args.mutual_filter
-    )
+        src_fpfh_import, dst_fpfh_import, args.mutual_filter)
 
     # Tensor CPU
     src_fpfh_cpu = o3c.Tensor(src_fpfh_np.T).contiguous()
     dst_fpfh_cpu = o3c.Tensor(dst_fpfh_np.T).contiguous()
     corres_tensor_cpu = o3d.t.pipelines.registration.correspondences_from_features(
-        src_fpfh_cpu, dst_fpfh_cpu
-    )
+        src_fpfh_cpu, dst_fpfh_cpu)
 
     src_fpfh_cuda = src_fpfh_cpu.cuda()
     dst_fpfh_cuda = dst_fpfh_cpu.cuda()
     corres_tensor_cuda = o3d.t.pipelines.registration.correspondences_from_features(
-        src_fpfh_cuda, dst_fpfh_cuda
-    )
+        src_fpfh_cuda, dst_fpfh_cuda)
 
     for corres in [
-        corres_legacy,
-        o3d.utility.Vector2iVector(corres_tensor_cpu.numpy()),
-        o3d.utility.Vector2iVector(corres_tensor_cuda.cpu().numpy()),
+            corres_legacy,
+            o3d.utility.Vector2iVector(corres_tensor_cpu.numpy()),
+            o3d.utility.Vector2iVector(corres_tensor_cuda.cpu().numpy()),
     ]:
         print(np.asarray(corres))
         result = o3d.pipelines.registration.registration_ransac_based_on_correspondence(
@@ -142,19 +139,17 @@ if __name__ == "__main__":
             dst_down,
             corres,
             max_correspondence_distance=distance_threshold,
-            estimation_method=o3d.pipelines.registration.TransformationEstimationPointToPoint(
-                False
-            ),
+            estimation_method=o3d.pipelines.registration.
+            TransformationEstimationPointToPoint(False),
             ransac_n=3,
             checkers=[
-                o3d.pipelines.registration.CorrespondenceCheckerBasedOnEdgeLength(0.9),
+                o3d.pipelines.registration.
+                CorrespondenceCheckerBasedOnEdgeLength(0.9),
                 o3d.pipelines.registration.CorrespondenceCheckerBasedOnDistance(
-                    distance_threshold
-                ),
+                    distance_threshold),
             ],
             criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(
-                args.max_iterations, args.confidence
-            ),
+                args.max_iterations, args.confidence),
         )
         print(result)
         visualize_registration(src_down, dst_down, result.transformation)
