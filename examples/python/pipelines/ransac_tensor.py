@@ -90,8 +90,8 @@ if __name__ == "__main__":
 
     # o3d.utility.set_verbosity_level(o3d.utility.VerbosityLevel.Debug)
     print("Reading inputs")
-    tsrc = o3d.t.io.read_point_cloud(args.src).cuda()
-    tdst = o3d.t.io.read_point_cloud(args.dst).cuda()
+    tsrc = o3d.t.io.read_point_cloud(args.src).cpu()
+    tdst = o3d.t.io.read_point_cloud(args.dst).cpu()
 
     print("Downsampling inputs")
     tsrc_down, tsrc_fpfh = preprocess_point_cloud(tsrc, voxel_size)
@@ -114,23 +114,34 @@ if __name__ == "__main__":
     dst_fpfh_import.data = dst_fpfh_np
 
     # Legacy CPU
+    import time
+    start = time.time()
     corres_legacy = o3d.pipelines.registration.correspondences_from_features(
         src_fpfh_import, dst_fpfh_import, args.mutual_filter
     )
+    end = time.time()
+    print('legacy feature matching:', end - start)
     corres_legacy = np.asarray(corres_legacy)
 
     # Tensor CPU
     src_fpfh_cpu = o3c.Tensor(src_fpfh_np.T).contiguous()
     dst_fpfh_cpu = o3c.Tensor(dst_fpfh_np.T).contiguous()
+    start = time.time()
     corres_tensor_cpu = o3d.t.pipelines.registration.correspondences_from_features(
         src_fpfh_cpu, dst_fpfh_cpu
     )
+    end = time.time()
+    print('tensor feature matching cpu:', end - start)
 
     src_fpfh_cuda = src_fpfh_cpu.cuda()
     dst_fpfh_cuda = dst_fpfh_cpu.cuda()
+    start = time.time()
     corres_tensor_cuda = o3d.t.pipelines.registration.correspondences_from_features(
         src_fpfh_cuda, dst_fpfh_cuda
     )
+    end = time.time()
+    print('tensor feature matching cuda:', end - start)
+
 
     for corres in [
         corres_legacy,
@@ -139,6 +150,8 @@ if __name__ == "__main__":
     ]:
         equivalence = corres_legacy[:, 1] == corres[:, 1]
         print(f'consistency to legacy: {equivalence.sum() / len(equivalence)}')
+        import time
+        start = time.time()
         result = o3d.t.pipelines.registration.ransac_from_correspondences(
             tsrc_down,
             tdst_down,
@@ -148,5 +161,6 @@ if __name__ == "__main__":
                 args.max_iterations, args.confidence
             ),
         )
-        print(result)
+        end = time.time()
+        print(result, end - start)
         visualize_registration(tsrc_down, tdst_down, result.transformation)

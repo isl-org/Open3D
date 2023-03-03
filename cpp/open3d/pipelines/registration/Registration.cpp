@@ -13,6 +13,7 @@
 #include "open3d/utility/Logging.h"
 #include "open3d/utility/Parallel.h"
 #include "open3d/utility/Random.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace pipelines {
@@ -187,7 +188,10 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
     RegistrationResult best_result;
     geometry::KDTreeFlann kdtree(target);
     int est_k_global = criteria.max_iteration_;
-    int total_validation = 0;
+    int total_validations = 0;
+    float total_proposal_time = 0;
+    float total_check_time = 0;
+    float total_validation_time = 0;
 
 #pragma omp parallel
     {
@@ -197,9 +201,16 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
         utility::random::UniformIntGenerator<int> rand_gen(0,
                                                            corres.size() - 1);
 
+        int local_validations = 0;
+        float local_proposal_time = 0;
+        float local_check_time = 0;
+        float local_validation_time = 0;
+        utility::Timer timer;
+
 #pragma omp for nowait
         for (int itr = 0; itr < criteria.max_iteration_; itr++) {
             if (itr < est_k_global) {
+                timer.Start();
                 for (int j = 0; j < ransac_n; j++) {
                     ransac_corres[j] = corres[rand_gen()];
                 }
@@ -207,24 +218,35 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 Eigen::Matrix4d transformation =
                         estimation.ComputeTransformation(source, target,
                                                          ransac_corres);
+                timer.Stop();
+                local_proposal_time += timer.GetDurationInSecond();
 
+                timer.Start();
                 // Check transformation: inexpensive
                 bool check = true;
                 for (const auto &checker : checkers) {
                     if (!checker.get().Check(source, target, ransac_corres,
                                              transformation)) {
                         check = false;
+                        timer.Stop();
+                        local_check_time += timer.GetDurationInSecond();
                         break;
                     }
                 }
+                timer.Stop();
+                local_check_time += timer.GetDurationInSecond();
                 if (!check) continue;
 
+                timer.Start();
                 // Expensive validation
                 geometry::PointCloud pcd = source;
                 pcd.Transform(transformation);
                 auto result = GetRegistrationResultAndCorrespondences(
                         pcd, target, kdtree, max_correspondence_distance,
                         transformation);
+                timer.Stop();
+                local_validation_time += timer.GetDurationInSecond();
+                local_validations++;
 
                 if (result.IsBetterRANSACThan(best_result_local)) {
                     best_result_local = result;
@@ -255,7 +277,7 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
                 }
 #pragma omp critical
                 {
-                    total_validation += 1;
+                    // total_validation += 1;
                     if (est_k_local < est_k_global) {
                         est_k_global = est_k_local;
                     }
@@ -265,15 +287,28 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 
 #pragma omp critical(RegistrationRANSACBasedOnCorrespondence)
         {
+            total_validations += local_validations;
+
+            total_proposal_time += local_proposal_time;
+            total_check_time += local_check_time;
+            total_validation_time += local_validation_time;
+
             if (best_result_local.IsBetterRANSACThan(best_result)) {
                 best_result = best_result_local;
             }
         }
     }
+
+    utility::LogInfo(
+            "Average proposal time: {}, check time: {}, validation time: "
+            "{}",
+            total_proposal_time / criteria.max_iteration_,
+            total_check_time / criteria.max_iteration_,
+            total_validation_time / total_validations);
     utility::LogDebug(
             "RANSAC exits after {:d} validations. Best inlier ratio {:e}, "
             "RMSE {:e}",
-            total_validation, best_result.fitness_, best_result.inlier_rmse_);
+            total_validations, best_result.fitness_, best_result.inlier_rmse_);
     return best_result;
 }
 

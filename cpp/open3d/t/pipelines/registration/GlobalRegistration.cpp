@@ -12,6 +12,7 @@
 #include "open3d/t/pipelines/registration/Feature.h"
 #include "open3d/t/pipelines/registration/Registration.h"
 #include "open3d/utility/Random.h"
+#include "open3d/utility/Timer.h"
 
 namespace open3d {
 namespace t {
@@ -129,6 +130,9 @@ RegistrationResult RANSACFromCorrespondences(
     // TODO: allow parameter (?)
     const int ransac_n = 3;
 
+    utility::LogInfo("source device: {}", source.GetDevice().ToString());
+    utility::LogInfo("target device: {}", target.GetDevice().ToString());
+
     core::Device host("CPU:0");
 
     // Move to host for easier memcopy/computation
@@ -146,10 +150,22 @@ RegistrationResult RANSACFromCorrespondences(
     core::nns::NearestNeighborSearch target_nns(target.GetPointPositions());
     target_nns.HybridIndex(max_correspondence_distance);
 
+    int total_validations = 0;
+    float total_proposal_time = 0;
+    float total_transform_time = 0;
+    float total_check_time = 0;
+    float total_validation_time = 0;
 #pragma omp parallel
     {
         RegistrationResult best_local_result;
         utility::random::UniformIntGenerator<int> rand_gen(0, n - 1);
+        int local_validations = 0;
+
+        float local_proposal_time = 0;
+        float local_transform_time = 0;
+        float local_check_time = 0;
+        float local_validation_time = 0;
+        utility::Timer timer;
 
 #pragma omp for nowait
         for (int itr = 0; itr < criteria.max_iteration_; ++itr) {
@@ -158,6 +174,7 @@ RegistrationResult RANSACFromCorrespondences(
 
             // TODO(wei): random tensor generation in
             // Tensor.h
+            timer.Start();
             for (int s = 0; s < ransac_n; ++s) {
                 int k = rand_gen();
                 auto corres_k = corres_host[k];
@@ -174,22 +191,34 @@ RegistrationResult RANSACFromCorrespondences(
                     source_host.SelectByIndex(source_indices);
             t::geometry::PointCloud target_sample =
                     target_host.SelectByIndex(target_indices);
+            timer.Stop();
+            local_proposal_time += timer.GetDurationInSecond();
 
             // Inexpensive model estimation: on host
+            timer.Start();
             core::Tensor transformation = estimation.ComputeTransformation(
                     source_sample, target_sample, dummy_corres);
+            timer.Stop();
+            local_transform_time += timer.GetDurationInSecond();
 
             // TODO: check for filtering
             // Inexpensive candidate check: on host
+            timer.Start();
             bool consistent = ConsistencyCheck(
                     ransac_n, source_sample, target_sample, transformation,
                     max_correspondence_distance, 0.9);
+            timer.Stop();
+            local_check_time += timer.GetDurationInSecond();
             if (!consistent) continue;
 
             // Expensive validation: should be on device
+            timer.Start();
             auto result = ComputeRegistrationResult(
                     source.Clone().Transform(transformation), target_nns,
                     max_correspondence_distance, transformation);
+            timer.Stop();
+            local_validations++;
+            local_validation_time += timer.GetDurationInSecond();
 
             // TODO: update validation
             if (result.IsBetterThan(best_local_result)) {
@@ -208,8 +237,23 @@ RegistrationResult RANSACFromCorrespondences(
             if (best_local_result.IsBetterThan(best_result)) {
                 best_result = best_local_result;
             }
+            total_validations += local_validations;
+
+            total_transform_time += local_transform_time;
+            total_proposal_time += local_proposal_time;
+            total_check_time += local_check_time;
+            total_validation_time += local_validation_time;
         }
     }  // omp parallel
+
+    utility::LogInfo("Total validations: {}", total_validations);
+    utility::LogInfo(
+            "Average proposal time: {}, transform time: {} check time: {}, "
+            "validation time: {}",
+            total_proposal_time / criteria.max_iteration_,
+            total_transform_time / criteria.max_iteration_,
+            total_check_time / criteria.max_iteration_,
+            total_validation_time / total_validations);
     return best_result;
 }
 
