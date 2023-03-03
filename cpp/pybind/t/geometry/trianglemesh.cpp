@@ -897,7 +897,6 @@ Example:
             R"(Returns a new mesh with the faces selected by a boolean mask.
 
 Args:
-    mask ()
     mask (open3d.core.Tensor): A boolean mask with the shape (N) with N as the 
         number of faces in the mesh.
     
