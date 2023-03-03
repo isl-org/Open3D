@@ -93,6 +93,7 @@ jobs:
             -DBUILD_LIBREALSENSE=ON `
             -DBUILD_WEBRTC=OFF `
             -DBUILD_JUPYTER_EXTENSION=OFF `
+            -DBUILD_EXAMPLES=OFF `
             ${{ env.SRC_DIR }}
 
       - name: Build Python package
