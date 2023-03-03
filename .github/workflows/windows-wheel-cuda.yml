@@ -1,4 +1,4 @@
-name: Windows wheel
+name: Windows CUDA wheel
 
 on:
   workflow_dispatch:
@@ -35,7 +35,7 @@ env:
   GCE_CLI_GHA_VERSION: '416.0.0'      # Fixed to avoid dependency on API changes
 
 jobs:
-  build-wheel:
+  build-cuda-wheel:
     name: Build wheel
     runs-on: windows-2019
     strategy:
