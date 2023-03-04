@@ -136,8 +136,10 @@ void pybind_registration_classes(py::module &m) {
            "correspondences.");
     te.def("compute_transformation",
            &TransformationEstimation::ComputeTransformation, "source"_a,
-           "target"_a, "correspondences"_a, "current_transform"_a,
-           "iteration"_a,
+           "target"_a, "correspondences"_a,
+           "current_transform"_a =
+                   core::Tensor::Eye(4, core::Float64, core::Device("CPU:0")),
+           "iteration"_a = 0,
            "Compute transformation from source to target point cloud given "
            "correspondences.");
     docstring::ClassMethodDocInject(m, "TransformationEstimation",
