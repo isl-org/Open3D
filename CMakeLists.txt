@@ -361,7 +361,8 @@ else()
     set(Open3D_INSTALL_INCLUDE_DIR include)
     set(Open3D_INSTALL_BIN_DIR bin)
     set(Open3D_INSTALL_LIB_DIR lib)
-    set(Open3D_INSTALL_RESOURCE_DIR bin/resources)
+    # Put resources in */bin, with executables / DLLs
+    set(Open3D_INSTALL_RESOURCE_DIR bin)
     set(Open3D_INSTALL_CMAKE_DIR CMake)
 endif()
 
