@@ -173,6 +173,12 @@ install(FILES
         "${PROJECT_BINARY_DIR}/Open3DConfigVersion.cmake"
         DESTINATION "${Open3D_INSTALL_CMAKE_DIR}" COMPONENT dev)
 
+# Install GUI resources
+if (BUILD_GUI)
+    install(DIRECTORY ${GUI_RESOURCE_DIR}
+         DESTINATION "${Open3D_INSTALL_RESOURCE_DIR}")
+endif()
+
 if (BUILD_SHARED_LIBS AND UNIX)
     file(CONFIGURE OUTPUT Open3D.pc.in
          CONTENT [=[
