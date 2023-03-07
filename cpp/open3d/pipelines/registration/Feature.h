@@ -63,11 +63,22 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
 /// \param target_features (D, M) feature
 /// \param mutual_filter Boolean flag, only return correspondences s.t. i and j
 /// are mutually the nearest neighbor
-/// \return A CorrespondenceSet, where the first column is arange(0, N) of
-/// source, and the second column is the corresponding index of target.
-CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
-                                              const Feature &target_features,
-                                              bool mutual_filter = false);
+/// \param mutual_filter Boolean flag, only return correspondences (i, j) s.t.
+/// source_features[i] and target_features[j] are mutually the nearest neighbor.
+/// \param mutual_consistency_ratio Float threshold to decide whether the number
+/// of correspondences is sufficient. Only used when mutual_filter is set to
+/// True.
+/// \return A CorrespondenceSet. When mutual_filter is disabled: the first
+/// column is arange(0, N) of source, and the second column is the corresponding
+/// index of target. When mutual_filter is enabled, return the filtering subset
+/// of the aforementioned correspondence set where source[i] and target[j] are
+/// mutually the nearest neighbor. If the subset size is smaller than
+/// mutual_consistency_ratio * N, return the unfiltered set.
+CorrespondenceSet CorrespondencesFromFeatures(
+        const Feature &source_features,
+        const Feature &target_features,
+        bool mutual_filter = false,
+        float mutual_consistency_ratio = 0.3);
 
 }  // namespace registration
 }  // namespace pipelines

@@ -141,7 +141,8 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
 
 CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
                                               const Feature &target_features,
-                                              bool mutual_filter) {
+                                              bool mutual_filter,
+                                              float mutual_consistent_ratio) {
     int num_src_pts = int(source_features.data_.cols());
     int num_tgt_pts = int(target_features.data_.cols());
 
@@ -184,12 +185,13 @@ CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
     }
 
     // Empirically mutual correspondence set should not be too small
-    if (int(corres_mutual.size()) >= int(0.3f * num_src_pts)) {
+    if (int(corres_mutual.size()) >=
+        int(mutual_consistent_ratio * num_src_pts)) {
         utility::LogDebug("{:d} correspondences remain after mutual filter",
                           corres_mutual.size());
         return corres_mutual;
     }
-    utility::LogDebug(
+    utility::LogWarning(
             "Too few correspondences after mutual filter, fall back to "
             "original correspondences.");
     return corres_ij;

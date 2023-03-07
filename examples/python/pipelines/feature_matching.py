@@ -105,8 +105,6 @@ if __name__ == "__main__":
     src_fpfh_np = np.asarray(src_fpfh.data).copy()
     dst_fpfh_np = np.asarray(dst_fpfh.data).copy()
 
-    print(src_fpfh_np)
-
     src_fpfh_import = o3d.pipelines.registration.Feature()
     src_fpfh_import.data = src_fpfh_np
 
@@ -115,18 +113,26 @@ if __name__ == "__main__":
 
     # Legacy CPU
     corres_legacy = o3d.pipelines.registration.correspondences_from_features(
-        src_fpfh_import, dst_fpfh_import, args.mutual_filter)
+        src_fpfh_import, dst_fpfh_import, args.mutual_filter, 0.1)
+    print(np.asarray(corres_legacy).shape)
 
     # Tensor CPU
     src_fpfh_cpu = o3c.Tensor(src_fpfh_np.T).contiguous()
     dst_fpfh_cpu = o3c.Tensor(dst_fpfh_np.T).contiguous()
+    corres_ij = o3d.t.pipelines.registration.correspondences_from_features(
+        src_fpfh_cpu, dst_fpfh_cpu, False, 0.1)
+    corres_ji = o3d.t.pipelines.registration.correspondences_from_features(
+        dst_fpfh_cpu, src_fpfh_cpu, False, 0.1)
+    # import ipdb; ipdb.set_trace();
+
     corres_tensor_cpu = o3d.t.pipelines.registration.correspondences_from_features(
-        src_fpfh_cpu, dst_fpfh_cpu)
+        src_fpfh_cpu, dst_fpfh_cpu, args.mutual_filter, 0.1)
 
     src_fpfh_cuda = src_fpfh_cpu.cuda()
     dst_fpfh_cuda = dst_fpfh_cpu.cuda()
     corres_tensor_cuda = o3d.t.pipelines.registration.correspondences_from_features(
-        src_fpfh_cuda, dst_fpfh_cuda)
+        src_fpfh_cuda, dst_fpfh_cuda, args.mutual_filter, 0.1)
+    print(corres_tensor_cuda.shape)
 
     for corres in [
             corres_legacy,

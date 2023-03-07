@@ -56,14 +56,20 @@ void pybind_feature_methods(py::module &m) {
 
     m.def("correspondences_from_features", &CorrespondencesFromFeatures,
           "Function to find nearest neighbor correspondences from features",
-          "source_features"_a, "target_features"_a, "mutual_filter"_a = false);
+          "source_features"_a, "target_features"_a, "mutual_filter"_a = false,
+          "mutual_consistency_ratio"_a = 0.3f);
     docstring::FunctionDocInject(
             m, "correspondences_from_features",
             {{"source_features", "The source features stored in (dim, N)."},
              {"target_features", "The target features stored in (dim, M)."},
              {"mutual_filter",
-              "filter to enforce i in source and j in target are mutually the "
-              "nearest neighbor."}});
+              "filter correspondences and return the collection of (i, j) s.t. "
+              "source_features[i] and target_features[j] are mutually the "
+              "nearest neighbor."},
+             {"mutual_consistency_ratio",
+              "Threshold to decide whether the number of filtered "
+              "correspondences is sufficient. Only used when mutual_filter is "
+              "enabled."}});
 }
 
 }  // namespace registration

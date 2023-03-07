@@ -42,10 +42,24 @@ core::Tensor ComputeFPFHFeature(
 /// object, in order to query source.
 /// \param source_feats (N, D) tensor
 /// \param target_feats (M, D) tensor
-/// \return (N, 2, Int64) tensor, where the first column is arange(0, N) of
-/// source, and the second column is the corresponding index of target.
-core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_feats,
-                                         const core::Tensor &target_feats);
+/// \param mutual_filter Boolean flag, only return correspondences (i, j) s.t.
+/// source_features[i] and target_features[j] are mutually the nearest neighbor.
+/// \param mutual_consistency_ratio Float threshold to decide whether the number
+/// of correspondences is sufficient. Only used when mutual_filter is set to
+/// True.
+/// \param mutual_consistency_ratio Float threshold to decide whether the number
+/// of correspondences is sufficient. Only used when mutual_filter is set to
+/// True.
+/// \return (K, 2, Int64) tensor. When mutual_filter is disabled: the first
+/// column is arange(0, N) of source, and the second column is the corresponding
+/// index of target. When mutual_filter is enabled, return the filtering subset
+/// of the aforementioned correspondence set where source[i] and target[j] are
+/// mutually the nearest neighbor. If the subset size is smaller than
+/// mutual_consistency_ratio * N, return the unfiltered set.
+core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_features,
+                                         const core::Tensor &target_features,
+                                         bool mutual_filter = false,
+                                         float mutual_consistency_ratio = 0.3);
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

@@ -91,19 +91,49 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
 }
 
 core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_feats,
-                                         const core::Tensor &target_feats) {
-    core::nns::NearestNeighborSearch nns_target(target_feats);
+                                         const core::Tensor &target_feats,
+                                         bool mutual_filter,
+                                         float mutual_consistent_ratio) {
+    core::nns::NearestNeighborSearch nns_target(target_feats,
+                                                core::Dtype::Int64);
     nns_target.KnnIndex();
-    auto query_result = nns_target.KnnSearch(source_feats, 1);
+    auto target_result = nns_target.KnnSearch(source_feats, 1);
+
+    core::Tensor corres_ij = target_result.first.View({-1});
+    core::Tensor arange_source =
+            core::Tensor::Arange(0, source_feats.GetLength(), 1,
+                                 corres_ij.GetDtype(), corres_ij.GetDevice());
 
     // Change view for the appending axis
-    core::Tensor target_indices = query_result.first.View({-1, 1});
-    core::Tensor source_indices =
-            core::Tensor::Arange(0, source_feats.GetLength(), 1,
-                                 target_indices.GetDtype(),
-                                 target_indices.GetDevice())
-                    .View({-1, 1});
-    return source_indices.Append(target_indices, 1).To(core::Int64);
+    core::Tensor result_ij =
+            arange_source.View({-1, 1}).Append(corres_ij.View({-1, 1}), 1);
+
+    if (!mutual_filter) {
+        return result_ij;
+    }
+
+    core::nns::NearestNeighborSearch nns_source(source_feats,
+                                                core::Dtype::Int64);
+    nns_source.KnnIndex();
+    auto source_result = nns_source.KnnSearch(target_feats, 1);
+    core::Tensor corres_ji = source_result.first.View({-1});
+
+    // Mutually consistent
+    core::Tensor corres_ii = corres_ji.IndexGet({corres_ij});
+
+    core::Tensor identical = corres_ii.Eq(arange_source);
+    core::Tensor result = corres_ij.IndexGet({identical});
+    if (result.GetLength() >
+        mutual_consistent_ratio * arange_source.GetLength()) {
+        return arange_source.IndexGet({identical})
+                .View({-1, 1})
+                .Append(result.View({-1, 1}), 1);
+    }
+    // fall back to full correspondences
+    utility::LogWarning(
+            "Too few correspondences after mutual filter, fall back to "
+            "original correspondences.");
+    return result_ij;
 }
 
 }  // namespace registration
