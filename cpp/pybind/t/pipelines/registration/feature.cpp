@@ -40,7 +40,7 @@ parameter is provided, and Hybrid search (Recommended) if both are provided.)",
           py::call_guard<py::gil_scoped_release>(),
           R"(Function to query nearest neighbors of source_features in target_features.)",
           "source_features"_a, "target_features"_a, "mutual_filter"_a = false,
-          "mutual_consistency_ratio"_a = 0.3f);
+          "mutual_consistency_ratio"_a = 0.1f);
     docstring::FunctionDocInject(
             m, "correspondences_from_features",
             {{"source_features", "The source features in shape (N, dim)."},

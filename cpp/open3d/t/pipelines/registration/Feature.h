@@ -59,7 +59,7 @@ core::Tensor ComputeFPFHFeature(
 core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_features,
                                          const core::Tensor &target_features,
                                          bool mutual_filter = false,
-                                         float mutual_consistency_ratio = 0.3);
+                                         float mutual_consistency_ratio = 0.1);
 }  // namespace registration
 }  // namespace pipelines
 }  // namespace t

@@ -78,7 +78,7 @@ CorrespondenceSet CorrespondencesFromFeatures(
         const Feature &source_features,
         const Feature &target_features,
         bool mutual_filter = false,
-        float mutual_consistency_ratio = 0.3);
+        float mutual_consistency_ratio = 0.1);
 
 }  // namespace registration
 }  // namespace pipelines

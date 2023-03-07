@@ -57,7 +57,7 @@ void pybind_feature_methods(py::module &m) {
     m.def("correspondences_from_features", &CorrespondencesFromFeatures,
           "Function to find nearest neighbor correspondences from features",
           "source_features"_a, "target_features"_a, "mutual_filter"_a = false,
-          "mutual_consistency_ratio"_a = 0.3f);
+          "mutual_consistency_ratio"_a = 0.1f);
     docstring::FunctionDocInject(
             m, "correspondences_from_features",
             {{"source_features", "The source features stored in (dim, N)."},

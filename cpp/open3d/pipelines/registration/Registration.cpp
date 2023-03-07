@@ -280,8 +280,8 @@ RegistrationResult RegistrationRANSACBasedOnCorrespondence(
 RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
         const geometry::PointCloud &source,
         const geometry::PointCloud &target,
-        const Feature &source_feature,
-        const Feature &target_feature,
+        const Feature &source_features,
+        const Feature &target_features,
         bool mutual_filter,
         double max_correspondence_distance,
         const TransformationEstimation
@@ -296,7 +296,7 @@ RegistrationResult RegistrationRANSACBasedOnFeatureMatching(
     }
 
     CorrespondenceSet corres = CorrespondencesFromFeatures(
-            source_feature, target_feature, mutual_filter);
+            source_features, target_features, mutual_filter);
 
     return RegistrationRANSACBasedOnCorrespondence(
             source, target, corres, max_correspondence_distance, estimation,

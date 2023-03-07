@@ -90,18 +90,18 @@ core::Tensor ComputeFPFHFeature(const geometry::PointCloud &input,
     return fpfh;
 }
 
-core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_feats,
-                                         const core::Tensor &target_feats,
+core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_features,
+                                         const core::Tensor &target_features,
                                          bool mutual_filter,
                                          float mutual_consistent_ratio) {
-    core::nns::NearestNeighborSearch nns_target(target_feats,
+    core::nns::NearestNeighborSearch nns_target(target_features,
                                                 core::Dtype::Int64);
     nns_target.KnnIndex();
-    auto target_result = nns_target.KnnSearch(source_feats, 1);
+    auto target_result = nns_target.KnnSearch(source_features, 1);
 
     core::Tensor corres_ij = target_result.first.View({-1});
     core::Tensor arange_source =
-            core::Tensor::Arange(0, source_feats.GetLength(), 1,
+            core::Tensor::Arange(0, source_features.GetLength(), 1,
                                  corres_ij.GetDtype(), corres_ij.GetDevice());
 
     // Change view for the appending axis
@@ -112,10 +112,10 @@ core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_feats,
         return result_ij;
     }
 
-    core::nns::NearestNeighborSearch nns_source(source_feats,
+    core::nns::NearestNeighborSearch nns_source(source_features,
                                                 core::Dtype::Int64);
     nns_source.KnnIndex();
-    auto source_result = nns_source.KnnSearch(target_feats, 1);
+    auto source_result = nns_source.KnnSearch(target_features, 1);
     core::Tensor corres_ji = source_result.first.View({-1});
 
     // Mutually consistent
