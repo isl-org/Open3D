@@ -18,6 +18,8 @@ def draw(geometry=None,
          eye=None,
          up=None,
          field_of_view=60.0,
+         intrinsic_matrix=None,
+         extrinsic_matrix=None,
          bg_color=(1.0, 1.0, 1.0, 1.0),
          bg_image=None,
          ibl=None,
@@ -65,6 +67,8 @@ def draw(geometry=None,
     w.reset_camera_to_default()  # make sure far/near get setup nicely
     if lookat is not None and eye is not None and up is not None:
         w.setup_camera(field_of_view, lookat, eye, up)
+    elif intrinsic_matrix is not None and extrinsic_matrix is not None:
+        w.setup_camera(intrinsic_matrix, extrinsic_matrix, width, height)
 
     w.animation_time_step = animation_time_step
     if animation_duration is not None:
