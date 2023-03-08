@@ -2045,7 +2045,7 @@ struct O3DVisualizer::Impl {
             }
             if (o.model.get()) {
                 for (auto &g : o.model->meshes_) {
-                    pickable.emplace_back(o.name, g.mesh.get(),
+                    pickable.emplace_back(g.mesh_name, g.mesh.get(),
                                           o.tgeometry.get());
                 }
             } else {
