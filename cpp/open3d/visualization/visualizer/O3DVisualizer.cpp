@@ -2026,12 +2026,32 @@ struct O3DVisualizer::Impl {
 
     void UpdateSelectableGeometry() {
         std::vector<SceneWidget::PickableGeometry> pickable;
-        pickable.reserve(objects_.size());
+        // Count number of meshes stored in TriangleMeshModels
+        size_t model_mesh_count = 0;
+        size_t model_count = 0;
         for (auto &o : objects_) {
             if (!IsGeometryVisible(o)) {
                 continue;
             }
-            pickable.emplace_back(o.name, o.geometry.get(), o.tgeometry.get());
+            if (o.model.get()) {
+                model_count++;
+                model_mesh_count += o.model.get()->meshes_.size();
+            }
+        }
+        pickable.reserve(objects_.size() + model_mesh_count - model_count);
+        for (auto &o : objects_) {
+            if (!IsGeometryVisible(o)) {
+                continue;
+            }
+            if (o.model.get()) {
+                for (auto &g : o.model->meshes_) {
+                    pickable.emplace_back(g.mesh_name, g.mesh.get(),
+                                          o.tgeometry.get());
+                }
+            } else {
+                pickable.emplace_back(o.name, o.geometry.get(),
+                                      o.tgeometry.get());
+            }
         }
         selections_->SetSelectableGeometry(pickable);
     }
