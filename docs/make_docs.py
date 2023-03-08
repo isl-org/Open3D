@@ -312,8 +312,6 @@ class PyExampleDocsBuilder:
                       f"\n.. literalinclude:: {example.stem}.py"
                       f"\n   :language: python"
                       f"\n   :linenos:"
-                      f"\n   :lineno-start: 27"
-                      f"\n   :lines: 27-"
                       f"\n\n\n")
 
         with open(output_path / "index.rst", "a") as f:

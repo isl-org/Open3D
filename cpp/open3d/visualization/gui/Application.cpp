@@ -87,7 +87,10 @@ std::string FindResourcePath(int argc, const char *argv[]) {
 
     auto resource_path = path + "/resources";
     if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
-        return path + "/../resources";  // building with Xcode
+        resource_path = path + "/../resources";  // building with Xcode
+        if (!open3d::utility::filesystem::DirectoryExists(resource_path)) {
+            resource_path = path + "/share/resources";  // GNU
+        }
     }
     return resource_path;
 }

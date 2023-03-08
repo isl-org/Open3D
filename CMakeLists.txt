@@ -354,11 +354,15 @@ if(UNIX OR CYGWIN)
     set(Open3D_INSTALL_INCLUDE_DIR "${CMAKE_INSTALL_INCLUDEDIR}")
     set(Open3D_INSTALL_BIN_DIR "${CMAKE_INSTALL_BINDIR}")
     set(Open3D_INSTALL_LIB_DIR "${CMAKE_INSTALL_LIBDIR}")
+    # Put resources in */share/
+    set(Open3D_INSTALL_RESOURCE_DIR "${CMAKE_INSTALL_DATADIR}")
     set(Open3D_INSTALL_CMAKE_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 else()
     set(Open3D_INSTALL_INCLUDE_DIR include)
     set(Open3D_INSTALL_BIN_DIR bin)
     set(Open3D_INSTALL_LIB_DIR lib)
+    # Put resources in */bin, with executables / DLLs
+    set(Open3D_INSTALL_RESOURCE_DIR bin)
     set(Open3D_INSTALL_CMAKE_DIR CMake)
 endif()
 

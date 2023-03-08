@@ -49,9 +49,8 @@ Pip (PyPI)
     In general, we recommend using a
     `virtual environment <https://docs.python-guide.org/dev/virtualenvs/>`_
     or `conda environment <https://docs.conda.io/en/latest/miniconda.html>`_.
-    Otherwise, depending on the configurations, ``pip3`` may be needed for
-    Python 3, or the ``--user`` option may need to be used to avoid permission
-    issues. For example:
+    Otherwise, depending on the configurations, you may need ``pip3``  for
+    Python 3, or the ``--user`` option to avoid permission issues. For example:
 
     .. code-block:: bash
 
@@ -96,13 +95,12 @@ version (``HEAD`` of ``master`` branch):
       - `Python 3.10 <https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp310-cp310-win_amd64.whl>`__
 
 Please use these links from the `latest version of this page
-<http://www.open3d.org/docs/latest/getting_started.html>`__ only. For example,
-to install the latest development version on Linux for Python 3.9:
+<http://www.open3d.org/docs/latest/getting_started.html>`__ only. You can also
+install the latest development version directly with pip:
 
 .. code-block:: bash
 
-    pip install --user --pre \
-        https://storage.googleapis.com/open3d-releases-master/python-wheels/open3d-@OPEN3D_VERSION_FULL@-cp39-cp39-linux_x86_64.whl
+    pip install --trusted-host www.open3d.org -f http://www.open3d.org/docs/latest/getting_started.html open3d
 
 .. note::
    The development wheels for Linux are named according to PEP600. Please
@@ -194,8 +192,8 @@ provided here [#]_:
     Linux versions (e.g. if the OS came with GCC versions 5+) use the CXX11 ABI,
     while PyTorch and Tensorflow libraries typically use the pre CXX11 ABI.
 
-If you need only a subset of features, or a custom build configuration, please
-refer to :ref:`compilation` and compile Open3D from source.
+If you need a subset of features, or a custom build configuration, please refer
+to :ref:`compilation` and compile Open3D from source.
 
 Try it
 ------
