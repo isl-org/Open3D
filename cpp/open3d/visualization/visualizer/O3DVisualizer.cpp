@@ -2029,7 +2029,7 @@ struct O3DVisualizer::Impl {
         // Count number of meshes stored in TriangleMeshModels
         size_t model_mesh_count = 0;
         size_t model_count = 0;
-        for (auto &o: objects_) {
+        for (auto &o : objects_) {
             if (!IsGeometryVisible(o)) {
                 continue;
             }
@@ -2038,17 +2038,19 @@ struct O3DVisualizer::Impl {
                 model_mesh_count += o.model.get()->meshes_.size();
             }
         }
-        pickable.reserve(objects_.size()+model_mesh_count-model_count);
+        pickable.reserve(objects_.size() + model_mesh_count - model_count);
         for (auto &o : objects_) {
             if (!IsGeometryVisible(o)) {
                 continue;
             }
             if (o.model.get()) {
                 for (auto &g : o.model->meshes_) {
-                    pickable.emplace_back(o.name, g.mesh.get(), o.tgeometry.get());
+                    pickable.emplace_back(o.name, g.mesh.get(),
+                                          o.tgeometry.get());
                 }
             } else {
-                pickable.emplace_back(o.name, o.geometry.get(), o.tgeometry.get());
+                pickable.emplace_back(o.name, o.geometry.get(),
+                                      o.tgeometry.get());
             }
         }
         selections_->SetSelectableGeometry(pickable);
