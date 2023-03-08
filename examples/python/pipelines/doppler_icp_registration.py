@@ -23,7 +23,8 @@ import os
 
 import numpy as np
 import open3d as o3d
-import transformations as tf
+import open3d.t.pipelines.registration as o3d_reg
+from pyquaternion import Quaternion
 
 
 def translation_quaternion_to_transform(translation,
@@ -43,9 +44,8 @@ def translation_quaternion_to_transform(translation,
     """
     if quat_xyzw:
         quaternion = np.roll(quaternion, 1)
-    R = tf.quaternion_matrix(quaternion)  # [w, x, y, z]
-    T = tf.translation_matrix(translation)  # [x, y, z]
-    transform = tf.concatenate_matrices(T, R)
+    transform = Quaternion(quaternion).transformation_matrix  # [w, x, y, z]
+    transform[:3, -1] = translation  # [x, y, z]
     return np.linalg.inv(transform) if inverse else transform
 
 
@@ -154,11 +154,12 @@ def run_doppler_icp(args):
     target_in_V.estimate_normals(radius=10.0, max_nn=30)
 
     # Compute direction vectors on source point cloud frame in sensor frame.
-    directions = tf.unit_vector(source_in_S.point.positions.numpy(), axis=1)
+    directions = source_in_S.point.positions.numpy()
+    norms = np.tile(np.linalg.norm(directions, axis=1), (3, 1)).T
+    directions = directions / norms
     source_in_V.point['directions'] = o3d.core.Tensor(directions, dtype, device)
 
     # Setup robust kernels.
-    o3d_reg = o3d.t.pipelines.registration
     kernel = o3d_reg.robust_kernel.RobustKernel(o3d_reg.robust_kernel.TukeyLoss,
                                                 scaling_parameter=0.5)
 
@@ -170,7 +171,7 @@ def run_doppler_icp(args):
     # Setup transformation estimator.
     estimator_p2l = o3d_reg.TransformationEstimationPointToPlane(kernel)
     estimator_dicp = o3d_reg.TransformationEstimationForDopplerICP(
-        period=period,
+        period=period * (args.target - args.source),
         lambda_doppler=0.01,
         reject_dynamic_outliers=False,
         doppler_outlier_threshold=2.0,

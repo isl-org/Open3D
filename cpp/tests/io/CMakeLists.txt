@@ -22,7 +22,6 @@ target_sources(tests PRIVATE
     file_format/FilePTS.cpp
     file_format/FileSTL.cpp
     file_format/FileXYZ.cpp
-    file_format/FileXYZD.cpp
     file_format/FileXYZN.cpp
     file_format/FileXYZRGB.cpp
 )
