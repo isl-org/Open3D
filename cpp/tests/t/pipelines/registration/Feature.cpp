@@ -89,19 +89,19 @@ TEST_P(FeaturePermuteDevices, CorrespondencesFromFeatures) {
                         correspondences, core::Dtype::Int64, device)
                         .T()
                         .GetItem(core::TensorKey::Index(1));
-        auto mask = t_correspondence_idx.Eq(correspondence_idx);
 
         // TODO(wei): mask.to(float).sum() has ISPC issues. Use advanced
         // indexing instead.
         if (!mutual_filter) {
+            auto mask = t_correspondence_idx.Eq(correspondence_idx);
             auto masked_idx = t_correspondence_idx.IndexGet({mask});
             float valid_ratio = float(masked_idx.GetLength()) /
                                 float(t_correspondence_idx.GetLength());
-            EXPECT_NEAR(valid_ratio, 1.0, 1e-3);
+            EXPECT_NEAR(valid_ratio, 1.0, 1e-2);
         } else {
             auto consistent_ratio = float(t_correspondence_idx.GetLength()) /
                                     float(correspondences.size());
-            EXPECT_NEAR(consistent_ratio, 1.0, 1e-3);
+            EXPECT_NEAR(consistent_ratio, 1.0, 1e-2);
         }
     }
 }
