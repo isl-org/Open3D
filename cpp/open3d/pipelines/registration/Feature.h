@@ -61,8 +61,6 @@ std::shared_ptr<Feature> ComputeFPFHFeature(
 /// object, in order to query source.
 /// \param source_features (D, N) feature
 /// \param target_features (D, M) feature
-/// \param mutual_filter Boolean flag, only return correspondences s.t. i and j
-/// are mutually the nearest neighbor
 /// \param mutual_filter Boolean flag, only return correspondences (i, j) s.t.
 /// source_features[i] and target_features[j] are mutually the nearest neighbor.
 /// \param mutual_consistency_ratio Float threshold to decide whether the number
