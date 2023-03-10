@@ -143,43 +143,43 @@ CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
                                               const Feature &target_features,
                                               bool mutual_filter,
                                               float mutual_consistent_ratio) {
-    int num_src_pts = int(source_features.data_.cols());
-    int num_tgt_pts = int(target_features.data_.cols());
+    const int num_searches = mutual_filter ? 2 : 1;
 
-    geometry::KDTreeFlann kdtree_target(target_features);
-    CorrespondenceSet corres_ij(num_src_pts);
+    // Access by reference, since Eigen Matrix could be copied
+    std::vector<std::reference_wrapper<const Feature>> features{
+            std::reference_wrapper<const Feature>(source_features),
+            std::reference_wrapper<const Feature>(target_features)};
+    std::vector<int> num_pts{int(source_features.data_.cols()),
+                             int(target_features.data_.cols())};
+    std::vector<CorrespondenceSet> corres(num_searches);
 
+#pragma omp parallel for num_threads(2)
+    for (int k = 0; k < num_searches; ++k) {
+        geometry::KDTreeFlann kdtree(features[1 - k]);
+
+        int num_pts_k = num_pts[k];
+        corres[k] = CorrespondenceSet(num_pts_k);
 #pragma omp parallel for num_threads(utility::EstimateMaxThreads())
-    for (int i = 0; i < num_src_pts; i++) {
-        std::vector<int> corres_tmp(1);
-        std::vector<double> dist_tmp(1);
+        for (int i = 0; i < num_pts_k; i++) {
+            std::vector<int> corres_tmp(1);
+            std::vector<double> dist_tmp(1);
 
-        kdtree_target.SearchKNN(Eigen::VectorXd(source_features.data_.col(i)),
-                                1, corres_tmp, dist_tmp);
-        int j = corres_tmp[0];
-        corres_ij[i] = Eigen::Vector2i(i, j);
+            kdtree.SearchKNN(Eigen::VectorXd(features[k].get().data_.col(i)), 1,
+                             corres_tmp, dist_tmp);
+            int j = corres_tmp[0];
+            corres[k][i] = Eigen::Vector2i(i, j);
+        }
     }
 
-    if (!mutual_filter) return corres_ij;
+    // corres[0]: corres_ij, corres[1]: corres_ji
+    if (!mutual_filter) return corres[0];
 
-    // Do reverse check if mutual_filter is enabled
-    geometry::KDTreeFlann kdtree_source(source_features);
-    CorrespondenceSet corres_ji(num_tgt_pts);
-
-#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
-    for (int j = 0; j < num_tgt_pts; ++j) {
-        std::vector<int> corres_tmp(1);
-        std::vector<double> dist_tmp(1);
-        kdtree_source.SearchKNN(Eigen::VectorXd(target_features.data_.col(j)),
-                                1, corres_tmp, dist_tmp);
-        int i = corres_tmp[0];
-        corres_ji[j] = Eigen::Vector2i(i, j);
-    }
-
+    // should not use parallel for due to emplace back
     CorrespondenceSet corres_mutual;
+    int num_src_pts = num_pts[0];
     for (int i = 0; i < num_src_pts; ++i) {
-        int j = corres_ij[i](1);
-        if (corres_ji[j](0) == i) {
+        int j = corres[0][i](1);
+        if (corres[1][j](1) == i) {
             corres_mutual.emplace_back(i, j);
         }
     }
@@ -192,9 +192,10 @@ CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
         return corres_mutual;
     }
     utility::LogWarning(
-            "Too few correspondences after mutual filter, fall back to "
-            "original correspondences.");
-    return corres_ij;
+            "Too few correspondences ({:d}) after mutual filter, fall back to "
+            "original correspondences.",
+            corres_mutual.size());
+    return corres[0];
 }
 }  // namespace registration
 }  // namespace pipelines

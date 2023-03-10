@@ -94,12 +94,23 @@ core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_features,
                                          const core::Tensor &target_features,
                                          bool mutual_filter,
                                          float mutual_consistent_ratio) {
-    core::nns::NearestNeighborSearch nns_target(target_features,
-                                                core::Dtype::Int64);
-    nns_target.KnnIndex();
-    auto target_result = nns_target.KnnSearch(source_features, 1);
+    const int num_searches = mutual_filter ? 2 : 1;
 
-    core::Tensor corres_ij = target_result.first.View({-1});
+    std::vector<core::Tensor> features{source_features, target_features};
+    std::vector<core::Tensor> corres(num_searches);
+
+    // corres[0]: corres_ij, corres[1]: corres_ji
+#pragma omp parallel for num_threads(num_searches)
+    for (int i = 0; i < num_searches; ++i) {
+        core::nns::NearestNeighborSearch nns(features[1 - i],
+                                             core::Dtype::Int64);
+        nns.KnnIndex();
+        auto result = nns.KnnSearch(features[i], 1);
+
+        corres[i] = result.first.View({-1});
+    }
+
+    auto corres_ij = corres[0];
     core::Tensor arange_source =
             core::Tensor::Arange(0, source_features.GetLength(), 1,
                                  corres_ij.GetDtype(), corres_ij.GetDevice());
@@ -112,27 +123,24 @@ core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_features,
         return result_ij;
     }
 
-    core::nns::NearestNeighborSearch nns_source(source_features,
-                                                core::Dtype::Int64);
-    nns_source.KnnIndex();
-    auto source_result = nns_source.KnnSearch(target_features, 1);
-    core::Tensor corres_ji = source_result.first.View({-1});
-
+    auto corres_ji = corres[1];
     // Mutually consistent
     core::Tensor corres_ii = corres_ji.IndexGet({corres_ij});
-
     core::Tensor identical = corres_ii.Eq(arange_source);
-    core::Tensor result = corres_ij.IndexGet({identical});
-    if (result.GetLength() >
+    core::Tensor result_mutual = corres_ij.IndexGet({identical});
+    if (result_mutual.GetLength() >
         mutual_consistent_ratio * arange_source.GetLength()) {
+        utility::LogDebug("{:d} correspondences remain after mutual filter",
+                          result_mutual.GetLength());
         return arange_source.IndexGet({identical})
                 .View({-1, 1})
-                .Append(result.View({-1, 1}), 1);
+                .Append(result_mutual.View({-1, 1}), 1);
     }
     // fall back to full correspondences
     utility::LogWarning(
-            "Too few correspondences after mutual filter, fall back to "
-            "original correspondences.");
+            "Too few correspondences ({:d}) after mutual filter, fall back to "
+            "original correspondences.",
+            result_mutual.GetLength());
     return result_ij;
 }
 
