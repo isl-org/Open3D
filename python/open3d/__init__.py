@@ -91,22 +91,22 @@ if _build_config["BUILD_CUDA_MODULE"]:
         # prevent "symbol already registered" errors if first import fails.
         _pybind_cuda = load_cdll(
             str(next((Path(__file__).parent / "cuda").glob("pybind*"))))
-        if sys.platform == "win32":
+        if sys.platform != "win32":
             if _pybind_cuda.open3d_core_cuda_device_count() > 0:
                 from open3d.cuda.pybind import (core, camera, data, geometry, io,
                                                 pipelines, utility, t)
                 from open3d.cuda import pybind
                 __DEVICE_API__ = "cuda"
+            else:
+                warnings.warn(
+                    "Open3D was built with CUDA support, but no suitable CUDA "
+                    "devices found. If your system has CUDA devices, check your "
+                    "CUDA drivers and runtime.", ImportWarning)
         else:
             from open3d.cuda.pybind import (core, camera, data, geometry, io,
                                             pipelines, utility, t)
             from open3d.cuda import pybind
             __DEVICE_API__ = "cuda"
-        else:
-            warnings.warn(
-                "Open3D was built with CUDA support, but no suitable CUDA "
-                "devices found. If your system has CUDA devices, check your "
-                "CUDA drivers and runtime.", ImportWarning)
     except OSError:
         warnings.warn(
             "Open3D was built with CUDA support, but CUDA libraries could "
