@@ -241,7 +241,6 @@ build_pip_package() {
 
     echo "Packaging Open3D pip package..."
     make VERBOSE=1 -j"$NPROC" pip-package
-    mv open3d*.whl lib/python_package/pip_package/   # restore CPU wheel
     popd # PWD=Open3D
 }
 
