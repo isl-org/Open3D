@@ -154,7 +154,7 @@ def load_input_data(object, camera_pose, input_image, tex_dim):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=
-        "Script that estimates texture and environment map from an input image and geometry",
+        "Script that estimates texture and environment map from an input image and geometry. You can find data to test this script here: https://github.com/isl-org/open3d_downloads/releases/download/untagged-54f12e1e0c2f42eaabab/raven_mitsuba.zip.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         'object_path',
