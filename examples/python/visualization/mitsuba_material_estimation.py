@@ -15,14 +15,6 @@ import numpy as np
 import math
 
 
-def save_image(img, name, output_dir):
-    """Saves a float image array with range [0..1] as 8 bit PNG"""
-    # scale to 0-255
-    texture = o3d.core.Tensor(img * 255.0).to(o3d.core.Dtype.UInt8)
-    texture = o3d.t.geometry.Image(texture)
-    o3d.t.io.write_image(str(output_dir / name), texture)
-
-
 def make_mitsuba_scene(mesh, cam_xform, fov, width, height, principle_pts,
                        envmap):
     # Camera transform
@@ -201,13 +193,13 @@ if __name__ == '__main__':
         mi.set_variant('cuda_ad_rgb')
 
     # Confirm that the 3 required inputs exist
-    object = args.object_path
-    object_name = object.stem
+    object_path = args.object_path
+    object_name = object_path.stem
     datadir = args.object_path.parent
     camera_pose = datadir / (object_name + '.npz')
     input_image = datadir / (object_name + '.png')
-    if not object.exists():
-        print(f'{object} does not exist!')
+    if not object_path.exists():
+        print(f'{object_path} does not exist!')
         sys.exit()
     if not camera_pose.exists():
         print(f'{camera_pose} does not exist!')
@@ -217,7 +209,7 @@ if __name__ == '__main__':
         sys.exit()
 
     # Load input data
-    mesh, cam_info, input_image = load_input_data(object, camera_pose,
+    mesh, cam_info, input_image = load_input_data(object_path, camera_pose,
                                                   input_image, args.tex_width)
 
     # Estimate albedo map
