@@ -167,9 +167,11 @@ if __name__ == '__main__':
                         type=int,
                         default=2048,
                         help="The dimensions of the texture")
-    parser.add_argument('--with-cpu',
-                        action='store_true',
-                        help="Run Mitsuba on CPU instead of CUDA")
+    parser.add_argument(
+        '--device',
+        default='cuda' if o3d.core.cuda.is_available() else 'cpu',
+        choices=('cpu', 'cuda'),
+        help="Run Mitsuba on 'cuda' or 'cpu'")
     parser.add_argument('--iterations',
                         type=int,
                         default=40,
@@ -184,10 +186,10 @@ if __name__ == '__main__':
         parser.print_help(sys.stderr)
         sys.exit(1)
     args = parser.parse_args()
-    print(args)
+    print("Arguments: ", vars(args))
 
     # Initialize Mitsuba
-    if args.with_cpu:
+    if args.device == 'cpu':
         mi.set_variant('llvm_ad_rgb')
     else:
         mi.set_variant('cuda_ad_rgb')
