@@ -1,6 +1,7 @@
 # Parsed by make_docs.py
 open3d.camera
 open3d.core
+open3d.core.nns
 open3d.data
 open3d.geometry
 open3d.io

@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/PointCloud.h"
@@ -680,6 +661,30 @@ Example:
         lines = pcd.extrude_linear([0,1,0])
         o3d.visualization.draw([{'name': 'lines', 'geometry': lines}])
 
+)");
+
+    pointcloud.def("pca_partition", &PointCloud::PCAPartition, "max_points"_a,
+                   R"(Partition the point cloud by recursively doing PCA.
+
+This function creates a new point attribute with the name "partition_ids" storing 
+the partition id for each point.
+
+Args:
+    max_points (int): The maximum allowed number of points in a partition.
+
+
+Example:
+
+    This code computes parititions a point cloud such that each partition
+    contains at most 20 points::
+
+        import open3d as o3d
+        import numpy as np
+        pcd = o3d.t.geometry.PointCloud(np.random.rand(100,3))
+        num_partitions = pcd.pca_partition(max_points=20)
+
+        # print the partition ids and the number of points for each of them.
+        print(np.unique(pcd.point.partition_ids.numpy(), return_counts=True))
 
 )");
 }

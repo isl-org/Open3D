@@ -1,27 +1,8 @@
 // ----------------------------------------------------------------------------
 // -                        Open3D: www.open3d.org                            -
 // ----------------------------------------------------------------------------
-// The MIT License (MIT)
-//
-// Copyright (c) 2018-2021 www.open3d.org
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// Copyright (c) 2018-2023 www.open3d.org
+// SPDX-License-Identifier: MIT
 // ----------------------------------------------------------------------------
 
 #include "open3d/t/geometry/VtkUtils.h"
@@ -329,17 +310,19 @@ static void AddTensorMapToVtkFieldData(
             continue;
         }
         // we only support 2D tensors
-        if (key_tensor.second.NumDims() != 2) {
-            utility::LogWarning(
-                    "Ignoring attribute '{}' for TensorMap with primary key "
-                    "'{}' because of incompatible ndim={}",
-                    key_tensor.first, tmap.GetPrimaryKey(),
-                    key_tensor.second.NumDims());
-            continue;
-        }
 
         if (include.count(key_tensor.first) &&
             !exclude.count(key_tensor.first)) {
+            if (key_tensor.second.NumDims() != 2) {
+                utility::LogWarning(
+                        "Ignoring attribute '{}' for TensorMap with primary "
+                        "key "
+                        "'{}' because of incompatible ndim={}",
+                        key_tensor.first, tmap.GetPrimaryKey(),
+                        key_tensor.second.NumDims());
+                continue;
+            }
+
             auto array = CreateVtkDataArrayFromTensor(key_tensor.second, copy);
             array->SetName(key_tensor.first.c_str());
             field_data->AddArray(array);
