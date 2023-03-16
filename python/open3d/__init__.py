@@ -79,11 +79,10 @@ if _build_config["BUILD_CUDA_MODULE"]:
                 "Open3D was built with CUDA support, but no suitable CUDA "
                 "devices found. If your system has CUDA devices, check your "
                 "CUDA drivers and runtime.", ImportWarning)
-    except OSError:
+    except OSError as os_error:
         warnings.warn(
-            "Open3D was built with CUDA support, but CUDA libraries could "
-            "not be found! Check your CUDA installation. Falling back to the "
-            "CPU pybind library.", ImportWarning)
+            f'Open3D was built with CUDA support, but an error ocurred while loading the Open3D CUDA Python bindings. This is usually because the CUDA libraries could not be found. Check your CUDA installation. Falling back to the CPU pybind library. Reported error: {os_error}.',
+            ImportWarning)
     except StopIteration:
         warnings.warn(
             "Open3D was built with CUDA support, but Open3D CUDA Python "
