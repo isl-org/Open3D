@@ -146,20 +146,24 @@ CorrespondenceSet CorrespondencesFromFeatures(const Feature &source_features,
     const int num_searches = mutual_filter ? 2 : 1;
 
     // Access by reference, since Eigen Matrix could be copied
-    std::vector<std::reference_wrapper<const Feature>> features{
+    std::array<std::reference_wrapper<const Feature>, 2> features{
             std::reference_wrapper<const Feature>(source_features),
             std::reference_wrapper<const Feature>(target_features)};
-    std::vector<int> num_pts{int(source_features.data_.cols()),
-                             int(target_features.data_.cols())};
+    std::array<int, 2> num_pts{int(source_features.data_.cols()),
+                               int(target_features.data_.cols())};
     std::vector<CorrespondenceSet> corres(num_searches);
 
-#pragma omp parallel for num_threads(2)
+    const int kMaxThreads = utility::EstimateMaxThreads();
+
+    const int kOuterThreads = std::min(kMaxThreads, num_searches);
+    const int kInnerThreads = std::max(kMaxThreads / num_searches, 1);
+#pragma omp parallel for num_threads(kOuterThreads)
     for (int k = 0; k < num_searches; ++k) {
         geometry::KDTreeFlann kdtree(features[1 - k]);
 
         int num_pts_k = num_pts[k];
         corres[k] = CorrespondenceSet(num_pts_k);
-#pragma omp parallel for num_threads(utility::EstimateMaxThreads())
+#pragma omp parallel for num_threads(kInnerThreads)
         for (int i = 0; i < num_pts_k; i++) {
             std::vector<int> corres_tmp(1);
             std::vector<double> dist_tmp(1);

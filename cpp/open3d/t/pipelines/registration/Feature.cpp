@@ -10,6 +10,7 @@
 #include "open3d/core/nns/NearestNeighborSearch.h"
 #include "open3d/t/geometry/PointCloud.h"
 #include "open3d/t/pipelines/kernel/Feature.h"
+#include "open3d/utility/Parallel.h"
 
 namespace open3d {
 namespace t {
@@ -96,11 +97,14 @@ core::Tensor CorrespondencesFromFeatures(const core::Tensor &source_features,
                                          float mutual_consistent_ratio) {
     const int num_searches = mutual_filter ? 2 : 1;
 
-    std::vector<core::Tensor> features{source_features, target_features};
+    std::array<core::Tensor, 2> features{source_features, target_features};
     std::vector<core::Tensor> corres(num_searches);
 
+    const int kMaxThreads = utility::EstimateMaxThreads();
+    const int kOuterThreads = std::min(kMaxThreads, num_searches);
+
     // corres[0]: corres_ij, corres[1]: corres_ji
-#pragma omp parallel for num_threads(num_searches)
+#pragma omp parallel for num_threads(kOuterThreads)
     for (int i = 0; i < num_searches; ++i) {
         core::nns::NearestNeighborSearch nns(features[1 - i],
                                              core::Dtype::Int64);

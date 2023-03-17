@@ -47,9 +47,6 @@ core::Tensor ComputeFPFHFeature(
 /// \param mutual_consistency_ratio Float threshold to decide whether the number
 /// of correspondences is sufficient. Only used when mutual_filter is set to
 /// True.
-/// \param mutual_consistency_ratio Float threshold to decide whether the number
-/// of correspondences is sufficient. Only used when mutual_filter is set to
-/// True.
 /// \return (K, 2, Int64) tensor. When mutual_filter is disabled: the first
 /// column is arange(0, N) of source, and the second column is the corresponding
 /// index of target. When mutual_filter is enabled, return the filtering subset
