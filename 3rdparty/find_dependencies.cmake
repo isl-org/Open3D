@@ -1668,7 +1668,12 @@ else() # if(OPEN3D_USE_ONEAPI_PACKAGES)
                     target_link_libraries(3rdparty_blas INTERFACE
                         ${quadmath_lib})
                     # Suppress Apple compiler warnigns.
-                    target_link_options(3rdparty_blas INTERFACE "-Wl,-no_compact_unwind")
+                    if(NOT ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+                        message(WARNING "All link warnings have been disabled on Apple Silicon builds "
+                            "due to the large number of spurious warnings that are generated. If you "
+                            "need to see link warnings please build with -DCMAKE_BUILD_TYPE=Debug.")
+                        target_link_options(3rdparty_blas INTERFACE "-Wl,-w")
+                    endif()
                 endif()
             elseif(UNIX AND NOT APPLE)
                 # On Ubuntu 20.04 x86-64, libgfortran.a is not compiled with `-fPIC`.
