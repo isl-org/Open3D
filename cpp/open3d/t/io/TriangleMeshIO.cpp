@@ -7,8 +7,10 @@
 
 #include "open3d/t/io/TriangleMeshIO.h"
 
+#include <set>
 #include <unordered_map>
 
+#include "open3d/t/io/NumpyIO.h"
 #include "open3d/utility/FileSystem.h"
 #include "open3d/utility/Logging.h"
 
@@ -22,6 +24,7 @@ static const std::unordered_map<
                            geometry::TriangleMesh &,
                            const open3d::io::ReadTriangleMeshOptions &)>>
         file_extension_to_trianglemesh_read_function{
+                {"npz", ReadTriangleMeshFromNPZ},
                 {"stl", ReadTriangleMeshUsingASSIMP},
                 {"obj", ReadTriangleMeshUsingASSIMP},
                 {"off", ReadTriangleMeshUsingASSIMP},
@@ -40,7 +43,9 @@ static const std::unordered_map<
                            const bool,
                            const bool,
                            const bool)>>
-        file_extension_to_trianglemesh_write_function{};
+        file_extension_to_trianglemesh_write_function{
+                {"npz", WriteTriangleMeshToNPZ},
+        };
 
 std::shared_ptr<geometry::TriangleMesh> CreateMeshFromFile(
         const std::string &filename, bool print_progress) {
@@ -135,6 +140,114 @@ bool WriteTriangleMesh(const std::string &filename,
             mesh.GetTriangleIndices().GetLength(),
             mesh.GetVertexPositions().GetLength());
     return success;
+}
+
+bool ReadTriangleMeshFromNPZ(
+        const std::string &filename,
+        geometry::TriangleMesh &mesh,
+        const open3d::io::ReadTriangleMeshOptions &params) {
+    auto attribute_map = ReadNpz(filename);
+
+    // At a minimum there should be 'vertices' and 'triangles'
+    if (!(attribute_map.count("vertices") > 0) ||
+        !(attribute_map.count("triangles") > 0)) {
+        utility::LogWarning(
+                "Read geometry::TriangleMesh failed: Could not find 'vertices' "
+                "or 'triangles' attributes in {}",
+                filename);
+        return false;
+    }
+
+    // Fill mesh with attributes
+    for (auto &attr : attribute_map) {
+        if (attr.first == "vertices") {
+            mesh.SetVertexPositions(attr.second);
+        } else if (attr.first == "triangles") {
+            mesh.SetTriangleIndices(attr.second);
+        } else if (attr.first == "vertex_normals") {
+            mesh.SetVertexNormals(attr.second);
+        } else if (attr.first == "triangle_normals") {
+            mesh.SetTriangleNormals(attr.second);
+        } else if (attr.first == "vertex_colors") {
+            mesh.SetVertexColors(attr.second);
+        } else if (attr.first == "triangle_colors") {
+            mesh.SetTriangleColors(attr.second);
+        } else if (attr.first == "uvmap") {
+            mesh.SetTriangleAttr("texture_uvs", attr.second);
+        }
+    }
+
+    return true;
+}
+
+bool WriteTriangleMeshToNPZ(const std::string &filename,
+                            const geometry::TriangleMesh &mesh,
+                            const bool write_ascii,
+                            const bool compressed,
+                            const bool write_vertex_normals,
+                            const bool write_vertex_colors,
+                            const bool write_triangle_uvs,
+                            const bool print_progress) {
+    // Sanity checks...
+    if (write_ascii) {
+        utility::LogWarning(
+                "TriangleMesh can't be saved in ASCII fromat as .npz");
+        return false;
+    }
+    if (compressed) {
+        utility::LogWarning(
+                "TriangleMesh can't be saved in compressed format as .npz");
+        return false;
+    }
+
+    // Map attribute names to names already used by convention in other software
+    std::set<std::string> known_attributes(
+            {"positions", "normals", "texture_uvs", "indices", "colors"});
+
+    // Build map of known attributes
+    std::unordered_map<std::string, core::Tensor> mesh_attributes;
+    if (mesh.HasVertexPositions()) {
+        mesh_attributes["vertices"] = mesh.GetVertexPositions();
+    }
+    if (mesh.HasVertexNormals()) {
+        mesh_attributes["vertex_normals"] = mesh.GetVertexNormals();
+    }
+    if (mesh.HasVertexColors()) {
+        mesh_attributes["vertex_colors"] = mesh.GetVertexColors();
+    }
+    if (mesh.HasTriangleIndices()) {
+        mesh_attributes["triangles"] = mesh.GetTriangleIndices();
+    }
+    if (mesh.HasTriangleNormals()) {
+        mesh_attributes["triangle_normals"] = mesh.GetTriangleNormals();
+    }
+    if (mesh.HasTriangleColors()) {
+        mesh_attributes["triangle_colors"] = mesh.GetTriangleColors();
+    }
+    if (mesh.HasTriangleAttr("texture_uvs")) {
+        mesh_attributes["uvmap"] = mesh.GetTriangleAttr("texture_uvs");
+    }
+
+    // Add "generic" attributes
+    for (auto attr : mesh.GetVertexAttr()) {
+        if (known_attributes.count(attr.first) > 0) {
+            continue;
+        }
+        std::string key_name("vertex_");
+        key_name += attr.first;
+        mesh_attributes[key_name] = attr.second;
+    }
+    for (auto attr : mesh.GetTriangleAttr()) {
+        if (known_attributes.count(attr.first) > 0) {
+            continue;
+        }
+        std::string key_name("triangle_");
+        key_name += attr.first;
+        mesh_attributes[key_name] = attr.second;
+    }
+    WriteNpz(filename, mesh_attributes);
+
+    return true;
 }
 
 }  // namespace io
