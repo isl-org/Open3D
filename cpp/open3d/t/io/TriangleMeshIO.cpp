@@ -263,7 +263,7 @@ bool WriteTriangleMeshToNPZ(const std::string &filename,
 
     // Output texture maps
     if (mesh.GetMaterial().IsValid()) {
-        for (auto& tex : mesh.GetMaterial().GetTextureMaps()) {
+        for (auto &tex : mesh.GetMaterial().GetTextureMaps()) {
             std::string key = std::string("tex_") + tex.first;
             mesh_attributes[key] = tex.second.AsTensor();
         }
