@@ -174,6 +174,21 @@ bool ReadTriangleMeshFromNPZ(
             mesh.SetTriangleColors(attr.second);
         } else if (attr.first == "uvmap") {
             mesh.SetTriangleAttr("texture_uvs", attr.second);
+        } else if (attr.first.find("tex_") != std::string::npos) {
+            // Get texture map
+            auto key = attr.first.substr(4);
+            if (!mesh.GetMaterial().IsValid()) {
+                mesh.GetMaterial().SetDefaultProperties();
+            }
+            mesh.GetMaterial().SetTextureMap(key, geometry::Image(attr.second));
+        } else if (attr.first.find("vertex_") != std::string::npos) {
+            // Generic vertex attribute
+            auto key = attr.first.substr(7);
+            mesh.SetVertexAttr(key, attr.second);
+        } else if (attr.first.find("triangle_") != std::string::npos) {
+            // Generic triangle attribute
+            auto key = attr.first.substr(9);
+            mesh.SetTriangleAttr(key, attr.second);
         }
     }
 
@@ -245,6 +260,15 @@ bool WriteTriangleMeshToNPZ(const std::string &filename,
         key_name += attr.first;
         mesh_attributes[key_name] = attr.second;
     }
+
+    // Output texture maps
+    if (mesh.GetMaterial().IsValid()) {
+        for (auto& tex : mesh.GetMaterial().GetTextureMaps()) {
+            std::string key = std::string("tex_") + tex.first;
+            mesh_attributes[key] = tex.second.AsTensor();
+        }
+    }
+
     WriteNpz(filename, mesh_attributes);
 
     return true;
