@@ -172,7 +172,7 @@ bool ReadTriangleMeshFromNPZ(
             mesh.SetVertexColors(attr.second);
         } else if (attr.first == "triangle_colors") {
             mesh.SetTriangleColors(attr.second);
-        } else if (attr.first == "uvmap") {
+        } else if (attr.first == "triangle_texture_uvs") {
             mesh.SetTriangleAttr("texture_uvs", attr.second);
         } else if (attr.first.find("tex_") != std::string::npos) {
             // Get texture map
@@ -255,7 +255,7 @@ bool WriteTriangleMeshToNPZ(const std::string &filename,
         mesh_attributes["triangle_colors"] = mesh.GetTriangleColors();
     }
     if (mesh.HasTriangleAttr("texture_uvs")) {
-        mesh_attributes["uvmap"] = mesh.GetTriangleAttr("texture_uvs");
+        mesh_attributes["triangle_texture_uvs"] = mesh.GetTriangleAttr("texture_uvs");
     }
 
     // Add "generic" attributes
