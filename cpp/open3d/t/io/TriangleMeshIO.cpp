@@ -199,9 +199,10 @@ bool ReadTriangleMeshFromNPZ(
             if (!mesh.GetMaterial().IsValid()) {
                 mesh.GetMaterial().SetDefaultProperties();
             }
-            const uint8_t* str_ptr = attr.second.GetDataPtr<uint8_t>();
+            const uint8_t *str_ptr = attr.second.GetDataPtr<uint8_t>();
             std::string mat_name(attr.second.GetShape().GetLength(), 'a');
-            std::memcpy((void*)mat_name.data(), str_ptr, attr.second.GetShape().GetLength());
+            std::memcpy((void *)mat_name.data(), str_ptr,
+                        attr.second.GetShape().GetLength());
             mesh.GetMaterial().SetMaterialName(mat_name);
         }
     }
@@ -277,9 +278,10 @@ bool WriteTriangleMeshToNPZ(const std::string &filename,
 
     // Output texture maps
     if (mesh.GetMaterial().IsValid()) {
-        auto& mat = mesh.GetMaterial();
+        auto &mat = mesh.GetMaterial();
         // Get material name in Tensor form
-        std::vector<uint8_t> mat_name_vec({mat.GetMaterialName().begin(), mat.GetMaterialName().end()});
+        std::vector<uint8_t> mat_name_vec(
+                {mat.GetMaterialName().begin(), mat.GetMaterialName().end()});
         core::Tensor mat_name_tensor(std::move(mat_name_vec));
         mesh_attributes["material_name"] = mat_name_tensor;
         for (auto &tex : mat.GetTextureMaps()) {
