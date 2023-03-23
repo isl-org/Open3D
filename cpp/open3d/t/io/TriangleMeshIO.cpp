@@ -255,7 +255,8 @@ bool WriteTriangleMeshToNPZ(const std::string &filename,
         mesh_attributes["triangle_colors"] = mesh.GetTriangleColors();
     }
     if (mesh.HasTriangleAttr("texture_uvs")) {
-        mesh_attributes["triangle_texture_uvs"] = mesh.GetTriangleAttr("texture_uvs");
+        mesh_attributes["triangle_texture_uvs"] =
+                mesh.GetTriangleAttr("texture_uvs");
     }
 
     // Add "generic" attributes
