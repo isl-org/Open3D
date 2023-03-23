@@ -181,6 +181,12 @@ bool ReadTriangleMeshFromNPZ(
                 mesh.GetMaterial().SetDefaultProperties();
             }
             mesh.GetMaterial().SetTextureMap(key, geometry::Image(attr.second));
+            // Note: due to quirk of Open3D shader implementation if we have a
+            // metallic texture we need to set the metallic scalar propert to
+            // 1.0
+            if (key == "metallic") {
+                mesh.GetMaterial().SetScalarProperty("metallic", 1.0);
+            }
         } else if (attr.first.find("vertex_") != std::string::npos) {
             // Generic vertex attribute
             auto key = attr.first.substr(7);
@@ -189,6 +195,14 @@ bool ReadTriangleMeshFromNPZ(
             // Generic triangle attribute
             auto key = attr.first.substr(9);
             mesh.SetTriangleAttr(key, attr.second);
+        } else if (attr.first == "material_name") {
+            if (!mesh.GetMaterial().IsValid()) {
+                mesh.GetMaterial().SetDefaultProperties();
+            }
+            const uint8_t* str_ptr = attr.second.GetDataPtr<uint8_t>();
+            std::string mat_name(attr.second.GetShape().GetLength(), 'a');
+            std::memcpy((void*)mat_name.data(), str_ptr, attr.second.GetShape().GetLength());
+            mesh.GetMaterial().SetMaterialName(mat_name);
         }
     }
 
@@ -263,7 +277,12 @@ bool WriteTriangleMeshToNPZ(const std::string &filename,
 
     // Output texture maps
     if (mesh.GetMaterial().IsValid()) {
-        for (auto &tex : mesh.GetMaterial().GetTextureMaps()) {
+        auto& mat = mesh.GetMaterial();
+        // Get material name in Tensor form
+        std::vector<uint8_t> mat_name_vec({mat.GetMaterialName().begin(), mat.GetMaterialName().end()});
+        core::Tensor mat_name_tensor(std::move(mat_name_vec));
+        mesh_attributes["material_name"] = mat_name_tensor;
+        for (auto &tex : mat.GetTextureMaps()) {
             std::string key = std::string("tex_") + tex.first;
             mesh_attributes[key] = tex.second.AsTensor();
         }
