@@ -16,7 +16,8 @@ import open3d as o3d
 import time
 
 from config import ConfigParser
-from common import get_default_dataset, load_rgbd_file_names, save_poses, load_intrinsic, extract_trianglemesh, get_default_testdata, extract_rgbd_frames
+from common import (get_default_dataset, load_rgbd_file_names, save_poses,
+                    load_intrinsic, extract_trianglemesh, extract_rgbd_frames)
 
 
 def slam(depth_file_names, color_file_names, intrinsic, config):

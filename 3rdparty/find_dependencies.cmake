@@ -256,6 +256,8 @@ endfunction()
 #        finding the package is quiet
 #    PACKAGE <pkg>
 #        the name of the queried package <pkg> forwarded to find_package()
+#    VERSION <version>
+#        the compatible version (single or range) required for the package forwarded to find_package()
 #    PACKAGE_VERSION_VAR <pkg_version>
 #        the variable <pkg_version> where to find the version of the queried package <pkg> find_package().
 #        If not provided, PACKAGE_VERSION_VAR will default to <pkg>_VERSION.
@@ -269,7 +271,8 @@ endfunction()
 #        If <pkg> also defines targets, use them instead and pass them via TARGETS option.
 #
 function(open3d_find_package_3rdparty_library name)
-    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET" "PACKAGE;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
+    cmake_parse_arguments(arg "PUBLIC;HEADER;REQUIRED;QUIET"
+        "PACKAGE;VERSION;PACKAGE_VERSION_VAR" "TARGETS;INCLUDE_DIRS;LIBRARIES" ${ARGN})
     if(arg_UNPARSED_ARGUMENTS)
         message(STATUS "Unparsed: ${arg_UNPARSED_ARGUMENTS}")
         message(FATAL_ERROR "Invalid syntax: open3d_find_package_3rdparty_library(${name} ${ARGN})")
@@ -281,6 +284,9 @@ function(open3d_find_package_3rdparty_library name)
         set(arg_PACKAGE_VERSION_VAR "${arg_PACKAGE}_VERSION")
     endif()
     set(find_package_args "")
+    if(arg_VERSION)
+        list(APPEND find_package_args ${arg_VERSION})
+    endif()
     if(arg_REQUIRED)
         list(APPEND find_package_args "REQUIRED")
     endif()
@@ -1455,7 +1461,7 @@ endif()
 # VTK
 if(USE_SYSTEM_VTK)
     open3d_find_package_3rdparty_library(3rdparty_vtk
-        PACKAGE VTK
+        PACKAGE VTK VERSION 9.1
         TARGETS
             VTK::FiltersGeneral
             VTK::FiltersSources

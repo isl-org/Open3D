@@ -73,7 +73,7 @@ extensions = [
     'm2r2',
 ]
 
-if os.environ["skip_notebooks"] == "true":
+if os.environ.get("skip_notebooks", "false") == "true":
     print("Skipping Jupyter notebooks")
     extensions = [e for e in extensions if e != "nbsphinx"]
 
@@ -96,7 +96,7 @@ master_doc = "index"
 
 # General information about the project.
 project = u"Open3D"
-copyright = u"2018 - 2021, www.open3d.org"
+copyright = u"2018 - 2023, www.open3d.org"
 author = u"www.open3d.org"
 
 # The version info for the project you're documenting, acts as replacement for

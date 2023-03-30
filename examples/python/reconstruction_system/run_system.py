@@ -86,7 +86,7 @@ if __name__ == "__main__":
             initialize_config(config)
             check_folder_structure(config['path_dataset'])
     else:
-        # load deafult dataset.
+        # load default dataset.
         config = dataset_loader(args.default_dataset)
 
     assert config is not None
