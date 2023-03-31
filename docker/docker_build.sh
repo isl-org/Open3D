@@ -354,7 +354,7 @@ cpu-static_export_env() {
     export BUILD_CUDA_MODULE=OFF
     export BUILD_TENSORFLOW_OPS=OFF
     export BUILD_PYTORCH_OPS=OFF
-    export PACKAGE=OFF
+    export PACKAGE=VIEWER
     export BUILD_SYCL_MODULE=OFF
 }
 

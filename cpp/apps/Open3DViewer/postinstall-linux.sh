@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/sh
 
 if [ $(id -u) = 0 ]; then
     update-mime-database /usr/share/mime # add new MIME types
