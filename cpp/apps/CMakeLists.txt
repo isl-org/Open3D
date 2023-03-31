@@ -72,8 +72,17 @@ macro(open3d_add_app_gui SRC_DIR APP_NAME TARGET_NAME)
                     RENAME "${APP_NAME}.xml")
             # Various caches need to be updated for the app to become visible
             install(CODE "execute_process(COMMAND ${SOURCE_DIR}/postinstall-linux.sh)")
+            configure_file("${SOURCE_DIR}/Debian/CMakeLists.in.txt"
+                "${CMAKE_BINARY_DIR}/package-${TARGET_NAME}-deb/CMakeLists.txt" @ONLY)
+            add_custom_target(package-${TARGET_NAME}-deb
+                COMMAND cp -a "${CMAKE_BINARY_DIR}/${APP_NAME}" .
+                COMMAND cp "${SOURCE_DIR}/icon.svg" "${APP_NAME}/${APP_NAME}.svg"
+                COMMAND cp "${SOURCE_DIR}/${TARGET_NAME}.xml" "${APP_NAME}/"
+                COMMAND "${CMAKE_COMMAND}" -S .
+                COMMAND "${CMAKE_COMMAND}" --build . -t package
+                WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/package-${TARGET_NAME}-deb/"
+                DEPENDS ${TARGET_NAME})
         elseif (WIN32)
-            # Don't create a command window on launch
             target_sources(${TARGET_NAME} PRIVATE "${SOURCE_DIR}/icon.rc")   # add icon
 
             # MSVC puts the binary in bin/Open3D/Release/Open3D.exe
