@@ -277,7 +277,7 @@ struct RaycastingScene::Impl {
                   float* primitive_normals,
                   const int nthreads) {
         if (!scene_committed_) {
-            rtcCommitScene(scene_);
+            rtcJoinCommitScene(scene_);
             scene_committed_ = true;
         }
 
@@ -366,7 +366,7 @@ struct RaycastingScene::Impl {
                         int8_t* occluded,
                         const int nthreads) {
         if (!scene_committed_) {
-            rtcCommitScene(scene_);
+            rtcJoinCommitScene(scene_);
             scene_committed_ = true;
         }
 
@@ -421,7 +421,7 @@ struct RaycastingScene::Impl {
                             int* intersections,
                             const int nthreads) {
         if (!scene_committed_) {
-            rtcCommitScene(scene_);
+            rtcJoinCommitScene(scene_);
             scene_committed_ = true;
         }
 
@@ -487,7 +487,7 @@ struct RaycastingScene::Impl {
                               float* primitive_normals,
                               const int nthreads) {
         if (!scene_committed_) {
-            rtcCommitScene(scene_);
+            rtcJoinCommitScene(scene_);
             scene_committed_ = true;
         }
 
