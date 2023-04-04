@@ -35,6 +35,26 @@ parameter is provided, and Hybrid search (Recommended) if both are provided.)",
              {"radius",
               "[optional] Neighbor search radius parameter. [Recommended ~5x "
               "voxel size]"}});
+
+    m.def("correspondences_from_features", &CorrespondencesFromFeatures,
+          py::call_guard<py::gil_scoped_release>(),
+          R"(Function to query nearest neighbors of source_features in target_features.)",
+          "source_features"_a, "target_features"_a, "mutual_filter"_a = false,
+          "mutual_consistency_ratio"_a = 0.1f);
+    docstring::FunctionDocInject(
+            m, "correspondences_from_features",
+            {{"source_features", "The source features in shape (N, dim)."},
+             {"target_features", "The target features in shape (M, dim)."},
+             {"mutual_filter",
+              "filter correspondences and return the collection of (i, j) "
+              "s.t. "
+              "source_features[i] and target_features[j] are mutually the "
+              "nearest neighbor."},
+             {"mutual_consistency_ratio",
+              "Threshold to decide whether the number of filtered "
+              "correspondences is sufficient. Only used when "
+              "mutual_filter is "
+              "enabled."}});
 }
 
 }  // namespace registration
