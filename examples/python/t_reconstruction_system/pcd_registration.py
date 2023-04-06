@@ -73,7 +73,7 @@ def pcd_global_registration(src, src_fpfh, dst, dst_fpfh, voxel_size):
         criteria=o3d.pipelines.registration.RANSACConvergenceCriteria(1000000, 0.9999),
     )
 
-    return result.transformation
+    return result.transformation, result.fitness
 
 
 if __name__ == "__main__":

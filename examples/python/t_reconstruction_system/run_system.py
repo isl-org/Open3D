@@ -214,6 +214,40 @@ if __name__ == "__main__":
             pose_graph.add_edge(i, j, trans_i2j.copy(), info_i2j.copy(), False)
             pose_i2w = pose_j2w
 
+        # Loop closure
+        pairs = []
+        # TODO(wei): add window and global
+        for i in range(len(fragment_pcds)):
+            for j in range(i + 2, len(fragment_pcds)):
+                pairs.append((i, j))
+
+        for pair in tqdm(pairs):
+            i, j = pair
+
+            pcd_i = pcd_downs[i]
+            pcd_fpfh_i = pcd_fpfhs[i]
+
+            pcd_j = pcd_downs[j]
+            pcd_fpfh_j = pcd_fpfhs[j]
+
+            trans_ij, fitness = pcd_global_registration(
+                pcd_i, pcd_fpfh_i, pcd_j, pcd_fpfh_j, config.icp_voxelsize
+            )
+            if fitness > 0.3:
+                print("fitness({},{}) = {:.3f}".format(i, j, fitness))
+                info_ij = o3d.t.pipelines.registration.get_information_matrix(
+                    pcd_i, pcd_j, config.icp_voxelsize * 1.4, trans_ij
+                ).numpy()
+                pose_graph.add_edge(i, j, trans_ij.copy(), info_ij.copy(), True)
+
+        pose_graph.solve_()
+        pose_graph.save(
+            os.path.join(
+                config.path_dataset,
+                "fragments",
+                "fragment_posegraph.json",
+            )
+        )
         frustums, loops = pose_graph.visualize(intrinsic.numpy())
         o3d.visualization.draw(frustums + [loops])
 
@@ -221,13 +255,6 @@ if __name__ == "__main__":
         print(
             "Fragments preprocessing takes {:.3f}s for {} fragments.".format(
                 end - start, len(fragment_pcds)
-            )
-        )
-        pose_graph.save(
-            os.path.join(
-                config.path_dataset,
-                "fragments",
-                "fragment_posegraph.json",
             )
         )
 
@@ -255,14 +282,14 @@ if __name__ == "__main__":
         depth_list, color_list = load_rgbd_file_names(config)
 
         vbg = integrate(
-                depth_list,
-                color_list,
-                intrinsic,
-                intrinsic,
-                extrinsics,
-                integrate_color=True,
-                config=config,
-            )
+            depth_list,
+            color_list,
+            intrinsic,
+            intrinsic,
+            extrinsics,
+            integrate_color=True,
+            config=config,
+        )
 
         pcd = vbg.extract_point_cloud()
         o3d.visualization.draw(pcd)
