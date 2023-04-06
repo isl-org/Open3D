@@ -22,12 +22,13 @@ from rgbd_odometry import rgbd_odometry, rgbd_loop_closure
 from pose_graph_optim import PoseGraphWrapper
 from integrate import integrate
 from pcd_registration import (
+    visualize_registration,
     preprocess_point_cloud,
     pcd_odometry,
     pcd_global_registration,
 )
 
-from common import load_intrinsic
+from common import load_intrinsic, load_rgbd_file_names
 
 if __name__ == "__main__":
     parser = ConfigParser()
@@ -50,6 +51,7 @@ if __name__ == "__main__":
     parser.add("--fragment_odometry", action="store_true")
     parser.add("--fragment_integration", action="store_true")
     parser.add("--fragment_registration", action="store_true")
+    parser.add("--fusion", action="store_true")
     config = parser.get_config()
 
     if config.split_fragments:
@@ -163,6 +165,8 @@ if __name__ == "__main__":
         fragment_posegraphs = load_fragment_posegraph(config)
         assert len(fragment_pcds) == len(fragment_posegraphs)
 
+        intrinsic = load_intrinsic(config)
+
         # TODO(wei): make cache all optional
         # TODO(wei): make device/tensor engine optional
         pcd_downs = []
@@ -173,9 +177,92 @@ if __name__ == "__main__":
             pcd_downs.append(pcd_down)
             pcd_fpfhs.append(pcd_fpfh)
 
+        pose_graph = PoseGraphWrapper()
+        pose_i2w = np.eye(4)
+        pose_graph.add_node(0, pose_i2w.copy())
+
+        # Odometry first
+        # frustums, loops = posegraph_i.visualize(intrinsic.numpy())
+        # o3d.visualization.draw(frustums + [loops])
+
+        # Odometry
+        for i in tqdm(range(len(fragment_pcds))):
+            if i == len(fragment_pcds) - 1:
+                break
+
+            pcd_i = pcd_downs[i]
+
+            posegraph_i = PoseGraphWrapper.load(fragment_posegraphs[i])
+            n_nodes = len(posegraph_i.dict_nodes)
+            init_pose_ij = (
+                np.linalg.inv(posegraph_i.dict_nodes[n_nodes - 1])
+                @ posegraph_i.dict_nodes[0]
+            )
+
+            j = i + 1
+            pcd_j = pcd_downs[j]
+
+            trans_i2j = pcd_odometry(pcd_i, pcd_j, config.icp_voxelsize, init_pose_ij)
+            info_i2j = o3d.t.pipelines.registration.get_information_matrix(
+                pcd_i, pcd_j, config.icp_voxelsize * 1.5, trans_i2j
+            ).numpy()
+
+            trans_j2i = np.linalg.inv(trans_i2j)
+            pose_j2w = pose_i2w @ trans_j2i
+
+            pose_graph.add_node(j, pose_j2w.copy())
+            pose_graph.add_edge(i, j, trans_i2j.copy(), info_i2j.copy(), False)
+            pose_i2w = pose_j2w
+
+        frustums, loops = pose_graph.visualize(intrinsic.numpy())
+        o3d.visualization.draw(frustums + [loops])
+
         end = time.time()
         print(
             "Fragments preprocessing takes {:.3f}s for {} fragments.".format(
                 end - start, len(fragment_pcds)
             )
         )
+        pose_graph.save(
+            os.path.join(
+                config.path_dataset,
+                "fragments",
+                "fragment_posegraph.json",
+            )
+        )
+
+    if config.fusion:
+        global_posegraph = PoseGraphWrapper.load(
+            os.path.join(config.path_dataset, "fragments", "fragment_posegraph.json")
+        )
+
+        local_posegraphs = [
+            PoseGraphWrapper.load(p) for p in load_fragment_posegraph(config)
+        ]
+
+        intrinsic = load_intrinsic(config)
+        poses = []
+        global_extrinsics = global_posegraph.export_extrinsics()
+        for frag_id, local_posegraph in enumerate(local_posegraphs):
+            pose_f2w = np.linalg.inv(global_extrinsics[frag_id])
+            local_extrinsics = local_posegraph.export_extrinsics()
+            for pose_f2i in local_extrinsics:
+                pose_i2f = np.linalg.inv(pose_f2i)
+                pose_i2w = pose_f2w @ pose_i2f
+                poses.append(pose_i2w)
+        extrinsics = [np.linalg.inv(p) for p in poses]
+
+        depth_list, color_list = load_rgbd_file_names(config)
+
+        vbg = integrate(
+                depth_list,
+                color_list,
+                intrinsic,
+                intrinsic,
+                extrinsics,
+                integrate_color=True,
+                config=config,
+            )
+
+        pcd = vbg.extract_point_cloud()
+        o3d.visualization.draw(pcd)
