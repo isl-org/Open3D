@@ -694,7 +694,8 @@ void SerializeTexture(tinygltf::Model& model,
     if (image.name.empty()) {
         image.name = fmt::format("primitive-{}-{}", primitive_idx, tex_name);
     }
-    image.mimeType = "image/jpeg";
+    image.uri = image.name + ".png";
+    image.mimeType = "image/png";
     image.width = tex_img.width_;
     image.height = tex_img.height_;
     image.component = tex_img.num_of_channels_;
@@ -758,6 +759,7 @@ void WriteImagesToBuffers(tinygltf::Model& model) {
             utility::LogError("Unsupported mime-type for image {}", image.name);
         }
         image.image.clear();
+        image.uri.clear();
         image.bufferView = static_cast<int>(model.bufferViews.size()) - 1;
         image.as_is = true;
         img_buff_view.byteLength = img_buff.data.size();
@@ -814,6 +816,8 @@ bool WriteTriangleMeshModelToGLTF(
     model.scenes.emplace_back();
     model.scenes.back().nodes.emplace_back(0);
     model.defaultScene = 0;
+
+    model.extensionsUsed = {"KHR_materials_unlit"};
 
     for (std::size_t i = 0; i < mesh_model.meshes_.size(); ++i) {
         geometry::TriangleMesh mesh;
@@ -1041,6 +1045,9 @@ bool WriteTriangleMeshModelToGLTF(
         // Write the material definition
         const auto& mat_rec = mesh_model.materials_[i];
         tinygltf::Material material = ConvertMaterial(mat_rec);
+        material.extensions = {
+            std::make_pair("KHR_materials_unlit", tinygltf::Value{})
+        };
 
         // Write the textures
         if (mat_rec.albedo_img && mat_rec.albedo_img->HasData()) {
