@@ -118,6 +118,7 @@ std::shared_ptr<PointCloud> ComputeISSKeypoints(
 
             if (nb_neighbors >= min_neighbors &&
                 IsLocalMaxima(i, nn_indices, third_eigen_values)) {
+#pragma omp critical
                 kp_indices.emplace_back(i);
             }
         }
