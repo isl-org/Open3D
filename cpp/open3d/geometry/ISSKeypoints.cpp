@@ -31,12 +31,13 @@ namespace {
 bool IsLocalMaxima(int query_idx,
                    const std::vector<int>& indices,
                    const std::vector<double>& third_eigen_values) {
-    for (const auto& idx : indices) {
-        if (third_eigen_values[query_idx] < third_eigen_values[idx]) {
-            return false;
+    return std::none_of(
+        indices.begin(),
+        indices.end(),
+        [&third_eigen_values, value = third_eigen_values[query_idx]](const int idx) {
+            return value < third_eigen_values[idx];
         }
-    }
-    return true;
+    );
 }
 
 double ComputeModelResolution(const std::vector<Eigen::Vector3d>& points,
@@ -51,7 +52,6 @@ double ComputeModelResolution(const std::vector<Eigen::Vector3d>& points,
             if (kdtree.SearchKNN(point, 2, indices, distances) >= 2) {
                 state += std::sqrt(distances[1]);
             }
-
             return state;
         }
     );
