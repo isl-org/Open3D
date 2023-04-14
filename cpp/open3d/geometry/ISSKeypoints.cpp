@@ -11,8 +11,10 @@
 
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues>
+#include <algorithm>
 #include <cmath>
 #include <memory>
+#include <numeric>
 #include <tuple>
 #include <vector>
 
@@ -41,15 +43,20 @@ double ComputeModelResolution(const std::vector<Eigen::Vector3d>& points,
                               const geometry::KDTreeFlann& kdtree) {
     std::vector<int> indices(2);
     std::vector<double> distances(2);
-    double resolution = 0.0;
+    const double resolution = std::accumulate(
+        points.begin(),
+        points.end(),
+        0.,
+        [&](double state, const Eigen::Vector3d& point) {
+            if (kdtree.SearchKNN(point, 2, indices, distances) >= 2) {
+                state += std::sqrt(distances[1]);
+            }
 
-    for (const auto& point : points) {
-        if (kdtree.SearchKNN(point, 2, indices, distances) != 0) {
-            resolution += std::sqrt(distances[1]);
+            return state;
         }
-    }
-    resolution /= points.size();
-    return resolution;
+    );
+
+    return resolution / static_cast<double>(points.size());
 }
 
 }  // namespace
