@@ -51,7 +51,7 @@ REGISTER_OP("Open3DTrilinearDevoxelize")
             c->set_output(1, out2);
             c->set_output(2, out2);
 
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Trilinear Devoxelize.
@@ -167,7 +167,7 @@ REGISTER_OP("Open3DTrilinearDevoxelizeGrad")
 
             c->set_output(0, out);
 
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Gradient function for Trilinear Devoxelize op.
