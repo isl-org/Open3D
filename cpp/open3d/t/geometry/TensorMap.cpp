@@ -56,7 +56,7 @@ void TensorMap::AssertSizeSynchronized() const {
             if (kv.first != primary_key_ &&
                 kv.second.GetLength() != primary_size) {
                 ss << fmt::format("    > Tensor \"{}\" has size {}.\n",
-                            kv.first, kv.second.GetLength());
+                                  kv.first, kv.second.GetLength());
             }
         }
         utility::LogError("{}", ss.str());
