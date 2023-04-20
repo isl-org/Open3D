@@ -1045,9 +1045,12 @@ bool WriteTriangleModelToGLTF(
         // Write the material definition
         const auto& mat_rec = mesh_model.materials_[i];
         tinygltf::Material material = ConvertMaterial(mat_rec);
-        material.extensions = {
-            std::make_pair("KHR_materials_unlit", tinygltf::Value{})
-        };
+        const std::string lowercase_mat_name = utility::ToLower(mat_rec.name);
+        if (utility::ContainsString(lowercase_mat_name, "unlit")) {
+            material.extensions = {
+                    std::make_pair("KHR_materials_unlit", tinygltf::Value{})
+            };
+        }
 
         // Write the textures
         if (mat_rec.albedo_img && mat_rec.albedo_img->HasData()) {
