@@ -790,7 +790,7 @@ void ConsolidateBuffers(tinygltf::Model& model) {
     model.buffers.erase(std::next(model.buffers.begin()), model.buffers.end());
 }
 
-bool WriteTriangleMeshModelToGLTF(
+bool WriteTriangleModelToGLTF(
         const std::string& filename,
         const visualization::rendering::TriangleMeshModel& mesh_model) {
     for (const auto& mesh_info: mesh_model.meshes_) {

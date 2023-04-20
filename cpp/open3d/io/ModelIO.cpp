@@ -135,36 +135,13 @@ bool WriteTriangleModel(const std::string& filename,
     }
 
     if (ext == "gltf" || ext == "glb") {
-        return WriteTriangleMeshModelToGLTF(filename, model);
+        return WriteTriangleModelToGLTF(filename, model);
     } else {
         utility::LogWarning("Unsupported file format {}. "
                 "Currently only gltf and glb are supported", ext);
         return false;
     }
 }
-
-//bool WriteTriangleMeshModelToGLTF(
-//        const std::string& filename,
-//        const visualization::rendering::TriangleMeshModel& model) {
-//    // Validate model for output
-//    for (const auto& mesh_info: model.meshes_) {
-//        if (!HasPerVertexUVs(*mesh_info.mesh)) {
-//            utility::LogWarning("Cannot export model because mesh {} needs "
-//                    "to be converted to have per-vertex uvs instead "
-//                    "of per-triangle uvs", mesh_info.mesh_name);
-//            return false;
-//        }
-//        auto mat_it = std::minmax_element(
-//                mesh_info.mesh->triangle_material_ids_.begin(),
-//                mesh_info.mesh->triangle_material_ids_.end());
-//        if (mat_it.first != mat_it.second) {
-//            utility::LogWarning("Cannot export model because mesh {} has more "
-//                    "than one material", mesh_info.mesh_name);
-//            return false;
-//        }
-//    }
-//    return detail::WriteValidatedTriangleMeshModelToGLTF(filename, model);
-//}
 
 }  // namespace io
 }  // namespace open3d

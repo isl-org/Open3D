@@ -30,20 +30,6 @@ namespace open3d {
 namespace visualization {
 namespace rendering {
 
-bool StringStartsWith(const std::string& str, const std::string& prefix) {
-#ifdef __cpp_lib_starts_ends_with
-    return str.starts_with(prefix);
-#else
-    if (prefix.size() >= str.size()) {
-        return std::equal(str.begin(), str.end(),
-                          prefix.begin(), prefix.end());
-    } else {
-        return std::equal(prefix.begin(), prefix.end(),
-                          str.begin(), str.end());
-    }
-#endif
-}
-
 MaterialRecord ConvertMaterial(
         const geometry::TriangleMesh::Material& mat,
         const std::string& name = "Material") {

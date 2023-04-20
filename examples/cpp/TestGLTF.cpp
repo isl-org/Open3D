@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
     if (!open3d::io::ReadTriangleModel(argv[1], mesh_model, {})) {
         open3d::utility::LogError("Could not read {}", argv[1]);
     }
-    if (!open3d::io::WriteTriangleMeshModelToGLTF(argv[2], mesh_model)) {
+    if (!open3d::io::WriteTriangleModelToGLTF(argv[2], mesh_model)) {
         open3d::utility::LogError("Could not write {}", argv[2]);
     }
 }
