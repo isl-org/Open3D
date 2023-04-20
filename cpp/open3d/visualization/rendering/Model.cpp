@@ -153,8 +153,7 @@ void TriangleMeshModel::AddMesh(
                 mesh.triangle_material_ids_.begin(),
                 mesh.triangle_material_ids_.end());
         if (*minmax_iters.first == *minmax_iters.second) {
-            std::pair<std::string, geometry::TriangleMesh::Material> mat =
-                    mesh.materials_[*minmax_iters.first];
+            const auto& mat = mesh.materials_[*minmax_iters.first];
             add_mesh_with_material(mesh, name, mat.second, mat.first);
         } else {
             // Split the mesh into components, one for each material
@@ -163,7 +162,7 @@ void TriangleMeshModel::AddMesh(
                     mesh.triangle_material_ids_.begin(),
                     mesh.triangle_material_ids_.end());
             for (int mat_idx: unique_material_indices) {
-                std::pair<std::string, geometry::TriangleMesh::Material> mat =
+                const auto& mat =
                         mesh.materials_[mat_idx];
                 const std::string component_name =
                         name + " " + std::to_string(mat_idx);
@@ -193,8 +192,7 @@ void TriangleMeshModel::AddMesh(
                     material_it = mesh.materials_.begin();
                 }
             }
-            std::pair<std::string, geometry::TriangleMesh::Material> mat =
-                    *material_it;
+            const auto& mat = *material_it;
             add_mesh_with_material(mesh, name, mat.second, mat.first);
         }
     }
