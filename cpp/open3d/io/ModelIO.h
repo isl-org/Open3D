@@ -7,10 +7,9 @@
 
 #pragma once
 
+#include <Eigen/Core>
 #include <functional>
 #include <string>
-
-#include <Eigen/Core>
 
 namespace open3d {
 namespace geometry {
@@ -55,11 +54,13 @@ bool ReadTriangleModel(const std::string& filename,
                        visualization::rendering::TriangleMeshModel& model,
                        ReadTriangleModelOptions params = {});
 
-bool WriteTriangleModel(const std::string& filename,
+bool WriteTriangleModel(
+        const std::string& filename,
         const visualization::rendering::TriangleMeshModel& model);
 
 // Implemented in FileGLTF.cpp
-bool WriteTriangleModelToGLTF(const std::string& filename,
+bool WriteTriangleModelToGLTF(
+        const std::string& filename,
         const visualization::rendering::TriangleMeshModel& mesh_model);
 
 }  // namespace io

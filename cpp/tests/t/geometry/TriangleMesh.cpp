@@ -500,11 +500,8 @@ TEST_P(TriangleMeshPermuteDevices, ToLegacy) {
                                   Pointwise(FloatEq(), {1.0, 1.1})}));
 
     auto mat_iterator = std::find_if(
-            legacy_mesh.materials_.begin(),
-            legacy_mesh.materials_.end(),
-            [](const auto& pair)->bool{
-                return pair.first == "Mat1";
-    });
+            legacy_mesh.materials_.begin(), legacy_mesh.materials_.end(),
+            [](const auto& pair) -> bool { return pair.first == "Mat1"; });
     EXPECT_TRUE(mat_iterator != legacy_mesh.materials_.end());
     auto& mat = mat_iterator->second;
     EXPECT_TRUE(Eigen::Vector4f(mat.baseColor.f4) ==

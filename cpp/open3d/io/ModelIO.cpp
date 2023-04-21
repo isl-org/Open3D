@@ -25,7 +25,8 @@ MeshWithPerVertexUVs(const geometry::TriangleMesh& mesh) {
         return {mesh, {}};
     }
     if (mesh.HasAdjacencyList()) {
-        utility::LogWarning("[MeshWithPerVertexUVs] This mesh contains "
+        utility::LogWarning(
+                "[MeshWithPerVertexUVs] This mesh contains "
                 "an adjacency list that are not handled in this function");
     }
     geometry::TriangleMesh out = mesh;
@@ -40,10 +41,11 @@ MeshWithPerVertexUVs(const geometry::TriangleMesh& mesh) {
             if (vertex_uvs[triangle(i)] == InvalidUV) {
                 vertex_uvs[triangle(i)] = out.triangle_uvs_[3 * tidx + i];
             } else {
-                if (vertex_uvs[triangle(i)] != out.triangle_uvs_[3 * tidx + i]){
+                if (vertex_uvs[triangle(i)] !=
+                    out.triangle_uvs_[3 * tidx + i]) {
                     assert(true);
                     if (vertex_remap.count(triangle(i))) {
-                        for (int remap_tidx: vertex_remap[(int)tidx]) {
+                        for (int remap_tidx : vertex_remap[(int)tidx]) {
                             if (vertex_uvs[remap_tidx] ==
                                 out.triangle_uvs_[3 * tidx + i]) {
                                 triangle(i) = remap_tidx;
@@ -51,7 +53,8 @@ MeshWithPerVertexUVs(const geometry::TriangleMesh& mesh) {
                             }
                         }
                     } else {
-                        vertex_uvs.emplace_back(out.triangle_uvs_[3 * tidx + 1]);
+                        vertex_uvs.emplace_back(
+                                out.triangle_uvs_[3 * tidx + 1]);
                         out.vertices_.emplace_back(out.vertices_[triangle(i)]);
                         if (mesh.HasVertexColors()) {
                             out.vertex_colors_.emplace_back(
@@ -63,7 +66,8 @@ MeshWithPerVertexUVs(const geometry::TriangleMesh& mesh) {
                         }
                         vertex_remap[triangle(i)].emplace_back(
                                 out.vertices_.size() - 1);
-                        triangle(i) = static_cast<int>(out.vertices_.size() - 1);
+                        triangle(i) =
+                                static_cast<int>(out.vertices_.size() - 1);
                     }
                 }
             }
@@ -73,7 +77,7 @@ MeshWithPerVertexUVs(const geometry::TriangleMesh& mesh) {
     return {out, vertex_uvs};
 }
 
-}  // namesapce detail
+}  // namespace detail
 
 bool ReadModelUsingAssimp(const std::string& filename,
                           visualization::rendering::TriangleMeshModel& model,
@@ -94,8 +98,8 @@ bool ReadTriangleModel(const std::string& filename,
 }
 
 bool HasPerVertexUVs(const geometry::TriangleMesh& mesh) {
-    std::vector<Eigen::Vector2d> vertex_uvs(
-            mesh.vertices_.size(), Eigen::Vector2d(-1, -1));
+    std::vector<Eigen::Vector2d> vertex_uvs(mesh.vertices_.size(),
+                                            Eigen::Vector2d(-1, -1));
     for (std::size_t tidx = 0; tidx < mesh.triangles_.size(); ++tidx) {
         const auto& triangle = mesh.triangles_[tidx];
         for (int i = 0; i < 3; ++i) {
@@ -112,24 +116,29 @@ bool HasPerVertexUVs(const geometry::TriangleMesh& mesh) {
     return true;
 }
 
-bool WriteTriangleModel(const std::string& filename,
-                        const visualization::rendering::TriangleMeshModel& model) {
+bool WriteTriangleModel(
+        const std::string& filename,
+        const visualization::rendering::TriangleMeshModel& model) {
     const std::string ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     // Validate model for output
-    for (const auto& mesh_info: model.meshes_) {
+    for (const auto& mesh_info : model.meshes_) {
         if (!HasPerVertexUVs(*mesh_info.mesh)) {
-            utility::LogWarning("Cannot export model because mesh {} needs "
+            utility::LogWarning(
+                    "Cannot export model because mesh {} needs "
                     "to be converted to have per-vertex uvs instead "
-                    "of per-triangle uvs", mesh_info.mesh_name);
+                    "of per-triangle uvs",
+                    mesh_info.mesh_name);
             return false;
         }
         auto mat_it = std::minmax_element(
                 mesh_info.mesh->triangle_material_ids_.begin(),
                 mesh_info.mesh->triangle_material_ids_.end());
         if (mat_it.first != mat_it.second) {
-            utility::LogWarning("Cannot export model because mesh {} has more "
-                    "than one material", mesh_info.mesh_name);
+            utility::LogWarning(
+                    "Cannot export model because mesh {} has more "
+                    "than one material",
+                    mesh_info.mesh_name);
             return false;
         }
     }
@@ -137,8 +146,10 @@ bool WriteTriangleModel(const std::string& filename,
     if (ext == "gltf" || ext == "glb") {
         return WriteTriangleModelToGLTF(filename, model);
     } else {
-        utility::LogWarning("Unsupported file format {}. "
-                "Currently only gltf and glb are supported", ext);
+        utility::LogWarning(
+                "Unsupported file format {}. "
+                "Currently only gltf and glb are supported",
+                ext);
         return false;
     }
 }
