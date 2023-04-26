@@ -134,7 +134,7 @@ bool WriteTriangleModel(
         auto mat_it = std::minmax_element(
                 mesh_info.mesh->triangle_material_ids_.begin(),
                 mesh_info.mesh->triangle_material_ids_.end());
-        if (mat_it.first != mat_it.second) {
+        if (*mat_it.first != *mat_it.second) {
             utility::LogWarning(
                     "Cannot export model because mesh {} has more "
                     "than one material",
