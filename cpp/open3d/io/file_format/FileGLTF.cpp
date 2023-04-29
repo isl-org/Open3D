@@ -597,11 +597,16 @@ bool WriteTriangleMeshToGLTF(const std::string& filename,
 template <typename T>
 tcb::span<T, tcb::dynamic_extent> GetBufferSpan(
         tinygltf::Buffer& buff,
-        const tinygltf::BufferView& view,
+        tinygltf::BufferView& view,
         const tinygltf::Accessor& accessor) {
     if (view.byteStride != 0 && view.byteStride != sizeof(T)) {
         utility::LogError("Cannot get a strided buffer span");
     }
+
+    if (view.byteLength % 4 != 0) {
+        view.byteLength += 4 - (view.byteLength % 4);
+    }
+
     // Make sure the buffer can hold that much data
     buff.data.resize(view.byteOffset + view.byteLength);
     // Create a span with the correct type aliasing the underlying data
