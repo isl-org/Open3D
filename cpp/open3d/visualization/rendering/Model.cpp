@@ -114,7 +114,9 @@ void TriangleMeshModel::AddMesh(const geometry::TriangleMesh& mesh,
         added_mesh->triangle_material_ids_ =
                 std::vector<int>(added_mesh->triangles_.size(), 0);
         added_mesh->materials_ = {std::make_pair(material_name, material)};
-        added_mesh->textures_ = {*material.albedo->FlipVertical()};
+        if (material.albedo) {
+            added_mesh->textures_ = {*material.albedo->FlipVertical()};
+        }
         materials_.emplace_back(ConvertMaterial(material, material_name));
     };
 
