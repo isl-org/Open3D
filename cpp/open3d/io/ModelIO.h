@@ -37,6 +37,8 @@ namespace detail {
 std::pair<geometry::TriangleMesh, std::vector<Eigen::Vector2d>>
 MeshWithPerVertexUVs(const geometry::TriangleMesh& mesh);
 
+bool HasPerVertexUVs(const geometry::TriangleMesh& mesh);
+
 }  // namespace detail
 
 struct ReadTriangleModelOptions {
