@@ -393,6 +393,9 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         // avoid flip of triangle normal and creation of degenerate triangles
         bool creates_invalid_triangle = false;
         const double degenerate_ratio_threshold = 0.001;
+        std::unordered_set<Eigen::Vector2i,
+                           utility::hash_eigen<Eigen::Vector2i>>
+                edges{};
         for (int vidx : {vidx0, vidx1}) {
             for (int tidx : vert_to_triangles[vidx]) {
                 if (triangles_deleted[tidx]) {
@@ -416,13 +419,23 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
                 const double area_before = 0.5 * norm_before.norm();
                 norm_before /= norm_before.norm();
 
+                auto sort_edges = [](auto a, auto b) {
+                    const auto minmax = std::minmax(a, b);
+                    return Eigen::Vector2i(std::get<0>(minmax),
+                                           std::get<1>(minmax));
+                };
+                const std::size_t old_edges_size = edges.size();
                 if (vidx == tria(0)) {
                     vert0 = vbars[edge];
+                    edges.insert(sort_edges(tria(1), tria(2)));
                 } else if (vidx == tria(1)) {
                     vert1 = vbars[edge];
+                    edges.insert(sort_edges(tria(0), tria(2)));
                 } else if (vidx == tria(2)) {
                     vert2 = vbars[edge];
+                    edges.insert(sort_edges(tria(0), tria(1)));
                 }
+                creates_invalid_triangle |= edges.size() == old_edges_size;
 
                 Eigen::Vector3d norm_after =
                         (vert1 - vert0).cross(vert2 - vert0);
