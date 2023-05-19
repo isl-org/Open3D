@@ -390,44 +390,54 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
             continue;
         }
 
-        // avoid flip of triangle normal
-        bool flipped = false;
-        for (int tidx : vert_to_triangles[vidx1]) {
-            if (triangles_deleted[tidx]) {
-                continue;
-            }
+        // avoid flip of triangle normal and creation of degenerate triangles
+        bool creates_invalid_triangle = false;
+        for (int vidx : {vidx0, vidx1}) {
+            for (int tidx : vert_to_triangles[vidx]) {
+                if (triangles_deleted[tidx]) {
+                    continue;
+                }
 
-            const Eigen::Vector3i& tria = mesh->triangles_[tidx];
-            bool has_vidx0 =
-                    vidx0 == tria(0) || vidx0 == tria(1) || vidx0 == tria(2);
-            bool has_vidx1 =
-                    vidx1 == tria(0) || vidx1 == tria(1) || vidx1 == tria(2);
-            if (has_vidx0 && has_vidx1) {
-                continue;
-            }
+                const Eigen::Vector3i& tria = mesh->triangles_[tidx];
+                const bool has_vidx0 = vidx0 == tria(0) || vidx0 == tria(1) ||
+                                       vidx0 == tria(2);
+                const bool has_vidx1 = vidx1 == tria(0) || vidx1 == tria(1) ||
+                                       vidx1 == tria(2);
+                if (has_vidx0 && has_vidx1) {
+                    continue;
+                }
 
-            Eigen::Vector3d vert0 = mesh->vertices_[tria(0)];
-            Eigen::Vector3d vert1 = mesh->vertices_[tria(1)];
-            Eigen::Vector3d vert2 = mesh->vertices_[tria(2)];
-            Eigen::Vector3d norm_before = (vert1 - vert0).cross(vert2 - vert0);
-            norm_before /= norm_before.norm();
+                Eigen::Vector3d vert0 = mesh->vertices_[tria(0)];
+                Eigen::Vector3d vert1 = mesh->vertices_[tria(1)];
+                Eigen::Vector3d vert2 = mesh->vertices_[tria(2)];
+                Eigen::Vector3d norm_before =
+                        (vert1 - vert0).cross(vert2 - vert0);
+                norm_before /= norm_before.norm();
 
-            if (vidx1 == tria(0)) {
-                vert0 = vbars[edge];
-            } else if (vidx1 == tria(1)) {
-                vert1 = vbars[edge];
-            } else if (vidx1 == tria(2)) {
-                vert2 = vbars[edge];
-            }
+                if (vidx == tria(0)) {
+                    vert0 = vbars[edge];
+                } else if (vidx == tria(1)) {
+                    vert1 = vbars[edge];
+                } else if (vidx == tria(2)) {
+                    vert2 = vbars[edge];
+                }
 
-            Eigen::Vector3d norm_after = (vert1 - vert0).cross(vert2 - vert0);
-            norm_after /= norm_after.norm();
-            if (norm_before.dot(norm_after) < 0) {
-                flipped = true;
-                break;
+                Eigen::Vector3d norm_after =
+                        (vert1 - vert0).cross(vert2 - vert0);
+                norm_after /= norm_after.norm();
+                // Disallow flipping the triangle normal
+                creates_invalid_triangle |= norm_before.dot(norm_after) < 0;
+
+                if (creates_invalid_triangle) {
+                    // Goto is the only way to jump out of two loops without
+                    // multiple redundant if()'s. Yes, it can lead to spagetti
+                    // code if abused but we're doing a very short jump here
+                    goto end_flip_loop;
+                }
             }
         }
-        if (flipped) {
+    end_flip_loop:
+        if (creates_invalid_triangle) {
             continue;
         }
 
