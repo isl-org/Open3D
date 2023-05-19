@@ -392,6 +392,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
 
         // avoid flip of triangle normal and creation of degenerate triangles
         bool creates_invalid_triangle = false;
+        const double degenerate_ratio_threshold = 0.001;
         for (int vidx : {vidx0, vidx1}) {
             for (int tidx : vert_to_triangles[vidx]) {
                 if (triangles_deleted[tidx]) {
@@ -412,6 +413,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
                 Eigen::Vector3d vert2 = mesh->vertices_[tria(2)];
                 Eigen::Vector3d norm_before =
                         (vert1 - vert0).cross(vert2 - vert0);
+                const double area_before = 0.5 * norm_before.norm();
                 norm_before /= norm_before.norm();
 
                 if (vidx == tria(0)) {
@@ -424,9 +426,13 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
 
                 Eigen::Vector3d norm_after =
                         (vert1 - vert0).cross(vert2 - vert0);
+                const double area_after = 0.5 * norm_after.norm();
                 norm_after /= norm_after.norm();
                 // Disallow flipping the triangle normal
                 creates_invalid_triangle |= norm_before.dot(norm_after) < 0;
+                // Disallow creating very small triangles (possibly degenerate)
+                creates_invalid_triangle |=
+                        area_after < degenerate_ratio_threshold * area_before;
 
                 if (creates_invalid_triangle) {
                     // Goto is the only way to jump out of two loops without
