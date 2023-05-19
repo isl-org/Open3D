@@ -311,6 +311,11 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         AddPerpPlaneQuadric(tria(2), tria(0), tria(1), area);
     }
 
+    // Clear the unused vectors to save some memory
+    triangle_areas.clear();
+    triangle_planes.clear();
+    edge_triangle_count.clear();
+
     // Get valid edges and compute cost
     // Note: We could also select all vertex pairs as edges with dist < eps
     std::unordered_map<Eigen::Vector2i, Eigen::Vector3d,
