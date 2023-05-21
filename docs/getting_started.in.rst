@@ -13,13 +13,10 @@ Open3D Python packages are distributed via
 
 Supported Python versions:
 
-.. hlist::
-    :columns: 4
-
-    * 3.7
-    * 3.8
-    * 3.9
-    * 3.10
+* 3.7
+* 3.8
+* 3.9
+* 3.10
 
 Supported operating systems:
 
