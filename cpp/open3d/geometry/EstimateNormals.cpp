@@ -496,13 +496,15 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k, const double lamb
     }
 
     // find start node for tree traversal
-    // init with node that maximizes z
-    double max_z = std::numeric_limits<double>::lowest();
+    // init with node that maximizes z 
+
+    //change minimize instead of maximize
+    double min_z = std::numeric_limits<double>::max();
     size_t v0 = 0;
     for (size_t vidx = 0; vidx < points_.size(); ++vidx) {
         const Eigen::Vector3d &v = points_[vidx];
-        if (v(2) > max_z) {
-            max_z = v(2);
+        if (v(2) < min_z) {
+            min_z = v(2);
             v0 = vidx;
         }
     }
@@ -518,7 +520,7 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k, const double lamb
         }
     };
     std::cout << "Procedo con tangenti NUOVE open3D" << std::endl;
-    TestAndOrientNormal(Eigen::Vector3d(0, 0, 1), normals_[v0]);
+    TestAndOrientNormal(Eigen::Vector3d(0, 0, -1), normals_[v0]);
     while (!traversal_queue.empty()) {
         v0 = traversal_queue.front();
         traversal_queue.pop();
