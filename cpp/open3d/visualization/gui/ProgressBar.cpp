@@ -42,16 +42,19 @@ Widget::DrawResult ProgressBar::Draw(const DrawContext& context) {
     auto fg = context.theme.border_color;
     auto color = colorToImguiRGBA(fg);
     float rounding = frame.height / 2.0f;
+
     ImGui::GetWindowDrawList()->AddRect(
-            ImVec2(float(frame.x), float(frame.y)),
-            ImVec2(float(frame.GetRight()), float(frame.GetBottom())), color,
-            rounding);
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()),
+            ImVec2(float(frame.GetRight()),
+                   float(frame.GetBottom()) - ImGui::GetScrollY()),
+            color, rounding);
     float x = float(frame.x) + float(frame.width) * impl_->value_;
     x = std::max(x, float(frame.x + rounding));
+
     ImGui::GetWindowDrawList()->AddRectFilled(
-            ImVec2(float(frame.x), float(frame.y)),
-            ImVec2(float(x), float(frame.GetBottom())), color,
-            frame.height / 2.0f);
+            ImVec2(float(frame.x), float(frame.y) - ImGui::GetScrollY()),
+            ImVec2(float(x), float(frame.GetBottom()) - ImGui::GetScrollY()),
+            color, frame.height / 2.0f);
     return DrawResult::NONE;
 }
 
