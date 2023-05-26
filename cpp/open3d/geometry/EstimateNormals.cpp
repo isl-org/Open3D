@@ -8,7 +8,6 @@
 #include <Eigen/Eigenvalues>
 #include <queue>
 #include <tuple>
-#include <iostream>
 
 #include "open3d/geometry/KDTreeFlann.h"
 #include "open3d/geometry/PointCloud.h"
@@ -519,7 +518,6 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k, const double lamb
             n1 *= -1;
         }
     };
-    std::cout << "Procedo con tangenti NUOVE open3D" << std::endl;
     TestAndOrientNormal(Eigen::Vector3d(0, 0, -1), normals_[v0]);
     while (!traversal_queue.empty()) {
         v0 = traversal_queue.front();

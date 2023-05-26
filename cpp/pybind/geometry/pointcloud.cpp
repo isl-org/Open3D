@@ -139,7 +139,7 @@ void pybind_pointcloud(py::module &m) {
                  &PointCloud::OrientNormalsConsistentTangentPlane,
                  "Function to orient the normals with respect to consistent "
                  "tangent planes",
-                 "k"_a,"lamda"_a,"cos_alpha_tol"_a)
+                 "k"_a,"lambda"_a,"cos_alpha_tol"_a)
             .def("compute_point_cloud_distance",
                  &PointCloud::ComputePointCloudDistance,
                  "For each point in the source point cloud, compute the "
