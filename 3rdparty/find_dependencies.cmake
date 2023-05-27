@@ -1826,13 +1826,24 @@ endif ()
 
 # Stdgpu
 if (BUILD_CUDA_MODULE)
-    include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
-    open3d_import_3rdparty_library(3rdparty_stdgpu
-        INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
-        LIB_DIR      ${STDGPU_LIB_DIR}
-        LIBRARIES    ${STDGPU_LIBRARIES}
-        DEPENDS      ext_stdgpu
-    )
+    if(USE_SYSTEM_STDGPU)
+        open3d_find_package_3rdparty_library(3rdparty_stdgpu
+            PACKAGE stdgpu
+            TARGETS stdgpu::stdgpu
+        )
+        if(NOT 3rdparty_stdgpu_FOUND)
+            set(USE_SYSTEM_STDGPU OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_STDGPU)
+        include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
+        open3d_import_3rdparty_library(3rdparty_stdgpu
+            INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
+            LIB_DIR      ${STDGPU_LIB_DIR}
+            LIBRARIES    ${STDGPU_LIBRARIES}
+            DEPENDS      ext_stdgpu
+        )
+    endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_stdgpu)
 endif ()
 
