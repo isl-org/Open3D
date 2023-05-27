@@ -539,11 +539,23 @@ endif()
 
 # cutlass
 if(BUILD_CUDA_MODULE)
-    include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
-    open3d_import_3rdparty_library(3rdparty_cutlass
-        INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
-        DEPENDS      ext_cutlass
-    )
+    if(USE_SYSTEM_CUTLASS)
+        find_path(3rdparty_cutlass_INCLUDE_DIR NAMES cutlass/cutlass.h)
+        if(3rdparty_cutlass_INCLUDE_DIR)
+            add_library(3rdparty_cutlass INTERFACE)
+            target_include_directories(3rdparty_cutlass INTERFACE ${3rdparty_cutlass_INCLUDE_DIR})
+            add_library(Open3D::3rdparty_cutlass ALIAS 3rdparty_cutlass)
+        else()
+            set(USE_SYSTEM_CUTLASS OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_CUTLASS)
+        include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
+        open3d_import_3rdparty_library(3rdparty_cutlass
+            INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
+            DEPENDS      ext_cutlass
+        )
+    endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_cutlass)
 endif()
 
