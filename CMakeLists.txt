@@ -124,6 +124,7 @@ else()
 endif()
 
 option(PREFER_OSX_HOMEBREW        "Prefer Homebrew libs over frameworks"     ON )
+option(WITH_MINIZIP               "Enable MiniZIP"                           OFF)
 
 # Sensor options
 option(BUILD_LIBREALSENSE         "Build support for Intel RealSense camera" OFF)

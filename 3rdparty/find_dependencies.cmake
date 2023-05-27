@@ -1121,6 +1121,14 @@ open3d_import_3rdparty_library(3rdparty_poisson
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_poisson)
 
+# Minizip
+if(WITH_MINIZIP)
+    open3d_pkg_config_3rdparty_library(3rdparty_minizip
+        SEARCH_ARGS minizip
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
+endif()
+
 # Googletest
 if (BUILD_UNIT_TESTS)
     if(USE_SYSTEM_GOOGLETEST)
