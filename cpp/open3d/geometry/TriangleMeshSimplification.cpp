@@ -317,50 +317,49 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
     edge_triangle_count.clear();
 
     // Get valid edges and compute cost
-    // Note: We could also select all vertex pairs as edges with dist < eps
-    std::unordered_map<Eigen::Vector2i, Eigen::Vector3d,
-                       utility::hash_eigen<Eigen::Vector2i>>
-            vbars;
-    std::unordered_map<Eigen::Vector2i, double,
-                       utility::hash_eigen<Eigen::Vector2i>>
-            costs;
     auto CostEdgeComp = [](const CostEdge& a, const CostEdge& b) {
         return std::get<0>(a) > std::get<0>(b);
     };
     std::priority_queue<CostEdge, std::vector<CostEdge>, decltype(CostEdgeComp)>
             queue(CostEdgeComp);
 
-    auto AddEdge = [&](int vidx0, int vidx1, bool update) {
-        int min = std::min(vidx0, vidx1);
-        int max = std::max(vidx0, vidx1);
-        Eigen::Vector2i edge(min, max);
-        if (update || vbars.count(edge) == 0) {
-            const Quadric& Q0 = Qs[min];
-            const Quadric& Q1 = Qs[max];
-            Quadric Qbar = Q0 + Q1;
-            double cost;
-            Eigen::Vector3d vbar;
-            if (Qbar.IsInvertible()) {
-                vbar = Qbar.Minimum();
-                cost = Qbar.Eval(vbar);
+    auto compute_cost_vbar = [&](Eigen::Vector2i e) {
+        const Quadric& Q0 = Qs[e(0)];
+        const Quadric& Q1 = Qs[e(1)];
+        const Quadric Qbar = Q0 + Q1;
+        double cost;
+        Eigen::Vector3d vbar;
+        if (Qbar.IsInvertible()) {
+            vbar = Qbar.Minimum();
+            cost = Qbar.Eval(vbar);
+        } else {
+            const Eigen::Vector3d& v0 = mesh->vertices_[e(0)];
+            const Eigen::Vector3d& v1 = mesh->vertices_[e(1)];
+            const Eigen::Vector3d vmid = (v0 + v1) / 2;
+            const double cost0 = Qbar.Eval(v0);
+            const double cost1 = Qbar.Eval(v1);
+            const double costmid = Qbar.Eval(vmid);
+            cost = std::min(cost0, std::min(cost1, costmid));
+            if (cost == costmid) {
+                vbar = vmid;
+            } else if (cost == cost0) {
+                vbar = v0;
             } else {
-                const Eigen::Vector3d& v0 = mesh->vertices_[vidx0];
-                const Eigen::Vector3d& v1 = mesh->vertices_[vidx1];
-                Eigen::Vector3d vmid = (v0 + v1) / 2;
-                double cost0 = Qbar.Eval(v0);
-                double cost1 = Qbar.Eval(v1);
-                double costmid = Qbar.Eval(vmid);
-                cost = std::min(cost0, std::min(cost1, costmid));
-                if (cost == costmid) {
-                    vbar = vmid;
-                } else if (cost == cost0) {
-                    vbar = v0;
-                } else {
-                    vbar = v1;
-                }
+                vbar = v1;
             }
-            vbars[edge] = vbar;
-            costs[edge] = cost;
+        }
+        return std::make_pair(cost, vbar);
+    };
+
+    std::unordered_set<Eigen::Vector2i, utility::hash_eigen<Eigen::Vector2i>>
+            added_edges;
+    auto AddEdge = [&](int vidx0, int vidx1, bool update) {
+        const int min = std::min(vidx0, vidx1);
+        const int max = std::max(vidx0, vidx1);
+        const Eigen::Vector2i edge(min, max);
+        if (update || added_edges.count(edge) == 0) {
+            const auto cost = compute_cost_vbar(edge).first;
+            added_edges.insert(edge);
             queue.push(CostEdge(cost, min, max));
         }
     };
@@ -371,6 +370,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         AddEdge(triangle(1), triangle(2), false);
         AddEdge(triangle(2), triangle(0), false);
     }
+    added_edges.clear();
 
     // perform incremental edge collapse
     bool has_vert_normal = HasVertexNormals();
@@ -389,8 +389,10 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
 
         // test if the edge has been updated (reinserted into queue)
         Eigen::Vector2i edge(vidx0, vidx1);
+        const auto cost_vbar = compute_cost_vbar(edge);
+        const Eigen::Vector3d vbar = cost_vbar.second;
         bool valid = !vertices_deleted[vidx0] && !vertices_deleted[vidx1] &&
-                     cost == costs[edge];
+                     cost == cost_vbar.first;
         if (!valid) {
             continue;
         }
@@ -431,13 +433,13 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
                 };
                 const std::size_t old_edges_size = edges.size();
                 if (vidx == tria(0)) {
-                    vert0 = vbars[edge];
+                    vert0 = vbar;
                     edges.insert(sort_edges(tria(1), tria(2)));
                 } else if (vidx == tria(1)) {
-                    vert1 = vbars[edge];
+                    vert1 = vbar;
                     edges.insert(sort_edges(tria(0), tria(2)));
                 } else if (vidx == tria(2)) {
-                    vert2 = vbars[edge];
+                    vert2 = vbar;
                     edges.insert(sort_edges(tria(0), tria(1)));
                 }
                 creates_invalid_triangle |= edges.size() == old_edges_size;
@@ -494,7 +496,7 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SimplifyQuadricDecimation(
         }
 
         // update vertex vidx0 to vbar
-        mesh->vertices_[vidx0] = vbars[edge];
+        mesh->vertices_[vidx0] = vbar;
         Qs[vidx0] += Qs[vidx1];
         if (has_vert_normal) {
             mesh->vertex_normals_[vidx0] = 0.5 * (mesh->vertex_normals_[vidx0] +
