@@ -251,7 +251,7 @@ public:
     ///
     /// \param k k nearest neighbour for graph reconstruction for normal
     /// propagation.
-    void OrientNormalsConsistentTangentPlane(size_t k, const double lambda = 0, const double cos_alpha_tol = 1);
+    void OrientNormalsConsistentTangentPlane(size_t k, const double lambda = 0.0, const double cos_alpha_tol = 1.0);
 
     /// \brief Function to compute the point to point distances between point
     /// clouds.
