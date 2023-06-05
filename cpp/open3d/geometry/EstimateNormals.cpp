@@ -360,8 +360,8 @@ void PointCloud::OrientNormalsTowardsCameraLocation(
 }
 
 void PointCloud::OrientNormalsConsistentTangentPlane(size_t k, 
-        const double lambda /* = 0*/,
-        const double cos_alpha_tol /* = 1*/) {
+        const double lambda /* = 0.0*/,
+        const double cos_alpha_tol /* = 1.0*/) {
     if (!HasNormals()) {
         utility::LogError(
                 "No normals in the PointCloud. Call EstimateNormals() first.");
@@ -384,16 +384,16 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k,
         if (graph_edges.count(edge) == 0) {
             const auto diff = points_[v0] - points_[v1];
             // penalization on normal-plane distance
-            double dist = diff.squaredNorm() 
-            + lambda * std::abs(diff.dot(normals_[v0]));
+            double dist = diff.squaredNorm();
+            double penalization = lambda * std::abs(diff.dot(normals_[v0]));
 
             // if cos_alpha_tol < 1 some edges will be excluded. In particular the ones connecting
             // points that form an angle below a certain threshold (defined by the cosine) 
-            double cos_alpha = std::abs(diff.dot(normals_[v0]))/dist;
+            double cos_alpha = std::abs(diff.dot(normals_[v0]))/std::sqrt(dist);
             if(cos_alpha > cos_alpha_tol)
                 dist = std::numeric_limits<double>::infinity();
     
-            delaunay_graph.push_back(WeightedEdge(v0, v1, dist));
+            delaunay_graph.push_back(WeightedEdge(v0, v1, dist + penalization));
             graph_edges.insert(edge);
         }
     };
@@ -415,7 +415,8 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k,
         edge.weight_ = NormalWeight(edge.v0_, edge.v1_);
     }
 
-     // function to remove outliers from the KNN-> the points that are far from the plane must be removed
+    // The function below takes v0 and its neighbors as inputs.
+    // The function returns the quartiles of the distances between the neighbors and a plane defined by the normal vector of v0 and the point v0.
     auto compute_q1q3= [&](size_t v0, std::vector<int> neighbors) -> std::array<double, 2> {
         std::vector<double> dist_plane;
 
@@ -448,8 +449,6 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k,
         std::vector<int> neighbors;
         std::vector<double> dists2;
 
-        // Modifications: instead of considering the KNN in terms of euclidean distance
-        // between points only, we want to include a penalization for the distance from the plane
         kdtree.SearchKNN(points_[v0], int(k), neighbors, dists2);
 
         const double DEFAULT_VALUE = std::numeric_limits<double>::quiet_NaN();
@@ -467,12 +466,11 @@ void PointCloud::OrientNormalsConsistentTangentPlane(size_t k,
                 const auto diff = points_[v0] - points_[v1];
                 double normal_dist = std::abs(diff.dot(normals_[v0]));
 
-                double dist = diff.squaredNorm()
-                + lambda * normal_dist;
+                double dist = diff.squaredNorm();
 
                 // if cos_alpha_tol < 1 some edges will be excluded. In particular the ones connecting
                 // points that form an angle below a certain threshold (defined by the cosine) 
-                double cos_alpha = std::abs(diff.dot(normals_[v0]))/dist;
+                double cos_alpha = std::abs(diff.dot(normals_[v0]))/std::sqrt(dist);
                 if(cos_alpha > cos_alpha_tol)
                     continue;
                 
