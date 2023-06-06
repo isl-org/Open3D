@@ -304,7 +304,7 @@ Return:
                    &PointCloud::OrientNormalsConsistentTangentPlane,
                    "Function to orient the normals with respect to consistent "
                    "tangent planes.",
-                   "k"_a);
+                   "k"_a, "lambda"_a = 0.0, "cos_alpha_tol"_a = 1.0);
     pointcloud.def(
             "estimate_color_gradients", &PointCloud::EstimateColorGradients,
             py::call_guard<py::gil_scoped_release>(), py::arg("max_nn") = 30,
