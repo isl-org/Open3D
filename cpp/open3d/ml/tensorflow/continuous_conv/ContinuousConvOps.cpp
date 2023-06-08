@@ -139,7 +139,7 @@ REGISTER_OP("Open3DContinuousConv")
                     c->MakeShape({output_first_dim, output_channel_dim});
 
             c->set_output(0, output_shape);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Continuous convolution of two pointclouds.

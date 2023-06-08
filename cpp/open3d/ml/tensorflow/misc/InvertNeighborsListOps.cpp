@@ -58,7 +58,7 @@ REGISTER_OP("Open3DInvertNeighborsList")
 
             // the attributes will have the same shape
             c->set_output(2, inp_neighbors_attributes);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 Inverts a neighbors list made of neighbors_index and neighbors_row_splits.

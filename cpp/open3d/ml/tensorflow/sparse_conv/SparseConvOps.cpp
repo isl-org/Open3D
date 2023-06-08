@@ -66,7 +66,7 @@ REGISTER_OP("Open3DSparseConv")
             ShapeHandle out_features_shape =
                     MakeShapeHandle(c, num_out, out_channels);
             c->set_output(0, out_features_shape);
-            return Status::OK();
+            return Status();
         })
         .Doc(R"doc(
 General sparse convolution.
