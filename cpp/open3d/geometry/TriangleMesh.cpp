@@ -1634,7 +1634,8 @@ std::shared_ptr<TriangleMesh> TriangleMesh::SelectByIndex(
             output->triangles_.push_back(
                     Eigen::Vector3i(nvidx0, nvidx1, nvidx2));
             if (has_triangle_material_ids) {
-                output->triangle_material_ids_.push_back(triangle_material_ids_[tidx]);
+                output->triangle_material_ids_.push_back(
+                        triangle_material_ids_[tidx]);
             }
             if (has_triangle_normals) {
                 output->triangle_normals_.push_back(triangle_normals_[tidx]);
