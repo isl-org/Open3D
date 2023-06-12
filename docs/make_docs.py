@@ -390,6 +390,11 @@ class SphinxDocsBuilder:
         build_dir = os.path.join(self.html_output_dir, "html")
         nproc = multiprocessing.cpu_count() if self.parallel else 1
         print(f"Building docs with {nproc} processes")
+        today = os.environ.get("SPHINX_TODAY", None)
+        if today:
+            cmd_args_today = ["-D", "today=" + today]
+        else:
+            cmd_args_today = []
 
         if self.is_release:
             version_list = [
@@ -400,15 +405,10 @@ class SphinxDocsBuilder:
             print("Building docs for release:", release_version)
 
             cmd = [
-                "sphinx-build",
-                "-j",
-                str(nproc),
-                "-b",
-                "html",
-                "-D",
-                "version=" + release_version,
-                "-D",
-                "release=" + release_version,
+                "sphinx-build", "-j",
+                str(nproc), "-b", "html", "-D", "version=" + release_version,
+                "-D", "release=" + release_version
+            ] + cmd_args_today + [
                 ".",
                 build_dir,
             ]
@@ -419,6 +419,7 @@ class SphinxDocsBuilder:
                 str(nproc),
                 "-b",
                 "html",
+            ] + cmd_args_today + [
                 ".",
                 build_dir,
             ]

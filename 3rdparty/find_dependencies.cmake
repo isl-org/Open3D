@@ -539,11 +539,26 @@ endif()
 
 # cutlass
 if(BUILD_CUDA_MODULE)
-    include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
-    open3d_import_3rdparty_library(3rdparty_cutlass
-        INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
-        DEPENDS      ext_cutlass
-    )
+    if(USE_SYSTEM_CUTLASS)
+        find_path(3rdparty_cutlass_INCLUDE_DIR NAMES cutlass/cutlass.h)
+        if(3rdparty_cutlass_INCLUDE_DIR)
+            add_library(3rdparty_cutlass INTERFACE)
+            target_include_directories(3rdparty_cutlass INTERFACE ${3rdparty_cutlass_INCLUDE_DIR})
+            add_library(Open3D::3rdparty_cutlass ALIAS 3rdparty_cutlass)
+            if(NOT BUILD_SHARED_LIBS)
+                install(TARGETS 3rdparty_cutlass EXPORT ${PROJECT_NAME}Targets)
+            endif()
+        else()
+            set(USE_SYSTEM_CUTLASS OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_CUTLASS)
+        include(${Open3D_3RDPARTY_DIR}/cutlass/cutlass.cmake)
+        open3d_import_3rdparty_library(3rdparty_cutlass
+            INCLUDE_DIRS ${CUTLASS_INCLUDE_DIRS}
+            DEPENDS      ext_cutlass
+        )
+    endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_cutlass)
 endif()
 
@@ -1108,6 +1123,14 @@ open3d_import_3rdparty_library(3rdparty_poisson
     DEPENDS      ext_poisson
 )
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_poisson)
+
+# Minizip
+if(WITH_MINIZIP)
+    open3d_pkg_config_3rdparty_library(3rdparty_minizip
+        SEARCH_ARGS minizip
+    )
+    list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_SYSTEM Open3D::3rdparty_minizip)
+endif()
 
 # Googletest
 if (BUILD_UNIT_TESTS)
@@ -1826,25 +1849,47 @@ endif ()
 
 # Stdgpu
 if (BUILD_CUDA_MODULE)
-    include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
-    open3d_import_3rdparty_library(3rdparty_stdgpu
-        INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
-        LIB_DIR      ${STDGPU_LIB_DIR}
-        LIBRARIES    ${STDGPU_LIBRARIES}
-        DEPENDS      ext_stdgpu
-    )
+    if(USE_SYSTEM_STDGPU)
+        open3d_find_package_3rdparty_library(3rdparty_stdgpu
+            PACKAGE stdgpu
+            TARGETS stdgpu::stdgpu
+        )
+        if(NOT 3rdparty_stdgpu_FOUND)
+            set(USE_SYSTEM_STDGPU OFF)
+        endif()
+    endif()
+    if(NOT USE_SYSTEM_STDGPU)
+        include(${Open3D_3RDPARTY_DIR}/stdgpu/stdgpu.cmake)
+        open3d_import_3rdparty_library(3rdparty_stdgpu
+            INCLUDE_DIRS ${STDGPU_INCLUDE_DIRS}
+            LIB_DIR      ${STDGPU_LIB_DIR}
+            LIBRARIES    ${STDGPU_LIBRARIES}
+            DEPENDS      ext_stdgpu
+        )
+    endif()
     list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_stdgpu)
 endif ()
 
 # embree
-include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
-open3d_import_3rdparty_library(3rdparty_embree
-    HIDDEN
-    INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
-    LIB_DIR      ${EMBREE_LIB_DIR}
-    LIBRARIES    ${EMBREE_LIBRARIES}
-    DEPENDS      ext_embree
-)
+if(USE_SYSTEM_EMBREE)
+    open3d_find_package_3rdparty_library(3rdparty_embree
+        PACKAGE embree
+        TARGETS embree
+    )
+    if(NOT 3rdparty_embree_FOUND)
+        set(USE_SYSTEM_EMBREE OFF)
+    endif()
+endif()
+if(NOT USE_SYSTEM_EMBREE)
+    include(${Open3D_3RDPARTY_DIR}/embree/embree.cmake)
+    open3d_import_3rdparty_library(3rdparty_embree
+        HIDDEN
+        INCLUDE_DIRS ${EMBREE_INCLUDE_DIRS}
+        LIB_DIR      ${EMBREE_LIB_DIR}
+        LIBRARIES    ${EMBREE_LIBRARIES}
+        DEPENDS      ext_embree
+    )
+endif()
 list(APPEND Open3D_3RDPARTY_PRIVATE_TARGETS_FROM_CUSTOM Open3D::3rdparty_embree)
 
 # WebRTC
