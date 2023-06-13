@@ -21,12 +21,11 @@ from config import ConfigParser
 
 
 def integrate(depth_file_names, color_file_names, depth_intrinsic,
-              color_intrinsic, extrinsics, integrate_color, config):
-
+              color_intrinsic, extrinsics, config):
     n_files = len(depth_file_names)
     device = o3d.core.Device(config.device)
 
-    if integrate_color:
+    if config.integrate_color:
         vbg = o3d.t.geometry.VoxelBlockGrid(
             attr_names=('tsdf', 'weight', 'color'),
             attr_dtypes=(o3c.float32, o3c.float32, o3c.float32),
@@ -54,7 +53,7 @@ def integrate(depth_file_names, color_file_names, depth_intrinsic,
             depth, depth_intrinsic, extrinsic, config.depth_scale,
             config.depth_max)
 
-        if integrate_color:
+        if config.integrate_color:
             color = o3d.t.io.read_image(color_file_names[i]).to(device)
             vbg.integrate(frustum_block_coords, depth, color, depth_intrinsic,
                           color_intrinsic, extrinsic, config.depth_scale,
@@ -81,7 +80,6 @@ if __name__ == '__main__':
                'Default dataset may be selected from the following options: '
                '[lounge, jack_jack]',
                default='lounge')
-    parser.add('--integrate_color', action='store_true')
     parser.add('--path_trajectory',
                help='path to the trajectory .log or .json file.')
     parser.add('--path_npz',
