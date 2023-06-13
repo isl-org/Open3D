@@ -10,16 +10,14 @@
 # P.S. This example is used in documentation, so, please ensure the changes are
 # synchronized.
 
-import os
-import numpy as np
+import time
+
 import open3d as o3d
 import open3d.core as o3c
-import time
-import matplotlib.pyplot as plt
 from tqdm import tqdm
-from config import ConfigParser
 
 from common import load_rgbd_file_names, load_depth_file_names, load_intrinsic, load_extrinsics, get_default_dataset
+from config import ConfigParser
 
 
 def integrate(depth_file_names, color_file_names, depth_intrinsic,
