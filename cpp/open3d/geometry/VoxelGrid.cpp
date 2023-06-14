@@ -197,9 +197,7 @@ void VoxelGrid::AddVoxel(const Voxel &voxel) {
     voxels_[voxel.grid_index_] = voxel;
 }
 
-void VoxelGrid::RemoveVoxel(const Eigen::Vector3i &idx) {
-    voxels_.erase(idx);
-}
+void VoxelGrid::RemoveVoxel(const Eigen::Vector3i &idx) { voxels_.erase(idx); }
 
 std::vector<bool> VoxelGrid::CheckIfIncluded(
         const std::vector<Eigen::Vector3d> &queries) {

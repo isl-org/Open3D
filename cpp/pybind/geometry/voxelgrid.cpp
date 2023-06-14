@@ -161,8 +161,9 @@ void pybind_voxelgrid(py::module &m) {
                                     {{"point", "The query point."}});
     docstring::ClassMethodDocInject(m, "VoxelGrid", "add_voxel",
                                     {{"Voxel", "A new voxel."}});
-    docstring::ClassMethodDocInject(m, "VoxelGrid", "remove_voxel",
-                                    {{"idx", "The grid index of the target voxel."}});
+    docstring::ClassMethodDocInject(
+            m, "VoxelGrid", "remove_voxel",
+            {{"idx", "The grid index of the target voxel."}});
     docstring::ClassMethodDocInject(
             m, "VoxelGrid", "check_if_included",
             {{"query", "a list of voxel indices to check."}});
