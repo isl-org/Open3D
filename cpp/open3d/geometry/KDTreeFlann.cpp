@@ -128,7 +128,7 @@ int KDTreeFlann::SearchRadius(const T &query,
     std::vector<nanoflann::ResultItem<Eigen::Index, double>> indices_dists;
     int k = nanoflann_index_->index_->radiusSearch(
             query.data(), radius * radius, indices_dists,
-            nanoflann::SearchParameters(-1, 0.0));
+            nanoflann::SearchParameters(0.0));
     indices.resize(k);
     distance2.resize(k);
     for (int i = 0; i < k; ++i) {
