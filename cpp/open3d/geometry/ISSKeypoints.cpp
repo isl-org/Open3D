@@ -32,12 +32,9 @@ bool IsLocalMaxima(int query_idx,
                    const std::vector<int>& indices,
                    const std::vector<double>& third_eigen_values) {
     return std::none_of(
-        indices.begin(),
-        indices.end(),
-        [&third_eigen_values, value = third_eigen_values[query_idx]](const int idx) {
-            return value < third_eigen_values[idx];
-        }
-    );
+            indices.begin(), indices.end(),
+            [&third_eigen_values, value = third_eigen_values[query_idx]](
+                    const int idx) { return value < third_eigen_values[idx]; });
 }
 
 double ComputeModelResolution(const std::vector<Eigen::Vector3d>& points,
@@ -45,16 +42,13 @@ double ComputeModelResolution(const std::vector<Eigen::Vector3d>& points,
     std::vector<int> indices(2);
     std::vector<double> distances(2);
     const double resolution = std::accumulate(
-        points.begin(),
-        points.end(),
-        0.,
-        [&](double state, const Eigen::Vector3d& point) {
-            if (kdtree.SearchKNN(point, 2, indices, distances) >= 2) {
-                state += std::sqrt(distances[1]);
-            }
-            return state;
-        }
-    );
+            points.begin(), points.end(), 0.,
+            [&](double state, const Eigen::Vector3d& point) {
+                if (kdtree.SearchKNN(point, 2, indices, distances) >= 2) {
+                    state += std::sqrt(distances[1]);
+                }
+                return state;
+            });
 
     return resolution / static_cast<double>(points.size());
 }
