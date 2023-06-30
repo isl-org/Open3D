@@ -714,7 +714,7 @@ void PeerConnectionManager::SendInitFramesToPeer(const std::string &peerid) {
 void PeerConnectionManager::CloseWindowConnections(
         const std::string &window_uid) {
     utility::LogDebug("PeerConnectionManager::CloseWindowConnections: {}",
-                     window_uid);
+                      window_uid);
     std::set<std::string> peerids;
     {
         std::lock_guard<std::mutex> mlock(window_uid_to_peerids_mutex_);
