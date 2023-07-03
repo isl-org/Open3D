@@ -74,6 +74,18 @@ OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE void cross_3x1(
 
 template <typename scalar_t>
 OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE scalar_t
+cross_mag_3x1(const scalar_t* A_3x1_input, const scalar_t* B_3x1_input) {
+    scalar_t temp_0 =
+            A_3x1_input[1] * B_3x1_input[2] - A_3x1_input[2] * B_3x1_input[1];
+    scalar_t temp_1 =
+            A_3x1_input[2] * B_3x1_input[0] - A_3x1_input[0] * B_3x1_input[2];
+    scalar_t temp_2 =
+            A_3x1_input[0] * B_3x1_input[1] - A_3x1_input[1] * B_3x1_input[0];
+    return sqrt(temp_0 * temp_0 + temp_1 * temp_1 + temp_2 * temp_2);
+}
+
+template <typename scalar_t>
+OPEN3D_HOST_DEVICE OPEN3D_FORCE_INLINE scalar_t
 dot_3x1(const scalar_t* A_3x1_input, const scalar_t* B_3x1_input) {
     return A_3x1_input[0] * B_3x1_input[0] + A_3x1_input[1] * B_3x1_input[1] +
            A_3x1_input[2] * B_3x1_input[2];
