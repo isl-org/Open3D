@@ -293,6 +293,9 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
     // Maps voxel to indices ranging from 0 to set.size()
     core::Tensor origin2down_indices, masks;
     points_voxeli_hashset.Insert(points_voxeli, origin2down_indices, masks);
+
+    // Find and insert are two different passes
+    points_voxeli_hashset.Find(points_voxeli, origin2down_indices, masks);
     origin2down_indices = origin2down_indices.To(core::Int64);
 
     int64_t num_points = points_voxeli.GetLength();
@@ -305,6 +308,8 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
     index_count.IndexSum_(
             origin2down_indices,
             core::Tensor::Ones({num_points}, core::Float32, device_));
+    // utility::LogInfo("indices = {}", origin2down_indices.ToString());
+    utility::LogInfo("index_count = {}", index_count.ToString());
 
     for (auto &kv : point_attr_) {
         auto down_attr = core::Tensor::Zeros({num_points_down, 3},

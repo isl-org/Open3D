@@ -29,7 +29,13 @@ void LaunchIndexReductionKernel(const Device& device,
         const int64_t idx = *(indexer.GetInputPtr<int64_t>(0, i));
         element_kernel(indexer.GetInputPtr(1, i), indexer.GetOutputPtr(idx));
     };
-    ParallelFor(device, indexer.NumWorkloads(), element_func);
+    utility::LogInfo(
+            "LaunchIndexReductionKernel: NumWorkloads = {}, index shape: {}, "
+            "src shape: {}, dst shape: {}",
+            index.GetLength(), index.GetShape(), src.GetShape(),
+            dst.GetShape());
+
+    ParallelFor(device, index.GetLength(), element_func);
     OPEN3D_GET_LAST_CUDA_ERROR("LaunchIndexReductionKernel failed.");
 }
 
