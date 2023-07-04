@@ -280,9 +280,8 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }
-    if (reduction != "mean" && reduction != "min") {
-        utility::LogError(
-                "Reduction can only be 'mean' or 'min' for VoxelDownSample.");
+    if (reduction != "mean") {
+        utility::LogError("Reduction can only be 'mean' for VoxelDownSample.");
     }
 
     core::Tensor points_voxeld = GetPointPositions() / voxel_size;
@@ -294,22 +293,27 @@ PointCloud PointCloud::VoxelDownSample(double voxel_size,
     // Maps voxel to indices ranging from 0 to set.size()
     core::Tensor origin2down_indices, masks;
     points_voxeli_hashset.Insert(points_voxeli, origin2down_indices, masks);
+    origin2down_indices = origin2down_indices.To(core::Int64);
 
+    int64_t num_points = points_voxeli.GetLength();
     int64_t num_points_down = points_voxeli_hashset.Size();
 
     PointCloud pcd_down(device_);
 
-    if (reduction == "min") {
-        for (auto &kv : point_attr_) {
-            auto down_attr = core::Tensor::Zeros({num_points_down, 3},
-                                                 kv.second.GetDtype(), device_);
-            if (reduction == "mean") {
-                down_attr.IndexMean_(origin2down_indices, kv.second);
-            } else if (reduction == "min") {
-                down_attr.IndexMin_(origin2down_indices, kv.second);
-            }
-            pcd_down.SetPointAttr(kv.first, down_attr);
+    auto index_count =
+            core::Tensor::Zeros({num_points_down}, core::Float32, device_);
+    index_count.IndexSum_(
+            origin2down_indices,
+            core::Tensor::Ones({num_points}, core::Float32, device_));
+
+    for (auto &kv : point_attr_) {
+        auto down_attr = core::Tensor::Zeros({num_points_down, 3},
+                                             kv.second.GetDtype(), device_);
+        if (reduction == "mean") {
+            down_attr.IndexSum_(origin2down_indices, kv.second);
+            down_attr /= index_count;
         }
+        pcd_down.SetPointAttr(kv.first, down_attr);
     }
 
     return pcd_down;

@@ -14,7 +14,7 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-void IndexMeanCPU_(const Tensor& index, const Tensor& src, Tensor& dst) {}
+void IndexSumCPU_(const Tensor& index, const Tensor& src, Tensor& dst) {}
 
 }  // namespace kernel
 }  // namespace core

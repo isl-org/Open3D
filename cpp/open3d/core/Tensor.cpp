@@ -958,16 +958,16 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
 
 void Tensor::IndexAdd_(const Tensor& index, const Tensor& src) {}
 
-void Tensor::IndexMean_(const Tensor& index, const Tensor& src) {
+void Tensor::IndexSum_(const Tensor& index, const Tensor& src) {
     if (NumDims() != 1 || index.NumDims() != 1 || src.NumDims() != 1) {
-        utility::LogError("IndexMean_ only supports 1D tensors.");
+        utility::LogError("IndexSum_ only supports 1D tensors.");
     }
 
     AssertTensorDtype(index, core::Int64);
     AssertTensorShape(index, src.GetShape());
     AssertTensorDtype(*this, src.GetDtype());
 
-    kernel::IndexMean_(index, src, *this);
+    kernel::IndexSum_(index, src, *this);
 }
 
 void Tensor::IndexMin_(const Tensor& index, const Tensor& src) {}

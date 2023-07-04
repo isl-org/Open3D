@@ -584,7 +584,7 @@ public:
     ///
     /// Note: Only support 1D index and src tensors now.
     void IndexAdd_(const Tensor& index, const Tensor& src);
-    void IndexMean_(const Tensor& index, const Tensor& src);
+    void IndexSum_(const Tensor& index, const Tensor& src);
     void IndexMax_(const Tensor& index, const Tensor& src);
     void IndexMin_(const Tensor& index, const Tensor& src);
 

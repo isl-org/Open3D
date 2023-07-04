@@ -13,15 +13,15 @@ namespace open3d {
 namespace core {
 namespace kernel {
 
-void IndexMean_(const Tensor& index, const Tensor& src, Tensor& dst) {
+void IndexSum_(const Tensor& index, const Tensor& src, Tensor& dst) {
     if (dst.IsCPU()) {
-        IndexMeanCPU_(index, src, dst);
+        IndexSumCPU_(index, src, dst);
     } else if (src.IsCUDA()) {
 #ifdef BUILD_CUDA_MODULE
-        IndexMeanCUDA_(index, src, dst);
+        IndexSumCUDA_(index, src, dst);
 #endif
     } else {
-        utility::LogError("IndexMean_: Unimplemented device");
+        utility::LogError("IndexSum_: Unimplemented device");
     }
 }
 
