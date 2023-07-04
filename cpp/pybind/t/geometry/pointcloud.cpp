@@ -211,12 +211,13 @@ The attributes of the point cloud have different levels::
                    "output point cloud.");
     pointcloud.def(
             "voxel_down_sample",
-            [](const PointCloud& pointcloud, const double voxel_size) {
-                return pointcloud.VoxelDownSample(
-                        voxel_size, core::HashBackendType::Default);
+            [](const PointCloud& pointcloud, const double voxel_size,
+               const std::string& reduction) {
+                return pointcloud.VoxelDownSample(voxel_size, reduction);
             },
-            "Downsamples a point cloud with a specified voxel size.",
-            "voxel_size"_a);
+            "Downsamples a point cloud with a specified voxel size and a "
+            "reduction type.",
+            "voxel_size"_a, "reduction"_a = "mean");
     pointcloud.def("uniform_down_sample", &PointCloud::UniformDownSample,
                    "Downsamples a point cloud by selecting every kth index "
                    "point and its attributes.",

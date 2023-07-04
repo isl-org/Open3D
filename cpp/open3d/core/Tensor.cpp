@@ -22,6 +22,7 @@
 #include "open3d/core/TensorFunction.h"
 #include "open3d/core/TensorKey.h"
 #include "open3d/core/kernel/Arange.h"
+#include "open3d/core/kernel/IndexReduction.h"
 #include "open3d/core/kernel/Kernel.h"
 #include "open3d/core/linalg/Det.h"
 #include "open3d/core/linalg/Inverse.h"
@@ -954,6 +955,24 @@ void Tensor::IndexSet(const std::vector<Tensor>& index_tensors,
     kernel::IndexSet(src_tensor, pre_processed_dst, aip.GetIndexTensors(),
                      aip.GetIndexedShape(), aip.GetIndexedStrides());
 }
+
+void Tensor::IndexAdd_(const Tensor& index, const Tensor& src) {}
+
+void Tensor::IndexMean_(const Tensor& index, const Tensor& src) {
+    if (NumDims() != 1 || index.NumDims() != 1 || src.NumDims() != 1) {
+        utility::LogError("IndexMean_ only supports 1D tensors.");
+    }
+
+    AssertTensorDtype(index, core::Int64);
+    AssertTensorShape(index, src.GetShape());
+    AssertTensorDtype(*this, src.GetDtype());
+
+    kernel::IndexMean_(index, src, *this);
+}
+
+void Tensor::IndexMin_(const Tensor& index, const Tensor& src) {}
+
+void Tensor::IndexMax_(const Tensor& index, const Tensor& src) {}
 
 Tensor Tensor::Permute(const SizeVector& dims) const {
     // Check dimension size

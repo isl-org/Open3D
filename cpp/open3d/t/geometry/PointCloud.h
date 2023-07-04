@@ -330,8 +330,7 @@ public:
     ///
     /// \param voxel_size Voxel size. A positive number.
     PointCloud VoxelDownSample(double voxel_size,
-                               const core::HashBackendType &backend =
-                                       core::HashBackendType::Default) const;
+                               const std::string &reduction = "mean") const;
 
     /// \brief Downsamples a point cloud by selecting every kth index point and
     /// its attributes.

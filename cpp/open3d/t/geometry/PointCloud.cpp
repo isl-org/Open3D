@@ -275,29 +275,40 @@ PointCloud PointCloud::SelectByIndex(
     return pcd;
 }
 
-PointCloud PointCloud::VoxelDownSample(
-        double voxel_size, const core::HashBackendType &backend) const {
+PointCloud PointCloud::VoxelDownSample(double voxel_size,
+                                       const std::string &reduction) const {
     if (voxel_size <= 0) {
         utility::LogError("voxel_size must be positive.");
     }
+    if (reduction != "mean" && reduction != "min") {
+        utility::LogError(
+                "Reduction can only be 'mean' or 'min' for VoxelDownSample.");
+    }
+
     core::Tensor points_voxeld = GetPointPositions() / voxel_size;
     core::Tensor points_voxeli = points_voxeld.Floor().To(core::Int64);
 
     core::HashSet points_voxeli_hashset(points_voxeli.GetLength(), core::Int64,
-                                        {3}, device_, backend);
+                                        {3}, device_);
 
-    core::Tensor buf_indices, masks;
-    points_voxeli_hashset.Insert(points_voxeli, buf_indices, masks);
+    // Maps voxel to indices ranging from 0 to set.size()
+    core::Tensor origin2down_indices, masks;
+    points_voxeli_hashset.Insert(points_voxeli, origin2down_indices, masks);
 
-    PointCloud pcd_down(GetPointPositions().GetDevice());
-    for (auto &kv : point_attr_) {
-        if (kv.first == "positions") {
-            pcd_down.SetPointAttr(kv.first,
-                                  points_voxeli.IndexGet({masks}).To(
-                                          GetPointPositions().GetDtype()) *
-                                          voxel_size);
-        } else {
-            pcd_down.SetPointAttr(kv.first, kv.second.IndexGet({masks}));
+    int64_t num_points_down = points_voxeli_hashset.Size();
+
+    PointCloud pcd_down(device_);
+
+    if (reduction == "min") {
+        for (auto &kv : point_attr_) {
+            auto down_attr = core::Tensor::Zeros({num_points_down, 3},
+                                                 kv.second.GetDtype(), device_);
+            if (reduction == "mean") {
+                down_attr.IndexMean_(origin2down_indices, kv.second);
+            } else if (reduction == "min") {
+                down_attr.IndexMin_(origin2down_indices, kv.second);
+            }
+            pcd_down.SetPointAttr(kv.first, down_attr);
         }
     }
 
