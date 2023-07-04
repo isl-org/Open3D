@@ -146,8 +146,9 @@ void ComputeTriangleAreasCPU
                               v02[2] = vertex_ptr[3 * triangle_id3 + 2] -
                                        vertex_ptr[3 * triangle_id1 + 2];
 
-                              area_ptr[workload_idx] = 0.5 *
-                                                       core::linalg::kernel::cross_mag_3x1(v01, v02);
+                              area_ptr[workload_idx] =
+                                      0.5 * core::linalg::kernel::cross_mag_3x1(
+                                                    v01, v02);
                           });
     });
 }

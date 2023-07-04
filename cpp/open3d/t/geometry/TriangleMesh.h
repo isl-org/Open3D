@@ -665,8 +665,8 @@ public:
     /// rendering.
     TriangleMesh &ComputeVertexNormals(bool normalized = true);
 
-    /// \brief Function that computes the surface area of the mesh, i.e. the sum of
-    /// the individual triangle surfaces.
+    /// \brief Function that computes the surface area of the mesh, i.e. the sum
+    /// of the individual triangle surfaces.
     double GetSurfaceArea() const;
 
     /// \brief Clip mesh with a plane.
